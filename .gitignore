@@ -1,11 +1,9 @@
 # Dependencies
 node_modules/
 
-# Build artifacts
-dist/
-build/
-.vercel/
-.cache/
+# Logs
+*.log
+npm-debug.log*
 
 # OS files
 .DS_Store

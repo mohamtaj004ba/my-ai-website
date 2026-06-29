@@ -1,6 +1,18 @@
 {
   "name": "my-ai-website",
   "version": "1.0.0",
+  "description": "CallerCore - AI-powered call management website",
+  "scripts": {
+    "dev": "python3 -m http.server 8000",
+    "build": "echo 'Static HTML site - no build needed'"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^1.1.1"
+  },
+  "devDependencies": {},
+  "keywords": ["vercel", "analytics", "static-website"],
+  "author": "",
+  "license": "MIT"
   "description": "CallerCore - Never Miss Another Call",
   "main": "index.html",
   "scripts": {
