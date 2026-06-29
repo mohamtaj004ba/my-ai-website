@@ -13,4 +13,15 @@
   "keywords": ["vercel", "analytics", "static-website"],
   "author": "",
   "license": "MIT"
+  "description": "CallerCore - Never Miss Another Call",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/speed-insights": "^1.0.12"
+  }
 }
