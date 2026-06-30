@@ -178,7 +178,7 @@ h1 .o{color:var(--signal);}
 .clog .txt{color:var(--paper); line-height:1.4;}
 .clog .txt small{display:block; color:var(--steel); font-size:11.5px; margin-top:2px;}
 
-/* ================= CONVERSATION INTELLIGENCE ================= */
+/* ================= INTEL ================= */
 .intel{
   background:var(--ink); padding:88px 0;
 }
@@ -253,7 +253,7 @@ h2{
   font-size:14px; color:#5B616B; margin-top:10px; line-height:1.45;
 }
 
-/* ================= SOLUTION — system architecture motif ================= */
+/* ================= SOLUTION ================= */
 .solution{
   background:var(--ink); color:var(--paper); padding:96px 0;
 }
@@ -371,7 +371,7 @@ h2{
 }
 @media (max-width:860px){.flow{flex-direction:column;} .flow-arrow{display:none;} .flow-step{border-top:none; border-left:3px solid var(--signal-dim); padding-left:18px;}}
 
-/* ================= PLATFORM (capabilities, not roadmap) ================= */
+/* ================= PLATFORM ================= */
 .platform{
   background:var(--paper-dim); padding:96px 0;
 }
@@ -546,7 +546,7 @@ h2{
   background:rgba(255,107,53,0.2); color:var(--signal);
 }
 
-/* ================= PRICING — comparison table ================= */
+/* ================= PRICING ================= */
 .pricing{
   background:var(--paper); padding:96px 0;
 }

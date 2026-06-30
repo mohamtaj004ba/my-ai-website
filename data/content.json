@@ -1,0 +1,82 @@
+{
+  "nav": {
+    "links": [
+      {"text": "Why It Matters", "href": "#problem"},
+      {"text": "How It Works", "href": "#how"},
+      {"text": "What's Included", "href": "#platform"},
+      {"text": "Pricing", "href": "#pricing"},
+      {"text": "Get a Free Demo", "href": "#cta", "cta": true}
+    ]
+  },
+  "hero": {
+    "eyebrow": "● Now booking demos",
+    "headline": "AI that answers every call and captures every client opportunity.",
+    "subheadline": "CallerCore is the AI intake system for service businesses — answering calls, capturing leads, and keeping your front office moving now, with a platform built to expand as you grow.",
+    "stats": [
+      {"number": "24/7", "text": "coverage, no overtime"},
+      {"number": "<30 sec", "text": "response time"},
+      {"number": "0", "text": "manual data entry"}
+    ]
+  },
+  "problem": {
+    "title": "Unanswered calls are unbooked revenue",
+    "intro": "Service businesses lose thousands every month to calls nobody answers — because someone's with a customer, on a job, or it's after hours.",
+    "stats": [
+      {"number": 62, "suffix": "%", "label": "of calls to service businesses go unanswered during peak hours"},
+      {"number": 1200, "prefix": "$", "suffix": "+", "label": "average revenue lost per missed service call"},
+      {"number": 85, "suffix": "%", "label": "of callers who reach voicemail call a competitor instead"},
+      {"number": 0, "prefix": "$", "label": "coverage after hours, on weekends, or when your team is busy"}
+    ]
+  },
+  "solution": {
+    "title": "One platform. Every layer connected.",
+    "quote": "We answer every call. Capture every lead. Run your front office. Automatically.",
+    "stack": [
+      {
+        "label": "INPUT",
+        "title": "AI Phone Agent",
+        "description": "Answers every call, 24 hours a day, in natural conversation — not a scripted menu. It follows context, handles questions on the fly, qualifies the caller, and books the job or transfers to a human."
+      },
+      {
+        "label": "PROCESS",
+        "title": "Lead Engine",
+        "description": "Every conversation is parsed automatically — name, contact info, intent, urgency — and routed into your pipeline with zero manual entry."
+      },
+      {
+        "label": "OUTPUT",
+        "title": "Instant Follow-Up",
+        "description": "Missed or after-hours contacts get an automatic text within seconds — so they hear from you before they think to call anyone else."
+      },
+      {
+        "label": "RECORD",
+        "title": "Always-On Memory",
+        "description": "Nothing lives in a notepad or a sticky note. Every interaction is logged, searchable, and ready for your team the next morning."
+      }
+    ]
+  },
+  "pricing": {
+    "title": "Compare plans side by side",
+    "intro": "One flat setup fee, then a monthly plan that scales with you. Every feature below carries forward into the tiers above it — nothing gets swapped out, only added.",
+    "note": "Overage billed at $0.30/min beyond your included minutes. No long-term contract required.",
+    "plans": [
+      {
+        "name": "Starter",
+        "price": 349,
+        "setup": 500,
+        "popular": false
+      },
+      {
+        "name": "Growth",
+        "price": 599,
+        "setup": 500,
+        "popular": true
+      },
+      {
+        "name": "Pro",
+        "price": 999,
+        "setup": 500,
+        "popular": false
+      }
+    ]
+  }
+}
