@@ -629,7 +629,6 @@
     border-radius:6px; transition:background 0.15s, color 0.15s;
   }
   .modal-close:hover{background:rgba(245,243,239,0.08); color:var(--paper);}
-  .modal-header{margin-bottom:22px;}
   .modal-plan-tag{
     display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
     color:var(--signal); background:rgba(255,107,53,0.12); border:1px solid rgba(255,107,53,0.35);
@@ -640,8 +639,58 @@
     color:var(--paper); margin-bottom:8px; letter-spacing:0.01em;
   }
   .modal-sub{font-size:14px; color:#A8ADB5; line-height:1.5;}
-  .modal-form .form-row{margin-bottom:12px;}
-  .modal-form textarea{margin-bottom:16px;}
+
+  /* ── PLAN CONFIRMATION SCREEN ──────────────────────────────────────────────── */
+  .plan-confirm-box{max-width:540px;}
+  .plan-confirm-header{margin-bottom:20px;}
+
+  .plan-confirm-summary{
+    display:flex; gap:20px; align-items:flex-start;
+    background:rgba(255,107,53,0.06); border:1px solid rgba(255,107,53,0.2);
+    border-radius:10px; padding:16px 18px; margin-bottom:20px;
+  }
+  .plan-confirm-price-block{flex-shrink:0; text-align:center; min-width:90px;}
+  .plan-confirm-price{
+    font-family:'Oswald',sans-serif; font-size:32px; font-weight:700; color:var(--signal); line-height:1;
+  }
+  .plan-confirm-price span{font-size:14px; color:var(--steel); font-family:'Inter',sans-serif; font-weight:400;}
+  .plan-confirm-setup{font-size:11px; color:var(--steel); margin-top:4px; line-height:1.3;}
+  .plan-confirm-features{list-style:none; padding:0; margin:0; flex:1;}
+  .plan-confirm-features li{
+    font-size:13px; color:#C9CDD3; padding:3px 0; display:flex; align-items:center; gap:7px;
+  }
+  .plan-confirm-features li::before{content:"✓"; color:var(--good); font-weight:700; flex-shrink:0;}
+
+  .plan-confirm-next{margin-bottom:20px;}
+  .plan-confirm-next-title{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--steel); margin-bottom:12px; font-family:'JetBrains Mono',monospace;
+  }
+  .plan-confirm-steps{display:flex; flex-direction:column; gap:12px;}
+  .plan-confirm-step{display:flex; gap:12px; align-items:flex-start;}
+  .plan-confirm-step-num{
+    width:24px; height:24px; border-radius:50%; background:var(--signal);
+    color:var(--graphite); font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;
+  }
+  .plan-confirm-step-text{font-size:13px; color:#C9CDD3; line-height:1.5;}
+  .plan-confirm-step-text strong{color:var(--paper); display:block; margin-bottom:2px; font-size:13.5px;}
+
+  .plan-confirm-trust{
+    display:flex; flex-wrap:wrap; gap:8px 18px; margin-bottom:20px;
+    padding-top:16px; border-top:1px solid var(--line);
+  }
+  .plan-confirm-trust-item{
+    display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--steel);
+  }
+
+  .plan-confirm-cta{
+    width:100%; justify-content:center; font-size:16px; padding:14px;
+    display:flex; text-decoration:none; margin-bottom:14px;
+  }
+  .plan-confirm-disclaimer{
+    font-size:11.5px; color:#5A6370; line-height:1.6; text-align:center;
+  }
 
   @media (max-width:480px){
     .modal-box{padding:24px 20px;}
@@ -1139,7 +1188,7 @@
                 <div class="col-bestfor">Best for single-location shops just getting started</div>
                 <div class="col-price">$349<span>/mo</span></div>
                 <div class="col-setup">+ $500 setup</div>
-                <button type="button" class="btn btn-ghost col-btn plan-modal-btn" data-plan="Starter">Choose Starter</button>
+                <button type="button" class="btn btn-ghost col-btn plan-confirm-btn" data-plan="Starter" data-price="$349/mo" data-stripe="https://buy.stripe.com/14A9ATda1805aqSfoB4sE02">Choose Starter</button>
               </div>
             </th>
             <th class="popular">
@@ -1149,7 +1198,7 @@
                 <div class="col-bestfor">Best for busy teams ready to book jobs automatically</div>
                 <div class="col-price">$599<span>/mo</span></div>
                 <div class="col-setup">+ $500 setup</div>
-                <button type="button" class="btn btn-ghost col-btn col-btn-dark plan-modal-btn" data-plan="Growth">Choose Growth</button>
+                <button type="button" class="btn btn-ghost col-btn col-btn-dark plan-confirm-btn" data-plan="Growth" data-price="$599/mo" data-stripe="https://buy.stripe.com/28E6oH5Hza8d7eG6S54sE01">Choose Growth</button>
               </div>
             </th>
             <th>
@@ -1158,7 +1207,7 @@
                 <div class="col-bestfor">Best for multi-location operations at scale</div>
                 <div class="col-price">$999<span>/mo</span></div>
                 <div class="col-setup">+ $500 setup</div>
-                <button type="button" class="btn btn-ghost col-btn plan-modal-btn" data-plan="Pro">Choose Pro</button>
+                <button type="button" class="btn btn-ghost col-btn plan-confirm-btn" data-plan="Pro" data-price="$999/mo" data-stripe="https://buy.stripe.com/6oUbJ1ee5a8d7eGfoB4sE00">Choose Pro</button>
               </div>
             </th>
           </tr>
@@ -1418,34 +1467,85 @@
 </div>
 
 <div class="modal-overlay" id="planModalOverlay">
-  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-box plan-confirm-box" role="dialog" aria-modal="true" aria-labelledby="planConfirmTitle">
     <button type="button" class="modal-close" id="modalClose" aria-label="Close">✕</button>
-    <div class="modal-header">
-      <span class="modal-plan-tag" id="modalPlanTag">GROWTH PLAN</span>
-      <h3 id="modalTitle">Get started with CallerCore</h3>
-      <p class="modal-sub" id="modalSub">$599/mo + $500 setup — let's get your account set up.</p>
+
+    <!-- HEADER -->
+    <div class="plan-confirm-header">
+      <span class="modal-plan-tag" id="planConfirmTag">GROWTH PLAN</span>
+      <h3 id="planConfirmTitle">You're one step away</h3>
+      <p class="modal-sub">Review what's included, then proceed to secure checkout.</p>
     </div>
-    <div id="planModalFormWrap">
-      <form class="contact-form modal-form" id="modalForm">
-        <input type="hidden" name="plan" id="modalPlanField" value="">
-        <div class="form-row">
-          <input type="text" name="name" placeholder="Your name" required>
-          <input type="text" name="business" placeholder="Business name" required>
+
+    <!-- PLAN SUMMARY -->
+    <div class="plan-confirm-summary">
+      <div class="plan-confirm-price-block">
+        <div class="plan-confirm-price" id="planConfirmPrice">$599<span>/mo</span></div>
+        <div class="plan-confirm-setup">+ $500 one-time setup fee</div>
+      </div>
+      <ul class="plan-confirm-features" id="planConfirmFeatures">
+        <!-- populated by JS based on plan -->
+      </ul>
+    </div>
+
+    <!-- WHAT HAPPENS NEXT -->
+    <div class="plan-confirm-next">
+      <div class="plan-confirm-next-title">What happens after you pay</div>
+      <div class="plan-confirm-steps">
+        <div class="plan-confirm-step">
+          <div class="plan-confirm-step-num">1</div>
+          <div class="plan-confirm-step-text">
+            <strong>Confirmation email within minutes</strong>
+            Stripe sends a receipt. Our team gets notified instantly.
+          </div>
         </div>
-        <div class="form-row">
-          <input type="email" name="email" placeholder="Email address" required>
-          <input type="tel" name="phone" placeholder="Phone number" required>
+        <div class="plan-confirm-step">
+          <div class="plan-confirm-step-num">2</div>
+          <div class="plan-confirm-step-text">
+            <strong>Onboarding call within 1 business day</strong>
+            We reach out to configure your AI agent for your specific business and call flow.
+          </div>
         </div>
-        <textarea name="message" placeholder="Anything we should know before we set things up? (optional)" rows="3"></textarea>
-        <button type="submit" class="btn btn-primary form-submit" id="modalSubmitBtn">Start with this plan →</button>
-        <p class="form-note" id="modalFormNote">We'll reach out within one business day to finish setup. No long-term contract.</p>
-      </form>
+        <div class="plan-confirm-step">
+          <div class="plan-confirm-step-num">3</div>
+          <div class="plan-confirm-step-text">
+            <strong>Go live within 24 hours of onboarding</strong>
+            Your AI agent starts answering calls. You start capturing every lead.
+          </div>
+        </div>
+      </div>
     </div>
-    <div id="planModalThankYou" style="display:none; text-align:center; padding:24px 0;">
-      <div class="thankyou-icon">✓</div>
-      <h3 class="thankyou-heading" style="font-size:22px;">You're all set!</h3>
-      <p class="thankyou-msg" id="planThankYouMsg">We'll reach out within one business day to finish setting up your account. No long-term contract.</p>
+
+    <!-- TRUST SIGNALS -->
+    <div class="plan-confirm-trust">
+      <div class="plan-confirm-trust-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="#3FA66B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        30-day money-back guarantee
+      </div>
+      <div class="plan-confirm-trust-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="#3FA66B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        No long-term contract — cancel anytime
+      </div>
+      <div class="plan-confirm-trust-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke="#3FA66B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Secure checkout powered by Stripe
+      </div>
+      <div class="plan-confirm-trust-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#3FA66B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Live within 1 business day
+      </div>
     </div>
+
+    <!-- CTA -->
+    <a href="#" id="planStripeBtn" class="btn btn-primary plan-confirm-cta" target="_blank">
+      Proceed to secure checkout →
+    </a>
+    <p class="plan-confirm-disclaimer">
+      You'll enter your payment details on Stripe's secure checkout page.
+      The $500 setup fee and first month are charged at signup.
+      Subsequent months are billed on the same date each month.
+      Cancel anytime — no penalties, no questions asked.
+    </p>
   </div>
 </div>
 
@@ -1591,35 +1691,70 @@
     Pro:     {price: '$999/mo + $500 setup', sub: "let's get your Pro account set up."}
   };
 
-  const modalOverlay = document.getElementById('planModalOverlay');
-  const modalPlanTag = document.getElementById('modalPlanTag');
-  const modalSub = document.getElementById('modalSub');
-  const modalPlanField = document.getElementById('modalPlanField');
-  const modalClose = document.getElementById('modalClose');
-  const modalForm = document.getElementById('modalForm');
-  const modalFormNote = document.getElementById('modalFormNote');
+  // ── PLAN CONFIRMATION MODAL ───────────────────────────────────────────────
+  const modalOverlay  = document.getElementById('planModalOverlay');
+  const modalClose    = document.getElementById('modalClose');
+  const planConfirmTag   = document.getElementById('planConfirmTag');
+  const planConfirmPrice = document.getElementById('planConfirmPrice');
+  const planConfirmFeatures = document.getElementById('planConfirmFeatures');
+  const planStripeBtn = document.getElementById('planStripeBtn');
+
+  const PLAN_DATA = {
+    Starter: {
+      price: '$349',
+      stripe: 'https://buy.stripe.com/14A9ATda1805aqSfoB4sE02',
+      features: [
+        '300 minutes/mo included',
+        '1 business location',
+        'AI phone agent, 24/7',
+        'Instant lead capture & follow-up',
+        'Lead dashboard',
+        'Standard support'
+      ]
+    },
+    Growth: {
+      price: '$599',
+      stripe: 'https://buy.stripe.com/28E6oH5Hza8d7eG6S54sE01',
+      features: [
+        '600 minutes/mo included',
+        '2 business locations',
+        'Everything in Starter',
+        'Online appointment booking',
+        'SMS marketing campaigns',
+        'Priority support'
+      ]
+    },
+    Pro: {
+      price: '$999',
+      stripe: 'https://buy.stripe.com/6oUbJ1ee5a8d7eGfoB4sE00',
+      features: [
+        'Unlimited minutes',
+        'Up to 5 business locations',
+        'Everything in Growth',
+        'Custom integrations',
+        'Dedicated onboarding specialist',
+        'White-glove support'
+      ]
+    }
+  };
 
   function openPlanModal(planName){
-    const details = planDetails[planName] || {price: '', sub: "let's get your account set up."};
-    modalPlanTag.textContent = planName.toUpperCase() + ' PLAN';
-    modalSub.textContent = details.price + ' — ' + details.sub;
-    modalPlanField.value = planName;
+    const plan = PLAN_DATA[planName];
+    if(!plan) return;
+    planConfirmTag.textContent = planName.toUpperCase() + ' PLAN';
+    planConfirmPrice.innerHTML = plan.price + '<span>/mo</span>';
+    planConfirmFeatures.innerHTML = plan.features.map(f => `<li>${f}</li>`).join('');
+    planStripeBtn.href = plan.stripe;
     modalOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
-    const firstInput = modalForm.querySelector('input[name="name"]');
-    if(firstInput){ setTimeout(() => firstInput.focus(), 250); }
   }
+
   function closePlanModal(){
     modalOverlay.classList.remove('open');
     document.body.style.overflow = '';
-    setTimeout(() => {
-      document.getElementById('planModalFormWrap').style.display = 'block';
-      document.getElementById('planModalThankYou').style.display = 'none';
-      modalForm.reset();
-    }, 250);
   }
 
-  document.querySelectorAll('.plan-modal-btn').forEach(btn => {
+  document.querySelectorAll('.plan-confirm-btn').forEach(btn => {
     btn.addEventListener('click', function(){
       openPlanModal(btn.dataset.plan);
     });
@@ -1631,27 +1766,8 @@
     });
   }
   document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape' && modalOverlay.classList.contains('open')){ closePlanModal(); }
+    if(e.key === 'Escape' && modalOverlay && modalOverlay.classList.contains('open')){ closePlanModal(); }
   });
-
-  if(modalForm){
-    modalForm.addEventListener('submit', function(e){
-      e.preventDefault();
-      const formData = new FormData(modalForm);
-      const payload = {
-        name: formData.get('name'),
-        business: formData.get('business'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        message: formData.get('message') || '',
-        plan: formData.get('plan') || '',
-        source: 'plan_modal'
-      };
-      sendLeadToGHL(payload);
-      document.getElementById('planModalFormWrap').style.display = 'none';
-      document.getElementById('planModalThankYou').style.display = 'block';
-    });
-  }
 
   // Main CTA form submission — send to GHL, hide form, show thank-you
   const ctaForm = document.getElementById('cta-form');
