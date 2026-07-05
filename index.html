@@ -1662,7 +1662,7 @@
   // ============= LEAD DELIVERY (GoHighLevel webhook) =============
   // All forms on this page (main CTA, demo modal, contact modal, plan modal, chat handoff)
   // send captured leads here. Update this URL if the GHL workflow is ever recreated.
-  const GHL_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/8m3nfjxNnGqagYU2ouAE/webhook-trigger/XWMrNjC1yYwsDUqaF9VP';
+  const GHL_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/8m3nfjxNnGqagYU2ouAE/webhook-trigger/39d0fd5f-8ad9-478a-9294-8b7c97b61d9c';
 
   async function sendLeadToGHL(payload){
     const fullPayload = Object.assign({
@@ -1926,9 +1926,9 @@
   const demoSubmitBtn = document.getElementById('demoModalSubmitBtn');
 
   function openDemoModal(){
-    demoOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => demoForm.querySelector('input[name="name"]').focus(), 250);
+    // Demo CTAs now go straight to the live booking calendar (GHL funnel).
+    // The old lead-capture modal is bypassed; booking > lead chasing.
+    window.location.href = 'https://go.callercore.com/demo';
   }
   function closeDemoModal(){
     demoOverlay.classList.remove('open');
