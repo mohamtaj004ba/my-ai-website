@@ -2141,8 +2141,10 @@
       addMessage(reply, 'bot');
     } catch(err) {
       typingEl.remove();
-      addMessage("Sorry, I'm having trouble connecting right now. Please use the Contact button in the nav to reach our team directly.", 'bot');
+      addMessage("Sorry, I'm having trouble connecting right now — but I don't want to leave you hanging.", 'bot');
       console.error('Claude API error:', err);
+      // Chat backend unavailable: offer the human handoff instead of a dead end.
+      showHandoffPrompt(text);
     }
   }
 
@@ -2165,9 +2167,12 @@
   chatHandoffForm.addEventListener('submit', async function(e){
     e.preventDefault();
     const formData = new FormData(chatHandoffForm);
+    const contactVal = (formData.get('contact') || '').trim();
     const payload = {
       name: formData.get('name'),
-      contact: formData.get('contact'),
+      email: contactVal.includes('@') ? contactVal : '',
+      phone: contactVal.includes('@') ? '' : contactVal,
+      message: lastUnansweredQuestion,
       question: lastUnansweredQuestion,
       source: 'chatbot'
     };
