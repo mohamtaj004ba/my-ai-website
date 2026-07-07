@@ -1523,7 +1523,7 @@
       <p style="color:var(--steel); font-weight:400; font-size:13.5px; margin:0; line-height:1.5;">Pick a time below — we'll call you and run CallerCore against 3 of your real call scenarios, live. No commitment.</p>
     </div>
     <div class="demo-cal-wrap">
-      <iframe id="demoCalFrame" src="about:blank" data-src="https://api.leadconnectorhq.com/widget/booking/Pwxo8erwZGv9JhRhDdjJ" style="width:100%;min-height:640px;border:none;overflow:hidden;background:transparent;display:block;" scrolling="no" title="Book a CallerCore demo"></iframe>
+      <iframe id="demoCalFrame" src="about:blank" data-src="https://api.leadconnectorhq.com/widget/booking/Pwxo8erwZGv9JhRhDdjJ" scrolling="no" title="Book a CallerCore demo" style="width:100%;min-height:900px;border:none;overflow:hidden;background:transparent;display:block;"></iframe>
     </div>
   </div>
 </div>
@@ -2197,19 +2197,29 @@
 <script>
   // Auto-resize the demo calendar iframe to its content height (kills the inner scrollbar).
   (function(){
+    function applyHeight(px){
+      var f = document.getElementById('demoCalFrame');
+      if(!f) return;
+      px = parseInt(px, 10);
+      if(!px || px < 300) return;              // ignore junk/too-small values
+      f.style.height = (px + 30) + 'px';       // small buffer so nothing clips
+      f.style.minHeight = '0px';               // let it shrink below the default too
+    }
     window.addEventListener('message', function(e){
-      if(!e.data) return;
-      var h = null;
-      // GHL sends height in a few possible shapes depending on widget version
-      if(typeof e.data === 'object'){
-        if(e.data.type === 'MSG_RESIZE' && e.data.height) h = e.data.height;
-        else if(e.data.height) h = e.data.height;
-      } else if(typeof e.data === 'string'){
-        try{ var d = JSON.parse(e.data); if(d && d.height) h = d.height; }catch(_){}
+      var d = e.data;
+      if(!d) return;
+      // Try every shape GHL / LeadConnector widgets are known to send:
+      if(typeof d === 'number'){ applyHeight(d); return; }
+      if(typeof d === 'string'){
+        // sometimes "height:1234" or a JSON string
+        var m = d.match(/(\d{3,5})/);
+        try{ var j = JSON.parse(d); if(j && (j.height||j.docHeight)) { applyHeight(j.height||j.docHeight); return; } }catch(_){}
+        if(m) applyHeight(m[1]);
+        return;
       }
-      if(h){
-        var f = document.getElementById('demoCalFrame');
-        if(f){ f.style.height = (parseInt(h,10) + 20) + 'px'; }
+      if(typeof d === 'object'){
+        var h = d.height || d.docHeight || (d.payload && d.payload.height) || (d.data && d.data.height);
+        if(h) applyHeight(h);
       }
     });
   })();
