@@ -593,6 +593,9 @@
 
   /* ── CONTACT SECTION ──────────────────────────────────────────────────────── */
   .contact-modal-box{max-width:760px !important; padding:28px 32px;}
+  .demo-cal-box{max-width:720px !important; width:calc(100vw - 40px); padding:24px 24px 12px; max-height:92vh; overflow-y:auto;}
+  .demo-cal-wrap{border-radius:10px; overflow:hidden; background:var(--paper);}
+  @media (max-width:560px){ .demo-cal-box{padding:18px 14px 8px;} #demoCalFrame{min-height:600px;} }
   .contact-modal-box .modal-header{margin-bottom:14px;}
   .contact-modal-box .modal-plan-tag{margin-bottom:10px;}
   .contact-modal-box .modal-header h3{font-size:20px; margin-bottom:5px;}
@@ -1409,7 +1412,7 @@
     <h2>Your AI receptionist is 24 hours away</h2>
     <p class="sec-intro">See how CallerCore handles intake, captures lead details, and keeps follow-up moving without adding front-office overhead.</p>
     <div style="text-align:center; margin-top:28px;">
-      <a href="https://go.callercore.com/demo" class="btn btn-primary" style="display:inline-block; text-decoration:none;">Book Your Free Demo &rarr;</a>
+      <button type="button" class="btn btn-primary" id="finalCtaDemoBtn" style="display:inline-block;">Book Your Free Demo &rarr;</button>
       <p class="form-note" style="margin-top:14px;">Pick a time that works &mdash; booking takes 30 seconds. No contract required.</p>
     </div>
     <div id="ctaFormWrap" style="display:none">
@@ -1513,39 +1516,15 @@
 
 <!-- DEMO MODAL -->
 <div class="modal-overlay" id="demoModalOverlay">
-  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="demoModalTitle">
+  <div class="modal-box demo-cal-box" role="dialog" aria-modal="true" aria-labelledby="demoModalTitle">
     <button type="button" class="modal-close" id="demoModalClose" aria-label="Close">✕</button>
-    <div class="modal-header">
+    <div class="modal-header" style="margin-bottom:14px;">
       <span class="modal-plan-tag">FREE DEMO</span>
-      <h3 id="demoModalTitle">Let's get you a working demo</h3>
-      <p class="modal-sub">No commitment, no credit card — we'll reach out within 24 hours.</p>
+      <h3 id="demoModalTitle">Book your live demo</h3>
+      <p class="modal-sub">Pick a time that works — you'll watch CallerCore handle a real call.</p>
     </div>
-    <div id="demoModalFormWrap">
-      <form class="contact-form modal-form" id="demoModalForm">
-        <div class="form-row">
-          <input type="text" name="name" placeholder="Your name" required>
-          <input type="text" name="business" placeholder="Business name" required>
-        </div>
-        <div class="form-row">
-          <input type="email" name="email" placeholder="Email address" required>
-          <input type="tel" name="phone" placeholder="Phone number" required>
-        </div>
-        <select name="industry" style="width:100%;padding:10px 13px;border-radius:7px;border:1px solid rgba(247,249,252,0.18);background:rgba(247,249,252,0.05);color:var(--steel);font-family:'Inter',sans-serif;font-size:13.5px;margin-bottom:12px;">
-          <option value="" disabled selected>Industry / trade (optional)</option>
-          <option>Plumbing</option><option>HVAC</option><option>Electrical</option>
-          <option>Roofing</option><option>Landscaping</option><option>Auto Repair</option>
-          <option>Pest Control</option><option>Cleaning Services</option>
-          <option>General Contracting</option><option>Other</option>
-        </select>
-        <textarea name="message" placeholder="Anything you'd like us to know? (optional)" rows="2"></textarea>
-        <button type="submit" class="btn btn-primary form-submit" id="demoModalSubmitBtn">Get a Free Demo →</button>
-        <p class="form-note" id="demoModalNote">We'll be in touch within one business day. Takes about 15 minutes to see it live.</p>
-      </form>
-    </div>
-    <div id="demoModalThankYou" style="display:none; text-align:center; padding:24px 0;">
-      <div class="thankyou-icon">✓</div>
-      <h3 class="thankyou-heading" style="font-size:22px;">We've got your request!</h3>
-      <p class="thankyou-msg">We'll reach out within 24 hours to get your demo scheduled — no commitment, no credit card needed.</p>
+    <div class="demo-cal-wrap">
+      <iframe id="demoCalFrame" src="about:blank" data-src="https://api.leadconnectorhq.com/widget/booking/Pwxo8erwZGv9JhRhDdjJ" style="width:100%;min-height:700px;border:none;overflow:hidden;background:transparent;display:block;" scrolling="no" title="Book a CallerCore demo"></iframe>
     </div>
   </div>
 </div>
@@ -1968,53 +1947,28 @@
 
 
   // ── DEMO MODAL ────────────────────────────────────────────────────────────
-  const demoOverlay   = document.getElementById('demoModalOverlay');
-  const demoClose     = document.getElementById('demoModalClose');
-  const demoForm      = document.getElementById('demoModalForm');
   const demoNote      = document.getElementById('demoModalNote');
   const demoSubmitBtn = document.getElementById('demoModalSubmitBtn');
 
   function openDemoModal(){
-    // Demo CTAs now go straight to the live booking calendar (GHL funnel).
-    // The old lead-capture modal is bypassed; booking > lead chasing.
-    window.location.href = 'https://go.callercore.com/demo';
+    const ov = document.getElementById('demoModalOverlay');
+    const frame = document.getElementById('demoCalFrame');
+    // Lazy-load the calendar only on first open (keeps page load fast)
+    if(frame && frame.src === 'about:blank'){ frame.src = frame.getAttribute('data-src'); }
+    ov.classList.add('open');
+    document.body.style.overflow = 'hidden';
   }
   function closeDemoModal(){
-    demoOverlay.classList.remove('open');
+    document.getElementById('demoModalOverlay').classList.remove('open');
     document.body.style.overflow = '';
-    setTimeout(() => {
-      document.getElementById('demoModalFormWrap').style.display = 'block';
-      document.getElementById('demoModalThankYou').style.display = 'none';
-      demoForm.reset();
-    }, 250);
   }
 
   document.getElementById('navDemoBtn').addEventListener('click', e => { e.preventDefault(); openDemoModal(); });
   document.getElementById('heroDemoBtn').addEventListener('click', openDemoModal);
-  demoClose.addEventListener('click', closeDemoModal);
-  demoOverlay.addEventListener('click', e => { if(e.target === demoOverlay) closeDemoModal(); });
-  document.addEventListener('keydown', e => {
-    if(e.key === 'Escape' && demoOverlay.classList.contains('open')) closeDemoModal();
-  });
-
-  if(demoForm){
-    demoForm.addEventListener('submit', function(e){
-      e.preventDefault();
-      const formData = new FormData(demoForm);
-      const payload = {
-        name: formData.get('name'),
-        business: formData.get('business'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        industry: formData.get('industry') || '',
-        message: formData.get('message') || '',
-        source: 'demo_modal'
-      };
-      sendLeadToGHL(payload);
-      document.getElementById('demoModalFormWrap').style.display = 'none';
-      document.getElementById('demoModalThankYou').style.display = 'block';
-    });
-  }
+  document.getElementById('demoModalClose').addEventListener('click', closeDemoModal);
+  document.getElementById('demoModalOverlay').addEventListener('click', e => { if(e.target.id==='demoModalOverlay') closeDemoModal(); });
+  document.addEventListener('keydown', e => { if(e.key==='Escape') closeDemoModal(); });
+  var fcta=document.getElementById('finalCtaDemoBtn'); if(fcta) fcta.addEventListener('click', openDemoModal);
 
   // ── CONTACT MODAL ─────────────────────────────────────────────────────────
   const contactOverlay = document.getElementById('contactModalOverlay');
@@ -2240,5 +2194,26 @@
   });
 </script>
 
+<script src="https://api.leadconnectorhq.com/js/form_embed.js" type="text/javascript"></script>
+<script>
+  // Auto-resize the demo calendar iframe to its content height (kills the inner scrollbar).
+  (function(){
+    window.addEventListener('message', function(e){
+      if(!e.data) return;
+      var h = null;
+      // GHL sends height in a few possible shapes depending on widget version
+      if(typeof e.data === 'object'){
+        if(e.data.type === 'MSG_RESIZE' && e.data.height) h = e.data.height;
+        else if(e.data.height) h = e.data.height;
+      } else if(typeof e.data === 'string'){
+        try{ var d = JSON.parse(e.data); if(d && d.height) h = d.height; }catch(_){}
+      }
+      if(h){
+        var f = document.getElementById('demoCalFrame');
+        if(f){ f.style.height = (parseInt(h,10) + 20) + 'px'; }
+      }
+    });
+  })();
+</script>
 </body>
 </html>
