@@ -638,6 +638,16 @@
   .contact-response-sub{font-size:12px;color:var(--steel);margin-top:3px;}
   .contact-demo-link{background:none;border:none;color:var(--signal);font-size:14px;font-weight:600;cursor:pointer;padding:0;font-family:'Inter',sans-serif;}
   .contact-demo-link:hover{text-decoration:underline;}
+  .demo-number-row{margin-top:14px;}
+  .demo-number-btn{display:inline-flex;align-items:center;gap:8px;background:none;border:1px solid rgba(255,255,255,0.18);color:#C7CBD1;font-size:14px;font-weight:600;cursor:pointer;padding:9px 16px;border-radius:8px;font-family:'Inter',sans-serif;transition:border-color .15s ease, color .15s ease, background .15s ease;}
+  .demo-number-btn:hover{border-color:var(--signal);color:#fff;}
+  .demo-number-btn:disabled{opacity:0.6;cursor:wait;}
+  .demo-number-btn .demo-number-icon{font-size:15px;}
+  .demo-number-btn[data-state="revealed"]{border-color:var(--signal);background:rgba(210,103,60,0.1);color:#fff;}
+  .demo-number-btn[data-state="revealed"] .demo-number-label{font-variant-numeric:tabular-nums;letter-spacing:.2px;}
+  .demo-number-btn-sm{font-size:13px;padding:8px 14px;border-color:rgba(0,0,0,0.15);color:var(--slate);}
+  .demo-number-btn-sm:hover{border-color:var(--signal);color:var(--ink);}
+  .demo-number-btn-sm[data-state="revealed"]{background:rgba(210,103,60,0.08);}
 
   /* ================= PLAN SIGNUP MODAL ================= */
   .modal-overlay{
@@ -929,6 +939,12 @@
         <div class="hero-ctas">
           <button type="button" class="btn btn-primary" id="heroDemoBtn">Book a Live Demo →</button>
           <a href="#how" class="btn btn-ghost">See how it works</a>
+        </div>
+        <div class="demo-number-row">
+          <button type="button" class="demo-number-btn" id="demoNumberBtn" data-state="hidden">
+            <span class="demo-number-icon">☎</span>
+            <span class="demo-number-label">Or call our live demo line now</span>
+          </button>
         </div>
         <div class="hero-microstats">
           <div class="microstat"><b>24/7</b> coverage, no overtime</div>
@@ -1503,6 +1519,13 @@
           <div class="contact-info-label">Want a demo?</div>
           <button type="button" class="contact-demo-link" id="contactDemoLink">Book a free demo →</button>
         </div>
+        <div class="contact-info-block">
+          <div class="contact-info-label">Prefer to just call?</div>
+          <button type="button" class="demo-number-btn demo-number-btn-sm" id="demoNumberBtnContact" data-state="hidden">
+            <span class="demo-number-icon">☎</span>
+            <span class="demo-number-label">Call our live demo line</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2000,6 +2023,65 @@
   document.getElementById('demoModalOverlay').addEventListener('click', e => { if(e.target.id==='demoModalOverlay') closeDemoModal(); });
   document.addEventListener('keydown', e => { if(e.key==='Escape') closeDemoModal(); });
   var fcta=document.getElementById('finalCtaDemoBtn'); if(fcta) fcta.addEventListener('click', openDemoModal);
+
+  // ── DEMO NUMBER REVEAL ────────────────────────────────────────────────────
+  // The demo phone number is never present in the page source or JS bundle.
+  // It's fetched from a serverless endpoint only after a real click, gated by
+  // a short-lived signed token (issued on page load) plus origin + rate-limit
+  // checks on the server. This keeps it out of reach of static scrapers while
+  // staying a single click for real visitors.
+  (function(){
+    let revealToken = null;
+    fetch('/api/reveal-token').then(r => r.ok ? r.json() : null).then(data => {
+      if (data && data.token) revealToken = data.token;
+    }).catch(() => {});
+
+    async function reveal(btn){
+      if (btn.dataset.state === 'revealed') return; // already shown, let the tel: link work
+      if (btn.disabled) return;
+      btn.disabled = true;
+      const label = btn.querySelector('.demo-number-label');
+      const originalLabel = label.textContent;
+      label.textContent = 'Loading…';
+      try {
+        if (!revealToken) {
+          const r = await fetch('/api/reveal-token');
+          const d = await r.json();
+          revealToken = d.token;
+          // A freshly-minted token isn't old enough yet — ask for a beat.
+          label.textContent = 'One sec…';
+          await new Promise(res => setTimeout(res, 1100));
+        }
+        const res = await fetch('/api/demo-number', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ token: revealToken })
+        });
+        if (!res.ok) {
+          throw new Error('reveal failed');
+        }
+        const data = await res.json();
+        btn.dataset.state = 'revealed';
+        label.textContent = data.display;
+        btn.onclick = null;
+        const wrapper = document.createElement('a');
+        wrapper.href = 'tel:' + data.number;
+        wrapper.className = btn.className;
+        wrapper.dataset.state = 'revealed';
+        wrapper.innerHTML = btn.innerHTML;
+        wrapper.setAttribute('rel', 'nofollow');
+        btn.replaceWith(wrapper);
+      } catch (e) {
+        label.textContent = originalLabel;
+        btn.disabled = false;
+      }
+    }
+
+    ['demoNumberBtn', 'demoNumberBtnContact'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.addEventListener('click', () => reveal(btn));
+    });
+  })();
 
   // ── CONTACT MODAL ─────────────────────────────────────────────────────────
   const contactOverlay = document.getElementById('contactModalOverlay');
