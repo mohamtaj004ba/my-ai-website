@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — CallerCore</title>
+<meta name="description" content="Get in touch with CallerCore. Pick a category and we'll route your message to the right person — we respond to every message within one business day.">
+<link rel="icon" type="image/png" href="/logo-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<style>
+  /* ── Contact page ──────────────────────────────────────── */
+  .subpage{background:var(--graphite); min-height:100vh;}
+  .subhero{padding:72px 0 34px; text-align:center;}
+  .subhero .eyebrow{margin-bottom:20px;}
+  .subhero h1{font-size:clamp(32px,4.4vw,50px); margin-bottom:16px; color:var(--paper);}
+  .subhero p.sub{font-size:17px; color:#C9CDD3; max-width:520px; margin:0 auto; line-height:1.6;}
+
+  .ct-layout{display:grid; grid-template-columns:1fr 340px; gap:34px; align-items:start; padding-bottom:70px;}
+  @media(max-width:880px){.ct-layout{grid-template-columns:1fr; gap:26px;}}
+
+  .ct-form-card{background:#fff; border-radius:16px; padding:32px 30px; box-shadow:0 30px 60px -30px rgba(0,0,0,0.55);}
+  .ct-form-card h2{font-size:21px; color:var(--graphite); margin:0 0 4px;}
+  .ct-form-card .ct-lead{font-size:14px; color:#6A7280; margin:0 0 20px; line-height:1.55;}
+
+  .ct-cats{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;}
+  .ct-cat{
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:500; cursor:pointer;
+    padding:8px 14px; border-radius:20px; border:1.5px solid #DCE2EB; background:#fff; color:#4A4F57;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .ct-cat:hover{border-color:var(--signal);}
+  .ct-cat.active{border-color:var(--signal); background:var(--signal); color:#fff;}
+
+  .ct-form-card .form-row{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;}
+  @media(max-width:480px){.ct-form-card .form-row{grid-template-columns:1fr;}}
+  .ct-form-card input, .ct-form-card textarea{
+    width:100%; padding:13px 14px; border:1.5px solid #DCE2EB; border-radius:9px;
+    font-size:14.5px; font-family:'Inter',sans-serif; color:var(--graphite); background:#fff;
+    transition:border-color .15s; box-sizing:border-box; resize:vertical;
+  }
+  .ct-form-card input:focus, .ct-form-card textarea:focus{outline:none; border-color:var(--signal);}
+  .ct-form-card textarea{margin-bottom:12px; min-height:96px;}
+  .ct-submit{
+    width:100%; padding:15px; border:none; border-radius:9px; cursor:pointer;
+    background:var(--signal); color:#fff; font-size:15.5px; font-weight:700; font-family:'Inter',sans-serif;
+    box-shadow:0 10px 24px -12px rgba(210,103,60,.8); transition:background .15s, transform .15s;
+  }
+  .ct-submit:hover{background:var(--signal-dim); transform:translateY(-2px);}
+  .ct-submit:disabled{opacity:0.7; cursor:wait; transform:none;}
+  .ct-note{font-size:12.5px; color:#8A93A3; line-height:1.55; margin:13px 0 0; text-align:center;}
+  .ct-spinner{display:inline-block; width:15px; height:15px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:ctSpin .7s linear infinite; vertical-align:-2px; margin-right:8px;}
+  @keyframes ctSpin{to{transform:rotate(360deg);}}
+
+  .ct-thanks{text-align:center; padding:26px 0;}
+  .ct-thanks .ic{width:52px; height:52px; border-radius:50%; background:rgba(210,103,60,0.12); color:var(--signal); display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 16px;}
+  .ct-thanks h3{font-size:20px; color:var(--graphite); margin:0 0 8px;}
+  .ct-thanks p{font-size:14.5px; color:#4A4F57; line-height:1.6; margin:0;}
+
+  /* sidebar */
+  .ct-side{display:flex; flex-direction:column; gap:14px;}
+  .ct-card{background:rgba(247,249,252,0.03); border:1.5px solid rgba(247,249,252,0.13); border-radius:14px; padding:22px 22px;}
+  .ct-card .lbl{font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#8A93A3; margin-bottom:10px;}
+  .ct-card a.email{color:var(--signal); font-size:15px; font-weight:600; text-decoration:none; word-break:break-all;}
+  .ct-card a.email:hover{text-decoration:underline;}
+  .ct-card .big{font-family:'Oswald',sans-serif; font-size:22px; font-weight:600; color:var(--paper);}
+  .ct-card .small{font-size:13px; color:#A8ADB5; margin-top:3px;}
+  .ct-card a.booklink{display:inline-block; margin-top:2px; color:var(--paper); font-size:14.5px; font-weight:600; text-decoration:none; border-bottom:1.5px solid var(--signal); padding-bottom:2px; transition:color .15s;}
+  .ct-card a.booklink:hover{color:var(--signal);}
+
+  /* demo line block (#call anchor) */
+  .ct-demo{scroll-margin-top:90px;}
+  .ct-demo-btn{
+    position:relative; display:inline-flex; align-items:center; gap:9px; margin-top:4px; cursor:pointer;
+    background:var(--signal); color:#fff; border:none; border-radius:8px; padding:12px 18px;
+    font-family:'Inter',sans-serif; font-size:14.5px; font-weight:700;
+    box-shadow:0 8px 20px -12px rgba(210,103,60,.75); transition:background .15s, transform .15s;
+  }
+  .ct-demo-btn:hover{background:var(--signal-dim); transform:translateY(-2px);}
+  .ct-demo-btn[data-state="revealed"]{background:var(--signal-dim);}
+  .ct-demo-btn[data-state="hidden"]::after{
+    content:''; position:absolute; top:-3px; right:-3px; width:9px; height:9px;
+    border-radius:50%; background:var(--good); box-shadow:0 0 0 2px var(--graphite);
+    animation:pulse 2.2s infinite;
+  }
+  .ct-demo-btn svg{width:17px; height:17px;}
+  .ct-demo-btn .demo-number-label{font-variant-numeric:tabular-nums;}
+  .ct-disclaim{font-size:12.5px; color:#A8ADB5; line-height:1.55; margin-top:11px;}
+</style>
+</head>
+<body>
+<div class="subpage">
+<header>
+  <nav>
+    <a href="/" class="logo" aria-label="CallerCore home"><img class="logo-full" src="/logo.png" alt="CallerCore logo"></a>
+    <div class="navlinks">
+      <a href="/#problem">Why It Matters</a>
+      <a href="/#how">How It Works</a>
+      <a href="/#platform">What's Included</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/#demo">Live Demo</a>
+      <a href="/contact">Contact</a><a href="/get-started" class="navcta">Get Started</a>
+    </div>
+  </nav>
+</header>
+
+<main class="wrap">
+  <section class="subhero reveal">
+    <span class="eyebrow">● GET IN TOUCH</span>
+    <h1>How can we <span class="o">help</span>?</h1>
+    <p class="sub">Pick a category and we'll route your message to the right person. We respond to every message within one business day — no sales pressure, just answers.</p>
+  </section>
+
+  <section class="ct-layout">
+    <div class="ct-form-card reveal">
+      <div id="ctFormInner">
+        <h2>Send us a message</h2>
+        <p class="ct-lead">Tell us what you need and we'll get back to you fast.</p>
+
+        <div class="ct-cats" id="ctCats">
+          <button type="button" class="ct-cat" data-cat="Client Inquiry">Client Inquiry</button>
+          <button type="button" class="ct-cat" data-cat="Technical Support">Technical Support</button>
+          <button type="button" class="ct-cat" data-cat="Billing">Billing</button>
+          <button type="button" class="ct-cat" data-cat="Partnership">Partnership</button>
+          <button type="button" class="ct-cat" data-cat="General Question">General Question</button>
+        </div>
+
+        <form id="ctForm">
+          <input type="hidden" name="category" id="ctCatInput" value="">
+          <div class="form-row">
+            <input type="text" name="name" placeholder="Your name" required>
+            <input type="text" name="business" placeholder="Business name">
+          </div>
+          <div class="form-row">
+            <input type="email" name="email" placeholder="Email address" required>
+            <input type="tel" name="phone" placeholder="Phone (optional)">
+          </div>
+          <textarea name="message" placeholder="Your message..." required></textarea>
+          <button type="submit" class="ct-submit" id="ctSubmitBtn">Send message →</button>
+          <p class="ct-note">We respond to every message within one business day. No sales pressure, just answers.</p>
+        </form>
+      </div>
+    </div>
+
+    <aside class="ct-side reveal">
+      <div class="ct-card">
+        <div class="lbl">Email</div>
+        <a href="mailto:support@callercore.com" class="email">support@callercore.com</a>
+      </div>
+      <div class="ct-card">
+        <div class="lbl">Response time</div>
+        <div class="big">Within 24 hrs</div>
+        <div class="small">Mon–Fri, business hours</div>
+      </div>
+      <div class="ct-card">
+        <div class="lbl">Prefer to talk it through?</div>
+        <a href="/book" class="booklink">Book a quick call →</a>
+      </div>
+      <div class="ct-card ct-demo" id="call">
+        <div class="lbl">Curious how the AI sounds?</div>
+        <button type="button" class="ct-demo-btn" id="ctDemoBtn" data-state="hidden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span class="demo-number-label">Call the demo number</span>
+        </button>
+        <p class="ct-disclaim">It's a demo of the AI answering a sample business — <strong>not our support line</strong>. For questions, use the form or the chat.</p>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footwrap">
+      <a href="/" class="logo" aria-label="CallerCore home"><img class="logo-full" src="/logo.png" alt="CallerCore logo"></a>
+      <div class="footlinks">
+        <a href="/#problem">Why It Matters</a>
+        <a href="/#how">How It Works</a>
+        <a href="/#platform">What's Included</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </div>
+    <div class="footer-contact">Questions? <a href="mailto:support@callercore.com" style="color:var(--signal);">support@callercore.com</a></div>
+    <div class="footnote">© 2026 CallerCore · The AI system that streamlines your business operations</div>
+  </div>
+</footer>
+</div>
+
+<script>
+(function(){
+  const GHL_WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/8m3nfjxNnGqagYU2ouAE/webhook-trigger/39d0fd5f-8ad9-478a-9294-8b7c97b61d9c';
+  async function sendLeadToGHL(payload){
+    const fullPayload = Object.assign({page: window.location.href, timestamp: new Date().toISOString()}, payload);
+    try { await fetch(GHL_WEBHOOK_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(fullPayload)}); return true; }
+    catch(err){ console.error('Failed to send lead to GHL:', err, fullPayload); return false; }
+  }
+
+  // Category selection
+  const catBtns = document.querySelectorAll('.ct-cat');
+  const catInput = document.getElementById('ctCatInput');
+  catBtns.forEach(b => b.addEventListener('click', () => {
+    catBtns.forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    catInput.value = b.dataset.cat;
+  }));
+
+  // Form submit
+  const form = document.getElementById('ctForm');
+  const submitBtn = document.getElementById('ctSubmitBtn');
+  const inner = document.getElementById('ctFormInner');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="ct-spinner"></span>Sending…';
+    const data = new FormData(form);
+    const payload = {
+      source: 'contact_page',
+      category: data.get('category') || 'General Question',
+      name: data.get('name'),
+      business: data.get('business'),
+      email: data.get('email'),
+      phone: data.get('phone'),
+      message: data.get('message')
+    };
+    sendLeadToGHL(payload).then(() => {
+      inner.innerHTML = '<div class="ct-thanks"><div class="ic">✓</div><h3>Message received!</h3><p>Thanks for reaching out — we\'ll be in touch within one business day.</p></div>';
+    });
+  });
+
+  // Demo number reveal — matches the site's anti-abuse contract:
+  // signed token minted on load, POSTed to /api/demo-number on click.
+  // On mobile, one tap reveals AND dials. On desktop it becomes tap-to-copy.
+  (function(){
+    const demoBtn = document.getElementById('ctDemoBtn');
+    if(!demoBtn) return;
+    let revealToken = null;
+    fetch('/api/reveal-token').then(r => r.ok ? r.json() : null).then(d => { if(d && d.token) revealToken = d.token; }).catch(()=>{});
+    const isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
+    demoBtn.addEventListener('click', async function(){
+      if(demoBtn.dataset.state === 'revealed' || demoBtn.disabled) return;
+      demoBtn.disabled = true;
+      const label = demoBtn.querySelector('.demo-number-label');
+      const original = label.textContent;
+      label.textContent = 'One sec…';
+      try {
+        if(!revealToken){
+          const r = await fetch('/api/reveal-token');
+          const d = await r.json();
+          revealToken = d.token;
+          await new Promise(res => setTimeout(res, 1100));
+        }
+        const res = await fetch('/api/demo-number', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ token: revealToken })
+        });
+        if(!res.ok) throw new Error('reveal failed');
+        const data = await res.json();
+        demoBtn.dataset.state = 'revealed';
+        label.textContent = data.display;
+        demoBtn.disabled = false;
+
+        if(isTouch){
+          demoBtn.onclick = null;
+          requestAnimationFrame(() => {
+            const dialer = document.createElement('a');
+            dialer.href = 'tel:' + data.number;
+            dialer.style.display = 'none';
+            document.body.appendChild(dialer);
+            dialer.click();
+            dialer.remove();
+          });
+        } else {
+          demoBtn.onclick = async function(){
+            try {
+              await navigator.clipboard.writeText(data.number);
+              const prev = label.textContent;
+              label.textContent = 'Copied!';
+              setTimeout(() => { label.textContent = prev; }, 1400);
+            } catch(_) {}
+          };
+        }
+      } catch(e){
+        label.textContent = original;
+        demoBtn.disabled = false;
+      }
+    });
+  })();
+
+  // Scroll reveal
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(en => { if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, {threshold:0.12, rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+})();
+</script>
+</body></html>
