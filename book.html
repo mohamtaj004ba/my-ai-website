@@ -12,12 +12,15 @@
 <style>
   /* ── Book a call page ──────────────────────────────────────── */
   .subpage{background:var(--graphite); min-height:100vh;}
-  .subhero{padding:72px 0 34px; text-align:center;}
+  html, body{overflow:hidden;}
+  #firstScreen{overflow:clip;}
+  #fitInner{transform-origin:top center; width:100%;}
+  .subhero{padding:48px 0 28px; text-align:center;}
   .subhero .eyebrow{margin-bottom:20px;}
   .subhero h1{font-size:clamp(32px,4.4vw,50px); margin-bottom:16px; color:var(--paper);}
   .subhero p.sub{font-size:17px; color:#C9CDD3; max-width:560px; margin:0 auto; line-height:1.6;}
 
-  .bk-layout{display:grid; grid-template-columns:300px 1fr; gap:34px; align-items:start; padding-bottom:80px;}
+  .bk-layout{display:grid; grid-template-columns:300px 1fr; gap:34px; align-items:start; padding-bottom:48px;}
   @media(max-width:860px){.bk-layout{grid-template-columns:1fr; gap:24px;}}
 
   .bk-points{display:flex; flex-direction:column; gap:14px;}
@@ -30,10 +33,10 @@
   .bk-alt a{color:var(--signal); text-decoration:none; font-weight:600;}
   .bk-alt a:hover{text-decoration:underline;}
 
-  .bk-cal-card{background:#fff; border-radius:16px; padding:14px; box-shadow:0 30px 60px -30px rgba(0,0,0,0.55); min-height:780px;}
+  .bk-cal-card{background:#fff; border-radius:16px; padding:14px; box-shadow:0 30px 60px -30px rgba(0,0,0,0.55); min-height:420px;}
   .bk-cal-wrap{border-radius:10px; overflow:hidden; background:#fff;}
-  .bk-cal-wrap iframe{width:100%; height:760px; min-height:760px; border:none; overflow:hidden; background:transparent; display:block;}
-  .bk-loading{display:flex; align-items:center; justify-content:center; height:760px; color:#8A93A3; font-size:14px; font-family:'JetBrains Mono',monospace;}
+  .bk-cal-wrap iframe{width:100%; height:420px; min-height:420px; border:none; overflow:hidden; background:transparent; display:block;}
+  .bk-loading{display:flex; align-items:center; justify-content:center; height:420px; color:#8A93A3; font-size:14px; font-family:'JetBrains Mono',monospace;}
 </style>
 </head>
 <body>
@@ -52,6 +55,8 @@
   </nav>
 </header>
 
+<div id="firstScreen">
+<div id="fitInner">
 <main class="wrap">
   <section class="subhero reveal">
     <span class="eyebrow">● BOOK A CALL</span>
@@ -106,6 +111,8 @@
   </div>
 </footer>
 </div>
+</div>
+</div>
 
 <script src="https://api.leadconnectorhq.com/js/form_embed.js" type="text/javascript"></script>
 <script>
@@ -116,9 +123,9 @@
   function loadCal(){
     if(frame.src === 'about:blank' || frame.getAttribute('src') === 'about:blank'){
       frame.src = frame.dataset.src;
-      frame.onload = function(){ if(loading) loading.style.display='none'; frame.style.display='block'; };
+      frame.onload = function(){ if(loading) loading.style.display='none'; frame.style.display='block'; fitFirstScreen(); };
       // Fallback in case onload doesn't fire in the embed
-      setTimeout(function(){ if(loading) loading.style.display='none'; frame.style.display='block'; }, 2500);
+      setTimeout(function(){ if(loading) loading.style.display='none'; frame.style.display='block'; fitFirstScreen(); }, 2500);
     }
   }
   if('IntersectionObserver' in window){
@@ -136,13 +143,16 @@
   }, {threshold:0.12, rootMargin:'0px 0px -40px 0px'});
   document.querySelectorAll('.reveal').forEach(el => rio.observe(el));
 
-  // Auto-resize the GHL calendar iframe to its content height (kills the inner scrollbar)
-  var BASE = 760;
+  // Auto-resize the GHL calendar iframe to its content height (kills the inner scrollbar).
+  // The outer fit-to-screen scale (below) handles keeping the whole page visible
+  // without scrolling, so this just reports the calendar's real natural height.
+  var BASE = 420;
   function applyHeight(px){
     if(!frame) return;
     px = parseInt(px, 10);
     if(!px || px < 300) return;
     frame.style.height = Math.max(BASE, px + 30) + 'px';
+    fitFirstScreen();
   }
   window.addEventListener('message', function(e){
     var d = e.data;
@@ -159,6 +169,46 @@
       if(h) applyHeight(h);
     }
   });
+
+  // Fit-to-screen: this whole page (reassurance points + calendar + footer)
+  // should never need scrolling. Scales down only if genuinely needed for a
+  // shorter viewport; never scales up past 1. Re-runs whenever the calendar
+  // reports a new height so a late-loading widget can't push the page taller
+  // than the viewport after the fact.
+  const outer = document.getElementById('firstScreen');
+  const inner = document.getElementById('fitInner');
+  function fitFirstScreen(){
+    inner.style.transform = 'none';
+    outer.style.height = 'auto';
+    const header = document.querySelector('header');
+    const headerH = header ? header.offsetHeight : 0;
+    const available = window.innerHeight - headerH - 24; // safety buffer
+    const contentH = inner.scrollHeight;
+    if (contentH > available && available > 100){
+      const scale = Math.max(available / contentH, 0.5);
+      inner.style.transform = 'scale(' + scale + ')';
+      outer.style.height = (contentH * scale) + 'px';
+    }
+    // Synchronous corrective pass — forces an immediate reflow so this
+    // completes fully before any subsequent call (e.g. a burst of calendar
+    // resize messages) can interleave with it.
+    void document.body.offsetHeight;
+    const totalH = document.documentElement.scrollHeight;
+    const vh = window.innerHeight;
+    if (totalH > vh){
+      const diff = totalH - vh;
+      const currentH = parseFloat(outer.style.height) || outer.getBoundingClientRect().height;
+      outer.style.height = Math.max(50, currentH - diff) + 'px';
+    }
+  }
+  window.addEventListener('load', fitFirstScreen);
+  window.addEventListener('resize', fitFirstScreen);
+  setTimeout(fitFirstScreen, 60);
+  setTimeout(fitFirstScreen, 400);
+  setTimeout(fitFirstScreen, 900);
+  setTimeout(fitFirstScreen, 1500);
+})();
+</script>
 })();
 </script>
 </body></html>
