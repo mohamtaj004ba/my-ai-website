@@ -12,6 +12,9 @@
 <style>
   /* ── Contact page ──────────────────────────────────────── */
   .subpage{background:var(--graphite); min-height:100vh;}
+  html, body{overflow:hidden;}
+  #firstScreen{overflow:clip;}
+  #fitInner{transform-origin:top center; width:100%;}
   .subhero{padding:72px 0 34px; text-align:center;}
   .subhero .eyebrow{margin-bottom:20px;}
   .subhero h1{font-size:clamp(32px,4.4vw,50px); margin-bottom:16px; color:var(--paper);}
@@ -105,6 +108,8 @@
   </nav>
 </header>
 
+<div id="firstScreen">
+<div id="fitInner">
 <main class="wrap">
   <section class="subhero reveal">
     <span class="eyebrow">● GET IN TOUCH</span>
@@ -186,6 +191,8 @@
     <div class="footnote">© 2026 CallerCore · The AI system that streamlines your business operations</div>
   </div>
 </footer>
+</div>
+</div>
 </div>
 
 <script>
@@ -294,6 +301,38 @@
     entries.forEach(en => { if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
   }, {threshold:0.12, rootMargin:'0px 0px -40px 0px'});
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // Fit-to-screen: this whole page (form + sidebar + footer) should never
+  // need scrolling. Scales down only if genuinely needed for a shorter
+  // viewport; never scales up past 1.
+  const fsOuter = document.getElementById('firstScreen');
+  const fsInner = document.getElementById('fitInner');
+  function fitFirstScreen(){
+    fsInner.style.transform = 'none';
+    fsOuter.style.height = 'auto';
+    const header = document.querySelector('header');
+    const headerH = header ? header.offsetHeight : 0;
+    const available = window.innerHeight - headerH;
+    const contentH = fsInner.scrollHeight;
+    if (contentH > available && available > 100){
+      const scale = Math.max(available / contentH, 0.55);
+      fsInner.style.transform = 'scale(' + scale + ')';
+      fsOuter.style.height = (contentH * scale) + 'px';
+    }
+    requestAnimationFrame(function(){
+      const totalH = document.documentElement.scrollHeight;
+      const vh = window.innerHeight;
+      if (totalH > vh){
+        const diff = totalH - vh;
+        const currentH = parseFloat(fsOuter.style.height) || fsOuter.getBoundingClientRect().height;
+        fsOuter.style.height = Math.max(50, currentH - diff) + 'px';
+      }
+    });
+  }
+  window.addEventListener('load', fitFirstScreen);
+  window.addEventListener('resize', fitFirstScreen);
+  setTimeout(fitFirstScreen, 60);
+  setTimeout(fitFirstScreen, 400);
 })();
 </script>
 </body></html>
