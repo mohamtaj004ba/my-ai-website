@@ -303,31 +303,25 @@
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
   // Fit-to-screen: this whole page (form + sidebar + footer) should never
-  // need scrolling. Scales down only if genuinely needed for a shorter
-  // viewport; never scales up past 1.
+  // need scrolling. `fsOuter` is ALWAYS set to exactly the available
+  // viewport space (a simple, deterministic value with no dependency on
+  // content height) — the content inside is scaled down only if it
+  // genuinely doesn't fit, and clipped by overflow as a final safety net.
+  // This avoids the previous approach's failure mode, where outer's height
+  // was computed FROM the (fragile, sometimes stale) scaled content height.
   const fsOuter = document.getElementById('firstScreen');
   const fsInner = document.getElementById('fitInner');
   function fitFirstScreen(){
-    fsInner.style.transform = 'none';
-    fsOuter.style.height = 'auto';
     const header = document.querySelector('header');
     const headerH = header ? header.offsetHeight : 0;
-    const available = window.innerHeight - headerH;
+    const available = Math.max(window.innerHeight - headerH, 100);
+    fsOuter.style.height = available + 'px';
+    fsInner.style.transform = 'none';
     const contentH = fsInner.scrollHeight;
-    if (contentH > available && available > 100){
+    if (contentH > available){
       const scale = Math.max(available / contentH, 0.55);
       fsInner.style.transform = 'scale(' + scale + ')';
-      fsOuter.style.height = (contentH * scale) + 'px';
     }
-    requestAnimationFrame(function(){
-      const totalH = document.documentElement.scrollHeight;
-      const vh = window.innerHeight;
-      if (totalH > vh){
-        const diff = totalH - vh;
-        const currentH = parseFloat(fsOuter.style.height) || fsOuter.getBoundingClientRect().height;
-        fsOuter.style.height = Math.max(50, currentH - diff) + 'px';
-      }
-    });
   }
   window.addEventListener('load', fitFirstScreen);
   window.addEventListener('resize', fitFirstScreen);
