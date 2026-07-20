@@ -178,27 +178,15 @@
   const outer = document.getElementById('firstScreen');
   const inner = document.getElementById('fitInner');
   function fitFirstScreen(){
-    inner.style.transform = 'none';
-    outer.style.height = 'auto';
     const header = document.querySelector('header');
     const headerH = header ? header.offsetHeight : 0;
-    const available = window.innerHeight - headerH - 24; // safety buffer
+    const available = Math.max(window.innerHeight - headerH, 100);
+    outer.style.height = available + 'px';
+    inner.style.transform = 'none';
     const contentH = inner.scrollHeight;
-    if (contentH > available && available > 100){
+    if (contentH > available){
       const scale = Math.max(available / contentH, 0.5);
       inner.style.transform = 'scale(' + scale + ')';
-      outer.style.height = (contentH * scale) + 'px';
-    }
-    // Synchronous corrective pass — forces an immediate reflow so this
-    // completes fully before any subsequent call (e.g. a burst of calendar
-    // resize messages) can interleave with it.
-    void document.body.offsetHeight;
-    const totalH = document.documentElement.scrollHeight;
-    const vh = window.innerHeight;
-    if (totalH > vh){
-      const diff = totalH - vh;
-      const currentH = parseFloat(outer.style.height) || outer.getBoundingClientRect().height;
-      outer.style.height = Math.max(50, currentH - diff) + 'px';
     }
   }
   window.addEventListener('load', fitFirstScreen);
