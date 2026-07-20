@@ -349,23 +349,13 @@
     outer.style.height = 'auto';
     const header = document.querySelector('header');
     const headerH = header ? header.offsetHeight : 0;
-    const available = window.innerHeight - headerH;
+    const available = Math.max(window.innerHeight - headerH, 100);
     const contentH = inner.scrollHeight;
-    if (contentH > available && available > 100){
+    if (contentH > available){
       const scale = Math.max(available / contentH, 0.55);
       inner.style.transform = 'scale(' + scale + ')';
-      outer.style.height = (contentH * scale) + 'px';
+      outer.style.height = available + 'px';
     }
-    // Corrective pass, scoped to just this region (not the whole document,
-    // since the content below intentionally remains scrollable).
-    requestAnimationFrame(function(){
-      const bottom = outer.getBoundingClientRect().bottom;
-      if (bottom > window.innerHeight){
-        const diff = bottom - window.innerHeight;
-        const currentH = parseFloat(outer.style.height) || outer.getBoundingClientRect().height;
-        outer.style.height = Math.max(50, currentH - diff) + 'px';
-      }
-    });
   }
   window.addEventListener('load', fitFirstScreen);
   window.addEventListener('resize', fitFirstScreen);
