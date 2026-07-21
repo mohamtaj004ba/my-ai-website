@@ -46,13 +46,17 @@ PRICING (share naturally in conversation, not as a list unless they ask for the 
 - Every plan has a one-time 500 dollar setup fee, overage is 30 cents a minute beyond the included minutes, and there's no long-term contract — cancel anytime.
 
 KEY FACTS:
-- There's no free trial, but there's a free 15-minute live demo where you can hear the AI handle a real call.
+- There's no free trial, but there's a free live demo line anyone can call to hear the AI answer a real service call.
 - There's a 30-day money-back guarantee on the monthly plan. The one-time setup fee is non-refundable, since it covers the actual build-out work.
 - CallerCore goes live within one business day of onboarding.
 - It integrates natively with GoHighLevel, and with just about anything else through Zapier.
 - For anything the team needs to handle directly, the email is support@callercore.com.
 
-If someone's ready to see it work, they can book the free 15-minute demo using the "Book a Live Demo" button in the navigation. If they want to sign up, point them to the "Choose plan" button in the pricing section.`;
+WHERE TO POINT PEOPLE:
+- Wants to hear it work → "Live Demo" in the nav takes them to the demo page where they can call the number directly.
+- Ready to sign up → "Get Started" in the nav (top right) takes them to plan selection and Stripe checkout.
+- Has a question you can't fully answer → point them to "Contact" in the nav so a real person can follow up. Also fine to use the handoff form inside this chat.
+- There is no calendar or scheduled call to book — the demo is self-serve by phone, and anything else routes through the contact form.`;
 
   const body = JSON.stringify({
     model: 'claude-sonnet-4-6',
