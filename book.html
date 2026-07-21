@@ -92,6 +92,8 @@
     </div>
   </section>
 </main>
+</div>
+</div>
 
 <footer>
   <div class="wrap">
@@ -110,8 +112,6 @@
     <div class="footnote">© 2026 CallerCore · The AI system that streamlines your business operations</div>
   </div>
 </footer>
-</div>
-</div>
 </div>
 
 <script src="https://api.leadconnectorhq.com/js/form_embed.js" type="text/javascript"></script>
@@ -179,8 +179,10 @@
   const inner = document.getElementById('fitInner');
   function fitFirstScreen(){
     const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
     const headerH = header ? header.offsetHeight : 0;
-    const available = Math.max(window.innerHeight - headerH, 100);
+    const footerH = footer ? footer.offsetHeight : 0;
+    const available = Math.max(window.innerHeight - headerH - footerH, 100);
     outer.style.height = available + 'px';
     inner.style.transform = 'none';
     const contentH = inner.scrollHeight;
