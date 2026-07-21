@@ -15,6 +15,12 @@
   html, body{overflow:hidden;}
   #firstScreen{overflow:clip;}
   #fitInner{transform-origin:top center; width:100%;}
+  /* On mobile, disable fit-to-screen entirely — let the page scroll normally */
+  @media(max-width:767px){
+    html, body{overflow:auto;}
+    #firstScreen{overflow:visible; height:auto !important;}
+    #fitInner{transform:none !important;}
+  }
   /* Compact footer on the fit-to-screen book page so the calendar has room */
   footer{padding:18px 0 !important;}
   footer .logo-full{height:26px;}
@@ -184,6 +190,11 @@
   const outer = document.getElementById('firstScreen');
   const inner = document.getElementById('fitInner');
   function fitFirstScreen(){
+    if (window.innerWidth < 768){
+      outer.style.height = '';
+      inner.style.transform = '';
+      return;
+    }
     const header = document.querySelector('header');
     const footer = document.querySelector('footer');
     const headerH = header ? header.offsetHeight : 0;
@@ -203,8 +214,6 @@
   setTimeout(fitFirstScreen, 400);
   setTimeout(fitFirstScreen, 900);
   setTimeout(fitFirstScreen, 1500);
-})();
-</script>
 })();
 </script>
 </body></html>
