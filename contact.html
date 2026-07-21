@@ -173,6 +173,8 @@
     </aside>
   </section>
 </main>
+</div>
+</div>
 
 <footer>
   <div class="wrap">
@@ -191,8 +193,6 @@
     <div class="footnote">© 2026 CallerCore · The AI system that streamlines your business operations</div>
   </div>
 </footer>
-</div>
-</div>
 </div>
 
 <script>
@@ -313,8 +313,10 @@
   const fsInner = document.getElementById('fitInner');
   function fitFirstScreen(){
     const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
     const headerH = header ? header.offsetHeight : 0;
-    const available = Math.max(window.innerHeight - headerH, 100);
+    const footerH = footer ? footer.offsetHeight : 0;
+    const available = Math.max(window.innerHeight - headerH - footerH, 100);
     fsOuter.style.height = available + 'px';
     fsInner.style.transform = 'none';
     const contentH = fsInner.scrollHeight;
