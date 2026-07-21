@@ -15,6 +15,12 @@
   html, body{overflow:hidden;}
   #firstScreen{overflow:clip;}
   #fitInner{transform-origin:top center; width:100%;}
+  /* On mobile, disable fit-to-screen entirely — let the page scroll normally */
+  @media(max-width:767px){
+    html, body{overflow:auto;}
+    #firstScreen{overflow:visible; height:auto !important;}
+    #fitInner{transform:none !important;}
+  }
   /* Compact footer on the fit-to-screen contact page so the form has room */
   footer{padding:18px 0 !important;}
   footer .logo-full{height:26px;}
@@ -317,6 +323,12 @@
   const fsOuter = document.getElementById('firstScreen');
   const fsInner = document.getElementById('fitInner');
   function fitFirstScreen(){
+    // Skip fit-to-screen on mobile — let the page scroll naturally
+    if (window.innerWidth < 768){
+      fsOuter.style.height = '';
+      fsInner.style.transform = '';
+      return;
+    }
     const header = document.querySelector('header');
     const footer = document.querySelector('footer');
     const headerH = header ? header.offsetHeight : 0;
