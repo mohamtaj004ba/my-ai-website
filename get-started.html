@@ -14,6 +14,10 @@
   .subpage{background:var(--graphite); min-height:100vh;}
   #firstScreen{overflow:clip;}
   #fitInner{transform-origin:top center; width:100%;}
+  @media(max-width:767px){
+    #firstScreen{overflow:visible; height:auto !important;}
+    #fitInner{transform:none !important;}
+  }
   .subhero{padding:52px 0 32px; text-align:center;}
   .subhero .eyebrow{margin-bottom:16px;}
   .subhero h1{font-size:clamp(30px,4vw,44px); margin-bottom:12px; color:var(--paper);}
@@ -345,6 +349,11 @@
   const outer = document.getElementById('firstScreen');
   const inner = document.getElementById('fitInner');
   function fitFirstScreen(){
+    if (window.innerWidth < 768){
+      outer.style.height = '';
+      inner.style.transform = '';
+      return;
+    }
     inner.style.transform = 'none';
     outer.style.height = 'auto';
     const header = document.querySelector('header');
