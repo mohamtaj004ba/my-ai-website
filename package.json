@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@vercel/analytics": "^1.1.1",
-    "@vercel/speed-insights": "^1.0.12"
+    "@vercel/speed-insights": "^1.0.12",
+    "@vercel/kv": "^2.0.0",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {},
   "keywords": [

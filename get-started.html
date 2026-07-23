@@ -318,7 +318,7 @@
   const submitBtn = document.getElementById('gsSubmitBtn');
   const formInner = document.getElementById('gsFormInner');
 
-  form.addEventListener('submit', function(e){
+  form.addEventListener('submit', async function(e){
     e.preventDefault();
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="gs-spinner"></span>Sending you to checkout…';
@@ -333,8 +333,29 @@
       industry: data.get('industry')
     };
     sendLeadToGHL(payload);
-    const stripeUrl = (PLAN_DATA[selectedPlan] || PLAN_DATA.Growth).stripe;
-    setTimeout(() => { window.location.href = stripeUrl; }, 500);
+
+    // Stash the lead so the Stripe webhook can match the payment back to it
+    // and send the onboarding magic link. If this fails we still proceed to
+    // checkout — the webhook falls back to Stripe's own customer details.
+    let leadId = null;
+    try {
+      const leadRes = await fetch('/api/lead-create', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      if (leadRes.ok) {
+        const leadData = await leadRes.json();
+        leadId = leadData.leadId;
+      }
+    } catch (err) {
+      console.error('lead-create failed, continuing to checkout', err);
+    }
+
+    let stripeUrl = (PLAN_DATA[selectedPlan] || PLAN_DATA.Growth).stripe;
+    if (leadId) {
+      stripeUrl += (stripeUrl.includes('?') ? '&' : '?') + 'client_reference_id=' + encodeURIComponent(leadId);
+    }
+    setTimeout(() => { window.location.href = stripeUrl; }, 400);
   });
 
   // Scroll reveal
