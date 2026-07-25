@@ -47,7 +47,7 @@
   .ob-prefill-review-head{font-family:'Inter',sans-serif; font-size:13px; color:var(--paper); font-weight:600; margin-bottom:12px;}
   .ob-prefill-row{margin-bottom:10px;}
   .ob-prefill-row label{display:block; font-size:12px; color:var(--steel); margin-bottom:4px; font-family:'Inter',sans-serif;}
-  .ob-prefill-row input{width:100%; background:rgba(247,249,252,0.05); border:1px solid rgba(247,249,252,0.18); border-radius:7px; padding:9px 11px; color:var(--paper); font-family:'Inter',sans-serif; font-size:14px;}
+  .ob-prefill-row textarea{width:100%; background:rgba(247,249,252,0.05); border:1px solid rgba(247,249,252,0.18); border-radius:7px; padding:9px 11px; color:var(--paper); font-family:'Inter',sans-serif; font-size:14px; line-height:1.4; resize:none; overflow:hidden; min-height:38px;}
   .ob-prefill-review-actions{display:flex; gap:10px; margin-top:14px;}
   .ob-prefill-review-actions button{flex:1; padding:11px; font-size:14px;}
 
@@ -109,6 +109,10 @@
   .ob-doc-body p{font-family:'Inter',sans-serif; font-size:12.5px; line-height:1.65; color:#2A2D34; margin:0 0 9px;}
   .ob-doc-body p b{color:#14161C;}
   .ob-doc-foot{border-top:1px solid #DADCE0; padding:11px 30px; display:flex; justify-content:space-between; font-family:'Inter',sans-serif; font-size:10.5px; color:#73767D; background:#FAFAFB;}
+
+  /* This page's conversations run longer than the site-wide default assumes */
+  .chat-panel{ width:440px !important; max-height:min(760px, calc(100vh - 110px)) !important; }
+  @media(max-width:600px){ .chat-panel{ width:calc(100vw - 24px) !important; } }
   .ob-agreement-scrollnote{font-family:'Inter',sans-serif; font-size:12px; color:var(--steel); margin:0 0 16px; text-align:center;}
   .ob-agreement-scrollnote.done{color:var(--good);}
 
@@ -162,7 +166,13 @@
   }
   .ob-continue-btn:hover{background:var(--signal-dim);}
 
-  .ob-done-card{text-align:center; padding:48px 26px;}
+  .ob-done-card{text-align:center; padding:44px 30px 34px;}
+  .ob-done-card h2{font-size:22px; margin:0 0 6px;}
+  .ob-next-steps{text-align:left; max-width:480px; margin:28px auto 0; display:flex; flex-direction:column; gap:18px;}
+  .ob-next-step{display:flex; gap:14px; align-items:flex-start;}
+  .ob-next-num{flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--signal); color:#fff; font-family:'Inter',sans-serif; font-weight:700; font-size:12.5px; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .ob-next-step div{font-family:'Inter',sans-serif; font-size:14px; line-height:1.55; color:#C9CDD3; text-align:left;}
+  .ob-next-step b{color:var(--paper);}
   .ob-done-card .ob-check{width:56px; height:56px; border-radius:50%; background:var(--good); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;}
   .ob-support-line{text-align:center; font-size:13.5px; color:var(--steel); margin-top:24px;}
   .ob-support-line a{color:var(--signal);}
@@ -194,9 +204,9 @@
 
   <div id="obContent" style="display:none;">
     <section class="subhero">
-      <span class="eyebrow">● YOUR SETUP</span>
+      <span class="eyebrow" id="obEyebrow">● YOUR SETUP</span>
       <h1 id="obGreeting">Welcome</h1>
-      <p class="sub">Sign your service agreement and tell us about your business. We start building the moment your intake form is complete — most accounts go live within 1 business day after that.</p>
+      <p class="sub" id="obHeroSub">Sign your service agreement and tell us about your business. We start building the moment your intake form is complete — most accounts go live within 1 business day after that.</p>
     </section>
 
     <div class="ob-steps">
@@ -703,11 +713,34 @@
       <!-- STEP 3: CONFIRMATION -->
       <section class="ob-card ob-done-card" id="doneCard" style="display:none;">
         <div class="ob-check"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><path d="M20 6 9 17l-5-5"/></svg></div>
-        <h2>You're all set</h2>
-        <p class="ob-sub">We're building your AI receptionist now. You'll get a text with a link to test it before it goes live on your real number — usually within 1 business day.</p>
+        <h2>You're all set — here's exactly what happens next</h2>
+        <p class="ob-sub">Nothing else to schedule. The rest of this runs over text and email.</p>
+
+        <div class="ob-next-steps">
+          <div class="ob-next-step">
+            <span class="ob-next-num">1</span>
+            <div><b>We start building today.</b> Your intake form is what kicks off the build — we begin the same day it comes in.</div>
+          </div>
+          <div class="ob-next-step">
+            <span class="ob-next-num">2</span>
+            <div><b>You'll get a text with a test link.</b> Before anything touches your real number, you can call your AI yourself, try a few scenarios, and confirm it sounds right.</div>
+          </div>
+          <div class="ob-next-step">
+            <span class="ob-next-num">3</span>
+            <div><b>We send you what you need to go live.</b> If you chose to forward your existing number, you'll get your carrier's forwarding code with short instructions. If you chose a new number, we send that instead.</div>
+          </div>
+          <div class="ob-next-step">
+            <span class="ob-next-num">4</span>
+            <div><b>Most accounts are live within 1 business day</b> of the intake form being submitted.</div>
+          </div>
+          <div class="ob-next-step">
+            <span class="ob-next-num">5</span>
+            <div><b>After that:</b> a quick check-in text on day 2, a short review on day 7, and a fuller review at day 30.</div>
+          </div>
+        </div>
       </section>
 
-      <p class="ob-support-line">Questions while you fill this out? Use the chat in the corner, or text/email <a href="mailto:support@callercore.com">support@callercore.com</a>.</p>
+      <p class="ob-support-line">Questions any time? Use the chat in the corner, or text/email <a href="mailto:support@callercore.com">support@callercore.com</a>.</p>
     </div>
   </div>
 </main>
@@ -738,6 +771,11 @@
       if (i < idx) el.classList.add('done');
       else if (i === idx) el.classList.add('active');
     });
+    const eyebrowText = { agreement: '● YOUR SETUP', intake: '● YOUR SETUP', done: '● LIVE SOON' };
+    $('obEyebrow').textContent = eyebrowText[stage] || '● YOUR SETUP';
+    if (stage === 'done') {
+      $('obHeroSub').textContent = "You're done — nothing left to fill out. We're building your AI receptionist now.";
+    }
   }
 
   async function load() {
@@ -1203,12 +1241,16 @@
       row.className = 'ob-prefill-row';
       const lab = document.createElement('label');
       lab.textContent = f.label + (f.step === 2 ? '  (on the next step)' : '');
-      const inp = document.createElement('input');
-      inp.type = 'text';
+      const inp = document.createElement('textarea');
+      inp.rows = 1;
       inp.value = val;
       inp.dataset.target = f.field;
       row.appendChild(lab); row.appendChild(inp);
       wrap.appendChild(row);
+      // auto-grow to fit content, so short fields stay compact and long ones expand
+      const autoGrow = () => { inp.style.height = 'auto'; inp.style.height = (inp.scrollHeight + 2) + 'px'; };
+      inp.addEventListener('input', autoGrow);
+      requestAnimationFrame(autoGrow);
     });
     $('prefillReview').style.display = any ? 'block' : 'none';
     return any;
@@ -1245,7 +1287,7 @@
 
   $('prefillApply').addEventListener('click', () => {
     let applied = 0, nextStep = 0;
-    $('prefillReviewFields').querySelectorAll('input[data-target]').forEach((inp) => {
+    $('prefillReviewFields').querySelectorAll('[data-target]').forEach((inp) => {
       const v = inp.value.trim();
       if (!v) return;
       const el = document.querySelector('[data-field="' + inp.dataset.target + '"]');
