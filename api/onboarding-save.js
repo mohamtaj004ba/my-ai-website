@@ -163,25 +163,46 @@ module.exports = async function handler(req, res) {
       }
 
       // 2) Direct email to Tj, so a GHL workflow misfire never means a silent miss.
+      // Includes every field the form collected — not a curated subset — plus a
+      // formatted PDF attachment for build reference and permanent company records.
       try {
-        const lines = [
-          `Business: ${i.businessName || record.business || '-'}`,
-          `Contact: ${i.contactName || '-'} · ${i.phone || '-'} · ${i.email || '-'}`,
-          `Plan: ${record.plan || '-'}`,
-          `Industry: ${trade || '-'}`,
-          `Service area: ${i.serviceArea || '-'}`,
-          `Hours: ${i.hours || '-'}`,
-          `Routing: ${i.routingChoice || '-'}${i.forwardNumber ? ' (' + i.forwardNumber + ')' : ''}`,
-          `Carrier: ${i.phoneCarrier || 'not given'}`,
-          `AI answers: ${i.callHandling || '-'}`,
-          `Escalation: ${i.escalationName || '-'} · ${i.escalationPhone || '-'}`,
-          `Emergency example: ${i.exampleEmergency || '-'} → ${i.promiseEmergency || '-'}`,
-        ];
+        const submittedAt = new Date(record.intakeCompletedAt).toLocaleString('en-US', {
+          year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit',
+        });
+
+        const { SECTIONS, buildIntakeSummaryPdf } = require('./_lib/intake-summary-pdf');
+        const textLines = [];
+        const htmlLines = [];
+        SECTIONS.forEach(([sectionTitle, fields]) => {
+          const present = fields.filter(([key]) => i[key] && String(i[key]).trim() !== '');
+          if (!present.length) return;
+          textLines.push(`\n${sectionTitle.toUpperCase()}`);
+          htmlLines.push(`<p style="margin:14px 0 4px;"><b>${sectionTitle}</b></p>`);
+          present.forEach(([key, label]) => {
+            textLines.push(`${label}: ${i[key]}`);
+            htmlLines.push(`<div><span style="color:#666;">${label}:</span> ${i[key]}</div>`);
+          });
+        });
+
+        const { buildIntakeSummaryPdf: buildPdf } = { buildIntakeSummaryPdf };
+        const pdfBytes = await buildPdf({
+          business: i.businessName || record.business,
+          contactName: i.contactName,
+          plan: record.plan,
+          intake: i,
+          submittedAt,
+        });
+
         await sendMail({
           to: 'tj@callercore.com',
           subject: `Intake complete — ${i.businessName || record.business || 'new client'} (build clock started)`,
-          text: `Intake form submitted. The 1-business-day build clock starts now.\n\n${lines.join('\n')}\n\n— CallerCore onboarding`,
-          html: `<p><b>Intake form submitted.</b> The 1-business-day build clock starts now.</p><p>${lines.join('<br>')}</p>`,
+          text: `Intake form submitted. The 1-business-day build clock starts now.\nFull intake attached as a PDF for your records.\n${textLines.join('\n')}\n\n— CallerCore onboarding`,
+          html: `<p><b>Intake form submitted.</b> The 1-business-day build clock starts now. Full intake attached as a PDF for your records.</p>${htmlLines.join('\n')}`,
+          attachments: [{
+            filename: `Intake-Summary-${(i.businessName || record.business || 'client').replace(/[^a-z0-9]+/gi, '-')}.pdf`,
+            data: Buffer.from(pdfBytes),
+            contentType: 'application/pdf',
+          }],
         });
       } catch (err) {
         console.error('Internal intake_complete email failed:', err);
