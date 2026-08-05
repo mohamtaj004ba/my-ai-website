@@ -9,7 +9,11 @@
 <meta property="og:title" content="CallerCore — Never Miss Another Call">
 <meta property="og:description" content="AI phone answering for service businesses. Every call answered 24/7, every lead captured, jobs booked automatically. Call the live demo line and hear it for yourself.">
 <meta property="og:site_name" content="CallerCore">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://www.callercore.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://www.callercore.com/og-image.png">
 <meta name="twitter:title" content="CallerCore — Never Miss Another Call">
 <meta name="twitter:description" content="AI phone answering for service businesses. Every call answered 24/7, every lead captured, jobs booked automatically. Call the live demo line and hear it for yourself.">
 <link rel="icon" type="image/png" href="/logo-icon.png">
@@ -17,6 +21,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"What happens if I go over my minutes?","acceptedAnswer":{"@type":"Answer","text":"You're billed $0.30/min for any minutes beyond your plan's limit — no surprise caps or service interruption."}},
+    {"@type":"Question","name":"What does onboarding involve?","acceptedAnswer":{"@type":"Answer","text":"No calls needed. After checkout you get a link to sign your agreement and fill out a short intake form — your services, hours, and how you want calls handled. We build and test from there, and most accounts go live within 1 business day of that form coming in."}},
+    {"@type":"Question","name":"What's the live demo line?","acceptedAnswer":{"@type":"Answer","text":"A real phone number answered by our AI. Call it, tell it your industry, and it plays receptionist for a sample business — qualifying you, capturing details, and handling curveballs live. Free, takes about two minutes, no signup needed."}},
+    {"@type":"Question","name":"Which plan is right for my business?","acceptedAnswer":{"@type":"Answer","text":"If you mainly need calls answered and leads captured, Starter covers it. Teams that want automatic booking and SMS follow-up go with Growth — the most popular plan. Unsure? Message us and we'll size it with you."}}
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -91,7 +107,7 @@
       <div class="ds-card ds-demo-card">
         <div class="ds-card-tag"><span class="ds-step-num">1</span>The live demo</div>
         <h3>Call the demo line</h3>
-        <p>A real phone number answered by our AI. Tell it what kind of business you run and it plays receptionist for a sample company in your trade — answering naturally, asking the right questions, and capturing the lead exactly as it would for your customers.</p>
+        <p>A real number answered by our AI. Tell it your trade and it plays receptionist for a sample company — asking the right questions and capturing the lead, exactly like it would for your customers.</p>
         <ul class="ds-list">
           <li>Ask it anything a real customer would</li>
           <li>Try to trip it up — interrupt it, ask if it's a robot</li>
@@ -112,7 +128,7 @@
       <div class="ds-card ds-signup-card">
         <div class="ds-card-tag ds-card-tag-signal"><span class="ds-step-num">2</span>Get started</div>
         <h3>Pick a plan and go live</h3>
-        <p class="ds-signup-sub">Choose your plan, tell us who you are, and check out securely with Stripe. We'll reach out within one business day to configure your AI and take you live.</p>
+        <p class="ds-signup-sub">Choose your plan and check out securely with Stripe. Your onboarding link arrives instantly — complete it, and you're live within one business day.</p>
         <form class="contact-form ds-form" id="signupSectionForm">
           <div class="ds-plan-pills" id="dsPlanPills">
             <button type="button" class="ds-pill" data-plan="Starter"><b>Starter</b><span>$349/mo</span></button>
@@ -192,7 +208,7 @@
       <div class="intel-copy reveal">
         <div class="sectiontag" style="color:var(--signal);">Conversation Intelligence</div>
         <h2 style="color:var(--paper);">A receptionist with real judgment, not a script</h2>
-        <p class="sec-intro" style="color:#A8ADB5; margin-bottom:24px;">CallerCore doesn't read from a decision tree. It understands context, picks up on urgency, and responds the way a sharp, experienced employee would — because it's reasoning through the conversation in real time, not playing back a recording.</p>
+        <p class="sec-intro" style="color:#A8ADB5; margin-bottom:24px;">No decision trees, no recordings. It follows context, reads urgency, and responds the way a sharp, experienced receptionist would — reasoning through the conversation in real time.</p>
         <ul class="intel-list">
           <li><span class="intel-check">✓</span>Understands follow-up questions and changes of topic mid-call</li>
           <li><span class="intel-check">✓</span>Reads urgency and tone, not just keywords</li>
@@ -223,8 +239,8 @@
             </g>
           </svg>
           <div class="network-stats">
-            <div><span class="ns-num" data-count="100" data-suffix="%">0%</span><span class="ns-label">Calls answered</span></div>
-            <div><span class="ns-num" data-count="14" data-suffix="s">0s</span><span class="ns-label">Avg. response time</span></div>
+            <div><span class="ns-num" data-count="100" data-suffix="%">100%</span><span class="ns-label">Calls answered</span></div>
+            <div><span class="ns-num" data-count="14" data-suffix="s">14s</span><span class="ns-label">Avg. response time</span></div>
             <div><span class="ns-num" data-count="0">0</span><span class="ns-label">Calls dropped</span></div>
           </div>
         </div>
@@ -244,55 +260,10 @@
       <div class="stat-card"><div class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-head">Revenue walks</div><div class="stat-label">Every missed call is a booked job that quietly went to someone else — and you never even knew.</div></div>
       <div class="stat-card"><div class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><div class="stat-head">No after-hours cover</div><div class="stat-label">Emergencies don't keep business hours. Without coverage, the 9pm burst pipe becomes tomorrow's lost customer.</div></div>
     </div>
-    <p class="sec-outro reveal"><strong>CallerCore answers instantly, qualifies the lead, records the conversation, and triggers follow-up before the customer moves on</strong> — so your team stays focused on the work while the front office keeps moving.</p>
+    <p class="sec-outro reveal"><strong>CallerCore answers instantly, captures the lead, and fires follow-up before the caller moves on</strong> — while your team stays on the job.</p>
   </div>
 </section>
 
-<section class="solution" id="solution">
-  <div class="wrap">
-    <div class="sectiontag">The System</div>
-    <h2>One platform. Every layer connected.</h2>
-    <div class="quote-block reveal">"We answer every call. Capture every lead. Run your front office. Automatically."</div>
-
-    <div class="stack reveal">
-      <div class="stack-row">
-        <div class="stack-label"><span class="pin"></span>INPUT</div>
-        <div class="stack-content">
-          <div class="stack-content-flex">
-            <div>
-              <h3>AI Phone Agent</h3>
-              <p>Answers every call, 24 hours a day, in natural conversation — not a scripted menu. It follows context, handles questions on the fly, qualifies the caller, and books the job or hands off to your team for anything urgent.</p>
-            </div>
-            <div class="waveform" aria-hidden="true">
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="stack-row">
-        <div class="stack-label"><span class="pin"></span>PROCESS</div>
-        <div class="stack-content">
-          <h3>Lead Engine</h3>
-          <p>Every conversation is parsed automatically — name, contact info, intent, urgency — and routed into your pipeline with zero manual entry.</p>
-        </div>
-      </div>
-      <div class="stack-row">
-        <div class="stack-label"><span class="pin"></span>OUTPUT</div>
-        <div class="stack-content">
-          <h3>Instant Follow-Up</h3>
-          <p>The moment a call ends, an automatic follow-up text fires — so the caller hears from you within seconds while the conversation is still fresh.</p>
-        </div>
-      </div>
-      <div class="stack-row">
-        <div class="stack-label"><span class="pin"></span>RECORD</div>
-        <div class="stack-content">
-          <h3>Always-On Memory</h3>
-          <p>Nothing lives in a notepad or a sticky note. Every interaction is logged, searchable, and ready for your team the next morning.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
 <section class="how" id="how">
   <div class="wrap">
@@ -320,7 +291,7 @@
   <div class="wrap">
     <div class="sectiontag">What's Included</div>
     <h2>Everything your front office needs, in one system</h2>
-    <p class="sec-intro">CallerCore starts with phone intake, but it is built as a single operating system for customer communication, lead capture, follow-up, and workflow automation.</p>
+    <p class="sec-intro">Phone intake first — plus the follow-up, booking, and lead tracking that turn answered calls into booked jobs.</p>
 
     <div class="platform-layout">
       <div class="platform-grid">
@@ -380,17 +351,17 @@
         <div class="dash-stats">
           <div class="dash-stat">
             <span class="dash-stat-label">Leads this week</span>
-            <span class="dash-stat-num" data-count="47">0</span>
+            <span class="dash-stat-num" data-count="47">47</span>
             <span class="dash-stat-trend up">↑ 18%</span>
           </div>
           <div class="dash-stat">
             <span class="dash-stat-label">Calls answered</span>
-            <span class="dash-stat-num" data-count="100" data-suffix="%">0%</span>
+            <span class="dash-stat-num" data-count="100" data-suffix="%">100%</span>
             <span class="dash-stat-trend flat">— steady</span>
           </div>
           <div class="dash-stat">
             <span class="dash-stat-label">Avg. response</span>
-            <span class="dash-stat-num" data-count="14" data-suffix="s">0s</span>
+            <span class="dash-stat-num" data-count="14" data-suffix="s">14s</span>
             <span class="dash-stat-trend up">↓ 6s</span>
           </div>
           <div class="dash-chart">
@@ -444,7 +415,7 @@
   <div class="wrap">
     <div class="sectiontag">Pricing</div>
     <h2>Compare plans side by side</h2>
-    <p class="sec-intro"><strong style="color:var(--paper);">For businesses that depend on inbound calls, one saved job can cover a big part of the monthly cost.</strong><br>One flat setup fee, then a monthly plan that scales with you. Every feature below carries forward into the tiers above it — nothing gets swapped out, only added.</p>
+    <p class="sec-intro"><strong style="color:var(--ink);">One saved job can cover most of the month.</strong><br>One flat setup fee, then a plan that scales with you — every feature carries forward into the tiers above.</p>
 
     <div class="compare-wrap">
       <table class="compare-table">
@@ -563,11 +534,34 @@
       <strong>Overage:</strong> $0.30 per minute beyond your plan's included minutes &nbsp;·&nbsp; <strong>No long-term contract required</strong>
     </div>
 
-    <div class="estimator-box">
-      <div class="estimator-icon">📊</div>
-      <div class="estimator-text">
-        <strong>Quick math:</strong> if you're missing even 20 calls a month and CallerCore turns just 3–4 of those into booked jobs, Growth typically pays for itself before the month is over.
+    <div class="calc reveal" id="calculator">
+      <div class="calc-head">
+        <span class="calc-tag">MISSED-CALL MATH</span>
+        <h3>What are missed calls actually costing you?</h3>
       </div>
+      <div class="calc-grid">
+        <div class="calc-controls">
+          <div class="calc-field">
+            <label for="calcCalls">Calls you miss per week <output id="calcCallsOut">10</output></label>
+            <input type="range" id="calcCalls" min="1" max="40" step="1" value="10">
+          </div>
+          <div class="calc-field">
+            <label for="calcValue">Average job value <output id="calcValueOut">$450</output></label>
+            <input type="range" id="calcValue" min="100" max="2000" step="50" value="450">
+          </div>
+        </div>
+        <div class="calc-results">
+          <div class="calc-result">
+            <span class="calc-num calc-num-lost" id="calcLost">$19,485</span>
+            <span class="calc-label">est. revenue walking out the door / month</span>
+          </div>
+          <div class="calc-result">
+            <span class="calc-num calc-num-won" id="calcWon">$4,871</span>
+            <span class="calc-label">recovered by winning back just 1 in 4 — <b id="calcRoi">8×</b> the cost of Growth</span>
+          </div>
+        </div>
+      </div>
+      <p class="calc-note">Estimates based on your numbers and a conservative 25% win-back rate.</p>
     </div>
 
     <div class="pricing-faq">
@@ -622,7 +616,7 @@
       </div>
     </div>
     <div class="footer-contact">Questions? <a href="mailto:support@callercore.com" style="color:var(--signal);">support@callercore.com</a></div>
-    <div class="footnote">© 2026 CallerCore · The AI system that streamlines your business operations</div>
+    <div class="footnote">© 2026 CallerCore · Never miss another call.</div>
   </div>
 </footer>
 
@@ -909,6 +903,32 @@
       const btn = document.getElementById(id);
       if (btn) btn.addEventListener('click', () => reveal(btn));
     });
+  })();
+
+  // ── MISSED-CALL CALCULATOR ───────────────────────────────────────────────
+  (function(){
+    const calls = document.getElementById('calcCalls');
+    const value = document.getElementById('calcValue');
+    if(!calls || !value) return;
+    const callsOut = document.getElementById('calcCallsOut');
+    const valueOut = document.getElementById('calcValueOut');
+    const lostEl = document.getElementById('calcLost');
+    const wonEl = document.getElementById('calcWon');
+    const roiEl = document.getElementById('calcRoi');
+    const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+    function update(){
+      const c = Number(calls.value), v = Number(value.value);
+      callsOut.textContent = c;
+      valueOut.textContent = fmt(v);
+      const lost = c * 4.33 * v;
+      const won = lost * 0.25;
+      lostEl.textContent = fmt(lost);
+      wonEl.textContent = fmt(won);
+      roiEl.textContent = Math.max(1, Math.round(won / 599)) + '\u00d7';
+    }
+    calls.addEventListener('input', update);
+    value.addEventListener('input', update);
+    update();
   })();
 
 </script>

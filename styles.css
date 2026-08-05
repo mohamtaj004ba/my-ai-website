@@ -518,14 +518,52 @@
   .dash{color:#C7C2B8; font-weight:600;}
 
   .pricing-foot{text-align:center; font-size:13.5px; color:#8A8F97; margin-top:36px;}
-  .estimator-box{
-    display:flex; gap:16px; align-items:flex-start; max-width:680px; margin:28px auto 0;
-    background:rgba(210,103,60,0.06); border:1px solid rgba(210,103,60,0.25);
-    border-radius:12px; padding:18px 22px;
+
+  /* ---- missed-call calculator ---- */
+  .calc{
+    margin-top:48px; background:#fff; border:1px solid var(--line-dark);
+    border-radius:6px; padding:36px 40px;
+    box-shadow:0 18px 44px -30px rgba(12,30,56,0.35);
   }
-  .estimator-icon{font-size:22px; flex-shrink:0;}
-  .estimator-text{font-size:14px; color:var(--ink); line-height:1.55;}
-  .estimator-text strong{color:var(--signal);}
+  .calc-head{margin-bottom:28px;}
+  .calc-tag{
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px;
+    letter-spacing:0.12em; color:var(--signal); margin-bottom:10px; font-weight:600;
+  }
+  .calc-head h3{font-size:22px; color:var(--ink); font-weight:800; letter-spacing:-0.01em;}
+  .calc-grid{display:grid; grid-template-columns:1fr 1fr; gap:44px; align-items:center;}
+  .calc-field{margin-bottom:26px;}
+  .calc-field:last-child{margin-bottom:0;}
+  .calc-field label{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size:14px; font-weight:600; color:var(--ink); margin-bottom:12px;
+  }
+  .calc-field output{
+    font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--signal);
+  }
+  .calc-field input[type=range]{
+    width:100%; accent-color:var(--signal); cursor:pointer; height:4px;
+  }
+  .calc-results{display:grid; gap:18px;}
+  .calc-result{
+    padding:18px 22px; border-radius:5px; background:var(--paper);
+    border:1px solid var(--line-dark);
+  }
+  .calc-num{
+    display:block; font-family:'JetBrains Mono',monospace; font-size:30px;
+    font-weight:600; letter-spacing:-0.01em; margin-bottom:4px;
+  }
+  .calc-num-lost{color:var(--ink);}
+  .calc-num-won{color:var(--good);}
+  .calc-label{font-size:13px; color:#4A4F57; line-height:1.5;}
+  .calc-label b{color:var(--signal); font-family:'JetBrains Mono',monospace;}
+  .calc-note{margin-top:22px; font-size:12px; color:var(--steel);}
+  @media(max-width:820px){
+    .calc{padding:28px 22px;}
+    .calc-grid{grid-template-columns:1fr; gap:30px;}
+    .calc-num{font-size:26px;}
+  }
+
   .pricing-faq{max-width:880px; margin:56px auto 0;}
   .pricing-faq-title{
     font-family:'Oswald',sans-serif; font-size:14px; font-weight:700; text-transform:uppercase;
