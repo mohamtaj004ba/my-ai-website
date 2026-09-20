@@ -3,7 +3,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Onboarding — CallerCore</title>
-<meta name="robots" content="noindex">
+<meta name="robots" content="noindex, nofollow"><meta name="description" content="Private CallerCore client onboarding and service setup."><meta name="theme-color" content="#20201d">
 <link rel="icon" type="image/png" href="/logo-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -186,30 +186,18 @@
 </style>
 <style>
 /* V2 brand bridge: preserve onboarding functionality while matching the redesigned site */
-:root{--graphite:#20201d;--slate:#34332e;--paper:#f5f2ea;--paper-dim:#ebe7dd;--signal:#c85d35;--signal-dim:#a94b2c;--steel:#8b877f;--ink:#181816}
-body,.subpage{background:#f5f2ea!important;color:#181816!important;font-family:"DM Sans",Inter,sans-serif!important}
+:root{--graphite:#20201d;--slate:#34332e;--paper:#f5f2ea;--paper-dim:#ebe7dd;--signal:#b54b27;--signal-dim:#943c20;--steel:#aaa69d;--ink:#181816}
+body,.subpage{background:#20201d!important;color:#f5f2ea!important;font-family:"DM Sans",Inter,sans-serif!important}
 header{background:#f5f2ea!important;border-bottom:1px solid #d9d4c8!important}.navlinks a{color:#34332e!important}.navlinks .navcta{color:white!important;background:#c85d35!important}
-.subhero h1{color:#181816!important;font-family:Manrope,Inter,sans-serif!important;letter-spacing:-.04em}.subhero p.sub{color:#6e6b63!important}.eyebrow{color:#c85d35!important}
-.ob-card,.ob-wizard-card,.ob-agreement-card{border-color:#d9d4c8!important;box-shadow:0 18px 45px rgba(34,31,24,.07)!important}
+.subhero h1{color:#f5f2ea!important;font-family:Manrope,Inter,sans-serif!important;letter-spacing:-.04em}.subhero p.sub{color:#b7b2a8!important}.eyebrow{color:#e18a69!important}
+.ob-card,.ob-wizard-card,.ob-agreement-card{border-color:#45443f!important;box-shadow:0 18px 45px rgba(0,0,0,.16)!important}
 footer{background:#20201d!important}
 </style><link rel="stylesheet" href="/redesign.css"></head>
-<body>
+<body><a class="skip-link" href="#main-content">Skip to content</a>
 <div class="subpage">
-<header>
-  <nav>
-    <a href="/" class="logo" aria-label="CallerCore home"><img class="logo-full" src="/logo.png" alt="CallerCore logo"></a>
-    <div class="navlinks">
-      <a href="/#how">Why It Matters</a>
-      <a href="/#how">How It Works</a>
-      <a href="/#capabilities">What's Included</a>
-      <a href="/#pricing">Pricing</a>
-      <a href="/live-demo">Live Demo</a>
-      <a href="/contact">Contact</a>
-    </div>
-  </nav>
-</header>
+<header class="site-header"><a class="brand" href="/" aria-label="CallerCore home"><img src="/logo-icon.png" alt=""><span>Caller<b>Core</b></span></a><nav id="primary-nav" aria-label="Primary navigation"><a href="/#how">Why CallerCore</a><a href="/#capabilities">AI Receptionist</a><a href="/#pricing">Plans</a><a href="/contact">Talk to us</a><a class="nav-mobile-only nav-mobile-demo" href="/live-demo">Try the AI</a><a class="nav-mobile-only nav-mobile-cta" href="/get-started">Get CallerCore</a></nav><div class="header-actions"><a class="text-link" href="/live-demo">Try the AI</a><a class="button small" href="/get-started">Get CallerCore</a></div><button class="menu" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-nav">Menu</button></header>
 
-<main class="wrap">
+<main id="main-content" class="wrap">
   <div id="obLoading" class="ob-loading">Loading your setup…</div>
   <div id="obError" class="ob-error" style="display:none;">
     <p>We couldn't find that setup link. If you just paid, check your email for the correct link — or reach out at <a href="mailto:support@callercore.com" style="color:var(--signal);">support@callercore.com</a>.</p>
@@ -222,7 +210,7 @@ footer{background:#20201d!important}
       <p class="sub" id="obHeroSub">Sign your service agreement and tell us about your business. We start building the moment your intake form is complete — most accounts go live within 1 business day after that.</p>
     </section>
 
-    <div class="ob-steps">
+    <div class="ob-steps" aria-label="Onboarding progress">
       <div class="ob-step" id="stepAgreement"><span class="ob-step-dot"><span class="ob-num">1</span><svg class="ob-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M20 6 9 17l-5-5"/></svg></span><span>Agreement</span></div>
       <div class="ob-step-line"></div>
       <div class="ob-step" id="stepIntake"><span class="ob-step-dot"><span class="ob-num">2</span><svg class="ob-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M20 6 9 17l-5-5"/></svg></span><span>Intake</span></div>
@@ -243,7 +231,7 @@ footer{background:#20201d!important}
             <span>SERVICE AGREEMENT</span>
           </div>
           <div class="ob-doc-body" id="agreementScroll">
-            <h1 class="ob-doc-title">Service Agreement</h1>
+            <h2 class="ob-doc-title">Service Agreement</h2>
             <div class="ob-doc-accent"></div>
             <div class="ob-doc-meta">
               <div class="ob-doc-meta-row"><div class="ob-doc-meta-k">Between</div><div class="ob-doc-meta-v">CallerCore</div></div>
@@ -1542,4 +1530,4 @@ footer{background:#20201d!important}
   }
 })();
 </script>
-</body></html>
+<script src="/site.js" defer></script></body></html>
