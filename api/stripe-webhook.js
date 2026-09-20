@@ -110,7 +110,7 @@ module.exports = async function handler(req, res) {
   if (event.type === 'checkout.session.completed' && !['paid','no_payment_required'].includes(session.payment_status)) {
     return res.status(200).json({ received: true, pending_payment: true });
   }
-  const paidPlan = PLAN_BY_PAYMENT_LINK[session.payment_link] || null;
+  const paidPlan = PLAN_BY_PAYMENT_LINK[session.payment_link] || session.metadata?.plan || null;
   const sessionKey = session.id ? `stripe:session:${session.id}` : null;
   let sessionState = sessionKey ? await kv.get(sessionKey) : null;
 
@@ -132,11 +132,11 @@ module.exports = async function handler(req, res) {
     if (leadId) lead = await kv.get(`lead:${leadId}`);
     if (!lead) {
       lead = {
-        name: (session.customer_details && session.customer_details.name) || '',
-        business: '',
-        email: customerEmail || '',
-        phone: (session.customer_details && session.customer_details.phone) || '',
-        industry: '',
+        name: session.metadata?.name || (session.customer_details && session.customer_details.name) || '',
+        business: session.metadata?.business || '',
+        email: customerEmail || session.customer_email || '',
+        phone: session.metadata?.phone || (session.customer_details && session.customer_details.phone) || '',
+        industry: session.metadata?.industry || '',
         plan: paidPlan || 'Unknown',
       };
     }
