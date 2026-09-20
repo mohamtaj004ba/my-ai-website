@@ -10,7 +10,32 @@ advancedAnalytics:{title:'Advanced analytics',copy:'Go beyond totals with conver
 apiAccess:{title:'API & webhooks',copy:'Connect CallerCore to custom tools and internal systems.',tier:'Pro',items:['Webhooks','API credentials','Custom events','Advanced integrations']},
 unifiedInbox:{title:'Unified inbox',copy:'Keep customer voice, SMS and digital conversations in one timeline.',tier:'Growth',items:['Voice timeline','SMS inbox','Shared notes','Cross-channel history']}
 };
-let currentPlan=(new URLSearchParams(location.search).get('plan'))||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
+const params=new URLSearchParams(location.search);
+const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
+let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
+let sessionWorkspace=null;
+
+async function bootstrapClient(){
+  if(document.body.dataset.dashboard!=='client')return true;
+  if(demoMode){document.body.classList.add('demo-mode');return true}
+  try{
+    const r=await fetch('/api/session',{headers:{Accept:'application/json'},cache:'no-store'});
+    if(r.status===401){location.replace('/login?next=%2Fdashboard');return false}
+    if(!r.ok)throw new Error('session');
+    const data=await r.json();sessionWorkspace=data.workspace;
+    currentPlan=data.workspace.plan;
+    const name=data.workspace.name||'CallerCore Client';
+    const wName=document.getElementById('workspaceName');if(wName)wName.textContent=name;
+    const wMeta=document.getElementById('workspaceMeta');if(wMeta)wMeta.textContent=currentPlan+' plan';
+    document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=name);
+    const selector=document.getElementById('planSelector');if(selector)selector.closest('.plan-demo').style.display='none';
+    const avatar=document.querySelector('.avatar');if(avatar)avatar.textContent=name.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
+    if(data.workspace.usage&&Number.isFinite(data.workspace.usage.minutes)){PLAN_DATA[currentPlan].used=data.workspace.usage.minutes}
+    return true;
+  }catch(err){console.error('Dashboard bootstrap failed',err);location.replace('/login?error=session');return false}
+}
+async function logout(){try{await fetch('/api/logout',{method:'POST'})}finally{location.href='/login'}}
+
 
 function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
@@ -31,4 +56,5 @@ const modal=document.getElementById('upgradeModal');function openModal(target){i
 function bindUpgradeButtons(){document.querySelectorAll('[data-upgrade]').forEach(b=>{b.onclick=()=>openModal(b.dataset.upgrade)})}
 document.querySelector('.modal-close')?.addEventListener('click',()=>modal.classList.remove('open'));modal?.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});document.getElementById('upgradeButton')?.addEventListener('click',()=>document.getElementById('planComparison')?.scrollIntoView({behavior:'smooth'}));document.getElementById('paymentButton')?.addEventListener('click',()=>openModal(currentPlan));document.getElementById('modalCta')?.addEventListener('click',()=>alert('Prototype only: authenticated Stripe customer + subscription mapping is required before enabling real in-dashboard billing changes.'));
 
-if(document.body.dataset.dashboard==='client'){setPlan(currentPlan)}else{renderBilling()}
+(async()=>{const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan)}else{renderBilling()}})();
+document.getElementById('logoutButton')?.addEventListener('click',logout);
