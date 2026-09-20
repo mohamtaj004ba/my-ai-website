@@ -24,15 +24,24 @@ function isAllowedOrigin(req) {
   }
 }
 
+const hits=new Map();
+function rateLimited(ip){
+  const now=Date.now(),e=hits.get(ip),windowMs=10*60*1000;
+  if(!e||now-e.start>windowMs){hits.set(ip,{start:now,count:1});return false}
+  e.count++;return e.count>10;
+}
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin=req.headers.origin||'';
+  if(isAllowedOrigin(req)&&origin) res.setHeader('Access-Control-Allow-Origin',origin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Cache-Control', 'no-store');
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method === 'OPTIONS') return isAllowedOrigin(req)?res.status(200).end():res.status(403).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
+  const ip=String(req.headers['x-forwarded-for']||req.socket?.remoteAddress||'unknown').split(',')[0].trim();
+  if(rateLimited(ip)) return res.status(429).json({error:'Too many requests'});
 
   const raw = req.body || {};
   const clean = (v, n) => String(v || '').trim().slice(0, n);
@@ -44,7 +53,7 @@ module.exports = async function handler(req, res) {
   const plan = clean(raw.plan, 20);
   const allowedPlans = new Set(['Starter','Growth','Pro']);
 
-  if (!name || !business || !email || !allowedPlans.has(plan)) {
+  if (!name || !business || !email || !phone || !industry || !allowedPlans.has(plan)) {
     return res.status(400).json({ error: 'Missing or invalid required fields' });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
