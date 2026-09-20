@@ -43,27 +43,27 @@ picks it up automatically.
 
 ## Step 3 — Dashboard setup
 
-These four need your logins and involve secrets, so they're yours to do.
+These deployment settings involve secrets or account-level configuration.
 
 **1. Vercel KV** (stores tokens, lead records, intake progress)
 Vercel → your project → Storage → Create Database → KV → connect to the project.
 It auto-injects `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Nothing to copy.
 
-**2. Stripe webhook**
-Stripe → Developers → Webhooks → Add endpoint
+**2. Stripe Embedded Checkout + webhook**
+Add these Vercel environment variables for Production and Preview:
+- `STRIPE_SECRET_KEY` — your Stripe live secret key (server-side only)
+- `STRIPE_PUBLISHABLE_KEY` — your Stripe live publishable key
+
+Keep the webhook:
 - URL: `https://www.callercore.com/api/stripe-webhook`
-- Event: `checkout.session.completed`
-- Copy the signing secret (`whsec_...`) → add to Vercel env vars as
-  `STRIPE_WEBHOOK_SECRET`
+- Events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`
+- Signing secret → `STRIPE_WEBHOOK_SECRET`
+
+The Get Started page creates Checkout Sessions server-side and embeds Stripe directly on callercore.com. Never put `STRIPE_SECRET_KEY` in browser JavaScript.
 
 **3. Mailgun**
 Confirm you have a sending key for `mail.callercore.com` → add to Vercel env
 vars as `MAILGUN_API_KEY`.
-
-**4. GHL webhook URL**
-Add to Vercel env vars as `GHL_WEBHOOK_URL`, set to the same webhook-trigger
-URL your other site forms already POST to. If you leave this unset, the GHL
-push is skipped silently and you'll still get the internal email alert.
 
 Already set, nothing to do: `ANTHROPIC_API_KEY` (reused by the setup-help chat
 and the website lookup).
