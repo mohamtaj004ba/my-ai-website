@@ -6,7 +6,7 @@
  const sessionId=new URLSearchParams(location.search).get('session_id');
  if(!sessionId){title.textContent='We could not verify that checkout.';status.className='return-status error';status.textContent='The checkout session ID is missing. Please contact CallerCore if you completed payment.';return}
  try{
-   const r=await fetch('/api/checkout-session-status?session_id='+encodeURIComponent(sessionId),{headers:{'Accept':'application/json'}});
+   const r=await fetch('/api/create-checkout-session?session_id='+encodeURIComponent(sessionId),{headers:{'Accept':'application/json'}});
    const data=await r.json().catch(()=>({}));
    if(!r.ok) throw new Error(data.error||'Unable to verify payment');
    if(data.status==='complete'){
