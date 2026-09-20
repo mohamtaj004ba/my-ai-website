@@ -1,21 +1,63 @@
 const https = require('https');
 
+const ALLOWED_HOSTS = new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
+const hits = new Map();
+const RATE_WINDOW_MS = 10 * 60 * 1000;
+const RATE_MAX = 25;
+
+function isAllowedOrigin(req) {
+  const candidate = req.headers.origin || req.headers.referer || '';
+  if (!candidate) return false;
+  try {
+    const host = new URL(candidate).host;
+    return ALLOWED_HOSTS.has(host) || host.endsWith('.vercel.app');
+  } catch (_) { return false; }
+}
+function getIp(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  return fwd ? fwd.split(',')[0].trim() : (req.socket?.remoteAddress || 'unknown');
+}
+function rateLimited(ip) {
+  const now = Date.now(), entry = hits.get(ip);
+  if (!entry || now - entry.start > RATE_WINDOW_MS) {
+    hits.set(ip, { start: now, count: 1 });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > RATE_MAX;
+}
+function sanitizeMessages(messages) {
+  if (!Array.isArray(messages) || messages.length < 1 || messages.length > 20) return null;
+  let total = 0;
+  const safe = [];
+  for (const m of messages) {
+    if (!m || !['user','assistant'].includes(m.role) || typeof m.content !== 'string') return null;
+    const content = m.content.trim().slice(0, 3000);
+    total += content.length;
+    if (!content || total > 18000) return null;
+    safe.push({ role: m.role, content });
+  }
+  return safe;
+}
+
 module.exports = async function handler(req, res) {
-  // Handle CORS preflight
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  const origin = req.headers.origin || '';
   if (req.method === 'OPTIONS') {
+    if (!isAllowedOrigin(req)) return res.status(403).end();
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     return res.status(200).end();
   }
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!isAllowedOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Cache-Control', 'no-store');
+  if (rateLimited(getIp(req))) return res.status(429).json({ error: 'Too many requests' });
+  if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Assistant unavailable' });
 
-  const { messages } = req.body;
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Invalid request body' });
-  }
+  const safeMessages = sanitizeMessages(req.body && req.body.messages);
+  if (!safeMessages) return res.status(400).json({ error: 'Invalid request body' });
 
   const SYSTEM_PROMPT = `You are the virtual assistant for CallerCore, an AI phone receptionist service for trade and service businesses — plumbers, HVAC, electricians, roofers, landscapers, auto repair, pest control, cleaning services, and similar trades.
 
@@ -62,7 +104,7 @@ WHERE TO POINT PEOPLE:
     model: 'claude-sonnet-4-6',
     max_tokens: 1000,
     system: SYSTEM_PROMPT,
-    messages: messages
+    messages: safeMessages
   });
 
   const options = {
