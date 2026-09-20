@@ -37,22 +37,37 @@ document.getElementById('startForm').addEventListener('submit',async e=>{
   btn.disabled=true;btn.textContent='Preparing secure checkout…';
   const d=new FormData(form);
   const payload={source:'get_started',plan,name:d.get('name'),business:d.get('business'),email:d.get('email'),phone:d.get('phone'),industry:d.get('industry')};
+  let leadId=null;
   try{
-    const r=await fetch('/api/lead-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(!r.ok){const body=await r.json().catch(()=>({}));throw new Error(body.error||'Unable to save your details')}
-    const {leadId}=await r.json();
-    if(!leadId) throw new Error('Unable to save your details');
-    const u=new URL(PLAN[plan].stripe);
-    u.searchParams.set('client_reference_id',leadId);
-    u.searchParams.set('prefilled_email',String(d.get('email')||''));
-    u.searchParams.set('utm_source','callercore');
-    u.searchParams.set('utm_medium','website');
-    u.searchParams.set('utm_campaign','direct_checkout');
-    location.href=u.toString();
+    const r=await fetch('/api/lead-create',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)});
+    const body=await r.json().catch(()=>({}));
+    if(r.ok){
+      leadId=body.leadId||null;
+    }else if(r.status===400){
+      throw new Error(body.error||'Please check your information and try again.');
+    }else{
+      console.warn('Lead pre-save unavailable; continuing with Stripe fallback',r.status,body.error||'');
+      status.className='form-status';
+      status.textContent='Secure checkout is ready. We’ll collect any remaining setup details after payment.';
+    }
   }catch(err){
-    status.className='form-status error';
-    status.textContent='We could not prepare checkout. Your card has not been charged. Please try again.';
-    btn.disabled=false;btn.textContent='Continue to secure checkout →';
+    if(err && /Missing|Invalid|check your information/i.test(err.message||'')){
+      status.className='form-status error';
+      status.textContent=err.message;
+      btn.disabled=false;btn.textContent='Continue to secure checkout →';
+      return;
+    }
+    console.warn('Lead pre-save request failed; continuing with Stripe fallback',err);
+    status.className='form-status';
+    status.textContent='Secure checkout is ready. We’ll collect any remaining setup details after payment.';
   }
+
+  const u=new URL(PLAN[plan].stripe);
+  if(leadId) u.searchParams.set('client_reference_id',leadId);
+  u.searchParams.set('prefilled_email',String(d.get('email')||''));
+  u.searchParams.set('utm_source','callercore');
+  u.searchParams.set('utm_medium','website');
+  u.searchParams.set('utm_campaign','direct_checkout');
+  location.href=u.toString();
 });
 </script><script src="/site.js" defer></script><script src="/chat-widget.js" defer></script></body></html>
