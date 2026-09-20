@@ -52,7 +52,7 @@ module.exports = async function handler(req, res) {
   } else if (type === 'intake') {
     record.intake = { ...(record.intake || {}), ...(fields || {}) };
     // If every required intake field is present, mark it submitted and
-    // flip status so your GHL/notification workflow can pick it up.
+    // flip status so the completion notification and build workflow can pick it up.
     // Mirrors the conditional logic in onboarding.html's requiredFieldsForStep().
     const required = [
       'businessName', 'contactName', 'phone', 'email', 'industry', 'address', 'addressSharing', 'serviceArea', 'outOfArea',
