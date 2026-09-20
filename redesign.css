@@ -42,3 +42,38 @@ body{animation:pageIn .32s ease both}
 .cc-chat-quick{padding:0 18px 10px;display:flex;gap:7px;flex-wrap:wrap}.cc-chat-quick button{border:1px solid #d7d0c3;background:#fff;border-radius:999px;padding:7px 10px;font:600 11px "DM Sans";cursor:pointer}.cc-chat-quick button:hover{border-color:var(--orange);color:var(--orange)}
 .cc-chat-form{display:flex;gap:8px;padding:12px;border-top:1px solid #ddd7cb;background:#fff}.cc-chat-form input{flex:1;border:1px solid #d8d2c6;background:#f8f5ee;border-radius:999px;padding:11px 14px;font:500 13px "DM Sans";outline:none}.cc-chat-form input:focus{border-color:var(--orange)}.cc-chat-form button{width:40px;height:40px;border-radius:50%;border:0;background:var(--orange);color:white;font-size:16px;cursor:pointer}
 @media(max-width:900px){.site-header{padding:0 18px}.page-id{padding:13px 20px}.page-id strong{font-size:12px}.page-id span{display:none}.footer-top{grid-template-columns:1fr;padding:46px 20px 34px;gap:35px}.footer-cta{border-left:0;border-top:1px solid #41403b;padding:24px 0 0}.footer-bottom{padding:18px 20px 24px;display:block!important}.footer-bottom span{display:block;margin-top:6px}.cc-chat-launcher{right:14px;bottom:14px}.cc-chat-panel{right:14px;bottom:72px}.site-header nav{top:70px}}
+
+/* V4.1 footer correction */
+.site-footer{overflow:hidden}
+.footer-top{
+  max-width:1180px;
+  padding:54px 28px 38px;
+  grid-template-columns:minmax(280px,1.45fr) minmax(320px,1.1fr) minmax(210px,.7fr);
+  gap:52px;
+  align-items:start
+}
+.footer-brand{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"brand brand" "headline copy";column-gap:34px;row-gap:24px;align-items:start}
+.footer-brand .brand{grid-area:brand;margin-bottom:0}
+.footer-brand h2{grid-area:headline;font-size:30px;line-height:1.02;max-width:245px}
+.footer-brand p{grid-area:copy;max-width:210px;font-size:14px;line-height:1.55;padding-top:1px}
+.footer-links{grid-template-columns:1fr 1fr;gap:48px!important;padding-top:7px}
+.footer-links span{margin-bottom:10px}
+.footer-links a{font-size:14px;line-height:1.35}
+.footer-cta{padding-left:34px;padding-top:7px}
+.footer-cta p{max-width:145px;line-height:1.45;margin-bottom:18px!important}
+.footer-cta .button{padding:12px 17px;font-size:13px}
+.footer-bottom{max-width:1180px;padding:18px 28px 22px}
+@media(max-width:1050px){
+ .footer-top{grid-template-columns:1fr 1fr;gap:42px}
+ .footer-cta{grid-column:1/-1;border-left:0;border-top:1px solid #41403b;padding:24px 0 0;display:flex;align-items:center;justify-content:space-between;gap:20px}
+ .footer-cta p{margin:0!important;max-width:none}
+}
+@media(max-width:700px){
+ .footer-top{grid-template-columns:1fr;padding:40px 20px 30px}
+ .footer-brand{grid-template-columns:1fr;grid-template-areas:"brand" "headline" "copy";row-gap:16px}
+ .footer-brand h2{font-size:28px;max-width:320px}
+ .footer-brand p{max-width:360px}
+ .footer-links{grid-template-columns:1fr 1fr;gap:30px!important}
+ .footer-cta{display:block}
+ .footer-cta p{margin-bottom:16px!important}
+}
