@@ -31,6 +31,13 @@ function rateLimited(ip){
   return entry.count>12;
 }
 function clean(v,n){ return String(v||'').trim().slice(0,n); }
+function checkoutReturnOrigin(req){
+  const requestHost=String(req.headers.host||'').toLowerCase();
+  const supplied=String(req.headers.origin||'');
+  if(requestHost.endsWith('.vercel.app') && supplied===`https://${requestHost}`) return supplied;
+  if(requestHost.startsWith('localhost:') && supplied===`http://${requestHost}`) return supplied;
+  return SITE_URL;
+}
 
 function stripePost(path, params){
   return new Promise((resolve,reject)=>{
@@ -135,7 +142,7 @@ module.exports=async function handler(req,res){
   const params=new URLSearchParams();
   params.set('mode','subscription');
   params.set('ui_mode','embedded_page');
-  params.set('return_url',`${SITE_URL}/checkout-complete?session_id={CHECKOUT_SESSION_ID}`);
+  params.set('return_url',`${checkoutReturnOrigin(req)}/checkout-complete?session_id={CHECKOUT_SESSION_ID}`);
   params.set('redirect_on_completion','always');
   params.set('submit_type','subscribe');
   params.set('customer_email',email);
