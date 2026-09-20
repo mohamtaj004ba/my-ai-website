@@ -101,3 +101,8 @@ that the workflow trigger is published.
 - Still outstanding, not blocking launch: a lawyer's pass over the agreement
   before the first real signature, especially Section 13 (regulated data) if
   you sign a medical or dental client.
+
+
+## Embedded checkout preview verification
+
+Once STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY are set for the `feature/embedded-stripe-checkout` Preview branch, deploy this branch and confirm the embedded payment form renders for all three plans. Verify session creation without submitting a live payment; use Stripe test-mode credentials and test prices for end-to-end payment testing. Do not merge this feature until the preview has been checked and the production environment is configured.
