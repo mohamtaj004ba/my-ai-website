@@ -53,9 +53,9 @@ KEY FACTS:
 - For anything the team needs to handle directly, the email is support@callercore.com.
 
 WHERE TO POINT PEOPLE:
-- Wants to hear it work → "Live Demo" in the nav takes them to the demo page where they can call the number directly.
-- Ready to sign up → "Get Started" in the nav (top right) takes them to plan selection and Stripe checkout.
-- Has a question you can't fully answer → point them to "Contact" in the nav so a real person can follow up. Also fine to use the handoff form inside this chat.
+- Wants to hear it work → "Try the AI" in the nav takes them to the demo page where they can call the number directly.
+- Ready to sign up → "Get CallerCore" in the nav (top right) takes them to plan selection and Stripe checkout.
+- Has a question you can't fully answer → point them to "Talk to us" in the nav so a real person can follow up. Also fine to use the handoff form inside this chat.
 - There is no calendar or scheduled call to book — the demo is self-serve by phone, and anything else routes through the contact form.`;
 
   const body = JSON.stringify({
