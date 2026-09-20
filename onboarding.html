@@ -184,16 +184,24 @@
 
   .ob-loading, .ob-error{text-align:center; color:var(--steel); padding:80px 20px; font-family:'Inter',sans-serif;}
 </style>
-</head>
+<style>
+/* V2 brand bridge: preserve onboarding functionality while matching the redesigned site */
+:root{--graphite:#20201d;--slate:#34332e;--paper:#f5f2ea;--paper-dim:#ebe7dd;--signal:#c85d35;--signal-dim:#a94b2c;--steel:#8b877f;--ink:#181816}
+body,.subpage{background:#f5f2ea!important;color:#181816!important;font-family:"DM Sans",Inter,sans-serif!important}
+header{background:#f5f2ea!important;border-bottom:1px solid #d9d4c8!important}.navlinks a{color:#34332e!important}.navlinks .navcta{color:white!important;background:#c85d35!important}
+.subhero h1{color:#181816!important;font-family:Manrope,Inter,sans-serif!important;letter-spacing:-.04em}.subhero p.sub{color:#6e6b63!important}.eyebrow{color:#c85d35!important}
+.ob-card,.ob-wizard-card,.ob-agreement-card{border-color:#d9d4c8!important;box-shadow:0 18px 45px rgba(34,31,24,.07)!important}
+footer{background:#20201d!important}
+</style><link rel="stylesheet" href="/redesign.css"></head>
 <body>
 <div class="subpage">
 <header>
   <nav>
     <a href="/" class="logo" aria-label="CallerCore home"><img class="logo-full" src="/logo.png" alt="CallerCore logo"></a>
     <div class="navlinks">
-      <a href="/#problem">Why It Matters</a>
+      <a href="/#how">Why It Matters</a>
       <a href="/#how">How It Works</a>
-      <a href="/#platform">What's Included</a>
+      <a href="/#capabilities">What's Included</a>
       <a href="/#pricing">Pricing</a>
       <a href="/live-demo">Live Demo</a>
       <a href="/contact">Contact</a>
@@ -253,7 +261,7 @@
           <p>Client will not use the Service to: transmit unlawful, harassing, fraudulent, or deceptive content; impersonate another business or individual; violate any applicable telecommunications, consumer protection, or privacy law; or resell or provide the Service to third parties without CallerCore's written consent. CallerCore may suspend the Service, with notice where practicable, if it reasonably believes it is being used in violation of this Section.</p>
 
           <h3>4. Fees &amp; payment</h3>
-          <p><b>4.1 Setup fee.</b> A one-time setup fee of $500 is due at signup. This fee is non-refundable, as it covers configuration and build labor already performed.</p>
+          <p><b>4.1 Setup fee.</b> A standard one-time setup fee of $500 may apply unless it is waived or reduced by the promotional offer shown at signup. Any applicable setup fee and its refund terms will be disclosed before purchase.</p>
           <p><b>4.2 Monthly subscription.</b> Client is billed monthly in advance according to the selected plan.</p>
           <p><b>4.3 Recurring billing authorization.</b> Client authorizes CallerCore to charge the payment method on file, on a recurring basis, for the monthly subscription fee and any applicable overage or fees, until this Agreement is cancelled under Section 6. Client is responsible for keeping payment details current.</p>
           <p><b>4.4 Overage.</b> Minutes beyond the plan's included minutes are billed at $0.30 per minute in arrears.</p>
