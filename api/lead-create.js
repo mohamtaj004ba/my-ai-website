@@ -34,9 +34,21 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
 
-  const { name, business, email, phone, industry, plan } = req.body || {};
-  if (!name || !business || !email || !plan) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  const raw = req.body || {};
+  const clean = (v, n) => String(v || '').trim().slice(0, n);
+  const name = clean(raw.name, 120);
+  const business = clean(raw.business, 160);
+  const email = clean(raw.email, 200);
+  const phone = clean(raw.phone, 80);
+  const industry = clean(raw.industry, 160);
+  const plan = clean(raw.plan, 20);
+  const allowedPlans = new Set(['Starter','Growth','Pro']);
+
+  if (!name || !business || !email || !allowedPlans.has(plan)) {
+    return res.status(400).json({ error: 'Missing or invalid required fields' });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Invalid email address' });
   }
 
   const leadId = crypto.randomUUID();
