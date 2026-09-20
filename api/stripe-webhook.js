@@ -111,62 +111,84 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ received: true, pending_payment: true });
   }
   const paidPlan = PLAN_BY_PAYMENT_LINK[session.payment_link] || null;
+  const sessionKey = session.id ? `stripe:session:${session.id}` : null;
+  let sessionState = sessionKey ? await kv.get(sessionKey) : null;
+
+  if (sessionState && sessionState.status === 'complete') {
+    if (eventKey) await kv.set(eventKey, true, { ex: 60 * 60 * 24 * 90 });
+    return res.status(200).json({ received: true, duplicate: true });
+  }
+
   const leadId = session.client_reference_id;
   const customerEmail = session.customer_details && session.customer_details.email;
-
   let lead = null;
-  if (leadId) {
-    lead = await kv.get(`lead:${leadId}`);
+  let token = sessionState && sessionState.token ? sessionState.token : null;
+
+  if (token) {
+    lead = await kv.get(`onboarding:${token}`);
   }
-  // Fallback: if the lead record expired or client_reference_id was missing,
-  // still onboard them using whatever Stripe collected, so nobody who paid
-  // falls through the cracks.
+
   if (!lead) {
-    lead = {
-      name: (session.customer_details && session.customer_details.name) || '',
-      business: '',
-      email: customerEmail || '',
-      phone: (session.customer_details && session.customer_details.phone) || '',
-      industry: '',
-      plan: paidPlan || 'Growth',
-    };
+    if (leadId) lead = await kv.get(`lead:${leadId}`);
+    if (!lead) {
+      lead = {
+        name: (session.customer_details && session.customer_details.name) || '',
+        business: '',
+        email: customerEmail || '',
+        phone: (session.customer_details && session.customer_details.phone) || '',
+        industry: '',
+        plan: paidPlan || 'Unknown',
+      };
+    }
+
+    if (paidPlan) lead.plan = paidPlan;
+    token = crypto.randomBytes(24).toString('hex');
+
+    await kv.set(
+      `onboarding:${token}`,
+      {
+        ...lead,
+        stripeSessionId: session.id,
+        agreementSigned: false,
+        agreementSignedAt: null,
+        intake: {},
+        status: 'awaiting_agreement',
+        createdAt: Date.now(),
+      },
+      { ex: 60 * 60 * 24 * 30 }
+    );
+
+    if (sessionKey) {
+      await kv.set(sessionKey, { token, status: 'pending_email' }, { ex: 60 * 60 * 24 * 90 });
+    }
   }
-
-  // Trust the product actually paid for over any client-submitted plan label.
-  if (paidPlan) lead.plan = paidPlan;
-
-  const token = crypto.randomBytes(24).toString('hex');
-
-  await kv.set(
-    `onboarding:${token}`,
-    {
-      ...lead,
-      stripeSessionId: session.id,
-      agreementSigned: false,
-      agreementSignedAt: null,
-      intake: {},
-      status: 'awaiting_agreement',
-      createdAt: Date.now(),
-    },
-    { ex: 60 * 60 * 24 * 30 } // 30-day link validity
-  );
 
   const magicLink = `${SITE_URL}/onboarding?token=${token}`;
   const firstName = (lead.name || '').split(' ')[0] || 'there';
+  const recipient = lead.email || customerEmail;
+
+  if (!recipient) {
+    console.error('Stripe checkout completed without a usable customer email', session.id);
+    return res.status(500).json({ error: 'Missing customer email' });
+  }
 
   try {
     await sendMail({
-      to: lead.email || customerEmail,
+      to: recipient,
       subject: 'Welcome to CallerCore — your setup link',
       text: `Hi ${firstName},\n\nWelcome to CallerCore — payment received.\n\nYour next steps: ${magicLink}\n\nSign your service agreement and fill out your intake form there. We start building your AI the moment your intake form comes in — most accounts go live within 1 business day of that.\n\nQuestions any time: support@callercore.com\n\n— Tj, CallerCore`,
       html: `<p>Hi ${firstName},</p><p>Welcome to CallerCore — payment received.</p><p><a href="${magicLink}">Click here for your next steps</a> — sign your service agreement and fill out your intake form. We start building your AI the moment your intake form comes in, and most accounts go live within 1 business day of that.</p><p>Questions any time: support@callercore.com</p><p>— Tj, CallerCore</p>`,
     });
   } catch (err) {
     console.error('Failed to send onboarding email:', err);
-    // Don't fail the webhook over an email issue — Stripe will retry and
-    // we'd send a duplicate. Log it; the record still exists in KV.
+    // Return 500 so Stripe retries the webhook. The session->token mapping
+    // lets a retry reuse the same onboarding link instead of creating duplicates.
+    return res.status(500).json({ error: 'Onboarding email failed' });
   }
 
+  if (sessionKey) {
+    await kv.set(sessionKey, { token, status: 'complete' }, { ex: 60 * 60 * 24 * 90 });
+  }
   if (eventKey) {
     await kv.set(eventKey, true, { ex: 60 * 60 * 24 * 90 });
   }
