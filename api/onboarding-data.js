@@ -1,5 +1,7 @@
 const { kv } = require('@vercel/kv');
 
+function validToken(token){return typeof token==='string'&&/^[a-f0-9]{48}$/i.test(token)}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -7,9 +9,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const { token } = req.query;
-  if (!token || typeof token !== 'string') {
-    return res.status(400).json({ error: 'Missing token' });
-  }
+  if (!validToken(token)) return res.status(400).json({ error: 'Invalid token' });
 
   const record = await kv.get(`onboarding:${token}`);
   if (!record) {
