@@ -184,19 +184,27 @@
 
   .ob-loading, .ob-error{text-align:center; color:var(--steel); padding:80px 20px; font-family:'Inter',sans-serif;}
 </style>
-</head>
+<style>
+/* V2 brand bridge: preserve onboarding functionality while matching the redesigned site */
+:root{--graphite:#20201d;--slate:#34332e;--paper:#f5f2ea;--paper-dim:#ebe7dd;--signal:#c85d35;--signal-dim:#a94b2c;--steel:#8b877f;--ink:#181816}
+body,.subpage{background:#f5f2ea!important;color:#181816!important;font-family:"DM Sans",Inter,sans-serif!important}
+header{background:#f5f2ea!important;border-bottom:1px solid #d9d4c8!important}.navlinks a{color:#34332e!important}.navlinks .navcta{color:white!important;background:#c85d35!important}
+.subhero h1{color:#181816!important;font-family:Manrope,Inter,sans-serif!important;letter-spacing:-.04em}.subhero p.sub{color:#6e6b63!important}.eyebrow{color:#c85d35!important}
+.ob-card,.ob-wizard-card,.ob-agreement-card{border-color:#d9d4c8!important;box-shadow:0 18px 45px rgba(34,31,24,.07)!important}
+footer{background:#20201d!important}
+</style><link rel="stylesheet" href="/redesign.css"></head>
 <body>
 <div class="subpage">
 <header>
   <nav>
-    <a href="/" class="logo" aria-label="CallerCore home"><img class="logo-full" src="/logo.png" alt="CallerCore logo"></a>
+    <a href="/homepage-v2" class="logo" aria-label="CallerCore home"><img class="logo-full" src="/logo.png" alt="CallerCore logo"></a>
     <div class="navlinks">
-      <a href="/#problem">Why It Matters</a>
-      <a href="/#how">How It Works</a>
-      <a href="/#platform">What's Included</a>
-      <a href="/#pricing">Pricing</a>
-      <a href="/live-demo">Live Demo</a>
-      <a href="/contact">Contact</a>
+      <a href="/homepage-v2#how">Why It Matters</a>
+      <a href="/homepage-v2#how">How It Works</a>
+      <a href="/homepage-v2#capabilities">What's Included</a>
+      <a href="/homepage-v2#pricing">Pricing</a>
+      <a href="/live-demo-v2">Live Demo</a>
+      <a href="/contact-v2">Contact</a>
     </div>
   </nav>
 </header>
