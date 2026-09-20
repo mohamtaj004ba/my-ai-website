@@ -19,7 +19,7 @@ async function bootstrapClient(){
   if(document.body.dataset.dashboard!=='client')return true;
   if(demoMode){document.body.classList.add('demo-mode');return true}
   try{
-    const r=await fetch('/api/session',{headers:{Accept:'application/json'},cache:'no-store'});
+    const r=await fetch('/api/account?action=session',{headers:{Accept:'application/json'},cache:'no-store'});
     if(r.status===401){location.replace('/login?next=%2Fdashboard');return false}
     if(!r.ok)throw new Error('session');
     const data=await r.json();sessionWorkspace=data.workspace;
@@ -34,7 +34,7 @@ async function bootstrapClient(){
     return true;
   }catch(err){console.error('Dashboard bootstrap failed',err);location.replace('/login?error=session');return false}
 }
-async function logout(){try{await fetch('/api/logout',{method:'POST'})}finally{location.href='/login'}}
+async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
 
 
 function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();}
