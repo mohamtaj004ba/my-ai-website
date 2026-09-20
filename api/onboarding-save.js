@@ -1,35 +1,6 @@
 const { kv } = require('@vercel/kv');
-const https = require('https');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { sendMail } = require('./_lib/mailgun');
-
-// Fires when a client's intake form is complete, so Tj knows the build clock
-// has started. Same webhook the website forms already POST to.
-const GHL_WEBHOOK_URL = process.env.GHL_WEBHOOK_URL || '';
-
-function notifyGHL(payload) {
-  return new Promise((resolve, reject) => {
-    if (!GHL_WEBHOOK_URL) return resolve(null);
-    let url;
-    try { url = new URL(GHL_WEBHOOK_URL); } catch (e) { return resolve(null); }
-    const body = JSON.stringify(payload);
-    const req = https.request({
-      hostname: url.hostname,
-      path: url.pathname + url.search,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
-      timeout: 8000,
-    }, (res) => {
-      let data = '';
-      res.on('data', (c) => { data += c; });
-      res.on('end', () => resolve(data));
-    });
-    req.on('timeout', () => { req.destroy(); reject(new Error('ghl_timeout')); });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
-  });
-}
 
 // Handles two kinds of saves from the onboarding page:
 //   { token, type: 'intake', fields: {...} }        -> merges into intake progress
@@ -130,39 +101,7 @@ module.exports = async function handler(req, res) {
       const i = record.intake || {};
       const trade = i.tradeType ? `${i.industry} / ${i.tradeType}` : i.industry;
 
-      // 1) Push into GHL so the contact is updated and any workflow can trigger.
-      try {
-        await notifyGHL({
-          source: 'onboarding_intake_complete',
-          event: 'intake_complete',
-          first_name: (i.contactName || record.name || '').split(' ')[0] || '',
-          full_name: i.contactName || record.name || '',
-          business_name: i.businessName || record.business || '',
-          phone: i.phone || record.phone || '',
-          email: i.email || record.email || '',
-          address: i.address || '',
-          plan: record.plan || '',
-          industry: trade || '',
-          service_area: i.serviceArea || '',
-          hours: i.hours || '',
-          call_handling: i.callHandling || '',
-          routing_choice: i.routingChoice || '',
-          forward_number: i.forwardNumber || '',
-          phone_carrier: i.phoneCarrier || '',
-          escalation_name: i.escalationName || '',
-          escalation_phone: i.escalationPhone || '',
-          notify_recipient: i.notifyRecipient || '',
-          emergency_example: i.exampleEmergency || '',
-          emergency_promise: i.promiseEmergency || '',
-          agreement_signed_at: record.agreementSignedAt
-            ? new Date(record.agreementSignedAt).toISOString() : '',
-          intake_completed_at: new Date(record.intakeCompletedAt).toISOString(),
-        });
-      } catch (err) {
-        console.error('GHL intake_complete notify failed:', err);
-      }
-
-      // 2) Direct email to Tj, so a GHL workflow misfire never means a silent miss.
+      // Send the completed intake directly to CallerCore operations.
       // Includes every field the form collected — not a curated subset — plus a
       // formatted PDF attachment for build reference and permanent company records.
       try {
