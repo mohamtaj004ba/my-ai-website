@@ -21,21 +21,25 @@ function getRawBody(req) {
 }
 
 function verifyStripeSignature(rawBody, sigHeader, secret) {
-  if (!sigHeader) return false;
-  const parts = Object.fromEntries(
-    sigHeader.split(',').map((p) => p.split('=').map((s) => s.trim()))
-  );
-  const timestamp = parts.t;
-  const v1 = parts.v1;
-  if (!timestamp || !v1) return false;
+  if (!sigHeader || !secret) return false;
+  const parts = sigHeader.split(',').map((p) => p.split('=').map((s) => s.trim()));
+  const timestamp = parts.find(([k]) => k === 't')?.[1];
+  const signatures = parts.filter(([k]) => k === 'v1').map(([,v]) => v);
+  if (!timestamp || !signatures.length) return false;
+
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts) || Math.abs(Math.floor(Date.now() / 1000) - ts) > 300) return false;
 
   const signedPayload = `${timestamp}.${rawBody}`;
   const expected = crypto.createHmac('sha256', secret).update(signedPayload).digest('hex');
-
   const expectedBuf = Buffer.from(expected, 'hex');
-  const gotBuf = Buffer.from(v1, 'hex');
-  if (expectedBuf.length !== gotBuf.length) return false;
-  return crypto.timingSafeEqual(expectedBuf, gotBuf);
+
+  return signatures.some((sig) => {
+    try {
+      const gotBuf = Buffer.from(sig, 'hex');
+      return expectedBuf.length === gotBuf.length && crypto.timingSafeEqual(expectedBuf, gotBuf);
+    } catch (_) { return false; }
+  });
 }
 
 function sendMail({ to, subject, text, html }) {
@@ -83,11 +87,18 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid signature' });
   }
 
-  const event = JSON.parse(rawBody);
+  let event;
+  try { event = JSON.parse(rawBody); }
+  catch (_) { return res.status(400).json({ error: 'Invalid payload' }); }
 
   if (event.type !== 'checkout.session.completed') {
     // Ignore everything else — this endpoint only cares about completed payments.
     return res.status(200).json({ received: true, ignored: true });
+  }
+
+  const eventKey = event.id ? `stripe:event:${event.id}` : null;
+  if (eventKey && await kv.get(eventKey)) {
+    return res.status(200).json({ received: true, duplicate: true });
   }
 
   const session = event.data.object;
@@ -144,5 +155,8 @@ module.exports = async function handler(req, res) {
     // we'd send a duplicate. Log it; the record still exists in KV.
   }
 
+  if (eventKey) {
+    await kv.set(eventKey, true, { ex: 60 * 60 * 24 * 90 });
+  }
   return res.status(200).json({ received: true });
 };
