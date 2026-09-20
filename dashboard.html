@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CallerCore Dashboard</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="/logo-icon.png"><link rel="stylesheet" href="/dashboard.css">
+</head>
+<body data-dashboard="client">
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="dash-brand" href="/"><img src="/logo-icon.png" alt=""><span>Caller<b>Core</b></span></a>
+    <div class="workspace"><span>Workspace</span><strong>Alpine Roofing</strong><small>Growth plan · Demo</small></div>
+    <nav class="dash-nav" aria-label="Dashboard">
+      <button class="nav-item active" data-view="overview">Overview</button>
+      <button class="nav-item" data-view="calls">Calls</button>
+      <button class="nav-item" data-view="conversations">Conversations</button>
+      <button class="nav-item" data-view="leads">Leads</button>
+      <button class="nav-item" data-view="appointments">Appointments</button>
+      <div class="nav-label">AI & growth</div>
+      <button class="nav-item" data-view="agent">AI Agent</button>
+      <button class="nav-item" data-view="automations" data-feature="automations">Automations <span class="lock">PRO</span></button>
+      <button class="nav-item" data-view="analytics" data-feature="advancedAnalytics">Analytics</button>
+      <div class="nav-label">Account</div>
+      <button class="nav-item" data-view="integrations">Integrations</button>
+      <button class="nav-item" data-view="billing">Billing & plan</button>
+      <button class="nav-item" data-view="settings">Settings</button>
+    </nav>
+    <div class="sidebar-plan"><small>Current plan</small><strong id="sidebarPlan">Growth</strong><div class="usage-track"><i id="sidebarUsage"></i></div><span id="sidebarUsageLabel">428 / 600 min</span><button data-view="billing">Manage plan</button></div>
+  </aside>
+
+  <main class="dashboard-main">
+    <header class="topbar">
+      <div><button class="mobile-menu" aria-label="Toggle navigation">☰</button><span class="eyebrow">CallerCore client portal</span></div>
+      <div class="top-actions"><button class="search-pill">⌕ Ask CallerCore</button><button class="icon-btn">♡</button><div class="avatar">AR</div></div>
+    </header>
+
+    <section class="view active" id="view-overview">
+      <div class="page-head"><div><span class="eyebrow">Sunday, Sep 20</span><h1>Good afternoon, TJ.</h1><p>Here’s what CallerCore has handled for Alpine Roofing.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
+      <div class="metric-grid">
+        <article><span>Calls answered</span><strong>142</strong><small>↑ 18% this month</small></article>
+        <article><span>New leads</span><strong>31</strong><small>↑ 11% this month</small></article>
+        <article><span>Appointments</span><strong>12</strong><small>8 AI-booked</small></article>
+        <article><span>Pipeline</span><strong>$48.2k</strong><small>Estimated opportunity</small></article>
+      </div>
+      <div class="two-col">
+        <article class="panel agent-card"><div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2>Maya is online</h2></div></div><button data-view="agent">Configure</button></div><p>96% answer rate · 284 minutes this month</p><div class="mini-stats"><div><strong>142</strong><span>calls handled</span></div><div><strong>31</strong><span>leads captured</span></div><div><strong>12</strong><span>appointments</span></div></div><button class="primary">Test Maya</button></article>
+        <article class="panel ask-card"><span class="eyebrow">Ask CallerCore</span><h2>Your business, searchable.</h2><p>Ask questions across calls, leads and appointments.</p><div class="ask-box">Which leads should we follow up with today?<button>→</button></div><div class="chips"><span>After-hours leads</span><span>Missed opportunities</span><span>Top call reasons</span></div></article>
+      </div>
+      <article class="panel activity"><div class="panel-head"><div><span class="eyebrow">Live activity</span><h2>Recent calls & outcomes</h2></div><button data-view="calls">View all calls →</button></div>
+        <div class="activity-row"><span class="time">3:14 PM</span><div class="person"><b>SJ</b><span><strong>Sarah Johnson</strong><small>Roof replacement estimate</small></span></div><span class="tag green">Appointment booked</span><strong>$8,500</strong></div>
+        <div class="activity-row"><span class="time">2:57 PM</span><div class="person"><b>MP</b><span><strong>Mike Peterson</strong><small>Storm damage inspection</small></span></div><span class="tag green">Qualified</span><strong>$4,200</strong></div>
+        <div class="activity-row"><span class="time">2:41 PM</span><div class="person"><b>?</b><span><strong>Unknown caller</strong><small>Missed call recovery</small></span></div><span class="tag amber">Follow-up sent</span><strong>—</strong></div>
+      </article>
+      <div class="unlock-grid" id="overviewUnlocks"></div>
+    </section>
+
+    <section class="view" id="view-calls"><div class="page-head"><div><span class="eyebrow">Calls</span><h1>Every conversation, organized.</h1><p>Recordings, transcripts, summaries and outcomes in one place.</p></div></div><article class="panel table-panel"><div class="call-row head"><span>Caller</span><span>Type</span><span>Duration</span><span>Outcome</span><span>Agent</span></div><div class="call-row"><span>Sarah Johnson</span><span>Incoming</span><span>4:32</span><span class="tag green">Booked</span><span>Maya</span></div><div class="call-row"><span>Mike Peterson</span><span>Incoming</span><span>3:17</span><span class="tag green">Qualified</span><span>Maya</span></div><div class="call-row"><span>Unknown</span><span>Missed</span><span>—</span><span class="tag amber">SMS sent</span><span>Recovery</span></div></article></section>
+
+    <section class="view" id="view-conversations"><div class="page-head"><div><span class="eyebrow">Conversations</span><h1>One customer timeline.</h1><p>Voice and SMS today, with chat and email ready for future expansion.</p></div></div><div class="locked-stage" data-feature-card="unifiedInbox"></div></section>
+    <section class="view" id="view-leads"><div class="page-head"><div><span class="eyebrow">Leads</span><h1>From ringing to revenue.</h1><p>Track every captured opportunity through the pipeline.</p></div></div><div class="kanban"><div><h3>New <span>4</span></h3><article><b>Emily Ross</b><small>Roof leak · $2.8k</small></article></div><div><h3>Qualified <span>7</span></h3><article><b>Mike Peterson</b><small>Storm damage · $4.2k</small></article></div><div><h3>Appointment <span>5</span></h3><article><b>Sarah Johnson</b><small>Replacement · $8.5k</small></article></div><div><h3>Won <span>12</span></h3><article><b>Jared Lee</b><small>Full roof · $13.4k</small></article></div></div></section>
+    <section class="view" id="view-appointments"><div class="page-head"><div><span class="eyebrow">Appointments</span><h1>Booked while you work.</h1><p>See AI-booked appointments and upcoming customer commitments.</p></div></div><div class="locked-stage" data-feature-card="appointments"></div></section>
+    <section class="view" id="view-agent"><div class="page-head"><div><span class="eyebrow">AI Agent</span><h1>Meet Maya.</h1><p>Control what your receptionist knows, says and does.</p></div></div><div class="two-col"><article class="panel form-card"><label>Agent name<input value="Maya"></label><label>Role<input value="AI Receptionist"></label><label>Opening message<textarea>Thank you for calling Alpine Roofing. This is Maya. How can I help you today?</textarea></label><button class="primary">Save changes</button></article><article class="panel"><span class="eyebrow">Knowledge</span><h2>Business brain</h2><div class="setting-row"><span>Services & pricing</span><b>12 items</b></div><div class="setting-row"><span>Hours & service area</span><b>Configured</b></div><div class="setting-row"><span>FAQs & policies</span><b>24 answers</b></div><div class="setting-row"><span>Emergency rules</span><b>3 routes</b></div></article></div></section>
+    <section class="view" id="view-automations"><div class="page-head"><div><span class="eyebrow">Automations</span><h1>Follow up without chasing.</h1><p>Trigger actions from calls, leads and appointments.</p></div></div><div class="locked-stage" data-feature-card="automations"></div></section>
+    <section class="view" id="view-analytics"><div class="page-head"><div><span class="eyebrow">Analytics</span><h1>Know what the phones are telling you.</h1><p>Turn call activity into business decisions.</p></div></div><div class="locked-stage" data-feature-card="advancedAnalytics"></div></section>
+    <section class="view" id="view-integrations"><div class="page-head"><div><span class="eyebrow">Integrations</span><h1>Connect the rest of your stack.</h1><p>Calendars, CRMs, webhooks and more.</p></div></div><div class="integration-grid"><article class="panel"><b>Google Calendar</b><span class="tag green">Connected</span></article><article class="panel"><b>Stripe</b><span class="tag green">Connected</span></article><article class="panel" data-feature="apiAccess"><b>API & Webhooks</b><span class="tag amber">Pro</span></article></div></section>
+
+    <section class="view" id="view-billing">
+      <div class="page-head"><div><span class="eyebrow">Billing & plan</span><h1>Everything about your subscription.</h1><p>Upgrade, review usage and manage payment details without leaving CallerCore.</p></div></div>
+      <div class="billing-layout">
+        <article class="panel current-plan"><span class="eyebrow">Current plan</span><div class="plan-line"><div><h2 id="billingPlan">Growth</h2><p id="billingPrice">$599/month</p></div><span class="tag green">Active</span></div><div class="usage-block"><div><span>AI minutes</span><b id="billingUsageText">428 / 600</b></div><div class="usage-track"><i id="billingUsage"></i></div></div><button class="primary" id="upgradeButton">Compare plans</button></article>
+        <article class="panel payment-card"><span class="eyebrow">Payment method</span><h2>Stripe-secured billing</h2><div class="card-display"><span>VISA</span><b>•••• 4242</b><small>Demo payment method</small></div><button class="secondary-btn" id="paymentButton">Update payment method</button><small class="muted">Real card data will be collected by Stripe, never stored by CallerCore.</small></article>
+      </div>
+      <div class="plan-comparison" id="planComparison"></div>
+      <article class="panel invoices"><div class="panel-head"><div><span class="eyebrow">Invoices</span><h2>Billing history</h2></div></div><div class="invoice-row"><span>Sep 1, 2026</span><b>Growth</b><span>$599.00</span><span class="tag green">Paid</span></div><div class="invoice-row"><span>Aug 1, 2026</span><b>Growth</b><span>$599.00</span><span class="tag green">Paid</span></div></article>
+    </section>
+    <section class="view" id="view-settings"><div class="page-head"><div><span class="eyebrow">Settings</span><h1>Workspace settings.</h1><p>Business profile, team access and notification preferences.</p></div></div><article class="panel form-card"><label>Business name<input value="Alpine Roofing"></label><label>Primary email<input value="owner@example.com"></label><label>Timezone<input value="America/Los_Angeles"></label><button class="primary">Save settings</button></article></section>
+  </main>
+</div>
+
+<div class="modal" id="upgradeModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" aria-label="Close">×</button><span class="eyebrow">Upgrade CallerCore</span><h2 id="modalTitle">Unlock more with Pro</h2><p id="modalCopy"></p><div id="modalFeatures" class="modal-features"></div><div class="stripe-embed"><span>STRIPE EMBED AREA</span><strong>Secure upgrade checkout will render here.</strong><small>This prototype intentionally does not create an unauthenticated subscription-change endpoint. Once client authentication and Stripe customer mapping are connected, this area can mount Stripe's embedded payment UI.</small></div><button class="primary full" id="modalCta">Continue with Stripe</button></div></div>
+<script src="/dashboard.js"></script>
+</body></html>
