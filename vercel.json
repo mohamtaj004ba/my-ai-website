@@ -1,4 +1,11 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/homepage-v2", "destination": "/", "permanent": true },
+    { "source": "/contact-v2", "destination": "/contact", "permanent": true },
+    { "source": "/live-demo-v2", "destination": "/live-demo", "permanent": true },
+    { "source": "/get-started-v2", "destination": "/get-started", "permanent": true },
+    { "source": "/book", "destination": "/contact", "permanent": true }
+  ]
 }
