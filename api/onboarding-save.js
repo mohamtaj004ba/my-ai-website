@@ -2,6 +2,26 @@ const { kv } = require('@vercel/kv');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { sendMail } = require('./_lib/mailgun');
 
+const ALLOWED_INTAKE_FIELDS = new Set([
+  'businessName','contactName','phone','email','industry','industryOther','address','addressSharing','serviceArea','outOfArea','outOfAreaReferral',
+  'tradeType','tradeTypeOther','servicesOffered','servicesNotOffered','gasUtility','insuranceInfo','vetAskSpecies','vetEmergencyNotes','conflictCheck',
+  'realEstateNotes','vendorDispatch','salonNotes','collectVehicleInfo','hours','exampleRoutine','promiseRoutine','exampleUrgent','promiseUrgent',
+  'exampleEmergency','promiseEmergency','routingChoice','forwardNumber','phoneCarrier','callHandling','notificationPreference','notifyRecipient',
+  'notifyOtherName','notifyOtherTitle','notifyOtherPhone','notifyOtherEmail','escalationName','escalationPhone','escalationBackupName',
+  'escalationBackupPhone','greeting','tone','faqs','pricingPolicy','pricingRanges','guardrails','additionalNotes','attribution'
+]);
+function validToken(token){return typeof token==='string'&&/^[a-f0-9]{48}$/i.test(token)}
+function cleanText(v,max=6000){return typeof v==='string'?v.trim().slice(0,max):''}
+function sanitizeFields(fields){
+  if(!fields||typeof fields!=='object'||Array.isArray(fields)) return {};
+  const out={};
+  for(const [key,value] of Object.entries(fields)){
+    if(ALLOWED_INTAKE_FIELDS.has(key)) out[key]=cleanText(value);
+  }
+  return out;
+}
+function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
 // Handles two kinds of saves from the onboarding page:
 //   { token, type: 'intake', fields: {...} }        -> merges into intake progress
 //   { token, type: 'agreement', fullName: '...' }   -> records agreement signature
@@ -12,21 +32,19 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { token, type, fields, fullName } = req.body || {};
-  if (!token || typeof token !== 'string') {
-    return res.status(400).json({ error: 'Missing token' });
-  }
+  if (!validToken(token)) return res.status(400).json({ error: 'Invalid token' });
 
   const key = `onboarding:${token}`;
   const record = await kv.get(key);
   if (!record) return res.status(404).json({ error: 'not_found' });
 
   if (type === 'agreement') {
-    if (!fullName || typeof fullName !== 'string') {
-      return res.status(400).json({ error: 'Missing fullName' });
-    }
+    const signedName=cleanText(fullName,120);
+    if (!signedName) return res.status(400).json({ error: 'Missing fullName' });
+    if(record.agreementSigned) return res.status(200).json({ok:true,status:record.status,alreadySigned:true});
     record.agreementSigned = true;
     record.agreementSignedAt = Date.now();
-    record.agreementFullName = fullName;
+    record.agreementFullName = signedName;
 
     await kv.set(key, record, { ex: 60 * 60 * 24 * 30 });
 
@@ -35,12 +53,12 @@ module.exports = async function handler(req, res) {
     try {
       const signedDate = new Date(record.agreementSignedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       const pdfBytes = await buildAgreementPdfBytes({
-        business: record.business, fullName, plan: record.plan, signedAt: signedDate,
+        business: record.business, fullName: signedName, plan: record.plan, signedAt: signedDate,
       });
       await sendMail({
         to: record.email,
         subject: 'Your signed CallerCore service agreement',
-        text: `Hi ${(fullName || '').split(' ')[0] || 'there'},\n\nAttached is your signed CallerCore service agreement for your records.\n\nQuestions any time: support@callercore.com\n\n\u2014 CallerCore`,
+        text: `Hi ${signedName.split(' ')[0] || 'there'},\n\nAttached is your signed CallerCore service agreement for your records.\n\nQuestions any time: support@callercore.com\n\n\u2014 CallerCore`,
         html: `<p>Attached is your signed CallerCore service agreement for your records.</p><p>Questions any time: support@callercore.com</p>`,
         attachments: [{ filename: 'CallerCore-Service-Agreement.pdf', data: Buffer.from(pdfBytes), contentType: 'application/pdf' }],
       });
@@ -50,7 +68,9 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ ok: true, status: record.status });
   } else if (type === 'intake') {
-    record.intake = { ...(record.intake || {}), ...(fields || {}) };
+    const incoming=sanitizeFields(fields);
+    if(!Object.keys(incoming).length) return res.status(400).json({error:'No valid fields'});
+    record.intake = { ...(record.intake || {}), ...incoming };
     // If every required intake field is present, mark it submitted and
     // flip status so the completion notification and build workflow can pick it up.
     // Mirrors the conditional logic in onboarding.html's requiredFieldsForStep().
@@ -119,7 +139,7 @@ module.exports = async function handler(req, res) {
           htmlLines.push(`<p style="margin:14px 0 4px;"><b>${sectionTitle}</b></p>`);
           present.forEach(([key, label]) => {
             textLines.push(`${label}: ${i[key]}`);
-            htmlLines.push(`<div><span style="color:#666;">${label}:</span> ${i[key]}</div>`);
+            htmlLines.push(`<div><span style="color:#666;">${escapeHtml(label)}:</span> ${escapeHtml(i[key])}</div>`);
           });
         });
 
