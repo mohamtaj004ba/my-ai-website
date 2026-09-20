@@ -62,11 +62,15 @@ module.exports = async function handler(req, res) {
 
   const leadId = crypto.randomUUID();
 
-  await kv.set(
-    `lead:${leadId}`,
-    { name, business, email, phone, industry, plan, createdAt: Date.now() },
-    { ex: 60 * 60 * 24 * 7 } // expires in 7 days if payment never completes
-  );
-
-  return res.status(200).json({ leadId });
+  try {
+    await kv.set(
+      `lead:${leadId}`,
+      { name, business, email, phone, industry, plan, createdAt: Date.now() },
+      { ex: 60 * 60 * 24 * 7 }
+    );
+    return res.status(200).json({ leadId });
+  } catch (err) {
+    console.error('lead-create KV write failed:', err);
+    return res.status(503).json({ error: 'Lead pre-save temporarily unavailable' });
+  }
 };
