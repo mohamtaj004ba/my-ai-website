@@ -10,7 +10,7 @@
 <div class="app-shell">
   <aside class="sidebar">
     <a class="dash-brand" href="/"><img src="/logo-icon.png" alt=""><span>Caller<b>Core</b></span></a>
-    <div class="workspace"><span>Workspace</span><strong>Alpine Roofing</strong><small>Growth plan · Demo</small></div>
+    <div class="workspace"><span>Workspace</span><strong id="workspaceName">Alpine Roofing</strong><small id="workspaceMeta">Growth plan · Demo</small></div>
     <nav class="dash-nav" aria-label="Dashboard">
       <button class="nav-item active" data-view="overview">Overview</button>
       <button class="nav-item" data-view="calls">Calls</button>
@@ -32,11 +32,11 @@
   <main class="dashboard-main">
     <header class="topbar">
       <div><button class="mobile-menu" aria-label="Toggle navigation">☰</button><span class="eyebrow">CallerCore client portal</span></div>
-      <div class="top-actions"><button class="search-pill">⌕ Ask CallerCore</button><button class="icon-btn">♡</button><div class="avatar">AR</div></div>
+      <div class="top-actions"><button class="search-pill">⌕ Ask CallerCore</button><button class="icon-btn" id="logoutButton" title="Sign out">↪</button><div class="avatar">AR</div></div>
     </header>
 
     <section class="view active" id="view-overview">
-      <div class="page-head"><div><span class="eyebrow">Sunday, Sep 20</span><h1>Good afternoon, TJ.</h1><p>Here’s what CallerCore has handled for Alpine Roofing.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
+      <div class="page-head"><div><span class="eyebrow">Sunday, Sep 20</span><h1>Good afternoon, TJ.</h1><p>Here’s what CallerCore has handled for <span data-business-name>Alpine Roofing</span>.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
       <div class="metric-grid">
         <article><span>Calls answered</span><strong>142</strong><small>↑ 18% this month</small></article>
         <article><span>New leads</span><strong>31</strong><small>↑ 11% this month</small></article>
