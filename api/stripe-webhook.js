@@ -10,6 +10,11 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
 const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'mail.callercore.com';
 const SITE_URL = process.env.SITE_URL || 'https://www.callercore.com';
+const PLAN_BY_PAYMENT_LINK = {
+  'plink_1To9m8F0BXlPng7VihxbmKPJ': 'Starter',
+  'plink_1To9pBF0BXlPng7VdkdBhHcx': 'Growth',
+  'plink_1To9qJF0BXlPng7VXXwBIHHf': 'Pro',
+};
 
 function getRawBody(req) {
   return new Promise((resolve, reject) => {
@@ -91,8 +96,8 @@ module.exports = async function handler(req, res) {
   try { event = JSON.parse(rawBody); }
   catch (_) { return res.status(400).json({ error: 'Invalid payload' }); }
 
-  if (event.type !== 'checkout.session.completed') {
-    // Ignore everything else — this endpoint only cares about completed payments.
+  const checkoutEvent = event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded';
+  if (!checkoutEvent) {
     return res.status(200).json({ received: true, ignored: true });
   }
 
@@ -102,6 +107,10 @@ module.exports = async function handler(req, res) {
   }
 
   const session = event.data.object;
+  if (event.type === 'checkout.session.completed' && !['paid','no_payment_required'].includes(session.payment_status)) {
+    return res.status(200).json({ received: true, pending_payment: true });
+  }
+  const paidPlan = PLAN_BY_PAYMENT_LINK[session.payment_link] || null;
   const leadId = session.client_reference_id;
   const customerEmail = session.customer_details && session.customer_details.email;
 
@@ -119,9 +128,12 @@ module.exports = async function handler(req, res) {
       email: customerEmail || '',
       phone: (session.customer_details && session.customer_details.phone) || '',
       industry: '',
-      plan: 'Growth',
+      plan: paidPlan || 'Growth',
     };
   }
+
+  // Trust the product actually paid for over any client-submitted plan label.
+  if (paidPlan) lead.plan = paidPlan;
 
   const token = crypto.randomBytes(24).toString('hex');
 
