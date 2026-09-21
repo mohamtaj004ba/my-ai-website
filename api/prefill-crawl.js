@@ -27,7 +27,7 @@ module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');const origin=req.headers.origin||'';
   if(req.method==='OPTIONS'){if(!isAllowedOrigin(req))return res.status(403).end();res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type');return res.status(200).end()}
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});if(!isAllowedOrigin(req))return res.status(403).json({error:'Forbidden'});res.setHeader('Access-Control-Allow-Origin',origin);
-  const rl=await rateLimit({scope:'prefill-crawl',identifier:requestIp(req),limit:8,windowSeconds:600});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ok:false,reason:'rate_limited'})}if(!process.env.ANTHROPIC_API_KEY)return res.status(503).json({ok:false,reason:'assistant_unavailable'});
+  const rl=await rateLimit({scope:'prefill-crawl',identifier:requestIp(req),limit:8,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ok:false,reason:'rate_limited'})}if(!process.env.ANTHROPIC_API_KEY)return res.status(503).json({ok:false,reason:'assistant_unavailable'});
   const {url,token}=req.body||{};if(!url||typeof url!=='string')return res.status(400).json({error:'Missing url'});if(url.length>500)return res.status(400).json({error:'URL too long'});
   const normalized=/^https?:\/\//i.test(url)?url:'https://'+url;
   try{
