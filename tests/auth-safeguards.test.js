@@ -24,3 +24,9 @@ test('session cookies are HttpOnly SameSite and Secure in production',()=>{
   assert.match(auth,/NODE_ENV==='production'\?'\; Secure'/);
   assert.match(auth,/SESSION_TTL=60\*60\*24\*7/);
 });
+
+test('pending deletion disables customer magic-link access',()=>{
+  assert.match(account,/member&&member\.workspaceId&&!member\.disabled/);
+  assert.match(account,/loginWs&&loginWs\.status==='pending_deletion'/);
+  assert.match(account,/member\.disabled\|\|!loginWs\|\|loginWs\.status==='pending_deletion'/);
+});
