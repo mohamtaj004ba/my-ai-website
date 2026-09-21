@@ -535,7 +535,7 @@ document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebho
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},filter:'all',search:''},currentInboxItem=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null;
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -644,18 +644,36 @@ async function updateWebsiteProspect(id,stage){
   renderWebsiteAnalytics();renderAdminFleet();
 }
 
-async function loadAdminInbox(){
-  const refresh=document.getElementById('inboxRefreshButton');if(refresh){refresh.disabled=true;refresh.textContent='Refreshing…'}
+async function loadAdminInbox({silent=false}={}){
+  if(adminInboxData.loading)return;
+  adminInboxData.loading=true;
+  const refresh=document.getElementById('inboxRefreshButton'),auto=document.getElementById('inboxAutoStatus');
+  if(refresh&&!silent){refresh.disabled=true;refresh.textContent='Refreshing…'}
+  if(auto)auto.textContent='Syncing…';
   try{
     const sr=await fetch('/api/account?action=admin-gmail-status',{headers:{Accept:'application/json'},cache:'no-store'});
     if(sr.ok)adminInboxData.gmailStatus=await sr.json();
     if(adminInboxData.gmailStatus.connected){
-      const gr=await fetch('/api/account?action=admin-gmail-inbox&limit=35',{headers:{Accept:'application/json'},cache:'no-store'});
+      const [gr,ar]=await Promise.all([
+        fetch('/api/account?action=admin-gmail-inbox&limit=35',{headers:{Accept:'application/json'},cache:'no-store'}),
+        fetch('/api/account?action=admin-gmail-aliases',{headers:{Accept:'application/json'},cache:'no-store'})
+      ]);
       if(gr.ok)adminInboxData.gmail=await gr.json();else{const d=await gr.json().catch(()=>({}));adminInboxData.gmail={threads:[],analytics:{},error:d.error||'Gmail sync failed'}}
-    }else adminInboxData.gmail={threads:[],analytics:{}};
+      if(ar.ok)adminInboxData.aliases=(await ar.json()).aliases||[];
+    }else{adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[]}
+    adminInboxData.lastSync=Date.now();
   }catch(e){console.error('Inbox load failed',e)}
+  adminInboxData.loading=false;
   if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}
+  if(auto)auto.textContent='Auto-sync · 60s'+(adminInboxData.lastSync?' · '+new Date(adminInboxData.lastSync).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'');
   renderAdminInbox();
+  if(currentInboxItem){
+    if(currentInboxItem.kind==='gmail'){
+      const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===currentInboxItem.id);
+      if(t)currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]};
+    }
+    renderInboxThread();
+  }
 }
 function websiteInboxItems(){
   return (adminWebsiteData.prospects||[]).filter(p=>p.message||['contact','chatbot'].includes(p.source)).map(p=>({
@@ -673,11 +691,12 @@ function renderAdminInbox(){
   const st=adminInboxData.gmailStatus||{},ga=adminInboxData.gmail?.analytics||{},website=websiteInboxItems(),gmail=gmailInboxItems(),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   set('inboxWebsiteCount',website.length);set('inboxGmailUnread',ga.unread||0);set('inboxGmailAccount',st.connected?(st.gmailEmail||'Connected'):(st.configured?'Not connected':'OAuth setup required'));
   set('inboxResponseTime',ga.avgFirstResponseSeconds?formatDuration(ga.avgFirstResponseSeconds):'—');set('inboxThreadCount',website.length+gmail.length);
-  const connect=document.getElementById('gmailConnectButton'),disconnect=document.getElementById('gmailDisconnectButton'),title=document.getElementById('gmailStatusTitle'),copy=document.getElementById('gmailStatusCopy');
+  const connect=document.getElementById('gmailConnectButton'),disconnect=document.getElementById('gmailDisconnectButton'),title=document.getElementById('gmailStatusTitle'),copy=document.getElementById('gmailStatusCopy'),aliasList=document.getElementById('gmailAliasList');
   if(connect){connect.hidden=!!st.connected;connect.textContent=st.configured?'Connect Gmail':'Set up Gmail OAuth'}
   if(disconnect)disconnect.hidden=!st.connected;
   if(title)title.textContent=st.connected?'Gmail connected':st.configured?'Gmail ready to connect':'Gmail OAuth setup required';
   if(copy)copy.textContent=st.connected?('Connected as '+(st.gmailEmail||'Gmail')+'. '+Number(ga.inbound||0)+' received · '+Number(ga.outbound||0)+' sent in the loaded 30-day view. Threads remain in Google and sync into this inbox.'):st.configured?'Authorize the Gmail account you want CallerCore Admin to use.':'Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY in Vercel before connecting.';
+  if(aliasList)aliasList.innerHTML=(adminInboxData.aliases||[]).map(a=>'<span class="gmail-alias-chip '+(a.inboundSeen?'ok':'warn')+'"><b>'+esc(a.email)+'</b><small>'+(a.isPrimary?'Primary':(a.verificationStatus==='accepted'?'Send as verified':'Pending'))+' · '+(a.inboundSeen?'Inbound seen':'No inbound seen yet')+'</small></span>').join('');
   let items=[...website,...gmail].sort((a,b)=>b.at-a.at);
   if(adminInboxData.filter!=='all')items=items.filter(x=>x.kind===adminInboxData.filter);
   const q=String(adminInboxData.search||'').toLowerCase();if(q)items=items.filter(x=>(x.title+' '+x.subject+' '+x.preview).toLowerCase().includes(q));
@@ -702,6 +721,22 @@ async function openInboxItem(kind,id){
   }
   renderInboxThread();renderAdminInbox();
 }
+function preferredInboxFrom(){
+  const aliases=adminInboxData.aliases||[];if(!aliases.length)return '';
+  if(currentInboxItem?.kind==='gmail'){
+    const inbound=[...(currentInboxItem.messages||[])].reverse().find(m=>m.direction==='inbound');
+    const sentTo=String(inbound?.to||'').toLowerCase();
+    const match=aliases.find(a=>a.email===sentTo&&(a.isPrimary||a.verificationStatus==='accepted'));if(match)return match.email;
+  }
+  const support=aliases.find(a=>a.email==='support@callercore.com'&&(a.isPrimary||a.verificationStatus==='accepted'));if(support)return support.email;
+  return (aliases.find(a=>a.isDefault&&(a.isPrimary||a.verificationStatus==='accepted'))||aliases.find(a=>a.isPrimary)||aliases.find(a=>a.verificationStatus==='accepted')||{}).email||'';
+}
+function renderInboxFromOptions(){
+  const sel=document.getElementById('inboxFromSelect'),hint=document.getElementById('inboxFromHint');if(!sel)return;
+  const aliases=(adminInboxData.aliases||[]).filter(a=>a.isPrimary||a.verificationStatus==='accepted'),preferred=preferredInboxFrom(),current=sel.value;
+  sel.innerHTML=aliases.map(a=>'<option value="'+esc(a.email)+'" '+((current||preferred)===a.email?'selected':'')+'>'+esc((a.displayName?a.displayName+' · ':'')+a.email)+'</option>').join('');
+  if(hint)hint.textContent=aliases.length>1?'Choose which CallerCore address the recipient sees.':(aliases[0]?.email||'');
+}
 function renderInboxThread(){
   const ph=document.getElementById('inboxThreadPlaceholder'),wrap=document.getElementById('inboxThread');if(!ph||!wrap)return;
   if(!currentInboxItem){ph.hidden=false;wrap.hidden=true;return}
@@ -717,15 +752,16 @@ function renderInboxThread(){
   if(box)box.innerHTML=messages.map(m=>'<div class="inbox-message '+(m.direction==='outbound'?'outbound':'inbound')+'"><div><b>'+(m.direction==='outbound'?'You':esc(m.from||p.email||'Visitor'))+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+' · '+esc(m.channel||currentInboxItem.kind)+'</small></div><p>'+esc(m.body||m.snippet||'')+'</p></div>').join('');
   if(box)box.scrollTop=box.scrollHeight;
   const reply=document.getElementById('inboxReplyText');if(reply)reply.value='';
+  renderInboxFromOptions();
   const status=document.getElementById('inboxReplyStatus');if(status)status.textContent='';
 }
 async function sendInboxReply(e){
   e?.preventDefault();if(!currentInboxItem)return;
-  const field=document.getElementById('inboxReplyText'),status=document.getElementById('inboxReplyStatus'),btn=document.querySelector('#inboxReplyForm button[type="submit"]'),message=String(field?.value||'').trim();
+  const field=document.getElementById('inboxReplyText'),status=document.getElementById('inboxReplyStatus'),btn=document.querySelector('#inboxReplyForm button[type="submit"]'),message=String(field?.value||'').trim(),from=String(document.getElementById('inboxFromSelect')?.value||'').trim().toLowerCase();
   if(!message)return;if(btn){btn.disabled=true;btn.textContent='Sending…'}if(status)status.textContent='';
   try{
     if(currentInboxItem.kind==='website'){
-      const r=await fetch('/api/account?action=admin-website-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentInboxItem.id,message})}),data=await r.json().catch(()=>({}));
+      const r=await fetch('/api/account?action=admin-website-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentInboxItem.id,message,from})}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not send reply');
       currentInboxItem.messages.push(data.message);currentInboxItem.prospect=data.prospect;
       const p=(adminWebsiteData.prospects||[]).find(x=>x.id===currentInboxItem.id);if(p)Object.assign(p,data.prospect);
@@ -734,7 +770,7 @@ async function sendInboxReply(e){
       if(!to)throw new Error('No Gmail recipient found');
       const subject=/^re:/i.test(currentInboxItem.thread.subject||'')?(currentInboxItem.thread.subject):'Re: '+(currentInboxItem.thread.subject||'CallerCore');
       const refs=msgs.map(m=>m.messageId).filter(Boolean).join(' ');
-      const r=await fetch('/api/account?action=admin-gmail-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,subject,body:message,threadId:currentInboxItem.id,inReplyTo:last.messageId||'',references:refs})}),data=await r.json().catch(()=>({}));
+      const r=await fetch('/api/account?action=admin-gmail-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,subject,body:message,from,threadId:currentInboxItem.id,inReplyTo:last.messageId||'',references:refs})}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not send Gmail reply');
       await loadAdminInbox();
       const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===(data.threadId||currentInboxItem.id));if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]}}
@@ -751,12 +787,18 @@ async function disconnectGmailAdmin(){
   if(!confirm('Disconnect Gmail from CallerCore Admin? No messages will be deleted from Gmail.'))return;
   const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST'});if(!r.ok)return alert('Could not disconnect Gmail.');currentInboxItem=null;await loadAdminInbox();renderInboxThread();
 }
-document.getElementById('inboxRefreshButton')?.addEventListener('click',loadAdminInbox);
+document.getElementById('inboxRefreshButton')?.addEventListener('click',()=>loadAdminInbox({silent:false}));
 document.getElementById('gmailConnectButton')?.addEventListener('click',connectGmail);
 document.getElementById('gmailDisconnectButton')?.addEventListener('click',disconnectGmailAdmin);
 document.getElementById('inboxReplyForm')?.addEventListener('submit',sendInboxReply);
 document.getElementById('inboxSearch')?.addEventListener('input',e=>{adminInboxData.search=e.target.value||'';renderAdminInbox()});
 document.querySelectorAll('[data-inbox-filter]').forEach(b=>b.addEventListener('click',()=>{adminInboxData.filter=b.dataset.inboxFilter;renderAdminInbox()}));
+setInterval(()=>{
+  if(document.body.dataset.dashboard!=='admin'||document.hidden)return;
+  const view=document.getElementById('view-inbox');
+  if(view?.classList.contains('active'))loadAdminInbox({silent:true});
+},60000);
+
 
 function renderAdminSupport(){
   const tickets=adminSupportData||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
