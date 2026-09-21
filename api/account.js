@@ -226,7 +226,10 @@ async function adminClient(req,res){
 }
 
 async function requestLogin(req,res){
-  const email=cleanEmail((req.body||{}).email);
+  const body=req.body||{};
+  const email=cleanEmail(body.email);
+  const requestedNext=String(body.next||'');
+  const next=requestedNext==='/admin-dashboard'||requestedNext==='/dashboard'?requestedNext:'';
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(200).json({ok:true});
   const ip=String(req.headers['x-forwarded-for']||'unknown').split(',')[0].trim();
   const bucket='auth:rate:'+crypto.createHash('sha256').update(ip).digest('hex');
@@ -235,7 +238,7 @@ async function requestLogin(req,res){
   const member=await kv.get('user:email:'+email);
   if(member&&member.workspaceId){
     const token=crypto.randomBytes(32).toString('hex');
-    await kv.set('login:'+token,{email,workspaceId:member.workspaceId,role:member.role||'owner'},{ex:15*60});
+    await kv.set('login:'+token,{email,workspaceId:member.workspaceId,role:member.role||'owner',next},{ex:15*60});
     const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
     try{
       await sendMail({
@@ -256,7 +259,8 @@ async function verify(req,res){
   if(!record||!record.workspaceId)return res.redirect(302,'/login?error=expired');
   await kv.del(key);
   await createSession(res,{email:record.email,workspaceId:record.workspaceId,role:record.role||'owner'});
-  return res.redirect(302,'/dashboard');
+  const destination=record.next||((record.role||'owner')==='admin'?'/admin-dashboard':'/dashboard');
+  return res.redirect(302,destination);
 }
 
 async function session(req,res){
