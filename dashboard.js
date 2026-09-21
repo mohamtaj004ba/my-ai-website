@@ -14,7 +14,7 @@ const params=new URLSearchParams(location.search);
 const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
 let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
 let sessionWorkspace=null;
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[];
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',reason:'Roof replacement estimate',duration:'4:32',outcome:'Booked',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and booked an inspection for Tuesday at 10:30 AM.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can help get an inspection scheduled. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -44,6 +44,8 @@ const DEMO_AUTOMATIONS=[
 {id:'auto2',name:'Hot lead team alert',trigger:'qualified_lead',action:'notify_team',enabled:true},
 {id:'auto3',name:'Appointment confirmation',trigger:'appointment_booked',action:'send_confirmation',enabled:true}
 ];
+const DEMO_SETTINGS={businessName:'Alpine Roofing',primaryEmail:'owner@alpineroofing.com',timezone:'America/Los_Angeles',notificationEmail:'owner@alpineroofing.com',smsAlerts:true,emailAlerts:true};
+const DEMO_INTEGRATIONS={googleCalendar:true,stripe:true,webhookUrl:'',apiAccess:false};
 const LEAD_STAGES=['New','Contacted','Qualified','Appointment','Won','Lost'];
 function esc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 
@@ -69,7 +71,7 @@ async function bootstrapClient(){
 async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
 
 
-function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();}
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
 
@@ -91,14 +93,19 @@ async function loadOperations(){
     conversationsData=DEMO_CONVERSATIONS.map(x=>({...x}));appointmentsData=DEMO_APPOINTMENTS.map(x=>({...x}));
     agentData={...DEMO_AGENT,qualificationQuestions:[...DEMO_AGENT.qualificationQuestions]};
     automationsData=DEMO_AUTOMATIONS.map(x=>({...x}));
-    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();return;
+    settingsData={...DEMO_SETTINGS};integrationsData={...DEMO_INTEGRATIONS,apiAccess:has('apiAccess')};
+    analyticsData=buildLocalAnalytics();
+    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderAnalytics();renderIntegrations();renderSettings();return;
   }
   try{
     const jobs=[
       fetch('/api/account?action=calls',{headers:{Accept:'application/json'},cache:'no-store'}),
       fetch('/api/account?action=leads',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=agent',{headers:{Accept:'application/json'},cache:'no-store'})
+      fetch('/api/account?action=agent',{headers:{Accept:'application/json'},cache:'no-store'}),
+      fetch('/api/account?action=settings',{headers:{Accept:'application/json'},cache:'no-store'}),
+      fetch('/api/account?action=integrations',{headers:{Accept:'application/json'},cache:'no-store'})
     ];
+    if(has('advancedAnalytics'))jobs.push(fetch('/api/account?action=analytics',{headers:{Accept:'application/json'},cache:'no-store'}));
     if(has('unifiedInbox'))jobs.push(fetch('/api/account?action=conversations',{headers:{Accept:'application/json'},cache:'no-store'}));
     if(has('appointments'))jobs.push(fetch('/api/account?action=appointments',{headers:{Accept:'application/json'},cache:'no-store'}));
     if(has('automations'))jobs.push(fetch('/api/account?action=automations',{headers:{Accept:'application/json'},cache:'no-store'}));
@@ -106,7 +113,10 @@ async function loadOperations(){
     if(results[0].ok)callsData=(await results[0].json()).calls||[];
     if(results[1].ok)leadsData=(await results[1].json()).leads||[];
     if(results[2].ok)agentData=(await results[2].json()).agent||null;
-    let idx=3;
+    if(results[3].ok)settingsData=(await results[3].json()).settings||null;
+    if(results[4].ok)integrationsData=(await results[4].json()).integrations||null;
+    let idx=5;
+    if(has('advancedAnalytics')){if(results[idx].ok)analyticsData=(await results[idx].json()).analytics||null;idx++}
     if(has('unifiedInbox')){if(results[idx].ok)conversationsData=(await results[idx].json()).conversations||[];idx++}
     if(has('appointments')){if(results[idx].ok)appointmentsData=(await results[idx].json()).appointments||[];idx++}
     if(has('automations')){if(results[idx].ok)automationsData=(await results[idx].json()).automations||[]}
@@ -188,9 +198,13 @@ function renderEntitledApps(){
   const aug=document.getElementById('automationGate'),aua=document.getElementById('automationApp'),newBtn=document.getElementById('newAutomationButton');
   if(aug&&aua){aug.hidden=has('automations');aua.hidden=!has('automations')}
   if(newBtn)newBtn.hidden=!has('automations');
+  const ang=document.getElementById('analyticsGate'),ana=document.getElementById('analyticsApp');
+  if(ang&&ana){ang.hidden=has('advancedAnalytics');ana.hidden=!has('advancedAnalytics')}
   if(has('unifiedInbox'))renderConversations();
   if(has('appointments'))renderAppointments();
   if(has('automations'))renderAutomations();
+  if(has('advancedAnalytics'))renderAnalytics();
+  renderIntegrations();
 }
 function renderConversations(){
   if(!has('unifiedInbox'))return;
@@ -309,6 +323,59 @@ document.querySelectorAll('[data-preset]').forEach(btn=>btn.addEventListener('cl
 document.getElementById('saveAutomationButton')?.addEventListener('click',saveAutomation);
 document.querySelector('.automation-close')?.addEventListener('click',closeAutomation);
 document.getElementById('automationModal')?.addEventListener('click',e=>{if(e.target.id==='automationModal')closeAutomation()});
+
+
+function buildLocalAnalytics(){
+  const qualified=callsData.filter(x=>/qualified|booked/i.test(String(x.outcome||''))).length;
+  const won=leadsData.filter(x=>x.stage==='Won').length;
+  const pipeline=leadsData.reduce((s,x)=>s+Number(x.value||0),0);
+  const reasons={};callsData.forEach(x=>{const k=x.reason||'Other';reasons[k]=(reasons[k]||0)+1});
+  return {calls:callsData.length,leads:leadsData.length,appointments:appointmentsData.length,qualified,won,pipeline,conversion:leadsData.length?Math.round(won/leadsData.length*100):0,callReasons:Object.entries(reasons).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value).slice(0,6)};
+}
+function renderAnalytics(){
+  if(!has('advancedAnalytics'))return;
+  const a=analyticsData||buildLocalAnalytics();if(!a)return;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  set('analyticsCalls',a.calls||0);set('analyticsQualified',a.qualified||0);set('analyticsConversion',(a.conversion||0)+'%');set('analyticsPipeline',money(a.pipeline||0));
+  set('analyticsLeads',a.leads||0);set('analyticsAppointments',a.appointments||0);set('analyticsWon',a.won||0);
+  const wrap=document.getElementById('callReasonBars');if(!wrap)return;
+  const rows=Array.isArray(a.callReasons)?a.callReasons:[],max=Math.max(1,...rows.map(x=>Number(x.value||0)));
+  wrap.innerHTML=rows.map(x=>'<div class="bar-row"><span>'+esc(x.label)+'</span><b>'+Number(x.value||0)+'</b><div class="bar-track"><i style="width:'+Math.round(Number(x.value||0)/max*100)+'%"></i></div></div>').join('')||'<span class="muted">No call data yet.</span>';
+}
+function renderIntegrations(){
+  if(!integrationsData)integrationsData={googleCalendar:false,stripe:!!sessionWorkspace?.stripe?.customerLinked,webhookUrl:'',apiAccess:has('apiAccess')};
+  const g=document.getElementById('googleCalendarStatus');if(g){g.textContent=integrationsData.googleCalendar?'Connected':'Not connected';g.className='tag '+(integrationsData.googleCalendar?'green':'amber')}
+  const s=document.getElementById('stripeIntegrationStatus');if(s){s.textContent=integrationsData.stripe?'Linked':'Not linked';s.className='tag '+(integrationsData.stripe?'green':'amber')}
+  const panel=document.getElementById('webhookPanel');if(panel)panel.hidden=!has('apiAccess');
+  const url=document.getElementById('webhookUrl');if(url)url.value=integrationsData.webhookUrl||'';
+}
+async function saveWebhook(){
+  if(!has('apiAccess'))return openModal('Pro');
+  const webhookUrl=document.getElementById('webhookUrl')?.value.trim()||'';
+  if(demoMode){integrationsData={...(integrationsData||{}),webhookUrl};return}
+  const r=await fetch('/api/account?action=integrations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl})});
+  if(!r.ok){alert('Could not save webhook. Make sure it uses HTTPS.');return}
+  integrationsData={...(integrationsData||{}),...((await r.json()).integrations||{})};renderIntegrations();
+}
+function renderSettings(){
+  if(!settingsData)return;
+  const put=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||''};
+  put('settingsBusinessName',settingsData.businessName);put('settingsPrimaryEmail',settingsData.primaryEmail);put('settingsTimezone',settingsData.timezone);put('settingsNotificationEmail',settingsData.notificationEmail);
+  const e=document.getElementById('settingsEmailAlerts'),s=document.getElementById('settingsSmsAlerts');if(e)e.checked=settingsData.emailAlerts!==false;if(s)s.checked=settingsData.smsAlerts!==false;
+}
+async function saveSettings(){
+  const payload={businessName:document.getElementById('settingsBusinessName')?.value||'',primaryEmail:document.getElementById('settingsPrimaryEmail')?.value||'',timezone:document.getElementById('settingsTimezone')?.value||'America/Los_Angeles',notificationEmail:document.getElementById('settingsNotificationEmail')?.value||'',emailAlerts:!!document.getElementById('settingsEmailAlerts')?.checked,smsAlerts:!!document.getElementById('settingsSmsAlerts')?.checked};
+  if(demoMode)settingsData={...payload};
+  else{
+    const r=await fetch('/api/account?action=settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!r.ok){alert('Could not save workspace settings.');return}
+    settingsData=(await r.json()).settings||payload;
+    if(settingsData.businessName){document.getElementById('workspaceName').textContent=settingsData.businessName;document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=settingsData.businessName)}
+  }
+  const tag=document.getElementById('settingsSaveStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1600)}
+}
+document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebhook);
+document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 
 const modal=document.getElementById('upgradeModal');function openModal(target){if(!modal)return;const t=PLAN_DATA[target];document.getElementById('modalTitle').textContent=(t.price>PLAN_DATA[currentPlan].price?'Upgrade to ':'Switch to ')+target;document.getElementById('modalCopy').textContent=target==='Pro'?'Unlock the full CallerCore platform, including API access, advanced integrations and custom workflows.':'Unlock appointment booking, automations, the unified inbox and advanced analytics.';const fs=Object.entries(FEATURE_INFO).filter(([k,v])=>target==='Pro'||v.tier==='Growth').slice(0,target==='Pro'?6:4);document.getElementById('modalFeatures').innerHTML=fs.map(([k,v])=>'<span>✓ '+v.title+'</span>').join('');document.getElementById('modalCta').textContent='Continue with Stripe · $'+t.price+'/mo';modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
 function bindUpgradeButtons(){document.querySelectorAll('[data-upgrade]').forEach(b=>{b.onclick=()=>openModal(b.dataset.upgrade)})}
