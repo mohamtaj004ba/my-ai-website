@@ -17,7 +17,7 @@ module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
   if(!allowed(req))return res.status(403).json({error:'Forbidden'});
-  const rl=await rateLimit({scope:'contact',identifier:requestIp(req),limit:5,windowSeconds:600});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests. Please try again later.'})}
+  const rl=await rateLimit({scope:'contact',identifier:requestIp(req),limit:5,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests. Please try again later.'})}
 
   const name=clean(req.body?.name,120),business=clean(req.body?.business,160),email=clean(req.body?.email,200),phone=clean(req.body?.phone,80),category=clean(req.body?.category,80),message=clean(req.body?.message,4000),visitorId=clean(req.body?.visitorId,120),sessionId=clean(req.body?.sessionId,120),utmSource=clean(req.body?.utmSource,120),utmMedium=clean(req.body?.utmMedium,120),utmCampaign=clean(req.body?.utmCampaign,160);
   if(!name||!email||!message||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Please complete the required fields'});
