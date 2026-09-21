@@ -14,6 +14,31 @@ function requestOrigin(req){
   return SITE_URL;
 }
 
+async function bootstrapPreview(req,res){
+  const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+  if(!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
+  const configured=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||'');
+  const supplied=String(req.headers['x-bootstrap-secret']||'');
+  if(!configured||!supplied||supplied!==configured)return res.status(403).json({error:'Forbidden'});
+  const email=cleanEmail((req.body||{}).email);
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Valid email required'});
+  const existing=await kv.get('user:email:'+email);
+  if(existing&&existing.workspaceId)return res.status(409).json({error:'User already provisioned',workspaceId:existing.workspaceId});
+  const workspaceId=crypto.randomUUID();
+  const name=String((req.body||{}).businessName||'CallerCore Test Workspace').trim().slice(0,160);
+  const plan=['Starter','Growth','Pro'].includes((req.body||{}).plan)?(req.body||{}).plan:'Pro';
+  const now=Date.now();
+  const workspace={
+    id:workspaceId,name,ownerName:'TJ',ownerEmail:email,phone:'',industry:'Testing',
+    plan,status:'active',subscriptionStatus:'active',
+    stripeCustomerId:null,stripeSubscriptionId:null,stripeCheckoutSessionId:null,
+    usage:{minutes:0},createdAt:now,updatedAt:now
+  };
+  await kv.set('workspace:'+workspaceId,workspace);
+  await kv.set('user:email:'+email,{workspaceId,role:'owner',email});
+  return res.status(201).json({ok:true,workspaceId,email,plan});
+}
+
 async function requestLogin(req,res){
   const email=cleanEmail((req.body||{}).email);
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(200).json({ok:true});
@@ -276,6 +301,7 @@ async function logout(req,res){
 module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   const action=String((req.query||{}).action||'');
+  if(action==='bootstrap-preview'&&req.method==='POST')return bootstrapPreview(req,res);
   if(action==='request'&&req.method==='POST')return requestLogin(req,res);
   if(action==='verify'&&req.method==='GET')return verify(req,res);
   if(action==='session'&&req.method==='GET')return session(req,res);
