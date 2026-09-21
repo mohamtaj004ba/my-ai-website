@@ -28,8 +28,10 @@ Destructive automated deletion must not be enabled until these periods are appro
 | Authentication sessions | 7 days | Expire automatically | Current session TTL. |
 | Magic-link login tokens | 15 minutes / one-time | Expire automatically | Current implementation. |
 | Onboarding secure tokens | 30–90 days depending on stage | Expire automatically | Current implementation already uses bounded TTLs. |
-| Website analytics sessions | 90 days | Expire automatically | Current implementation. |
-| Raw first-party website events | Rolling bounded store; target 90 days | Delete as rolling window advances | Current store is size-bounded; convert to time-bounded retention before scale. |
+| Website analytics sessions | 180 days | Expire automatically | Retain enough raw session history for recent-funnel analysis while limiting long-lived visitor-level data. |
+| Raw first-party website events | 180 days | Delete as rolling window advances | Convert current size-bounded storage to explicit time-bounded retention. |
+| Aggregated/anonymized analytics | Indefinite | Retain indefinitely | No direct personal identifiers. Use for year-over-year, cohort, conversion, usage and business-performance analysis. |
+| Monthly KPI snapshots | Indefinite | Retain indefinitely | Preserve historical metrics even after underlying raw events expire. |
 | Unconverted website prospects / contact-form leads | 12 months from last meaningful interaction | Delete/de-identify after 12 months unless consent/customer relationship continues | Converted prospects follow customer/lead retention instead. |
 | Gmail message cache | 24 hours target | Expire automatically; Gmail remains source of truth | OAuth tokens are deleted when integration is disconnected; Gmail messages are not deleted from Google by CallerCore. |
 | Gmail OAuth credentials | While connected | Delete immediately on disconnect | Encrypted at rest. |
@@ -64,6 +66,7 @@ CallerCore must separately delete or configure retention at providers that store
 
 ### Before launch
 - Approve the retention periods in this document.
+- Establish permanent monthly analytics rollups before relying on raw-event expiration.
 - Add these periods to the public Privacy Policy in plain language.
 - Ensure Vapi/voice provider recording retention matches the approved 90-day recording period or is shorter.
 - Ensure SMS/message provider retention does not silently exceed CallerCore policy where configuration is available.
@@ -72,7 +75,9 @@ CallerCore must separately delete or configure retention at providers that store
 
 ### Shortly after launch
 - Add scheduled retention cleanup for calls, transcripts, messages, appointments, stale prospects and audit/support data.
-- Convert raw site-event storage from size-bounded-only to an explicit time-bounded window.
+- Convert raw site-event storage from size-bounded-only to an explicit 180-day time-bounded window.
+- Create durable monthly KPI rollups (for example `analytics:monthly:YYYY-MM`) for visitors, leads, conversion rate, acquisition sources, plan mix, churn, MRR/ARR, calls, minutes, appointments, call outcomes, transfers, payment failures and other business metrics.
+- Keep only aggregated/anonymized values in permanent analytics history; do not carry visitor IDs, caller phone numbers, transcripts, message bodies or other direct identifiers into indefinite rollups.
 - Add provider deletion reconciliation and a retention-cleanup audit event.
 - Add data-hold metadata and expiry to prevent accidental deletion during legitimate holds.
 - Add a periodic retention report in the admin dashboard.
@@ -80,3 +85,20 @@ CallerCore must separately delete or configure retention at providers that store
 ## Public-policy language
 
 Do not promise that every record is deleted immediately when a customer cancels. Cancellation and deletion are different actions. The public policy should describe category-specific retention, the 30-day workspace recovery window, exceptions for billing/contracts/security/opt-out suppression, and the ability to request deletion at support@callercore.com.
+
+## Approved analytics retention model
+
+CallerCore may retain aggregated or anonymized business-performance information indefinitely where it no longer identifies an individual caller, website visitor, lead, or customer contact.
+
+This includes historical totals, ratios, cohorts and trend data used for:
+- month-over-month and year-over-year comparisons;
+- revenue, MRR/ARR and churn trends;
+- plan mix and customer-cohort performance;
+- website traffic and conversion rates;
+- lead generation and acquisition-source performance;
+- aggregate call volume, duration and outcomes;
+- aggregate appointment and transfer rates;
+- aggregate AI containment, escalation and operational performance;
+- aggregate support and billing-failure trends.
+
+Permanent analytics rollups must exclude direct identifiers and raw content.
