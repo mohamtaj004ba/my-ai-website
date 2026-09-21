@@ -622,6 +622,20 @@ async function updateLead(req,res){
   return res.status(200).json({ok:true,updated});
 }
 
+async function billingPortal(req,res){
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(!ws.stripeCustomerId)return res.status(409).json({error:'No Stripe customer is linked to this workspace'});
+  if(!process.env.STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe billing is not configured'});
+  try{
+    const body=new URLSearchParams({customer:String(ws.stripeCustomerId),return_url:requestOrigin(req)+'/dashboard'});
+    const r=await fetch('https://api.stripe.com/v1/billing_portal/sessions',{method:'POST',headers:{Authorization:'Bearer '+process.env.STRIPE_SECRET_KEY,'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
+    const data=await r.json();
+    if(!r.ok||!data.url)return res.status(502).json({error:data.error?.message||'Could not create Stripe billing portal session'});
+    return res.status(200).json({url:data.url});
+  }catch(err){console.error('billing portal failed',err);return res.status(502).json({error:'Could not open Stripe billing portal'})}
+}
+
 async function logout(req,res){
   const token=parseCookies(req).cc_session;if(token)await kv.del('session:'+token);
   clearSessionCookie(res);return res.status(200).json({ok:true});
@@ -671,6 +685,7 @@ module.exports=async function handler(req,res){
   if(action==='lead-update'&&req.method==='POST')return updateLead(req,res);
   if(action==='support-tickets'&&req.method==='GET')return supportTickets(req,res);
   if(action==='support-ticket-create'&&req.method==='POST')return createSupportTicket(req,res);
+  if(action==='billing-portal'&&req.method==='POST')return billingPortal(req,res);
   if(action==='logout'&&req.method==='POST')return logout(req,res);
   return res.status(404).json({error:'Unknown account action'});
 };
