@@ -1,4 +1,5 @@
 const https=require('https');
+const {safeError}=require('../lib/safe-log');
 const http=require('http');
 const {URL}=require('url');
 const dns=require('dns');
@@ -16,7 +17,7 @@ function decode(s=''){return s.replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').re
 function htmlToText(html){const ld=[...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map(m=>decode(m[1]).replace(/\s+/g,' ').slice(0,2500)).join(' ');const text=html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<!--[\s\S]*?-->/g,' ').replace(/<[^>]+>/g,' ');return decode(ld+' '+text).replace(/\s+/g,' ').trim().slice(0,9000)}
 function sameSite(a,b){const clean=h=>String(h||'').toLowerCase().replace(/^www\./,'');return clean(a)===clean(b)}
 function discoverLinks(html,baseUrl){const base=new URL(baseUrl),seen=new Map();for(const m of html.matchAll(/<a\b[^>]*href=["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi)){try{const u=new URL(decode(m[1]),base);if(!['http:','https:'].includes(u.protocol)||!sameSite(u.hostname,base.hostname))continue;u.hash='';const key=u.origin+u.pathname.replace(/\/+$/,'')+(u.search||'');if(key===base.origin+base.pathname.replace(/\/+$/,''))continue;const label=htmlToText(m[2]).slice(0,120).toLowerCase(),path=u.pathname.toLowerCase(),hay=path+' '+label;let score=0;for(const [word,weight] of [['service',10],['contact',10],['about',8],['faq',10],['question',8],['location',9],['hour',9],['book',7],['appointment',7],['team',5],['pricing',5]])if(hay.includes(word))score+=weight;if(/privacy|terms|login|account|blog|news|career|cart|checkout/i.test(hay))score-=20;if(score>0&&!seen.has(key))seen.set(key,{url:u.toString(),score,label})}catch(_){}}return [...seen.values()].sort((a,b)=>b.score-a.score).slice(0,MAX_PAGES-1)}
-async function crawlSite(url){const home=await fetchPage(url),root=new URL(home.url),pages=[{url:home.url,html:home.html}];for(const link of discoverLinks(home.html,home.url)){try{const page=await fetchPage(link.url);if(sameSite(new URL(page.url).hostname,root.hostname))pages.push(page)}catch(err){console.warn('Smart crawl skipped',link.url,err.message)}if(pages.length>=MAX_PAGES)break}return pages}
+async function crawlSite(url){const home=await fetchPage(url),root=new URL(home.url),pages=[{url:home.url,html:home.html}];for(const link of discoverLinks(home.html,home.url)){try{const page=await fetchPage(link.url);if(sameSite(new URL(page.url).hostname,root.hostname))pages.push(page)}catch(err){console.warn('Smart crawl skipped:',safeError(err))}if(pages.length>=MAX_PAGES)break}return pages}
 function callClaude(pageText){
   const system='Extract only facts explicitly stated in the supplied business website pages. Never guess or infer missing facts. Return raw JSON only with this exact shape: {"businessName":null,"phone":null,"email":null,"address":null,"servicesOffered":null,"serviceArea":null,"hours":null,"faqs":null}. servicesOffered should be a concise comma-separated list of explicitly advertised services. faqs should contain useful question-and-answer pairs only when the answer is explicitly supported by the website, formatted one pair per line as "Question — Answer". If a field is not clearly supported, return null.';
   const body=JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system,messages:[{role:'user',content:'Business website content:\n\n'+pageText}]});
@@ -39,5 +40,5 @@ module.exports=async function handler(req,res){
       if(record){record.intake={...(record.intake||{}),website:normalized};record.website=normalized;record.websiteScan={source:normalized,pagesScanned:pages.length,foundCount,scannedAt:Date.now(),pages:pages.map(p=>{try{return new URL(p.url).pathname||'/'}catch(_){return'/'}})};await kv.set(key,record,{ex:60*60*24*90})}
     }
     return res.status(200).json({ok:true,fields,source:normalized,pagesScanned:pages.length,foundCount});
-  }catch(err){console.error('Smart crawl failed:',err.message);return res.status(200).json({ok:false,reason:'crawl_failed'})}
+  }catch(err){console.error('Smart crawl failed:',safeError(err));return res.status(200).json({ok:false,reason:'crawl_failed'})}
 };
