@@ -22,5 +22,27 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
-      - name: Run critical-path tests
+      - name: Plans and entitlements
+        run: node --test tests/plans.test.js
+      - name: Business hours
+        run: node --test tests/business-hours.test.js
+      - name: Agreement snapshots
+        run: node --test tests/agreement.test.js
+      - name: Email templates
+        run: node --test tests/email-template.test.js
+      - name: Repository cleanliness
+        run: node --test tests/repository-cleanliness.test.js
+      - name: Security hygiene
+        run: node --test tests/security-hygiene.test.js
+      - name: Stripe structure
+        run: node --test tests/stripe-structure.test.js
+      - name: Admin safeguards
+        run: node --test tests/admin-safeguards.test.js
+      - name: UI structure
+        run: node --test tests/ui-structure.test.js
+      - name: Asset links
+        run: node --test tests/asset-links.test.js
+      - name: JavaScript syntax
+        run: node --test tests/syntax.test.js
+      - name: Full test suite
         run: npm test
