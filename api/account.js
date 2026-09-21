@@ -738,6 +738,7 @@ async function adminSystemHealth(req,res){
     {key:'stripe',name:'Stripe',status:process.env.STRIPE_SECRET_KEY?'configured':'not_configured',detail:process.env.STRIPE_SECRET_KEY?'Secret key available':'STRIPE_SECRET_KEY missing'},
     {key:'mailgun',name:'Mailgun',status:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'configured':'not_configured',detail:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'API credentials available':'Mailgun credentials incomplete'},
     {key:'gmail',name:'Gmail / Google OAuth',status:gmailConfigReady()?'configured':'not_configured',detail:gmailConfigReady()?'OAuth credentials + token encryption available':'GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or CALLERCORE_ENCRYPTION_KEY missing'},
+    {key:'onboarding-ai',name:'Smart Onboarding AI',status:process.env.ANTHROPIC_API_KEY?'configured':'not_configured',detail:process.env.ANTHROPIC_API_KEY?'Website extraction and agent-draft model available':'ANTHROPIC_API_KEY missing'},
     {key:'voice',name:'Voice provider',status:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'configured':'not_configured',detail:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'Voice API credentials available':'Voice API credentials not configured'}
   ];
   return res.status(200).json({services,checkedAt:Date.now()});
