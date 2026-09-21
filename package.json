@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "python3 -m http.server 8000",
     "build": "echo \"Static HTML site - no build needed\"",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "node --test tests/*.test.js",
+    "preflight": "npm test"
   },
   "dependencies": {
     "@vercel/analytics": "^1.1.1",
