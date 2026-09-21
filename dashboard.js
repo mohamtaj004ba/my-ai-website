@@ -1275,6 +1275,7 @@ async function viewAdminClient(){
 document.getElementById('adminSaveClientButton')?.addEventListener('click',saveAdminClient);
 document.getElementById('adminDeleteClientButton')?.addEventListener('click',deleteAdminClient);
 document.getElementById('adminViewClientButton')?.addEventListener('click',viewAdminClient);
+document.getElementById('adminExportClientButton')?.addEventListener('click',()=>{if(currentAdminClient)window.location.href='/api/account?action=admin-workspace-export&id='+encodeURIComponent(currentAdminClient.id)});
 
 
 const modal=document.getElementById('upgradeModal');
