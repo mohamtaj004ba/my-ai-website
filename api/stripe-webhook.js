@@ -60,12 +60,43 @@ module.exports=async function handler(req,res){
   if(!verifyStripeSignature(rawBody,req.headers['stripe-signature'],STRIPE_WEBHOOK_SECRET))return res.status(400).json({error:'Invalid signature'});
   let event;try{event=JSON.parse(rawBody)}catch(_){return res.status(400).json({error:'Invalid payload'})}
   const checkoutEvent=event.type==='checkout.session.completed'||event.type==='checkout.session.async_payment_succeeded';
+  const lifecycleEvent=['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.payment_failed','invoice.paid'].includes(event.type);
+
+  if(lifecycleEvent){
+    const obj=event.data&&event.data.object||{};
+    const subscriptionId=event.type.startsWith('customer.subscription.')?obj.id:obj.subscription;
+    const customerId=obj.customer;
+    let workspaceId=null;
+    if(subscriptionId)workspaceId=await kv.get('stripe:subscription:'+subscriptionId);
+    if(!workspaceId&&customerId)workspaceId=await kv.get('stripe:customer:'+customerId);
+    if(!workspaceId)return res.status(200).json({received:true,unmapped:true});
+    const key='workspace:'+workspaceId;
+    const ws=await kv.get(key);
+    if(!ws)return res.status(200).json({received:true,workspace_missing:true});
+
+    let status=ws.subscriptionStatus||'active';
+    if(event.type==='customer.subscription.deleted')status='canceled';
+    else if(event.type==='invoice.payment_failed')status='past_due';
+    else if(event.type==='invoice.paid')status='active';
+    else if(event.type.startsWith('customer.subscription.'))status=obj.status||status;
+
+    await kv.set(key,{...ws,subscriptionStatus:status,updatedAt:Date.now()});
+    if(subscriptionId&&!ws.stripeSubscriptionId){
+      const updated=await kv.get(key);
+      await kv.set(key,{...updated,stripeSubscriptionId:subscriptionId,updatedAt:Date.now()});
+      await kv.set('stripe:subscription:'+subscriptionId,workspaceId);
+    }
+    return res.status(200).json({received:true,workspaceId,status});
+  }
+
   if(!checkoutEvent)return res.status(200).json({received:true,ignored:true});
   const eventKey=event.id?'stripe:event:'+event.id:null;
   if(eventKey&&await kv.get(eventKey))return res.status(200).json({received:true,duplicate:true});
   const session=event.data.object;
   if(event.type==='checkout.session.completed'&&!['paid','no_payment_required'].includes(session.payment_status))return res.status(200).json({received:true,pending_payment:true});
-  const paidPlan=normalizePlan(PLAN_BY_PAYMENT_LINK[session.payment_link]||'Starter');
+  const mappedPlan=PLAN_BY_PAYMENT_LINK[session.payment_link];
+  if(!mappedPlan)return res.status(400).json({error:'Unknown payment link'});
+  const paidPlan=normalizePlan(mappedPlan);
   const sessionKey=session.id?'stripe:session:'+session.id:null;
   let sessionState=sessionKey?await kv.get(sessionKey):null;
   if(sessionState&&sessionState.status==='complete'){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,duplicate:true})}
