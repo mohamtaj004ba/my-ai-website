@@ -1,4 +1,5 @@
 const { sendMail } = require('./_lib/mailgun');
+const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 
 const ALLOWED_HOSTS = new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
 const hits = new Map();
@@ -28,18 +29,20 @@ module.exports=async function handler(req,res){
   if(!allowed(req))return res.status(403).json({error:'Forbidden'});
   if(rateLimited(getIp(req)))return res.status(429).json({error:'Too many requests. Please try again later.'});
 
-  const name=clean(req.body?.name,120),business=clean(req.body?.business,160),email=clean(req.body?.email,200),phone=clean(req.body?.phone,80),category=clean(req.body?.category,80),message=clean(req.body?.message,4000);
+  const name=clean(req.body?.name,120),business=clean(req.body?.business,160),email=clean(req.body?.email,200),phone=clean(req.body?.phone,80),category=clean(req.body?.category,80),message=clean(req.body?.message,4000),visitorId=clean(req.body?.visitorId,120),sessionId=clean(req.body?.sessionId,120),utmSource=clean(req.body?.utmSource,120),utmMedium=clean(req.body?.utmMedium,120),utmCampaign=clean(req.body?.utmCampaign,160);
   if(!name||!email||!message||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Please complete the required fields'});
 
   const text=['New CallerCore website inquiry','','Category: '+category,'Name: '+name,'Business: '+business,'Email: '+email,'Phone: '+phone,'','Message:',message].join('\n');
   try{
+    const prospect=await upsertWebsiteProspect({name,business,email,phone,category,message,source:'contact',stage:'inquiry',visitorId,sessionId,utmSource,utmMedium,utmCampaign});
+    await recordSiteEvent({type:'contact_submit',visitorId,sessionId,path:'/contact',label:category||'General',utmSource,utmMedium,utmCampaign},req);
     await sendMail({
       to:'support@callercore.com',
       subject:'Website inquiry — '+(category||'General')+' — '+(business||name),
       text,
       html:'<p><b>New CallerCore website inquiry</b></p><p><b>Category:</b> '+escapeHtml(category)+'<br><b>Name:</b> '+escapeHtml(name)+'<br><b>Business:</b> '+escapeHtml(business)+'<br><b>Email:</b> '+escapeHtml(email)+'<br><b>Phone:</b> '+escapeHtml(phone)+'</p><p><b>Message</b><br>'+escapeHtml(message).replace(/\n/g,'<br>')+'</p>'
     });
-    return res.status(200).json({ok:true});
+    return res.status(200).json({ok:true,prospectId:prospect.id});
   }catch(e){
     console.error('contact send failed',e);
     return res.status(500).json({error:'Unable to send'});
