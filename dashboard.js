@@ -457,12 +457,37 @@ function renderProvisioning(){
   const stages=['Paid','Intake','Building','Ready','Live'];
   board.innerHTML=stages.map(stage=>{
     const rows=adminProvisioningData.filter(x=>x.stage===stage);
-    return '<div><h3>'+stage+' <span>'+rows.length+'</span></h3>'+rows.map(x=>'<article><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+(x.phone?' · '+esc(x.phone):'')+'</small></article>').join('')+'</div>';
+    return '<div class="provision-column" data-provision-stage="'+stage+'"><h3>'+stage+' <span>'+rows.length+'</span></h3>'+rows.map(x=>'<article draggable="true" data-provision-id="'+esc(x.id)+'"><div class="provision-card-head"><b>'+esc(x.name)+'</b>'+(x.manualOverride?'<span class="tag amber">Manual</span>':'')+'</div><small>'+esc(x.plan)+(x.phone?' · '+esc(x.phone):'')+'</small><div class="provision-foot"><span>Auto: '+esc(x.autoStage||x.stage)+'</span>'+(x.manualOverride?'<button data-auto-stage="'+esc(x.id)+'">Use auto</button>':'')+'</div></article>').join('')+'</div>';
   }).join('');
+  board.querySelectorAll('[draggable="true"]').forEach(card=>{
+    card.addEventListener('dragstart',()=>{card.classList.add('dragging');card.dataset.dragging='1'});
+    card.addEventListener('dragend',()=>{card.classList.remove('dragging');delete card.dataset.dragging});
+  });
+  board.querySelectorAll('.provision-column').forEach(col=>{
+    col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drop-active')});
+    col.addEventListener('dragleave',()=>col.classList.remove('drop-active'));
+    col.addEventListener('drop',async e=>{
+      e.preventDefault();col.classList.remove('drop-active');
+      const card=board.querySelector('[data-dragging="1"]');if(!card)return;
+      await moveProvisioningStage(card.dataset.provisionId,col.dataset.provisionStage);
+    });
+  });
+  board.querySelectorAll('[data-auto-stage]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();clearProvisioningOverride(b.dataset.autoStage)}));
+}
+async function moveProvisioningStage(id,stage){
+  const item=adminProvisioningData.find(x=>String(x.id)===String(id));if(!item||item.stage===stage)return;
+  const previous=item.stage;item.stage=stage;item.manualOverride=true;renderProvisioning();
+  const r=await fetch('/api/account?action=admin-provisioning-stage-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})});
+  if(!r.ok){item.stage=previous;renderProvisioning();const d=await r.json().catch(()=>({}));alert(d.error||'Could not move provisioning stage.')}
+}
+async function clearProvisioningOverride(id){
+  const r=await fetch('/api/account?action=admin-provisioning-stage-clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'Could not restore automatic stage.');return}
+  await loadAdminOps();
 }
 function renderPhones(){
   const wrap=document.getElementById('phoneTable');if(!wrap)return;
-  wrap.innerHTML=adminPhoneData.map(x=>'<div class="call-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span><span class="tag green">'+esc(x.status||'active')+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>').join('');
+  wrap.innerHTML=adminPhoneData.map(x=>'<div class="call-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+(x.forwardingFrom?' · from '+esc(x.forwardingFrom):'')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span><span class="tag green">'+esc(x.status||'active')+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>').join('');
   const empty=document.getElementById('phoneEmpty');if(empty)empty.hidden=adminPhoneData.length!==0;
   wrap.querySelectorAll('[data-edit-phone]').forEach(b=>b.addEventListener('click',()=>openPhoneModal(b.dataset.editPhone)));
   wrap.querySelectorAll('[data-delete-phone]').forEach(b=>b.addEventListener('click',()=>deletePhone(b.dataset.deletePhone)));
@@ -489,6 +514,10 @@ function openPhoneModal(id=null){
   document.getElementById('phoneNumberInput').value=item?.number||'';
   document.getElementById('phoneLabelInput').value=item?.label||'Primary';
   document.getElementById('phoneProviderInput').value=item?.provider||'Vapi';
+  document.getElementById('phoneForwardingInput').value=item?.forwardingFrom||'';
+  document.getElementById('phoneTransferInput').value=item?.transferNumber||'';
+  document.getElementById('phoneAfterHoursInput').value=item?.afterHours||'ai';
+  document.getElementById('phoneSmsInput').checked=item?.smsEnabled!==false;
   const sel=document.getElementById('phoneWorkspaceInput');
   sel.innerHTML='<option value="">Unassigned</option>'+adminClientsData.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
   sel.value=item?.workspaceId||'';
@@ -497,7 +526,7 @@ function openPhoneModal(id=null){
 function closePhoneModal(){const m=document.getElementById('phoneModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 async function savePhone(){
   const modal=document.getElementById('phoneModal');
-  const payload={id:modal?.dataset.editId||undefined,number:document.getElementById('phoneNumberInput')?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||''};
+  const payload={id:modal?.dataset.editId||undefined,number:document.getElementById('phoneNumberInput')?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||'',forwardingFrom:document.getElementById('phoneForwardingInput')?.value||'',transferNumber:document.getElementById('phoneTransferInput')?.value||'',afterHours:document.getElementById('phoneAfterHoursInput')?.value||'ai',smsEnabled:!!document.getElementById('phoneSmsInput')?.checked};
   const r=await fetch('/api/account?action=admin-phone-number-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not save phone number.');return}
