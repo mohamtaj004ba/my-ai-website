@@ -1,6 +1,7 @@
 const crypto=require('crypto');
 const {kv}=require('@vercel/kv');
 const {sendMail}=require('../lib/mail');
+const {safeError}=require('../lib/safe-log');
 const {lifecycleEmail}=require('../lib/email-template');
 const {normalizePlan,entitlementsFor}=require('../lib/plans');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
@@ -169,7 +170,7 @@ module.exports=async function handler(req,res){
         });
         await sendMail({to:recipient,subject:'CallerCore payment received',...email});
       }
-    }catch(err){console.error('Stripe lifecycle email failed:',err)}
+    }catch(err){console.error('Stripe lifecycle email failed:',safeError(err))}
 
     if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
     return res.status(200).json({received:true,workspaceId,status});
@@ -242,7 +243,7 @@ module.exports=async function handler(req,res){
       siteUrl:SITE_URL
     });
     await sendMail({to:recipient,subject:'Payment received — welcome to CallerCore',...email});
-  }catch(err){console.error('Failed to send payment confirmation:',err)}
+  }catch(err){console.error('Failed to send payment confirmation:',safeError(err))}
 
   if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
   if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
