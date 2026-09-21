@@ -51,6 +51,7 @@ module.exports=async function handler(req,res){
 
   if(req.method==='OPTIONS')return allowedOrigin(req)?res.status(200).end():res.status(403).end();
   if(!allowedOrigin(req))return res.status(403).json({error:'Forbidden'});
+  if(process.env.CALLERCORE_CHECKOUT_ENABLED!=='true')return res.status(503).json({error:'CallerCore checkout is not open yet'});
   if(!STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe checkout is not configured'});
 
   const rl=await rateLimit({scope:'embedded-checkout',identifier:requestIp(req),limit:req.method==='GET'?30:10,windowSeconds:600});
