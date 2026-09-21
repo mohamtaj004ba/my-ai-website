@@ -37,7 +37,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return isAllowedOrigin(req)?res.status(200).end():res.status(403).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
-  const rl=await rateLimit({scope:'lead-create',identifier:requestIp(req),limit:10,windowSeconds:600});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests'})}
+  const rl=await rateLimit({scope:'lead-create',identifier:requestIp(req),limit:10,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests'})}
 
   const raw = req.body || {};
   const clean = (v, n) => String(v || '').trim().slice(0, n);
