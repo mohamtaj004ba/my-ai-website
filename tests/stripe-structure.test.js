@@ -47,3 +47,10 @@ test('get-started mounts Stripe Embedded Checkout instead of redirecting to Paym
   assert.match(page,/initEmbeddedCheckout/);
   assert.doesNotMatch(page,/buy\.stripe\.com/);
 });
+
+test('checkout completion page distinguishes confirmed and pending payments',()=>{
+  const page=fs.readFileSync(path.join(__dirname,'..','checkout-complete.html'),'utf8');
+  assert.match(page,/data\.status==='complete'&&\['paid','no_payment_required'\]\.includes\(data\.paymentStatus\)/);
+  assert.match(page,/Your payment is processing\./);
+  assert.match(page,/Do not submit another payment\./);
+});
