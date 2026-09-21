@@ -1,4 +1,5 @@
 const { kv } = require('@vercel/kv');
+const { agreementSnapshot, planSnapshot, LEGACY_CLAUSES, LEGACY_AGREEMENT_VERSION } = require('./_lib/agreement-clauses');
 
 function validToken(token){return typeof token==='string'&&/^[a-f0-9]{48}$/i.test(token)}
 
@@ -17,6 +18,9 @@ module.exports = async function handler(req, res) {
   }
 
   // Never leak internal fields (stripe session id) to the client.
-  const { stripeSessionId, ...safe } = record;
-  return res.status(200).json(safe);
+  const { stripeSessionId, agreementSnapshot:storedSnapshot, ...safe } = record;
+  const agreement = record.agreementSigned
+    ? (storedSnapshot || {version:record.agreementVersion||LEGACY_AGREEMENT_VERSION,effectiveDate:record.agreementEffectiveDate||'',clauses:LEGACY_CLAUSES})
+    : agreementSnapshot();
+  return res.status(200).json({...safe,agreement,planSnapshot:record.agreementPlanSnapshot||planSnapshot(record.plan)});
 };
