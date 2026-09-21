@@ -728,18 +728,18 @@ async function loadAdminInbox({silent=false,force=false}={}){
   }catch(e){
     console.error('Inbox cache load failed',e);adminInboxData.loading=false;
     if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}
-    if(auto)auto.textContent='Auto-sync · 60s';
+    if(auto)auto.textContent='Auto-sync · 3 min';
     renderAdminInbox();
   }
 }
-async function refreshAdminInboxLive({silent=true}={}){
+async function refreshAdminInboxLive({silent=true,force=false}={}){
   if(adminInboxData.liveLoading)return;
   adminInboxData.liveLoading=true;
   const refresh=document.getElementById('inboxRefreshButton'),auto=document.getElementById('inboxAutoStatus');
   if(refresh&&!silent){refresh.disabled=true;refresh.textContent='Syncing…'}
   if(auto)auto.textContent='Syncing with Gmail…';
   try{
-    const gr=await fetch('/api/account?action=admin-gmail-inbox&limit=35',{headers:{Accept:'application/json'},cache:'no-store'});
+    const gr=await fetch('/api/account?action=admin-gmail-inbox&limit=25'+(force?'&force=1':''),{headers:{Accept:'application/json'},cache:'no-store'});
     if(gr.ok){
       const d=await gr.json();
       if(Array.isArray(d.threads)){adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||Date.now())}
@@ -757,7 +757,7 @@ async function refreshAdminInboxLive({silent=true}={}){
   finally{
     adminInboxData.liveLoading=false;
     if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}
-    if(auto)auto.textContent='Auto-sync · 60s'+(adminInboxData.lastSync?' · '+new Date(adminInboxData.lastSync).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'');
+    if(auto)auto.textContent='Auto-sync · 3 min'+(adminInboxData.lastSync?' · '+new Date(adminInboxData.lastSync).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'');
   }
 }
 function websiteInboxItems(){
@@ -872,7 +872,7 @@ async function disconnectGmailAdmin(){
   if(!confirm('Disconnect Gmail from CallerCore Admin? No messages will be deleted from Gmail.'))return;
   const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST'});if(!r.ok)return alert('Could not disconnect Gmail.');currentInboxItem=null;await loadAdminInbox();renderInboxThread();
 }
-document.getElementById('inboxRefreshButton')?.addEventListener('click',()=>refreshAdminInboxLive({silent:false}));
+document.getElementById('inboxRefreshButton')?.addEventListener('click',()=>refreshAdminInboxLive({silent:false,force:true}));
 document.getElementById('gmailConnectButton')?.addEventListener('click',connectGmail);
 document.getElementById('gmailDisconnectButton')?.addEventListener('click',disconnectGmailAdmin);
 document.getElementById('inboxReplyForm')?.addEventListener('submit',sendInboxReply);
@@ -882,7 +882,7 @@ setInterval(()=>{
   if(document.body.dataset.dashboard!=='admin'||document.hidden)return;
   const view=document.getElementById('view-inbox');
   if(view?.classList.contains('active'))refreshAdminInboxLive({silent:true});
-},60000);
+},180000);
 
 
 function renderAdminSupport(){
