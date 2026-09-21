@@ -119,8 +119,23 @@
         <div class="empty-state" id="automationEmpty" hidden><h3>No automations yet</h3><p>Create your first workflow or start from a preset above.</p></div>
       </div>
     </section>
-    <section class="view" id="view-analytics"><div class="page-head"><div><span class="eyebrow">Analytics</span><h1>Know what the phones are telling you.</h1><p>Turn call activity into business decisions.</p></div></div><div class="locked-stage" data-feature-card="advancedAnalytics"></div></section>
-    <section class="view" id="view-integrations"><div class="page-head"><div><span class="eyebrow">Integrations</span><h1>Connect the rest of your stack.</h1><p>Calendars, CRMs, webhooks and more.</p></div></div><div class="integration-grid"><article class="panel"><b>Google Calendar</b><span class="tag green">Connected</span></article><article class="panel"><b>Stripe</b><span class="tag green">Connected</span></article><article class="panel" data-feature="apiAccess"><b>API & Webhooks</b><span class="tag amber">Pro</span></article></div></section>
+    <section class="view" id="view-analytics">
+      <div class="page-head"><div><span class="eyebrow">Analytics</span><h1>Know what the phones are telling you.</h1><p>Turn call activity into business decisions.</p></div></div>
+      <div id="analyticsGate" class="locked-stage" data-feature-card="advancedAnalytics"></div>
+      <div id="analyticsApp" hidden>
+        <div class="metric-grid"><article><span>Total calls</span><strong id="analyticsCalls">0</strong><small>Handled activity</small></article><article><span>Qualified calls</span><strong id="analyticsQualified">0</strong><small>Booked or qualified</small></article><article><span>Lead conversion</span><strong id="analyticsConversion">0%</strong><small>Won leads</small></article><article><span>Pipeline value</span><strong id="analyticsPipeline">$0</strong><small>Open + won opportunity</small></article></div>
+        <div class="two-col"><article class="panel"><span class="eyebrow">Top call reasons</span><h2>What customers want</h2><div class="bar-list" id="callReasonBars"></div></article><article class="panel"><span class="eyebrow">Performance</span><h2>Business outcomes</h2><div class="setting-row"><span>Leads captured</span><b id="analyticsLeads">0</b></div><div class="setting-row"><span>Appointments</span><b id="analyticsAppointments">0</b></div><div class="setting-row"><span>Won leads</span><b id="analyticsWon">0</b></div></article></div>
+      </div>
+    </section>
+    <section class="view" id="view-integrations">
+      <div class="page-head"><div><span class="eyebrow">Integrations</span><h1>Connect the rest of your stack.</h1><p>Calendars, billing, APIs and webhooks in one place.</p></div></div>
+      <div class="integration-grid">
+        <article class="panel integration-card"><div><b>Google Calendar</b><p>Sync availability and bookings.</p></div><span class="tag amber" id="googleCalendarStatus">Not connected</span></article>
+        <article class="panel integration-card"><div><b>Stripe</b><p>Subscription and billing status.</p></div><span class="tag amber" id="stripeIntegrationStatus">Not linked</span></article>
+        <article class="panel integration-card" data-feature="apiAccess"><div><b>API & Webhooks</b><p>Send CallerCore events to your systems.</p></div><span class="tag amber">Pro</span></article>
+      </div>
+      <article class="panel form-card" id="webhookPanel"><span class="eyebrow">Pro integration</span><h2>Outbound webhook</h2><label>Webhook URL<input id="webhookUrl" placeholder="https://example.com/callercore/events"></label><button class="primary" id="saveWebhookButton">Save webhook</button><small class="muted">CallerCore will only accept HTTPS endpoints.</small></article>
+    </section>
 
     <section class="view" id="view-billing">
       <div class="page-head"><div><span class="eyebrow">Billing & plan</span><h1>Everything about your subscription.</h1><p>Upgrade, review usage and manage payment details without leaving CallerCore.</p></div></div>
@@ -131,7 +146,13 @@
       <div class="plan-comparison" id="planComparison"></div>
       <article class="panel invoices"><div class="panel-head"><div><span class="eyebrow">Invoices</span><h2>Billing history</h2></div></div><div class="invoice-row"><span>Sep 1, 2026</span><b>Growth</b><span>$599.00</span><span class="tag green">Paid</span></div><div class="invoice-row"><span>Aug 1, 2026</span><b>Growth</b><span>$599.00</span><span class="tag green">Paid</span></div></article>
     </section>
-    <section class="view" id="view-settings"><div class="page-head"><div><span class="eyebrow">Settings</span><h1>Workspace settings.</h1><p>Business profile, team access and notification preferences.</p></div></div><article class="panel form-card"><label>Business name<input value="Alpine Roofing"></label><label>Primary email<input value="owner@example.com"></label><label>Timezone<input value="America/Los_Angeles"></label><button class="primary">Save settings</button></article></section>
+    <section class="view" id="view-settings">
+      <div class="page-head"><div><span class="eyebrow">Settings</span><h1>Workspace settings.</h1><p>Keep business details and notification preferences up to date.</p></div><span class="tag green" id="settingsSaveStatus">Saved</span></div>
+      <div class="two-col">
+        <article class="panel form-card"><span class="eyebrow">Business profile</span><label>Business name<input id="settingsBusinessName"></label><label>Primary email<input id="settingsPrimaryEmail" type="email"></label><label>Timezone<select id="settingsTimezone"><option>America/Los_Angeles</option><option>America/Denver</option><option>America/Chicago</option><option>America/New_York</option></select></label></article>
+        <article class="panel form-card"><span class="eyebrow">Notifications</span><label>Notification email<input id="settingsNotificationEmail" type="email"></label><label class="toggle-row"><span>Email alerts</span><input id="settingsEmailAlerts" type="checkbox" checked></label><label class="toggle-row"><span>SMS alerts</span><input id="settingsSmsAlerts" type="checkbox" checked></label><button class="primary" id="saveSettingsButton">Save settings</button></article>
+      </div>
+    </section>
   </main>
 </div>
 
