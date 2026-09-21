@@ -816,6 +816,46 @@ async function notificationsReadAll(req,res){
   return res.status(200).json({ok:true});
 }
 
+
+function userProfileKey(email){
+  return 'user:profile:'+crypto.createHash('sha256').update(cleanEmail(email)).digest('hex');
+}
+function defaultDisplayName(email,ws){
+  const owner=String(ws?.ownerName||'').trim();
+  if(owner)return owner.slice(0,80);
+  const local=String(email||'').split('@')[0].replace(/[._-]+/g,' ').trim();
+  return local?local.replace(/\b\w/g,m=>m.toUpperCase()).slice(0,80):'CallerCore User';
+}
+async function getUserProfile(email,ws=null){
+  const saved=await kv.get(userProfileKey(email))||{};
+  return {
+    displayName:String(saved.displayName||defaultDisplayName(email,ws)).slice(0,80),
+    avatarDataUrl:String(saved.avatarDataUrl||''),
+    updatedAt:Number(saved.updatedAt||0)
+  };
+}
+async function profile(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);
+  const p=await getUserProfile(s.email,ws);
+  return res.status(200).json({profile:{...p,email:s.email}});
+}
+async function profileSave(req,res){
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);
+  const body=req.body||{},existing=await getUserProfile(s.email,ws);
+  const displayName=String(body.displayName===undefined?existing.displayName:body.displayName).trim().slice(0,80);
+  if(displayName.length<1)return res.status(400).json({error:'Display name is required'});
+  let avatarDataUrl=body.avatarDataUrl===undefined?existing.avatarDataUrl:String(body.avatarDataUrl||'');
+  if(avatarDataUrl){
+    if(avatarDataUrl.length>450000)return res.status(413).json({error:'Profile photo is too large'});
+    if(!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(avatarDataUrl))return res.status(400).json({error:'Invalid profile photo'});
+  }
+  const next={displayName,avatarDataUrl,updatedAt:Date.now()};
+  await kv.set(userProfileKey(s.email),next);
+  return res.status(200).json({ok:true,profile:{...next,email:s.email}});
+}
+
 async function requestLogin(req,res){
   const body=req.body||{};
   const email=cleanEmail(body.email);
@@ -860,8 +900,9 @@ async function session(req,res){
   if(!ws)return res.status(404).json({error:'Workspace not found'});
   const ent=entitlementsFor(ws.plan);
   const member=await kv.get('user:email:'+cleanEmail(s.email));
+  const profileData=await getUserProfile(s.email,ws);
   return res.status(200).json({
-    user:{email:s.email,role:member&&member.role||s.role,adminView:!!s.adminView},
+    user:{email:s.email,role:member&&member.role||s.role,adminView:!!s.adminView,profile:profileData},
     workspace:{
       id:ws.id,name:ws.name,plan:ent.plan,status:ws.status||'active',
       subscriptionStatus:ws.subscriptionStatus||'active',
@@ -1212,6 +1253,8 @@ module.exports=async function handler(req,res){
   if(action==='admin-client-delete'&&req.method==='POST')return adminDeleteClient(req,res);
   if(action==='admin-view-client'&&req.method==='POST')return adminViewClient(req,res);
   if(action==='admin-exit-client-view'&&req.method==='POST')return adminExitClientView(req,res);
+  if(action==='profile'&&req.method==='GET')return profile(req,res);
+  if(action==='profile-save'&&req.method==='POST')return profileSave(req,res);
   if(action==='notifications'&&req.method==='GET')return notifications(req,res);
   if(action==='notifications-read'&&req.method==='POST')return notificationsRead(req,res);
   if(action==='notifications-read-all'&&req.method==='POST')return notificationsReadAll(req,res);
