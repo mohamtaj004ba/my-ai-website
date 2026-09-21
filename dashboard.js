@@ -14,6 +14,7 @@ const params=new URLSearchParams(location.search);
 const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
 let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
 let sessionWorkspace=null;
+let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false;
 let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;
 const DEMO_CALLS=[
@@ -57,7 +58,7 @@ async function bootstrapClient(){
     const r=await fetch('/api/account?action=session',{headers:{Accept:'application/json'},cache:'no-store'});
     if(r.status===401){location.replace('/login?next=%2Fdashboard');return false}
     if(!r.ok)throw new Error('session');
-    const data=await r.json();sessionWorkspace=data.workspace;
+    const data=await r.json();sessionWorkspace=data.workspace;applyUserProfile(data.user||{},data.workspace||{});
     if(data.user?.adminView){
       document.body.classList.add('admin-client-view');
       const banner=document.createElement('div');banner.className='admin-view-banner';
@@ -552,7 +553,7 @@ async function bootstrapAdmin(){
     if(sess.ok){
       const data=await sess.json(),email=data.user?.email||'admin';
       const identity=document.getElementById('adminIdentity');if(identity)identity.textContent=email;
-      const av=document.getElementById('adminAvatar');if(av)av.textContent=email.slice(0,1).toUpperCase();
+      applyUserProfile(data.user||{},data.workspace||{});
     }
     renderAdmin();await loadAdminOps();
     const qp=new URLSearchParams(location.search);
@@ -1182,6 +1183,68 @@ document.getElementById('paymentButton')?.addEventListener('click',async()=>{con
 document.getElementById('modalCta')?.addEventListener('click',async()=>{const b=document.getElementById('modalCta');b.disabled=true;b.textContent='Opening Stripe…';const r=await fetch('/api/account?action=billing-portal',{method:'POST'}),data=await r.json().catch(()=>({}));if(r.ok&&data.url)location.href=data.url;else{alert(data.error||'Stripe billing is unavailable for this workspace.');b.disabled=false;b.textContent='Open Stripe billing'}});
 
 
+
+function profileInitials(name,email=''){
+  const source=String(name||email.split('@')[0]||'CC').trim();
+  const parts=source.split(/\s+/).filter(Boolean);
+  return (parts.length>1?(parts[0][0]+parts[1][0]):source.slice(0,2)).toUpperCase();
+}
+function applyUserProfile(user={},workspace={}){
+  const p=user.profile||{},email=String(user.email||currentUserProfile.email||''),name=String(p.displayName||workspace.ownerName||email.split('@')[0]||'CallerCore User');
+  currentUserProfile={displayName:name,email,avatarDataUrl:String(p.avatarDataUrl||'')};
+  renderUserProfile();
+}
+function renderUserProfile(){
+  const p=currentUserProfile,initials=profileInitials(p.displayName,p.email);
+  const name=document.getElementById('profileDisplayName'),email=document.getElementById('profileEmail'),input=document.getElementById('profileNameInput');
+  if(name)name.textContent=p.displayName;if(email)email.textContent=p.email;if(input&&!input.matches(':focus'))input.value=p.displayName;
+  for(const id of ['profileInitials','profileInitialsLarge']){const el=document.getElementById(id);if(el)el.textContent=initials}
+  for(const id of ['profileAvatarImage','profileAvatarImageLarge']){
+    const img=document.getElementById(id),initial=img?.previousElementSibling;if(!img)continue;
+    if(p.avatarDataUrl){img.src=p.avatarDataUrl;img.hidden=false;if(initial)initial.hidden=true}
+    else{img.removeAttribute('src');img.hidden=true;if(initial)initial.hidden=false}
+  }
+  const remove=document.getElementById('profilePhotoRemove');if(remove)remove.hidden=!p.avatarDataUrl;
+}
+async function resizeProfilePhoto(file){
+  if(!file||!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('Choose a JPG, PNG, or WebP image.');
+  if(file.size>8*1024*1024)throw new Error('Choose an image smaller than 8 MB.');
+  const src=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error('Could not read image'));r.readAsDataURL(file)});
+  const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error('Could not load image'));i.src=src});
+  const size=256,canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;
+  const ctx=canvas.getContext('2d'),scale=Math.max(size/img.width,size/img.height),w=img.width*scale,h=img.height*scale;
+  ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
+  return canvas.toDataURL('image/jpeg',.84);
+}
+async function saveProfile(){
+  const input=document.getElementById('profileNameInput'),status=document.getElementById('profileSaveStatus'),btn=document.getElementById('profileSaveButton');
+  const displayName=String(input?.value||'').trim();if(!displayName){if(status)status.textContent='Enter your name.';return}
+  if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status)status.textContent='';
+  try{
+    const r=await fetch('/api/account?action=profile-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({displayName,avatarDataUrl:currentUserProfile.avatarDataUrl||''})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not save profile');
+    currentUserProfile={...currentUserProfile,...data.profile};renderUserProfile();if(status)status.textContent='Saved.';
+  }catch(err){if(status)status.textContent=err.message||'Could not save profile'}
+  finally{if(btn){btn.disabled=false;btn.textContent='Save profile'}}
+}
+function initProfileControls(){
+  const button=document.getElementById('accountButton'),panel=document.getElementById('accountPanel'),photoInput=document.getElementById('profilePhotoInput');
+  if(!button||!panel)return;renderUserProfile();
+  button.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)document.getElementById('profileNameInput')?.focus()});
+  panel.addEventListener('click',e=>e.stopPropagation());
+  document.getElementById('profilePhotoButton')?.addEventListener('click',()=>photoInput?.click());
+  photoInput?.addEventListener('change',async()=>{
+    const status=document.getElementById('profileSaveStatus');
+    try{const data=await resizeProfilePhoto(photoInput.files?.[0]);currentUserProfile.avatarDataUrl=data;renderUserProfile();if(status)status.textContent='Photo ready — save profile.'}
+    catch(err){if(status)status.textContent=err.message||'Could not use that image'}
+    photoInput.value='';
+  });
+  document.getElementById('profilePhotoRemove')?.addEventListener('click',()=>{currentUserProfile.avatarDataUrl='';renderUserProfile();const s=document.getElementById('profileSaveStatus');if(s)s.textContent='Photo removed — save profile.'});
+  document.getElementById('profileSaveButton')?.addEventListener('click',saveProfile);
+  document.addEventListener('click',()=>{panel.hidden=true;button.setAttribute('aria-expanded','false')});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){panel.hidden=true;button.setAttribute('aria-expanded','false')}})
+}
+
 function notificationScope(){return document.body.dataset.dashboard==='admin'?'admin':'client'}
 function notificationKindIcon(kind){
   return kind==='danger'?'!':kind==='warning'?'!':kind==='success'?'✓':'•'
@@ -1254,5 +1317,5 @@ function initNotifications(){
   setInterval(()=>{if(!document.hidden)loadNotifications({silent:true})},60000);
 }
 
-(async()=>{if(document.body.dataset.dashboard==='admin'){const ok=await bootstrapAdmin();if(ok)initNotifications();return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations();initNotifications()}else{renderBilling()}})();
+(async()=>{if(document.body.dataset.dashboard==='admin'){const ok=await bootstrapAdmin();if(ok){initProfileControls();initNotifications()}return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations();initProfileControls();initNotifications()}else{renderBilling()}})();
 document.getElementById('logoutButton')?.addEventListener('click',logout);
