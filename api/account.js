@@ -708,24 +708,66 @@ async function adminRestoreAudit(req,res){
 }
 
 
+
+async function adminSendOnboardingInvite(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String(req.body?.id||'').slice(0,80);if(!id)return res.status(400).json({error:'Client is required'});
+  const [ws,state,token]=await Promise.all([
+    kv.get('workspace:'+id),kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)
+  ]);
+  if(!ws||!state||!token)return res.status(404).json({error:'Onboarding record not found'});
+  if(state.onboardingLinkSent)return res.status(200).json({ok:true,alreadySent:true});
+  if(Number(state.reviewEligibleAt||0)>Date.now())return res.status(409).json({error:'This account is still in the post-payment review hold.',eligibleAt:state.reviewEligibleAt});
+  const onboarding=await kv.get('onboarding:'+token),to=String(onboarding?.email||ws.ownerEmail||'').trim().toLowerCase();
+  if(!to)return res.status(400).json({error:'Client email is missing'});
+  const link=requestOrigin(req)+'/onboarding?token='+token,firstName=String(onboarding?.name||ws.ownerName||'').split(' ')[0]||'there';
+  await sendMail({
+    to,
+    subject:'Your CallerCore onboarding is ready',
+    text:['Hi '+firstName,'','We’ve reviewed your CallerCore account and your onboarding workspace is ready.','','Complete your service agreement and business intake here:',link,'','Your progress saves automatically, so you can come back if needed.','','Questions any time: support@callercore.com','','— CallerCore'].join('\n'),
+    html:'<p>Hi '+firstName+',</p><p><strong>We’ve reviewed your CallerCore account and your onboarding workspace is ready.</strong></p><p><a href="'+link+'">Open your secure onboarding workspace</a> to complete your service agreement and business intake.</p><p>Your progress saves automatically, so you can come back if needed.</p><p>Questions any time: support@callercore.com</p><p>— CallerCore</p>'
+  });
+  const next={...state,status:'awaiting_agreement',onboardingLinkSent:true,onboardingSentAt:Date.now(),reviewedAt:Date.now(),reviewedBy:admin.email,checklist:{...(state.checklist||{}),accountReview:true,onboardingSent:true},updatedAt:Date.now()};
+  await kv.set('onboarding:workspace:'+id,next);
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'onboarding_invite_sent',section:'workspace',meta:{to}});
+  return res.status(200).json({ok:true,onboarding:next});
+}
+
 async function adminProvisioningChecklistSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80),field=String(body.field||''),value=body.value===true;
   const allowed=new Set(['adminReview','testCall','clientApproval','live']);
   if(!id||!allowed.has(field))return res.status(400).json({error:'Invalid provisioning checklist update'});
   const wsKey='workspace:'+id,ws=await kv.get(wsKey);if(!ws)return res.status(404).json({error:'Client not found'});
+  const key='onboarding:workspace:'+id,state=await kv.get(key)||{workspaceId:id,status:'building_review',completionPercent:100,checklist:{}};
+  if(field==='adminReview'&&value&&Number(state.buildEligibleAt||0)>Date.now())return res.status(409).json({error:'The build is still in its review hold.',eligibleAt:state.buildEligibleAt});
   if(field==='live'&&value){
     const agent=await kv.get('agent:'+id);
     if(!agent||!String(agent.openingMessage||agent.name||'').trim())return res.status(409).json({error:'An AI agent must be configured before launch'});
     if(!String(ws.phone||'').trim())return res.status(409).json({error:'Assign a CallerCore phone number before launch'});
   }
-  const key='onboarding:workspace:'+id,state=await kv.get(key)||{workspaceId:id,status:'building',completionPercent:100,checklist:{}};
   const next={...state,checklist:{...(state.checklist||{}),phoneAssigned:!!String(ws.phone||'').trim(),[field]:value},updatedAt:Date.now(),updatedBy:admin.email};
+  const to=String(ws.ownerEmail||'').trim().toLowerCase(),firstName=String(ws.ownerName||'').split(' ')[0]||'there';
+  if(field==='adminReview'&&value){
+    next.status='qa_complete';next.adminReviewedAt=Date.now();
+    if(to)await sendMail({
+      to,subject:'Your CallerCore build has passed our initial review',
+      text:['Hi '+firstName,'','We’ve completed the initial review of your CallerCore configuration. Your AI agent and business rules have been prepared from the information you submitted.','','We’re now finishing phone routing and test-call preparation. We’ll let you know when the next step is ready.','','No action is needed from you right now.','','— CallerCore'].join('\n'),
+      html:'<p>Hi '+firstName+',</p><p><strong>We’ve completed the initial review of your CallerCore configuration.</strong></p><p>Your AI agent and business rules have been prepared from the information you submitted. We’re now finishing phone routing and test-call preparation.</p><p>No action is needed from you right now.</p><p>— CallerCore</p>'
+    });
+  }
+  if(field==='testCall'&&value){next.status='client_test';next.testReadyAt=Date.now()}
+  if(field==='clientApproval'&&value){next.status='ready';next.clientApprovedAt=Date.now()}
   if(field==='live'&&value){
     next.checklist.adminReview=true;next.checklist.testCall=true;next.checklist.clientApproval=true;
-    next.status='live';await kv.set(wsKey,{...ws,status:'active',updatedAt:Date.now()});
+    next.status='live';next.liveAt=Date.now();await kv.set(wsKey,{...ws,status:'active',updatedAt:Date.now()});
+    if(to)await sendMail({
+      to,subject:'CallerCore is live',
+      text:['Hi '+firstName,'','Your CallerCore AI receptionist is now live.','','You can monitor calls, leads, conversations, and setup details from your client dashboard:',requestOrigin(req)+'/dashboard','','Welcome aboard.','','— CallerCore'].join('\n'),
+      html:'<p>Hi '+firstName+',</p><p><strong>Your CallerCore AI receptionist is now live.</strong></p><p>You can monitor calls, leads, conversations, and setup details from your <a href="'+requestOrigin(req)+'/dashboard">client dashboard</a>.</p><p>Welcome aboard.</p><p>— CallerCore</p>'
+    });
   }else if(field==='live'&&!value&&state.status==='live'){
-    next.status='intake_complete';await kv.set(wsKey,{...ws,status:'onboarding',updatedAt:Date.now()});
+    next.status='ready';await kv.set(wsKey,{...ws,status:'onboarding',updatedAt:Date.now()});
   }
   await kv.set(key,next);
   await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'provisioning_checklist',section:'workspace',meta:{field,value}});
@@ -967,7 +1009,7 @@ async function session(req,res){
   const profileData=await getUserProfile(s.email,ws);
   const onboardingState=await kv.get('onboarding:workspace:'+s.workspaceId)||null;
   const onboardingToken=await kv.get('onboarding:workspace-token:'+s.workspaceId)||'';
-  const needsOnboarding=!!onboardingToken&&(!onboardingState||!['intake_complete','live'].includes(onboardingState.status));
+  const needsOnboarding=!!onboardingToken&&!!onboardingState?.onboardingLinkSent&&!['intake_complete','building_review','qa_complete','client_test','ready','live'].includes(onboardingState.status);
   return res.status(200).json({
     user:{email:s.email,role:member&&member.role||s.role,adminView:!!s.adminView,profile:profileData},
     onboarding:onboardingState?{...onboardingState,needsCompletion:needsOnboarding,url:needsOnboarding?('/onboarding?token='+onboardingToken):''}:{needsCompletion:needsOnboarding,url:needsOnboarding?('/onboarding?token='+onboardingToken):''},
@@ -1292,6 +1334,7 @@ module.exports=async function handler(req,res){
   if(action==='admin-provisioning-stage-save'&&req.method==='POST')return adminSaveProvisioningStage(req,res);
   if(action==='admin-provisioning-stage-clear'&&req.method==='POST')return adminClearProvisioningStage(req,res);
   if(action==='admin-provisioning-checklist-save'&&req.method==='POST')return adminProvisioningChecklistSave(req,res);
+  if(action==='admin-onboarding-send'&&req.method==='POST')return adminSendOnboardingInvite(req,res);
   if(action==='admin-phone-numbers'&&req.method==='GET')return adminPhoneNumbers(req,res);
   if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
   if(action==='admin-phone-number-delete'&&req.method==='POST')return adminDeletePhoneNumber(req,res);
