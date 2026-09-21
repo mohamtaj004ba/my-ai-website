@@ -546,8 +546,21 @@ function renderClientChecklist(){
 }
 function renderSupport(){
   const wrap=document.getElementById('supportTicketList'),empty=document.getElementById('supportTicketsEmpty');if(!wrap)return;
-  wrap.innerHTML=supportTicketsData.map(t=>'<div class="support-ticket"><div><b>'+esc(t.subject)+'</b><small>'+new Date(t.createdAt).toLocaleString()+' · '+esc(t.priority||'normal')+'</small></div><span class="tag '+(t.status==='resolved'?'green':t.status==='in_progress'?'amber':'')+'">'+esc(String(t.status||'open').replace('_',' '))+'</span></div>').join('');
+  wrap.innerHTML=supportTicketsData.map(t=>{
+    const messages=(Array.isArray(t.messages)&&t.messages.length?t.messages:[{direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||Date.now()}]);
+    const thread=messages.map(m=>'<div class="support-message '+(m.direction==='support'?'support':'client')+'"><div><b>'+(m.direction==='support'?'CallerCore Support':'You')+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+'</small></div><p>'+esc(m.body||'').replace(/\n/g,'<br>')+'</p></div>').join('');
+    return '<details class="support-ticket-thread"><summary><div><b>'+esc(t.subject)+'</b><small>'+new Date(t.createdAt).toLocaleString()+' · '+esc(t.priority||'normal')+'</small></div><span class="tag '+(t.status==='resolved'?'green':t.status==='in_progress'?'amber':'')+'">'+esc(String(t.status||'open').replace('_',' '))+'</span></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-client-input="'+esc(t.id)+'" placeholder="Reply to CallerCore support…"></textarea><button class="secondary-btn" type="button" data-support-client-reply="'+esc(t.id)+'">Send reply</button></div></details>';
+  }).join('');
   if(empty)empty.hidden=supportTicketsData.length!==0;
+  wrap.querySelectorAll('[data-support-client-reply]').forEach(b=>b.addEventListener('click',()=>replyClientSupportTicket(b.dataset.supportClientReply,b)));
+}
+async function replyClientSupportTicket(id,button){
+  const input=document.querySelector('[data-support-client-input="'+CSS.escape(id)+'"]'),message=String(input?.value||'').trim();if(!message)return;
+  if(button){button.disabled=true;button.textContent='Sending…'}
+  const r=await fetch('/api/account?action=support-ticket-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,message})}),data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error||'Could not send support reply.');if(button){button.disabled=false;button.textContent='Send reply'};return}
+  const i=supportTicketsData.findIndex(x=>x.id===id);if(i>=0)supportTicketsData[i]=data.ticket;
+  renderSupport();loadNotifications({silent:true});
 }
 async function submitSupportTicket(){
   const subject=document.getElementById('supportSubject')?.value.trim(),message=document.getElementById('supportMessage')?.value.trim(),priority=document.getElementById('supportPriority')?.value||'normal',status=document.getElementById('supportStatus'),btn=document.getElementById('submitSupportButton');
@@ -870,9 +883,22 @@ function renderAdminSupport(){
   const tickets=adminSupportData||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   set('supportOpen',tickets.filter(x=>x.status==='open').length);set('supportProgress',tickets.filter(x=>x.status==='in_progress').length);set('supportResolved',tickets.filter(x=>x.status==='resolved').length);set('supportUrgent',tickets.filter(x=>x.priority==='urgent'&&x.status!=='resolved').length);
   const wrap=document.getElementById('adminSupportList');if(!wrap)return;
-  wrap.innerHTML=tickets.map(t=>'<div class="support-admin-row" data-support-ticket-id="'+esc(t.id)+'"><div><b>'+esc(t.subject)+'</b><small>'+esc(t.workspaceName||'Workspace')+' · '+esc(t.email||'')+' · '+new Date(t.createdAt).toLocaleString()+'</small><p>'+esc(t.message||'')+'</p></div><div><span class="tag '+(t.priority==='urgent'?'red':'')+'">'+esc(t.priority||'normal')+'</span><select class="support-status-select" data-ticket-status="'+esc(t.id)+'"><option value="open" '+(t.status==='open'?'selected':'')+'>Open</option><option value="in_progress" '+(t.status==='in_progress'?'selected':'')+'>In progress</option><option value="resolved" '+(t.status==='resolved'?'selected':'')+'>Resolved</option></select></div></div>').join('');
+  wrap.innerHTML=tickets.map(t=>{
+    const messages=(Array.isArray(t.messages)&&t.messages.length?t.messages:[{direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||Date.now()}]);
+    const thread=messages.map(m=>'<div class="support-message '+(m.direction==='support'?'support':'client')+'"><div><b>'+(m.direction==='support'?'CallerCore Support':esc(t.workspaceName||'Client'))+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+'</small></div><p>'+esc(m.body||'').replace(/\n/g,'<br>')+'</p></div>').join('');
+    return '<details class="support-admin-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+esc(t.workspaceName||'Workspace')+' · '+esc(t.email||'')+' · '+new Date(t.createdAt).toLocaleString()+'</small></div><div><span class="tag '+(t.priority==='urgent'?'red':'')+'">'+esc(t.priority||'normal')+'</span><select class="support-status-select" data-ticket-status="'+esc(t.id)+'"><option value="open" '+(t.status==='open'?'selected':'')+'>Open</option><option value="in_progress" '+(t.status==='in_progress'?'selected':'')+'>In progress</option><option value="resolved" '+(t.status==='resolved'?'selected':'')+'>Resolved</option></select></div></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-admin-input="'+esc(t.id)+'" placeholder="Reply to the client…"></textarea><button class="primary" type="button" data-support-admin-reply="'+esc(t.id)+'">Send reply</button></div></details>';
+  }).join('');
   const empty=document.getElementById('adminSupportEmpty');if(empty)empty.hidden=tickets.length!==0;
-  wrap.querySelectorAll('[data-ticket-status]').forEach(s=>s.addEventListener('change',()=>updateSupportStatus(s.dataset.ticketStatus,s.value)));
+  wrap.querySelectorAll('[data-ticket-status]').forEach(s=>s.addEventListener('change',e=>{e.stopPropagation();updateSupportStatus(s.dataset.ticketStatus,s.value)}));
+  wrap.querySelectorAll('[data-support-admin-reply]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();replyAdminSupportTicket(b.dataset.supportAdminReply,b)}));
+}
+async function replyAdminSupportTicket(id,button){
+  const input=document.querySelector('[data-support-admin-input="'+CSS.escape(id)+'"]'),message=String(input?.value||'').trim();if(!message)return;
+  if(button){button.disabled=true;button.textContent='Sending…'}
+  const r=await fetch('/api/account?action=admin-support-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,message})}),data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error||'Could not send support reply.');if(button){button.disabled=false;button.textContent='Send reply'};return}
+  const i=adminSupportData.findIndex(x=>x.id===id);if(i>=0)adminSupportData[i]=data.ticket;
+  renderAdminSupport();loadNotifications({silent:true});
 }
 async function updateSupportStatus(id,status){
   const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})});if(!r.ok)return;
