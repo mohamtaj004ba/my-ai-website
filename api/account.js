@@ -907,17 +907,20 @@ function notificationItem(id,{title='',body='',kind='info',view='overview',creat
 }
 async function buildClientNotifications(s){
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return [];
+  const savedSettings=await kv.get('settings:'+ws.id)||{},prefs={
+    billing:savedSettings.notifyBilling!==false,setup:savedSettings.notifySetup!==false,calls:savedSettings.notifyCalls!==false,support:savedSettings.notifySupport!==false,usage:savedSettings.notifyUsage!==false
+  };
   const items=[],now=Date.now(),plan=entitlementsFor(ws.plan),usage=Number(ws.usage?.minutes||0);
-  if(ws.subscriptionStatus==='past_due')items.push(notificationItem('billing:'+ws.id+':past_due',{title:'Billing needs attention',body:'Your CallerCore subscription is past due.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
-  if(ws.subscriptionStatus==='canceled')items.push(notificationItem('billing:'+ws.id+':canceled',{title:'Subscription canceled',body:'Your CallerCore subscription is canceled.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
-  if(ws.status==='suspended')items.push(notificationItem('workspace:'+ws.id+':suspended',{title:'Workspace suspended',body:'Your CallerCore workspace is currently suspended. Contact support for help.',kind:'danger',view:'support',createdAt:ws.updatedAt||now}));
-  if(ws.status==='onboarding')items.push(notificationItem('workspace:'+ws.id+':onboarding',{title:'Onboarding in progress',body:'CallerCore is still being configured for your business.',kind:'info',view:'overview',createdAt:ws.updatedAt||ws.createdAt||now}));
+  if(prefs.billing&&ws.subscriptionStatus==='past_due')items.push(notificationItem('billing:'+ws.id+':past_due',{title:'Billing needs attention',body:'Your CallerCore subscription is past due.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
+  if(prefs.billing&&ws.subscriptionStatus==='canceled')items.push(notificationItem('billing:'+ws.id+':canceled',{title:'Subscription canceled',body:'Your CallerCore subscription is canceled.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
+  if(prefs.support&&ws.status==='suspended')items.push(notificationItem('workspace:'+ws.id+':suspended',{title:'Workspace suspended',body:'Your CallerCore workspace is currently suspended. Contact support for help.',kind:'danger',view:'support',createdAt:ws.updatedAt||now}));
+  if(prefs.setup&&ws.status==='onboarding')items.push(notificationItem('workspace:'+ws.id+':onboarding',{title:'Onboarding in progress',body:'CallerCore is still being configured for your business.',kind:'info',view:'overview',createdAt:ws.updatedAt||ws.createdAt||now}));
   const onboarding=await kv.get('onboarding:workspace:'+ws.id);
-  if(onboarding?.status==='awaiting_review')items.push(notificationItem('onboarding:'+ws.id+':account-review',{title:'Account review in progress',body:'Payment is confirmed. CallerCore is reviewing your account before sending onboarding.',kind:'info',view:'overview',createdAt:onboarding.paidAt||onboarding.updatedAt||now}));
-  if(onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview)items.push(notificationItem('onboarding:'+ws.id+':review',{title:'Your setup is being reviewed',body:'We received your onboarding and are reviewing the initial AI-agent configuration.',kind:'info',view:'overview',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now}));
-  if(onboarding?.checklist?.adminReview&&!onboarding?.checklist?.testCall)items.push(notificationItem('onboarding:'+ws.id+':test',{title:'Next step: test call',body:'CallerCore has reviewed your setup. A test call is the next launch step.',kind:'info',view:'calls',createdAt:onboarding.updatedAt||now}));
-  if(onboarding?.checklist?.live)items.push(notificationItem('onboarding:'+ws.id+':live',{title:'CallerCore is live',body:'Your AI receptionist setup is marked live.',kind:'success',view:'overview',createdAt:onboarding.updatedAt||now}));
-  if(plan.minutes&&usage>=plan.minutes*.8){
+  if(prefs.setup&&onboarding?.status==='awaiting_review')items.push(notificationItem('onboarding:'+ws.id+':account-review',{title:'Account review in progress',body:'Payment is confirmed. CallerCore is reviewing your account before sending onboarding.',kind:'info',view:'overview',createdAt:onboarding.paidAt||onboarding.updatedAt||now}));
+  if(prefs.setup&&onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview)items.push(notificationItem('onboarding:'+ws.id+':review',{title:'Your setup is being reviewed',body:'We received your onboarding and are reviewing the initial AI-agent configuration.',kind:'info',view:'overview',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now}));
+  if(prefs.setup&&onboarding?.checklist?.adminReview&&!onboarding?.checklist?.testCall)items.push(notificationItem('onboarding:'+ws.id+':test',{title:'Next step: test call',body:'CallerCore has reviewed your setup. A test call is the next launch step.',kind:'info',view:'calls',createdAt:onboarding.updatedAt||now}));
+  if(prefs.setup&&onboarding?.checklist?.live)items.push(notificationItem('onboarding:'+ws.id+':live',{title:'CallerCore is live',body:'Your AI receptionist setup is marked live.',kind:'success',view:'overview',createdAt:onboarding.updatedAt||now}));
+  if(prefs.usage&&plan.minutes&&usage>=plan.minutes*.8){
     const pct=Math.min(100,Math.round((usage/plan.minutes)*100));
     items.push(notificationItem('usage:'+ws.id+':'+Math.floor(pct/10)*10,{title:'Minutes usage at '+pct+'%',body:usage+' of '+plan.minutes+' included minutes used.',kind:pct>=100?'danger':'warning',view:'billing',createdAt:now}));
   }
@@ -925,16 +928,16 @@ async function buildClientNotifications(s){
     kv.get('agent:'+ws.id),kv.get('phone:index'),kv.get('calls:'+ws.id),kv.get('support:index')
   ]);
   const phone=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===ws.id);
-  if(!agent)items.push(notificationItem('setup:'+ws.id+':agent',{title:'AI agent setup incomplete',body:'Your AI agent has not been configured yet.',kind:'warning',view:'agent',createdAt:ws.createdAt||now}));
-  if(!phone)items.push(notificationItem('setup:'+ws.id+':phone',{title:'Phone routing not configured',body:'No CallerCore phone number is currently assigned.',kind:'warning',view:'phone-routing',createdAt:ws.createdAt||now}));
+  if(prefs.setup&&!agent)items.push(notificationItem('setup:'+ws.id+':agent',{title:'AI agent setup incomplete',body:'Your AI agent has not been configured yet.',kind:'warning',view:'agent',createdAt:ws.createdAt||now}));
+  if(prefs.setup&&!phone)items.push(notificationItem('setup:'+ws.id+':phone',{title:'Phone routing not configured',body:'No CallerCore phone number is currently assigned.',kind:'warning',view:'phone-routing',createdAt:ws.createdAt||now}));
   const missed=(Array.isArray(calls)?calls:[]).filter(x=>/missed|failed/i.test(String(x.outcome||''))).slice(-8).reverse();
-  missed.forEach((x,i)=>{
+  if(prefs.calls)missed.forEach((x,i)=>{
     const id=String(x.id||x.callId||x.phone||i),at=Number(x.createdAt||x.at||x.timestamp||Date.now());
     items.push(notificationItem('call:'+id+':missed',{title:'Missed call',body:(x.caller||x.phone||'A caller')+' was not successfully handled.',kind:'warning',view:'calls',createdAt:at}));
   });
   for(const id of Array.isArray(index)?index.slice(0,100):[]){
     const t=await kv.get('support:'+id);if(!t||t.workspaceId!==ws.id)continue;
-    if(t.updatedAt&&t.updatedAt>t.createdAt){
+    if(prefs.support&&t.updatedAt&&t.updatedAt>t.createdAt){
       items.push(notificationItem('support:'+t.id+':'+t.status+':'+t.updatedAt,{title:'Support request updated',body:'“'+t.subject+'” is now '+String(t.status||'').replace('_',' ')+'.',kind:t.status==='resolved'?'success':'info',view:'support',createdAt:t.updatedAt}));
     }
   }
@@ -1307,7 +1310,12 @@ async function settings(req,res){
     timezone:saved.timezone||platform.defaultTimezone||'America/Los_Angeles',
     notificationEmail:saved.notificationEmail||ws.ownerEmail||s.email||'',
     smsAlerts:saved.smsAlerts!==false,
-    emailAlerts:saved.emailAlerts!==false
+    emailAlerts:saved.emailAlerts!==false,
+    notifyBilling:saved.notifyBilling!==false,
+    notifySetup:saved.notifySetup!==false,
+    notifyCalls:saved.notifyCalls!==false,
+    notifySupport:saved.notifySupport!==false,
+    notifyUsage:saved.notifyUsage!==false
   }});
 }
 
@@ -1328,7 +1336,9 @@ async function saveSettings(req,res){
     serviceArea:clean(body.serviceArea,500),
     timezone:clean(body.timezone,100)||'America/Los_Angeles',
     notificationEmail:clean(body.notificationEmail,200).toLowerCase(),
-    smsAlerts:body.smsAlerts!==false,emailAlerts:body.emailAlerts!==false,updatedAt:Date.now()
+    smsAlerts:body.smsAlerts!==false,emailAlerts:body.emailAlerts!==false,
+    notifyBilling:body.notifyBilling!==false,notifySetup:body.notifySetup!==false,notifyCalls:body.notifyCalls!==false,notifySupport:body.notifySupport!==false,notifyUsage:body.notifyUsage!==false,
+    updatedAt:Date.now()
   };
   if(settings.primaryEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.primaryEmail))return res.status(400).json({error:'Valid primary email required'});
   if(settings.notificationEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.notificationEmail))return res.status(400).json({error:'Valid notification email required'});
