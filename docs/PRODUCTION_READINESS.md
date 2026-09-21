@@ -27,6 +27,11 @@ This document tracks the release-readiness state of the feature branch. It is in
 - Automated critical-path tests for pricing/entitlements, business-hours timing, agreement snapshots, and email support requirements.
 - GitHub Actions CI and deployment-time test execution.
 - Client support channels and stated business-hour expectations.
+- Client/admin workspace JSON export with recursive secret redaction and audited admin exports.
+- Audit-snapshot restore support for recoverable configuration sections.
+- Backup/recovery operating strategy documented in `docs/BACKUP_AND_RECOVERY.md`.
+- Incident-response runbook documented in `docs/INCIDENT_RESPONSE.md`.
+- Current server-side tenant/admin write-isolation review backed by regression tests.
 
 ## Must complete before broad production launch
 
@@ -92,10 +97,9 @@ Run one complete disposable client through:
 ### Security / reliability
 - Resolve/verify the Preview Upstash / Vercel KV connection; the observed DNS lookup failures came from an older `feature/callercore-dashboards` preview deployment, not a production deployment.
 - Complete protected-preview browser QA.
-- Focused authorization/tenant-isolation security review.
+- Re-run focused authorization/tenant-isolation review when new authenticated API surfaces are added.
 - Webhook security review for all external providers as they are added.
-- Backup/export strategy for production data.
-- Incident-response and recovery checklist.
+- Add provider-managed point-in-time database recovery before CallerCore reaches material production scale; current workspace exports are an interim recovery layer.
 
 ## Next engineering improvements after core launch
 
