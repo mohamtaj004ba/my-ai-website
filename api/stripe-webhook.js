@@ -74,10 +74,9 @@ module.exports=async function handler(req,res){
     let workspaceId=null;
     if(subscriptionId)workspaceId=await kv.get('stripe:subscription:'+subscriptionId);
     if(!workspaceId&&customerId)workspaceId=await kv.get('stripe:customer:'+customerId);
-    if(!workspaceId)return res.status(200).json({received:true,unmapped:true});
-    const key='workspace:'+workspaceId;
-    const ws=await kv.get(key);
-    if(!ws)return res.status(200).json({received:true,workspace_missing:true});
+    if(!workspaceId){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,unmapped:true})}
+    const key='workspace:'+workspaceId,ws=await kv.get(key);
+    if(!ws){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,workspace_missing:true})}
 
     let status=ws.subscriptionStatus||'active';
     if(event.type==='customer.subscription.deleted')status='canceled';
@@ -85,16 +84,76 @@ module.exports=async function handler(req,res){
     else if(event.type==='invoice.paid')status='active';
     else if(event.type.startsWith('customer.subscription.'))status=obj.status||status;
 
-    await kv.set(key,{...ws,subscriptionStatus:status,updatedAt:Date.now()});
-    if(subscriptionId&&!ws.stripeSubscriptionId){
-      const updated=await kv.get(key);
-      await kv.set(key,{...updated,stripeSubscriptionId:subscriptionId,updatedAt:Date.now()});
-      await kv.set('stripe:subscription:'+subscriptionId,workspaceId);
+    const billing={...(ws.stripeBilling||{}),customerId:customerId||ws.stripeCustomerId||null,subscriptionId:subscriptionId||ws.stripeSubscriptionId||null,lastEvent:event.type,lastEventAt:Date.now()};
+    if(event.type.startsWith('customer.subscription.')){
+      billing.currentPeriodEnd=obj.current_period_end?Number(obj.current_period_end)*1000:(billing.currentPeriodEnd||null);
+      billing.cancelAtPeriodEnd=!!obj.cancel_at_period_end;
+      billing.canceledAt=obj.canceled_at?Number(obj.canceled_at)*1000:(billing.canceledAt||null);
+      const amount=Number(obj.items?.data?.[0]?.price?.unit_amount||0);
+      const planByAmount={34900:'Starter',59900:'Growth',99900:'Pro'};
+      if(planByAmount[amount])billing.detectedPlan=planByAmount[amount];
+    }else{
+      billing.lastInvoiceId=obj.id||billing.lastInvoiceId||null;
+      billing.lastInvoiceAmount=Number(obj.amount_due||obj.amount_paid||0);
+      billing.lastInvoiceUrl=obj.hosted_invoice_url||billing.lastInvoiceUrl||'';
     }
+    const next={...ws,subscriptionStatus:status,stripeBilling:billing,updatedAt:Date.now()};
+    if(subscriptionId&&!next.stripeSubscriptionId)next.stripeSubscriptionId=subscriptionId;
+    if(billing.detectedPlan&&billing.detectedPlan!==ws.plan)next.plan=billing.detectedPlan;
+    await kv.set(key,next);
+    if(subscriptionId)await kv.set('stripe:subscription:'+subscriptionId,workspaceId);
+
+    const recipient=String(next.ownerEmail||'').trim().toLowerCase(),firstName=String(next.ownerName||'').split(' ')[0]||'there';
+    try{
+      if(recipient&&event.type==='invoice.payment_failed'){
+        const email=lifecycleEmail({
+          preheader:'Your CallerCore payment needs attention.',
+          eyebrow:'BILLING ACTION NEEDED',
+          title:'We couldn’t process your CallerCore payment.',
+          intro:'Hi '+firstName+', your subscription is still attached to your account, but the latest payment attempt was unsuccessful.',
+          statusLabel:'Current status',
+          statusText:'Past due — please update your billing method to avoid service interruption.',
+          bodyHtml:'<p style="margin:0">Open Billing & Plan in CallerCore to review your billing status. If anything looks wrong or you need help, contact us and we’ll work through it with you.</p>',
+          ctaLabel:'Open billing',
+          ctaUrl:SITE_URL+'/dashboard',
+          siteUrl:SITE_URL
+        });
+        await sendMail({to:recipient,subject:'CallerCore billing needs attention',...email});
+      }else if(recipient&&event.type==='customer.subscription.deleted'){
+        const email=lifecycleEmail({
+          preheader:'Your CallerCore subscription has been canceled.',
+          eyebrow:'SUBSCRIPTION UPDATE',
+          title:'Your CallerCore subscription is canceled.',
+          intro:'Hi '+firstName+', Stripe has confirmed the cancellation of your CallerCore subscription.',
+          statusLabel:'Status',
+          statusText:'Canceled',
+          bodyHtml:'<p style="margin:0">Your account data is not automatically deleted by this billing event. If this cancellation was unexpected, or you’d like help restarting service, contact us and we’ll help.</p>',
+          ctaLabel:'Contact support',
+          ctaUrl:'mailto:support@callercore.com',
+          siteUrl:SITE_URL
+        });
+        await sendMail({to:recipient,subject:'Your CallerCore subscription is canceled',...email});
+      }else if(recipient&&event.type==='invoice.paid'&&ws.subscriptionStatus==='past_due'){
+        const email=lifecycleEmail({
+          preheader:'Your CallerCore billing is back in good standing.',
+          eyebrow:'PAYMENT RECEIVED',
+          title:'Your CallerCore billing is back on track.',
+          intro:'Hi '+firstName+', we received your payment successfully.',
+          statusLabel:'Status',
+          statusText:'Active',
+          bodyHtml:'<p style="margin:0">No further billing action is needed right now. Thanks for taking care of it.</p>',
+          ctaLabel:'Open CallerCore',
+          ctaUrl:SITE_URL+'/dashboard',
+          siteUrl:SITE_URL
+        });
+        await sendMail({to:recipient,subject:'CallerCore payment received',...email});
+      }
+    }catch(err){console.error('Stripe lifecycle email failed:',err)}
+
+    if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
     return res.status(200).json({received:true,workspaceId,status});
   }
-
-  if(!checkoutEvent)return res.status(200).json({received:true,ignored:true});
+  if(!checkoutEvent){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,ignored:true})}
   const eventKey=event.id?'stripe:event:'+event.id:null;
   if(eventKey&&await kv.get(eventKey))return res.status(200).json({received:true,duplicate:true});
   const session=event.data.object;
