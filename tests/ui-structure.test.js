@@ -22,3 +22,10 @@ test('security headers include baseline protections',()=>{
   for(const key of ['strict-transport-security','content-security-policy','x-content-type-options','x-frame-options','referrer-policy'])assert.ok(map[key],key+' missing');
   assert.match(map['content-security-policy'],/frame-ancestors 'none'/);
 });
+
+test('dashboard JavaScript has no duplicate named function declarations',()=>{
+  const src=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  const names=[...src.matchAll(/(?:async\s+)?function\s+([A-Za-z0-9_$]+)\s*\(/g)].map(m=>m[1]);
+  const counts={};for(const name of names)counts[name]=(counts[name]||0)+1;
+  assert.deepEqual(Object.entries(counts).filter(([,count])=>count>1),[]);
+});
