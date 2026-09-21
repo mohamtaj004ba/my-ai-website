@@ -565,7 +565,7 @@ document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebho
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null;
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -603,7 +603,7 @@ async function loadAdminOps(){
     ]);
     if(pr.ok)adminProvisioningData=(await pr.json()).provisioning||[];
     if(ph.ok)adminPhoneData=(await ph.json()).numbers||[];
-    if(hr.ok)adminHealthData=(await hr.json()).services||[];
+    if(hr.ok){const health=await hr.json();adminHealthData=health.services||[];adminReadinessData=health.readiness||null;}
     if(fr.ok)adminFleetData=await fr.json();
     if(sr.ok)adminSupportData=(await sr.json()).tickets||[];
     if(ps.ok)adminPlatformData=(await ps.json()).settings||null;
@@ -971,6 +971,13 @@ function renderHealth(){
   const wrap=document.getElementById('systemHealthGrid');if(!wrap)return;
   wrap.innerHTML=adminHealthData.map(x=>'<article class="panel integration-card"><div><b>'+esc(x.name)+'</b><p>'+esc(x.detail||'')+'</p></div><span class="tag '+(x.status==='operational'||x.status==='configured'?'green':x.status==='error'?'red':'amber')+'">'+esc(x.status.replace('_',' '))+'</span></article>').join('');
   const bad=adminHealthData.filter(x=>x.status==='error'||x.status==='not_configured').length,side=document.getElementById('adminSidebarHealth');if(side)side.textContent=bad?bad+' system item'+(bad===1?'':'s')+' need attention':'All systems operational';
+  const title=document.getElementById('productionReadinessTitle'),copy=document.getElementById('productionReadinessCopy'),blockers=document.getElementById('productionReadinessBlockers'),card=document.getElementById('productionReadinessCard');
+  if(adminReadinessData&&title&&copy&&blockers){
+    title.textContent=adminReadinessData.ready?'Core launch dependencies are ready.':adminReadinessData.blockers.length+' launch blocker'+(adminReadinessData.blockers.length===1?'':'s')+' remain.';
+    copy.textContent=adminReadinessData.ready?'Required infrastructure is configured. Complete the end-to-end release checklist before production launch.':'These are infrastructure requirements for a broad production launch, not just optional integrations.';
+    blockers.innerHTML=(adminReadinessData.blockers||[]).map(x=>'<div class="readiness-blocker"><b>'+esc(x.name)+'</b><span>'+esc(x.detail||'Needs attention')+'</span></div>').join('')||'<div class="readiness-ok">No dependency blockers detected.</div>';
+    card?.classList.toggle('ready',!!adminReadinessData.ready);
+  }
 }
 
 async function deletePhone(id){
