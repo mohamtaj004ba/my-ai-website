@@ -443,11 +443,18 @@ async function adminWebsiteReply(req,res){
   const to=String(prospect.email||'').trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))return res.status(409).json({error:'This prospect has no valid email address'});
   const subject='Re: '+(prospect.category||'Your CallerCore inquiry');
+  let channel='mailgun',from='support@callercore.com';
   try{
-    await sendMail({to,subject,text:message,html:'<p>'+message.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])).replace(/\n/g,'<br>')+'</p>'});
+    const gmail=await getGmailConnection(admin.email);
+    if(gmail){
+      await sendGmailMessage(admin.email,{to,subject,body:message});
+      channel='gmail';from=gmail.gmailEmail||admin.email;
+    }else{
+      await sendMail({to,subject,text:message,html:'<p>'+message.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])).replace(/\n/g,'<br>')+'</p>'});
+    }
   }catch(err){console.error('website reply failed',err);return res.status(502).json({error:'Unable to send reply'})}
   const convKey='site:conversation:'+id,conversation=await kv.get(convKey)||[];
-  const item={id:crypto.randomUUID(),direction:'outbound',channel:'email',from:'support@callercore.com',to,subject,body:message,actorEmail:admin.email,at:Date.now()};
+  const item={id:crypto.randomUUID(),direction:'outbound',channel,from,to,subject,body:message,actorEmail:admin.email,at:Date.now()};
   const next=Array.isArray(conversation)?conversation:[];
   next.push(item);await kv.set(convKey,next.slice(-200));
   const updated={...prospect,stage:prospect.stage==='new'||prospect.stage==='inquiry'?'follow_up':prospect.stage,lastRepliedAt:Date.now(),updatedAt:Date.now(),updatedBy:admin.email};
