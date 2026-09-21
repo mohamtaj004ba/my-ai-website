@@ -385,6 +385,35 @@ async function adminPlatformSettingsSave(req,res){
 
 
 
+
+async function adminWebsiteConversation(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.query||{}).id||'').slice(0,100);
+  if(!id)return res.status(400).json({error:'Prospect id required'});
+  const prospect=await kv.get('site:prospect:'+id);if(!prospect)return res.status(404).json({error:'Prospect not found'});
+  const messages=await kv.get('site:conversation:'+id)||[];
+  return res.status(200).json({prospect,messages:Array.isArray(messages)?messages:[]});
+}
+async function adminWebsiteReply(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,100),message=String(body.message||'').trim().slice(0,10000);
+  if(!id||!message)return res.status(400).json({error:'Prospect and reply message required'});
+  const key='site:prospect:'+id,prospect=await kv.get(key);if(!prospect)return res.status(404).json({error:'Prospect not found'});
+  const to=String(prospect.email||'').trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))return res.status(409).json({error:'This prospect has no valid email address'});
+  const subject='Re: '+(prospect.category||'Your CallerCore inquiry');
+  try{
+    await sendMail({to,subject,text:message,html:'<p>'+message.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])).replace(/\n/g,'<br>')+'</p>'});
+  }catch(err){console.error('website reply failed',err);return res.status(502).json({error:'Unable to send reply'})}
+  const convKey='site:conversation:'+id,conversation=await kv.get(convKey)||[];
+  const item={id:crypto.randomUUID(),direction:'outbound',channel:'email',from:'support@callercore.com',to,subject,body:message,actorEmail:admin.email,at:Date.now()};
+  const next=Array.isArray(conversation)?conversation:[];
+  next.push(item);await kv.set(convKey,next.slice(-200));
+  const updated={...prospect,stage:prospect.stage==='new'||prospect.stage==='inquiry'?'follow_up':prospect.stage,lastRepliedAt:Date.now(),updatedAt:Date.now(),updatedBy:admin.email};
+  await kv.set(key,updated);
+  return res.status(200).json({ok:true,message:item,prospect:updated});
+}
+
 async function adminWebsiteAnalytics(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   try{
@@ -944,6 +973,8 @@ module.exports=async function handler(req,res){
   if(action==='admin-phone-numbers'&&req.method==='GET')return adminPhoneNumbers(req,res);
   if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
   if(action==='admin-phone-number-delete'&&req.method==='POST')return adminDeletePhoneNumber(req,res);
+  if(action==='admin-website-conversation'&&req.method==='GET')return adminWebsiteConversation(req,res);
+  if(action==='admin-website-reply'&&req.method==='POST')return adminWebsiteReply(req,res);
   if(action==='admin-website-analytics'&&req.method==='GET')return adminWebsiteAnalytics(req,res);
   if(action==='admin-website-prospect-update'&&req.method==='POST')return adminWebsiteProspectUpdate(req,res);
   if(action==='admin-tech-support'&&req.method==='GET')return adminTechSupport(req,res);
