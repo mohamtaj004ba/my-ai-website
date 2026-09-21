@@ -383,6 +383,111 @@ async function adminPlatformSettingsSave(req,res){
   await kv.set('platform:settings',settings);return res.status(200).json({ok:true,settings});
 }
 
+
+async function adminTechSupport(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.query||{}).id||'').slice(0,80);
+  if(!id)return res.status(400).json({error:'Client id required'});
+  const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
+  const email=cleanEmail(ws.ownerEmail||''),member=email?await kv.get('user:email:'+email):null;
+  const config=await getWorkspaceConfigSnapshot(id),audit=await kv.get('audit:'+id)||[];
+  return res.status(200).json({
+    diagnostics:{
+      workspaceExists:true,workspaceId:id,workspaceStatus:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',
+      ownerEmail:email,userMappingExists:!!member,userMappingMatches:!!member&&member.workspaceId===id,
+      role:member?.role||null,sessionVersion:Number(member?.sessionVersion||0),
+      stripeCustomerLinked:!!ws.stripeCustomerId,stripeSubscriptionLinked:!!ws.stripeSubscriptionId,
+      phoneConfigured:!!config.phone,agentConfigured:!!config.agent,settingsConfigured:!!config.settings,
+      locationsConfigured:Array.isArray(config.locations)?config.locations.length:0
+    },
+    config,audit:Array.isArray(audit)?audit.slice(0,100):[]
+  });
+}
+async function adminSendClientLogin(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).id||'').slice(0,80),ws=await kv.get('workspace:'+id);
+  if(!ws)return res.status(404).json({error:'Client not found'});
+  const email=cleanEmail(ws.ownerEmail||'');if(!email)return res.status(409).json({error:'Client has no owner email'});
+  const member=await kv.get('user:email:'+email);
+  if(!member||member.workspaceId!==id)return res.status(409).json({error:'Client access mapping is broken. Repair access first.'});
+  const token=crypto.randomBytes(32).toString('hex');
+  await kv.set('login:'+token,{email,workspaceId:id,role:member.role||'owner',next:'/dashboard',authVersion:Number(member.sessionVersion||0)},{ex:15*60});
+  const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
+  await sendMail({to:email,subject:'Your CallerCore sign-in link',text:'CallerCore support sent you a secure sign-in link:\n\n'+link+'\n\nThis link expires in 15 minutes.',html:'<p>CallerCore support sent you a secure sign-in link:</p><p><a href="'+link+'">Sign in to CallerCore</a></p><p>This link expires in 15 minutes.</p>'});
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'login_link_sent',section:'access',meta:{recipient:email}});
+  return res.status(200).json({ok:true,email});
+}
+async function adminForceLogout(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).id||'').slice(0,80),ws=await kv.get('workspace:'+id);
+  if(!ws)return res.status(404).json({error:'Client not found'});
+  const email=cleanEmail(ws.ownerEmail||''),key='user:email:'+email,member=email?await kv.get(key):null;
+  if(!member||member.workspaceId!==id)return res.status(409).json({error:'Client access mapping is missing or broken'});
+  const sessionVersion=Number(member.sessionVersion||0)+1;
+  await kv.set(key,{...member,sessionVersion});
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'force_logout',section:'access',meta:{sessionVersion}});
+  return res.status(200).json({ok:true,sessionVersion});
+}
+async function adminRepairAccess(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80),email=cleanEmail(body.email);
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Valid owner email required'});
+  const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
+  const existing=await kv.get('user:email:'+email);
+  if(existing&&existing.workspaceId&&existing.workspaceId!==id)return res.status(409).json({error:'That email already belongs to another workspace'});
+  const oldEmail=cleanEmail(ws.ownerEmail||''),oldMember=oldEmail?await kv.get('user:email:'+oldEmail):null;
+  if(oldEmail&&oldEmail!==email&&oldMember&&oldMember.workspaceId===id)await kv.del('user:email:'+oldEmail);
+  const sessionVersion=Number(existing?.sessionVersion||oldMember?.sessionVersion||0)+1;
+  const member={workspaceId:id,role:'owner',email,sessionVersion};
+  await kv.set('user:email:'+email,member);
+  const next={...ws,ownerEmail:email,updatedAt:Date.now()};await kv.set(key,next);
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'access_repair',section:'access',before:{ownerEmail:oldEmail,mapping:oldMember||null},after:{ownerEmail:email,mapping:member}});
+  return res.status(200).json({ok:true,email,sessionVersion});
+}
+function sanitizeAdminOverride(section,value,current){
+  if(section==='settings'||section==='agent'||section==='integrations'){
+    if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Section must be a JSON object');
+    return {...value,updatedAt:Date.now()};
+  }
+  if(section==='automations'||section==='locations'){
+    if(!Array.isArray(value))throw new Error('Section must be a JSON array');
+    return value.slice(0,section==='automations'?20:5);
+  }
+  if(section==='workspace'){
+    if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Workspace override must be a JSON object');
+    const safe={...current};
+    for(const k of ['name','ownerName','ownerEmail','industry','phone','status','plan','usage'])if(value[k]!==undefined)safe[k]=value[k];
+    if(!['Starter','Growth','Pro'].includes(safe.plan))throw new Error('Invalid plan');
+    if(!['active','onboarding','suspended'].includes(safe.status))throw new Error('Invalid status');
+    safe.id=current.id;safe.updatedAt=Date.now();return safe;
+  }
+  throw new Error('Unsupported section');
+}
+async function adminOverrideConfig(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80),section=String(body.section||'');
+  const key=configKey(section,id);if(!key)return res.status(400).json({error:'Unsupported configuration section'});
+  const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
+  const before=await kv.get(key);
+  let after;try{after=sanitizeAdminOverride(section,body.value,before||ws)}catch(err){return res.status(400).json({error:err.message})}
+  await kv.set(key,after);
+  if(section==='settings'&&after.businessName){const current=await kv.get('workspace:'+id);await kv.set('workspace:'+id,{...current,name:after.businessName,updatedAt:Date.now()})}
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'admin_override',section,before:before||null,after});
+  return res.status(200).json({ok:true,section,value:after});
+}
+async function adminRestoreAudit(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80),auditId=String(body.auditId||'').slice(0,80);
+  const list=await kv.get('audit:'+id)||[],entry=(Array.isArray(list)?list:[]).find(x=>x&&x.id===auditId);
+  if(!entry)return res.status(404).json({error:'Audit entry not found'});
+  const key=configKey(entry.section,id);if(!key)return res.status(400).json({error:'This change cannot be restored automatically'});
+  if(entry.before===undefined)return res.status(400).json({error:'No prior snapshot is available'});
+  const current=await kv.get(key),restored=entry.before===null?(entry.section==='automations'||entry.section==='locations'?[]:{}):entry.before;
+  await kv.set(key,restored);
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'restore_snapshot',section:entry.section,before:current||null,after:restored,meta:{restoredFrom:auditId}});
+  return res.status(200).json({ok:true,section:entry.section,value:restored});
+}
+
 async function adminSystemHealth(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   let kvOk=false;
@@ -783,6 +888,12 @@ module.exports=async function handler(req,res){
   if(action==='admin-phone-numbers'&&req.method==='GET')return adminPhoneNumbers(req,res);
   if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
   if(action==='admin-phone-number-delete'&&req.method==='POST')return adminDeletePhoneNumber(req,res);
+  if(action==='admin-tech-support'&&req.method==='GET')return adminTechSupport(req,res);
+  if(action==='admin-send-client-login'&&req.method==='POST')return adminSendClientLogin(req,res);
+  if(action==='admin-force-logout'&&req.method==='POST')return adminForceLogout(req,res);
+  if(action==='admin-repair-access'&&req.method==='POST')return adminRepairAccess(req,res);
+  if(action==='admin-config-override'&&req.method==='POST')return adminOverrideConfig(req,res);
+  if(action==='admin-audit-restore'&&req.method==='POST')return adminRestoreAudit(req,res);
   if(action==='admin-system-health'&&req.method==='GET')return adminSystemHealth(req,res);
   if(action==='admin-fleet'&&req.method==='GET')return adminFleet(req,res);
   if(action==='admin-support'&&req.method==='GET')return adminSupport(req,res);
