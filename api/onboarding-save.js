@@ -22,6 +22,14 @@ function sanitizeFields(fields){
   }
   return out;
 }
+function addBusinessHours(startMs,hours){
+  let remaining=Math.max(0,Number(hours||0))*60*60*1000,t=new Date(startMs);
+  const parts=(d)=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d).reduce((a,p)=>(a[p.type]=p.value,a),{});
+  const open=(d)=>{let g=0;while(g++<10){const p=parts(d),day=p.weekday,h=Number(p.hour),m=Number(p.minute);if(day!=='Sat'&&day!=='Sun'&&h>=9&&h<17)return d;const add=day==='Sat'?2:day==='Sun'?1:(h>=17?1:0),x=new Date(d.getTime()+add*86400000),q=parts(x);x.setTime(x.getTime()+((9-Number(q.hour))*60-Number(q.minute))*60000);d=x}return d};
+  t=open(t);while(remaining>0){const p=parts(t),mins=Math.max(0,17*60-(Number(p.hour)*60+Number(p.minute))),win=mins*60000;if(remaining<=win){t=new Date(t.getTime()+remaining);break}remaining-=win;t=open(new Date(t.getTime()+win+16*3600000))}
+  return t.getTime();
+}
+
 function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 // Handles two kinds of saves from the onboarding page:
@@ -179,9 +187,9 @@ module.exports = async function handler(req, res) {
 
         await sendMail({
           to: 'tj@callercore.com',
-          subject: `Intake complete — ${i.businessName || record.business || 'new client'} (build clock started)`,
-          text: `Intake form submitted. The 1-business-day build clock starts now.\nFull intake attached as a PDF for your records.\n${textLines.join('\n')}\n\n— CallerCore onboarding`,
-          html: `<p><b>Intake form submitted.</b> The 1-business-day build clock starts now. Full intake attached as a PDF for your records.</p>${htmlLines.join('\n')}`,
+          subject: `Onboarding submitted — ${i.businessName || record.business || 'new client'} (review required)`,
+          text: `Onboarding submitted. Smart configuration has been prepared internally and is awaiting CallerCore review.\nFull intake attached as a PDF for your records.\n${textLines.join('\n')}\n\n— CallerCore onboarding`,
+          html: `<p><b>Onboarding submitted.</b> Smart configuration has been prepared internally and is awaiting CallerCore review. Full intake attached as a PDF for your records.</p>${htmlLines.join('\n')}`,
           attachments: [{
             filename: `Intake-Summary-${(i.businessName || record.business || 'client').replace(/[^a-z0-9]+/gi, '-')}.pdf`,
             data: Buffer.from(pdfBytes),
@@ -193,6 +201,17 @@ module.exports = async function handler(req, res) {
       }
       try{
         await syncCompletedOnboarding(record);
+        if(record.workspaceId){
+          const stateKey='onboarding:workspace:'+record.workspaceId,state=await kv.get(stateKey)||{};
+          await kv.set(stateKey,{...state,status:'building_review',buildEligibleAt:addBusinessHours(Date.now(),1),buildSubmittedAt:Date.now(),checklist:{...(state.checklist||{}),intake:true,businessProfile:true,agentDraft:true,adminReview:false},updatedAt:Date.now()});
+        }
+        const firstName=String(record.intake?.contactName||record.name||'').split(' ')[0]||'there';
+        if(record.email)await sendMail({
+          to:record.email,
+          subject:'We received your CallerCore onboarding',
+          text:['Hi '+firstName,'','We received your onboarding information and service agreement. Thank you.','','Our team is now reviewing your business details, AI-agent configuration, and routing preferences. We’ll contact you when the initial build has completed review and the next step is ready.','','No action is needed from you right now.','','— CallerCore'].join('\n'),
+          html:'<p>Hi '+firstName+',</p><p><strong>We received your onboarding information and service agreement. Thank you.</strong></p><p>Our team is now reviewing your business details, AI-agent configuration, and routing preferences. We’ll contact you when the initial build has completed review and the next step is ready.</p><p>No action is needed from you right now.</p><p>— CallerCore</p>'
+        });
       }catch(err){
         console.error('Smart onboarding workspace sync failed:',err);
         record.syncError=String(err&&err.message||'sync_failed').slice(0,300);
