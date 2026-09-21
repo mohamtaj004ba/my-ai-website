@@ -36,6 +36,8 @@ jobs:
         run: node --test tests/repository-cleanliness.test.js
       - name: Security hygiene
         run: node --test tests/security-hygiene.test.js
+      - name: Origin safeguards
+        run: node --test tests/origin-safeguards.test.js
       - name: Stripe structure
         run: node --test tests/stripe-structure.test.js
       - name: Gmail safeguards
