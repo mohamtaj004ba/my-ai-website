@@ -663,7 +663,7 @@ function renderWebsiteAnalytics(){
   }).join('');
   if(je)je.hidden=sessions.length!==0;
   const prospects=document.getElementById('websiteProspectList'),pe=document.getElementById('websiteProspectEmpty'),pros=d.prospects||[];
-  if(prospects)prospects.innerHTML=pros.slice(0,50).map(p=>'<article class="website-prospect-card"><div class="prospect-row"><div><b>'+esc(p.name||p.business||p.email||'Website prospect')+'</b><small>'+esc([p.business,p.email,p.phone].filter(Boolean).join(' · '))+'</small></div><span>'+esc(p.source||'website')+'</span><span>'+esc(p.plan||p.category||p.industry||'—')+'</span><select class="prospect-stage" data-prospect-stage="'+esc(p.id)+'">'+['new','inquiry','checkout_started','follow_up','qualified','lost','converted'].map(s=>'<option value="'+s+'" '+(p.stage===s?'selected':'')+'>'+s.replaceAll('_',' ')+'</option>').join('')+'</select></div><details><summary>View lead details</summary><div class="prospect-detail-grid"><div><span>Contact</span><b>'+esc([p.email,p.phone].filter(Boolean).join(' · ')||'Not provided')+'</b></div><div><span>Attribution</span><b>'+esc([p.utmSource,p.utmMedium,p.utmCampaign].filter(Boolean).join(' / ')||p.source||'direct')+'</b></div><div class="full"><span>Inquiry / message</span><p>'+esc(p.message||'No message submitted.')+'</p></div>'+(p.notes?'<div class="full"><span>Admin notes</span><p>'+esc(p.notes)+'</p></div>':'')+'</div></details></article>').join('');
+  if(prospects)prospects.innerHTML=pros.slice(0,50).map(p=>'<article class="website-prospect-card" data-website-prospect-id="'+esc(p.id)+'"><div class="prospect-row"><div><b>'+esc(p.name||p.business||p.email||'Website prospect')+'</b><small>'+esc([p.business,p.email,p.phone].filter(Boolean).join(' · '))+'</small></div><span>'+esc(p.source||'website')+'</span><span>'+esc(p.plan||p.category||p.industry||'—')+'</span><select class="prospect-stage" data-prospect-stage="'+esc(p.id)+'">'+['new','inquiry','checkout_started','follow_up','qualified','lost','converted'].map(s=>'<option value="'+s+'" '+(p.stage===s?'selected':'')+'>'+s.replaceAll('_',' ')+'</option>').join('')+'</select></div><details><summary>View lead details</summary><div class="prospect-detail-grid"><div><span>Contact</span><b>'+esc([p.email,p.phone].filter(Boolean).join(' · ')||'Not provided')+'</b></div><div><span>Attribution</span><b>'+esc([p.utmSource,p.utmMedium,p.utmCampaign].filter(Boolean).join(' / ')||p.source||'direct')+'</b></div><div class="full"><span>Inquiry / message</span><p>'+esc(p.message||'No message submitted.')+'</p></div>'+(p.notes?'<div class="full"><span>Admin notes</span><p>'+esc(p.notes)+'</p></div>':'')+'</div></details></article>').join('');
   if(pe)pe.hidden=pros.length!==0;
   prospects?.querySelectorAll('[data-prospect-stage]').forEach(sel=>sel.addEventListener('change',()=>updateWebsiteProspect(sel.dataset.prospectStage,sel.value)));
 }
@@ -870,7 +870,7 @@ function renderAdminSupport(){
   const tickets=adminSupportData||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   set('supportOpen',tickets.filter(x=>x.status==='open').length);set('supportProgress',tickets.filter(x=>x.status==='in_progress').length);set('supportResolved',tickets.filter(x=>x.status==='resolved').length);set('supportUrgent',tickets.filter(x=>x.priority==='urgent'&&x.status!=='resolved').length);
   const wrap=document.getElementById('adminSupportList');if(!wrap)return;
-  wrap.innerHTML=tickets.map(t=>'<div class="support-admin-row"><div><b>'+esc(t.subject)+'</b><small>'+esc(t.workspaceName||'Workspace')+' · '+esc(t.email||'')+' · '+new Date(t.createdAt).toLocaleString()+'</small><p>'+esc(t.message||'')+'</p></div><div><span class="tag '+(t.priority==='urgent'?'red':'')+'">'+esc(t.priority||'normal')+'</span><select class="support-status-select" data-ticket-status="'+esc(t.id)+'"><option value="open" '+(t.status==='open'?'selected':'')+'>Open</option><option value="in_progress" '+(t.status==='in_progress'?'selected':'')+'>In progress</option><option value="resolved" '+(t.status==='resolved'?'selected':'')+'>Resolved</option></select></div></div>').join('');
+  wrap.innerHTML=tickets.map(t=>'<div class="support-admin-row" data-support-ticket-id="'+esc(t.id)+'"><div><b>'+esc(t.subject)+'</b><small>'+esc(t.workspaceName||'Workspace')+' · '+esc(t.email||'')+' · '+new Date(t.createdAt).toLocaleString()+'</small><p>'+esc(t.message||'')+'</p></div><div><span class="tag '+(t.priority==='urgent'?'red':'')+'">'+esc(t.priority||'normal')+'</span><select class="support-status-select" data-ticket-status="'+esc(t.id)+'"><option value="open" '+(t.status==='open'?'selected':'')+'>Open</option><option value="in_progress" '+(t.status==='in_progress'?'selected':'')+'>In progress</option><option value="resolved" '+(t.status==='resolved'?'selected':'')+'>Resolved</option></select></div></div>').join('');
   const empty=document.getElementById('adminSupportEmpty');if(empty)empty.hidden=tickets.length!==0;
   wrap.querySelectorAll('[data-ticket-status]').forEach(s=>s.addEventListener('change',()=>updateSupportStatus(s.dataset.ticketStatus,s.value)));
 }
@@ -1064,8 +1064,7 @@ function adminClientRow(x,activity=false){
 }
 function renderAdminClients(){
   const wrap=document.getElementById('adminClientsTable');if(!wrap)return;
-  const q=(document.getElementById('adminSearch')?.value||'').trim().toLowerCase();
-  const rows=adminClientsData.filter(x=>!q||[x.name,x.ownerEmail,x.plan,x.subscriptionStatus].join(' ').toLowerCase().includes(q));
+  const rows=adminClientsData;
   wrap.innerHTML=rows.map(x=>adminClientRow(x)).join('');
   const empty=document.getElementById('adminClientsEmpty');if(empty)empty.hidden=rows.length!==0;
   wrap.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.adminClient)));
@@ -1169,7 +1168,41 @@ document.getElementById('adminForceLogoutButton')?.addEventListener('click',forc
 document.getElementById('adminRepairAccessButton')?.addEventListener('click',repairClientAccess);
 
 function closeAdminClient(){document.getElementById('adminClientDrawer')?.classList.remove('open');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
-document.getElementById('adminSearch')?.addEventListener('input',renderAdminClients);
+
+function adminGlobalSearchItems(q){
+  const needle=String(q||'').trim().toLowerCase();if(needle.length<2)return[];
+  const match=(parts)=>parts.filter(Boolean).join(' ').toLowerCase().includes(needle),items=[];
+  for(const x of adminClientsData)if(match([x.name,x.ownerEmail,x.id,x.plan,x.subscriptionStatus]))items.push({type:'client',id:x.id,title:x.name||'Client',meta:[x.ownerEmail,x.plan,'Client'].filter(Boolean).join(' · '),view:'clients'});
+  for(const p of adminWebsiteData.prospects||[])if(match([p.name,p.business,p.email,p.phone,p.source,p.stage,p.plan,p.industry]))items.push({type:'prospect',id:p.id,title:p.name||p.business||p.email||'Website prospect',meta:[p.business,p.email,p.stage,'Website prospect'].filter(Boolean).join(' · '),view:'website'});
+  for(const t of adminSupportData||[])if(match([t.subject,t.workspaceName,t.email,t.message,t.priority,t.status]))items.push({type:'support',id:t.id,title:t.subject||'Support request',meta:[t.workspaceName,t.status,'Support'].filter(Boolean).join(' · '),view:'admin-support'});
+  for(const x of adminFleetData.calls||[])if(match([x.id,x.callId,x.caller,x.phone,x.reason,x.summary,x.workspaceName,x.outcome]))items.push({type:'call',id:String(x.id||x.callId||''),title:x.caller||x.phone||'Call',meta:[x.workspaceName,x.reason,x.outcome,'Call'].filter(Boolean).join(' · '),view:'calls'});
+  for(const x of adminFleetData.leads||[])if(match([x.id,x.name,x.email,x.phone,x.stage,x.workspaceName,x.source]))items.push({type:'lead',id:String(x.id||''),title:x.name||x.email||x.phone||'Lead',meta:[x.workspaceName,x.stage,'Lead'].filter(Boolean).join(' · '),view:'admin-leads'});
+  for(const t of adminInboxData.gmail?.threads||[])if(match([t.subject,t.last?.from,t.last?.to,t.last?.snippet]))items.push({type:'gmail',id:t.id,title:t.subject||'Gmail thread',meta:[t.last?.from,'Gmail'].filter(Boolean).join(' · '),view:'inbox'});
+  return items.slice(0,14);
+}
+function renderAdminGlobalSearch(){
+  const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(!input||!wrap)return;
+  const q=input.value.trim(),items=adminGlobalSearchItems(q);
+  if(q.length<2){wrap.hidden=true;wrap.innerHTML='';return}
+  wrap.hidden=false;
+  wrap.innerHTML=items.length?items.map(x=>'<button type="button" class="admin-search-result" data-global-search-type="'+esc(x.type)+'" data-global-search-id="'+esc(x.id||'')+'" data-global-search-view="'+esc(x.view)+'"><span>'+esc(x.title)+'</span><small>'+esc(x.meta||'')+'</small></button>').join(''):'<div class="admin-search-empty">No CallerCore records match “'+esc(q)+'”.</div>';
+  wrap.querySelectorAll('[data-global-search-type]').forEach(b=>b.addEventListener('click',()=>openAdminGlobalSearchResult(b.dataset.globalSearchType,b.dataset.globalSearchId,b.dataset.globalSearchView)));
+}
+function flashAdminSearchTarget(el){
+  if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('search-target-flash');setTimeout(()=>el.classList.remove('search-target-flash'),2200);
+}
+async function openAdminGlobalSearchResult(type,id,view){
+  const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(wrap)wrap.hidden=true;if(input)input.value='';
+  if(type==='client'){showView('clients');await openAdminClient(id);return}
+  showView(view);
+  setTimeout(()=>{
+    if(type==='prospect')flashAdminSearchTarget(document.querySelector('[data-website-prospect-id="'+CSS.escape(id)+'"]'));
+    else if(type==='support')flashAdminSearchTarget(document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]'));
+  },80);
+}
+document.getElementById('adminSearch')?.addEventListener('input',renderAdminGlobalSearch);
+document.getElementById('adminSearch')?.addEventListener('keydown',e=>{if(e.key==='Escape'){const r=document.getElementById('adminSearchResults');if(r)r.hidden=true}});
+
 document.getElementById('closeAdminClient')?.addEventListener('click',closeAdminClient);
 document.getElementById('adminClientBackdrop')?.addEventListener('click',closeAdminClient);
 
