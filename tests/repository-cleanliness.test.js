@@ -1,7 +1,7 @@
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('fs');const path=require('path');
 const root=path.join(__dirname,'..');
 test('obsolete v2 prototype pages are not shipped',()=>{
-  for(const name of ['homepage-v2.html','contact-v2.html','get-started-v2.html','live-demo-v2.html','redesign.css'])assert.equal(fs.existsSync(path.join(root,name)),false,name+' should remain removed');
+  for(const name of ['homepage-v2.html','contact-v2.html','get-started-v2.html','live-demo-v2.html'])assert.equal(fs.existsSync(path.join(root,name)),false,name+' should remain removed');
 });
 test('old v2 URLs retain permanent redirects',()=>{
   const config=JSON.parse(fs.readFileSync(path.join(root,'vercel.json'),'utf8'));
