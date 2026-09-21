@@ -75,6 +75,33 @@ async function workspace(req,res){
   }});
 }
 
+async function calls(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const items=await kv.get('calls:'+s.workspaceId)||[];
+  return res.status(200).json({calls:Array.isArray(items)?items:[]});
+}
+
+async function leads(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const items=await kv.get('leads:'+s.workspaceId)||[];
+  return res.status(200).json({leads:Array.isArray(items)?items:[]});
+}
+
+async function updateLead(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const id=String((req.body||{}).id||'').slice(0,120);
+  const stage=String((req.body||{}).stage||'').slice(0,40);
+  const allowed=['New','Contacted','Qualified','Appointment','Won','Lost'];
+  if(!id||!allowed.includes(stage))return res.status(400).json({error:'Invalid lead update'});
+  const key='leads:'+s.workspaceId;
+  const items=await kv.get(key)||[];
+  if(!Array.isArray(items))return res.status(200).json({ok:true,updated:false});
+  let updated=false;
+  const next=items.map(item=>item&&String(item.id)===id?(updated=true,{...item,stage,updatedAt:Date.now()}):item);
+  if(updated)await kv.set(key,next);
+  return res.status(200).json({ok:true,updated});
+}
+
 async function logout(req,res){
   const token=parseCookies(req).cc_session;if(token)await kv.del('session:'+token);
   clearSessionCookie(res);return res.status(200).json({ok:true});
@@ -87,6 +114,9 @@ module.exports=async function handler(req,res){
   if(action==='verify'&&req.method==='GET')return verify(req,res);
   if(action==='session'&&req.method==='GET')return session(req,res);
   if(action==='workspace'&&req.method==='GET')return workspace(req,res);
+  if(action==='calls'&&req.method==='GET')return calls(req,res);
+  if(action==='leads'&&req.method==='GET')return leads(req,res);
+  if(action==='lead-update'&&req.method==='POST')return updateLead(req,res);
   if(action==='logout'&&req.method==='POST')return logout(req,res);
   return res.status(404).json({error:'Unknown account action'});
 };
