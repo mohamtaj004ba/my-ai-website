@@ -22,3 +22,28 @@ test('Stripe webhook still verifies signatures before parsing events',()=>{
   const parse=src.indexOf("JSON.parse(rawBody)");
   assert.ok(verify>=0&&parse>verify);
 });
+
+test('embedded checkout uses verified CallerCore prices and preserves lead tracking',()=>{
+  const checkout=fs.readFileSync(path.join(__dirname,'..','api','create-checkout-session.js'),'utf8');
+  assert.match(checkout,/price_1To98LF0BXlPng7V4YXh69Yc/);
+  assert.match(checkout,/price_1To9D3F0BXlPng7VH3Ye2OzZ/);
+  assert.match(checkout,/price_1To9G4F0BXlPng7VkvMGPE2Y/);
+  assert.match(checkout,/price_1To9HhF0BXlPng7V0OBFPmQR/);
+  assert.match(checkout,/params\.set\('ui_mode','embedded_page'\)/);
+  assert.match(checkout,/params\.set\('client_reference_id',leadId\)/);
+  assert.match(checkout,/upsertWebsiteProspect/);
+  assert.match(checkout,/recordSiteEvent/);
+});
+
+test('Stripe webhook accepts embedded checkout plan metadata as well as legacy payment links',()=>{
+  assert.match(src,/const metadataPlan=String\(session\.metadata\?\.plan\|\|''\)/);
+  assert.match(src,/PLAN_BY_PAYMENT_LINK\[session\.payment_link\]\|\|\(\['Starter','Growth','Pro'\]\.includes\(metadataPlan\)\?metadataPlan:null\)/);
+});
+
+test('get-started mounts Stripe Embedded Checkout instead of redirecting to Payment Links',()=>{
+  const page=fs.readFileSync(path.join(__dirname,'..','get-started.html'),'utf8');
+  assert.match(page,/https:\/\/js\.stripe\.com\/v3\//);
+  assert.match(page,/fetch\('\/api\/create-checkout-session'/);
+  assert.match(page,/initEmbeddedCheckout/);
+  assert.doesNotMatch(page,/buy\.stripe\.com/);
+});
