@@ -32,8 +32,9 @@ function isAllowedOrigin(req) {
   const candidate = origin || referer;
   if (!candidate) return false;
   try {
-    const host = new URL(candidate).host;
-    return ALLOWED_HOSTS.has(host) || host.endsWith('.vercel.app');
+    const host=new URL(candidate).host.toLowerCase();
+    const requestHost=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+    return ALLOWED_HOSTS.has(host)||(host.endsWith('.vercel.app')&&host===requestHost);
   } catch (e) {
     return false;
   }
