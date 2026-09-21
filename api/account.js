@@ -711,6 +711,11 @@ async function adminProvisioningChecklistSave(req,res){
   const allowed=new Set(['adminReview','testCall','clientApproval','live']);
   if(!id||!allowed.has(field))return res.status(400).json({error:'Invalid provisioning checklist update'});
   const wsKey='workspace:'+id,ws=await kv.get(wsKey);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(field==='live'&&value){
+    const agent=await kv.get('agent:'+id);
+    if(!agent||!String(agent.openingMessage||agent.name||'').trim())return res.status(409).json({error:'An AI agent must be configured before launch'});
+    if(!String(ws.phone||'').trim())return res.status(409).json({error:'Assign a CallerCore phone number before launch'});
+  }
   const key='onboarding:workspace:'+id,state=await kv.get(key)||{workspaceId:id,status:'building',completionPercent:100,checklist:{}};
   const next={...state,checklist:{...(state.checklist||{}),phoneAssigned:!!String(ws.phone||'').trim(),[field]:value},updatedAt:Date.now(),updatedBy:admin.email};
   if(field==='live'&&value){
