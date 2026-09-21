@@ -535,7 +535,7 @@ document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebho
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}};
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -560,13 +560,14 @@ async function bootstrapAdmin(){
 
 async function loadAdminOps(){
   try{
-    const [pr,ph,hr,fr,sr,ps]=await Promise.all([
+    const [pr,ph,hr,fr,sr,ps,wr]=await Promise.all([
       fetch('/api/account?action=admin-provisioning',{cache:'no-store'}),
       fetch('/api/account?action=admin-phone-numbers',{cache:'no-store'}),
       fetch('/api/account?action=admin-system-health',{cache:'no-store'}),
       fetch('/api/account?action=admin-fleet',{cache:'no-store'}),
       fetch('/api/account?action=admin-support',{cache:'no-store'}),
-      fetch('/api/account?action=admin-platform-settings',{cache:'no-store'})
+      fetch('/api/account?action=admin-platform-settings',{cache:'no-store'}),
+      fetch('/api/account?action=admin-website-analytics',{cache:'no-store'})
     ]);
     if(pr.ok)adminProvisioningData=(await pr.json()).provisioning||[];
     if(ph.ok)adminPhoneData=(await ph.json()).numbers||[];
@@ -574,21 +575,71 @@ async function loadAdminOps(){
     if(fr.ok)adminFleetData=await fr.json();
     if(sr.ok)adminSupportData=(await sr.json()).tickets||[];
     if(ps.ok)adminPlatformData=(await ps.json()).settings||null;
+    if(wr.ok)adminWebsiteData=(await wr.json()).analytics||adminWebsiteData;
   }catch(e){console.error('Admin ops load failed',e)}
-  renderProvisioning();renderPhones();renderHealth();renderAdminFleet();renderAdminSupport();renderPlatformSettings();renderAdmin();
+  renderProvisioning();renderPhones();renderHealth();renderWebsiteAnalytics();renderAdminFleet();renderAdminSupport();renderPlatformSettings();renderAdmin();
 }
 
 function renderAdminFleet(){
-  const agents=adminFleetData.agents||[],calls=adminFleetData.calls||[],leads=adminFleetData.leads||[],autos=adminFleetData.automations||[];
+  const agents=adminFleetData.agents||[],calls=adminFleetData.calls||[],workspaceLeads=adminFleetData.leads||[],autos=adminFleetData.automations||[],webProspects=adminWebsiteData.prospects||[];
   const ag=document.getElementById('adminAgentsGrid');if(ag){ag.innerHTML=agents.filter(x=>x.agent).map(x=>'<article class="panel integration-card"><div><b>'+esc(x.agent.name||'Maya')+' · '+esc(x.workspaceName)+'</b><p>'+esc(x.agent.role||'AI Receptionist')+(x.phone?' · '+esc(x.phone):' · No phone assigned')+'</p></div><span class="tag '+(x.status==='active'&&x.phone?'green':'amber')+'">'+(x.status==='active'&&x.phone?'Ready':'Setup')+'</span></article>').join('');document.getElementById('adminAgentsEmpty').hidden=agents.some(x=>x.agent)}
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   set('adminCallsTotal',calls.length);set('adminCallsQualified',calls.filter(x=>/booked|qualified/i.test(String(x.outcome||''))).length);set('adminCallsMissed',calls.filter(x=>/missed/i.test(String(x.outcome||''))).length);set('adminCallsWorkspaces',new Set(calls.map(x=>x.workspaceId)).size);
   const ct=document.getElementById('adminCallsTable');if(ct)ct.innerHTML=calls.slice(0,100).map(x=>'<div class="call-row"><span><strong>'+esc(x.caller||x.phone||'Unknown caller')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span>'+esc(x.workspaceName)+'</span><span>'+esc(x.reason||'General')+'</span><span class="tag '+outcomeClass(x.outcome)+'">'+esc(x.outcome||'Handled')+'</span><span>'+esc(x.time||'—')+'</span></div>').join('');
   const ce=document.getElementById('adminCallsEmpty');if(ce)ce.hidden=calls.length!==0;
-  set('adminLeadsTotal',leads.length);set('adminLeadsQualified',leads.filter(x=>x.stage==='Qualified').length);set('adminLeadsAppointments',leads.filter(x=>x.stage==='Appointment').length);set('adminLeadsWon',leads.filter(x=>x.stage==='Won').length);
-  const lt=document.getElementById('adminLeadsTable');if(lt)lt.innerHTML=leads.slice(0,100).map(x=>'<div class="call-row"><span><strong>'+esc(x.name||'Unnamed lead')+'</strong><small class="subtle">'+esc(x.source||'CallerCore')+'</small></span><span>'+esc(x.workspaceName)+'</span><span>'+esc(x.service||'General inquiry')+'</span><span class="tag">'+esc(x.stage||'New')+'</span><span>'+money(x.value)+'</span></div>').join('');
-  const le=document.getElementById('adminLeadsEmpty');if(le)le.hidden=leads.length!==0;
+
+  const totalLeads=workspaceLeads.length+webProspects.length;
+  const qualified=workspaceLeads.filter(x=>x.stage==='Qualified').length+webProspects.filter(x=>x.stage==='qualified').length;
+  const checkoutStarts=webProspects.filter(x=>x.stage==='checkout_started').length;
+  const won=workspaceLeads.filter(x=>x.stage==='Won').length+webProspects.filter(x=>x.stage==='converted').length;
+  set('adminLeadsTotal',totalLeads);set('adminLeadsQualified',qualified);set('adminLeadsAppointments',checkoutStarts);set('adminLeadsWon',won);
+  const lt=document.getElementById('adminLeadsTable');
+  if(lt){
+    const webRows=webProspects.slice(0,100).map(p=>{
+      const interest=p.plan||p.category||p.industry||'Website inquiry';
+      return '<div class="lead-admin-row"><span><strong>'+esc(p.name||p.business||p.email||'Website prospect')+'</strong><small class="subtle">'+esc(p.business||p.email||'')+'</small></span><span><span class="tag amber">Website</span><small class="subtle">'+esc(p.source||'website')+'</small></span><span>'+esc(interest)+'</span><span><select class="prospect-stage" data-prospect-stage="'+esc(p.id)+'">'+['new','inquiry','checkout_started','follow_up','qualified','lost','converted'].map(s=>'<option value="'+s+'" '+(p.stage===s?'selected':'')+'>'+s.replaceAll('_',' ')+'</option>').join('')+'</select></span><span><button class="admin-link" data-view="website">Journey</button></span></div>'
+    }).join('');
+    const clientRows=workspaceLeads.slice(0,100).map(x=>'<div class="lead-admin-row"><span><strong>'+esc(x.name||'Unnamed lead')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><span class="tag">Client</span><small class="subtle">'+esc(x.workspaceName||'Workspace')+'</small></span><span>'+esc(x.service||'General inquiry')+'</span><span><span class="tag">'+esc(x.stage||'New')+'</span></span><span>'+money(x.value)+'</span></div>').join('');
+    lt.innerHTML=webRows+clientRows;
+    lt.querySelectorAll('[data-prospect-stage]').forEach(sel=>sel.addEventListener('change',()=>updateWebsiteProspect(sel.dataset.prospectStage,sel.value)));
+    lt.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+  }
+  const le=document.getElementById('adminLeadsEmpty');if(le)le.hidden=totalLeads!==0;
   const aw=document.getElementById('adminAutomationGrid');if(aw){aw.innerHTML=autos.filter(x=>x.total).map(x=>'<article class="panel integration-card"><div><b>'+esc(x.workspaceName)+'</b><p>'+x.enabled+' enabled of '+x.total+' configured</p></div><span class="tag '+(x.enabled?'green':'amber')+'">'+esc(x.plan)+'</span></article>').join('');document.getElementById('adminAutomationsEmpty').hidden=autos.some(x=>x.total)}
+}
+
+function renderWebsiteAnalytics(){
+  const d=adminWebsiteData||{},set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  set('webSessions',Number(d.sessions||0).toLocaleString());set('webVisitors',Number(d.visitors||0).toLocaleString()+' unique visitors');
+  set('webPageViews',Number(d.pageViews||0).toLocaleString());set('webBounce',Number(d.bounceRate||0)+'% bounce');
+  set('webEngagement',formatDuration(Number(d.avgActiveSeconds||0)));set('webConversions',Number(d.conversions||0).toLocaleString());
+  const rate=d.sessions?Math.round((Number(d.conversions||0)/Number(d.sessions))*1000)/10:0;set('webConversionRate',rate+'% session conversion');
+  const f=d.funnel||{},funnel=document.getElementById('websiteFunnel');
+  if(funnel){
+    const rows=[['Sessions',f.visitors||0],['Get Started viewed',f.getStarted||0],['Form started',f.formStarted||0],['Checkout started',f.checkoutStarted||0],['Converted',f.converted||0]],base=Math.max(1,Number(f.visitors||0));
+    funnel.innerHTML=rows.map(([label,n],i)=>'<div class="funnel-row"><div><b>'+esc(label)+'</b><span>'+Number(n).toLocaleString()+'</span></div><i style="width:'+Math.max(n?4:0,Math.min(100,(Number(n)/base)*100))+'%"></i>'+(i?'<small>'+Math.round((Number(n)/base)*100)+'% of sessions</small>':'')+'</div>').join('');
+  }
+  const intent=document.getElementById('websiteIntentMetrics');if(intent)intent.innerHTML=[['Contact inquiries',d.contactInquiries||0],['Chat sessions',d.chatSessions||0],['Checkout starts',d.checkoutStarts||0],['Prospects',(d.prospects||[]).length]].map(([k,v])=>'<div><b>'+Number(v).toLocaleString()+'</b><span>'+esc(k)+'</span></div>').join('');
+  const pages=document.getElementById('websiteTopPages');if(pages)pages.innerHTML=(d.topPages||[]).map(x=>'<div class="rank-row"><b>'+esc(x.path)+'</b><span>'+Number(x.count).toLocaleString()+' views</span></div>').join('')||'<p class="muted">No page views yet.</p>';
+  const sources=document.getElementById('websiteSources');if(sources)sources.innerHTML=(d.sources||[]).map(x=>'<div class="rank-row"><b>'+esc(x.source)+'</b><span>'+Number(x.count).toLocaleString()+' sessions</span></div>').join('')||'<p class="muted">No acquisition data yet.</p>';
+  const journeys=document.getElementById('websiteJourneyList'),je=document.getElementById('websiteJourneyEmpty'),sessions=d.recentSessions||[];
+  if(journeys)journeys.innerHTML=sessions.map(s=>{
+    const loc=[s.city,s.region,s.country].filter(Boolean).join(', '),source=s.utmSource||s.source||'direct';
+    const steps=(s.journey||[]).filter(e=>!['engagement'].includes(e.type)).slice(-12).map(e=>'<span><b>'+esc(e.type.replaceAll('_',' '))+'</b>'+esc(e.path||e.label||'')+'</span>').join('');
+    return '<article class="journey-card"><div class="journey-head"><div><b>'+esc(source)+'</b><small>'+new Date(s.firstAt).toLocaleString()+' · '+esc(s.device||'device')+(loc?' · '+esc(loc):'')+'</small></div><span class="tag">'+formatDuration(Math.round(Number(s.activeMs||0)/1000))+'</span></div><div class="journey-steps">'+steps+'</div></article>'
+  }).join('');
+  if(je)je.hidden=sessions.length!==0;
+  const prospects=document.getElementById('websiteProspectList'),pe=document.getElementById('websiteProspectEmpty'),pros=d.prospects||[];
+  if(prospects)prospects.innerHTML=pros.slice(0,50).map(p=>'<div class="prospect-row"><div><b>'+esc(p.name||p.business||p.email||'Website prospect')+'</b><small>'+esc([p.business,p.email,p.phone].filter(Boolean).join(' · '))+'</small></div><span>'+esc(p.source||'website')+'</span><span>'+esc(p.plan||p.category||p.industry||'—')+'</span><select class="prospect-stage" data-prospect-stage="'+esc(p.id)+'">'+['new','inquiry','checkout_started','follow_up','qualified','lost','converted'].map(s=>'<option value="'+s+'" '+(p.stage===s?'selected':'')+'>'+s.replaceAll('_',' ')+'</option>').join('')+'</select></div>').join('');
+  if(pe)pe.hidden=pros.length!==0;
+  prospects?.querySelectorAll('[data-prospect-stage]').forEach(sel=>sel.addEventListener('change',()=>updateWebsiteProspect(sel.dataset.prospectStage,sel.value)));
+}
+function formatDuration(seconds){seconds=Math.max(0,Math.round(Number(seconds||0)));if(seconds<60)return seconds+'s';const m=Math.floor(seconds/60),s=seconds%60;return m+'m '+(s?s+'s':'')}
+async function updateWebsiteProspect(id,stage){
+  const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})}),data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error||'Could not update website prospect.');return}
+  const p=(adminWebsiteData.prospects||[]).find(x=>x.id===id);if(p)Object.assign(p,data.prospect);
+  renderWebsiteAnalytics();renderAdminFleet();
 }
 function renderAdminSupport(){
   const tickets=adminSupportData||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
