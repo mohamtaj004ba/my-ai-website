@@ -140,8 +140,12 @@ function setPlan(plan){currentPlan=plan;document.getElementById('planSelector')&
 document.getElementById('planSelector')?.addEventListener('change',e=>setPlan(e.target.value));
 
 
+function setDataHealth(id,degraded){
+  const el=document.getElementById(id);if(!el)return;
+  el.hidden=!degraded;
+}
 async function loadOperations(){
-  if(demoMode){
+  if(demoMode){setDataHealth('clientDataHealth',false);
     callsData=DEMO_CALLS.map(x=>({...x}));leadsData=DEMO_LEADS.map(x=>({...x}));
     conversationsData=DEMO_CONVERSATIONS.map(x=>({...x}));appointmentsData=DEMO_APPOINTMENTS.map(x=>({...x}));
     agentData={...DEMO_AGENT,qualificationQuestions:[...DEMO_AGENT.qualificationQuestions]};
@@ -168,6 +172,7 @@ async function loadOperations(){
     if(has('appointments'))jobs.push(fetch('/api/account?action=appointments',{headers:{Accept:'application/json'},cache:'no-store'}));
     if(has('automations'))jobs.push(fetch('/api/account?action=automations',{headers:{Accept:'application/json'},cache:'no-store'}));
     const results=await Promise.all(jobs);
+    setDataHealth('clientDataHealth',results.some(r=>!r.ok));
     if(results[0].ok)callsData=(await results[0].json()).calls||[];
     if(results[1].ok)leadsData=(await results[1].json()).leads||[];
     if(results[2].ok)agentData=(await results[2].json()).agent||null;
@@ -181,7 +186,7 @@ async function loadOperations(){
     if(has('unifiedInbox')){if(results[idx].ok)conversationsData=(await results[idx].json()).conversations||[];idx++}
     if(has('appointments')){if(results[idx].ok)appointmentsData=(await results[idx].json()).appointments||[];idx++}
     if(has('automations')){if(results[idx].ok)automationsData=(await results[idx].json()).automations||[]}
-  }catch(err){console.error('Operations data failed',err)}
+  }catch(err){console.error('Operations data failed',err);setDataHealth('clientDataHealth',true)}
   renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientChecklist();renderBillingConnection();renderPhoneRouting();renderLocations();
 }
 
@@ -615,6 +620,7 @@ async function loadAdminOps(){
       fetch('/api/account?action=admin-platform-settings',{cache:'no-store'}),
       fetch('/api/account?action=admin-website-analytics',{cache:'no-store'})
     ]);
+    setDataHealth('adminDataHealth',[pr,ph,hr,fr,sr,ps,wr].some(r=>!r.ok));
     if(pr.ok)adminProvisioningData=(await pr.json()).provisioning||[];
     if(ph.ok)adminPhoneData=(await ph.json()).numbers||[];
     if(hr.ok){const health=await hr.json();adminHealthData=health.services||[];adminReadinessData=health.readiness||null;}
@@ -622,7 +628,7 @@ async function loadAdminOps(){
     if(sr.ok)adminSupportData=(await sr.json()).tickets||[];
     if(ps.ok)adminPlatformData=(await ps.json()).settings||null;
     if(wr.ok)adminWebsiteData=(await wr.json()).analytics||adminWebsiteData;
-  }catch(e){console.error('Admin ops load failed',e)}
+  }catch(e){console.error('Admin ops load failed',e);setDataHealth('adminDataHealth',true)}
   renderProvisioning();renderPhones();renderHealth();renderWebsiteAnalytics();renderAdminFleet();renderAdminSupport();renderPlatformSettings();renderAdmin();
 }
 
@@ -1436,3 +1442,6 @@ function initNotifications(){
 
 (async()=>{if(document.body.dataset.dashboard==='admin'){const ok=await bootstrapAdmin();if(ok){initProfileControls();initNotifications()}return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations();initProfileControls();initNotifications()}else{renderBilling()}})();
 document.getElementById('logoutButton')?.addEventListener('click',logout);
+
+document.getElementById('clientDataRetry')?.addEventListener('click',async()=>{setDataHealth('clientDataHealth',false);await loadOperations()});
+document.getElementById('adminDataRetry')?.addEventListener('click',async()=>{setDataHealth('adminDataHealth',false);await loadAdminOps()});
