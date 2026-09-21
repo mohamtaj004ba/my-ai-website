@@ -337,7 +337,6 @@ footer{background:#20201d!important}
             <select data-field="industry" id="industrySelect" required>
               <option value="" disabled selected>Choose one</option>
               <option>Trades &amp; Construction (plumbing, HVAC, electrical, construction, roofing, etc.)</option>
-              <option>Medical &amp; Dental</option>
               <option>Veterinary</option>
               <option>Legal</option>
               <option>Real Estate</option>
@@ -417,11 +416,6 @@ footer{background:#20201d!important}
               <label class="req cond-req" data-cond-field="gasUtility">Local gas utility company</label>
               <p class="ob-field-note" style="margin-top:-8px;">If a caller reports a gas smell, the AI will tell them to leave the building and call this utility or 911 before anything else.</p>
               <input type="text" data-field="gasUtility" placeholder="e.g. Avista">
-            </div>
-
-            <div class="ob-conditional" data-show-for="Medical &amp; Dental">
-              <label>Insurance/intake info needed before booking? (optional)</label>
-              <input type="text" data-field="insuranceInfo" placeholder="e.g. insurance carrier and member ID">
             </div>
 
             <div class="ob-conditional" data-show-for="Veterinary">
@@ -986,7 +980,6 @@ footer{background:#20201d!important}
   // --- Conditional fields: industry (step 2 trade-specific fields) ---
   const EXAMPLE_MAP = {
     'Trades & Construction (plumbing, HVAC, electrical, construction, roofing, etc.)': { routine: 'e.g. requesting a quote for a small repair', urgent: "e.g. something that needs attention today, but isn't a safety issue", emergency: 'e.g. a safety issue needing an immediate response' },
-    'Medical & Dental': { routine: 'e.g. scheduling a routine cleaning or checkup', urgent: 'e.g. severe tooth pain or worsening symptoms', emergency: 'e.g. difficulty breathing or a severe allergic reaction' },
     'Veterinary': { routine: 'e.g. scheduling a wellness exam or vaccination', urgent: 'e.g. pet not eating or acting lethargic', emergency: 'e.g. pet hit by a car or actively bleeding' },
     'Legal': { routine: 'e.g. scheduling an initial consultation', urgent: 'e.g. a filing deadline later this week', emergency: 'e.g. a client was just arrested' },
     'Real Estate': { routine: 'e.g. asking about a listing', urgent: 'e.g. an offer deadline today', emergency: 'e.g. a deal about to fall through over a time-sensitive issue' },
