@@ -5,3 +5,4 @@ Force fresh Vercel branch-head deploy after API consolidation
 GitHub app permission refresh deploy trigger
 KV reconnect deploy trigger
 bootstrap secret deploy trigger
+pro bootstrap redeploy trigger
