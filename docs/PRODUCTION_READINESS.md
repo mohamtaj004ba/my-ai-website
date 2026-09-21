@@ -90,7 +90,7 @@ Run one complete disposable client through:
 - Confirm data-retention policy.
 
 ### Security / reliability
-- Resolve/verify the production Upstash / Vercel KV endpoint; recent runtime logs showed DNS lookup failures for the configured host.
+- Resolve/verify the Preview Upstash / Vercel KV connection; the observed DNS lookup failures came from an older `feature/callercore-dashboards` preview deployment, not a production deployment.
 - Complete protected-preview browser QA.
 - Focused authorization/tenant-isolation security review.
 - Webhook security review for all external providers as they are added.
