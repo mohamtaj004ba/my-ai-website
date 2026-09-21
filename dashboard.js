@@ -687,6 +687,7 @@ function renderAdmin(){
     const rows=[];
     adminClientsData.filter(x=>x.subscriptionStatus==='past_due').forEach(x=>rows.push('<div class="admin-event redline"><b>'+esc(x.name)+'</b><span>Stripe payment needs attention</span><small>Billing</small></div>'));
     adminClientsData.filter(x=>x.status==='onboarding').forEach(x=>rows.push('<div class="admin-event"><b>'+esc(x.name)+'</b><span>Workspace onboarding in progress</span><small>Onboarding</small></div>'));
+    adminClientsData.filter(x=>x.status==='suspended').forEach(x=>rows.push('<div class="admin-event redline"><b>'+esc(x.name)+'</b><span>Workspace access is suspended</span><small>Workspace</small></div>'));
     attention.innerHTML=rows.slice(0,6).join('')||'<div class="empty-state"><h3>Nothing needs attention</h3><p>Billing and onboarding alerts will appear here.</p></div>';
   }
   renderAdminClients();
@@ -706,7 +707,7 @@ function adminClientRow(x,activity=false){
   const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0);
   const usage=lim?used+' / '+lim:used.toLocaleString()+' min';
   const initials=String(x.name||'?').split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase()||'?';
-  if(activity)return '<div class="activity-row"><span class="time">'+esc(x.plan)+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.name)+'</strong><small>'+esc(usage)+'</small></span></div><span class="tag '+adminBillingTag(x.subscriptionStatus)+'">'+esc(x.subscriptionStatus||'active')+'</span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Open</button></div>';
+  if(activity)return '<div class="activity-row"><span class="time">'+esc(x.plan)+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.name)+'</strong><small>'+esc(usage)+' · Billing '+esc(x.subscriptionStatus||'active')+'</small></span></div><span class="tag '+(x.status==='active'?'green':x.status==='suspended'?'red':'amber')+'">'+esc(x.status||'active')+'</span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></div>';
   return '<div class="admin-client-row"><span><strong>'+esc(x.name)+'</strong><small class="subtle">'+esc(x.ownerEmail||'')+'</small></span><span>'+esc(x.plan)+'</span><span>'+esc(usage)+'</span><span class="tag '+(x.status==='active'?'green':x.status==='suspended'?'red':'amber')+'">'+esc(x.status||'active')+'</span><span class="tag '+adminBillingTag(x.subscriptionStatus)+'">'+esc(x.subscriptionStatus||'active')+'</span><span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></span></div>';
 }
 function renderAdminClients(){
