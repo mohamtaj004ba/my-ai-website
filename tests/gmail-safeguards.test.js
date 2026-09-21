@@ -26,3 +26,13 @@ test('Gmail OAuth requests only the restricted modify scope needed for admin inb
   assert.doesNotMatch(src,/gmail\.send/);
   assert.match(src,/integration:gmail:admin:/);
 });
+
+test('Gmail sync is quota-conscious and cache-first',()=>{
+  assert.match(gmail,/maxResults=25/);
+  assert.match(gmail,/for\(let i=0;i<refs\.length;i\+\+\)/);
+  assert.match(gmail,/800\*Math\.pow\(2,attempt\)/);
+  assert.match(account,/Date\.now\(\)-Number\(cached\.syncedAt\|\|0\)<2\*60\*1000/);
+  assert.match(account,/Math\.min\(25/);
+  assert.match(account,/6\*60\*60\*1000/);
+  assert.match(account,/Array\.isArray\(aliasCache\)\?aliasCache/);
+});
