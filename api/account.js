@@ -5,6 +5,7 @@ const {sendMail}=require('../lib/mail');
 const {lifecycleEmail,authEmail,esc:escapeEmailHtml}=require('../lib/email-template');
 const {entitlementsFor}=require('../lib/plans');
 const {emailKey}=require('../lib/site-analytics');
+const {safeError}=require('../lib/safe-log');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
@@ -461,7 +462,7 @@ async function createSupportTicket(req,res){
   await kv.set('support:index',[id,...list.filter(x=>x!==id)].slice(0,500));
   const [platform,clientSettings]=await Promise.all([kv.get('platform:settings'),kv.get('settings:'+s.workspaceId)]);
   const supportTo=platform?.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
-  if(supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',err)}}
+  if(supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',safeError(err))}}
   if(s.email&&clientSettings?.emailAlerts!==false&&clientSettings?.notifySupport!==false){
     try{
       const firstName=String(ws.ownerName||clientSettings?.contactName||'').split(' ')[0]||'there';
@@ -478,7 +479,7 @@ async function createSupportTicket(req,res){
         siteUrl:requestOrigin(req)
       });
       await sendMail({to:s.email,subject:'We received your CallerCore support request',...emailBody});
-    }catch(err){console.error('support client acknowledgement failed',err)}
+    }catch(err){console.error('support client acknowledgement failed',safeError(err))}
   }
   return res.status(201).json({ok:true,ticket});
 }
@@ -503,7 +504,7 @@ async function replySupportTicket(req,res){
   const next={...t,messages:messages.slice(-100),status:t.status==='resolved'?'open':t.status,updatedAt:now,updatedBy:s.email};
   await kv.set(key,next);
   const platform=await kv.get('platform:settings')||{},to=platform.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
-  if(to){try{await sendMail({to,subject:'CallerCore support reply · '+t.subject,text:'Workspace: '+(t.workspaceName||'Workspace')+'\nFrom: '+s.email+'\n\n'+message})}catch(err){console.error('support reply email failed',err)}}
+  if(to){try{await sendMail({to,subject:'CallerCore support reply · '+t.subject,text:'Workspace: '+(t.workspaceName||'Workspace')+'\nFrom: '+s.email+'\n\n'+message})}catch(err){console.error('support reply email failed',safeError(err))}}
   return res.status(200).json({ok:true,ticket:next});
 }
 
@@ -541,7 +542,7 @@ async function adminSupportReply(req,res){
           siteUrl:requestOrigin(req)
         });
         await sendMail({to:t.email,subject:'CallerCore support replied · '+t.subject,...emailBody});
-      }catch(err){console.error('support client reply email failed',err)}
+      }catch(err){console.error('support client reply email failed',safeError(err))}
     }
   }
   await appendAudit(t.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'support_reply',section:'support',meta:{ticketId:id}});
@@ -569,7 +570,7 @@ async function adminSupportUpdate(req,res){
           ctaLabel:'Open support',ctaUrl:requestOrigin(req)+'/dashboard',siteUrl:requestOrigin(req)
         });
         await sendMail({to:t.email,subject:'CallerCore support update · '+label,...emailBody});
-      }catch(err){console.error('support status email failed',err)}
+      }catch(err){console.error('support status email failed',safeError(err))}
     }
   }
   await appendAudit(t.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'support_status_update',section:'support',meta:{ticketId:id,from:previousStatus,to:status}});
@@ -643,7 +644,7 @@ async function adminGmailInbox(req,res){
     ]);
     return res.status(200).json({configured:true,...snapshot,cached:false});
   }catch(err){
-    console.error('gmail inbox failed',err);
+    console.error('gmail inbox failed',safeError(err));
     const cached=await kv.get(cacheKey);
     if(cached)return res.status(200).json({configured:true,...cached,cached:true,stale:true,warning:err.message||'Fresh Gmail sync failed'});
     return res.status(502).json({error:err.message||'Gmail sync failed'})
@@ -664,7 +665,7 @@ async function adminGmailAliases(req,res){
     await kv.set(cacheKey,aliases,{ex:60*60*24*7});
     return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases,cached:false});
   }catch(err){
-    console.error('gmail aliases failed',err);
+    console.error('gmail aliases failed',safeError(err));
     const aliases=await kv.get(cacheKey);
     if(aliases)return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases,cached:true,stale:true});
     return res.status(502).json({error:err.message||'Could not load Gmail aliases'})
@@ -675,7 +676,7 @@ async function adminGmailRead(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).threadId||'').slice(0,120);if(!id)return res.status(400).json({error:'Thread id required'});
   try{await markGmailThreadRead(admin.email,id);return res.status(200).json({ok:true})}
-  catch(err){console.error('gmail mark read failed',err);return res.status(502).json({error:err.message||'Could not update Gmail thread'})}
+  catch(err){console.error('gmail mark read failed',safeError(err));return res.status(502).json({error:'Could not update Gmail thread'})}
 }
 
 async function adminGmailSend(req,res){
@@ -685,7 +686,7 @@ async function adminGmailSend(req,res){
   try{
     const from=await validatedGmailFrom(admin.email,requestedFrom);const sent=await sendGmailMessage(admin.email,{to,subject,body,from,threadId:String(b.threadId||''),inReplyTo:String(b.inReplyTo||''),references:String(b.references||'')});
     return res.status(200).json({ok:true,id:sent.id||'',threadId:sent.threadId||b.threadId||''});
-  }catch(err){console.error('gmail send failed',err);return res.status(502).json({error:err.message||'Could not send Gmail message'})}
+  }catch(err){console.error('gmail send failed',safeError(err));return res.status(502).json({error:'Could not send Gmail message'})}
 }
 
 async function adminWebsiteConversation(req,res){
@@ -713,7 +714,7 @@ async function adminWebsiteReply(req,res){
     }else{
       await sendMail({to,subject,text:message,html:'<p>'+message.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])).replace(/\n/g,'<br>')+'</p>'});
     }
-  }catch(err){console.error('website reply failed',err);return res.status(502).json({error:'Unable to send reply'})}
+  }catch(err){console.error('website reply failed',safeError(err));return res.status(502).json({error:'Unable to send reply'})}
   const convKey='site:conversation:'+id,conversation=await kv.get(convKey)||[];
   const item={id:crypto.randomUUID(),direction:'outbound',channel,from,to,subject,body:message,actorEmail:admin.email,at:Date.now()};
   const next=Array.isArray(conversation)?conversation:[];
@@ -770,7 +771,7 @@ async function adminWebsiteAnalytics(req,res){
       checkoutAbandoned:prospects.filter(p=>p.stage==='checkout_started').length,conversions:funnel.converted,
       attributedMrr,attributedSetupRevenue,last7Events:e7.length,funnel,topPages,sources,recentSessions,prospects
     }});
-  }catch(err){console.error('admin website analytics failed',err);return res.status(500).json({error:'Website analytics unavailable'})}
+  }catch(err){console.error('admin website analytics failed',safeError(err));return res.status(500).json({error:'Website analytics unavailable'})}
 }
 async function adminWebsiteProspectUpdate(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
@@ -1169,7 +1170,7 @@ async function buildAdminNotifications(admin){
       const summaryKey='gmail:summary:'+crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex');
       const cached=await kv.get(summaryKey),count=Number(cached?.analytics?.unread||0);
       if(count>0)items.push(notificationItem('gmail:unread',{title:count+' unread Gmail thread'+(count===1?'':'s'),body:'Your connected CallerCore inbox has unread email.',kind:'info',view:'inbox',createdAt:Number(cached?.syncedAt||now),meta:{count}}));
-    }catch(err){console.error('notification gmail summary failed',err)}
+    }catch(err){console.error('notification gmail summary failed',safeError(err))}
   }
   return items;
 }
@@ -1279,7 +1280,7 @@ async function requestLogin(req,res){
         ctaUrl:link,
         siteUrl:requestOrigin(req)
       });await sendMail({to:email,subject:'Your CallerCore sign-in link',...emailBody});}
-    }catch(err){console.error('auth email failed',err);return res.status(503).json({error:'Sign-in email temporarily unavailable'})}
+    }catch(err){console.error('auth email failed',safeError(err));return res.status(503).json({error:'Sign-in email temporarily unavailable'})}
   }
   return res.status(200).json({ok:true});
 }
@@ -1669,7 +1670,7 @@ async function billingPortal(req,res){
     const data=await r.json();
     if(!r.ok||!data.url)return res.status(502).json({error:data.error?.message||'Could not create Stripe billing portal session'});
     return res.status(200).json({url:data.url});
-  }catch(err){console.error('billing portal failed',err);return res.status(502).json({error:'Could not open Stripe billing portal'})}
+  }catch(err){console.error('billing portal failed',safeError(err));return res.status(502).json({error:'Could not open Stripe billing portal'})}
 }
 
 async function logout(req,res){
