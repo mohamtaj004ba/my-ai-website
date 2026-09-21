@@ -1,13 +1,13 @@
 # CallerCore Data Retention & Deletion Policy
 
-Status: Proposed launch defaults — operational policy pending owner/legal approval  
+Status: Approved launch retention model — destructive automation pending validation  
 Updated: 2026-09-21
 
 ## Principles
 
 CallerCore should retain customer and caller data only as long as it is useful for delivering the service, resolving support/billing issues, maintaining security and auditability, or meeting applicable legal obligations.
 
-Destructive automated deletion must not be enabled until these periods are approved and recovery/hold behavior is tested.
+Destructive scheduled automation must not be enabled until recovery, retention archives, provider deletion, and hold behavior are tested.
 
 ## Proposed retention matrix
 
@@ -65,12 +65,11 @@ CallerCore must separately delete or configure retention at providers that store
 ## Implementation plan
 
 ### Before launch
-- Approve the retention periods in this document.
 - Establish permanent monthly analytics rollups before relying on raw-event expiration.
 - Add these periods to the public Privacy Policy in plain language.
 - Ensure Vapi/voice provider recording retention matches the approved 90-day recording period or is shorter.
 - Ensure SMS/message provider retention does not silently exceed CallerCore policy where configuration is available.
-- Add a documented admin deletion workflow with export, soft-delete, session revocation and permanent-delete confirmation.
+- Admin deletion workflow implemented with export capability, 30-day soft-delete, access revocation, restore, and explicit permanent-delete confirmation.
 - Maintain an explicit opt-out suppression store separate from disposable message content.
 
 ### Shortly after launch
