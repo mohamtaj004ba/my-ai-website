@@ -19,6 +19,8 @@
       <button class="nav-item" data-view="appointments">Appointments</button>
       <div class="nav-label">AI & growth</div>
       <button class="nav-item" data-view="agent">AI Agent</button>
+      <button class="nav-item" data-view="phone-routing">Phone & routing</button>
+      <button class="nav-item" data-view="locations">Locations</button>
       <button class="nav-item" data-view="automations" data-feature="automations">Automations <span class="lock">PRO</span></button>
       <button class="nav-item" data-view="analytics" data-feature="advancedAnalytics">Analytics</button>
       <div class="nav-label">Account</div>
@@ -102,6 +104,25 @@
       </div>
       <article class="panel questions-panel"><div class="panel-head"><div><span class="eyebrow">Qualification</span><h2>Questions Maya should ask</h2></div><button id="addQuestionButton">+ Add question</button></div><div id="qualificationQuestions" class="question-list"></div></article>
     </section>
+
+    <section class="view" id="view-phone-routing">
+      <div class="page-head"><div><span class="eyebrow">Phone & routing</span><h1>Your CallerCore line.</h1><p>See how your business number, AI line, transfers and after-hours behavior are configured.</p></div></div>
+      <div class="metric-grid">
+        <article><span>CallerCore number</span><strong id="clientPhoneNumber">Not assigned</strong><small id="clientPhoneProvider">Awaiting provisioning</small></article>
+        <article><span>Forwarding from</span><strong id="clientForwardingFrom">—</strong><small>Existing business line</small></article>
+        <article><span>Transfer destination</span><strong id="clientTransferNumber">—</strong><small>Human escalation</small></article>
+        <article><span>After hours</span><strong id="clientAfterHours">—</strong><small id="clientSmsStatus">SMS status unavailable</small></article>
+      </div>
+      <article class="panel"><span class="eyebrow">Routing status</span><h2 id="clientRoutingHeadline">Phone routing has not been provisioned yet.</h2><p class="muted" id="clientRoutingCopy">CallerCore support will configure the AI-facing number and routing details during onboarding.</p><button class="secondary-btn" data-view="support">Request a routing change</button></article>
+    </section>
+
+    <section class="view" id="view-locations">
+      <div class="page-head"><div><span class="eyebrow">Locations</span><h1>Manage your service locations.</h1><p>CallerCore plan limits apply automatically.</p></div><button class="primary" id="addLocationButton">+ Add location</button></div>
+      <div class="integration-grid" id="locationsGrid"></div>
+      <div class="empty-state" id="locationsEmpty" hidden><h3>No locations configured</h3><p>Add your first business location to complete workspace setup.</p></div>
+      <p class="muted" id="locationsLimitLabel"></p>
+    </section>
+
     <section class="view" id="view-automations">
       <div class="page-head"><div><span class="eyebrow">Automations</span><h1>Follow up without chasing.</h1><p>Turn call and lead events into automatic actions.</p></div><button class="primary" id="newAutomationButton">+ New automation</button></div>
       <div id="automationGate" class="locked-stage" data-feature-card="automations"></div>
@@ -168,6 +189,9 @@
   <section><span class="eyebrow">Transcript</span><div id="drawerTranscript" class="transcript"></div></section>
 </aside>
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+
+<div class="modal" id="locationModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" id="closeLocationModal" aria-label="Close">×</button><span class="eyebrow">Business location</span><h2 id="locationModalTitle">Add location</h2><div class="form-card"><label>Location name<input id="locationName" placeholder="Spokane"></label><label>Phone<input id="locationPhone" placeholder="+15095550100"></label><label>Address<textarea id="locationAddress" placeholder="Street, city, state, ZIP"></textarea></label><label>Timezone<select id="locationTimezone"><option>America/Los_Angeles</option><option>America/Denver</option><option>America/Chicago</option><option>America/New_York</option></select></label><label class="toggle-row"><span>Active</span><input id="locationActive" type="checkbox" checked></label><button class="primary" id="saveLocationButton">Save location</button></div></div></div>
 
 <div class="modal" id="automationModal" aria-hidden="true"><div class="modal-card"><button class="modal-close automation-close" aria-label="Close">×</button><span class="eyebrow">Automation builder</span><h2 id="automationModalTitle">New automation</h2><div class="form-card"><label>Name<input id="automationName" placeholder="Missed-call recovery"></label><label>When this happens<select id="automationTrigger"><option value="missed_call">Missed call</option><option value="new_lead">New lead captured</option><option value="qualified_lead">Lead qualified</option><option value="appointment_booked">Appointment booked</option><option value="after_hours_call">After-hours call</option></select></label><label>Do this<select id="automationAction"><option value="send_sms">Send SMS</option><option value="notify_team">Notify team</option><option value="create_followup">Create follow-up task</option><option value="mark_priority">Mark lead priority</option><option value="send_confirmation">Send confirmation</option></select></label><button class="primary" id="saveAutomationButton">Save automation</button></div></div></div>
 <div class="modal" id="upgradeModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" aria-label="Close">×</button><span class="eyebrow">CallerCore plans</span><h2 id="modalTitle">Manage your plan</h2><p id="modalCopy"></p><div id="modalFeatures" class="modal-features"></div><div class="stripe-embed"><span>SECURE BILLING</span><strong>Subscription changes are handled by Stripe.</strong><small>Your payment details stay with Stripe and are never stored in CallerCore.</small></div><button class="primary full" id="modalCta">Open Stripe billing</button></div></div>
