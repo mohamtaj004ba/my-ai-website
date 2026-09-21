@@ -57,6 +57,16 @@ async function bootstrapClient(){
     if(r.status===401){location.replace('/login?next=%2Fdashboard');return false}
     if(!r.ok)throw new Error('session');
     const data=await r.json();sessionWorkspace=data.workspace;
+    if(data.user?.adminView){
+      document.body.classList.add('admin-client-view');
+      const banner=document.createElement('div');banner.className='admin-view-banner';
+      banner.innerHTML='<span><b>Admin view</b> · Read only · Viewing '+esc(data.workspace.name||'client workspace')+'</span><button id="exitAdminView">Return to Admin</button>';
+      document.body.prepend(banner);
+      document.getElementById('exitAdminView')?.addEventListener('click',async()=>{
+        const x=await fetch('/api/account?action=admin-exit-client-view',{method:'POST'});const out=await x.json().catch(()=>({}));
+        location.href=out.redirect||'/admin-dashboard';
+      });
+    }
     currentPlan=data.workspace.plan;
     const name=data.workspace.name||'CallerCore Client';
     const wName=document.getElementById('workspaceName');if(wName)wName.textContent=name;
