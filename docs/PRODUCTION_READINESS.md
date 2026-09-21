@@ -18,10 +18,12 @@ This document tracks the release-readiness state of the feature branch. It is in
 - Branded lifecycle/auth email system with support contact paths.
 - Gmail OAuth, alias support, unified inbox, cached rendering, thread caching, and background refresh.
 - Persistent portal notifications, sidebar alert dots, and client notification-category preferences.
+- Stripe Embedded Checkout session creation with tracked lead/acquisition context and on-site payment UI.
 - Stripe checkout account creation and core subscription lifecycle handling.
+- Stripe webhook support for both embedded Checkout metadata and legacy Payment Links.
 - Stripe webhook signature verification and global event idempotency.
 - Stripe past-due / canceled / payment-recovered state and customer lifecycle emails.
-- Security headers, OAuth token encryption, mutation same-origin protection, preview bootstrap protection, and safe website-crawl SSRF defenses.
+- Security headers, OAuth token encryption, mutation same-origin protection, preview bootstrap protection, safe website-crawl SSRF defenses, and bounded external KV health reporting.
 - Automated critical-path tests for pricing/entitlements, business-hours timing, agreement snapshots, and email support requirements.
 - GitHub Actions CI and deployment-time test execution.
 - Client support channels and stated business-hour expectations.
@@ -60,7 +62,7 @@ Run one complete disposable client through:
 17. billing state
 
 ### Billing
-- Configure production Stripe credentials/webhook if not already configured.
+- Confirm production Stripe secret key, publishable key, and webhook signing secret are all present in the production environment.
 - Confirm Stripe Customer Portal behavior.
 - Define and implement minute overage policy, if any.
 - Verify subscription-plan change behavior against real Stripe Price IDs.
@@ -88,6 +90,8 @@ Run one complete disposable client through:
 - Confirm data-retention policy.
 
 ### Security / reliability
+- Resolve/verify the production Upstash / Vercel KV endpoint; recent runtime logs showed DNS lookup failures for the configured host.
+- Complete protected-preview browser QA.
 - Focused authorization/tenant-isolation security review.
 - Webhook security review for all external providers as they are added.
 - Backup/export strategy for production data.
