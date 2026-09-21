@@ -2,7 +2,7 @@ const crypto=require('crypto');
 const {kv}=require('@vercel/kv');
 const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession}=require('../lib/auth');
 const {sendMail}=require('../lib/mail');
-const {lifecycleEmail,authEmail}=require('../lib/email-template');
+const {lifecycleEmail,authEmail,esc:escapeEmailHtml}=require('../lib/email-template');
 const {entitlementsFor}=require('../lib/plans');
 const {emailKey}=require('../lib/site-analytics');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
@@ -390,7 +390,7 @@ async function createSupportTicket(req,res){
   const body=req.body||{},subject=String(body.subject||'').trim().slice(0,160),message=String(body.message||'').trim().slice(0,4000),priority=['normal','urgent'].includes(body.priority)?body.priority:'normal';
   if(subject.length<3||message.length<10)return res.status(400).json({error:'Subject and message are required'});
   const id=crypto.randomUUID(),now=Date.now();
-  const ticket={id,workspaceId:s.workspaceId,workspaceName:ws.name||'Workspace',email:s.email,subject,message,priority,status:'open',createdAt:now,updatedAt:now};
+  const ticket={id,workspaceId:s.workspaceId,workspaceName:ws.name||'Workspace',email:s.email,subject,message,priority,status:'open',messages:[{id:crypto.randomUUID(),direction:'client',from:s.email,body:message,at:now}],createdAt:now,updatedAt:now};
   await kv.set('support:'+id,ticket);
   const index=await kv.get('support:index')||[];const list=Array.isArray(index)?index:[];
   await kv.set('support:index',[id,...list.filter(x=>x!==id)].slice(0,500));
@@ -409,6 +409,21 @@ async function supportTickets(req,res){
   return res.status(200).json({tickets});
 }
 
+
+async function replySupportTicket(req,res){
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80),message=String(body.message||'').trim().slice(0,4000);
+  if(!id||message.length<2)return res.status(400).json({error:'Reply is required'});
+  const key='support:'+id,t=await kv.get(key);if(!t||t.workspaceId!==s.workspaceId)return res.status(404).json({error:'Support request not found'});
+  const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||s.email,body:t.message||'',at:t.createdAt||now}];
+  messages.push({id:crypto.randomUUID(),direction:'client',from:s.email,body:message,at:now});
+  const next={...t,messages:messages.slice(-100),status:t.status==='resolved'?'open':t.status,updatedAt:now,updatedBy:s.email};
+  await kv.set(key,next);
+  const platform=await kv.get('platform:settings')||{},to=platform.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
+  if(to){try{await sendMail({to,subject:'CallerCore support reply · '+t.subject,text:'Workspace: '+(t.workspaceName||'Workspace')+'\nFrom: '+s.email+'\n\n'+message})}catch(err){console.error('support reply email failed',err)}}
+  return res.status(200).json({ok:true,ticket:next});
+}
+
 async function adminSupport(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const index=await kv.get('support:index')||[],tickets=[];
@@ -416,12 +431,58 @@ async function adminSupport(req,res){
   return res.status(200).json({tickets});
 }
 
+
+async function adminSupportReply(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80),message=String(body.message||'').trim().slice(0,4000);
+  if(!id||message.length<2)return res.status(400).json({error:'Reply is required'});
+  const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
+  const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||now}];
+  messages.push({id:crypto.randomUUID(),direction:'support',from:admin.email,body:message,at:now});
+  const next={...t,messages:messages.slice(-100),status:t.status==='open'?'in_progress':t.status,updatedAt:now,updatedBy:admin.email};
+  await kv.set(key,next);
+  if(t.email){
+    try{
+      const emailBody=lifecycleEmail({
+        preheader:'CallerCore support replied to your request.',
+        eyebrow:'SUPPORT UPDATE',
+        title:'We replied to your support request.',
+        intro:'There’s a new response on “'+escapeEmailHtml(t.subject||'your support request')+'”.',
+        statusLabel:'Support status',
+        statusText:String(next.status||'in_progress').replace('_',' '),
+        bodyHtml:'<div style="padding:14px 16px;border-left:3px solid #D2673C;background:#FFF8F4;border-radius:8px">'+escapeEmailHtml(message).replace(/\n/g,'<br>')+'</div><p style="margin:16px 0 0">You can reply directly to this email or continue the conversation from Help & Support in your CallerCore dashboard.</p>',
+        ctaLabel:'Open support',
+        ctaUrl:requestOrigin(req)+'/dashboard',
+        siteUrl:requestOrigin(req)
+      });
+      await sendMail({to:t.email,subject:'CallerCore support replied · '+t.subject,...emailBody});
+    }catch(err){console.error('support client reply email failed',err)}
+  }
+  await appendAudit(t.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'support_reply',section:'support',meta:{ticketId:id}});
+  return res.status(200).json({ok:true,ticket:next});
+}
+
 async function adminSupportUpdate(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80),status=String(body.status||'');
   if(!id||!['open','in_progress','resolved'].includes(status))return res.status(400).json({error:'Invalid support update'});
   const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
-  const next={...t,status,updatedAt:Date.now(),updatedBy:admin.email};await kv.set(key,next);
+  const previousStatus=t.status||'open',next={...t,status,updatedAt:Date.now(),updatedBy:admin.email};await kv.set(key,next);
+  if(t.email&&status==='resolved'&&previousStatus!=='resolved'){
+    try{
+      const emailBody=lifecycleEmail({
+        preheader:'Your CallerCore support request has been resolved.',
+        eyebrow:'SUPPORT RESOLVED',
+        title:'Your support request is marked resolved.',
+        intro:'We’ve marked “'+escapeEmailHtml(t.subject||'your support request')+'” as resolved.',
+        statusLabel:'Status',statusText:'Resolved',
+        bodyHtml:'<p style="margin:0">If anything is still unresolved, reply to this email or reopen the conversation from Help & Support in your CallerCore dashboard.</p>',
+        ctaLabel:'Open support',ctaUrl:requestOrigin(req)+'/dashboard',siteUrl:requestOrigin(req)
+      });
+      await sendMail({to:t.email,subject:'CallerCore support request resolved · '+t.subject,...emailBody});
+    }catch(err){console.error('support resolved email failed',err)}
+  }
+  await appendAudit(t.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'support_status_update',section:'support',meta:{ticketId:id,from:previousStatus,to:status}});
   return res.status(200).json({ok:true,ticket:next});
 }
 
@@ -1493,6 +1554,7 @@ module.exports=async function handler(req,res){
   if(action==='admin-fleet'&&req.method==='GET')return adminFleet(req,res);
   if(action==='admin-support'&&req.method==='GET')return adminSupport(req,res);
   if(action==='admin-support-update'&&req.method==='POST')return adminSupportUpdate(req,res);
+  if(action==='admin-support-reply'&&req.method==='POST')return adminSupportReply(req,res);
   if(action==='admin-platform-settings'&&req.method==='GET')return adminPlatformSettings(req,res);
   if(action==='admin-platform-settings-save'&&req.method==='POST')return adminPlatformSettingsSave(req,res);
   if(action==='admin-client-update'&&req.method==='POST')return adminUpdateClient(req,res);
@@ -1529,6 +1591,7 @@ module.exports=async function handler(req,res){
   if(action==='lead-update'&&req.method==='POST')return updateLead(req,res);
   if(action==='support-tickets'&&req.method==='GET')return supportTickets(req,res);
   if(action==='support-ticket-create'&&req.method==='POST')return createSupportTicket(req,res);
+  if(action==='support-ticket-reply'&&req.method==='POST')return replySupportTicket(req,res);
   if(action==='billing-portal'&&req.method==='POST')return billingPortal(req,res);
   if(action==='logout'&&req.method==='POST')return logout(req,res);
   return res.status(404).json({error:'Unknown account action'});
