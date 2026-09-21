@@ -207,7 +207,7 @@ footer{background:#20201d!important}
     <section class="subhero">
       <span class="eyebrow" id="obEyebrow">● YOUR SETUP</span>
       <h1 id="obGreeting">Welcome</h1>
-      <p class="sub" id="obHeroSub">Sign your service agreement and tell us about your business. We start building the moment your intake form is complete — most accounts go live within 1 business day after that.</p>
+      <p class="sub" id="obHeroSub">Sign your service agreement, scan your website if you have one, and confirm the details CallerCore needs. Your answers become your live business profile and first AI-agent draft — no re-entering the same information later.</p>
     </section>
 
     <div class="ob-steps" aria-label="Onboarding progress">
@@ -360,7 +360,7 @@ footer{background:#20201d!important}
       <!-- STEP 2: INTAKE -->
       <section class="ob-card" id="intakeCard" style="display:none;">
         <h2 id="intakeCardTitle">Your business</h2>
-        <p class="ob-sub" id="intakeCardSub">Your answers save automatically — close this anytime and pick up where you left off.</p>
+        <p class="ob-sub" id="intakeCardSub">Your answers save automatically. Confirm them once here and CallerCore will use them to build your dashboard and AI-agent draft.</p>
 
         <div class="ob-wizard-label">
           <span id="wizardStepLabel">Step 1 of 5 — Your business</span>
@@ -382,7 +382,7 @@ footer{background:#20201d!important}
             <div class="ob-prefill-block">
               <label>Have a website? Paste it and we'll pull what we can find.</label>
               <div class="ob-prefill">
-                <input type="text" id="prefillUrl" placeholder="yourbusiness.com (optional)">
+                <input type="text" id="prefillUrl" data-field="website" placeholder="yourbusiness.com (optional)" autocomplete="url">
                 <button type="button" class="ob-agree-btn" id="prefillBtn" style="width:auto; padding:11px 18px;">Look it up</button>
               </div>
               <div class="ob-prefill-status" id="prefillStatus"></div>
@@ -1229,10 +1229,12 @@ footer{background:#20201d!important}
   const PREFILLABLE = [
     { key: 'businessName', field: 'businessName', label: 'Business name', step: 1 },
     { key: 'phone',        field: 'phone',        label: 'Best contact phone', step: 1 },
+    { key: 'email',        field: 'email',        label: 'Business email', step: 1 },
     { key: 'address',      field: 'address',      label: 'Business address', step: 1 },
     { key: 'serviceArea',  field: 'serviceArea',  label: 'Service area', step: 1 },
     { key: 'servicesOffered', field: 'servicesOffered', label: 'Services you offer', step: 2 },
-    { key: 'hours',        field: 'hours',        label: 'Business hours', step: 2 }
+    { key: 'hours',        field: 'hours',        label: 'Business hours', step: 2 },
+    { key: 'faqs',         field: 'faqs',         label: 'Common questions & answers', step: 4 }
   ];
 
   function showPrefillReview(fields) {
@@ -1273,14 +1275,14 @@ footer{background:#20201d!important}
     try {
       const res = await fetch('/api/prefill-crawl', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url, token })
       });
       const data = await res.json();
       if (!data.ok || !showPrefillReview(data.fields)) {
         $('prefillStatus').textContent = "Couldn't pull anything usable from that site — no problem, just fill the form in below.";
         $('prefillStatus').className = 'ob-prefill-status fail';
       } else {
-        $('prefillStatus').textContent = 'Found a few things. Check them over before we drop them into the form.';
+        $('prefillStatus').textContent = 'Scanned ' + (data.pagesScanned || 1) + ' page' + ((data.pagesScanned || 1) === 1 ? '' : 's') + ' and found ' + (data.foundCount || 'several') + ' useful details. Check them before applying.';
         $('prefillStatus').className = 'ob-prefill-status ok';
       }
     } catch (e) {
@@ -1372,10 +1374,12 @@ footer{background:#20201d!important}
     $('intakeSubmitBtn').disabled = true;
     $('intakeSubmitBtn').textContent = 'Submitting…';
     try {
-      await fetch('/api/onboarding-save', {
+      const submitRes = await fetch('/api/onboarding-save', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ token, type: 'intake', fields: collectIntakeFields() })
+        body: JSON.stringify({ token, type: 'intake', fields: collectIntakeFields(), finalize: true })
       });
+      const submitData = await submitRes.json().catch(()=>({}));
+      if (!submitRes.ok) throw new Error(submitData.error || 'Could not submit onboarding.');
       $('intakeCard').style.display = 'none';
       $('doneCard').style.display = 'block';
       setStep('done');
