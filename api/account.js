@@ -239,12 +239,15 @@ async function adminPurgeClient(req,res){
   if(ws.stripeSubscriptionId)await kv.del('stripe:subscription:'+ws.stripeSubscriptionId);
   const phoneIndex=await kv.get('phone:index')||[];
   if(Array.isArray(phoneIndex))await kv.set('phone:index',phoneIndex.map(x=>x&&x.workspaceId===id?{...x,workspaceId:'',workspaceName:'',updatedAt:Date.now()}:x));
-  const supportIndex=await kv.get('support:index')||[],keepSupport=[];
+  const supportIndex=await kv.get('support:index')||[],keepSupport=[],retainedSupport=[];
   for(const ticketId of Array.isArray(supportIndex)?supportIndex:[]){
     const ticket=await kv.get('support:'+ticketId);
-    if(ticket&&ticket.workspaceId===id)await kv.del('support:'+ticketId);else keepSupport.push(ticketId);
+    if(ticket&&ticket.workspaceId===id){retainedSupport.push(ticket);await kv.del('support:'+ticketId)}else keepSupport.push(ticketId);
   }
   await kv.set('support:index',keepSupport);
+  const audit=await kv.get('audit:'+id)||[];
+  if(retainedSupport.length)await kv.set('retention:support:'+id,{workspaceId:id,tickets:retainedSupport,retainedAt:Date.now()},{ex:60*60*24*365*2});
+  if(Array.isArray(audit)&&audit.length)await kv.set('retention:audit:'+id,{workspaceId:id,events:audit,retainedAt:Date.now()},{ex:60*60*24*365*2});
   const onboardingToken=await kv.get('onboarding:workspace-token:'+id);
   await Promise.all([
     'workspace:','agent:','calls:','leads:','conversations:','appointments:','automations:',
