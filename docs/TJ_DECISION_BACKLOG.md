@@ -96,3 +96,34 @@ TJ approval required before:
 - modifying production data intentionally
 - enabling new customer billing behavior
 - activating live telephony for real clients
+
+## Final prelaunch authorizations discovered in audit
+
+### Hosting / release controls
+- Upgrade Vercel from Hobby to a commercial-use plan before taking paying customers.
+- Enable/enforce the existing CallerCore GitHub branch ruleset for `main`.
+- Choose/authorize a production uptime and error-monitoring provider or operating approach.
+
+### Business / tax
+- Confirm CallerCore's legal operating entity.
+- Confirm Washington business license / UBI and Spokane endorsement where applicable.
+- Confirm EIN, business banking, and Stripe account ownership are aligned to the legal entity.
+- Review Washington sales-tax/B&O classification with a qualified tax professional.
+- Add the Washington tax registration to Stripe Tax once registration is complete.
+- Approve enabling Stripe automatic tax after tax classification is confirmed.
+
+### Billing launch
+- Approve adding the five missing live Stripe lifecycle webhook events.
+- Approve/activate the Stripe Customer Portal configuration.
+- Decide Starter/Growth overage policy.
+- Decide Pro unlimited/fair-use policy.
+- Final approval to set `CALLERCORE_CHECKOUT_ENABLED=true` only after E2E launch validation.
+
+### Email / identity
+- Verify SPF, DKIM, and DMARC for CallerCore sending domains.
+- Decide whether the admin Gmail integration stays owner-only or will later be offered to customers; broad external Gmail connections require a Google OAuth verification/security-assessment plan.
+
+### Compliance scope
+- Standard launch excludes Medical & Dental / HIPAA workflows unless separately reviewed and built.
+- Decide concrete retention periods for call recordings, transcripts, messages, leads, analytics, onboarding records, and audit history.
+- Consider technology E&O / cyber liability insurance before material customer volume.
