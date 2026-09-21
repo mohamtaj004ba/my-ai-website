@@ -1,5 +1,6 @@
 const { kv } = require('@vercel/kv');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
+const { LEGACY_CLAUSES, LEGACY_AGREEMENT_VERSION } = require('./_lib/agreement-clauses');
 
 function validToken(token){return typeof token==='string'&&/^[a-f0-9]{48}$/i.test(token)}
 
@@ -18,11 +19,16 @@ module.exports = async function handler(req, res) {
     ? new Date(record.agreementSignedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     : '';
 
+  const snap=record.agreementSnapshot||{version:record.agreementVersion||LEGACY_AGREEMENT_VERSION,effectiveDate:record.agreementEffectiveDate||'',clauses:LEGACY_CLAUSES};
   const pdfBytes = await buildAgreementPdfBytes({
     business: record.business,
     fullName: record.agreementFullName,
     plan: record.plan,
     signedAt: signedDate,
+    clauses: snap.clauses,
+    agreementVersion: snap.version,
+    effectiveDate: snap.effectiveDate,
+    planSnapshot: record.agreementPlanSnapshot||null,
   });
 
   const safeName = (record.business || 'CallerCore-Client').replace(/[^a-z0-9]+/gi, '-');
