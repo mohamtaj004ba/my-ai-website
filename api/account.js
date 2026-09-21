@@ -71,13 +71,15 @@ async function adminSummary(req,res){
     const ws=await kv.get('workspace:'+id);if(ws)workspaces.push(ws);
   }
   const prices={Starter:349,Growth:599,Pro:999};
-  const active=workspaces.filter(w=>String(w.subscriptionStatus||'active')!=='canceled');
-  const mrr=active.reduce((sum,w)=>sum+(prices[w.plan]||0),0);
+  const billable=workspaces.filter(w=>String(w.subscriptionStatus||'active')!=='canceled');
+  const active=workspaces.filter(w=>(w.status||'active')==='active'&&String(w.subscriptionStatus||'active')!=='canceled');
+  const mrr=billable.reduce((sum,w)=>sum+(prices[w.plan]||0),0);
   const pastDue=workspaces.filter(w=>w.subscriptionStatus==='past_due').length;
   const onboarding=workspaces.filter(w=>w.status==='onboarding').length;
+  const suspended=workspaces.filter(w=>w.status==='suspended').length;
   const totalMinutes=workspaces.reduce((sum,w)=>sum+Number(w.usage&&w.usage.minutes||0),0);
   const planMix={Starter:0,Growth:0,Pro:0};workspaces.forEach(w=>{if(planMix[w.plan]!==undefined)planMix[w.plan]++});
-  return res.status(200).json({summary:{mrr,clients:workspaces.length,activeClients:active.length,pastDue,onboarding,totalMinutes,planMix}});
+  return res.status(200).json({summary:{mrr,clients:workspaces.length,activeClients:active.length,pastDue,onboarding,suspended,totalMinutes,planMix}});
 }
 
 async function adminClients(req,res){
@@ -116,6 +118,40 @@ async function adminUpdateClient(req,res){
   next.updatedAt=Date.now();
   await kv.set(key,next);
   return res.status(200).json({ok:true,client:{id:next.id,name:next.name,plan:next.plan,status:next.status,subscriptionStatus:next.subscriptionStatus||'active'}});
+}
+
+async function adminDeleteClient(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).id||'').slice(0,80);
+  if(!id)return res.status(400).json({error:'Client id required'});
+  if(id===admin.workspaceId)return res.status(409).json({error:'You cannot delete the workspace currently used by your admin account'});
+  const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled'){
+    return res.status(409).json({error:'This workspace has an active Stripe subscription. Cancel the subscription before deleting the workspace.'});
+  }
+  const index=await kv.get('workspace:index')||[];
+  await kv.set('workspace:index',(Array.isArray(index)?index:[]).filter(x=>x!==id));
+  if(ws.ownerEmail){
+    const memberKey='user:email:'+cleanEmail(ws.ownerEmail),member=await kv.get(memberKey);
+    if(member&&member.workspaceId===id)await kv.del(memberKey);
+  }
+  if(ws.stripeCustomerId)await kv.del('stripe:customer:'+ws.stripeCustomerId);
+  if(ws.stripeSubscriptionId)await kv.del('stripe:subscription:'+ws.stripeSubscriptionId);
+  const phoneIndex=await kv.get('phone:index')||[];
+  if(Array.isArray(phoneIndex)){
+    await kv.set('phone:index',phoneIndex.map(x=>x&&x.workspaceId===id?{...x,workspaceId:'',workspaceName:'',updatedAt:Date.now()}:x));
+  }
+  const supportIndex=await kv.get('support:index')||[],keepSupport=[];
+  for(const ticketId of Array.isArray(supportIndex)?supportIndex:[]){
+    const ticket=await kv.get('support:'+ticketId);
+    if(ticket&&ticket.workspaceId===id)await kv.del('support:'+ticketId);else keepSupport.push(ticketId);
+  }
+  await kv.set('support:index',keepSupport);
+  await Promise.all([
+    'workspace:','agent:','calls:','leads:','conversations:','appointments:','automations:',
+    'settings:','integrations:','locations:','provisioning:override:','provisioning:history:'
+  ].map(prefix=>kv.del(prefix+id)));
+  return res.status(200).json({ok:true,deleted:{id,name:ws.name||'Workspace'}});
 }
 
 async function adminViewClient(req,res){
@@ -583,6 +619,15 @@ async function settings(req,res){
   return res.status(200).json({settings:{
     businessName:saved.businessName||ws.name||'',
     primaryEmail:saved.primaryEmail||ws.ownerEmail||s.email||'',
+    contactName:saved.contactName||ws.ownerName||'',
+    businessPhone:saved.businessPhone||'',
+    website:saved.website||'',
+    streetAddress:saved.streetAddress||'',
+    city:saved.city||'',
+    state:saved.state||'',
+    postalCode:saved.postalCode||'',
+    industry:saved.industry||ws.industry||'',
+    serviceArea:saved.serviceArea||'',
     timezone:saved.timezone||platform.defaultTimezone||'America/Los_Angeles',
     notificationEmail:saved.notificationEmail||ws.ownerEmail||s.email||'',
     smsAlerts:saved.smsAlerts!==false,
@@ -596,14 +641,27 @@ async function saveSettings(req,res){
   const settings={
     businessName:clean(body.businessName,160),
     primaryEmail:clean(body.primaryEmail,200).toLowerCase(),
+    contactName:clean(body.contactName,160),
+    businessPhone:clean(body.businessPhone,40),
+    website:clean(body.website,300),
+    streetAddress:clean(body.streetAddress,240),
+    city:clean(body.city,120),
+    state:clean(body.state,80),
+    postalCode:clean(body.postalCode,30),
+    industry:clean(body.industry,120),
+    serviceArea:clean(body.serviceArea,500),
     timezone:clean(body.timezone,100)||'America/Los_Angeles',
     notificationEmail:clean(body.notificationEmail,200).toLowerCase(),
     smsAlerts:body.smsAlerts!==false,emailAlerts:body.emailAlerts!==false,updatedAt:Date.now()
   };
+  if(settings.primaryEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.primaryEmail))return res.status(400).json({error:'Valid primary email required'});
+  if(settings.notificationEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.notificationEmail))return res.status(400).json({error:'Valid notification email required'});
+  if(settings.businessPhone&&!/^\+?[0-9() .-]{7,30}$/.test(settings.businessPhone))return res.status(400).json({error:'Valid business phone required'});
+  if(settings.website&&!/^https?:\/\//i.test(settings.website))return res.status(400).json({error:'Website must begin with http:// or https://'});
   await kv.set('settings:'+s.workspaceId,settings);
   if(settings.businessName){
     const key='workspace:'+s.workspaceId,ws=await kv.get(key);
-    if(ws)await kv.set(key,{...ws,name:settings.businessName,updatedAt:Date.now()});
+    if(ws)await kv.set(key,{...ws,name:settings.businessName,ownerName:settings.contactName||ws.ownerName,industry:settings.industry||ws.industry,updatedAt:Date.now()});
   }
   return res.status(200).json({ok:true,settings});
 }
@@ -700,6 +758,7 @@ module.exports=async function handler(req,res){
   if(action==='admin-platform-settings'&&req.method==='GET')return adminPlatformSettings(req,res);
   if(action==='admin-platform-settings-save'&&req.method==='POST')return adminPlatformSettingsSave(req,res);
   if(action==='admin-client-update'&&req.method==='POST')return adminUpdateClient(req,res);
+  if(action==='admin-client-delete'&&req.method==='POST')return adminDeleteClient(req,res);
   if(action==='admin-view-client'&&req.method==='POST')return adminViewClient(req,res);
   if(action==='admin-exit-client-view'&&req.method==='POST')return adminExitClientView(req,res);
   if(action==='request'&&req.method==='POST')return requestLogin(req,res);
