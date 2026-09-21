@@ -84,7 +84,7 @@ async function bootstrapClient(){
 async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
 
 
-function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();}
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
 
@@ -535,7 +535,7 @@ document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebho
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},filter:'all',search:''},currentInboxItem=null;
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -554,6 +554,8 @@ async function bootstrapAdmin(){
       const av=document.getElementById('adminAvatar');if(av)av.textContent=email.slice(0,1).toUpperCase();
     }
     renderAdmin();await loadAdminOps();
+    const qp=new URLSearchParams(location.search);
+    if(qp.get('gmail')){showView('inbox');await loadAdminInbox();history.replaceState({},'',location.pathname)}
     return true;
   }catch(err){console.error('Admin bootstrap failed',err);return false}
 }
@@ -641,6 +643,117 @@ async function updateWebsiteProspect(id,stage){
   const p=(adminWebsiteData.prospects||[]).find(x=>x.id===id);if(p)Object.assign(p,data.prospect);
   renderWebsiteAnalytics();renderAdminFleet();
 }
+
+async function loadAdminInbox(){
+  const refresh=document.getElementById('inboxRefreshButton');if(refresh){refresh.disabled=true;refresh.textContent='Refreshing…'}
+  try{
+    const sr=await fetch('/api/account?action=admin-gmail-status',{headers:{Accept:'application/json'},cache:'no-store'});
+    if(sr.ok)adminInboxData.gmailStatus=await sr.json();
+    if(adminInboxData.gmailStatus.connected){
+      const gr=await fetch('/api/account?action=admin-gmail-inbox&limit=35',{headers:{Accept:'application/json'},cache:'no-store'});
+      if(gr.ok)adminInboxData.gmail=await gr.json();else{const d=await gr.json().catch(()=>({}));adminInboxData.gmail={threads:[],analytics:{},error:d.error||'Gmail sync failed'}}
+    }else adminInboxData.gmail={threads:[],analytics:{}};
+  }catch(e){console.error('Inbox load failed',e)}
+  if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}
+  renderAdminInbox();
+}
+function websiteInboxItems(){
+  return (adminWebsiteData.prospects||[]).filter(p=>p.message||['contact','chatbot'].includes(p.source)).map(p=>({
+    kind:'website',id:p.id,title:p.name||p.business||p.email||'Website inquiry',subject:p.category||'Website inquiry',
+    preview:p.message||'',at:p.updatedAt||p.createdAt||0,email:p.email||'',prospect:p
+  }));
+}
+function gmailInboxItems(){
+  return (adminInboxData.gmail?.threads||[]).map(t=>{
+    const inbound=[...(t.messages||[])].reverse().find(m=>m.direction==='inbound'),last=t.last||t.messages?.[t.messages.length-1]||{};
+    return {kind:'gmail',id:t.id,title:inbound?.from||last.from||last.to||'Gmail thread',subject:t.subject||last.subject||'(no subject)',preview:last.snippet||last.body||'',at:t.lastAt||0,unread:!!t.unread,thread:t,prospect:t.prospect||null}
+  });
+}
+function renderAdminInbox(){
+  const st=adminInboxData.gmailStatus||{},ga=adminInboxData.gmail?.analytics||{},website=websiteInboxItems(),gmail=gmailInboxItems(),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  set('inboxWebsiteCount',website.length);set('inboxGmailUnread',ga.unread||0);set('inboxGmailAccount',st.connected?(st.gmailEmail||'Connected'):(st.configured?'Not connected':'OAuth setup required'));
+  set('inboxResponseTime',ga.avgFirstResponseSeconds?formatDuration(ga.avgFirstResponseSeconds):'—');set('inboxThreadCount',website.length+gmail.length);
+  const connect=document.getElementById('gmailConnectButton'),disconnect=document.getElementById('gmailDisconnectButton'),title=document.getElementById('gmailStatusTitle'),copy=document.getElementById('gmailStatusCopy');
+  if(connect){connect.hidden=!!st.connected;connect.textContent=st.configured?'Connect Gmail':'Set up Gmail OAuth'}
+  if(disconnect)disconnect.hidden=!st.connected;
+  if(title)title.textContent=st.connected?'Gmail connected':st.configured?'Gmail ready to connect':'Gmail OAuth setup required';
+  if(copy)copy.textContent=st.connected?('Connected as '+(st.gmailEmail||'Gmail')+'. Threads remain in Google and sync into this inbox.'):st.configured?'Authorize the Gmail account you want CallerCore Admin to use.':'Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY in Vercel before connecting.';
+  let items=[...website,...gmail].sort((a,b)=>b.at-a.at);
+  if(adminInboxData.filter!=='all')items=items.filter(x=>x.kind===adminInboxData.filter);
+  const q=String(adminInboxData.search||'').toLowerCase();if(q)items=items.filter(x=>(x.title+' '+x.subject+' '+x.preview).toLowerCase().includes(q));
+  const list=document.getElementById('inboxList'),empty=document.getElementById('inboxEmpty');
+  if(list)list.innerHTML=items.map(x=>'<button class="inbox-item '+(currentInboxItem?.kind===x.kind&&currentInboxItem?.id===x.id?'active':'')+'" data-inbox-kind="'+x.kind+'" data-inbox-id="'+esc(x.id)+'"><span class="inbox-source '+x.kind+'">'+(x.kind==='gmail'?'Gmail':'Website')+'</span><div><b>'+esc(x.title)+'</b><strong>'+esc(x.subject)+'</strong><p>'+esc(String(x.preview||'').slice(0,150))+'</p><small>'+new Date(x.at||Date.now()).toLocaleString()+(x.unread?' · unread':'')+'</small></div></button>').join('');
+  if(empty)empty.hidden=items.length!==0;
+  list?.querySelectorAll('[data-inbox-id]').forEach(b=>b.addEventListener('click',()=>openInboxItem(b.dataset.inboxKind,b.dataset.inboxId)));
+  document.querySelectorAll('[data-inbox-filter]').forEach(b=>b.classList.toggle('active',b.dataset.inboxFilter===adminInboxData.filter));
+}
+async function openInboxItem(kind,id){
+  if(kind==='website'){
+    const r=await fetch('/api/account?action=admin-website-conversation&id='+encodeURIComponent(id),{cache:'no-store'}),data=await r.json().catch(()=>({}));
+    if(!r.ok){alert(data.error||'Could not load website conversation.');return}
+    currentInboxItem={kind,id,prospect:data.prospect,messages:data.messages||[]};
+  }else{
+    const thread=(adminInboxData.gmail?.threads||[]).find(x=>x.id===id);if(!thread)return;
+    currentInboxItem={kind,id,thread,prospect:thread.prospect||null,messages:thread.messages||[]};
+  }
+  renderInboxThread();renderAdminInbox();
+}
+function renderInboxThread(){
+  const ph=document.getElementById('inboxThreadPlaceholder'),wrap=document.getElementById('inboxThread');if(!ph||!wrap)return;
+  if(!currentInboxItem){ph.hidden=false;wrap.hidden=true;return}
+  ph.hidden=true;wrap.hidden=false;
+  const website=currentInboxItem.kind==='website',p=currentInboxItem.prospect||{},messages=currentInboxItem.messages||[],last=messages[messages.length-1]||{};
+  const subject=website?(p.category||'Website inquiry'):(currentInboxItem.thread?.subject||last.subject||'Gmail thread');
+  const contact=website?(p.email||p.phone||'Website visitor'):([...(messages||[])].reverse().find(m=>m.direction==='inbound')?.from||last.from||last.to||'Gmail contact');
+  document.getElementById('inboxThreadChannel').textContent=website?(p.source==='chatbot'?'Website · Chatbot':'Website · Contact'):'Gmail';
+  document.getElementById('inboxThreadSubject').textContent=subject;
+  document.getElementById('inboxThreadMeta').textContent=contact+(p.business?' · '+p.business:'');
+  const lead=document.getElementById('inboxThreadLead');if(lead)lead.textContent=p.stage?('Lead · '+p.stage.replaceAll('_',' ')):(currentInboxItem.prospect?'Linked lead':'Email');
+  const box=document.getElementById('inboxMessages');
+  if(box)box.innerHTML=messages.map(m=>'<div class="inbox-message '+(m.direction==='outbound'?'outbound':'inbound')+'"><div><b>'+(m.direction==='outbound'?'You':esc(m.from||p.email||'Visitor'))+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+' · '+esc(m.channel||currentInboxItem.kind)+'</small></div><p>'+esc(m.body||m.snippet||'')+'</p></div>').join('');
+  if(box)box.scrollTop=box.scrollHeight;
+  const reply=document.getElementById('inboxReplyText');if(reply)reply.value='';
+  const status=document.getElementById('inboxReplyStatus');if(status)status.textContent='';
+}
+async function sendInboxReply(e){
+  e?.preventDefault();if(!currentInboxItem)return;
+  const field=document.getElementById('inboxReplyText'),status=document.getElementById('inboxReplyStatus'),btn=document.querySelector('#inboxReplyForm button[type="submit"]'),message=String(field?.value||'').trim();
+  if(!message)return;if(btn){btn.disabled=true;btn.textContent='Sending…'}if(status)status.textContent='';
+  try{
+    if(currentInboxItem.kind==='website'){
+      const r=await fetch('/api/account?action=admin-website-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentInboxItem.id,message})}),data=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(data.error||'Could not send reply');
+      currentInboxItem.messages.push(data.message);currentInboxItem.prospect=data.prospect;
+      const p=(adminWebsiteData.prospects||[]).find(x=>x.id===currentInboxItem.id);if(p)Object.assign(p,data.prospect);
+    }else{
+      const msgs=currentInboxItem.messages||[],inbound=[...msgs].reverse().find(m=>m.direction==='inbound'),last=msgs[msgs.length-1]||{},to=inbound?.from||last.from;
+      if(!to)throw new Error('No Gmail recipient found');
+      const subject=/^re:/i.test(currentInboxItem.thread.subject||'')?(currentInboxItem.thread.subject):'Re: '+(currentInboxItem.thread.subject||'CallerCore');
+      const refs=msgs.map(m=>m.messageId).filter(Boolean).join(' ');
+      const r=await fetch('/api/account?action=admin-gmail-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,subject,body:message,threadId:currentInboxItem.id,inReplyTo:last.messageId||'',references:refs})}),data=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(data.error||'Could not send Gmail reply');
+      await loadAdminInbox();
+      const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===(data.threadId||currentInboxItem.id));if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]}}
+    }
+    if(status)status.textContent='Reply sent.';renderInboxThread();renderAdminInbox();renderWebsiteAnalytics();renderAdminFleet();
+  }catch(err){if(status)status.textContent=err.message||'Could not send reply'}
+  finally{if(btn){btn.disabled=false;btn.textContent='Send reply'}}
+}
+async function connectGmail(){
+  if(!adminInboxData.gmailStatus?.configured){alert('Gmail OAuth needs three Vercel environment variables first: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY.');return}
+  const r=await fetch('/api/account?action=admin-gmail-connect',{method:'POST'}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not start Gmail connection.');return}location.href=data.url;
+}
+async function disconnectGmailAdmin(){
+  if(!confirm('Disconnect Gmail from CallerCore Admin? No messages will be deleted from Gmail.'))return;
+  const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST'});if(!r.ok)return alert('Could not disconnect Gmail.');currentInboxItem=null;await loadAdminInbox();renderInboxThread();
+}
+document.getElementById('inboxRefreshButton')?.addEventListener('click',loadAdminInbox);
+document.getElementById('gmailConnectButton')?.addEventListener('click',connectGmail);
+document.getElementById('gmailDisconnectButton')?.addEventListener('click',disconnectGmailAdmin);
+document.getElementById('inboxReplyForm')?.addEventListener('submit',sendInboxReply);
+document.getElementById('inboxSearch')?.addEventListener('input',e=>{adminInboxData.search=e.target.value||'';renderAdminInbox()});
+document.querySelectorAll('[data-inbox-filter]').forEach(b=>b.addEventListener('click',()=>{adminInboxData.filter=b.dataset.inboxFilter;renderAdminInbox()}));
+
 function renderAdminSupport(){
   const tickets=adminSupportData||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   set('supportOpen',tickets.filter(x=>x.status==='open').length);set('supportProgress',tickets.filter(x=>x.status==='in_progress').length);set('supportResolved',tickets.filter(x=>x.status==='resolved').length);set('supportUrgent',tickets.filter(x=>x.priority==='urgent'&&x.status!=='resolved').length);
