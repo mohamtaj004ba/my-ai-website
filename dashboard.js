@@ -509,6 +509,8 @@ function renderClientChecklist(){
   const ck=sessionOnboarding?.checklist||{};
   const items=sessionOnboarding?[
     ['Payment received',ck.payment!==false,'billing'],
+    ['Account reviewed',!!ck.accountReview,'overview'],
+    ['Onboarding sent',!!ck.onboardingSent,'overview'],
     ['Intake submitted',!!ck.intake,'settings'],
     ['Business profile created',!!ck.businessProfile,'settings'],
     ['AI agent draft created',!!ck.agentDraft,'agent'],
@@ -875,15 +877,26 @@ document.getElementById('savePlatformSettings')?.addEventListener('click',savePl
 
 function renderProvisioning(){
   const board=document.getElementById('provisioningBoard');if(!board)return;
-  const stages=['Paid','Intake','Building','Ready','Live'];
-  const labels={payment:'Paid',agreement:'Agreement',intake:'Intake',businessProfile:'Profile',agentDraft:'Agent draft',routingCaptured:'Routing',phoneAssigned:'Phone',adminReview:'Admin review',testCall:'Test call',clientApproval:'Client approval',live:'Live'};
+  const stages=['Paid','Review','Intake','Building','QA','Client Test','Ready','Live'];
+  const labels={payment:'Paid',accountReview:'Account review',onboardingSent:'Onboarding sent',agreement:'Agreement',intake:'Intake',businessProfile:'Profile',agentDraft:'Agent draft',routingCaptured:'Routing',phoneAssigned:'Phone',adminReview:'Admin review',testCall:'Test call',clientApproval:'Client approval',live:'Live'};
   board.innerHTML=stages.map(stage=>{
     const rows=adminProvisioningData.filter(x=>x.stage===stage);
     return '<div class="provision-column" data-provision-stage="'+stage+'"><h3>'+stage+' <span>'+rows.length+'</span></h3>'+rows.map(x=>{
-      const ck=x.checklist||{},chips=Object.entries(labels).map(([k,label])=>'<button type="button" class="provision-check '+(ck[k]?'done':'')+'" '+(['adminReview','testCall','clientApproval','live'].includes(k)?'data-provision-check="'+k+'" data-provision-id="'+esc(x.id)+'"':'disabled')+'><span>'+(ck[k]?'✓':'○')+'</span>'+label+'</button>').join('');
+      const ck=x.checklist||{},chips=Object.entries(labels).map(([k,label])=>'<button type="button" class="provision-check '+(ck[k]?'done':'')+'" '+(['testCall','clientApproval','live'].includes(k)?'data-provision-check="'+k+'" data-provision-id="'+esc(x.id)+'"':'disabled')+'><span>'+(ck[k]?'✓':'○')+'</span>'+label+'</button>').join('');
       const scan=x.websiteScan?('<span class="provision-scan">Website scan · '+Number(x.websiteScan.pagesScanned||0)+' page'+(Number(x.websiteScan.pagesScanned||0)===1?'':'s')+'</span>'):'';
       const agreement=x.agreementVersion?('<span class="provision-scan">Agreement v'+esc(x.agreementVersion)+(x.agreementSignedName?' · '+esc(x.agreementSignedName):'')+'</span>'):'';
-      return '<article draggable="true" data-provision-id="'+esc(x.id)+'"><div class="provision-card-head"><b>'+esc(x.name)+'</b>'+(x.manualOverride?'<span class="tag amber">Manual</span>':'')+'</div><small>'+esc(x.plan)+(x.phone?' · '+esc(x.phone):'')+'</small><div class="provision-progress"><i style="width:'+Math.round((Number(x.checklistDone||0)/Math.max(1,Number(x.checklistTotal||1)))*100)+'%"></i></div><div class="provision-checks">'+chips+'</div>'+agreement+scan+'<div class="provision-foot"><span>Auto: '+esc(x.autoStage||x.stage)+'</span>'+(x.manualOverride?'<button data-auto-stage="'+esc(x.id)+'">Use auto</button>':'')+'</div></article>';
+      const now=Date.now(),reviewAt=Number(x.reviewEligibleAt||0),buildAt=Number(x.buildEligibleAt||0);
+      let action='';
+      if(x.onboardingStatus==='awaiting_review'&&!x.onboardingLinkSent){
+        action=reviewAt>now
+          ? '<div class="provision-wait">Onboarding invite available '+esc(new Date(reviewAt).toLocaleString())+'</div>'
+          : '<button class="primary provision-action" data-send-onboarding="'+esc(x.id)+'">Approve & send onboarding</button>';
+      }else if(x.onboardingStatus==='building_review'&&!ck.adminReview){
+        action=buildAt>now
+          ? '<div class="provision-wait">Build review available '+esc(new Date(buildAt).toLocaleString())+'</div>'
+          : '<button class="primary provision-action" data-approve-build="'+esc(x.id)+'">Approve build</button>';
+      }
+      return '<article draggable="true" data-provision-id="'+esc(x.id)+'"><div class="provision-card-head"><b>'+esc(x.name)+'</b>'+(x.manualOverride?'<span class="tag amber">Manual</span>':'')+'</div><small>'+esc(x.plan)+(x.phone?' · '+esc(x.phone):'')+'</small><div class="provision-progress"><i style="width:'+Math.round((Number(x.checklistDone||0)/Math.max(1,Number(x.checklistTotal||1)))*100)+'%"></i></div><div class="provision-checks">'+chips+'</div>'+agreement+scan+action+'<div class="provision-foot"><span>Auto: '+esc(x.autoStage||x.stage)+'</span>'+(x.manualOverride?'<button data-auto-stage="'+esc(x.id)+'">Use auto</button>':'')+'</div></article>';
     }).join('')+'</div>';
   }).join('');
   board.querySelectorAll('[draggable="true"]').forEach(card=>{
@@ -901,6 +914,20 @@ function renderProvisioning(){
   });
   board.querySelectorAll('[data-auto-stage]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();clearProvisioningOverride(b.dataset.autoStage)}));
   board.querySelectorAll('[data-provision-check]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done'))}));
+  board.querySelectorAll('[data-send-onboarding]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await sendOnboardingInvite(b.dataset.sendOnboarding,b)}));
+  board.querySelectorAll('[data-approve-build]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await approveProvisioningBuild(b.dataset.approveBuild,b)}));
+}
+async function sendOnboardingInvite(id,button){
+  if(button){button.disabled=true;button.textContent='Sending…'}
+  const r=await fetch('/api/account?action=admin-onboarding-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));if(button){button.disabled=false;button.textContent='Approve & send onboarding'};return}
+  await loadAdminOps();await loadNotifications({silent:true});
+}
+async function approveProvisioningBuild(id,button){
+  if(button){button.disabled=true;button.textContent='Approving…'}
+  const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field:'adminReview',value:true})}),data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));if(button){button.disabled=false;button.textContent='Approve build'};return}
+  await loadAdminOps();await loadNotifications({silent:true});
 }
 async function updateProvisioningChecklist(id,field,value){
   const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field,value})}),data=await r.json().catch(()=>({}));
