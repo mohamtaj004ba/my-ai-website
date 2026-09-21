@@ -46,7 +46,7 @@
       else launcher.focus();
     };
 
-    launcher.addEventListener('click',()=>setOpen(true));
+    launcher.addEventListener('click',()=>{setOpen(true);window.CallerCoreAnalytics?.track('chat_open',{label:'website_assistant'})});
     close.addEventListener('click',()=>setOpen(false));
     document.addEventListener('keydown',e=>{
       if(e.key==='Escape' && panel.classList.contains('open')) setOpen(false);
@@ -61,6 +61,7 @@
       input.value='';
       quick.hidden=true;
       history.push({role:'user',content:text});
+      window.CallerCoreAnalytics?.track('chat_message',{label:'visitor_message'});
       const typing=add('Thinking…','bot typing');
 
       try{
