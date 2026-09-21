@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { kv } = require('@vercel/kv');
+const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 
 // Called from get-started.html right before redirecting to Stripe.
 // Stores the lead's form answers under a short-lived leadId so the Stripe
@@ -51,6 +52,7 @@ module.exports = async function handler(req, res) {
   const phone = clean(raw.phone, 80);
   const industry = clean(raw.industry, 160);
   const plan = clean(raw.plan, 20);
+  const visitorId=clean(raw.visitorId,120),sessionId=clean(raw.sessionId,120),utmSource=clean(raw.utmSource,120),utmMedium=clean(raw.utmMedium,120),utmCampaign=clean(raw.utmCampaign,160);
   const allowedPlans = new Set(['Starter','Growth','Pro']);
 
   if (!name || !business || !email || !phone || !industry || !allowedPlans.has(plan)) {
@@ -61,14 +63,16 @@ module.exports = async function handler(req, res) {
   }
 
   const leadId = crypto.randomUUID();
+  const prospect=await upsertWebsiteProspect({name,business,email,phone,industry,plan,source:'get_started',stage:'checkout_started',visitorId,sessionId,utmSource,utmMedium,utmCampaign});
+  await recordSiteEvent({type:'checkout_start',visitorId,sessionId,path:'/get-started',label:plan,utmSource,utmMedium,utmCampaign},req);
 
   try {
     await kv.set(
       `lead:${leadId}`,
-      { name, business, email, phone, industry, plan, createdAt: Date.now() },
+      { name, business, email, phone, industry, plan, prospectId:prospect.id, visitorId, sessionId, createdAt: Date.now() },
       { ex: 60 * 60 * 24 * 7 }
     );
-    return res.status(200).json({ leadId });
+    return res.status(200).json({ leadId, prospectId:prospect.id });
   } catch (err) {
     console.error('lead-create KV write failed:', err);
     return res.status(503).json({ error: 'Lead pre-save temporarily unavailable' });
