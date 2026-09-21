@@ -1123,6 +1123,32 @@ async function session(req,res){
   });
 }
 
+async function workspaceExport(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const id=s.workspaceId;
+  const [workspace,settings,agent,calls,leads,conversations,appointments,automations,integrations,locations,phones,supportIndex,onboarding,audit]=await Promise.all([
+    kv.get('workspace:'+id),kv.get('settings:'+id),kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('conversations:'+id),kv.get('appointments:'+id),kv.get('automations:'+id),kv.get('integrations:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('support:index'),kv.get('onboarding:workspace:'+id),kv.get('audit:'+id)
+  ]);
+  const support=[];
+  for(const ticketId of Array.isArray(supportIndex)?supportIndex:[]){
+    const t=await kv.get('support:'+ticketId);if(t&&t.workspaceId===id)support.push(t);
+  }
+  const phone=(Array.isArray(phones)?phones:[]).find(x=>x&&x.workspaceId===id)||null;
+  const exportedAt=new Date().toISOString();
+  const data={
+    exportVersion:'1.0',exportedAt,
+    workspace:workspace||null,settings:settings||null,agent:agent||null,phone,
+    locations:Array.isArray(locations)?locations:[],integrations:integrations||null,
+    calls:Array.isArray(calls)?calls:[],leads:Array.isArray(leads)?leads:[],
+    conversations:Array.isArray(conversations)?conversations:[],appointments:Array.isArray(appointments)?appointments:[],
+    automations:Array.isArray(automations)?automations:[],support,onboarding:onboarding||null,
+    audit:Array.isArray(audit)?audit:[]
+  };
+  res.setHeader('Content-Type','application/json; charset=utf-8');
+  res.setHeader('Content-Disposition','attachment; filename="CallerCore-workspace-export-'+String(id).slice(0,8)+'.json"');
+  return res.status(200).send(JSON.stringify(data,null,2));
+}
+
 async function workspace(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);
@@ -1482,6 +1508,7 @@ module.exports=async function handler(req,res){
   if(action==='verify'&&req.method==='GET')return verify(req,res);
   if(action==='session'&&req.method==='GET')return session(req,res);
   if(action==='workspace'&&req.method==='GET')return workspace(req,res);
+  if(action==='workspace-export'&&req.method==='GET')return workspaceExport(req,res);
   if(action==='phone-routing'&&req.method==='GET')return phoneRouting(req,res);
   if(action==='locations'&&req.method==='GET')return locations(req,res);
   if(action==='locations-save'&&req.method==='POST')return saveLocations(req,res);
