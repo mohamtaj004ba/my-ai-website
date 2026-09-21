@@ -54,7 +54,7 @@ module.exports=async function handler(req,res){
   if(process.env.CALLERCORE_CHECKOUT_ENABLED!=='true')return res.status(503).json({error:'CallerCore checkout is not open yet'});
   if(!STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe checkout is not configured'});
 
-  const rl=await rateLimit({scope:'embedded-checkout',identifier:requestIp(req),limit:req.method==='GET'?30:10,windowSeconds:600});
+  const rl=await rateLimit({scope:'embedded-checkout',identifier:requestIp(req),limit:req.method==='GET'?30:10,windowSeconds:600,failClosed:true});
   if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests'})}
 
   if(req.method==='GET'){
