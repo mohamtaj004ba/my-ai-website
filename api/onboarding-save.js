@@ -57,7 +57,7 @@ module.exports = async function handler(req, res) {
     if(record.workspaceId){
       await kv.set('onboarding:workspace-token:'+record.workspaceId,token,{ex:60*60*24*90});
       const prior=await kv.get('onboarding:workspace:'+record.workspaceId)||{};
-      await kv.set('onboarding:workspace:'+record.workspaceId,{...prior,workspaceId:record.workspaceId,status:'intake_in_progress',completionPercent:Number(record.completionPercent||0),checklist:{...(prior.checklist||{}),payment:true,agreement:true,intake:false},updatedAt:Date.now()});
+      await kv.set('onboarding:workspace:'+record.workspaceId,{...prior,workspaceId:record.workspaceId,status:'intake_in_progress',completionPercent:Number(record.completionPercent||0),agreementVersion:record.agreementVersion,agreementSignedAt:record.agreementSignedAt,agreementSignedName:record.agreementFullName,checklist:{...(prior.checklist||{}),payment:true,agreement:true,intake:false},updatedAt:Date.now()});
     }
 
     // Email a signed copy. Don't fail the request if this errors — the
