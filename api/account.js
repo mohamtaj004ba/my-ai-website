@@ -14,6 +14,28 @@ function requestOrigin(req){
   return SITE_URL;
 }
 
+
+async function appendAudit(workspaceId,{actorEmail='',actorRole='client',action='',section='',before=null,after=null,meta={}}={}){
+  if(!workspaceId)return;
+  const key='audit:'+workspaceId,list=await kv.get(key)||[];
+  const item={id:crypto.randomUUID(),workspaceId,actorEmail,actorRole,action,section,before,after,meta,at:Date.now()};
+  const next=Array.isArray(list)?list:[];
+  next.unshift(item);await kv.set(key,next.slice(0,200));
+  return item;
+}
+function configKey(section,workspaceId){
+  const map={workspace:'workspace:',settings:'settings:',agent:'agent:',automations:'automations:',integrations:'integrations:',locations:'locations:'};
+  return map[section]?map[section]+workspaceId:null;
+}
+async function getWorkspaceConfigSnapshot(workspaceId){
+  const [workspace,settings,agent,automations,integrations,locations,phones]=await Promise.all([
+    kv.get('workspace:'+workspaceId),kv.get('settings:'+workspaceId),kv.get('agent:'+workspaceId),
+    kv.get('automations:'+workspaceId),kv.get('integrations:'+workspaceId),kv.get('locations:'+workspaceId),kv.get('phone:index')
+  ]);
+  const phone=(Array.isArray(phones)?phones:[]).find(x=>x&&x.workspaceId===workspaceId)||null;
+  return {workspace:workspace||null,settings:settings||null,agent:agent||null,automations:Array.isArray(automations)?automations:[],integrations:integrations||null,locations:Array.isArray(locations)?locations:[],phone};
+}
+
 async function bootstrapPreview(req,res){
   const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
   if(!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
@@ -117,6 +139,7 @@ async function adminUpdateClient(req,res){
   }
   next.updatedAt=Date.now();
   await kv.set(key,next);
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'workspace_update',section:'workspace',before:ws,after:next});
   return res.status(200).json({ok:true,client:{id:next.id,name:next.name,plan:next.plan,status:next.status,subscriptionStatus:next.subscriptionStatus||'active'}});
 }
 
@@ -404,7 +427,7 @@ async function requestLogin(req,res){
   const member=await kv.get('user:email:'+email);
   if(member&&member.workspaceId){
     const token=crypto.randomBytes(32).toString('hex');
-    await kv.set('login:'+token,{email,workspaceId:member.workspaceId,role:member.role||'owner',next},{ex:15*60});
+    await kv.set('login:'+token,{email,workspaceId:member.workspaceId,role:member.role||'owner',next,authVersion:Number(member.sessionVersion||0)},{ex:15*60});
     const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
     try{
       await sendMail({
@@ -424,7 +447,7 @@ async function verify(req,res){
   const key='login:'+token,record=await kv.get(key);
   if(!record||!record.workspaceId)return res.redirect(302,'/login?error=expired');
   await kv.del(key);
-  await createSession(res,{email:record.email,workspaceId:record.workspaceId,role:record.role||'owner'});
+  await createSession(res,{email:record.email,workspaceId:record.workspaceId,role:record.role||'owner',authVersion:Number(record.authVersion||0)});
   const destination=record.next||((record.role||'owner')==='admin'?'/admin-dashboard':'/dashboard');
   return res.redirect(302,destination);
 }
@@ -497,7 +520,9 @@ async function saveLocations(req,res){
     updatedAt:Date.now()
   }));
   for(const item of items){if(item.phone&&!/^\+?[0-9() .-]{7,30}$/.test(item.phone))return res.status(400).json({error:'One or more location phone numbers are invalid'})}
+  const previous=await kv.get('locations:'+s.workspaceId)||[];
   await kv.set('locations:'+s.workspaceId,items);
+  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'locations_save',section:'locations',before:previous,after:items});
   return res.status(200).json({ok:true,locations:items,limit:ent.locations});
 }
 
@@ -537,7 +562,9 @@ async function saveAgent(req,res){
     transferNumber:clean(body.transferNumber,40),
     updatedAt:Date.now()
   };
+  const previous=await kv.get('agent:'+s.workspaceId)||null;
   await kv.set('agent:'+s.workspaceId,agent);
+  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'agent_save',section:'agent',before:previous,after:agent});
   return res.status(200).json({ok:true,agent});
 }
 
@@ -563,7 +590,9 @@ async function saveAutomations(req,res){
     enabled:item.enabled!==false,
     updatedAt:Date.now()
   }));
+  const previous=await kv.get('automations:'+access.session.workspaceId)||[];
   await kv.set('automations:'+access.session.workspaceId,items);
+  await appendAudit(access.session.workspaceId,{actorEmail:access.session.email,actorRole:access.session.role||'client',action:'automations_save',section:'automations',before:previous,after:items});
   return res.status(200).json({ok:true,automations:items});
 }
 
@@ -658,7 +687,9 @@ async function saveSettings(req,res){
   if(settings.notificationEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.notificationEmail))return res.status(400).json({error:'Valid notification email required'});
   if(settings.businessPhone&&!/^\+?[0-9() .-]{7,30}$/.test(settings.businessPhone))return res.status(400).json({error:'Valid business phone required'});
   if(settings.website&&!/^https?:\/\//i.test(settings.website))return res.status(400).json({error:'Website must begin with http:// or https://'});
+  const previous=await kv.get('settings:'+s.workspaceId)||null;
   await kv.set('settings:'+s.workspaceId,settings);
+  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'settings_save',section:'settings',before:previous,after:settings});
   if(settings.businessName){
     const key='workspace:'+s.workspaceId,ws=await kv.get(key);
     if(ws)await kv.set(key,{...ws,name:settings.businessName,ownerName:settings.contactName||ws.ownerName,industry:settings.industry||ws.industry,updatedAt:Date.now()});
@@ -688,6 +719,7 @@ async function saveIntegrations(req,res){
   const saved=await kv.get('integrations:'+access.session.workspaceId)||{};
   const next={...saved,webhookUrl:url,updatedAt:Date.now()};
   await kv.set('integrations:'+access.session.workspaceId,next);
+  await appendAudit(access.session.workspaceId,{actorEmail:access.session.email,actorRole:access.session.role||'client',action:'integrations_save',section:'integrations',before:saved,after:next});
   return res.status(200).json({ok:true,integrations:next});
 }
 
