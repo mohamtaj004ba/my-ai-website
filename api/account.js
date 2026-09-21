@@ -1008,6 +1008,7 @@ async function adminSystemHealth(req,res){
   const stripeReady=stripeEnv&&stripeHealth.ok;
   const services=[
     {key:'database',name:'Upstash / KV',status:kvOk?'operational':'error',detail:kvOk?'Read/write check passed':('Database check failed ('+kvHealth.error+')')},
+    {key:'checkout',name:'Sales / checkout',status:process.env.CALLERCORE_CHECKOUT_ENABLED==='true'?'operational':'not_configured',detail:process.env.CALLERCORE_CHECKOUT_ENABLED==='true'?'Customer checkout is enabled':'Checkout launch gate is closed'},
     {key:'stripe',name:'Stripe',status:stripeReady?'operational':(stripeEnv?'error':'not_configured'),detail:!stripeEnv?(!process.env.STRIPE_SECRET_KEY?'STRIPE_SECRET_KEY missing':(!process.env.STRIPE_PUBLISHABLE_KEY?'STRIPE_PUBLISHABLE_KEY missing':'STRIPE_WEBHOOK_SECRET missing')):stripeHealth.detail,meta:{webhook:stripeHealth.webhook,portal:stripeHealth.portal,missingEvents:stripeHealth.missingEvents||[]}},
     {key:'mailgun',name:'Mailgun',status:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'configured':'not_configured',detail:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'API credentials available':'Mailgun credentials incomplete'},
     {key:'demo',name:'Live demo protection',status:process.env.DEMO_TOKEN_SECRET?'configured':'not_configured',detail:process.env.DEMO_TOKEN_SECRET?'Demo reveal signing secret available':'DEMO_TOKEN_SECRET missing — live demo number reveal is disabled'},
