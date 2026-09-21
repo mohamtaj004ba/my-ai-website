@@ -1212,8 +1212,11 @@ async function requestLogin(req,res){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(200).json({ok:true});
   const ip=String(req.headers['x-forwarded-for']||'unknown').split(',')[0].trim();
   const bucket='auth:rate:'+crypto.createHash('sha256').update(ip).digest('hex');
-  const count=await kv.incr(bucket);if(count===1)await kv.expire(bucket,WINDOW);
-  if(count>MAX)return res.status(429).json({error:'Too many requests. Try again shortly.'});
+  const emailBucket='auth:email-rate:'+crypto.createHash('sha256').update(email).digest('hex');
+  const [count,emailCount]=await Promise.all([kv.incr(bucket),kv.incr(emailBucket)]);
+  if(count===1)await kv.expire(bucket,WINDOW);
+  if(emailCount===1)await kv.expire(emailBucket,WINDOW);
+  if(count>MAX||emailCount>MAX)return res.status(429).json({error:'Too many requests. Try again shortly.'});
   const member=await kv.get('user:email:'+email);
   if(member&&member.workspaceId){
     const token=crypto.randomBytes(32).toString('hex');
