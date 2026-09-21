@@ -2,6 +2,7 @@ const crypto=require('crypto');
 const {kv}=require('@vercel/kv');
 const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession}=require('../lib/auth');
 const {sendMail}=require('../lib/mail');
+const {lifecycleEmail,authEmail}=require('../lib/email-template');
 const {entitlementsFor}=require('../lib/plans');
 const {emailKey}=require('../lib/site-analytics');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
@@ -643,7 +644,17 @@ async function adminSendClientLogin(req,res){
   const token=crypto.randomBytes(32).toString('hex');
   await kv.set('login:'+token,{email,workspaceId:id,role:member.role||'owner',next:'/dashboard',authVersion:Number(member.sessionVersion||0)},{ex:15*60});
   const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
-  await sendMail({to:email,subject:'Your CallerCore sign-in link',text:'CallerCore support sent you a secure sign-in link:\n\n'+link+'\n\nThis link expires in 15 minutes.',html:'<p>CallerCore support sent you a secure sign-in link:</p><p><a href="'+link+'">Sign in to CallerCore</a></p><p>This link expires in 15 minutes.</p>'});
+  {const emailBody=authEmail({
+    preheader:'CallerCore support sent you a secure sign-in link.',
+    title:'Your secure sign-in link',
+    intro:'CallerCore support created a secure sign-in link for your account.',
+    statusLabel:'Security',
+    statusText:'This link expires in 15 minutes and can only be used once.',
+    bodyHtml:'<p style="margin:0">If you did not request help signing in, you can ignore this email.</p>',
+    ctaLabel:'Sign in to CallerCore',
+    ctaUrl:link,
+    siteUrl:requestOrigin(req)
+  });await sendMail({to:email,subject:'Your CallerCore sign-in link',...emailBody});}
   await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'login_link_sent',section:'access',meta:{recipient:email}});
   return res.status(200).json({ok:true,email});
 }
@@ -732,12 +743,19 @@ async function adminSendOnboardingInvite(req,res){
   const onboarding=await kv.get('onboarding:'+token),to=String(onboarding?.email||ws.ownerEmail||'').trim().toLowerCase();
   if(!to)return res.status(400).json({error:'Client email is missing'});
   const link=requestOrigin(req)+'/onboarding?token='+token,firstName=String(onboarding?.name||ws.ownerName||'').split(' ')[0]||'there';
-  await sendMail({
-    to,
-    subject:'Your CallerCore onboarding is ready',
-    text:['Hi '+firstName,'','We’ve reviewed your CallerCore account and your onboarding workspace is ready.','','Complete your service agreement and business intake here:',link,'','Your progress saves automatically, so you can come back if needed.','','Questions any time: support@callercore.com','','— CallerCore'].join('\n'),
-    html:'<p>Hi '+firstName+',</p><p><strong>We’ve reviewed your CallerCore account and your onboarding workspace is ready.</strong></p><p><a href="'+link+'">Open your secure onboarding workspace</a> to complete your service agreement and business intake.</p><p>Your progress saves automatically, so you can come back if needed.</p><p>Questions any time: support@callercore.com</p><p>— CallerCore</p>'
-  });
+  {const emailBody=lifecycleEmail({
+    preheader:'Your CallerCore onboarding workspace is ready.',
+    eyebrow:'ONBOARDING READY',
+    title:'Your setup workspace is ready, '+firstName+'.',
+    intro:'We’ve reviewed your CallerCore account and prepared your secure onboarding workspace.',
+    statusLabel:'Next step',
+    statusText:'Complete your service agreement and business intake.',
+    bodyHtml:'<p style="margin:0 0 12px">Your progress saves automatically, so you can stop and come back if needed.</p><p style="margin:0">Once submitted, CallerCore will prepare your initial business profile, AI-agent configuration, routing preferences, and launch checklist for review.</p>',
+    ctaLabel:'Open onboarding',
+    ctaUrl:link,
+    siteUrl:requestOrigin(req),
+    showDashboardSupport:false
+  });await sendMail({to,subject:'Your CallerCore onboarding is ready',...emailBody});}
   const next={...state,status:'awaiting_agreement',onboardingLinkSent:true,onboardingSentAt:Date.now(),reviewedAt:Date.now(),reviewedBy:admin.email,checklist:{...(state.checklist||{}),accountReview:true,onboardingSent:true},updatedAt:Date.now()};
   await kv.set('onboarding:workspace:'+id,next);
   await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'onboarding_invite_sent',section:'workspace',meta:{to}});
@@ -761,36 +779,64 @@ async function adminProvisioningChecklistSave(req,res){
   const to=String(ws.ownerEmail||'').trim().toLowerCase(),firstName=String(ws.ownerName||'').split(' ')[0]||'there';
   if(field==='adminReview'&&value){
     next.status='qa_complete';next.adminReviewedAt=Date.now();
-    if(to)await sendMail({
-      to,subject:'Your CallerCore build has passed our initial review',
-      text:['Hi '+firstName,'','We’ve completed the initial review of your CallerCore configuration. Your AI agent and business rules have been prepared from the information you submitted.','','We’re now finishing phone routing and test-call preparation. We’ll let you know when the next step is ready.','','No action is needed from you right now.','','— CallerCore'].join('\n'),
-      html:'<p>Hi '+firstName+',</p><p><strong>We’ve completed the initial review of your CallerCore configuration.</strong></p><p>Your AI agent and business rules have been prepared from the information you submitted. We’re now finishing phone routing and test-call preparation.</p><p>No action is needed from you right now.</p><p>— CallerCore</p>'
-    });
+    if(to){const emailBody=lifecycleEmail({
+      preheader:'Your CallerCore build passed its initial review.',
+      eyebrow:'BUILD REVIEW COMPLETE',
+      title:'Initial review complete, '+firstName+'.',
+      intro:'We’ve completed the initial review of your CallerCore configuration.',
+      statusLabel:'Current status',
+      statusText:'Phone routing and test-call preparation are in progress.',
+      bodyHtml:'<p style="margin:0">Your AI agent and business rules have been prepared from the information you submitted. No action is needed from you right now — we’ll let you know when the next step is ready.</p>',
+      ctaLabel:'View setup progress',
+      ctaUrl:requestOrigin(req)+'/dashboard',
+      siteUrl:requestOrigin(req)
+    });await sendMail({to,subject:'Your CallerCore build has passed our initial review',...emailBody});}
   }
   if(field==='testCall'&&value){
     next.status='client_test';next.testReadyAt=Date.now();
-    if(to)await sendMail({
-      to,subject:'Your CallerCore test stage is ready',
-      text:['Hi '+firstName,'','Your CallerCore setup has reached the test stage.','','Your agent configuration has been reviewed and the test-call step is ready. Sign in to your CallerCore dashboard to review your setup and test experience:',requestOrigin(req)+'/dashboard','','Once everything sounds right, we’ll move into final launch preparation.','','— CallerCore'].join('\n'),
-      html:'<p>Hi '+firstName+',</p><p><strong>Your CallerCore setup has reached the test stage.</strong></p><p>Your agent configuration has been reviewed and the test-call step is ready. <a href="'+requestOrigin(req)+'/dashboard">Open your CallerCore dashboard</a> to review your setup and test experience.</p><p>Once everything sounds right, we’ll move into final launch preparation.</p><p>— CallerCore</p>'
-    });
+    if(to){const emailBody=lifecycleEmail({
+      preheader:'Your CallerCore test stage is ready.',
+      eyebrow:'TEST STAGE READY',
+      title:'It’s time to test your CallerCore setup.',
+      intro:'Your agent configuration has been reviewed and the test-call stage is ready.',
+      statusLabel:'Action needed',
+      statusText:'Review the setup and test experience before final launch preparation.',
+      bodyHtml:'<p style="margin:0">Once everything sounds right, we’ll move into final launch preparation.</p>',
+      ctaLabel:'Open test stage',
+      ctaUrl:requestOrigin(req)+'/dashboard',
+      siteUrl:requestOrigin(req)
+    });await sendMail({to,subject:'Your CallerCore test stage is ready',...emailBody});}
   }
   if(field==='clientApproval'&&value){
     next.status='ready';next.clientApprovedAt=Date.now();
-    if(to)await sendMail({
-      to,subject:'CallerCore is preparing your launch',
-      text:['Hi '+firstName,'','Your test stage is complete and your CallerCore setup is now in final launch preparation.','','We’re completing the last routing and activation checks. We’ll send you a confirmation as soon as your AI receptionist is live.','','No action is needed right now.','','— CallerCore'].join('\n'),
-      html:'<p>Hi '+firstName+',</p><p><strong>Your test stage is complete and your CallerCore setup is now in final launch preparation.</strong></p><p>We’re completing the last routing and activation checks. We’ll send you a confirmation as soon as your AI receptionist is live.</p><p>No action is needed right now.</p><p>— CallerCore</p>'
-    });
+    if(to){const emailBody=lifecycleEmail({
+      preheader:'Your CallerCore setup is in final launch preparation.',
+      eyebrow:'FINAL LAUNCH PREPARATION',
+      title:'Your setup is almost live.',
+      intro:'Your test stage is complete and your CallerCore setup is now in final launch preparation.',
+      statusLabel:'Current status',
+      statusText:'Final routing and activation checks are underway.',
+      bodyHtml:'<p style="margin:0">No action is needed right now. We’ll send you a confirmation as soon as your AI receptionist is live.</p>',
+      ctaLabel:'View launch progress',
+      ctaUrl:requestOrigin(req)+'/dashboard',
+      siteUrl:requestOrigin(req)
+    });await sendMail({to,subject:'CallerCore is preparing your launch',...emailBody});}
   }
   if(field==='live'&&value){
     next.checklist.adminReview=true;next.checklist.testCall=true;next.checklist.clientApproval=true;
     next.status='live';next.liveAt=Date.now();await kv.set(wsKey,{...ws,status:'active',updatedAt:Date.now()});
-    if(to)await sendMail({
-      to,subject:'CallerCore is live',
-      text:['Hi '+firstName,'','Your CallerCore AI receptionist is now live.','','You can monitor calls, leads, conversations, and setup details from your client dashboard:',requestOrigin(req)+'/dashboard','','Welcome aboard.','','— CallerCore'].join('\n'),
-      html:'<p>Hi '+firstName+',</p><p><strong>Your CallerCore AI receptionist is now live.</strong></p><p>You can monitor calls, leads, conversations, and setup details from your <a href="'+requestOrigin(req)+'/dashboard">client dashboard</a>.</p><p>Welcome aboard.</p><p>— CallerCore</p>'
-    });
+    if(to){const emailBody=lifecycleEmail({
+      preheader:'Your CallerCore AI receptionist is now live.',
+      eyebrow:'YOU’RE LIVE',
+      title:'CallerCore is live, '+firstName+'.',
+      intro:'Your AI receptionist is now active and your launch is complete.',
+      statusLabel:'Status',
+      statusText:'Live and ready to handle production traffic.',
+      bodyHtml:'<p style="margin:0 0 12px">You can monitor calls, leads, conversations, routing, and setup details from your client dashboard.</p><p style="margin:0"><strong>Welcome aboard.</strong></p>',
+      ctaLabel:'Open CallerCore dashboard',
+      ctaUrl:requestOrigin(req)+'/dashboard',
+      siteUrl:requestOrigin(req)
+    });await sendMail({to,subject:'CallerCore is live',...emailBody});}
   }else if(field==='live'&&!value&&state.status==='live'){
     next.status='ready';await kv.set(wsKey,{...ws,status:'onboarding',updatedAt:Date.now()});
   }
@@ -1009,12 +1055,17 @@ async function requestLogin(req,res){
     await kv.set('login:'+token,{email,workspaceId:member.workspaceId,role:member.role||'owner',next,authVersion:Number(member.sessionVersion||0)},{ex:15*60});
     const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
     try{
-      await sendMail({
-        to:email,
-        subject:'Your CallerCore sign-in link',
-        text:'Use this secure link to sign in to CallerCore:\n\n'+link+'\n\nThis link expires in 15 minutes.',
-        html:'<p>Use this secure link to sign in to CallerCore:</p><p><a href="'+link+'">Sign in to CallerCore</a></p><p>This link expires in 15 minutes.</p>'
-      });
+      {const emailBody=authEmail({
+        preheader:'Use this secure link to sign in to CallerCore.',
+        title:'Sign in to CallerCore',
+        intro:'Use the secure button below to access your CallerCore account.',
+        statusLabel:'Security',
+        statusText:'This link expires in 15 minutes and can only be used once.',
+        bodyHtml:'<p style="margin:0">If you didn’t request this email, no action is required.</p>',
+        ctaLabel:'Sign in securely',
+        ctaUrl:link,
+        siteUrl:requestOrigin(req)
+      });await sendMail({to:email,subject:'Your CallerCore sign-in link',...emailBody});}
     }catch(err){console.error('auth email failed',err);return res.status(503).json({error:'Sign-in email temporarily unavailable'})}
   }
   return res.status(200).json({ok:true});
