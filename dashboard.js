@@ -631,7 +631,7 @@ function renderAdminFleet(){
   const ag=document.getElementById('adminAgentsGrid');if(ag){ag.innerHTML=agents.filter(x=>x.agent).map(x=>'<article class="panel integration-card"><div><b>'+esc(x.agent.name||'Maya')+' · '+esc(x.workspaceName)+'</b><p>'+esc(x.agent.role||'AI Receptionist')+(x.phone?' · '+esc(x.phone):' · No phone assigned')+'</p></div><span class="tag '+(x.status==='active'&&x.phone?'green':'amber')+'">'+(x.status==='active'&&x.phone?'Ready':'Setup')+'</span></article>').join('');document.getElementById('adminAgentsEmpty').hidden=agents.some(x=>x.agent)}
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   set('adminCallsTotal',calls.length);set('adminCallsQualified',calls.filter(x=>/booked|qualified/i.test(String(x.outcome||''))).length);set('adminCallsMissed',calls.filter(x=>/missed/i.test(String(x.outcome||''))).length);set('adminCallsWorkspaces',new Set(calls.map(x=>x.workspaceId)).size);
-  const ct=document.getElementById('adminCallsTable');if(ct)ct.innerHTML=calls.slice(0,100).map(x=>'<div class="call-row"><span><strong>'+esc(x.caller||x.phone||'Unknown caller')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span>'+esc(x.workspaceName)+'</span><span>'+esc(x.reason||'General')+'</span><span class="tag '+outcomeClass(x.outcome)+'">'+esc(x.outcome||'Handled')+'</span><span>'+esc(x.time||'—')+'</span></div>').join('');
+  const ct=document.getElementById('adminCallsTable');if(ct)ct.innerHTML=calls.slice(0,100).map(x=>'<div class="call-row" data-admin-call-id="'+esc(String(x.id||x.callId||''))+'"><span><strong>'+esc(x.caller||x.phone||'Unknown caller')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span>'+esc(x.workspaceName)+'</span><span>'+esc(x.reason||'General')+'</span><span class="tag '+outcomeClass(x.outcome)+'">'+esc(x.outcome||'Handled')+'</span><span>'+esc(x.time||'—')+'</span></div>').join('');
   const ce=document.getElementById('adminCallsEmpty');if(ce)ce.hidden=calls.length!==0;
 
   const totalLeads=workspaceLeads.length+webProspects.length;
@@ -645,7 +645,7 @@ function renderAdminFleet(){
       const interest=p.plan||p.category||p.industry||'Website inquiry';
       return '<div class="lead-admin-row"><span><strong>'+esc(p.name||p.business||p.email||'Website prospect')+'</strong><small class="subtle">'+esc(p.business||p.email||'')+'</small></span><span><span class="tag amber">Website</span><small class="subtle">'+esc(p.source||'website')+'</small></span><span>'+esc(interest)+'</span><span><select class="prospect-stage" data-prospect-stage="'+esc(p.id)+'">'+['new','inquiry','checkout_started','follow_up','qualified','lost','converted'].map(s=>'<option value="'+s+'" '+(p.stage===s?'selected':'')+'>'+s.replaceAll('_',' ')+'</option>').join('')+'</select></span><span><button class="admin-link" data-view="website">Journey</button></span></div>'
     }).join('');
-    const clientRows=workspaceLeads.slice(0,100).map(x=>'<div class="lead-admin-row"><span><strong>'+esc(x.name||'Unnamed lead')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><span class="tag">Client</span><small class="subtle">'+esc(x.workspaceName||'Workspace')+'</small></span><span>'+esc(x.service||'General inquiry')+'</span><span><span class="tag">'+esc(x.stage||'New')+'</span></span><span>'+money(x.value)+'</span></div>').join('');
+    const clientRows=workspaceLeads.slice(0,100).map(x=>'<div class="lead-admin-row" data-admin-lead-id="'+esc(String(x.id||''))+'"><span><strong>'+esc(x.name||'Unnamed lead')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><span class="tag">Client</span><small class="subtle">'+esc(x.workspaceName||'Workspace')+'</small></span><span>'+esc(x.service||'General inquiry')+'</span><span><span class="tag">'+esc(x.stage||'New')+'</span></span><span>'+money(x.value)+'</span></div>').join('');
     lt.innerHTML=webRows+clientRows;
     lt.querySelectorAll('[data-prospect-stage]').forEach(sel=>sel.addEventListener('change',()=>updateWebsiteProspect(sel.dataset.prospectStage,sel.value)));
     lt.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
@@ -1220,10 +1220,13 @@ function flashAdminSearchTarget(el){
 async function openAdminGlobalSearchResult(type,id,view){
   const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(wrap)wrap.hidden=true;if(input)input.value='';
   if(type==='client'){showView('clients');await openAdminClient(id);return}
+  if(type==='gmail'){showView('inbox');await openInboxItem('gmail',id);setTimeout(()=>flashAdminSearchTarget(document.querySelector('[data-inbox-kind="gmail"][data-inbox-id="'+CSS.escape(id)+'"]')),80);return}
   showView(view);
   setTimeout(()=>{
     if(type==='prospect')flashAdminSearchTarget(document.querySelector('[data-website-prospect-id="'+CSS.escape(id)+'"]'));
     else if(type==='support')flashAdminSearchTarget(document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]'));
+    else if(type==='call')flashAdminSearchTarget(document.querySelector('[data-admin-call-id="'+CSS.escape(id)+'"]'));
+    else if(type==='lead')flashAdminSearchTarget(document.querySelector('[data-admin-lead-id="'+CSS.escape(id)+'"]'));
   },80);
 }
 document.getElementById('adminSearch')?.addEventListener('input',renderAdminGlobalSearch);
