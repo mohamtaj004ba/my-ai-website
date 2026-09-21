@@ -2,25 +2,13 @@ const crypto=require('crypto');
 const { kv }=require('@vercel/kv');
 const { sendMail } = require('./_lib/mailgun');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
+const {rateLimit,requestIp}=require('../lib/rate-limit');
 
 const ALLOWED_HOSTS = new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
-const hits = new Map();
-const RATE_WINDOW_MS = 10 * 60 * 1000;
-const RATE_MAX = 5;
-
 function allowed(req){
   const c=req.headers.origin||req.headers.referer||'';
   if(!c)return false;
   try{const h=new URL(c).host;return ALLOWED_HOSTS.has(h)||h.endsWith('.vercel.app')}catch(e){return false}
-}
-function getIp(req){
-  const fwd=req.headers['x-forwarded-for'];
-  return fwd ? fwd.split(',')[0].trim() : (req.socket?.remoteAddress||'unknown');
-}
-function rateLimited(ip){
-  const now=Date.now(), entry=hits.get(ip);
-  if(!entry || now-entry.start>RATE_WINDOW_MS){hits.set(ip,{start:now,count:1});return false}
-  entry.count+=1; return entry.count>RATE_MAX;
 }
 function clean(v,n=2000){return String(v||'').trim().slice(0,n)}
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -29,7 +17,7 @@ module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
   if(!allowed(req))return res.status(403).json({error:'Forbidden'});
-  if(rateLimited(getIp(req)))return res.status(429).json({error:'Too many requests. Please try again later.'});
+  const rl=await rateLimit({scope:'contact',identifier:requestIp(req),limit:5,windowSeconds:600});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests. Please try again later.'})}
 
   const name=clean(req.body?.name,120),business=clean(req.body?.business,160),email=clean(req.body?.email,200),phone=clean(req.body?.phone,80),category=clean(req.body?.category,80),message=clean(req.body?.message,4000),visitorId=clean(req.body?.visitorId,120),sessionId=clean(req.body?.sessionId,120),utmSource=clean(req.body?.utmSource,120),utmMedium=clean(req.body?.utmMedium,120),utmCampaign=clean(req.body?.utmCampaign,160);
   if(!name||!email||!message||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Please complete the required fields'});
