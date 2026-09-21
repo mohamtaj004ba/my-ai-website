@@ -71,7 +71,7 @@ async function bootstrapClient(){
 async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
 
 
-function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();}
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
 
@@ -95,7 +95,7 @@ async function loadOperations(){
     automationsData=DEMO_AUTOMATIONS.map(x=>({...x}));
     settingsData={...DEMO_SETTINGS};integrationsData={...DEMO_INTEGRATIONS,apiAccess:has('apiAccess')};
     analyticsData=buildLocalAnalytics();
-    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderAnalytics();renderIntegrations();renderSettings();return;
+    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderAnalytics();renderIntegrations();renderSettings();return;
   }
   try{
     const jobs=[
@@ -123,6 +123,34 @@ async function loadOperations(){
   }catch(err){console.error('Operations data failed',err)}
   renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();
 }
+
+function renderOverview(){
+  const calls=callsData.length,leads=leadsData.length,appointments=appointmentsData.length;
+  const pipeline=leadsData.reduce((sum,x)=>sum+Number(x&&x.value||0),0);
+  const minutes=Number(PLAN_DATA[currentPlan]?.used||0);
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  set('overviewCalls',calls);set('overviewLeads',leads);set('overviewAppointments',appointments);set('overviewPipeline',money(pipeline));
+  if(!demoMode){
+    set('overviewCallsMeta',calls?'Handled in this workspace':'No calls yet');
+    set('overviewLeadsMeta',leads?'Captured from CallerCore':'No leads yet');
+    set('overviewAppointmentsMeta',appointments?'Booked appointments':'No appointments yet');
+    set('overviewPipelineMeta',pipeline?'Estimated opportunity':'No pipeline value yet');
+  }
+  const name=agentData?.name||'Maya';
+  set('overviewAgentName',name+' is online');
+  set('overviewAgentMeta',(calls?Math.round((calls/Math.max(1,calls))*100):0)+'% answer rate · '+minutes+' minutes this month');
+  set('overviewAgentCalls',calls);set('overviewAgentLeads',leads);set('overviewAgentAppointments',appointments);
+  const wrap=document.getElementById('overviewActivity');
+  if(wrap){
+    const recent=callsData.slice(0,3);
+    wrap.innerHTML=recent.length?recent.map(x=>{
+      const initials=String(x.caller||'?').split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase()||'?';
+      const lead=leadsData.find(l=>l&&l.name===x.caller);
+      return '<div class="activity-row"><span class="time">'+esc(x.time||'—')+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.caller||'Unknown caller')+'</strong><small>'+esc(x.reason||'Call activity')+'</small></span></div><span class="tag '+outcomeClass(x.outcome)+'">'+esc(x.outcome||'Handled')+'</span><strong>'+(lead?money(lead.value):'—')+'</strong></div>';
+    }).join(''):'<div class="empty-state"><h3>No activity yet</h3><p>Calls, leads and booked appointments will appear here as CallerCore starts handling traffic.</p></div>';
+  }
+}
+
 function outcomeClass(outcome){return /book|qualif/i.test(outcome)?'green':/miss|follow/i.test(outcome)?'amber':'amber'}
 function renderCalls(){
   const wrap=document.getElementById('callsTable');if(!wrap)return;
