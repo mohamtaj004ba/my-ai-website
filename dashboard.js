@@ -85,7 +85,7 @@ async function bootstrapClient(){
 async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
 
 
-function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();}
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});markViewNotificationsRead(name);if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
 
@@ -1169,6 +1169,20 @@ function renderNotifications(){
   list.innerHTML=notificationData.map(n=>'<button class="notification-item '+(n.read?'read':'unread')+'" data-notification-id="'+esc(n.id)+'" data-notification-view="'+esc(n.view||'overview')+'"><span class="notification-dot '+esc(n.kind||'info')+'">'+notificationKindIcon(n.kind)+'</span><span class="notification-copy"><b>'+esc(n.title||'Notification')+'</b><span>'+esc(n.body||'')+'</span><small>'+formatNotificationTime(n.createdAt)+'</small></span></button>').join('');
   if(empty)empty.hidden=notificationData.length!==0;
   list.querySelectorAll('[data-notification-id]').forEach(b=>b.addEventListener('click',()=>openNotification(b.dataset.notificationId,b.dataset.notificationView)));
+  renderSidebarNotificationDots();
+}
+function renderSidebarNotificationDots(){
+  document.querySelectorAll('.nav-item[data-view]').forEach(btn=>{
+    const view=btn.dataset.view,items=notificationData.filter(n=>!n.read&&(n.view||'overview')===view),count=items.length;
+    btn.classList.toggle('nav-has-alert',count>0);
+    btn.dataset.alertCount=count?String(count):'';
+    if(count)btn.title=count+' unread alert'+(count===1?'':'s')+' in '+view.replaceAll('-',' ');
+    else if(btn.title&&btn.title.includes('unread alert'))btn.removeAttribute('title');
+  });
+}
+async function markViewNotificationsRead(view){
+  const ids=notificationData.filter(n=>!n.read&&(n.view||'overview')===view).map(n=>n.id);
+  if(ids.length)await markNotifications(ids);
 }
 function formatNotificationTime(ts){
   const t=Number(ts||0);if(!t)return '';
