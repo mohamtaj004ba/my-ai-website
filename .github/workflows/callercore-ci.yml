@@ -36,6 +36,8 @@ jobs:
         run: node --test tests/security-hygiene.test.js
       - name: Stripe structure
         run: node --test tests/stripe-structure.test.js
+      - name: Gmail safeguards
+        run: node --test tests/gmail-safeguards.test.js
       - name: Admin safeguards
         run: node --test tests/admin-safeguards.test.js
       - name: UI structure
