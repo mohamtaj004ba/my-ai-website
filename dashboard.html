@@ -10,7 +10,7 @@
 <div class="app-shell">
   <aside class="sidebar">
     <a class="dash-brand" href="/"><img src="/logo-icon.png" alt=""><span>Caller<b>Core</b></span></a>
-    <div class="workspace"><span>Workspace</span><strong id="workspaceName">Alpine Roofing</strong><small id="workspaceMeta">Growth plan · Demo</small></div>
+    <div class="workspace"><span>Workspace</span><strong id="workspaceName">Loading…</strong><small id="workspaceMeta">Secure client portal</small></div>
     <nav class="dash-nav" aria-label="Dashboard">
       <button class="nav-item active" data-view="overview">Overview</button>
       <button class="nav-item" data-view="calls">Calls</button>
@@ -24,28 +24,28 @@
       <div class="nav-label">Account</div>
       <button class="nav-item" data-view="integrations">Integrations</button>
       <button class="nav-item" data-view="billing">Billing & plan</button>
-      <button class="nav-item" data-view="settings">Settings</button>
+      <button class="nav-item" data-view="settings">Settings</button><button class="nav-item" data-view="support">Help & support</button>
     </nav>
-    <div class="sidebar-plan"><small>Current plan</small><strong id="sidebarPlan">Growth</strong><div class="usage-track"><i id="sidebarUsage"></i></div><span id="sidebarUsageLabel">428 / 600 min</span><button data-view="billing">Manage plan</button></div>
+    <div class="sidebar-plan"><small>Current plan</small><strong id="sidebarPlan">—</strong><div class="usage-track"><i id="sidebarUsage" style="width:0"></i></div><span id="sidebarUsageLabel">0 min</span><button data-view="billing">Manage plan</button></div>
   </aside>
 
   <main class="dashboard-main">
     <header class="topbar">
       <div><button class="mobile-menu" aria-label="Toggle navigation">☰</button><span class="eyebrow">CallerCore client portal</span></div>
-      <div class="top-actions"><button class="search-pill">⌕ Ask CallerCore</button><button class="icon-btn" id="logoutButton" title="Sign out">↪</button><div class="avatar">AR</div></div>
+      <div class="top-actions"><button class="search-pill" data-view="support">? Help</button><button class="icon-btn" id="logoutButton" title="Sign out" aria-label="Sign out">↪</button><div class="avatar">CC</div></div>
     </header>
 
     <section class="view active" id="view-overview">
-      <div class="page-head"><div><span class="eyebrow">Sunday, Sep 20</span><h1>Good afternoon, TJ.</h1><p>Here’s what CallerCore has handled for <span data-business-name>Alpine Roofing</span>.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
+      <div class="page-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>Here’s what CallerCore has handled for <span data-business-name>your business</span>.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
       <div class="metric-grid">
-        <article><span>Calls answered</span><strong id="overviewCalls">142</strong><small id="overviewCallsMeta">↑ 18% this month</small></article>
-        <article><span>New leads</span><strong id="overviewLeads">31</strong><small id="overviewLeadsMeta">↑ 11% this month</small></article>
-        <article><span>Appointments</span><strong id="overviewAppointments">12</strong><small id="overviewAppointmentsMeta">8 AI-booked</small></article>
-        <article><span>Pipeline</span><strong id="overviewPipeline">$48.2k</strong><small id="overviewPipelineMeta">Estimated opportunity</small></article>
+        <article><span>Calls answered</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">No activity yet</small></article>
+        <article><span>New leads</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">No activity yet</small></article>
+        <article><span>Appointments</span><strong id="overviewAppointments">0</strong><small id="overviewAppointmentsMeta">No activity yet</small></article>
+        <article><span>Pipeline</span><strong id="overviewPipeline">$0</strong><small id="overviewPipelineMeta">Estimated opportunity</small></article>
       </div>
       <div class="two-col">
-        <article class="panel agent-card"><div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya is online</h2></div></div><button data-view="agent">Configure</button></div><p id="overviewAgentMeta">96% answer rate · 284 minutes this month</p><div class="mini-stats"><div><strong id="overviewAgentCalls">142</strong><span>calls handled</span></div><div><strong id="overviewAgentLeads">31</strong><span>leads captured</span></div><div><strong id="overviewAgentAppointments">12</strong><span>appointments</span></div></div><button class="primary">Test Maya</button></article>
-        <article class="panel ask-card"><span class="eyebrow">Ask CallerCore</span><h2>Your business, searchable.</h2><p>Ask questions across calls, leads and appointments.</p><div class="ask-box">Which leads should we follow up with today?<button>→</button></div><div class="chips"><span>After-hours leads</span><span>Missed opportunities</span><span>Top call reasons</span></div></article>
+        <article class="panel agent-card"><div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya is online</h2></div></div><button data-view="agent">Configure</button></div><p id="overviewAgentMeta">Configure your AI receptionist to begin handling calls.</p><div class="mini-stats"><div><strong id="overviewAgentCalls">0</strong><span>calls handled</span></div><div><strong id="overviewAgentLeads">0</strong><span>leads captured</span></div><div><strong id="overviewAgentAppointments">0</strong><span>appointments</span></div></div><button class="primary" data-view="agent">Configure agent</button></article>
+        <article class="panel ask-card"><span class="eyebrow">Launch checklist</span><h2>Get your workspace live.</h2><p>CallerCore will track the core steps required before your AI receptionist can take production traffic.</p><div class="onboarding-list" id="clientOnboardingChecklist"></div><button class="secondary-btn" data-view="settings">Review workspace setup</button></article>
       </div>
       <article class="panel activity"><div class="panel-head"><div><span class="eyebrow">Live activity</span><h2>Recent calls & outcomes</h2></div><button data-view="calls">View all calls →</button></div><div id="overviewActivity"></div></article>
       <div class="unlock-grid" id="overviewUnlocks"></div>
@@ -137,10 +137,18 @@
       <div class="page-head"><div><span class="eyebrow">Billing & plan</span><h1>Everything about your subscription.</h1><p>Upgrade, review usage and manage payment details without leaving CallerCore.</p></div></div>
       <div class="billing-layout">
         <article class="panel current-plan"><span class="eyebrow">Current plan</span><div class="plan-line"><div><h2 id="billingPlan">Growth</h2><p id="billingPrice">$599/month</p></div><span class="tag green">Active</span></div><div class="usage-block"><div><span>AI minutes</span><b id="billingUsageText">428 / 600</b></div><div class="usage-track"><i id="billingUsage"></i></div></div><button class="primary" id="upgradeButton">Compare plans</button></article>
-        <article class="panel payment-card"><span class="eyebrow">Payment method</span><h2>Stripe-secured billing</h2><div class="card-display"><span>VISA</span><b>•••• 4242</b><small>Demo payment method</small></div><button class="secondary-btn" id="paymentButton">Update payment method</button><small class="muted">Real card data will be collected by Stripe, never stored by CallerCore.</small></article>
+        <article class="panel payment-card"><span class="eyebrow">Billing connection</span><h2>Stripe-secured billing</h2><div class="billing-status-card" id="billingConnection"><b>Checking billing status…</b><small>Payment details are managed securely by Stripe and are never stored by CallerCore.</small></div><button class="secondary-btn" id="paymentButton" disabled>Manage billing</button></article>
       </div>
       <div class="plan-comparison" id="planComparison"></div>
-      <article class="panel invoices"><div class="panel-head"><div><span class="eyebrow">Invoices</span><h2>Billing history</h2></div></div><div class="invoice-row"><span>Sep 1, 2026</span><b>Growth</b><span>$599.00</span><span class="tag green">Paid</span></div><div class="invoice-row"><span>Aug 1, 2026</span><b>Growth</b><span>$599.00</span><span class="tag green">Paid</span></div></article>
+      <article class="panel invoices"><div class="panel-head"><div><span class="eyebrow">Invoices</span><h2>Billing history</h2></div></div><div class="empty-state" id="invoiceEmpty"><h3>No invoice history loaded</h3><p>Stripe invoice history will appear here once billing portal access is connected.</p></div></article>
+    </section>
+
+    <section class="view" id="view-support">
+      <div class="page-head"><div><span class="eyebrow">Help & support</span><h1>We’re here when you need us.</h1><p>Send CallerCore support a request and track its status from your workspace.</p></div></div>
+      <div class="two-col">
+        <article class="panel form-card"><span class="eyebrow">New request</span><label>Subject<input id="supportSubject" placeholder="What do you need help with?"></label><label>Priority<select id="supportPriority"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></label><label>Details<textarea id="supportMessage" placeholder="Include what happened, what you expected, and any relevant caller or phone number details."></textarea></label><button class="primary" id="submitSupportButton">Send support request</button><small class="muted" id="supportStatus"></small></article>
+        <article class="panel"><span class="eyebrow">Request history</span><h2>Your support requests</h2><div id="supportTicketList"></div><div class="empty-state" id="supportTicketsEmpty"><h3>No support requests</h3><p>Your submitted requests will appear here.</p></div></article>
+      </div>
     </section>
     <section class="view" id="view-settings">
       <div class="page-head"><div><span class="eyebrow">Settings</span><h1>Workspace settings.</h1><p>Keep business details and notification preferences up to date.</p></div><span class="tag green" id="settingsSaveStatus">Saved</span></div>
