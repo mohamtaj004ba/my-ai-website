@@ -26,18 +26,19 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - GitHub CI regression suite.
 - CodeQL workflow and Dependabot configuration.
 - Production health checks for KV and live Stripe webhook/Customer Portal readiness.
+- Vercel Pro commercial hosting confirmed.
+- GitHub `main` ruleset active with PR requirement, strict `test` and `Analyze JavaScript` checks, force-push/deletion protection, and no bypass.
+- Live Stripe webhook now subscribes to all seven handled events; Stripe Customer Portal is active.
+- Mailgun sending domain `notify.callercore.com` verified; SPF/DKIM present; DMARC present in monitoring mode; production Mailgun domain configuration corrected.
+- Gmail integration intentionally remains admin-only at launch and requests only `gmail.modify`.
+- Category-specific retention policy approved, with indefinite aggregated/anonymized analytics and bounded raw data.
+- Recoverable customer deletion flow implemented with 30-day recovery, access revocation, restore, explicit purge confirmation, and separate retention archives.
+- Public launch copy no longer sells SMS or calendar booking as currently active.
 
 ## Customer journey — required before sales open
 
 ### Checkout / billing
 - Keep `CALLERCORE_CHECKOUT_ENABLED` closed until the final launch authorization.
-- Add the five missing live Stripe webhook events:
-  - `customer.subscription.created`
-  - `customer.subscription.updated`
-  - `customer.subscription.deleted`
-  - `invoice.payment_failed`
-  - `invoice.paid`
-- Activate a Stripe Customer Portal configuration.
 - Complete Washington tax registration/classification and configure Stripe Tax registrations/product tax treatment.
 - Enable Stripe automatic tax only after the tax setup is legally correct.
 - Test success, asynchronous payment, failed payment, cancellation, portal access and recovery in Stripe test mode.
@@ -76,19 +77,17 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - If not ready at launch, do not market/sell SMS campaigns or automated follow-up as active.
 
 ## Admin / operations — required before launch
-- Complete protected-preview browser QA.
-- Fix/verify Preview KV connectivity.
+- Complete protected-preview browser QA after configuring Vercel Automation Protection Bypass.
+- Fix/verify Preview KV connectivity after protected automation access is available.
 - Verify System Health correctly shows all production blockers.
 - Confirm support@callercore.com inbound and outbound behavior.
-- Validate SPF, DKIM and DMARC for CallerCore sending domains.
-- Set up production uptime/error monitoring with alert delivery to an owner-controlled channel.
+- Tighten DMARC from monitoring toward enforcement after continued Google Workspace/Mailgun alignment is verified.
+- Native Vercel production anomaly rule is configured; signed webhook email fallback is coded/configured. Production fallback delivery test remains after PR #5 is merged.
 - Verify rollback procedure and identify the last known-good production deployment.
 - Export a disposable workspace and perform a recovery drill.
 - Confirm production logs do not expose customer message contents, secrets or tokens unnecessarily.
-- Enable/enforce the CallerCore GitHub ruleset for `main` and require successful CI before merge.
 
 ## Hosting / infrastructure — required before commercial launch
-- Upgrade Vercel from Hobby to a plan permitting commercial business use (currently Pro or Enterprise under Vercel policy).
 - Verify production vs preview environment-variable scoping.
 - Keep preview bootstrap credentials preview-only.
 - Confirm production KV/storage credentials and provider ownership.
@@ -103,15 +102,13 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Review Washington sales-tax and B&O treatment with a qualified tax professional; CallerCore has SaaS/DAS/technology-service characteristics that can be taxable.
 - Add the correct legal entity name to Terms, Service Agreement, Stripe statements/receipts and business communications.
 - Attorney review: Service Agreement, Terms, Privacy Policy, recording consent, SMS/TCPA policy and retention/deletion policy.
-- Decide data-retention periods for recordings, transcripts, messages, leads, analytics, onboarding and audit records.
 - Consider technology E&O/cyber liability insurance before serving material customer volume.
 
 ## Google / email
-- Current Gmail integration is admin-only and requests `gmail.modify` plus `gmail.send`.
-- `gmail.modify` is a Google restricted scope.
-- If Gmail remains limited to the owner's/admin inbox, keep the OAuth audience tightly limited and document the use.
-- Before offering Gmail connections to customers or broader external users, complete the required Google OAuth verification/security-assessment path or redesign around narrower scopes.
-- Verify support/lifecycle email DNS authentication (SPF/DKIM/DMARC).
+- Gmail is intentionally admin-only at launch and requests only `gmail.modify`.
+- `gmail.modify` is a Google restricted scope; do not expose customer Gmail connections without the required Google verification/security-assessment path or a narrower redesign.
+- Active Mailgun sending domain is `notify.callercore.com`; SPF/DKIM are verified and DMARC is present in monitoring mode.
+- Legacy `mail.callercore.com` records are GHL-era infrastructure and should be cleaned up only after final production mail validation.
 
 ## Security items to revisit after core launch
 - Replace CSP `unsafe-inline` with nonces/hashes as the frontend is modularized.
@@ -125,14 +122,14 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 
 ## Explicit launch authorization sequence
 1. Business/legal/tax registrations confirmed.
-2. Vercel commercial plan confirmed.
-3. Stripe webhook + Portal + Tax configuration completed.
+2. Vercel Pro commercial plan confirmed. ✅
+3. Stripe webhook + Portal completed; Washington tax registration/Stripe Tax configuration still pending.
 4. Vapi/voice implemented and tested.
-5. Calendar/SMS either implemented or removed from launch promises.
-6. Email authentication and monitoring verified.
+5. Calendar/SMS removed from active launch promises; integrations may be added later.
+6. Email authentication verified; monitoring fallback requires post-merge production test.
 7. Protected preview browser QA passes.
 8. Disposable-client E2E passes.
-9. GitHub main protection enabled.
+9. GitHub main protection enabled. ✅
 10. TJ authorizes production merge.
 11. Merge PR #5.
 12. Validate production health and logs.
