@@ -405,9 +405,96 @@ async function saveSettings(){
 document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebhook);
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 
+
+let adminClientsData=[],adminSummaryData=null;
+async function bootstrapAdmin(){
+  try{
+    const [sr,cr]=await Promise.all([
+      fetch('/api/account?action=admin-summary',{headers:{Accept:'application/json'},cache:'no-store'}),
+      fetch('/api/account?action=admin-clients',{headers:{Accept:'application/json'},cache:'no-store'})
+    ]);
+    if(sr.status===401||cr.status===401){location.replace('/login?next=%2Fadmin-dashboard');return false}
+    if(sr.status===403||cr.status===403){document.body.innerHTML='<main style="padding:40px;font-family:system-ui"><h1>Admin access required</h1><p>This account does not have CallerCore admin permissions.</p><a href="/dashboard">Return to client dashboard</a></main>';return false}
+    if(!sr.ok||!cr.ok)throw new Error('admin bootstrap');
+    adminSummaryData=(await sr.json()).summary||{};
+    adminClientsData=(await cr.json()).clients||[];
+    const sess=await fetch('/api/account?action=session',{headers:{Accept:'application/json'},cache:'no-store'});
+    if(sess.ok){
+      const data=await sess.json(),email=data.user?.email||'admin';
+      const identity=document.getElementById('adminIdentity');if(identity)identity.textContent=email;
+      const av=document.getElementById('adminAvatar');if(av)av.textContent=email.slice(0,1).toUpperCase();
+    }
+    renderAdmin();
+    return true;
+  }catch(err){console.error('Admin bootstrap failed',err);return false}
+}
+function adminMoney(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
+function adminPlanMinutes(plan){return plan==='Starter'?300:plan==='Growth'?600:null}
+function adminBillingTag(status){return status==='past_due'?'red':status==='canceled'?'amber':'green'}
+function renderAdmin(){
+  if(!adminSummaryData)return;
+  const s=adminSummaryData,set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  set('adminMrr',adminMoney(s.mrr));set('adminActiveClients',s.activeClients||0);set('adminOnboarding',(s.onboarding||0)+' onboarding');
+  set('adminMinutes',Number(s.totalMinutes||0).toLocaleString());set('adminPastDue',s.pastDue||0);
+  set('revenueMrr',adminMoney(s.mrr));set('revenueActive',s.activeClients||0);set('revenuePastDue',s.pastDue||0);set('revenueOnboarding',s.onboarding||0);
+  const mix=document.getElementById('adminPlanMix');if(mix){
+    const pm=s.planMix||{},max=Math.max(1,...Object.values(pm).map(Number));
+    mix.innerHTML=['Starter','Growth','Pro'].map(p=>'<div><span>'+p+' · '+Number(pm[p]||0)+' clients</span><i style="width:'+Math.round(Number(pm[p]||0)/max*100)+'%"></i></div>').join('');
+  }
+  const attention=document.getElementById('adminAttention');if(attention){
+    const rows=[];
+    adminClientsData.filter(x=>x.subscriptionStatus==='past_due').forEach(x=>rows.push('<div class="admin-event redline"><b>'+esc(x.name)+'</b><span>Stripe payment needs attention</span><small>Billing</small></div>'));
+    adminClientsData.filter(x=>x.status==='onboarding').forEach(x=>rows.push('<div class="admin-event"><b>'+esc(x.name)+'</b><span>Workspace onboarding in progress</span><small>Onboarding</small></div>'));
+    attention.innerHTML=rows.slice(0,6).join('')||'<div class="empty-state"><h3>Nothing needs attention</h3><p>Billing and onboarding alerts will appear here.</p></div>';
+  }
+  renderAdminClients();
+  const recent=document.getElementById('adminRecentClients');if(recent){
+    recent.innerHTML=adminClientsData.slice(0,5).map(x=>adminClientRow(x,true)).join('')||'<div class="empty-state"><h3>No clients yet</h3></div>';
+    recent.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.adminClient)));
+  }
+  const usage=document.getElementById('adminUsageList');if(usage){
+    usage.innerHTML=adminClientsData.map(x=>{
+      const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0),pct=lim?Math.round(used/lim*100):null;
+      return '<div class="admin-event"><b>'+esc(x.name)+'</b><span>'+used.toLocaleString()+' min'+(lim?' · '+pct+'% of '+lim:' · unlimited')+'</span><small>'+esc(x.plan)+'</small></div>';
+    }).join('')||'<div class="empty-state"><h3>No usage yet</h3></div>';
+  }
+}
+function adminClientRow(x,activity=false){
+  const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0);
+  const usage=lim?used+' / '+lim:used.toLocaleString()+' min';
+  const initials=String(x.name||'?').split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase()||'?';
+  if(activity)return '<div class="activity-row"><span class="time">'+esc(x.plan)+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.name)+'</strong><small>'+esc(usage)+'</small></span></div><span class="tag '+adminBillingTag(x.subscriptionStatus)+'">'+esc(x.subscriptionStatus||'active')+'</span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Open</button></div>';
+  return '<div class="call-row"><span><strong>'+esc(x.name)+'</strong><small class="subtle">'+esc(x.ownerEmail||'')+'</small></span><span>'+esc(x.plan)+'</span><span>'+esc(usage)+'</span><span class="tag '+adminBillingTag(x.subscriptionStatus)+'">'+esc(x.subscriptionStatus||'active')+'</span><span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Open</button></span></div>';
+}
+function renderAdminClients(){
+  const wrap=document.getElementById('adminClientsTable');if(!wrap)return;
+  const q=(document.getElementById('adminSearch')?.value||'').trim().toLowerCase();
+  const rows=adminClientsData.filter(x=>!q||[x.name,x.ownerEmail,x.plan,x.subscriptionStatus].join(' ').toLowerCase().includes(q));
+  wrap.innerHTML=rows.map(x=>adminClientRow(x)).join('');
+  const empty=document.getElementById('adminClientsEmpty');if(empty)empty.hidden=rows.length!==0;
+  wrap.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.adminClient)));
+}
+async function openAdminClient(id){
+  const r=await fetch('/api/account?action=admin-client&id='+encodeURIComponent(id),{headers:{Accept:'application/json'},cache:'no-store'});
+  if(!r.ok)return;
+  const x=(await r.json()).client;if(!x)return;
+  document.getElementById('adminClientName').textContent=x.name||'Client';
+  document.getElementById('adminClientMeta').innerHTML=[x.plan,x.subscriptionStatus,x.ownerEmail].filter(Boolean).map(v=>'<span>'+esc(v)+'</span>').join('');
+  document.getElementById('adminClientAccount').innerHTML=[
+    ['Plan',x.plan],['Status',x.status],['Billing',x.subscriptionStatus],['Minutes',Number(x.usage?.minutes||0).toLocaleString()],['Stripe customer',x.stripe?.customerLinked?'Linked':'Not linked'],['Stripe subscription',x.stripe?.subscriptionLinked?'Linked':'Not linked']
+  ].map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('');
+  document.getElementById('adminClientCounts').innerHTML=[['Calls',x.counts?.calls||0],['Leads',x.counts?.leads||0],['Appointments',x.counts?.appointments||0]].map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('');
+  document.getElementById('adminClientAgent').textContent=x.agent?(x.agent.name||'Maya')+' · '+(x.agent.role||'AI Receptionist'):'No agent configured yet.';
+  document.getElementById('adminClientDrawer').classList.add('open');document.getElementById('adminClientBackdrop').classList.add('open');
+}
+function closeAdminClient(){document.getElementById('adminClientDrawer')?.classList.remove('open');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
+document.getElementById('adminSearch')?.addEventListener('input',renderAdminClients);
+document.getElementById('closeAdminClient')?.addEventListener('click',closeAdminClient);
+document.getElementById('adminClientBackdrop')?.addEventListener('click',closeAdminClient);
+
 const modal=document.getElementById('upgradeModal');function openModal(target){if(!modal)return;const t=PLAN_DATA[target];document.getElementById('modalTitle').textContent=(t.price>PLAN_DATA[currentPlan].price?'Upgrade to ':'Switch to ')+target;document.getElementById('modalCopy').textContent=target==='Pro'?'Unlock the full CallerCore platform, including API access, advanced integrations and custom workflows.':'Unlock appointment booking, automations, the unified inbox and advanced analytics.';const fs=Object.entries(FEATURE_INFO).filter(([k,v])=>target==='Pro'||v.tier==='Growth').slice(0,target==='Pro'?6:4);document.getElementById('modalFeatures').innerHTML=fs.map(([k,v])=>'<span>✓ '+v.title+'</span>').join('');document.getElementById('modalCta').textContent='Continue with Stripe · $'+t.price+'/mo';modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
 function bindUpgradeButtons(){document.querySelectorAll('[data-upgrade]').forEach(b=>{b.onclick=()=>openModal(b.dataset.upgrade)})}
 document.querySelector('.modal-close')?.addEventListener('click',()=>modal.classList.remove('open'));modal?.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});document.getElementById('upgradeButton')?.addEventListener('click',()=>document.getElementById('planComparison')?.scrollIntoView({behavior:'smooth'}));document.getElementById('paymentButton')?.addEventListener('click',()=>openModal(currentPlan));document.getElementById('modalCta')?.addEventListener('click',()=>alert('Prototype only: authenticated Stripe customer + subscription mapping is required before enabling real in-dashboard billing changes.'));
 
-(async()=>{const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations()}else{renderBilling()}})();
+(async()=>{if(document.body.dataset.dashboard==='admin'){await bootstrapAdmin();return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations()}else{renderBilling()}})();
 document.getElementById('logoutButton')?.addEventListener('click',logout);
