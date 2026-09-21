@@ -24,3 +24,5 @@
 .provisioning-board{grid-template-columns:repeat(5,minmax(180px,1fr))}.provisioning-board>div{min-height:260px}.provisioning-board article{cursor:default}@media(max-width:1050px){.provisioning-board{grid-template-columns:repeat(5,minmax(200px,1fr))}}
 
 .phone-actions{display:flex;align-items:center;gap:10px}.danger-link{color:var(--red)!important}
+
+.provisioning-board article{cursor:grab}.provision-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.provision-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:9px;color:var(--muted)}.provision-foot button{border:0;background:transparent;color:var(--accent);font-weight:800;cursor:pointer;padding:0}.provisioning-board .drop-active{outline:2px dashed var(--accent);outline-offset:-4px}.provisioning-board article.dragging{opacity:.45}
