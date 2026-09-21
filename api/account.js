@@ -154,14 +154,39 @@ async function adminProvisioning(req,res){
     const hasIntake=!!(settings&&((settings.businessName||'').trim()||(settings.primaryEmail||'').trim()));
     const hasAgent=!!(agent&&((agent.name||'').trim()||(agent.openingMessage||'').trim()));
     const hasPhone=!!String(ws.phone||'').trim();
-    let stage='Paid';
-    if(hasIntake)stage='Intake';
-    if(hasAgent)stage='Building';
-    if(hasAgent&&hasPhone)stage='Ready';
-    if(ws.status==='active'&&hasAgent&&hasPhone)stage='Live';
-    items.push({id:ws.id,name:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',stage,hasIntake,hasAgent,hasPhone,phone:ws.phone||''});
+    let autoStage='Paid';
+    if(hasIntake)autoStage='Intake';
+    if(hasAgent)autoStage='Building';
+    if(hasAgent&&hasPhone)autoStage='Ready';
+    if(ws.status==='active'&&hasAgent&&hasPhone)autoStage='Live';
+    const override=await kv.get('provisioning:override:'+id);
+    const stage=override&&['Paid','Intake','Building','Ready','Live'].includes(override.stage)?override.stage:autoStage;
+    items.push({id:ws.id,name:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',stage,autoStage,manualOverride:!!override,stageUpdatedAt:override&&override.updatedAt||null,hasIntake,hasAgent,hasPhone,phone:ws.phone||''});
   }
   return res.status(200).json({provisioning:items});
+}
+
+async function adminSaveProvisioningStage(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80),stage=String(body.stage||'');
+  const allowed=['Paid','Intake','Building','Ready','Live'];
+  if(!id||!allowed.includes(stage))return res.status(400).json({error:'Invalid provisioning stage'});
+  const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const record={stage,updatedAt:Date.now(),updatedBy:admin.email};
+  await kv.set('provisioning:override:'+id,record);
+  const history=await kv.get('provisioning:history:'+id)||[];
+  const next=Array.isArray(history)?history:[];
+  next.unshift({stage,at:record.updatedAt,by:admin.email});
+  await kv.set('provisioning:history:'+id,next.slice(0,50));
+  return res.status(200).json({ok:true,stage,updatedAt:record.updatedAt});
+}
+
+async function adminClearProvisioningStage(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).id||'').slice(0,80);
+  if(!id)return res.status(400).json({error:'Workspace id required'});
+  await kv.del('provisioning:override:'+id);
+  return res.status(200).json({ok:true});
 }
 
 async function adminPhoneNumbers(req,res){
@@ -178,7 +203,13 @@ async function adminSavePhoneNumber(req,res){
   const workspaceId=String(body.workspaceId||'').trim().slice(0,80);
   const provider=String(body.provider||'Vapi').trim().slice(0,40);
   const label=String(body.label||'Primary').trim().slice(0,80);
+  const forwardingFrom=String(body.forwardingFrom||'').trim().slice(0,40);
+  const transferNumber=String(body.transferNumber||'').trim().slice(0,40);
+  const afterHours=['ai','transfer','voicemail'].includes(body.afterHours)?body.afterHours:'ai';
+  const smsEnabled=body.smsEnabled!==false;
   if(!/^\+?[0-9() .-]{7,30}$/.test(number))return res.status(400).json({error:'Valid phone number required'});
+  if(forwardingFrom&&!/^\+?[0-9() .-]{7,30}$/.test(forwardingFrom))return res.status(400).json({error:'Forwarding source number is invalid'});
+  if(transferNumber&&!/^\+?[0-9() .-]{7,30}$/.test(transferNumber))return res.status(400).json({error:'Transfer destination is invalid'});
   let workspaceName='';
   if(workspaceId){
     const ws=await kv.get('workspace:'+workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
@@ -187,7 +218,12 @@ async function adminSavePhoneNumber(req,res){
   }
   const current=await kv.get('phone:index')||[];
   const list=Array.isArray(current)?current:[];
-  const item={id,number,workspaceId,workspaceName,provider,label,status:'active',updatedAt:Date.now()};
+  const previous=list.find(x=>x&&String(x.id)===id);
+  if(previous&&previous.workspaceId&&previous.workspaceId!==workspaceId){
+    const oldKey='workspace:'+previous.workspaceId,oldWs=await kv.get(oldKey);
+    if(oldWs&&String(oldWs.phone||'')===String(previous.number||''))await kv.set(oldKey,{...oldWs,phone:'',updatedAt:Date.now()});
+  }
+  const item={id,number,workspaceId,workspaceName,provider,label,forwardingFrom,transferNumber,afterHours,smsEnabled,status:'active',updatedAt:Date.now()};
   const i=list.findIndex(x=>x&&String(x.id)===id);
   if(i>=0)list[i]=item;else list.push(item);
   await kv.set('phone:index',list.slice(0,500));
@@ -526,6 +562,8 @@ module.exports=async function handler(req,res){
   if(action==='admin-clients'&&req.method==='GET')return adminClients(req,res);
   if(action==='admin-client'&&req.method==='GET')return adminClient(req,res);
   if(action==='admin-provisioning'&&req.method==='GET')return adminProvisioning(req,res);
+  if(action==='admin-provisioning-stage-save'&&req.method==='POST')return adminSaveProvisioningStage(req,res);
+  if(action==='admin-provisioning-stage-clear'&&req.method==='POST')return adminClearProvisioningStage(req,res);
   if(action==='admin-phone-numbers'&&req.method==='GET')return adminPhoneNumbers(req,res);
   if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
   if(action==='admin-phone-number-delete'&&req.method==='POST')return adminDeletePhoneNumber(req,res);
