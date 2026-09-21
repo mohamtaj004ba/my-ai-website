@@ -4,6 +4,7 @@ const {sendMail}=require('../lib/mail');
 const {lifecycleEmail}=require('../lib/email-template');
 const {normalizePlan,entitlementsFor}=require('../lib/plans');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
+const {addBusinessHours}=require('../lib/business-hours');
 module.exports.config={api:{bodyParser:false}};
 const STRIPE_WEBHOOK_SECRET=process.env.STRIPE_WEBHOOK_SECRET;
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
@@ -23,34 +24,6 @@ function verifyStripeSignature(rawBody,sigHeader,secret){
   const expected=crypto.createHmac('sha256',secret).update(timestamp+'.'+rawBody).digest('hex');
   const expectedBuf=Buffer.from(expected,'hex');
   return signatures.some(sig=>{try{const got=Buffer.from(sig,'hex');return got.length===expectedBuf.length&&crypto.timingSafeEqual(got,expectedBuf)}catch(_){return false}})
-}
-
-function addBusinessHours(startMs,hours){
-  let remaining=Math.max(0,Number(hours||0))*60*60*1000;
-  let t=new Date(startMs);
-  const parts=(d)=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d).reduce((a,p)=>(a[p.type]=p.value,a),{});
-  const advanceToOpen=(d)=>{
-    let guard=0;
-    while(guard++<10){
-      const p=parts(d),day=p.weekday,h=Number(p.hour),m=Number(p.minute);
-      const weekend=day==='Sat'||day==='Sun';
-      if(!weekend&&h>=9&&h<17)return d;
-      const addDays=weekend?(day==='Sat'?2:1):(h>=17?1:0);
-      const local=new Date(d);
-      local.setTime(local.getTime()+((addDays||0)*24*60*60*1000));
-      const q=parts(local),curH=Number(q.hour),curM=Number(q.minute);
-      local.setTime(local.getTime()+((9-curH)*60-curM)*60*1000);
-      d=local;
-    }
-    return d;
-  };
-  t=advanceToOpen(t);
-  while(remaining>0){
-    const p=parts(t),h=Number(p.hour),m=Number(p.minute),minsLeft=Math.max(0,(17*60)-(h*60+m)),windowMs=minsLeft*60*1000;
-    if(remaining<=windowMs){t=new Date(t.getTime()+remaining);remaining=0;break}
-    remaining-=windowMs;t=new Date(t.getTime()+windowMs+16*60*60*1000);t=advanceToOpen(t);
-  }
-  return t.getTime();
 }
 
 async function upsertWorkspace({lead,session,plan,email}){
