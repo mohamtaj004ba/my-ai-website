@@ -79,8 +79,11 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - If not ready at launch, do not market/sell SMS campaigns or automated follow-up as active.
 
 ## Admin / operations — required before launch
-- Complete protected-preview browser QA after configuring Vercel Automation Protection Bypass.
-- Fix/verify Preview KV connectivity after protected automation access is available.
+- Protected Preview access is verified with Vercel Automation Protection Bypass.
+- Preview KV connectivity is verified operational through the health endpoint.
+- Protected preview static/legal/dashboard assets and unauthenticated API access-control smoke tests passed.
+- Full authenticated POST/browser E2E with a disposable client is still required before release.
+- Confirm Preview KV is isolated from Production KV before destructive disposable-client testing.
 - Verify System Health correctly shows all production blockers.
 - Confirm support@callercore.com inbound and outbound behavior.
 - Tighten DMARC from monitoring toward enforcement after continued Google Workspace/Mailgun alignment is verified.
