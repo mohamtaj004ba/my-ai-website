@@ -116,6 +116,11 @@ Run one complete disposable client through:
 - Webhook security review for all external providers as they are added.
 - Add provider-managed point-in-time database recovery before CallerCore reaches material production scale; current workspace exports are an interim recovery layer.
 
+## Non-blocking infrastructure debt
+
+- `@vercel/kv` is deprecated upstream and the underlying Vercel KV product has been replaced by the Upstash Marketplace integration. CallerCore's existing store remains operational, but the application should migrate deliberately to the supported Upstash Redis SDK after launch validation rather than changing the persistence client during the current release freeze.
+- The recurring Node `url.parse()` deprecation warning appears in runtime paths that use the current persistence/integration stack; no direct CallerCore source use of `url.parse()` was found. Re-check after the Upstash client migration.
+
 ## Next engineering improvements after core launch
 
 - Split api/account.js into feature-specific API/service modules.
