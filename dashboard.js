@@ -1241,6 +1241,7 @@ function initProfileControls(){
   });
   document.getElementById('profilePhotoRemove')?.addEventListener('click',()=>{currentUserProfile.avatarDataUrl='';renderUserProfile();const s=document.getElementById('profileSaveStatus');if(s)s.textContent='Photo removed — save profile.'});
   document.getElementById('profileSaveButton')?.addEventListener('click',saveProfile);
+  document.getElementById('profilePanelLogout')?.addEventListener('click',logout);
   document.addEventListener('click',()=>{panel.hidden=true;button.setAttribute('aria-expanded','false')});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){panel.hidden=true;button.setAttribute('aria-expanded','false')}})
 }
