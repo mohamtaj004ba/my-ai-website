@@ -7,6 +7,13 @@ const {entitlementsFor}=require('../lib/plans');
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
 const WINDOW=10*60,MAX=5;
 
+function requestOrigin(req){
+  const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+  const proto=String(req.headers['x-forwarded-proto']||'https').toLowerCase().split(',')[0].trim()==='http'?'http':'https';
+  if(host==='callercore.com'||host==='www.callercore.com'||host.endsWith('.vercel.app'))return proto+'://'+host;
+  return SITE_URL;
+}
+
 async function requestLogin(req,res){
   const email=cleanEmail((req.body||{}).email);
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(200).json({ok:true});
@@ -18,7 +25,7 @@ async function requestLogin(req,res){
   if(member&&member.workspaceId){
     const token=crypto.randomBytes(32).toString('hex');
     await kv.set('login:'+token,{email,workspaceId:member.workspaceId,role:member.role||'owner'},{ex:15*60});
-    const link=SITE_URL+'/api/account?action=verify&token='+encodeURIComponent(token);
+    const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
     try{
       await sendMail({
         to:email,
