@@ -342,8 +342,8 @@ async function adminClient(req,res){
   const id=String((req.query||{}).id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Client id required'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
-  const [agent,calls,leads,appointments]=await Promise.all([
-    kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('appointments:'+id)
+  const [agent,calls,leads,appointments,locations]=await Promise.all([
+    kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('appointments:'+id),kv.get('locations:'+id)
   ]);
   return res.status(200).json({client:{
     id:ws.id,name:ws.name,plan:ws.plan,status:ws.status||'active',
@@ -351,7 +351,7 @@ async function adminClient(req,res){
     phone:ws.phone||'',industry:ws.industry||'',usage:ws.usage||{minutes:0},
     stripe:{customerLinked:!!ws.stripeCustomerId,subscriptionLinked:!!ws.stripeSubscriptionId},
     agent:agent||null,
-    counts:{calls:Array.isArray(calls)?calls.length:0,leads:Array.isArray(leads)?leads.length:0,appointments:Array.isArray(appointments)?appointments.length:0}
+    counts:{calls:Array.isArray(calls)?calls.length:0,leads:Array.isArray(leads)?leads.length:0,appointments:Array.isArray(appointments)?appointments.length:0,locations:Array.isArray(locations)?locations.length:0}
   }});
 }
 
