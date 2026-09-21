@@ -131,7 +131,7 @@ async function loadOperations(){
     if(has('appointments')){if(results[idx].ok)appointmentsData=(await results[idx].json()).appointments||[];idx++}
     if(has('automations')){if(results[idx].ok)automationsData=(await results[idx].json()).automations||[]}
   }catch(err){console.error('Operations data failed',err)}
-  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();
+  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();
 }
 
 function renderOverview(){
