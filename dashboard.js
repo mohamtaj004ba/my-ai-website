@@ -416,7 +416,7 @@ document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebho
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[];
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -434,10 +434,68 @@ async function bootstrapAdmin(){
       const identity=document.getElementById('adminIdentity');if(identity)identity.textContent=email;
       const av=document.getElementById('adminAvatar');if(av)av.textContent=email.slice(0,1).toUpperCase();
     }
-    renderAdmin();
+    renderAdmin();await loadAdminOps();
     return true;
   }catch(err){console.error('Admin bootstrap failed',err);return false}
 }
+
+async function loadAdminOps(){
+  try{
+    const [pr,ph,hr]=await Promise.all([
+      fetch('/api/account?action=admin-provisioning',{cache:'no-store'}),
+      fetch('/api/account?action=admin-phone-numbers',{cache:'no-store'}),
+      fetch('/api/account?action=admin-system-health',{cache:'no-store'})
+    ]);
+    if(pr.ok)adminProvisioningData=(await pr.json()).provisioning||[];
+    if(ph.ok)adminPhoneData=(await ph.json()).numbers||[];
+    if(hr.ok)adminHealthData=(await hr.json()).services||[];
+  }catch(e){console.error('Admin ops load failed',e)}
+  renderProvisioning();renderPhones();renderHealth();
+}
+function renderProvisioning(){
+  const board=document.getElementById('provisioningBoard');if(!board)return;
+  const stages=['Paid','Intake','Building','Ready','Live'];
+  board.innerHTML=stages.map(stage=>{
+    const rows=adminProvisioningData.filter(x=>x.stage===stage);
+    return '<div><h3>'+stage+' <span>'+rows.length+'</span></h3>'+rows.map(x=>'<article><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+(x.phone?' · '+esc(x.phone):'')+'</small></article>').join('')+'</div>';
+  }).join('');
+}
+function renderPhones(){
+  const wrap=document.getElementById('phoneTable');if(!wrap)return;
+  wrap.innerHTML=adminPhoneData.map(x=>'<div class="call-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span><span class="tag green">'+esc(x.status||'active')+'</span><span><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button></span></div>').join('');
+  const empty=document.getElementById('phoneEmpty');if(empty)empty.hidden=adminPhoneData.length!==0;
+  wrap.querySelectorAll('[data-edit-phone]').forEach(b=>b.addEventListener('click',()=>openPhoneModal(b.dataset.editPhone)));
+}
+function renderHealth(){
+  const wrap=document.getElementById('systemHealthGrid');if(!wrap)return;
+  wrap.innerHTML=adminHealthData.map(x=>'<article class="panel integration-card"><div><b>'+esc(x.name)+'</b><p>'+esc(x.detail||'')+'</p></div><span class="tag '+(x.status==='operational'||x.status==='configured'?'green':x.status==='error'?'red':'amber')+'">'+esc(x.status.replace('_',' '))+'</span></article>').join('');
+}
+function openPhoneModal(id=null){
+  const item=id?adminPhoneData.find(x=>String(x.id)===String(id)):null;
+  const modal=document.getElementById('phoneModal');if(!modal)return;
+  modal.dataset.editId=id||'';
+  document.getElementById('phoneNumberInput').value=item?.number||'';
+  document.getElementById('phoneLabelInput').value=item?.label||'Primary';
+  document.getElementById('phoneProviderInput').value=item?.provider||'Vapi';
+  const sel=document.getElementById('phoneWorkspaceInput');
+  sel.innerHTML='<option value="">Unassigned</option>'+adminClientsData.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
+  sel.value=item?.workspaceId||'';
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+}
+function closePhoneModal(){const m=document.getElementById('phoneModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
+async function savePhone(){
+  const modal=document.getElementById('phoneModal');
+  const payload={id:modal?.dataset.editId||undefined,number:document.getElementById('phoneNumberInput')?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||''};
+  const r=await fetch('/api/account?action=admin-phone-number-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error||'Could not save phone number.');return}
+  closePhoneModal();await loadAdminOps();
+}
+document.getElementById('addPhoneButton')?.addEventListener('click',()=>openPhoneModal());
+document.getElementById('closePhoneModal')?.addEventListener('click',closePhoneModal);
+document.getElementById('savePhoneButton')?.addEventListener('click',savePhone);
+document.getElementById('phoneModal')?.addEventListener('click',e=>{if(e.target.id==='phoneModal')closePhoneModal()});
+
 function adminMoney(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
 function adminPlanMinutes(plan){return plan==='Starter'?300:plan==='Growth'?600:null}
 function adminBillingTag(status){return status==='past_due'?'red':status==='canceled'?'amber':'green'}
