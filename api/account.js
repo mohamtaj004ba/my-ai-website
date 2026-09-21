@@ -974,12 +974,41 @@ async function adminProvisioningChecklistSave(req,res){
   return res.status(200).json({ok:true,onboarding:next});
 }
 
+async function stripeConfigurationHealth(){
+  const key=process.env.STRIPE_SECRET_KEY||'';
+  if(!key)return {ok:false,webhook:false,portal:false,detail:'STRIPE_SECRET_KEY missing'};
+  const headers={Authorization:'Bearer '+key};
+  const expected=['checkout.session.completed','checkout.session.async_payment_succeeded','customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.payment_failed','invoice.paid'];
+  try{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),3500);
+    try{
+      const [whRes,portalRes]=await Promise.all([
+        fetch('https://api.stripe.com/v1/webhook_endpoints?limit=100',{headers,signal:controller.signal}),
+        fetch('https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=10',{headers,signal:controller.signal})
+      ]);
+      const [wh,portal]=await Promise.all([whRes.json().catch(()=>({})),portalRes.json().catch(()=>({}))]);
+      if(!whRes.ok||!portalRes.ok)return {ok:false,webhook:false,portal:false,detail:'Stripe configuration check failed'};
+      const desiredUrl=(process.env.SITE_URL||'https://www.callercore.com').replace(/\/$/,'')+'/api/stripe-webhook';
+      const endpoint=(Array.isArray(wh.data)?wh.data:[]).find(x=>x&&x.status==='enabled'&&x.url===desiredUrl);
+      const enabled=new Set(Array.isArray(endpoint?.enabled_events)?endpoint.enabled_events:[]);
+      const missing=expected.filter(e=>!enabled.has(e)&&!enabled.has('*'));
+      const webhook=!!endpoint&&missing.length===0;
+      const portal=Array.isArray(portal.data)&&portal.data.some(x=>x&&x.active!==false);
+      return {ok:webhook&&portal,webhook,portal,missingEvents:missing,detail:!endpoint?'Stripe webhook endpoint not found/enabled':missing.length?('Stripe webhook missing '+missing.length+' required event'+(missing.length===1?'':'s')):!portal?'Stripe Customer Portal has no active configuration':'Stripe webhook and Customer Portal configured'};
+    }finally{clearTimeout(timer)}
+  }catch(err){
+    return {ok:false,webhook:false,portal:false,detail:/aborted|timeout/i.test(String(err&&err.message||err))?'Stripe configuration check timed out':'Stripe configuration check unavailable'};
+  }
+}
+
 async function adminSystemHealth(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const kvHealth=await kvHealthCheck(),kvOk=kvHealth.ok;
+  const [kvHealth,stripeHealth]=await Promise.all([kvHealthCheck(),stripeConfigurationHealth()]),kvOk=kvHealth.ok;
+  const stripeEnv=!!(process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_PUBLISHABLE_KEY&&process.env.STRIPE_WEBHOOK_SECRET);
+  const stripeReady=stripeEnv&&stripeHealth.ok;
   const services=[
     {key:'database',name:'Upstash / KV',status:kvOk?'operational':'error',detail:kvOk?'Read/write check passed':('Database check failed ('+kvHealth.error+')')},
-    {key:'stripe',name:'Stripe',status:(process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_PUBLISHABLE_KEY&&process.env.STRIPE_WEBHOOK_SECRET)?'configured':'not_configured',detail:(process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_PUBLISHABLE_KEY&&process.env.STRIPE_WEBHOOK_SECRET)?'Secret key + publishable key + webhook signing secret available':(!process.env.STRIPE_SECRET_KEY?'STRIPE_SECRET_KEY missing':(!process.env.STRIPE_PUBLISHABLE_KEY?'STRIPE_PUBLISHABLE_KEY missing':'STRIPE_WEBHOOK_SECRET missing'))},
+    {key:'stripe',name:'Stripe',status:stripeReady?'operational':(stripeEnv?'error':'not_configured'),detail:!stripeEnv?(!process.env.STRIPE_SECRET_KEY?'STRIPE_SECRET_KEY missing':(!process.env.STRIPE_PUBLISHABLE_KEY?'STRIPE_PUBLISHABLE_KEY missing':'STRIPE_WEBHOOK_SECRET missing')):stripeHealth.detail,meta:{webhook:stripeHealth.webhook,portal:stripeHealth.portal,missingEvents:stripeHealth.missingEvents||[]}},
     {key:'mailgun',name:'Mailgun',status:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'configured':'not_configured',detail:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'API credentials available':'Mailgun credentials incomplete'},
     {key:'demo',name:'Live demo protection',status:process.env.DEMO_TOKEN_SECRET?'configured':'not_configured',detail:process.env.DEMO_TOKEN_SECRET?'Demo reveal signing secret available':'DEMO_TOKEN_SECRET missing — live demo number reveal is disabled'},
     {key:'gmail',name:'Gmail / Google OAuth',status:gmailConfigReady()?'configured':'not_configured',detail:gmailConfigReady()?'OAuth credentials + token encryption available':'GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or CALLERCORE_ENCRYPTION_KEY missing'},
