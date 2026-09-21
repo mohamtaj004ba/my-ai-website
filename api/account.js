@@ -75,6 +75,39 @@ async function workspace(req,res){
   }});
 }
 
+async function requireFeature(req,res,feature){
+  const s=await requireSession(req,res);if(!s)return null;
+  const ws=await kv.get('workspace:'+s.workspaceId);
+  if(!ws)return res.status(404).json({error:'Workspace not found'}),null;
+  const ent=entitlementsFor(ws.plan);
+  if(!ent.features[feature])return res.status(403).json({error:'Upgrade required',feature}),null;
+  return {session:s,workspace:ws,entitlements:ent};
+}
+
+async function conversations(req,res){
+  const access=await requireFeature(req,res,'unifiedInbox');if(!access)return;
+  const items=await kv.get('conversations:'+access.session.workspaceId)||[];
+  return res.status(200).json({conversations:Array.isArray(items)?items:[]});
+}
+
+async function appointments(req,res){
+  const access=await requireFeature(req,res,'appointments');if(!access)return;
+  const items=await kv.get('appointments:'+access.session.workspaceId)||[];
+  return res.status(200).json({appointments:Array.isArray(items)?items:[]});
+}
+
+async function updateAppointment(req,res){
+  const access=await requireFeature(req,res,'appointments');if(!access)return;
+  const id=String((req.body||{}).id||'').slice(0,120);
+  const status=String((req.body||{}).status||'').slice(0,40);
+  if(!id||!['Scheduled','Confirmed','Completed','Canceled'].includes(status))return res.status(400).json({error:'Invalid appointment update'});
+  const key='appointments:'+access.session.workspaceId;
+  const items=await kv.get(key)||[];if(!Array.isArray(items))return res.status(200).json({ok:true,updated:false});
+  let updated=false;const next=items.map(item=>item&&String(item.id)===id?(updated=true,{...item,status,updatedAt:Date.now()}):item);
+  if(updated)await kv.set(key,next);
+  return res.status(200).json({ok:true,updated});
+}
+
 async function calls(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const items=await kv.get('calls:'+s.workspaceId)||[];
@@ -115,6 +148,9 @@ module.exports=async function handler(req,res){
   if(action==='session'&&req.method==='GET')return session(req,res);
   if(action==='workspace'&&req.method==='GET')return workspace(req,res);
   if(action==='calls'&&req.method==='GET')return calls(req,res);
+  if(action==='conversations'&&req.method==='GET')return conversations(req,res);
+  if(action==='appointments'&&req.method==='GET')return appointments(req,res);
+  if(action==='appointment-update'&&req.method==='POST')return updateAppointment(req,res);
   if(action==='leads'&&req.method==='GET')return leads(req,res);
   if(action==='lead-update'&&req.method==='POST')return updateLead(req,res);
   if(action==='logout'&&req.method==='POST')return logout(req,res);
