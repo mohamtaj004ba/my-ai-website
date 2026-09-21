@@ -20,3 +20,9 @@ test('Gmail token encryption requires a strong environment key',()=>{
   assert.match(src,/aes-256-gcm/);
   assert.match(src,/randomBytes\(12\)/);
 });
+
+test('Gmail OAuth requests only the restricted modify scope needed for admin inbox operations',()=>{
+  assert.match(src,/gmail\.modify/);
+  assert.doesNotMatch(src,/gmail\.send/);
+  assert.match(src,/integration:gmail:admin:/);
+});
