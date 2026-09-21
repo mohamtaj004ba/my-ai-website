@@ -30,6 +30,8 @@ jobs:
         run: node --test tests/agreement.test.js
       - name: Commercial copy consistency
         run: node --test tests/commercial-copy.test.js
+      - name: Regulated data safeguards
+        run: node --test tests/regulated-data.test.js
       - name: Email templates
         run: node --test tests/email-template.test.js
       - name: Repository cleanliness
