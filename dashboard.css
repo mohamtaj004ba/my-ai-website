@@ -111,3 +111,5 @@
 .account-panel-actions small{font-size:9px;color:var(--muted)}
 @media(max-width:900px){.account-copy{display:none}.account-button{padding-right:7px}.account-caret{display:none}.signout-button{padding:9px}.signout-button:not(:hover){font-size:0}.signout-button span{font-size:13px}}
 @media(max-width:640px){.top-actions .search-pill{display:none}.account-panel{position:fixed;top:64px;right:10px;left:10px;width:auto}.signout-button{display:none}}
+
+.profile-panel-signout{width:100%;margin-top:12px;border:1px solid #ead2cc;background:#fff7f5;color:#9d3d2b;border-radius:9px;padding:10px 11px;font:800 10px inherit;cursor:pointer;text-align:center}.profile-panel-signout:hover{background:#ffefeb}
