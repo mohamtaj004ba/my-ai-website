@@ -869,7 +869,10 @@ async function adminSystemHealth(req,res){
     {key:'onboarding-ai',name:'Smart Onboarding AI',status:process.env.ANTHROPIC_API_KEY?'configured':'not_configured',detail:process.env.ANTHROPIC_API_KEY?'Website extraction and agent-draft model available':'ANTHROPIC_API_KEY missing'},
     {key:'voice',name:'Voice provider',status:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'configured':'not_configured',detail:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'Voice API credentials available':'Voice API credentials not configured'}
   ];
-  return res.status(200).json({services,checkedAt:Date.now()});
+  const requiredForLaunch=['database','stripe','mailgun','onboarding-ai','voice'];
+  const blockers=services.filter(x=>requiredForLaunch.includes(x.key)&&!['operational','configured'].includes(x.status));
+  const readiness={ready:blockers.length===0,requiredForLaunch,blockers:blockers.map(x=>({key:x.key,name:x.name,detail:x.detail})),configured:services.filter(x=>['operational','configured'].includes(x.status)).length,total:services.length};
+  return res.status(200).json({services,readiness,checkedAt:Date.now()});
 }
 
 async function adminClient(req,res){
