@@ -994,7 +994,7 @@ async function stripeConfigurationHealth(){
       const missing=expected.filter(e=>!enabled.has(e)&&!enabled.has('*'));
       const webhook=!!endpoint&&missing.length===0;
       const portal=Array.isArray(portalData.data)&&portalData.data.some(x=>x&&x.active!==false);
-      return {ok:webhook&&portal,webhook,portal,missingEvents:missing,detail:!endpoint?'Stripe webhook endpoint not found/enabled':missing.length?('Stripe webhook missing '+missing.length+' required event'+(missing.length===1?'':'s')):!portal?'Stripe Customer Portal has no active configuration':'Stripe webhook and Customer Portal configured'};
+      return {ok:webhook&&portal,webhook,portal,missingEvents:missing,detail:!endpoint?'Stripe webhook endpoint not found/enabled':missing.length?('Stripe webhook missing: '+missing.join(', ')):!portal?'Stripe Customer Portal has no active configuration':'Stripe webhook and Customer Portal configured'};
     }finally{clearTimeout(timer)}
   }catch(err){
     return {ok:false,webhook:false,portal:false,detail:/aborted|timeout/i.test(String(err&&err.message||err))?'Stripe configuration check timed out':'Stripe configuration check unavailable'};
