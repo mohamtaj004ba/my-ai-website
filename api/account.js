@@ -384,6 +384,60 @@ async function adminPlatformSettingsSave(req,res){
 }
 
 
+
+async function adminWebsiteAnalytics(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  try{
+    const [eventsRaw,sessionIds,prospectIds]=await Promise.all([
+      kv.lrange('site:events',0,4999),kv.lrange('site:session:index',0,999),kv.lrange('site:prospect:index',0,999)
+    ]);
+    const events=Array.isArray(eventsRaw)?eventsRaw.filter(Boolean):[];
+    const sessions=(await Promise.all((Array.isArray(sessionIds)?sessionIds:[]).slice(0,500).map(id=>kv.get('site:session:'+id)))).filter(Boolean);
+    const prospects=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,1000).map(id=>kv.get('site:prospect:'+id)))).filter(Boolean).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    const now=Date.now(),cut30=now-30*24*60*60*1000,cut7=now-7*24*60*60*1000;
+    const s30=sessions.filter(s=>(s.firstAt||0)>=cut30),e30=events.filter(e=>(e.at||0)>=cut30),e7=events.filter(e=>(e.at||0)>=cut7);
+    const uniqueVisitors=new Set(s30.map(s=>s.visitorId).filter(Boolean)).size;
+    const pageViews=e30.filter(e=>e.type==='page_view').length;
+    const avgActive=s30.length?Math.round(s30.reduce((n,s)=>n+Number(s.activeMs||0),0)/s30.length/1000):0;
+    const bounced=s30.filter(s=>(s.pages||[]).length<=1&&Number(s.activeMs||0)<15000).length;
+    const bounceRate=s30.length?Math.round((bounced/s30.length)*100):0;
+    const uniqueEventSessions=(type,label='')=>new Set(e30.filter(e=>e.type===type&&(!label||e.label===label)).map(e=>e.sessionId).filter(Boolean)).size;
+    const funnel={
+      visitors:s30.length,
+      getStarted:new Set(e30.filter(e=>e.type==='page_view'&&String(e.path||'').startsWith('/get-started')).map(e=>e.sessionId).filter(Boolean)).size,
+      formStarted:uniqueEventSessions('form_start','startForm'),
+      checkoutStarted:uniqueEventSessions('checkout_start'),
+      converted:prospects.filter(p=>p.stage==='converted'&&(p.updatedAt||0)>=cut30).length
+    };
+    const pageMap={},sourceMap={};
+    e30.filter(e=>e.type==='page_view').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=(pageMap[p]||0)+1});
+    s30.forEach(s=>{const source=s.utmSource||s.source||'direct';sourceMap[source]=(sourceMap[source]||0)+1});
+    const topPages=Object.entries(pageMap).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([path,count])=>({path,count}));
+    const sources=Object.entries(sourceMap).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([source,count])=>({source,count}));
+    const eventBySession={};e30.forEach(e=>{if(!e.sessionId)return;(eventBySession[e.sessionId]||(eventBySession[e.sessionId]=[])).push(e)});
+    const recentSessions=sessions.sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).slice(0,60).map(s=>({
+      ...s,journey:(eventBySession[s.id]||[]).sort((a,b)=>(a.at||0)-(b.at||0)).slice(-40).map(e=>({type:e.type,at:e.at,path:e.path,label:e.label,value:e.value,activeMs:e.activeMs}))
+    }));
+    return res.status(200).json({analytics:{
+      periodDays:30,sessions:s30.length,visitors:uniqueVisitors,pageViews,avgActiveSeconds:avgActive,bounceRate,
+      contactInquiries:e30.filter(e=>e.type==='contact_submit').length,chatSessions:uniqueEventSessions('chat_open'),
+      checkoutStarts:uniqueEventSessions('checkout_start'),conversions:funnel.converted,
+      last7Events:e7.length,funnel,topPages,sources,recentSessions,prospects
+    }});
+  }catch(err){console.error('admin website analytics failed',err);return res.status(500).json({error:'Website analytics unavailable'})}
+}
+async function adminWebsiteProspectUpdate(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,100),key='site:prospect:'+id,old=await kv.get(key);
+  if(!old)return res.status(404).json({error:'Website prospect not found'});
+  const allowed=['new','inquiry','checkout_started','follow_up','qualified','lost','converted'];
+  const stage=body.stage!==undefined?String(body.stage):old.stage;
+  if(!allowed.includes(stage))return res.status(400).json({error:'Invalid prospect stage'});
+  const next={...old,stage,notes:body.notes!==undefined?String(body.notes||'').trim().slice(0,3000):(old.notes||''),updatedAt:Date.now(),updatedBy:admin.email};
+  await kv.set(key,next);
+  return res.status(200).json({ok:true,prospect:next});
+}
+
 async function adminTechSupport(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.query||{}).id||'').slice(0,80);
@@ -888,6 +942,8 @@ module.exports=async function handler(req,res){
   if(action==='admin-phone-numbers'&&req.method==='GET')return adminPhoneNumbers(req,res);
   if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
   if(action==='admin-phone-number-delete'&&req.method==='POST')return adminDeletePhoneNumber(req,res);
+  if(action==='admin-website-analytics'&&req.method==='GET')return adminWebsiteAnalytics(req,res);
+  if(action==='admin-website-prospect-update'&&req.method==='POST')return adminWebsiteProspectUpdate(req,res);
   if(action==='admin-tech-support'&&req.method==='GET')return adminTechSupport(req,res);
   if(action==='admin-send-client-login'&&req.method==='POST')return adminSendClientLogin(req,res);
   if(action==='admin-force-logout'&&req.method==='POST')return adminForceLogout(req,res);
