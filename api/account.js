@@ -249,6 +249,80 @@ async function adminDeletePhoneNumber(req,res){
   return res.status(200).json({ok:true,deleted:{id:item.id,number:item.number}});
 }
 
+async function adminFleet(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const ids=await kv.get('workspace:index')||[];
+  const agents=[],calls=[],leads=[],automations=[];
+  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
+    const ws=await kv.get('workspace:'+id);if(!ws)continue;
+    const [agent,wsCalls,wsLeads,wsAutos]=await Promise.all([
+      kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('automations:'+id)
+    ]);
+    agents.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',phone:ws.phone||'',agent:agent||null});
+    (Array.isArray(wsCalls)?wsCalls:[]).slice(0,200).forEach(x=>calls.push({...x,workspaceId:id,workspaceName:ws.name||'Unnamed workspace'}));
+    (Array.isArray(wsLeads)?wsLeads:[]).slice(0,200).forEach(x=>leads.push({...x,workspaceId:id,workspaceName:ws.name||'Unnamed workspace'}));
+    const autos=Array.isArray(wsAutos)?wsAutos:[];
+    automations.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length});
+  }
+  const time=x=>Number(x?.createdAt||x?.timestamp||x?.dateMs||x?.updatedAt||0);
+  calls.sort((a,b)=>time(b)-time(a));leads.sort((a,b)=>time(b)-time(a));
+  return res.status(200).json({agents,calls:calls.slice(0,500),leads:leads.slice(0,500),automations});
+}
+
+async function createSupportTicket(req,res){
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const body=req.body||{},subject=String(body.subject||'').trim().slice(0,160),message=String(body.message||'').trim().slice(0,4000),priority=['normal','urgent'].includes(body.priority)?body.priority:'normal';
+  if(subject.length<3||message.length<10)return res.status(400).json({error:'Subject and message are required'});
+  const id=crypto.randomUUID(),now=Date.now();
+  const ticket={id,workspaceId:s.workspaceId,workspaceName:ws.name||'Workspace',email:s.email,subject,message,priority,status:'open',createdAt:now,updatedAt:now};
+  await kv.set('support:'+id,ticket);
+  const index=await kv.get('support:index')||[];const list=Array.isArray(index)?index:[];
+  await kv.set('support:index',[id,...list.filter(x=>x!==id)].slice(0,500));
+  const to=process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
+  if(to){try{await sendMail({to,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\n\n'+message})}catch(err){console.error('support email failed',err)}}
+  return res.status(201).json({ok:true,ticket});
+}
+
+async function supportTickets(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const index=await kv.get('support:index')||[],tickets=[];
+  for(const id of Array.isArray(index)?index.slice(0,100):[]){
+    const t=await kv.get('support:'+id);if(t&&t.workspaceId===s.workspaceId)tickets.push(t);
+  }
+  return res.status(200).json({tickets});
+}
+
+async function adminSupport(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const index=await kv.get('support:index')||[],tickets=[];
+  for(const id of Array.isArray(index)?index.slice(0,250):[]){const t=await kv.get('support:'+id);if(t)tickets.push(t)}
+  return res.status(200).json({tickets});
+}
+
+async function adminSupportUpdate(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80),status=String(body.status||'');
+  if(!id||!['open','in_progress','resolved'].includes(status))return res.status(400).json({error:'Invalid support update'});
+  const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
+  const next={...t,status,updatedAt:Date.now(),updatedBy:admin.email};await kv.set(key,next);
+  return res.status(200).json({ok:true,ticket:next});
+}
+
+async function adminPlatformSettings(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const saved=await kv.get('platform:settings')||{};
+  return res.status(200).json({settings:{supportEmail:saved.supportEmail||process.env.SUPPORT_EMAIL||'',defaultAgentName:saved.defaultAgentName||'Maya',defaultTimezone:saved.defaultTimezone||'America/Los_Angeles',maintenanceMode:!!saved.maintenanceMode,updatedAt:saved.updatedAt||null}});
+}
+
+async function adminPlatformSettingsSave(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},supportEmail=cleanEmail(body.supportEmail),defaultAgentName=String(body.defaultAgentName||'Maya').trim().slice(0,80),defaultTimezone=String(body.defaultTimezone||'America/Los_Angeles').trim().slice(0,100);
+  if(supportEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail))return res.status(400).json({error:'Valid support email required'});
+  const settings={supportEmail,defaultAgentName:defaultAgentName||'Maya',defaultTimezone,maintenanceMode:!!body.maintenanceMode,updatedAt:Date.now(),updatedBy:admin.email};
+  await kv.set('platform:settings',settings);return res.status(200).json({ok:true,settings});
+}
+
 async function adminSystemHealth(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   let kvOk=false;
@@ -568,6 +642,11 @@ module.exports=async function handler(req,res){
   if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
   if(action==='admin-phone-number-delete'&&req.method==='POST')return adminDeletePhoneNumber(req,res);
   if(action==='admin-system-health'&&req.method==='GET')return adminSystemHealth(req,res);
+  if(action==='admin-fleet'&&req.method==='GET')return adminFleet(req,res);
+  if(action==='admin-support'&&req.method==='GET')return adminSupport(req,res);
+  if(action==='admin-support-update'&&req.method==='POST')return adminSupportUpdate(req,res);
+  if(action==='admin-platform-settings'&&req.method==='GET')return adminPlatformSettings(req,res);
+  if(action==='admin-platform-settings-save'&&req.method==='POST')return adminPlatformSettingsSave(req,res);
   if(action==='admin-client-update'&&req.method==='POST')return adminUpdateClient(req,res);
   if(action==='admin-view-client'&&req.method==='POST')return adminViewClient(req,res);
   if(action==='admin-exit-client-view'&&req.method==='POST')return adminExitClientView(req,res);
@@ -590,6 +669,8 @@ module.exports=async function handler(req,res){
   if(action==='appointment-update'&&req.method==='POST')return updateAppointment(req,res);
   if(action==='leads'&&req.method==='GET')return leads(req,res);
   if(action==='lead-update'&&req.method==='POST')return updateLead(req,res);
+  if(action==='support-tickets'&&req.method==='GET')return supportTickets(req,res);
+  if(action==='support-ticket-create'&&req.method==='POST')return createSupportTicket(req,res);
   if(action==='logout'&&req.method==='POST')return logout(req,res);
   return res.status(404).json({error:'Unknown account action'});
 };
