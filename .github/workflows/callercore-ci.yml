@@ -50,6 +50,8 @@ jobs:
         run: node --test tests/admin-safeguards.test.js
       - name: Authentication safeguards
         run: node --test tests/auth-safeguards.test.js
+      - name: Vercel alert webhook safeguards
+        run: node --test tests/vercel-alert-webhook.test.js
       - name: Export safeguards
         run: node --test tests/export-safeguards.test.js
       - name: UI structure
