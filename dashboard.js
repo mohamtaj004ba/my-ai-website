@@ -690,15 +690,15 @@ async function refreshAdminInboxLive({silent=true}={}){
   if(refresh&&!silent){refresh.disabled=true;refresh.textContent='Syncing…'}
   if(auto)auto.textContent='Syncing with Gmail…';
   try{
-    const [gr,ar]=await Promise.all([
-      fetch('/api/account?action=admin-gmail-inbox&limit=35',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=admin-gmail-aliases',{headers:{Accept:'application/json'},cache:'no-store'})
-    ]);
+    const gr=await fetch('/api/account?action=admin-gmail-inbox&limit=35',{headers:{Accept:'application/json'},cache:'no-store'});
     if(gr.ok){
       const d=await gr.json();
       if(Array.isArray(d.threads)){adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||Date.now())}
     }
-    if(ar.ok){const d=await ar.json();if(Array.isArray(d.aliases))adminInboxData.aliases=d.aliases}
+    if(!(adminInboxData.aliases||[]).length){
+      const ar=await fetch('/api/account?action=admin-gmail-aliases',{headers:{Accept:'application/json'},cache:'no-store'});
+      if(ar.ok){const d=await ar.json();if(Array.isArray(d.aliases))adminInboxData.aliases=d.aliases}
+    }
     renderAdminInbox();
     if(currentInboxItem?.kind==='gmail'){
       const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===currentInboxItem.id);
