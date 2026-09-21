@@ -535,7 +535,7 @@ document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebho
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null;
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -767,7 +767,87 @@ async function openAdminClient(id){
   if(statusSel)statusSel.value=x.status||'active';
   const note=document.getElementById('adminClientManageNote');if(note)note.textContent=(x.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Workspace status controls access/readiness; billing status is tracked separately.';
   document.getElementById('adminClientDrawer').classList.add('open');document.getElementById('adminClientBackdrop').classList.add('open');
+  await loadAdminTechSupport(id);
 }
+
+function adminTechMessage(message,error=false){
+  const el=document.getElementById('adminTechStatus');if(!el)return;el.textContent=message||'';el.classList.toggle('error-text',!!error)
+}
+async function loadAdminTechSupport(id=currentAdminClient?.id){
+  if(!id)return;
+  adminTechMessage('Running diagnostics…');
+  const r=await fetch('/api/account?action=admin-tech-support&id='+encodeURIComponent(id),{headers:{Accept:'application/json'},cache:'no-store'});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok){adminTechMessage(data.error||'Could not load support diagnostics.',true);return}
+  currentAdminTech=data;renderAdminTechSupport();adminTechMessage('Diagnostics refreshed.');
+}
+function renderAdminTechSupport(){
+  if(!currentAdminTech)return;
+  const d=currentAdminTech.diagnostics||{},diag=document.getElementById('adminDiagnostics');
+  if(diag)diag.innerHTML=[
+    ['Access mapping',d.userMappingMatches?'Healthy':'Needs repair',d.userMappingMatches?'green':'red'],
+    ['Workspace',d.workspaceStatus||'unknown',d.workspaceStatus==='active'?'green':d.workspaceStatus==='suspended'?'red':'amber'],
+    ['Billing',d.subscriptionStatus||'unknown',d.subscriptionStatus==='active'?'green':d.subscriptionStatus==='past_due'?'red':'amber'],
+    ['Phone',d.phoneConfigured?'Configured':'Missing',d.phoneConfigured?'green':'amber'],
+    ['AI agent',d.agentConfigured?'Configured':'Missing',d.agentConfigured?'green':'amber'],
+    ['Settings',d.settingsConfigured?'Configured':'Missing',d.settingsConfigured?'green':'amber']
+  ].map(([k,v,color])=>'<div><span>'+esc(k)+'</span><b class="status-text '+color+'">'+esc(v)+'</b></div>').join('');
+  const email=document.getElementById('adminRepairEmail');if(email)email.value=d.ownerEmail||'';
+  renderAdminConfigEditor();
+  const list=document.getElementById('adminAuditList'),empty=document.getElementById('adminAuditEmpty'),audit=currentAdminTech.audit||[];
+  if(list)list.innerHTML=audit.map(entry=>{
+    const when=new Date(entry.at).toLocaleString(),who=entry.actorRole==='admin'?'Admin':'Client';
+    const restorable=['workspace','settings','agent','automations','integrations','locations'].includes(entry.section)&&entry.before!==undefined;
+    return '<article class="audit-entry"><div class="audit-head"><div><b>'+esc(entry.action.replaceAll('_',' '))+'</b><small>'+esc(when)+' · '+esc(who)+' · '+esc(entry.actorEmail||'unknown')+'</small></div><span class="tag">'+esc(entry.section||'system')+'</span></div><details><summary>Inspect change</summary><div class="audit-diff"><div><span>Before</span><pre>'+esc(JSON.stringify(entry.before,null,2))+'</pre></div><div><span>After</span><pre>'+esc(JSON.stringify(entry.after,null,2))+'</pre></div></div></details>'+(restorable?'<button class="secondary-btn audit-restore" data-restore-audit="'+esc(entry.id)+'">Restore previous snapshot</button>':'')+'</article>'
+  }).join('');
+  if(empty)empty.hidden=audit.length!==0;
+  list?.querySelectorAll('[data-restore-audit]').forEach(b=>b.addEventListener('click',()=>restoreAdminAudit(b.dataset.restoreAudit)));
+}
+function renderAdminConfigEditor(){
+  const section=document.getElementById('adminConfigSection')?.value||'settings',editor=document.getElementById('adminConfigEditor');if(!editor||!currentAdminTech)return;
+  const value=currentAdminTech.config?.[section]??(section==='automations'||section==='locations'?[]:{});
+  editor.value=JSON.stringify(value,null,2);
+}
+async function sendClientLogin(){
+  if(!currentAdminClient)return;adminTechMessage('Sending secure sign-in link…');
+  const r=await fetch('/api/account?action=admin-send-client-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})}),data=await r.json().catch(()=>({}));
+  adminTechMessage(r.ok?'Sign-in link sent to '+data.email:(data.error||'Could not send sign-in link.'),!r.ok);
+  if(r.ok)await loadAdminTechSupport();
+}
+async function forceClientLogout(){
+  if(!currentAdminClient||!confirm('Force this client to sign out of all existing CallerCore sessions?'))return;
+  const r=await fetch('/api/account?action=admin-force-logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})}),data=await r.json().catch(()=>({}));
+  adminTechMessage(r.ok?'All existing client sessions have been revoked.':(data.error||'Could not revoke sessions.'),!r.ok);
+  if(r.ok)await loadAdminTechSupport();
+}
+async function repairClientAccess(){
+  if(!currentAdminClient)return;const email=(document.getElementById('adminRepairEmail')?.value||'').trim();
+  if(!confirm('Repair the login mapping for '+email+' and revoke older sessions?'))return;
+  const r=await fetch('/api/account?action=admin-repair-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,email})}),data=await r.json().catch(()=>({}));
+  adminTechMessage(r.ok?'Access mapping repaired for '+data.email:(data.error||'Could not repair access.'),!r.ok);
+  if(r.ok){await refreshAdminCore();await loadAdminTechSupport()}
+}
+async function applyAdminConfigOverride(){
+  if(!currentAdminClient)return;const section=document.getElementById('adminConfigSection')?.value||'settings',raw=document.getElementById('adminConfigEditor')?.value||'';
+  let value;try{value=JSON.parse(raw)}catch(_){adminTechMessage('Configuration JSON is invalid.',true);return}
+  if(!confirm('Apply this admin override to '+section+'? The previous value will remain available in Change History.'))return;
+  const r=await fetch('/api/account?action=admin-config-override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,section,value})}),data=await r.json().catch(()=>({}));
+  adminTechMessage(r.ok?'Admin override applied to '+section+'.':(data.error||'Could not apply override.'),!r.ok);
+  if(r.ok){await refreshAdminCore();await loadAdminOps();await loadAdminTechSupport()}
+}
+async function restoreAdminAudit(auditId){
+  if(!currentAdminClient||!confirm('Restore the configuration that existed before this change? A new audit entry will record the rollback.'))return;
+  const r=await fetch('/api/account?action=admin-audit-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,auditId})}),data=await r.json().catch(()=>({}));
+  adminTechMessage(r.ok?'Previous '+data.section+' configuration restored.':(data.error||'Could not restore snapshot.'),!r.ok);
+  if(r.ok){await refreshAdminCore();await loadAdminOps();await loadAdminTechSupport()}
+}
+document.getElementById('adminConfigSection')?.addEventListener('change',renderAdminConfigEditor);
+document.getElementById('adminReloadConfigButton')?.addEventListener('click',()=>loadAdminTechSupport());
+document.getElementById('adminApplyOverrideButton')?.addEventListener('click',applyAdminConfigOverride);
+document.getElementById('adminSendLoginButton')?.addEventListener('click',sendClientLogin);
+document.getElementById('adminForceLogoutButton')?.addEventListener('click',forceClientLogout);
+document.getElementById('adminRepairAccessButton')?.addEventListener('click',repairClientAccess);
+
 function closeAdminClient(){document.getElementById('adminClientDrawer')?.classList.remove('open');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
 document.getElementById('adminSearch')?.addEventListener('input',renderAdminClients);
 document.getElementById('closeAdminClient')?.addEventListener('click',closeAdminClient);
