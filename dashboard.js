@@ -14,7 +14,7 @@ const params=new URLSearchParams(location.search);
 const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
 let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
 let sessionWorkspace=null;
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[];
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',reason:'Roof replacement estimate',duration:'4:32',outcome:'Booked',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and booked an inspection for Tuesday at 10:30 AM.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can help get an inspection scheduled. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -89,7 +89,7 @@ document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',(
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
 
 function has(feature){return !!PLAN_DATA[currentPlan]?.features?.[feature]}
-function featureStage(el,feature){const info=FEATURE_INFO[feature],ok=has(feature);if(ok){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Included with '+currentPlan+'</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel"><span class="eyebrow">Active feature</span><h2>Ready to configure</h2><p class="muted">This prototype shows the entitlement state. Production data and controls will plug into this surface.</p><button class="primary">Configure</button></article></div>'}else{el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>See what this could do for your business.</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel gate-card"><small>AVAILABLE ON '+info.tier.toUpperCase()+'</small><h2>Unlock '+info.title+'</h2><p>'+info.copy+'</p><ul>'+info.items.map(x=>'<li>'+x+'</li>').join('')+'</ul><button class="primary" data-upgrade="'+info.tier+'">Upgrade to '+info.tier+'</button></article></div>'}}
+function featureStage(el,feature){const info=FEATURE_INFO[feature],ok=has(feature);if(ok){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Included with '+currentPlan+'</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel"><span class="eyebrow">Active feature</span><h2>Included in your plan</h2><p class="muted">Use the live controls on this page to configure the feature for your workspace.</p></article></div>'}else{el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>See what this could do for your business.</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel gate-card"><small>AVAILABLE ON '+info.tier.toUpperCase()+'</small><h2>Unlock '+info.title+'</h2><p>'+info.copy+'</p><ul>'+info.items.map(x=>'<li>'+x+'</li>').join('')+'</ul><button class="primary" data-upgrade="'+info.tier+'">Upgrade to '+info.tier+'</button></article></div>'}}
 function renderStages(){document.querySelectorAll('[data-feature-card]').forEach(el=>featureStage(el,el.dataset.featureCard));document.querySelectorAll('[data-feature]').forEach(el=>{const f=el.dataset.feature;el.classList.toggle('feature-locked',!has(f));const lock=el.querySelector('.lock');if(lock)lock.textContent=has(f)?'ON':FEATURE_INFO[f]?.tier?.toUpperCase()||'LOCKED'});bindUpgradeButtons()}
 
 function renderOverviewUnlocks(){const el=document.getElementById('overviewUnlocks');if(!el)return;const next=PLAN_DATA[currentPlan].unlock;if(!next){el.innerHTML='<article class="unlock-card"><small>PRO PLAN</small><h3>You have every core feature.</h3><p>Future enterprise capabilities and add-ons can appear here without changing the plan architecture.</p></article>';return}const locked=Object.keys(PLAN_DATA[currentPlan].features).filter(f=>!has(f)).slice(0,3);if(!locked.length&&next==='Pro')locked.push('apiAccess');el.innerHTML=locked.map(f=>{const i=FEATURE_INFO[f];return '<article class="unlock-card"><small>UNLOCK WITH '+i.tier.toUpperCase()+'</small><h3>'+i.title+'</h3><p>'+i.copy+'</p><button data-upgrade="'+i.tier+'">See what you unlock →</button></article>'}).join('');bindUpgradeButtons()}
@@ -123,7 +123,9 @@ async function loadOperations(){
       fetch('/api/account?action=agent',{headers:{Accept:'application/json'},cache:'no-store'}),
       fetch('/api/account?action=settings',{headers:{Accept:'application/json'},cache:'no-store'}),
       fetch('/api/account?action=integrations',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=support-tickets',{headers:{Accept:'application/json'},cache:'no-store'})
+      fetch('/api/account?action=support-tickets',{headers:{Accept:'application/json'},cache:'no-store'}),
+      fetch('/api/account?action=phone-routing',{headers:{Accept:'application/json'},cache:'no-store'}),
+      fetch('/api/account?action=locations',{headers:{Accept:'application/json'},cache:'no-store'})
     ];
     if(has('advancedAnalytics'))jobs.push(fetch('/api/account?action=analytics',{headers:{Accept:'application/json'},cache:'no-store'}));
     if(has('unifiedInbox'))jobs.push(fetch('/api/account?action=conversations',{headers:{Accept:'application/json'},cache:'no-store'}));
@@ -136,13 +138,15 @@ async function loadOperations(){
     if(results[3].ok)settingsData=(await results[3].json()).settings||null;
     if(results[4].ok)integrationsData=(await results[4].json()).integrations||null;
     if(results[5].ok)supportTicketsData=(await results[5].json()).tickets||[];
-    let idx=6;
+    if(results[6].ok)phoneRoutingData=(await results[6].json()).routing||null;
+    if(results[7].ok){const loc=await results[7].json();locationsData=loc.locations||[];locationsLimit=Number(loc.limit||1)}
+    let idx=8;
     if(has('advancedAnalytics')){if(results[idx].ok)analyticsData=(await results[idx].json()).analytics||null;idx++}
     if(has('unifiedInbox')){if(results[idx].ok)conversationsData=(await results[idx].json()).conversations||[];idx++}
     if(has('appointments')){if(results[idx].ok)appointmentsData=(await results[idx].json()).appointments||[];idx++}
     if(has('automations')){if(results[idx].ok)automationsData=(await results[idx].json()).automations||[]}
   }catch(err){console.error('Operations data failed',err)}
-  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientChecklist();renderBillingConnection();
+  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientChecklist();renderBillingConnection();renderPhoneRouting();renderLocations();
 }
 
 function renderOverview(){
@@ -205,13 +209,14 @@ function renderLeads(){
   const visible=leadsData.filter(x=>!q||[x.name,x.service,x.source,x.stage].join(' ').toLowerCase().includes(q));
   board.innerHTML=LEAD_STAGES.map(stage=>{
     const items=visible.filter(x=>(x.stage||'New')===stage);
-    return '<div class="lead-column" data-stage="'+stage+'"><h3>'+stage+' <span>'+items.length+'</span></h3>'+items.map(x=>'<article draggable="true" data-lead-id="'+esc(x.id)+'"><b>'+esc(x.name||'Unnamed lead')+'</b><small>'+esc(x.service||'General inquiry')+'</small><div class="lead-value">'+money(x.value)+'</div><div class="lead-foot"><span>'+esc(x.source||'CallerCore')+'</span><span>'+esc(x.age||'')+'</span></div></article>').join('')+'</div>';
+    return '<div class="lead-column" data-stage="'+stage+'"><h3>'+stage+' <span>'+items.length+'</span></h3>'+items.map(x=>'<article draggable="true" data-lead-id="'+esc(x.id)+'"><b>'+esc(x.name||'Unnamed lead')+'</b><small>'+esc(x.service||'General inquiry')+'</small><div class="lead-value">'+money(x.value)+'</div><div class="lead-foot"><span>'+esc(x.source||'CallerCore')+'</span><span>'+esc(x.age||'')+'</span></div><select class="lead-stage-select" data-lead-stage="'+esc(x.id)+'" aria-label="Lead stage">'+LEAD_STAGES.map(s=>'<option '+(s===stage?'selected':'')+'>'+s+'</option>').join('')+'</select></article>').join('')+'</div>';
   }).join('');
   document.getElementById('leadsEmpty').hidden=visible.length!==0;
   board.querySelectorAll('[draggable="true"]').forEach(card=>{
     card.addEventListener('dragstart',()=>{card.classList.add('dragging');card.dataset.dragging='1'});
-    card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+    card.addEventListener('dragend',()=>{card.classList.remove('dragging');delete card.dataset.dragging});
   });
+  board.querySelectorAll('[data-lead-stage]').forEach(sel=>sel.addEventListener('change',e=>{e.stopPropagation();moveLead(sel.dataset.leadStage,sel.value)}));
   board.querySelectorAll('.lead-column').forEach(col=>{
     col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drop-active')});
     col.addEventListener('dragleave',()=>col.classList.remove('drop-active'));
@@ -324,10 +329,11 @@ function actionLabel(v){return ({send_sms:'Send SMS',notify_team:'Notify team',c
 function renderAutomations(){
   if(!has('automations'))return;
   const wrap=document.getElementById('automationList');if(!wrap)return;
-  wrap.innerHTML=automationsData.map(x=>'<article class="automation-card"><div><h3>'+esc(x.name)+'</h3><p>When <b>'+esc(triggerLabel(x.trigger))+'</b> → '+esc(actionLabel(x.action))+'</p></div><div class="automation-actions"><button data-edit-auto="'+esc(x.id)+'">Edit</button><button class="switch '+(x.enabled?'on':'')+'" data-toggle-auto="'+esc(x.id)+'" aria-label="Toggle automation"><i></i></button></div></article>').join('');
+  wrap.innerHTML=automationsData.map(x=>'<article class="automation-card"><div><h3>'+esc(x.name)+'</h3><p>When <b>'+esc(triggerLabel(x.trigger))+'</b> → '+esc(actionLabel(x.action))+'</p></div><div class="automation-actions"><button data-edit-auto="'+esc(x.id)+'">Edit</button><button class="danger-link" data-delete-auto="'+esc(x.id)+'">Delete</button><button class="switch '+(x.enabled?'on':'')+'" data-toggle-auto="'+esc(x.id)+'" aria-label="Toggle automation"><i></i></button></div></article>').join('');
   document.getElementById('automationEmpty').hidden=automationsData.length!==0;
   wrap.querySelectorAll('[data-toggle-auto]').forEach(btn=>btn.addEventListener('click',()=>toggleAutomation(btn.dataset.toggleAuto)));
   wrap.querySelectorAll('[data-edit-auto]').forEach(btn=>btn.addEventListener('click',()=>openAutomation(btn.dataset.editAuto)));
+  wrap.querySelectorAll('[data-delete-auto]').forEach(btn=>btn.addEventListener('click',()=>deleteAutomation(btn.dataset.deleteAuto)));
 }
 async function persistAutomations(){
   if(demoMode)return true;
@@ -424,12 +430,52 @@ async function saveSettings(){
   const tag=document.getElementById('settingsSaveStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1600)}
 }
 
+
+function renderPhoneRouting(){
+  const d=phoneRoutingData,set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  if(!document.getElementById('clientPhoneNumber'))return;
+  set('clientPhoneNumber',d?.number||sessionWorkspace?.phone||'Not assigned');
+  set('clientPhoneProvider',d?.provider?d.provider+' · '+(d.status||'active'):'Awaiting provisioning');
+  set('clientForwardingFrom',d?.forwardingFrom||'—');set('clientTransferNumber',d?.transferNumber||agentData?.transferNumber||'—');
+  set('clientAfterHours',d?({ai:'AI answers',transfer:'Transfer',voicemail:'Voicemail'}[d.afterHours]||d.afterHours):'—');
+  set('clientSmsStatus',d?(d.smsEnabled?'SMS enabled':'SMS disabled'):'SMS status unavailable');
+  set('clientRoutingHeadline',d?'Your CallerCore routing is configured.':'Phone routing has not been provisioned yet.');
+  set('clientRoutingCopy',d?'Routing changes are managed by CallerCore support to prevent accidental call disruption.':'CallerCore support will configure the AI-facing number and routing details during onboarding.');
+}
+function renderLocations(){
+  const wrap=document.getElementById('locationsGrid'),empty=document.getElementById('locationsEmpty'),label=document.getElementById('locationsLimitLabel'),add=document.getElementById('addLocationButton');if(!wrap)return;
+  wrap.innerHTML=locationsData.map(x=>'<article class="panel location-card"><div><span class="tag '+(x.active?'green':'amber')+'">'+(x.active?'Active':'Inactive')+'</span><h3>'+esc(x.name)+'</h3><p>'+esc(x.address||'No address added')+'</p><small>'+esc(x.phone||'No phone')+' · '+esc(x.timezone||'America/Los_Angeles')+'</small></div><div class="location-actions"><button class="admin-link" data-edit-location="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-location="'+esc(x.id)+'">Delete</button></div></article>').join('');
+  if(empty)empty.hidden=locationsData.length!==0;if(label)label.textContent=locationsData.length+' of '+locationsLimit+' locations used on '+currentPlan+'.';if(add)add.disabled=locationsData.length>=locationsLimit;
+  wrap.querySelectorAll('[data-edit-location]').forEach(b=>b.addEventListener('click',()=>openLocationModal(b.dataset.editLocation)));
+  wrap.querySelectorAll('[data-delete-location]').forEach(b=>b.addEventListener('click',()=>deleteLocation(b.dataset.deleteLocation)));
+}
+function openLocationModal(id=''){
+  const modal=document.getElementById('locationModal');if(!modal)return;const x=locationsData.find(v=>String(v.id)===String(id));
+  modal.dataset.editId=x?.id||'';document.getElementById('locationModalTitle').textContent=x?'Edit location':'Add location';document.getElementById('locationName').value=x?.name||'';document.getElementById('locationPhone').value=x?.phone||'';document.getElementById('locationAddress').value=x?.address||'';document.getElementById('locationTimezone').value=x?.timezone||settingsData?.timezone||'America/Los_Angeles';document.getElementById('locationActive').checked=x?.active!==false;modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+}
+function closeLocationModal(){const m=document.getElementById('locationModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
+async function persistLocations(next){
+  const r=await fetch('/api/account?action=locations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:next})}),data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error||'Could not save locations.');return false}locationsData=data.locations||[];locationsLimit=Number(data.limit||locationsLimit);renderLocations();renderClientChecklist();return true;
+}
+async function saveLocation(){
+  const modal=document.getElementById('locationModal'),id=modal?.dataset.editId||'',item={id:id||undefined,name:document.getElementById('locationName')?.value||'',phone:document.getElementById('locationPhone')?.value||'',address:document.getElementById('locationAddress')?.value||'',timezone:document.getElementById('locationTimezone')?.value||'America/Los_Angeles',active:!!document.getElementById('locationActive')?.checked};
+  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];if(await persistLocations(next))closeLocationModal();
+}
+async function deleteLocation(id){const x=locationsData.find(v=>String(v.id)===String(id));if(!x||!confirm('Delete location "'+x.name+'"?'))return;await persistLocations(locationsData.filter(v=>String(v.id)!==String(id)))}
+document.getElementById('addLocationButton')?.addEventListener('click',()=>openLocationModal());
+document.getElementById('closeLocationModal')?.addEventListener('click',closeLocationModal);
+document.getElementById('saveLocationButton')?.addEventListener('click',saveLocation);
+document.getElementById('locationModal')?.addEventListener('click',e=>{if(e.target.id==='locationModal')closeLocationModal()});
+
 function renderClientChecklist(){
   const wrap=document.getElementById('clientOnboardingChecklist');if(!wrap)return;
   const items=[
     ['Business profile',!!settingsData?.businessName,'settings'],
     ['AI agent configured',!!agentData?.openingMessage,'agent'],
     ['Transfer number',!!agentData?.transferNumber,'agent'],
+    ['Phone number assigned',!!(phoneRoutingData?.number||sessionWorkspace?.phone),'phone-routing'],
+    ['Business location',locationsData.length>0,'locations'],
     ['Billing linked',!!sessionWorkspace?.stripe?.customerLinked,'billing']
   ];
   wrap.innerHTML=items.map(([label,done,view])=>'<button class="onboarding-item '+(done?'done':'')+'" data-view="'+view+'"><span>'+(done?'✓':'○')+'</span><b>'+esc(label)+'</b><small>'+(done?'Complete':'Needs attention')+'</small></button>').join('');
