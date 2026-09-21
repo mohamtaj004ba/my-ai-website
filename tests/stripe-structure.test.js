@@ -54,3 +54,9 @@ test('checkout completion page distinguishes confirmed and pending payments',()=
   assert.match(page,/Your payment is processing\./);
   assert.match(page,/Do not submit another payment\./);
 });
+
+test('embedded checkout is closed unless the explicit sales launch flag is enabled',()=>{
+  const checkout=fs.readFileSync(path.join(__dirname,'..','api','create-checkout-session.js'),'utf8');
+  assert.match(checkout,/process\.env\.CALLERCORE_CHECKOUT_ENABLED!=='true'/);
+  assert.match(checkout,/CallerCore checkout is not open yet/);
+});
