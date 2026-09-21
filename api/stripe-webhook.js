@@ -177,8 +177,9 @@ module.exports=async function handler(req,res){
   if(!checkoutEvent){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,ignored:true})}
   const session=event.data.object;
   if(event.type==='checkout.session.completed'&&!['paid','no_payment_required'].includes(session.payment_status))return res.status(200).json({received:true,pending_payment:true});
-  const mappedPlan=PLAN_BY_PAYMENT_LINK[session.payment_link];
-  if(!mappedPlan)return res.status(400).json({error:'Unknown payment link'});
+  const metadataPlan=String(session.metadata?.plan||'');
+  const mappedPlan=PLAN_BY_PAYMENT_LINK[session.payment_link]||(['Starter','Growth','Pro'].includes(metadataPlan)?metadataPlan:null);
+  if(!mappedPlan)return res.status(400).json({error:'Unknown checkout plan'});
   const paidPlan=normalizePlan(mappedPlan);
   const sessionKey=session.id?'stripe:session:'+session.id:null;
   let sessionState=sessionKey?await kv.get(sessionKey):null;
