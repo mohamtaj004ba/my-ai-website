@@ -219,6 +219,8 @@ async function adminProvisioning(req,res){
     const hasPhone=!!String(ws.phone||'').trim();
     const checklist={
       payment:onboarding?.checklist?.payment!==false,
+      accountReview:!!onboarding?.checklist?.accountReview,
+      onboardingSent:!!onboarding?.checklist?.onboardingSent,
       agreement:!!onboarding?.checklist?.agreement,
       intake:!!onboarding?.checklist?.intake,
       businessProfile:!!onboarding?.checklist?.businessProfile,
@@ -231,12 +233,16 @@ async function adminProvisioning(req,res){
       live:!!onboarding?.checklist?.live
     };
     let autoStage='Paid';
-    if(onboarding?.status==='intake_in_progress'||onboarding?.status==='awaiting_agreement'||(checklist.agreement&&!checklist.intake))autoStage='Intake';
-    if(checklist.intake&&checklist.agentDraft)autoStage='Building';
-    if(checklist.agentDraft&&checklist.phoneAssigned&&checklist.adminReview&&checklist.testCall)autoStage='Ready';
-    if(checklist.live||ws.status==='active'&&checklist.agentDraft&&checklist.phoneAssigned&&checklist.adminReview)autoStage='Live';
+    if(onboarding?.status==='awaiting_review')autoStage='Review';
+    else if(['awaiting_agreement','intake_in_progress'].includes(onboarding?.status)||checklist.onboardingSent&&!checklist.intake)autoStage='Intake';
+    else if(onboarding?.status==='building_review'||checklist.intake&&!checklist.adminReview)autoStage='Building';
+    else if(onboarding?.status==='qa_complete'||checklist.adminReview&&!checklist.testCall)autoStage='QA';
+    else if(onboarding?.status==='client_test'||checklist.testCall&&!checklist.clientApproval)autoStage='Client Test';
+    else if(onboarding?.status==='ready'||checklist.clientApproval&&!checklist.live)autoStage='Ready';
+    if(checklist.live||onboarding?.status==='live')autoStage='Live';
     const override=await kv.get('provisioning:override:'+id);
-    const stage=override&&['Paid','Intake','Building','Ready','Live'].includes(override.stage)?override.stage:autoStage;
+    const allowedStages=['Paid','Review','Intake','Building','QA','Client Test','Ready','Live'];
+    const stage=override&&allowedStages.includes(override.stage)?override.stage:autoStage;
     const doneCount=Object.values(checklist).filter(Boolean).length,totalCount=Object.keys(checklist).length;
     items.push({
       id:ws.id,name:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',
@@ -245,6 +251,11 @@ async function adminProvisioning(req,res){
       checklistDone:doneCount,checklistTotal:totalCount,
       completionPercent:Number(onboarding?.completionPercent||0),
       onboardingStatus:onboarding?.status||'paid',
+      reviewEligibleAt:onboarding?.reviewEligibleAt||null,
+      onboardingLinkSent:!!onboarding?.onboardingLinkSent,
+      onboardingSentAt:onboarding?.onboardingSentAt||null,
+      buildEligibleAt:onboarding?.buildEligibleAt||null,
+      adminReviewedAt:onboarding?.adminReviewedAt||null,
       agreementVersion:onboarding?.agreementVersion||'',
       agreementSignedAt:onboarding?.agreementSignedAt||null,
       agreementSignedName:onboarding?.agreementSignedName||'',
