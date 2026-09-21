@@ -394,9 +394,27 @@ async function createSupportTicket(req,res){
   await kv.set('support:'+id,ticket);
   const index=await kv.get('support:index')||[];const list=Array.isArray(index)?index:[];
   await kv.set('support:index',[id,...list.filter(x=>x!==id)].slice(0,500));
-  const platform=await kv.get('platform:settings')||{};
-  const to=platform.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
-  if(to){try{await sendMail({to,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\n\n'+message})}catch(err){console.error('support email failed',err)}}
+  const [platform,clientSettings]=await Promise.all([kv.get('platform:settings'),kv.get('settings:'+s.workspaceId)]);
+  const supportTo=platform?.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
+  if(supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',err)}}
+  if(s.email&&clientSettings?.emailAlerts!==false&&clientSettings?.notifySupport!==false){
+    try{
+      const firstName=String(ws.ownerName||clientSettings?.contactName||'').split(' ')[0]||'there';
+      const emailBody=lifecycleEmail({
+        preheader:'We received your CallerCore support request.',
+        eyebrow:'SUPPORT REQUEST RECEIVED',
+        title:'We’ve got your request, '+firstName+'.',
+        intro:'Your CallerCore support request has been received and added to our queue.',
+        statusLabel:'Ticket status',
+        statusText:(priority==='urgent'?'Urgent · ':'')+'Open',
+        bodyHtml:'<p style="margin:0 0 12px"><strong>'+escapeEmailHtml(subject)+'</strong></p><p style="margin:0">Reference: '+escapeEmailHtml(id.slice(0,8).toUpperCase())+'. Requests are reviewed during normal business hours, Monday–Friday, 9 AM–5 PM Pacific. You can reply to this email if there’s anything else we should know.</p>',
+        ctaLabel:'View support requests',
+        ctaUrl:requestOrigin(req)+'/dashboard',
+        siteUrl:requestOrigin(req)
+      });
+      await sendMail({to:s.email,subject:'We received your CallerCore support request',...emailBody});
+    }catch(err){console.error('support client acknowledgement failed',err)}
+  }
   return res.status(201).json({ok:true,ticket});
 }
 
@@ -468,19 +486,23 @@ async function adminSupportUpdate(req,res){
   if(!id||!['open','in_progress','resolved'].includes(status))return res.status(400).json({error:'Invalid support update'});
   const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
   const previousStatus=t.status||'open',next={...t,status,updatedAt:Date.now(),updatedBy:admin.email};await kv.set(key,next);
-  if(t.email&&status==='resolved'&&previousStatus!=='resolved'){
-    try{
-      const emailBody=lifecycleEmail({
-        preheader:'Your CallerCore support request has been resolved.',
-        eyebrow:'SUPPORT RESOLVED',
-        title:'Your support request is marked resolved.',
-        intro:'We’ve marked “'+escapeEmailHtml(t.subject||'your support request')+'” as resolved.',
-        statusLabel:'Status',statusText:'Resolved',
-        bodyHtml:'<p style="margin:0">If anything is still unresolved, reply to this email or reopen the conversation from Help & Support in your CallerCore dashboard.</p>',
-        ctaLabel:'Open support',ctaUrl:requestOrigin(req)+'/dashboard',siteUrl:requestOrigin(req)
-      });
-      await sendMail({to:t.email,subject:'CallerCore support request resolved · '+t.subject,...emailBody});
-    }catch(err){console.error('support resolved email failed',err)}
+  if(t.email&&status!==previousStatus){
+    const clientSettings=await kv.get('settings:'+t.workspaceId)||{};
+    if(clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false&&(status==='in_progress'||status==='resolved')){
+      try{
+        const resolved=status==='resolved',label=resolved?'Resolved':'In progress';
+        const emailBody=lifecycleEmail({
+          preheader:resolved?'Your CallerCore support request has been resolved.':'Your CallerCore support request is being worked on.',
+          eyebrow:resolved?'SUPPORT RESOLVED':'SUPPORT UPDATE',
+          title:resolved?'Your support request is marked resolved.':'We’re working on your support request.',
+          intro:resolved?'We’ve marked “'+escapeEmailHtml(t.subject||'your support request')+'” as resolved.':'Your request “'+escapeEmailHtml(t.subject||'support request')+'” is now in progress.',
+          statusLabel:'Status',statusText:label,
+          bodyHtml:resolved?'<p style="margin:0">If anything is still unresolved, reply to this email or reopen the conversation from Help & Support in your CallerCore dashboard.</p>':'<p style="margin:0">No action is required unless we contact you for more information. You can reply to this email or add information from Help & Support in your dashboard.</p>',
+          ctaLabel:'Open support',ctaUrl:requestOrigin(req)+'/dashboard',siteUrl:requestOrigin(req)
+        });
+        await sendMail({to:t.email,subject:'CallerCore support update · '+label,...emailBody});
+      }catch(err){console.error('support status email failed',err)}
+    }
   }
   await appendAudit(t.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'support_status_update',section:'support',meta:{ticketId:id,from:previousStatus,to:status}});
   return res.status(200).json({ok:true,ticket:next});
