@@ -14,6 +14,7 @@ const params=new URLSearchParams(location.search);
 const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
 let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
 let sessionWorkspace=null;
+let notificationData=[],notificationUnreadCount=0,notificationsLoading=false;
 let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',reason:'Roof replacement estimate',duration:'4:32',outcome:'Booked',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and booked an inspection for Tuesday at 10:30 AM.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can help get an inspection scheduled. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
@@ -1145,5 +1146,64 @@ modal?.querySelector('.modal-close')?.addEventListener('click',()=>{modal.classL
 document.getElementById('paymentButton')?.addEventListener('click',async()=>{const b=document.getElementById('paymentButton');if(b?.disabled)return;b.disabled=true;b.textContent='Opening…';const r=await fetch('/api/account?action=billing-portal',{method:'POST'}),data=await r.json().catch(()=>({}));if(r.ok&&data.url)location.href=data.url;else{alert(data.error||'Billing portal is unavailable.');b.disabled=false;b.textContent='Manage billing'}});
 document.getElementById('modalCta')?.addEventListener('click',async()=>{const b=document.getElementById('modalCta');b.disabled=true;b.textContent='Opening Stripe…';const r=await fetch('/api/account?action=billing-portal',{method:'POST'}),data=await r.json().catch(()=>({}));if(r.ok&&data.url)location.href=data.url;else{alert(data.error||'Stripe billing is unavailable for this workspace.');b.disabled=false;b.textContent='Open Stripe billing'}});
 
-(async()=>{if(document.body.dataset.dashboard==='admin'){await bootstrapAdmin();return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations()}else{renderBilling()}})();
+
+function notificationScope(){return document.body.dataset.dashboard==='admin'?'admin':'client'}
+function notificationKindIcon(kind){
+  return kind==='danger'?'!':kind==='warning'?'!':kind==='success'?'✓':'•'
+}
+async function loadNotifications({silent=true}={}){
+  if(demoMode||notificationsLoading||!document.getElementById('notificationBell'))return;
+  notificationsLoading=true;
+  try{
+    const scope=notificationScope(),r=await fetch('/api/account?action=notifications&scope='+scope,{headers:{Accept:'application/json'},cache:'no-store'});
+    if(r.ok){
+      const data=await r.json();notificationData=data.notifications||[];notificationUnreadCount=Number(data.unreadCount||0);renderNotifications();
+    }
+  }catch(e){if(!silent)console.error('Notifications failed',e)}
+  finally{notificationsLoading=false}
+}
+function renderNotifications(){
+  const badge=document.getElementById('notificationBadge'),list=document.getElementById('notificationList'),empty=document.getElementById('notificationEmpty');
+  if(badge){badge.textContent=notificationUnreadCount>99?'99+':String(notificationUnreadCount);badge.hidden=notificationUnreadCount===0}
+  if(!list)return;
+  list.innerHTML=notificationData.map(n=>'<button class="notification-item '+(n.read?'read':'unread')+'" data-notification-id="'+esc(n.id)+'" data-notification-view="'+esc(n.view||'overview')+'"><span class="notification-dot '+esc(n.kind||'info')+'">'+notificationKindIcon(n.kind)+'</span><span class="notification-copy"><b>'+esc(n.title||'Notification')+'</b><span>'+esc(n.body||'')+'</span><small>'+formatNotificationTime(n.createdAt)+'</small></span></button>').join('');
+  if(empty)empty.hidden=notificationData.length!==0;
+  list.querySelectorAll('[data-notification-id]').forEach(b=>b.addEventListener('click',()=>openNotification(b.dataset.notificationId,b.dataset.notificationView)));
+}
+function formatNotificationTime(ts){
+  const t=Number(ts||0);if(!t)return '';
+  const diff=Math.max(0,Date.now()-t),m=Math.floor(diff/60000);
+  if(m<1)return 'Just now';if(m<60)return m+'m ago';
+  const h=Math.floor(m/60);if(h<24)return h+'h ago';
+  const d=Math.floor(h/24);if(d<7)return d+'d ago';
+  return new Date(t).toLocaleDateString();
+}
+async function markNotifications(ids){
+  if(!ids?.length)return;
+  const scope=notificationScope();
+  await fetch('/api/account?action=notifications-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope,ids})}).catch(()=>{});
+  const set=new Set(ids);notificationData.forEach(n=>{if(set.has(n.id))n.read=true});notificationUnreadCount=notificationData.filter(n=>!n.read).length;renderNotifications();
+}
+async function openNotification(id,view){
+  await markNotifications([id]);
+  const panel=document.getElementById('notificationPanel'),bell=document.getElementById('notificationBell');if(panel)panel.hidden=true;if(bell)bell.setAttribute('aria-expanded','false');
+  if(view)showView(view);
+}
+async function markAllNotifications(){
+  const scope=notificationScope();
+  await fetch('/api/account?action=notifications-read-all',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope})}).catch(()=>{});
+  notificationData.forEach(n=>n.read=true);notificationUnreadCount=0;renderNotifications();
+}
+function initNotifications(){
+  const bell=document.getElementById('notificationBell'),panel=document.getElementById('notificationPanel');if(!bell||!panel)return;
+  bell.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;bell.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)loadNotifications({silent:true})});
+  panel.addEventListener('click',e=>e.stopPropagation());
+  document.getElementById('notificationReadAll')?.addEventListener('click',markAllNotifications);
+  document.addEventListener('click',()=>{panel.hidden=true;bell.setAttribute('aria-expanded','false')});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){panel.hidden=true;bell.setAttribute('aria-expanded','false')}});
+  loadNotifications({silent:true});
+  setInterval(()=>{if(!document.hidden)loadNotifications({silent:true})},60000);
+}
+
+(async()=>{if(document.body.dataset.dashboard==='admin'){const ok=await bootstrapAdmin();if(ok)initNotifications();return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations();initNotifications()}else{renderBilling()}})();
 document.getElementById('logoutButton')?.addEventListener('click',logout);
