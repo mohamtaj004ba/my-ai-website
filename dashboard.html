@@ -14,15 +14,15 @@
     <nav class="dash-nav" aria-label="Dashboard">
       <button class="nav-item active" data-view="overview">Overview</button>
       <button class="nav-item" data-view="calls">Calls</button>
-      <button class="nav-item" data-view="conversations">Conversations</button>
+      <button class="nav-item" data-view="conversations" data-feature="unifiedInbox">Conversations <span class="lock">GROWTH</span></button>
       <button class="nav-item" data-view="leads">Leads</button>
-      <button class="nav-item" data-view="appointments">Appointments</button>
+      <button class="nav-item" data-view="appointments" data-feature="appointments">Appointments <span class="lock">GROWTH</span></button>
       <div class="nav-label">AI & growth</div>
       <button class="nav-item" data-view="agent">AI Agent</button>
       <button class="nav-item" data-view="phone-routing">Phone & routing</button>
       <button class="nav-item" data-view="locations">Locations</button>
-      <button class="nav-item" data-view="automations" data-feature="automations">Automations <span class="lock">PRO</span></button>
-      <button class="nav-item" data-view="analytics" data-feature="advancedAnalytics">Analytics</button>
+      <button class="nav-item" data-view="automations" data-feature="automations">Automations <span class="lock">GROWTH</span></button>
+      <button class="nav-item" data-view="analytics" data-feature="advancedAnalytics">Analytics <span class="lock">GROWTH</span></button>
       <div class="nav-label">Account</div>
       <button class="nav-item" data-view="integrations">Integrations</button>
       <button class="nav-item" data-view="billing">Billing & plan</button>
@@ -149,7 +149,7 @@
       <div class="integration-grid">
         <article class="panel integration-card"><div><b>Google Calendar</b><p>Sync availability and bookings.</p></div><span class="tag amber" id="googleCalendarStatus">Not connected</span></article>
         <article class="panel integration-card"><div><b>Stripe</b><p>Subscription and billing status.</p></div><span class="tag amber" id="stripeIntegrationStatus">Not linked</span></article>
-        <article class="panel integration-card" data-feature="apiAccess"><div><b>API & Webhooks</b><p>Send CallerCore events to your systems.</p></div><span class="tag amber">Pro</span></article>
+        <article class="panel integration-card" data-feature="apiAccess"><div><b>API & Webhooks</b><p>Send CallerCore events to your systems.</p></div><span class="tag amber lock">PRO</span></article>
       </div>
       <article class="panel form-card" id="webhookPanel"><span class="eyebrow">Pro integration</span><h2>Outbound webhook</h2><label>Webhook URL<input id="webhookUrl" placeholder="https://example.com/callercore/events"></label><button class="primary" id="saveWebhookButton">Save webhook</button><small class="muted">CallerCore will only accept HTTPS endpoints.</small></article>
     </section>
