@@ -32,6 +32,11 @@ This document tracks the release-readiness state of the feature branch. It is in
 - Backup/recovery operating strategy documented in `docs/BACKUP_AND_RECOVERY.md`.
 - Incident-response runbook documented in `docs/INCIDENT_RESPONSE.md`.
 - Current server-side tenant/admin write-isolation review backed by regression tests.
+- Explicit `CALLERCORE_CHECKOUT_ENABLED` launch gate prevents accidental real sales before final approval.
+- Sensitive/cost-bearing public endpoints fail closed if rate-limit storage is unavailable.
+- Standard onboarding excludes Medical & Dental and server-side intake rejects regulated medical onboarding.
+- CodeQL workflow and Dependabot configuration added.
+- Client/admin portals surface partial API failures instead of silently presenting incomplete data as trustworthy zeros.
 
 ## Must complete before broad production launch
 
@@ -67,10 +72,14 @@ Run one complete disposable client through:
 17. billing state
 
 ### Billing
+- Keep `CALLERCORE_CHECKOUT_ENABLED` disabled until the final sales-open authorization.
 - Confirm production Stripe secret key, publishable key, and webhook signing secret are all present in the production environment.
 - Update the live Stripe webhook endpoint to include the five lifecycle events currently missing: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, and `invoice.paid`.
 - Create/activate a Stripe Customer Portal configuration; the connected live CallerCore account currently has no active portal configuration.
+- Complete Washington tax registration/classification; Stripe Tax is active but the connected live account currently has no tax registrations configured.
+- Configure the correct Stripe product tax treatment and enable automatic tax only after registration/classification is confirmed.
 - Define and implement minute overage policy, if any.
+- Define Pro unlimited/fair-use policy before material high-volume usage.
 - Verify subscription-plan change behavior against real Stripe Price IDs.
 - Test failed-payment recovery and cancellation in Stripe test mode.
 
@@ -89,6 +98,7 @@ Run one complete disposable client through:
 - Carrier registration where required.
 
 ### Legal / compliance
+- Confirm CallerCore legal entity / Washington business license / UBI and any Spokane business registration required for the operating location.
 - Attorney review of Service Agreement v2.0.
 - Attorney review of Privacy Policy and Terms.
 - Confirm call-recording disclosure approach by client/jurisdiction.
@@ -96,8 +106,13 @@ Run one complete disposable client through:
 - Confirm data-retention policy.
 
 ### Security / reliability
+- Upgrade Vercel from Hobby before commercial launch; Vercel restricts Hobby to non-commercial personal use.
+- Enable/enforce the existing CallerCore GitHub ruleset for main and require successful checks.
+- Validate SPF/DKIM/DMARC for the CallerCore sending domain.
+- Configure production uptime/error monitoring and owner alerts.
 - Resolve/verify the Preview Upstash / Vercel KV connection; the observed DNS lookup failures came from an older `feature/callercore-dashboards` preview deployment, not a production deployment.
 - Complete protected-preview browser QA.
+- Review the admin-only Gmail OAuth deployment posture: current `gmail.modify` scope is restricted; complete Google verification/security assessment before offering Gmail connections broadly to external customers.
 - Re-run focused authorization/tenant-isolation review when new authenticated API surfaces are added.
 - Webhook security review for all external providers as they are added.
 - Add provider-managed point-in-time database recovery before CallerCore reaches material production scale; current workspace exports are an interim recovery layer.
