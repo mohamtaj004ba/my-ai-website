@@ -46,6 +46,8 @@ jobs:
         run: node --test tests/stripe-structure.test.js
       - name: Gmail safeguards
         run: node --test tests/gmail-safeguards.test.js
+      - name: Mailgun domain safeguards
+        run: node --test tests/mailgun-domain.test.js
       - name: Admin safeguards
         run: node --test tests/admin-safeguards.test.js
       - name: Authentication safeguards
