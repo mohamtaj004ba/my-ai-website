@@ -4,12 +4,10 @@ const {URL}=require('url');
 const dns=require('dns');
 const net=require('net');
 const {kv}=require('@vercel/kv');
+const {rateLimit,requestIp}=require('../lib/rate-limit');
 
 const MAX_BYTES=550*1000,MAX_PAGES=6,FETCH_TIMEOUT_MS=8000,ALLOWED_HOSTS=new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
-const hits=new Map(),RATE_WINDOW_MS=10*60*1000,RATE_MAX=8;
 function isAllowedOrigin(req){const c=req.headers.origin||req.headers.referer||'';if(!c)return false;try{const h=new URL(c).host;return ALLOWED_HOSTS.has(h)||h.endsWith('.vercel.app')}catch(_){return false}}
-function getIp(req){const f=req.headers['x-forwarded-for'];return f?f.split(',')[0].trim():(req.socket?.remoteAddress||'unknown')}
-function rateLimited(ip){const now=Date.now(),e=hits.get(ip);if(!e||now-e.start>RATE_WINDOW_MS){hits.set(ip,{start:now,count:1});return false}e.count++;return e.count>RATE_MAX}
 function isPrivateAddress(address){if(!address)return true;if(net.isIPv4(address)){const p=address.split('.').map(Number);return p[0]===10||p[0]===127||p[0]===0||(p[0]===169&&p[1]===254)||(p[0]===172&&p[1]>=16&&p[1]<=31)||(p[0]===192&&p[1]===168)||(p[0]===100&&p[1]>=64&&p[1]<=127)||p[0]>=224}const a=address.toLowerCase();return a==='::1'||a==='::'||a.startsWith('fc')||a.startsWith('fd')||/^fe[89ab]/.test(a)||a.startsWith('::ffff:127.')||a.startsWith('::ffff:10.')||a.startsWith('::ffff:192.168.')}
 function safeLookup(hostname,options,cb){dns.lookup(hostname,{all:false,verbatim:true},(err,address,family)=>{if(err)return cb(err);if(isPrivateAddress(address))return cb(new Error('blocked_host'));cb(null,address,family)})}
 function validateTarget(u){if(!['http:','https:'].includes(u.protocol))throw new Error('invalid_protocol');const host=u.hostname.toLowerCase();if(host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||host.endsWith('.internal'))throw new Error('blocked_host');if(net.isIP(host)&&isPrivateAddress(host))throw new Error('blocked_host');if(u.username||u.password)throw new Error('credentials_not_allowed');if(u.port&&!['80','443'].includes(u.port))throw new Error('blocked_port')}
@@ -29,7 +27,7 @@ module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');const origin=req.headers.origin||'';
   if(req.method==='OPTIONS'){if(!isAllowedOrigin(req))return res.status(403).end();res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type');return res.status(200).end()}
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});if(!isAllowedOrigin(req))return res.status(403).json({error:'Forbidden'});res.setHeader('Access-Control-Allow-Origin',origin);
-  if(rateLimited(getIp(req)))return res.status(429).json({ok:false,reason:'rate_limited'});if(!process.env.ANTHROPIC_API_KEY)return res.status(503).json({ok:false,reason:'assistant_unavailable'});
+  const rl=await rateLimit({scope:'prefill-crawl',identifier:requestIp(req),limit:8,windowSeconds:600});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ok:false,reason:'rate_limited'})}if(!process.env.ANTHROPIC_API_KEY)return res.status(503).json({ok:false,reason:'assistant_unavailable'});
   const {url,token}=req.body||{};if(!url||typeof url!=='string')return res.status(400).json({error:'Missing url'});if(url.length>500)return res.status(400).json({error:'URL too long'});
   const normalized=/^https?:\/\//i.test(url)?url:'https://'+url;
   try{
