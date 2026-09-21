@@ -4,7 +4,7 @@ const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession}=
 const {sendMail}=require('../lib/mail');
 const {entitlementsFor}=require('../lib/plans');
 const {emailKey}=require('../lib/site-analytics');
-const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,sendMessage:sendGmailMessage}=require('../lib/gmail');
+const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
 const WINDOW=10*60,MAX=5;
@@ -417,6 +417,14 @@ async function adminGmailInbox(req,res){
     return res.status(200).json({configured:true,...data});
   }catch(err){console.error('gmail inbox failed',err);return res.status(502).json({error:err.message||'Gmail sync failed'})}
 }
+
+async function adminGmailRead(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).threadId||'').slice(0,120);if(!id)return res.status(400).json({error:'Thread id required'});
+  try{await markGmailThreadRead(admin.email,id);return res.status(200).json({ok:true})}
+  catch(err){console.error('gmail mark read failed',err);return res.status(502).json({error:err.message||'Could not update Gmail thread'})}
+}
+
 async function adminGmailSend(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const b=req.body||{},to=String(b.to||'').trim().toLowerCase(),subject=String(b.subject||'').trim().slice(0,300),body=String(b.body||'').trim().slice(0,20000);
@@ -1026,6 +1034,7 @@ module.exports=async function handler(req,res){
   if(action==='admin-gmail-connect'&&req.method==='POST')return adminGmailConnect(req,res);
   if(action==='admin-gmail-disconnect'&&req.method==='POST')return adminGmailDisconnect(req,res);
   if(action==='admin-gmail-inbox'&&req.method==='GET')return adminGmailInbox(req,res);
+  if(action==='admin-gmail-read'&&req.method==='POST')return adminGmailRead(req,res);
   if(action==='admin-gmail-send'&&req.method==='POST')return adminGmailSend(req,res);
   if(action==='admin-website-conversation'&&req.method==='GET')return adminWebsiteConversation(req,res);
   if(action==='admin-website-reply'&&req.method==='POST')return adminWebsiteReply(req,res);
