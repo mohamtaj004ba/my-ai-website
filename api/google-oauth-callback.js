@@ -1,5 +1,6 @@
 const {kv}=require('@vercel/kv');
 const {exchangeCode,saveConnection}=require('../lib/gmail');
+const {safeError}=require('../lib/safe-log');
 
 module.exports=async function handler(req,res){
   const state=String(req.query?.state||''),code=String(req.query?.code||''),error=String(req.query?.error||'');
@@ -16,7 +17,7 @@ module.exports=async function handler(req,res){
     await saveConnection(record.adminEmail,tokens,profile);
     return res.redirect('/admin-dashboard?gmail=connected');
   }catch(err){
-    console.error('gmail oauth callback failed',err);
+    console.error('gmail oauth callback failed',safeError(err));
     return res.redirect('/admin-dashboard?gmail=error');
   }
 };
