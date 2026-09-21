@@ -170,6 +170,77 @@ async function updateAppointment(req,res){
   return res.status(200).json({ok:true,updated});
 }
 
+async function analytics(req,res){
+  const access=await requireFeature(req,res,'advancedAnalytics');if(!access)return;
+  const calls=await kv.get('calls:'+access.session.workspaceId)||[];
+  const leads=await kv.get('leads:'+access.session.workspaceId)||[];
+  const appointments=await kv.get('appointments:'+access.session.workspaceId)||[];
+  const safeCalls=Array.isArray(calls)?calls:[],safeLeads=Array.isArray(leads)?leads:[],safeAppointments=Array.isArray(appointments)?appointments:[];
+  const qualified=safeCalls.filter(x=>/qualified|booked/i.test(String(x.outcome||''))).length;
+  const won=safeLeads.filter(x=>x&&x.stage==='Won').length;
+  const pipeline=safeLeads.reduce((sum,x)=>sum+Number(x&&x.value||0),0);
+  const reasons={};safeCalls.forEach(x=>{const k=String(x&&x.reason||'Other').slice(0,80);reasons[k]=(reasons[k]||0)+1});
+  return res.status(200).json({analytics:{
+    calls:safeCalls.length,leads:safeLeads.length,appointments:safeAppointments.length,
+    qualified,won,pipeline,conversion:safeLeads.length?Math.round((won/safeLeads.length)*100):0,
+    callReasons:Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([label,value])=>({label,value}))
+  }});
+}
+
+async function settings(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const saved=await kv.get('settings:'+s.workspaceId)||{};
+  return res.status(200).json({settings:{
+    businessName:saved.businessName||ws.name||'',
+    primaryEmail:saved.primaryEmail||ws.ownerEmail||s.email||'',
+    timezone:saved.timezone||'America/Los_Angeles',
+    notificationEmail:saved.notificationEmail||ws.ownerEmail||s.email||'',
+    smsAlerts:saved.smsAlerts!==false,
+    emailAlerts:saved.emailAlerts!==false
+  }});
+}
+
+async function saveSettings(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const body=req.body||{},clean=(v,n)=>String(v||'').trim().slice(0,n);
+  const settings={
+    businessName:clean(body.businessName,160),
+    primaryEmail:clean(body.primaryEmail,200).toLowerCase(),
+    timezone:clean(body.timezone,100)||'America/Los_Angeles',
+    notificationEmail:clean(body.notificationEmail,200).toLowerCase(),
+    smsAlerts:body.smsAlerts!==false,emailAlerts:body.emailAlerts!==false,updatedAt:Date.now()
+  };
+  await kv.set('settings:'+s.workspaceId,settings);
+  if(settings.businessName){
+    const key='workspace:'+s.workspaceId,ws=await kv.get(key);
+    if(ws)await kv.set(key,{...ws,name:settings.businessName,updatedAt:Date.now()});
+  }
+  return res.status(200).json({ok:true,settings});
+}
+
+async function integrations(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const saved=await kv.get('integrations:'+s.workspaceId)||{};
+  return res.status(200).json({integrations:{
+    googleCalendar:!!saved.googleCalendar,
+    stripe:!!ws.stripeCustomerId,
+    webhookUrl:saved.webhookUrl||'',
+    apiAccess:entitlementsFor(ws.plan).features.apiAccess
+  }});
+}
+
+async function saveIntegrations(req,res){
+  const access=await requireFeature(req,res,'apiAccess');if(!access)return;
+  const url=String((req.body||{}).webhookUrl||'').trim().slice(0,500);
+  if(url&&!/^https:\/\//i.test(url))return res.status(400).json({error:'Webhook URL must use HTTPS'});
+  const saved=await kv.get('integrations:'+access.session.workspaceId)||{};
+  const next={...saved,webhookUrl:url,updatedAt:Date.now()};
+  await kv.set('integrations:'+access.session.workspaceId,next);
+  return res.status(200).json({ok:true,integrations:next});
+}
+
 async function calls(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const items=await kv.get('calls:'+s.workspaceId)||[];
@@ -213,6 +284,11 @@ module.exports=async function handler(req,res){
   if(action==='agent-save'&&req.method==='POST')return saveAgent(req,res);
   if(action==='automations'&&req.method==='GET')return automations(req,res);
   if(action==='automations-save'&&req.method==='POST')return saveAutomations(req,res);
+  if(action==='analytics'&&req.method==='GET')return analytics(req,res);
+  if(action==='settings'&&req.method==='GET')return settings(req,res);
+  if(action==='settings-save'&&req.method==='POST')return saveSettings(req,res);
+  if(action==='integrations'&&req.method==='GET')return integrations(req,res);
+  if(action==='integrations-save'&&req.method==='POST')return saveIntegrations(req,res);
   if(action==='calls'&&req.method==='GET')return calls(req,res);
   if(action==='conversations'&&req.method==='GET')return conversations(req,res);
   if(action==='appointments'&&req.method==='GET')return appointments(req,res);
