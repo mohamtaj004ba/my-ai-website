@@ -62,14 +62,29 @@
       <div class="empty-state" id="callsEmpty" hidden><h3>No calls yet</h3><p>Caller activity for this workspace will appear here once your AI number begins handling calls.</p></div>
     </section>
 
-    <section class="view" id="view-conversations"><div class="page-head"><div><span class="eyebrow">Conversations</span><h1>One customer timeline.</h1><p>Voice and SMS today, with chat and email ready for future expansion.</p></div></div><div class="locked-stage" data-feature-card="unifiedInbox"></div></section>
+    <section class="view" id="view-conversations">
+      <div class="page-head"><div><span class="eyebrow">Conversations</span><h1>One customer timeline.</h1><p>Voice and SMS in one shared inbox, with room for chat and email later.</p></div></div>
+      <div id="conversationGate" class="locked-stage" data-feature-card="unifiedInbox"></div>
+      <div id="conversationApp" class="conversation-shell" hidden>
+        <aside class="conversation-list"><div class="toolbar"><input id="conversationSearch" type="search" placeholder="Search conversations…"></div><div id="conversationThreads"></div></aside>
+        <section class="conversation-panel"><div class="conversation-head"><div><span class="eyebrow">Customer timeline</span><h2 id="conversationName">Select a conversation</h2></div><span class="tag green" id="conversationStatus">Active</span></div><div class="message-stream" id="messageStream"><div class="empty-state"><h3>Select a conversation</h3><p>Calls and messages will appear together here.</p></div></div></section>
+      </div>
+    </section>
     <section class="view" id="view-leads">
       <div class="page-head"><div><span class="eyebrow">Leads</span><h1>From ringing to revenue.</h1><p>Track every captured opportunity through the pipeline.</p></div></div>
       <div class="toolbar"><input id="leadSearch" type="search" placeholder="Search leads…"><span class="muted">Drag cards between stages to update the pipeline.</span></div>
       <div class="kanban" id="leadKanban"></div>
       <div class="empty-state" id="leadsEmpty" hidden><h3>No leads yet</h3><p>Qualified callers and captured opportunities will populate this pipeline automatically.</p></div>
     </section>
-    <section class="view" id="view-appointments"><div class="page-head"><div><span class="eyebrow">Appointments</span><h1>Booked while you work.</h1><p>See AI-booked appointments and upcoming customer commitments.</p></div></div><div class="locked-stage" data-feature-card="appointments"></div></section>
+    <section class="view" id="view-appointments">
+      <div class="page-head"><div><span class="eyebrow">Appointments</span><h1>Booked while you work.</h1><p>See AI-booked appointments and upcoming customer commitments.</p></div></div>
+      <div id="appointmentGate" class="locked-stage" data-feature-card="appointments"></div>
+      <div id="appointmentApp" hidden>
+        <div class="appointment-summary"><article><span>Upcoming</span><strong id="apptUpcoming">0</strong></article><article><span>Confirmed</span><strong id="apptConfirmed">0</strong></article><article><span>Completed</span><strong id="apptCompleted">0</strong></article></div>
+        <article class="panel table-panel"><div class="appointment-row head"><span>Customer</span><span>Date & time</span><span>Service</span><span>Status</span><span>Source</span></div><div id="appointmentTable"></div></article>
+        <div class="empty-state" id="appointmentsEmpty" hidden><h3>No appointments yet</h3><p>AI-booked appointments will appear here once booking is enabled.</p></div>
+      </div>
+    </section>
     <section class="view" id="view-agent"><div class="page-head"><div><span class="eyebrow">AI Agent</span><h1>Meet Maya.</h1><p>Control what your receptionist knows, says and does.</p></div></div><div class="two-col"><article class="panel form-card"><label>Agent name<input value="Maya"></label><label>Role<input value="AI Receptionist"></label><label>Opening message<textarea>Thank you for calling Alpine Roofing. This is Maya. How can I help you today?</textarea></label><button class="primary">Save changes</button></article><article class="panel"><span class="eyebrow">Knowledge</span><h2>Business brain</h2><div class="setting-row"><span>Services & pricing</span><b>12 items</b></div><div class="setting-row"><span>Hours & service area</span><b>Configured</b></div><div class="setting-row"><span>FAQs & policies</span><b>24 answers</b></div><div class="setting-row"><span>Emergency rules</span><b>3 routes</b></div></article></div></section>
     <section class="view" id="view-automations"><div class="page-head"><div><span class="eyebrow">Automations</span><h1>Follow up without chasing.</h1><p>Trigger actions from calls, leads and appointments.</p></div></div><div class="locked-stage" data-feature-card="automations"></div></section>
     <section class="view" id="view-analytics"><div class="page-head"><div><span class="eyebrow">Analytics</span><h1>Know what the phones are telling you.</h1><p>Turn call activity into business decisions.</p></div></div><div class="locked-stage" data-feature-card="advancedAnalytics"></div></section>
