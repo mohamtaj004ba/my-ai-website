@@ -404,7 +404,7 @@ async function session(req,res){
     workspace:{
       id:ws.id,name:ws.name,plan:ent.plan,status:ws.status||'active',
       subscriptionStatus:ws.subscriptionStatus||'active',
-      usage:ws.usage||{minutes:0},
+      usage:ws.usage||{minutes:0},phone:ws.phone||'',locations:ent.locations,
       stripe:{customerLinked:!!ws.stripeCustomerId,subscriptionLinked:!!ws.stripeSubscriptionId},
       entitlements:ent
     }
@@ -428,6 +428,41 @@ async function requireFeature(req,res,feature){
   const ent=entitlementsFor(ws.plan);
   if(!ent.features[feature])return res.status(403).json({error:'Upgrade required',feature}),null;
   return {session:s,workspace:ws,entitlements:ent};
+}
+
+async function phoneRouting(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const numbers=await kv.get('phone:index')||[];
+  const item=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===s.workspaceId)||null;
+  return res.status(200).json({routing:item?{number:item.number||'',label:item.label||'Primary',provider:item.provider||'Vapi',forwardingFrom:item.forwardingFrom||'',transferNumber:item.transferNumber||'',afterHours:item.afterHours||'ai',smsEnabled:item.smsEnabled!==false,status:item.status||'active'}:null});
+}
+
+async function locations(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const items=await kv.get('locations:'+s.workspaceId)||[];
+  const ent=entitlementsFor(ws.plan);
+  return res.status(200).json({locations:Array.isArray(items)?items:[],limit:ent.locations});
+}
+
+async function saveLocations(req,res){
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const ent=entitlementsFor(ws.plan),incoming=Array.isArray((req.body||{}).locations)?req.body.locations:[];
+  if(incoming.length>ent.locations)return res.status(403).json({error:'Your '+ent.plan+' plan supports up to '+ent.locations+' location'+(ent.locations===1?'':'s')});
+  const clean=(v,n)=>String(v||'').trim().slice(0,n);
+  const items=incoming.map((x,i)=>({
+    id:clean(x.id,100)||crypto.randomUUID(),
+    name:clean(x.name,120)||('Location '+(i+1)),
+    phone:clean(x.phone,40),
+    address:clean(x.address,300),
+    timezone:clean(x.timezone,100)||'America/Los_Angeles',
+    active:x.active!==false,
+    updatedAt:Date.now()
+  }));
+  for(const item of items){if(item.phone&&!/^\+?[0-9() .-]{7,30}$/.test(item.phone))return res.status(400).json({error:'One or more location phone numbers are invalid'})}
+  await kv.set('locations:'+s.workspaceId,items);
+  return res.status(200).json({ok:true,locations:items,limit:ent.locations});
 }
 
 async function agent(req,res){
@@ -671,6 +706,9 @@ module.exports=async function handler(req,res){
   if(action==='verify'&&req.method==='GET')return verify(req,res);
   if(action==='session'&&req.method==='GET')return session(req,res);
   if(action==='workspace'&&req.method==='GET')return workspace(req,res);
+  if(action==='phone-routing'&&req.method==='GET')return phoneRouting(req,res);
+  if(action==='locations'&&req.method==='GET')return locations(req,res);
+  if(action==='locations-save'&&req.method==='POST')return saveLocations(req,res);
   if(action==='agent'&&req.method==='GET')return agent(req,res);
   if(action==='agent-save'&&req.method==='POST')return saveAgent(req,res);
   if(action==='automations'&&req.method==='GET')return automations(req,res);
