@@ -14,6 +14,22 @@ const params=new URLSearchParams(location.search);
 const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
 let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
 let sessionWorkspace=null;
+let callsData=[],leadsData=[];
+const DEMO_CALLS=[
+{id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',reason:'Roof replacement estimate',duration:'4:32',outcome:'Booked',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and booked an inspection for Tuesday at 10:30 AM.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can help get an inspection scheduled. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
+{id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
+{id:'c3',caller:'Unknown caller',phone:'Private',reason:'Missed call recovery',duration:'—',outcome:'Follow-up',agent:'Recovery',time:'2:41 PM',summary:'The caller disconnected before the AI answered. CallerCore automatically sent the missed-call recovery text.',qualification:{Intent:'Unknown',Service:'Unknown',Timeline:'Unknown',Value:'—'},transcript:[['CallerCore','Missed call detected. Recovery SMS sent automatically.']]}
+];
+const DEMO_LEADS=[
+{id:'l1',name:'Emily Ross',service:'Roof leak',value:2800,stage:'New',source:'AI call',age:'12m'},
+{id:'l2',name:'David Nguyen',service:'Gutter replacement',value:1900,stage:'Contacted',source:'SMS',age:'1h'},
+{id:'l3',name:'Mike Peterson',service:'Storm damage',value:4200,stage:'Qualified',source:'AI call',age:'2h'},
+{id:'l4',name:'Sarah Johnson',service:'Roof replacement',value:8500,stage:'Appointment',source:'AI call',age:'3h'},
+{id:'l5',name:'Jared Lee',service:'Full roof',value:13400,stage:'Won',source:'AI call',age:'2d'},
+{id:'l6',name:'Chris Bell',service:'Repair estimate',value:1600,stage:'Lost',source:'Web',age:'4d'}
+];
+const LEAD_STAGES=['New','Contacted','Qualified','Appointment','Won','Lost'];
+function esc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 
 async function bootstrapClient(){
   if(document.body.dataset.dashboard!=='client')return true;
@@ -37,7 +53,7 @@ async function bootstrapClient(){
 async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
 
 
-function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();}
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
 
@@ -52,9 +68,88 @@ const wrap=document.getElementById('planComparison');if(wrap)wrap.innerHTML=Obje
 function setPlan(plan){currentPlan=plan;document.getElementById('planSelector')&&(document.getElementById('planSelector').value=plan);renderBilling();renderStages();renderOverviewUnlocks()}
 document.getElementById('planSelector')?.addEventListener('change',e=>setPlan(e.target.value));
 
+
+async function loadOperations(){
+  if(demoMode){callsData=DEMO_CALLS.map(x=>({...x}));leadsData=DEMO_LEADS.map(x=>({...x}));renderCalls();renderLeads();return}
+  try{
+    const [cr,lr]=await Promise.all([
+      fetch('/api/account?action=calls',{headers:{Accept:'application/json'},cache:'no-store'}),
+      fetch('/api/account?action=leads',{headers:{Accept:'application/json'},cache:'no-store'})
+    ]);
+    if(cr.ok)callsData=(await cr.json()).calls||[];
+    if(lr.ok)leadsData=(await lr.json()).leads||[];
+  }catch(err){console.error('Operations data failed',err)}
+  renderCalls();renderLeads();
+}
+function outcomeClass(outcome){return /book|qualif/i.test(outcome)?'green':/miss|follow/i.test(outcome)?'amber':'amber'}
+function renderCalls(){
+  const wrap=document.getElementById('callsTable');if(!wrap)return;
+  const q=(document.getElementById('callSearch')?.value||'').trim().toLowerCase();
+  const filter=document.getElementById('callFilter')?.value||'all';
+  const rows=callsData.filter(x=>{
+    const hay=[x.caller,x.phone,x.reason,x.outcome,x.agent].join(' ').toLowerCase();
+    return (!q||hay.includes(q))&&(filter==='all'||String(x.outcome||'').includes(filter));
+  });
+  wrap.innerHTML=rows.map(x=>'<div class="call-row data" data-call-id="'+esc(x.id)+'"><span><strong>'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span>'+esc(x.reason||'—')+'</span><span>'+esc(x.duration||'—')+'</span><span class="tag '+outcomeClass(x.outcome)+'">'+esc(x.outcome||'Unknown')+'</span><span>'+esc(x.agent||'Maya')+'</span></div>').join('');
+  document.getElementById('callsEmpty').hidden=rows.length!==0;
+  wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
+}
+function openCall(id){
+  const x=callsData.find(c=>String(c.id)===String(id));if(!x)return;
+  document.getElementById('drawerCaller').textContent=x.caller||'Unknown caller';
+  document.getElementById('drawerMeta').innerHTML=[x.phone,x.time,x.duration,x.outcome,x.agent].filter(Boolean).map(v=>'<span>'+esc(v)+'</span>').join('');
+  document.getElementById('drawerSummary').textContent=x.summary||'No AI summary is available yet.';
+  const q=x.qualification||{};
+  document.getElementById('drawerQualification').innerHTML=Object.entries(q).map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('')||'<span class="muted">No qualification data yet.</span>';
+  const t=Array.isArray(x.transcript)?x.transcript:[];
+  document.getElementById('drawerTranscript').innerHTML=t.map(pair=>'<div class="'+(String(pair[0]).toLowerCase()==='maya'?'ai':'')+'"><b>'+esc(pair[0])+'</b>'+esc(pair[1])+'</div>').join('')||'<span class="muted">Transcript unavailable.</span>';
+  document.getElementById('callDrawer').classList.add('open');document.getElementById('drawerBackdrop').classList.add('open');
+  document.getElementById('callDrawer').setAttribute('aria-hidden','false');
+}
+function closeCall(){document.getElementById('callDrawer')?.classList.remove('open');document.getElementById('drawerBackdrop')?.classList.remove('open');document.getElementById('callDrawer')?.setAttribute('aria-hidden','true')}
+function money(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
+function renderLeads(){
+  const board=document.getElementById('leadKanban');if(!board)return;
+  const q=(document.getElementById('leadSearch')?.value||'').trim().toLowerCase();
+  const visible=leadsData.filter(x=>!q||[x.name,x.service,x.source,x.stage].join(' ').toLowerCase().includes(q));
+  board.innerHTML=LEAD_STAGES.map(stage=>{
+    const items=visible.filter(x=>(x.stage||'New')===stage);
+    return '<div class="lead-column" data-stage="'+stage+'"><h3>'+stage+' <span>'+items.length+'</span></h3>'+items.map(x=>'<article draggable="true" data-lead-id="'+esc(x.id)+'"><b>'+esc(x.name||'Unnamed lead')+'</b><small>'+esc(x.service||'General inquiry')+'</small><div class="lead-value">'+money(x.value)+'</div><div class="lead-foot"><span>'+esc(x.source||'CallerCore')+'</span><span>'+esc(x.age||'')+'</span></div></article>').join('')+'</div>';
+  }).join('');
+  document.getElementById('leadsEmpty').hidden=visible.length!==0;
+  board.querySelectorAll('[draggable="true"]').forEach(card=>{
+    card.addEventListener('dragstart',()=>{card.classList.add('dragging');card.dataset.dragging='1'});
+    card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+  });
+  board.querySelectorAll('.lead-column').forEach(col=>{
+    col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drop-active')});
+    col.addEventListener('dragleave',()=>col.classList.remove('drop-active'));
+    col.addEventListener('drop',async e=>{
+      e.preventDefault();col.classList.remove('drop-active');
+      const card=board.querySelector('[data-dragging="1"]');if(!card)return;
+      card.removeAttribute('data-dragging');await moveLead(card.dataset.leadId,col.dataset.stage);
+    });
+  });
+}
+async function moveLead(id,stage){
+  const lead=leadsData.find(x=>String(x.id)===String(id));if(!lead||lead.stage===stage)return;
+  const previous=lead.stage;lead.stage=stage;renderLeads();
+  if(demoMode)return;
+  try{
+    const r=await fetch('/api/account?action=lead-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})});
+    if(!r.ok)throw new Error('update failed');
+  }catch(err){lead.stage=previous;renderLeads();console.error(err)}
+}
+document.getElementById('callSearch')?.addEventListener('input',renderCalls);
+document.getElementById('callFilter')?.addEventListener('change',renderCalls);
+document.getElementById('leadSearch')?.addEventListener('input',renderLeads);
+document.getElementById('closeCallDrawer')?.addEventListener('click',closeCall);
+document.getElementById('drawerBackdrop')?.addEventListener('click',closeCall);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCall()});
+
 const modal=document.getElementById('upgradeModal');function openModal(target){if(!modal)return;const t=PLAN_DATA[target];document.getElementById('modalTitle').textContent=(t.price>PLAN_DATA[currentPlan].price?'Upgrade to ':'Switch to ')+target;document.getElementById('modalCopy').textContent=target==='Pro'?'Unlock the full CallerCore platform, including API access, advanced integrations and custom workflows.':'Unlock appointment booking, automations, the unified inbox and advanced analytics.';const fs=Object.entries(FEATURE_INFO).filter(([k,v])=>target==='Pro'||v.tier==='Growth').slice(0,target==='Pro'?6:4);document.getElementById('modalFeatures').innerHTML=fs.map(([k,v])=>'<span>✓ '+v.title+'</span>').join('');document.getElementById('modalCta').textContent='Continue with Stripe · $'+t.price+'/mo';modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
 function bindUpgradeButtons(){document.querySelectorAll('[data-upgrade]').forEach(b=>{b.onclick=()=>openModal(b.dataset.upgrade)})}
 document.querySelector('.modal-close')?.addEventListener('click',()=>modal.classList.remove('open'));modal?.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});document.getElementById('upgradeButton')?.addEventListener('click',()=>document.getElementById('planComparison')?.scrollIntoView({behavior:'smooth'}));document.getElementById('paymentButton')?.addEventListener('click',()=>openModal(currentPlan));document.getElementById('modalCta')?.addEventListener('click',()=>alert('Prototype only: authenticated Stripe customer + subscription mapping is required before enabling real in-dashboard billing changes.'));
 
-(async()=>{const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan)}else{renderBilling()}})();
+(async()=>{const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations()}else{renderBilling()}})();
 document.getElementById('logoutButton')?.addEventListener('click',logout);
