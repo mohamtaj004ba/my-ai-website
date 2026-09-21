@@ -110,9 +110,11 @@ Run one complete disposable client through:
 - Keep DMARC under review and move from monitoring toward enforcement after continued sender alignment validation.
 - Vercel anomaly monitoring is configured. Signed webhook-to-email fallback is coded/configured and requires a post-merge production delivery test.
 - Resolve/verify the Preview Upstash / Vercel KV connection; the observed DNS lookup failures came from an older `feature/callercore-dashboards` preview deployment, not a production deployment.
-- Protected Preview automation access is working.
+- Protected Preview automation access was successfully used for QA.
 - Preview KV health is operational.
-- Static/legal/dashboard assets and unauthenticated API access-control smoke checks pass on the protected preview.
+- Static/legal/dashboard assets and unauthenticated API access-control smoke checks pass on the cleaned protected preview head.
+- Temporary diagnostic code was removed and verified absent.
+- Rotate the automation bypass secret after the completed QA cycle.
 - Complete authenticated disposable-client POST/browser E2E before release, and verify Preview KV isolation before destructive testing.
 - Keep Gmail admin-only at launch. Complete Google verification/security assessment before offering Gmail connections broadly to external customers.
 - Re-run focused authorization/tenant-isolation review when new authenticated API surfaces are added.
