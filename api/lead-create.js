@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
   try {
     await kv.set(
       `lead:${leadId}`,
-      { name, business, email, phone, industry, plan, prospectId:prospect.id, visitorId, sessionId, createdAt: Date.now() },
+      { name, business, email, phone, industry, plan, prospectId:prospect.id, visitorId, sessionId, utmSource, utmMedium, utmCampaign, acquisition:{source:prospect.firstSource||prospect.source||'website',utmSource:prospect.firstUtmSource||prospect.utmSource||utmSource,utmMedium:prospect.firstUtmMedium||prospect.utmMedium||utmMedium,utmCampaign:prospect.firstUtmCampaign||prospect.utmCampaign||utmCampaign}, createdAt: Date.now() },
       { ex: 60 * 60 * 24 * 7 }
     );
     return res.status(200).json({ leadId, prospectId:prospect.id });
