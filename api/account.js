@@ -185,10 +185,13 @@ async function adminDeleteClient(req,res){
     if(ticket&&ticket.workspaceId===id)await kv.del('support:'+ticketId);else keepSupport.push(ticketId);
   }
   await kv.set('support:index',keepSupport);
+  const onboardingToken=await kv.get('onboarding:workspace-token:'+id);
   await Promise.all([
     'workspace:','agent:','calls:','leads:','conversations:','appointments:','automations:',
-    'settings:','integrations:','locations:','provisioning:override:','provisioning:history:'
+    'settings:','integrations:','locations:','routing-request:','onboarding:workspace:',
+    'onboarding:workspace-token:','provisioning:override:','provisioning:history:','audit:'
   ].map(prefix=>kv.del(prefix+id)));
+  if(onboardingToken)await kv.del('onboarding:'+onboardingToken);
   return res.status(200).json({ok:true,deleted:{id,name:ws.name||'Workspace'}});
 }
 
