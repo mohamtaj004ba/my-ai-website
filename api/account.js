@@ -144,6 +144,69 @@ async function requireWritableSession(req,res){
   return s;
 }
 
+async function adminProvisioning(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const ids=await kv.get('workspace:index')||[];
+  const items=[];
+  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
+    const ws=await kv.get('workspace:'+id);if(!ws)continue;
+    const [settings,agent]=await Promise.all([kv.get('settings:'+id),kv.get('agent:'+id)]);
+    const hasIntake=!!(settings&&((settings.businessName||'').trim()||(settings.primaryEmail||'').trim()));
+    const hasAgent=!!(agent&&((agent.name||'').trim()||(agent.openingMessage||'').trim()));
+    const hasPhone=!!String(ws.phone||'').trim();
+    let stage='Paid';
+    if(hasIntake)stage='Intake';
+    if(hasAgent)stage='Building';
+    if(hasAgent&&hasPhone)stage='Ready';
+    if(ws.status==='active'&&hasAgent&&hasPhone)stage='Live';
+    items.push({id:ws.id,name:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',stage,hasIntake,hasAgent,hasPhone,phone:ws.phone||''});
+  }
+  return res.status(200).json({provisioning:items});
+}
+
+async function adminPhoneNumbers(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const numbers=await kv.get('phone:index')||[];
+  return res.status(200).json({numbers:Array.isArray(numbers)?numbers:[]});
+}
+
+async function adminSavePhoneNumber(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{};
+  const id=String(body.id||crypto.randomUUID()).slice(0,100);
+  const number=String(body.number||'').trim().slice(0,40);
+  const workspaceId=String(body.workspaceId||'').trim().slice(0,80);
+  const provider=String(body.provider||'Vapi').trim().slice(0,40);
+  const label=String(body.label||'Primary').trim().slice(0,80);
+  if(!/^\+?[0-9() .-]{7,30}$/.test(number))return res.status(400).json({error:'Valid phone number required'});
+  let workspaceName='';
+  if(workspaceId){
+    const ws=await kv.get('workspace:'+workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+    workspaceName=ws.name||'';
+    await kv.set('workspace:'+workspaceId,{...ws,phone:number,updatedAt:Date.now()});
+  }
+  const current=await kv.get('phone:index')||[];
+  const list=Array.isArray(current)?current:[];
+  const item={id,number,workspaceId,workspaceName,provider,label,status:'active',updatedAt:Date.now()};
+  const i=list.findIndex(x=>x&&String(x.id)===id);
+  if(i>=0)list[i]=item;else list.push(item);
+  await kv.set('phone:index',list.slice(0,500));
+  return res.status(200).json({ok:true,number:item});
+}
+
+async function adminSystemHealth(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  let kvOk=false;
+  try{await kv.set('health:last_check',Date.now(),{ex:120});const v=await kv.get('health:last_check');kvOk=!!v}catch(e){kvOk=false}
+  const services=[
+    {key:'database',name:'Upstash / KV',status:kvOk?'operational':'error',detail:kvOk?'Read/write check passed':'Database check failed'},
+    {key:'stripe',name:'Stripe',status:process.env.STRIPE_SECRET_KEY?'configured':'not_configured',detail:process.env.STRIPE_SECRET_KEY?'Secret key available':'STRIPE_SECRET_KEY missing'},
+    {key:'mailgun',name:'Mailgun',status:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'configured':'not_configured',detail:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'API credentials available':'Mailgun credentials incomplete'},
+    {key:'voice',name:'Voice provider',status:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'configured':'not_configured',detail:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'Voice API credentials available':'Voice API credentials not configured'}
+  ];
+  return res.status(200).json({services,checkedAt:Date.now()});
+}
+
 async function adminClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.query||{}).id||'').slice(0,80);
@@ -439,6 +502,10 @@ module.exports=async function handler(req,res){
   if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
   if(action==='admin-clients'&&req.method==='GET')return adminClients(req,res);
   if(action==='admin-client'&&req.method==='GET')return adminClient(req,res);
+  if(action==='admin-provisioning'&&req.method==='GET')return adminProvisioning(req,res);
+  if(action==='admin-phone-numbers'&&req.method==='GET')return adminPhoneNumbers(req,res);
+  if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
+  if(action==='admin-system-health'&&req.method==='GET')return adminSystemHealth(req,res);
   if(action==='admin-client-update'&&req.method==='POST')return adminUpdateClient(req,res);
   if(action==='admin-view-client'&&req.method==='POST')return adminViewClient(req,res);
   if(action==='admin-exit-client-view'&&req.method==='POST')return adminExitClientView(req,res);
