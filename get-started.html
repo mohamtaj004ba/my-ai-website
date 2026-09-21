@@ -36,7 +36,8 @@ document.getElementById('startForm').addEventListener('submit',async e=>{
   if(!form.reportValidity()) return;
   btn.disabled=true;btn.textContent='Preparing secure checkout…';
   const d=new FormData(form);
-  const payload={source:'get_started',plan,name:d.get('name'),business:d.get('business'),email:d.get('email'),phone:d.get('phone'),industry:d.get('industry')};
+  const a=window.CallerCoreAnalytics?.context||{};
+  const payload={source:'get_started',plan,name:d.get('name'),business:d.get('business'),email:d.get('email'),phone:d.get('phone'),industry:d.get('industry'),visitorId:a.visitorId||'',sessionId:a.sessionId||'',utmSource:a.utmSource||'',utmMedium:a.utmMedium||'',utmCampaign:a.utmCampaign||''};
   let leadId=null;
   try{
     const r=await fetch('/api/lead-create',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)});
