@@ -682,12 +682,18 @@ async function adminWebsiteAnalytics(req,res){
       checkoutStarted:uniqueEventSessions('checkout_start'),
       converted:prospects.filter(p=>p.stage==='converted'&&(p.updatedAt||0)>=cut30).length
     };
-    const pageMap={},sourceMap={};
+    const pageMap={},sourceMap={},conversionMap={};
     e30.filter(e=>e.type==='page_view').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=pageMap[p]||{count:0,totalMs:0,exits:0};pageMap[p].count++});
     e30.filter(e=>e.type==='page_exit').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=pageMap[p]||{count:0,totalMs:0,exits:0};pageMap[p].totalMs+=Number(e.activeMs||0);pageMap[p].exits++});
     s30.forEach(s=>{const source=s.utmSource||s.source||'direct';sourceMap[source]=(sourceMap[source]||0)+1});
+    prospects.filter(p=>p.stage==='converted'&&Number(p.convertedAt||p.updatedAt||0)>=cut30).forEach(p=>{
+      const source=p.firstUtmSource||p.utmSource||p.firstSource||p.source||'direct',row=conversionMap[source]||(conversionMap[source]={conversions:0,mrr:0,setupRevenue:0});
+      row.conversions++;row.mrr+=Number(p.monthlyValue||0);row.setupRevenue+=Number(p.setupValue||0);
+    });
     const topPages=Object.entries(pageMap).sort((a,b)=>b[1].count-a[1].count).slice(0,10).map(([path,v])=>({path,count:v.count,avgSeconds:v.exits?Math.round(v.totalMs/v.exits/1000):0}));
-    const sources=Object.entries(sourceMap).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([source,count])=>({source,count}));
+    const sourceNames=[...new Set([...Object.keys(sourceMap),...Object.keys(conversionMap)])];
+    const sources=sourceNames.map(source=>({source,count:sourceMap[source]||0,...(conversionMap[source]||{conversions:0,mrr:0,setupRevenue:0})})).sort((a,b)=>(b.mrr-a.mrr)||(b.count-a.count)).slice(0,10);
+    const attributedMrr=Object.values(conversionMap).reduce((n,x)=>n+Number(x.mrr||0),0),attributedSetupRevenue=Object.values(conversionMap).reduce((n,x)=>n+Number(x.setupRevenue||0),0);
     const eventBySession={};e30.forEach(e=>{if(!e.sessionId)return;(eventBySession[e.sessionId]||(eventBySession[e.sessionId]=[])).push(e)});
     const recentSessions=sessions.sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).slice(0,60).map(s=>({
       ...s,journey:(eventBySession[s.id]||[]).sort((a,b)=>(a.at||0)-(b.at||0)).slice(-40).map(e=>({type:e.type,at:e.at,path:e.path,label:e.label,value:e.value,activeMs:e.activeMs}))
@@ -697,7 +703,7 @@ async function adminWebsiteAnalytics(req,res){
       contactInquiries:e30.filter(e=>e.type==='contact_submit').length,chatSessions:uniqueEventSessions('chat_open'),
       formAbandons:uniqueEventSessions('form_abandon'),checkoutStarts:uniqueEventSessions('checkout_start'),
       checkoutAbandoned:prospects.filter(p=>p.stage==='checkout_started').length,conversions:funnel.converted,
-      last7Events:e7.length,funnel,topPages,sources,recentSessions,prospects
+      attributedMrr,attributedSetupRevenue,last7Events:e7.length,funnel,topPages,sources,recentSessions,prospects
     }});
   }catch(err){console.error('admin website analytics failed',err);return res.status(500).json({error:'Website analytics unavailable'})}
 }
