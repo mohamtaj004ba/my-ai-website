@@ -406,7 +406,7 @@ document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebho
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 
 
-let adminClientsData=[],adminSummaryData=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null;
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -485,12 +485,39 @@ async function openAdminClient(id){
   ].map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('');
   document.getElementById('adminClientCounts').innerHTML=[['Calls',x.counts?.calls||0],['Leads',x.counts?.leads||0],['Appointments',x.counts?.appointments||0]].map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('');
   document.getElementById('adminClientAgent').textContent=x.agent?(x.agent.name||'Maya')+' · '+(x.agent.role||'AI Receptionist'):'No agent configured yet.';
+  currentAdminClient=x;
+  const planSel=document.getElementById('adminClientPlan'),statusSel=document.getElementById('adminClientStatus');
+  if(planSel){planSel.value=x.plan||'Starter';planSel.disabled=!!x.stripe?.subscriptionLinked}
+  if(statusSel)statusSel.value=x.status||'active';
+  const note=document.getElementById('adminClientManageNote');if(note)note.textContent=x.stripe?.subscriptionLinked?'Plan is managed by Stripe for this workspace.':'Plan can be adjusted manually because no Stripe subscription is linked.';
   document.getElementById('adminClientDrawer').classList.add('open');document.getElementById('adminClientBackdrop').classList.add('open');
 }
 function closeAdminClient(){document.getElementById('adminClientDrawer')?.classList.remove('open');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
 document.getElementById('adminSearch')?.addEventListener('input',renderAdminClients);
 document.getElementById('closeAdminClient')?.addEventListener('click',closeAdminClient);
 document.getElementById('adminClientBackdrop')?.addEventListener('click',closeAdminClient);
+
+async function saveAdminClient(){
+  if(!currentAdminClient)return;
+  const plan=document.getElementById('adminClientPlan')?.value;
+  const status=document.getElementById('adminClientStatus')?.value;
+  const r=await fetch('/api/account?action=admin-client-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,plan,status})});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error||'Could not update client.');return}
+  const local=adminClientsData.find(x=>x.id===currentAdminClient.id);if(local){local.plan=data.client.plan;local.status=data.client.status}
+  currentAdminClient={...currentAdminClient,plan:data.client.plan,status:data.client.status};
+  renderAdmin();openAdminClient(currentAdminClient.id);
+}
+async function viewAdminClient(){
+  if(!currentAdminClient)return;
+  const r=await fetch('/api/account?action=admin-view-client',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error||'Could not open client view.');return}
+  location.href=data.redirect||'/dashboard';
+}
+document.getElementById('adminSaveClientButton')?.addEventListener('click',saveAdminClient);
+document.getElementById('adminViewClientButton')?.addEventListener('click',viewAdminClient);
+
 
 const modal=document.getElementById('upgradeModal');function openModal(target){if(!modal)return;const t=PLAN_DATA[target];document.getElementById('modalTitle').textContent=(t.price>PLAN_DATA[currentPlan].price?'Upgrade to ':'Switch to ')+target;document.getElementById('modalCopy').textContent=target==='Pro'?'Unlock the full CallerCore platform, including API access, advanced integrations and custom workflows.':'Unlock appointment booking, automations, the unified inbox and advanced analytics.';const fs=Object.entries(FEATURE_INFO).filter(([k,v])=>target==='Pro'||v.tier==='Growth').slice(0,target==='Pro'?6:4);document.getElementById('modalFeatures').innerHTML=fs.map(([k,v])=>'<span>✓ '+v.title+'</span>').join('');document.getElementById('modalCta').textContent='Continue with Stripe · $'+t.price+'/mo';modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
 function bindUpgradeButtons(){document.querySelectorAll('[data-upgrade]').forEach(b=>{b.onclick=()=>openModal(b.dataset.upgrade)})}
