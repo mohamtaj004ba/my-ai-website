@@ -1,9 +1,10 @@
 const { kv } = require('@vercel/kv');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { sendMail } = require('./_lib/mailgun');
+const { syncCompletedOnboarding } = require('../lib/onboarding-sync');
 
 const ALLOWED_INTAKE_FIELDS = new Set([
-  'businessName','contactName','phone','email','industry','industryOther','address','addressSharing','serviceArea','outOfArea','outOfAreaReferral',
+  'website','businessName','contactName','phone','email','industry','industryOther','address','addressSharing','serviceArea','outOfArea','outOfAreaReferral',
   'tradeType','tradeTypeOther','servicesOffered','servicesNotOffered','gasUtility','insuranceInfo','vetAskSpecies','vetEmergencyNotes','conflictCheck',
   'realEstateNotes','vendorDispatch','salonNotes','collectVehicleInfo','hours','exampleRoutine','promiseRoutine','exampleUrgent','promiseUrgent',
   'exampleEmergency','promiseEmergency','routingChoice','forwardNumber','phoneCarrier','callHandling','notificationPreference','notifyRecipient',
@@ -31,7 +32,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { token, type, fields, fullName } = req.body || {};
+  const { token, type, fields, fullName, finalize } = req.body || {};
   if (!validToken(token)) return res.status(400).json({ error: 'Invalid token' });
 
   const key = `onboarding:${token}`;
@@ -45,6 +46,7 @@ module.exports = async function handler(req, res) {
     record.agreementSigned = true;
     record.agreementSignedAt = Date.now();
     record.agreementFullName = signedName;
+    if(record.status==='awaiting_agreement')record.status='intake_in_progress';
 
     await kv.set(key, record, { ex: 60 * 60 * 24 * 30 });
 
@@ -109,13 +111,25 @@ module.exports = async function handler(req, res) {
       required.push('pricingRanges');
     }
     const complete = required.every((k) => record.intake[k] && String(record.intake[k]).trim() !== '');
-    const justCompleted = complete && record.status !== 'intake_complete';
+    const completionPercent=Math.round((required.filter(k=>record.intake[k]&&String(record.intake[k]).trim()!=='').length/Math.max(1,required.length))*100);
+    record.completionPercent=completionPercent;
+    if(record.status==='awaiting_agreement'&&record.agreementSigned)record.status='intake_in_progress';
+    const wantsFinalize=finalize===true;
+    if(wantsFinalize&&!complete)return res.status(400).json({error:'Please complete all required onboarding fields before submitting.',completionPercent});
+    const justCompleted = wantsFinalize && complete && record.status !== 'intake_complete';
     if (justCompleted) {
       record.status = 'intake_complete';
       record.intakeCompletedAt = Date.now();
     }
 
-    await kv.set(key, record, { ex: 60 * 60 * 24 * 30 });
+    await kv.set(key, record, { ex: 60 * 60 * 24 * 90 });
+    if(record.workspaceId){
+      await kv.set('onboarding:workspace-token:'+record.workspaceId,token,{ex:60*60*24*90});
+      if(!justCompleted){
+        const prior=await kv.get('onboarding:workspace:'+record.workspaceId)||{};
+        await kv.set('onboarding:workspace:'+record.workspaceId,{...prior,workspaceId:record.workspaceId,status:record.status||'intake_in_progress',completionPercent,checklist:{...(prior.checklist||{}),payment:true,agreement:!!record.agreementSigned,intake:false},updatedAt:Date.now()});
+      }
+    }
 
     if (justCompleted) {
       const i = record.intake || {};
@@ -166,9 +180,16 @@ module.exports = async function handler(req, res) {
       } catch (err) {
         console.error('Internal intake_complete email failed:', err);
       }
+      try{
+        await syncCompletedOnboarding(record);
+      }catch(err){
+        console.error('Smart onboarding workspace sync failed:',err);
+        record.syncError=String(err&&err.message||'sync_failed').slice(0,300);
+        await kv.set(key,record,{ex:60*60*24*90});
+      }
     }
 
-    return res.status(200).json({ ok: true, status: record.status });
+    return res.status(200).json({ ok: true, status: record.status, completionPercent:record.completionPercent||0 });
   } else {
     return res.status(400).json({ error: 'Invalid type' });
   }
