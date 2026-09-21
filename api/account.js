@@ -627,12 +627,15 @@ async function adminGmailInbox(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   if(!gmailConfigReady())return res.status(200).json({configured:false,connected:false,threads:[],analytics:{}});
   const hash=crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex'),cacheKey='gmail:inbox:'+hash,summaryKey='gmail:summary:'+hash;
+  const cached=await kv.get(cacheKey),force=String(req.query?.force||'')==='1';
   if(String(req.query?.cached||'')==='1'){
-    const cached=await kv.get(cacheKey);
     return res.status(200).json(cached?{configured:true,...cached,cached:true}:{configured:true,connected:true,threads:[],analytics:{},cached:true,emptyCache:true});
   }
+  if(!force&&cached&&Date.now()-Number(cached.syncedAt||0)<2*60*1000){
+    return res.status(200).json({configured:true,...cached,cached:true,fresh:true});
+  }
   try{
-    const data=await listGmailInbox(admin.email,{maxResults:Math.min(60,Math.max(1,Number(req.query?.limit||40))),query:String(req.query?.q||'newer_than:30d').slice(0,200)});
+    const data=await listGmailInbox(admin.email,{maxResults:Math.min(25,Math.max(1,Number(req.query?.limit||25))),query:String(req.query?.q||'newer_than:30d').slice(0,200)});
     for(const t of data.threads||[]){
       const inbound=(t.messages||[]).find(m=>m.direction==='inbound'),sender=inbound?.from||'';
       if(sender){const pid=await kv.get('site:prospect:email:'+emailKey(sender));if(pid){const p=await kv.get('site:prospect:'+pid);if(p)t.prospect={id:p.id,name:p.name,business:p.business,email:p.email,stage:p.stage}}}
@@ -645,9 +648,8 @@ async function adminGmailInbox(req,res){
     return res.status(200).json({configured:true,...snapshot,cached:false});
   }catch(err){
     console.error('gmail inbox failed',safeError(err));
-    const cached=await kv.get(cacheKey);
-    if(cached)return res.status(200).json({configured:true,...cached,cached:true,stale:true,warning:err.message||'Fresh Gmail sync failed'});
-    return res.status(502).json({error:err.message||'Gmail sync failed'})
+    if(cached)return res.status(200).json({configured:true,...cached,cached:true,stale:true,warning:'Fresh Gmail sync failed'});
+    return res.status(502).json({error:'Gmail sync failed'})
   }
 }
 
@@ -656,19 +658,21 @@ async function adminGmailAliases(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const conn=await getGmailConnection(admin.email);if(!conn)return res.status(200).json({connected:false,aliases:[]});
   const hash=crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex'),cacheKey='gmail:aliases:'+hash;
+  const aliasCache=await kv.get(cacheKey),force=String(req.query?.force||'')==='1';
   if(String(req.query?.cached||'')==='1'){
-    const aliases=await kv.get(cacheKey)||[];
-    return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases,cached:true});
+    return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:aliasCache||[],cached:true});
+  }
+  if(!force&&aliasCache&&aliasCache.cachedAt&&Date.now()-Number(aliasCache.cachedAt)<6*60*60*1000){
+    return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:aliasCache.aliases||[],cached:true,fresh:true});
   }
   try{
     const aliases=await listGmailAliases(admin.email);
-    await kv.set(cacheKey,aliases,{ex:60*60*24*7});
+    await kv.set(cacheKey,{aliases,cachedAt:Date.now()},{ex:60*60*24*7});
     return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases,cached:false});
   }catch(err){
     console.error('gmail aliases failed',safeError(err));
-    const aliases=await kv.get(cacheKey);
-    if(aliases)return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases,cached:true,stale:true});
-    return res.status(502).json({error:err.message||'Could not load Gmail aliases'})
+    if(aliasCache)return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:aliasCache.aliases||[],cached:true,stale:true});
+    return res.status(502).json({error:'Could not load Gmail aliases'})
   }
 }
 
