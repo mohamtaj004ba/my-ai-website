@@ -61,3 +61,8 @@ test('Stripe health validates live webhook event coverage and Customer Portal co
   assert.match(src,/missingEvents/);
   assert.match(src,/Stripe Customer Portal has no active configuration/);
 });
+
+test('production readiness requires the explicit checkout launch gate',()=>{
+  assert.match(src,/CALLERCORE_CHECKOUT_ENABLED==='true'/);
+  assert.match(src,/requiredForLaunch=\['database','checkout','stripe','mailgun','onboarding-ai','voice'\]/);
+});
