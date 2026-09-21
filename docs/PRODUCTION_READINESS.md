@@ -37,6 +37,14 @@ This document tracks the release-readiness state of the feature branch. It is in
 - Standard onboarding excludes Medical & Dental and server-side intake rejects regulated medical onboarding.
 - CodeQL workflow and Dependabot configuration added.
 - Client/admin portals surface partial API failures instead of silently presenting incomplete data as trustworthy zeros.
+- Vercel Pro commercial hosting confirmed.
+- GitHub main-branch ruleset enabled and verified with required PR/checks and no bypass.
+- Live Stripe webhook event coverage and Customer Portal configuration completed.
+- Mailgun `notify.callercore.com` verified; production sending-domain configuration corrected.
+- Gmail launch posture narrowed to admin-only with only `gmail.modify`.
+- Retention policy approved with indefinite anonymized analytics and bounded raw data.
+- 30-day recoverable deletion workflow implemented with access revocation, restore and explicit permanent purge.
+- Public launch copy no longer promises SMS or calendar booking as active launch features.
 
 ## Must complete before broad production launch
 
@@ -74,8 +82,6 @@ Run one complete disposable client through:
 ### Billing
 - Keep `CALLERCORE_CHECKOUT_ENABLED` disabled until the final sales-open authorization.
 - Confirm production Stripe secret key, publishable key, and webhook signing secret are all present in the production environment.
-- Update the live Stripe webhook endpoint to include the five lifecycle events currently missing: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, and `invoice.paid`.
-- Create/activate a Stripe Customer Portal configuration; the connected live CallerCore account currently has no active portal configuration.
 - Complete Washington tax registration/classification; Stripe Tax is active but the connected live account currently has no tax registrations configured.
 - Configure the correct Stripe product tax treatment and enable automatic tax only after registration/classification is confirmed.
 - Define and implement minute overage policy, if any.
@@ -84,18 +90,12 @@ Run one complete disposable client through:
 - Test failed-payment recovery and cancellation in Stripe test mode.
 
 ### Calendar / appointments
-- Choose calendar scope/provider strategy.
-- Connect Google Calendar or another scheduling provider.
-- Real availability lookup and booking.
-- Cancellation/reschedule behavior.
-- Timezone edge cases.
+- Calendar booking is not part of the initial advertised launch scope.
+- Choose provider/scope and implement availability, booking, cancel/reschedule and timezone behavior before re-enabling calendar-booking marketing claims.
 
 ### Messaging
-- Choose SMS/telephony provider path.
-- Consent/opt-out handling.
-- STOP/HELP behavior.
-- Delivery-state ingestion.
-- Carrier registration where required.
+- SMS is not part of the initial advertised launch scope.
+- Before enabling it, choose provider/number strategy, implement consent provenance, STOP/HELP suppression, delivery-state ingestion, transactional-vs-marketing separation, and required carrier/A2P registration.
 
 ### Legal / compliance
 - Confirm CallerCore legal entity / Washington business license / UBI and any Spokane business registration required for the operating location.
@@ -103,16 +103,13 @@ Run one complete disposable client through:
 - Attorney review of Privacy Policy and Terms.
 - Confirm call-recording disclosure approach by client/jurisdiction.
 - Confirm SMS/TCPA operational policy.
-- Confirm data-retention policy.
 
 ### Security / reliability
-- Upgrade Vercel from Hobby before commercial launch; Vercel restricts Hobby to non-commercial personal use.
-- Enable/enforce the existing CallerCore GitHub ruleset for main and require successful checks.
-- Validate SPF/DKIM/DMARC for the CallerCore sending domain.
-- Configure production uptime/error monitoring and owner alerts.
+- Keep DMARC under review and move from monitoring toward enforcement after continued sender alignment validation.
+- Vercel anomaly monitoring is configured. Signed webhook-to-email fallback is coded/configured and requires a post-merge production delivery test.
 - Resolve/verify the Preview Upstash / Vercel KV connection; the observed DNS lookup failures came from an older `feature/callercore-dashboards` preview deployment, not a production deployment.
-- Complete protected-preview browser QA.
-- Review the admin-only Gmail OAuth deployment posture: current `gmail.modify` scope is restricted; complete Google verification/security assessment before offering Gmail connections broadly to external customers.
+- Complete protected-preview browser QA after enabling Vercel Automation Protection Bypass.
+- Keep Gmail admin-only at launch. Complete Google verification/security assessment before offering Gmail connections broadly to external customers.
 - Re-run focused authorization/tenant-isolation review when new authenticated API surfaces are added.
 - Webhook security review for all external providers as they are added.
 - Add provider-managed point-in-time database recovery before CallerCore reaches material production scale; current workspace exports are an interim recovery layer.
