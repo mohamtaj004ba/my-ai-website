@@ -55,10 +55,20 @@
       <div class="unlock-grid" id="overviewUnlocks"></div>
     </section>
 
-    <section class="view" id="view-calls"><div class="page-head"><div><span class="eyebrow">Calls</span><h1>Every conversation, organized.</h1><p>Recordings, transcripts, summaries and outcomes in one place.</p></div></div><article class="panel table-panel"><div class="call-row head"><span>Caller</span><span>Type</span><span>Duration</span><span>Outcome</span><span>Agent</span></div><div class="call-row"><span>Sarah Johnson</span><span>Incoming</span><span>4:32</span><span class="tag green">Booked</span><span>Maya</span></div><div class="call-row"><span>Mike Peterson</span><span>Incoming</span><span>3:17</span><span class="tag green">Qualified</span><span>Maya</span></div><div class="call-row"><span>Unknown</span><span>Missed</span><span>—</span><span class="tag amber">SMS sent</span><span>Recovery</span></div></article></section>
+    <section class="view" id="view-calls">
+      <div class="page-head"><div><span class="eyebrow">Calls</span><h1>Every conversation, organized.</h1><p>Search recordings, transcripts, summaries and outcomes in one place.</p></div></div>
+      <div class="toolbar"><input id="callSearch" type="search" placeholder="Search caller, reason, outcome…"><select id="callFilter"><option value="all">All outcomes</option><option value="Booked">Booked</option><option value="Qualified">Qualified</option><option value="Follow-up">Follow-up</option><option value="Missed">Missed</option></select></div>
+      <article class="panel table-panel"><div class="call-row head"><span>Caller</span><span>Reason</span><span>Duration</span><span>Outcome</span><span>Agent</span></div><div id="callsTable"></div></article>
+      <div class="empty-state" id="callsEmpty" hidden><h3>No calls yet</h3><p>Caller activity for this workspace will appear here once your AI number begins handling calls.</p></div>
+    </section>
 
     <section class="view" id="view-conversations"><div class="page-head"><div><span class="eyebrow">Conversations</span><h1>One customer timeline.</h1><p>Voice and SMS today, with chat and email ready for future expansion.</p></div></div><div class="locked-stage" data-feature-card="unifiedInbox"></div></section>
-    <section class="view" id="view-leads"><div class="page-head"><div><span class="eyebrow">Leads</span><h1>From ringing to revenue.</h1><p>Track every captured opportunity through the pipeline.</p></div></div><div class="kanban"><div><h3>New <span>4</span></h3><article><b>Emily Ross</b><small>Roof leak · $2.8k</small></article></div><div><h3>Qualified <span>7</span></h3><article><b>Mike Peterson</b><small>Storm damage · $4.2k</small></article></div><div><h3>Appointment <span>5</span></h3><article><b>Sarah Johnson</b><small>Replacement · $8.5k</small></article></div><div><h3>Won <span>12</span></h3><article><b>Jared Lee</b><small>Full roof · $13.4k</small></article></div></div></section>
+    <section class="view" id="view-leads">
+      <div class="page-head"><div><span class="eyebrow">Leads</span><h1>From ringing to revenue.</h1><p>Track every captured opportunity through the pipeline.</p></div></div>
+      <div class="toolbar"><input id="leadSearch" type="search" placeholder="Search leads…"><span class="muted">Drag cards between stages to update the pipeline.</span></div>
+      <div class="kanban" id="leadKanban"></div>
+      <div class="empty-state" id="leadsEmpty" hidden><h3>No leads yet</h3><p>Qualified callers and captured opportunities will populate this pipeline automatically.</p></div>
+    </section>
     <section class="view" id="view-appointments"><div class="page-head"><div><span class="eyebrow">Appointments</span><h1>Booked while you work.</h1><p>See AI-booked appointments and upcoming customer commitments.</p></div></div><div class="locked-stage" data-feature-card="appointments"></div></section>
     <section class="view" id="view-agent"><div class="page-head"><div><span class="eyebrow">AI Agent</span><h1>Meet Maya.</h1><p>Control what your receptionist knows, says and does.</p></div></div><div class="two-col"><article class="panel form-card"><label>Agent name<input value="Maya"></label><label>Role<input value="AI Receptionist"></label><label>Opening message<textarea>Thank you for calling Alpine Roofing. This is Maya. How can I help you today?</textarea></label><button class="primary">Save changes</button></article><article class="panel"><span class="eyebrow">Knowledge</span><h2>Business brain</h2><div class="setting-row"><span>Services & pricing</span><b>12 items</b></div><div class="setting-row"><span>Hours & service area</span><b>Configured</b></div><div class="setting-row"><span>FAQs & policies</span><b>24 answers</b></div><div class="setting-row"><span>Emergency rules</span><b>3 routes</b></div></article></div></section>
     <section class="view" id="view-automations"><div class="page-head"><div><span class="eyebrow">Automations</span><h1>Follow up without chasing.</h1><p>Trigger actions from calls, leads and appointments.</p></div></div><div class="locked-stage" data-feature-card="automations"></div></section>
@@ -77,6 +87,15 @@
     <section class="view" id="view-settings"><div class="page-head"><div><span class="eyebrow">Settings</span><h1>Workspace settings.</h1><p>Business profile, team access and notification preferences.</p></div></div><article class="panel form-card"><label>Business name<input value="Alpine Roofing"></label><label>Primary email<input value="owner@example.com"></label><label>Timezone<input value="America/Los_Angeles"></label><button class="primary">Save settings</button></article></section>
   </main>
 </div>
+
+<aside class="call-drawer" id="callDrawer" aria-hidden="true">
+  <div class="drawer-head"><div><span class="eyebrow">Call details</span><h2 id="drawerCaller">Caller</h2></div><button id="closeCallDrawer" aria-label="Close">×</button></div>
+  <div class="drawer-meta" id="drawerMeta"></div>
+  <section><span class="eyebrow">AI summary</span><p id="drawerSummary"></p></section>
+  <section><span class="eyebrow">Qualification</span><div id="drawerQualification" class="detail-grid"></div></section>
+  <section><span class="eyebrow">Transcript</span><div id="drawerTranscript" class="transcript"></div></section>
+</aside>
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
 
 <div class="modal" id="upgradeModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" aria-label="Close">×</button><span class="eyebrow">Upgrade CallerCore</span><h2 id="modalTitle">Unlock more with Pro</h2><p id="modalCopy"></p><div id="modalFeatures" class="modal-features"></div><div class="stripe-embed"><span>STRIPE EMBED AREA</span><strong>Secure upgrade checkout will render here.</strong><small>This prototype intentionally does not create an unauthenticated subscription-change endpoint. Once client authentication and Stripe customer mapping are connected, this area can mount Stripe's embedded payment UI.</small></div><button class="primary full" id="modalCta">Continue with Stripe</button></div></div>
 <script src="/dashboard.js"></script>
