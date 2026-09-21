@@ -1,4 +1,5 @@
 const { kv } = require('@vercel/kv');
+const {safeError}=require('../lib/safe-log');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { sendMail } = require('./_lib/mailgun');
 const { syncCompletedOnboarding } = require('../lib/onboarding-sync');
@@ -86,7 +87,7 @@ module.exports = async function handler(req, res) {
         attachments:[{filename:'CallerCore-Service-Agreement.pdf',data:Buffer.from(pdfBytes),contentType:'application/pdf'}]
       });}
     } catch (err) {
-      console.error('Failed to email signed agreement PDF:', err);
+      console.error('Failed to email signed agreement PDF:', safeError(err));
     }
 
     return res.status(200).json({ ok: true, status: record.status });
@@ -200,7 +201,7 @@ module.exports = async function handler(req, res) {
           }],
         });
       } catch (err) {
-        console.error('Internal intake_complete email failed:', err);
+        console.error('Internal intake_complete email failed:', safeError(err));
       }
       try{
         await syncCompletedOnboarding(record);
@@ -219,7 +220,7 @@ module.exports = async function handler(req, res) {
           bodyHtml:'<p style="margin:0">No action is needed from you right now. We’ll contact you when the initial build has completed review and the next step is ready.</p>'
         });await sendMail({to:record.email,subject:'We received your CallerCore onboarding',...emailBody});}
       }catch(err){
-        console.error('Smart onboarding workspace sync failed:',err);
+        console.error('Smart onboarding workspace sync failed:',safeError(err));
         record.syncError=String(err&&err.message||'sync_failed').slice(0,300);
         await kv.set(key,record,{ex:60*60*24*90});
       }
