@@ -38,20 +38,16 @@
     <section class="view active" id="view-overview">
       <div class="page-head"><div><span class="eyebrow">Sunday, Sep 20</span><h1>Good afternoon, TJ.</h1><p>Here’s what CallerCore has handled for <span data-business-name>Alpine Roofing</span>.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
       <div class="metric-grid">
-        <article><span>Calls answered</span><strong>142</strong><small>↑ 18% this month</small></article>
-        <article><span>New leads</span><strong>31</strong><small>↑ 11% this month</small></article>
-        <article><span>Appointments</span><strong>12</strong><small>8 AI-booked</small></article>
-        <article><span>Pipeline</span><strong>$48.2k</strong><small>Estimated opportunity</small></article>
+        <article><span>Calls answered</span><strong id="overviewCalls">142</strong><small id="overviewCallsMeta">↑ 18% this month</small></article>
+        <article><span>New leads</span><strong id="overviewLeads">31</strong><small id="overviewLeadsMeta">↑ 11% this month</small></article>
+        <article><span>Appointments</span><strong id="overviewAppointments">12</strong><small id="overviewAppointmentsMeta">8 AI-booked</small></article>
+        <article><span>Pipeline</span><strong id="overviewPipeline">$48.2k</strong><small id="overviewPipelineMeta">Estimated opportunity</small></article>
       </div>
       <div class="two-col">
-        <article class="panel agent-card"><div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2>Maya is online</h2></div></div><button data-view="agent">Configure</button></div><p>96% answer rate · 284 minutes this month</p><div class="mini-stats"><div><strong>142</strong><span>calls handled</span></div><div><strong>31</strong><span>leads captured</span></div><div><strong>12</strong><span>appointments</span></div></div><button class="primary">Test Maya</button></article>
+        <article class="panel agent-card"><div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya is online</h2></div></div><button data-view="agent">Configure</button></div><p id="overviewAgentMeta">96% answer rate · 284 minutes this month</p><div class="mini-stats"><div><strong id="overviewAgentCalls">142</strong><span>calls handled</span></div><div><strong id="overviewAgentLeads">31</strong><span>leads captured</span></div><div><strong id="overviewAgentAppointments">12</strong><span>appointments</span></div></div><button class="primary">Test Maya</button></article>
         <article class="panel ask-card"><span class="eyebrow">Ask CallerCore</span><h2>Your business, searchable.</h2><p>Ask questions across calls, leads and appointments.</p><div class="ask-box">Which leads should we follow up with today?<button>→</button></div><div class="chips"><span>After-hours leads</span><span>Missed opportunities</span><span>Top call reasons</span></div></article>
       </div>
-      <article class="panel activity"><div class="panel-head"><div><span class="eyebrow">Live activity</span><h2>Recent calls & outcomes</h2></div><button data-view="calls">View all calls →</button></div>
-        <div class="activity-row"><span class="time">3:14 PM</span><div class="person"><b>SJ</b><span><strong>Sarah Johnson</strong><small>Roof replacement estimate</small></span></div><span class="tag green">Appointment booked</span><strong>$8,500</strong></div>
-        <div class="activity-row"><span class="time">2:57 PM</span><div class="person"><b>MP</b><span><strong>Mike Peterson</strong><small>Storm damage inspection</small></span></div><span class="tag green">Qualified</span><strong>$4,200</strong></div>
-        <div class="activity-row"><span class="time">2:41 PM</span><div class="person"><b>?</b><span><strong>Unknown caller</strong><small>Missed call recovery</small></span></div><span class="tag amber">Follow-up sent</span><strong>—</strong></div>
-      </article>
+      <article class="panel activity"><div class="panel-head"><div><span class="eyebrow">Live activity</span><h2>Recent calls & outcomes</h2></div><button data-view="calls">View all calls →</button></div><div id="overviewActivity"></div></article>
       <div class="unlock-grid" id="overviewUnlocks"></div>
     </section>
 
