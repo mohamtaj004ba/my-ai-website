@@ -62,7 +62,7 @@ module.exports = async function handler(req, res) {
   if(!SECRET)return res.status(503).json({error:'Demo unavailable'});
 
   // Layer 2: per-IP distributed rate limit.
-  const rl=await rateLimit({scope:'demo-number',identifier:requestIp(req),limit:6,windowSeconds:600});
+  const rl=await rateLimit({scope:'demo-number',identifier:requestIp(req),limit:6,windowSeconds:600,failClosed:true});
   if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ error: 'Too many requests, try again later' })}
 
   // Layer 3: token must be valid, correctly signed, and aged appropriately.
