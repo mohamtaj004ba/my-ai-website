@@ -42,6 +42,8 @@ jobs:
         run: node --test tests/security-hygiene.test.js
       - name: Log privacy safeguards
         run: node --test tests/log-privacy.test.js
+      - name: Environment scope safeguards
+        run: node --test tests/environment-scope.test.js
       - name: Origin safeguards
         run: node --test tests/origin-safeguards.test.js
       - name: Rate limit safeguards
