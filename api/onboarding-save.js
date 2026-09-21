@@ -2,6 +2,7 @@ const { kv } = require('@vercel/kv');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { sendMail } = require('./_lib/mailgun');
 const { syncCompletedOnboarding } = require('../lib/onboarding-sync');
+const { AGREEMENT_VERSION, AGREEMENT_EFFECTIVE_DATE, agreementSnapshot, planSnapshot } = require('./_lib/agreement-clauses');
 
 const ALLOWED_INTAKE_FIELDS = new Set([
   'website','businessName','contactName','phone','email','industry','industryOther','address','addressSharing','serviceArea','outOfArea','outOfAreaReferral',
@@ -46,6 +47,10 @@ module.exports = async function handler(req, res) {
     record.agreementSigned = true;
     record.agreementSignedAt = Date.now();
     record.agreementFullName = signedName;
+    record.agreementVersion = AGREEMENT_VERSION;
+    record.agreementEffectiveDate = AGREEMENT_EFFECTIVE_DATE;
+    record.agreementSnapshot = agreementSnapshot();
+    record.agreementPlanSnapshot = planSnapshot(record.plan);
     if(record.status==='awaiting_agreement')record.status='intake_in_progress';
 
     await kv.set(key, record, { ex: 60 * 60 * 24 * 90 });
@@ -61,6 +66,7 @@ module.exports = async function handler(req, res) {
       const signedDate = new Date(record.agreementSignedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       const pdfBytes = await buildAgreementPdfBytes({
         business: record.business, fullName: signedName, plan: record.plan, signedAt: signedDate,
+        clauses: record.agreementSnapshot.clauses, agreementVersion: record.agreementVersion, effectiveDate: record.agreementEffectiveDate, planSnapshot: record.agreementPlanSnapshot,
       });
       await sendMail({
         to: record.email,
