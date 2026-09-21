@@ -188,6 +188,28 @@ A focused security review is still required before broad production launch.
 
 Keep Vercel Preview Protection enabled. Automated preview QA should use Vercel Protection Bypass for Automation rather than disabling protection. Preview KV connectivity and protected-browser QA remain pending until that bypass is configured.
 
+
+## Verified rollback baseline
+
+Before PR #5 is merged, the current production baseline is:
+
+- Deployment ID: `dpl_DkoEXfYyfenw7Hee18cmwygc92fV`
+- Main commit: `7cc9562e71bcc63ccc3bcec390a1a601fba2b874`
+- State: READY
+- Production aliases: `callercore.com` and `www.callercore.com`
+
+Treat this deployment as the pre-release rollback target after PR #5 ships. Do not perform a rollback merely as a test because that changes live production traffic.
+
+If a post-merge production regression is material:
+1. confirm the failure in production health/logs;
+2. roll production back to `dpl_DkoEXfYyfenw7Hee18cmwygc92fV` using Vercel's rollback control;
+3. confirm the aliases point to the restored deployment;
+4. check production 5xx/error logs over the next several minutes;
+5. keep checkout disabled until the release is revalidated;
+6. fix the regression on the feature/fix branch and repeat preview + CI validation before a new production deployment.
+
+Vercel Pro supports rollback to a previous deployment by deployment ID or URL. The rollback changes production routing; it does not rebuild the old deployment.
+
 ## Production smoke test
 
 Before merging to production, run one disposable client through the entire path:
