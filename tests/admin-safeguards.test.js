@@ -50,3 +50,14 @@ test('Stripe launch health requires the publishable key used by embedded checkou
   assert.match(src,/process\.env\.STRIPE_SECRET_KEY&&process\.env\.STRIPE_PUBLISHABLE_KEY&&process\.env\.STRIPE_WEBHOOK_SECRET/);
   assert.match(src,/STRIPE_PUBLISHABLE_KEY missing/);
 });
+
+test('Stripe health validates live webhook event coverage and Customer Portal configuration',()=>{
+  assert.match(src,/async function stripeConfigurationHealth\(\)/);
+  for(const event of ['checkout.session.completed','checkout.session.async_payment_succeeded','customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.payment_failed','invoice.paid']){
+    assert.ok(src.includes("'"+event+"'"),'missing Stripe health event '+event);
+  }
+  assert.match(src,/\/v1\/webhook_endpoints\?limit=100/);
+  assert.match(src,/\/v1\/billing_portal\/configurations\?active=true&limit=10/);
+  assert.match(src,/missingEvents/);
+  assert.match(src,/Stripe Customer Portal has no active configuration/);
+});
