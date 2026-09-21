@@ -34,3 +34,9 @@
 .health-note{margin-top:14px;font-size:11px}.provision-column{transition:.15s}.provisioning-board article{user-select:none}.provisioning-board article:active{cursor:grabbing}
 #platformSettingsStatus{opacity:.35;transition:.2s}#platformSettingsStatus.show{opacity:1}
 @media(max-width:760px){.support-admin-row{grid-template-columns:1fr}.support-admin-row>div:last-child{justify-items:start}.page-head>.muted{max-width:100%}}
+
+.lead-stage-select{width:100%;margin-top:10px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:7px 8px;font:inherit;font-size:10px}
+.location-card{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.location-card h3{margin:9px 0 5px}.location-card p{margin:0 0 7px;color:var(--muted);font-size:12px;line-height:1.45}.location-card small{color:var(--muted)}.location-actions{display:flex;gap:10px;white-space:nowrap}
+#locationsLimitLabel{margin-top:12px;font-size:11px}
+@media(min-width:761px){.lead-stage-select{display:none}}
+@media(max-width:760px){.kanban article{cursor:default}.location-card{flex-direction:column}.location-actions{width:100%;justify-content:flex-end}}
