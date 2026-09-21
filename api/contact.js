@@ -8,7 +8,7 @@ const ALLOWED_HOSTS = new Set(['callercore.com','www.callercore.com','localhost:
 function allowed(req){
   const c=req.headers.origin||req.headers.referer||'';
   if(!c)return false;
-  try{const h=new URL(c).host;return ALLOWED_HOSTS.has(h)||h.endsWith('.vercel.app')}catch(e){return false}
+  try{const h=new URL(c).host.toLowerCase(),requestHost=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();return ALLOWED_HOSTS.has(h)||(h.endsWith('.vercel.app')&&h===requestHost)}catch(e){return false}
 }
 function clean(v,n=2000){return String(v||'').trim().slice(0,n)}
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
