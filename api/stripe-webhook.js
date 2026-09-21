@@ -2,6 +2,7 @@ const crypto=require('crypto');
 const {kv}=require('@vercel/kv');
 const {sendMail}=require('../lib/mail');
 const {normalizePlan,entitlementsFor}=require('../lib/plans');
+const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 module.exports.config={api:{bodyParser:false}};
 const STRIPE_WEBHOOK_SECRET=process.env.STRIPE_WEBHOOK_SECRET;
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
@@ -112,6 +113,10 @@ module.exports=async function handler(req,res){
   if(!recipient)return res.status(500).json({error:'Missing customer email'});
 
   const workspace=await upsertWorkspace({lead,session,plan:paidPlan,email:recipient});
+  if(lead.prospectId){
+    await upsertWebsiteProspect({id:lead.prospectId,name:lead.name,business:lead.business,email:recipient,phone:lead.phone,industry:lead.industry,plan:paidPlan,source:'get_started',stage:'converted',visitorId:lead.visitorId||'',sessionId:lead.sessionId||''});
+  }
+  await recordSiteEvent({type:'checkout_complete',visitorId:lead.visitorId||'',sessionId:lead.sessionId||'',path:'/get-started',label:paidPlan,value:workspace.id});
 
   if(!token){
     token=crypto.randomBytes(24).toString('hex');
