@@ -49,6 +49,25 @@ async function upsertWorkspace({lead,session,plan,email}){
     stripeCustomerId:session.customer||existing.stripeCustomerId||null,
     stripeSubscriptionId:session.subscription||existing.stripeSubscriptionId||null,
     stripeCheckoutSessionId:session.id,
+    acquisition:existing.acquisition||{
+      prospectId:lead.prospectId||'',
+      source:lead.acquisition?.source||'website',
+      utmSource:lead.acquisition?.utmSource||lead.utmSource||'',
+      utmMedium:lead.acquisition?.utmMedium||lead.utmMedium||'',
+      utmCampaign:lead.acquisition?.utmCampaign||lead.utmCampaign||'',
+      visitorId:lead.visitorId||'',
+      sessionId:lead.sessionId||'',
+      firstTouchAt:lead.createdAt||Date.now()
+    },
+    conversion:{
+      ...(existing.conversion||{}),
+      firstPaidAt:existing.conversion?.firstPaidAt||Date.now(),
+      lastCheckoutAt:Date.now(),
+      checkoutSessionId:session.id||'',
+      plan:ent.plan,
+      monthlyValue:ent.price,
+      setupValue:500
+    },
     usage:existing.usage||{minutes:0},
     createdAt:existing.createdAt||Date.now(),
     updatedAt:Date.now()
@@ -177,7 +196,12 @@ module.exports=async function handler(req,res){
 
   const workspace=await upsertWorkspace({lead,session,plan:paidPlan,email:recipient});
   if(lead.prospectId){
-    await upsertWebsiteProspect({id:lead.prospectId,name:lead.name,business:lead.business,email:recipient,phone:lead.phone,industry:lead.industry,plan:paidPlan,source:'get_started',stage:'converted',visitorId:lead.visitorId||'',sessionId:lead.sessionId||''});
+    const paidEnt=entitlementsFor(paidPlan),convertedAt=Date.now();
+    await upsertWebsiteProspect({
+      id:lead.prospectId,name:lead.name,business:lead.business,email:recipient,phone:lead.phone,industry:lead.industry,plan:paidPlan,
+      stage:'converted',visitorId:lead.visitorId||'',sessionId:lead.sessionId||'',utmSource:lead.utmSource||undefined,utmMedium:lead.utmMedium||undefined,utmCampaign:lead.utmCampaign||undefined,
+      workspaceId:workspace.id,stripeCustomerId:session.customer||'',convertedAt,monthlyValue:paidEnt.price,setupValue:500
+    });
   }
   await recordSiteEvent({type:'checkout_complete',visitorId:lead.visitorId||'',sessionId:lead.sessionId||'',path:'/get-started',label:paidPlan,value:workspace.id});
 
