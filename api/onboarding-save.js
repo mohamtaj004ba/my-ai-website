@@ -3,6 +3,7 @@ const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { sendMail } = require('./_lib/mailgun');
 const { syncCompletedOnboarding } = require('../lib/onboarding-sync');
 const { lifecycleEmail } = require('../lib/email-template');
+const { addBusinessHours } = require('../lib/business-hours');
 const { AGREEMENT_VERSION, AGREEMENT_EFFECTIVE_DATE, agreementSnapshot, planSnapshot } = require('./_lib/agreement-clauses');
 
 const ALLOWED_INTAKE_FIELDS = new Set([
@@ -23,14 +24,6 @@ function sanitizeFields(fields){
   }
   return out;
 }
-function addBusinessHours(startMs,hours){
-  let remaining=Math.max(0,Number(hours||0))*60*60*1000,t=new Date(startMs);
-  const parts=(d)=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d).reduce((a,p)=>(a[p.type]=p.value,a),{});
-  const open=(d)=>{let g=0;while(g++<10){const p=parts(d),day=p.weekday,h=Number(p.hour),m=Number(p.minute);if(day!=='Sat'&&day!=='Sun'&&h>=9&&h<17)return d;const add=day==='Sat'?2:day==='Sun'?1:(h>=17?1:0),x=new Date(d.getTime()+add*86400000),q=parts(x);x.setTime(x.getTime()+((9-Number(q.hour))*60-Number(q.minute))*60000);d=x}return d};
-  t=open(t);while(remaining>0){const p=parts(t),mins=Math.max(0,17*60-(Number(p.hour)*60+Number(p.minute))),win=mins*60000;if(remaining<=win){t=new Date(t.getTime()+remaining);break}remaining-=win;t=open(new Date(t.getTime()+win+16*3600000))}
-  return t.getTime();
-}
-
 function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 // Handles two kinds of saves from the onboarding page:
