@@ -3,6 +3,8 @@ const {kv}=require('@vercel/kv');
 const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession}=require('../lib/auth');
 const {sendMail}=require('../lib/mail');
 const {entitlementsFor}=require('../lib/plans');
+const {emailKey}=require('../lib/site-analytics');
+const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
 const WINDOW=10*60,MAX=5;
@@ -385,6 +387,45 @@ async function adminPlatformSettingsSave(req,res){
 
 
 
+
+
+async function adminGmailStatus(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const conn=await getGmailConnection(admin.email);
+  return res.status(200).json({configured:gmailConfigReady(),connected:!!conn,gmailEmail:conn?.gmailEmail||'',connectedAt:conn?.connectedAt||null});
+}
+async function adminGmailConnect(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  if(!gmailConfigReady())return res.status(409).json({error:'Google OAuth is not configured yet'});
+  const state=crypto.randomBytes(24).toString('hex'),redirectUri=requestOrigin(req)+'/api/google-oauth-callback';
+  await kv.set('oauth:gmail:'+state,{adminEmail:admin.email,redirectUri,createdAt:Date.now()},{ex:10*60});
+  return res.status(200).json({url:getGmailOauthUrl({state,redirectUri})});
+}
+async function adminGmailDisconnect(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  await disconnectGmail(admin.email);return res.status(200).json({ok:true});
+}
+async function adminGmailInbox(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  if(!gmailConfigReady())return res.status(200).json({configured:false,connected:false,threads:[],analytics:{}});
+  try{
+    const data=await listGmailInbox(admin.email,{maxResults:Math.min(60,Math.max(1,Number(req.query?.limit||40))),query:String(req.query?.q||'newer_than:30d').slice(0,200)});
+    for(const t of data.threads||[]){
+      const inbound=(t.messages||[]).find(m=>m.direction==='inbound'),sender=inbound?.from||'';
+      if(sender){const pid=await kv.get('site:prospect:email:'+emailKey(sender));if(pid){const p=await kv.get('site:prospect:'+pid);if(p)t.prospect={id:p.id,name:p.name,business:p.business,email:p.email,stage:p.stage}}}
+    }
+    return res.status(200).json({configured:true,...data});
+  }catch(err){console.error('gmail inbox failed',err);return res.status(502).json({error:err.message||'Gmail sync failed'})}
+}
+async function adminGmailSend(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const b=req.body||{},to=String(b.to||'').trim().toLowerCase(),subject=String(b.subject||'').trim().slice(0,300),body=String(b.body||'').trim().slice(0,20000);
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||!subject||!body)return res.status(400).json({error:'Valid recipient, subject, and message required'});
+  try{
+    const sent=await sendGmailMessage(admin.email,{to,subject,body,threadId:String(b.threadId||''),inReplyTo:String(b.inReplyTo||''),references:String(b.references||'')});
+    return res.status(200).json({ok:true,id:sent.id||'',threadId:sent.threadId||b.threadId||''});
+  }catch(err){console.error('gmail send failed',err);return res.status(502).json({error:err.message||'Could not send Gmail message'})}
+}
 
 async function adminWebsiteConversation(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
@@ -973,6 +1014,11 @@ module.exports=async function handler(req,res){
   if(action==='admin-phone-numbers'&&req.method==='GET')return adminPhoneNumbers(req,res);
   if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
   if(action==='admin-phone-number-delete'&&req.method==='POST')return adminDeletePhoneNumber(req,res);
+  if(action==='admin-gmail-status'&&req.method==='GET')return adminGmailStatus(req,res);
+  if(action==='admin-gmail-connect'&&req.method==='POST')return adminGmailConnect(req,res);
+  if(action==='admin-gmail-disconnect'&&req.method==='POST')return adminGmailDisconnect(req,res);
+  if(action==='admin-gmail-inbox'&&req.method==='GET')return adminGmailInbox(req,res);
+  if(action==='admin-gmail-send'&&req.method==='POST')return adminGmailSend(req,res);
   if(action==='admin-website-conversation'&&req.method==='GET')return adminWebsiteConversation(req,res);
   if(action==='admin-website-reply'&&req.method==='POST')return adminWebsiteReply(req,res);
   if(action==='admin-website-analytics'&&req.method==='GET')return adminWebsiteAnalytics(req,res);
