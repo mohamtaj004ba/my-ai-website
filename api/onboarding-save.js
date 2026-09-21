@@ -2,6 +2,7 @@ const { kv } = require('@vercel/kv');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { sendMail } = require('./_lib/mailgun');
 const { syncCompletedOnboarding } = require('../lib/onboarding-sync');
+const { lifecycleEmail } = require('../lib/email-template');
 const { AGREEMENT_VERSION, AGREEMENT_EFFECTIVE_DATE, agreementSnapshot, planSnapshot } = require('./_lib/agreement-clauses');
 
 const ALLOWED_INTAKE_FIELDS = new Set([
@@ -76,13 +77,21 @@ module.exports = async function handler(req, res) {
         business: record.business, fullName: signedName, plan: record.plan, signedAt: signedDate,
         clauses: record.agreementSnapshot.clauses, agreementVersion: record.agreementVersion, effectiveDate: record.agreementEffectiveDate, planSnapshot: record.agreementPlanSnapshot,
       });
-      await sendMail({
-        to: record.email,
-        subject: 'Your signed CallerCore service agreement',
-        text: `Hi ${signedName.split(' ')[0] || 'there'},\n\nAttached is your signed CallerCore service agreement for your records.\n\nQuestions any time: support@callercore.com\n\n\u2014 CallerCore`,
-        html: `<p>Attached is your signed CallerCore service agreement for your records.</p><p>Questions any time: support@callercore.com</p>`,
-        attachments: [{ filename: 'CallerCore-Service-Agreement.pdf', data: Buffer.from(pdfBytes), contentType: 'application/pdf' }],
-      });
+      {const firstName=signedName.split(' ')[0]||'there',emailBody=lifecycleEmail({
+        preheader:'Your signed CallerCore service agreement is attached.',
+        eyebrow:'AGREEMENT SIGNED',
+        title:'Your agreement is complete, '+firstName+'.',
+        intro:'Thanks for completing your CallerCore service agreement.',
+        statusLabel:'Agreement',
+        statusText:'Signed and saved to your onboarding record.',
+        bodyHtml:'<p style="margin:0">A PDF copy of the exact agreement you accepted is attached for your records. Your onboarding can continue from where you left off.</p>',
+        showDashboardSupport:false
+      });await sendMail({
+        to:record.email,
+        subject:'Your signed CallerCore service agreement',
+        ...emailBody,
+        attachments:[{filename:'CallerCore-Service-Agreement.pdf',data:Buffer.from(pdfBytes),contentType:'application/pdf'}]
+      });}
     } catch (err) {
       console.error('Failed to email signed agreement PDF:', err);
     }
@@ -206,12 +215,15 @@ module.exports = async function handler(req, res) {
           await kv.set(stateKey,{...state,status:'building_review',buildEligibleAt:addBusinessHours(Date.now(),1),buildSubmittedAt:Date.now(),checklist:{...(state.checklist||{}),intake:true,businessProfile:true,agentDraft:true,adminReview:false},updatedAt:Date.now()});
         }
         const firstName=String(record.intake?.contactName||record.name||'').split(' ')[0]||'there';
-        if(record.email)await sendMail({
-          to:record.email,
-          subject:'We received your CallerCore onboarding',
-          text:['Hi '+firstName,'','We received your onboarding information and service agreement. Thank you.','','Our team is now reviewing your business details, AI-agent configuration, and routing preferences. We’ll contact you when the initial build has completed review and the next step is ready.','','No action is needed from you right now.','','— CallerCore'].join('\n'),
-          html:'<p>Hi '+firstName+',</p><p><strong>We received your onboarding information and service agreement. Thank you.</strong></p><p>Our team is now reviewing your business details, AI-agent configuration, and routing preferences. We’ll contact you when the initial build has completed review and the next step is ready.</p><p>No action is needed from you right now.</p><p>— CallerCore</p>'
-        });
+        if(record.email){const emailBody=lifecycleEmail({
+          preheader:'We received your CallerCore onboarding and your setup is now in review.',
+          eyebrow:'ONBOARDING RECEIVED',
+          title:'We’ve got everything, '+firstName+'.',
+          intro:'We received your onboarding information and service agreement. Thank you.',
+          statusLabel:'Current status',
+          statusText:'Your business details, AI-agent configuration, and routing preferences are being reviewed.',
+          bodyHtml:'<p style="margin:0">No action is needed from you right now. We’ll contact you when the initial build has completed review and the next step is ready.</p>'
+        });await sendMail({to:record.email,subject:'We received your CallerCore onboarding',...emailBody});}
       }catch(err){
         console.error('Smart onboarding workspace sync failed:',err);
         record.syncError=String(err&&err.message||'sync_failed').slice(0,300);
