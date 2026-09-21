@@ -284,7 +284,7 @@ async function adminProvisioning(req,res){
 async function adminSaveProvisioningStage(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80),stage=String(body.stage||'');
-  const allowed=['Paid','Intake','Building','Ready','Live'];
+  const allowed=['Paid','Review','Intake','Building','QA','Client Test','Ready','Live'];
   if(!id||!allowed.includes(stage))return res.status(400).json({error:'Invalid provisioning stage'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Workspace not found'});
   const record={stage,updatedAt:Date.now(),updatedBy:admin.email};
