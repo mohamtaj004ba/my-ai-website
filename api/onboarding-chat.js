@@ -1,10 +1,7 @@
 const https = require('https');
+const {rateLimit,requestIp}=require('../lib/rate-limit');
 
 const ALLOWED_HOSTS = new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
-const hits = new Map();
-const RATE_WINDOW_MS = 10 * 60 * 1000;
-const RATE_MAX = 40;
-
 function isAllowedOrigin(req) {
   const candidate = req.headers.origin || req.headers.referer || '';
   if (!candidate) return false;
@@ -12,19 +9,6 @@ function isAllowedOrigin(req) {
     const host = new URL(candidate).host;
     return ALLOWED_HOSTS.has(host) || host.endsWith('.vercel.app');
   } catch (_) { return false; }
-}
-function getIp(req) {
-  const fwd = req.headers['x-forwarded-for'];
-  return fwd ? fwd.split(',')[0].trim() : (req.socket?.remoteAddress || 'unknown');
-}
-function rateLimited(ip) {
-  const now = Date.now(), entry = hits.get(ip);
-  if (!entry || now - entry.start > RATE_WINDOW_MS) {
-    hits.set(ip, { start: now, count: 1 });
-    return false;
-  }
-  entry.count += 1;
-  return entry.count > RATE_MAX;
 }
 function sanitizeMessages(messages) {
   if (!Array.isArray(messages) || messages.length < 1 || messages.length > 24) return null;
@@ -141,7 +125,7 @@ module.exports = async function handler(req, res) {
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Cache-Control', 'no-store');
-  if (rateLimited(getIp(req))) return res.status(429).json({ error: 'Too many requests' });
+  const rl=await rateLimit({scope:'onboarding-chat',identifier:requestIp(req),limit:40,windowSeconds:600});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ error: 'Too many requests' })}
   if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Assistant unavailable' });
 
   const { context } = req.body || {};
