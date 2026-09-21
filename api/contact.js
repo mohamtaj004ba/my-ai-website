@@ -1,3 +1,4 @@
+const {safeError}=require('../lib/safe-log');
 const crypto=require('crypto');
 const { kv }=require('@vercel/kv');
 const { sendMail } = require('./_lib/mailgun');
@@ -37,7 +38,7 @@ module.exports=async function handler(req,res){
     });
     return res.status(200).json({ok:true,prospectId:prospect.id});
   }catch(e){
-    console.error('contact send failed',e);
+    console.error('contact send failed',safeError(e));
     return res.status(500).json({error:'Unable to send'});
   }
 };
