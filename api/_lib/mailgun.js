@@ -7,7 +7,7 @@ const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'mail.callercore.com';
 // Sends via Mailgun. Pass `attachments: [{ filename, data (Buffer), contentType }]`
 // to include files — Mailgun's API needs multipart/form-data for that, so this
 // builds the multipart body by hand rather than pulling in a form-data library.
-function sendMail({ to, subject, text, html, attachments = [] }) {
+function sendMail({ to, subject, text, html, attachments = [], from = 'CallerCore <support@callercore.com>', replyTo = 'support@callercore.com' }) {
   return new Promise((resolve, reject) => {
     const boundary = '----ccmail' + crypto.randomBytes(16).toString('hex');
     const parts = [];
@@ -18,7 +18,8 @@ function sendMail({ to, subject, text, html, attachments = [] }) {
       ));
     }
 
-    field('from', 'CallerCore <support@callercore.com>');
+    field('from', from);
+    field('h:Reply-To', replyTo);
     field('to', to);
     field('subject', subject);
     field('text', text);
