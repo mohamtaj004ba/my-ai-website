@@ -1,5 +1,6 @@
 const https = require('https');
 const {rateLimit,requestIp}=require('../lib/rate-limit');
+const {safeError,upstreamCode}=require('../lib/safe-log');
 
 const ALLOWED_HOSTS = new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
 function isAllowedOrigin(req) {
@@ -178,7 +179,7 @@ module.exports = async function handler(req, res) {
       apiRes.on('end', () => {
         try {
           if (apiRes.statusCode !== 200) {
-            console.error('Anthropic API error:', data);
+            console.error('Anthropic API error:', upstreamCode(data));
             res.status(502).json({ error: 'Upstream API error' });
             return resolve();
           }
@@ -186,14 +187,14 @@ module.exports = async function handler(req, res) {
           res.status(200).json({ reply: parsed.content[0].text });
           resolve();
         } catch (err) {
-          console.error('Parse error:', err);
+          console.error('Parse error:', safeError(err));
           res.status(500).json({ error: 'Parse error' });
           resolve();
         }
       });
     });
     apiReq.on('error', (err) => {
-      console.error('Request error:', err);
+      console.error('Request error:', safeError(err));
       res.status(500).json({ error: 'Request failed' });
       resolve();
     });
