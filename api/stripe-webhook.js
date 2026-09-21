@@ -125,6 +125,16 @@ module.exports=async function handler(req,res){
     const onboarding=await kv.get('onboarding:'+token);
     if(onboarding&&!onboarding.workspaceId)await kv.set('onboarding:'+token,{...onboarding,workspaceId:workspace.id},{ex:60*60*24*30});
   }
+  await kv.set('onboarding:workspace-token:'+workspace.id,token,{ex:60*60*24*90});
+  const existingOnboarding=await kv.get('onboarding:workspace:'+workspace.id)||{};
+  await kv.set('onboarding:workspace:'+workspace.id,{
+    ...existingOnboarding,
+    workspaceId:workspace.id,
+    status:'awaiting_agreement',
+    completionPercent:0,
+    checklist:{...(existingOnboarding.checklist||{}),payment:true,agreement:false,intake:false,businessProfile:false,agentDraft:false,routingCaptured:false,phoneAssigned:!!String(workspace.phone||'').trim(),adminReview:false,testCall:false,clientApproval:false,live:false},
+    updatedAt:Date.now()
+  });
   if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'pending_email'},{ex:60*60*24*90});
 
   const magicLink=SITE_URL+'/onboarding?token='+token;
