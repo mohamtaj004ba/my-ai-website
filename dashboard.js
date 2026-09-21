@@ -462,14 +462,26 @@ function renderProvisioning(){
 }
 function renderPhones(){
   const wrap=document.getElementById('phoneTable');if(!wrap)return;
-  wrap.innerHTML=adminPhoneData.map(x=>'<div class="call-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span><span class="tag green">'+esc(x.status||'active')+'</span><span><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button></span></div>').join('');
+  wrap.innerHTML=adminPhoneData.map(x=>'<div class="call-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span><span class="tag green">'+esc(x.status||'active')+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>').join('');
   const empty=document.getElementById('phoneEmpty');if(empty)empty.hidden=adminPhoneData.length!==0;
   wrap.querySelectorAll('[data-edit-phone]').forEach(b=>b.addEventListener('click',()=>openPhoneModal(b.dataset.editPhone)));
+  wrap.querySelectorAll('[data-delete-phone]').forEach(b=>b.addEventListener('click',()=>deletePhone(b.dataset.deletePhone)));
 }
 function renderHealth(){
   const wrap=document.getElementById('systemHealthGrid');if(!wrap)return;
   wrap.innerHTML=adminHealthData.map(x=>'<article class="panel integration-card"><div><b>'+esc(x.name)+'</b><p>'+esc(x.detail||'')+'</p></div><span class="tag '+(x.status==='operational'||x.status==='configured'?'green':x.status==='error'?'red':'amber')+'">'+esc(x.status.replace('_',' '))+'</span></article>').join('');
 }
+
+async function deletePhone(id){
+  const item=adminPhoneData.find(x=>String(x.id)===String(id));if(!item)return;
+  const assigned=item.workspaceName?' assigned to '+item.workspaceName:'';
+  if(!confirm('Delete '+item.number+assigned+'? This will remove the number from CallerCore'+(item.workspaceId?' and clear it from that workspace.':'.')))return;
+  const r=await fetch('/api/account?action=admin-phone-number-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error||'Could not delete phone number.');return}
+  await loadAdminOps();
+}
+
 function openPhoneModal(id=null){
   const item=id?adminPhoneData.find(x=>String(x.id)===String(id)):null;
   const modal=document.getElementById('phoneModal');if(!modal)return;
