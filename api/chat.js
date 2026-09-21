@@ -38,7 +38,7 @@ module.exports = async function handler(req, res) {
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Cache-Control', 'no-store');
-  const rl=await rateLimit({scope:'public-chat',identifier:requestIp(req),limit:25,windowSeconds:600});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ error: 'Too many requests' })}
+  const rl=await rateLimit({scope:'public-chat',identifier:requestIp(req),limit:25,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ error: 'Too many requests' })}
   if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Assistant unavailable' });
 
   const safeMessages = sanitizeMessages(req.body && req.body.messages);
