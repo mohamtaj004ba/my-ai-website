@@ -69,7 +69,7 @@ PRICING (share naturally in conversation, not as a list unless they ask for the 
 - Starter is 349 dollars a month: 300 minutes, 1 location, the AI phone agent, lead capture, follow-up, and the lead dashboard.
 - Growth is 599 a month and the most popular: 600 minutes, 2 locations, everything in Starter plus appointment booking, SMS marketing, and priority support.
 - Pro is 999 a month: unlimited minutes, up to 5 locations, everything in Growth plus custom integrations, dedicated onboarding, and white-glove support.
-- Every plan has a one-time 500 dollar setup fee, overage is 30 cents a minute beyond the included minutes, and there's no long-term contract — cancel anytime.
+- Every plan has a one-time 500 dollar setup fee, usage beyond included minutes is handled according to the billing terms disclosed at signup, and there's no long-term contract — cancel anytime.
 
 KEY FACTS:
 - There's no free trial, but there's a free live demo line anyone can call to hear the AI answer a real service call.
