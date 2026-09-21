@@ -767,8 +767,22 @@ async function adminProvisioningChecklistSave(req,res){
       html:'<p>Hi '+firstName+',</p><p><strong>We’ve completed the initial review of your CallerCore configuration.</strong></p><p>Your AI agent and business rules have been prepared from the information you submitted. We’re now finishing phone routing and test-call preparation.</p><p>No action is needed from you right now.</p><p>— CallerCore</p>'
     });
   }
-  if(field==='testCall'&&value){next.status='client_test';next.testReadyAt=Date.now()}
-  if(field==='clientApproval'&&value){next.status='ready';next.clientApprovedAt=Date.now()}
+  if(field==='testCall'&&value){
+    next.status='client_test';next.testReadyAt=Date.now();
+    if(to)await sendMail({
+      to,subject:'Your CallerCore test stage is ready',
+      text:['Hi '+firstName,'','Your CallerCore setup has reached the test stage.','','Your agent configuration has been reviewed and the test-call step is ready. Sign in to your CallerCore dashboard to review your setup and test experience:',requestOrigin(req)+'/dashboard','','Once everything sounds right, we’ll move into final launch preparation.','','— CallerCore'].join('\n'),
+      html:'<p>Hi '+firstName+',</p><p><strong>Your CallerCore setup has reached the test stage.</strong></p><p>Your agent configuration has been reviewed and the test-call step is ready. <a href="'+requestOrigin(req)+'/dashboard">Open your CallerCore dashboard</a> to review your setup and test experience.</p><p>Once everything sounds right, we’ll move into final launch preparation.</p><p>— CallerCore</p>'
+    });
+  }
+  if(field==='clientApproval'&&value){
+    next.status='ready';next.clientApprovedAt=Date.now();
+    if(to)await sendMail({
+      to,subject:'CallerCore is preparing your launch',
+      text:['Hi '+firstName,'','Your test stage is complete and your CallerCore setup is now in final launch preparation.','','We’re completing the last routing and activation checks. We’ll send you a confirmation as soon as your AI receptionist is live.','','No action is needed right now.','','— CallerCore'].join('\n'),
+      html:'<p>Hi '+firstName+',</p><p><strong>Your test stage is complete and your CallerCore setup is now in final launch preparation.</strong></p><p>We’re completing the last routing and activation checks. We’ll send you a confirmation as soon as your AI receptionist is live.</p><p>No action is needed right now.</p><p>— CallerCore</p>'
+    });
+  }
   if(field==='live'&&value){
     next.checklist.adminReview=true;next.checklist.testCall=true;next.checklist.clientApproval=true;
     next.status='live';next.liveAt=Date.now();await kv.set(wsKey,{...ws,status:'active',updatedAt:Date.now()});
