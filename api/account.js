@@ -4,7 +4,7 @@ const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession}=
 const {sendMail}=require('../lib/mail');
 const {entitlementsFor}=require('../lib/plans');
 const {emailKey}=require('../lib/site-analytics');
-const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
+const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
 const WINDOW=10*60,MAX=5;
@@ -389,6 +389,18 @@ async function adminPlatformSettingsSave(req,res){
 
 
 
+
+async function validatedGmailFrom(adminEmail,requested=''){
+  const conn=await getGmailConnection(adminEmail);
+  if(!conn)return '';
+  const aliases=await listGmailAliases(adminEmail);
+  const wanted=String(requested||'').trim().toLowerCase();
+  if(!wanted)return (aliases.find(a=>a.isDefault&&a.verificationStatus!=='pending')||aliases.find(a=>a.isPrimary)||{}).email||conn.gmailEmail||adminEmail;
+  const match=aliases.find(a=>a.email===wanted&&(a.isPrimary||a.verificationStatus==='accepted'));
+  if(!match)throw new Error('Selected From address is not an accepted Gmail send-as alias');
+  return match.email;
+}
+
 async function adminGmailStatus(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const conn=await getGmailConnection(admin.email);
@@ -418,6 +430,16 @@ async function adminGmailInbox(req,res){
   }catch(err){console.error('gmail inbox failed',err);return res.status(502).json({error:err.message||'Gmail sync failed'})}
 }
 
+
+async function adminGmailAliases(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const conn=await getGmailConnection(admin.email);if(!conn)return res.status(200).json({connected:false,aliases:[]});
+  try{
+    const aliases=await listGmailAliases(admin.email);
+    return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases});
+  }catch(err){console.error('gmail aliases failed',err);return res.status(502).json({error:err.message||'Could not load Gmail aliases'})}
+}
+
 async function adminGmailRead(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).threadId||'').slice(0,120);if(!id)return res.status(400).json({error:'Thread id required'});
@@ -427,10 +449,10 @@ async function adminGmailRead(req,res){
 
 async function adminGmailSend(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const b=req.body||{},to=String(b.to||'').trim().toLowerCase(),subject=String(b.subject||'').trim().slice(0,300),body=String(b.body||'').trim().slice(0,20000);
+  const b=req.body||{},to=String(b.to||'').trim().toLowerCase(),subject=String(b.subject||'').trim().slice(0,300),body=String(b.body||'').trim().slice(0,20000),requestedFrom=String(b.from||'').trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||!subject||!body)return res.status(400).json({error:'Valid recipient, subject, and message required'});
   try{
-    const sent=await sendGmailMessage(admin.email,{to,subject,body,threadId:String(b.threadId||''),inReplyTo:String(b.inReplyTo||''),references:String(b.references||'')});
+    const from=await validatedGmailFrom(admin.email,requestedFrom);const sent=await sendGmailMessage(admin.email,{to,subject,body,from,threadId:String(b.threadId||''),inReplyTo:String(b.inReplyTo||''),references:String(b.references||'')});
     return res.status(200).json({ok:true,id:sent.id||'',threadId:sent.threadId||b.threadId||''});
   }catch(err){console.error('gmail send failed',err);return res.status(502).json({error:err.message||'Could not send Gmail message'})}
 }
@@ -445,7 +467,7 @@ async function adminWebsiteConversation(req,res){
 }
 async function adminWebsiteReply(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const body=req.body||{},id=String(body.id||'').slice(0,100),message=String(body.message||'').trim().slice(0,10000);
+  const body=req.body||{},id=String(body.id||'').slice(0,100),message=String(body.message||'').trim().slice(0,10000),requestedFrom=String(body.from||'').trim().toLowerCase();
   if(!id||!message)return res.status(400).json({error:'Prospect and reply message required'});
   const key='site:prospect:'+id,prospect=await kv.get(key);if(!prospect)return res.status(404).json({error:'Prospect not found'});
   const to=String(prospect.email||'').trim().toLowerCase();
@@ -455,8 +477,8 @@ async function adminWebsiteReply(req,res){
   try{
     const gmail=await getGmailConnection(admin.email);
     if(gmail){
-      await sendGmailMessage(admin.email,{to,subject,body:message});
-      channel='gmail';from=gmail.gmailEmail||admin.email;
+      from=await validatedGmailFrom(admin.email,requestedFrom);await sendGmailMessage(admin.email,{to,subject,body:message,from});
+      channel='gmail';
     }else{
       await sendMail({to,subject,text:message,html:'<p>'+message.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])).replace(/\n/g,'<br>')+'</p>'});
     }
@@ -1034,6 +1056,7 @@ module.exports=async function handler(req,res){
   if(action==='admin-gmail-connect'&&req.method==='POST')return adminGmailConnect(req,res);
   if(action==='admin-gmail-disconnect'&&req.method==='POST')return adminGmailDisconnect(req,res);
   if(action==='admin-gmail-inbox'&&req.method==='GET')return adminGmailInbox(req,res);
+  if(action==='admin-gmail-aliases'&&req.method==='GET')return adminGmailAliases(req,res);
   if(action==='admin-gmail-read'&&req.method==='POST')return adminGmailRead(req,res);
   if(action==='admin-gmail-send'&&req.method==='POST')return adminGmailSend(req,res);
   if(action==='admin-website-conversation'&&req.method==='GET')return adminWebsiteConversation(req,res);
