@@ -179,7 +179,7 @@
   .ob-next-step div{font-family:'Inter',sans-serif; font-size:14px; line-height:1.55; color:#C9CDD3; text-align:left;}
   .ob-next-step b{color:var(--paper);}
   .ob-done-card .ob-check{width:56px; height:56px; border-radius:50%; background:var(--good); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;}
-  .ob-support-line{text-align:center; font-size:13.5px; color:var(--steel); margin-top:24px;}
+  .ob-dashboard-link{display:inline-flex;align-items:center;justify-content:center;margin:28px auto 0;background:var(--signal);color:#fff;text-decoration:none;border-radius:10px;padding:13px 18px;font:700 14px 'Inter',sans-serif;}.ob-dashboard-link:hover{background:var(--signal-dim);}\n  .ob-support-line{text-align:center; font-size:13.5px; color:var(--steel); margin-top:24px;}
   .ob-support-line a{color:var(--signal);}
 
   .ob-loading, .ob-error{text-align:center; color:var(--steel); padding:80px 20px; font-family:'Inter',sans-serif;}
@@ -383,7 +383,7 @@ footer{background:#20201d!important}
               <label>Have a website? Paste it and we'll pull what we can find.</label>
               <div class="ob-prefill">
                 <input type="text" id="prefillUrl" data-field="website" placeholder="yourbusiness.com (optional)" autocomplete="url">
-                <button type="button" class="ob-agree-btn" id="prefillBtn" style="width:auto; padding:11px 18px;">Look it up</button>
+                <button type="button" class="ob-agree-btn" id="prefillBtn" style="width:auto; padding:11px 18px;">Scan website</button>
               </div>
               <div class="ob-prefill-status" id="prefillStatus"></div>
               <button type="button" class="ob-skip" id="skipPrefillBtn">No website — I'll fill it in manually</button>
@@ -1291,7 +1291,7 @@ footer{background:#20201d!important}
       $('prefillStatus').className = 'ob-prefill-status fail';
     }
     $('prefillBtn').disabled = false;
-    $('prefillBtn').textContent = 'Look it up';
+    $('prefillBtn').textContent = 'Scan website';
   });
 
   $('prefillApply').addEventListener('click', () => {
