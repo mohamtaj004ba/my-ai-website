@@ -1,206 +1,45 @@
-const https = require('https');
-const http = require('http');
-const { URL } = require('url');
-const dns = require('dns');
-const net = require('net');
+const https=require('https');
+const http=require('http');
+const {URL}=require('url');
+const dns=require('dns');
+const net=require('net');
+const {kv}=require('@vercel/kv');
 
-// Fetches a business's own website and extracts ONLY the safe, factual,
-// logistics-style fields — never anything from the emergency/urgency,
-// escalation, routing, or pricing-policy sections of the intake form.
-// Those stay manual, always, on purpose (see CallerCore ops manual).
-
-const MAX_BYTES = 500 * 1000; // 500KB cap
-const FETCH_TIMEOUT_MS = 8000;
-const ALLOWED_HOSTS = new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
-const hits = new Map();
-const RATE_WINDOW_MS = 10 * 60 * 1000;
-const RATE_MAX = 8;
-
-function isAllowedOrigin(req) {
-  const candidate = req.headers.origin || req.headers.referer || '';
-  if (!candidate) return false;
-  try { const host = new URL(candidate).host; return ALLOWED_HOSTS.has(host) || host.endsWith('.vercel.app'); }
-  catch (_) { return false; }
-}
-function getIp(req) {
-  const fwd=req.headers['x-forwarded-for'];
-  return fwd ? fwd.split(',')[0].trim() : (req.socket?.remoteAddress || 'unknown');
-}
-function rateLimited(ip) {
-  const now=Date.now(), entry=hits.get(ip);
-  if(!entry || now-entry.start>RATE_WINDOW_MS){hits.set(ip,{start:now,count:1});return false}
-  entry.count+=1; return entry.count>RATE_MAX;
-}
-function isPrivateAddress(address) {
-  if (!address) return true;
-  if (net.isIPv4(address)) {
-    const p=address.split('.').map(Number);
-    return p[0]===10 || p[0]===127 || p[0]===0 || (p[0]===169&&p[1]===254) || (p[0]===172&&p[1]>=16&&p[1]<=31) || (p[0]===192&&p[1]===168) || (p[0]===100&&p[1]>=64&&p[1]<=127) || p[0]>=224;
-  }
-  const a=address.toLowerCase();
-  return a==='::1' || a==='::' || a.startsWith('fc') || a.startsWith('fd') || a.startsWith('fe8') || a.startsWith('fe9') || a.startsWith('fea') || a.startsWith('feb') || a.startsWith('::ffff:127.') || a.startsWith('::ffff:10.') || a.startsWith('::ffff:192.168.');
-}
-function safeLookup(hostname, options, callback) {
-  dns.lookup(hostname, {all:false,verbatim:true}, (err,address,family)=>{
-    if(err) return callback(err);
-    if(isPrivateAddress(address)) return callback(new Error('blocked_host'));
-    callback(null,address,family);
-  });
-}
-function validateTarget(parsed) {
-  if (!['http:','https:'].includes(parsed.protocol)) throw new Error('invalid_protocol');
-  const host=parsed.hostname.toLowerCase();
-  if(host==='localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal')) throw new Error('blocked_host');
-  if(net.isIP(host) && isPrivateAddress(host)) throw new Error('blocked_host');
-  if(parsed.username || parsed.password) throw new Error('credentials_not_allowed');
-  if(parsed.port && !['80','443'].includes(parsed.port)) throw new Error('blocked_port');
-}
-
-function fetchPage(targetUrl, redirectsLeft = 3) {
-  return new Promise((resolve, reject) => {
-    let parsed;
-    try {
-      parsed = new URL(targetUrl);
-    } catch (e) {
-      return reject(new Error('invalid_url'));
+const MAX_BYTES=550*1000,MAX_PAGES=6,FETCH_TIMEOUT_MS=8000,ALLOWED_HOSTS=new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
+const hits=new Map(),RATE_WINDOW_MS=10*60*1000,RATE_MAX=8;
+function isAllowedOrigin(req){const c=req.headers.origin||req.headers.referer||'';if(!c)return false;try{const h=new URL(c).host;return ALLOWED_HOSTS.has(h)||h.endsWith('.vercel.app')}catch(_){return false}}
+function getIp(req){const f=req.headers['x-forwarded-for'];return f?f.split(',')[0].trim():(req.socket?.remoteAddress||'unknown')}
+function rateLimited(ip){const now=Date.now(),e=hits.get(ip);if(!e||now-e.start>RATE_WINDOW_MS){hits.set(ip,{start:now,count:1});return false}e.count++;return e.count>RATE_MAX}
+function isPrivateAddress(address){if(!address)return true;if(net.isIPv4(address)){const p=address.split('.').map(Number);return p[0]===10||p[0]===127||p[0]===0||(p[0]===169&&p[1]===254)||(p[0]===172&&p[1]>=16&&p[1]<=31)||(p[0]===192&&p[1]===168)||(p[0]===100&&p[1]>=64&&p[1]<=127)||p[0]>=224}const a=address.toLowerCase();return a==='::1'||a==='::'||a.startsWith('fc')||a.startsWith('fd')||/^fe[89ab]/.test(a)||a.startsWith('::ffff:127.')||a.startsWith('::ffff:10.')||a.startsWith('::ffff:192.168.')}
+function safeLookup(hostname,options,cb){dns.lookup(hostname,{all:false,verbatim:true},(err,address,family)=>{if(err)return cb(err);if(isPrivateAddress(address))return cb(new Error('blocked_host'));cb(null,address,family)})}
+function validateTarget(u){if(!['http:','https:'].includes(u.protocol))throw new Error('invalid_protocol');const host=u.hostname.toLowerCase();if(host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||host.endsWith('.internal'))throw new Error('blocked_host');if(net.isIP(host)&&isPrivateAddress(host))throw new Error('blocked_host');if(u.username||u.password)throw new Error('credentials_not_allowed');if(u.port&&!['80','443'].includes(u.port))throw new Error('blocked_port')}
+function fetchPage(target,redirects=3){return new Promise((resolve,reject)=>{let u;try{u=new URL(target);validateTarget(u)}catch(e){return reject(e)}const lib=u.protocol==='https:'?https:http;const req=lib.get(u,{timeout:FETCH_TIMEOUT_MS,lookup:safeLookup,headers:{'User-Agent':'CallerCoreOnboarding/2.0','Accept':'text/html,text/plain;q=0.9'}},res=>{if([301,302,303,307,308].includes(res.statusCode)&&res.headers.location&&redirects>0){const next=new URL(res.headers.location,u).toString();res.resume();return resolve(fetchPage(next,redirects-1))}if(res.statusCode>=400){res.resume();return reject(new Error('http_'+res.statusCode))}const ct=String(res.headers['content-type']||'').toLowerCase();if(ct&&!ct.includes('text/html')&&!ct.includes('text/plain')){res.resume();return reject(new Error('unsupported_content_type'))}let data='',bytes=0;res.on('data',chunk=>{bytes+=chunk.length;if(bytes>MAX_BYTES){req.destroy(new Error('page_too_large'));return}data+=chunk});res.on('end',()=>resolve({html:data,url:u.toString()}))});req.on('timeout',()=>{req.destroy(new Error('timeout'))});req.on('error',reject)})}
+function decode(s=''){return s.replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/&lt;/gi,'<').replace(/&gt;/gi,'>')}
+function htmlToText(html){const ld=[...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map(m=>decode(m[1]).replace(/\s+/g,' ').slice(0,2500)).join(' ');const text=html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<!--[\s\S]*?-->/g,' ').replace(/<[^>]+>/g,' ');return decode(ld+' '+text).replace(/\s+/g,' ').trim().slice(0,9000)}
+function sameSite(a,b){const clean=h=>String(h||'').toLowerCase().replace(/^www\./,'');return clean(a)===clean(b)}
+function discoverLinks(html,baseUrl){const base=new URL(baseUrl),seen=new Map();for(const m of html.matchAll(/<a\b[^>]*href=["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi)){try{const u=new URL(decode(m[1]),base);if(!['http:','https:'].includes(u.protocol)||!sameSite(u.hostname,base.hostname))continue;u.hash='';const key=u.origin+u.pathname.replace(/\/+$/,'')+(u.search||'');if(key===base.origin+base.pathname.replace(/\/+$/,''))continue;const label=htmlToText(m[2]).slice(0,120).toLowerCase(),path=u.pathname.toLowerCase(),hay=path+' '+label;let score=0;for(const [word,weight] of [['service',10],['contact',10],['about',8],['faq',10],['question',8],['location',9],['hour',9],['book',7],['appointment',7],['team',5],['pricing',5]])if(hay.includes(word))score+=weight;if(/privacy|terms|login|account|blog|news|career|cart|checkout/i.test(hay))score-=20;if(score>0&&!seen.has(key))seen.set(key,{url:u.toString(),score,label})}catch(_){}}return [...seen.values()].sort((a,b)=>b.score-a.score).slice(0,MAX_PAGES-1)}
+async function crawlSite(url){const home=await fetchPage(url),root=new URL(home.url),pages=[{url:home.url,html:home.html}];for(const link of discoverLinks(home.html,home.url)){try{const page=await fetchPage(link.url);if(sameSite(new URL(page.url).hostname,root.hostname))pages.push(page)}catch(err){console.warn('Smart crawl skipped',link.url,err.message)}if(pages.length>=MAX_PAGES)break}return pages}
+function callClaude(pageText){
+  const system='Extract only facts explicitly stated in the supplied business website pages. Never guess or infer missing facts. Return raw JSON only with this exact shape: {"businessName":null,"phone":null,"email":null,"address":null,"servicesOffered":null,"serviceArea":null,"hours":null,"faqs":null}. servicesOffered should be a concise comma-separated list of explicitly advertised services. faqs should contain useful question-and-answer pairs only when the answer is explicitly supported by the website, formatted one pair per line as "Question — Answer". If a field is not clearly supported, return null.';
+  const body=JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system,messages:[{role:'user',content:'Business website content:\n\n'+pageText}]});
+  const opts={hostname:'api.anthropic.com',path:'/v1/messages',method:'POST',headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body),'x-api-key':process.env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'}};
+  return new Promise((resolve,reject)=>{const r=https.request(opts,res=>{let d='';res.on('data',c=>d+=c);res.on('end',()=>{if(res.statusCode!==200)return reject(new Error('anthropic_'+res.statusCode));try{const p=JSON.parse(d),txt=String(p.content?.[0]?.text||'').trim().replace(/^\x60\x60\x60json/i,'').replace(/^\x60\x60\x60/,'').replace(/\x60\x60\x60$/,'').trim();resolve(JSON.parse(txt))}catch(e){reject(e)}})});r.on('error',reject);r.setTimeout(12000,()=>r.destroy(new Error('assistant_timeout')));r.write(body);r.end()})}
+function cleanFields(raw){const out={};for(const k of ['businessName','phone','email','address','servicesOffered','serviceArea','hours','faqs']){const v=raw&&raw[k];out[k]=typeof v==='string'&&v.trim()?v.trim().slice(0,k==='faqs'?6000:3000):null}return out}
+module.exports=async function handler(req,res){
+  res.setHeader('Cache-Control','no-store');const origin=req.headers.origin||'';
+  if(req.method==='OPTIONS'){if(!isAllowedOrigin(req))return res.status(403).end();res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type');return res.status(200).end()}
+  if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});if(!isAllowedOrigin(req))return res.status(403).json({error:'Forbidden'});res.setHeader('Access-Control-Allow-Origin',origin);
+  if(rateLimited(getIp(req)))return res.status(429).json({ok:false,reason:'rate_limited'});if(!process.env.ANTHROPIC_API_KEY)return res.status(503).json({ok:false,reason:'assistant_unavailable'});
+  const {url,token}=req.body||{};if(!url||typeof url!=='string')return res.status(400).json({error:'Missing url'});if(url.length>500)return res.status(400).json({error:'URL too long'});
+  const normalized=/^https?:\/\//i.test(url)?url:'https://'+url;
+  try{
+    const pages=await crawlSite(normalized),combined=pages.map((p,i)=>'PAGE '+(i+1)+' '+p.url+'\n'+htmlToText(p.html)).join('\n\n').slice(0,32000);
+    if(combined.length<40)return res.status(200).json({ok:false,reason:'no_content'});
+    const fields=cleanFields(await callClaude(combined)),foundCount=Object.values(fields).filter(Boolean).length;
+    if(token&&/^[a-f0-9]{48}$/i.test(token)){
+      const key='onboarding:'+token,record=await kv.get(key);
+      if(record){record.intake={...(record.intake||{}),website:normalized};record.website=normalized;record.websiteScan={source:normalized,pagesScanned:pages.length,foundCount,scannedAt:Date.now(),pages:pages.map(p=>{try{return new URL(p.url).pathname||'/'}catch(_){return'/'}})};await kv.set(key,record,{ex:60*60*24*90})}
     }
-    try { validateTarget(parsed); } catch (e) { return reject(e); }
-
-    const lib = parsed.protocol === 'https:' ? https : http;
-    const req = lib.get(parsed, { timeout: FETCH_TIMEOUT_MS, lookup: safeLookup, headers: { 'User-Agent':'CallerCoreOnboarding/1.0', 'Accept':'text/html,text/plain;q=0.9' } }, (res) => {
-      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redirectsLeft > 0) {
-        const nextUrl = new URL(res.headers.location, parsed).toString();
-        res.resume();
-        return resolve(fetchPage(nextUrl, redirectsLeft - 1));
-      }
-      if (res.statusCode >= 400) {
-        res.resume();
-        return reject(new Error(`http_${res.statusCode}`));
-      }
-      const contentType=String(res.headers['content-type']||'').toLowerCase();
-      if(contentType && !contentType.includes('text/html') && !contentType.includes('text/plain')){
-        res.resume();return reject(new Error('unsupported_content_type'));
-      }
-      let data = '';
-      let bytes = 0;
-      res.on('data', (chunk) => {
-        bytes += chunk.length;
-        if (bytes > MAX_BYTES) {
-          req.destroy();
-          return;
-        }
-        data += chunk;
-      });
-      res.on('end', () => resolve(data));
-    });
-    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
-    req.on('error', reject);
-  });
-}
-
-function htmlToText(html) {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 6000);
-}
-
-function callClaude(pageText) {
-  const SYSTEM_PROMPT = `You extract ONLY facts explicitly stated in the provided website text. You never infer, guess, assume, or fill in a "typical" value for the industry. If a field is not clearly and explicitly stated in the text, its value must be null.
-
-Extract these fields, and nothing else:
-- businessName: the business's name, if stated
-- phone: a business phone number, if stated (as written)
-- address: the business's street address, if stated (full line: street, city, state, ZIP)
-- servicesOffered: a short comma-separated list of services explicitly mentioned, or null
-- serviceArea: cities/region explicitly mentioned as served, or null
-- hours: business hours if explicitly stated, or null
-
-Respond with ONLY a raw JSON object, no markdown fences, no commentary, in this exact shape:
-{"businessName": null, "phone": null, "address": null, "servicesOffered": null, "serviceArea": null, "hours": null}`;
-
-  const body = JSON.stringify({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 400,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: `Website text:\n\n${pageText}` }],
-  });
-
-  const options = {
-    hostname: 'api.anthropic.com',
-    path: '/v1/messages',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(body),
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-  };
-
-  return new Promise((resolve, reject) => {
-    const apiReq = https.request(options, (apiRes) => {
-      let data = '';
-      apiRes.on('data', (c) => { data += c; });
-      apiRes.on('end', () => {
-        if (apiRes.statusCode !== 200) return reject(new Error(`anthropic_${apiRes.statusCode}`));
-        try {
-          const parsed = JSON.parse(data);
-          const text = parsed.content[0].text.trim()
-            .replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-          resolve(JSON.parse(text));
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
-    apiReq.on('error', reject);
-    apiReq.write(body);
-    apiReq.end();
-  });
-}
-
-module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
-  const origin=req.headers.origin||'';
-  if (req.method === 'OPTIONS') {
-    if(!isAllowedOrigin(req)) return res.status(403).end();
-    res.setHeader('Access-Control-Allow-Origin',origin);
-    res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers','Content-Type');
-    return res.status(200).end();
-  }
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if(!isAllowedOrigin(req)) return res.status(403).json({error:'Forbidden'});
-  res.setHeader('Access-Control-Allow-Origin',origin);
-  if(rateLimited(getIp(req))) return res.status(429).json({ok:false,reason:'rate_limited'});
-  if(!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ok:false,reason:'assistant_unavailable'});
-
-  const { url } = req.body || {};
-  if (!url || typeof url !== 'string') {
-    return res.status(400).json({ error: 'Missing url' });
-  }
-
-  if(url.length>500) return res.status(400).json({error:'URL too long'});
-  const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`;
-
-  try {
-    const html = await fetchPage(normalized);
-    const text = htmlToText(html);
-    if (!text || text.length < 40) {
-      return res.status(200).json({ ok: false, reason: 'no_content' });
-    }
-    const fields = await callClaude(text);
-    return res.status(200).json({ ok: true, fields, source: normalized });
-  } catch (err) {
-    console.error('Crawl/prefill failed:', err.message);
-    // Never a hard error to the client — the form just falls back to blank.
-    return res.status(200).json({ ok: false, reason: 'crawl_failed' });
-  }
+    return res.status(200).json({ok:true,fields,source:normalized,pagesScanned:pages.length,foundCount});
+  }catch(err){console.error('Smart crawl failed:',err.message);return res.status(200).json({ok:false,reason:'crawl_failed'})}
 };
