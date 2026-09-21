@@ -8,7 +8,7 @@ const { AGREEMENT_VERSION, AGREEMENT_EFFECTIVE_DATE, agreementSnapshot, planSnap
 
 const ALLOWED_INTAKE_FIELDS = new Set([
   'website','businessName','contactName','phone','email','industry','industryOther','address','addressSharing','serviceArea','outOfArea','outOfAreaReferral',
-  'tradeType','tradeTypeOther','servicesOffered','servicesNotOffered','gasUtility','insuranceInfo','vetAskSpecies','vetEmergencyNotes','conflictCheck',
+  'tradeType','tradeTypeOther','servicesOffered','servicesNotOffered','gasUtility','vetAskSpecies','vetEmergencyNotes','conflictCheck',
   'realEstateNotes','vendorDispatch','salonNotes','collectVehicleInfo','hours','exampleRoutine','promiseRoutine','exampleUrgent','promiseUrgent',
   'exampleEmergency','promiseEmergency','routingChoice','forwardNumber','phoneCarrier','callHandling','notificationPreference','notifyRecipient',
   'notifyOtherName','notifyOtherTitle','notifyOtherPhone','notifyOtherEmail','escalationName','escalationPhone','escalationBackupName',
@@ -92,6 +92,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, status: record.status });
   } else if (type === 'intake') {
     const incoming=sanitizeFields(fields);
+    if(incoming.industry==='Medical & Dental')return res.status(400).json({error:'Medical and dental businesses require a separately approved compliant configuration before onboarding.'});
     if(!Object.keys(incoming).length) return res.status(400).json({error:'No valid fields'});
     record.intake = { ...(record.intake || {}), ...incoming };
     // If every required intake field is present, mark it submitted and
