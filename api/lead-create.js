@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { kv } = require('@vercel/kv');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
+const {rateLimit,requestIp}=require('../lib/rate-limit');
 
 // Called from get-started.html right before redirecting to Stripe.
 // Stores the lead's form answers under a short-lived leadId so the Stripe
@@ -25,12 +26,6 @@ function isAllowedOrigin(req) {
   }
 }
 
-const hits=new Map();
-function rateLimited(ip){
-  const now=Date.now(),e=hits.get(ip),windowMs=10*60*1000;
-  if(!e||now-e.start>windowMs){hits.set(ip,{start:now,count:1});return false}
-  e.count++;return e.count>10;
-}
 module.exports = async function handler(req, res) {
   const origin=req.headers.origin||'';
   if(isAllowedOrigin(req)&&origin) res.setHeader('Access-Control-Allow-Origin',origin);
@@ -41,8 +36,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return isAllowedOrigin(req)?res.status(200).end():res.status(403).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
-  const ip=String(req.headers['x-forwarded-for']||req.socket?.remoteAddress||'unknown').split(',')[0].trim();
-  if(rateLimited(ip)) return res.status(429).json({error:'Too many requests'});
+  const rl=await rateLimit({scope:'lead-create',identifier:requestIp(req),limit:10,windowSeconds:600});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests'})}
 
   const raw = req.body || {};
   const clean = (v, n) => String(v || '').trim().slice(0, n);
