@@ -1263,12 +1263,13 @@ async function saveAdminClient(){
 async function deleteAdminClient(){
   if(!currentAdminClient)return;
   const name=currentAdminClient.name||'this workspace';
-  if(!confirm('Delete '+name+'? This permanently removes its CallerCore workspace data. This cannot be undone.'))return;
-  const typed=prompt('Type DELETE to confirm permanent deletion of '+name+'.');
+  if(!confirm('Schedule '+name+' for deletion? Customer access will be disabled now and the workspace will enter a 30-day recovery period before permanent deletion can be completed.'))return;
+  const typed=prompt('Type DELETE to schedule deletion of '+name+'.');
   if(typed!=='DELETE')return;
   const r=await fetch('/api/account?action=admin-client-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})});
   const data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not delete workspace.');return}
+  if(data.pendingDeletion&&data.purgeEligibleAt)alert(name+' is now pending deletion. Recovery is available until '+new Date(data.purgeEligibleAt).toLocaleString()+'.');
   closeAdminClient();currentAdminClient=null;await refreshAdminCore();await loadAdminOps();
 }
 async function viewAdminClient(){
