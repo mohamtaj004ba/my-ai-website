@@ -18,7 +18,7 @@ const ALLOWED_HOSTS=new Set(['callercore.com','www.callercore.com','localhost:30
 function allowedOrigin(req){
   const candidate=req.headers.origin||req.headers.referer||'';
   if(!candidate)return false;
-  try{const host=new URL(candidate).host;return ALLOWED_HOSTS.has(host)||host.endsWith('.vercel.app')}catch(_){return false}
+  try{const host=new URL(candidate).host.toLowerCase(),requestHost=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();return ALLOWED_HOSTS.has(host)||(host.endsWith('.vercel.app')&&host===requestHost)}catch(_){return false}
 }
 function clean(v,n){return String(v||'').trim().slice(0,n)}
 function checkoutOrigin(req){
