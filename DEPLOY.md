@@ -6,9 +6,9 @@ This repository now contains the public CallerCore site, client dashboard, admin
 
 Do **not** treat this as a simple static-site deploy. The current feature branch represents a substantial product release.
 
-## Hosting plan requirement
+## Hosting plan
 
-CallerCore is a commercial product. Vercel Hobby is restricted to non-commercial personal use, so production launch requires a Vercel plan that permits commercial business use (currently Pro or Enterprise under Vercel policy).
+CallerCore is hosted on Vercel Pro. Commercial hosting is therefore confirmed for launch.
 
 ## Release branch
 
@@ -51,9 +51,11 @@ Vercel / Upstash KV variables such as:
 
 ### Mailgun
 - `MAILGUN_API_KEY`
-- `MAILGUN_DOMAIN`
+- `MAILGUN_DOMAIN` — production/preview should be `notify.callercore.com`
 - optional `MAILGUN_FROM`
 - optional `SUPPORT_EMAIL`
+
+The active Mailgun sending domain is `notify.callercore.com`. Legacy `mail.callercore.com` DNS is from the prior GHL setup and is not an application fallback.
 
 ### Stripe
 - `STRIPE_SECRET_KEY`
@@ -84,12 +86,14 @@ The webhook verifies Stripe signatures and deduplicates event IDs.
 
 Before production launch, verify in Stripe that the `https://www.callercore.com/api/stripe-webhook` endpoint is enabled for every event above. CallerCore System Health checks this live and reports any missing events.
 
-Also activate at least one Stripe Customer Portal configuration. The dashboard's **Manage billing** action creates Stripe Billing Portal sessions and should be treated as unavailable until an active portal configuration exists.
+CallerCore's live Stripe Customer Portal configuration is active. The dashboard's **Manage billing** action creates Stripe Billing Portal sessions.
 
 ### Google / Gmail
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `CALLERCORE_ENCRYPTION_KEY`
+
+Gmail is intentionally admin-only for the initial launch and requests only `gmail.modify`. Do not expose customer Gmail connections until the external OAuth verification/security-assessment path is addressed.
 
 Production OAuth callback:
 `https://www.callercore.com/api/google-oauth-callback`
@@ -179,6 +183,10 @@ Current controls include:
 - preview bootstrap secret + preview-host restriction
 
 A focused security review is still required before broad production launch.
+
+## Preview QA prerequisite
+
+Keep Vercel Preview Protection enabled. Automated preview QA should use Vercel Protection Bypass for Automation rather than disabling protection. Preview KV connectivity and protected-browser QA remain pending until that bypass is configured.
 
 ## Production smoke test
 
