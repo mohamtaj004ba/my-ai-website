@@ -426,6 +426,8 @@ async function adminGmailInbox(req,res){
       const inbound=(t.messages||[]).find(m=>m.direction==='inbound'),sender=inbound?.from||'';
       if(sender){const pid=await kv.get('site:prospect:email:'+emailKey(sender));if(pid){const p=await kv.get('site:prospect:'+pid);if(p)t.prospect={id:p.id,name:p.name,business:p.business,email:p.email,stage:p.stage}}}
     }
+    const summaryKey='gmail:summary:'+crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex');
+    await kv.set(summaryKey,{analytics:data.analytics||{},syncedAt:Date.now()},{ex:60*60*24});
     return res.status(200).json({configured:true,...data});
   }catch(err){console.error('gmail inbox failed',err);return res.status(502).json({error:err.message||'Gmail sync failed'})}
 }
@@ -749,9 +751,9 @@ async function buildAdminNotifications(admin){
   });
   if(gmailConn){
     try{
-      const unread=await gmailFetch(admin.email,'/messages?maxResults=1&labelIds=INBOX&labelIds=UNREAD&q='+encodeURIComponent('newer_than:30d'));
-      const count=Number(unread.resultSizeEstimate||0);
-      if(count>0)items.push(notificationItem('gmail:unread',{title:count+' unread Gmail message'+(count===1?'':'s'),body:'Your connected CallerCore inbox has unread email.',kind:'info',view:'inbox',createdAt:now,meta:{count}}));
+      const summaryKey='gmail:summary:'+crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex');
+      const cached=await kv.get(summaryKey),count=Number(cached?.analytics?.unread||0);
+      if(count>0)items.push(notificationItem('gmail:unread',{title:count+' unread Gmail thread'+(count===1?'':'s'),body:'Your connected CallerCore inbox has unread email.',kind:'info',view:'inbox',createdAt:Number(cached?.syncedAt||now),meta:{count}}));
     }catch(err){console.error('notification gmail summary failed',err)}
   }
   return items;
