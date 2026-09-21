@@ -410,9 +410,10 @@ async function adminWebsiteAnalytics(req,res){
       converted:prospects.filter(p=>p.stage==='converted'&&(p.updatedAt||0)>=cut30).length
     };
     const pageMap={},sourceMap={};
-    e30.filter(e=>e.type==='page_view').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=(pageMap[p]||0)+1});
+    e30.filter(e=>e.type==='page_view').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=pageMap[p]||{count:0,totalMs:0,exits:0};pageMap[p].count++});
+    e30.filter(e=>e.type==='page_exit').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=pageMap[p]||{count:0,totalMs:0,exits:0};pageMap[p].totalMs+=Number(e.activeMs||0);pageMap[p].exits++});
     s30.forEach(s=>{const source=s.utmSource||s.source||'direct';sourceMap[source]=(sourceMap[source]||0)+1});
-    const topPages=Object.entries(pageMap).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([path,count])=>({path,count}));
+    const topPages=Object.entries(pageMap).sort((a,b)=>b[1].count-a[1].count).slice(0,10).map(([path,v])=>({path,count:v.count,avgSeconds:v.exits?Math.round(v.totalMs/v.exits/1000):0}));
     const sources=Object.entries(sourceMap).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([source,count])=>({source,count}));
     const eventBySession={};e30.forEach(e=>{if(!e.sessionId)return;(eventBySession[e.sessionId]||(eventBySession[e.sessionId]=[])).push(e)});
     const recentSessions=sessions.sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).slice(0,60).map(s=>({
@@ -421,7 +422,8 @@ async function adminWebsiteAnalytics(req,res){
     return res.status(200).json({analytics:{
       periodDays:30,sessions:s30.length,visitors:uniqueVisitors,pageViews,avgActiveSeconds:avgActive,bounceRate,
       contactInquiries:e30.filter(e=>e.type==='contact_submit').length,chatSessions:uniqueEventSessions('chat_open'),
-      checkoutStarts:uniqueEventSessions('checkout_start'),conversions:funnel.converted,
+      formAbandons:uniqueEventSessions('form_abandon'),checkoutStarts:uniqueEventSessions('checkout_start'),
+      checkoutAbandoned:prospects.filter(p=>p.stage==='checkout_started').length,conversions:funnel.converted,
       last7Events:e7.length,funnel,topPages,sources,recentSessions,prospects
     }});
   }catch(err){console.error('admin website analytics failed',err);return res.status(500).json({error:'Website analytics unavailable'})}
