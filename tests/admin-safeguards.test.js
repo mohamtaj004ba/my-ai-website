@@ -13,8 +13,18 @@ test('raw workspace override cannot bypass Stripe-managed plan',()=>{
   assert.match(src,/current\.stripeSubscriptionId/);
 });
 
-test('workspace deletion cleans onboarding routing and audit records',()=>{
+test('workspace deletion uses a 30-day recoverable state before purge',()=>{
+  assert.match(src,/status:'pending_deletion'/);
+  assert.match(src,/30\*24\*60\*60\*1000/);
+  assert.match(src,/adminRestoreDeletedClient/);
+  assert.match(src,/adminPurgeClient/);
+  assert.match(src,/Confirmation must equal DELETE/);
+  assert.match(src,/retention:workspace:/);
+});
+
+test('permanent purge cleans customer-content stores only after recovery gate',()=>{
   for(const prefix of ["'routing-request:'","'onboarding:workspace:'","'onboarding:workspace-token:'","'audit:'"])assert.ok(src.includes(prefix),prefix+' cleanup missing');
+  assert.match(src,/30-day recovery window has not ended/);
 });
 
 test('admin client view remains read-only and client mutations require writable sessions',()=>{
