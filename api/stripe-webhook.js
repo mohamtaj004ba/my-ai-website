@@ -23,6 +23,35 @@ function verifyStripeSignature(rawBody,sigHeader,secret){
   const expectedBuf=Buffer.from(expected,'hex');
   return signatures.some(sig=>{try{const got=Buffer.from(sig,'hex');return got.length===expectedBuf.length&&crypto.timingSafeEqual(got,expectedBuf)}catch(_){return false}})
 }
+
+function addBusinessHours(startMs,hours){
+  let remaining=Math.max(0,Number(hours||0))*60*60*1000;
+  let t=new Date(startMs);
+  const parts=(d)=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d).reduce((a,p)=>(a[p.type]=p.value,a),{});
+  const advanceToOpen=(d)=>{
+    let guard=0;
+    while(guard++<10){
+      const p=parts(d),day=p.weekday,h=Number(p.hour),m=Number(p.minute);
+      const weekend=day==='Sat'||day==='Sun';
+      if(!weekend&&h>=9&&h<17)return d;
+      const addDays=weekend?(day==='Sat'?2:1):(h>=17?1:0);
+      const local=new Date(d);
+      local.setTime(local.getTime()+((addDays||0)*24*60*60*1000));
+      const q=parts(local),curH=Number(q.hour),curM=Number(q.minute);
+      local.setTime(local.getTime()+((9-curH)*60-curM)*60*1000);
+      d=local;
+    }
+    return d;
+  };
+  t=advanceToOpen(t);
+  while(remaining>0){
+    const p=parts(t),h=Number(p.hour),m=Number(p.minute),minsLeft=Math.max(0,(17*60)-(h*60+m)),windowMs=minsLeft*60*1000;
+    if(remaining<=windowMs){t=new Date(t.getTime()+remaining);remaining=0;break}
+    remaining-=windowMs;t=new Date(t.getTime()+windowMs+16*60*60*1000);t=advanceToOpen(t);
+  }
+  return t.getTime();
+}
+
 async function upsertWorkspace({lead,session,plan,email}){
   const userKey='user:email:'+email;
   const existingMember=await kv.get(userKey);
@@ -128,28 +157,31 @@ module.exports=async function handler(req,res){
   }
   await kv.set('onboarding:workspace-token:'+workspace.id,token,{ex:60*60*24*90});
   const existingOnboarding=await kv.get('onboarding:workspace:'+workspace.id)||{};
+  const paidAt=Date.now(),reviewEligibleAt=addBusinessHours(paidAt,2);
   await kv.set('onboarding:workspace:'+workspace.id,{
     ...existingOnboarding,
     workspaceId:workspace.id,
-    status:'awaiting_agreement',
+    status:'awaiting_review',
+    paidAt,
+    reviewEligibleAt,
+    onboardingLinkSent:false,
     completionPercent:0,
-    checklist:{...(existingOnboarding.checklist||{}),payment:true,agreement:false,intake:false,businessProfile:false,agentDraft:false,routingCaptured:false,phoneAssigned:!!String(workspace.phone||'').trim(),adminReview:false,testCall:false,clientApproval:false,live:false},
+    checklist:{...(existingOnboarding.checklist||{}),payment:true,accountReview:false,onboardingSent:false,agreement:false,intake:false,businessProfile:false,agentDraft:false,routingCaptured:false,phoneAssigned:!!String(workspace.phone||'').trim(),adminReview:false,testCall:false,clientApproval:false,live:false},
     updatedAt:Date.now()
   });
-  if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'pending_email'},{ex:60*60*24*90});
+  if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
 
-  const magicLink=SITE_URL+'/onboarding?token='+token;
   const firstName=(lead.name||'').split(' ')[0]||'there';
   try{
     await sendMail({
       to:recipient,
-      subject:'Welcome to CallerCore — your setup link',
-      text:'Hi '+firstName+',\n\nWelcome to CallerCore — payment received.\n\nYour next steps: '+magicLink+'\n\nSign your service agreement and fill out your intake form there. We start building your AI the moment your intake form comes in — most accounts go live within 1 business day of that.\n\nYour CallerCore client account has also been created for '+workspace.name+'. Once setup is ready, you can sign in at '+SITE_URL+'/login.\n\nQuestions any time: support@callercore.com\n\n— Tj, CallerCore',
-      html:'<p>Hi '+firstName+',</p><p>Welcome to CallerCore — payment received.</p><p><a href="'+magicLink+'">Click here for your next steps</a> — sign your service agreement and fill out your intake form.</p><p>Your CallerCore client account has also been created for <strong>'+workspace.name+'</strong>. Once setup is ready, you can sign in at <a href="'+SITE_URL+'/login">'+SITE_URL+'/login</a>.</p><p>Questions any time: support@callercore.com</p><p>— Tj, CallerCore</p>'
+      subject:'Payment received — welcome to CallerCore',
+      text:'Hi '+firstName+',\n\nThank you — we received your payment and created your CallerCore account for '+workspace.name+'.\n\nOur team will review your order and business details during business hours. Once that review is complete, we’ll send your welcome email with a secure onboarding link and service agreement.\n\nThere is nothing you need to do right now.\n\nQuestions any time: support@callercore.com\n\n— CallerCore',
+      html:'<p>Hi '+firstName+',</p><p><strong>Thank you — we received your payment.</strong></p><p>We created your CallerCore account for <strong>'+workspace.name+'</strong>. Our team will review your order and business details during business hours. Once that review is complete, we’ll send your welcome email with a secure onboarding link and service agreement.</p><p>There is nothing you need to do right now.</p><p>Questions any time: support@callercore.com</p><p>— CallerCore</p>'
     });
-  }catch(err){console.error('Failed to send onboarding email:',err);return res.status(500).json({error:'Onboarding email failed'})}
+  }catch(err){console.error('Failed to send payment confirmation:',err)}
 
-  if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'complete'},{ex:60*60*24*90});
+  if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
   if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
   return res.status(200).json({received:true,workspaceId:workspace.id});
 };
