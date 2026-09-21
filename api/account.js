@@ -194,6 +194,25 @@ async function adminSavePhoneNumber(req,res){
   return res.status(200).json({ok:true,number:item});
 }
 
+async function adminDeletePhoneNumber(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).id||'').slice(0,100);
+  if(!id)return res.status(400).json({error:'Phone id required'});
+  const current=await kv.get('phone:index')||[];
+  const list=Array.isArray(current)?current:[];
+  const item=list.find(x=>x&&String(x.id)===id);
+  if(!item)return res.status(404).json({error:'Phone number not found'});
+  const next=list.filter(x=>!x||String(x.id)!==id);
+  await kv.set('phone:index',next);
+  if(item.workspaceId){
+    const key='workspace:'+item.workspaceId,ws=await kv.get(key);
+    if(ws&&String(ws.phone||'')===String(item.number||'')){
+      await kv.set(key,{...ws,phone:'',updatedAt:Date.now()});
+    }
+  }
+  return res.status(200).json({ok:true,deleted:{id:item.id,number:item.number}});
+}
+
 async function adminSystemHealth(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   let kvOk=false;
@@ -509,6 +528,7 @@ module.exports=async function handler(req,res){
   if(action==='admin-provisioning'&&req.method==='GET')return adminProvisioning(req,res);
   if(action==='admin-phone-numbers'&&req.method==='GET')return adminPhoneNumbers(req,res);
   if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
+  if(action==='admin-phone-number-delete'&&req.method==='POST')return adminDeletePhoneNumber(req,res);
   if(action==='admin-system-health'&&req.method==='GET')return adminSystemHealth(req,res);
   if(action==='admin-client-update'&&req.method==='POST')return adminUpdateClient(req,res);
   if(action==='admin-view-client'&&req.method==='POST')return adminViewClient(req,res);
