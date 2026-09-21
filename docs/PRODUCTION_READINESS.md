@@ -68,7 +68,8 @@ Run one complete disposable client through:
 
 ### Billing
 - Confirm production Stripe secret key, publishable key, and webhook signing secret are all present in the production environment.
-- Confirm Stripe Customer Portal behavior.
+- Update the live Stripe webhook endpoint to include the five lifecycle events currently missing: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, and `invoice.paid`.
+- Create/activate a Stripe Customer Portal configuration; the connected live CallerCore account currently has no active portal configuration.
 - Define and implement minute overage policy, if any.
 - Verify subscription-plan change behavior against real Stripe Price IDs.
 - Test failed-payment recovery and cancellation in Stripe test mode.
