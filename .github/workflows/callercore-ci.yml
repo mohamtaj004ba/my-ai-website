@@ -42,6 +42,8 @@ jobs:
         run: node --test tests/gmail-safeguards.test.js
       - name: Admin safeguards
         run: node --test tests/admin-safeguards.test.js
+      - name: Export safeguards
+        run: node --test tests/export-safeguards.test.js
       - name: UI structure
         run: node --test tests/ui-structure.test.js
       - name: Asset links
