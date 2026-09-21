@@ -14,7 +14,7 @@ const params=new URLSearchParams(location.search);
 const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
 let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
 let sessionWorkspace=null;
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[];
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[];
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',reason:'Roof replacement estimate',duration:'4:32',outcome:'Booked',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and booked an inspection for Tuesday at 10:30 AM.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can help get an inspection scheduled. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -37,6 +37,12 @@ const DEMO_APPOINTMENTS=[
 {id:'a1',name:'Sarah Johnson',phone:'(509) 555-0148',date:'Tue, Sep 22',time:'10:30 AM',service:'Roof replacement inspection',status:'Confirmed',source:'Maya'},
 {id:'a2',name:'Emily Ross',phone:'(509) 555-0114',date:'Wed, Sep 23',time:'1:00 PM',service:'Roof leak inspection',status:'Scheduled',source:'Maya'},
 {id:'a3',name:'Jared Lee',phone:'(509) 555-0181',date:'Fri, Sep 18',time:'9:00 AM',service:'Full roof estimate',status:'Completed',source:'Team'}
+];
+const DEMO_AGENT={name:'Maya',role:'AI Receptionist',openingMessage:'Thank you for calling Alpine Roofing. This is Maya. How can I help you today?',tone:'Warm & professional',serviceArea:'Spokane, Spokane Valley, Liberty Lake and nearby communities.',businessHours:'Monday–Friday 8 AM–5 PM. Saturday by appointment.',emergencyInstructions:'For active leaks or storm damage, collect the address, confirm safety, and mark the lead urgent for immediate team follow-up.',qualificationQuestions:['What service are you calling about?','Are you the property owner?','What is the property address?','How soon are you hoping to have the work completed?'],transferNumber:'(509) 555-0100'};
+const DEMO_AUTOMATIONS=[
+{id:'auto1',name:'Missed-call recovery',trigger:'missed_call',action:'send_sms',enabled:true},
+{id:'auto2',name:'Hot lead team alert',trigger:'qualified_lead',action:'notify_team',enabled:true},
+{id:'auto3',name:'Appointment confirmation',trigger:'appointment_booked',action:'send_confirmation',enabled:true}
 ];
 const LEAD_STAGES=['New','Contacted','Qualified','Appointment','Won','Lost'];
 function esc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
@@ -63,7 +69,7 @@ async function bootstrapClient(){
 async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
 
 
-function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();}
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
 
@@ -83,23 +89,29 @@ async function loadOperations(){
   if(demoMode){
     callsData=DEMO_CALLS.map(x=>({...x}));leadsData=DEMO_LEADS.map(x=>({...x}));
     conversationsData=DEMO_CONVERSATIONS.map(x=>({...x}));appointmentsData=DEMO_APPOINTMENTS.map(x=>({...x}));
-    renderCalls();renderLeads();renderConversations();renderAppointments();return;
+    agentData={...DEMO_AGENT,qualificationQuestions:[...DEMO_AGENT.qualificationQuestions]};
+    automationsData=DEMO_AUTOMATIONS.map(x=>({...x}));
+    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();return;
   }
   try{
     const jobs=[
       fetch('/api/account?action=calls',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=leads',{headers:{Accept:'application/json'},cache:'no-store'})
+      fetch('/api/account?action=leads',{headers:{Accept:'application/json'},cache:'no-store'}),
+      fetch('/api/account?action=agent',{headers:{Accept:'application/json'},cache:'no-store'})
     ];
     if(has('unifiedInbox'))jobs.push(fetch('/api/account?action=conversations',{headers:{Accept:'application/json'},cache:'no-store'}));
     if(has('appointments'))jobs.push(fetch('/api/account?action=appointments',{headers:{Accept:'application/json'},cache:'no-store'}));
+    if(has('automations'))jobs.push(fetch('/api/account?action=automations',{headers:{Accept:'application/json'},cache:'no-store'}));
     const results=await Promise.all(jobs);
     if(results[0].ok)callsData=(await results[0].json()).calls||[];
     if(results[1].ok)leadsData=(await results[1].json()).leads||[];
-    let idx=2;
+    if(results[2].ok)agentData=(await results[2].json()).agent||null;
+    let idx=3;
     if(has('unifiedInbox')){if(results[idx].ok)conversationsData=(await results[idx].json()).conversations||[];idx++}
-    if(has('appointments')){if(results[idx].ok)appointmentsData=(await results[idx].json()).appointments||[]}
+    if(has('appointments')){if(results[idx].ok)appointmentsData=(await results[idx].json()).appointments||[];idx++}
+    if(has('automations')){if(results[idx].ok)automationsData=(await results[idx].json()).automations||[]}
   }catch(err){console.error('Operations data failed',err)}
-  renderCalls();renderLeads();renderConversations();renderAppointments();
+  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();
 }
 function outcomeClass(outcome){return /book|qualif/i.test(outcome)?'green':/miss|follow/i.test(outcome)?'amber':'amber'}
 function renderCalls(){
@@ -173,8 +185,12 @@ function renderEntitledApps(){
   if(cg&&ca){cg.hidden=has('unifiedInbox');ca.hidden=!has('unifiedInbox')}
   const ag=document.getElementById('appointmentGate'),aa=document.getElementById('appointmentApp');
   if(ag&&aa){ag.hidden=has('appointments');aa.hidden=!has('appointments')}
+  const aug=document.getElementById('automationGate'),aua=document.getElementById('automationApp'),newBtn=document.getElementById('newAutomationButton');
+  if(aug&&aua){aug.hidden=has('automations');aua.hidden=!has('automations')}
+  if(newBtn)newBtn.hidden=!has('automations');
   if(has('unifiedInbox'))renderConversations();
   if(has('appointments'))renderAppointments();
+  if(has('automations'))renderAutomations();
 }
 function renderConversations(){
   if(!has('unifiedInbox'))return;
@@ -210,6 +226,89 @@ async function updateAppointment(id,status){
   catch(err){item.status=previous;renderAppointments();console.error(err)}
 }
 document.getElementById('conversationSearch')?.addEventListener('input',renderConversations);
+
+
+function renderAgent(){
+  if(!agentData)return;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||''};
+  set('agentName',agentData.name);set('agentRole',agentData.role);set('agentTone',agentData.tone);
+  set('agentOpening',agentData.openingMessage);set('agentServiceArea',agentData.serviceArea);
+  set('agentHours',agentData.businessHours);set('agentTransfer',agentData.transferNumber);set('agentEmergency',agentData.emergencyInstructions);
+  renderQuestions();
+}
+function renderQuestions(){
+  const wrap=document.getElementById('qualificationQuestions');if(!wrap||!agentData)return;
+  const qs=Array.isArray(agentData.qualificationQuestions)?agentData.qualificationQuestions:[];
+  wrap.innerHTML=qs.map((q,i)=>'<div class="question-row"><input data-question-index="'+i+'" value="'+esc(q)+'"><button data-remove-question="'+i+'" aria-label="Remove">×</button></div>').join('');
+  wrap.querySelectorAll('[data-question-index]').forEach(input=>input.addEventListener('input',()=>{agentData.qualificationQuestions[Number(input.dataset.questionIndex)]=input.value}));
+  wrap.querySelectorAll('[data-remove-question]').forEach(btn=>btn.addEventListener('click',()=>{agentData.qualificationQuestions.splice(Number(btn.dataset.removeQuestion),1);renderQuestions()}));
+}
+function collectAgent(){
+  const val=id=>document.getElementById(id)?.value||'';
+  return {name:val('agentName'),role:val('agentRole'),tone:val('agentTone'),openingMessage:val('agentOpening'),serviceArea:val('agentServiceArea'),businessHours:val('agentHours'),transferNumber:val('agentTransfer'),emergencyInstructions:val('agentEmergency'),qualificationQuestions:[...(agentData?.qualificationQuestions||[])]};
+}
+async function saveAgent(){
+  agentData=collectAgent();
+  if(!demoMode){
+    const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(agentData)});
+    if(!r.ok){alert('Could not save the AI agent right now.');return}
+    agentData=(await r.json()).agent||agentData;
+  }
+  const s=document.getElementById('agentSaveStatus');if(s){s.classList.add('show');setTimeout(()=>s.classList.remove('show'),1600)}
+}
+function triggerLabel(v){return ({missed_call:'Missed call',new_lead:'New lead captured',qualified_lead:'Lead qualified',appointment_booked:'Appointment booked',after_hours_call:'After-hours call'})[v]||v}
+function actionLabel(v){return ({send_sms:'Send SMS',notify_team:'Notify team',create_followup:'Create follow-up task',mark_priority:'Mark lead priority',send_confirmation:'Send confirmation'})[v]||v}
+function renderAutomations(){
+  if(!has('automations'))return;
+  const wrap=document.getElementById('automationList');if(!wrap)return;
+  wrap.innerHTML=automationsData.map(x=>'<article class="automation-card"><div><h3>'+esc(x.name)+'</h3><p>When <b>'+esc(triggerLabel(x.trigger))+'</b> → '+esc(actionLabel(x.action))+'</p></div><div class="automation-actions"><button data-edit-auto="'+esc(x.id)+'">Edit</button><button class="switch '+(x.enabled?'on':'')+'" data-toggle-auto="'+esc(x.id)+'" aria-label="Toggle automation"><i></i></button></div></article>').join('');
+  document.getElementById('automationEmpty').hidden=automationsData.length!==0;
+  wrap.querySelectorAll('[data-toggle-auto]').forEach(btn=>btn.addEventListener('click',()=>toggleAutomation(btn.dataset.toggleAuto)));
+  wrap.querySelectorAll('[data-edit-auto]').forEach(btn=>btn.addEventListener('click',()=>openAutomation(btn.dataset.editAuto)));
+}
+async function persistAutomations(){
+  if(demoMode)return true;
+  const r=await fetch('/api/account?action=automations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({automations:automationsData})});
+  if(!r.ok){alert('Could not save automations right now.');return false}
+  automationsData=(await r.json()).automations||automationsData;return true;
+}
+async function toggleAutomation(id){
+  const item=automationsData.find(x=>String(x.id)===String(id));if(!item)return;
+  item.enabled=!item.enabled;renderAutomations();await persistAutomations();
+}
+let editingAutomationId=null;
+function openAutomation(id=null,preset=null){
+  if(!has('automations'))return;
+  const modal=document.getElementById('automationModal');if(!modal)return;
+  editingAutomationId=id;
+  let item=id?automationsData.find(x=>String(x.id)===String(id)):null;
+  if(!item&&preset){
+    const defs={
+      missed_call:{name:'Missed-call recovery',trigger:'missed_call',action:'send_sms'},
+      new_lead:{name:'New lead alert',trigger:'new_lead',action:'notify_team'},
+      appointment_booked:{name:'Booking confirmation',trigger:'appointment_booked',action:'send_confirmation'}
+    };item=defs[preset]||null;
+  }
+  document.getElementById('automationModalTitle').textContent=id?'Edit automation':'New automation';
+  document.getElementById('automationName').value=item?.name||'';
+  document.getElementById('automationTrigger').value=item?.trigger||'new_lead';
+  document.getElementById('automationAction').value=item?.action||'notify_team';
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+}
+function closeAutomation(){const modal=document.getElementById('automationModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');editingAutomationId=null}
+async function saveAutomation(){
+  const name=document.getElementById('automationName').value.trim();if(!name)return;
+  const item={id:editingAutomationId||('auto_'+Date.now()),name,trigger:document.getElementById('automationTrigger').value,action:document.getElementById('automationAction').value,enabled:true};
+  const i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
+  renderAutomations();closeAutomation();await persistAutomations();
+}
+document.getElementById('saveAgentButton')?.addEventListener('click',saveAgent);
+document.getElementById('addQuestionButton')?.addEventListener('click',()=>{if(!agentData)agentData={...DEMO_AGENT,qualificationQuestions:[]};agentData.qualificationQuestions=agentData.qualificationQuestions||[];if(agentData.qualificationQuestions.length<12){agentData.qualificationQuestions.push('');renderQuestions()}});
+document.getElementById('newAutomationButton')?.addEventListener('click',()=>openAutomation());
+document.querySelectorAll('[data-preset]').forEach(btn=>btn.addEventListener('click',()=>openAutomation(null,btn.dataset.preset)));
+document.getElementById('saveAutomationButton')?.addEventListener('click',saveAutomation);
+document.querySelector('.automation-close')?.addEventListener('click',closeAutomation);
+document.getElementById('automationModal')?.addEventListener('click',e=>{if(e.target.id==='automationModal')closeAutomation()});
 
 const modal=document.getElementById('upgradeModal');function openModal(target){if(!modal)return;const t=PLAN_DATA[target];document.getElementById('modalTitle').textContent=(t.price>PLAN_DATA[currentPlan].price?'Upgrade to ':'Switch to ')+target;document.getElementById('modalCopy').textContent=target==='Pro'?'Unlock the full CallerCore platform, including API access, advanced integrations and custom workflows.':'Unlock appointment booking, automations, the unified inbox and advanced analytics.';const fs=Object.entries(FEATURE_INFO).filter(([k,v])=>target==='Pro'||v.tier==='Growth').slice(0,target==='Pro'?6:4);document.getElementById('modalFeatures').innerHTML=fs.map(([k,v])=>'<span>✓ '+v.title+'</span>').join('');document.getElementById('modalCta').textContent='Continue with Stripe · $'+t.price+'/mo';modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
 function bindUpgradeButtons(){document.querySelectorAll('[data-upgrade]').forEach(b=>{b.onclick=()=>openModal(b.dataset.upgrade)})}
