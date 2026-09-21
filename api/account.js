@@ -97,6 +97,53 @@ async function adminClients(req,res){
   return res.status(200).json({clients});
 }
 
+async function adminUpdateClient(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80);
+  if(!id)return res.status(400).json({error:'Client id required'});
+  const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
+  const next={...ws};
+  if(body.status!==undefined){
+    const allowedStatus=['active','onboarding','suspended'];
+    if(!allowedStatus.includes(body.status))return res.status(400).json({error:'Invalid workspace status'});
+    next.status=body.status;
+  }
+  if(body.plan!==undefined&&body.plan!==ws.plan){
+    if(ws.stripeSubscriptionId)return res.status(409).json({error:'Plan is managed by Stripe for this workspace'});
+    if(!['Starter','Growth','Pro'].includes(body.plan))return res.status(400).json({error:'Invalid plan'});
+    next.plan=body.plan;
+  }
+  next.updatedAt=Date.now();
+  await kv.set(key,next);
+  return res.status(200).json({ok:true,client:{id:next.id,name:next.name,plan:next.plan,status:next.status,subscriptionStatus:next.subscriptionStatus||'active'}});
+}
+
+async function adminViewClient(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).id||'').slice(0,80);
+  const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
+  const old=parseCookies(req).cc_session;if(old)await kv.del('session:'+old);
+  await createSession(res,{email:admin.email,workspaceId:id,role:'admin',adminView:true,adminHomeWorkspaceId:admin.workspaceId});
+  return res.status(200).json({ok:true,redirect:'/dashboard',workspace:{id:ws.id,name:ws.name}});
+}
+
+async function adminExitClientView(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const member=await kv.get('user:email:'+cleanEmail(s.email));
+  if(!member||member.role!=='admin')return res.status(403).json({error:'Admin access required'});
+  const home=String(s.adminHomeWorkspaceId||member.workspaceId||'');
+  if(!home)return res.status(409).json({error:'Admin home workspace unavailable'});
+  const old=parseCookies(req).cc_session;if(old)await kv.del('session:'+old);
+  await createSession(res,{email:s.email,workspaceId:home,role:'admin'});
+  return res.status(200).json({ok:true,redirect:'/admin-dashboard'});
+}
+
+async function requireWritableSession(req,res){
+  const s=await requireSession(req,res);if(!s)return null;
+  if(s.adminView)return res.status(403).json({error:'Admin client view is read-only'}),null;
+  return s;
+}
+
 async function adminClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.query||{}).id||'').slice(0,80);
@@ -156,7 +203,7 @@ async function session(req,res){
   const ent=entitlementsFor(ws.plan);
   const member=await kv.get('user:email:'+cleanEmail(s.email));
   return res.status(200).json({
-    user:{email:s.email,role:member&&member.role||s.role},
+    user:{email:s.email,role:member&&member.role||s.role,adminView:!!s.adminView},
     workspace:{
       id:ws.id,name:ws.name,plan:ent.plan,status:ws.status||'active',
       subscriptionStatus:ws.subscriptionStatus||'active',
@@ -206,7 +253,7 @@ async function agent(req,res){
 }
 
 async function saveAgent(req,res){
-  const s=await requireSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
   const body=req.body||{};
   const clean=(v,n)=>String(v||'').trim().slice(0,n);
   const agent={
@@ -232,7 +279,10 @@ async function automations(req,res){
 }
 
 async function saveAutomations(req,res){
-  const access=await requireFeature(req,res,'automations');if(!access)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(!entitlementsFor(ws.plan).features.automations)return res.status(403).json({error:'Upgrade required',feature:'automations'});
+  const access={session:s,workspace:ws};
   const incoming=Array.isArray((req.body||{}).automations)?req.body.automations:[];
   const allowedTriggers=['missed_call','new_lead','qualified_lead','appointment_booked','after_hours_call'];
   const allowedActions=['send_sms','notify_team','create_followup','mark_priority','send_confirmation'];
@@ -261,7 +311,10 @@ async function appointments(req,res){
 }
 
 async function updateAppointment(req,res){
-  const access=await requireFeature(req,res,'appointments');if(!access)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(!entitlementsFor(ws.plan).features.appointments)return res.status(403).json({error:'Upgrade required',feature:'appointments'});
+  const access={session:s,workspace:ws};
   const id=String((req.body||{}).id||'').slice(0,120);
   const status=String((req.body||{}).status||'').slice(0,40);
   if(!id||!['Scheduled','Confirmed','Completed','Canceled'].includes(status))return res.status(400).json({error:'Invalid appointment update'});
@@ -304,7 +357,7 @@ async function settings(req,res){
 }
 
 async function saveSettings(req,res){
-  const s=await requireSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
   const body=req.body||{},clean=(v,n)=>String(v||'').trim().slice(0,n);
   const settings={
     businessName:clean(body.businessName,160),
@@ -334,7 +387,10 @@ async function integrations(req,res){
 }
 
 async function saveIntegrations(req,res){
-  const access=await requireFeature(req,res,'apiAccess');if(!access)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(!entitlementsFor(ws.plan).features.apiAccess)return res.status(403).json({error:'Upgrade required',feature:'apiAccess'});
+  const access={session:s,workspace:ws};
   const url=String((req.body||{}).webhookUrl||'').trim().slice(0,500);
   if(url&&!/^https:\/\//i.test(url))return res.status(400).json({error:'Webhook URL must use HTTPS'});
   const saved=await kv.get('integrations:'+access.session.workspaceId)||{};
@@ -356,7 +412,7 @@ async function leads(req,res){
 }
 
 async function updateLead(req,res){
-  const s=await requireSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
   const id=String((req.body||{}).id||'').slice(0,120);
   const stage=String((req.body||{}).stage||'').slice(0,40);
   const allowed=['New','Contacted','Qualified','Appointment','Won','Lost'];
@@ -383,6 +439,9 @@ module.exports=async function handler(req,res){
   if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
   if(action==='admin-clients'&&req.method==='GET')return adminClients(req,res);
   if(action==='admin-client'&&req.method==='GET')return adminClient(req,res);
+  if(action==='admin-client-update'&&req.method==='POST')return adminUpdateClient(req,res);
+  if(action==='admin-view-client'&&req.method==='POST')return adminViewClient(req,res);
+  if(action==='admin-exit-client-view'&&req.method==='POST')return adminExitClientView(req,res);
   if(action==='request'&&req.method==='POST')return requestLogin(req,res);
   if(action==='verify'&&req.method==='GET')return verify(req,res);
   if(action==='session'&&req.method==='GET')return session(req,res);
