@@ -658,12 +658,12 @@ async function adminGmailAliases(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const conn=await getGmailConnection(admin.email);if(!conn)return res.status(200).json({connected:false,aliases:[]});
   const hash=crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex'),cacheKey='gmail:aliases:'+hash;
-  const aliasCache=await kv.get(cacheKey),force=String(req.query?.force||'')==='1';
+  const aliasCache=await kv.get(cacheKey),cachedAliases=Array.isArray(aliasCache)?aliasCache:(aliasCache?.aliases||[]),aliasCachedAt=Number(aliasCache?.cachedAt||0),force=String(req.query?.force||'')==='1';
   if(String(req.query?.cached||'')==='1'){
-    return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:aliasCache||[],cached:true});
+    return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:cachedAliases,cached:true});
   }
-  if(!force&&aliasCache&&aliasCache.cachedAt&&Date.now()-Number(aliasCache.cachedAt)<6*60*60*1000){
-    return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:aliasCache.aliases||[],cached:true,fresh:true});
+  if(!force&&cachedAliases.length&&aliasCachedAt&&Date.now()-aliasCachedAt<6*60*60*1000){
+    return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:cachedAliases,cached:true,fresh:true});
   }
   try{
     const aliases=await listGmailAliases(admin.email);
@@ -671,7 +671,7 @@ async function adminGmailAliases(req,res){
     return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases,cached:false});
   }catch(err){
     console.error('gmail aliases failed',safeError(err));
-    if(aliasCache)return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:aliasCache.aliases||[],cached:true,stale:true});
+    if(cachedAliases.length)return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:cachedAliases,cached:true,stale:true});
     return res.status(502).json({error:'Could not load Gmail aliases'})
   }
 }
