@@ -85,8 +85,40 @@
         <div class="empty-state" id="appointmentsEmpty" hidden><h3>No appointments yet</h3><p>AI-booked appointments will appear here once booking is enabled.</p></div>
       </div>
     </section>
-    <section class="view" id="view-agent"><div class="page-head"><div><span class="eyebrow">AI Agent</span><h1>Meet Maya.</h1><p>Control what your receptionist knows, says and does.</p></div></div><div class="two-col"><article class="panel form-card"><label>Agent name<input value="Maya"></label><label>Role<input value="AI Receptionist"></label><label>Opening message<textarea>Thank you for calling Alpine Roofing. This is Maya. How can I help you today?</textarea></label><button class="primary">Save changes</button></article><article class="panel"><span class="eyebrow">Knowledge</span><h2>Business brain</h2><div class="setting-row"><span>Services & pricing</span><b>12 items</b></div><div class="setting-row"><span>Hours & service area</span><b>Configured</b></div><div class="setting-row"><span>FAQs & policies</span><b>24 answers</b></div><div class="setting-row"><span>Emergency rules</span><b>3 routes</b></div></article></div></section>
-    <section class="view" id="view-automations"><div class="page-head"><div><span class="eyebrow">Automations</span><h1>Follow up without chasing.</h1><p>Trigger actions from calls, leads and appointments.</p></div></div><div class="locked-stage" data-feature-card="automations"></div></section>
+    <section class="view" id="view-agent">
+      <div class="page-head"><div><span class="eyebrow">AI Agent</span><h1>Control your receptionist.</h1><p>Shape how CallerCore answers, qualifies, routes and escalates calls.</p></div><span class="tag green" id="agentSaveStatus">Saved</span></div>
+      <div class="agent-layout">
+        <article class="panel form-card">
+          <span class="eyebrow">Identity & voice</span>
+          <label>Agent name<input id="agentName" value="Maya"></label>
+          <label>Role<input id="agentRole" value="AI Receptionist"></label>
+          <label>Tone<select id="agentTone"><option>Warm & professional</option><option>Friendly & conversational</option><option>Direct & efficient</option><option>Luxury & polished</option></select></label>
+          <label>Opening message<textarea id="agentOpening"></textarea></label>
+          <button class="primary" id="saveAgentButton">Save agent</button>
+        </article>
+        <article class="panel form-card">
+          <span class="eyebrow">Business knowledge</span>
+          <label>Service area<textarea id="agentServiceArea" placeholder="Spokane, Spokane Valley, Liberty Lake…"></textarea></label>
+          <label>Business hours<textarea id="agentHours" placeholder="Mon–Fri 8 AM–5 PM…"></textarea></label>
+          <label>Transfer number<input id="agentTransfer" placeholder="(509) 555-0100"></label>
+          <label>Emergency / escalation instructions<textarea id="agentEmergency" placeholder="What should Maya do for urgent situations?"></textarea></label>
+        </article>
+      </div>
+      <article class="panel questions-panel"><div class="panel-head"><div><span class="eyebrow">Qualification</span><h2>Questions Maya should ask</h2></div><button id="addQuestionButton">+ Add question</button></div><div id="qualificationQuestions" class="question-list"></div></article>
+    </section>
+    <section class="view" id="view-automations">
+      <div class="page-head"><div><span class="eyebrow">Automations</span><h1>Follow up without chasing.</h1><p>Turn call and lead events into automatic actions.</p></div><button class="primary" id="newAutomationButton">+ New automation</button></div>
+      <div id="automationGate" class="locked-stage" data-feature-card="automations"></div>
+      <div id="automationApp" hidden>
+        <div class="automation-presets">
+          <button data-preset="missed_call"><b>Missed-call recovery</b><span>Text callers automatically</span></button>
+          <button data-preset="new_lead"><b>New lead alert</b><span>Notify your team instantly</span></button>
+          <button data-preset="appointment_booked"><b>Booking confirmation</b><span>Confirm appointments by SMS</span></button>
+        </div>
+        <div id="automationList" class="automation-list"></div>
+        <div class="empty-state" id="automationEmpty" hidden><h3>No automations yet</h3><p>Create your first workflow or start from a preset above.</p></div>
+      </div>
+    </section>
     <section class="view" id="view-analytics"><div class="page-head"><div><span class="eyebrow">Analytics</span><h1>Know what the phones are telling you.</h1><p>Turn call activity into business decisions.</p></div></div><div class="locked-stage" data-feature-card="advancedAnalytics"></div></section>
     <section class="view" id="view-integrations"><div class="page-head"><div><span class="eyebrow">Integrations</span><h1>Connect the rest of your stack.</h1><p>Calendars, CRMs, webhooks and more.</p></div></div><div class="integration-grid"><article class="panel"><b>Google Calendar</b><span class="tag green">Connected</span></article><article class="panel"><b>Stripe</b><span class="tag green">Connected</span></article><article class="panel" data-feature="apiAccess"><b>API & Webhooks</b><span class="tag amber">Pro</span></article></div></section>
 
@@ -112,6 +144,7 @@
 </aside>
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
 
+<div class="modal" id="automationModal" aria-hidden="true"><div class="modal-card"><button class="modal-close automation-close" aria-label="Close">×</button><span class="eyebrow">Automation builder</span><h2 id="automationModalTitle">New automation</h2><div class="form-card"><label>Name<input id="automationName" placeholder="Missed-call recovery"></label><label>When this happens<select id="automationTrigger"><option value="missed_call">Missed call</option><option value="new_lead">New lead captured</option><option value="qualified_lead">Lead qualified</option><option value="appointment_booked">Appointment booked</option><option value="after_hours_call">After-hours call</option></select></label><label>Do this<select id="automationAction"><option value="send_sms">Send SMS</option><option value="notify_team">Notify team</option><option value="create_followup">Create follow-up task</option><option value="mark_priority">Mark lead priority</option><option value="send_confirmation">Send confirmation</option></select></label><button class="primary" id="saveAutomationButton">Save automation</button></div></div></div>
 <div class="modal" id="upgradeModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" aria-label="Close">×</button><span class="eyebrow">Upgrade CallerCore</span><h2 id="modalTitle">Unlock more with Pro</h2><p id="modalCopy"></p><div id="modalFeatures" class="modal-features"></div><div class="stripe-embed"><span>STRIPE EMBED AREA</span><strong>Secure upgrade checkout will render here.</strong><small>This prototype intentionally does not create an unauthenticated subscription-change endpoint. Once client authentication and Stripe customer mapping are connected, this area can mount Stripe's embedded payment UI.</small></div><button class="primary full" id="modalCta">Continue with Stripe</button></div></div>
 <script src="/dashboard.js"></script>
 </body></html>
