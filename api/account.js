@@ -800,11 +800,14 @@ function sanitizeAdminOverride(section,value,current){
   }
   if(section==='workspace'){
     if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Workspace override must be a JSON object');
+    if(value.ownerEmail!==undefined&&cleanEmail(value.ownerEmail)!==cleanEmail(current.ownerEmail))throw new Error('Owner email is protected. Use Repair access mapping instead.');
+    if(value.phone!==undefined&&String(value.phone||'')!==String(current.phone||''))throw new Error('CallerCore phone assignment is protected. Use Phone Numbers instead.');
+    if(value.plan!==undefined&&value.plan!==current.plan&&current.stripeSubscriptionId)throw new Error('Plan is managed by Stripe for this workspace.');
     const safe={...current};
-    for(const k of ['name','ownerName','ownerEmail','industry','phone','status','plan','usage'])if(value[k]!==undefined)safe[k]=value[k];
+    for(const k of ['name','ownerName','industry','status','plan','usage'])if(value[k]!==undefined)safe[k]=value[k];
     if(!['Starter','Growth','Pro'].includes(safe.plan))throw new Error('Invalid plan');
     if(!['active','onboarding','suspended'].includes(safe.status))throw new Error('Invalid status');
-    safe.id=current.id;safe.updatedAt=Date.now();return safe;
+    safe.id=current.id;safe.ownerEmail=current.ownerEmail;safe.phone=current.phone;safe.updatedAt=Date.now();return safe;
   }
   throw new Error('Unsupported section');
 }
