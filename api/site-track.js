@@ -1,7 +1,7 @@
 const {recordSiteEvent}=require('../lib/site-analytics');
 const {rateLimit,requestIp}=require('../lib/rate-limit');
 const ALLOWED_HOSTS=new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
-function allowed(req){const c=req.headers.origin||req.headers.referer||'';if(!c)return false;try{const h=new URL(c).host;return ALLOWED_HOSTS.has(h)||h.endsWith('.vercel.app')}catch(_){return false}}
+function allowed(req){const c=req.headers.origin||req.headers.referer||'';if(!c)return false;try{const h=new URL(c).host.toLowerCase(),requestHost=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();return ALLOWED_HOSTS.has(h)||(h.endsWith('.vercel.app')&&h===requestHost)}catch(_){return false}}
 module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   if(req.method==='OPTIONS')return allowed(req)?res.status(200).end():res.status(403).end();
