@@ -179,13 +179,56 @@ async function adminUpdateClient(req,res){
 
 async function adminDeleteClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const id=String((req.body||{}).id||'').slice(0,80);
+  const body=req.body||{},id=String(body.id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Client id required'});
   if(id===admin.workspaceId)return res.status(409).json({error:'You cannot delete the workspace currently used by your admin account'});
   const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
   if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled'){
-    return res.status(409).json({error:'This workspace has an active Stripe subscription. Cancel the subscription before deleting the workspace.'});
+    return res.status(409).json({error:'This workspace has an active Stripe subscription. Cancel the subscription before scheduling deletion.'});
   }
+  if(ws.status==='pending_deletion')return res.status(200).json({ok:true,pendingDeletion:true,purgeEligibleAt:ws.purgeEligibleAt||null});
+  const now=Date.now(),purgeEligibleAt=now+30*24*60*60*1000;
+  const next={...ws,status:'pending_deletion',deletionRequestedAt:now,purgeEligibleAt,deletionRequestedBy:admin.email,deletionReason:String(body.reason||'').trim().slice(0,500),preDeletionStatus:ws.status||'active',updatedAt:now};
+  await kv.set(key,next);
+  const email=cleanEmail(ws.ownerEmail||''),memberKey=email?'user:email:'+email:'',member=memberKey?await kv.get(memberKey):null;
+  if(member&&member.workspaceId===id)await kv.set(memberKey,{...member,disabled:true,sessionVersion:Number(member.sessionVersion||0)+1});
+  try{if(email)await disconnectGmail(email)}catch(_){}
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'deletion_scheduled',section:'privacy',before:{status:ws.status||'active'},after:{status:'pending_deletion',purgeEligibleAt},meta:{reason:next.deletionReason}});
+  return res.status(200).json({ok:true,pendingDeletion:true,purgeEligibleAt});
+}
+
+async function adminRestoreDeletedClient(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).id||'').slice(0,80),key='workspace:'+id,ws=await kv.get(key);
+  if(!ws)return res.status(404).json({error:'Client not found'});
+  if(ws.status!=='pending_deletion')return res.status(409).json({error:'Workspace is not pending deletion'});
+  const restoredStatus=['active','onboarding','suspended'].includes(ws.preDeletionStatus)?ws.preDeletionStatus:'suspended';
+  const next={...ws,status:restoredStatus,updatedAt:Date.now()};
+  delete next.deletionRequestedAt;delete next.purgeEligibleAt;delete next.deletionRequestedBy;delete next.deletionReason;delete next.preDeletionStatus;
+  await kv.set(key,next);
+  const email=cleanEmail(ws.ownerEmail||''),memberKey=email?'user:email:'+email:'',member=memberKey?await kv.get(memberKey):null;
+  if(member&&member.workspaceId===id)await kv.set(memberKey,{...member,disabled:false,sessionVersion:Number(member.sessionVersion||0)+1});
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'deletion_restored',section:'privacy',before:{status:'pending_deletion'},after:{status:restoredStatus}});
+  return res.status(200).json({ok:true,status:restoredStatus});
+}
+
+async function adminPurgeClient(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80),key='workspace:'+id,ws=await kv.get(key);
+  if(!ws)return res.status(404).json({error:'Client not found'});
+  if(ws.status!=='pending_deletion')return res.status(409).json({error:'Workspace must be pending deletion first'});
+  if(Date.now()<Number(ws.purgeEligibleAt||0))return res.status(409).json({error:'30-day recovery window has not ended',purgeEligibleAt:ws.purgeEligibleAt||null});
+  if(String(body.confirm||'')!=='DELETE '+id)return res.status(400).json({error:'Confirmation must equal DELETE '+id});
+  if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled')return res.status(409).json({error:'Active Stripe subscription blocks permanent deletion'});
+  const onboarding=await kv.get('onboarding:workspace:'+id)||{};
+  const retained={
+    workspaceId:id,businessName:ws.name||'',ownerEmail:cleanEmail(ws.ownerEmail||''),
+    stripeCustomerId:ws.stripeCustomerId||null,stripeSubscriptionId:ws.stripeSubscriptionId||null,
+    agreementVersion:onboarding.agreementVersion||'',agreementSignedAt:onboarding.agreementSignedAt||null,
+    agreementSignedName:onboarding.agreementSignedName||onboarding.agreementFullName||'',
+    deletionRequestedAt:ws.deletionRequestedAt||null,purgedAt:Date.now(),purgedBy:admin.email
+  };
+  await kv.set('retention:workspace:'+id,retained,{ex:60*60*24*365*7});
   const index=await kv.get('workspace:index')||[];
   await kv.set('workspace:index',(Array.isArray(index)?index:[]).filter(x=>x!==id));
   if(ws.ownerEmail){
@@ -195,9 +238,7 @@ async function adminDeleteClient(req,res){
   if(ws.stripeCustomerId)await kv.del('stripe:customer:'+ws.stripeCustomerId);
   if(ws.stripeSubscriptionId)await kv.del('stripe:subscription:'+ws.stripeSubscriptionId);
   const phoneIndex=await kv.get('phone:index')||[];
-  if(Array.isArray(phoneIndex)){
-    await kv.set('phone:index',phoneIndex.map(x=>x&&x.workspaceId===id?{...x,workspaceId:'',workspaceName:'',updatedAt:Date.now()}:x));
-  }
+  if(Array.isArray(phoneIndex))await kv.set('phone:index',phoneIndex.map(x=>x&&x.workspaceId===id?{...x,workspaceId:'',workspaceName:'',updatedAt:Date.now()}:x));
   const supportIndex=await kv.get('support:index')||[],keepSupport=[];
   for(const ticketId of Array.isArray(supportIndex)?supportIndex:[]){
     const ticket=await kv.get('support:'+ticketId);
@@ -211,9 +252,8 @@ async function adminDeleteClient(req,res){
     'onboarding:workspace-token:','provisioning:override:','provisioning:history:','audit:'
   ].map(prefix=>kv.del(prefix+id)));
   if(onboardingToken)await kv.del('onboarding:'+onboardingToken);
-  return res.status(200).json({ok:true,deleted:{id,name:ws.name||'Workspace'}});
+  return res.status(200).json({ok:true,purged:{id,name:ws.name||'Workspace'},retainedUntil:Date.now()+60*60*24*365*7*1000});
 }
-
 async function adminViewClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).id||'').slice(0,80);
@@ -1218,7 +1258,9 @@ async function requestLogin(req,res){
   if(emailCount===1)await kv.expire(emailBucket,WINDOW);
   if(count>MAX||emailCount>MAX)return res.status(429).json({error:'Too many requests. Try again shortly.'});
   const member=await kv.get('user:email:'+email);
-  if(member&&member.workspaceId){
+  if(member&&member.workspaceId&&!member.disabled){
+    const loginWs=await kv.get('workspace:'+member.workspaceId);
+    if(loginWs&&loginWs.status==='pending_deletion')return res.status(200).json({ok:true});
     const token=crypto.randomBytes(32).toString('hex');
     await kv.set('login:'+token,{email,workspaceId:member.workspaceId,role:member.role||'owner',next,authVersion:Number(member.sessionVersion||0)},{ex:15*60});
     const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
@@ -1245,6 +1287,8 @@ async function verify(req,res){
   const key='login:'+token,record=await kv.get(key);
   if(!record||!record.workspaceId)return res.redirect(302,'/login?error=expired');
   await kv.del(key);
+  const member=await kv.get('user:email:'+cleanEmail(record.email)),loginWs=await kv.get('workspace:'+record.workspaceId);
+  if(!member||member.disabled||!loginWs||loginWs.status==='pending_deletion')return res.redirect(302,'/login?error=disabled');
   await createSession(res,{email:record.email,workspaceId:record.workspaceId,role:record.role||'owner',authVersion:Number(record.authVersion||0)});
   const destination=record.next||((record.role||'owner')==='admin'?'/admin-dashboard':'/dashboard');
   return res.redirect(302,destination);
@@ -1254,6 +1298,7 @@ async function session(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);
   if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(ws.status==='pending_deletion'&&!s.adminView)return res.status(403).json({error:'Workspace is pending deletion'});
   const ent=entitlementsFor(ws.plan);
   const member=await kv.get('user:email:'+cleanEmail(s.email));
   const profileData=await getUserProfile(s.email,ws);
@@ -1673,6 +1718,8 @@ module.exports=async function handler(req,res){
   if(action==='admin-platform-settings-save'&&req.method==='POST')return adminPlatformSettingsSave(req,res);
   if(action==='admin-client-update'&&req.method==='POST')return adminUpdateClient(req,res);
   if(action==='admin-client-delete'&&req.method==='POST')return adminDeleteClient(req,res);
+  if(action==='admin-client-delete-restore'&&req.method==='POST')return adminRestoreDeletedClient(req,res);
+  if(action==='admin-client-purge'&&req.method==='POST')return adminPurgeClient(req,res);
   if(action==='admin-view-client'&&req.method==='POST')return adminViewClient(req,res);
   if(action==='admin-exit-client-view'&&req.method==='POST')return adminExitClientView(req,res);
   if(action==='profile'&&req.method==='GET')return profile(req,res);
