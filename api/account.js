@@ -211,18 +211,45 @@ async function adminProvisioning(req,res){
   const items=[];
   for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
     const ws=await kv.get('workspace:'+id);if(!ws)continue;
-    const [settings,agent]=await Promise.all([kv.get('settings:'+id),kv.get('agent:'+id)]);
-    const hasIntake=!!(settings&&((settings.businessName||'').trim()||(settings.primaryEmail||'').trim()));
-    const hasAgent=!!(agent&&((agent.name||'').trim()||(agent.openingMessage||'').trim()));
+    const [settings,agent,onboarding,routing]=await Promise.all([
+      kv.get('settings:'+id),kv.get('agent:'+id),kv.get('onboarding:workspace:'+id),kv.get('routing-request:'+id)
+    ]);
+    const hasIntake=!!(onboarding?.checklist?.intake||(settings&&((settings.businessName||'').trim()||(settings.primaryEmail||'').trim())));
+    const hasAgent=!!(onboarding?.checklist?.agentDraft||(agent&&((agent.name||'').trim()||(agent.openingMessage||'').trim())));
     const hasPhone=!!String(ws.phone||'').trim();
+    const checklist={
+      payment:onboarding?.checklist?.payment!==false,
+      agreement:!!onboarding?.checklist?.agreement,
+      intake:!!onboarding?.checklist?.intake,
+      businessProfile:!!onboarding?.checklist?.businessProfile,
+      agentDraft:!!onboarding?.checklist?.agentDraft,
+      routingCaptured:!!(onboarding?.checklist?.routingCaptured||routing?.routingChoice),
+      phoneAssigned:hasPhone,
+      adminReview:!!onboarding?.checklist?.adminReview,
+      testCall:!!onboarding?.checklist?.testCall,
+      clientApproval:!!onboarding?.checklist?.clientApproval,
+      live:!!onboarding?.checklist?.live
+    };
     let autoStage='Paid';
-    if(hasIntake)autoStage='Intake';
-    if(hasAgent)autoStage='Building';
-    if(hasAgent&&hasPhone)autoStage='Ready';
-    if(ws.status==='active'&&hasAgent&&hasPhone)autoStage='Live';
+    if(onboarding?.status==='intake_in_progress'||onboarding?.status==='awaiting_agreement'||(checklist.agreement&&!checklist.intake))autoStage='Intake';
+    if(checklist.intake&&checklist.agentDraft)autoStage='Building';
+    if(checklist.agentDraft&&checklist.phoneAssigned&&checklist.adminReview&&checklist.testCall)autoStage='Ready';
+    if(checklist.live||ws.status==='active'&&checklist.agentDraft&&checklist.phoneAssigned&&checklist.adminReview)autoStage='Live';
     const override=await kv.get('provisioning:override:'+id);
     const stage=override&&['Paid','Intake','Building','Ready','Live'].includes(override.stage)?override.stage:autoStage;
-    items.push({id:ws.id,name:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',stage,autoStage,manualOverride:!!override,stageUpdatedAt:override&&override.updatedAt||null,hasIntake,hasAgent,hasPhone,phone:ws.phone||''});
+    const doneCount=Object.values(checklist).filter(Boolean).length,totalCount=Object.keys(checklist).length;
+    items.push({
+      id:ws.id,name:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',
+      stage,autoStage,manualOverride:!!override,stageUpdatedAt:override&&override.updatedAt||null,
+      hasIntake,hasAgent,hasPhone,phone:ws.phone||'',checklist,
+      checklistDone:doneCount,checklistTotal:totalCount,
+      completionPercent:Number(onboarding?.completionPercent||0),
+      onboardingStatus:onboarding?.status||'paid',
+      website:onboarding?.website||settings?.website||'',
+      websiteScan:onboarding?.websiteScan||null,
+      routing:routing||null,
+      intakeCompletedAt:onboarding?.intakeCompletedAt||null
+    });
   }
   return res.status(200).json({provisioning:items});
 }
@@ -677,6 +704,26 @@ async function adminRestoreAudit(req,res){
   return res.status(200).json({ok:true,section:entry.section,value:restored});
 }
 
+
+async function adminProvisioningChecklistSave(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80),field=String(body.field||''),value=body.value===true;
+  const allowed=new Set(['adminReview','testCall','clientApproval','live']);
+  if(!id||!allowed.has(field))return res.status(400).json({error:'Invalid provisioning checklist update'});
+  const wsKey='workspace:'+id,ws=await kv.get(wsKey);if(!ws)return res.status(404).json({error:'Client not found'});
+  const key='onboarding:workspace:'+id,state=await kv.get(key)||{workspaceId:id,status:'building',completionPercent:100,checklist:{}};
+  const next={...state,checklist:{...(state.checklist||{}),phoneAssigned:!!String(ws.phone||'').trim(),[field]:value},updatedAt:Date.now(),updatedBy:admin.email};
+  if(field==='live'&&value){
+    next.checklist.adminReview=true;next.checklist.testCall=true;next.checklist.clientApproval=true;
+    next.status='live';await kv.set(wsKey,{...ws,status:'active',updatedAt:Date.now()});
+  }else if(field==='live'&&!value&&state.status==='live'){
+    next.status='intake_complete';await kv.set(wsKey,{...ws,status:'onboarding',updatedAt:Date.now()});
+  }
+  await kv.set(key,next);
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'provisioning_checklist',section:'workspace',meta:{field,value}});
+  return res.status(200).json({ok:true,onboarding:next});
+}
+
 async function adminSystemHealth(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   let kvOk=false;
@@ -901,8 +948,12 @@ async function session(req,res){
   const ent=entitlementsFor(ws.plan);
   const member=await kv.get('user:email:'+cleanEmail(s.email));
   const profileData=await getUserProfile(s.email,ws);
+  const onboardingState=await kv.get('onboarding:workspace:'+s.workspaceId)||null;
+  const onboardingToken=await kv.get('onboarding:workspace-token:'+s.workspaceId)||'';
+  const needsOnboarding=!!onboardingToken&&(!onboardingState||!['intake_complete','live'].includes(onboardingState.status));
   return res.status(200).json({
     user:{email:s.email,role:member&&member.role||s.role,adminView:!!s.adminView,profile:profileData},
+    onboarding:onboardingState?{...onboardingState,needsCompletion:needsOnboarding,url:needsOnboarding?('/onboarding?token='+onboardingToken):''}:{needsCompletion:needsOnboarding,url:needsOnboarding?('/onboarding?token='+onboardingToken):''},
     workspace:{
       id:ws.id,name:ws.name,plan:ent.plan,status:ws.status||'active',
       subscriptionStatus:ws.subscriptionStatus||'active',
@@ -1223,6 +1274,7 @@ module.exports=async function handler(req,res){
   if(action==='admin-provisioning'&&req.method==='GET')return adminProvisioning(req,res);
   if(action==='admin-provisioning-stage-save'&&req.method==='POST')return adminSaveProvisioningStage(req,res);
   if(action==='admin-provisioning-stage-clear'&&req.method==='POST')return adminClearProvisioningStage(req,res);
+  if(action==='admin-provisioning-checklist-save'&&req.method==='POST')return adminProvisioningChecklistSave(req,res);
   if(action==='admin-phone-numbers'&&req.method==='GET')return adminPhoneNumbers(req,res);
   if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
   if(action==='admin-phone-number-delete'&&req.method==='POST')return adminDeletePhoneNumber(req,res);
