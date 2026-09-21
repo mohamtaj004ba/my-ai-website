@@ -45,6 +45,8 @@ This document tracks the release-readiness state of the feature branch. It is in
 - Retention policy approved with indefinite anonymized analytics and bounded raw data.
 - 30-day recoverable deletion workflow implemented with access revocation, restore and explicit permanent purge.
 - Public launch copy no longer promises SMS or calendar booking as active launch features.
+- Pre-release rollback baseline is documented and points to the verified READY production deployment before PR #5.
+- Server error logging uses a privacy-safe sanitizer; raw provider response bodies and raw Error objects were removed from sensitive API logs, with CI regression coverage.
 
 ## Must complete before broad production launch
 
