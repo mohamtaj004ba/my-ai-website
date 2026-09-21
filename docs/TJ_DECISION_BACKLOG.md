@@ -79,7 +79,6 @@ Decide later whether to offer:
 - Terms review.
 - Recording-consent policy.
 - SMS/TCPA operating policy.
-- Data-retention/deletion policy.
 
 ## Vendor / production credentials
 
@@ -100,9 +99,8 @@ TJ approval required before:
 ## Final prelaunch authorizations discovered in audit
 
 ### Hosting / release controls
-- Upgrade Vercel from Hobby to a commercial-use plan before taking paying customers.
-- Enable/enforce the existing CallerCore GitHub branch ruleset for `main`.
-- Choose/authorize a production uptime and error-monitoring provider or operating approach.
+- Vercel Pro is confirmed and GitHub main-branch protection is complete.
+- Native Vercel anomaly monitoring is configured; post-merge validation of the signed webhook email fallback remains.
 
 ### Business / tax
 - Confirm CallerCore's legal operating entity.
@@ -113,17 +111,16 @@ TJ approval required before:
 - Approve enabling Stripe automatic tax after tax classification is confirmed.
 
 ### Billing launch
-- Approve adding the five missing live Stripe lifecycle webhook events.
-- Approve/activate the Stripe Customer Portal configuration.
+- Live Stripe webhook event coverage and Customer Portal configuration are complete.
 - Decide Starter/Growth overage policy.
 - Decide Pro unlimited/fair-use policy.
 - Final approval to set `CALLERCORE_CHECKOUT_ENABLED=true` only after E2E launch validation.
 
 ### Email / identity
-- Verify SPF, DKIM, and DMARC for CallerCore sending domains.
-- Decide whether the admin Gmail integration stays owner-only or will later be offered to customers; broad external Gmail connections require a Google OAuth verification/security-assessment plan.
+- Mailgun sending-domain authentication is verified; DMARC is currently monitoring and can be tightened later.
+- Gmail stays admin-only for launch. Broad external Gmail connections require a Google OAuth verification/security-assessment plan.
 
 ### Compliance scope
 - Standard launch excludes Medical & Dental / HIPAA workflows unless separately reviewed and built.
-- Decide concrete retention periods for call recordings, transcripts, messages, leads, analytics, onboarding records, and audit history.
+- Retention periods are approved; scheduled destructive cleanup remains intentionally disabled until provider deletion/recovery testing is complete.
 - Consider technology E&O / cyber liability insurance before material customer volume.
