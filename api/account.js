@@ -279,7 +279,8 @@ async function createSupportTicket(req,res){
   await kv.set('support:'+id,ticket);
   const index=await kv.get('support:index')||[];const list=Array.isArray(index)?index:[];
   await kv.set('support:index',[id,...list.filter(x=>x!==id)].slice(0,500));
-  const to=process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
+  const platform=await kv.get('platform:settings')||{};
+  const to=platform.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
   if(to){try{await sendMail({to,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\n\n'+message})}catch(err){console.error('support email failed',err)}}
   return res.status(201).json({ok:true,ticket});
 }
@@ -434,8 +435,9 @@ async function agent(req,res){
   const ws=await kv.get('workspace:'+s.workspaceId);
   if(!ws)return res.status(404).json({error:'Workspace not found'});
   const saved=await kv.get('agent:'+s.workspaceId)||{};
+  const platform=await kv.get('platform:settings')||{};
   return res.status(200).json({agent:{
-    name:saved.name||'Maya',
+    name:saved.name||platform.defaultAgentName||'Maya',
     role:saved.role||'AI Receptionist',
     openingMessage:saved.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),
     tone:saved.tone||'Warm & professional',
@@ -542,10 +544,11 @@ async function settings(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   const saved=await kv.get('settings:'+s.workspaceId)||{};
+  const platform=await kv.get('platform:settings')||{};
   return res.status(200).json({settings:{
     businessName:saved.businessName||ws.name||'',
     primaryEmail:saved.primaryEmail||ws.ownerEmail||s.email||'',
-    timezone:saved.timezone||'America/Los_Angeles',
+    timezone:saved.timezone||platform.defaultTimezone||'America/Los_Angeles',
     notificationEmail:saved.notificationEmail||ws.ownerEmail||s.email||'',
     smsAlerts:saved.smsAlerts!==false,
     emailAlerts:saved.emailAlerts!==false
