@@ -81,6 +81,13 @@ Gmail refresh/access tokens are encrypted before being stored.
 
 Used for website extraction and conservative first-draft agent configuration. Onboarding falls back to deterministic configuration when the model call is unavailable.
 
+### Live demo protection
+- `DEMO_TOKEN_SECRET`
+- optional `DEMO_PHONE_NUMBER`
+- optional `DEMO_PHONE_NUMBER_DISPLAY`
+
+`DEMO_TOKEN_SECRET` is required for the reveal-token flow. There is intentionally no source-code fallback secret. Use a long random value and scope it through Vercel environment variables.
+
 ### Preview bootstrap
 - `CALLERCORE_BOOTSTRAP_SECRET`
 
