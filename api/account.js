@@ -84,6 +84,68 @@ async function requireFeature(req,res,feature){
   return {session:s,workspace:ws,entitlements:ent};
 }
 
+async function agent(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);
+  if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const saved=await kv.get('agent:'+s.workspaceId)||{};
+  return res.status(200).json({agent:{
+    name:saved.name||'Maya',
+    role:saved.role||'AI Receptionist',
+    openingMessage:saved.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),
+    tone:saved.tone||'Warm & professional',
+    serviceArea:saved.serviceArea||'',
+    businessHours:saved.businessHours||'',
+    emergencyInstructions:saved.emergencyInstructions||'',
+    qualificationQuestions:Array.isArray(saved.qualificationQuestions)?saved.qualificationQuestions:[],
+    transferNumber:saved.transferNumber||'',
+    updatedAt:saved.updatedAt||null
+  }});
+}
+
+async function saveAgent(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const body=req.body||{};
+  const clean=(v,n)=>String(v||'').trim().slice(0,n);
+  const agent={
+    name:clean(body.name,80)||'Maya',
+    role:clean(body.role,120)||'AI Receptionist',
+    openingMessage:clean(body.openingMessage,1200),
+    tone:clean(body.tone,80)||'Warm & professional',
+    serviceArea:clean(body.serviceArea,500),
+    businessHours:clean(body.businessHours,500),
+    emergencyInstructions:clean(body.emergencyInstructions,1200),
+    qualificationQuestions:Array.isArray(body.qualificationQuestions)?body.qualificationQuestions.map(v=>clean(v,240)).filter(Boolean).slice(0,12):[],
+    transferNumber:clean(body.transferNumber,40),
+    updatedAt:Date.now()
+  };
+  await kv.set('agent:'+s.workspaceId,agent);
+  return res.status(200).json({ok:true,agent});
+}
+
+async function automations(req,res){
+  const access=await requireFeature(req,res,'automations');if(!access)return;
+  const items=await kv.get('automations:'+access.session.workspaceId)||[];
+  return res.status(200).json({automations:Array.isArray(items)?items:[]});
+}
+
+async function saveAutomations(req,res){
+  const access=await requireFeature(req,res,'automations');if(!access)return;
+  const incoming=Array.isArray((req.body||{}).automations)?req.body.automations:[];
+  const allowedTriggers=['missed_call','new_lead','qualified_lead','appointment_booked','after_hours_call'];
+  const allowedActions=['send_sms','notify_team','create_followup','mark_priority','send_confirmation'];
+  const items=incoming.slice(0,20).map((item,i)=>({
+    id:String(item.id||('auto_'+i)).slice(0,120),
+    name:String(item.name||'Automation').trim().slice(0,120),
+    trigger:allowedTriggers.includes(item.trigger)?item.trigger:'new_lead',
+    action:allowedActions.includes(item.action)?item.action:'notify_team',
+    enabled:item.enabled!==false,
+    updatedAt:Date.now()
+  }));
+  await kv.set('automations:'+access.session.workspaceId,items);
+  return res.status(200).json({ok:true,automations:items});
+}
+
 async function conversations(req,res){
   const access=await requireFeature(req,res,'unifiedInbox');if(!access)return;
   const items=await kv.get('conversations:'+access.session.workspaceId)||[];
@@ -147,6 +209,10 @@ module.exports=async function handler(req,res){
   if(action==='verify'&&req.method==='GET')return verify(req,res);
   if(action==='session'&&req.method==='GET')return session(req,res);
   if(action==='workspace'&&req.method==='GET')return workspace(req,res);
+  if(action==='agent'&&req.method==='GET')return agent(req,res);
+  if(action==='agent-save'&&req.method==='POST')return saveAgent(req,res);
+  if(action==='automations'&&req.method==='GET')return automations(req,res);
+  if(action==='automations-save'&&req.method==='POST')return saveAutomations(req,res);
   if(action==='calls'&&req.method==='GET')return calls(req,res);
   if(action==='conversations'&&req.method==='GET')return conversations(req,res);
   if(action==='appointments'&&req.method==='GET')return appointments(req,res);
