@@ -30,6 +30,25 @@ function mutationOriginAllowed(req){
   }catch(_){return false}
 }
 
+async function kvHealthCheck(timeoutMs=2500){
+  const stamp=Date.now(),key='health:last_check';
+  try{
+    const work=(async()=>{await kv.set(key,stamp,{ex:120});const value=await kv.get(key);return Number(value)===stamp})();
+    const ok=await Promise.race([work,new Promise((_,reject)=>setTimeout(()=>reject(new Error('KV health check timed out')),timeoutMs))]);
+    return {ok:!!ok,error:''};
+  }catch(err){
+    const raw=String(err&&err.message||err||'Database check failed');
+    const error=/ENOTFOUND|getaddrinfo/i.test(raw)?'dns':/timed out/i.test(raw)?'timeout':'unavailable';
+    return {ok:false,error};
+  }
+}
+
+async function publicHealth(req,res){
+  const db=await kvHealthCheck();
+  res.setHeader('Cache-Control','no-store');
+  return res.status(db.ok?200:503).json({ok:db.ok,database:db.ok?'operational':'error',checkedAt:Date.now()});
+}
+
 async function appendAudit(workspaceId,{actorEmail='',actorRole='client',action='',section='',before=null,after=null,meta={}}={}){
   if(!workspaceId)return;
   const key='audit:'+workspaceId,list=await kv.get(key)||[];
@@ -957,10 +976,9 @@ async function adminProvisioningChecklistSave(req,res){
 
 async function adminSystemHealth(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  let kvOk=false;
-  try{await kv.set('health:last_check',Date.now(),{ex:120});const v=await kv.get('health:last_check');kvOk=!!v}catch(e){kvOk=false}
+  const kvHealth=await kvHealthCheck(),kvOk=kvHealth.ok;
   const services=[
-    {key:'database',name:'Upstash / KV',status:kvOk?'operational':'error',detail:kvOk?'Read/write check passed':'Database check failed'},
+    {key:'database',name:'Upstash / KV',status:kvOk?'operational':'error',detail:kvOk?'Read/write check passed':('Database check failed ('+kvHealth.error+')')},
     {key:'stripe',name:'Stripe',status:(process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_WEBHOOK_SECRET)?'configured':'not_configured',detail:(process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_WEBHOOK_SECRET)?'API key + webhook signing secret available':(!process.env.STRIPE_SECRET_KEY?'STRIPE_SECRET_KEY missing':'STRIPE_WEBHOOK_SECRET missing')},
     {key:'mailgun',name:'Mailgun',status:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'configured':'not_configured',detail:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'API credentials available':'Mailgun credentials incomplete'},
     {key:'demo',name:'Live demo protection',status:process.env.DEMO_TOKEN_SECRET?'configured':'not_configured',detail:process.env.DEMO_TOKEN_SECRET?'Demo reveal signing secret available':'DEMO_TOKEN_SECRET missing — live demo number reveal is disabled'},
@@ -1570,6 +1588,7 @@ module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   const action=String((req.query||{}).action||'');
   if(req.method==='POST'&&!mutationOriginAllowed(req))return res.status(403).json({error:'Cross-site request blocked'});
+  if(action==='health'&&req.method==='GET')return publicHealth(req,res);
   if(action==='bootstrap-preview'&&req.method==='POST')return bootstrapPreview(req,res);
   if(action==='promote-preview-admin'&&req.method==='POST')return promotePreviewAdmin(req,res);
   if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
