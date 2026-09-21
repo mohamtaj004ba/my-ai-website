@@ -64,6 +64,8 @@ module.exports=async function handler(req,res){
   const rawBody=await getRawBody(req);
   if(!verifyStripeSignature(rawBody,req.headers['stripe-signature'],STRIPE_WEBHOOK_SECRET))return res.status(400).json({error:'Invalid signature'});
   let event;try{event=JSON.parse(rawBody)}catch(_){return res.status(400).json({error:'Invalid payload'})}
+  const eventKey=event.id?'stripe:event:'+event.id:null;
+  if(eventKey&&await kv.get(eventKey))return res.status(200).json({received:true,duplicate:true});
   const checkoutEvent=event.type==='checkout.session.completed'||event.type==='checkout.session.async_payment_succeeded';
   const lifecycleEvent=['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.payment_failed','invoice.paid'].includes(event.type);
 
@@ -154,8 +156,6 @@ module.exports=async function handler(req,res){
     return res.status(200).json({received:true,workspaceId,status});
   }
   if(!checkoutEvent){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,ignored:true})}
-  const eventKey=event.id?'stripe:event:'+event.id:null;
-  if(eventKey&&await kv.get(eventKey))return res.status(200).json({received:true,duplicate:true});
   const session=event.data.object;
   if(event.type==='checkout.session.completed'&&!['paid','no_payment_required'].includes(session.payment_status))return res.status(200).json({received:true,pending_payment:true});
   const mappedPlan=PLAN_BY_PAYMENT_LINK[session.payment_link];
