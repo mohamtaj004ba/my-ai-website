@@ -34,7 +34,24 @@
   <main class="dashboard-main">
     <header class="topbar">
       <div><button class="mobile-menu" aria-label="Toggle navigation">☰</button><span class="eyebrow">CallerCore client portal</span></div>
-      <div class="top-actions"><button class="search-pill" data-view="support">? Help</button><div class="notification-shell"><button class="icon-btn notification-bell" id="notificationBell" title="Notifications" aria-label="Notifications" aria-expanded="false">🔔<span class="notification-badge" id="notificationBadge" hidden>0</span></button><div class="notification-panel" id="notificationPanel" hidden><div class="notification-head"><div><span class="eyebrow">Notifications</span><b>Workspace alerts</b></div><button id="notificationReadAll">Mark all read</button></div><div id="notificationList"></div><div class="notification-empty" id="notificationEmpty" hidden>No notifications right now.</div></div></div><button class="icon-btn" id="logoutButton" title="Sign out" aria-label="Sign out">↪</button><div class="avatar">CC</div></div>
+      <div class="top-actions"><button class="search-pill" data-view="support">? Help</button><div class="notification-shell"><button class="icon-btn notification-bell" id="notificationBell" title="Notifications" aria-label="Notifications" aria-expanded="false">🔔<span class="notification-badge" id="notificationBadge" hidden>0</span></button><div class="notification-panel" id="notificationPanel" hidden><div class="notification-head"><div><span class="eyebrow">Notifications</span><b>Workspace alerts</b></div><button id="notificationReadAll">Mark all read</button></div><div id="notificationList"></div><div class="notification-empty" id="notificationEmpty" hidden>No notifications right now.</div></div></div>
+<div class="account-shell">
+  <button class="account-button" id="accountButton" type="button" aria-expanded="false">
+    <span class="profile-avatar" id="profileAvatar"><span id="profileInitials">CC</span><img id="profileAvatarImage" alt="" hidden></span>
+    <span class="account-copy"><b id="profileDisplayName">CallerCore User</b><small id="profileEmail"></small></span>
+    <span class="account-caret">⌄</span>
+  </button>
+  <div class="account-panel" id="accountPanel" hidden>
+    <div class="account-panel-head"><span class="eyebrow">Your profile</span><b>Account appearance</b></div>
+    <div class="profile-editor">
+      <span class="profile-avatar profile-avatar-large"><span id="profileInitialsLarge">CC</span><img id="profileAvatarImageLarge" alt="" hidden></span>
+      <div class="profile-photo-actions"><button type="button" id="profilePhotoButton">Change photo</button><button type="button" id="profilePhotoRemove">Remove</button><input id="profilePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>
+    </div>
+    <label class="profile-name-field">Display name<input id="profileNameInput" maxlength="80" autocomplete="name"></label>
+    <div class="account-panel-actions"><small id="profileSaveStatus"></small><button type="button" class="primary" id="profileSaveButton">Save profile</button></div>
+  </div>
+</div>
+<button class="signout-button" id="logoutButton" type="button" title="Sign out"><span>↪</span> Sign out</button></div>
     </header>
 
     <section class="view active" id="view-overview">
