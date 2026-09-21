@@ -463,21 +463,24 @@ async function adminSupportReply(req,res){
   const next={...t,messages:messages.slice(-100),status:t.status==='open'?'in_progress':t.status,updatedAt:now,updatedBy:admin.email};
   await kv.set(key,next);
   if(t.email){
-    try{
-      const emailBody=lifecycleEmail({
-        preheader:'CallerCore support replied to your request.',
-        eyebrow:'SUPPORT UPDATE',
-        title:'We replied to your support request.',
-        intro:'There’s a new response on “'+escapeEmailHtml(t.subject||'your support request')+'”.',
-        statusLabel:'Support status',
-        statusText:String(next.status||'in_progress').replace('_',' '),
-        bodyHtml:'<div style="padding:14px 16px;border-left:3px solid #D2673C;background:#FFF8F4;border-radius:8px">'+escapeEmailHtml(message).replace(/\n/g,'<br>')+'</div><p style="margin:16px 0 0">You can reply directly to this email or continue the conversation from Help & Support in your CallerCore dashboard.</p>',
-        ctaLabel:'Open support',
-        ctaUrl:requestOrigin(req)+'/dashboard',
-        siteUrl:requestOrigin(req)
-      });
-      await sendMail({to:t.email,subject:'CallerCore support replied · '+t.subject,...emailBody});
-    }catch(err){console.error('support client reply email failed',err)}
+    const clientSettings=await kv.get('settings:'+t.workspaceId)||{};
+    if(clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false){
+      try{
+        const emailBody=lifecycleEmail({
+          preheader:'CallerCore support replied to your request.',
+          eyebrow:'SUPPORT UPDATE',
+          title:'We replied to your support request.',
+          intro:'There’s a new response on “'+escapeEmailHtml(t.subject||'your support request')+'”.',
+          statusLabel:'Support status',
+          statusText:String(next.status||'in_progress').replace('_',' '),
+          bodyHtml:'<div style="padding:14px 16px;border-left:3px solid #D2673C;background:#FFF8F4;border-radius:8px">'+escapeEmailHtml(message).replace(/\n/g,'<br>')+'</div><p style="margin:16px 0 0">You can reply directly to this email or continue the conversation from Help & Support in your CallerCore dashboard.</p>',
+          ctaLabel:'Open support',
+          ctaUrl:requestOrigin(req)+'/dashboard',
+          siteUrl:requestOrigin(req)
+        });
+        await sendMail({to:t.email,subject:'CallerCore support replied · '+t.subject,...emailBody});
+      }catch(err){console.error('support client reply email failed',err)}
+    }
   }
   await appendAudit(t.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'support_reply',section:'support',meta:{ticketId:id}});
   return res.status(200).json({ok:true,ticket:next});
