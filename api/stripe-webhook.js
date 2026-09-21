@@ -1,6 +1,7 @@
 const crypto=require('crypto');
 const {kv}=require('@vercel/kv');
 const {sendMail}=require('../lib/mail');
+const {lifecycleEmail}=require('../lib/email-template');
 const {normalizePlan,entitlementsFor}=require('../lib/plans');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 module.exports.config={api:{bodyParser:false}};
@@ -173,12 +174,17 @@ module.exports=async function handler(req,res){
 
   const firstName=(lead.name||'').split(' ')[0]||'there';
   try{
-    await sendMail({
-      to:recipient,
-      subject:'Payment received — welcome to CallerCore',
-      text:'Hi '+firstName+',\n\nThank you — we received your payment and created your CallerCore account for '+workspace.name+'.\n\nOur team will review your order and business details during business hours. Once that review is complete, we’ll send your welcome email with a secure onboarding link and service agreement.\n\nThere is nothing you need to do right now.\n\nQuestions any time: support@callercore.com\n\n— CallerCore',
-      html:'<p>Hi '+firstName+',</p><p><strong>Thank you — we received your payment.</strong></p><p>We created your CallerCore account for <strong>'+workspace.name+'</strong>. Our team will review your order and business details during business hours. Once that review is complete, we’ll send your welcome email with a secure onboarding link and service agreement.</p><p>There is nothing you need to do right now.</p><p>Questions any time: support@callercore.com</p><p>— CallerCore</p>'
+    const email=lifecycleEmail({
+      preheader:'Payment received. Your CallerCore setup request is now in review.',
+      eyebrow:'PAYMENT CONFIRMED',
+      title:'Welcome to CallerCore, '+firstName+'.',
+      intro:'Thank you — we received your payment and created the CallerCore account for <strong>'+workspace.name+'</strong>.',
+      statusLabel:'Current status',
+      statusText:'Account review in progress — no action needed from you right now.',
+      bodyHtml:'<p style="margin:0 0 12px">Our team will review your order and business details during business hours. Once that review is complete, we’ll send your welcome email with a secure onboarding link and service agreement.</p><p style="margin:0">You’ll always be able to see setup progress from your CallerCore account as the implementation moves forward.</p>',
+      siteUrl:SITE_URL
     });
+    await sendMail({to:recipient,subject:'Payment received — welcome to CallerCore',...email});
   }catch(err){console.error('Failed to send payment confirmation:',err)}
 
   if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
