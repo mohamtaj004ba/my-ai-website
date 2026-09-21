@@ -8,7 +8,7 @@ function sign(ts){return crypto.createHmac('sha256',SECRET).update(String(ts)).d
 function allowed(req){
   const candidate=req.headers.origin||req.headers.referer||'';
   if(!candidate)return false;
-  try{const host=new URL(candidate).host;return ALLOWED_HOSTS.has(host)||host.endsWith('.vercel.app')}catch(_){return false}
+  try{const host=new URL(candidate).host.toLowerCase(),requestHost=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();return ALLOWED_HOSTS.has(host)||(host.endsWith('.vercel.app')&&host===requestHost)}catch(_){return false}
 }
 module.exports = async function handler(req, res) {
   const origin=req.headers.origin||'';
