@@ -1,3 +1,4 @@
+const {safeError}=require('../lib/safe-log');
 const crypto = require('crypto');
 const { kv } = require('@vercel/kv');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
@@ -69,7 +70,7 @@ module.exports = async function handler(req, res) {
     );
     return res.status(200).json({ leadId, prospectId:prospect.id });
   } catch (err) {
-    console.error('lead-create KV write failed:', err);
+    console.error('lead-create KV write failed:', safeError(err));
     return res.status(503).json({ error: 'Lead pre-save temporarily unavailable' });
   }
 };
