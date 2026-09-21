@@ -1184,30 +1184,42 @@ async function session(req,res){
   });
 }
 
-async function workspaceExport(req,res){
-  const s=await requireSession(req,res);if(!s)return;
-  const id=s.workspaceId;
+async function buildWorkspaceExportData(id){
   const [workspace,settings,agent,calls,leads,conversations,appointments,automations,integrations,locations,phones,supportIndex,onboarding,audit]=await Promise.all([
     kv.get('workspace:'+id),kv.get('settings:'+id),kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('conversations:'+id),kv.get('appointments:'+id),kv.get('automations:'+id),kv.get('integrations:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('support:index'),kv.get('onboarding:workspace:'+id),kv.get('audit:'+id)
   ]);
+  if(!workspace)return null;
   const support=[];
   for(const ticketId of Array.isArray(supportIndex)?supportIndex:[]){
     const t=await kv.get('support:'+ticketId);if(t&&t.workspaceId===id)support.push(t);
   }
   const phone=(Array.isArray(phones)?phones:[]).find(x=>x&&x.workspaceId===id)||null;
-  const exportedAt=new Date().toISOString();
-  const data={
-    exportVersion:'1.0',exportedAt,
-    workspace:workspace||null,settings:settings||null,agent:agent||null,phone,
+  return {
+    exportVersion:'1.0',exportedAt:new Date().toISOString(),
+    workspace,settings:settings||null,agent:agent||null,phone,
     locations:Array.isArray(locations)?locations:[],integrations:integrations||null,
     calls:Array.isArray(calls)?calls:[],leads:Array.isArray(leads)?leads:[],
     conversations:Array.isArray(conversations)?conversations:[],appointments:Array.isArray(appointments)?appointments:[],
     automations:Array.isArray(automations)?automations:[],support,onboarding:onboarding||null,
     audit:Array.isArray(audit)?audit:[]
   };
+}
+function sendWorkspaceExport(res,id,data,prefix='CallerCore-workspace-export'){
   res.setHeader('Content-Type','application/json; charset=utf-8');
-  res.setHeader('Content-Disposition','attachment; filename="CallerCore-workspace-export-'+String(id).slice(0,8)+'.json"');
+  res.setHeader('Content-Disposition','attachment; filename="'+prefix+'-'+String(id).slice(0,8)+'.json"');
   return res.status(200).send(JSON.stringify(data,null,2));
+}
+async function workspaceExport(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const data=await buildWorkspaceExportData(s.workspaceId);if(!data)return res.status(404).json({error:'Workspace not found'});
+  return sendWorkspaceExport(res,s.workspaceId,data);
+}
+async function adminWorkspaceExport(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.query||{}).id||'').slice(0,80);if(!id)return res.status(400).json({error:'Client id required'});
+  const data=await buildWorkspaceExportData(id);if(!data)return res.status(404).json({error:'Workspace not found'});
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'workspace_export',section:'access',meta:{reason:'admin_download'}});
+  return sendWorkspaceExport(res,id,data,'CallerCore-admin-workspace-export');
 }
 
 async function workspace(req,res){
@@ -1571,6 +1583,7 @@ module.exports=async function handler(req,res){
   if(action==='session'&&req.method==='GET')return session(req,res);
   if(action==='workspace'&&req.method==='GET')return workspace(req,res);
   if(action==='workspace-export'&&req.method==='GET')return workspaceExport(req,res);
+  if(action==='admin-workspace-export'&&req.method==='GET')return adminWorkspaceExport(req,res);
   if(action==='phone-routing'&&req.method==='GET')return phoneRouting(req,res);
   if(action==='locations'&&req.method==='GET')return locations(req,res);
   if(action==='locations-save'&&req.method==='POST')return saveLocations(req,res);
