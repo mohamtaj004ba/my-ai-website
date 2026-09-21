@@ -75,6 +75,10 @@ Subscribe the endpoint to the events CallerCore handles:
 
 The webhook verifies Stripe signatures and deduplicates event IDs.
 
+Before production launch, verify in Stripe that the `https://www.callercore.com/api/stripe-webhook` endpoint is enabled for every event above. CallerCore System Health checks this live and reports any missing events.
+
+Also activate at least one Stripe Customer Portal configuration. The dashboard's **Manage billing** action creates Stripe Billing Portal sessions and should be treated as unavailable until an active portal configuration exists.
+
 ### Google / Gmail
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
