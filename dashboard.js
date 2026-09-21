@@ -677,7 +677,7 @@ function renderAdminInbox(){
   if(connect){connect.hidden=!!st.connected;connect.textContent=st.configured?'Connect Gmail':'Set up Gmail OAuth'}
   if(disconnect)disconnect.hidden=!st.connected;
   if(title)title.textContent=st.connected?'Gmail connected':st.configured?'Gmail ready to connect':'Gmail OAuth setup required';
-  if(copy)copy.textContent=st.connected?('Connected as '+(st.gmailEmail||'Gmail')+'. Threads remain in Google and sync into this inbox.'):st.configured?'Authorize the Gmail account you want CallerCore Admin to use.':'Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY in Vercel before connecting.';
+  if(copy)copy.textContent=st.connected?('Connected as '+(st.gmailEmail||'Gmail')+'. '+Number(ga.inbound||0)+' received · '+Number(ga.outbound||0)+' sent in the loaded 30-day view. Threads remain in Google and sync into this inbox.'):st.configured?'Authorize the Gmail account you want CallerCore Admin to use.':'Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY in Vercel before connecting.';
   let items=[...website,...gmail].sort((a,b)=>b.at-a.at);
   if(adminInboxData.filter!=='all')items=items.filter(x=>x.kind===adminInboxData.filter);
   const q=String(adminInboxData.search||'').toLowerCase();if(q)items=items.filter(x=>(x.title+' '+x.subject+' '+x.preview).toLowerCase().includes(q));
@@ -695,6 +695,10 @@ async function openInboxItem(kind,id){
   }else{
     const thread=(adminInboxData.gmail?.threads||[]).find(x=>x.id===id);if(!thread)return;
     currentInboxItem={kind,id,thread,prospect:thread.prospect||null,messages:thread.messages||[]};
+    if(thread.unread){
+      fetch('/api/account?action=admin-gmail-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({threadId:id})}).catch(()=>{});
+      thread.unread=false;if(adminInboxData.gmail?.analytics?.unread>0)adminInboxData.gmail.analytics.unread--;
+    }
   }
   renderInboxThread();renderAdminInbox();
 }
