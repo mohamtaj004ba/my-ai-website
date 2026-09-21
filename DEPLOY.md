@@ -6,6 +6,10 @@ This repository now contains the public CallerCore site, client dashboard, admin
 
 Do **not** treat this as a simple static-site deploy. The current feature branch represents a substantial product release.
 
+## Hosting plan requirement
+
+CallerCore is a commercial product. Vercel Hobby is restricted to non-commercial personal use, so production launch requires a Vercel plan that permits commercial business use (currently Pro or Enterprise under Vercel policy).
+
 ## Release branch
 
 Current development branch:
@@ -15,6 +19,8 @@ Production branch:
 `main`
 
 Do not merge the feature branch to `main` until the production-readiness gates in `docs/PRODUCTION_READINESS.md` are satisfied and TJ explicitly approves the production release.
+
+Even after merge, customer payment creation remains closed unless `CALLERCORE_CHECKOUT_ENABLED=true`. Treat enabling that variable as a separate sales-open authorization after production validation.
 
 ## Automated checks
 
@@ -41,6 +47,7 @@ Vercel / Upstash KV variables such as:
 
 ### Site
 - `SITE_URL` — production should be `https://www.callercore.com`
+- `CALLERCORE_CHECKOUT_ENABLED` — keep unset/false until final launch approval; set exactly `true` only when sales are authorized
 
 ### Mailgun
 - `MAILGUN_API_KEY`
