@@ -76,3 +76,11 @@ test('production readiness requires the explicit checkout launch gate',()=>{
   assert.match(src,/CALLERCORE_CHECKOUT_ENABLED==='true'/);
   assert.match(src,/requiredForLaunch=\['database','checkout','stripe','mailgun','onboarding-ai','voice'\]/);
 });
+
+test('privacy purge preserves policy-required support and audit archives separately',()=>{
+  assert.match(src,/retention:support:/);
+  assert.match(src,/retention:audit:/);
+  assert.match(src,/365\*2/);
+  assert.match(src,/retention:workspace:/);
+  assert.match(src,/365\*7/);
+});
