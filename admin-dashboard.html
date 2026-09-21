@@ -9,6 +9,7 @@
 <button class="nav-item" data-view="agents">AI Agents</button>
 <button class="nav-item" data-view="calls">Calls</button>
 <button class="nav-item" data-view="admin-leads">Leads</button>
+<button class="nav-item" data-view="inbox">Inbox</button>
 <button class="nav-item" data-view="admin-automations">Automations</button>
 <button class="nav-item" data-view="website">Website</button>
 <div class="nav-label">Business</div>
@@ -52,6 +53,20 @@
   </div>
   <article class="panel"><div class="panel-head"><div><span class="eyebrow">Recent journeys</span><h2>Anonymous visitor sessions</h2></div><small class="muted">No passwords, card data, or typed form contents are captured here.</small></div><div id="websiteJourneyList"></div><div class="empty-state" id="websiteJourneyEmpty" hidden><h3>No tracked sessions yet</h3><p>New website visits will begin appearing after this deployment.</p></div></article>
   <article class="panel"><div class="panel-head"><div><span class="eyebrow">Website prospects</span><h2>Inquiries & checkout intent</h2></div><button data-view="admin-leads">Open all leads →</button></div><div id="websiteProspectList"></div><div class="empty-state" id="websiteProspectEmpty" hidden><h3>No website prospects yet</h3><p>Contact inquiries and signup starts will appear here.</p></div></article>
+</section>
+
+
+<section class="view" id="view-inbox">
+  <div class="page-head"><div><span class="eyebrow">Unified inbox</span><h1>Website and Gmail, one conversation view.</h1><p>Read inquiries, connect conversations to leads, and reply without leaving CallerCore.</p></div><div class="page-actions"><button class="secondary-btn" id="inboxRefreshButton">Refresh inbox</button><button class="primary" id="gmailConnectButton">Connect Gmail</button></div></div>
+  <div class="metric-grid"><article><span>Website inquiries</span><strong id="inboxWebsiteCount">0</strong><small>Contact + chatbot</small></article><article><span>Gmail unread</span><strong id="inboxGmailUnread">0</strong><small id="inboxGmailAccount">Not connected</small></article><article><span>Avg Gmail response</span><strong id="inboxResponseTime">—</strong><small>First response · last 30 days</small></article><article><span>Inbox threads</span><strong id="inboxThreadCount">0</strong><small>Loaded conversations</small></article></div>
+  <article class="panel gmail-connect-panel" id="gmailConnectPanel">
+    <div><span class="eyebrow">Gmail integration</span><h3 id="gmailStatusTitle">Gmail not connected</h3><p id="gmailStatusCopy">Connect your business Gmail to read and reply to email threads from CallerCore.</p></div>
+    <button class="secondary-btn" id="gmailDisconnectButton" hidden>Disconnect Gmail</button>
+  </article>
+  <div class="inbox-layout">
+    <aside class="panel inbox-list-panel"><div class="inbox-tools"><div class="inbox-tabs"><button class="active" data-inbox-filter="all">All</button><button data-inbox-filter="website">Website</button><button data-inbox-filter="gmail">Gmail</button></div><input id="inboxSearch" type="search" placeholder="Search messages"></div><div id="inboxList"></div><div class="empty-state" id="inboxEmpty" hidden><h3>No conversations yet</h3><p>Website inquiries and Gmail threads will appear here.</p></div></aside>
+    <article class="panel inbox-thread-panel"><div id="inboxThreadPlaceholder" class="empty-state"><h3>Select a conversation</h3><p>Choose a website or Gmail message to read and reply.</p></div><div id="inboxThread" hidden><div class="inbox-thread-head"><div><span class="eyebrow" id="inboxThreadChannel">Website</span><h2 id="inboxThreadSubject">Conversation</h2><p id="inboxThreadMeta"></p></div><span class="tag" id="inboxThreadLead"></span></div><div class="inbox-messages" id="inboxMessages"></div><form id="inboxReplyForm" class="inbox-reply"><label for="inboxReplyText">Reply</label><textarea id="inboxReplyText" required placeholder="Write a reply…"></textarea><div><small id="inboxReplyStatus" role="status"></small><button class="primary" type="submit">Send reply</button></div></form></div></article>
+  </div>
 </section>
 
 <section class="view" id="view-admin-automations"><div class="page-head"><div><span class="eyebrow">Automations</span><h1>Workflow coverage.</h1><p>See which client workspaces have automations configured and active.</p></div></div><div class="integration-grid" id="adminAutomationGrid"></div><div class="empty-state" id="adminAutomationsEmpty" hidden><h3>No automations configured</h3><p>Automation coverage will appear here as clients enable workflows.</p></div></section>
