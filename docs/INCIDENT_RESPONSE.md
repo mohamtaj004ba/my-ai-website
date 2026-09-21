@@ -154,3 +154,12 @@ For SEV-1/SEV-2 record:
 - permanent fix
 - tests added
 - follow-up owner/items
+
+
+## Pre-PR #5 production rollback target
+
+The verified pre-release production baseline is Vercel deployment `dpl_DkoEXfYyfenw7Hee18cmwygc92fV` on main commit `7cc9562e71bcc63ccc3bcec390a1a601fba2b874`.
+
+After PR #5 is released, use this as the first rollback target for a severe release regression unless a newer known-good production deployment has been explicitly recorded. Rollback is a live traffic change and should only be used to restore service, not as a rehearsal.
+
+After rollback, verify production health, 5xx/error logs, authentication, dashboard access, and checkout remains disabled until the incident is understood.
