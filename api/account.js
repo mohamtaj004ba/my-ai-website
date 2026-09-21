@@ -18,6 +18,18 @@ function requestOrigin(req){
 }
 
 
+function mutationOriginAllowed(req){
+  const fetchSite=String(req.headers['sec-fetch-site']||'').toLowerCase();
+  if(fetchSite==='cross-site')return false;
+  const origin=String(req.headers.origin||'').trim();
+  if(!origin)return true;
+  try{
+    const originHost=new URL(origin).host.toLowerCase();
+    const requestHost=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+    return !!requestHost&&originHost===requestHost;
+  }catch(_){return false}
+}
+
 async function appendAudit(workspaceId,{actorEmail='',actorRole='client',action='',section='',before=null,after=null,meta={}}={}){
   if(!workspaceId)return;
   const key='audit:'+workspaceId,list=await kv.get(key)||[];
@@ -1407,6 +1419,7 @@ async function logout(req,res){
 module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   const action=String((req.query||{}).action||'');
+  if(req.method==='POST'&&!mutationOriginAllowed(req))return res.status(403).json({error:'Cross-site request blocked'});
   if(action==='bootstrap-preview'&&req.method==='POST')return bootstrapPreview(req,res);
   if(action==='promote-preview-admin'&&req.method==='POST')return promotePreviewAdmin(req,res);
   if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
