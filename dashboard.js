@@ -417,11 +417,11 @@ async function saveWebhook(){
 function renderSettings(){
   if(!settingsData)return;
   const put=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||''};
-  put('settingsBusinessName',settingsData.businessName);put('settingsPrimaryEmail',settingsData.primaryEmail);put('settingsTimezone',settingsData.timezone);put('settingsNotificationEmail',settingsData.notificationEmail);
+  put('settingsBusinessName',settingsData.businessName);put('settingsContactName',settingsData.contactName);put('settingsPrimaryEmail',settingsData.primaryEmail);put('settingsBusinessPhone',settingsData.businessPhone);put('settingsWebsite',settingsData.website);put('settingsIndustry',settingsData.industry);put('settingsServiceArea',settingsData.serviceArea);put('settingsStreetAddress',settingsData.streetAddress);put('settingsCity',settingsData.city);put('settingsState',settingsData.state);put('settingsPostalCode',settingsData.postalCode);put('settingsTimezone',settingsData.timezone);put('settingsNotificationEmail',settingsData.notificationEmail);
   const e=document.getElementById('settingsEmailAlerts'),s=document.getElementById('settingsSmsAlerts');if(e)e.checked=settingsData.emailAlerts!==false;if(s)s.checked=settingsData.smsAlerts!==false;
 }
 async function saveSettings(){
-  const payload={businessName:document.getElementById('settingsBusinessName')?.value||'',primaryEmail:document.getElementById('settingsPrimaryEmail')?.value||'',timezone:document.getElementById('settingsTimezone')?.value||'America/Los_Angeles',notificationEmail:document.getElementById('settingsNotificationEmail')?.value||'',emailAlerts:!!document.getElementById('settingsEmailAlerts')?.checked,smsAlerts:!!document.getElementById('settingsSmsAlerts')?.checked};
+  const payload={businessName:document.getElementById('settingsBusinessName')?.value||'',contactName:document.getElementById('settingsContactName')?.value||'',primaryEmail:document.getElementById('settingsPrimaryEmail')?.value||'',businessPhone:document.getElementById('settingsBusinessPhone')?.value||'',website:document.getElementById('settingsWebsite')?.value||'',industry:document.getElementById('settingsIndustry')?.value||'',serviceArea:document.getElementById('settingsServiceArea')?.value||'',streetAddress:document.getElementById('settingsStreetAddress')?.value||'',city:document.getElementById('settingsCity')?.value||'',state:document.getElementById('settingsState')?.value||'',postalCode:document.getElementById('settingsPostalCode')?.value||'',timezone:document.getElementById('settingsTimezone')?.value||'America/Los_Angeles',notificationEmail:document.getElementById('settingsNotificationEmail')?.value||'',emailAlerts:!!document.getElementById('settingsEmailAlerts')?.checked,smsAlerts:!!document.getElementById('settingsSmsAlerts')?.checked};
   if(demoMode)settingsData={...payload};
   else{
     const r=await fetch('/api/account?action=settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -707,7 +707,7 @@ function adminClientRow(x,activity=false){
   const usage=lim?used+' / '+lim:used.toLocaleString()+' min';
   const initials=String(x.name||'?').split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase()||'?';
   if(activity)return '<div class="activity-row"><span class="time">'+esc(x.plan)+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.name)+'</strong><small>'+esc(usage)+'</small></span></div><span class="tag '+adminBillingTag(x.subscriptionStatus)+'">'+esc(x.subscriptionStatus||'active')+'</span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Open</button></div>';
-  return '<div class="call-row"><span><strong>'+esc(x.name)+'</strong><small class="subtle">'+esc(x.ownerEmail||'')+'</small></span><span>'+esc(x.plan)+'</span><span>'+esc(usage)+'</span><span class="tag '+adminBillingTag(x.subscriptionStatus)+'">'+esc(x.subscriptionStatus||'active')+'</span><span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Open</button></span></div>';
+  return '<div class="admin-client-row"><span><strong>'+esc(x.name)+'</strong><small class="subtle">'+esc(x.ownerEmail||'')+'</small></span><span>'+esc(x.plan)+'</span><span>'+esc(usage)+'</span><span class="tag '+(x.status==='active'?'green':x.status==='suspended'?'red':'amber')+'">'+esc(x.status||'active')+'</span><span class="tag '+adminBillingTag(x.subscriptionStatus)+'">'+esc(x.subscriptionStatus||'active')+'</span><span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></span></div>';
 }
 function renderAdminClients(){
   const wrap=document.getElementById('adminClientsTable');if(!wrap)return;
@@ -732,7 +732,7 @@ async function openAdminClient(id){
   const planSel=document.getElementById('adminClientPlan'),statusSel=document.getElementById('adminClientStatus');
   if(planSel){planSel.value=x.plan||'Starter';planSel.disabled=!!x.stripe?.subscriptionLinked}
   if(statusSel)statusSel.value=x.status||'active';
-  const note=document.getElementById('adminClientManageNote');if(note)note.textContent=x.stripe?.subscriptionLinked?'Plan is managed by Stripe for this workspace.':'Plan can be adjusted manually because no Stripe subscription is linked.';
+  const note=document.getElementById('adminClientManageNote');if(note)note.textContent=(x.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Workspace status controls access/readiness; billing status is tracked separately.';
   document.getElementById('adminClientDrawer').classList.add('open');document.getElementById('adminClientBackdrop').classList.add('open');
 }
 function closeAdminClient(){document.getElementById('adminClientDrawer')?.classList.remove('open');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
@@ -740,6 +740,15 @@ document.getElementById('adminSearch')?.addEventListener('input',renderAdminClie
 document.getElementById('closeAdminClient')?.addEventListener('click',closeAdminClient);
 document.getElementById('adminClientBackdrop')?.addEventListener('click',closeAdminClient);
 
+async function refreshAdminCore(){
+  const [sr,cr]=await Promise.all([
+    fetch('/api/account?action=admin-summary',{headers:{Accept:'application/json'},cache:'no-store'}),
+    fetch('/api/account?action=admin-clients',{headers:{Accept:'application/json'},cache:'no-store'})
+  ]);
+  if(sr.ok)adminSummaryData=(await sr.json()).summary||{};
+  if(cr.ok)adminClientsData=(await cr.json()).clients||[];
+  renderAdmin();
+}
 async function saveAdminClient(){
   if(!currentAdminClient)return;
   const plan=document.getElementById('adminClientPlan')?.value;
@@ -747,9 +756,19 @@ async function saveAdminClient(){
   const r=await fetch('/api/account?action=admin-client-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,plan,status})});
   const data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not update client.');return}
-  const local=adminClientsData.find(x=>x.id===currentAdminClient.id);if(local){local.plan=data.client.plan;local.status=data.client.status}
   currentAdminClient={...currentAdminClient,plan:data.client.plan,status:data.client.status};
-  renderAdmin();openAdminClient(currentAdminClient.id);
+  await refreshAdminCore();await loadAdminOps();openAdminClient(currentAdminClient.id);
+}
+async function deleteAdminClient(){
+  if(!currentAdminClient)return;
+  const name=currentAdminClient.name||'this workspace';
+  if(!confirm('Delete '+name+'? This permanently removes its CallerCore workspace data. This cannot be undone.'))return;
+  const typed=prompt('Type DELETE to confirm permanent deletion of '+name+'.');
+  if(typed!=='DELETE')return;
+  const r=await fetch('/api/account?action=admin-client-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok){alert(data.error||'Could not delete workspace.');return}
+  closeAdminClient();currentAdminClient=null;await refreshAdminCore();await loadAdminOps();
 }
 async function viewAdminClient(){
   if(!currentAdminClient)return;
@@ -759,6 +778,7 @@ async function viewAdminClient(){
   location.href=data.redirect||'/dashboard';
 }
 document.getElementById('adminSaveClientButton')?.addEventListener('click',saveAdminClient);
+document.getElementById('adminDeleteClientButton')?.addEventListener('click',deleteAdminClient);
 document.getElementById('adminViewClientButton')?.addEventListener('click',viewAdminClient);
 
 
