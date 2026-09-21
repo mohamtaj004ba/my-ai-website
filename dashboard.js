@@ -1182,15 +1182,6 @@ async function refreshAdminCore(){
   if(cr.ok)adminClientsData=(await cr.json()).clients||[];
   renderAdmin();
 }
-async function refreshAdminCore(){
-  const [sr,cr]=await Promise.all([
-    fetch('/api/account?action=admin-summary',{headers:{Accept:'application/json'},cache:'no-store'}),
-    fetch('/api/account?action=admin-clients',{headers:{Accept:'application/json'},cache:'no-store'})
-  ]);
-  if(sr.ok)adminSummaryData=(await sr.json()).summary||{};
-  if(cr.ok)adminClientsData=(await cr.json()).clients||[];
-  renderAdmin();
-}
 async function saveAdminClient(){
   if(!currentAdminClient)return;
   const plan=document.getElementById('adminClientPlan')?.value;
@@ -1200,17 +1191,6 @@ async function saveAdminClient(){
   if(!r.ok){alert(data.error||'Could not update client.');return}
   currentAdminClient={...currentAdminClient,plan:data.client.plan,status:data.client.status};
   await refreshAdminCore();await loadAdminOps();openAdminClient(currentAdminClient.id);
-}
-async function deleteAdminClient(){
-  if(!currentAdminClient)return;
-  const name=currentAdminClient.name||'this workspace';
-  if(!confirm('Delete '+name+'? This permanently removes its CallerCore workspace data. This cannot be undone.'))return;
-  const typed=prompt('Type DELETE to confirm permanent deletion of '+name+'.');
-  if(typed!=='DELETE')return;
-  const r=await fetch('/api/account?action=admin-client-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})});
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not delete workspace.');return}
-  closeAdminClient();currentAdminClient=null;await refreshAdminCore();await loadAdminOps();
 }
 async function deleteAdminClient(){
   if(!currentAdminClient)return;
