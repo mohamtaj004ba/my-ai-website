@@ -45,3 +45,8 @@ test('KV health checks are bounded and do not leak raw infrastructure errors',()
   assert.match(src,/error=\/ENOTFOUND\|getaddrinfo\/i\.test\(raw\)\?'dns':\/timed out\/i\.test\(raw\)\?'timeout':'unavailable'/);
   assert.doesNotMatch(src,/publicHealth[\s\S]{0,600}raw/);
 });
+
+test('Stripe launch health requires the publishable key used by embedded checkout',()=>{
+  assert.match(src,/process\.env\.STRIPE_SECRET_KEY&&process\.env\.STRIPE_PUBLISHABLE_KEY&&process\.env\.STRIPE_WEBHOOK_SECRET/);
+  assert.match(src,/STRIPE_PUBLISHABLE_KEY missing/);
+});
