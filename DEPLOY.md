@@ -50,7 +50,16 @@ Vercel / Upstash KV variables such as:
 
 ### Stripe
 - `STRIPE_SECRET_KEY`
+- `STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- optional `STRIPE_STARTER_PRICE_ID`
+- optional `STRIPE_GROWTH_PRICE_ID`
+- optional `STRIPE_PRO_PRICE_ID`
+- optional `STRIPE_SETUP_PRICE_ID`
+
+CallerCore uses Stripe Embedded Checkout on `/get-started`. The server creates the Checkout Session and sends only the publishable key plus the Session client secret to the browser. Card data is collected directly by Stripe.
+
+The current live CallerCore prices are used as safe source defaults; the optional Price-ID environment variables allow a future catalog migration without changing application code.
 
 Webhook endpoint:
 `https://www.callercore.com/api/stripe-webhook`
@@ -100,19 +109,21 @@ Keep this preview-scoped wherever possible. The bootstrap endpoint refuses non-V
 
 The expected customer lifecycle is now:
 
-1. Checkout succeeds.
-2. Stripe webhook creates/updates the CallerCore workspace.
-3. Client receives a branded payment-confirmation email.
-4. Account enters a two-business-hour managed review hold.
-5. Admin reviews and clicks **Approve & send onboarding**.
-6. Client receives the secure onboarding link.
-7. Client signs the versioned Service Agreement.
-8. Client completes Smart Onboarding / website scan / intake.
-9. CallerCore creates the initial business profile, location, routing request, and agent draft.
-10. Client receives an intake-received confirmation.
-11. Build enters a one-business-hour QA hold.
-12. Admin approves the build.
-13. Test stage, client approval, and final launch follow.
+1. Customer chooses a plan and enters business details on CallerCore.
+2. CallerCore creates a tracked Stripe Embedded Checkout Session.
+3. Payment completes inside CallerCore and Stripe redirects to `/checkout-complete`.
+4. Stripe webhook creates/updates the CallerCore workspace.
+5. Client receives a branded payment-confirmation email.
+6. Account enters a two-business-hour managed review hold.
+7. Admin reviews and clicks **Approve & send onboarding**.
+8. Client receives the secure onboarding link.
+9. Client signs the versioned Service Agreement.
+10. Client completes Smart Onboarding / website scan / intake.
+11. CallerCore creates the initial business profile, location, routing request, and agent draft.
+12. Client receives an intake-received confirmation.
+13. Build enters a one-business-hour QA hold.
+14. Admin approves the build.
+15. Test stage, client approval, and final launch follow.
 14. Live confirmation is sent only when the account is actually marked Live.
 
 Business-hour holds currently use Monday-Friday, 9 AM-5 PM Pacific.
