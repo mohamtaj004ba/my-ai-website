@@ -778,6 +778,10 @@ async function buildClientNotifications(s){
   if(ws.subscriptionStatus==='canceled')items.push(notificationItem('billing:'+ws.id+':canceled',{title:'Subscription canceled',body:'Your CallerCore subscription is canceled.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
   if(ws.status==='suspended')items.push(notificationItem('workspace:'+ws.id+':suspended',{title:'Workspace suspended',body:'Your CallerCore workspace is currently suspended. Contact support for help.',kind:'danger',view:'support',createdAt:ws.updatedAt||now}));
   if(ws.status==='onboarding')items.push(notificationItem('workspace:'+ws.id+':onboarding',{title:'Onboarding in progress',body:'CallerCore is still being configured for your business.',kind:'info',view:'overview',createdAt:ws.updatedAt||ws.createdAt||now}));
+  const onboarding=await kv.get('onboarding:workspace:'+ws.id);
+  if(onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview)items.push(notificationItem('onboarding:'+ws.id+':review',{title:'Your setup is being reviewed',body:'Your business profile and AI-agent draft are ready for CallerCore review.',kind:'info',view:'overview',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now}));
+  if(onboarding?.checklist?.adminReview&&!onboarding?.checklist?.testCall)items.push(notificationItem('onboarding:'+ws.id+':test',{title:'Next step: test call',body:'CallerCore has reviewed your setup. A test call is the next launch step.',kind:'info',view:'calls',createdAt:onboarding.updatedAt||now}));
+  if(onboarding?.checklist?.live)items.push(notificationItem('onboarding:'+ws.id+':live',{title:'CallerCore is live',body:'Your AI receptionist setup is marked live.',kind:'success',view:'overview',createdAt:onboarding.updatedAt||now}));
   if(plan.minutes&&usage>=plan.minutes*.8){
     const pct=Math.min(100,Math.round((usage/plan.minutes)*100));
     items.push(notificationItem('usage:'+ws.id+':'+Math.floor(pct/10)*10,{title:'Minutes usage at '+pct+'%',body:usage+' of '+plan.minutes+' included minutes used.',kind:pct>=100?'danger':'warning',view:'billing',createdAt:now}));
@@ -814,6 +818,10 @@ async function buildAdminNotifications(admin){
     const ws=await kv.get('workspace:'+id);if(!ws)continue;
     if(ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'revenue',createdAt:ws.updatedAt||now}));
     if(ws.status==='suspended')items.push(notificationItem('admin-workspace:'+id+':suspended',{title:'Client workspace suspended',body:(ws.name||'Client')+' is currently suspended.',kind:'warning',view:'clients',createdAt:ws.updatedAt||now}));
+    const onboarding=await kv.get('onboarding:workspace:'+id);
+    if(onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview){
+      items.push(notificationItem('admin-onboarding:'+id+':review',{title:'Onboarding ready for review',body:(ws.name||'Client')+' submitted intake and has an AI-agent draft ready.',kind:'info',view:'provisioning',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
+    }
   }
   const prospectList=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,100).map(id=>kv.get('site:prospect:'+id)))).filter(Boolean);
   prospectList.filter(p=>['new','inquiry','checkout_started'].includes(p.stage)).slice(0,25).forEach(p=>{
