@@ -36,7 +36,83 @@ async function bootstrapPreview(req,res){
   };
   await kv.set('workspace:'+workspaceId,workspace);
   await kv.set('user:email:'+email,{workspaceId,role:'owner',email});
+  const index=await kv.get('workspace:index')||[];
+  if(Array.isArray(index)&&!index.includes(workspaceId))await kv.set('workspace:index',[...index,workspaceId]);
   return res.status(201).json({ok:true,workspaceId,email,plan});
+}
+
+async function promotePreviewAdmin(req,res){
+  const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+  if(!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
+  const configured=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||'');
+  const supplied=String(req.headers['x-bootstrap-secret']||'');
+  if(!configured||!supplied||supplied!==configured)return res.status(403).json({error:'Forbidden'});
+  const email=cleanEmail((req.body||{}).email);
+  const member=await kv.get('user:email:'+email);
+  if(!member||!member.workspaceId)return res.status(404).json({error:'User not found'});
+  await kv.set('user:email:'+email,{...member,email,role:'admin'});
+  const index=await kv.get('workspace:index')||[];
+  if(Array.isArray(index)&&!index.includes(member.workspaceId))await kv.set('workspace:index',[...index,member.workspaceId]);
+  return res.status(200).json({ok:true,email,role:'admin'});
+}
+
+async function requireAdmin(req,res){
+  const s=await requireSession(req,res);if(!s)return null;
+  const member=await kv.get('user:email:'+cleanEmail(s.email));
+  if(!member||member.role!=='admin')return res.status(403).json({error:'Admin access required'}),null;
+  return {...s,role:'admin'};
+}
+
+async function adminSummary(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const ids=await kv.get('workspace:index')||[];
+  const workspaces=[];
+  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
+    const ws=await kv.get('workspace:'+id);if(ws)workspaces.push(ws);
+  }
+  const prices={Starter:349,Growth:599,Pro:999};
+  const active=workspaces.filter(w=>String(w.subscriptionStatus||'active')!=='canceled');
+  const mrr=active.reduce((sum,w)=>sum+(prices[w.plan]||0),0);
+  const pastDue=workspaces.filter(w=>w.subscriptionStatus==='past_due').length;
+  const onboarding=workspaces.filter(w=>w.status==='onboarding').length;
+  const totalMinutes=workspaces.reduce((sum,w)=>sum+Number(w.usage&&w.usage.minutes||0),0);
+  const planMix={Starter:0,Growth:0,Pro:0};workspaces.forEach(w=>{if(planMix[w.plan]!==undefined)planMix[w.plan]++});
+  return res.status(200).json({summary:{mrr,clients:workspaces.length,activeClients:active.length,pastDue,onboarding,totalMinutes,planMix}});
+}
+
+async function adminClients(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const ids=await kv.get('workspace:index')||[];
+  const clients=[];
+  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
+    const ws=await kv.get('workspace:'+id);if(!ws)continue;
+    clients.push({
+      id:ws.id,name:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',
+      status:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',
+      ownerEmail:ws.ownerEmail||'',usage:ws.usage||{minutes:0},
+      stripeLinked:!!ws.stripeCustomerId,createdAt:ws.createdAt||null
+    });
+  }
+  clients.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  return res.status(200).json({clients});
+}
+
+async function adminClient(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.query||{}).id||'').slice(0,80);
+  if(!id)return res.status(400).json({error:'Client id required'});
+  const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
+  const [agent,calls,leads,appointments]=await Promise.all([
+    kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('appointments:'+id)
+  ]);
+  return res.status(200).json({client:{
+    id:ws.id,name:ws.name,plan:ws.plan,status:ws.status||'active',
+    subscriptionStatus:ws.subscriptionStatus||'active',ownerEmail:ws.ownerEmail||'',
+    phone:ws.phone||'',industry:ws.industry||'',usage:ws.usage||{minutes:0},
+    stripe:{customerLinked:!!ws.stripeCustomerId,subscriptionLinked:!!ws.stripeSubscriptionId},
+    agent:agent||null,
+    counts:{calls:Array.isArray(calls)?calls.length:0,leads:Array.isArray(leads)?leads.length:0,appointments:Array.isArray(appointments)?appointments.length:0}
+  }});
 }
 
 async function requestLogin(req,res){
@@ -78,8 +154,9 @@ async function session(req,res){
   const ws=await kv.get('workspace:'+s.workspaceId);
   if(!ws)return res.status(404).json({error:'Workspace not found'});
   const ent=entitlementsFor(ws.plan);
+  const member=await kv.get('user:email:'+cleanEmail(s.email));
   return res.status(200).json({
-    user:{email:s.email,role:s.role},
+    user:{email:s.email,role:member&&member.role||s.role},
     workspace:{
       id:ws.id,name:ws.name,plan:ent.plan,status:ws.status||'active',
       subscriptionStatus:ws.subscriptionStatus||'active',
@@ -302,6 +379,10 @@ module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   const action=String((req.query||{}).action||'');
   if(action==='bootstrap-preview'&&req.method==='POST')return bootstrapPreview(req,res);
+  if(action==='promote-preview-admin'&&req.method==='POST')return promotePreviewAdmin(req,res);
+  if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
+  if(action==='admin-clients'&&req.method==='GET')return adminClients(req,res);
+  if(action==='admin-client'&&req.method==='GET')return adminClient(req,res);
   if(action==='request'&&req.method==='POST')return requestLogin(req,res);
   if(action==='verify'&&req.method==='GET')return verify(req,res);
   if(action==='session'&&req.method==='GET')return session(req,res);
