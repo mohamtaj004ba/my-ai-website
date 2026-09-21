@@ -18,7 +18,9 @@ document.getElementById('contactForm').addEventListener('submit',async e=>{
   const d=new FormData(f);
   btn.disabled=true;btn.textContent='Sending…';
   try{
-    const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(d.entries()))});
+    const payload=Object.fromEntries(d.entries()),a=window.CallerCoreAnalytics?.context||{};
+    Object.assign(payload,{visitorId:a.visitorId||'',sessionId:a.sessionId||'',utmSource:a.utmSource||'',utmMedium:a.utmMedium||'',utmCampaign:a.utmCampaign||''});
+    const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     if(!r.ok){const body=await r.json().catch(()=>({}));throw new Error(body.error||'send failed')}
     f.hidden=true;document.getElementById('contactSuccess').hidden=false;
   }catch(err){
