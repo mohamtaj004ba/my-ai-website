@@ -14,7 +14,7 @@ const params=new URLSearchParams(location.search);
 const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
 let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
 let sessionWorkspace=null;
-let callsData=[],leadsData=[];
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[];
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',reason:'Roof replacement estimate',duration:'4:32',outcome:'Booked',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and booked an inspection for Tuesday at 10:30 AM.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can help get an inspection scheduled. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -27,6 +27,16 @@ const DEMO_LEADS=[
 {id:'l4',name:'Sarah Johnson',service:'Roof replacement',value:8500,stage:'Appointment',source:'AI call',age:'3h'},
 {id:'l5',name:'Jared Lee',service:'Full roof',value:13400,stage:'Won',source:'AI call',age:'2d'},
 {id:'l6',name:'Chris Bell',service:'Repair estimate',value:1600,stage:'Lost',source:'Web',age:'4d'}
+];
+const DEMO_CONVERSATIONS=[
+{id:'m1',name:'Sarah Johnson',phone:'(509) 555-0148',status:'Active',last:'Appointment confirmed for Tuesday at 10:30 AM.',time:'3:22 PM',messages:[{who:'Maya',text:'Thanks for calling Alpine Roofing today. Your inspection is booked for Tuesday at 10:30 AM.',dir:'out'},{who:'Sarah',text:'Perfect, thank you!',dir:'in'},{who:'CallerCore',text:'Appointment confirmation sent',dir:'system'}]},
+{id:'m2',name:'Mike Peterson',phone:'(509) 555-0193',status:'Needs follow-up',last:'Can someone come by this week?',time:'3:02 PM',messages:[{who:'Maya',text:'Thanks for speaking with me about the storm damage. I shared your request with the team.',dir:'out'},{who:'Mike',text:'Can someone come by this week?',dir:'in'}]},
+{id:'m3',name:'Unknown caller',phone:'Private',status:'Recovered',last:'Sorry we missed you. How can we help?',time:'2:42 PM',messages:[{who:'CallerCore',text:'Missed call recovery SMS sent',dir:'system'},{who:'Maya',text:'Sorry we missed you. How can we help?',dir:'out'}]}
+];
+const DEMO_APPOINTMENTS=[
+{id:'a1',name:'Sarah Johnson',phone:'(509) 555-0148',date:'Tue, Sep 22',time:'10:30 AM',service:'Roof replacement inspection',status:'Confirmed',source:'Maya'},
+{id:'a2',name:'Emily Ross',phone:'(509) 555-0114',date:'Wed, Sep 23',time:'1:00 PM',service:'Roof leak inspection',status:'Scheduled',source:'Maya'},
+{id:'a3',name:'Jared Lee',phone:'(509) 555-0181',date:'Fri, Sep 18',time:'9:00 AM',service:'Full roof estimate',status:'Completed',source:'Team'}
 ];
 const LEAD_STAGES=['New','Contacted','Qualified','Appointment','Won','Lost'];
 function esc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
@@ -53,7 +63,7 @@ async function bootstrapClient(){
 async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
 
 
-function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();}
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
 
@@ -65,21 +75,31 @@ function renderOverviewUnlocks(){const el=document.getElementById('overviewUnloc
 
 function renderBilling(){const d=PLAN_DATA[currentPlan];document.getElementById('billingPlan')&&(document.getElementById('billingPlan').textContent=currentPlan);document.getElementById('billingPrice')&&(document.getElementById('billingPrice').textContent='$'+d.price+'/month');const usageText=d.minutes?d.used+' / '+d.minutes:d.used+' min · unlimited plan';document.getElementById('billingUsageText')&&(document.getElementById('billingUsageText').textContent=usageText);const pct=d.minutes?Math.min(100,(d.used/d.minutes)*100):38;document.getElementById('billingUsage')?.style.setProperty('width',pct+'%');document.getElementById('sidebarUsage')?.style.setProperty('width',pct+'%');document.getElementById('sidebarUsageLabel')&&(document.getElementById('sidebarUsageLabel').textContent=usageText);document.getElementById('sidebarPlan')&&(document.getElementById('sidebarPlan').textContent=currentPlan);
 const wrap=document.getElementById('planComparison');if(wrap)wrap.innerHTML=Object.entries(PLAN_DATA).map(([name,p])=>{const current=name===currentPlan;const list=name==='Starter'?['300 included minutes','1 location','Lead capture + summaries','Basic routing']:name==='Growth'?['600 included minutes','Up to 2 locations','Appointments','Automations','Advanced analytics']:['Unlimited minutes','Up to 5 locations','API + webhooks','Advanced integrations','Custom workflows'];return '<article class="plan-option '+(current?'current':'')+'"><span class="eyebrow">'+(current?'Your plan':'CallerCore '+name)+'</span><h3>'+name+'</h3><b>$'+p.price+'/mo</b><ul>'+list.map(x=>'<li>'+x+'</li>').join('')+'</ul><button class="'+(current?'secondary-btn':'primary')+'" '+(current?'disabled':'data-upgrade="'+name+'"')+'>'+(current?'Current plan':(p.price>d.price?'Upgrade to ':'Switch to ')+name)+'</button></article>'}).join('');bindUpgradeButtons()}
-function setPlan(plan){currentPlan=plan;document.getElementById('planSelector')&&(document.getElementById('planSelector').value=plan);renderBilling();renderStages();renderOverviewUnlocks()}
+function setPlan(plan){currentPlan=plan;document.getElementById('planSelector')&&(document.getElementById('planSelector').value=plan);renderBilling();renderStages();renderOverviewUnlocks();renderEntitledApps()}
 document.getElementById('planSelector')?.addEventListener('change',e=>setPlan(e.target.value));
 
 
 async function loadOperations(){
-  if(demoMode){callsData=DEMO_CALLS.map(x=>({...x}));leadsData=DEMO_LEADS.map(x=>({...x}));renderCalls();renderLeads();return}
+  if(demoMode){
+    callsData=DEMO_CALLS.map(x=>({...x}));leadsData=DEMO_LEADS.map(x=>({...x}));
+    conversationsData=DEMO_CONVERSATIONS.map(x=>({...x}));appointmentsData=DEMO_APPOINTMENTS.map(x=>({...x}));
+    renderCalls();renderLeads();renderConversations();renderAppointments();return;
+  }
   try{
-    const [cr,lr]=await Promise.all([
+    const jobs=[
       fetch('/api/account?action=calls',{headers:{Accept:'application/json'},cache:'no-store'}),
       fetch('/api/account?action=leads',{headers:{Accept:'application/json'},cache:'no-store'})
-    ]);
-    if(cr.ok)callsData=(await cr.json()).calls||[];
-    if(lr.ok)leadsData=(await lr.json()).leads||[];
+    ];
+    if(has('unifiedInbox'))jobs.push(fetch('/api/account?action=conversations',{headers:{Accept:'application/json'},cache:'no-store'}));
+    if(has('appointments'))jobs.push(fetch('/api/account?action=appointments',{headers:{Accept:'application/json'},cache:'no-store'}));
+    const results=await Promise.all(jobs);
+    if(results[0].ok)callsData=(await results[0].json()).calls||[];
+    if(results[1].ok)leadsData=(await results[1].json()).leads||[];
+    let idx=2;
+    if(has('unifiedInbox')){if(results[idx].ok)conversationsData=(await results[idx].json()).conversations||[];idx++}
+    if(has('appointments')){if(results[idx].ok)appointmentsData=(await results[idx].json()).appointments||[]}
   }catch(err){console.error('Operations data failed',err)}
-  renderCalls();renderLeads();
+  renderCalls();renderLeads();renderConversations();renderAppointments();
 }
 function outcomeClass(outcome){return /book|qualif/i.test(outcome)?'green':/miss|follow/i.test(outcome)?'amber':'amber'}
 function renderCalls(){
@@ -146,6 +166,50 @@ document.getElementById('leadSearch')?.addEventListener('input',renderLeads);
 document.getElementById('closeCallDrawer')?.addEventListener('click',closeCall);
 document.getElementById('drawerBackdrop')?.addEventListener('click',closeCall);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCall()});
+
+
+function renderEntitledApps(){
+  const cg=document.getElementById('conversationGate'),ca=document.getElementById('conversationApp');
+  if(cg&&ca){cg.hidden=has('unifiedInbox');ca.hidden=!has('unifiedInbox')}
+  const ag=document.getElementById('appointmentGate'),aa=document.getElementById('appointmentApp');
+  if(ag&&aa){ag.hidden=has('appointments');aa.hidden=!has('appointments')}
+  if(has('unifiedInbox'))renderConversations();
+  if(has('appointments'))renderAppointments();
+}
+function renderConversations(){
+  if(!has('unifiedInbox'))return;
+  const list=document.getElementById('conversationThreads'),stream=document.getElementById('messageStream');if(!list||!stream)return;
+  const q=(document.getElementById('conversationSearch')?.value||'').trim().toLowerCase();
+  const rows=conversationsData.filter(x=>!q||[x.name,x.phone,x.last,x.status].join(' ').toLowerCase().includes(q));
+  list.innerHTML=rows.map((x,i)=>'<button class="thread-item '+(i===0&&!document.querySelector('.thread-item.active')?'active':'')+'" data-thread-id="'+esc(x.id)+'"><div class="thread-top"><strong>'+esc(x.name||'Unknown')+'</strong><small>'+esc(x.time||'')+'</small></div><small>'+esc(x.phone||'')+' · '+esc(x.status||'')+'</small><p>'+esc(x.last||'')+'</p></button>').join('');
+  list.querySelectorAll('[data-thread-id]').forEach(btn=>btn.addEventListener('click',()=>openConversation(btn.dataset.threadId)));
+  const active=list.querySelector('.thread-item.active')||list.querySelector('.thread-item');if(active)openConversation(active.dataset.threadId);else{document.getElementById('conversationName').textContent='No conversations';stream.innerHTML='<div class="empty-state"><h3>No conversations yet</h3><p>Voice and SMS activity will appear here.</p></div>'}
+}
+function openConversation(id){
+  const x=conversationsData.find(v=>String(v.id)===String(id));if(!x)return;
+  document.querySelectorAll('.thread-item').forEach(b=>b.classList.toggle('active',b.dataset.threadId===String(id)));
+  document.getElementById('conversationName').textContent=x.name||'Unknown';
+  const status=document.getElementById('conversationStatus');status.textContent=x.status||'Active';status.className='tag '+(/active|recover/i.test(x.status||'')?'green':'amber');
+  document.getElementById('messageStream').innerHTML=(Array.isArray(x.messages)?x.messages:[]).map(m=>'<div class="message '+(m.dir==='out'?'out':m.dir==='system'?'system':'')+'">'+(m.dir==='system'?'':'<b>'+esc(m.who||'Customer')+'</b>')+esc(m.text||'')+'</div>').join('')||'<div class="empty-state"><h3>No messages yet</h3></div>';
+}
+function renderAppointments(){
+  if(!has('appointments'))return;
+  const wrap=document.getElementById('appointmentTable');if(!wrap)return;
+  const upcoming=appointmentsData.filter(x=>!['Completed','Canceled'].includes(x.status)).length;
+  document.getElementById('apptUpcoming').textContent=upcoming;
+  document.getElementById('apptConfirmed').textContent=appointmentsData.filter(x=>x.status==='Confirmed').length;
+  document.getElementById('apptCompleted').textContent=appointmentsData.filter(x=>x.status==='Completed').length;
+  wrap.innerHTML=appointmentsData.map(x=>'<div class="appointment-row"><span><strong>'+esc(x.name||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span>'+esc(x.date||'')+'<small class="subtle">'+esc(x.time||'')+'</small></span><span>'+esc(x.service||'General appointment')+'</span><span><select class="appointment-status" data-appointment-id="'+esc(x.id)+'">'+['Scheduled','Confirmed','Completed','Canceled'].map(s=>'<option '+(x.status===s?'selected':'')+'>'+s+'</option>').join('')+'</select></span><span>'+esc(x.source||'CallerCore')+'</span></div>').join('');
+  document.getElementById('appointmentsEmpty').hidden=appointmentsData.length!==0;
+  wrap.querySelectorAll('[data-appointment-id]').forEach(sel=>sel.addEventListener('change',()=>updateAppointment(sel.dataset.appointmentId,sel.value)));
+}
+async function updateAppointment(id,status){
+  const item=appointmentsData.find(x=>String(x.id)===String(id));if(!item)return;
+  const previous=item.status;item.status=status;renderAppointments();if(demoMode)return;
+  try{const r=await fetch('/api/account?action=appointment-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})});if(!r.ok)throw new Error('update failed')}
+  catch(err){item.status=previous;renderAppointments();console.error(err)}
+}
+document.getElementById('conversationSearch')?.addEventListener('input',renderConversations);
 
 const modal=document.getElementById('upgradeModal');function openModal(target){if(!modal)return;const t=PLAN_DATA[target];document.getElementById('modalTitle').textContent=(t.price>PLAN_DATA[currentPlan].price?'Upgrade to ':'Switch to ')+target;document.getElementById('modalCopy').textContent=target==='Pro'?'Unlock the full CallerCore platform, including API access, advanced integrations and custom workflows.':'Unlock appointment booking, automations, the unified inbox and advanced analytics.';const fs=Object.entries(FEATURE_INFO).filter(([k,v])=>target==='Pro'||v.tier==='Growth').slice(0,target==='Pro'?6:4);document.getElementById('modalFeatures').innerHTML=fs.map(([k,v])=>'<span>✓ '+v.title+'</span>').join('');document.getElementById('modalCta').textContent='Continue with Stripe · $'+t.price+'/mo';modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
 function bindUpgradeButtons(){document.querySelectorAll('[data-upgrade]').forEach(b=>{b.onclick=()=>openModal(b.dataset.upgrade)})}
