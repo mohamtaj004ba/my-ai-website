@@ -1240,6 +1240,18 @@ async function session(req,res){
   });
 }
 
+function redactExportSecrets(value){
+  if(Array.isArray(value))return value.map(redactExportSecrets);
+  if(!value||typeof value!=='object')return value;
+  const out={};
+  for(const [key,val] of Object.entries(value)){
+    if(/(?:^|_)(?:password|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|private[_-]?key|webhook[_-]?secret)$/i.test(key)||/(?:password|secret|apiKey|accessToken|refreshToken|privateKey|webhookSecret)$/i.test(key)){
+      out[key]='[redacted]';
+    }else out[key]=redactExportSecrets(val);
+  }
+  return out;
+}
+
 async function buildWorkspaceExportData(id){
   const [workspace,settings,agent,calls,leads,conversations,appointments,automations,integrations,locations,phones,supportIndex,onboarding,audit]=await Promise.all([
     kv.get('workspace:'+id),kv.get('settings:'+id),kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('conversations:'+id),kv.get('appointments:'+id),kv.get('automations:'+id),kv.get('integrations:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('support:index'),kv.get('onboarding:workspace:'+id),kv.get('audit:'+id)
@@ -1252,12 +1264,12 @@ async function buildWorkspaceExportData(id){
   const phone=(Array.isArray(phones)?phones:[]).find(x=>x&&x.workspaceId===id)||null;
   return {
     exportVersion:'1.0',exportedAt:new Date().toISOString(),
-    workspace,settings:settings||null,agent:agent||null,phone,
-    locations:Array.isArray(locations)?locations:[],integrations:integrations||null,
-    calls:Array.isArray(calls)?calls:[],leads:Array.isArray(leads)?leads:[],
-    conversations:Array.isArray(conversations)?conversations:[],appointments:Array.isArray(appointments)?appointments:[],
-    automations:Array.isArray(automations)?automations:[],support,onboarding:onboarding||null,
-    audit:Array.isArray(audit)?audit:[]
+    workspace:redactExportSecrets(workspace),settings:redactExportSecrets(settings||null),agent:redactExportSecrets(agent||null),phone:redactExportSecrets(phone),
+    locations:redactExportSecrets(Array.isArray(locations)?locations:[]),integrations:redactExportSecrets(integrations||null),
+    calls:redactExportSecrets(Array.isArray(calls)?calls:[]),leads:redactExportSecrets(Array.isArray(leads)?leads:[]),
+    conversations:redactExportSecrets(Array.isArray(conversations)?conversations:[]),appointments:redactExportSecrets(Array.isArray(appointments)?appointments:[]),
+    automations:redactExportSecrets(Array.isArray(automations)?automations:[]),support:redactExportSecrets(support),onboarding:redactExportSecrets(onboarding||null),
+    audit:redactExportSecrets(Array.isArray(audit)?audit:[])
   };
 }
 function sendWorkspaceExport(res,id,data,prefix='CallerCore-workspace-export'){
