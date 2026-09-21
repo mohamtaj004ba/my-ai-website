@@ -841,7 +841,8 @@ async function buildClientNotifications(s){
   if(ws.status==='suspended')items.push(notificationItem('workspace:'+ws.id+':suspended',{title:'Workspace suspended',body:'Your CallerCore workspace is currently suspended. Contact support for help.',kind:'danger',view:'support',createdAt:ws.updatedAt||now}));
   if(ws.status==='onboarding')items.push(notificationItem('workspace:'+ws.id+':onboarding',{title:'Onboarding in progress',body:'CallerCore is still being configured for your business.',kind:'info',view:'overview',createdAt:ws.updatedAt||ws.createdAt||now}));
   const onboarding=await kv.get('onboarding:workspace:'+ws.id);
-  if(onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview)items.push(notificationItem('onboarding:'+ws.id+':review',{title:'Your setup is being reviewed',body:'Your business profile and AI-agent draft are ready for CallerCore review.',kind:'info',view:'overview',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now}));
+  if(onboarding?.status==='awaiting_review')items.push(notificationItem('onboarding:'+ws.id+':account-review',{title:'Account review in progress',body:'Payment is confirmed. CallerCore is reviewing your account before sending onboarding.',kind:'info',view:'overview',createdAt:onboarding.paidAt||onboarding.updatedAt||now}));
+  if(onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview)items.push(notificationItem('onboarding:'+ws.id+':review',{title:'Your setup is being reviewed',body:'We received your onboarding and are reviewing the initial AI-agent configuration.',kind:'info',view:'overview',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now}));
   if(onboarding?.checklist?.adminReview&&!onboarding?.checklist?.testCall)items.push(notificationItem('onboarding:'+ws.id+':test',{title:'Next step: test call',body:'CallerCore has reviewed your setup. A test call is the next launch step.',kind:'info',view:'calls',createdAt:onboarding.updatedAt||now}));
   if(onboarding?.checklist?.live)items.push(notificationItem('onboarding:'+ws.id+':live',{title:'CallerCore is live',body:'Your AI receptionist setup is marked live.',kind:'success',view:'overview',createdAt:onboarding.updatedAt||now}));
   if(plan.minutes&&usage>=plan.minutes*.8){
@@ -881,8 +882,13 @@ async function buildAdminNotifications(admin){
     if(ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'revenue',createdAt:ws.updatedAt||now}));
     if(ws.status==='suspended')items.push(notificationItem('admin-workspace:'+id+':suspended',{title:'Client workspace suspended',body:(ws.name||'Client')+' is currently suspended.',kind:'warning',view:'clients',createdAt:ws.updatedAt||now}));
     const onboarding=await kv.get('onboarding:workspace:'+id);
+    if(onboarding?.status==='awaiting_review'){
+      const eligible=Number(onboarding.reviewEligibleAt||0)<=now;
+      items.push(notificationItem('admin-onboarding:'+id+':account-review',{title:eligible?'Paid client ready for onboarding review':'New paid client in review hold',body:(ws.name||'Client')+(eligible?' is ready for account review and onboarding approval.':' has paid. The onboarding invite will become eligible during business hours.'),kind:eligible?'warning':'info',view:'provisioning',createdAt:onboarding.paidAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
+    }
     if(onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview){
-      items.push(notificationItem('admin-onboarding:'+id+':review',{title:'Onboarding ready for review',body:(ws.name||'Client')+' submitted intake and has an AI-agent draft ready.',kind:'info',view:'provisioning',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
+      const eligible=Number(onboarding.buildEligibleAt||0)<=now;
+      items.push(notificationItem('admin-onboarding:'+id+':build-review',{title:eligible?'Build ready for QA review':'Build in QA hold',body:(ws.name||'Client')+' submitted intake and has an AI-agent draft '+(eligible?'ready for review.':'waiting for the review window.'),kind:eligible?'warning':'info',view:'provisioning',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
     }
   }
   const prospectList=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,100).map(id=>kv.get('site:prospect:'+id)))).filter(Boolean);
