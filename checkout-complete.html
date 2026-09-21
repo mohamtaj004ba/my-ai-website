@@ -9,11 +9,18 @@
    const r=await fetch('/api/create-checkout-session?session_id='+encodeURIComponent(sessionId),{headers:{'Accept':'application/json'}});
    const data=await r.json().catch(()=>({}));
    if(!r.ok) throw new Error(data.error||'Unable to verify payment');
-   if(data.status==='complete'){
+   if(data.status==='complete'&&['paid','no_payment_required'].includes(data.paymentStatus)){
      title.textContent='You’re in.';
      status.textContent='Payment confirmed securely through Stripe.';
      document.getElementById('customerEmail').textContent=data.customerEmail||'your email';
      success.hidden=false;
+   }else if(data.status==='complete'){
+     title.textContent='Your payment is processing.';
+     status.textContent='Stripe has your payment details, but the payment is not confirmed yet. Do not submit another payment.';
+     document.getElementById('customerEmail').textContent=data.customerEmail||'your email';
+     success.hidden=false;
+     success.querySelector('p').innerHTML='Your checkout was submitted. We’ll create your setup link after Stripe confirms the payment and send it to <strong id="customerEmailPending"></strong>.';
+     document.getElementById('customerEmailPending').textContent=data.customerEmail||'your email';
    }else{
      title.textContent='Checkout is still open.';
      status.textContent='No completed payment was found for this session.';
