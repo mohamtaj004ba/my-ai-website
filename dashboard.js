@@ -150,7 +150,7 @@ async function loadOperations(){
     phoneRoutingData={number:'(509) 555-0100',label:'Primary',provider:'Vapi',forwardingFrom:'(509) 555-0199',transferNumber:'(509) 555-0101',afterHours:'ai',smsEnabled:true,status:'active'};
     locationsData=[{id:'loc-demo',name:'Spokane',phone:'(509) 555-0199',address:'Spokane, WA',timezone:'America/Los_Angeles',active:true}];locationsLimit=PLAN_DATA[currentPlan].locations||1;
     analyticsData=buildLocalAnalytics();
-    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientChecklist();renderBillingConnection();renderPhoneRouting();renderLocations();return;
+    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientSetupStatus();renderClientChecklist();renderBillingConnection();renderPhoneRouting();renderLocations();return;
   }
   try{
     const jobs=[
@@ -504,6 +504,20 @@ document.getElementById('closeLocationModal')?.addEventListener('click',closeLoc
 document.getElementById('saveLocationButton')?.addEventListener('click',saveLocation);
 document.getElementById('locationModal')?.addEventListener('click',e=>{if(e.target.id==='locationModal')closeLocationModal()});
 
+function renderClientSetupStatus(){
+  const title=document.getElementById('clientSetupStatusTitle'),copy=document.getElementById('clientSetupStatusCopy'),pill=document.getElementById('clientSetupStatusPill');
+  if(!title||!copy||!pill)return;
+  const s=sessionOnboarding?.status||'',ck=sessionOnboarding?.checklist||{};
+  let t='Get your workspace live.',p='CallerCore will track the core steps required before your AI receptionist can take production traffic.',b='Setup in progress';
+  if(s==='awaiting_review'){t='Your account is under review.';p='Payment is confirmed. Our team is reviewing your order and business details before sending your onboarding workspace. No action is needed from you right now.';b='Awaiting CallerCore review'}
+  else if(['awaiting_agreement','intake_in_progress'].includes(s)){t='Complete your onboarding.';p='Your secure onboarding workspace is ready. Complete the service agreement and business intake so we can begin the build.';b='Action needed'}
+  else if(s==='building_review'||(ck.intake&&!ck.adminReview)){t='We’re reviewing your build.';p='We received your onboarding. Your initial AI-agent configuration has been prepared and is going through CallerCore review and QA. No action is needed right now.';b='Building & QA'}
+  else if(s==='qa_complete'||(ck.adminReview&&!ck.testCall)){t='Initial review complete.';p='Your agent configuration has passed our initial review. We’re finishing phone routing and preparing the test-call step.';b='Preparing test call'}
+  else if(s==='client_test'||(ck.testCall&&!ck.clientApproval)){t='Your test stage is ready.';p='Your setup has reached the test-call stage. Review the agent experience before final launch approval.';b='Test & review'}
+  else if(s==='ready'||(ck.clientApproval&&!ck.live)){t='Ready for launch.';p='Your configuration is approved and awaiting final activation.';b='Ready'}
+  else if(s==='live'||ck.live){t='CallerCore is live.';p='Your AI receptionist is active. Monitor calls, leads, conversations, and performance from this dashboard.';b='Live'}
+  title.textContent=t;copy.textContent=p;pill.textContent=b;pill.classList.toggle('live',s==='live'||!!ck.live);
+}
 function renderClientChecklist(){
   const wrap=document.getElementById('clientOnboardingChecklist');if(!wrap)return;
   const ck=sessionOnboarding?.checklist||{};
