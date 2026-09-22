@@ -1,4 +1,4 @@
-const { kv } = require('@vercel/kv');
+const {kv}=require('../lib/kv');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { LEGACY_CLAUSES, LEGACY_AGREEMENT_VERSION } = require('./_lib/agreement-clauses');
 
