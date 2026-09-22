@@ -87,7 +87,7 @@ Run one complete disposable client through:
 - Complete Washington tax registration/classification; Stripe Tax is active but the connected live account currently has no tax registrations configured.
 - Configure the correct Stripe product tax treatment and enable automatic tax only after registration/classification is confirmed.
 - Define and implement minute overage policy, if any.
-- Define Pro unlimited/fair-use policy before material high-volume usage.
+- Define Pro high-volume/fair-use policy before material high-volume usage.
 - Verify subscription-plan change behavior against real Stripe Price IDs.
 - Test failed-payment recovery and cancellation in Stripe test mode.
 
@@ -109,10 +109,10 @@ Run one complete disposable client through:
 ### Security / reliability
 - Keep DMARC under review and move from monitoring toward enforcement after continued sender alignment validation.
 - Vercel anomaly monitoring is configured. Signed webhook-to-email fallback is coded/configured and requires a post-merge production delivery test.
-- Resolve/verify the Preview Upstash / Vercel KV connection; the observed DNS lookup failures came from an older `feature/callercore-dashboards` preview deployment, not a production deployment.
 - Protected Preview automation access was successfully used for QA.
 - Preview KV health is operational.
 - Static/legal/dashboard assets and unauthenticated API access-control smoke checks pass on the cleaned protected preview head.
+- support@callercore.com inbound/outbound mailbox behavior is verified from recent CallerCore Gmail history.
 - Temporary diagnostic code was removed and verified absent.
 - Rotate the automation bypass secret after the completed QA cycle.
 - Complete authenticated disposable-client POST/browser E2E before release, and verify Preview KV isolation before destructive testing.
