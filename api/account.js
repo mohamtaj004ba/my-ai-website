@@ -577,17 +577,32 @@ async function adminSupportUpdate(req,res){
   return res.status(200).json({ok:true,ticket:next});
 }
 
+const LAUNCH_GATE_DEFS=[
+  {key:'previewIsolation',name:'Preview data isolation',detail:'Preview KV/storage is confirmed separate from Production before destructive E2E testing'},
+  {key:'disposableE2E',name:'Disposable-client E2E',detail:'A complete authenticated customer journey has passed in the isolated test environment'},
+  {key:'voiceLifecycle',name:'Voice lifecycle validation',detail:'Voice assistant, phone number, authenticated webhooks, calls, transfers, transcripts, duration/cost and usage flow have passed end-to-end'},
+  {key:'productionEnvScope',name:'Production environment scope',detail:'Production and Preview secrets/storage bindings have been reviewed and intentionally scoped'},
+  {key:'supportEmail',name:'Support email verification',detail:'support@callercore.com inbound and outbound delivery has been verified'},
+  {key:'businessTax',name:'Business / tax readiness',detail:'Operating entity, Washington registration/classification and required tax setup are confirmed'},
+  {key:'legalReview',name:'Legal / compliance review',detail:'Launch legal documents and recording/communications policies have completed owner/legal review'}
+];
+function launchGateState(saved={}){
+  const raw=saved&&typeof saved==='object'?saved:{};
+  return Object.fromEntries(LAUNCH_GATE_DEFS.map(x=>[x.key,!!raw[x.key]]));
+}
+
 async function adminPlatformSettings(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const saved=await kv.get('platform:settings')||{};
-  return res.status(200).json({settings:{supportEmail:saved.supportEmail||process.env.SUPPORT_EMAIL||'',defaultAgentName:saved.defaultAgentName||'Maya',defaultTimezone:saved.defaultTimezone||'America/Los_Angeles',maintenanceMode:!!saved.maintenanceMode,updatedAt:saved.updatedAt||null}});
+  return res.status(200).json({settings:{supportEmail:saved.supportEmail||process.env.SUPPORT_EMAIL||'',defaultAgentName:saved.defaultAgentName||'Maya',defaultTimezone:saved.defaultTimezone||'America/Los_Angeles',maintenanceMode:!!saved.maintenanceMode,launchGates:launchGateState(saved.launchGates),updatedAt:saved.updatedAt||null}});
 }
 
 async function adminPlatformSettingsSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},supportEmail=cleanEmail(body.supportEmail),defaultAgentName=String(body.defaultAgentName||'Maya').trim().slice(0,80),defaultTimezone=String(body.defaultTimezone||'America/Los_Angeles').trim().slice(0,100);
   if(supportEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail))return res.status(400).json({error:'Valid support email required'});
-  const settings={supportEmail,defaultAgentName:defaultAgentName||'Maya',defaultTimezone,maintenanceMode:!!body.maintenanceMode,updatedAt:Date.now(),updatedBy:admin.email};
+  const previous=await kv.get('platform:settings')||{},launchGates=body.launchGates&&typeof body.launchGates==='object'?launchGateState(body.launchGates):launchGateState(previous.launchGates);
+  const settings={supportEmail,defaultAgentName:defaultAgentName||'Maya',defaultTimezone,maintenanceMode:!!body.maintenanceMode,launchGates,updatedAt:Date.now(),updatedBy:admin.email};
   await kv.set('platform:settings',settings);return res.status(200).json({ok:true,settings});
 }
 
@@ -1051,7 +1066,7 @@ async function stripeConfigurationHealth(){
 
 async function adminSystemHealth(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const [kvHealth,stripeHealth]=await Promise.all([kvHealthCheck(),stripeConfigurationHealth()]),kvOk=kvHealth.ok;
+  const [kvHealth,stripeHealth,platformSettings]=await Promise.all([kvHealthCheck(),stripeConfigurationHealth(),kv.get('platform:settings')]),kvOk=kvHealth.ok,launchGates=launchGateState(platformSettings?.launchGates);
   const stripeEnv=!!(process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_PUBLISHABLE_KEY&&process.env.STRIPE_WEBHOOK_SECRET);
   const stripeReady=stripeEnv&&stripeHealth.ok;
   const services=[
@@ -1062,11 +1077,12 @@ async function adminSystemHealth(req,res){
     {key:'demo',name:'Live demo protection',status:process.env.DEMO_TOKEN_SECRET?'configured':'not_configured',detail:process.env.DEMO_TOKEN_SECRET?'Demo reveal signing secret available':'DEMO_TOKEN_SECRET missing — live demo number reveal is disabled'},
     {key:'gmail',name:'Gmail / Google OAuth',status:gmailConfigReady()?'configured':'not_configured',detail:gmailConfigReady()?'OAuth credentials + token encryption available':'GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or CALLERCORE_ENCRYPTION_KEY missing'},
     {key:'onboarding-ai',name:'Smart Onboarding AI',status:process.env.ANTHROPIC_API_KEY?'configured':'not_configured',detail:process.env.ANTHROPIC_API_KEY?'Website extraction and agent-draft model available':'ANTHROPIC_API_KEY missing'},
-    {key:'voice',name:'Voice provider',status:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'configured':'not_configured',detail:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'Voice API credentials available':'Voice API credentials not configured'}
+    {key:'voice',name:'Voice provider',status:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'configured':'not_configured',detail:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'Voice API credentials available; lifecycle validation is tracked separately':'Voice API credentials not configured'},
+    ...LAUNCH_GATE_DEFS.map(g=>({key:'gate-'+g.key,name:g.name,status:launchGates[g.key]?'confirmed':'pending',detail:launchGates[g.key]?'Owner/admin confirmation recorded':g.detail,manual:true}))
   ];
-  const requiredForLaunch=['database','checkout','stripe','mailgun','onboarding-ai','voice'];
-  const blockers=services.filter(x=>requiredForLaunch.includes(x.key)&&!['operational','configured'].includes(x.status));
-  const readiness={ready:blockers.length===0,requiredForLaunch,blockers:blockers.map(x=>({key:x.key,name:x.name,detail:x.detail})),configured:services.filter(x=>['operational','configured'].includes(x.status)).length,total:services.length};
+  const requiredForLaunch=['database','checkout','stripe','mailgun','onboarding-ai','voice',...LAUNCH_GATE_DEFS.map(g=>'gate-'+g.key)];
+  const blockers=services.filter(x=>requiredForLaunch.includes(x.key)&&!['operational','configured','confirmed'].includes(x.status));
+  const readiness={ready:blockers.length===0,requiredForLaunch,blockers:blockers.map(x=>({key:x.key,name:x.name,detail:x.detail})),configured:services.filter(x=>['operational','configured','confirmed'].includes(x.status)).length,total:services.length};
   return res.status(200).json({services,readiness,checkedAt:Date.now()});
 }
 
