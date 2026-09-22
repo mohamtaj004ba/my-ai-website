@@ -184,6 +184,13 @@ Current controls include:
 
 A focused security review is still required before broad production launch.
 
+## Deferred feature flags
+
+- `CALLERCORE_CALENDAR_ENABLED` — leave unset/false for the initial launch. Appointment/calendar UI and server-side triggers remain disabled until a production calendar integration is ready.
+- `CALLERCORE_SMS_ENABLED` — leave unset/false for the initial launch. SMS controls/actions remain disabled until provider, consent, STOP/HELP, delivery-state and carrier/A2P requirements are complete.
+
+Do not enable either flag merely to expose unfinished UI.
+
 ## Preview QA prerequisite
 
 Keep Vercel Preview Protection enabled. Automated preview QA should use Vercel Protection Bypass for Automation rather than disabling protection. Preview KV connectivity and protected-browser QA remain pending until that bypass is configured.
