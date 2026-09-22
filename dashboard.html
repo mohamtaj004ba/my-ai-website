@@ -16,7 +16,7 @@
       <button class="nav-item" data-view="calls">Calls</button>
       <button class="nav-item" data-view="conversations" data-feature="unifiedInbox">Conversations <span class="lock">GROWTH</span></button>
       <button class="nav-item" data-view="leads">Leads</button>
-      <button class="nav-item" data-view="appointments" data-feature="appointments">Appointments <span class="lock">GROWTH</span></button>
+      <button class="nav-item" data-view="appointments" data-feature="appointments" hidden>Appointments <span class="lock">COMING LATER</span></button>
       <div class="nav-label">AI & growth</div>
       <button class="nav-item" data-view="agent">AI Agent</button>
       <button class="nav-item" data-view="phone-routing">Phone & routing</button>
@@ -79,7 +79,7 @@
     </section>
 
     <section class="view" id="view-conversations">
-      <div class="page-head"><div><span class="eyebrow">Conversations</span><h1>One customer timeline.</h1><p>Voice and SMS in one shared inbox, with room for chat and email later.</p></div></div>
+      <div class="page-head"><div><span class="eyebrow">Conversations</span><h1>One customer timeline.</h1><p>Call and website conversation history in one shared inbox, with more channels planned later.</p></div></div>
       <div id="conversationGate" class="locked-stage" data-feature-card="unifiedInbox"></div>
       <div id="conversationApp" class="conversation-shell" hidden>
         <aside class="conversation-list"><div class="toolbar"><input id="conversationSearch" type="search" placeholder="Search conversations…"></div><div id="conversationThreads"></div></aside>
@@ -93,12 +93,12 @@
       <div class="empty-state" id="leadsEmpty" hidden><h3>No leads yet</h3><p>Qualified callers and captured opportunities will populate this pipeline automatically.</p></div>
     </section>
     <section class="view" id="view-appointments">
-      <div class="page-head"><div><span class="eyebrow">Appointments</span><h1>Booked while you work.</h1><p>See AI-booked appointments and upcoming customer commitments.</p></div></div>
+      <div class="page-head"><div><span class="eyebrow">Appointments</span><h1>Calendar booking.</h1><p>This feature remains hidden until CallerCore's calendar integration is enabled.</p></div></div>
       <div id="appointmentGate" class="locked-stage" data-feature-card="appointments"></div>
       <div id="appointmentApp" hidden>
         <div class="appointment-summary"><article><span>Upcoming</span><strong id="apptUpcoming">0</strong></article><article><span>Confirmed</span><strong id="apptConfirmed">0</strong></article><article><span>Completed</span><strong id="apptCompleted">0</strong></article></div>
         <article class="panel table-panel"><div class="appointment-row head"><span>Customer</span><span>Date & time</span><span>Service</span><span>Status</span><span>Source</span></div><div id="appointmentTable"></div></article>
-        <div class="empty-state" id="appointmentsEmpty" hidden><h3>No appointments yet</h3><p>AI-booked appointments will appear here once booking is enabled.</p></div>
+        <div class="empty-state" id="appointmentsEmpty" hidden><h3>No appointments yet</h3><p>Appointments will appear here after calendar booking is enabled for your workspace.</p></div>
       </div>
     </section>
     <section class="view" id="view-agent">
@@ -146,9 +146,9 @@
       <div id="automationGate" class="locked-stage" data-feature-card="automations"></div>
       <div id="automationApp" hidden>
         <div class="automation-presets">
-          <button data-preset="missed_call"><b>Missed-call recovery</b><span>Text callers automatically</span></button>
+          <button data-preset="missed_call"><b>Missed-call follow-up</b><span>Create a team follow-up task</span></button>
           <button data-preset="new_lead"><b>New lead alert</b><span>Notify your team instantly</span></button>
-          <button data-preset="appointment_booked"><b>Booking confirmation</b><span>Confirm appointments by SMS</span></button>
+          
         </div>
         <div id="automationList" class="automation-list"></div>
         <div class="empty-state" id="automationEmpty" hidden><h3>No automations yet</h3><p>Create your first workflow or start from a preset above.</p></div>
@@ -165,7 +165,7 @@
     <section class="view" id="view-integrations">
       <div class="page-head"><div><span class="eyebrow">Integrations</span><h1>Connect the rest of your stack.</h1><p>Calendars, billing, APIs and webhooks in one place.</p></div></div>
       <div class="integration-grid">
-        <article class="panel integration-card"><div><b>Google Calendar</b><p>Sync availability and bookings.</p></div><span class="tag amber" id="googleCalendarStatus">Not connected</span></article>
+        <article class="panel integration-card"><div><b>Google Calendar</b><p>Calendar booking is planned for a later release.</p></div><span class="tag amber" id="googleCalendarStatus">Coming later</span></article>
         <article class="panel integration-card"><div><b>Stripe</b><p>Subscription and billing status.</p></div><span class="tag amber" id="stripeIntegrationStatus">Not linked</span></article>
         <article class="panel integration-card" data-feature="apiAccess"><div><b>API & Webhooks</b><p>Send CallerCore events to your systems.</p></div><span class="tag amber lock">PRO</span></article>
       </div>
@@ -193,7 +193,7 @@
       <div class="page-head"><div><span class="eyebrow">Settings</span><h1>Workspace settings.</h1><p>Keep business details and notification preferences up to date.</p></div><span class="tag green" id="settingsSaveStatus">Saved</span></div>
       <div class="two-col">
         <article class="panel form-card"><span class="eyebrow">Business profile</span><label>Business name<input id="settingsBusinessName"></label><label>Primary contact<input id="settingsContactName"></label><label>Primary email<input id="settingsPrimaryEmail" type="email"></label><label>Business phone<input id="settingsBusinessPhone" type="tel" placeholder="+1 509 555 0100"></label><label>Website<input id="settingsWebsite" type="url" placeholder="https://example.com"></label><label>Industry<input id="settingsIndustry" placeholder="HVAC, dental, roofing…"></label><label>Service area<textarea id="settingsServiceArea" placeholder="Spokane, Spokane Valley, Liberty Lake…"></textarea></label></article>
-        <article class="panel form-card"><span class="eyebrow">Location & notifications</span><label>Street address<input id="settingsStreetAddress"></label><div class="form-split"><label>City<input id="settingsCity"></label><label>State / region<input id="settingsState"></label></div><label>ZIP / postal code<input id="settingsPostalCode"></label><label>Timezone<select id="settingsTimezone"><option>America/Los_Angeles</option><option>America/Denver</option><option>America/Chicago</option><option>America/New_York</option></select></label><label>Notification email<input id="settingsNotificationEmail" type="email"></label><label class="toggle-row"><span>Email alerts</span><input id="settingsEmailAlerts" type="checkbox" checked></label><label class="toggle-row"><span>SMS alerts</span><input id="settingsSmsAlerts" type="checkbox" checked></label><div class="notification-pref-group"><span class="eyebrow">Dashboard notification categories</span><label class="toggle-row"><span>Billing & account</span><input id="settingsNotifyBilling" type="checkbox" checked></label><label class="toggle-row"><span>Setup & launch</span><input id="settingsNotifySetup" type="checkbox" checked></label><label class="toggle-row"><span>Missed / failed calls</span><input id="settingsNotifyCalls" type="checkbox" checked></label><label class="toggle-row"><span>Support updates</span><input id="settingsNotifySupport" type="checkbox" checked></label><label class="toggle-row"><span>Usage alerts</span><input id="settingsNotifyUsage" type="checkbox" checked></label></div><button class="primary" id="saveSettingsButton">Save settings</button><div class="settings-export"><span class="eyebrow">Data portability</span><p>Download a JSON copy of your current CallerCore workspace data, configuration, calls, leads, conversations, appointments, support history, and audit history.</p><button class="secondary-btn" id="exportWorkspaceButton" type="button">Download workspace data</button></div></article>
+        <article class="panel form-card"><span class="eyebrow">Location & notifications</span><label>Street address<input id="settingsStreetAddress"></label><div class="form-split"><label>City<input id="settingsCity"></label><label>State / region<input id="settingsState"></label></div><label>ZIP / postal code<input id="settingsPostalCode"></label><label>Timezone<select id="settingsTimezone"><option>America/Los_Angeles</option><option>America/Denver</option><option>America/Chicago</option><option>America/New_York</option></select></label><label>Notification email<input id="settingsNotificationEmail" type="email"></label><label class="toggle-row"><span>Email alerts</span><input id="settingsEmailAlerts" type="checkbox" checked></label><label class="toggle-row"><span>SMS alerts · coming later</span><input id="settingsSmsAlerts" type="checkbox" disabled></label><div class="notification-pref-group"><span class="eyebrow">Dashboard notification categories</span><label class="toggle-row"><span>Billing & account</span><input id="settingsNotifyBilling" type="checkbox" checked></label><label class="toggle-row"><span>Setup & launch</span><input id="settingsNotifySetup" type="checkbox" checked></label><label class="toggle-row"><span>Missed / failed calls</span><input id="settingsNotifyCalls" type="checkbox" checked></label><label class="toggle-row"><span>Support updates</span><input id="settingsNotifySupport" type="checkbox" checked></label><label class="toggle-row"><span>Usage alerts</span><input id="settingsNotifyUsage" type="checkbox" checked></label></div><button class="primary" id="saveSettingsButton">Save settings</button><div class="settings-export"><span class="eyebrow">Data portability</span><p>Download a JSON copy of your current CallerCore workspace data, configuration, calls, leads, conversations, appointments, support history, and audit history.</p><button class="secondary-btn" id="exportWorkspaceButton" type="button">Download workspace data</button></div></article>
       </div>
     </section>
   </main>
@@ -211,7 +211,7 @@
 
 <div class="modal" id="locationModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" id="closeLocationModal" aria-label="Close">×</button><span class="eyebrow">Business location</span><h2 id="locationModalTitle">Add location</h2><div class="form-card"><label>Location name<input id="locationName" placeholder="Spokane"></label><label>Phone<input id="locationPhone" placeholder="+15095550100"></label><label>Address<textarea id="locationAddress" placeholder="Street, city, state, ZIP"></textarea></label><label>Timezone<select id="locationTimezone"><option>America/Los_Angeles</option><option>America/Denver</option><option>America/Chicago</option><option>America/New_York</option></select></label><label class="toggle-row"><span>Active</span><input id="locationActive" type="checkbox" checked></label><button class="primary" id="saveLocationButton">Save location</button></div></div></div>
 
-<div class="modal" id="automationModal" aria-hidden="true"><div class="modal-card"><button class="modal-close automation-close" aria-label="Close">×</button><span class="eyebrow">Automation builder</span><h2 id="automationModalTitle">New automation</h2><div class="form-card"><label>Name<input id="automationName" placeholder="Missed-call recovery"></label><label>When this happens<select id="automationTrigger"><option value="missed_call">Missed call</option><option value="new_lead">New lead captured</option><option value="qualified_lead">Lead qualified</option><option value="appointment_booked">Appointment booked</option><option value="after_hours_call">After-hours call</option></select></label><label>Do this<select id="automationAction"><option value="send_sms">Send SMS</option><option value="notify_team">Notify team</option><option value="create_followup">Create follow-up task</option><option value="mark_priority">Mark lead priority</option><option value="send_confirmation">Send confirmation</option></select></label><button class="primary" id="saveAutomationButton">Save automation</button></div></div></div>
+<div class="modal" id="automationModal" aria-hidden="true"><div class="modal-card"><button class="modal-close automation-close" aria-label="Close">×</button><span class="eyebrow">Automation builder</span><h2 id="automationModalTitle">New automation</h2><div class="form-card"><label>Name<input id="automationName" placeholder="Missed-call recovery"></label><label>When this happens<select id="automationTrigger"><option value="missed_call">Missed call</option><option value="new_lead">New lead captured</option><option value="qualified_lead">Lead qualified</option><option value="after_hours_call">After-hours call</option></select></label><label>Do this<select id="automationAction"><option value="notify_team">Notify team</option><option value="create_followup">Create follow-up task</option><option value="mark_priority">Mark lead priority</option></select></label><button class="primary" id="saveAutomationButton">Save automation</button></div></div></div>
 <div class="modal" id="upgradeModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" aria-label="Close">×</button><span class="eyebrow">CallerCore plans</span><h2 id="modalTitle">Manage your plan</h2><p id="modalCopy"></p><div id="modalFeatures" class="modal-features"></div><div class="stripe-embed"><span>SECURE BILLING</span><strong>Subscription changes are handled by Stripe.</strong><small>Your payment details stay with Stripe and are never stored in CallerCore.</small></div><button class="primary full" id="modalCta">Open Stripe billing</button></div></div>
 <script src="/dashboard.js"></script>
 </body></html>
