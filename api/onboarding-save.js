@@ -1,4 +1,4 @@
-const { kv } = require('@vercel/kv');
+const {kv}=require('../lib/kv');
 const {safeError}=require('../lib/safe-log');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { sendMail } = require('./_lib/mailgun');
