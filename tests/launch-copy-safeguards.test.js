@@ -50,3 +50,11 @@ test('authenticated launch dashboard keeps deferred SMS and calendar capabilitie
   assert.match(dashHtml,/Google Calendar<\/b><p>Calendar booking is planned for a later release/);
   assert.doesNotMatch(dashJs,/Unlimited minutes|unlimited plan/i);
 });
+
+test('onboarding assistant does not promise recording transcription or automatic SMS',()=>{
+  const onboardingChat=fs.readFileSync(path.join(root,'api','onboarding-chat.js'),'utf8');
+  assert.doesNotMatch(onboardingChat,/all calls recorded and transcribed/i);
+  assert.doesNotMatch(onboardingChat,/Every call is recorded and transcribed/i);
+  assert.doesNotMatch(onboardingChat,/automatic follow-up text the moment the call ends/i);
+  assert.match(onboardingChat,/Do not promise SMS, calendar booking, recording, transcription/);
+});
