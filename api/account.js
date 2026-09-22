@@ -1475,7 +1475,8 @@ async function phoneRouting(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const numbers=await kv.get('phone:index')||[];
   const item=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===s.workspaceId)||null;
-  return res.status(200).json({routing:item?{number:item.number||'',label:item.label||'Primary',provider:item.provider||'Vapi',forwardingFrom:item.forwardingFrom||'',transferNumber:item.transferNumber||'',afterHours:item.afterHours||'ai',smsEnabled:item.smsEnabled!==false,status:item.status||'active'}:null});
+  const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true';
+  return res.status(200).json({routing:item?{number:item.number||'',label:item.label||'Primary',provider:item.provider||'Vapi',forwardingFrom:item.forwardingFrom||'',transferNumber:item.transferNumber||'',afterHours:item.afterHours||'ai',smsEnabled:smsLive&&item.smsEnabled!==false,status:item.status||'active'}:null});
 }
 
 async function locations(req,res){
@@ -1562,8 +1563,11 @@ async function saveAutomations(req,res){
   if(!entitlementsFor(ws.plan).features.automations)return res.status(403).json({error:'Upgrade required',feature:'automations'});
   const access={session:s,workspace:ws};
   const incoming=Array.isArray((req.body||{}).automations)?req.body.automations:[];
-  const allowedTriggers=['missed_call','new_lead','qualified_lead','appointment_booked','after_hours_call'];
-  const allowedActions=['send_sms','notify_team','create_followup','mark_priority','send_confirmation'];
+  const calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true',smsLive=process.env.CALLERCORE_SMS_ENABLED==='true';
+  const allowedTriggers=['missed_call','new_lead','qualified_lead','after_hours_call',...(calendarLive?['appointment_booked']:[])];
+  const allowedActions=['notify_team','create_followup','mark_priority',...(smsLive?['send_sms','send_confirmation']:[])];
+  if(incoming.some(item=>item&&item.trigger==='appointment_booked'&&!calendarLive))return res.status(409).json({error:'Calendar automation triggers are not enabled'});
+  if(incoming.some(item=>item&&['send_sms','send_confirmation'].includes(item.action)&&!smsLive))return res.status(409).json({error:'SMS automation actions are not enabled'});
   const items=incoming.slice(0,20).map((item,i)=>({
     id:String(item.id||('auto_'+i)).slice(0,120),
     name:String(item.name||'Automation').trim().slice(0,120),
@@ -1668,7 +1672,7 @@ async function saveSettings(req,res){
     serviceArea:clean(body.serviceArea,500),
     timezone:clean(body.timezone,100)||'America/Los_Angeles',
     notificationEmail:clean(body.notificationEmail,200).toLowerCase(),
-    smsAlerts:body.smsAlerts!==false,emailAlerts:body.emailAlerts!==false,
+    smsAlerts:process.env.CALLERCORE_SMS_ENABLED==='true'&&body.smsAlerts!==false,emailAlerts:body.emailAlerts!==false,
     notifyBilling:body.notifyBilling!==false,notifySetup:body.notifySetup!==false,notifyCalls:body.notifyCalls!==false,notifySupport:body.notifySupport!==false,notifyUsage:body.notifyUsage!==false,
     updatedAt:Date.now()
   };
