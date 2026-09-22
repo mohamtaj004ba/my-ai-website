@@ -38,15 +38,18 @@ Decide/provider setup:
 ## Commercial decisions
 
 ### Minute overages
+
+Decision memo: `docs/VOICE_UNIT_ECONOMICS.md`
+
 Starter: 300 included minutes.
 Growth: 600 included minutes.
 Pro: high-volume plan; public unlimited-minutes claim removed pending policy.
 
 Need to decide:
 - whether Starter/Growth have overage billing
-- exact overage rate
+- exact overage rate (current provider economics support considering roughly $0.25-$0.30/min, but owner approval is still required)
 - soft vs hard limits
-- alerts at 80%, 90%, 100%
+- customer/admin usage warnings are already implemented at 70%, 85%, and 100% without implying an overage charge
 - Pro usage allowance/fair-use language
 
 ### Unit economics
