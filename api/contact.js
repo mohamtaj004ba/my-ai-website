@@ -1,6 +1,6 @@
 const {safeError}=require('../lib/safe-log');
 const crypto=require('crypto');
-const { kv }=require('@vercel/kv');
+const {kv}=require('../lib/kv');
 const { sendMail } = require('./_lib/mailgun');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {rateLimit,requestIp}=require('../lib/rate-limit');
