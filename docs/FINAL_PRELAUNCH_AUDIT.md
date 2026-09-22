@@ -36,6 +36,10 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Public launch copy no longer sells SMS or calendar booking as currently active.
 - Verified pre-release rollback baseline recorded: Vercel deployment `dpl_DkoEXfYyfenw7Hee18cmwygc92fV` on main commit `7cc9562e71bcc63ccc3bcec390a1a601fba2b874`.
 - Server logging hardened to sanitize bounded error messages and avoid raw AI/provider payloads, request content, customer URLs, and raw Error objects; CI now enforces log-privacy safeguards.
+- System Health now combines live technical checks with explicit owner-confirmed launch gates for Preview isolation, disposable E2E, voice lifecycle validation, environment scoping, support email, business/tax readiness, and legal review.
+- Runtime environment-scope checks flag Preview live-Stripe exposure, Preview checkout enablement, and Preview bootstrap secrets present in Production.
+- A non-destructive admin recovery drill validates workspace-export structure, redaction, section coverage, and provider-reconnect requirements without mutating customer data.
+- Deferred SMS and calendar capabilities are runtime-gated off by default and hidden/disabled across customer and admin launch UI until explicitly enabled.
 
 ## Customer journey — required before sales open
 
@@ -77,11 +81,10 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Regenerate the automation-bypass secret after this QA cycle because the test value was handled interactively.
 - Full authenticated POST/browser E2E with a disposable client is still required before release.
 - Confirm Preview KV is isolated from Production KV before destructive disposable-client testing.
-- Verify System Health correctly shows all production blockers.
 - support@callercore.com inbound and outbound Gmail behavior verified from recent CallerCore mailbox history. ✅
 - Tighten DMARC from monitoring toward enforcement after continued Google Workspace/Mailgun alignment is verified.
 - Native Vercel production anomaly rule is configured; signed webhook email fallback is coded/configured. Production fallback delivery test remains after PR #5 is merged.
-- Export a disposable workspace and perform a recovery drill.
+- Run the new non-destructive recovery drill against a disposable workspace during authenticated E2E, then perform a real restore drill in the isolated test environment if needed.
 
 ## Hosting / infrastructure — required before commercial launch
 - Verify production vs preview environment-variable scoping.
