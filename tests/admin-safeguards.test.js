@@ -117,3 +117,10 @@ test('workspace recovery drill validates export structure without writing custom
   assert.doesNotMatch(body,/kv\.set\(/);
   assert.doesNotMatch(body,/kv\.del\(/);
 });
+
+test('usage notifications warn at 70 85 and 100 percent without implying charges',()=>{
+  assert.match(src,/pct>=100\?100:pct>=85\?85:pct>=70\?70:0/);
+  assert.match(src,/This notice does not by itself mean an overage charge has been applied/);
+  assert.match(src,/admin-usage:/);
+  assert.match(src,/no overage policy is implied by this notice/);
+});
