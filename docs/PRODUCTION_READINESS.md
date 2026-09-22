@@ -90,7 +90,8 @@ Run one complete disposable client through:
 - Confirm production Stripe secret key, publishable key, and webhook signing secret are all present in the production environment.
 - Complete Washington tax registration/classification; Stripe Tax is active but the connected live account currently has no tax registrations configured.
 - Configure the correct Stripe product tax treatment and enable automatic tax only after registration/classification is confirmed.
-- Define and implement minute overage policy, if any.
+- Define and implement minute overage policy, if any. Current unit-economics planning is documented in `docs/VOICE_UNIT_ECONOMICS.md`.
+- Policy-neutral customer/admin usage warnings are implemented at 70% / 85% / 100% of included Starter/Growth minutes; they do not imply or apply an overage charge.
 - Define Pro high-volume/fair-use policy before material high-volume usage.
 - Verify subscription-plan change behavior against real Stripe Price IDs.
 - Test failed-payment recovery and cancellation in Stripe test mode.
