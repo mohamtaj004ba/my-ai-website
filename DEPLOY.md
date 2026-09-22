@@ -191,6 +191,10 @@ A focused security review is still required before broad production launch.
 
 Do not enable either flag merely to expose unfinished UI.
 
+## Preview KV isolation
+
+Preview uses a dedicated Upstash Redis resource through `PREVIEW_KV_*` environment variables. `lib/kv.js` maps those credentials only when `VERCEL_ENV=preview` and fails closed if they are missing, so Preview cannot silently fall back to Production KV. The deployed Preview health endpoint must report `storage: preview-isolated` before any destructive test data is created.
+
 ## Preview QA prerequisite
 
 Keep Vercel Preview Protection enabled. Automated preview QA should use Vercel Protection Bypass for Automation rather than disabling protection. Preview KV connectivity and protected-browser QA remain pending until that bypass is configured.
