@@ -915,9 +915,11 @@ function renderPlatformSettings(){
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v};
   set('platformAgentName',adminPlatformData.defaultAgentName||'Maya');set('platformTimezone',adminPlatformData.defaultTimezone||'America/Los_Angeles');set('platformSupportEmail',adminPlatformData.supportEmail||'');
   const mm=document.getElementById('platformMaintenanceMode');if(mm)mm.checked=!!adminPlatformData.maintenanceMode;
+  const gates=adminPlatformData.launchGates||{},gateMap={launchGatePreviewIsolation:'previewIsolation',launchGateDisposableE2E:'disposableE2E',launchGateVoiceLifecycle:'voiceLifecycle',launchGateProductionEnvScope:'productionEnvScope',launchGateSupportEmail:'supportEmail',launchGateBusinessTax:'businessTax',launchGateLegalReview:'legalReview'};
+  Object.entries(gateMap).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.checked=!!gates[key]});
 }
 async function savePlatformSettings(){
-  const payload={defaultAgentName:document.getElementById('platformAgentName')?.value||'Maya',defaultTimezone:document.getElementById('platformTimezone')?.value||'America/Los_Angeles',supportEmail:document.getElementById('platformSupportEmail')?.value||'',maintenanceMode:!!document.getElementById('platformMaintenanceMode')?.checked};
+  const payload={defaultAgentName:document.getElementById('platformAgentName')?.value||'Maya',defaultTimezone:document.getElementById('platformTimezone')?.value||'America/Los_Angeles',supportEmail:document.getElementById('platformSupportEmail')?.value||'',maintenanceMode:!!document.getElementById('platformMaintenanceMode')?.checked,launchGates:{previewIsolation:!!document.getElementById('launchGatePreviewIsolation')?.checked,disposableE2E:!!document.getElementById('launchGateDisposableE2E')?.checked,voiceLifecycle:!!document.getElementById('launchGateVoiceLifecycle')?.checked,productionEnvScope:!!document.getElementById('launchGateProductionEnvScope')?.checked,supportEmail:!!document.getElementById('launchGateSupportEmail')?.checked,businessTax:!!document.getElementById('launchGateBusinessTax')?.checked,legalReview:!!document.getElementById('launchGateLegalReview')?.checked}};
   const r=await fetch('/api/account?action=admin-platform-settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not save platform settings.');return}adminPlatformData=data.settings;const tag=document.getElementById('platformSettingsStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1500)}
 }
@@ -1002,8 +1004,8 @@ function renderPhones(){
 }
 function renderHealth(){
   const wrap=document.getElementById('systemHealthGrid');if(!wrap)return;
-  wrap.innerHTML=adminHealthData.map(x=>'<article class="panel integration-card"><div><b>'+esc(x.name)+'</b><p>'+esc(x.detail||'')+'</p></div><span class="tag '+(x.status==='operational'||x.status==='configured'?'green':x.status==='error'?'red':'amber')+'">'+esc(x.status.replace('_',' '))+'</span></article>').join('');
-  const bad=adminHealthData.filter(x=>x.status==='error'||x.status==='not_configured').length,side=document.getElementById('adminSidebarHealth');if(side)side.textContent=bad?bad+' system item'+(bad===1?'':'s')+' need attention':'All systems operational';
+  wrap.innerHTML=adminHealthData.map(x=>'<article class="panel integration-card"><div><b>'+esc(x.name)+'</b><p>'+esc(x.detail||'')+'</p></div><span class="tag '+(x.status==='operational'||x.status==='configured'||x.status==='confirmed'?'green':x.status==='error'?'red':'amber')+'">'+esc(x.status.replace('_',' '))+'</span></article>').join('');
+  const bad=adminHealthData.filter(x=>['error','not_configured','pending'].includes(x.status)).length,side=document.getElementById('adminSidebarHealth');if(side)side.textContent=bad?bad+' system item'+(bad===1?'':'s')+' need attention':'All systems operational';
   const title=document.getElementById('productionReadinessTitle'),copy=document.getElementById('productionReadinessCopy'),blockers=document.getElementById('productionReadinessBlockers'),card=document.getElementById('productionReadinessCard');
   if(adminReadinessData&&title&&copy&&blockers){
     title.textContent=adminReadinessData.ready?'Core launch dependencies are ready.':adminReadinessData.blockers.length+' launch blocker'+(adminReadinessData.blockers.length===1?'':'s')+' remain.';
