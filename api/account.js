@@ -1689,9 +1689,12 @@ async function saveSettings(req,res){
     notifyBilling:body.notifyBilling!==false,notifySetup:body.notifySetup!==false,notifyCalls:body.notifyCalls!==false,notifySupport:body.notifySupport!==false,notifyUsage:body.notifyUsage!==false,
     updatedAt:Date.now()
   };
+  if(!settings.businessName)return res.status(400).json({error:'Business name is required'});
   if(settings.primaryEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.primaryEmail))return res.status(400).json({error:'Valid primary email required'});
   if(settings.notificationEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.notificationEmail))return res.status(400).json({error:'Valid notification email required'});
   if(settings.businessPhone&&!/^\+?[0-9() .-]{7,30}$/.test(settings.businessPhone))return res.status(400).json({error:'Valid business phone required'});
+  if(settings.state&&!/^[A-Za-z]{2}$/.test(settings.state))return res.status(400).json({error:'State / region must be a 2-letter code'});
+  if(settings.postalCode&&!/^\d{5}(?:-\d{4})?$/.test(settings.postalCode))return res.status(400).json({error:'Valid ZIP code required'});
   if(settings.website&&!/^https?:\/\//i.test(settings.website))return res.status(400).json({error:'Website must begin with http:// or https://'});
   const previous=await kv.get('settings:'+s.workspaceId)||null;
   await kv.set('settings:'+s.workspaceId,settings);
