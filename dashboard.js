@@ -1043,7 +1043,7 @@ function openPhoneModal(id=null){
   document.getElementById('phoneForwardingInput').value=item?.forwardingFrom||'';
   document.getElementById('phoneTransferInput').value=item?.transferNumber||'';
   document.getElementById('phoneAfterHoursInput').value=item?.afterHours||'ai';
-  document.getElementById('phoneSmsInput').checked=item?.smsEnabled!==false;
+  const smsBox=document.getElementById('phoneSmsInput');if(smsBox){smsBox.checked=false;smsBox.disabled=true}
   const sel=document.getElementById('phoneWorkspaceInput');
   sel.innerHTML='<option value="">Unassigned</option>'+adminClientsData.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
   sel.value=item?.workspaceId||'';
@@ -1052,7 +1052,7 @@ function openPhoneModal(id=null){
 function closePhoneModal(){const m=document.getElementById('phoneModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 async function savePhone(){
   const modal=document.getElementById('phoneModal');
-  const payload={id:modal?.dataset.editId||undefined,number:document.getElementById('phoneNumberInput')?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||'',forwardingFrom:document.getElementById('phoneForwardingInput')?.value||'',transferNumber:document.getElementById('phoneTransferInput')?.value||'',afterHours:document.getElementById('phoneAfterHoursInput')?.value||'ai',smsEnabled:!!document.getElementById('phoneSmsInput')?.checked};
+  const payload={id:modal?.dataset.editId||undefined,number:document.getElementById('phoneNumberInput')?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||'',forwardingFrom:document.getElementById('phoneForwardingInput')?.value||'',transferNumber:document.getElementById('phoneTransferInput')?.value||'',afterHours:document.getElementById('phoneAfterHoursInput')?.value||'ai',smsEnabled:false};
   const r=await fetch('/api/account?action=admin-phone-number-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not save phone number.');return}
