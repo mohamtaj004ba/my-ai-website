@@ -6,6 +6,7 @@ const {lifecycleEmail,authEmail,esc:escapeEmailHtml}=require('../lib/email-templ
 const {entitlementsFor}=require('../lib/plans');
 const {emailKey}=require('../lib/site-analytics');
 const {safeError}=require('../lib/safe-log');
+const previewSeed=require('../lib/preview-seed');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
@@ -96,6 +97,58 @@ async function bootstrapPreview(req,res){
   const index=await kv.get('workspace:index')||[];
   if(Array.isArray(index)&&!index.includes(workspaceId))await kv.set('workspace:index',[...index,workspaceId]);
   return res.status(201).json({ok:true,workspaceId,email,plan});
+}
+
+async function seedPreviewData(req,res){
+  const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+  if(process.env.VERCEL_ENV!=='preview'||!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
+  const configured=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||''),supplied=String(req.headers['x-bootstrap-secret']||'');
+  if(!configured||!supplied||supplied!==configured)return res.status(403).json({error:'Forbidden'});
+  const email=cleanEmail((req.body||{}).email);
+  const member=await kv.get('user:email:'+email);
+  if(!member||!member.workspaceId)return res.status(404).json({error:'Create the workspace first'});
+  const workspaceId=member.workspaceId,now=Date.now(),dataset=previewSeed.makePrimaryDataset();
+  const workspace=previewSeed.primaryWorkspace(workspaceId,email,now);
+  workspace.usage.minutes=dataset.minutes;
+  await Promise.all([
+    kv.set('workspace:'+workspaceId,workspace),
+    kv.set('settings:'+workspaceId,previewSeed.primarySettings(email)),
+    kv.set('agent:'+workspaceId,previewSeed.primaryAgent()),
+    kv.set('automations:'+workspaceId,previewSeed.primaryAutomations()),
+    kv.set('locations:'+workspaceId,previewSeed.primaryLocations()),
+    kv.set('calls:'+workspaceId,dataset.calls),
+    kv.set('leads:'+workspaceId,dataset.leads),
+    kv.set('conversations:'+workspaceId,dataset.conversations),
+    kv.set('appointments:'+workspaceId,dataset.appointments),
+    kv.set('integrations:'+workspaceId,{googleCalendar:false,stripe:false,webhookUrl:'',apiAccess:true,updatedAt:now}),
+    kv.set('onboarding:workspace:'+workspaceId,{status:'live',completionPercent:100,checklist:{payment:true,accountReview:true,onboardingSent:true,agreement:true,intake:true,businessProfile:true,agentDraft:true,routingCaptured:true,phoneAssigned:true,adminReview:true,testCall:true,clientApproval:true,live:true},updatedAt:now})
+  ]);
+  const phoneIndex=await kv.get('phone:index')||[],primaryPhone=previewSeed.primaryPhone(workspaceId);
+  const phoneList=(Array.isArray(phoneIndex)?phoneIndex:[]).filter(x=>x&&x.workspaceId!==workspaceId&&x.id!==primaryPhone.id);
+  phoneList.unshift(primaryPhone);
+  await kv.set('phone:index',phoneList.slice(0,500));
+
+  const currentIndex=await kv.get('workspace:index')||[],index=Array.isArray(currentIndex)?currentIndex:[];
+  const seedPrefix=workspaceId.slice(0,8);
+  const keep=index.filter(id=>!String(id).startsWith('seed_'+seedPrefix+'_'));
+  const adminIds=[];
+  for(let i=0;i<previewSeed.ADMIN_CLIENTS.length;i++){
+    const ws=previewSeed.adminWorkspace(seedPrefix,i,now);adminIds.push(ws.id);
+    const settings={businessName:ws.name,primaryEmail:ws.ownerEmail,contactName:ws.ownerName,businessPhone:ws.phone,website:'https://example-client.test',streetAddress:(1200+i*113)+' W Riverside Ave',city:'Spokane',state:'WA',postalCode:'99201',industry:ws.industry,serviceArea:'Spokane metro and surrounding communities.',timezone:'America/Los_Angeles',notificationEmail:ws.ownerEmail,emailAlerts:true,smsAlerts:false,notifyBilling:true,notifySetup:true,notifyCalls:true,notifySupport:true,notifyUsage:true,updatedAt:now};
+    const autos=i%3===0?[]:[{id:'seed_auto_'+i,name:'New lead alert',trigger:'new_lead',action:'notify_team',enabled:true}];
+    const onboarding=ws.status==='onboarding'
+      ?{status:'building_review',completionPercent:66,checklist:{payment:true,accountReview:true,onboardingSent:true,agreement:true,intake:true,businessProfile:true,agentDraft:true,routingCaptured:true,phoneAssigned:false,adminReview:false,testCall:false,clientApproval:false,live:false},updatedAt:now}
+      :{status:'live',completionPercent:100,checklist:{payment:true,accountReview:true,onboardingSent:true,agreement:true,intake:true,businessProfile:true,agentDraft:true,routingCaptured:true,phoneAssigned:true,adminReview:true,testCall:true,clientApproval:true,live:true},updatedAt:now};
+    await Promise.all([
+      kv.set('workspace:'+ws.id,ws),kv.set('settings:'+ws.id,settings),kv.set('agent:'+ws.id,previewSeed.adminSeedAgent(ws.industry)),
+      kv.set('automations:'+ws.id,autos),kv.set('calls:'+ws.id,previewSeed.adminSeedCalls(i,ws.name)),kv.set('leads:'+ws.id,previewSeed.adminSeedLeads(i)),
+      kv.set('conversations:'+ws.id,[]),kv.set('appointments:'+ws.id,[]),kv.set('locations:'+ws.id,[{id:'loc_'+i,name:'Main office',phone:ws.phone,address:(1200+i*113)+' W Riverside Ave, Spokane, WA 99201',timezone:'America/Los_Angeles',active:true}]),
+      kv.set('onboarding:workspace:'+ws.id,onboarding)
+    ]);
+  }
+  await kv.set('workspace:index',[workspaceId,...adminIds,...keep.filter(id=>id!==workspaceId)].slice(0,250));
+  await appendAudit(workspaceId,{actorEmail:email,actorRole:'owner',action:'preview_seed_realistic_dataset',section:'workspace',before:null,after:{calls:dataset.calls.length,leads:dataset.leads.length,conversations:dataset.conversations.length,days:60,adminClients:adminIds.length}});
+  return res.status(200).json({ok:true,workspaceId,businessName:workspace.name,days:60,calls:dataset.calls.length,leads:dataset.leads.length,conversations:dataset.conversations.length,appointments:dataset.appointments.length,adminClients:adminIds.length,plan:workspace.plan,minutes:dataset.minutes});
 }
 
 async function promotePreviewAdmin(req,res){
@@ -1784,6 +1837,7 @@ module.exports=async function handler(req,res){
   if(req.method==='POST'&&!mutationOriginAllowed(req))return res.status(403).json({error:'Cross-site request blocked'});
   if(action==='health'&&req.method==='GET')return publicHealth(req,res);
   if(action==='bootstrap-preview'&&req.method==='POST')return bootstrapPreview(req,res);
+  if(action==='seed-preview-data'&&req.method==='POST')return seedPreviewData(req,res);
   if(action==='promote-preview-admin'&&req.method==='POST')return promotePreviewAdmin(req,res);
   if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
   if(action==='admin-clients'&&req.method==='GET')return adminClients(req,res);
