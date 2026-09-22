@@ -29,3 +29,10 @@ test('dashboard JavaScript has no duplicate named function declarations',()=>{
   const counts={};for(const name of names)counts[name]=(counts[name]||0)+1;
   assert.deepEqual(Object.entries(counts).filter(([,count])=>count>1),[]);
 });
+
+test('admin platform settings expose every required launch gate',()=>{
+  const src=html('admin-dashboard.html');
+  for(const id of ['launchGatePreviewIsolation','launchGateDisposableE2E','launchGateVoiceLifecycle','launchGateProductionEnvScope','launchGateSupportEmail','launchGateBusinessTax','launchGateLegalReview']){
+    assert.ok(src.includes('id="'+id+'"'),id+' launch gate missing');
+  }
+});
