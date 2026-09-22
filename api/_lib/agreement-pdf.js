@@ -106,6 +106,7 @@ async function buildAgreementPdfBytes({ business, fullName, plan, signedAt, clau
     if (planSnapshot.monthlyPrice != null) planParts.push(String.fromCharCode(36) + planSnapshot.monthlyPrice + '/month');
     if (planSnapshot.includedMinutes) planParts.push(planSnapshot.includedMinutes + ' minutes');
     if (planSnapshot.locations) planParts.push(planSnapshot.locations);
+    if (planSnapshot.usageNote) planParts.push(planSnapshot.usageNote);
     planLine = planParts.join(' / ');
   }
   const agreementLine = 'v' + String(agreementVersion || AGREEMENT_VERSION) + (effectiveDate ? (' / effective ' + effectiveDate) : '');
