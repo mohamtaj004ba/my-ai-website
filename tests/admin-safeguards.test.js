@@ -104,3 +104,16 @@ test('system health detects dangerous production and preview environment scoping
   assert.match(src,/key:'environment-scope'/);
   assert.match(src,/requiredForLaunch=\['database','environment-scope','checkout'/);
 });
+
+test('workspace recovery drill validates export structure without writing customer data',()=>{
+  assert.match(src,/function validateWorkspaceExportData\(data\)/);
+  assert.match(src,/Potential unredacted secret fields/);
+  assert.match(src,/requiresProviderReconnect/);
+  assert.match(src,/async function adminRecoveryDrill\(req,res\)/);
+  assert.match(src,/action:'recovery_drill'/);
+  const start=src.indexOf('async function adminRecoveryDrill');
+  const end=src.indexOf('\nasync function ',start+1);
+  const body=src.slice(start,end>=0?end:src.length);
+  assert.doesNotMatch(body,/kv\.set\(/);
+  assert.doesNotMatch(body,/kv\.del\(/);
+});
