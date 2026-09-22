@@ -58,3 +58,11 @@ test('onboarding assistant does not promise recording transcription or automatic
   assert.doesNotMatch(onboardingChat,/automatic follow-up text the moment the call ends/i);
   assert.match(onboardingChat,/Do not promise SMS, calendar booking, recording, transcription/);
 });
+
+test('signed agreement template does not restore unresolved Pro unlimited terms',()=>{
+  const clauses=fs.readFileSync(path.join(root,'api','_lib','agreement-clauses.js'),'utf8');
+  assert.match(clauses,/AGREEMENT_VERSION = '2\.1'/);
+  const current=clauses.slice(clauses.indexOf('const CLAUSES ='));
+  assert.doesNotMatch(current,/includedMinutes:'Unlimited'/i);
+  assert.doesNotMatch(current,/\$0\.30 per minute/i);
+});
