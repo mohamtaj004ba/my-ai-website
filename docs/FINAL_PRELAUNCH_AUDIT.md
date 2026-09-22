@@ -50,6 +50,7 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Test success, asynchronous payment, failed payment, cancellation, portal access and recovery in Stripe test mode.
 - Decide and disclose the minute-overage policy before selling Starter/Growth usage above allowance.
 - Define Pro high-volume/fair-use policy before selling Pro at material call volume.
+- Starter/Growth policy-neutral usage warnings at 70% / 85% / 100% are implemented; no automatic overage charge is implied or applied.
 
 ### Onboarding
 - Run one disposable customer from prospect -> checkout -> payment -> review -> agreement -> intake -> build -> QA -> test call -> approval -> live.
