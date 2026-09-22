@@ -1,5 +1,5 @@
 const crypto=require('crypto');
-const {kv}=require('../lib/kv');
+const {kv,storageEnvironment}=require('../lib/kv');
 const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession}=require('../lib/auth');
 const {sendMail}=require('../lib/mail');
 const {lifecycleEmail,authEmail,esc:escapeEmailHtml}=require('../lib/email-template');
@@ -47,7 +47,7 @@ async function kvHealthCheck(timeoutMs=2500){
 async function publicHealth(req,res){
   const db=await kvHealthCheck();
   res.setHeader('Cache-Control','no-store');
-  return res.status(db.ok?200:503).json({ok:db.ok,database:db.ok?'operational':'error',checkedAt:Date.now()});
+  return res.status(db.ok?200:503).json({ok:db.ok,database:db.ok?'operational':'error',storage:storageEnvironment(),checkedAt:Date.now()});
 }
 
 async function appendAudit(workspaceId,{actorEmail='',actorRole='client',action='',section='',before=null,after=null,meta={}}={}){
