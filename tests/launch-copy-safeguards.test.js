@@ -31,3 +31,22 @@ test('checkout and onboarding copy avoid unresolved scheduling and unlimited usa
   assert.doesNotMatch(privacy,/scheduling appointments/i);
   assert.doesNotMatch(terms,/appointment scheduling/i);
 });
+
+test('authenticated launch dashboard keeps deferred SMS and calendar capabilities off',()=>{
+  const plans=fs.readFileSync(path.join(root,'lib','plans.js'),'utf8');
+  const account=fs.readFileSync(path.join(root,'api','account.js'),'utf8');
+  const dashHtml=fs.readFileSync(path.join(root,'dashboard.html'),'utf8');
+  const dashJs=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  assert.match(plans,/CALLERCORE_CALENDAR_ENABLED==='true'/);
+  assert.match(plans,/CALLERCORE_SMS_ENABLED==='true'/);
+  assert.match(account,/Calendar automation triggers are not enabled/);
+  assert.match(account,/SMS automation actions are not enabled/);
+  assert.match(account,/CALLERCORE_SMS_ENABLED==='true'&&saved\.smsAlerts!==false/);
+  assert.match(account,/CALLERCORE_CALENDAR_ENABLED==='true'&&!!saved\.googleCalendar/);
+  assert.doesNotMatch(dashHtml,/>Send SMS</);
+  assert.doesNotMatch(dashHtml,/value="appointment_booked"/);
+  assert.doesNotMatch(dashHtml,/value="send_confirmation"/);
+  assert.match(dashHtml,/SMS alerts · coming later/);
+  assert.match(dashHtml,/Google Calendar<\/b><p>Calendar booking is planned for a later release/);
+  assert.doesNotMatch(dashJs,/Unlimited minutes|unlimited plan/i);
+});
