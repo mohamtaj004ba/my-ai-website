@@ -11,3 +11,15 @@ test('Growth and Pro entitlement differences remain enforced',()=>{
   assert.equal(entitlementsFor('Pro').features.apiAccess,true);
   assert.equal(entitlementsFor('Starter').features.unifiedInbox,false);
 });
+
+test('runtime capabilities default deferred integrations off',()=>{
+  const oldCal=process.env.CALLERCORE_CALENDAR_ENABLED,oldSms=process.env.CALLERCORE_SMS_ENABLED;
+  delete process.env.CALLERCORE_CALENDAR_ENABLED;delete process.env.CALLERCORE_SMS_ENABLED;
+  delete require.cache[require.resolve('../lib/plans')];
+  const {entitlementsFor}=require('../lib/plans');
+  const growth=entitlementsFor('Growth');
+  assert.equal(growth.features.appointments,false);
+  assert.equal(growth.features.sms,false);
+  if(oldCal===undefined)delete process.env.CALLERCORE_CALENDAR_ENABLED;else process.env.CALLERCORE_CALENDAR_ENABLED=oldCal;
+  if(oldSms===undefined)delete process.env.CALLERCORE_SMS_ENABLED;else process.env.CALLERCORE_SMS_ENABLED=oldSms;
+});
