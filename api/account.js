@@ -1,5 +1,5 @@
 const crypto=require('crypto');
-const {kv}=require('@vercel/kv');
+const {kv}=require('../lib/kv');
 const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession}=require('../lib/auth');
 const {sendMail}=require('../lib/mail');
 const {lifecycleEmail,authEmail,esc:escapeEmailHtml}=require('../lib/email-template');
