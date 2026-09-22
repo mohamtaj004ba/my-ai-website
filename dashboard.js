@@ -1,14 +1,14 @@
 const PLAN_DATA={
-Starter:{price:349,minutes:300,locations:1,used:214,features:{appointments:false,automations:false,advancedAnalytics:false,apiAccess:false,unifiedInbox:false},unlock:'Growth'},
-Growth:{price:599,minutes:600,locations:2,used:428,features:{appointments:true,automations:true,advancedAnalytics:true,apiAccess:false,unifiedInbox:true},unlock:'Pro'},
-Pro:{price:999,minutes:null,locations:5,used:1240,features:{appointments:true,automations:true,advancedAnalytics:true,apiAccess:true,unifiedInbox:true},unlock:null}
+Starter:{price:349,minutes:300,locations:1,used:214,features:{appointments:false,sms:false,automations:false,advancedAnalytics:false,apiAccess:false,unifiedInbox:false},unlock:'Growth'},
+Growth:{price:599,minutes:600,locations:2,used:428,features:{appointments:false,sms:false,automations:true,advancedAnalytics:true,apiAccess:false,unifiedInbox:true},unlock:'Pro'},
+Pro:{price:999,minutes:null,locations:5,used:1240,features:{appointments:false,sms:false,automations:true,advancedAnalytics:true,apiAccess:true,unifiedInbox:true},unlock:null}
 };
 const FEATURE_INFO={
-appointments:{title:'AI appointment booking',copy:'Let Maya check availability and book qualified callers while you work.',tier:'Growth',items:['Calendar sync','Booking rules','Confirmations','Reschedule handling']},
+appointments:{title:'Appointment booking',copy:'Calendar-connected booking is planned for a later release.',tier:'Growth',deferred:true,items:['Calendar sync','Booking rules','Confirmations','Reschedule handling']},
 automations:{title:'Advanced automations',copy:'Build follow-up sequences from call and lead events.',tier:'Growth',items:['Missed-call recovery','Lead follow-up','Team alerts','AI outbound steps']},
 advancedAnalytics:{title:'Advanced analytics',copy:'Go beyond totals with conversion trends, call reasons and after-hours impact.',tier:'Growth',items:['Conversion trends','Call reason analysis','After-hours revenue','Lead attribution']},
 apiAccess:{title:'API & webhooks',copy:'Connect CallerCore to custom tools and internal systems.',tier:'Pro',items:['Webhooks','API credentials','Custom events','Advanced integrations']},
-unifiedInbox:{title:'Unified inbox',copy:'Keep customer voice, SMS and digital conversations in one timeline.',tier:'Growth',items:['Voice timeline','SMS inbox','Shared notes','Cross-channel history']}
+unifiedInbox:{title:'Unified inbox',copy:'Keep customer call and digital conversation history in one timeline.',tier:'Growth',items:['Call timeline','Shared notes','Website inquiries','Cross-channel history']}
 };
 const params=new URLSearchParams(location.search);
 const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
@@ -91,13 +91,21 @@ function showView(name){document.querySelectorAll('.view').forEach(v=>v.classLis
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
 
-function has(feature){return !!PLAN_DATA[currentPlan]?.features?.[feature]}
-function featureStage(el,feature){const info=FEATURE_INFO[feature],ok=has(feature);if(ok){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Included with '+currentPlan+'</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel"><span class="eyebrow">Active feature</span><h2>Included in your plan</h2><p class="muted">Use the live controls on this page to configure the feature for your workspace.</p></article></div>'}else{el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>See what this could do for your business.</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel gate-card"><small>AVAILABLE ON '+info.tier.toUpperCase()+'</small><h2>Unlock '+info.title+'</h2><p>'+info.copy+'</p><ul>'+info.items.map(x=>'<li>'+x+'</li>').join('')+'</ul><button class="primary" data-upgrade="'+info.tier+'">Upgrade to '+info.tier+'</button></article></div>'}}
+function has(feature){
+  if(!demoMode&&sessionWorkspace?.entitlements?.features&&Object.prototype.hasOwnProperty.call(sessionWorkspace.entitlements.features,feature))return !!sessionWorkspace.entitlements.features[feature];
+  return !!PLAN_DATA[currentPlan]?.features?.[feature];
+}
+function capability(name){
+  if(!demoMode&&sessionWorkspace?.entitlements?.capabilities)return !!sessionWorkspace.entitlements.capabilities[name];
+  return false;
+}
+function featureStage(el,feature){const info=FEATURE_INFO[feature],ok=has(feature);if(info?.deferred){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Coming later.</h2><p class="muted">'+info.copy+'</p></article><article class="panel gate-card"><small>NOT ENABLED AT LAUNCH</small><h2>'+info.title+' is not active yet</h2><p>CallerCore will only expose this feature after the calendar integration is production-ready.</p></article></div>';return}if(ok){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Included with '+currentPlan+'</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel"><span class="eyebrow">Active feature</span><h2>Included in your plan</h2><p class="muted">Use the live controls on this page to configure the feature for your workspace.</p></article></div>'}else{el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>See what this could do for your business.</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel gate-card"><small>AVAILABLE ON '+info.tier.toUpperCase()+'</small><h2>Unlock '+info.title+'</h2><p>'+info.copy+'</p><ul>'+info.items.map(x=>'<li>'+x+'</li>').join('')+'</ul><button class="primary" data-upgrade="'+info.tier+'">Upgrade to '+info.tier+'</button></article></div>'}}
 function renderStages(){
   document.querySelectorAll('[data-feature-card]').forEach(el=>featureStage(el,el.dataset.featureCard));
   document.querySelectorAll('[data-feature]').forEach(el=>{
     const f=el.dataset.feature,allowed=has(f),info=FEATURE_INFO[f];
-    el.classList.toggle('feature-locked',!allowed);el.setAttribute('aria-disabled',allowed?'false':'true');
+    if(info?.deferred){el.hidden=true;return}
+    el.hidden=false;el.classList.toggle('feature-locked',!allowed);el.setAttribute('aria-disabled',allowed?'false':'true');
     const lock=el.querySelector('.lock');
     if(lock){lock.textContent=allowed?'ON':(info?.tier||'Locked').toUpperCase();lock.className='lock '+(allowed?'lock-on':'')}
     if(!allowed&&el.classList.contains('integration-card'))el.title='Requires '+(info?.tier||'a higher plan');
@@ -117,7 +125,7 @@ function renderBilling(){
   const d=PLAN_DATA[currentPlan];
   document.getElementById('billingPlan')&&(document.getElementById('billingPlan').textContent=currentPlan);
   document.getElementById('billingPrice')&&(document.getElementById('billingPrice').textContent='$'+d.price+'/month');
-  const usageText=d.minutes?d.used+' / '+d.minutes:d.used+' min · unlimited plan';
+  const usageText=d.minutes?d.used+' / '+d.minutes:d.used+' min · usage policy pending';
   document.getElementById('billingUsageText')&&(document.getElementById('billingUsageText').textContent=usageText);
   const pct=d.minutes?Math.min(100,(d.used/d.minutes)*100):38;
   document.getElementById('billingUsage')?.style.setProperty('width',pct+'%');
@@ -130,8 +138,8 @@ function renderBilling(){
     const list=name==='Starter'
       ?['300 included minutes','1 location','Calls, leads & AI agent','Phone routing & support']
       :name==='Growth'
-        ?['600 included minutes','Up to 2 locations','Unified conversations & appointments','Automations & advanced analytics']
-        :['Unlimited minutes','Up to 5 locations','Everything in Growth','API & webhooks'];
+        ?['600 included minutes','Up to 2 locations','Unified conversations','Automations & advanced analytics']
+        :['High-volume workflows','Up to 5 locations','Everything in Growth','API & webhooks'];
     return '<article class="plan-option '+(current?'current':'')+'"><span class="eyebrow">'+(current?'Your plan':'CallerCore '+name)+'</span><h3>'+name+'</h3><b>$'+p.price+'/mo</b><ul>'+list.map(x=>'<li>'+x+'</li>').join('')+'</ul><button class="'+(current?'secondary-btn':'primary')+'" '+(current?'disabled':'data-upgrade="'+name+'"')+'>'+(current?'Current plan':(p.price>d.price?'Upgrade to ':'Switch to ')+name)+'</button></article>'
   }).join('');
   bindUpgradeButtons()
@@ -288,8 +296,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCall()});
 function renderEntitledApps(){
   const cg=document.getElementById('conversationGate'),ca=document.getElementById('conversationApp');
   if(cg&&ca){cg.hidden=has('unifiedInbox');ca.hidden=!has('unifiedInbox')}
-  const ag=document.getElementById('appointmentGate'),aa=document.getElementById('appointmentApp');
-  if(ag&&aa){ag.hidden=has('appointments');aa.hidden=!has('appointments')}
+  const ag=document.getElementById('appointmentGate'),aa=document.getElementById('appointmentApp'),apptNav=document.querySelector('[data-view="appointments"]');
+  if(ag&&aa){const live=capability('calendar')&&has('appointments');ag.hidden=live;aa.hidden=!live}
+  if(apptNav)apptNav.hidden=!capability('calendar')
   const aug=document.getElementById('automationGate'),aua=document.getElementById('automationApp'),newBtn=document.getElementById('newAutomationButton');
   if(aug&&aua){aug.hidden=has('automations');aua.hidden=!has('automations')}
   if(newBtn)newBtn.hidden=!has('automations');
@@ -308,7 +317,7 @@ function renderConversations(){
   const rows=conversationsData.filter(x=>!q||[x.name,x.phone,x.last,x.status].join(' ').toLowerCase().includes(q));
   list.innerHTML=rows.map((x,i)=>'<button class="thread-item '+(i===0&&!document.querySelector('.thread-item.active')?'active':'')+'" data-thread-id="'+esc(x.id)+'"><div class="thread-top"><strong>'+esc(x.name||'Unknown')+'</strong><small>'+esc(x.time||'')+'</small></div><small>'+esc(x.phone||'')+' · '+esc(x.status||'')+'</small><p>'+esc(x.last||'')+'</p></button>').join('');
   list.querySelectorAll('[data-thread-id]').forEach(btn=>btn.addEventListener('click',()=>openConversation(btn.dataset.threadId)));
-  const active=list.querySelector('.thread-item.active')||list.querySelector('.thread-item');if(active)openConversation(active.dataset.threadId);else{document.getElementById('conversationName').textContent='No conversations';stream.innerHTML='<div class="empty-state"><h3>No conversations yet</h3><p>Voice and SMS activity will appear here.</p></div>'}
+  const active=list.querySelector('.thread-item.active')||list.querySelector('.thread-item');if(active)openConversation(active.dataset.threadId);else{document.getElementById('conversationName').textContent='No conversations';stream.innerHTML='<div class="empty-state"><h3>No conversations yet</h3><p>Call and website conversation activity will appear here.</p></div>'}
 }
 function openConversation(id){
   const x=conversationsData.find(v=>String(v.id)===String(id));if(!x)return;
@@ -394,9 +403,9 @@ function openAutomation(id=null,preset=null){
   let item=id?automationsData.find(x=>String(x.id)===String(id)):null;
   if(!item&&preset){
     const defs={
-      missed_call:{name:'Missed-call recovery',trigger:'missed_call',action:'send_sms'},
+      missed_call:{name:'Missed-call follow-up task',trigger:'missed_call',action:'create_followup'},
       new_lead:{name:'New lead alert',trigger:'new_lead',action:'notify_team'},
-      appointment_booked:{name:'Booking confirmation',trigger:'appointment_booked',action:'send_confirmation'}
+      appointment_booked:{name:'Booking confirmation',trigger:'appointment_booked',action:'notify_team'}
     };item=defs[preset]||null;
   }
   document.getElementById('automationModalTitle').textContent=id?'Edit automation':'New automation';
@@ -440,7 +449,7 @@ function renderAnalytics(){
 }
 function renderIntegrations(){
   if(!integrationsData)integrationsData={googleCalendar:false,stripe:!!sessionWorkspace?.stripe?.customerLinked,webhookUrl:'',apiAccess:has('apiAccess')};
-  const g=document.getElementById('googleCalendarStatus');if(g){g.textContent=integrationsData.googleCalendar?'Connected':'Not connected';g.className='tag '+(integrationsData.googleCalendar?'green':'amber')}
+  const g=document.getElementById('googleCalendarStatus');if(g){g.textContent=capability('calendar')?(integrationsData.googleCalendar?'Connected':'Not connected'):'Coming later';g.className='tag '+(capability('calendar')&&integrationsData.googleCalendar?'green':'amber')}
   const s=document.getElementById('stripeIntegrationStatus');if(s){s.textContent=integrationsData.stripe?'Linked':'Not linked';s.className='tag '+(integrationsData.stripe?'green':'amber')}
   const panel=document.getElementById('webhookPanel');if(panel)panel.hidden=!has('apiAccess');
   const url=document.getElementById('webhookUrl');if(url)url.value=integrationsData.webhookUrl||'';
@@ -457,7 +466,7 @@ function renderSettings(){
   if(!settingsData)return;
   const put=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||''};
   put('settingsBusinessName',settingsData.businessName);put('settingsContactName',settingsData.contactName);put('settingsPrimaryEmail',settingsData.primaryEmail);put('settingsBusinessPhone',settingsData.businessPhone);put('settingsWebsite',settingsData.website);put('settingsIndustry',settingsData.industry);put('settingsServiceArea',settingsData.serviceArea);put('settingsStreetAddress',settingsData.streetAddress);put('settingsCity',settingsData.city);put('settingsState',settingsData.state);put('settingsPostalCode',settingsData.postalCode);put('settingsTimezone',settingsData.timezone);put('settingsNotificationEmail',settingsData.notificationEmail);
-  const e=document.getElementById('settingsEmailAlerts'),s=document.getElementById('settingsSmsAlerts');if(e)e.checked=settingsData.emailAlerts!==false;if(s)s.checked=settingsData.smsAlerts!==false;
+  const e=document.getElementById('settingsEmailAlerts'),s=document.getElementById('settingsSmsAlerts');if(e)e.checked=settingsData.emailAlerts!==false;if(s){s.checked=capability('sms')&&settingsData.smsAlerts!==false;s.disabled=!capability('sms')}
   for(const [id,key] of [['settingsNotifyBilling','notifyBilling'],['settingsNotifySetup','notifySetup'],['settingsNotifyCalls','notifyCalls'],['settingsNotifySupport','notifySupport'],['settingsNotifyUsage','notifyUsage']]){const el=document.getElementById(id);if(el)el.checked=settingsData[key]!==false}
 }
 async function saveSettings(){
@@ -480,7 +489,7 @@ function renderPhoneRouting(){
   set('clientPhoneProvider',d?.provider?d.provider+' · '+(d.status||'active'):'Awaiting provisioning');
   set('clientForwardingFrom',d?.forwardingFrom||'—');set('clientTransferNumber',d?.transferNumber||agentData?.transferNumber||'—');
   set('clientAfterHours',d?({ai:'AI answers',transfer:'Transfer',voicemail:'Voicemail'}[d.afterHours]||d.afterHours):'—');
-  set('clientSmsStatus',d?(d.smsEnabled?'SMS enabled':'SMS disabled'):'SMS status unavailable');
+  set('clientSmsStatus',capability('sms')?(d&&d.smsEnabled?'SMS enabled':'SMS disabled'):'Messaging not enabled at launch');
   set('clientRoutingHeadline',d?'Your CallerCore routing is configured.':'Phone routing has not been provisioned yet.');
   set('clientRoutingCopy',d?'Routing changes are managed by CallerCore support to prevent accidental call disruption.':'CallerCore support will configure the AI-facing number and routing details during onboarding.');
 }
