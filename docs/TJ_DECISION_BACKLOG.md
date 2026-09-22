@@ -40,14 +40,14 @@ Decide/provider setup:
 ### Minute overages
 Starter: 300 included minutes.
 Growth: 600 included minutes.
-Pro: unlimited minutes.
+Pro: high-volume plan; public unlimited-minutes claim removed pending policy.
 
 Need to decide:
 - whether Starter/Growth have overage billing
 - exact overage rate
 - soft vs hard limits
 - alerts at 80%, 90%, 100%
-- whether Pro has fair-use language
+- Pro usage allowance/fair-use language
 
 ### Unit economics
 Need actual provider pricing/usage assumptions for:
@@ -113,7 +113,7 @@ TJ approval required before:
 ### Billing launch
 - Live Stripe webhook event coverage and Customer Portal configuration are complete.
 - Decide Starter/Growth overage policy.
-- Decide Pro unlimited/fair-use policy.
+- Decide Pro high-volume/fair-use policy.
 - Final approval to set `CALLERCORE_CHECKOUT_ENABLED=true` only after E2E launch validation.
 
 ### Email / identity
