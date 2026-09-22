@@ -1,5 +1,5 @@
 const crypto=require('crypto');
-const {kv}=require('@vercel/kv');
+const {kv}=require('../lib/kv');
 const {rateLimit,requestIp}=require('../lib/rate-limit');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 
