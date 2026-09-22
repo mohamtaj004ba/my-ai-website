@@ -77,7 +77,7 @@ Decide later whether to offer:
 
 ## Legal / compliance authorization
 
-- Washington technology/business attorney review of Service Agreement v2.0.
+- Washington technology/business attorney review of Service Agreement v2.1.
 - Privacy Policy review.
 - Terms review.
 - Recording-consent policy.
@@ -114,6 +114,8 @@ TJ approval required before:
 - Approve enabling Stripe automatic tax after tax classification is confirmed.
 
 ### Billing launch
+
+- Live Stripe catalog descriptions have already been cleaned to match current launch scope; no billing amounts or active subscriptions were changed.
 - Live Stripe webhook event coverage and Customer Portal configuration are complete.
 - Decide Starter/Growth overage policy.
 - Decide Pro high-volume/fair-use policy.
