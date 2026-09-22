@@ -81,7 +81,7 @@
   const promote = byId('promote');
   const login = byId('login');
 
-  if (!create || !promote || !login) {
+  if (!create || !seed || !promote || !login) {
     out('Launcher failed to initialize. Refresh the page.', false);
     return;
   }
@@ -98,6 +98,20 @@
       'Workspace ID: ' + (data.workspaceId || '(created)') + '\n' +
       'Email: ' + (data.email || value('email')) + '\n' +
       'Plan: ' + (data.plan || value('plan'))
+    );
+  }));
+
+  seed.addEventListener('click', () => run(seed, 'Loading 60-day dataset', async () => {
+    const data = await post('seed-preview-data', { email: value('email') }, true);
+    out(
+      'Realistic business dataset loaded.\n' +
+      'Business: ' + data.businessName + '\n' +
+      'History: ' + data.days + ' days\n' +
+      'Calls: ' + data.calls + '\n' +
+      'Leads: ' + data.leads + '\n' +
+      'Conversations: ' + data.conversations + '\n' +
+      'Admin workspaces: ' + data.adminClients + '\n' +
+      'Plan: ' + data.plan
     );
   }));
 
