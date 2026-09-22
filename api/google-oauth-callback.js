@@ -1,4 +1,4 @@
-const {kv}=require('@vercel/kv');
+const {kv}=require('../lib/kv');
 const {exchangeCode,saveConnection}=require('../lib/gmail');
 const {safeError}=require('../lib/safe-log');
 
