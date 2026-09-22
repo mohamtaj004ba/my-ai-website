@@ -20,20 +20,20 @@ let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',reason:'Roof replacement estimate',duration:'4:32',outcome:'Booked',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and booked an inspection for Tuesday at 10:30 AM.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can help get an inspection scheduled. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
-{id:'c3',caller:'Unknown caller',phone:'Private',reason:'Missed call recovery',duration:'—',outcome:'Follow-up',agent:'Recovery',time:'2:41 PM',summary:'The caller disconnected before the AI answered. CallerCore automatically sent the missed-call recovery text.',qualification:{Intent:'Unknown',Service:'Unknown',Timeline:'Unknown',Value:'—'},transcript:[['CallerCore','Missed call detected. Recovery SMS sent automatically.']]}
+{id:'c3',caller:'Unknown caller',phone:'Private',reason:'Missed call follow-up',duration:'—',outcome:'Follow-up',agent:'Recovery',time:'2:41 PM',summary:'The caller disconnected before the AI answered. CallerCore created a follow-up item for the team.',qualification:{Intent:'Unknown',Service:'Unknown',Timeline:'Unknown',Value:'—'},transcript:[['CallerCore','Missed call detected. Team follow-up created.']]}
 ];
 const DEMO_LEADS=[
 {id:'l1',name:'Emily Ross',service:'Roof leak',value:2800,stage:'New',source:'AI call',age:'12m'},
-{id:'l2',name:'David Nguyen',service:'Gutter replacement',value:1900,stage:'Contacted',source:'SMS',age:'1h'},
+{id:'l2',name:'David Nguyen',service:'Gutter replacement',value:1900,stage:'Contacted',source:'Website',age:'1h'},
 {id:'l3',name:'Mike Peterson',service:'Storm damage',value:4200,stage:'Qualified',source:'AI call',age:'2h'},
 {id:'l4',name:'Sarah Johnson',service:'Roof replacement',value:8500,stage:'Appointment',source:'AI call',age:'3h'},
 {id:'l5',name:'Jared Lee',service:'Full roof',value:13400,stage:'Won',source:'AI call',age:'2d'},
 {id:'l6',name:'Chris Bell',service:'Repair estimate',value:1600,stage:'Lost',source:'Web',age:'4d'}
 ];
 const DEMO_CONVERSATIONS=[
-{id:'m1',name:'Sarah Johnson',phone:'(509) 555-0148',status:'Active',last:'Appointment confirmed for Tuesday at 10:30 AM.',time:'3:22 PM',messages:[{who:'Maya',text:'Thanks for calling Alpine Roofing today. Your inspection is booked for Tuesday at 10:30 AM.',dir:'out'},{who:'Sarah',text:'Perfect, thank you!',dir:'in'},{who:'CallerCore',text:'Appointment confirmation sent',dir:'system'}]},
+{id:'m1',name:'Sarah Johnson',phone:'(509) 555-0148',status:'Active',last:'Preferred time captured for Tuesday morning.',time:'3:22 PM',messages:[{who:'Maya',text:'Thanks for calling Alpine Roofing today. I captured Tuesday morning as your preferred service window and shared it with the team.',dir:'out'},{who:'Sarah',text:'Perfect, thank you!',dir:'in'}]},
 {id:'m2',name:'Mike Peterson',phone:'(509) 555-0193',status:'Needs follow-up',last:'Can someone come by this week?',time:'3:02 PM',messages:[{who:'Maya',text:'Thanks for speaking with me about the storm damage. I shared your request with the team.',dir:'out'},{who:'Mike',text:'Can someone come by this week?',dir:'in'}]},
-{id:'m3',name:'Unknown caller',phone:'Private',status:'Recovered',last:'Sorry we missed you. How can we help?',time:'2:42 PM',messages:[{who:'CallerCore',text:'Missed call recovery SMS sent',dir:'system'},{who:'Maya',text:'Sorry we missed you. How can we help?',dir:'out'}]}
+{id:'m3',name:'Unknown caller',phone:'Private',status:'Needs follow-up',last:'Missed call added for team follow-up.',time:'2:42 PM',messages:[{who:'CallerCore',text:'Missed call follow-up task created',dir:'system'}]}
 ];
 const DEMO_APPOINTMENTS=[
 {id:'a1',name:'Sarah Johnson',phone:'(509) 555-0148',date:'Tue, Sep 22',time:'10:30 AM',service:'Roof replacement inspection',status:'Confirmed',source:'Maya'},
@@ -42,12 +42,11 @@ const DEMO_APPOINTMENTS=[
 ];
 const DEMO_AGENT={name:'Maya',role:'AI Receptionist',openingMessage:'Thank you for calling Alpine Roofing. This is Maya. How can I help you today?',tone:'Warm & professional',serviceArea:'Spokane, Spokane Valley, Liberty Lake and nearby communities.',businessHours:'Monday–Friday 8 AM–5 PM. Saturday by appointment.',emergencyInstructions:'For active leaks or storm damage, collect the address, confirm safety, and mark the lead urgent for immediate team follow-up.',qualificationQuestions:['What service are you calling about?','Are you the property owner?','What is the property address?','How soon are you hoping to have the work completed?'],transferNumber:'(509) 555-0100'};
 const DEMO_AUTOMATIONS=[
-{id:'auto1',name:'Missed-call recovery',trigger:'missed_call',action:'send_sms',enabled:true},
-{id:'auto2',name:'Hot lead team alert',trigger:'qualified_lead',action:'notify_team',enabled:true},
-{id:'auto3',name:'Appointment confirmation',trigger:'appointment_booked',action:'send_confirmation',enabled:true}
+{id:'auto1',name:'Missed-call follow-up',trigger:'missed_call',action:'create_followup',enabled:true},
+{id:'auto2',name:'Hot lead team alert',trigger:'qualified_lead',action:'notify_team',enabled:true}
 ];
-const DEMO_SETTINGS={businessName:'Alpine Roofing',primaryEmail:'owner@alpineroofing.com',timezone:'America/Los_Angeles',notificationEmail:'owner@alpineroofing.com',smsAlerts:true,emailAlerts:true};
-const DEMO_INTEGRATIONS={googleCalendar:true,stripe:true,webhookUrl:'',apiAccess:false};
+const DEMO_SETTINGS={businessName:'Alpine Roofing',primaryEmail:'owner@alpineroofing.com',timezone:'America/Los_Angeles',notificationEmail:'owner@alpineroofing.com',smsAlerts:false,emailAlerts:true};
+const DEMO_INTEGRATIONS={googleCalendar:false,stripe:true,webhookUrl:'',apiAccess:false};
 const LEAD_STAGES=['New','Contacted','Qualified','Appointment','Won','Lost'];
 function esc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 
@@ -159,7 +158,7 @@ async function loadOperations(){
     agentData={...DEMO_AGENT,qualificationQuestions:[...DEMO_AGENT.qualificationQuestions]};
     automationsData=DEMO_AUTOMATIONS.map(x=>({...x}));
     settingsData={...DEMO_SETTINGS};integrationsData={...DEMO_INTEGRATIONS,apiAccess:has('apiAccess')};
-    phoneRoutingData={number:'(509) 555-0100',label:'Primary',provider:'Vapi',forwardingFrom:'(509) 555-0199',transferNumber:'(509) 555-0101',afterHours:'ai',smsEnabled:true,status:'active'};
+    phoneRoutingData={number:'(509) 555-0100',label:'Primary',provider:'Vapi',forwardingFrom:'(509) 555-0199',transferNumber:'(509) 555-0101',afterHours:'ai',smsEnabled:false,status:'active'};
     locationsData=[{id:'loc-demo',name:'Spokane',phone:'(509) 555-0199',address:'Spokane, WA',timezone:'America/Los_Angeles',active:true}];locationsLimit=PLAN_DATA[currentPlan].locations||1;
     analyticsData=buildLocalAnalytics();
     renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientSetupStatus();renderClientChecklist();renderBillingConnection();renderPhoneRouting();renderLocations();return;
@@ -1317,7 +1316,7 @@ function openModal(target){
   document.getElementById('modalCopy').textContent=target==='Pro'
     ?'Unlock everything in Growth plus API and webhook access.'
     :target==='Growth'
-      ?'Unlock conversations, appointment booking, automations, and advanced analytics.'
+      ?'Unlock unified conversations, automations, and advanced analytics.'
       :'Use CallerCore core calling, lead capture, AI agent, routing, and support features.';
   const fs=Object.entries(FEATURE_INFO).filter(([k,v])=>target==='Pro'?true:v.tier===target);
   document.getElementById('modalFeatures').innerHTML=fs.map(([k,v])=>'<span>✓ '+v.title+'</span>').join('');
