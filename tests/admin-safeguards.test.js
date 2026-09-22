@@ -72,9 +72,14 @@ test('Stripe health validates live webhook event coverage and Customer Portal co
   assert.match(src,/Stripe Customer Portal has no active configuration/);
 });
 
-test('production readiness requires the explicit checkout launch gate',()=>{
+test('production readiness requires checkout plus owner-confirmed launch gates',()=>{
   assert.match(src,/CALLERCORE_CHECKOUT_ENABLED==='true'/);
-  assert.match(src,/requiredForLaunch=\['database','checkout','stripe','mailgun','onboarding-ai','voice'\]/);
+  assert.match(src,/LAUNCH_GATE_DEFS/);
+  for(const key of ['previewIsolation','disposableE2E','voiceLifecycle','productionEnvScope','supportEmail','businessTax','legalReview']){
+    assert.ok(src.includes("key:'"+key+"'"),'missing launch gate '+key);
+  }
+  assert.match(src,/\.\.\.LAUNCH_GATE_DEFS\.map\(g=>'gate-'\+g\.key\)/);
+  assert.match(src,/\['operational','configured','confirmed'\]/);
 });
 
 test('privacy purge preserves policy-required support and audit archives separately',()=>{
@@ -83,4 +88,10 @@ test('privacy purge preserves policy-required support and audit archives separat
   assert.match(src,/365\*2/);
   assert.match(src,/retention:workspace:/);
   assert.match(src,/365\*7/);
+});
+
+test('platform settings persist launch confirmations without dropping existing gates',()=>{
+  assert.match(src,/launchGateState\(saved\.launchGates\)/);
+  assert.match(src,/body\.launchGates&&typeof body\.launchGates==='object'\?launchGateState\(body\.launchGates\):launchGateState\(previous\.launchGates\)/);
+  assert.match(src,/status:launchGates\[g\.key\]\?'confirmed':'pending'/);
 });
