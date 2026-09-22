@@ -36,3 +36,9 @@ test('admin platform settings expose every required launch gate',()=>{
     assert.ok(src.includes('id="'+id+'"'),id+' launch gate missing');
   }
 });
+
+test('admin client drawer exposes the recovery drill action',()=>{
+  assert.ok(html('admin-dashboard.html').includes('id="adminRecoveryDrillButton"'));
+  const js=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  assert.match(js,/admin-recovery-drill/);
+});
