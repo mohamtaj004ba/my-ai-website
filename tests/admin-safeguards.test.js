@@ -124,3 +124,10 @@ test('usage notifications warn at 70 85 and 100 percent without implying charges
   assert.match(src,/admin-usage:/);
   assert.match(src,/no overage policy is implied by this notice/);
 });
+
+test('launch-gate changes are audit logged',()=>{
+  assert.match(src,/platform_launch_gates_update/);
+  assert.match(src,/changedGates/);
+  assert.match(src,/before:launchGateState\(previous\.launchGates\)/);
+  assert.match(src,/after:launchGates/);
+});
