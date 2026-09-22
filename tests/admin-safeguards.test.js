@@ -95,3 +95,12 @@ test('platform settings persist launch confirmations without dropping existing g
   assert.match(src,/body\.launchGates&&typeof body\.launchGates==='object'\?launchGateState\(body\.launchGates\):launchGateState\(previous\.launchGates\)/);
   assert.match(src,/status:launchGates\[g\.key\]\?'confirmed':'pending'/);
 });
+
+test('system health detects dangerous production and preview environment scoping',()=>{
+  assert.match(src,/function environmentScopeHealth\(\)/);
+  assert.match(src,/Preview is using live Stripe credentials/);
+  assert.match(src,/Preview checkout launch gate is enabled/);
+  assert.match(src,/Preview bootstrap secret is present in Production/);
+  assert.match(src,/key:'environment-scope'/);
+  assert.match(src,/requiredForLaunch=\['database','environment-scope','checkout'/);
+});
