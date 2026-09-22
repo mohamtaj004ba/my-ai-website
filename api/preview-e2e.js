@@ -14,8 +14,8 @@ body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0b0d10;
 <p class="note">Preview only. Uses the isolated Preview KV store. The bootstrap secret stays in this browser session and is never displayed back by the page.</p>
 <label>Preview bootstrap secret</label><input id="secret" type="password" autocomplete="off">
 <label>Test email</label><input id="email" type="email" value="support@callercore.com">
-<label>Business name</label><input id="business" value="CallerCore Preview E2E">
-<label>Plan</label><select id="plan"><option>Growth</option><option>Starter</option><option>Pro</option></select>
+<label>Business name</label><input id="business" value="Summit Heating & Air">
+<label>Plan</label><select id="plan"><option>Growth</option><option>Starter</option><option selected>Pro</option></select>
 <button id="create">1. Create disposable workspace</button>
 <button class="secondary" id="promote">2. Promote test user to admin (optional)</button>
 <button class="secondary" id="login">3. Send magic login link</button>
