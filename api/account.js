@@ -1389,6 +1389,43 @@ async function buildWorkspaceExportData(id){
     audit:redactExportSecrets(Array.isArray(audit)?audit:[])
   };
 }
+function validateWorkspaceExportData(data){
+  const issues=[],warnings=[],arraySections=['locations','calls','leads','conversations','appointments','automations','support','audit'];
+  if(!data||typeof data!=='object')return {ok:false,issues:['Export payload is missing or invalid'],warnings:[],sections:{},recoverable:false};
+  if(data.exportVersion!=='1.0')issues.push('Unsupported export version');
+  if(!data.workspace||typeof data.workspace!=='object')issues.push('Workspace section missing');
+  if(data.workspace&&!data.workspace.id)warnings.push('Workspace id is missing');
+  if(data.workspace&&!data.workspace.ownerEmail)warnings.push('Workspace owner email is missing');
+  for(const key of arraySections)if(!Array.isArray(data[key]))issues.push(key+' must be an array');
+  for(const key of ['settings','agent','phone','integrations','onboarding']){
+    if(data[key]!==null&&typeof data[key]!=='object')issues.push(key+' must be an object or null');
+  }
+  const secretLeaks=[];
+  const walk=(value,path='root')=>{
+    if(Array.isArray(value)){value.forEach((v,i)=>walk(v,path+'['+i+']'));return}
+    if(!value||typeof value!=='object')return;
+    for(const [key,val] of Object.entries(value)){
+      const next=path+'.'+key;
+      const secretKey=/(?:^|_)(?:password|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|private[_-]?key|webhook[_-]?secret)$/i.test(key)||/(?:password|secret|apiKey|accessToken|refreshToken|privateKey|webhookSecret)$/i.test(key);
+      if(secretKey&&val!=='[redacted]'&&val!==null&&val!=='')secretLeaks.push(next);
+      walk(val,next);
+    }
+  };
+  walk(data);
+  if(secretLeaks.length)issues.push('Potential unredacted secret fields: '+secretLeaks.slice(0,8).join(', '));
+  const redactedText=JSON.stringify(data);
+  const hasRedactions=redactedText.includes('"[redacted]"');
+  if(hasRedactions)warnings.push('Integration/authentication secrets are intentionally redacted and must be reconnected after a restore');
+  const sections={
+    workspace:!!data.workspace,settings:!!data.settings,agent:!!data.agent,phone:!!data.phone,locations:Array.isArray(data.locations),
+    integrations:!!data.integrations,calls:Array.isArray(data.calls),leads:Array.isArray(data.leads),conversations:Array.isArray(data.conversations),
+    appointments:Array.isArray(data.appointments),automations:Array.isArray(data.automations),support:Array.isArray(data.support),
+    onboarding:!!data.onboarding,audit:Array.isArray(data.audit)
+  };
+  const recoverable=issues.length===0&&!!data.workspace;
+  return {ok:issues.length===0,issues,warnings,sections,recoverable,requiresProviderReconnect:hasRedactions};
+}
+
 function sendWorkspaceExport(res,id,data,prefix='CallerCore-workspace-export'){
   res.setHeader('Content-Type','application/json; charset=utf-8');
   res.setHeader('Content-Disposition','attachment; filename="'+prefix+'-'+String(id).slice(0,8)+'.json"');
@@ -1405,6 +1442,14 @@ async function adminWorkspaceExport(req,res){
   const data=await buildWorkspaceExportData(id);if(!data)return res.status(404).json({error:'Workspace not found'});
   await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'workspace_export',section:'access',meta:{reason:'admin_download'}});
   return sendWorkspaceExport(res,id,data,'CallerCore-admin-workspace-export');
+}
+async function adminRecoveryDrill(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.query||{}).id||'').slice(0,80);if(!id)return res.status(400).json({error:'Client id required'});
+  const data=await buildWorkspaceExportData(id);if(!data)return res.status(404).json({error:'Workspace not found'});
+  const validation=validateWorkspaceExportData(data);
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'recovery_drill',section:'access',meta:{ok:validation.ok,recoverable:validation.recoverable,issueCount:validation.issues.length,warningCount:validation.warnings.length}});
+  return res.status(validation.ok?200:409).json({ok:validation.ok,recoverable:validation.recoverable,issues:validation.issues,warnings:validation.warnings,sections:validation.sections,requiresProviderReconnect:validation.requiresProviderReconnect,checkedAt:Date.now()});
 }
 
 async function workspace(req,res){
@@ -1772,6 +1817,7 @@ module.exports=async function handler(req,res){
   if(action==='workspace'&&req.method==='GET')return workspace(req,res);
   if(action==='workspace-export'&&req.method==='GET')return workspaceExport(req,res);
   if(action==='admin-workspace-export'&&req.method==='GET')return adminWorkspaceExport(req,res);
+  if(action==='admin-recovery-drill'&&req.method==='GET')return adminRecoveryDrill(req,res);
   if(action==='phone-routing'&&req.method==='GET')return phoneRouting(req,res);
   if(action==='locations'&&req.method==='GET')return locations(req,res);
   if(action==='locations-save'&&req.method==='POST')return saveLocations(req,res);
