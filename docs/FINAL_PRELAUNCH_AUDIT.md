@@ -83,7 +83,7 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Temporary preview diagnostics were removed and verified 404 before release.
 - Regenerate the automation-bypass secret after this QA cycle because the test value was handled interactively.
 - Full authenticated POST/browser E2E with a disposable client is still required before release.
-- Confirm Preview KV is isolated from Production KV before destructive disposable-client testing.
+- Preview KV is isolated from Production KV and verified at runtime: health reports `database: operational` and `storage: preview-isolated`. ✅
 - support@callercore.com inbound and outbound Gmail behavior verified from recent CallerCore mailbox history. ✅
 - Tighten DMARC from monitoring toward enforcement after continued Google Workspace/Mailgun alignment is verified.
 - Native Vercel production anomaly rule is configured; signed webhook email fallback is coded/configured. Production fallback delivery test remains after PR #5 is merged.
