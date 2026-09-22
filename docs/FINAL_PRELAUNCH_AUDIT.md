@@ -45,7 +45,7 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Enable Stripe automatic tax only after the tax setup is legally correct.
 - Test success, asynchronous payment, failed payment, cancellation, portal access and recovery in Stripe test mode.
 - Decide and disclose the minute-overage policy before selling Starter/Growth usage above allowance.
-- Define Pro unlimited/fair-use policy before selling Pro at material call volume.
+- Define Pro high-volume/fair-use policy before selling Pro at material call volume.
 
 ### Onboarding
 - Run one disposable customer from prospect -> checkout -> payment -> review -> agreement -> intake -> build -> QA -> test call -> approval -> live.
@@ -65,18 +65,9 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Test normal, urgent, emergency, transfer, hangup, voicemail/no-answer and provider-error calls.
 - Always use a legally reviewed recording disclosure when recording is enabled.
 
-### Calendar / appointment booking
-- Choose launch calendar provider strategy.
-- Implement real availability, booking, cancel/reschedule and timezone behavior.
-- If not ready at launch, do not market/sell appointment booking as active.
-
-### SMS / messaging
-- Choose provider/number strategy.
-- Implement consent provenance and transactional-vs-marketing separation.
-- Implement STOP/HELP suppression and make opt-out impossible to bypass accidentally.
-- Implement delivery/failure status.
-- Complete required carrier/A2P registration.
-- If not ready at launch, do not market/sell SMS campaigns or automated follow-up as active.
+### Deferred launch features
+- Calendar appointment booking is removed from active launch promises. Before re-enabling it, choose a provider and implement real availability, booking, cancel/reschedule and timezone behavior.
+- SMS campaigns/automated follow-up are removed from active launch promises. Before enabling them, choose a provider/number strategy, implement consent provenance, transactional-vs-marketing separation, STOP/HELP suppression, delivery status and required carrier/A2P registration.
 
 ## Admin / operations — required before launch
 - Protected Preview access was verified with Vercel Automation Protection Bypass.
@@ -87,7 +78,7 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Full authenticated POST/browser E2E with a disposable client is still required before release.
 - Confirm Preview KV is isolated from Production KV before destructive disposable-client testing.
 - Verify System Health correctly shows all production blockers.
-- Confirm support@callercore.com inbound and outbound behavior.
+- support@callercore.com inbound and outbound Gmail behavior verified from recent CallerCore mailbox history. ✅
 - Tighten DMARC from monitoring toward enforcement after continued Google Workspace/Mailgun alignment is verified.
 - Native Vercel production anomaly rule is configured; signed webhook email fallback is coded/configured. Production fallback delivery test remains after PR #5 is merged.
 - Export a disposable workspace and perform a recovery drill.
