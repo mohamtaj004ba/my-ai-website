@@ -1149,9 +1149,14 @@ async function buildClientNotifications(s){
   if(prefs.setup&&onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview)items.push(notificationItem('onboarding:'+ws.id+':review',{title:'Your setup is being reviewed',body:'We received your onboarding and are reviewing the initial AI-agent configuration.',kind:'info',view:'overview',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now}));
   if(prefs.setup&&onboarding?.checklist?.adminReview&&!onboarding?.checklist?.testCall)items.push(notificationItem('onboarding:'+ws.id+':test',{title:'Next step: test call',body:'CallerCore has reviewed your setup. A test call is the next launch step.',kind:'info',view:'calls',createdAt:onboarding.updatedAt||now}));
   if(prefs.setup&&onboarding?.checklist?.live)items.push(notificationItem('onboarding:'+ws.id+':live',{title:'CallerCore is live',body:'Your AI receptionist setup is marked live.',kind:'success',view:'overview',createdAt:onboarding.updatedAt||now}));
-  if(prefs.usage&&plan.minutes&&usage>=plan.minutes*.8){
-    const pct=Math.min(100,Math.round((usage/plan.minutes)*100));
-    items.push(notificationItem('usage:'+ws.id+':'+Math.floor(pct/10)*10,{title:'Minutes usage at '+pct+'%',body:usage+' of '+plan.minutes+' included minutes used.',kind:pct>=100?'danger':'warning',view:'billing',createdAt:now}));
+  if(prefs.usage&&plan.minutes){
+    const pct=Math.round((usage/plan.minutes)*100);
+    const threshold=pct>=100?100:pct>=85?85:pct>=70?70:0;
+    if(threshold){
+      const title=threshold>=100?'Included minutes reached':threshold>=85?'Minutes usage at 85%':'Minutes usage at 70%';
+      const body=usage+' of '+plan.minutes+' included minutes used.'+(threshold>=100?' This notice does not by itself mean an overage charge has been applied.':'');
+      items.push(notificationItem('usage:'+ws.id+':'+threshold,{title,body,kind:threshold>=100?'danger':'warning',view:'billing',createdAt:now,meta:{usage,limit:plan.minutes,threshold}}));
+    }
   }
   const [agent,numbers,calls,index]=await Promise.all([
     kv.get('agent:'+ws.id),kv.get('phone:index'),kv.get('calls:'+ws.id),kv.get('support:index')
@@ -1185,6 +1190,11 @@ async function buildAdminNotifications(admin){
     const ws=await kv.get('workspace:'+id);if(!ws)continue;
     if(ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'revenue',createdAt:ws.updatedAt||now}));
     if(ws.status==='suspended')items.push(notificationItem('admin-workspace:'+id+':suspended',{title:'Client workspace suspended',body:(ws.name||'Client')+' is currently suspended.',kind:'warning',view:'clients',createdAt:ws.updatedAt||now}));
+    const plan=entitlementsFor(ws.plan),usage=Number(ws.usage?.minutes||0);
+    if(plan.minutes){
+      const pct=Math.round((usage/plan.minutes)*100),threshold=pct>=100?100:pct>=85?85:0;
+      if(threshold)items.push(notificationItem('admin-usage:'+id+':'+threshold,{title:(ws.name||'Client')+' usage at '+Math.min(pct,100)+'%',body:usage+' of '+plan.minutes+' included minutes used. Review usage; no overage policy is implied by this notice.',kind:threshold>=100?'danger':'warning',view:'usage',createdAt:ws.updatedAt||now,meta:{workspaceId:id,usage,limit:plan.minutes,threshold}}));
+    }
     const onboarding=await kv.get('onboarding:workspace:'+id);
     if(onboarding?.status==='awaiting_review'){
       const eligible=Number(onboarding.reviewEligibleAt||0)<=now;
