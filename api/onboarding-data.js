@@ -1,4 +1,4 @@
-const { kv } = require('@vercel/kv');
+const {kv}=require('../lib/kv');
 const { agreementSnapshot, planSnapshot, LEGACY_CLAUSES, LEGACY_AGREEMENT_VERSION } = require('./_lib/agreement-clauses');
 
 function validToken(token){return typeof token==='string'&&/^[a-f0-9]{48}$/i.test(token)}
