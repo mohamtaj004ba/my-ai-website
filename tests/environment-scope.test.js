@@ -26,3 +26,12 @@ test('demo and alert secrets have no hard-coded fallback',()=>{
   assert.doesNotMatch(demo,/DEMO_TOKEN_SECRET\s*\|\|\s*['"][^'"]+['"]/);
   assert.match(alert,/process\.env\.VERCEL_ALERT_WEBHOOK_SECRET/);
 });
+
+test('temporary Preview E2E launcher stays Preview-only and never echoes the bootstrap secret',()=>{
+  const launcher=fs.readFileSync(path.join(root,'api','preview-e2e.js'),'utf8');
+  assert.match(launcher,/process\.env\.VERCEL_ENV!=='preview'/);
+  assert.match(launcher,/host\.endsWith\('\.vercel\.app'\)/);
+  assert.match(launcher,/x-bootstrap-secret/);
+  assert.match(launcher,/type="password"/);
+  assert.doesNotMatch(launcher,/CALLERCORE_BOOTSTRAP_SECRET/);
+});
