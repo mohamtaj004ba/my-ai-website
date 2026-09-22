@@ -1285,6 +1285,19 @@ document.getElementById('adminSaveClientButton')?.addEventListener('click',saveA
 document.getElementById('adminDeleteClientButton')?.addEventListener('click',deleteAdminClient);
 document.getElementById('adminViewClientButton')?.addEventListener('click',viewAdminClient);
 document.getElementById('adminExportClientButton')?.addEventListener('click',()=>{if(currentAdminClient)window.location.href='/api/account?action=admin-workspace-export&id='+encodeURIComponent(currentAdminClient.id)});
+document.getElementById('adminRecoveryDrillButton')?.addEventListener('click',async()=>{
+  if(!currentAdminClient)return;
+  const btn=document.getElementById('adminRecoveryDrillButton');if(btn){btn.disabled=true;btn.textContent='Checking…'}
+  try{
+    const r=await fetch('/api/account?action=admin-recovery-drill&id='+encodeURIComponent(currentAdminClient.id),{cache:'no-store'}),data=await r.json().catch(()=>({}));
+    const sections=data.sections?Object.entries(data.sections).filter(([,ok])=>ok).length:0,total=data.sections?Object.keys(data.sections).length:0;
+    const notes=[data.recoverable?'Core export is structurally recoverable.':'Recovery validation failed.',sections+'/'+total+' sections structurally present'];
+    if(data.requiresProviderReconnect)notes.push('provider secrets require reconnection');
+    if(Array.isArray(data.warnings)&&data.warnings.length)notes.push(data.warnings.join(' '));
+    if(Array.isArray(data.issues)&&data.issues.length)notes.push('Issues: '+data.issues.join('; '));
+    alert(notes.join('\n'));
+  }finally{if(btn){btn.disabled=false;btn.textContent='Run recovery drill'}}
+});
 
 
 const modal=document.getElementById('upgradeModal');
