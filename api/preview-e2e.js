@@ -17,8 +17,9 @@ body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0b0d10;
 <label>Business name</label><input id="business" value="Summit Heating & Air">
 <label>Plan</label><select id="plan"><option>Growth</option><option>Starter</option><option selected>Pro</option></select>
 <button id="create">1. Create disposable workspace</button>
-<button class="secondary" id="promote">2. Promote test user to admin (optional)</button>
-<button class="secondary" id="login">3. Send magic login link</button>
+<button class="secondary" id="seed">2. Load realistic 60-day business data</button>
+<button class="secondary" id="promote">3. Promote test user to admin (optional)</button>
+<button class="secondary" id="login">4. Send magic login link</button>
 <pre id="out">Ready.</pre>
 <script src="/preview-e2e-client.js" defer></script></main></body></html>`);
 };
