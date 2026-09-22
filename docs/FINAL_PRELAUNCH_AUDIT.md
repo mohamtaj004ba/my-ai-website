@@ -12,7 +12,7 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Customer workspace creation and managed onboarding lifecycle.
 - Passwordless authentication, session revocation, tenant scoping and read-only admin client view.
 - Client dashboard and admin operations dashboard.
-- Agreement v2 snapshots and signed PDF generation.
+- Agreement v2.1 snapshots and signed PDF generation.
 - Support workflow and branded lifecycle emails.
 - Gmail admin inbox integration with encrypted OAuth tokens and quota-aware loading.
 - Website crawl SSRF defenses.
@@ -29,9 +29,11 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Vercel Pro commercial hosting confirmed.
 - GitHub `main` ruleset active with PR requirement, strict `test` and `Analyze JavaScript` checks, force-push/deletion protection, and no bypass.
 - Live Stripe webhook now subscribes to all seven handled events; Stripe Customer Portal is active.
+- Live Stripe product descriptions were cleaned so Pro no longer promises unlimited minutes, Growth no longer advertises calendar/SMS, and the dormant metered overage product explicitly requires separately accepted terms.
 - Mailgun sending domain `notify.callercore.com` verified; SPF/DKIM present; DMARC present in monitoring mode; production Mailgun domain configuration corrected.
 - Gmail integration intentionally remains admin-only at launch and requests only `gmail.modify`.
 - Category-specific retention policy approved, with indefinite aggregated/anonymized analytics and bounded raw data.
+- Agreement v2.1 removes the stale Pro unlimited snapshot and requires explicit customer disclosure/acceptance before any automatic usage overage charge.
 - Recoverable customer deletion flow implemented with 30-day recovery, access revocation, restore, explicit purge confirmation, and separate retention archives.
 - Public launch copy no longer sells SMS or calendar booking as currently active.
 - Verified pre-release rollback baseline recorded: Vercel deployment `dpl_DkoEXfYyfenw7Hee18cmwygc92fV` on main commit `7cc9562e71bcc63ccc3bcec390a1a601fba2b874`.
@@ -101,7 +103,7 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Confirm EIN/business banking/payment-account ownership.
 - Review Washington sales-tax and B&O treatment with a qualified tax professional; CallerCore has SaaS/DAS/technology-service characteristics that can be taxable.
 - Add the correct legal entity name to Terms, Service Agreement, Stripe statements/receipts and business communications.
-- Attorney review: Service Agreement, Terms, Privacy Policy, recording consent, SMS/TCPA policy and retention/deletion policy.
+- Attorney review: Service Agreement v2.1, Terms, Privacy Policy, recording consent, SMS/TCPA policy and retention/deletion policy.
 - Consider technology E&O/cyber liability insurance before serving material customer volume.
 
 ## Google / email
