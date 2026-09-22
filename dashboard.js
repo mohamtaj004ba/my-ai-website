@@ -534,7 +534,7 @@ async function saveSettings(){
 }
 
 
-function renderPhoneRouting()function renderPhoneRouting(){
+function renderPhoneRouting(){
   const d=phoneRoutingData,set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   if(!document.getElementById('clientPhoneNumber'))return;
   set('clientPhoneNumber',d?.number||sessionWorkspace?.phone||'Not assigned');
@@ -995,7 +995,7 @@ async function savePlatformSettings(){
   }catch(err){if(status){status.textContent=err.message||'Could not save platform settings.';status.className='form-status-line error'}}
   finally{if(btn){btn.disabled=false;btn.textContent='Save platform settings'}}
 }
-document.getElementById('savePlatformSettings')?.addEventListenerdocument.getElementById('savePlatformSettings')?.addEventListener('click',savePlatformSettings);
+document.getElementById('savePlatformSettings')?.addEventListener('click',savePlatformSettings);
 
 function renderProvisioning(){
   const board=document.getElementById('provisioningBoard');if(!board)return;
@@ -1132,7 +1132,7 @@ async function savePhone(){
   }catch(err){if(status){status.textContent=err.message||'Could not save phone number.';status.className='form-status-line error'}}
   finally{if(btn){btn.disabled=false;btn.textContent='Save number'}}
 }
-document.getElementById('addPhoneButton')?.addEventListenerdocument.getElementById('addPhoneButton')?.addEventListener('click',()=>openPhoneModal());
+document.getElementById('addPhoneButton')?.addEventListener('click',()=>openPhoneModal());
 document.getElementById('closePhoneModal')?.addEventListener('click',closePhoneModal);
 document.getElementById('savePhoneButton')?.addEventListener('click',savePhone);
 document.getElementById('phoneModal')?.addEventListener('click',e=>{if(e.target.id==='phoneModal')closePhoneModal()});
