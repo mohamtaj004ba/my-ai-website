@@ -8,7 +8,19 @@ test('current customer-facing AI copy does not promise an unfinalized fixed over
   }
 });
 
-test('current agreement v2 keeps overage pricing conditional on signup disclosure',()=>{
+test('current agreement keeps overage pricing conditional on explicit customer acceptance',()=>{
   const src=fs.readFileSync(path.join(root,'api','_lib','agreement-clauses.js'),'utf8');
-  assert.match(src,/overage rate disclosed at signup/);
+  const current=src.slice(src.indexOf('const CLAUSES ='));
+  assert.match(current,/will not incur an automatic overage fee unless an overage rate or other usage charge was disclosed/);
+  assert.match(current,/will not automatically charge an overage fee/);
+  assert.doesNotMatch(current,/includedMinutes:'Unlimited'/i);
+});
+
+test('default checkout never silently attaches the dormant metered overage price',()=>{
+  const src=fs.readFileSync(path.join(root,'api','create-checkout-session.js'),'utf8');
+  assert.match(src,/line_items\[0\]\[price\]/);
+  assert.match(src,/line_items\[1\]\[price\]/);
+  assert.doesNotMatch(src,/line_items\[2\]/);
+  assert.doesNotMatch(src,/price_1To9SUF0BXlPng7VMlDTJE8P/);
+  assert.doesNotMatch(src,/OVERAGE_PRICE/);
 });
