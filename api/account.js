@@ -387,7 +387,7 @@ async function adminSavePhoneNumber(req,res){
   const forwardingFrom=String(body.forwardingFrom||'').trim().slice(0,40);
   const transferNumber=String(body.transferNumber||'').trim().slice(0,40);
   const afterHours=['ai','transfer','voicemail'].includes(body.afterHours)?body.afterHours:'ai';
-  const smsEnabled=body.smsEnabled!==false;
+  const smsEnabled=process.env.CALLERCORE_SMS_ENABLED==='true'&&body.smsEnabled!==false;
   if(!/^\+?[0-9() .-]{7,30}$/.test(number))return res.status(400).json({error:'Valid phone number required'});
   if(forwardingFrom&&!/^\+?[0-9() .-]{7,30}$/.test(forwardingFrom))return res.status(400).json({error:'Forwarding source number is invalid'});
   if(transferNumber&&!/^\+?[0-9() .-]{7,30}$/.test(transferNumber))return res.status(400).json({error:'Transfer destination is invalid'});
@@ -1645,7 +1645,7 @@ async function settings(req,res){
     serviceArea:saved.serviceArea||'',
     timezone:saved.timezone||platform.defaultTimezone||'America/Los_Angeles',
     notificationEmail:saved.notificationEmail||ws.ownerEmail||s.email||'',
-    smsAlerts:saved.smsAlerts!==false,
+    smsAlerts:process.env.CALLERCORE_SMS_ENABLED==='true'&&saved.smsAlerts!==false,
     emailAlerts:saved.emailAlerts!==false,
     notifyBilling:saved.notifyBilling!==false,
     notifySetup:saved.notifySetup!==false,
@@ -1695,7 +1695,7 @@ async function integrations(req,res){
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   const saved=await kv.get('integrations:'+s.workspaceId)||{};
   return res.status(200).json({integrations:{
-    googleCalendar:!!saved.googleCalendar,
+    googleCalendar:process.env.CALLERCORE_CALENDAR_ENABLED==='true'&&!!saved.googleCalendar,
     stripe:!!ws.stripeCustomerId,
     webhookUrl:saved.webhookUrl||'',
     apiAccess:entitlementsFor(ws.plan).features.apiAccess
