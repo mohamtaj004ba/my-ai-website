@@ -4,7 +4,7 @@ const http=require('http');
 const {URL}=require('url');
 const dns=require('dns');
 const net=require('net');
-const {kv}=require('@vercel/kv');
+const {kv}=require('../lib/kv');
 const {rateLimit,requestIp}=require('../lib/rate-limit');
 
 const MAX_BYTES=550*1000,MAX_PAGES=6,FETCH_TIMEOUT_MS=8000,ALLOWED_HOSTS=new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
