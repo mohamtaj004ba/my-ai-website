@@ -468,20 +468,73 @@ function renderSettings(){
   const e=document.getElementById('settingsEmailAlerts'),s=document.getElementById('settingsSmsAlerts');if(e)e.checked=settingsData.emailAlerts!==false;if(s){s.checked=capability('sms')&&settingsData.smsAlerts!==false;s.disabled=!capability('sms')}
   for(const [id,key] of [['settingsNotifyBilling','notifyBilling'],['settingsNotifySetup','notifySetup'],['settingsNotifyCalls','notifyCalls'],['settingsNotifySupport','notifySupport'],['settingsNotifyUsage','notifyUsage']]){const el=document.getElementById(id);if(el)el.checked=settingsData[key]!==false}
 }
+function settingsFieldError(id,message=''){
+  const input=document.getElementById(id);if(!input)return;
+  const label=input.closest('label')||input.parentElement;
+  input.classList.toggle('field-invalid',!!message);
+  input.setAttribute('aria-invalid',message?'true':'false');
+  let note=label?.querySelector('.field-error');
+  if(message&&!note){note=document.createElement('small');note.className='field-error';label?.appendChild(note)}
+  if(note){note.textContent=message;note.hidden=!message}
+}
+function normalizePhone(value){
+  const raw=String(value||'').trim();if(!raw)return '';
+  const digits=raw.replace(/\D/g,'');
+  if(digits.length===10)return '('+digits.slice(0,3)+') '+digits.slice(3,6)+'-'+digits.slice(6);
+  if(digits.length===11&&digits[0]==='1')return '+1 ('+digits.slice(1,4)+') '+digits.slice(4,7)+'-'+digits.slice(7);
+  return raw;
+}
+function normalizeWebsite(value){
+  let v=String(value||'').trim();if(!v)return '';
+  if(!/^https?:\/\//i.test(v)&&/^[a-z0-9.-]+\.[a-z]{2,}(?:\/.*)?$/i.test(v))v='https://'+v;
+  return v;
+}
+function validUsPhone(value,required=false){
+  const raw=String(value||'').trim();if(!raw)return !required;
+  const digits=raw.replace(/\D/g,'');
+  return digits.length===10||(digits.length===11&&digits[0]==='1');
+}
+function validateSettingsForm(){
+  const val=id=>String(document.getElementById(id)?.value||'').trim(),errors={};
+  const business=val('settingsBusinessName'),primary=val('settingsPrimaryEmail'),notify=val('settingsNotificationEmail'),phone=val('settingsBusinessPhone'),website=val('settingsWebsite'),state=val('settingsState'),postal=val('settingsPostalCode');
+  if(!business)errors.settingsBusinessName='Business name is required.';
+  if(primary&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(primary))errors.settingsPrimaryEmail='Enter a valid email address.';
+  if(notify&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(notify))errors.settingsNotificationEmail='Enter a valid notification email.';
+  if(phone&&!validUsPhone(phone))errors.settingsBusinessPhone='Enter a 10-digit U.S. phone number.';
+  if(website){try{const u=new URL(normalizeWebsite(website));if(!['http:','https:'].includes(u.protocol)||!u.hostname.includes('.'))throw new Error()}catch{errors.settingsWebsite='Enter a valid website, such as https://example.com.'}}
+  if(state&&!/^[A-Za-z]{2}$/.test(state))errors.settingsState='Use a 2-letter state code, such as WA.';
+  if(postal&&!/^\d{5}(?:-\d{4})?$/.test(postal))errors.settingsPostalCode='Enter a 5-digit ZIP code or ZIP+4.';
+  ['settingsBusinessName','settingsPrimaryEmail','settingsNotificationEmail','settingsBusinessPhone','settingsWebsite','settingsState','settingsPostalCode'].forEach(id=>settingsFieldError(id,errors[id]||''));
+  const status=document.getElementById('settingsFormStatus');
+  if(status){status.textContent=Object.keys(errors).length?'Please correct the highlighted fields.':'';status.className='form-status-line'+(Object.keys(errors).length?' error':'')}
+  const first=Object.keys(errors)[0];if(first)document.getElementById(first)?.focus();
+  return Object.keys(errors).length===0;
+}
 async function saveSettings(){
-  const payload={businessName:document.getElementById('settingsBusinessName')?.value||'',contactName:document.getElementById('settingsContactName')?.value||'',primaryEmail:document.getElementById('settingsPrimaryEmail')?.value||'',businessPhone:document.getElementById('settingsBusinessPhone')?.value||'',website:document.getElementById('settingsWebsite')?.value||'',industry:document.getElementById('settingsIndustry')?.value||'',serviceArea:document.getElementById('settingsServiceArea')?.value||'',streetAddress:document.getElementById('settingsStreetAddress')?.value||'',city:document.getElementById('settingsCity')?.value||'',state:document.getElementById('settingsState')?.value||'',postalCode:document.getElementById('settingsPostalCode')?.value||'',timezone:document.getElementById('settingsTimezone')?.value||'America/Los_Angeles',notificationEmail:document.getElementById('settingsNotificationEmail')?.value||'',emailAlerts:!!document.getElementById('settingsEmailAlerts')?.checked,smsAlerts:!!document.getElementById('settingsSmsAlerts')?.checked,notifyBilling:!!document.getElementById('settingsNotifyBilling')?.checked,notifySetup:!!document.getElementById('settingsNotifySetup')?.checked,notifyCalls:!!document.getElementById('settingsNotifyCalls')?.checked,notifySupport:!!document.getElementById('settingsNotifySupport')?.checked,notifyUsage:!!document.getElementById('settingsNotifyUsage')?.checked};
-  if(demoMode)settingsData={...payload};
-  else{
-    const r=await fetch('/api/account?action=settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(!r.ok){alert('Could not save workspace settings.');return}
-    settingsData=(await r.json()).settings||payload;
-    if(settingsData.businessName){document.getElementById('workspaceName').textContent=settingsData.businessName;document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=settingsData.businessName)}
-  }
-  const tag=document.getElementById('settingsSaveStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1600)}
+  if(!validateSettingsForm())return;
+  const phoneEl=document.getElementById('settingsBusinessPhone'),webEl=document.getElementById('settingsWebsite'),stateEl=document.getElementById('settingsState');
+  if(phoneEl)phoneEl.value=normalizePhone(phoneEl.value);
+  if(webEl)webEl.value=normalizeWebsite(webEl.value);
+  if(stateEl)stateEl.value=stateEl.value.trim().toUpperCase();
+  const payload={businessName:document.getElementById('settingsBusinessName')?.value.trim()||'',contactName:document.getElementById('settingsContactName')?.value.trim()||'',primaryEmail:document.getElementById('settingsPrimaryEmail')?.value.trim()||'',businessPhone:phoneEl?.value||'',website:webEl?.value||'',industry:document.getElementById('settingsIndustry')?.value.trim()||'',serviceArea:document.getElementById('settingsServiceArea')?.value.trim()||'',streetAddress:document.getElementById('settingsStreetAddress')?.value.trim()||'',city:document.getElementById('settingsCity')?.value.trim()||'',state:stateEl?.value||'',postalCode:document.getElementById('settingsPostalCode')?.value.trim()||'',timezone:document.getElementById('settingsTimezone')?.value||'America/Los_Angeles',notificationEmail:document.getElementById('settingsNotificationEmail')?.value.trim()||'',emailAlerts:!!document.getElementById('settingsEmailAlerts')?.checked,smsAlerts:!!document.getElementById('settingsSmsAlerts')?.checked,notifyBilling:!!document.getElementById('settingsNotifyBilling')?.checked,notifySetup:!!document.getElementById('settingsNotifySetup')?.checked,notifyCalls:!!document.getElementById('settingsNotifyCalls')?.checked,notifySupport:!!document.getElementById('settingsNotifySupport')?.checked,notifyUsage:!!document.getElementById('settingsNotifyUsage')?.checked};
+  const btn=document.getElementById('saveSettingsButton'),status=document.getElementById('settingsFormStatus');
+  if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status){status.textContent='';status.className='form-status-line'}
+  try{
+    if(demoMode)settingsData={...payload};
+    else{
+      const r=await fetch('/api/account?action=settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(data.error||'Could not save workspace settings.');
+      settingsData=data.settings||payload;
+      if(settingsData.businessName){document.getElementById('workspaceName').textContent=settingsData.businessName;document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=settingsData.businessName)}
+    }
+    if(status){status.textContent='Settings saved successfully.';status.className='form-status-line success'}
+    const tag=document.getElementById('settingsSaveStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1600)}
+  }catch(err){if(status){status.textContent=err.message||'Could not save workspace settings.';status.className='form-status-line error'}}
+  finally{if(btn){btn.disabled=false;btn.textContent='Save settings'}}
 }
 
 
-function renderPhoneRouting(){
+function renderPhoneRouting()function renderPhoneRouting(){
   const d=phoneRoutingData,set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   if(!document.getElementById('clientPhoneNumber'))return;
   set('clientPhoneNumber',d?.number||sessionWorkspace?.phone||'Not assigned');
@@ -927,11 +980,22 @@ function renderPlatformSettings(){
   Object.entries(gateMap).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.checked=!!gates[key]});
 }
 async function savePlatformSettings(){
-  const payload={defaultAgentName:document.getElementById('platformAgentName')?.value||'Maya',defaultTimezone:document.getElementById('platformTimezone')?.value||'America/Los_Angeles',supportEmail:document.getElementById('platformSupportEmail')?.value||'',maintenanceMode:!!document.getElementById('platformMaintenanceMode')?.checked,launchGates:{previewIsolation:!!document.getElementById('launchGatePreviewIsolation')?.checked,disposableE2E:!!document.getElementById('launchGateDisposableE2E')?.checked,voiceLifecycle:!!document.getElementById('launchGateVoiceLifecycle')?.checked,productionEnvScope:!!document.getElementById('launchGateProductionEnvScope')?.checked,supportEmail:!!document.getElementById('launchGateSupportEmail')?.checked,businessTax:!!document.getElementById('launchGateBusinessTax')?.checked,legalReview:!!document.getElementById('launchGateLegalReview')?.checked}};
-  const r=await fetch('/api/account?action=admin-platform-settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not save platform settings.');return}adminPlatformData=data.settings;const tag=document.getElementById('platformSettingsStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1500)}
+  const emailEl=document.getElementById('platformSupportEmail'),agentEl=document.getElementById('platformAgentName'),status=document.getElementById('platformSettingsFormStatus'),btn=document.getElementById('savePlatformSettings');
+  const email=String(emailEl?.value||'').trim(),agentName=String(agentEl?.value||'').trim(),badEmail=email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  settingsFieldError('platformSupportEmail',badEmail?'Enter a valid support email.':'');
+  settingsFieldError('platformAgentName',!agentName?'Enter a default agent name.':'');
+  if(badEmail||!agentName){if(status){status.textContent='Please correct the highlighted fields.';status.className='form-status-line error'};return}
+  const payload={defaultAgentName:agentName,defaultTimezone:document.getElementById('platformTimezone')?.value||'America/Los_Angeles',supportEmail:email,maintenanceMode:!!document.getElementById('platformMaintenanceMode')?.checked,launchGates:{previewIsolation:!!document.getElementById('launchGatePreviewIsolation')?.checked,disposableE2E:!!document.getElementById('launchGateDisposableE2E')?.checked,voiceLifecycle:!!document.getElementById('launchGateVoiceLifecycle')?.checked,productionEnvScope:!!document.getElementById('launchGateProductionEnvScope')?.checked,supportEmail:!!document.getElementById('launchGateSupportEmail')?.checked,businessTax:!!document.getElementById('launchGateBusinessTax')?.checked,legalReview:!!document.getElementById('launchGateLegalReview')?.checked}};
+  if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status){status.textContent='';status.className='form-status-line'}
+  try{
+    const r=await fetch('/api/account?action=admin-platform-settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not save platform settings.');
+    adminPlatformData=data.settings;if(status){status.textContent='Platform settings saved.';status.className='form-status-line success'}
+    const tag=document.getElementById('platformSettingsStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1500)}
+  }catch(err){if(status){status.textContent=err.message||'Could not save platform settings.';status.className='form-status-line error'}}
+  finally{if(btn){btn.disabled=false;btn.textContent='Save platform settings'}}
 }
-document.getElementById('savePlatformSettings')?.addEventListener('click',savePlatformSettings);
+document.getElementById('savePlatformSettings')?.addEventListenerdocument.getElementById('savePlatformSettings')?.addEventListener('click',savePlatformSettings);
 
 function renderProvisioning(){
   const board=document.getElementById('provisioningBoard');if(!board)return;
@@ -1051,14 +1115,24 @@ function openPhoneModal(id=null){
 }
 function closePhoneModal(){const m=document.getElementById('phoneModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 async function savePhone(){
-  const modal=document.getElementById('phoneModal');
-  const payload={id:modal?.dataset.editId||undefined,number:document.getElementById('phoneNumberInput')?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||'',forwardingFrom:document.getElementById('phoneForwardingInput')?.value||'',transferNumber:document.getElementById('phoneTransferInput')?.value||'',afterHours:document.getElementById('phoneAfterHoursInput')?.value||'ai',smsEnabled:false};
-  const r=await fetch('/api/account?action=admin-phone-number-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not save phone number.');return}
-  closePhoneModal();await loadAdminOps();
+  const modal=document.getElementById('phoneModal'),numberEl=document.getElementById('phoneNumberInput'),forwardEl=document.getElementById('phoneForwardingInput'),transferEl=document.getElementById('phoneTransferInput'),status=document.getElementById('phoneFormStatus'),btn=document.getElementById('savePhoneButton');
+  const number=String(numberEl?.value||'').trim(),forwarding=String(forwardEl?.value||'').trim(),transfer=String(transferEl?.value||'').trim(),errors={};
+  if(!validUsPhone(number,true))errors.phoneNumberInput='Enter a valid 10-digit phone number.';
+  if(forwarding&&!validUsPhone(forwarding))errors.phoneForwardingInput='Enter a valid forwarding number.';
+  if(transfer&&!validUsPhone(transfer))errors.phoneTransferInput='Enter a valid transfer number.';
+  ['phoneNumberInput','phoneForwardingInput','phoneTransferInput'].forEach(id=>settingsFieldError(id,errors[id]||''));
+  if(Object.keys(errors).length){if(status){status.textContent='Please correct the highlighted phone fields.';status.className='form-status-line error'};document.getElementById(Object.keys(errors)[0])?.focus();return}
+  if(numberEl)numberEl.value=normalizePhone(number);if(forwardEl)forwardEl.value=normalizePhone(forwarding);if(transferEl)transferEl.value=normalizePhone(transfer);
+  const payload={id:modal?.dataset.editId||undefined,number:numberEl?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||'',forwardingFrom:forwardEl?.value||'',transferNumber:transferEl?.value||'',afterHours:document.getElementById('phoneAfterHoursInput')?.value||'ai',smsEnabled:false};
+  if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status){status.textContent='';status.className='form-status-line'}
+  try{
+    const r=await fetch('/api/account?action=admin-phone-number-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not save phone number.');
+    closePhoneModal();await loadAdminOps();
+  }catch(err){if(status){status.textContent=err.message||'Could not save phone number.';status.className='form-status-line error'}}
+  finally{if(btn){btn.disabled=false;btn.textContent='Save number'}}
 }
-document.getElementById('addPhoneButton')?.addEventListener('click',()=>openPhoneModal());
+document.getElementById('addPhoneButton')?.addEventListenerdocument.getElementById('addPhoneButton')?.addEventListener('click',()=>openPhoneModal());
 document.getElementById('closePhoneModal')?.addEventListener('click',closePhoneModal);
 document.getElementById('savePhoneButton')?.addEventListener('click',savePhone);
 document.getElementById('phoneModal')?.addEventListener('click',e=>{if(e.target.id==='phoneModal')closePhoneModal()});
