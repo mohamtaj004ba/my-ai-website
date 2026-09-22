@@ -1,5 +1,5 @@
 const crypto=require('crypto');
-const {kv}=require('@vercel/kv');
+const {kv}=require('../lib/kv');
 const {sendMail}=require('../lib/mail');
 const {brandedEmail,esc}=require('../lib/email-template');
 
