@@ -122,7 +122,7 @@ Run one complete disposable client through:
 - support@callercore.com inbound/outbound mailbox behavior is verified from recent CallerCore Gmail history.
 - Temporary diagnostic code was removed and verified absent.
 - Rotate the automation bypass secret after the completed QA cycle.
-- Complete authenticated disposable-client POST/browser E2E before release, and verify Preview KV isolation before destructive testing.
+- Preview KV isolation is runtime-verified (`storage: preview-isolated`). Complete the authenticated disposable-client POST/browser E2E before release.
 - Keep Gmail admin-only at launch. Complete Google verification/security assessment before offering Gmail connections broadly to external customers.
 - Re-run focused authorization/tenant-isolation review when new authenticated API surfaces are added.
 - Webhook security review for all external providers as they are added.
