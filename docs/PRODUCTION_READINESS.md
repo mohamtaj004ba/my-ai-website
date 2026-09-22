@@ -14,7 +14,7 @@ This document tracks the release-readiness state of the feature branch. It is in
 - Admin operations dashboard with clients, provisioning, inbox, prospects, support, phone inventory, system health, revenue/usage, and platform settings.
 - Smart Onboarding with website scan, structured intake, agreement signing, automatic workspace population, agent draft generation, and launch checklist.
 - Managed onboarding stages with deliberate human review gates.
-- Agreement v2.0 with frozen signed snapshots and plan snapshots.
+- Agreement v2.1 with frozen signed snapshots and plan snapshots.
 - Branded lifecycle/auth email system with support contact paths.
 - Gmail OAuth, alias support, unified inbox, cached rendering, thread caching, and background refresh.
 - Persistent portal notifications, sidebar alert dots, and client notification-category preferences.
@@ -40,10 +40,12 @@ This document tracks the release-readiness state of the feature branch. It is in
 - Vercel Pro commercial hosting confirmed.
 - GitHub main-branch ruleset enabled and verified with required PR/checks and no bypass.
 - Live Stripe webhook event coverage and Customer Portal configuration completed.
+- Live Stripe catalog descriptions are aligned with launch scope: no Pro unlimited promise, no Growth calendar/SMS claim, and the dormant metered overage product warns against use without separately accepted terms.
 - Mailgun `notify.callercore.com` verified; production sending-domain configuration corrected.
 - Gmail launch posture narrowed to admin-only with only `gmail.modify`.
 - Retention policy approved with indefinite anonymized analytics and bounded raw data.
 - 30-day recoverable deletion workflow implemented with access revocation, restore and explicit permanent purge.
+- Agreement v2.1 no longer grants Pro unlimited usage and blocks automatic overage fees unless usage terms were disclosed and accepted.
 - Public launch copy no longer promises SMS or calendar booking as active launch features.
 - Pre-release rollback baseline is documented and points to the verified READY production deployment before PR #5.
 - Server error logging uses a privacy-safe sanitizer; raw provider response bodies and raw Error objects were removed from sensitive API logs, with CI regression coverage.
@@ -106,7 +108,7 @@ Run one complete disposable client through:
 
 ### Legal / compliance
 - Confirm CallerCore legal entity / Washington business license / UBI and any Spokane business registration required for the operating location.
-- Attorney review of Service Agreement v2.0.
+- Attorney review of Service Agreement v2.1.
 - Attorney review of Privacy Policy and Terms.
 - Confirm call-recording disclosure approach by client/jurisdiction.
 - Confirm SMS/TCPA operational policy.
