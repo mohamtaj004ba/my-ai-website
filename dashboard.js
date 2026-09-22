@@ -373,8 +373,8 @@ async function saveAgent(){
   }
   const s=document.getElementById('agentSaveStatus');if(s){s.classList.add('show');setTimeout(()=>s.classList.remove('show'),1600)}
 }
-function triggerLabel(v){return ({missed_call:'Missed call',new_lead:'New lead captured',qualified_lead:'Lead qualified',appointment_booked:'Appointment booked',after_hours_call:'After-hours call'})[v]||v}
-function actionLabel(v){return ({send_sms:'Send SMS',notify_team:'Notify team',create_followup:'Create follow-up task',mark_priority:'Mark lead priority',send_confirmation:'Send confirmation'})[v]||v}
+function triggerLabel(v){if(v==='appointment_booked'&&!capability('calendar'))return 'Appointment trigger · disabled';return ({missed_call:'Missed call',new_lead:'New lead captured',qualified_lead:'Lead qualified',appointment_booked:'Appointment booked',after_hours_call:'After-hours call'})[v]||v}
+function actionLabel(v){if(['send_sms','send_confirmation'].includes(v)&&!capability('sms'))return 'SMS action · disabled';return ({send_sms:'Send SMS',notify_team:'Notify team',create_followup:'Create follow-up task',mark_priority:'Mark lead priority',send_confirmation:'Send confirmation'})[v]||v}
 function renderAutomations(){
   if(!has('automations'))return;
   const wrap=document.getElementById('automationList');if(!wrap)return;
@@ -404,7 +404,7 @@ function openAutomation(id=null,preset=null){
     const defs={
       missed_call:{name:'Missed-call follow-up task',trigger:'missed_call',action:'create_followup'},
       new_lead:{name:'New lead alert',trigger:'new_lead',action:'notify_team'},
-      appointment_booked:{name:'Booking confirmation',trigger:'appointment_booked',action:'notify_team'}
+
     };item=defs[preset]||null;
   }
   document.getElementById('automationModalTitle').textContent=id?'Edit automation':'New automation';
