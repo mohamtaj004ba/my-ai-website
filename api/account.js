@@ -603,7 +603,10 @@ async function adminPlatformSettingsSave(req,res){
   if(supportEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail))return res.status(400).json({error:'Valid support email required'});
   const previous=await kv.get('platform:settings')||{},launchGates=body.launchGates&&typeof body.launchGates==='object'?launchGateState(body.launchGates):launchGateState(previous.launchGates);
   const settings={supportEmail,defaultAgentName:defaultAgentName||'Maya',defaultTimezone,maintenanceMode:!!body.maintenanceMode,launchGates,updatedAt:Date.now(),updatedBy:admin.email};
-  await kv.set('platform:settings',settings);return res.status(200).json({ok:true,settings});
+  await kv.set('platform:settings',settings);
+  const changedGates=LAUNCH_GATE_DEFS.filter(g=>!!launchGateState(previous.launchGates)[g.key]!==!!launchGates[g.key]).map(g=>({key:g.key,from:!!launchGateState(previous.launchGates)[g.key],to:!!launchGates[g.key]}));
+  if(changedGates.length)await appendAudit(admin.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'platform_launch_gates_update',section:'platform',before:launchGateState(previous.launchGates),after:launchGates,meta:{changedGates}});
+  return res.status(200).json({ok:true,settings});
 }
 
 
