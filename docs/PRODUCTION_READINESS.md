@@ -47,6 +47,10 @@ This document tracks the release-readiness state of the feature branch. It is in
 - Public launch copy no longer promises SMS or calendar booking as active launch features.
 - Pre-release rollback baseline is documented and points to the verified READY production deployment before PR #5.
 - Server error logging uses a privacy-safe sanitizer; raw provider response bodies and raw Error objects were removed from sensitive API logs, with CI regression coverage.
+- System Health now includes explicit owner-confirmed launch gates in addition to technical service checks, preventing a false ready state when business/legal/E2E/voice prerequisites remain open.
+- Runtime environment-scope safety checks detect Preview live-Stripe usage, Preview checkout enablement, and Production exposure of Preview bootstrap credentials.
+- Admin client tools include a non-destructive recovery drill that validates the exact workspace-export payload without modifying customer data.
+- SMS and calendar/appointment capabilities default off behind `CALLERCORE_SMS_ENABLED` and `CALLERCORE_CALENDAR_ENABLED`; launch UI and server writes respect those flags.
 
 ## Must complete before broad production launch
 
