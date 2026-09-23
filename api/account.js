@@ -1282,12 +1282,12 @@ async function followups(req,res){
 }
 async function followupUpdate(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
-  const callId=String((req.body||{}).callId||'').slice(0,120),status=String((req.body||{}).status||'');
+  const callId=String((req.body||{}).callId||'').slice(0,120),status=String((req.body||{}).status||''),note=String((req.body||{}).note||'').trim().slice(0,2000);
   if(!callId||!['open','handled'].includes(status))return res.status(400).json({error:'Invalid follow-up update'});
   const calls=await kv.get('calls:'+s.workspaceId)||[];
   if(!Array.isArray(calls)||!calls.some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
   const key='followup:state:'+s.workspaceId,state=await kv.get(key)||{},next={...(state&&typeof state==='object'&&!Array.isArray(state)?state:{})};
-  next[callId]={status,updatedAt:Date.now(),updatedBy:s.email||''};
+  next[callId]={status,note,updatedAt:Date.now(),updatedBy:s.email||''};
   await kv.set(key,next);
   await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'followup_'+status,section:'calls',before:state&&state[callId]||null,after:next[callId],meta:{callId}});
   return res.status(200).json({ok:true,state:next});
