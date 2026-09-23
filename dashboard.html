@@ -63,7 +63,7 @@
       <div class="overview-grid">
         <article class="panel overview-agent-card">
           <div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya is online</h2></div></div><button data-view="agent">Settings →</button></div>
-          <p id="overviewAgentMeta">Your AI receptionist is actively handling calls.</p><div class="live-call-state" id="liveCallState"><span class="live-state-dot"></span><b>No active call</b><small>Maya is ready for the next caller</small></div>
+          <p id="overviewAgentMeta">Your AI receptionist is configured to handle incoming calls.</p>
           <div class="overview-agent-stats"><div><span>Handled · 30 days</span><strong id="overviewAgentCalls">0</strong></div><div><span>Qualified requests</span><strong id="overviewAgentLeads">0</strong></div><div><span>Avg calls / day</span><strong id="overviewDailyAvg">0</strong></div></div>
           <div class="overview-chart-card">
   <div class="overview-chart-head"><div><span class="eyebrow">Call activity</span><b id="overviewChartSummary">0 calls/day average</b></div><div class="chart-head-actions"><div class="chart-legend"><span><i class="legend-line calls"></i>Calls</span><span><i class="legend-line followups"></i>Needs follow-up</span></div><div class="chart-range" id="overviewChartRange"><button data-chart-days="7">7D</button><button class="active" data-chart-days="14">14D</button><button data-chart-days="30">30D</button></div></div></div>
@@ -71,7 +71,7 @@
 </div>
         </article>
         <article class="panel overview-attention-card" id="overviewAttentionCard">
-          <div class="panel-head"><div><span class="eyebrow">Call health</span><h2>How CallerCore is performing</h2></div></div>
+          <div class="panel-head"><div><span class="eyebrow">Call health</span><h2>How CallerCore is performing</h2></div><span class="health-period">Last 60 days</span></div>
           <div class="health-rings">
             <div class="health-ring-wrap"><div class="health-ring" id="overviewAnswerRing"><span id="overviewAnswerPct">0%</span></div><b>Answer rate</b><small>Calls completed by AI</small></div>
             <div class="health-ring-wrap"><div class="health-ring" id="overviewQualifiedRing"><span id="overviewQualifiedPct">0%</span></div><b>High-intent rate</b><small>Qualified service requests</small></div>
@@ -94,7 +94,7 @@
 
     <section class="view" id="view-calls">
       <div class="page-head"><div><span class="eyebrow">Calls</span><h1>Every conversation, organized.</h1><p>Review call summaries, transcripts when available, customer details, and outcomes in one place.</p></div></div>
-      <div class="toolbar call-toolbar"><input id="callSearch" type="search" placeholder="Search caller, phone, reason…"><select id="callDateFilter"><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option><option value="all">All history</option></select><select id="callCategoryFilter"><option value="all">All call types</option><option value="New service">New service</option><option value="Existing job">Existing job</option><option value="Estimate follow-up">Estimate follow-up</option><option value="Billing">Billing</option><option value="Complaint">Complaint</option><option value="General question">General question</option><option value="Warranty">Warranty</option><option value="Vendor">Vendor / partner</option><option value="Wrong number">Wrong number</option><option value="Spam">Spam</option></select><select id="callFilter"><option value="all">All outcomes</option><option value="Qualified">Qualified</option><option value="Follow-up">Follow-up</option><option value="Missed">Missed</option></select></div><div class="calls-summary-strip"><span id="callsShownCount">0 calls</span><span id="callsFollowupCount">0 need follow-up</span><span id="callsResolvedCount">0 resolved</span></div>
+      <div class="toolbar call-toolbar"><input id="callSearch" type="search" placeholder="Search caller, phone, reason…"><select id="callDateFilter"><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option><option value="all">All history</option></select><select id="callCategoryFilter"><option value="all">All call types</option><option value="New service">New service</option><option value="Existing job">Existing job</option><option value="Estimate follow-up">Estimate follow-up</option><option value="Billing">Billing</option><option value="Complaint">Complaint</option><option value="General question">General question</option><option value="Warranty">Warranty</option><option value="Vendor">Vendor / partner</option><option value="Employment">Employment</option><option value="Wrong number">Wrong number</option><option value="Spam">Spam</option></select><select id="callFilter"><option value="all">All outcomes</option><option value="Qualified">Qualified</option><option value="Follow-up">Follow-up</option><option value="Missed">Missed</option></select></div><div class="calls-summary-strip"><span id="callsShownCount">0 calls</span><span id="callsFollowupCount">0 need follow-up</span><span id="callsResolvedCount">0 resolved</span></div>
       <article class="panel table-panel call-history-panel"><div class="call-row head"><span>Caller</span><span>Date & time</span><span>Call type</span><span>Reason</span><span>Outcome</span><span>Duration</span></div><div id="callsTable"></div></article>
       <div class="empty-state" id="callsEmpty" hidden><h3>No calls yet</h3><p>Caller activity for this workspace will appear here once your AI number begins handling calls.</p></div>
     </section>
@@ -189,13 +189,13 @@
       <div id="analyticsApp" hidden>
         <div class="metric-grid">
           <article><span>Answer rate</span><strong id="analyticsAnswerRate">0%</strong><small id="analyticsAnswerMeta">AI handled calls</small></article>
-          <article><span>High-intent calls</span><strong id="analyticsQualified">0%</strong><small>Qualified or booked</small></article>
+          <article><span>High-intent calls</span><strong id="analyticsQualified">0%</strong><small>Qualified service requests</small></article>
           <article><span>After-hours demand</span><strong id="analyticsAfterHours">0%</strong><small>Before 8 AM / after 6 PM</small></article>
           <article><span>Average daily calls</span><strong id="analyticsDailyAvg">0</strong><small id="analyticsCalls">0 total calls</small></article>
         </div>
         <div class="two-col">
           <article class="panel"><div class="panel-head"><div><span class="eyebrow">Call volume</span><h2>Demand by day</h2></div></div><div class="insight-bars" id="insightDailyBars"></div></article>
-          <article class="panel"><div class="panel-head"><div><span class="eyebrow">Caller intent</span><h2>Why customers call</h2></div></div><div class="bar-list" id="callReasonBars"></div></article>
+          <article class="panel"><div class="panel-head"><div><span class="eyebrow">Call mix</span><h2>Calls by type</h2></div></div><div class="bar-list" id="callReasonBars"></div></article>
         </div>
         <div class="two-col">
           <article class="panel"><span class="eyebrow">Time of day</span><h2>Busiest hours</h2><div class="insight-bars horizontal" id="insightHourBars"></div></article>
