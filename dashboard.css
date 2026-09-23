@@ -193,3 +193,5 @@
 
 @media(max-width:720px){.drawer-meta{grid-template-columns:1fr 1fr}.business-logo-editor{grid-template-columns:72px 1fr}.business-logo-preview{width:72px;height:58px}.billing-actions{flex-direction:column}.billing-actions>*{width:100%}.overview-chart-head{align-items:flex-start;flex-direction:column}}
 @media(prefers-reduced-motion:reduce){.chart-line,.chart-area{animation:none!important}}
+
+.workspace-with-logo{display:grid!important;grid-template-columns:34px 1fr;gap:9px;align-items:center}.workspace-with-logo>div:last-child{min-width:0}.workspace-logo{width:34px;height:34px;border-radius:9px;background:#252b32;border:1px solid rgba(255,255,255,.09);display:grid;place-items:center;overflow:hidden}.workspace-logo span{font-size:9px;font-weight:900;color:#fff}.workspace-logo img{width:100%;height:100%;object-fit:contain;background:#fff;padding:3px;box-sizing:border-box}
