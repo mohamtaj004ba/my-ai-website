@@ -1275,6 +1275,24 @@ async function buildAdminNotifications(admin){
   }
   return items;
 }
+async function followups(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const state=await kv.get('followup:state:'+s.workspaceId)||{};
+  return res.status(200).json({state:state&&typeof state==='object'&&!Array.isArray(state)?state:{}});
+}
+async function followupUpdate(req,res){
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const callId=String((req.body||{}).callId||'').slice(0,120),status=String((req.body||{}).status||'');
+  if(!callId||!['open','handled'].includes(status))return res.status(400).json({error:'Invalid follow-up update'});
+  const calls=await kv.get('calls:'+s.workspaceId)||[];
+  if(!Array.isArray(calls)||!calls.some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
+  const key='followup:state:'+s.workspaceId,state=await kv.get(key)||{},next={...(state&&typeof state==='object'&&!Array.isArray(state)?state:{})};
+  next[callId]={status,updatedAt:Date.now(),updatedBy:s.email||''};
+  await kv.set(key,next);
+  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'followup_'+status,section:'calls',before:state&&state[callId]||null,after:next[callId],meta:{callId}});
+  return res.status(200).json({ok:true,state:next});
+}
+
 async function notifications(req,res){
   const scope=String((req.query||{}).scope||'client')==='admin'?'admin':'client';
   let sessionData;
@@ -1885,6 +1903,8 @@ module.exports=async function handler(req,res){
   if(action==='notifications'&&req.method==='GET')return notifications(req,res);
   if(action==='notifications-read'&&req.method==='POST')return notificationsRead(req,res);
   if(action==='notifications-read-all'&&req.method==='POST')return notificationsReadAll(req,res);
+  if(action==='followups'&&req.method==='GET')return followups(req,res);
+  if(action==='followup-update'&&req.method==='POST')return followupUpdate(req,res);
   if(action==='request'&&req.method==='POST')return requestLogin(req,res);
   if(action==='verify'&&req.method==='GET')return verify(req,res);
   if(action==='session'&&req.method==='GET')return session(req,res);
