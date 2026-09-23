@@ -50,7 +50,7 @@
 </div>
 </div>
     </header>
-    <div class="data-health-banner" id="clientDataHealth" role="status" aria-live="polite" hidden><div><b>Some CallerCore data could not be loaded.</b><span>Numbers shown on this page may be incomplete. Your underlying account data has not been replaced.</span></div><button type="button" id="clientDataRetry">Retry</button></div>
+    <div class="client-sync-toast" id="clientDataHealth" role="status" aria-live="polite" hidden><span class="sync-dot"></span><div><b>Still syncing</b><span>Some background data is taking longer than usual.</span></div><button type="button" id="clientDataRetry">Retry</button></div>
 
     <section class="view active" id="view-overview">
       <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore handled, and what still needs your team.</p></div></div>
@@ -95,8 +95,8 @@
 
     <section class="view" id="view-calls">
       <div class="page-head"><div><span class="eyebrow">Calls</span><h1>Every conversation, organized.</h1><p>Review call summaries, transcripts when available, customer details, and outcomes in one place.</p></div></div>
-      <div class="toolbar call-toolbar"><input id="callSearch" type="search" placeholder="Search caller, phone, reason…"><select id="callDateFilter"><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option><option value="all">All history</option></select><select id="callFilter"><option value="all">All outcomes</option><option value="Qualified">Qualified</option><option value="Follow-up">Follow-up</option><option value="Missed">Missed</option></select></div>
-      <article class="panel table-panel call-history-panel"><div class="call-row head"><span>Caller</span><span>Date & time</span><span>Reason</span><span>Outcome</span><span>Duration</span></div><div id="callsTable"></div></article>
+      <div class="toolbar call-toolbar"><input id="callSearch" type="search" placeholder="Search caller, phone, reason…"><select id="callDateFilter"><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option><option value="all">All history</option></select><select id="callCategoryFilter"><option value="all">All call types</option><option value="New service">New service</option><option value="Existing job">Existing job</option><option value="Estimate follow-up">Estimate follow-up</option><option value="Billing">Billing</option><option value="Complaint">Complaint</option><option value="General question">General question</option><option value="Warranty">Warranty</option><option value="Vendor">Vendor / partner</option><option value="Wrong number">Wrong number</option><option value="Spam">Spam</option></select><select id="callFilter"><option value="all">All outcomes</option><option value="Qualified">Qualified</option><option value="Follow-up">Follow-up</option><option value="Missed">Missed</option></select></div>
+      <article class="panel table-panel call-history-panel"><div class="call-row head"><span>Caller</span><span>Date & time</span><span>Call type</span><span>Reason</span><span>Outcome</span><span>Duration</span></div><div id="callsTable"></div></article>
       <div class="empty-state" id="callsEmpty" hidden><h3>No calls yet</h3><p>Caller activity for this workspace will appear here once your AI number begins handling calls.</p></div>
     </section>
 
@@ -249,7 +249,7 @@
   <div class="drawer-meta" id="drawerMeta"></div>
   <div class="drawer-action-bar"><a class="secondary-btn action-link" id="drawerCallLink" href="#">Call</a><a class="secondary-btn action-link" id="drawerTextLink" href="#">Text</a><button class="primary" id="drawerFollowupButton" type="button">Mark handled</button></div>
   <button class="secondary-btn full drawer-contact-button" id="drawerContactButton" type="button">Open full customer history</button>
-  <section><span class="eyebrow">Location</span><p id="drawerAddress">No address captured.</p></section>
+  <section><span class="eyebrow">Call classification</span><div class="call-classification" id="drawerClassification"></div></section><section><span class="eyebrow">Location</span><p id="drawerAddress">No address captured.</p></section>
   <section><span class="eyebrow">AI summary</span><p id="drawerSummary"></p></section>
   <section><span class="eyebrow">Call details</span><div id="drawerQualification" class="detail-grid"></div></section>
   <section class="team-notes-section"><div class="section-title-row"><div><span class="eyebrow">Team notes</span><h3>Internal notes</h3></div><span class="tag" id="drawerNoteCount">0 notes</span></div><div id="drawerNotesList" class="drawer-notes-list"></div><div class="note-composer"><textarea id="drawerInternalNote" class="drawer-note" placeholder="Add another note for your team…"></textarea><div class="drawer-note-actions"><small id="drawerNoteStatus"></small><button class="primary" id="drawerSaveNote" type="button">Add note</button></div></div></section>
