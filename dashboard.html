@@ -12,22 +12,18 @@
     <a class="dash-brand" href="/"><img src="/logo-icon.png" alt=""><span>Caller<b>Core</b></span></a>
     <div class="workspace"><span>Workspace</span><strong id="workspaceName">Loading…</strong><small id="workspaceMeta">Secure client portal</small></div>
     <nav class="dash-nav" aria-label="Dashboard">
-      <button class="nav-item active" data-view="overview">Overview</button>
+      <button class="nav-item active" data-view="overview">Today</button>
       <button class="nav-item" data-view="calls">Calls</button>
-      <button class="nav-item" data-view="conversations" data-feature="unifiedInbox">Conversations <span class="lock">GROWTH</span></button>
-      <button class="nav-item" data-view="contacts">Contacts</button>
-      <button class="nav-item" data-view="leads">Opportunities</button>
-      <button class="nav-item" data-view="appointments" data-feature="appointments" hidden>Appointments <span class="lock">COMING LATER</span></button>
-      <div class="nav-label">AI & growth</div>
-      <button class="nav-item" data-view="agent">AI Agent</button>
-      <button class="nav-item" data-view="phone-routing">Phone & routing</button>
-      <button class="nav-item" data-view="locations">Locations</button>
-      <button class="nav-item" data-view="automations" data-feature="automations">Automations <span class="lock">GROWTH</span></button>
-      <button class="nav-item" data-view="analytics" data-feature="advancedAnalytics">Analytics <span class="lock">GROWTH</span></button>
+      <button class="nav-item" data-view="contacts">Customers</button>
+      <button class="nav-item" data-view="leads">Follow-ups <span class="nav-count" id="followupNavCount" hidden>0</span></button>
+      <div class="nav-label">CallerCore</div>
+      <button class="nav-item" data-view="agent">AI Receptionist</button>
+      <button class="nav-item" data-view="analytics" data-feature="advancedAnalytics">Insights <span class="lock">GROWTH</span></button>
+      <button class="nav-item" data-view="integrations">Connections</button>
       <div class="nav-label">Account</div>
-      <button class="nav-item" data-view="integrations">Integrations</button>
+      <button class="nav-item" data-view="settings">Settings</button>
       <button class="nav-item" data-view="billing">Billing & plan</button>
-      <button class="nav-item" data-view="settings">Settings</button><button class="nav-item" data-view="support">Help & support</button>
+      <button class="nav-item" data-view="support">Help & support</button>
     </nav>
     <div class="sidebar-plan"><small>Current plan</small><strong id="sidebarPlan">—</strong><div class="usage-track"><i id="sidebarUsage" style="width:0"></i></div><span id="sidebarUsageLabel">0 min</span><button data-view="billing">Manage plan</button></div>
   </aside>
@@ -57,11 +53,11 @@
     <div class="data-health-banner" id="clientDataHealth" role="status" aria-live="polite" hidden><div><b>Some CallerCore data could not be loaded.</b><span>Numbers shown on this page may be incomplete. Your underlying account data has not been replaced.</span></div><button type="button" id="clientDataRetry">Retry</button></div>
 
     <section class="view active" id="view-overview">
-      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>Here’s what CallerCore is handling for <span data-business-name>your business</span>.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
+      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore handled, and what still needs your team.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
       <div class="metric-grid overview-metrics">
         <article><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Today</small></article>
         <article><span>Calls · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
-        <article><span>New opportunities</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
+        <article><span>Qualified requests</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
         <article><span>Needs follow-up</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Calls needing attention</small></article>
       </div>
       <div class="overview-grid">
@@ -79,7 +75,7 @@
             <div class="health-ring-wrap"><div class="health-ring" id="overviewRecoveryRing"><span id="overviewRecoveryPct">0%</span></div><b>Handled cleanly</b><small>No follow-up needed</small></div>
           </div>
           <div class="overview-attention-divider"></div>
-          <div class="panel-head compact"><div><span class="eyebrow">Right now</span><h3>Needs attention</h3></div><button data-view="calls">Review →</button></div>
+          <div class="panel-head compact"><div><span class="eyebrow">Right now</span><h3>Needs attention</h3></div><button data-view="leads">Open queue →</button></div>
           <div id="overviewAttention"></div>
         </article>
       </div>
@@ -88,7 +84,7 @@
     </section>
 
     <section class="view" id="view-contacts">
-      <div class="page-head"><div><span class="eyebrow">Contacts</span><h1>One history for every caller.</h1><p>Open a person once and see their calls, messages, needs, and contact details together.</p></div></div>
+      <div class="page-head"><div><span class="eyebrow">Customers</span><h1>Every caller, one complete history.</h1><p>Calls, messages, addresses, service needs, and follow-ups stay attached to the same customer record automatically.</p></div></div>
       <div class="toolbar"><input id="contactSearch" type="search" placeholder="Search contacts by name, phone or service…"></div>
       <article class="panel contact-list-panel"><div class="contact-row head"><span>Contact</span><span>Last interaction</span><span>Calls</span><span>Messages</span><span>Latest need</span></div><div id="contactsTable"></div></article>
       <div class="empty-state" id="contactsEmpty" hidden><h3>No contacts yet</h3><p>Contacts are built automatically from caller and conversation history.</p></div>
@@ -110,10 +106,16 @@
       </div>
     </section>
     <section class="view" id="view-leads">
-      <div class="page-head"><div><span class="eyebrow">Opportunities</span><h1>People who may need your team.</h1><p>CallerCore surfaces qualified and follow-up-worthy conversations without making you manage a CRM board.</p></div></div>
-      <div class="toolbar"><input id="leadSearch" type="search" placeholder="Search name, phone or service…"><select id="leadFilter"><option value="all">All opportunities</option><option value="priority">Qualified / scheduled</option><option value="followup">Needs follow-up</option><option value="closed">Closed</option></select></div>
-      <article class="panel opportunity-panel"><div class="opportunity-row head"><span>Contact</span><span>What they need</span><span>Last activity</span><span>Status</span><span></span></div><div id="leadKanban"></div></article>
-      <div class="empty-state" id="leadsEmpty" hidden><h3>No opportunities yet</h3><p>CallerCore will surface people worth following up with as calls come in.</p></div>
+      <div class="page-head"><div><span class="eyebrow">Follow-ups</span><h1>Only the calls that still need a human.</h1><p>CallerCore handles the routine work automatically. This queue is for callbacks, urgent requests, failed transfers, and people who specifically asked for your team.</p></div><div class="page-actions"><button class="secondary-btn" id="showHandledFollowups">Show handled</button></div></div>
+      <div class="followup-summary">
+        <article><span>Open</span><strong id="followupOpenCount">0</strong><small>Needs your team</small></article>
+        <article><span>Urgent</span><strong id="followupUrgentCount">0</strong><small>Priority first</small></article>
+        <article><span>Callbacks</span><strong id="followupCallbackCount">0</strong><small>Requested or missed</small></article>
+        <article><span>Handled today</span><strong id="followupHandledCount">0</strong><small>Cleared from queue</small></article>
+      </div>
+      <div class="toolbar"><input id="leadSearch" type="search" placeholder="Search customer, phone, service or address…"><select id="leadFilter"><option value="all">All open items</option><option value="urgent">Urgent</option><option value="callback">Callbacks</option><option value="qualified">Qualified requests</option></select></div>
+      <div class="followup-list" id="leadKanban"></div>
+      <div class="empty-state" id="leadsEmpty" hidden><h3>You’re caught up</h3><p>When a caller needs your team, CallerCore will put the action here.</p></div>
     </section>
 
     <section class="view" id="view-appointments">
@@ -179,21 +181,37 @@
       </div>
     </section>
     <section class="view" id="view-analytics">
-      <div class="page-head"><div><span class="eyebrow">Analytics</span><h1>Know what the phones are telling you.</h1><p>Turn call activity into business decisions.</p></div></div>
+      <div class="page-head"><div><span class="eyebrow">Insights</span><h1>What your phones are telling you.</h1><p>Real call activity, demand patterns, and CallerCore performance — without asking you to maintain a sales pipeline.</p></div><div class="page-actions"><select id="insightsRange"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="60">Last 60 days</option></select></div></div>
       <div id="analyticsGate" class="locked-stage" data-feature-card="advancedAnalytics"></div>
       <div id="analyticsApp" hidden>
-        <div class="metric-grid"><article><span>Total calls</span><strong id="analyticsCalls">0</strong><small>Handled activity</small></article><article><span>Qualified calls</span><strong id="analyticsQualified">0</strong><small>Booked or qualified</small></article><article><span>Lead conversion</span><strong id="analyticsConversion">0%</strong><small>Won leads</small></article><article><span>Pipeline value</span><strong id="analyticsPipeline">$0</strong><small>Open + won opportunity</small></article></div>
-        <div class="two-col"><article class="panel"><span class="eyebrow">Top call reasons</span><h2>What customers want</h2><div class="bar-list" id="callReasonBars"></div></article><article class="panel"><span class="eyebrow">Performance</span><h2>Business outcomes</h2><div class="setting-row"><span>Leads captured</span><b id="analyticsLeads">0</b></div><div class="setting-row"><span>Appointments</span><b id="analyticsAppointments">0</b></div><div class="setting-row"><span>Won leads</span><b id="analyticsWon">0</b></div></article></div>
+        <div class="metric-grid">
+          <article><span>Answer rate</span><strong id="analyticsAnswerRate">0%</strong><small id="analyticsAnswerMeta">AI handled calls</small></article>
+          <article><span>High-intent calls</span><strong id="analyticsQualified">0%</strong><small>Qualified or booked</small></article>
+          <article><span>After-hours demand</span><strong id="analyticsAfterHours">0%</strong><small>Outside business hours</small></article>
+          <article><span>Average daily calls</span><strong id="analyticsDailyAvg">0</strong><small id="analyticsCalls">0 total calls</small></article>
+        </div>
+        <div class="two-col">
+          <article class="panel"><div class="panel-head"><div><span class="eyebrow">Call volume</span><h2>Demand by day</h2></div></div><div class="insight-bars" id="insightDailyBars"></div></article>
+          <article class="panel"><div class="panel-head"><div><span class="eyebrow">Caller intent</span><h2>Why customers call</h2></div></div><div class="bar-list" id="callReasonBars"></div></article>
+        </div>
+        <div class="two-col">
+          <article class="panel"><span class="eyebrow">Time of day</span><h2>Busiest hours</h2><div class="insight-bars horizontal" id="insightHourBars"></div></article>
+          <article class="panel"><span class="eyebrow">Outcomes</span><h2>How calls ended</h2><div class="outcome-donut-wrap"><div class="outcome-donut" id="outcomeDonut"><span id="outcomeDonutLabel">0</span></div><div id="outcomeLegend" class="outcome-legend"></div></div></article>
+        </div>
       </div>
     </section>
+
     <section class="view" id="view-integrations">
-      <div class="page-head"><div><span class="eyebrow">Integrations</span><h1>Connect the rest of your stack.</h1><p>Calendars, billing, APIs and webhooks in one place.</p></div></div>
-      <div class="integration-grid">
-        <article class="panel integration-card"><div><b>Google Calendar</b><p>Calendar booking is planned for a later release.</p></div><span class="tag amber" id="googleCalendarStatus">Coming later</span></article>
-        <article class="panel integration-card"><div><b>Stripe</b><p>Subscription and billing status.</p></div><span class="tag amber" id="stripeIntegrationStatus">Not linked</span></article>
-        <article class="panel integration-card" data-feature="apiAccess"><div><b>API & Webhooks</b><p>Send CallerCore events to your systems.</p></div><span class="tag amber lock">PRO</span></article>
+      <div class="page-head"><div><span class="eyebrow">Connections</span><h1>CallerCore in your daily operation.</h1><p>See what is connected, what CallerCore is syncing, and where your customer data goes next.</p></div></div>
+      <div class="connection-health-grid">
+        <article class="panel connection-health"><span class="connection-icon">☎</span><div><small>PHONE ROUTING</small><h3 id="connectionPhoneTitle">Checking line…</h3><p id="connectionPhoneCopy">Verifying your CallerCore number and transfer path.</p></div><span class="tag" id="connectionPhoneStatus">Checking</span></article>
+        <article class="panel connection-health"><span class="connection-icon">AI</span><div><small>AI RECEPTIONIST</small><h3 id="connectionAgentTitle">Checking Maya…</h3><p id="connectionAgentCopy">Verifying the active call-handling configuration.</p></div><span class="tag" id="connectionAgentStatus">Checking</span></article>
+        <article class="panel connection-health"><span class="connection-icon">↻</span><div><small>CRM / FIELD SERVICE</small><h3>Not connected</h3><p>Connect your system of record so CallerCore can hand off customer and job information automatically.</p></div><span class="tag amber">Not connected</span></article>
+        <article class="panel connection-health"><span class="connection-icon">▦</span><div><small>CALENDAR / SCHEDULING</small><h3 id="connectionCalendarTitle">Not connected</h3><p id="connectionCalendarCopy">Scheduling remains outside CallerCore until a calendar connection is enabled.</p></div><span class="tag amber" id="googleCalendarStatus">Not connected</span></article>
       </div>
-      <article class="panel form-card" id="webhookPanel"><span class="eyebrow">Pro integration</span><h2>Outbound webhook</h2><label>Webhook URL<input id="webhookUrl" placeholder="https://example.com/callercore/events"></label><button class="primary" id="saveWebhookButton">Save webhook</button><small class="muted">CallerCore will only accept HTTPS endpoints.</small></article>
+      <article class="panel routing-overview"><div class="panel-head"><div><span class="eyebrow">Voice path</span><h2>How a customer reaches your team</h2></div><button class="secondary-btn" data-view="support">Request routing change</button></div><div class="routing-flow"><div><small>Customer calls</small><b id="connectionBusinessNumber">Your business line</b></div><span>→</span><div><small>CallerCore answers</small><b id="connectionCallerCoreNumber">AI line</b></div><span>→</span><div><small>Escalates to</small><b id="connectionTransferNumber">Your team</b></div></div></article>
+      <article class="panel connection-roadmap"><span class="eyebrow">System of record</span><h2>CallerCore should complement your existing software.</h2><p>Customer and call history live here, while jobs, dispatching, estimates, invoices, and technician workflows should continue in the system your team already uses. CRM and field-service connections will become the handoff layer instead of asking you to duplicate that work in CallerCore.</p></article>
+      <article class="panel form-card" id="webhookPanel"><span class="eyebrow">Pro integration</span><h2>Outbound webhook</h2><label>Webhook URL<input id="webhookUrl" placeholder="https://example.com/callercore/events"></label><button class="primary" id="saveWebhookButton">Save webhook</button><small class="muted">For custom systems only. CallerCore sends event data to HTTPS endpoints.</small></article>
     </section>
 
     <section class="view" id="view-billing">
