@@ -1576,7 +1576,7 @@ async function phoneRouting(req,res){
   const numbers=await kv.get('phone:index')||[];
   const item=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===s.workspaceId)||null;
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true';
-  return res.status(200).json({routing:item?{number:item.number||'',label:item.label||'Primary',provider:item.provider||'Vapi',forwardingFrom:item.forwardingFrom||'',transferNumber:item.transferNumber||'',afterHours:item.afterHours||'ai',smsEnabled:smsLive&&item.smsEnabled!==false,status:item.status||'active'}:null});
+  return res.status(200).json({routing:item?{number:item.number||'',label:item.label||'Primary',provider:item.provider||'Vapi',forwardingFrom:item.forwardingFrom||'',transferNumber:item.transferNumber||'',afterHours:item.afterHours||'ai',smsEnabled:smsLive&&item.smsEnabled!==false,status:item.status||'active',pauseFallbackNumber:item.pauseFallbackNumber||''}:null});
 }
 
 async function locations(req,res){
@@ -1787,6 +1787,7 @@ async function saveSettings(req,res){
   if(settings.website&&!/^https?:\/\//i.test(settings.website))return res.status(400).json({error:'Website must begin with http:// or https://'});
   if(settings.logoDataUrl&&!/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(settings.logoDataUrl))return res.status(400).json({error:'Business logo must be a JPG, PNG, or WebP image'});
   const previous=await kv.get('settings:'+s.workspaceId)||null;
+  settings.aiAnsweringPaused=previous?.aiAnsweringPaused===true;settings.aiPauseFallbackNumber=previous?.aiPauseFallbackNumber||'';settings.aiPausedAt=Number(previous?.aiPausedAt||0);settings.aiPausedBy=previous?.aiPausedBy||'';
   await kv.set('settings:'+s.workspaceId,settings);
   await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'settings_save',section:'settings',before:previous,after:settings});
   if(settings.businessName){
@@ -1794,6 +1795,23 @@ async function saveSettings(req,res){
     if(ws)await kv.set(key,{...ws,name:settings.businessName,ownerName:settings.contactName||ws.ownerName,industry:settings.industry||ws.industry,updatedAt:Date.now()});
   }
   return res.status(200).json({ok:true,settings});
+}
+
+async function aiAnsweringControl(req,res){
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const body=req.body||{},paused=body.paused===true,fallback=String(body.fallbackNumber||'').trim().slice(0,40);
+  if(fallback&&!/^\+?[0-9() .-]{7,30}$/.test(fallback))return res.status(400).json({error:'Enter a valid temporary handoff number'});
+  const key='settings:'+s.workspaceId,previous=await kv.get(key)||{},now=Date.now(),next={...previous,aiAnsweringPaused:paused,aiPauseFallbackNumber:fallback,aiPausedAt:paused?now:0,aiPausedBy:paused?s.email:''};
+  await kv.set(key,next);
+  const raw=await kv.get('phone:index')||[],list=Array.isArray(raw)?raw:[],idx=list.findIndex(x=>x&&x.workspaceId===s.workspaceId);
+  let routing=null;
+  if(idx>=0){
+    const before=list[idx],after={...before,status:paused?'paused':'active',pauseFallbackNumber:fallback,updatedAt:now};
+    list[idx]=after;await kv.set('phone:index',list);
+    routing={number:after.number||'',label:after.label||'Primary',provider:after.provider||'Vapi',forwardingFrom:after.forwardingFrom||'',transferNumber:after.transferNumber||'',afterHours:after.afterHours||'ai',smsEnabled:after.smsEnabled!==false,status:after.status||'active',pauseFallbackNumber:after.pauseFallbackNumber||''};
+  }
+  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:paused?'ai_answering_paused':'ai_answering_resumed',section:'routing',before:{aiAnsweringPaused:previous.aiAnsweringPaused===true,aiPauseFallbackNumber:previous.aiPauseFallbackNumber||''},after:{aiAnsweringPaused:paused,aiPauseFallbackNumber:fallback}});
+  return res.status(200).json({ok:true,settings:{aiAnsweringPaused:paused,aiPauseFallbackNumber:fallback,aiPausedAt:next.aiPausedAt,aiPausedBy:next.aiPausedBy},routing});
 }
 
 async function integrations(req,res){
@@ -1832,10 +1850,11 @@ async function clientDashboardData(req,res){
   const savedAgent=agentRaw||{},savedSettings=settingsRaw||{},platform=platformRaw||{},savedIntegrations=integrationsRaw||{},numbers=Array.isArray(phoneIndex)?phoneIndex:[],phone=numbers.find(x=>x&&x.workspaceId===s.workspaceId)||null;
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true',calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true';
   const settings={
-    businessName:savedSettings.businessName||ws.name||'',primaryEmail:savedSettings.primaryEmail||ws.ownerEmail||s.email||'',contactName:savedSettings.contactName||ws.ownerName||'',businessPhone:savedSettings.businessPhone||'',website:savedSettings.website||'',streetAddress:savedSettings.streetAddress||'',city:savedSettings.city||'',state:savedSettings.state||'',postalCode:savedSettings.postalCode||'',industry:savedSettings.industry||ws.industry||'',serviceArea:savedSettings.serviceArea||'',logoDataUrl:savedSettings.logoDataUrl||'',timezone:savedSettings.timezone||platform.defaultTimezone||'America/Los_Angeles',notificationEmail:savedSettings.notificationEmail||ws.ownerEmail||s.email||'',smsAlerts:smsLive&&savedSettings.smsAlerts!==false,emailAlerts:savedSettings.emailAlerts!==false,notifyBilling:savedSettings.notifyBilling!==false,notifySetup:savedSettings.notifySetup!==false,notifyCalls:savedSettings.notifyCalls!==false,notifySupport:savedSettings.notifySupport!==false,notifyUsage:savedSettings.notifyUsage!==false
+    businessName:savedSettings.businessName||ws.name||'',primaryEmail:savedSettings.primaryEmail||ws.ownerEmail||s.email||'',contactName:savedSettings.contactName||ws.ownerName||'',businessPhone:savedSettings.businessPhone||'',website:savedSettings.website||'',streetAddress:savedSettings.streetAddress||'',city:savedSettings.city||'',state:savedSettings.state||'',postalCode:savedSettings.postalCode||'',industry:savedSettings.industry||ws.industry||'',serviceArea:savedSettings.serviceArea||'',logoDataUrl:savedSettings.logoDataUrl||'',timezone:savedSettings.timezone||platform.defaultTimezone||'America/Los_Angeles',notificationEmail:savedSettings.notificationEmail||ws.ownerEmail||s.email||'',smsAlerts:smsLive&&savedSettings.smsAlerts!==false,emailAlerts:savedSettings.emailAlerts!==false,notifyBilling:savedSettings.notifyBilling!==false,notifySetup:savedSettings.notifySetup!==false,notifyCalls:savedSettings.notifyCalls!==false,notifySupport:savedSettings.notifySupport!==false,notifyUsage:savedSettings.notifyUsage!==false,
+    aiAnsweringPaused:savedSettings.aiAnsweringPaused===true,aiPauseFallbackNumber:savedSettings.aiPauseFallbackNumber||'',aiPausedAt:Number(savedSettings.aiPausedAt||0),aiPausedBy:savedSettings.aiPausedBy||''
   };
   const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
-  const routing=phone?{number:phone.number||'',label:phone.label||'Primary',provider:phone.provider||'Vapi',forwardingFrom:phone.forwardingFrom||'',transferNumber:phone.transferNumber||'',afterHours:phone.afterHours||'ai',smsEnabled:smsLive&&phone.smsEnabled!==false,status:phone.status||'active'}:null;
+  const routing=phone?{number:phone.number||'',label:phone.label||'Primary',provider:phone.provider||'Vapi',forwardingFrom:phone.forwardingFrom||'',transferNumber:phone.transferNumber||'',afterHours:phone.afterHours||'ai',smsEnabled:smsLive&&phone.smsEnabled!==false,status:phone.status||'active',pauseFallbackNumber:phone.pauseFallbackNumber||''}:null;
   return res.status(200).json({
     calls:Array.isArray(callsRaw)?callsRaw.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x):[],leads:[],agent,settings,
     integrations:{googleCalendar:calendarLive&&!!savedIntegrations.googleCalendar,stripe:!!ws.stripeCustomerId,webhookUrl:savedIntegrations.webhookUrl||'',apiAccess:!!ent.features.apiAccess},
@@ -1975,6 +1994,7 @@ module.exports=async function handler(req,res){
   if(action==='analytics'&&req.method==='GET')return analytics(req,res);
   if(action==='settings'&&req.method==='GET')return settings(req,res);
   if(action==='settings-save'&&req.method==='POST')return saveSettings(req,res);
+  if(action==='ai-answering-control'&&req.method==='POST')return aiAnsweringControl(req,res);
   if(action==='integrations'&&req.method==='GET')return integrations(req,res);
   if(action==='integrations-save'&&req.method==='POST')return saveIntegrations(req,res);
   if(action==='client-dashboard-data'&&req.method==='GET')return clientDashboardData(req,res);
