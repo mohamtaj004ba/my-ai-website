@@ -332,7 +332,7 @@ function renderCalls(){
     wrap.innerHTML=[...groups.entries()].map(([label,items])=>{const meta=callLogGroupBy==='day'?(items[0]?new Date(recordTime(items[0])||Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'}):''):(items.length+' call'+(items.length===1?'':'s'));return '<div class="call-day-heading"><b>'+esc(label)+'</b><span>'+esc(meta)+'</span></div>'+items.map(renderRow).join('')}).join('');
   }
   const allBtn=document.getElementById('callsShownCount'),followBtn=document.getElementById('callsFollowupCount'),resolvedBtn=document.getElementById('callsResolvedCount');
-  if(allBtn)allBtn.textContent=baseRows.length+' call'+(baseRows.length===1?'':'s');if(followBtn)followBtn.textContent=needsCount+' need your team';if(resolvedBtn)resolvedBtn.textContent=resolvedCount+' resolved by AI';
+  if(allBtn)allBtn.textContent=baseRows.length+' call'+(baseRows.length===1?'':'s')+' in view';if(followBtn)followBtn.textContent=needsCount+' active follow-up'+(needsCount===1?'':'s')+' in view';if(resolvedBtn)resolvedBtn.textContent=resolvedCount+' AI-resolved in view';
   document.querySelectorAll('[data-call-quick]').forEach(b=>b.classList.toggle('active',b.dataset.callQuick===callQuickFilter));
   document.getElementById('callsEmpty').hidden=rows.length!==0;
   wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
