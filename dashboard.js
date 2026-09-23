@@ -180,6 +180,16 @@ async function fetchJsonRetry(url,{attempts=2,timeout=9000}={}){
   }
   throw lastErr||new Error('Request failed');
 }
+async function loadSecondaryClientData(){
+  const tasks=[
+    ['leads',d=>{leadsData=d.leads||[]}],
+    ['conversations',d=>{conversationsData=d.conversations||[]}],
+    ['automations',d=>{automationsData=d.automations||[]}],
+    ['locations',d=>{locationsData=d.locations||locationsData;locationsLimit=Number(d.limit||locationsLimit||1)}]
+  ];
+  await Promise.allSettled(tasks.map(async([action,apply])=>{try{const data=await fetchJsonRetry('/api/account?action='+action,{attempts:1,timeout:8000});apply(data)}catch(_){}}));
+  renderContacts();renderConversations();renderAutomations();renderLocations();
+}
 function renderClientData(){
   if(callsData.length&&agentData&&settingsData)setDataHealth('clientDataHealth',false);
   renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderBillingConnection();renderPhoneRouting();renderLocations();
@@ -194,7 +204,8 @@ async function loadOperations(){
     callsData=data.calls||[];leadsData=data.leads||[];agentData=data.agent||null;settingsData=data.settings||null;integrationsData=data.integrations||null;phoneRoutingData=data.routing||null;locationsData=data.locations||[];locationsLimit=Number(data.locationsLimit||1);conversationsData=data.conversations||[];appointmentsData=data.appointments||[];automationsData=data.automations||[];followupState=data.followupState||{};analyticsData=buildLocalAnalytics();
     renderClientData();setClientLoading(false);
     // Non-critical support history loads separately so it can never block Today.
-    fetchJsonRetry('/api/account?action=support-tickets',{attempts:2,timeout:6000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(err=>console.warn('Support history delayed',err));
+    fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:5000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(()=>{});
+    loadSecondaryClientData();
     return;
   }catch(err){console.warn('Bundled dashboard load failed; using fallback',err);setClientLoading(true,'Still loading — retrying your workspace data…')}
   try{
@@ -290,23 +301,24 @@ function dateGroupLabel(ts){
 }
 function renderCalls(){
   const wrap=document.getElementById('callsTable');if(!wrap)return;
-  const q=(document.getElementById('callSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('callFilter')?.value||'all',dateFilter=document.getElementById('callDateFilter')?.value||'60';
+  const q=(document.getElementById('callSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('callFilter')?.value||'all',categoryFilter=document.getElementById('callCategoryFilter')?.value||'all',dateFilter=document.getElementById('callDateFilter')?.value||'60';
   let rows=[...callsData].filter(x=>{
-    const hay=[x.caller,x.phone,x.reason,x.outcome,x.agent,x.address].join(' ').toLowerCase(),t=recordTime(x);
+    const hay=[x.caller,x.phone,x.category,x.reason,x.outcome,x.agent,x.address].join(' ').toLowerCase(),t=recordTime(x);
     const dateOk=dateFilter==='all'||withinDays(t,Number(dateFilter));
-    return (!q||hay.includes(q))&&(filter==='all'||String(x.outcome||'').includes(filter))&&dateOk;
+    return (!q||hay.includes(q))&&(filter==='all'||String(x.outcome||'').includes(filter))&&(categoryFilter==='all'||String(x.category||'General question')===categoryFilter)&&dateOk;
   }).sort((a,b)=>recordTime(b)-recordTime(a));
   let lastGroup='';
   wrap.innerHTML=rows.map(x=>{
     const group=dateGroupLabel(recordTime(x)),header=group!==lastGroup?'<div class="call-day-heading"><b>'+esc(group)+'</b><span>'+new Date(recordTime(x)||Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</span></div>':'';lastGroup=group;
     const candidate=followupCandidates().some(c=>String(c.id)===String(x.id)),handled=candidate&&followupIsHandled(x),pending=candidate&&!handled,stateClass=pending?'call-pending':handled?'call-handled':'call-resolved',status=pending?'Needs follow-up':handled?'Handled':(x.outcome||'Handled');
-    return header+'<button class="call-row data '+stateClass+'" data-call-id="'+esc(x.id)+'"><span><strong>'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(x.agent||'Maya')+'</small></span><span>'+esc(x.reason||'—')+'</span><span class="tag '+(pending?'amber':'green')+'">'+esc(status)+'</span><span>'+esc(x.duration||'—')+'</span></button>';
+    return header+'<button class="call-row data '+stateClass+'" data-call-id="'+esc(x.id)+'"><span><strong>'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(x.agent||'Maya')+'</small></span><span><i class="call-type-pill">'+esc(x.category||'General question')+'</i></span><span>'+esc(x.reason||'—')+'</span><span class="tag '+(pending?'amber':'green')+'">'+esc(status)+'</span><span>'+esc(x.duration||'—')+'</span></button>';
   }).join('');
   document.getElementById('callsEmpty').hidden=rows.length!==0;
   wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
 }
-function openCall(id){
-  const x=callsData.find(c=>String(c.id)===String(id));if(!x)return;
+async function openCall(id){
+  let x=callsData.find(c=>String(c.id)===String(id));if(!x)return;
+  if(!x.transcript&&!demoMode){try{const data=await fetchJsonRetry('/api/account?action=call-detail&id='+encodeURIComponent(id),{attempts:2,timeout:7000});if(data.call){x=data.call;const idx=callsData.findIndex(c=>String(c.id)===String(id));if(idx>=0)callsData[idx]={...callsData[idx],...x}}}catch(err){console.warn('Call details delayed',err)}}
   activeCallContactKey=contactKey(x);activeCallId=String(x.id||'');
   document.getElementById('drawerCaller').textContent=x.caller||'Unknown caller';
   const digits=String(x.phone||'').replace(/\D/g,'');const callLink=document.getElementById('drawerCallLink'),textLink=document.getElementById('drawerTextLink');if(callLink){callLink.href=digits?'tel:'+digits:'#';callLink.classList.toggle('disabled-link',!digits)}if(textLink){textLink.href=digits?'sms:'+digits:'#';textLink.classList.toggle('disabled-link',!digits)}
@@ -314,7 +326,7 @@ function openCall(id){
   const note=document.getElementById('drawerInternalNote');if(note)note.value='';const ns=document.getElementById('drawerNoteStatus');if(ns)ns.textContent='';renderCallNotes(x.id);
   const when=document.getElementById('drawerWhen');if(when)when.textContent=formatFullDateTime(x);
   document.getElementById('drawerMeta').innerHTML=[['Phone',x.phone],['Duration',x.duration],['Status',followupCandidates().some(c=>String(c.id)===String(x.id))?(followupIsHandled(x)?'Handled':'Needs follow-up'):(x.outcome||'Handled')],['Answered by',x.agent||'Maya']].filter(([,v])=>v).map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('');
-  const addr=document.getElementById('drawerAddress');if(addr)addr.textContent=x.address||contactForRecord(x)?.address||'No address was captured on this call.';
+  const classification=document.getElementById('drawerClassification');if(classification)classification.innerHTML='<span class="call-type-pill large">'+esc(x.category||'General question')+'</span><span>'+esc(x.outcome||'Handled')+'</span>';const addr=document.getElementById('drawerAddress');if(addr)addr.textContent=x.address||contactForRecord(x)?.address||'No address was captured on this call.';
   document.getElementById('drawerSummary').textContent=x.summary||'No AI summary is available yet.';
   const q=x.qualification||{};
   document.getElementById('drawerQualification').innerHTML=Object.entries(q).filter(([k])=>String(k).toLowerCase()!=='value').map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('')||'<span class="muted">No additional call details yet.</span>';
@@ -327,7 +339,7 @@ function closeCall(){document.getElementById('callDrawer')?.classList.remove('op
 function money(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
 function followupType(call){
   const reason=String(call?.reason||''),outcome=String(call?.outcome||'');
-  if(/no heat|emergency|urgent|gas|carbon monoxide/i.test(reason))return 'urgent';
+  if(/no heat|emergency|urgent|gas|carbon monoxide/i.test(reason)||String(call?.category||'')==='Complaint')return 'urgent';
   if(/miss/i.test(outcome))return 'callback';
   if(/follow/i.test(outcome))return 'callback';
   if(/book|qualif/i.test(outcome))return 'qualified';
@@ -335,7 +347,7 @@ function followupType(call){
 }
 function followupLabel(type){return ({urgent:'Urgent',callback:'Callback',qualified:'Qualified request',review:'Review'})[type]||'Review'}
 function followupCandidates(){
-  return callsData.filter(x=>/miss|follow|qualif/i.test(String(x.outcome||''))||/urgent|emergency|no heat|gas|carbon monoxide/i.test(String(x.reason||''))).sort((a,b)=>recordTime(b)-recordTime(a));
+  return callsData.filter(x=>/miss|follow|qualif/i.test(String(x.outcome||''))||['Complaint','Billing','Estimate follow-up'].includes(String(x.category||''))||/urgent|emergency|no heat|gas|carbon monoxide/i.test(String(x.reason||''))).sort((a,b)=>recordTime(b)-recordTime(a));
 }
 async function loadFollowupState(){
   if(demoMode)return;
@@ -399,6 +411,7 @@ async function moveLead(id,stage){
 document.getElementById('callSearch')?.addEventListener('input',renderCalls);
 document.getElementById('callFilter')?.addEventListener('change',renderCalls);
 document.getElementById('callDateFilter')?.addEventListener('change',renderCalls);
+document.getElementById('callCategoryFilter')?.addEventListener('change',renderCalls);
 document.getElementById('leadSearch')?.addEventListener('input',renderLeads);
 document.getElementById('leadFilter')?.addEventListener('change',renderLeads);
 document.getElementById('showHandledFollowups')?.addEventListener('click',e=>{showHandledFollowups=!showHandledFollowups;e.currentTarget.textContent=showHandledFollowups?'Show open':'Show handled';renderLeads()});
