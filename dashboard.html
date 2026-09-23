@@ -10,7 +10,7 @@
 <div class="app-shell">
   <aside class="sidebar">
     <a class="dash-brand" href="/"><img src="/logo-icon.png" alt=""><span>Caller<b>Core</b></span></a>
-    <div class="workspace"><span>Workspace</span><strong id="workspaceName">Loading…</strong><small id="workspaceMeta">Secure client portal</small></div>
+    <div class="workspace workspace-with-logo"><div class="workspace-logo"><span id="workspaceLogoInitials">CC</span><img id="workspaceLogoImage" alt="" hidden></div><div><span>Workspace</span><strong id="workspaceName">Loading…</strong><small id="workspaceMeta">Secure client portal</small></div></div>
     <nav class="dash-nav" aria-label="Dashboard">
       <button class="nav-item active" data-view="overview">Today</button>
       <button class="nav-item" data-view="calls">Calls</button>
@@ -64,7 +64,7 @@
         <article class="panel overview-agent-card">
           <div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya is online</h2></div></div><button data-view="agent">Settings →</button></div>
           <p id="overviewAgentMeta">Your AI receptionist is actively handling calls.</p>
-          <div class="overview-agent-stats"><div><span>Handled · 30 days</span><strong id="overviewAgentCalls">0</strong></div><div><span>Qualified / booked</span><strong id="overviewAgentLeads">0</strong></div><div><span>Avg calls / day</span><strong id="overviewDailyAvg">0</strong></div></div>
+          <div class="overview-agent-stats"><div><span>Handled · 30 days</span><strong id="overviewAgentCalls">0</strong></div><div><span>Qualified requests</span><strong id="overviewAgentLeads">0</strong></div><div><span>Avg calls / day</span><strong id="overviewDailyAvg">0</strong></div></div>
           <div class="overview-chart-card">
   <div class="overview-chart-head"><div><span class="eyebrow">Call volume · last 14 days</span><b id="overviewChartSummary">0 calls/day average</b></div><span id="overviewChartPeak">Peak 0</span></div>
   <div class="overview-line-chart" id="overviewLineChart" aria-label="Call volume over the last 14 days"></div>
@@ -74,7 +74,7 @@
           <div class="panel-head"><div><span class="eyebrow">Call health</span><h2>How CallerCore is performing</h2></div></div>
           <div class="health-rings">
             <div class="health-ring-wrap"><div class="health-ring" id="overviewAnswerRing"><span id="overviewAnswerPct">0%</span></div><b>Answer rate</b><small>Calls completed by AI</small></div>
-            <div class="health-ring-wrap"><div class="health-ring" id="overviewQualifiedRing"><span id="overviewQualifiedPct">0%</span></div><b>High-intent rate</b><small>Qualified or booked</small></div>
+            <div class="health-ring-wrap"><div class="health-ring" id="overviewQualifiedRing"><span id="overviewQualifiedPct">0%</span></div><b>High-intent rate</b><small>Qualified service requests</small></div>
             <div class="health-ring-wrap"><div class="health-ring" id="overviewRecoveryRing"><span id="overviewRecoveryPct">0%</span></div><b>Handled cleanly</b><small>No follow-up needed</small></div>
           </div>
           <div class="overview-attention-divider"></div>
