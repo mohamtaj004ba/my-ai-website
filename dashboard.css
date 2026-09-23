@@ -324,3 +324,9 @@ body.drawer-open{overflow:hidden}
   .page-head h1{font-size:30px}
   .call-drawer .drawer-head{top:-24px}
 }
+
+.disabled-link{pointer-events:none!important;cursor:not-allowed!important;opacity:.48!important;text-decoration:none!important}
+.health-rings .health-ring,.health-rings .health-ring-wrap{pointer-events:none}
+.table-guidance+ .toolbar{margin-top:0}
+.contact-row.data:focus-visible,.call-row.data:focus-visible,.attention-call:focus-visible,.overview-call-row:focus-visible{position:relative;z-index:2}
+@media(max-width:560px){.top-actions{gap:6px}.icon-btn,.help-button{width:40px;height:40px}.account-button{padding:4px 6px}.profile-avatar{width:32px;height:32px}}
