@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false;
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14;
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest';
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -138,7 +138,16 @@ function renderBillingConnection(){
   btn.disabled=!linked||!sessionWorkspace?.stripe?.customerLinked;btn.textContent=linked?'Manage billing':'Billing unavailable';
 }
 function planFeatures(name){
-  return name==='Starter'?['300 included minutes','1 location','Core call handling','AI receptionist','Phone routing & support']:name==='Growth'?['600 included minutes','Up to 2 locations','Everything in Starter','Unified conversations','Automations','Advanced insights']:['High-volume workflows','Up to 5 locations','Everything in Growth','API & webhooks'];
+  const starter=[
+    'AI receptionist call handling','Custom greeting and business instructions','Searchable call log','AI call summaries','Full transcripts when available','Automatic call-type classification','Contact history built from calls and messages','Follow-up queue for calls needing staff','Internal team notes','Business-hours and after-hours instructions','Phone routing visibility','Email alerts','300 included AI minutes','1 business location','CallerCore support'
+  ];
+  const growth=[
+    'AI receptionist call handling','Custom greeting and business instructions','Searchable call log','AI call summaries','Full transcripts when available','Automatic call-type classification','Contact history built from calls and messages','Follow-up queue for calls needing staff','Internal team notes','Business-hours and after-hours instructions','Phone routing visibility','Email alerts','600 included AI minutes','Up to 2 business locations','Unified conversations','Follow-up automations','Advanced insights','Call-type and after-hours analytics','CallerCore support'
+  ];
+  const pro=[
+    'AI receptionist call handling','Custom greeting and business instructions','Searchable call log','AI call summaries','Full transcripts when available','Automatic call-type classification','Contact history built from calls and messages','Follow-up queue for calls needing staff','Internal team notes','Business-hours and after-hours instructions','Phone routing visibility','Email alerts','High-volume usage plan','Up to 5 business locations','Unified conversations','Follow-up automations','Advanced insights','Call-type and after-hours analytics','API access','Webhooks and custom events','Advanced integrations','High-volume workflows','CallerCore support'
+  ];
+  return name==='Starter'?starter:name==='Growth'?growth:pro;
 }
 function planLosses(from,to){
   let losses=from==='Pro'&&to==='Growth'?['API & webhook access','Capacity above 2 locations','High-volume Pro workflows']:from==='Pro'&&to==='Starter'?['API & webhooks','Automations','Advanced insights','Unified conversations','Locations above 1','Higher included usage']:from==='Growth'&&to==='Starter'?['Automations','Advanced insights','Unified conversations','Second location','Higher included usage']:[];
@@ -153,7 +162,7 @@ function renderBilling(){
   const usageText=d.minutes?d.used+' / '+d.minutes:d.used+' min · usage policy pending';
   document.getElementById('billingUsageText')&&(document.getElementById('billingUsageText').textContent=usageText);
   const pct=d.minutes?Math.min(100,(d.used/d.minutes)*100):38;document.getElementById('billingUsage')?.style.setProperty('width',pct+'%');document.getElementById('sidebarUsage')?.style.setProperty('width',pct+'%');document.getElementById('sidebarUsageLabel')&&(document.getElementById('sidebarUsageLabel').textContent=usageText);document.getElementById('sidebarPlan')&&(document.getElementById('sidebarPlan').textContent=currentPlan);
-  const benefits=document.getElementById('currentPlanBenefits');if(benefits)benefits.innerHTML=planFeatures(currentPlan).map(x=>'<span>✓ '+esc(x)+'</span>').join('');
+  const benefits=document.getElementById('currentPlanBenefits');if(benefits)benefits.innerHTML='<div class="benefits-heading"><b>Everything included in '+esc(currentPlan)+'</b><small>Your current plan already includes all of the following.</small></div>'+planFeatures(currentPlan).map(x=>'<span>✓ '+esc(x)+'</span>').join('');
   const wrap=document.getElementById('planComparison');if(wrap)wrap.innerHTML=Object.entries(PLAN_DATA).filter(([name])=>name!==currentPlan).map(([name,p])=>{const losses=planLosses(currentPlan,name),isUpgrade=p.price>d.price,diff=Math.abs(p.price-d.price);return '<article class="plan-option contextual '+(losses.length?'downgrade-option':'upgrade-option')+'"><span class="eyebrow">'+(isUpgrade?'Upgrade option':'Lower-cost option')+'</span><h3>'+name+'</h3><p class="plan-price-delta">'+(isUpgrade?'+':'−')+'$'+diff+'/mo from your current plan</p><ul>'+planFeatures(name).slice(0,4).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+(losses.length?'<div class="loss-preview"><b>You would give up</b><span>'+losses.slice(0,2).map(esc).join(' · ')+(losses.length>2?' · +'+(losses.length-2)+' more':'')+'</span></div>':'<div class="gain-preview"><b>Adds more capacity and features</b></div>')+'<button class="'+(losses.length?'secondary-btn':'primary')+'" data-upgrade="'+esc(name)+'">'+(losses.length?'Review downgrade':'Review upgrade')+'</button></article>'}).join('');
   bindUpgradeButtons();
 }
@@ -191,7 +200,7 @@ async function loadSecondaryClientData(){
   renderContacts();renderConversations();renderAutomations();renderLocations();
 }
 function renderClientData(){
-  if(callsData.length&&agentData&&settingsData)setDataHealth('clientDataHealth',false);
+  loadCallLogPrefs();if(callsData.length&&agentData&&settingsData)setDataHealth('clientDataHealth',false);
   renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderBillingConnection();renderPhoneRouting();renderLocations();
 }
 async function loadOperations(){
@@ -237,6 +246,18 @@ function formatFullDateTime(x){
   const ts=recordTime(x);if(ts)return new Date(ts).toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
   return [x?.date,x?.time].filter(Boolean).join(' · ')||'Date unavailable';
 }
+function aiAnsweringState(){
+  const paused=settingsData?.aiAnsweringPaused===true||phoneRoutingData?.status==='paused',number=phoneRoutingData?.number||'',routingReady=!!number&&!!phoneRoutingData;
+  return {paused,number,routingReady,active:routingReady&&!paused&&(phoneRoutingData?.status||'active')==='active',fallback:settingsData?.aiPauseFallbackNumber||phoneRoutingData?.pauseFallbackNumber||''};
+}
+function renderAiCoverage(){
+  const state=aiAnsweringState(),banner=document.getElementById('aiCoverageBanner'),title=document.getElementById('aiCoverageTitle'),copy=document.getElementById('aiCoverageCopy'),eyebrow=document.getElementById('aiCoverageEyebrow');
+  if(!banner||!title||!copy)return;banner.classList.remove('active','paused','setup');
+  if(state.active){banner.classList.add('active');if(eyebrow)eyebrow.textContent='AI ANSWERING · ON';title.textContent='CallerCore is set to answer calls';copy.textContent=state.number?'Maya is active on '+state.number+'.':'Maya is ready for incoming calls.'}
+  else if(state.paused){banner.classList.add('paused');if(eyebrow)eyebrow.textContent='AI ANSWERING · PAUSED';title.textContent='AI answering is temporarily paused';copy.textContent=state.fallback?'Temporary handoff: '+state.fallback+'.':'Resume answering when your team is ready.'}
+  else{banner.classList.add('setup');if(eyebrow)eyebrow.textContent='AI ANSWERING · SETUP NEEDED';title.textContent='Phone routing is not ready yet';copy.textContent='Finish phone setup before relying on CallerCore for inbound coverage.'}
+  const name=agentData?.name||'Maya',nameEl=document.getElementById('overviewAgentName');if(nameEl)nameEl.textContent=name;
+}
 function renderOverview(){
   const callTimes=callsData.map(recordTime).filter(Boolean),todayCalls=callsData.filter(x=>sameLocalDay(recordTime(x))).length,weekCalls=callsData.filter(x=>withinDays(recordTime(x),7)).length,monthCalls=callsData.filter(x=>withinDays(recordTime(x),30)).length;
   const weekLeads=callsData.filter(x=>withinDays(recordTime(x),7)&&/qualif/i.test(String(x.outcome||''))).length;
@@ -250,11 +271,11 @@ function renderOverview(){
   set('overviewWeekCallsMeta',weekCalls+' handled in the last 7 days');
   set('overviewLeadsMeta',weekLeads+' surfaced in the last 7 days');
   set('overviewFollowupMeta',followups?'Calls waiting for your team':'Nothing waiting');const attentionCard=document.getElementById('overviewAttentionCard');if(attentionCard)attentionCard.classList.toggle('has-attention',followups>0);
-  const name=agentData?.name||'Maya';set('overviewAgentName',name+' is ready');
+  const name=agentData?.name||'Maya';set('overviewAgentName',name);renderAiCoverage();
   const recent60=callsData.filter(x=>withinDays(recordTime(x),60)),answered60=recent60.filter(x=>!/miss/i.test(String(x.outcome||''))).length,qualified60=recent60.filter(x=>/book|qualif/i.test(String(x.outcome||''))).length,clean60=recent60.filter(x=>!/miss|follow/i.test(String(x.outcome||''))).length;
   const answerPct=recent60.length?Math.round(answered60/recent60.length*100):0,qualifiedPct=recent60.length?Math.round(qualified60/recent60.length*100):0,recoveryPct=recent60.length?Math.round(clean60/recent60.length*100):0;
   [['overviewAnswerRing','overviewAnswerPct',answerPct],['overviewQualifiedRing','overviewQualifiedPct',qualifiedPct],['overviewRecoveryRing','overviewRecoveryPct',recoveryPct]].forEach(([ringId,textId,pct])=>{const ring=document.getElementById(ringId),txt=document.getElementById(textId);if(ring)ring.style.setProperty('--pct',pct);if(txt)txt.textContent=pct+'%'});
-  set('overviewAgentMeta','Configured to handle incoming calls for '+(settingsData?.businessName||sessionWorkspace?.name||'your business')+'.');
+  set('overviewAgentMeta','AI receptionist for '+(settingsData?.businessName||sessionWorkspace?.name||'your business')+'.');
   set('overviewAgentCalls',monthCalls);set('overviewAgentLeads',qualified30);set('overviewDailyAvg',dailyAvg);
   const chart=document.getElementById('overviewLineChart');
   if(chart){
@@ -305,20 +326,39 @@ function dateGroupLabel(ts){
   if(sameLocalDay(ts,yesterday))return 'Yesterday';
   return d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:d.getFullYear()!==today.getFullYear()?'numeric':undefined});
 }
+function callLogPrefsKey(){return 'callercore:calllog:prefs:'+(sessionWorkspace?.id||'default')}
+function loadCallLogPrefs(){
+  try{const p=JSON.parse(localStorage.getItem(callLogPrefsKey())||'{}');if(['day','type','outcome','none'].includes(p.groupBy))callLogGroupBy=p.groupBy;if(['newest','oldest'].includes(p.sort))callLogSort=p.sort}catch(_){}
+  const g=document.getElementById('callGroupBy'),s=document.getElementById('callSort');if(g)g.value=callLogGroupBy;if(s)s.value=callLogSort;
+}
+function saveCallLogPrefs(){
+  callLogGroupBy=document.getElementById('callGroupBy')?.value||'day';callLogSort=document.getElementById('callSort')?.value||'newest';
+  try{localStorage.setItem(callLogPrefsKey(),JSON.stringify({groupBy:callLogGroupBy,sort:callLogSort}))}catch(_){}
+}
+function callGroupLabel(x,mode){
+  if(mode==='type')return String(x.category||'General question');
+  if(mode==='outcome')return String(x.outcome||'Handled');
+  if(mode==='day')return dateGroupLabel(recordTime(x));
+  return '';
+}
 function renderCalls(){
   const wrap=document.getElementById('callsTable');if(!wrap)return;
   const q=(document.getElementById('callSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('callFilter')?.value||'all',categoryFilter=document.getElementById('callCategoryFilter')?.value||'all',dateFilter=document.getElementById('callDateFilter')?.value||'60';
+  callLogGroupBy=document.getElementById('callGroupBy')?.value||callLogGroupBy;callLogSort=document.getElementById('callSort')?.value||callLogSort;
   let rows=[...callsData].filter(x=>{
     const hay=[x.caller,x.phone,x.category,x.reason,x.outcome,x.agent,x.address].join(' ').toLowerCase(),t=recordTime(x);
     const dateOk=dateFilter==='all'||withinDays(t,Number(dateFilter));
     return (!q||hay.includes(q))&&(filter==='all'||String(x.outcome||'').includes(filter))&&(categoryFilter==='all'||String(x.category||'General question')===categoryFilter)&&dateOk;
-  }).sort((a,b)=>recordTime(b)-recordTime(a));
-  let lastGroup='';
-  wrap.innerHTML=rows.map(x=>{
-    const group=dateGroupLabel(recordTime(x)),header=group!==lastGroup?'<div class="call-day-heading"><b>'+esc(group)+'</b><span>'+new Date(recordTime(x)||Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</span></div>':'';lastGroup=group;
+  }).sort((a,b)=>callLogSort==='oldest'?recordTime(a)-recordTime(b):recordTime(b)-recordTime(a));
+  const renderRow=x=>{
     const candidate=followupCandidates().some(c=>String(c.id)===String(x.id)),handled=candidate&&followupIsHandled(x),pending=candidate&&!handled,stateClass=pending?'call-pending':handled?'call-handled':'call-resolved',status=pending?'Needs follow-up':handled?'Handled':(x.outcome||'Handled');
-    return header+'<button class="call-row data '+stateClass+'" data-call-id="'+esc(x.id)+'" title="Open call details"><span><strong title="'+esc(x.caller||'Unknown')+'">'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(x.agent||'Maya')+'</small></span><span><i class="call-type-pill" title="'+esc(x.category||'General question')+'">'+esc(x.category||'General question')+'</i></span><span class="call-reason" title="'+esc(x.reason||'—')+'">'+esc(x.reason||'—')+'</span><span class="tag '+(pending?'amber':'green')+'">'+esc(status)+'</span><span>'+esc(x.duration||'—')+'</span></button>';
-  }).join('');
+    return '<button class="call-row data '+stateClass+'" data-call-id="'+esc(x.id)+'" title="Open call details"><span><strong title="'+esc(x.caller||'Unknown')+'">'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span><span><i class="call-type-pill" title="'+esc(x.category||'General question')+'">'+esc(x.category||'General question')+'</i></span><span class="call-reason" title="'+esc(x.reason||'—')+'">'+esc(x.reason||'—')+'</span><span class="tag '+(pending?'amber':'green')+'">'+esc(status)+'</span><span>'+esc(x.duration||'—')+'</span></button>';
+  };
+  if(callLogGroupBy==='none')wrap.innerHTML=rows.map(renderRow).join('');
+  else{
+    const groups=new Map();for(const x of rows){const label=callGroupLabel(x,callLogGroupBy);if(!groups.has(label))groups.set(label,[]);groups.get(label).push(x)}
+    wrap.innerHTML=[...groups.entries()].map(([label,items])=>{const meta=callLogGroupBy==='day'?(items[0]?new Date(recordTime(items[0])||Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'}):''):(items.length+' call'+(items.length===1?'':'s'));return '<div class="call-day-heading"><b>'+esc(label)+'</b><span>'+esc(meta)+'</span></div>'+items.map(renderRow).join('')}).join('');
+  }
   const pendingShown=rows.filter(x=>followupCandidates().some(c=>String(c.id)===String(x.id))&&!followupIsHandled(x)).length,resolvedShown=rows.length-pendingShown;const shownEl=document.getElementById('callsShownCount'),followEl=document.getElementById('callsFollowupCount'),resolvedEl=document.getElementById('callsResolvedCount');if(shownEl)shownEl.textContent=rows.length+' call'+(rows.length===1?'':'s');if(followEl)followEl.textContent=pendingShown+' need follow-up';if(resolvedEl)resolvedEl.textContent=resolvedShown+' handled / resolved';
   document.getElementById('callsEmpty').hidden=rows.length!==0;
   wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
@@ -398,7 +438,7 @@ function normalizedCallNotes(id){
 }
 function renderCallNotes(id=activeCallId){
   const list=document.getElementById('drawerNotesList'),count=document.getElementById('drawerNoteCount');if(!list)return;const notes=normalizedCallNotes(id);
-  if(count)count.textContent=notes.length+' note'+(notes.length===1?'':'s');
+  if(count)count.textContent=notes.length+' note'+(notes.length===1?'':'s');const composer=document.getElementById('drawerInternalNote');if(composer)composer.placeholder=notes.length?'Add another note for your team…':'Add a note for your team…';
   list.innerHTML=notes.length?notes.map(n=>'<article class="internal-note-card"><p>'+esc(n.text)+'</p><small>'+esc(n.by||'Team')+(n.at?' · '+new Date(Number(n.at)).toLocaleString():'')+'</small></article>').join(''):'<div class="notes-empty">No internal notes yet.</div>';
 }
 async function saveCallNote(){
@@ -419,6 +459,8 @@ document.getElementById('callSearch')?.addEventListener('input',renderCalls);
 document.getElementById('callFilter')?.addEventListener('change',renderCalls);
 document.getElementById('callDateFilter')?.addEventListener('change',renderCalls);
 document.getElementById('callCategoryFilter')?.addEventListener('change',renderCalls);
+document.getElementById('callGroupBy')?.addEventListener('change',()=>{saveCallLogPrefs();renderCalls()});
+document.getElementById('callSort')?.addEventListener('change',()=>{saveCallLogPrefs();renderCalls()});
 document.getElementById('leadSearch')?.addEventListener('input',renderLeads);
 document.getElementById('leadFilter')?.addEventListener('change',renderLeads);
 document.getElementById('showHandledFollowups')?.addEventListener('click',e=>{showHandledFollowups=!showHandledFollowups;e.currentTarget.textContent=showHandledFollowups?'Show open':'Show handled';renderLeads()});
@@ -478,22 +520,29 @@ function buildContacts(){
     if(!map.has(key))map.set(key,{key,name,phone:rec?.phone||'',address:rec?.address||'',calls:[],conversations:[],leads:[],lastAt:0,services:new Set()});
     const c=map.get(key);if(name&&c.name==='Unknown caller')c.name=name;if(rec?.phone&&!c.phone)c.phone=rec.phone;if(rec?.address&&!c.address)c.address=rec.address;c.lastAt=Math.max(c.lastAt,recordTime(rec)||0);if(rec?.reason)c.services.add(rec.reason);if(rec?.service)c.services.add(rec.service);return c;
   };
-  callsData.filter(x=>!['Spam','Wrong number','Vendor','Employment'].includes(String(x.category||''))).forEach(x=>ensure(x,'caller').calls.push(x));
+  callsData.filter(x=>!['Spam','Wrong number'].includes(String(x.category||''))).forEach(x=>ensure(x,'caller').calls.push(x));
   conversationsData.forEach(x=>ensure(x).conversations.push(x));
   leadsData.forEach(x=>ensure(x).leads.push(x));
   return [...map.values()].sort((a,b)=>b.lastAt-a.lastAt);
 }
+function contactType(c){
+  const cats=new Set((c.calls||[]).map(x=>String(x.category||'')));
+  if(cats.has('Vendor'))return 'Vendor';
+  if(cats.has('Employment'))return 'Applicant';
+  if(c.leads?.length||[...cats].some(x=>['New service','Existing job','Estimate follow-up','Billing','Complaint','Warranty'].includes(x)))return 'Customer';
+  return 'Contact';
+}
 function contactForRecord(x){return buildContacts().find(c=>c.key===contactKey(x))||null}
 function renderContacts(){
   const wrap=document.getElementById('contactsTable');if(!wrap)return;
-  const q=(document.getElementById('contactSearch')?.value||'').trim().toLowerCase(),all=buildContacts(),rows=all.filter(c=>!q||[c.name,c.phone,c.address,...c.services].join(' ').toLowerCase().includes(q));
+  const q=(document.getElementById('contactSearch')?.value||'').trim().toLowerCase(),all=buildContacts(),rows=all.filter(c=>!q||[c.name,c.phone,c.address,contactType(c),...c.services].join(' ').toLowerCase().includes(q));
   const customerCount=document.getElementById('customerCount'),repeatCount=document.getElementById('repeatCustomerCount'),attentionCount=document.getElementById('customerAttentionCount');if(customerCount)customerCount.textContent=all.length;if(repeatCount)repeatCount.textContent=all.filter(c=>c.calls.length>1).length;if(attentionCount)attentionCount.textContent=all.filter(c=>c.calls.some(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x))).length;
   wrap.innerHTML=rows.map(c=>{
-    const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0),openCount=c.calls.filter(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x)).length,latestCall=[...c.calls].sort((a,b)=>recordTime(b)-recordTime(a))[0];
-    return '<div class="contact-row data '+(openCount?'customer-attention':'')+'" data-contact-row="'+esc(c.key)+'"><span><button class="customer-link contact-open" data-contact-open="'+esc(c.key)+'"><strong>'+esc(c.name)+'</strong></button><small>'+esc(c.phone||'No phone captured')+(openCount?' · '+openCount+' open follow-up'+(openCount===1?'':'s'):'')+'</small></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span><button class="count-link contact-open" data-contact-open="'+esc(c.key)+'">'+c.calls.length+'</button></span><span><button class="count-link contact-open" data-contact-open="'+esc(c.key)+'">'+msgCount+'</button></span><span><button class="latest-need-link contact-open" data-contact-open="'+esc(c.key)+'">'+esc(latestCall?.reason||[...c.services][0]||'General inquiry')+'</button></span></div>';
+    const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0),openCount=c.calls.filter(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x)).length,latestCall=[...c.calls].sort((a,b)=>recordTime(b)-recordTime(a))[0],latestText=latestCall?.reason||[...c.services][0]||'General activity',kind=contactType(c);
+    return '<button class="contact-row data '+(openCount?'customer-attention':'')+'" data-contact-row="'+esc(c.key)+'" title="Open '+esc(c.name)+' contact history"><span><strong>'+esc(c.name)+'</strong><small>'+esc(c.phone||'No phone captured')+(openCount?' · '+openCount+' open follow-up'+(openCount===1?'':'s'):'')+'</small></span><span><i class="contact-type-pill '+kind.toLowerCase()+'">'+esc(kind)+'</i></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span class="contact-count">'+c.calls.length+'</span><span class="contact-count">'+msgCount+'</span><span class="latest-need-link" title="'+esc(latestText)+'">'+esc(latestText)+'</span></button>';
   }).join('');
   document.getElementById('contactsEmpty').hidden=rows.length!==0;
-  wrap.onclick=e=>{const btn=e.target.closest('[data-contact-open]'),row=e.target.closest('[data-contact-row]');const key=btn?.dataset.contactOpen||row?.dataset.contactRow;if(key)openContact(key)};
+  wrap.querySelectorAll('[data-contact-row]').forEach(row=>row.addEventListener('click',()=>openContact(row.dataset.contactRow)));
 }
 function openContact(key){
   const c=buildContacts().find(x=>x.key===key);if(!c)return;
@@ -505,7 +554,7 @@ function openContact(key){
     ['Phone',c.phone||'Not captured'],['Address',c.address||'Not captured'],['Calls',c.calls.length],['Messages',c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0)]
   ].map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('');
   const latestCall=[...c.calls].sort((a,b)=>recordTime(b)-recordTime(a))[0],latestLead=[...c.leads].sort((a,b)=>recordTime(b)-recordTime(a))[0];
-  document.getElementById('contactDrawerSummary').textContent=latestCall?.summary||((latestLead?.service)?c.name+' contacted the business about '+latestLead.service.toLowerCase()+'.':'CallerCore has contact activity for this person.');
+  document.getElementById('contactDrawerSummary').textContent=latestCall?.summary||((latestLead?.service)?c.name+' contacted the business about '+latestLead.service.toLowerCase()+'.':'CallerCore has activity for this contact.');
   const events=[
     ...c.calls.map(x=>({at:recordTime(x),kind:'Call',title:x.reason||'Phone call',copy:[x.outcome,x.duration].filter(Boolean).join(' · '),callId:x.id})),
     ...c.conversations.flatMap(x=>(x.messages||[]).map(m=>({at:Number(m.at||recordTime(x)||0),kind:m.dir==='in'?'Message received':'Message sent',title:m.who||x.name,copy:m.text||''}))),
@@ -693,13 +742,35 @@ function setSettingsEditing(editing,{restore=false}={}){
   if(edit)edit.hidden=settingsEditing;if(cancel)cancel.hidden=!settingsEditing;if(save)save.hidden=!settingsEditing;if(logo)logo.hidden=!settingsEditing;
   renderBusinessLogo();
 }
+function renderAiAnsweringControl(){
+  const state=aiAnsweringState(),title=document.getElementById('settingsAiTitle'),copy=document.getElementById('settingsAiCopy'),button=document.getElementById('toggleAiAnsweringButton'),input=document.getElementById('aiPauseFallbackNumber'),visual=document.getElementById('settingsAiVisual'),note=document.getElementById('aiAnsweringStatusNote');
+  if(!title||!button)return;if(visual)visual.classList.remove('active','paused','setup');
+  if(input&&!input.matches(':focus'))input.value=state.fallback||'';
+  if(state.active){visual?.classList.add('active');title.textContent='AI answering is active';copy.textContent=(state.number?'CallerCore is set to answer '+state.number+'. ':'')+'Use Pause only when you intentionally need your team or another phone to take over.';button.textContent='Pause AI answering';button.className='danger-btn ai-pause-button';button.disabled=false;if(note)note.textContent='Optional: enter a temporary handoff number before pausing.'}
+  else if(state.paused){visual?.classList.add('paused');title.textContent='AI answering is paused';copy.textContent=state.fallback?'Temporary handoff number saved: '+state.fallback+'.':'CallerCore AI answering is paused for this workspace.';button.textContent='Resume AI answering';button.className='primary ai-pause-button';button.disabled=!state.routingReady;if(note)note.textContent='Resume when you want CallerCore to take inbound calls again.'}
+  else{visual?.classList.add('setup');title.textContent='Phone routing is not configured';copy.textContent='There is no active CallerCore number to pause or resume yet.';button.textContent='AI answering unavailable';button.className='secondary-btn ai-pause-button';button.disabled=true;if(note)note.textContent='Finish phone routing before using emergency answering controls.'}
+}
+async function toggleAiAnswering(){
+  const state=aiAnsweringState(),targetPaused=!state.paused,input=document.getElementById('aiPauseFallbackNumber'),status=document.getElementById('aiAnsweringActionStatus'),button=document.getElementById('toggleAiAnsweringButton'),fallback=normalizePhone(input?.value||'');
+  if(fallback&&!validUsPhone(fallback)){if(status)status.textContent='Enter a valid 10-digit handoff number or leave it blank.';input?.focus();return}
+  if(targetPaused&&!confirm('Pause CallerCore AI answering for this workspace? You can resume it from Settings at any time.'))return;
+  if(status)status.textContent=targetPaused?'Pausing AI answering…':'Resuming AI answering…';if(button)button.disabled=true;
+  try{
+    if(demoMode){settingsData={...(settingsData||{}),aiAnsweringPaused:targetPaused,aiPauseFallbackNumber:fallback,aiPausedAt:targetPaused?Date.now():0};phoneRoutingData={...(phoneRoutingData||{}),status:targetPaused?'paused':'active',pauseFallbackNumber:fallback}}
+    else{
+      const r=await fetch('/api/account?action=ai-answering-control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paused:targetPaused,fallbackNumber:fallback})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not change AI answering status');
+      settingsData={...(settingsData||{}),...(data.settings||{})};if(data.routing)phoneRoutingData=data.routing;else if(phoneRoutingData)phoneRoutingData={...phoneRoutingData,status:targetPaused?'paused':'active',pauseFallbackNumber:fallback};
+    }
+    renderAiAnsweringControl();renderOverview();renderPhoneRouting();if(status)status.textContent=targetPaused?'AI answering paused.':'AI answering resumed.';
+  }catch(err){if(status)status.textContent=err.message||'Could not change AI answering status';renderAiAnsweringControl()}
+}
 function renderSettings(){
   if(!settingsData)return;
   const put=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||''};
   put('settingsBusinessName',settingsData.businessName);put('settingsContactName',settingsData.contactName);put('settingsPrimaryEmail',settingsData.primaryEmail);put('settingsBusinessPhone',settingsData.businessPhone);put('settingsWebsite',settingsData.website);put('settingsIndustry',settingsData.industry);put('settingsServiceArea',settingsData.serviceArea);put('settingsStreetAddress',settingsData.streetAddress);put('settingsCity',settingsData.city);put('settingsState',settingsData.state);put('settingsPostalCode',settingsData.postalCode);put('settingsTimezone',settingsData.timezone);put('settingsNotificationEmail',settingsData.notificationEmail);
   const e=document.getElementById('settingsEmailAlerts'),sms=document.getElementById('settingsSmsAlerts');if(e)e.checked=settingsData.emailAlerts!==false;if(sms){sms.checked=capability('sms')&&settingsData.smsAlerts!==false;sms.disabled=true}
   for(const [id,key] of [['settingsNotifyBilling','notifyBilling'],['settingsNotifySetup','notifySetup'],['settingsNotifyCalls','notifyCalls'],['settingsNotifySupport','notifySupport'],['settingsNotifyUsage','notifyUsage']]){const el=document.getElementById(id);if(el)el.checked=settingsData[key]!==false}
-  pendingBusinessLogo=String(settingsData.logoDataUrl||'');setSettingsEditing(settingsEditing);
+  pendingBusinessLogo=String(settingsData.logoDataUrl||'');setSettingsEditing(settingsEditing);renderAiAnsweringControl();
 }
 async function resizeBusinessLogo(file){
   if(!file||!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('Choose a JPG, PNG, or WebP image.');if(file.size>8*1024*1024)throw new Error('Choose an image smaller than 8 MB.');
@@ -776,12 +847,12 @@ function renderPhoneRouting(){
   const d=phoneRoutingData,set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   if(!document.getElementById('clientPhoneNumber'))return;
   set('clientPhoneNumber',d?.number||sessionWorkspace?.phone||'Not assigned');
-  set('clientPhoneProvider',d?.provider?d.provider+' · '+(d.status||'active'):'Awaiting provisioning');
+  set('clientPhoneProvider',d?.provider?d.provider+' · '+((d.status||'active')==='paused'?'AI answering paused':(d.status||'active')):'Awaiting provisioning');
   set('clientForwardingFrom',d?.forwardingFrom||'—');set('clientTransferNumber',d?.transferNumber||agentData?.transferNumber||'—');
   set('clientAfterHours',d?({ai:'AI answers',transfer:'Transfer',voicemail:'Voicemail'}[d.afterHours]||d.afterHours):'—');
   set('clientSmsStatus',capability('sms')?(d&&d.smsEnabled?'SMS enabled':'SMS disabled'):'Messaging not enabled at launch');
-  set('clientRoutingHeadline',d?'Your CallerCore routing is configured.':'Phone routing has not been provisioned yet.');
-  set('clientRoutingCopy',d?'Routing changes are managed by CallerCore support to prevent accidental call disruption.':'CallerCore support will configure the AI-facing number and routing details during onboarding.');
+  set('clientRoutingHeadline',d?(d.status==='paused'?'AI answering is paused.':'Your CallerCore routing is configured.'):'Phone routing has not been provisioned yet.');
+  set('clientRoutingCopy',d?(d.status==='paused'?'Resume AI answering from Settings when you are ready for CallerCore to take calls again.':'Routing changes are managed carefully to prevent accidental call disruption.'):'CallerCore support will configure the AI-facing number and routing details during onboarding.');
 }
 function renderLocations(){
   const wrap=document.getElementById('locationsGrid'),empty=document.getElementById('locationsEmpty'),label=document.getElementById('locationsLimitLabel'),add=document.getElementById('addLocationButton');if(!wrap)return;
@@ -1810,3 +1881,5 @@ document.addEventListener('keydown',e=>{
   const np=document.getElementById('notificationPanel'),nb=document.getElementById('notificationBell');if(np&&!np.hidden){np.hidden=true;nb?.setAttribute('aria-expanded','false')}
   const openModalEl=document.querySelector('.modal.open');if(openModalEl)openModalEl.querySelector('.modal-close')?.click();
 });
+
+document.getElementById('toggleAiAnsweringButton')?.addEventListener('click',toggleAiAnswering);
