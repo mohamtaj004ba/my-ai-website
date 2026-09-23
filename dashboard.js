@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false;
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo='';
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo='',agentEditSnapshot=null;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',reason:'Roof replacement estimate',duration:'4:32',outcome:'Booked',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and booked an inspection for Tuesday at 10:30 AM.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can help get an inspection scheduled. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -246,7 +246,7 @@ function renderOverview(){
     const recentQualified=callsData.filter(x=>withinDays(recordTime(x),7)&&/book|qualif/i.test(String(x.outcome||''))).length;
     attention.innerHTML=[
       ['Needs follow-up',followups,followups?'Calls waiting for your team.':'No follow-up calls waiting.','leads'],
-      ['Qualified / booked',recentQualified,recentQualified?'High-intent calls identified this week.':'No qualified calls this week.','calls'],
+      ['Qualified requests',recentQualified,recentQualified?'High-intent calls identified this week.':'No qualified calls this week.','calls'],
       ['Customers added',weekLeads,weekLeads?'New people surfaced from CallerCore activity.':'No new customers this week.','contacts']
     ].map(([title,n,copy,view])=>'<button class="attention-row" data-view="'+view+'"><span class="attention-count">'+n+'</span><span><b>'+title+'</b><small>'+copy+'</small></span><em>→</em></button>').join('');
     attention.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
@@ -509,7 +509,8 @@ document.getElementById('conversationContactButton')?.addEventListener('click',e
 
 function agentControlIds(){return ['agentName','agentRole','agentTone','agentOpening','agentServiceArea','agentHours','agentTransfer','agentEmergency']}
 function setAgentEditing(editing,{restore=false}={}){
-  agentEditing=!!editing;if(restore)renderAgent();
+  if(editing&&!agentEditing&&agentData)agentEditSnapshot=JSON.parse(JSON.stringify(agentData));
+  agentEditing=!!editing;if(restore&&agentEditSnapshot){agentData=JSON.parse(JSON.stringify(agentEditSnapshot));renderAgent();return}
   agentControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!agentEditing});
   const edit=document.getElementById('agentEditButton'),cancel=document.getElementById('agentCancelButton'),save=document.getElementById('saveAgentButton'),add=document.getElementById('addQuestionButton');
   if(edit)edit.hidden=agentEditing;if(cancel)cancel.hidden=!agentEditing;if(save)save.hidden=!agentEditing;if(add)add.hidden=!agentEditing;
@@ -537,7 +538,7 @@ async function saveAgent(){
   if(!agentEditing)return;const next=collectAgent(),btn=document.getElementById('saveAgentButton');if(btn){btn.disabled=true;btn.textContent='Saving…'}
   try{
     if(!demoMode){const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save the AI receptionist.');agentData=data.agent||next}else agentData=next;
-    setAgentEditing(false);const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
+    agentEditSnapshot=null;setAgentEditing(false);const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
   }catch(err){alert(err.message||'Could not save the AI receptionist.')}
   finally{if(btn){btn.disabled=false;btn.textContent='Save changes'}}
 }
@@ -588,7 +589,7 @@ async function saveAutomation(){
 }
 document.getElementById('saveAgentButton')?.addEventListener('click',saveAgent);
 document.getElementById('agentEditButton')?.addEventListener('click',()=>setAgentEditing(true));
-document.getElementById('agentCancelButton')?.addEventListener('click',()=>{agentEditing=false;renderAgent()});
+document.getElementById('agentCancelButton')?.addEventListener('click',()=>{if(agentEditSnapshot)agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent()});
 document.getElementById('addQuestionButton')?.addEventListener('click',()=>{if(!agentEditing)return;if(!agentData)agentData={...DEMO_AGENT,qualificationQuestions:[]};agentData.qualificationQuestions=agentData.qualificationQuestions||[];if(agentData.qualificationQuestions.length<12){agentData.qualificationQuestions.push('');renderQuestions()}});
 document.getElementById('newAutomationButton')?.addEventListener('click',()=>openAutomation());
 document.querySelectorAll('[data-preset]').forEach(btn=>btn.addEventListener('click',()=>openAutomation(null,btn.dataset.preset)));
@@ -640,9 +641,10 @@ async function saveWebhook(){
 function settingsControlIds(){return ['settingsBusinessName','settingsContactName','settingsPrimaryEmail','settingsBusinessPhone','settingsWebsite','settingsIndustry','settingsServiceArea','settingsStreetAddress','settingsCity','settingsState','settingsPostalCode','settingsTimezone','settingsNotificationEmail','settingsEmailAlerts','settingsNotifyBilling','settingsNotifySetup','settingsNotifyCalls','settingsNotifySupport','settingsNotifyUsage']}
 function businessInitials(name=''){const parts=String(name||'Business').trim().split(/\s+/).filter(Boolean);return (parts.length>1?(parts[0][0]+parts[1][0]):String(parts[0]||'B').slice(0,2)).toUpperCase()}
 function renderBusinessLogo(){
-  const data=pendingBusinessLogo||settingsData?.logoDataUrl||'',img=document.getElementById('businessLogoImage'),initials=document.getElementById('businessLogoInitials'),remove=document.getElementById('businessLogoRemove');if(initials)initials.textContent=businessInitials(document.getElementById('settingsBusinessName')?.value||settingsData?.businessName);
+  const data=pendingBusinessLogo||settingsData?.logoDataUrl||'',img=document.getElementById('businessLogoImage'),initials=document.getElementById('businessLogoInitials'),remove=document.getElementById('businessLogoRemove'),workspaceImg=document.getElementById('workspaceLogoImage'),workspaceInitials=document.getElementById('workspaceLogoInitials');if(initials)initials.textContent=businessInitials(document.getElementById('settingsBusinessName')?.value||settingsData?.businessName);
   if(img){if(data){img.src=data;img.hidden=false;if(initials)initials.hidden=true}else{img.removeAttribute('src');img.hidden=true;if(initials)initials.hidden=false}}
   if(remove)remove.hidden=!settingsEditing||!data;
+  if(workspaceInitials)workspaceInitials.textContent=businessInitials(settingsData?.businessName||sessionWorkspace?.name);if(workspaceImg){if(settingsData?.logoDataUrl){workspaceImg.src=settingsData.logoDataUrl;workspaceImg.hidden=false;if(workspaceInitials)workspaceInitials.hidden=true}else{workspaceImg.removeAttribute('src');workspaceImg.hidden=true;if(workspaceInitials)workspaceInitials.hidden=false}}
 }
 function setSettingsEditing(editing,{restore=false}={}){
   settingsEditing=!!editing;if(restore)renderSettings();
