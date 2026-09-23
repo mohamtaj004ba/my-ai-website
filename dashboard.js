@@ -252,14 +252,14 @@ function renderOverview(){
   }
   const attention=document.getElementById('overviewAttention');
   if(attention){
-    const missed=callsData.filter(x=>withinDays(recordTime(x),7)&&/miss/i.test(String(x.outcome||''))).length;
-    const recentQualified=callsData.filter(x=>withinDays(recordTime(x),7)&&/book|qualif/i.test(String(x.outcome||''))).length;
-    attention.innerHTML=[
-      ['Needs follow-up',followups,followups?'Calls waiting for your team.':'No follow-up calls waiting.','leads'],
-      ['Qualified requests',recentQualified,recentQualified?'High-intent calls identified this week.':'No qualified calls this week.','calls'],
-      ['Customers added',weekLeads,weekLeads?'New people surfaced from CallerCore activity.':'No new customers this week.','contacts']
-    ].map(([title,n,copy,view])=>'<button class="attention-row" data-view="'+view+'"><span class="attention-count">'+n+'</span><span><b>'+title+'</b><small>'+copy+'</small></span><em>→</em></button>').join('');
-    attention.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+    const open=[...followupCandidates()].filter(x=>!followupIsHandled(x)).sort((a,b)=>{
+      const ap=followupType(a)==='urgent'?1:0,bp=followupType(b)==='urgent'?1:0;return bp-ap||recordTime(b)-recordTime(a)
+    }).slice(0,4);
+    attention.innerHTML=open.length?open.map(x=>{
+      const type=followupType(x),label=followupLabel(type),time=recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):'';
+      return '<button class="attention-call '+(type==='urgent'?'urgent':'')+'" data-call-id="'+esc(x.id)+'"><span class="attention-call-badge">'+esc(label)+'</span><span class="attention-call-copy"><b>'+esc(x.caller||'Unknown caller')+'</b><small>'+esc(x.reason||'Call requires review')+'</small><em>'+esc(time)+'</em></span><span class="attention-call-arrow">→</span></button>';
+    }).join(''):'<div class="attention-clear"><b>You’re caught up.</b><span>No calls are waiting for your team.</span></div>';
+    attention.querySelectorAll('[data-call-id]').forEach(b=>b.addEventListener('click',()=>openCall(b.dataset.callId)));
   }
   const wrap=document.getElementById('overviewActivity');
   if(wrap){
