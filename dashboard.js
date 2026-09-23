@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false;
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',followupState={},showHandledFollowups=false;
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo='';
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',reason:'Roof replacement estimate',duration:'4:32',outcome:'Booked',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and booked an inspection for Tuesday at 10:30 AM.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can help get an inspection scheduled. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -127,33 +127,27 @@ function renderBillingConnection(){
   box.innerHTML=linked?'<b>Stripe customer linked</b><small>Your subscription is connected to secure Stripe billing.</small>':'<b>Billing account not linked</b><small>This workspace does not currently have a Stripe customer attached.</small>';
   btn.disabled=!linked||!sessionWorkspace?.stripe?.customerLinked;btn.textContent=linked?'Manage billing':'Billing unavailable';
 }
+function planFeatures(name){
+  return name==='Starter'?['300 included minutes','1 location','Core call handling','AI receptionist','Phone routing & support']:name==='Growth'?['600 included minutes','Up to 2 locations','Everything in Starter','Unified conversations','Automations','Advanced insights']:['High-volume workflows','Up to 5 locations','Everything in Growth','API & webhooks'];
+}
+function planLosses(from,to){
+  if(from==='Pro'&&to==='Growth')return ['API & webhook access','Capacity above 2 locations','High-volume Pro workflows'];
+  if(from==='Pro'&&to==='Starter')return ['API & webhooks','Automations','Advanced insights','Unified conversations','Locations above 1','Higher included usage'];
+  if(from==='Growth'&&to==='Starter')return ['Automations','Advanced insights','Unified conversations','Second location','Higher included usage'];
+  return [];
+}
 function renderBilling(){
   const d=PLAN_DATA[currentPlan];
   document.getElementById('billingPlan')&&(document.getElementById('billingPlan').textContent=currentPlan);
   document.getElementById('billingPrice')&&(document.getElementById('billingPrice').textContent='$'+d.price+'/month');
   const usageText=d.minutes?d.used+' / '+d.minutes:d.used+' min · usage policy pending';
   document.getElementById('billingUsageText')&&(document.getElementById('billingUsageText').textContent=usageText);
-  const pct=d.minutes?Math.min(100,(d.used/d.minutes)*100):38;
-  document.getElementById('billingUsage')?.style.setProperty('width',pct+'%');
-  document.getElementById('sidebarUsage')?.style.setProperty('width',pct+'%');
-  document.getElementById('sidebarUsageLabel')&&(document.getElementById('sidebarUsageLabel').textContent=usageText);
-  document.getElementById('sidebarPlan')&&(document.getElementById('sidebarPlan').textContent=currentPlan);
-  const wrap=document.getElementById('planComparison');
-  if(wrap)wrap.innerHTML=Object.entries(PLAN_DATA).map(([name,p])=>{
-    const current=name===currentPlan;
-    const list=name==='Starter'
-      ?['300 included minutes','1 location','Calls, leads & AI agent','Phone routing & support']
-      :name==='Growth'
-        ?['600 included minutes','Up to 2 locations','Unified conversations','Automations & advanced analytics']
-        :['High-volume workflows','Up to 5 locations','Everything in Growth','API & webhooks'];
-    return '<article class="plan-option '+(current?'current':'')+'"><span class="eyebrow">'+(current?'Your plan':'CallerCore '+name)+'</span><h3>'+name+'</h3><b>$'+p.price+'/mo</b><ul>'+list.map(x=>'<li>'+x+'</li>').join('')+'</ul><button class="'+(current?'secondary-btn':'primary')+'" '+(current?'disabled':'data-upgrade="'+name+'"')+'>'+(current?'Current plan':(p.price>d.price?'Upgrade to ':'Switch to ')+name)+'</button></article>'
-  }).join('');
-  bindUpgradeButtons()
+  const pct=d.minutes?Math.min(100,(d.used/d.minutes)*100):38;document.getElementById('billingUsage')?.style.setProperty('width',pct+'%');document.getElementById('sidebarUsage')?.style.setProperty('width',pct+'%');document.getElementById('sidebarUsageLabel')&&(document.getElementById('sidebarUsageLabel').textContent=usageText);document.getElementById('sidebarPlan')&&(document.getElementById('sidebarPlan').textContent=currentPlan);
+  const benefits=document.getElementById('currentPlanBenefits');if(benefits)benefits.innerHTML=planFeatures(currentPlan).map(x=>'<span>✓ '+esc(x)+'</span>').join('');
+  const wrap=document.getElementById('planComparison');if(wrap)wrap.innerHTML=Object.entries(PLAN_DATA).filter(([name])=>name!==currentPlan).map(([name,p])=>{const losses=planLosses(currentPlan,name),isUpgrade=p.price>d.price,diff=Math.abs(p.price-d.price);return '<article class="plan-option contextual '+(losses.length?'downgrade-option':'upgrade-option')+'"><span class="eyebrow">'+(isUpgrade?'Upgrade option':'Lower-cost option')+'</span><h3>'+name+'</h3><p class="plan-price-delta">'+(isUpgrade?'+':'−')+'$'+diff+'/mo from your current plan</p><ul>'+planFeatures(name).slice(0,4).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+(losses.length?'<div class="loss-preview"><b>You would give up</b><span>'+losses.slice(0,2).map(esc).join(' · ')+(losses.length>2?' · +'+(losses.length-2)+' more':'')+'</span></div>':'<div class="gain-preview"><b>Adds more capacity and features</b></div>')+'<button class="'+(losses.length?'secondary-btn':'primary')+'" data-upgrade="'+esc(name)+'">'+(losses.length?'Review downgrade':'Review upgrade')+'</button></article>'}).join('');
+  bindUpgradeButtons();
 }
-function setPlan(plan){currentPlan=plan;document.getElementById('planSelector')&&(document.getElementById('planSelector').value=plan);renderBilling();renderStages();renderOverviewUnlocks();renderEntitledApps()}
-document.getElementById('planSelector')?.addEventListener('change',e=>setPlan(e.target.value));
-
-
+function setPlan(plan){currentPlan=plan;renderBilling();renderStages();renderOverviewUnlocks();renderEntitledApps()}
 function setDataHealth(id,degraded){
   const el=document.getElementById(id);if(!el)return;
   el.hidden=!degraded;
@@ -168,7 +162,7 @@ async function loadOperations(){
     phoneRoutingData={number:'(509) 555-0100',label:'Primary',provider:'Vapi',forwardingFrom:'(509) 555-0199',transferNumber:'(509) 555-0101',afterHours:'ai',smsEnabled:false,status:'active'};
     locationsData=[{id:'loc-demo',name:'Spokane',phone:'(509) 555-0199',address:'Spokane, WA',timezone:'America/Los_Angeles',active:true}];locationsLimit=PLAN_DATA[currentPlan].locations||1;
     analyticsData=buildLocalAnalytics();followupState={};
-    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientSetupStatus();renderBillingConnection();renderPhoneRouting();renderLocations();return;
+    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();setAgentEditing(false);setSettingsEditing(false);renderOverview();renderSupport();renderClientSetupStatus();renderBillingConnection();renderPhoneRouting();renderLocations();return;
   }
   try{
     const jobs=[
@@ -234,10 +228,17 @@ function renderOverview(){
   [['overviewAnswerRing','overviewAnswerPct',answerPct],['overviewQualifiedRing','overviewQualifiedPct',qualifiedPct],['overviewRecoveryRing','overviewRecoveryPct',recoveryPct]].forEach(([ringId,textId,pct])=>{const ring=document.getElementById(ringId),txt=document.getElementById(textId);if(ring)ring.style.setProperty('--pct',pct);if(txt)txt.textContent=pct+'%'});
   set('overviewAgentMeta','Handling incoming calls for '+(settingsData?.businessName||sessionWorkspace?.name||'your business')+'.');
   set('overviewAgentCalls',monthCalls);set('overviewAgentLeads',qualified30);set('overviewDailyAvg',dailyAvg);
-  const spark=document.getElementById('overviewSpark');
-  if(spark){
-    const days=[];for(let i=13;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);const next=d.getTime()+86400000,n=callsData.filter(x=>{const t=recordTime(x);return t>=d.getTime()&&t<next}).length;days.push({label:d.toLocaleDateString(undefined,{weekday:'short'}),n})}
-    const max=Math.max(1,...days.map(d=>d.n));spark.innerHTML=days.map(d=>'<span title="'+d.label+' · '+d.n+' calls"><i style="height:'+Math.max(8,Math.round(d.n/max*100))+'%"></i></span>').join('');
+  const chart=document.getElementById('overviewLineChart');
+  if(chart){
+    const days=[];for(let i=13;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);const next=d.getTime()+86400000,n=callsData.filter(x=>{const t=recordTime(x);return t>=d.getTime()&&t<next}).length;days.push({label:d.toLocaleDateString(undefined,{month:'short',day:'numeric'}),short:d.toLocaleDateString(undefined,{weekday:'short'}),n})}
+    const max=Math.max(1,...days.map(d=>d.n)),min=0,w=760,h=210,pad={l:36,r:14,t:20,b:34},plotW=w-pad.l-pad.r,plotH=h-pad.t-pad.b;
+    const pts=days.map((d,i)=>({x:pad.l+(plotW*(i/(days.length-1))),y:pad.t+plotH-(d.n-min)/(max-min||1)*plotH,...d}));
+    const line=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' '),area=line+' L '+pts[pts.length-1].x.toFixed(1)+' '+(pad.t+plotH)+' L '+pts[0].x.toFixed(1)+' '+(pad.t+plotH)+' Z';
+    const grid=[0,.5,1].map(r=>{const y=pad.t+plotH*(1-r),v=Math.round(max*r);return '<line x1="'+pad.l+'" y1="'+y+'" x2="'+(w-pad.r)+'" y2="'+y+'" class="chart-grid"/><text x="'+(pad.l-8)+'" y="'+(y+3)+'" class="chart-axis" text-anchor="end">'+v+'</text>'}).join('');
+    const labels=pts.map((p,i)=>i%2===0||i===pts.length-1?'<text x="'+p.x+'" y="'+(h-10)+'" class="chart-axis" text-anchor="middle">'+esc(p.short)+'</text>':'').join('');
+    const dots=pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="4" class="chart-dot"><title>'+esc(p.label)+' · '+p.n+' calls</title></circle>').join('');
+    chart.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img"><defs><linearGradient id="callArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#c85d35" stop-opacity=".22"/><stop offset="100%" stop-color="#c85d35" stop-opacity=".02"/></linearGradient></defs>'+grid+'<path d="'+area+'" class="chart-area"/><path d="'+line+'" class="chart-line"/>'+dots+labels+'</svg>';
+    const total=days.reduce((n,d)=>n+d.n,0),avg=Math.round(total/days.length*10)/10,peak=Math.max(...days.map(d=>d.n)),summary=document.getElementById('overviewChartSummary'),peakEl=document.getElementById('overviewChartPeak');if(summary)summary.textContent=avg+' calls/day average';if(peakEl)peakEl.textContent='Peak '+peak+' calls';
   }
   const attention=document.getElementById('overviewAttention');
   if(attention){
@@ -255,7 +256,8 @@ function renderOverview(){
     const recent=[...callsData].sort((a,b)=>recordTime(b)-recordTime(a)).slice(0,6);
     wrap.innerHTML=recent.length?recent.map(x=>{
       const initials=String(x.caller||'?').split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase()||'?';
-      return '<button class="activity-row overview-call-row" data-call-id="'+esc(x.id)+'"><span class="time">'+esc(formatFullDateTime(x))+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.caller||'Unknown caller')+'</strong><small>'+esc(x.reason||'Call activity')+'</small></span></div><span class="tag '+outcomeClass(x.outcome)+'">'+esc(x.outcome||'Handled')+'</span><strong>'+esc(x.duration||'—')+'</strong></button>';
+      const candidate=followupCandidates().some(c=>String(c.id)===String(x.id)),handled=candidate&&followupIsHandled(x),pending=candidate&&!handled,label=pending?'Needs follow-up':handled?'Handled':(/resolved/i.test(String(x.outcome||''))?'Resolved':(x.outcome||'Handled')),stateClass=pending?'activity-pending':handled?'activity-handled':'activity-resolved';
+      return '<button class="activity-row overview-call-row '+stateClass+'" data-call-id="'+esc(x.id)+'"><span class="time">'+esc(formatFullDateTime(x))+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.caller||'Unknown caller')+'</strong><small>'+esc(x.reason||'Call activity')+'</small></span></div><span class="tag '+(pending?'amber':'green')+'">'+esc(label)+'</span><strong>'+esc(x.duration||'—')+'</strong></button>';
     }).join(''):'<div class="empty-state"><h3>No activity yet</h3><p>Calls will appear here as CallerCore starts handling traffic.</p></div>';
     wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
   }
@@ -279,26 +281,28 @@ function renderCalls(){
   let lastGroup='';
   wrap.innerHTML=rows.map(x=>{
     const group=dateGroupLabel(recordTime(x)),header=group!==lastGroup?'<div class="call-day-heading"><b>'+esc(group)+'</b><span>'+new Date(recordTime(x)||Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</span></div>':'';lastGroup=group;
-    return header+'<button class="call-row data" data-call-id="'+esc(x.id)+'"><span><strong>'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(x.agent||'Maya')+'</small></span><span>'+esc(x.reason||'—')+'</span><span class="tag '+outcomeClass(x.outcome)+'">'+esc(x.outcome||'Unknown')+'</span><span>'+esc(x.duration||'—')+'</span></button>';
+    const candidate=followupCandidates().some(c=>String(c.id)===String(x.id)),handled=candidate&&followupIsHandled(x),pending=candidate&&!handled,stateClass=pending?'call-pending':handled?'call-handled':'call-resolved',status=pending?'Needs follow-up':handled?'Handled':(x.outcome||'Handled');
+    return header+'<button class="call-row data '+stateClass+'" data-call-id="'+esc(x.id)+'"><span><strong>'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(x.agent||'Maya')+'</small></span><span>'+esc(x.reason||'—')+'</span><span class="tag '+(pending?'amber':'green')+'">'+esc(status)+'</span><span>'+esc(x.duration||'—')+'</span></button>';
   }).join('');
   document.getElementById('callsEmpty').hidden=rows.length!==0;
   wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
 }
 function openCall(id){
   const x=callsData.find(c=>String(c.id)===String(id));if(!x)return;
-  activeCallContactKey=contactKey(x);
+  activeCallContactKey=contactKey(x);activeCallId=String(x.id||'');
   document.getElementById('drawerCaller').textContent=x.caller||'Unknown caller';
   const digits=String(x.phone||'').replace(/\D/g,'');const callLink=document.getElementById('drawerCallLink'),textLink=document.getElementById('drawerTextLink');if(callLink){callLink.href=digits?'tel:'+digits:'#';callLink.classList.toggle('disabled-link',!digits)}if(textLink){textLink.href=digits?'sms:'+digits:'#';textLink.classList.toggle('disabled-link',!digits)}
   const followBtn=document.getElementById('drawerFollowupButton');if(followBtn){const isCandidate=followupCandidates().some(c=>String(c.id)===String(x.id));followBtn.hidden=!isCandidate;followBtn.dataset.callId=x.id;followBtn.textContent=followupIsHandled(x)?'Reopen follow-up':'Mark handled'}
-  const note=document.getElementById('drawerInternalNote');if(note)note.value=followupState[String(x.id)]?.note||'';const ns=document.getElementById('drawerNoteStatus');if(ns)ns.textContent='';
+  const note=document.getElementById('drawerInternalNote');if(note)note.value='';const ns=document.getElementById('drawerNoteStatus');if(ns)ns.textContent='';renderCallNotes(x.id);
   const when=document.getElementById('drawerWhen');if(when)when.textContent=formatFullDateTime(x);
-  document.getElementById('drawerMeta').innerHTML=[x.phone,x.duration,x.outcome,x.agent].filter(Boolean).map(v=>'<span>'+esc(v)+'</span>').join('');
+  document.getElementById('drawerMeta').innerHTML=[['Phone',x.phone],['Duration',x.duration],['Status',followupCandidates().some(c=>String(c.id)===String(x.id))?(followupIsHandled(x)?'Handled':'Needs follow-up'):(x.outcome||'Handled')],['Answered by',x.agent||'Maya']].filter(([,v])=>v).map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('');
   const addr=document.getElementById('drawerAddress');if(addr)addr.textContent=x.address||contactForRecord(x)?.address||'No address was captured on this call.';
   document.getElementById('drawerSummary').textContent=x.summary||'No AI summary is available yet.';
   const q=x.qualification||{};
   document.getElementById('drawerQualification').innerHTML=Object.entries(q).filter(([k])=>String(k).toLowerCase()!=='value').map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('')||'<span class="muted">No additional call details yet.</span>';
   const t=Array.isArray(x.transcript)?x.transcript:[];
   document.getElementById('drawerTranscript').innerHTML=t.map(pair=>'<div class="'+(String(pair[0]).toLowerCase()==='maya'?'ai':'')+'"><b>'+esc(pair[0])+'</b>'+esc(pair[1])+'</div>').join('')||'<span class="muted">Transcript unavailable.</span>';
+  const historyBtn=document.getElementById('drawerContactButton');if(historyBtn)historyBtn.onclick=()=>{const key=activeCallContactKey;closeCall();setTimeout(()=>openContact(key),30)};
   document.getElementById('callDrawer').classList.add('open');document.getElementById('drawerBackdrop').classList.add('open');document.getElementById('callDrawer').setAttribute('aria-hidden','false');
 }
 function closeCall(){document.getElementById('callDrawer')?.classList.remove('open');document.getElementById('drawerBackdrop')?.classList.remove('open');document.getElementById('callDrawer')?.setAttribute('aria-hidden','true')}
@@ -344,16 +348,26 @@ function renderLeads(){
   board.querySelectorAll('[data-followup-toggle]').forEach(b=>b.addEventListener('click',()=>toggleFollowup(b.dataset.followupToggle)));
 }
 async function toggleFollowup(id){
-  const handled=followupState[id]?.status==='handled',next=handled?'open':'handled',previous=followupState[id],note=followupState[id]?.note||'';
-  followupState[id]={status:next,note,updatedAt:Date.now()};renderLeads();renderOverview();const x=callsData.find(c=>String(c.id)===String(id));const drawerBtn=document.getElementById('drawerFollowupButton');if(x&&drawerBtn&&drawerBtn.dataset.callId===String(id))drawerBtn.textContent=next==='handled'?'Reopen follow-up':'Mark handled';
+  const handled=followupState[id]?.status==='handled',next=handled?'open':'handled',previous=followupState[id],note=followupState[id]?.note||'',notes=Array.isArray(followupState[id]?.notes)?followupState[id].notes:[];
+  followupState[id]={status:next,note,notes,updatedAt:Date.now()};renderLeads();renderOverview();const x=callsData.find(c=>String(c.id)===String(id));const drawerBtn=document.getElementById('drawerFollowupButton');if(x&&drawerBtn&&drawerBtn.dataset.callId===String(id))drawerBtn.textContent=next==='handled'?'Reopen follow-up':'Mark handled';
   if(demoMode)return;
-  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:next,note})});if(!r.ok)throw new Error('Could not update follow-up');followupState=(await r.json()).state||followupState}
+  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:next,note,notes})});if(!r.ok)throw new Error('Could not update follow-up');followupState=(await r.json()).state||followupState}
   catch(err){if(previous)followupState[id]=previous;else delete followupState[id];renderLeads();renderOverview();console.error(err)}
 }
+function normalizedCallNotes(id){
+  const state=followupState[String(id)]||{},notes=Array.isArray(state.notes)?state.notes.slice():[];
+  if(state.note&&String(state.note).trim()&&!notes.some(n=>n&&n.text===state.note))notes.unshift({id:'legacy',text:String(state.note),at:Number(state.updatedAt||0),by:state.updatedBy||''});
+  return notes.filter(n=>n&&String(n.text||'').trim()).sort((a,b)=>Number(b.at||0)-Number(a.at||0));
+}
+function renderCallNotes(id=activeCallId){
+  const list=document.getElementById('drawerNotesList'),count=document.getElementById('drawerNoteCount');if(!list)return;const notes=normalizedCallNotes(id);
+  if(count)count.textContent=notes.length+' note'+(notes.length===1?'':'s');
+  list.innerHTML=notes.length?notes.map(n=>'<article class="internal-note-card"><p>'+esc(n.text)+'</p><small>'+esc(n.by||'Team')+(n.at?' · '+new Date(Number(n.at)).toLocaleString():'')+'</small></article>').join(''):'<div class="notes-empty">No internal notes yet.</div>';
+}
 async function saveCallNote(){
-  const id=document.getElementById('drawerFollowupButton')?.dataset.callId||callsData.find(x=>contactKey(x)===activeCallContactKey)?.id;if(!id)return;const input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),note=String(input?.value||'').trim().slice(0,2000),current=followupState[String(id)]||{},nextStatus=current.status||'open';if(status)status.textContent='Saving…';
-  if(demoMode){followupState[String(id)]={...current,status:nextStatus,note,updatedAt:Date.now()};if(status)status.textContent='Saved';return}
-  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:nextStatus,note})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save note');followupState=data.state||followupState;if(status)status.textContent='Saved'}catch(err){if(status)status.textContent=err.message||'Could not save note'}
+  const id=activeCallId;if(!id)return;const input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),text=String(input?.value||'').trim().slice(0,2000),current=followupState[String(id)]||{},nextStatus=current.status||'open';if(!text){if(status)status.textContent='Write a note first.';return}if(status)status.textContent='Saving…';
+  if(demoMode){const notes=[...(current.notes||[]),{id:'note_'+Date.now(),text,at:Date.now(),by:currentUserProfile.email||'Team'}];followupState[String(id)]={...current,status:nextStatus,notes,updatedAt:Date.now()};input.value='';renderCallNotes(id);if(status)status.textContent='Note added';return}
+  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:nextStatus,appendNote:text})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save note');followupState=data.state||followupState;input.value='';renderCallNotes(id);if(status)status.textContent='Note added'}catch(err){if(status)status.textContent=err.message||'Could not save note'}
 }
 async function moveLead(id,stage){
   const lead=leadsData.find(x=>String(x.id)===String(id));if(!lead||lead.stage===stage)return;
@@ -436,9 +450,12 @@ function renderContacts(){
   const wrap=document.getElementById('contactsTable');if(!wrap)return;
   const q=(document.getElementById('contactSearch')?.value||'').trim().toLowerCase();
   const rows=buildContacts().filter(c=>!q||[c.name,c.phone,c.address,...c.services].join(' ').toLowerCase().includes(q));
-  wrap.innerHTML=rows.map(c=>'<button class="contact-row data" data-contact-key="'+esc(c.key)+'"><span><strong>'+esc(c.name)+'</strong><small>'+esc(c.phone||'No phone captured')+'</small></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span>'+c.calls.length+'</span><span>'+c.conversations.length+'</span><span>'+esc([...c.services][0]||'General inquiry')+'</span></button>').join('');
+  wrap.innerHTML=rows.map(c=>{
+    const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0),openCount=c.calls.filter(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x)).length;
+    return '<div class="contact-row data '+(openCount?'customer-attention':'')+'" data-contact-row="'+esc(c.key)+'"><span><button class="customer-link contact-open" data-contact-open="'+esc(c.key)+'"><strong>'+esc(c.name)+'</strong></button><small>'+esc(c.phone||'No phone captured')+(openCount?' · '+openCount+' open follow-up'+(openCount===1?'':'s'):'')+'</small></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span><button class="count-link contact-open" data-contact-open="'+esc(c.key)+'">'+c.calls.length+'</button></span><span><button class="count-link contact-open" data-contact-open="'+esc(c.key)+'">'+msgCount+'</button></span><span><button class="latest-need-link contact-open" data-contact-open="'+esc(c.key)+'">'+esc([...c.services][0]||'General inquiry')+'</button></span></div>';
+  }).join('');
   document.getElementById('contactsEmpty').hidden=rows.length!==0;
-  wrap.querySelectorAll('[data-contact-key]').forEach(r=>r.addEventListener('click',()=>openContact(r.dataset.contactKey)));
+  wrap.onclick=e=>{const btn=e.target.closest('[data-contact-open]'),row=e.target.closest('[data-contact-row]');const key=btn?.dataset.contactOpen||row?.dataset.contactRow;if(key)openContact(key)};
 }
 function openContact(key){
   const c=buildContacts().find(x=>x.key===key);if(!c)return;
@@ -447,14 +464,15 @@ function openContact(key){
   document.getElementById('contactDrawerMeta').textContent=c.lastAt?'Last interaction '+new Date(c.lastAt).toLocaleString():'No recent interaction date';
   const digits=String(c.phone||'').replace(/\D/g,'');const callLink=document.getElementById('contactCallLink'),textLink=document.getElementById('contactTextLink');if(callLink){callLink.href=digits?'tel:'+digits:'#';callLink.classList.toggle('disabled-link',!digits)}if(textLink){textLink.href=digits?'sms:'+digits:'#';textLink.classList.toggle('disabled-link',!digits)}
   document.getElementById('contactDrawerDetails').innerHTML=[
-    ['Phone',c.phone||'Not captured'],['Address',c.address||'Not captured'],['Calls',c.calls.length],['Conversations',c.conversations.length]
+    ['Phone',c.phone||'Not captured'],['Address',c.address||'Not captured'],['Calls',c.calls.length],['Messages',c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0)]
   ].map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('');
   const latestCall=[...c.calls].sort((a,b)=>recordTime(b)-recordTime(a))[0],latestLead=[...c.leads].sort((a,b)=>recordTime(b)-recordTime(a))[0];
   document.getElementById('contactDrawerSummary').textContent=latestCall?.summary||((latestLead?.service)?c.name+' contacted the business about '+latestLead.service.toLowerCase()+'.':'CallerCore has contact activity for this person.');
   const events=[
     ...c.calls.map(x=>({at:recordTime(x),kind:'Call',title:x.reason||'Phone call',copy:[x.outcome,x.duration].filter(Boolean).join(' · '),callId:x.id})),
     ...c.conversations.flatMap(x=>(x.messages||[]).map(m=>({at:Number(m.at||recordTime(x)||0),kind:m.dir==='in'?'Message received':'Message sent',title:m.who||x.name,copy:m.text||''}))),
-    ...c.leads.map(x=>({at:recordTime(x),kind:'Opportunity',title:x.service||'Opportunity',copy:leadDisplayStatus(x.stage)}))
+    ...c.leads.map(x=>({at:recordTime(x),kind:'Service request',title:x.service||'Service request',copy:leadDisplayStatus(x.stage)})),
+    ...c.calls.flatMap(x=>normalizedCallNotes(x.id).map(n=>({at:Number(n.at||recordTime(x)||0),kind:'Internal note',title:n.by||'Team note',copy:n.text||''})))
   ].sort((a,b)=>b.at-a.at);
   document.getElementById('contactDrawerTimeline').innerHTML=events.slice(0,80).map(e=>'<'+(e.callId?'button':'div')+' class="contact-event" '+(e.callId?'data-contact-call="'+esc(e.callId)+'"':'')+'><span class="contact-event-dot"></span><span><small>'+esc(e.kind)+' · '+esc(e.at?new Date(e.at).toLocaleString():'Date unavailable')+'</small><b>'+esc(e.title)+'</b><p>'+esc(e.copy)+'</p></span></'+(e.callId?'button':'div')+'>').join('')||'<p class="muted">No activity is available yet.</p>';
   document.getElementById('contactDrawerTimeline').querySelectorAll('[data-contact-call]').forEach(b=>b.addEventListener('click',()=>{closeContact();openCall(b.dataset.contactCall)}));
@@ -464,7 +482,6 @@ function closeContact(){document.getElementById('contactDrawer')?.classList.remo
 document.getElementById('contactSearch')?.addEventListener('input',renderContacts);
 document.getElementById('closeContactDrawer')?.addEventListener('click',closeContact);
 document.getElementById('contactDrawerBackdrop')?.addEventListener('click',closeContact);
-document.getElementById('drawerContactButton')?.addEventListener('click',()=>{if(activeCallContactKey){closeCall();openContact(activeCallContactKey)}});
 document.getElementById('drawerFollowupButton')?.addEventListener('click',e=>{const id=e.currentTarget.dataset.callId;if(id)toggleFollowup(id)});
 document.getElementById('drawerSaveNote')?.addEventListener('click',saveCallNote);
 
@@ -490,36 +507,40 @@ document.querySelectorAll('[data-conversation-filter]').forEach(b=>b.addEventLis
 document.getElementById('conversationContactButton')?.addEventListener('click',e=>{const key=e.currentTarget.dataset.contactKey;if(key)openContact(key)});
 
 
+function agentControlIds(){return ['agentName','agentRole','agentTone','agentOpening','agentServiceArea','agentHours','agentTransfer','agentEmergency']}
+function setAgentEditing(editing,{restore=false}={}){
+  agentEditing=!!editing;if(restore)renderAgent();
+  agentControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!agentEditing});
+  const edit=document.getElementById('agentEditButton'),cancel=document.getElementById('agentCancelButton'),save=document.getElementById('saveAgentButton'),add=document.getElementById('addQuestionButton');
+  if(edit)edit.hidden=agentEditing;if(cancel)cancel.hidden=!agentEditing;if(save)save.hidden=!agentEditing;if(add)add.hidden=!agentEditing;
+  renderQuestions();
+}
 function renderAgent(){
   if(!agentData)return;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||''};
   set('agentName',agentData.name);set('agentRole',agentData.role);set('agentTone',agentData.tone);
   set('agentOpening',agentData.openingMessage);set('agentServiceArea',agentData.serviceArea);
   set('agentHours',agentData.businessHours);set('agentTransfer',agentData.transferNumber);set('agentEmergency',agentData.emergencyInstructions);
-  renderQuestions();
+  renderQuestions();setAgentEditing(agentEditing);
 }
 function renderQuestions(){
   const wrap=document.getElementById('qualificationQuestions');if(!wrap||!agentData)return;
   const qs=Array.isArray(agentData.qualificationQuestions)?agentData.qualificationQuestions:[];
-  wrap.innerHTML=qs.map((q,i)=>'<div class="question-row"><input data-question-index="'+i+'" value="'+esc(q)+'"><button data-remove-question="'+i+'" aria-label="Remove">×</button></div>').join('');
-  wrap.querySelectorAll('[data-question-index]').forEach(input=>input.addEventListener('input',()=>{agentData.qualificationQuestions[Number(input.dataset.questionIndex)]=input.value}));
-  wrap.querySelectorAll('[data-remove-question]').forEach(btn=>btn.addEventListener('click',()=>{agentData.qualificationQuestions.splice(Number(btn.dataset.removeQuestion),1);renderQuestions()}));
+  wrap.innerHTML=qs.map((q,i)=>'<div class="question-row '+(agentEditing?'editing':'locked')+'"><input data-question-index="'+i+'" value="'+esc(q)+'" '+(agentEditing?'':'disabled')+'><button data-remove-question="'+i+'" aria-label="Remove" '+(agentEditing?'':'hidden')+'>×</button></div>').join('');
+  if(agentEditing){wrap.querySelectorAll('[data-question-index]').forEach(input=>input.addEventListener('input',()=>{agentData.qualificationQuestions[Number(input.dataset.questionIndex)]=input.value}));wrap.querySelectorAll('[data-remove-question]').forEach(btn=>btn.addEventListener('click',()=>{agentData.qualificationQuestions.splice(Number(btn.dataset.removeQuestion),1);renderQuestions()}))}
 }
 function collectAgent(){
   const val=id=>document.getElementById(id)?.value||'';
   return {name:val('agentName'),role:val('agentRole'),tone:val('agentTone'),openingMessage:val('agentOpening'),serviceArea:val('agentServiceArea'),businessHours:val('agentHours'),transferNumber:val('agentTransfer'),emergencyInstructions:val('agentEmergency'),qualificationQuestions:[...(agentData?.qualificationQuestions||[])]};
 }
 async function saveAgent(){
-  agentData=collectAgent();
-  if(!demoMode){
-    const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(agentData)});
-    if(!r.ok){alert('Could not save the AI agent right now.');return}
-    agentData=(await r.json()).agent||agentData;
-  }
-  const s=document.getElementById('agentSaveStatus');if(s){s.classList.add('show');setTimeout(()=>s.classList.remove('show'),1600)}
+  if(!agentEditing)return;const next=collectAgent(),btn=document.getElementById('saveAgentButton');if(btn){btn.disabled=true;btn.textContent='Saving…'}
+  try{
+    if(!demoMode){const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save the AI receptionist.');agentData=data.agent||next}else agentData=next;
+    setAgentEditing(false);const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
+  }catch(err){alert(err.message||'Could not save the AI receptionist.')}
+  finally{if(btn){btn.disabled=false;btn.textContent='Save changes'}}
 }
-function triggerLabel(v){if(v==='appointment_booked'&&!capability('calendar'))return 'Appointment trigger · disabled';return ({missed_call:'Missed call',new_lead:'New lead captured',qualified_lead:'Lead qualified',appointment_booked:'Appointment booked',after_hours_call:'After-hours call'})[v]||v}
-function actionLabel(v){if(['send_sms','send_confirmation'].includes(v)&&!capability('sms'))return 'SMS action · disabled';return ({send_sms:'Send SMS',notify_team:'Notify team',create_followup:'Create follow-up task',mark_priority:'Mark lead priority',send_confirmation:'Send confirmation'})[v]||v}
 function renderAutomations(){
   if(!has('automations'))return;
   const wrap=document.getElementById('automationList');if(!wrap)return;
@@ -566,7 +587,9 @@ async function saveAutomation(){
   renderAutomations();closeAutomation();await persistAutomations();
 }
 document.getElementById('saveAgentButton')?.addEventListener('click',saveAgent);
-document.getElementById('addQuestionButton')?.addEventListener('click',()=>{if(!agentData)agentData={...DEMO_AGENT,qualificationQuestions:[]};agentData.qualificationQuestions=agentData.qualificationQuestions||[];if(agentData.qualificationQuestions.length<12){agentData.qualificationQuestions.push('');renderQuestions()}});
+document.getElementById('agentEditButton')?.addEventListener('click',()=>setAgentEditing(true));
+document.getElementById('agentCancelButton')?.addEventListener('click',()=>{agentEditing=false;renderAgent()});
+document.getElementById('addQuestionButton')?.addEventListener('click',()=>{if(!agentEditing)return;if(!agentData)agentData={...DEMO_AGENT,qualificationQuestions:[]};agentData.qualificationQuestions=agentData.qualificationQuestions||[];if(agentData.qualificationQuestions.length<12){agentData.qualificationQuestions.push('');renderQuestions()}});
 document.getElementById('newAutomationButton')?.addEventListener('click',()=>openAutomation());
 document.querySelectorAll('[data-preset]').forEach(btn=>btn.addEventListener('click',()=>openAutomation(null,btn.dataset.preset)));
 document.getElementById('saveAutomationButton')?.addEventListener('click',saveAutomation);
@@ -614,12 +637,33 @@ async function saveWebhook(){
   if(!r.ok){alert('Could not save webhook. Make sure it uses HTTPS.');return}
   integrationsData={...(integrationsData||{}),...((await r.json()).integrations||{})};renderIntegrations();
 }
+function settingsControlIds(){return ['settingsBusinessName','settingsContactName','settingsPrimaryEmail','settingsBusinessPhone','settingsWebsite','settingsIndustry','settingsServiceArea','settingsStreetAddress','settingsCity','settingsState','settingsPostalCode','settingsTimezone','settingsNotificationEmail','settingsEmailAlerts','settingsNotifyBilling','settingsNotifySetup','settingsNotifyCalls','settingsNotifySupport','settingsNotifyUsage']}
+function businessInitials(name=''){const parts=String(name||'Business').trim().split(/\s+/).filter(Boolean);return (parts.length>1?(parts[0][0]+parts[1][0]):String(parts[0]||'B').slice(0,2)).toUpperCase()}
+function renderBusinessLogo(){
+  const data=pendingBusinessLogo||settingsData?.logoDataUrl||'',img=document.getElementById('businessLogoImage'),initials=document.getElementById('businessLogoInitials'),remove=document.getElementById('businessLogoRemove');if(initials)initials.textContent=businessInitials(document.getElementById('settingsBusinessName')?.value||settingsData?.businessName);
+  if(img){if(data){img.src=data;img.hidden=false;if(initials)initials.hidden=true}else{img.removeAttribute('src');img.hidden=true;if(initials)initials.hidden=false}}
+  if(remove)remove.hidden=!settingsEditing||!data;
+}
+function setSettingsEditing(editing,{restore=false}={}){
+  settingsEditing=!!editing;if(restore)renderSettings();
+  settingsControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!settingsEditing});
+  const sms=document.getElementById('settingsSmsAlerts');if(sms)sms.disabled=true;
+  const edit=document.getElementById('settingsEditButton'),cancel=document.getElementById('settingsCancelButton'),save=document.getElementById('saveSettingsButton'),logo=document.getElementById('businessLogoButton');
+  if(edit)edit.hidden=settingsEditing;if(cancel)cancel.hidden=!settingsEditing;if(save)save.hidden=!settingsEditing;if(logo)logo.hidden=!settingsEditing;
+  renderBusinessLogo();
+}
 function renderSettings(){
   if(!settingsData)return;
   const put=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||''};
   put('settingsBusinessName',settingsData.businessName);put('settingsContactName',settingsData.contactName);put('settingsPrimaryEmail',settingsData.primaryEmail);put('settingsBusinessPhone',settingsData.businessPhone);put('settingsWebsite',settingsData.website);put('settingsIndustry',settingsData.industry);put('settingsServiceArea',settingsData.serviceArea);put('settingsStreetAddress',settingsData.streetAddress);put('settingsCity',settingsData.city);put('settingsState',settingsData.state);put('settingsPostalCode',settingsData.postalCode);put('settingsTimezone',settingsData.timezone);put('settingsNotificationEmail',settingsData.notificationEmail);
-  const e=document.getElementById('settingsEmailAlerts'),s=document.getElementById('settingsSmsAlerts');if(e)e.checked=settingsData.emailAlerts!==false;if(s){s.checked=capability('sms')&&settingsData.smsAlerts!==false;s.disabled=!capability('sms')}
+  const e=document.getElementById('settingsEmailAlerts'),sms=document.getElementById('settingsSmsAlerts');if(e)e.checked=settingsData.emailAlerts!==false;if(sms){sms.checked=capability('sms')&&settingsData.smsAlerts!==false;sms.disabled=true}
   for(const [id,key] of [['settingsNotifyBilling','notifyBilling'],['settingsNotifySetup','notifySetup'],['settingsNotifyCalls','notifyCalls'],['settingsNotifySupport','notifySupport'],['settingsNotifyUsage','notifyUsage']]){const el=document.getElementById(id);if(el)el.checked=settingsData[key]!==false}
+  pendingBusinessLogo=String(settingsData.logoDataUrl||'');setSettingsEditing(settingsEditing);
+}
+async function resizeBusinessLogo(file){
+  if(!file||!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('Choose a JPG, PNG, or WebP image.');if(file.size>8*1024*1024)throw new Error('Choose an image smaller than 8 MB.');
+  const src=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error('Could not read image'));r.readAsDataURL(file)}),img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error('Could not load image'));i.src=src});
+  const w=420,h=220,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,w,h);const scale=Math.min((w-24)/img.width,(h-24)/img.height),dw=img.width*scale,dh=img.height*scale;ctx.drawImage(img,(w-dw)/2,(h-dh)/2,dw,dh);return canvas.toDataURL('image/webp',.82);
 }
 function settingsFieldError(id,message=''){
   const input=document.getElementById(id);if(!input)return;
@@ -669,7 +713,7 @@ async function saveSettings(){
   if(phoneEl)phoneEl.value=normalizePhone(phoneEl.value);
   if(webEl)webEl.value=normalizeWebsite(webEl.value);
   if(stateEl)stateEl.value=stateEl.value.trim().toUpperCase();
-  const payload={businessName:document.getElementById('settingsBusinessName')?.value.trim()||'',contactName:document.getElementById('settingsContactName')?.value.trim()||'',primaryEmail:document.getElementById('settingsPrimaryEmail')?.value.trim()||'',businessPhone:phoneEl?.value||'',website:webEl?.value||'',industry:document.getElementById('settingsIndustry')?.value.trim()||'',serviceArea:document.getElementById('settingsServiceArea')?.value.trim()||'',streetAddress:document.getElementById('settingsStreetAddress')?.value.trim()||'',city:document.getElementById('settingsCity')?.value.trim()||'',state:stateEl?.value||'',postalCode:document.getElementById('settingsPostalCode')?.value.trim()||'',timezone:document.getElementById('settingsTimezone')?.value||'America/Los_Angeles',notificationEmail:document.getElementById('settingsNotificationEmail')?.value.trim()||'',emailAlerts:!!document.getElementById('settingsEmailAlerts')?.checked,smsAlerts:!!document.getElementById('settingsSmsAlerts')?.checked,notifyBilling:!!document.getElementById('settingsNotifyBilling')?.checked,notifySetup:!!document.getElementById('settingsNotifySetup')?.checked,notifyCalls:!!document.getElementById('settingsNotifyCalls')?.checked,notifySupport:!!document.getElementById('settingsNotifySupport')?.checked,notifyUsage:!!document.getElementById('settingsNotifyUsage')?.checked};
+  const payload={businessName:document.getElementById('settingsBusinessName')?.value.trim()||'',contactName:document.getElementById('settingsContactName')?.value.trim()||'',primaryEmail:document.getElementById('settingsPrimaryEmail')?.value.trim()||'',businessPhone:phoneEl?.value||'',website:webEl?.value||'',industry:document.getElementById('settingsIndustry')?.value.trim()||'',serviceArea:document.getElementById('settingsServiceArea')?.value.trim()||'',streetAddress:document.getElementById('settingsStreetAddress')?.value.trim()||'',city:document.getElementById('settingsCity')?.value.trim()||'',state:stateEl?.value||'',postalCode:document.getElementById('settingsPostalCode')?.value.trim()||'',timezone:document.getElementById('settingsTimezone')?.value||'America/Los_Angeles',notificationEmail:document.getElementById('settingsNotificationEmail')?.value.trim()||'',emailAlerts:!!document.getElementById('settingsEmailAlerts')?.checked,smsAlerts:!!document.getElementById('settingsSmsAlerts')?.checked,notifyBilling:!!document.getElementById('settingsNotifyBilling')?.checked,notifySetup:!!document.getElementById('settingsNotifySetup')?.checked,notifyCalls:!!document.getElementById('settingsNotifyCalls')?.checked,notifySupport:!!document.getElementById('settingsNotifySupport')?.checked,notifyUsage:!!document.getElementById('settingsNotifyUsage')?.checked,logoDataUrl:pendingBusinessLogo||''};
   const btn=document.getElementById('saveSettingsButton'),status=document.getElementById('settingsFormStatus');
   if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status){status.textContent='';status.className='form-status-line'}
   try{
@@ -680,7 +724,7 @@ async function saveSettings(){
       settingsData=data.settings||payload;
       if(settingsData.businessName){document.getElementById('workspaceName').textContent=settingsData.businessName;document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=settingsData.businessName)}
     }
-    if(status){status.textContent='Settings saved successfully.';status.className='form-status-line success'}
+    pendingBusinessLogo=String(settingsData.logoDataUrl||payload.logoDataUrl||'');setSettingsEditing(false);if(status){status.textContent='Settings saved successfully.';status.className='form-status-line success'}
     const tag=document.getElementById('settingsSaveStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1600)}
   }catch(err){if(status){status.textContent=err.message||'Could not save workspace settings.';status.className='form-status-line error'}}
   finally{if(btn){btn.disabled=false;btn.textContent='Save settings'}}
@@ -796,6 +840,11 @@ document.getElementById('submitSupportButton')?.addEventListener('click',submitS
 document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebhook);
 document.getElementById('insightsRange')?.addEventListener('change',renderAnalytics);
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
+document.getElementById('settingsEditButton')?.addEventListener('click',()=>setSettingsEditing(true));
+document.getElementById('settingsCancelButton')?.addEventListener('click',()=>{settingsEditing=false;pendingBusinessLogo=String(settingsData?.logoDataUrl||'');renderSettings()});
+document.getElementById('businessLogoButton')?.addEventListener('click',()=>document.getElementById('businessLogoInput')?.click());
+document.getElementById('businessLogoInput')?.addEventListener('change',async e=>{const status=document.getElementById('settingsFormStatus');try{pendingBusinessLogo=await resizeBusinessLogo(e.target.files?.[0]);renderBusinessLogo();if(status){status.textContent='Logo ready — save changes to apply it.';status.className='form-status-line'}}catch(err){if(status){status.textContent=err.message||'Could not use that logo.';status.className='form-status-line error'}}e.target.value=''});
+document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pendingBusinessLogo='';renderBusinessLogo()});
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
@@ -1539,24 +1588,30 @@ document.getElementById('adminRecoveryDrillButton')?.addEventListener('click',as
 
 const modal=document.getElementById('upgradeModal');
 function openModal(target){
-  if(!modal||!PLAN_DATA[target])return;
-  const t=PLAN_DATA[target];
-  document.getElementById('modalTitle').textContent=(t.price>PLAN_DATA[currentPlan].price?'Upgrade to ':'Switch to ')+target;
-  document.getElementById('modalCopy').textContent=target==='Pro'
-    ?'Unlock everything in Growth plus API and webhook access.'
-    :target==='Growth'
-      ?'Unlock unified conversations, automations, and advanced analytics.'
-      :'Use CallerCore core calling, lead capture, AI agent, routing, and support features.';
-  const fs=Object.entries(FEATURE_INFO).filter(([k,v])=>target==='Pro'?true:v.tier===target);
-  document.getElementById('modalFeatures').innerHTML=fs.map(([k,v])=>'<span>✓ '+v.title+'</span>').join('');
-  document.getElementById('modalCta').textContent='Open Stripe billing';
-  modal.classList.add('open');modal.setAttribute('aria-hidden','false')
+  if(!modal||!PLAN_DATA[target])return;const t=PLAN_DATA[target],current=PLAN_DATA[currentPlan],losses=planLosses(currentPlan,target),upgrade=t.price>current.price;
+  document.getElementById('modalTitle').textContent=(upgrade?'Upgrade to ':'Review downgrade to ')+target;
+  document.getElementById('modalCopy').textContent=upgrade?'You’re adding capacity or features. Review the changes below before continuing to Stripe.':'This would lower your monthly price, but some CallerCore capabilities may no longer be available.';
+  document.getElementById('modalFeatures').innerHTML=planFeatures(target).map(v=>'<span>✓ '+esc(v)+'</span>').join('');
+  const loss=document.getElementById('modalLosses');if(loss){loss.hidden=!losses.length;loss.innerHTML=losses.length?'<b>What you would lose</b>'+losses.map(v=>'<span>− '+esc(v)+'</span>').join(''):''}
+  document.getElementById('modalCta').textContent='Continue to Stripe';modal.classList.add('open');modal.setAttribute('aria-hidden','false')
 }
 function bindUpgradeButtons(){document.querySelectorAll('[data-upgrade]').forEach(b=>{b.onclick=()=>openModal(b.dataset.upgrade)})}
-modal?.querySelector('.modal-close')?.addEventListener('click',()=>{modal.classList.remove('open');modal.setAttribute('aria-hidden','true')});modal?.addEventListener('click',e=>{if(e.target===modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}});document.getElementById('upgradeButton')?.addEventListener('click',()=>document.getElementById('planComparison')?.scrollIntoView({behavior:'smooth'}));
-document.getElementById('paymentButton')?.addEventListener('click',async()=>{const b=document.getElementById('paymentButton');if(b?.disabled)return;b.disabled=true;b.textContent='Opening…';const r=await fetch('/api/account?action=billing-portal',{method:'POST'}),data=await r.json().catch(()=>({}));if(r.ok&&data.url)location.href=data.url;else{alert(data.error||'Billing portal is unavailable.');b.disabled=false;b.textContent='Manage billing'}});
-document.getElementById('modalCta')?.addEventListener('click',async()=>{const b=document.getElementById('modalCta');b.disabled=true;b.textContent='Opening Stripe…';const r=await fetch('/api/account?action=billing-portal',{method:'POST'}),data=await r.json().catch(()=>({}));if(r.ok&&data.url)location.href=data.url;else{alert(data.error||'Stripe billing is unavailable for this workspace.');b.disabled=false;b.textContent='Open Stripe billing'}});
-
+function closePlanModal(){modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true')}
+modal?.querySelector('.modal-close')?.addEventListener('click',closePlanModal);modal?.addEventListener('click',e=>{if(e.target===modal)closePlanModal()});
+document.getElementById('upgradeButton')?.addEventListener('click',()=>{const p=document.getElementById('planOptionsPanel');if(p){p.hidden=false;p.scrollIntoView({behavior:'smooth',block:'start'})}});
+document.getElementById('closePlanOptions')?.addEventListener('click',()=>{const p=document.getElementById('planOptionsPanel');if(p)p.hidden=true});
+async function openBillingPortal(button,label='Opening…'){if(button){button.disabled=true;button.textContent=label}const r=await fetch('/api/account?action=billing-portal',{method:'POST'}),data=await r.json().catch(()=>({}));if(r.ok&&data.url)location.href=data.url;else{alert(data.error||'Billing portal is unavailable.');if(button){button.disabled=false;button.textContent=button.dataset.original||'Manage billing'}}}
+document.getElementById('paymentButton')?.addEventListener('click',async e=>{const b=e.currentTarget;b.dataset.original='Manage billing & invoices';await openBillingPortal(b)});
+document.getElementById('modalCta')?.addEventListener('click',async e=>{const b=e.currentTarget;b.dataset.original='Continue to Stripe';await openBillingPortal(b,'Opening Stripe…')});
+const retentionModal=document.getElementById('retentionModal');
+function closeRetention(){retentionModal?.classList.remove('open');retentionModal?.setAttribute('aria-hidden','true')}
+function openRetention(){if(!retentionModal)return;document.getElementById('retentionStatus').textContent='';retentionModal.classList.add('open');retentionModal.setAttribute('aria-hidden','false')}
+document.getElementById('retentionButton')?.addEventListener('click',openRetention);retentionModal?.querySelector('.retention-close')?.addEventListener('click',closeRetention);retentionModal?.addEventListener('click',e=>{if(e.target===retentionModal)closeRetention()});
+async function requestRetention(kind){
+  const status=document.getElementById('retentionStatus'),copy=kind==='pause'?'I would like to discuss temporarily pausing my CallerCore subscription. Please contact me before making any changes.':'I am considering cancelling and would like to review any available retention options, incentives, or a better-fit plan before I decide.';
+  if(status)status.textContent='Sending request…';try{const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:kind==='pause'?'Subscription pause request':'Subscription save-options request',message:copy,priority:'normal'})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not send request');if(status)status.textContent='Request sent. CallerCore support will follow up before any subscription change.'}catch(err){if(status)status.textContent=err.message||'Could not send request'}}
+retentionModal?.querySelectorAll('[data-retention]').forEach(b=>b.addEventListener('click',()=>{const kind=b.dataset.retention;if(kind==='plan'){closeRetention();const p=document.getElementById('planOptionsPanel');if(p){p.hidden=false;p.scrollIntoView({behavior:'smooth'})}}else requestRetention(kind)}));
+document.getElementById('continueCancelButton')?.addEventListener('click',async e=>{const b=e.currentTarget;b.dataset.original='Continue to cancellation options';await openBillingPortal(b,'Opening cancellation options…')});
 
 
 function profileInitials(name,email=''){
