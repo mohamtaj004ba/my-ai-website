@@ -250,11 +250,11 @@ function renderOverview(){
   set('overviewWeekCallsMeta',weekCalls+' handled in the last 7 days');
   set('overviewLeadsMeta',weekLeads+' surfaced in the last 7 days');
   set('overviewFollowupMeta',followups?'Calls waiting for your team':'Nothing waiting');const attentionCard=document.getElementById('overviewAttentionCard');if(attentionCard)attentionCard.classList.toggle('has-attention',followups>0);
-  const name=agentData?.name||'Maya';set('overviewAgentName',name+' is online');
+  const name=agentData?.name||'Maya';set('overviewAgentName',name+' is ready');
   const recent60=callsData.filter(x=>withinDays(recordTime(x),60)),answered60=recent60.filter(x=>!/miss/i.test(String(x.outcome||''))).length,qualified60=recent60.filter(x=>/book|qualif/i.test(String(x.outcome||''))).length,clean60=recent60.filter(x=>!/miss|follow/i.test(String(x.outcome||''))).length;
   const answerPct=recent60.length?Math.round(answered60/recent60.length*100):0,qualifiedPct=recent60.length?Math.round(qualified60/recent60.length*100):0,recoveryPct=recent60.length?Math.round(clean60/recent60.length*100):0;
   [['overviewAnswerRing','overviewAnswerPct',answerPct],['overviewQualifiedRing','overviewQualifiedPct',qualifiedPct],['overviewRecoveryRing','overviewRecoveryPct',recoveryPct]].forEach(([ringId,textId,pct])=>{const ring=document.getElementById(ringId),txt=document.getElementById(textId);if(ring)ring.style.setProperty('--pct',pct);if(txt)txt.textContent=pct+'%'});
-  set('overviewAgentMeta','Handling incoming calls for '+(settingsData?.businessName||sessionWorkspace?.name||'your business')+'.');
+  set('overviewAgentMeta','Configured to handle incoming calls for '+(settingsData?.businessName||sessionWorkspace?.name||'your business')+'.');
   set('overviewAgentCalls',monthCalls);set('overviewAgentLeads',qualified30);set('overviewDailyAvg',dailyAvg);
   const chart=document.getElementById('overviewLineChart');
   if(chart){
@@ -478,7 +478,7 @@ function buildContacts(){
     if(!map.has(key))map.set(key,{key,name,phone:rec?.phone||'',address:rec?.address||'',calls:[],conversations:[],leads:[],lastAt:0,services:new Set()});
     const c=map.get(key);if(name&&c.name==='Unknown caller')c.name=name;if(rec?.phone&&!c.phone)c.phone=rec.phone;if(rec?.address&&!c.address)c.address=rec.address;c.lastAt=Math.max(c.lastAt,recordTime(rec)||0);if(rec?.reason)c.services.add(rec.reason);if(rec?.service)c.services.add(rec.service);return c;
   };
-  callsData.filter(x=>!['Spam','Wrong number','Vendor'].includes(String(x.category||''))).forEach(x=>ensure(x,'caller').calls.push(x));
+  callsData.filter(x=>!['Spam','Wrong number','Vendor','Employment'].includes(String(x.category||''))).forEach(x=>ensure(x,'caller').calls.push(x));
   conversationsData.forEach(x=>ensure(x).conversations.push(x));
   leadsData.forEach(x=>ensure(x).leads.push(x));
   return [...map.values()].sort((a,b)=>b.lastAt-a.lastAt);
@@ -652,7 +652,7 @@ function renderAnalytics(){
   const activeDays=new Set(rows.map(x=>new Date(recordTime(x)).toDateString())).size,avg=activeDays?Math.round(total/activeDays*10)/10:0;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
   set('analyticsAnswerRate',(total?Math.round(answered/total*100):0)+'%');set('analyticsQualified',(total?Math.round(qualified/total*100):0)+'%');set('analyticsAfterHours',(total?Math.round(afterHours/total*100):0)+'%');set('analyticsDailyAvg',avg);set('analyticsCalls',total+' total calls');
-  const reasons={};rows.forEach(x=>{const k=String(x.reason||'Other').slice(0,70);reasons[k]=(reasons[k]||0)+1});const reasonRows=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,7),reasonMax=Math.max(1,...reasonRows.map(x=>x[1]));
+  const reasons={};rows.forEach(x=>{const k=String(x.category||'Other');reasons[k]=(reasons[k]||0)+1});const reasonRows=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,9),reasonMax=Math.max(1,...reasonRows.map(x=>x[1]));
   const reasonWrap=document.getElementById('callReasonBars');if(reasonWrap)reasonWrap.innerHTML=reasonRows.map(([label,value])=>'<div class="bar-row"><span>'+esc(label)+'</span><b>'+Math.round(value/Math.max(1,total)*100)+'%</b><div class="bar-track"><i style="width:'+Math.round(value/reasonMax*100)+'%"></i></div></div>').join('')||'<span class="muted">No call data yet.</span>';
   const daily=document.getElementById('insightDailyBars');if(daily){const vals=[];for(let i=days-1;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);const next=d.getTime()+86400000,n=rows.filter(x=>{const t=recordTime(x);return t>=d.getTime()&&t<next}).length;vals.push({d,n})}const display=vals.filter((_,i)=>days<=7||i%Math.max(1,Math.floor(days/12))===0||i===vals.length-1),max=Math.max(1,...display.map(x=>x.n));daily.innerHTML=display.map(x=>'<div class="insight-bar-col"><b>'+x.n+'</b><span><i style="height:'+Math.max(5,Math.round(x.n/max*100))+'%"></i></span><small>'+x.d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</small></div>').join('')}
   const hours=Array.from({length:12},(_,i)=>({h:i+7,n:0}));rows.forEach(x=>{const h=new Date(recordTime(x)).getHours(),slot=hours.find(v=>v.h===h);if(slot)slot.n++});const hourWrap=document.getElementById('insightHourBars');if(hourWrap){const max=Math.max(1,...hours.map(x=>x.n));hourWrap.innerHTML=hours.map(x=>'<div><small>'+new Date(2020,1,1,x.h).toLocaleTimeString(undefined,{hour:'numeric'})+'</small><span><i style="width:'+Math.round(x.n/max*100)+'%"></i></span><b>'+x.n+'</b></div>').join('')}
