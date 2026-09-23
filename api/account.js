@@ -1834,15 +1834,23 @@ async function clientDashboardData(req,res){
   const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
   const routing=phone?{number:phone.number||'',label:phone.label||'Primary',provider:phone.provider||'Vapi',forwardingFrom:phone.forwardingFrom||'',transferNumber:phone.transferNumber||'',afterHours:phone.afterHours||'ai',smsEnabled:smsLive&&phone.smsEnabled!==false,status:phone.status||'active'}:null;
   return res.status(200).json({
-    calls:Array.isArray(callsRaw)?callsRaw:[],leads:Array.isArray(leadsRaw)?leadsRaw:[],agent,settings,
+    calls:Array.isArray(callsRaw)?callsRaw.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x):[],leads:[],agent,settings,
     integrations:{googleCalendar:calendarLive&&!!savedIntegrations.googleCalendar,stripe:!!ws.stripeCustomerId,webhookUrl:savedIntegrations.webhookUrl||'',apiAccess:!!ent.features.apiAccess},
     locations:Array.isArray(locationsRaw)?locationsRaw:[],locationsLimit:ent.locations,routing,
-    conversations:ent.features.unifiedInbox&&Array.isArray(conversationsRaw)?conversationsRaw:[],
-    appointments:ent.features.appointments&&Array.isArray(appointmentsRaw)?appointmentsRaw:[],
-    automations:ent.features.automations&&Array.isArray(automationsRaw)?automationsRaw:[],
+    conversations:[],appointments:[],automations:[],
     followupState:followupRaw&&typeof followupRaw==='object'&&!Array.isArray(followupRaw)?followupRaw:{},
     loadedAt:Date.now()
   });
+}
+
+async function callDetail(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const id=String((req.query&&req.query.id)||'').slice(0,120);
+  if(!id)return res.status(400).json({error:'Call ID is required'});
+  const items=await kv.get('calls:'+s.workspaceId)||[];
+  const call=Array.isArray(items)?items.find(x=>x&&String(x.id)===id):null;
+  if(!call)return res.status(404).json({error:'Call not found'});
+  return res.status(200).json({call});
 }
 
 async function calls(req,res){
@@ -1967,6 +1975,7 @@ module.exports=async function handler(req,res){
   if(action==='integrations'&&req.method==='GET')return integrations(req,res);
   if(action==='integrations-save'&&req.method==='POST')return saveIntegrations(req,res);
   if(action==='client-dashboard-data'&&req.method==='GET')return clientDashboardData(req,res);
+  if(action==='call-detail'&&req.method==='GET')return callDetail(req,res);
   if(action==='calls'&&req.method==='GET')return calls(req,res);
   if(action==='conversations'&&req.method==='GET')return conversations(req,res);
   if(action==='appointments'&&req.method==='GET')return appointments(req,res);
