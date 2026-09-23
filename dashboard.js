@@ -181,6 +181,7 @@ async function fetchJsonRetry(url,{attempts=2,timeout=9000}={}){
   throw lastErr||new Error('Request failed');
 }
 function renderClientData(){
+  if(callsData.length&&agentData&&settingsData)setDataHealth('clientDataHealth',false);
   renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderBillingConnection();renderPhoneRouting();renderLocations();
 }
 async function loadOperations(){
@@ -189,7 +190,7 @@ async function loadOperations(){
   }
   setClientLoading(true);setDataHealth('clientDataHealth',false);
   try{
-    const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:3,timeout:7000});
+    const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:2,timeout:15000});
     callsData=data.calls||[];leadsData=data.leads||[];agentData=data.agent||null;settingsData=data.settings||null;integrationsData=data.integrations||null;phoneRoutingData=data.routing||null;locationsData=data.locations||[];locationsLimit=Number(data.locationsLimit||1);conversationsData=data.conversations||[];appointmentsData=data.appointments||[];automationsData=data.automations||[];followupState=data.followupState||{};analyticsData=buildLocalAnalytics();
     renderClientData();setClientLoading(false);
     // Non-critical support history loads separately so it can never block Today.
@@ -200,9 +201,18 @@ async function loadOperations(){
     const requests=[
       ['calls','calls'],['leads','leads'],['agent','agent'],['settings','settings'],['integrations','integrations'],['phone-routing','routing'],['locations','locations']
     ];
-    const settled=await Promise.allSettled(requests.map(([action])=>fetchJsonRetry('/api/account?action='+action,{attempts:2,timeout:7000})));
+    let settled=await Promise.allSettled(requests.map(([action])=>fetchJsonRetry('/api/account?action='+action,{attempts:2,timeout:10000})));
+    // One slow optional request should not make a fully usable dashboard look broken.
+    const retryIndexes=settled.map((x,i)=>x.status==='rejected'?i:-1).filter(i=>i>=0);
+    if(retryIndexes.length){
+      const retried=await Promise.allSettled(retryIndexes.map(i=>fetchJsonRetry('/api/account?action='+requests[i][0],{attempts:1,timeout:12000})));
+      retryIndexes.forEach((idx,k)=>{if(retried[k].status==='fulfilled')settled[idx]=retried[k]});
+    }
     for(let i=0;i<settled.length;i++){if(settled[i].status!=='fulfilled')continue;const [action,key]=requests[i],data=settled[i].value;if(action==='calls')callsData=data.calls||[];else if(action==='leads')leadsData=data.leads||[];else if(action==='agent')agentData=data.agent||null;else if(action==='settings')settingsData=data.settings||null;else if(action==='integrations')integrationsData=data.integrations||null;else if(action==='phone-routing')phoneRoutingData=data.routing||null;else if(action==='locations'){locationsData=data.locations||[];locationsLimit=Number(data.limit||1)}}
-    await loadFollowupState();analyticsData=buildLocalAnalytics();renderClientData();setDataHealth('clientDataHealth',settled.some(x=>x.status==='rejected'));setClientLoading(false);
+    await loadFollowupState();analyticsData=buildLocalAnalytics();renderClientData();
+    const failedActions=settled.map((x,i)=>x.status==='rejected'?requests[i][0]:'').filter(Boolean),criticalFailed=failedActions.filter(x=>['calls','agent','settings'].includes(x));
+    setDataHealth('clientDataHealth',criticalFailed.length>0);setClientLoading(false);
+    if(failedActions.length&&!criticalFailed.length)console.warn('Optional dashboard data delayed:',failedActions.join(', '));
   }catch(err){console.error('Operations data failed',err);setClientLoading(false);setDataHealth('clientDataHealth',true)}
 }
 
