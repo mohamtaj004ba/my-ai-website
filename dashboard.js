@@ -228,6 +228,9 @@ function renderOverview(){
   set('overviewLeadsMeta',weekLeads+' surfaced in the last 7 days');
   set('overviewFollowupMeta',followups?'Review recommended':'Nothing waiting');
   const name=agentData?.name||'Maya';set('overviewAgentName',name+' is online');
+  const recent60=callsData.filter(x=>withinDays(recordTime(x),60)),answered60=recent60.filter(x=>!/miss/i.test(String(x.outcome||''))).length,qualified60=recent60.filter(x=>/book|qualif/i.test(String(x.outcome||''))).length,clean60=recent60.filter(x=>!/miss|follow/i.test(String(x.outcome||''))).length;
+  const answerPct=recent60.length?Math.round(answered60/recent60.length*100):0,qualifiedPct=recent60.length?Math.round(qualified60/recent60.length*100):0,recoveryPct=recent60.length?Math.round(clean60/recent60.length*100):0;
+  [['overviewAnswerRing','overviewAnswerPct',answerPct],['overviewQualifiedRing','overviewQualifiedPct',qualifiedPct],['overviewRecoveryRing','overviewRecoveryPct',recoveryPct]].forEach(([ringId,textId,pct])=>{const ring=document.getElementById(ringId),txt=document.getElementById(textId);if(ring)ring.style.setProperty('--pct',pct);if(txt)txt.textContent=pct+'%'});
   set('overviewAgentMeta','Handling incoming calls for '+(settingsData?.businessName||sessionWorkspace?.name||'your business')+'.');
   set('overviewAgentCalls',monthCalls);set('overviewAgentLeads',qualified30);set('overviewDailyAvg',dailyAvg);
   const spark=document.getElementById('overviewSpark');
@@ -1244,6 +1247,8 @@ function renderAdmin(){
   const s=adminSummaryData,set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
   set('adminMrr',adminMoney(s.mrr));set('adminActiveClients',s.activeClients||0);set('adminOnboarding',(s.onboarding||0)+' onboarding');
   set('adminMinutes',Number(s.totalMinutes||0).toLocaleString());set('adminPastDue',s.pastDue||0);
+  const clientTotal=Math.max(1,Number(s.clients||adminClientsData.length||0)),activePct=Math.round(Number(s.activeClients||0)/clientTotal*100),billingPct=Math.round((clientTotal-Number(s.pastDue||0))/clientTotal*100),livePct=Math.round((clientTotal-Number(s.onboarding||0))/clientTotal*100);
+  [['adminActiveRing','adminActivePct',activePct],['adminBillingRing','adminBillingPct',billingPct],['adminLiveRing','adminLivePct',livePct]].forEach(([ringId,textId,pct])=>{const ring=document.getElementById(ringId),txt=document.getElementById(textId);if(ring)ring.style.setProperty('--pct',pct);if(txt)txt.textContent=pct+'%'});
   set('revenueMrr',adminMoney(s.mrr));set('revenueActive',s.activeClients||0);set('revenuePastDue',s.pastDue||0);set('revenueOnboarding',s.onboarding||0);
   const mix=document.getElementById('adminPlanMix');if(mix){
     const pm=s.planMix||{},max=Math.max(1,...Object.values(pm).map(Number));
