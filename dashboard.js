@@ -219,58 +219,46 @@ function formatFullDateTime(x){
   const ts=recordTime(x);if(ts)return new Date(ts).toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
   return [x?.date,x?.time].filter(Boolean).join(' · ')||'Date unavailable';
 }
+function overviewWindow(){
+  if(overviewRangeDays==='custom'&&overviewCustomStart&&overviewCustomEnd)return {start:overviewCustomStart,end:overviewCustomEnd,label:'Custom range'};
+  const days=Number(overviewRangeDays||7),end=Date.now(),start=days===1?new Date().setHours(0,0,0,0):end-days*86400000;
+  return {start:Number(start),end,label:days===1?'Today':'Last '+days+' days',days};
+}
+function inOverviewWindow(x,win=overviewWindow()){const t=recordTime(x);return !!t&&t>=win.start&&t<=win.end}
+function pctChange(current,previous){if(!previous)return current?100:0;return Math.round((current-previous)/previous*100)}
+function trendText(current,previous){const pct=pctChange(current,previous);return (pct>0?'↑ ':pct<0?'↓ ':'')+Math.abs(pct)+'% vs previous period'}
 function renderOverview(){
-  const callTimes=callsData.map(recordTime).filter(Boolean),todayCalls=callsData.filter(x=>sameLocalDay(recordTime(x))).length,weekCalls=callsData.filter(x=>withinDays(recordTime(x),7)).length,monthCalls=callsData.filter(x=>withinDays(recordTime(x),30)).length;
-  const weekLeads=callsData.filter(x=>withinDays(recordTime(x),7)&&/qualif/i.test(String(x.outcome||''))).length;
-  const followups=followupCandidates().filter(x=>withinDays(recordTime(x),7)&&!followupIsHandled(x)).length;
-  const qualified30=callsData.filter(x=>withinDays(recordTime(x),30)&&/book|qualif/i.test(String(x.outcome||''))).length;
-  const activeDays=new Set(callsData.filter(x=>withinDays(recordTime(x),30)).map(x=>new Date(recordTime(x)).toDateString())).size;
-  const dailyAvg=activeDays?Math.round(monthCalls/activeDays*10)/10:0;
+  const win=overviewWindow(),periodMs=Math.max(86400000,win.end-win.start),prev={start:win.start-periodMs,end:win.start-1};
+  const selected=callsData.filter(x=>inOverviewWindow(x,win)),previous=callsData.filter(x=>{const t=recordTime(x);return t>=prev.start&&t<=prev.end});
+  const qualified=selected.filter(x=>/qualif/i.test(String(x.outcome||''))),prevQualified=previous.filter(x=>/qualif/i.test(String(x.outcome||'')));
+  const afterHours=selected.filter(x=>{const h=new Date(recordTime(x)).getHours();return h<8||h>=18}),prevAfter=previous.filter(x=>{const h=new Date(recordTime(x)).getHours();return h<8||h>=18});
+  const openFollowups=followupCandidates().filter(x=>!followupIsHandled(x)),followupsInRange=openFollowups.filter(x=>inOverviewWindow(x,win));
+  const answered=selected.filter(x=>!/miss/i.test(String(x.outcome||''))),requiresHuman=selected.filter(x=>followupCandidates().some(c=>String(c.id)===String(x.id))),resolvedNoStaff=selected.filter(x=>!requiresHuman.some(c=>String(c.id)===String(x.id)));
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
-  set('overviewCalls',todayCalls);set('overviewWeekCalls',weekCalls);set('overviewLeads',weekLeads);set('overviewFollowup',followups);
-  set('overviewCallsMeta',todayCalls===1?'1 call so far today':todayCalls+' calls so far today');
-  set('overviewWeekCallsMeta',weekCalls+' handled in the last 7 days');
-  set('overviewLeadsMeta',weekLeads+' surfaced in the last 7 days');
-  set('overviewFollowupMeta',followups?'Review recommended':'Nothing waiting');
-  const name=agentData?.name||'Maya';set('overviewAgentName',name+' is online');
-  const recent60=callsData.filter(x=>withinDays(recordTime(x),60)),answered60=recent60.filter(x=>!/miss/i.test(String(x.outcome||''))).length,qualified60=recent60.filter(x=>/book|qualif/i.test(String(x.outcome||''))).length,clean60=recent60.filter(x=>!/miss|follow/i.test(String(x.outcome||''))).length;
-  const answerPct=recent60.length?Math.round(answered60/recent60.length*100):0,qualifiedPct=recent60.length?Math.round(qualified60/recent60.length*100):0,recoveryPct=recent60.length?Math.round(clean60/recent60.length*100):0;
-  [['overviewAnswerRing','overviewAnswerPct',answerPct],['overviewQualifiedRing','overviewQualifiedPct',qualifiedPct],['overviewRecoveryRing','overviewRecoveryPct',recoveryPct]].forEach(([ringId,textId,pct])=>{const ring=document.getElementById(ringId),txt=document.getElementById(textId);if(ring)ring.style.setProperty('--pct',pct);if(txt)txt.textContent=pct+'%'});
-  set('overviewAgentMeta','Handling incoming calls for '+(settingsData?.businessName||sessionWorkspace?.name||'your business')+'.');
-  set('overviewAgentCalls',monthCalls);set('overviewAgentLeads',qualified30);set('overviewDailyAvg',dailyAvg);
+  set('overviewDate',win.label);set('overviewCalls',selected.length);set('overviewLeads',qualified.length);set('overviewAfterHours',afterHours.length);set('overviewFollowup',openFollowups.length);
+  set('overviewCallsMeta',selected.length+' calls in selected period');set('overviewLeadsMeta',qualified.length+' high-intent calls');set('overviewAfterHoursMeta',afterHours.length+' outside business hours');set('overviewFollowupMeta',openFollowups.length?'Open items waiting now':'Nothing waiting');
+  set('overviewCallsTrend',trendText(selected.length,previous.length));set('overviewLeadsTrend',trendText(qualified.length,prevQualified.length));set('overviewAfterHoursTrend',trendText(afterHours.length,prevAfter.length));
+  const name=agentData?.name||'Maya';set('overviewAgentName',name+' is online');set('overviewAgentMeta','Handling incoming calls for '+(settingsData?.businessName||sessionWorkspace?.name||'your business')+'.');
+  const answerPct=selected.length?Math.round(answered.length/selected.length*100):0,qualPct=selected.length?Math.round(qualified.length/selected.length*100):0,followPct=selected.length?Math.round(requiresHuman.length/selected.length*100):0,resolvedPct=selected.length?Math.round(resolvedNoStaff.length/selected.length*100):0;
+  [['perfAnswerBar','perfAnswerText',answerPct],['perfQualifiedBar','perfQualifiedText',qualPct],['perfFollowupBar','perfFollowupText',followPct],['perfResolvedBar','perfResolvedText',resolvedPct]].forEach(([barId,textId,p])=>{const bar=document.getElementById(barId),txt=document.getElementById(textId);if(bar)bar.style.width=p+'%';if(txt)txt.textContent=p+'%'});
+  const phoneReady=!!phoneRoutingData?.number,calendarReady=!!(capability('calendar')&&integrationsData?.googleCalendar),crmReady=false;
+  const health=(dotId,textId,ok,label)=>{const d=document.getElementById(dotId),t=document.getElementById(textId);if(d)d.className='health-dot '+(ok?'good':'warn');if(t)t.textContent=label};
+  health('opsPhoneDot','opsPhoneStatus',phoneReady,phoneReady?'Phone routing healthy':'Phone routing needs setup');health('opsCrmDot','opsCrmStatus',crmReady,crmReady?'CRM connected':'CRM not connected');health('opsCalendarDot','opsCalendarStatus',calendarReady,calendarReady?'Calendar connected':'Calendar not connected');
   const chart=document.getElementById('overviewLineChart');
   if(chart){
-    const days=[];for(let i=13;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);const next=d.getTime()+86400000,n=callsData.filter(x=>{const t=recordTime(x);return t>=d.getTime()&&t<next}).length;days.push({label:d.toLocaleDateString(undefined,{month:'short',day:'numeric'}),short:d.toLocaleDateString(undefined,{weekday:'short'}),n})}
-    const max=Math.max(1,...days.map(d=>d.n)),min=0,w=760,h=210,pad={l:36,r:14,t:20,b:34},plotW=w-pad.l-pad.r,plotH=h-pad.t-pad.b;
-    const pts=days.map((d,i)=>({x:pad.l+(plotW*(i/(days.length-1))),y:pad.t+plotH-(d.n-min)/(max-min||1)*plotH,...d}));
+    const dayCount=Math.max(1,Math.ceil((win.end-win.start)/86400000)),bucketCount=Math.min(dayCount,30),bucketMs=(win.end-win.start)/bucketCount,days=[];
+    for(let i=0;i<bucketCount;i++){const start=win.start+i*bucketMs,end=i===bucketCount-1?win.end:start+bucketMs,n=selected.filter(x=>{const t=recordTime(x);return t>=start&&t<end}).length,d=new Date(start);days.push({label:d.toLocaleDateString(undefined,{month:'short',day:'numeric'}),short:bucketCount>14?d.toLocaleDateString(undefined,{month:'numeric',day:'numeric'}):d.toLocaleDateString(undefined,{weekday:'short'}),n})}
+    const max=Math.max(1,...days.map(d=>d.n)),w=760,h=210,pad={l:36,r:14,t:20,b:34},plotW=w-pad.l-pad.r,plotH=h-pad.t-pad.b,pts=days.map((d,i)=>({x:pad.l+(plotW*(days.length===1?.5:i/(days.length-1))),y:pad.t+plotH-d.n/max*plotH,...d}));
     const line=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' '),area=line+' L '+pts[pts.length-1].x.toFixed(1)+' '+(pad.t+plotH)+' L '+pts[0].x.toFixed(1)+' '+(pad.t+plotH)+' Z';
     const grid=[0,.5,1].map(r=>{const y=pad.t+plotH*(1-r),v=Math.round(max*r);return '<line x1="'+pad.l+'" y1="'+y+'" x2="'+(w-pad.r)+'" y2="'+y+'" class="chart-grid"/><text x="'+(pad.l-8)+'" y="'+(y+3)+'" class="chart-axis" text-anchor="end">'+v+'</text>'}).join('');
-    const labels=pts.map((p,i)=>i%2===0||i===pts.length-1?'<text x="'+p.x+'" y="'+(h-10)+'" class="chart-axis" text-anchor="middle">'+esc(p.short)+'</text>':'').join('');
-    const dots=pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="4" class="chart-dot"><title>'+esc(p.label)+' · '+p.n+' calls</title></circle>').join('');
+    const labels=pts.map((p,i)=>i%Math.max(1,Math.ceil(pts.length/7))===0||i===pts.length-1?'<text x="'+p.x+'" y="'+(h-10)+'" class="chart-axis" text-anchor="middle">'+esc(p.short)+'</text>':'').join(''),dots=pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="4" class="chart-dot"><title>'+esc(p.label)+' · '+p.n+' calls</title></circle>').join('');
     chart.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img"><defs><linearGradient id="callArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#c85d35" stop-opacity=".22"/><stop offset="100%" stop-color="#c85d35" stop-opacity=".02"/></linearGradient></defs>'+grid+'<path d="'+area+'" class="chart-area"/><path d="'+line+'" class="chart-line"/>'+dots+labels+'</svg>';
-    const total=days.reduce((n,d)=>n+d.n,0),avg=Math.round(total/days.length*10)/10,peak=Math.max(...days.map(d=>d.n)),summary=document.getElementById('overviewChartSummary'),peakEl=document.getElementById('overviewChartPeak');if(summary)summary.textContent=avg+' calls/day average';if(peakEl)peakEl.textContent='Peak '+peak+' calls';
+    const avg=Math.round(selected.length/Math.max(1,dayCount)*10)/10,peak=Math.max(0,...days.map(d=>d.n));set('overviewChartSummary',avg+' calls/day average');set('overviewChartPeak','Peak '+peak+' calls');
   }
-  const attention=document.getElementById('overviewAttention');
-  if(attention){
-    const missed=callsData.filter(x=>withinDays(recordTime(x),7)&&/miss/i.test(String(x.outcome||''))).length;
-    const recentQualified=callsData.filter(x=>withinDays(recordTime(x),7)&&/book|qualif/i.test(String(x.outcome||''))).length;
-    attention.innerHTML=[
-      ['Needs follow-up',followups,followups?'Calls waiting for your team.':'No follow-up calls waiting.','leads'],
-      ['Qualified requests',recentQualified,recentQualified?'High-intent calls identified this week.':'No qualified calls this week.','calls'],
-      ['Customers added',weekLeads,weekLeads?'New people surfaced from CallerCore activity.':'No new customers this week.','contacts']
-    ].map(([title,n,copy,view])=>'<button class="attention-row" data-view="'+view+'"><span class="attention-count">'+n+'</span><span><b>'+title+'</b><small>'+copy+'</small></span><em>→</em></button>').join('');
-    attention.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
-  }
-  const wrap=document.getElementById('overviewActivity');
-  if(wrap){
-    const recent=[...callsData].sort((a,b)=>recordTime(b)-recordTime(a)).slice(0,6);
-    wrap.innerHTML=recent.length?recent.map(x=>{
-      const initials=String(x.caller||'?').split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase()||'?';
-      const candidate=followupCandidates().some(c=>String(c.id)===String(x.id)),handled=candidate&&followupIsHandled(x),pending=candidate&&!handled,label=pending?'Needs follow-up':handled?'Handled':(/resolved/i.test(String(x.outcome||''))?'Resolved':(x.outcome||'Handled')),stateClass=pending?'activity-pending':handled?'activity-handled':'activity-resolved';
-      return '<button class="activity-row overview-call-row '+stateClass+'" data-call-id="'+esc(x.id)+'"><span class="time">'+esc(formatFullDateTime(x))+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.caller||'Unknown caller')+'</strong><small>'+esc(x.reason||'Call activity')+'</small></span></div><span class="tag '+(pending?'amber':'green')+'">'+esc(label)+'</span><strong>'+esc(x.duration||'—')+'</strong></button>';
-    }).join(''):'<div class="empty-state"><h3>No activity yet</h3><p>Calls will appear here as CallerCore starts handling traffic.</p></div>';
-    wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
-  }
+  set('needsTeamCount',openFollowups.length);const list=document.getElementById('needsTeamList'),empty=document.getElementById('needsTeamEmpty');
+  if(list){const top=[...openFollowups].sort((a,b)=>{const ua=followupType(a)==='urgent'?1:0,ub=followupType(b)==='urgent'?1:0;return ub-ua||recordTime(b)-recordTime(a)}).slice(0,5);list.innerHTML=top.map(x=>'<button class="needs-team-item '+(followupType(x)==='urgent'?'urgent':'')+'" data-call-id="'+esc(x.id)+'"><span class="needs-team-status">'+esc(followupLabel(followupType(x)))+'</span><b>'+esc(x.caller||'Unknown caller')+'</b><small>'+esc(x.reason||'Call requires review')+'</small><em>'+esc(formatFullDateTime(x))+'</em></button>').join('');list.querySelectorAll('[data-call-id]').forEach(b=>b.addEventListener('click',()=>openCall(b.dataset.callId)));if(empty)empty.hidden=top.length!==0}
+  set('valueSummaryHeadline',selected.length+' calls handled');set('valueHandledWithoutStaff',resolvedNoStaff.length);set('valueQualified',qualified.length);set('valueEscalated',requiresHuman.length);set('valueAfterHours',afterHours.length);
+  const wrap=document.getElementById('overviewActivity');if(wrap){const recent=[...callsData].sort((a,b)=>recordTime(b)-recordTime(a)).slice(0,6);wrap.innerHTML=recent.length?recent.map(x=>{const initials=String(x.caller||'?').split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase()||'?',candidate=followupCandidates().some(c=>String(c.id)===String(x.id)),handled=candidate&&followupIsHandled(x),pending=candidate&&!handled,label=pending?'Needs follow-up':handled?'Handled':(/resolved/i.test(String(x.outcome||''))?'Resolved':(x.outcome||'Handled')),stateClass=pending?'activity-pending':handled?'activity-handled':'activity-resolved';return '<button class="activity-row overview-call-row '+stateClass+'" data-call-id="'+esc(x.id)+'"><span class="time">'+esc(formatFullDateTime(x))+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.caller||'Unknown caller')+'</strong><small>'+esc(x.reason||'Call activity')+'</small></span></div><span class="tag '+(pending?'amber':'green')+'">'+esc(label)+'</span><strong>'+esc(x.duration||'—')+'</strong></button>'}).join(''):'<div class="empty-state"><h3>No activity yet</h3><p>Calls will appear here as CallerCore starts handling traffic.</p></div>';wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)))}
 }
 function outcomeClass(outcome){return /book|qualif/i.test(outcome)?'green':/miss|follow/i.test(outcome)?'amber':'amber'}
 function dateGroupLabel(ts){
@@ -1765,3 +1753,6 @@ document.getElementById('logoutButton')?.addEventListener('click',logout);
 
 document.getElementById('clientDataRetry')?.addEventListener('click',async()=>{setDataHealth('clientDataHealth',false);await loadOperations()});
 document.getElementById('adminDataRetry')?.addEventListener('click',async()=>{setDataHealth('adminDataHealth',false);await loadAdminOps()});
+
+document.querySelectorAll('#overviewRange [data-range]').forEach(b=>b.addEventListener('click',()=>{const val=b.dataset.range;document.querySelectorAll('#overviewRange [data-range]').forEach(x=>x.classList.toggle('active',x===b));const custom=document.getElementById('overviewCustomRange');if(val==='custom'){overviewRangeDays='custom';if(custom)custom.hidden=false}else{overviewRangeDays=Number(val);if(custom)custom.hidden=true;renderOverview()}}));
+document.getElementById('applyOverviewRange')?.addEventListener('click',()=>{const a=document.getElementById('overviewStartDate')?.value,b=document.getElementById('overviewEndDate')?.value;if(!a||!b)return;const start=new Date(a+'T00:00:00').getTime(),end=new Date(b+'T23:59:59').getTime();if(end<start)return;overviewCustomStart=start;overviewCustomEnd=end;overviewRangeDays='custom';renderOverview()});
