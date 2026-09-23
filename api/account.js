@@ -1310,7 +1310,8 @@ async function followupUpdate(req,res){
   if(legacyNote&&!appendNote&&!notes.length)notes.push({id:'legacy_'+Date.now(),text:legacyNote,at:Date.now(),by:s.email||''});
   if(appendNote)notes.push({id:'note_'+Date.now().toString(36),text:appendNote,at:Date.now(),by:s.email||''});
   notes=notes.slice(-100);
-  next[callId]={status,notes,completionReason:status==='completed'?completionReason:'',completionNote:status==='completed'?completionNote:'',updatedAt:Date.now(),updatedBy:s.email||''};
+  const finalCompletionReason=status==='completed'?(body.completionReason!==undefined?completionReason:String(previous.completionReason||'')):'',finalCompletionNote=status==='completed'?(body.completionNote!==undefined?completionNote:String(previous.completionNote||'')):'';
+  next[callId]={status,notes,completionReason:finalCompletionReason,completionNote:finalCompletionNote,updatedAt:Date.now(),updatedBy:s.email||''};
   await kv.set(key,next);
   await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:appendNote?'team_note_added':'team_status_'+status,section:'calls',before:previous||null,after:next[callId],meta:{callId}});
   return res.status(200).json({ok:true,state:next});
