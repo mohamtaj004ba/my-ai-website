@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false;
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='';
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',followupState={},showHandledFollowups=false;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',reason:'Roof replacement estimate',duration:'4:32',outcome:'Booked',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and booked an inspection for Tuesday at 10:30 AM.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can help get an inspection scheduled. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -167,7 +167,7 @@ async function loadOperations(){
     settingsData={...DEMO_SETTINGS};integrationsData={...DEMO_INTEGRATIONS,apiAccess:has('apiAccess')};
     phoneRoutingData={number:'(509) 555-0100',label:'Primary',provider:'Vapi',forwardingFrom:'(509) 555-0199',transferNumber:'(509) 555-0101',afterHours:'ai',smsEnabled:false,status:'active'};
     locationsData=[{id:'loc-demo',name:'Spokane',phone:'(509) 555-0199',address:'Spokane, WA',timezone:'America/Los_Angeles',active:true}];locationsLimit=PLAN_DATA[currentPlan].locations||1;
-    analyticsData=buildLocalAnalytics();
+    analyticsData=buildLocalAnalytics();followupState={};
     renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientSetupStatus();renderClientChecklist();renderBillingConnection();renderPhoneRouting();renderLocations();return;
   }
   try{
@@ -201,6 +201,7 @@ async function loadOperations(){
     if(has('appointments')){if(results[idx].ok)appointmentsData=(await results[idx].json()).appointments||[];idx++}
     if(has('automations')){if(results[idx].ok)automationsData=(await results[idx].json()).automations||[]}
   }catch(err){console.error('Operations data failed',err);setDataHealth('clientDataHealth',true)}
+  await loadFollowupState();
   renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientChecklist();renderBillingConnection();renderPhoneRouting();renderLocations();
 }
 
@@ -217,7 +218,7 @@ function formatFullDateTime(x){
 function renderOverview(){
   const callTimes=callsData.map(recordTime).filter(Boolean),todayCalls=callsData.filter(x=>sameLocalDay(recordTime(x))).length,weekCalls=callsData.filter(x=>withinDays(recordTime(x),7)).length,monthCalls=callsData.filter(x=>withinDays(recordTime(x),30)).length;
   const weekLeads=leadsData.filter(x=>withinDays(recordTime(x),7)).length;
-  const followups=callsData.filter(x=>withinDays(recordTime(x),7)&&/miss|follow/i.test(String(x.outcome||''))).length;
+  const followups=followupCandidates().filter(x=>withinDays(recordTime(x),7)&&!followupIsHandled(x)).length;
   const qualified30=callsData.filter(x=>withinDays(recordTime(x),30)&&/book|qualif/i.test(String(x.outcome||''))).length;
   const activeDays=new Set(callsData.filter(x=>withinDays(recordTime(x),30)).map(x=>new Date(recordTime(x)).toDateString())).size;
   const dailyAvg=activeDays?Math.round(monthCalls/activeDays*10)/10:0;
@@ -243,9 +244,9 @@ function renderOverview(){
     const missed=callsData.filter(x=>withinDays(recordTime(x),7)&&/miss/i.test(String(x.outcome||''))).length;
     const recentQualified=callsData.filter(x=>withinDays(recordTime(x),7)&&/book|qualif/i.test(String(x.outcome||''))).length;
     attention.innerHTML=[
-      ['Needs follow-up',followups,followups?'Missed or follow-up calls from the last 7 days.':'No follow-up calls waiting.','calls'],
+      ['Needs follow-up',followups,followups?'Calls waiting for your team.':'No follow-up calls waiting.','leads'],
       ['Qualified / booked',recentQualified,recentQualified?'High-intent calls identified this week.':'No qualified calls this week.','calls'],
-      ['Contacts added',weekLeads,weekLeads?'New people surfaced from CallerCore activity.':'No new contacts this week.','contacts']
+      ['Customers added',weekLeads,weekLeads?'New people surfaced from CallerCore activity.':'No new customers this week.','contacts']
     ].map(([title,n,copy,view])=>'<button class="attention-row" data-view="'+view+'"><span class="attention-count">'+n+'</span><span><b>'+title+'</b><small>'+copy+'</small></span><em>→</em></button>').join('');
     attention.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
   }
@@ -299,22 +300,52 @@ function openCall(id){
 }
 function closeCall(){document.getElementById('callDrawer')?.classList.remove('open');document.getElementById('drawerBackdrop')?.classList.remove('open');document.getElementById('callDrawer')?.setAttribute('aria-hidden','true')}
 function money(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
-function leadDisplayStatus(stage){
-  return ({New:'New inquiry',Contacted:'Follow-up',Qualified:'Qualified',Appointment:'Scheduled',Won:'Closed · won',Lost:'Closed'})[stage]||stage||'New inquiry';
+function followupType(call){
+  const reason=String(call?.reason||''),outcome=String(call?.outcome||'');
+  if(/no heat|emergency|urgent|gas|carbon monoxide/i.test(reason))return 'urgent';
+  if(/miss/i.test(outcome))return 'callback';
+  if(/follow/i.test(outcome))return 'callback';
+  if(/book|qualif/i.test(outcome))return 'qualified';
+  return 'review';
 }
-function leadStatusClass(stage){return ['Qualified','Appointment','Won'].includes(stage)?'green':['Lost'].includes(stage)?'':'amber'}
+function followupLabel(type){return ({urgent:'Urgent',callback:'Callback',qualified:'Qualified request',review:'Review'})[type]||'Review'}
+function followupCandidates(){
+  return callsData.filter(x=>/miss|follow|book|qualif/i.test(String(x.outcome||''))||/urgent|emergency|no heat|gas|carbon monoxide/i.test(String(x.reason||''))).sort((a,b)=>recordTime(b)-recordTime(a));
+}
+async function loadFollowupState(){
+  if(demoMode)return;
+  try{const r=await fetch('/api/account?action=followups',{headers:{Accept:'application/json'},cache:'no-store'});if(r.ok)followupState=(await r.json()).state||{}}catch(err){console.error('Follow-up state failed',err)}
+}
+function followupIsHandled(call){return followupState[String(call.id)]?.status==='handled'}
+function updateFollowupCounts(){
+  const all=followupCandidates(),open=all.filter(x=>!followupIsHandled(x)),urgent=open.filter(x=>followupType(x)==='urgent'),callbacks=open.filter(x=>followupType(x)==='callback'),handledToday=all.filter(x=>{const st=followupState[String(x.id)];return st?.status==='handled'&&sameLocalDay(Number(st.updatedAt||0))});
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};set('followupOpenCount',open.length);set('followupUrgentCount',urgent.length);set('followupCallbackCount',callbacks.length);set('followupHandledCount',handledToday.length);
+  const nav=document.getElementById('followupNavCount');if(nav){nav.textContent=open.length>99?'99+':open.length;nav.hidden=open.length===0}
+  const overview=document.getElementById('overviewFollowup');if(overview)overview.textContent=open.filter(x=>withinDays(recordTime(x),7)).length;
+}
 function renderLeads(){
   const board=document.getElementById('leadKanban');if(!board)return;
   const q=(document.getElementById('leadSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('leadFilter')?.value||'all';
-  const visible=[...leadsData].filter(x=>{
-    const matches=!q||[x.name,x.phone,x.service,x.source,x.stage].join(' ').toLowerCase().includes(q);
-    const status=x.stage||'New';
-    const filterOk=filter==='all'||(filter==='priority'&&['Qualified','Appointment','Won'].includes(status))||(filter==='followup'&&['New','Contacted'].includes(status))||(filter==='closed'&&['Won','Lost'].includes(status));
-    return matches&&filterOk;
-  }).sort((a,b)=>recordTime(b)-recordTime(a));
-  board.innerHTML=visible.map(x=>'<button class="opportunity-row" data-contact-key="'+esc(contactKey(x))+'"><span><strong>'+esc(x.name||'Unnamed contact')+'</strong><small>'+esc(x.phone||'')+'</small></span><span><strong>'+esc(x.service||'General inquiry')+'</strong><small>'+esc(x.source||'CallerCore')+'</small></span><span>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.age||'Recently'))+'</span><span><i class="tag '+leadStatusClass(x.stage)+'">'+esc(leadDisplayStatus(x.stage))+'</i></span><span class="open-arrow">→</span></button>').join('');
-  document.getElementById('leadsEmpty').hidden=visible.length!==0;
-  board.querySelectorAll('[data-contact-key]').forEach(row=>row.addEventListener('click',()=>openContact(row.dataset.contactKey)));
+  let rows=followupCandidates().filter(x=>{
+    const handled=followupIsHandled(x);if(showHandledFollowups?!handled:handled)return false;
+    const type=followupType(x),searchOk=!q||[x.caller,x.phone,x.reason,x.address,x.outcome].join(' ').toLowerCase().includes(q),filterOk=filter==='all'||type===filter;
+    return searchOk&&filterOk;
+  });
+  board.innerHTML=rows.map(x=>{
+    const type=followupType(x),handled=followupIsHandled(x),phone=String(x.phone||''),digits=phone.replace(/\D/g,'');
+    return '<article class="followup-card '+(type==='urgent'?'urgent':'')+' '+(handled?'handled':'')+'"><div class="followup-main"><div class="followup-badge '+type+'">'+followupLabel(type)+'</div><div class="followup-customer"><button class="customer-link" data-contact-key="'+esc(contactKey(x))+'"><b>'+esc(x.caller||'Unknown caller')+'</b></button><span>'+esc(phone||'No phone')+' · '+esc(formatFullDateTime(x))+'</span><p>'+esc(x.reason||'Call requires review')+'</p><small>'+esc(x.address||'No service address captured')+'</small></div></div><div class="followup-actions">'+(digits?'<a class="secondary-btn action-link" href="tel:'+digits+'">Call</a><a class="secondary-btn action-link" href="sms:'+digits+'">Text</a>':'')+'<button class="secondary-btn" data-call-id="'+esc(x.id)+'">Call details</button><button class="'+(handled?'secondary-btn':'primary')+'" data-followup-toggle="'+esc(x.id)+'">'+(handled?'Reopen':'Mark handled')+'</button></div></article>';
+  }).join('');
+  document.getElementById('leadsEmpty').hidden=rows.length!==0;updateFollowupCounts();
+  board.querySelectorAll('[data-contact-key]').forEach(b=>b.addEventListener('click',()=>openContact(b.dataset.contactKey)));
+  board.querySelectorAll('[data-call-id]').forEach(b=>b.addEventListener('click',()=>openCall(b.dataset.callId)));
+  board.querySelectorAll('[data-followup-toggle]').forEach(b=>b.addEventListener('click',()=>toggleFollowup(b.dataset.followupToggle)));
+}
+async function toggleFollowup(id){
+  const handled=followupState[id]?.status==='handled',next=handled?'open':'handled',previous=followupState[id];
+  followupState[id]={status:next,updatedAt:Date.now()};renderLeads();renderOverview();
+  if(demoMode)return;
+  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:next})});if(!r.ok)throw new Error('Could not update follow-up');followupState=(await r.json()).state||followupState}
+  catch(err){if(previous)followupState[id]=previous;else delete followupState[id];renderLeads();renderOverview();console.error(err)}
 }
 async function moveLead(id,stage){
   const lead=leadsData.find(x=>String(x.id)===String(id));if(!lead||lead.stage===stage)return;
@@ -330,6 +361,7 @@ document.getElementById('callFilter')?.addEventListener('change',renderCalls);
 document.getElementById('callDateFilter')?.addEventListener('change',renderCalls);
 document.getElementById('leadSearch')?.addEventListener('input',renderLeads);
 document.getElementById('leadFilter')?.addEventListener('change',renderLeads);
+document.getElementById('showHandledFollowups')?.addEventListener('click',e=>{showHandledFollowups=!showHandledFollowups;e.currentTarget.textContent=showHandledFollowups?'Show open':'Show handled';renderLeads()});
 document.getElementById('closeCallDrawer')?.addEventListener('click',closeCall);
 document.getElementById('drawerBackdrop')?.addEventListener('click',closeCall);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeCall();closeContact()}});
@@ -540,20 +572,28 @@ function buildLocalAnalytics(){
 }
 function renderAnalytics(){
   if(!has('advancedAnalytics'))return;
-  const a=analyticsData||buildLocalAnalytics();if(!a)return;
+  const days=Number(document.getElementById('insightsRange')?.value||30),rows=callsData.filter(x=>withinDays(recordTime(x),days)),total=rows.length;
+  const answered=rows.filter(x=>!/miss/i.test(String(x.outcome||''))).length,qualified=rows.filter(x=>/book|qualif/i.test(String(x.outcome||''))).length;
+  const afterHours=rows.filter(x=>{const h=new Date(recordTime(x)).getHours();return h<8||h>=18}).length;
+  const activeDays=new Set(rows.map(x=>new Date(recordTime(x)).toDateString())).size,avg=activeDays?Math.round(total/activeDays*10)/10:0;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
-  set('analyticsCalls',a.calls||0);set('analyticsQualified',a.qualified||0);set('analyticsConversion',(a.conversion||0)+'%');set('analyticsPipeline',money(a.pipeline||0));
-  set('analyticsLeads',a.leads||0);set('analyticsAppointments',a.appointments||0);set('analyticsWon',a.won||0);
-  const wrap=document.getElementById('callReasonBars');if(!wrap)return;
-  const rows=Array.isArray(a.callReasons)?a.callReasons:[],max=Math.max(1,...rows.map(x=>Number(x.value||0)));
-  wrap.innerHTML=rows.map(x=>'<div class="bar-row"><span>'+esc(x.label)+'</span><b>'+Number(x.value||0)+'</b><div class="bar-track"><i style="width:'+Math.round(Number(x.value||0)/max*100)+'%"></i></div></div>').join('')||'<span class="muted">No call data yet.</span>';
+  set('analyticsAnswerRate',(total?Math.round(answered/total*100):0)+'%');set('analyticsQualified',(total?Math.round(qualified/total*100):0)+'%');set('analyticsAfterHours',(total?Math.round(afterHours/total*100):0)+'%');set('analyticsDailyAvg',avg);set('analyticsCalls',total+' total calls');
+  const reasons={};rows.forEach(x=>{const k=String(x.reason||'Other').slice(0,70);reasons[k]=(reasons[k]||0)+1});const reasonRows=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,7),reasonMax=Math.max(1,...reasonRows.map(x=>x[1]));
+  const reasonWrap=document.getElementById('callReasonBars');if(reasonWrap)reasonWrap.innerHTML=reasonRows.map(([label,value])=>'<div class="bar-row"><span>'+esc(label)+'</span><b>'+Math.round(value/Math.max(1,total)*100)+'%</b><div class="bar-track"><i style="width:'+Math.round(value/reasonMax*100)+'%"></i></div></div>').join('')||'<span class="muted">No call data yet.</span>';
+  const daily=document.getElementById('insightDailyBars');if(daily){const vals=[];for(let i=days-1;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);const next=d.getTime()+86400000,n=rows.filter(x=>{const t=recordTime(x);return t>=d.getTime()&&t<next}).length;vals.push({d,n})}const display=vals.filter((_,i)=>days<=7||i%Math.max(1,Math.floor(days/12))===0||i===vals.length-1),max=Math.max(1,...display.map(x=>x.n));daily.innerHTML=display.map(x=>'<div class="insight-bar-col"><b>'+x.n+'</b><span><i style="height:'+Math.max(5,Math.round(x.n/max*100))+'%"></i></span><small>'+x.d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</small></div>').join('')}
+  const hours=Array.from({length:12},(_,i)=>({h:i+7,n:0}));rows.forEach(x=>{const h=new Date(recordTime(x)).getHours(),slot=hours.find(v=>v.h===h);if(slot)slot.n++});const hourWrap=document.getElementById('insightHourBars');if(hourWrap){const max=Math.max(1,...hours.map(x=>x.n));hourWrap.innerHTML=hours.map(x=>'<div><small>'+new Date(2020,1,1,x.h).toLocaleTimeString(undefined,{hour:'numeric'})+'</small><span><i style="width:'+Math.round(x.n/max*100)+'%"></i></span><b>'+x.n+'</b></div>').join('')}
+  const outcomes={Answered:0,Qualified:0,'Follow-up':0,Missed:0};rows.forEach(x=>{/miss/i.test(x.outcome||'')?outcomes.Missed++:/follow/i.test(x.outcome||'')?outcomes['Follow-up']++:/book|qualif/i.test(x.outcome||'')?outcomes.Qualified++:outcomes.Answered++});const donut=document.getElementById('outcomeDonut'),legend=document.getElementById('outcomeLegend');if(donut){const pctQ=total?Math.round(outcomes.Qualified/total*100):0,pctF=total?Math.round(outcomes['Follow-up']/total*100):0,pctM=total?Math.round(outcomes.Missed/total*100):0;donut.style.background='conic-gradient(var(--accent) 0 '+pctQ+'%,#e2a56f '+pctQ+'% '+(pctQ+pctF)+'%,#cfd5dc '+(pctQ+pctF)+'% '+(100-pctM)+'%,#d8614c '+(100-pctM)+'% 100%)';set('outcomeDonutLabel',total)}if(legend)legend.innerHTML=Object.entries(outcomes).map(([k,v])=>'<div><span>'+esc(k)+'</span><b>'+v+' · '+(total?Math.round(v/total*100):0)+'%</b></div>').join('');
 }
 function renderIntegrations(){
   if(!integrationsData)integrationsData={googleCalendar:false,stripe:!!sessionWorkspace?.stripe?.customerLinked,webhookUrl:'',apiAccess:has('apiAccess')};
-  const g=document.getElementById('googleCalendarStatus');if(g){g.textContent=capability('calendar')?(integrationsData.googleCalendar?'Connected':'Not connected'):'Coming later';g.className='tag '+(capability('calendar')&&integrationsData.googleCalendar?'green':'amber')}
-  const s=document.getElementById('stripeIntegrationStatus');if(s){s.textContent=integrationsData.stripe?'Linked':'Not linked';s.className='tag '+(integrationsData.stripe?'green':'amber')}
-  const panel=document.getElementById('webhookPanel');if(panel)panel.hidden=!has('apiAccess');
-  const url=document.getElementById('webhookUrl');if(url)url.value=integrationsData.webhookUrl||'';
+  const routeReady=!!phoneRoutingData?.number,agentReady=!!agentData?.name;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  const tag=(id,ok,yes,no)=>{const el=document.getElementById(id);if(el){el.textContent=ok?yes:no;el.className='tag '+(ok?'green':'amber')}};
+  set('connectionPhoneTitle',routeReady?'Phone routing active':'Phone routing not ready');set('connectionPhoneCopy',routeReady?(phoneRoutingData.number+' is answering through CallerCore.'):'A CallerCore number has not been assigned yet.');tag('connectionPhoneStatus',routeReady,'Active','Needs setup');
+  set('connectionAgentTitle',agentReady?(agentData.name+' is configured'):'AI receptionist needs setup');set('connectionAgentCopy',agentReady?'Business hours, service area, and escalation rules are loaded.':'Finish your AI receptionist configuration before going live.');tag('connectionAgentStatus',agentReady,'Online','Needs setup');
+  const g=document.getElementById('googleCalendarStatus');if(g){const ok=capability('calendar')&&integrationsData.googleCalendar;g.textContent=ok?'Connected':'Not connected';g.className='tag '+(ok?'green':'amber')}
+  set('connectionBusinessNumber',phoneRoutingData?.forwardingFrom||settingsData?.businessPhone||'Your business line');set('connectionCallerCoreNumber',phoneRoutingData?.number||'Not assigned');set('connectionTransferNumber',phoneRoutingData?.transferNumber||agentData?.transferNumber||'Not configured');
+  const panel=document.getElementById('webhookPanel');if(panel)panel.hidden=!has('apiAccess');const url=document.getElementById('webhookUrl');if(url)url.value=integrationsData.webhookUrl||'';
 }
 async function saveWebhook(){
   if(!has('apiAccess'))return openModal('Pro');
@@ -743,6 +783,7 @@ async function submitSupportTicket(){
 document.getElementById('submitSupportButton')?.addEventListener('click',submitSupportTicket);
 
 document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebhook);
+document.getElementById('insightsRange')?.addEventListener('change',renderAnalytics);
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
