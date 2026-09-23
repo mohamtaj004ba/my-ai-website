@@ -110,6 +110,7 @@ async function seedPreviewData(req,res){
   const workspaceId=member.workspaceId,now=Date.now(),dataset=previewSeed.makePrimaryDataset();
   const workspace=previewSeed.primaryWorkspace(workspaceId,email,now);
   workspace.usage.minutes=dataset.minutes;
+  const compactCalls=dataset.calls.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x);
   const seededFollowups={};
   dataset.calls.forEach((call,index)=>{
     const outcome=String(call&&call.outcome||''),reason=String(call&&call.reason||''),requires=/miss|follow|qualif/i.test(outcome)||/urgent|emergency|no heat|gas|carbon monoxide/i.test(reason);
@@ -125,6 +126,7 @@ async function seedPreviewData(req,res){
     kv.set('automations:'+workspaceId,previewSeed.primaryAutomations()),
     kv.set('locations:'+workspaceId,previewSeed.primaryLocations()),
     kv.set('calls:'+workspaceId,dataset.calls),
+    kv.set('calls:index:'+workspaceId,compactCalls),
     kv.set('leads:'+workspaceId,dataset.leads),
     kv.set('conversations:'+workspaceId,dataset.conversations),
     kv.set('followup:state:'+workspaceId,seededFollowups),
@@ -1824,8 +1826,9 @@ async function clientDashboardData(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   const ent=entitlementsFor(ws.plan);
-  const keys=['calls:'+s.workspaceId,'leads:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'conversations:'+s.workspaceId,'appointments:'+s.workspaceId,'automations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index'];
-  const [callsRaw,leadsRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,conversationsRaw,appointmentsRaw,automationsRaw,followupRaw,platformRaw,phoneIndex]=await Promise.all(keys.map(k=>kv.get(k)));
+  const keys=['calls:index:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index'];
+  const [callIndexRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,followupRaw,platformRaw,phoneIndex]=await Promise.all(keys.map(k=>kv.get(k)));
+  const callsRaw=Array.isArray(callIndexRaw)?callIndexRaw:(await kv.get('calls:'+s.workspaceId)||[]);
   const savedAgent=agentRaw||{},savedSettings=settingsRaw||{},platform=platformRaw||{},savedIntegrations=integrationsRaw||{},numbers=Array.isArray(phoneIndex)?phoneIndex:[],phone=numbers.find(x=>x&&x.workspaceId===s.workspaceId)||null;
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true',calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true';
   const settings={
