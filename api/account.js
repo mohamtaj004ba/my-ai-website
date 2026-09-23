@@ -110,14 +110,17 @@ async function seedPreviewData(req,res){
   const workspaceId=member.workspaceId,now=Date.now(),dataset=previewSeed.makePrimaryDataset();
   const workspace=previewSeed.primaryWorkspace(workspaceId,email,now);
   workspace.usage.minutes=dataset.minutes;
-  const compactCalls=dataset.calls.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x);
+  const compactCalls=dataset.calls.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,disposition:x.disposition||'',duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x);
   const seededFollowups={};
   dataset.calls.forEach((call,index)=>{
-    const outcome=String(call&&call.outcome||''),reason=String(call&&call.reason||''),requires=/miss|follow|qualif/i.test(outcome)||/urgent|emergency|no heat|gas|carbon monoxide/i.test(reason);
+    const disposition=String(call&&call.disposition||''),requires=['request_captured','message_taken','escalated','incomplete'].includes(disposition);
     if(!requires)return;
-    const ageDays=Math.max(0,(now-Number(call.createdAt||now))/86400000),urgent=/urgent|emergency|no heat|gas|carbon monoxide/i.test(reason),missed=/miss/i.test(outcome),qualified=/qualif/i.test(outcome),follow=/follow/i.test(outcome);
-    const keepOpen=ageDays<2.25&&(urgent||missed||(follow&&index%3===0)||(qualified&&index%6===0));
-    seededFollowups[String(call.id)]={status:keepOpen?'open':'handled',note:'',updatedAt:keepOpen?Number(call.createdAt||now):Math.min(now,Number(call.createdAt||now)+Math.round((4+(index%36))*3600000)),updatedBy:keepOpen?'':'office@summitheatingair.com'};
+    const ageDays=Math.max(0,(now-Number(call.createdAt||now))/86400000),urgent=disposition==='escalated',incomplete=disposition==='incomplete';
+    let status='completed';
+    if(ageDays<2.25&&(urgent||incomplete||index%4===0))status='needs_action';
+    else if(ageDays<3.5&&index%7===0)status='in_progress';
+    const completionReason=status==='completed'?(['customer_contacted','appointment_scheduled','estimate_sent','issue_resolved'][index%4]):'';
+    seededFollowups[String(call.id)]={status,notes:[],completionReason,completionNote:'',updatedAt:status==='needs_action'?Number(call.createdAt||now):Math.min(now,Number(call.createdAt||now)+Math.round((4+(index%36))*3600000)),updatedBy:status==='needs_action'?'':'office@summitheatingair.com'};
   });
   await Promise.all([
     kv.set('workspace:'+workspaceId,workspace),
@@ -1231,10 +1234,10 @@ async function buildClientNotifications(s){
   const phone=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===ws.id);
   if(prefs.setup&&!agent)items.push(notificationItem('setup:'+ws.id+':agent',{title:'AI agent setup incomplete',body:'Your AI agent has not been configured yet.',kind:'warning',view:'agent',createdAt:ws.createdAt||now}));
   if(prefs.setup&&!phone)items.push(notificationItem('setup:'+ws.id+':phone',{title:'Phone routing not configured',body:'No CallerCore phone number is currently assigned.',kind:'warning',view:'phone-routing',createdAt:ws.createdAt||now}));
-  const missed=(Array.isArray(calls)?calls:[]).filter(x=>/missed|failed/i.test(String(x.outcome||''))).slice(-8).reverse();
+  const missed=(Array.isArray(calls)?calls:[]).filter(x=>String(x.disposition||'')==='incomplete'||/missed|failed/i.test(String(x.outcome||''))).slice(-8).reverse();
   if(prefs.calls)missed.forEach((x,i)=>{
     const id=String(x.id||x.callId||x.phone||i),at=Number(x.createdAt||x.at||x.timestamp||Date.now());
-    items.push(notificationItem('call:'+id+':missed',{title:'Missed call',body:(x.caller||x.phone||'A caller')+' was not successfully handled.',kind:'warning',view:'calls',createdAt:at}));
+    items.push(notificationItem('call:'+id+':missed',{title:'Missed call',body:(x.caller||x.phone||'A caller')+' disconnected or ended before CallerCore could complete the intake.',kind:'warning',view:'calls',createdAt:at}));
   });
   for(const id of Array.isArray(index)?index.slice(0,100):[]){
     const t=await kv.get('support:'+id);if(!t||t.workspaceId!==ws.id)continue;
@@ -1293,8 +1296,12 @@ async function followups(req,res){
 }
 async function followupUpdate(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
-  const body=req.body||{},callId=String(body.callId||'').slice(0,120),status=String(body.status||''),legacyNote=String(body.note||'').trim().slice(0,2000),appendNote=String(body.appendNote||'').trim().slice(0,2000);
-  if(!callId||!['open','handled'].includes(status))return res.status(400).json({error:'Invalid follow-up update'});
+  const body=req.body||{},callId=String(body.callId||'').slice(0,120),rawStatus=String(body.status||''),legacyNote=String(body.note||'').trim().slice(0,2000),appendNote=String(body.appendNote||'').trim().slice(0,2000);
+  const status=rawStatus==='open'?'needs_action':rawStatus==='handled'?'completed':rawStatus;
+  const allowed=['no_action','needs_action','in_progress','completed','dismissed'];
+  if(!callId||!allowed.includes(status))return res.status(400).json({error:'Invalid team-status update'});
+  const completionReason=String(body.completionReason||'').slice(0,80),completionNote=String(body.completionNote||'').trim().slice(0,160),completionReasons=['','customer_contacted','appointment_scheduled','estimate_sent','issue_resolved','no_longer_needed','other'];
+  if(!completionReasons.includes(completionReason))return res.status(400).json({error:'Invalid completion outcome'});
   const calls=await kv.get('calls:'+s.workspaceId)||[];
   if(!Array.isArray(calls)||!calls.some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
   const key='followup:state:'+s.workspaceId,state=await kv.get(key)||{},base=state&&typeof state==='object'&&!Array.isArray(state)?state:{},next={...base},previous=base[callId]&&typeof base[callId]==='object'?base[callId]:{};
@@ -1303,12 +1310,11 @@ async function followupUpdate(req,res){
   if(legacyNote&&!appendNote&&!notes.length)notes.push({id:'legacy_'+Date.now(),text:legacyNote,at:Date.now(),by:s.email||''});
   if(appendNote)notes.push({id:'note_'+Date.now().toString(36),text:appendNote,at:Date.now(),by:s.email||''});
   notes=notes.slice(-100);
-  next[callId]={status,notes,updatedAt:Date.now(),updatedBy:s.email||''};
+  next[callId]={status,notes,completionReason:status==='completed'?completionReason:'',completionNote:status==='completed'?completionNote:'',updatedAt:Date.now(),updatedBy:s.email||''};
   await kv.set(key,next);
-  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:appendNote?'followup_note_added':'followup_'+status,section:'calls',before:previous||null,after:next[callId],meta:{callId}});
+  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:appendNote?'team_note_added':'team_status_'+status,section:'calls',before:previous||null,after:next[callId],meta:{callId}});
   return res.status(200).json({ok:true,state:next});
 }
-
 async function notifications(req,res){
   const scope=String((req.query||{}).scope||'client')==='admin'?'admin':'client';
   let sessionData;
@@ -1856,7 +1862,7 @@ async function clientDashboardData(req,res){
   const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
   const routing=phone?{number:phone.number||'',label:phone.label||'Primary',provider:phone.provider||'Vapi',forwardingFrom:phone.forwardingFrom||'',transferNumber:phone.transferNumber||'',afterHours:phone.afterHours||'ai',smsEnabled:smsLive&&phone.smsEnabled!==false,status:phone.status||'active',pauseFallbackNumber:phone.pauseFallbackNumber||''}:null;
   return res.status(200).json({
-    calls:Array.isArray(callsRaw)?callsRaw.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x):[],leads:[],agent,settings,
+    calls:Array.isArray(callsRaw)?callsRaw.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,disposition:x.disposition||'',duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x):[],leads:[],agent,settings,
     integrations:{googleCalendar:calendarLive&&!!savedIntegrations.googleCalendar,stripe:!!ws.stripeCustomerId,webhookUrl:savedIntegrations.webhookUrl||'',apiAccess:!!ent.features.apiAccess},
     locations:Array.isArray(locationsRaw)?locationsRaw:[],locationsLimit:ent.locations,routing,
     conversations:[],appointments:[],automations:[],
