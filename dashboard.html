@@ -53,57 +53,35 @@
     <div class="data-health-banner" id="clientDataHealth" role="status" aria-live="polite" hidden><div><b>Some CallerCore data could not be loaded.</b><span>Numbers shown on this page may be incomplete. Your underlying account data has not been replaced.</span></div><button type="button" id="clientDataRetry">Retry</button></div>
 
     <section class="view active" id="view-overview">
-      <div class="page-head overview-head">
-        <div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore handled, and what still needs your team.</p></div>
-        <div class="overview-range-shell">
-          <div class="overview-range" id="overviewRange">
-            <button data-range="1">Today</button><button class="active" data-range="7">7 days</button><button data-range="30">30 days</button><button data-range="custom">Custom</button>
-          </div>
-          <div class="overview-custom-range" id="overviewCustomRange" hidden><input type="date" id="overviewStartDate"><span>to</span><input type="date" id="overviewEndDate"><button class="secondary-btn" id="applyOverviewRange">Apply</button></div>
-        </div>
-      </div>
-      <div class="ops-health-strip">
-        <div><span class="health-dot good"></span><b id="opsAiStatus">AI online</b></div>
-        <div><span class="health-dot" id="opsPhoneDot"></span><b id="opsPhoneStatus">Phone routing</b></div>
-        <div><span class="health-dot" id="opsCrmDot"></span><b id="opsCrmStatus">CRM not connected</b></div>
-        <div><span class="health-dot" id="opsCalendarDot"></span><b id="opsCalendarStatus">Calendar not connected</b></div>
-      </div>
+      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore handled, and what still needs your team.</p></div></div>
       <div class="metric-grid overview-metrics">
-        <article><span>Calls handled</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Selected period</small><em class="metric-trend" id="overviewCallsTrend"></em></article>
-        <article><span>Qualified requests</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">High-intent calls</small><em class="metric-trend" id="overviewLeadsTrend"></em></article>
-        <article><span>After-hours calls</span><strong id="overviewAfterHours">0</strong><small id="overviewAfterHoursMeta">Before 8 AM / after 6 PM</small><em class="metric-trend" id="overviewAfterHoursTrend"></em></article>
-        <article class="attention-kpi"><span>Needs your team</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Open follow-ups</small><button class="kpi-action" data-view="leads" id="overviewFollowupCta">Review follow-ups →</button></article>
+        <article><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Today</small></article>
+        <article><span>Calls · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
+        <article><span>Qualified requests</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
+        <article><span>Needs follow-up</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Calls needing attention</small></article>
       </div>
-      <div class="overview-ops-grid">
+      <div class="overview-grid">
         <article class="panel overview-agent-card">
           <div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya is online</h2></div></div><button data-view="agent">Settings →</button></div>
           <p id="overviewAgentMeta">Your AI receptionist is actively handling calls.</p>
+          <div class="overview-agent-stats"><div><span>Handled · 30 days</span><strong id="overviewAgentCalls">0</strong></div><div><span>Qualified requests</span><strong id="overviewAgentLeads">0</strong></div><div><span>Avg calls / day</span><strong id="overviewDailyAvg">0</strong></div></div>
           <div class="overview-chart-card">
-            <div class="overview-chart-head"><div><span class="eyebrow">Call volume</span><b id="overviewChartSummary">0 calls/day average</b></div><span id="overviewChartPeak">Peak 0 calls</span></div>
-            <div class="overview-line-chart" id="overviewLineChart" aria-label="Call volume over selected period"></div>
-          </div>
-          <div class="performance-bars">
-            <div><span><b>Answered by AI</b><em id="perfAnswerText">0%</em></span><div class="performance-track"><i id="perfAnswerBar"></i></div></div>
-            <div><span><b>Qualified requests</b><em id="perfQualifiedText">0%</em></span><div class="performance-track"><i id="perfQualifiedBar"></i></div></div>
-            <div><span><b>Required human follow-up</b><em id="perfFollowupText">0%</em></span><div class="performance-track"><i id="perfFollowupBar"></i></div></div>
-            <div><span><b>Resolved without staff action</b><em id="perfResolvedText">0%</em></span><div class="performance-track"><i id="perfResolvedBar"></i></div></div>
-          </div>
+  <div class="overview-chart-head"><div><span class="eyebrow">Call volume · last 14 days</span><b id="overviewChartSummary">0 calls/day average</b></div><span id="overviewChartPeak">Peak 0</span></div>
+  <div class="overview-line-chart" id="overviewLineChart" aria-label="Call volume over the last 14 days"></div>
+</div>
         </article>
-        <aside class="panel needs-team-panel">
-          <div class="panel-head"><div><span class="eyebrow">Action required</span><h2><span id="needsTeamCount">0</span> calls need your team</h2></div><button data-view="leads">Open queue →</button></div>
-          <div id="needsTeamList" class="needs-team-list"></div>
-          <div class="needs-team-empty" id="needsTeamEmpty" hidden><b>You’re caught up.</b><span>No calls are waiting for your team.</span></div>
-        </aside>
+        <article class="panel overview-attention-card">
+          <div class="panel-head"><div><span class="eyebrow">Call health</span><h2>How CallerCore is performing</h2></div></div>
+          <div class="health-rings">
+            <div class="health-ring-wrap"><div class="health-ring" id="overviewAnswerRing"><span id="overviewAnswerPct">0%</span></div><b>Answer rate</b><small>Calls completed by AI</small></div>
+            <div class="health-ring-wrap"><div class="health-ring" id="overviewQualifiedRing"><span id="overviewQualifiedPct">0%</span></div><b>High-intent rate</b><small>Qualified service requests</small></div>
+            <div class="health-ring-wrap"><div class="health-ring" id="overviewRecoveryRing"><span id="overviewRecoveryPct">0%</span></div><b>Handled cleanly</b><small>No follow-up needed</small></div>
+          </div>
+          <div class="overview-attention-divider"></div>
+          <div class="panel-head compact"><div><span class="eyebrow">Right now</span><h3>Needs attention</h3></div><button data-view="leads">Open queue →</button></div>
+          <div id="overviewAttention"></div>
+        </article>
       </div>
-      <article class="panel value-summary-card">
-        <div class="panel-head"><div><span class="eyebrow">CallerCore handled this for you</span><h2 id="valueSummaryHeadline">0 calls handled</h2></div></div>
-        <div class="value-summary-grid">
-          <div><strong id="valueHandledWithoutStaff">0</strong><span>required no staff action</span></div>
-          <div><strong id="valueQualified">0</strong><span>qualified service requests</span></div>
-          <div><strong id="valueEscalated">0</strong><span>calls escalated for follow-up</span></div>
-          <div><strong id="valueAfterHours">0</strong><span>after-hours calls covered</span></div>
-        </div>
-      </article>
       <article class="panel activity overview-activity"><div class="panel-head"><div><span class="eyebrow">Recent activity</span><h2>Latest calls</h2></div><button data-view="calls">View call history →</button></div><div id="overviewActivity"></div></article>
       <article class="panel overview-plan-strip" id="overviewUnlocks"></article>
     </section>
