@@ -272,22 +272,27 @@
 
 <aside class="call-drawer" id="callDrawer" aria-hidden="true">
   <div class="drawer-head"><div><span class="eyebrow">Call details</span><h2 id="drawerCaller">Caller</h2><p id="drawerWhen" class="drawer-when"></p></div><button id="closeCallDrawer" aria-label="Close">×</button></div>
-  <div class="drawer-meta" id="drawerMeta"></div>
-  <div class="drawer-action-bar call-team-actions"><a class="secondary-btn action-link disabled-link" id="drawerCallLink" aria-disabled="true" tabindex="-1">Call</a><a class="secondary-btn action-link disabled-link" id="drawerTextLink" aria-disabled="true" tabindex="-1">Text</a><label class="drawer-status-control"><span>Team status</span><select id="drawerTeamStatus"><option value="no_action">No action needed</option><option value="needs_action">Needs action</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="dismissed">Dismissed</option></select></label><button class="primary" id="drawerFollowupButton" type="button">Update status</button></div>
-  <button class="secondary-btn full drawer-contact-button" id="drawerContactButton" type="button">Open full contact history</button>
-  <section><span class="eyebrow">Call classification</span><div class="call-classification" id="drawerClassification"></div><div class="call-status-explainer" id="drawerStatusExplainer"></div></section><section><span class="eyebrow">Location</span><p id="drawerAddress">No address captured.</p></section>
-  <section><span class="eyebrow">AI summary</span><p id="drawerSummary"></p></section>
-  <section><span class="eyebrow">Call details</span><div id="drawerQualification" class="detail-grid"></div></section>
-  <section class="team-notes-section"><div class="section-title-row"><div><span class="eyebrow">Team notes</span><h3>Internal notes</h3></div><span class="tag" id="drawerNoteCount">0 notes</span></div><div id="drawerNotesList" class="drawer-notes-list"></div><div class="note-composer"><textarea id="drawerInternalNote" class="drawer-note" placeholder="Add a note for your team…"></textarea><div class="drawer-note-actions"><small id="drawerNoteStatus"></small><button class="primary" id="drawerSaveNote" type="button">Add note</button></div></div></section>
-  <section><span class="eyebrow">Full transcript</span><div id="drawerTranscript" class="transcript"></div></section>
+  <div class="drawer-meta compact-call-meta" id="drawerMeta"></div>
+  <div class="drawer-action-shell">
+    <div class="drawer-primary-actions"><a class="drawer-action-button call disabled-link" id="drawerCallLink" aria-disabled="true" tabindex="-1">Call</a><a class="drawer-action-button text disabled-link" id="drawerTextLink" aria-disabled="true" tabindex="-1">Text</a></div>
+    <div class="drawer-status-row"><label class="drawer-status-control"><span>Team status</span><select id="drawerTeamStatus"><option value="no_action">No action needed</option><option value="needs_action">Needs action</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="dismissed">Dismissed</option></select></label><button class="primary" id="drawerFollowupButton" type="button">Update status</button></div>
+    <button class="drawer-contact-link" id="drawerContactButton" type="button">View complete contact history →</button>
+  </div>
+  <section class="drawer-section compact-section"><span class="eyebrow">Call classification</span><div class="call-classification" id="drawerClassification"></div><div class="call-status-explainer" id="drawerStatusExplainer"></div></section>
+  <section class="drawer-section compact-section"><span class="eyebrow">Location</span><p id="drawerAddress">No address captured.</p></section>
+  <section class="drawer-section compact-section"><span class="eyebrow">AI summary</span><p id="drawerSummary"></p></section>
+  <section class="drawer-section compact-section"><span class="eyebrow">Call details</span><div id="drawerQualification" class="detail-grid"></div></section>
+  <section class="team-notes-section compact-notes"><div class="section-title-row"><div><span class="eyebrow">Team notes</span><h3>Internal notes</h3></div><div class="note-head-actions"><span class="tag" id="drawerNoteCount">0 notes</span><button class="inline-note-button" id="drawerAddNoteToggle" type="button">Add note</button></div></div><div id="drawerNotesList" class="drawer-notes-list"></div><div class="note-composer" id="drawerNoteComposer" hidden><textarea id="drawerInternalNote" class="drawer-note" placeholder="Add a note for your team…"></textarea><div class="drawer-note-actions"><small id="drawerNoteStatus"></small><button class="primary" id="drawerSaveNote" type="button">Save note</button></div></div></section>
+  <section class="drawer-section compact-section"><span class="eyebrow">Full transcript</span><div id="drawerTranscript" class="transcript"></div></section>
 </aside>
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
 <aside class="call-drawer contact-drawer" id="contactDrawer" aria-hidden="true">
-  <div class="drawer-head"><div><span class="eyebrow">Contact history</span><h2 id="contactDrawerName">Contact</h2><p id="contactDrawerMeta" class="drawer-when"></p></div><button id="closeContactDrawer" aria-label="Close">×</button></div>
-  <div class="drawer-action-bar"><a class="secondary-btn action-link disabled-link" id="contactCallLink" aria-disabled="true" tabindex="-1">Call</a><a class="secondary-btn action-link disabled-link" id="contactTextLink" aria-disabled="true" tabindex="-1">Text</a></div>
-  <section><span class="eyebrow">Contact information</span><div id="contactDrawerDetails" class="detail-grid"></div></section>
-  <section><span class="eyebrow">What we know</span><p id="contactDrawerSummary"></p></section>
-  <section><span class="eyebrow">Complete activity</span><div id="contactDrawerTimeline" class="contact-timeline"></div></section>
+  <div class="drawer-head"><div><span class="eyebrow">Contact</span><h2 id="contactDrawerName">Contact</h2><p id="contactDrawerMeta" class="drawer-when"></p></div><button id="closeContactDrawer" aria-label="Close">×</button></div>
+  <div class="drawer-primary-actions contact-primary-actions"><a class="drawer-action-button call disabled-link" id="contactCallLink" aria-disabled="true" tabindex="-1">Call</a><a class="drawer-action-button text disabled-link" id="contactTextLink" aria-disabled="true" tabindex="-1">Text</a></div>
+  <div class="contact-history-stats"><div><strong id="contactHistoryCalls">0</strong><span>Calls</span></div><div><strong id="contactHistoryMessages">0</strong><span>Messages</span></div><div><strong id="contactHistoryRequests">0</strong><span>Requests</span></div></div>
+  <section class="drawer-section compact-section"><span class="eyebrow">Contact information</span><div id="contactDrawerDetails" class="detail-grid contact-detail-grid"></div></section>
+  <section class="drawer-section compact-section"><span class="eyebrow">Current context</span><p id="contactDrawerSummary"></p></section>
+  <section class="drawer-section contact-activity-section"><div class="contact-activity-head"><div><span class="eyebrow">Complete history</span><h3>All activity</h3></div><div class="contact-history-tabs" id="contactHistoryTabs"><button class="active" data-contact-history-filter="all" type="button">All</button><button data-contact-history-filter="call" type="button">Calls</button><button data-contact-history-filter="message" type="button">Messages</button><button data-contact-history-filter="note" type="button">Notes</button></div></div><div id="contactDrawerTimeline" class="contact-timeline"></div></section>
 </aside>
 <div class="drawer-backdrop" id="contactDrawerBackdrop"></div>
 
