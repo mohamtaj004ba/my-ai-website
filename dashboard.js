@@ -231,7 +231,7 @@ function renderOverview(){
   set('overviewCallsMeta',todayCalls===1?'1 call so far today':todayCalls+' calls so far today');
   set('overviewWeekCallsMeta',weekCalls+' handled in the last 7 days');
   set('overviewLeadsMeta',weekLeads+' surfaced in the last 7 days');
-  set('overviewFollowupMeta',followups?'Review recommended':'Nothing waiting');
+  set('overviewFollowupMeta',followups?'Calls waiting for your team':'Nothing waiting');const attentionCard=document.getElementById('overviewAttentionCard');if(attentionCard)attentionCard.classList.toggle('has-attention',followups>0);
   const name=agentData?.name||'Maya';set('overviewAgentName',name+' is online');
   const recent60=callsData.filter(x=>withinDays(recordTime(x),60)),answered60=recent60.filter(x=>!/miss/i.test(String(x.outcome||''))).length,qualified60=recent60.filter(x=>/book|qualif/i.test(String(x.outcome||''))).length,clean60=recent60.filter(x=>!/miss|follow/i.test(String(x.outcome||''))).length;
   const answerPct=recent60.length?Math.round(answered60/recent60.length*100):0,qualifiedPct=recent60.length?Math.round(qualified60/recent60.length*100):0,recoveryPct=recent60.length?Math.round(clean60/recent60.length*100):0;
