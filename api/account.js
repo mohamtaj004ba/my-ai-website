@@ -1741,6 +1741,7 @@ async function settings(req,res){
     postalCode:saved.postalCode||'',
     industry:saved.industry||ws.industry||'',
     serviceArea:saved.serviceArea||'',
+    logoDataUrl:saved.logoDataUrl||'',
     timezone:saved.timezone||platform.defaultTimezone||'America/Los_Angeles',
     notificationEmail:saved.notificationEmail||ws.ownerEmail||s.email||'',
     smsAlerts:process.env.CALLERCORE_SMS_ENABLED==='true'&&saved.smsAlerts!==false,
@@ -1817,6 +1818,31 @@ async function saveIntegrations(req,res){
   await kv.set('integrations:'+access.session.workspaceId,next);
   await appendAudit(access.session.workspaceId,{actorEmail:access.session.email,actorRole:access.session.role||'client',action:'integrations_save',section:'integrations',before:saved,after:next});
   return res.status(200).json({ok:true,integrations:next});
+}
+
+async function clientDashboardData(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const ent=entitlementsFor(ws.plan);
+  const keys=['calls:'+s.workspaceId,'leads:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'conversations:'+s.workspaceId,'appointments:'+s.workspaceId,'automations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index'];
+  const [callsRaw,leadsRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,conversationsRaw,appointmentsRaw,automationsRaw,followupRaw,platformRaw,phoneIndex]=await Promise.all(keys.map(k=>kv.get(k)));
+  const savedAgent=agentRaw||{},savedSettings=settingsRaw||{},platform=platformRaw||{},savedIntegrations=integrationsRaw||{},numbers=Array.isArray(phoneIndex)?phoneIndex:[],phone=numbers.find(x=>x&&x.workspaceId===s.workspaceId)||null;
+  const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true',calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true';
+  const settings={
+    businessName:savedSettings.businessName||ws.name||'',primaryEmail:savedSettings.primaryEmail||ws.ownerEmail||s.email||'',contactName:savedSettings.contactName||ws.ownerName||'',businessPhone:savedSettings.businessPhone||'',website:savedSettings.website||'',streetAddress:savedSettings.streetAddress||'',city:savedSettings.city||'',state:savedSettings.state||'',postalCode:savedSettings.postalCode||'',industry:savedSettings.industry||ws.industry||'',serviceArea:savedSettings.serviceArea||'',logoDataUrl:savedSettings.logoDataUrl||'',timezone:savedSettings.timezone||platform.defaultTimezone||'America/Los_Angeles',notificationEmail:savedSettings.notificationEmail||ws.ownerEmail||s.email||'',smsAlerts:smsLive&&savedSettings.smsAlerts!==false,emailAlerts:savedSettings.emailAlerts!==false,notifyBilling:savedSettings.notifyBilling!==false,notifySetup:savedSettings.notifySetup!==false,notifyCalls:savedSettings.notifyCalls!==false,notifySupport:savedSettings.notifySupport!==false,notifyUsage:savedSettings.notifyUsage!==false
+  };
+  const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
+  const routing=phone?{number:phone.number||'',label:phone.label||'Primary',provider:phone.provider||'Vapi',forwardingFrom:phone.forwardingFrom||'',transferNumber:phone.transferNumber||'',afterHours:phone.afterHours||'ai',smsEnabled:smsLive&&phone.smsEnabled!==false,status:phone.status||'active'}:null;
+  return res.status(200).json({
+    calls:Array.isArray(callsRaw)?callsRaw:[],leads:Array.isArray(leadsRaw)?leadsRaw:[],agent,settings,
+    integrations:{googleCalendar:calendarLive&&!!savedIntegrations.googleCalendar,stripe:!!ws.stripeCustomerId,webhookUrl:savedIntegrations.webhookUrl||'',apiAccess:!!ent.features.apiAccess},
+    locations:Array.isArray(locationsRaw)?locationsRaw:[],locationsLimit:ent.locations,routing,
+    conversations:ent.features.unifiedInbox&&Array.isArray(conversationsRaw)?conversationsRaw:[],
+    appointments:ent.features.appointments&&Array.isArray(appointmentsRaw)?appointmentsRaw:[],
+    automations:ent.features.automations&&Array.isArray(automationsRaw)?automationsRaw:[],
+    followupState:followupRaw&&typeof followupRaw==='object'&&!Array.isArray(followupRaw)?followupRaw:{},
+    loadedAt:Date.now()
+  });
 }
 
 async function calls(req,res){
@@ -1940,6 +1966,7 @@ module.exports=async function handler(req,res){
   if(action==='settings-save'&&req.method==='POST')return saveSettings(req,res);
   if(action==='integrations'&&req.method==='GET')return integrations(req,res);
   if(action==='integrations-save'&&req.method==='POST')return saveIntegrations(req,res);
+  if(action==='client-dashboard-data'&&req.method==='GET')return clientDashboardData(req,res);
   if(action==='calls'&&req.method==='GET')return calls(req,res);
   if(action==='conversations'&&req.method==='GET')return conversations(req,res);
   if(action==='appointments'&&req.method==='GET')return appointments(req,res);
