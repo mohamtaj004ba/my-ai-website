@@ -615,7 +615,9 @@ function renderAgent(){
 function renderQuestions(){
   const wrap=document.getElementById('qualificationQuestions');if(!wrap||!agentData)return;
   const qs=Array.isArray(agentData.qualificationQuestions)?agentData.qualificationQuestions:[];
-  wrap.innerHTML=qs.map((q,i)=>'<div class="question-row '+(agentEditing?'editing':'locked')+'"><input data-question-index="'+i+'" value="'+esc(q)+'" '+(agentEditing?'':'disabled')+'><button data-remove-question="'+i+'" aria-label="Remove" '+(agentEditing?'':'hidden')+'>×</button></div>').join('');
+  wrap.innerHTML=agentEditing
+    ?qs.map((q,i)=>'<div class="question-row editing"><input data-question-index="'+i+'" value="'+esc(q)+'" aria-label="Qualification question '+(i+1)+'"><button data-remove-question="'+i+'" aria-label="Remove question '+(i+1)+'">×</button></div>').join('')
+    :qs.map((q,i)=>'<div class="question-row locked"><span class="question-number">'+String(i+1).padStart(2,'0')+'</span><p>'+esc(q||'Untitled question')+'</p></div>').join('');
   if(agentEditing){wrap.querySelectorAll('[data-question-index]').forEach(input=>input.addEventListener('input',()=>{agentData.qualificationQuestions[Number(input.dataset.questionIndex)]=input.value}));wrap.querySelectorAll('[data-remove-question]').forEach(btn=>btn.addEventListener('click',()=>{agentData.qualificationQuestions.splice(Number(btn.dataset.removeQuestion),1);renderQuestions()}))}
 }
 function collectAgent(){
