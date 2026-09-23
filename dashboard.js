@@ -162,51 +162,48 @@ function setDataHealth(id,degraded){
   const el=document.getElementById(id);if(!el)return;
   el.hidden=!degraded;
 }
+function setClientLoading(loading,message='Loading your CallerCore activity…'){
+  document.body.classList.toggle('client-data-loading',!!loading);
+  const overlay=document.getElementById('clientLoadingState');if(overlay){overlay.hidden=!loading;const copy=overlay.querySelector('span');if(copy)copy.textContent=message}
+}
+async function fetchJsonRetry(url,{attempts=2,timeout=9000}={}){
+  let lastErr;
+  for(let attempt=0;attempt<attempts;attempt++){
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout+(attempt*3000));
+    try{
+      const r=await fetch(url,{headers:{Accept:'application/json'},cache:'no-store',signal:controller.signal});
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(data.error||('Request failed ('+r.status+')'));
+      return data;
+    }catch(err){lastErr=err;if(attempt<attempts-1)await new Promise(resolve=>setTimeout(resolve,500+attempt*500))}
+    finally{clearTimeout(timer)}
+  }
+  throw lastErr||new Error('Request failed');
+}
+function renderClientData(){
+  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderBillingConnection();renderPhoneRouting();renderLocations();
+}
 async function loadOperations(){
   if(demoMode){setDataHealth('clientDataHealth',false);
-    callsData=DEMO_CALLS.map(x=>({...x}));leadsData=DEMO_LEADS.map(x=>({...x}));
-    conversationsData=DEMO_CONVERSATIONS.map(x=>({...x}));appointmentsData=DEMO_APPOINTMENTS.map(x=>({...x}));
-    agentData={...DEMO_AGENT,qualificationQuestions:[...DEMO_AGENT.qualificationQuestions]};
-    automationsData=DEMO_AUTOMATIONS.map(x=>({...x}));
-    settingsData={...DEMO_SETTINGS};integrationsData={...DEMO_INTEGRATIONS,apiAccess:has('apiAccess')};
-    phoneRoutingData={number:'(509) 555-0100',label:'Primary',provider:'Vapi',forwardingFrom:'(509) 555-0199',transferNumber:'(509) 555-0101',afterHours:'ai',smsEnabled:false,status:'active'};
-    locationsData=[{id:'loc-demo',name:'Spokane',phone:'(509) 555-0199',address:'Spokane, WA',timezone:'America/Los_Angeles',active:true}];locationsLimit=PLAN_DATA[currentPlan].locations||1;
-    analyticsData=buildLocalAnalytics();followupState={};
-    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();setAgentEditing(false);setSettingsEditing(false);renderOverview();renderSupport();renderClientSetupStatus();renderBillingConnection();renderPhoneRouting();renderLocations();return;
+    callsData=DEMO_CALLS.map(x=>({...x}));leadsData=DEMO_LEADS.map(x=>({...x}));conversationsData=DEMO_CONVERSATIONS.map(x=>({...x}));appointmentsData=DEMO_APPOINTMENTS.map(x=>({...x}));agentData={...DEMO_AGENT,qualificationQuestions:[...DEMO_AGENT.qualificationQuestions]};automationsData=DEMO_AUTOMATIONS.map(x=>({...x}));settingsData={...DEMO_SETTINGS};integrationsData={...DEMO_INTEGRATIONS,apiAccess:has('apiAccess')};phoneRoutingData={number:'(509) 555-0100',label:'Primary',provider:'Vapi',forwardingFrom:'(509) 555-0199',transferNumber:'(509) 555-0101',afterHours:'ai',smsEnabled:false,status:'active'};locationsData=[{id:'loc-demo',name:'Spokane',phone:'(509) 555-0199',address:'Spokane, WA',timezone:'America/Los_Angeles',active:true}];locationsLimit=PLAN_DATA[currentPlan].locations||1;analyticsData=buildLocalAnalytics();followupState={};renderClientData();renderSupport();renderClientSetupStatus();return;
   }
+  setClientLoading(true);setDataHealth('clientDataHealth',false);
   try{
-    const jobs=[
-      fetch('/api/account?action=calls',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=leads',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=agent',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=settings',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=integrations',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=support-tickets',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=phone-routing',{headers:{Accept:'application/json'},cache:'no-store'}),
-      fetch('/api/account?action=locations',{headers:{Accept:'application/json'},cache:'no-store'})
+    const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:3,timeout:7000});
+    callsData=data.calls||[];leadsData=data.leads||[];agentData=data.agent||null;settingsData=data.settings||null;integrationsData=data.integrations||null;phoneRoutingData=data.routing||null;locationsData=data.locations||[];locationsLimit=Number(data.locationsLimit||1);conversationsData=data.conversations||[];appointmentsData=data.appointments||[];automationsData=data.automations||[];followupState=data.followupState||{};analyticsData=buildLocalAnalytics();
+    renderClientData();setClientLoading(false);
+    // Non-critical support history loads separately so it can never block Today.
+    fetchJsonRetry('/api/account?action=support-tickets',{attempts:2,timeout:6000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(err=>console.warn('Support history delayed',err));
+    return;
+  }catch(err){console.warn('Bundled dashboard load failed; using fallback',err);setClientLoading(true,'Still loading — retrying your workspace data…')}
+  try{
+    const requests=[
+      ['calls','calls'],['leads','leads'],['agent','agent'],['settings','settings'],['integrations','integrations'],['phone-routing','routing'],['locations','locations']
     ];
-    if(has('advancedAnalytics'))jobs.push(fetch('/api/account?action=analytics',{headers:{Accept:'application/json'},cache:'no-store'}));
-    if(has('unifiedInbox'))jobs.push(fetch('/api/account?action=conversations',{headers:{Accept:'application/json'},cache:'no-store'}));
-    if(has('appointments'))jobs.push(fetch('/api/account?action=appointments',{headers:{Accept:'application/json'},cache:'no-store'}));
-    if(has('automations'))jobs.push(fetch('/api/account?action=automations',{headers:{Accept:'application/json'},cache:'no-store'}));
-    const results=await Promise.all(jobs);
-    setDataHealth('clientDataHealth',results.some(r=>!r.ok));
-    if(results[0].ok)callsData=(await results[0].json()).calls||[];
-    if(results[1].ok)leadsData=(await results[1].json()).leads||[];
-    if(results[2].ok)agentData=(await results[2].json()).agent||null;
-    if(results[3].ok)settingsData=(await results[3].json()).settings||null;
-    if(results[4].ok)integrationsData=(await results[4].json()).integrations||null;
-    if(results[5].ok)supportTicketsData=(await results[5].json()).tickets||[];
-    if(results[6].ok)phoneRoutingData=(await results[6].json()).routing||null;
-    if(results[7].ok){const loc=await results[7].json();locationsData=loc.locations||[];locationsLimit=Number(loc.limit||1)}
-    let idx=8;
-    if(has('advancedAnalytics')){if(results[idx].ok)analyticsData=(await results[idx].json()).analytics||null;idx++}
-    if(has('unifiedInbox')){if(results[idx].ok)conversationsData=(await results[idx].json()).conversations||[];idx++}
-    if(has('appointments')){if(results[idx].ok)appointmentsData=(await results[idx].json()).appointments||[];idx++}
-    if(has('automations')){if(results[idx].ok)automationsData=(await results[idx].json()).automations||[]}
-  }catch(err){console.error('Operations data failed',err);setDataHealth('clientDataHealth',true)}
-  await loadFollowupState();
-  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderBillingConnection();renderPhoneRouting();renderLocations();
+    const settled=await Promise.allSettled(requests.map(([action])=>fetchJsonRetry('/api/account?action='+action,{attempts:2,timeout:7000})));
+    for(let i=0;i<settled.length;i++){if(settled[i].status!=='fulfilled')continue;const [action,key]=requests[i],data=settled[i].value;if(action==='calls')callsData=data.calls||[];else if(action==='leads')leadsData=data.leads||[];else if(action==='agent')agentData=data.agent||null;else if(action==='settings')settingsData=data.settings||null;else if(action==='integrations')integrationsData=data.integrations||null;else if(action==='phone-routing')phoneRoutingData=data.routing||null;else if(action==='locations'){locationsData=data.locations||[];locationsLimit=Number(data.limit||1)}}
+    await loadFollowupState();analyticsData=buildLocalAnalytics();renderClientData();setDataHealth('clientDataHealth',settled.some(x=>x.status==='rejected'));setClientLoading(false);
+  }catch(err){console.error('Operations data failed',err);setClientLoading(false);setDataHealth('clientDataHealth',true)}
 }
 
 function recordTime(x){
@@ -246,9 +243,10 @@ function renderOverview(){
     const line=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' '),area=line+' L '+pts[pts.length-1].x.toFixed(1)+' '+(pad.t+plotH)+' L '+pts[0].x.toFixed(1)+' '+(pad.t+plotH)+' Z';
     const grid=[0,.5,1].map(r=>{const y=pad.t+plotH*(1-r),v=Math.round(max*r);return '<line x1="'+pad.l+'" y1="'+y+'" x2="'+(w-pad.r)+'" y2="'+y+'" class="chart-grid"/><text x="'+(pad.l-8)+'" y="'+(y+3)+'" class="chart-axis" text-anchor="end">'+v+'</text>'}).join('');
     const labels=pts.map((p,i)=>i%2===0||i===pts.length-1?'<text x="'+p.x+'" y="'+(h-10)+'" class="chart-axis" text-anchor="middle">'+esc(p.short)+'</text>':'').join('');
-    const dots=pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="4" class="chart-dot"><title>'+esc(p.label)+' · '+p.n+' calls</title></circle>').join('');
+    const dots=pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="4" class="chart-dot" data-label="'+esc(p.label)+'" data-count="'+p.n+'"><title>'+esc(p.label)+' · '+p.n+' calls</title></circle>').join('');
     chart.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img"><defs><linearGradient id="callArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#c85d35" stop-opacity=".22"/><stop offset="100%" stop-color="#c85d35" stop-opacity=".02"/></linearGradient></defs>'+grid+'<path d="'+area+'" class="chart-area"/><path d="'+line+'" class="chart-line"/>'+dots+labels+'</svg>';
     const total=days.reduce((n,d)=>n+d.n,0),avg=Math.round(total/days.length*10)/10,peak=Math.max(...days.map(d=>d.n)),summary=document.getElementById('overviewChartSummary'),peakEl=document.getElementById('overviewChartPeak');if(summary)summary.textContent=avg+' calls/day average';if(peakEl)peakEl.textContent='Peak '+peak+' calls';
+    const tip=document.getElementById('overviewChartTooltip');chart.querySelectorAll('.chart-dot').forEach(dot=>{dot.addEventListener('mouseenter',()=>{if(!tip)return;tip.innerHTML='<b>'+esc(dot.dataset.count)+' calls</b><span>'+esc(dot.dataset.label)+'</span>';tip.hidden=false});dot.addEventListener('mousemove',e=>{if(!tip)return;const r=chart.getBoundingClientRect();tip.style.left=(e.clientX-r.left+12)+'px';tip.style.top=(e.clientY-r.top-8)+'px'});dot.addEventListener('mouseleave',()=>{if(tip)tip.hidden=true})});
   }
   const attention=document.getElementById('overviewAttention');
   if(attention){
@@ -266,7 +264,7 @@ function renderOverview(){
     const recent=[...callsData].sort((a,b)=>recordTime(b)-recordTime(a)).slice(0,6);
     wrap.innerHTML=recent.length?recent.map(x=>{
       const initials=String(x.caller||'?').split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase()||'?';
-      const candidate=followupCandidates().some(c=>String(c.id)===String(x.id)),handled=candidate&&followupIsHandled(x),pending=candidate&&!handled,label=pending?'Needs follow-up':handled?'Handled':(/resolved/i.test(String(x.outcome||''))?'Resolved':(x.outcome||'Handled')),stateClass=pending?'activity-pending':handled?'activity-handled':'activity-resolved';
+      const candidate=followupCandidates().some(c=>String(c.id)===String(x.id)),handled=candidate&&followupIsHandled(x),pending=candidate&&!handled,label=pending?'● Needs follow-up':handled?'✓ Handled':(/resolved/i.test(String(x.outcome||''))?'✓ Resolved':('• '+(x.outcome||'Handled'))),stateClass=pending?'activity-pending':handled?'activity-handled':'activity-resolved';
       return '<button class="activity-row overview-call-row '+stateClass+'" data-call-id="'+esc(x.id)+'"><span class="time">'+esc(formatFullDateTime(x))+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.caller||'Unknown caller')+'</strong><small>'+esc(x.reason||'Call activity')+'</small></span></div><span class="tag '+(pending?'amber':'green')+'">'+esc(label)+'</span><strong>'+esc(x.duration||'—')+'</strong></button>';
     }).join(''):'<div class="empty-state"><h3>No activity yet</h3><p>Calls will appear here as CallerCore starts handling traffic.</p></div>';
     wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
@@ -1765,3 +1763,5 @@ document.getElementById('logoutButton')?.addEventListener('click',logout);
 
 document.getElementById('clientDataRetry')?.addEventListener('click',async()=>{setDataHealth('clientDataHealth',false);await loadOperations()});
 document.getElementById('adminDataRetry')?.addEventListener('click',async()=>{setDataHealth('adminDataHealth',false);await loadAdminOps()});
+
+document.querySelectorAll('[data-overview-jump]').forEach(card=>{const go=()=>showView(card.dataset.overviewJump);card.addEventListener('click',e=>{if(e.target.closest('button,a'))return;go()});card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})});
