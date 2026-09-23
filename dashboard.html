@@ -28,7 +28,7 @@
     <div class="sidebar-plan"><small>Current plan</small><strong id="sidebarPlan">—</strong><div class="usage-track"><i id="sidebarUsage" style="width:0"></i></div><span id="sidebarUsageLabel">0 min</span><button data-view="billing">Manage plan</button></div>
   </aside>
 
-  <main class="dashboard-main">
+  <main class="dashboard-main"><div class="client-loading-state" id="clientLoadingState"><div class="loading-spinner"></div><span>Loading your CallerCore activity…</span></div>
     <header class="topbar">
       <div><button class="mobile-menu" aria-label="Toggle navigation">☰</button><span class="eyebrow">CallerCore client portal</span></div>
       <div class="top-actions"><button class="search-pill" data-view="support">? Help</button><div class="notification-shell"><button class="icon-btn notification-bell" id="notificationBell" title="Notifications" aria-label="Notifications" aria-expanded="false">🔔<span class="notification-badge" id="notificationBadge" hidden>0</span></button><div class="notification-panel" id="notificationPanel" hidden><div class="notification-head"><div><span class="eyebrow">Notifications</span><b>Workspace alerts</b></div><button id="notificationReadAll">Mark all read</button></div><div id="notificationList"></div><div class="notification-empty" id="notificationEmpty" hidden>No notifications right now.</div></div></div>
@@ -55,19 +55,19 @@
     <section class="view active" id="view-overview">
       <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore handled, and what still needs your team.</p></div></div>
       <div class="metric-grid overview-metrics">
-        <article class="overview-metric metric-calls"><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Today</small></article>
-        <article class="overview-metric metric-volume"><span>Calls · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
-        <article class="overview-metric metric-qualified"><span>Qualified requests</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
-        <article class="overview-metric metric-followup"><span>Needs follow-up</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Calls needing attention</small><button data-view="leads" class="metric-link">Review queue →</button></article>
+        <article class="overview-metric metric-calls" role="button" tabindex="0" data-overview-jump="calls"><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Today</small></article>
+        <article class="overview-metric metric-volume" role="button" tabindex="0" data-overview-jump="calls"><span>Calls · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
+        <article class="overview-metric metric-qualified" role="button" tabindex="0" data-overview-jump="calls"><span>Qualified requests</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
+        <article class="overview-metric metric-followup" role="button" tabindex="0" data-overview-jump="leads"><span>Needs follow-up</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Calls needing attention</small><button data-view="leads" class="metric-link">Review queue →</button></article>
       </div>
       <div class="overview-grid">
         <article class="panel overview-agent-card">
           <div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya is online</h2></div></div><button data-view="agent">Settings →</button></div>
-          <p id="overviewAgentMeta">Your AI receptionist is actively handling calls.</p>
+          <p id="overviewAgentMeta">Your AI receptionist is actively handling calls.</p><div class="live-call-state" id="liveCallState"><span class="live-state-dot"></span><b>No active call</b><small>Maya is ready for the next caller</small></div>
           <div class="overview-agent-stats"><div><span>Handled · 30 days</span><strong id="overviewAgentCalls">0</strong></div><div><span>Qualified requests</span><strong id="overviewAgentLeads">0</strong></div><div><span>Avg calls / day</span><strong id="overviewDailyAvg">0</strong></div></div>
           <div class="overview-chart-card">
   <div class="overview-chart-head"><div><span class="eyebrow">Call volume · last 14 days</span><b id="overviewChartSummary">0 calls/day average</b></div><span id="overviewChartPeak">Peak 0</span></div>
-  <div class="overview-line-chart" id="overviewLineChart" aria-label="Call volume over the last 14 days"></div>
+  <div class="overview-line-chart" id="overviewLineChart" aria-label="Call volume over the last 14 days"></div><div class="chart-tooltip" id="overviewChartTooltip" hidden></div>
 </div>
         </article>
         <article class="panel overview-attention-card" id="overviewAttentionCard">
