@@ -443,3 +443,43 @@ body.drawer-open{overflow:hidden}
 @media(max-width:1100px){.call-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.custom-date-range{grid-column:1/-1}.overview-bar-chart{height:220px}}
 @media(max-width:760px){.call-log-search-row{grid-template-columns:1fr}.call-reset{width:100%}.call-filter-grid{grid-template-columns:1fr 1fr}.activity-chart-insights{grid-template-columns:1fr 1fr 1fr}.bar-chart-grid{gap:4px}.activity-bar-total{width:min(22px,78%)}}
 @media(max-width:520px){.call-filter-grid{grid-template-columns:1fr}.custom-date-range{grid-template-columns:1fr}.activity-chart-insights{grid-template-columns:1fr}.overview-bar-chart{height:205px}}
+
+
+/* Explicit AI disposition + team workflow */
+.call-row{grid-template-columns:1.18fr .72fr .78fr 1.15fr .9fr .82fr .48fr}
+.call-row.head{min-width:1040px}
+.call-row.data{min-width:1040px}
+.disposition-pill,.team-status-pill{display:inline-flex;align-items:center;width:max-content;max-width:100%;border-radius:999px;padding:5px 8px;font-size:8px;font-style:normal;font-weight:900;line-height:1.1;white-space:nowrap}
+.disposition-resolved_by_ai{background:#eaf7ef;color:#2e7749;border:1px solid #d4ebdd}
+.disposition-request_captured,.disposition-message_taken,.disposition-transferred{background:#eef5fb;color:#426b89;border:1px solid #d7e5f1}
+.disposition-escalated,.disposition-incomplete{background:#fcecea;color:#9c4338;border:1px solid #f0d3ce}
+.disposition-non_customer{background:#f1f3f5;color:#68717a;border:1px solid #e1e4e7}
+.team-status-pill{border:1px solid transparent}.team-status-pill.green{background:#eaf7ef;color:#2e7749;border-color:#d4ebdd}.team-status-pill.amber{background:#fff3df;color:#8a5a21;border-color:#efd9b6}.team-status-pill.blue{background:#eef5fb;color:#426b89;border-color:#d7e5f1}.team-status-pill.gray{background:#f1f3f5;color:#68717a;border-color:#e1e4e7}
+.call-neutral{background:#fff}.call-pending{background:#fffaf3}.call-resolved{background:#f7fbf8}
+
+.drawer-status-control{display:grid;gap:4px;min-width:135px}.drawer-status-control>span{font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.drawer-status-control select{height:38px;border:1px solid var(--line);border-radius:9px;background:#fff;padding:0 30px 0 9px;font:800 8px inherit;color:var(--ink)}
+.call-team-actions{align-items:end;flex-wrap:wrap}.call-status-explainer{display:grid;grid-template-columns:auto 1fr;gap:5px 9px;margin-top:10px;border:1px solid var(--line);background:#fafbfc;border-radius:10px;padding:10px}.call-status-explainer b{font-size:8px;color:#68717a}.call-status-explainer span{font-size:8px;line-height:1.45;color:var(--ink)}
+
+.followup-card.completed{opacity:.78;background:#fafbfc}.followup-status-line{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.followup-status-select{display:grid;gap:4px;min-width:132px}.followup-status-select>span{font-size:7px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.followup-status-select select{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 28px 8px 8px;font:800 8px inherit}
+
+.team-status-card label{display:grid;gap:6px;margin:14px 0;font-size:9px;font-weight:800;color:var(--muted)}.team-status-card select,.team-status-card input{width:100%;border:1px solid var(--line);border-radius:9px;background:#fff;padding:10px 11px;font:inherit;color:var(--ink)}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+
+/* Today chart: resolved, captured/routed, and team action are intentionally distinct */
+.legend-swatch.handled{background:#4f9b6a}.legend-swatch.captured{background:#6d89a1}.legend-swatch.followup{background:#d88736}
+.bar-resolved{background:linear-gradient(180deg,#6caf82,#4e9568);border-radius:0 0 3px 3px}.bar-captured{background:linear-gradient(180deg,#8aa2b6,#6d879d)}.bar-followup{background:linear-gradient(180deg,#e7a55f,#d58332);border-radius:7px 7px 0 0}
+
+/* Analytics legend markers */
+.outcome-legend span{display:inline-flex;align-items:center;gap:6px}.outcome-legend span i{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+/* Admin call table keeps its five-column layout despite shared client styles */
+.admin-call-head,.admin-sidebar~.dashboard-main #adminCallsTable .call-row{grid-template-columns:1.15fr 1fr 1.45fr 1fr .6fr;min-width:0}
+
+@media(max-width:1150px){
+  .call-row{grid-template-columns:1.2fr .72fr .82fr 1.2fr .9fr .5fr}
+  .call-row.head,.call-row.data{min-width:900px}
+  .call-row>*:nth-child(6){display:none}
+}
+@media(max-width:760px){
+  .call-row.head,.call-row.data{min-width:760px}
+  .call-team-actions{display:grid;grid-template-columns:1fr 1fr}.call-team-actions .drawer-status-control,.call-team-actions #drawerFollowupButton{grid-column:1/-1}
+}
