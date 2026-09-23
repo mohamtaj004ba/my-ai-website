@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false;
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callQuickFilter='all',pendingTeamStatusCallId='';
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callQuickFilter='all',pendingTeamStatusCallId='',callMoreFiltersOpen=false;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -295,7 +295,7 @@ function callDateBoundary(value,end=false){
 function callLocalDateValue(ts){
   const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
-function updateCustomDateVisibility(){const range=document.getElementById('customDateRange'),sel=document.getElementById('callDateFilter');if(range)range.hidden=sel?.value!=='custom'}
+function updateCustomDateVisibility(){const range=document.getElementById('customDateRange'),sel=document.getElementById('callDateFilter'),secondary=document.getElementById('callMoreFilters'),toggle=document.getElementById('toggleCallMoreFilters'),custom=sel?.value==='custom';if(range)range.hidden=!custom;if(secondary)secondary.hidden=!(custom||callMoreFiltersOpen);if(toggle){toggle.setAttribute('aria-expanded',(custom||callMoreFiltersOpen)?'true':'false');toggle.textContent=(custom||callMoreFiltersOpen)?'Less':'More'}}
 function callLogPrefsKey(){return 'callercore:calllog:prefs:'+(sessionWorkspace?.id||'default')}
 function loadCallLogPrefs(){
   try{const p=JSON.parse(localStorage.getItem(callLogPrefsKey())||'{}');if(['day','type','outcome','none'].includes(p.groupBy))callLogGroupBy=p.groupBy;if(['newest','oldest'].includes(p.sort))callLogSort=p.sort}catch(_){}
@@ -1927,9 +1927,10 @@ document.addEventListener('keydown',e=>{
 document.getElementById('toggleAiAnsweringButton')?.addEventListener('click',toggleAiAnswering);
 
 document.querySelectorAll('[data-call-quick]').forEach(btn=>btn.addEventListener('click',()=>{callQuickFilter=btn.dataset.callQuick||'all';renderCalls()}));
+document.getElementById('toggleCallMoreFilters')?.addEventListener('click',()=>{callMoreFiltersOpen=!callMoreFiltersOpen;updateCustomDateVisibility()});
 document.getElementById('resetCallFilters')?.addEventListener('click',()=>{
-  const q=document.getElementById('callSearch'),date=document.getElementById('callDateFilter'),type=document.getElementById('callCategoryFilter'),outcome=document.getElementById('callFilter'),from=document.getElementById('callDateFrom'),to=document.getElementById('callDateTo');
-  if(q)q.value='';if(date)date.value='7';if(type)type.value='all';if(outcome)outcome.value='all';if(from)from.value='';if(to)to.value='';callQuickFilter='all';updateCustomDateVisibility();renderCalls();
+  const q=document.getElementById('callSearch'),date=document.getElementById('callDateFilter'),type=document.getElementById('callCategoryFilter'),outcome=document.getElementById('callFilter'),from=document.getElementById('callDateFrom'),to=document.getElementById('callDateTo'),group=document.getElementById('callGroupBy'),sort=document.getElementById('callSort');
+  if(q)q.value='';if(date)date.value='7';if(type)type.value='all';if(outcome)outcome.value='all';if(from)from.value='';if(to)to.value='';if(group)group.value='day';if(sort)sort.value='newest';callLogGroupBy='day';callLogSort='newest';callQuickFilter='all';callMoreFiltersOpen=false;saveCallLogPrefs();updateCustomDateVisibility();renderCalls();
 });
 
 document.getElementById('teamCompletionReason')?.addEventListener('change',e=>{const wrap=document.getElementById('teamCompletionOtherWrap');if(wrap)wrap.hidden=e.target.value!=='other'});
