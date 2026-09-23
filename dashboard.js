@@ -395,7 +395,7 @@ function callDispositionLabel(call){return callDispositionMeta(call).label}
 function callNeedsTeam(call){return !!callDispositionMeta(call).needsTeam}
 function normalizedTeamStatusValue(value){
   const v=String(value||'');
-  if(v==='completed')return 'completed';
+  if(v==='handled'||v==='completed')return 'completed';
   if(v==='open')return 'needs_action';
   return TEAM_STATUS_META[v]?v:'';
 }
