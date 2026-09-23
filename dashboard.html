@@ -53,11 +53,11 @@
     <div class="client-sync-toast" id="clientDataHealth" role="status" aria-live="polite" hidden><span class="sync-dot"></span><div><b>Still syncing</b><span>Some background data is taking longer than usual.</span></div><button type="button" id="clientDataRetry">Retry</button></div>
 
     <section class="view active" id="view-overview">
-      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore handled, and what still needs your team.</p></div></div>
+      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore resolved automatically, what it captured, and what still needs your team.</p></div></div>
       <div class="metric-grid overview-metrics">
         <article class="overview-metric metric-calls" role="button" tabindex="0" data-overview-jump="calls"><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Today</small></article>
-        <article class="overview-metric metric-volume" role="button" tabindex="0" data-overview-jump="calls"><span>Calls · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
-        <article class="overview-metric metric-qualified" role="button" tabindex="0" data-overview-jump="calls"><span>Qualified requests</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
+        <article class="overview-metric metric-volume" role="button" tabindex="0" data-overview-jump="calls"><span>Calls answered · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
+        <article class="overview-metric metric-qualified" role="button" tabindex="0" data-overview-jump="calls"><span>Requests captured</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
         <article class="overview-metric metric-followup" role="button" tabindex="0" data-overview-jump="leads"><span>Needs follow-up</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Calls needing attention</small><span class="metric-link">Review queue →</span></article>
       </div>
       <div class="overview-grid">
@@ -65,10 +65,10 @@
           <div class="panel-head"><div><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya</h2></div></div><button data-view="agent">Receptionist settings →</button></div>
           <p id="overviewAgentMeta">CallerCore answering status for this workspace.</p>
           <div class="ai-live-banner" id="aiCoverageBanner"><div class="ai-live-visual" aria-hidden="true"><span class="ai-live-core"></span><i></i><i></i><i></i></div><div class="ai-live-copy"><span id="aiCoverageEyebrow">AI ANSWERING</span><strong id="aiCoverageTitle">Checking call coverage…</strong><small id="aiCoverageCopy">Confirming phone routing and answering status.</small></div><button class="secondary-btn" data-view="settings">Manage answering</button></div>
-          <div class="overview-agent-stats"><div><span>Handled · 30 days</span><strong id="overviewAgentCalls">0</strong></div><div><span>Qualified requests</span><strong id="overviewAgentLeads">0</strong></div><div><span>Avg calls / day</span><strong id="overviewDailyAvg">0</strong></div></div>
+          <div class="overview-agent-stats"><div><span>Calls answered · 30 days</span><strong id="overviewAgentCalls">0</strong></div><div><span>Requests captured</span><strong id="overviewAgentLeads">0</strong></div><div><span>Resolved by AI</span><strong id="overviewResolvedAi">0</strong></div></div>
           <div class="overview-chart-card activity-chart-card">
-  <div class="overview-chart-head"><div><span class="eyebrow">Phone activity</span><b>How calls were handled</b><small id="overviewChartSummary">Loading recent call activity…</small></div><div class="chart-head-actions"><div class="chart-legend"><span><i class="legend-swatch handled"></i>Handled by CallerCore</span><span><i class="legend-swatch followup"></i>Needs your team</span></div><div class="chart-range" id="overviewChartRange"><button data-chart-days="7">7D</button><button class="active" data-chart-days="14">14D</button><button data-chart-days="30">30D</button></div></div></div>
-  <div class="activity-chart-insights"><div><span>Handled without staff</span><strong id="overviewChartHandledPct">0%</strong></div><div><span>Busiest day</span><strong id="overviewChartBusiest">—</strong></div><div><span>Team follow-up</span><strong id="overviewChartFollowupPct">0%</strong></div></div>
+  <div class="overview-chart-head"><div><span class="eyebrow">Phone activity</span><b>What happened after each call</b><small id="overviewChartSummary">Loading recent call activity…</small></div><div class="chart-head-actions"><div class="chart-legend"><span><i class="legend-swatch handled"></i>Resolved by AI</span><span><i class="legend-swatch captured"></i>Captured / routed</span><span><i class="legend-swatch followup"></i>Needs your team</span></div><div class="chart-range" id="overviewChartRange"><button data-chart-days="7">7D</button><button class="active" data-chart-days="14">14D</button><button data-chart-days="30">30D</button></div></div></div>
+  <div class="activity-chart-insights"><div><span>Resolved by AI</span><strong id="overviewChartHandledPct">0%</strong></div><div><span>Requests captured</span><strong id="overviewChartBusiest">0</strong></div><div><span>Needs your team</span><strong id="overviewChartFollowupPct">0%</strong></div></div>
   <div class="overview-bar-chart" id="overviewLineChart" aria-label="Interactive daily calls chart"></div>
   <div class="chart-foot"><span>Hover for details. Select a day to open those calls.</span><b id="overviewChartPeak">Peak 0 calls</b></div><div class="chart-tooltip rich" id="overviewChartTooltip" hidden></div>
 </div>
@@ -76,9 +76,9 @@
         <article class="panel overview-attention-card" id="overviewAttentionCard">
           <div class="panel-head health-panel-head"><div><span class="eyebrow">Call health</span><h2>How CallerCore is performing</h2></div><div class="health-head-actions"><span class="health-period">Last 60 days</span><button data-view="analytics">View insights →</button></div></div>
           <div class="health-rings">
-            <div class="health-ring-wrap"><div class="health-ring" id="overviewAnswerRing"><span id="overviewAnswerPct">0%</span></div><b>Answer rate</b><small>Calls completed by AI</small></div>
-            <div class="health-ring-wrap"><div class="health-ring" id="overviewQualifiedRing"><span id="overviewQualifiedPct">0%</span></div><b>High-intent rate</b><small>Qualified service requests</small></div>
-            <div class="health-ring-wrap"><div class="health-ring" id="overviewRecoveryRing"><span id="overviewRecoveryPct">0%</span></div><b>Handled cleanly</b><small>No follow-up needed</small></div>
+            <div class="health-ring-wrap"><div class="health-ring" id="overviewAnswerRing"><span id="overviewAnswerPct">0%</span></div><b>Answer rate</b><small>Inbound calls successfully answered</small></div>
+            <div class="health-ring-wrap"><div class="health-ring" id="overviewQualifiedRing"><span id="overviewQualifiedPct">0%</span></div><b>Capture rate</b><small>Calls where CallerCore captured a request</small></div>
+            <div class="health-ring-wrap"><div class="health-ring" id="overviewRecoveryRing"><span id="overviewRecoveryPct">0%</span></div><b>Self-service rate</b><small>Caller needed no staff action</small></div>
           </div>
           <div class="overview-attention-divider"></div>
           <div class="panel-head compact"><div><span class="eyebrow">Right now</span><h3>Needs your team</h3></div><button data-view="leads">View all →</button></div>
@@ -104,12 +104,12 @@
           <label><span>Date range</span><select id="callDateFilter"><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option><option value="custom">Custom dates</option><option value="all">All history</option></select></label>
           <div class="custom-date-range" id="customDateRange" hidden><label><span>From</span><input id="callDateFrom" type="date"></label><label><span>To</span><input id="callDateTo" type="date"></label></div>
           <label><span>Call type</span><select id="callCategoryFilter"><option value="all">All call types</option><option value="New service">New service</option><option value="Existing job">Existing job</option><option value="Estimate follow-up">Estimate follow-up</option><option value="Billing">Billing</option><option value="Complaint">Complaint</option><option value="General question">General question</option><option value="Warranty">Warranty</option><option value="Vendor">Vendor / partner</option><option value="Employment">Employment</option><option value="Wrong number">Wrong number</option><option value="Spam">Spam</option></select></label>
-          <label><span>Outcome</span><select id="callFilter"><option value="all">All outcomes</option><option value="Qualified">Qualified</option><option value="Resolved">Resolved</option><option value="Follow-up">Follow-up</option><option value="Missed">Missed</option></select></label>
+          <label><span>Outcome</span><select id="callFilter"><option value="all">All outcomes</option><option value="resolved_by_ai">Resolved by AI</option><option value="request_captured">Request captured</option><option value="message_taken">Message taken</option><option value="transferred">Transferred</option><option value="escalated">Escalated</option><option value="incomplete">Incomplete</option><option value="non_customer">Non-customer call</option></select></label>
           <label><span>Group by</span><select id="callGroupBy"><option value="day">Day</option><option value="type">Call type</option><option value="outcome">Outcome</option><option value="none">No groups</option></select></label>
           <label><span>Sort</span><select id="callSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label>
         </div>
       </div>
-      <div class="calls-summary-strip" aria-label="Quick call filters"><button class="active" id="callsShownCount" data-call-quick="all" type="button">0 calls</button><button id="callsFollowupCount" data-call-quick="followup" type="button">0 need follow-up</button><button id="callsResolvedCount" data-call-quick="resolved" type="button">0 handled / resolved</button></div>
+      <div class="calls-summary-strip" aria-label="Quick call filters"><button class="active" id="callsShownCount" data-call-quick="all" type="button">0 calls</button><button id="callsFollowupCount" data-call-quick="followup" type="button">0 need follow-up</button><button id="callsResolvedCount" data-call-quick="resolved" type="button">0 resolved by AI</button></div>
       <article class="panel table-panel call-history-panel"><div class="call-row head"><span>Caller</span><span>Date & time</span><span>Call type</span><span>Reason</span><span>Outcome</span><span>Duration</span></div><div id="callsTable"></div></article>
       <div class="empty-state" id="callsEmpty" hidden><h3>No calls yet</h3><p>Caller activity for this workspace will appear here once your AI number begins handling calls.</p></div>
     </section>
@@ -123,14 +123,14 @@
       </div>
     </section>
     <section class="view" id="view-leads">
-      <div class="page-head"><div><span class="eyebrow">Follow-ups</span><h1>Only the calls that still need a human.</h1><p>CallerCore handles the routine work automatically. This queue is for callbacks, urgent requests, failed transfers, and people who specifically asked for your team.</p></div><div class="page-actions"><button class="secondary-btn" id="showHandledFollowups">Show handled</button></div></div>
+      <div class="page-head"><div><span class="eyebrow">Follow-ups</span><h1>Only the calls that still need a human.</h1><p>Calls only appear here when the business still owes the caller a next step. CallerCore can capture or escalate a request without pretending the underlying job is finished.</p></div><div class="page-actions"><button class="secondary-btn" id="showHandledFollowups">Show completed</button></div></div>
       <div class="followup-summary">
-        <article><span>Open</span><strong id="followupOpenCount">0</strong><small>Needs your team</small></article>
+        <article><span>Needs action</span><strong id="followupOpenCount">0</strong><small>Waiting on your team</small></article>
         <article><span>Urgent</span><strong id="followupUrgentCount">0</strong><small>Priority first</small></article>
-        <article><span>Callbacks</span><strong id="followupCallbackCount">0</strong><small>Requested or missed</small></article>
-        <article><span>Handled today</span><strong id="followupHandledCount">0</strong><small>Cleared from queue</small></article>
+        <article><span>In progress</span><strong id="followupCallbackCount">0</strong><small>Already being worked</small></article>
+        <article><span>Completed today</span><strong id="followupHandledCount">0</strong><small>Finished by your team</small></article>
       </div>
-      <div class="toolbar"><input id="leadSearch" type="search" placeholder="Search customer, phone, service or address…"><select id="leadFilter"><option value="all">All open items</option><option value="urgent">Urgent</option><option value="callback">Callbacks</option><option value="qualified">Qualified requests</option></select></div>
+      <div class="toolbar"><input id="leadSearch" type="search" placeholder="Search customer, phone, service or address…"><select id="leadFilter"><option value="all">All active items</option><option value="urgent">Urgent</option><option value="callback">Callback / message</option><option value="qualified">Service request</option></select></div>
       <div class="followup-list" id="leadKanban"></div>
       <div class="empty-state" id="leadsEmpty" hidden><h3>You’re caught up</h3><p>When a caller needs your team, CallerCore will put the action here.</p></div>
     </section>
@@ -203,8 +203,8 @@
       <div id="analyticsGate" class="locked-stage" data-feature-card="advancedAnalytics"></div>
       <div id="analyticsApp" hidden>
         <div class="metric-grid">
-          <article><span>Answer rate</span><strong id="analyticsAnswerRate">0%</strong><small id="analyticsAnswerMeta">AI handled calls</small></article>
-          <article><span>High-intent calls</span><strong id="analyticsQualified">0%</strong><small>Qualified service requests</small></article>
+          <article><span>Answer rate</span><strong id="analyticsAnswerRate">0%</strong><small id="analyticsAnswerMeta">Inbound calls answered</small></article>
+          <article><span>Self-service resolution</span><strong id="analyticsQualified">0%</strong><small>No staff action required</small></article>
           <article><span>After-hours demand</span><strong id="analyticsAfterHours">0%</strong><small>Before 8 AM / after 6 PM</small></article>
           <article><span>Average daily calls</span><strong id="analyticsDailyAvg">0</strong><small id="analyticsCalls">0 total calls</small></article>
         </div>
@@ -214,7 +214,7 @@
         </div>
         <div class="two-col">
           <article class="panel"><span class="eyebrow">Time of day</span><h2>Busiest hours</h2><div class="insight-bars horizontal" id="insightHourBars"></div></article>
-          <article class="panel"><span class="eyebrow">Outcomes</span><h2>How calls ended</h2><div class="outcome-donut-wrap"><div class="outcome-donut" id="outcomeDonut"><span id="outcomeDonutLabel">0</span></div><div id="outcomeLegend" class="outcome-legend"></div></div></article>
+          <article class="panel"><span class="eyebrow">AI disposition</span><h2>What CallerCore accomplished</h2><div class="outcome-donut-wrap"><div class="outcome-donut" id="outcomeDonut"><span id="outcomeDonutLabel">0</span></div><div id="outcomeLegend" class="outcome-legend"></div></div></article>
         </div>
       </div>
     </section>
@@ -267,9 +267,9 @@
 <aside class="call-drawer" id="callDrawer" aria-hidden="true">
   <div class="drawer-head"><div><span class="eyebrow">Call details</span><h2 id="drawerCaller">Caller</h2><p id="drawerWhen" class="drawer-when"></p></div><button id="closeCallDrawer" aria-label="Close">×</button></div>
   <div class="drawer-meta" id="drawerMeta"></div>
-  <div class="drawer-action-bar"><a class="secondary-btn action-link disabled-link" id="drawerCallLink" aria-disabled="true" tabindex="-1">Call</a><a class="secondary-btn action-link disabled-link" id="drawerTextLink" aria-disabled="true" tabindex="-1">Text</a><button class="primary" id="drawerFollowupButton" type="button">Mark handled</button></div>
+  <div class="drawer-action-bar call-team-actions"><a class="secondary-btn action-link disabled-link" id="drawerCallLink" aria-disabled="true" tabindex="-1">Call</a><a class="secondary-btn action-link disabled-link" id="drawerTextLink" aria-disabled="true" tabindex="-1">Text</a><label class="drawer-status-control"><span>Team status</span><select id="drawerTeamStatus"><option value="no_action">No action needed</option><option value="needs_action">Needs action</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="dismissed">Dismissed</option></select></label><button class="primary" id="drawerFollowupButton" type="button">Update status</button></div>
   <button class="secondary-btn full drawer-contact-button" id="drawerContactButton" type="button">Open full contact history</button>
-  <section><span class="eyebrow">Call classification</span><div class="call-classification" id="drawerClassification"></div></section><section><span class="eyebrow">Location</span><p id="drawerAddress">No address captured.</p></section>
+  <section><span class="eyebrow">Call classification</span><div class="call-classification" id="drawerClassification"></div><div class="call-status-explainer" id="drawerStatusExplainer"></div></section><section><span class="eyebrow">Location</span><p id="drawerAddress">No address captured.</p></section>
   <section><span class="eyebrow">AI summary</span><p id="drawerSummary"></p></section>
   <section><span class="eyebrow">Call details</span><div id="drawerQualification" class="detail-grid"></div></section>
   <section class="team-notes-section"><div class="section-title-row"><div><span class="eyebrow">Team notes</span><h3>Internal notes</h3></div><span class="tag" id="drawerNoteCount">0 notes</span></div><div id="drawerNotesList" class="drawer-notes-list"></div><div class="note-composer"><textarea id="drawerInternalNote" class="drawer-note" placeholder="Add a note for your team…"></textarea><div class="drawer-note-actions"><small id="drawerNoteStatus"></small><button class="primary" id="drawerSaveNote" type="button">Add note</button></div></div></section>
@@ -286,6 +286,7 @@
 <div class="drawer-backdrop" id="contactDrawerBackdrop"></div>
 
 
+<div class="modal" id="teamStatusModal" aria-hidden="true"><div class="modal-card team-status-card"><button class="modal-close" id="closeTeamStatusModal" aria-label="Close">×</button><span class="eyebrow">Complete team action</span><h2>What happened next?</h2><p>This is optional, but it gives CallerCore better operational reporting without asking the AI to guess.</p><label>Completion outcome<select id="teamCompletionReason"><option value="">No reason selected</option><option value="customer_contacted">Customer contacted</option><option value="appointment_scheduled">Appointment scheduled</option><option value="estimate_sent">Estimate sent</option><option value="issue_resolved">Issue resolved</option><option value="no_longer_needed">No longer needed</option><option value="other">Other</option></select></label><label id="teamCompletionOtherWrap" hidden>Other<input id="teamCompletionOther" maxlength="160" placeholder="Short completion note"></label><div class="modal-actions"><button class="secondary-btn" id="cancelTeamStatusModal" type="button">Cancel</button><button class="primary" id="saveTeamStatusModal" type="button">Mark complete</button></div></div></div>
 <div class="modal" id="locationModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" id="closeLocationModal" aria-label="Close">×</button><span class="eyebrow">Business location</span><h2 id="locationModalTitle">Add location</h2><div class="form-card"><label>Location name<input id="locationName" placeholder="Spokane"></label><label>Phone<input id="locationPhone" placeholder="+15095550100"></label><label>Address<textarea id="locationAddress" placeholder="Street, city, state, ZIP"></textarea></label><label>Timezone<select id="locationTimezone"><option>America/Los_Angeles</option><option>America/Denver</option><option>America/Chicago</option><option>America/New_York</option></select></label><label class="toggle-row"><span>Active</span><input id="locationActive" type="checkbox" checked></label><button class="primary" id="saveLocationButton">Save location</button></div></div></div>
 
 <div class="modal" id="automationModal" aria-hidden="true"><div class="modal-card"><button class="modal-close automation-close" aria-label="Close">×</button><span class="eyebrow">Automation builder</span><h2 id="automationModalTitle">New automation</h2><div class="form-card"><label>Name<input id="automationName" placeholder="Missed-call recovery"></label><label>When this happens<select id="automationTrigger"><option value="missed_call">Missed call</option><option value="new_lead">New lead captured</option><option value="qualified_lead">Lead qualified</option><option value="after_hours_call">After-hours call</option></select></label><label>Do this<select id="automationAction"><option value="notify_team">Notify team</option><option value="create_followup">Create follow-up task</option><option value="mark_priority">Mark lead priority</option></select></label><button class="primary" id="saveAutomationButton">Save automation</button></div></div></div>
