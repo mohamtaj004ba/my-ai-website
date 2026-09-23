@@ -483,3 +483,47 @@ body.drawer-open{overflow:hidden}
   .call-row.head,.call-row.data{min-width:760px}
   .call-team-actions{display:grid;grid-template-columns:1fr 1fr}.call-team-actions .drawer-status-control,.call-team-actions #drawerFollowupButton{grid-column:1/-1}
 }
+
+
+/* Compact call-log toolbar */
+.call-log-controls.compact{padding:9px 10px;margin-bottom:9px}
+.call-toolbar-main{display:grid;grid-template-columns:minmax(260px,2fr) minmax(125px,.72fr) minmax(145px,.82fr) minmax(155px,.9fr) auto;gap:8px;align-items:end}
+.call-search-field,.call-toolbar-field,.call-toolbar-secondary .custom-date-range label{display:grid;gap:4px;min-width:0}
+.call-search-field>span,.call-toolbar-field>span,.call-toolbar-secondary .custom-date-range label>span{font-size:7px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#7c858f}
+.call-search-field input,.call-toolbar-field select,.call-toolbar-secondary .custom-date-range input{width:100%;height:38px;min-width:0;border:1px solid #dfe3e7;background:#fff;border-radius:9px;padding:0 10px;font:700 9px inherit;color:var(--ink)}
+.call-search-field input{font-size:10px;font-weight:500}
+.call-more-toggle{height:38px;min-width:66px;padding:0 12px;white-space:nowrap}
+.call-toolbar-secondary{display:grid;grid-template-columns:minmax(330px,1.45fr) minmax(135px,.55fr) minmax(135px,.55fr) auto;gap:8px;align-items:end;padding-top:8px;margin-top:8px;border-top:1px solid #eef0f2}
+.call-toolbar-secondary[hidden]{display:none}
+.call-toolbar-secondary .custom-date-range.compact{grid-column:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0;border:0;background:transparent;border-radius:0}
+.call-toolbar-secondary .custom-date-range.compact[hidden]{display:none}
+.call-reset-link{height:38px;border:0;background:transparent;color:#69727c;font:800 8px inherit;padding:0 8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.call-reset-link:hover{color:var(--ink)}
+.calls-summary-strip{margin-top:0}
+.call-history-panel .call-row.head span:nth-child(5),
+.call-history-panel .call-row.head span:nth-child(6){white-space:nowrap}
+
+@media(max-width:1180px){
+  .call-toolbar-main{grid-template-columns:minmax(240px,1.6fr) repeat(3,minmax(125px,1fr)) auto}
+  .call-toolbar-secondary{grid-template-columns:minmax(300px,1.4fr) 1fr 1fr auto}
+}
+@media(max-width:980px){
+  .call-toolbar-main{grid-template-columns:minmax(220px,1.5fr) 1fr 1fr auto}
+  .call-toolbar-main .call-toolbar-field:nth-of-type(3){grid-column:auto}
+  .call-toolbar-main .call-toolbar-field:nth-of-type(4){grid-column:2/3}
+  .call-toolbar-secondary{grid-template-columns:1fr 1fr auto}
+  .call-toolbar-secondary .custom-date-range.compact{grid-column:1/-1}
+}
+@media(max-width:760px){
+  .call-toolbar-main{grid-template-columns:1fr 1fr}
+  .call-search-field{grid-column:1/-1}
+  .call-more-toggle{width:100%}
+  .call-toolbar-secondary{grid-template-columns:1fr 1fr}
+  .call-toolbar-secondary .custom-date-range.compact{grid-column:1/-1}
+  .call-reset-link{grid-column:1/-1;justify-self:start}
+}
+@media(max-width:520px){
+  .call-toolbar-main,.call-toolbar-secondary{grid-template-columns:1fr}
+  .call-search-field,.call-toolbar-secondary .custom-date-range.compact,.call-reset-link{grid-column:auto}
+  .call-toolbar-secondary .custom-date-range.compact{grid-template-columns:1fr}
+}
