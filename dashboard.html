@@ -15,7 +15,8 @@
       <button class="nav-item active" data-view="overview">Overview</button>
       <button class="nav-item" data-view="calls">Calls</button>
       <button class="nav-item" data-view="conversations" data-feature="unifiedInbox">Conversations <span class="lock">GROWTH</span></button>
-      <button class="nav-item" data-view="leads">Leads</button>
+      <button class="nav-item" data-view="contacts">Contacts</button>
+      <button class="nav-item" data-view="leads">Opportunities</button>
       <button class="nav-item" data-view="appointments" data-feature="appointments" hidden>Appointments <span class="lock">COMING LATER</span></button>
       <div class="nav-label">AI & growth</div>
       <button class="nav-item" data-view="agent">AI Agent</button>
@@ -51,30 +52,45 @@
     <div class="account-panel-actions"><small id="profileSaveStatus"></small><button type="button" class="primary" id="profileSaveButton">Save profile</button></div><button type="button" class="profile-panel-signout" id="profilePanelLogout">↪ Sign out of CallerCore</button>
   </div>
 </div>
-<button class="signout-button" id="logoutButton" type="button" title="Sign out"><span>↪</span> Sign out</button></div>
+</div>
     </header>
     <div class="data-health-banner" id="clientDataHealth" role="status" aria-live="polite" hidden><div><b>Some CallerCore data could not be loaded.</b><span>Numbers shown on this page may be incomplete. Your underlying account data has not been replaced.</span></div><button type="button" id="clientDataRetry">Retry</button></div>
 
     <section class="view active" id="view-overview">
-      <div class="page-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>Here’s what CallerCore has handled for <span data-business-name>your business</span>.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
-      <div class="metric-grid">
-        <article><span>Calls answered</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">No activity yet</small></article>
-        <article><span>New leads</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">No activity yet</small></article>
-        <article><span>Appointments</span><strong id="overviewAppointments">0</strong><small id="overviewAppointmentsMeta">No activity yet</small></article>
-        <article><span>Pipeline</span><strong id="overviewPipeline">$0</strong><small id="overviewPipelineMeta">Estimated opportunity</small></article>
+      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>Here’s what CallerCore is handling for <span data-business-name>your business</span>.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
+      <div class="metric-grid overview-metrics">
+        <article><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Today</small></article>
+        <article><span>Calls · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
+        <article><span>New opportunities</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
+        <article><span>Needs follow-up</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Calls needing attention</small></article>
       </div>
-      <div class="two-col">
-        <article class="panel agent-card"><div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya is online</h2></div></div><button data-view="agent">Configure</button></div><p id="overviewAgentMeta">Configure your AI receptionist to begin handling calls.</p><div class="mini-stats"><div><strong id="overviewAgentCalls">0</strong><span>calls handled</span></div><div><strong id="overviewAgentLeads">0</strong><span>leads captured</span></div><div><strong id="overviewAgentAppointments">0</strong><span>appointments</span></div></div><button class="primary" data-view="agent">Configure agent</button></article>
-        <article class="panel ask-card"><span class="eyebrow">Launch checklist</span><h2 id="clientSetupStatusTitle">Get your workspace live.</h2><p id="clientSetupStatusCopy">CallerCore will track the core steps required before your AI receptionist can take production traffic.</p><div class="setup-status-pill" id="clientSetupStatusPill">Setup in progress</div><div class="onboarding-list" id="clientOnboardingChecklist"></div><button class="secondary-btn" data-view="settings">Review workspace setup</button></article>
+      <div class="overview-grid">
+        <article class="panel overview-agent-card">
+          <div class="panel-head"><div><span class="status-dot"></span><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya is online</h2></div></div><button data-view="agent">Settings →</button></div>
+          <p id="overviewAgentMeta">Your AI receptionist is actively handling calls.</p>
+          <div class="overview-agent-stats"><div><span>Handled · 30 days</span><strong id="overviewAgentCalls">0</strong></div><div><span>Qualified / booked</span><strong id="overviewAgentLeads">0</strong></div><div><span>Avg calls / day</span><strong id="overviewDailyAvg">0</strong></div></div>
+          <div class="overview-spark" id="overviewSpark"></div>
+        </article>
+        <article class="panel overview-attention-card">
+          <div class="panel-head"><div><span class="eyebrow">Right now</span><h2>What needs attention</h2></div><button data-view="calls">Review calls →</button></div>
+          <div id="overviewAttention"></div>
+        </article>
       </div>
-      <article class="panel activity"><div class="panel-head"><div><span class="eyebrow">Live activity</span><h2>Recent calls & outcomes</h2></div><button data-view="calls">View all calls →</button></div><div id="overviewActivity"></div></article>
-      <div class="unlock-grid" id="overviewUnlocks"></div>
+      <article class="panel activity overview-activity"><div class="panel-head"><div><span class="eyebrow">Recent activity</span><h2>Latest calls</h2></div><button data-view="calls">View call history →</button></div><div id="overviewActivity"></div></article>
+      <article class="panel overview-plan-strip" id="overviewUnlocks"></article>
+    </section>
+
+    <section class="view" id="view-contacts">
+      <div class="page-head"><div><span class="eyebrow">Contacts</span><h1>One history for every caller.</h1><p>Open a person once and see their calls, messages, needs, and contact details together.</p></div></div>
+      <div class="toolbar"><input id="contactSearch" type="search" placeholder="Search contacts by name, phone or service…"></div>
+      <article class="panel contact-list-panel"><div class="contact-row head"><span>Contact</span><span>Last interaction</span><span>Calls</span><span>Messages</span><span>Latest need</span></div><div id="contactsTable"></div></article>
+      <div class="empty-state" id="contactsEmpty" hidden><h3>No contacts yet</h3><p>Contacts are built automatically from caller and conversation history.</p></div>
     </section>
 
     <section class="view" id="view-calls">
       <div class="page-head"><div><span class="eyebrow">Calls</span><h1>Every conversation, organized.</h1><p>Search recordings, transcripts, summaries and outcomes in one place.</p></div></div>
-      <div class="toolbar"><input id="callSearch" type="search" placeholder="Search caller, reason, outcome…"><select id="callFilter"><option value="all">All outcomes</option><option value="Booked">Booked</option><option value="Qualified">Qualified</option><option value="Follow-up">Follow-up</option><option value="Missed">Missed</option></select></div>
-      <article class="panel table-panel"><div class="call-row head"><span>Caller</span><span>Reason</span><span>Duration</span><span>Outcome</span><span>Agent</span></div><div id="callsTable"></div></article>
+      <div class="toolbar call-toolbar"><input id="callSearch" type="search" placeholder="Search caller, phone, reason…"><select id="callDateFilter"><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="60" selected>Last 60 days</option><option value="all">All history</option></select><select id="callFilter"><option value="all">All outcomes</option><option value="Booked">Booked</option><option value="Qualified">Qualified</option><option value="Follow-up">Follow-up</option><option value="Missed">Missed</option></select></div>
+      <article class="panel table-panel call-history-panel"><div class="call-row head"><span>Caller</span><span>Date & time</span><span>Reason</span><span>Outcome</span><span>Duration</span></div><div id="callsTable"></div></article>
       <div class="empty-state" id="callsEmpty" hidden><h3>No calls yet</h3><p>Caller activity for this workspace will appear here once your AI number begins handling calls.</p></div>
     </section>
 
@@ -82,16 +98,17 @@
       <div class="page-head"><div><span class="eyebrow">Conversations</span><h1>One customer timeline.</h1><p>Call and website conversation history in one shared inbox, with more channels planned later.</p></div></div>
       <div id="conversationGate" class="locked-stage" data-feature-card="unifiedInbox"></div>
       <div id="conversationApp" class="conversation-shell" hidden>
-        <aside class="conversation-list"><div class="toolbar"><input id="conversationSearch" type="search" placeholder="Search conversations…"></div><div id="conversationThreads"></div></aside>
-        <section class="conversation-panel"><div class="conversation-head"><div><span class="eyebrow">Customer timeline</span><h2 id="conversationName">Select a conversation</h2></div><span class="tag green" id="conversationStatus">Active</span></div><div class="message-stream" id="messageStream"><div class="empty-state"><h3>Select a conversation</h3><p>Calls and messages will appear together here.</p></div></div></section>
+        <aside class="conversation-list"><div class="conversation-tools"><input id="conversationSearch" type="search" placeholder="Search name, phone or message…"><div class="conversation-tabs"><button class="active" data-conversation-filter="all">Recent</button><button data-conversation-filter="attention">Needs follow-up</button><button data-conversation-filter="active">Active</button></div></div><div id="conversationThreads"></div></aside>
+        <section class="conversation-panel"><div class="conversation-head"><div><span class="eyebrow">Customer timeline</span><h2 id="conversationName">Select a conversation</h2><p id="conversationMeta"></p></div><div class="conversation-head-actions"><button class="secondary-btn" id="conversationContactButton" type="button" hidden>View contact</button><span class="tag green" id="conversationStatus">Active</span></div></div><div class="message-stream" id="messageStream"><div class="empty-state"><h3>Select a conversation</h3><p>Calls and messages will appear together here.</p></div></div></section>
       </div>
     </section>
     <section class="view" id="view-leads">
-      <div class="page-head"><div><span class="eyebrow">Leads</span><h1>From ringing to revenue.</h1><p>Track every captured opportunity through the pipeline.</p></div></div>
-      <div class="toolbar"><input id="leadSearch" type="search" placeholder="Search leads…"><span class="muted">Drag cards between stages to update the pipeline.</span></div>
-      <div class="kanban" id="leadKanban"></div>
-      <div class="empty-state" id="leadsEmpty" hidden><h3>No leads yet</h3><p>Qualified callers and captured opportunities will populate this pipeline automatically.</p></div>
+      <div class="page-head"><div><span class="eyebrow">Opportunities</span><h1>People who may need your team.</h1><p>CallerCore surfaces qualified and follow-up-worthy conversations without making you manage a CRM board.</p></div></div>
+      <div class="toolbar"><input id="leadSearch" type="search" placeholder="Search name, phone or service…"><select id="leadFilter"><option value="all">All opportunities</option><option value="priority">Qualified / scheduled</option><option value="followup">Needs follow-up</option><option value="closed">Closed</option></select></div>
+      <article class="panel opportunity-panel"><div class="opportunity-row head"><span>Contact</span><span>What they need</span><span>Last activity</span><span>Status</span><span></span></div><div id="leadKanban"></div></article>
+      <div class="empty-state" id="leadsEmpty" hidden><h3>No opportunities yet</h3><p>CallerCore will surface people worth following up with as calls come in.</p></div>
     </section>
+
     <section class="view" id="view-appointments">
       <div class="page-head"><div><span class="eyebrow">Appointments</span><h1>Calendar booking.</h1><p>This feature remains hidden until CallerCore's calendar integration is enabled.</p></div></div>
       <div id="appointmentGate" class="locked-stage" data-feature-card="appointments"></div>
@@ -200,13 +217,22 @@
 </div>
 
 <aside class="call-drawer" id="callDrawer" aria-hidden="true">
-  <div class="drawer-head"><div><span class="eyebrow">Call details</span><h2 id="drawerCaller">Caller</h2></div><button id="closeCallDrawer" aria-label="Close">×</button></div>
+  <div class="drawer-head"><div><span class="eyebrow">Call details</span><h2 id="drawerCaller">Caller</h2><p id="drawerWhen" class="drawer-when"></p></div><button id="closeCallDrawer" aria-label="Close">×</button></div>
   <div class="drawer-meta" id="drawerMeta"></div>
+  <button class="secondary-btn full drawer-contact-button" id="drawerContactButton" type="button">Open full contact history</button>
+  <section><span class="eyebrow">Location</span><p id="drawerAddress">No address captured.</p></section>
   <section><span class="eyebrow">AI summary</span><p id="drawerSummary"></p></section>
-  <section><span class="eyebrow">Qualification</span><div id="drawerQualification" class="detail-grid"></div></section>
-  <section><span class="eyebrow">Transcript</span><div id="drawerTranscript" class="transcript"></div></section>
+  <section><span class="eyebrow">Call details</span><div id="drawerQualification" class="detail-grid"></div></section>
+  <section><span class="eyebrow">Full transcript</span><div id="drawerTranscript" class="transcript"></div></section>
 </aside>
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="call-drawer contact-drawer" id="contactDrawer" aria-hidden="true">
+  <div class="drawer-head"><div><span class="eyebrow">Contact history</span><h2 id="contactDrawerName">Contact</h2><p id="contactDrawerMeta" class="drawer-when"></p></div><button id="closeContactDrawer" aria-label="Close">×</button></div>
+  <section><span class="eyebrow">Contact information</span><div id="contactDrawerDetails" class="detail-grid"></div></section>
+  <section><span class="eyebrow">What we know</span><p id="contactDrawerSummary"></p></section>
+  <section><span class="eyebrow">Complete activity</span><div id="contactDrawerTimeline" class="contact-timeline"></div></section>
+</aside>
+<div class="drawer-backdrop" id="contactDrawerBackdrop"></div>
 
 
 <div class="modal" id="locationModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" id="closeLocationModal" aria-label="Close">×</button><span class="eyebrow">Business location</span><h2 id="locationModalTitle">Add location</h2><div class="form-card"><label>Location name<input id="locationName" placeholder="Spokane"></label><label>Phone<input id="locationPhone" placeholder="+15095550100"></label><label>Address<textarea id="locationAddress" placeholder="Street, city, state, ZIP"></textarea></label><label>Timezone<select id="locationTimezone"><option>America/Los_Angeles</option><option>America/Denver</option><option>America/Chicago</option><option>America/New_York</option></select></label><label class="toggle-row"><span>Active</span><input id="locationActive" type="checkbox" checked></label><button class="primary" id="saveLocationButton">Save location</button></div></div></div>
