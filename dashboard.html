@@ -55,10 +55,10 @@
     <section class="view active" id="view-overview">
       <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore handled, and what still needs your team.</p></div></div>
       <div class="metric-grid overview-metrics">
-        <article><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Today</small></article>
-        <article><span>Calls · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
-        <article><span>Qualified requests</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
-        <article><span>Needs follow-up</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Calls needing attention</small></article>
+        <article class="overview-metric metric-calls"><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Today</small></article>
+        <article class="overview-metric metric-volume"><span>Calls · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
+        <article class="overview-metric metric-qualified"><span>Qualified requests</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
+        <article class="overview-metric metric-followup"><span>Needs follow-up</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Calls needing attention</small><button data-view="leads" class="metric-link">Review queue →</button></article>
       </div>
       <div class="overview-grid">
         <article class="panel overview-agent-card">
@@ -70,7 +70,7 @@
   <div class="overview-line-chart" id="overviewLineChart" aria-label="Call volume over the last 14 days"></div>
 </div>
         </article>
-        <article class="panel overview-attention-card">
+        <article class="panel overview-attention-card" id="overviewAttentionCard">
           <div class="panel-head"><div><span class="eyebrow">Call health</span><h2>How CallerCore is performing</h2></div></div>
           <div class="health-rings">
             <div class="health-ring-wrap"><div class="health-ring" id="overviewAnswerRing"><span id="overviewAnswerPct">0%</span></div><b>Answer rate</b><small>Calls completed by AI</small></div>
