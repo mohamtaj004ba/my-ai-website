@@ -53,38 +53,40 @@
     <div class="client-sync-toast" id="clientDataHealth" role="status" aria-live="polite" hidden><span class="sync-dot"></span><div><b>Still syncing</b><span>Some background data is taking longer than usual.</span></div><button type="button" id="clientDataRetry">Retry</button></div>
 
     <section class="view active" id="view-overview">
-      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore resolved automatically, what it captured, and what still needs your team.</p></div></div>
-      <div class="metric-grid overview-metrics">
-        <article class="overview-metric metric-calls" role="button" tabindex="0" data-overview-jump="calls"><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Today</small></article>
-        <article class="overview-metric metric-volume" role="button" tabindex="0" data-overview-jump="calls"><span>Calls answered · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
-        <article class="overview-metric metric-qualified" role="button" tabindex="0" data-overview-jump="calls"><span>Requests captured</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Last 7 days</small></article>
-        <article class="overview-metric metric-followup" role="button" tabindex="0" data-overview-jump="leads"><span>Needs follow-up</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Calls needing attention</small><span class="metric-link">Review queue →</span></article>
+      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>A simple view of today: what came in, what CallerCore resolved, and what still needs your team.</p></div></div>
+
+      <div class="metric-grid overview-metrics overview-metrics-clean">
+        <article class="overview-metric metric-calls" role="button" tabindex="0" data-overview-jump="calls"><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Inbound calls today</small></article>
+        <article class="overview-metric metric-qualified" role="button" tabindex="0" data-overview-jump="calls"><span>Requests captured today</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Requests or messages captured</small></article>
+        <article class="overview-metric metric-resolved" role="button" tabindex="0" data-overview-jump="calls"><span>Resolved by AI today</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">No staff action needed</small></article>
+        <article class="overview-metric metric-followup" role="button" tabindex="0" data-overview-jump="leads"><span>Needs your team</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Open team actions</small><span class="metric-link">Review queue →</span></article>
       </div>
-      <div class="overview-grid">
-        <article class="panel overview-agent-card">
-          <div class="panel-head"><div><div><small>AI RECEPTIONIST</small><h2 id="overviewAgentName">Maya</h2></div></div><button data-view="agent">Receptionist settings →</button></div>
-          <p id="overviewAgentMeta">CallerCore answering status for this workspace.</p>
-          <div class="ai-live-banner" id="aiCoverageBanner"><div class="ai-live-visual" aria-hidden="true"><span class="ai-live-core"></span><i></i><i></i><i></i></div><div class="ai-live-copy"><span id="aiCoverageEyebrow">AI ANSWERING</span><strong id="aiCoverageTitle">Checking call coverage…</strong><small id="aiCoverageCopy">Confirming phone routing and answering status.</small></div><button class="secondary-btn" data-view="settings">Manage answering</button></div>
-          <div class="overview-agent-stats"><div><span>Calls answered · 30 days</span><strong id="overviewAgentCalls">0</strong></div><div><span>Requests captured</span><strong id="overviewAgentLeads">0</strong></div><div><span>Resolved by AI</span><strong id="overviewResolvedAi">0</strong></div></div>
-          <div class="overview-chart-card activity-chart-card">
-  <div class="overview-chart-head"><div><span class="eyebrow">Phone activity</span><b>What happened after each call</b><small id="overviewChartSummary">Loading recent call activity…</small></div><div class="chart-head-actions"><div class="chart-legend"><span><i class="legend-swatch handled"></i>Resolved by AI</span><span><i class="legend-swatch captured"></i>Other / routed</span><span><i class="legend-swatch followup"></i>Needs your team</span></div><div class="chart-range" id="overviewChartRange"><button data-chart-days="7">7D</button><button class="active" data-chart-days="14">14D</button><button data-chart-days="30">30D</button></div></div></div>
-  <div class="activity-chart-insights"><div><span>Resolved by AI</span><strong id="overviewChartHandledPct">0%</strong></div><div><span>Requests captured</span><strong id="overviewChartBusiest">0</strong></div><div><span>Needs your team</span><strong id="overviewChartFollowupPct">0%</strong></div></div>
-  <div class="overview-bar-chart" id="overviewLineChart" aria-label="Interactive daily calls chart"></div>
-  <div class="chart-foot"><span>Hover for details. Select a day to open those calls.</span><b id="overviewChartPeak">Peak 0 calls</b></div><div class="chart-tooltip rich" id="overviewChartTooltip" hidden></div>
-</div>
-        </article>
-        <article class="panel overview-attention-card" id="overviewAttentionCard">
-          <div class="panel-head health-panel-head"><div><span class="eyebrow">Call health</span><h2>How CallerCore is performing</h2></div><div class="health-head-actions"><span class="health-period">Last 60 days</span><button data-view="analytics">View insights →</button></div></div>
-          <div class="health-rings">
-            <div class="health-ring-wrap"><div class="health-ring" id="overviewAnswerRing"><span id="overviewAnswerPct">0%</span></div><b>Answer rate</b><small>Inbound calls successfully answered</small></div>
-            <div class="health-ring-wrap"><div class="health-ring" id="overviewQualifiedRing"><span id="overviewQualifiedPct">0%</span></div><b>Capture rate</b><small>Calls where CallerCore captured a request</small></div>
-            <div class="health-ring-wrap"><div class="health-ring" id="overviewRecoveryRing"><span id="overviewRecoveryPct">0%</span></div><b>Self-service rate</b><small>Caller needed no staff action</small></div>
+
+      <article class="panel overview-ai-status-card">
+        <div class="panel-head"><div><span class="eyebrow">AI receptionist</span><h2 id="overviewAgentName">Maya</h2></div><button data-view="agent">Receptionist settings →</button></div>
+        <div class="ai-live-banner overview-ai-live" id="aiCoverageBanner"><div class="ai-live-visual" aria-hidden="true"><span class="ai-live-core"></span><i></i><i></i><i></i></div><div class="ai-live-copy"><span id="aiCoverageEyebrow">AI ANSWERING</span><strong id="aiCoverageTitle">Checking call coverage…</strong><small id="aiCoverageCopy">Confirming phone routing and answering status.</small></div><button class="secondary-btn" data-view="settings">Manage answering</button></div>
+      </article>
+
+      <div class="overview-grid overview-grid-clean">
+        <article class="panel overview-agent-card overview-chart-panel">
+          <div class="overview-chart-card activity-chart-card simple-volume-chart">
+            <div class="overview-chart-head">
+              <div><span class="eyebrow">Call activity</span><b>Daily call volume</b><small id="overviewChartSummary">Loading recent activity…</small></div>
+              <div class="chart-head-actions"><div class="chart-legend"><span><i class="legend-swatch total-calls"></i>Total calls</span><span><i class="legend-line followups"></i>Needs your team</span></div><div class="chart-range" id="overviewChartRange"><button data-chart-days="7">7D</button><button class="active" data-chart-days="14">14D</button><button data-chart-days="30">30D</button></div></div>
+            </div>
+            <div class="overview-combo-chart" id="overviewLineChart" aria-label="Interactive daily call volume and team-action chart"></div>
+            <div class="chart-foot"><span>Bars show total calls. The line shows calls that still need team action. Click a day to open its call log.</span><b id="overviewChartPeak">Peak 0 calls</b></div>
+            <div class="chart-tooltip rich" id="overviewChartTooltip" hidden></div>
           </div>
-          <div class="overview-attention-divider"></div>
-          <div class="panel-head compact"><div><span class="eyebrow">Right now</span><h3>Needs your team</h3></div><button data-view="leads">View all →</button></div>
+        </article>
+
+        <article class="panel overview-attention-card overview-attention-only" id="overviewAttentionCard">
+          <div class="panel-head compact"><div><span class="eyebrow">Right now</span><h3>Needs your team</h3><small>Only calls with an open human action.</small></div><button data-view="leads">View all →</button></div>
           <div id="overviewAttention"></div>
+          <div class="overview-insights-link"><span>Want performance rates and trends?</span><button data-view="analytics">Open Insights →</button></div>
         </article>
       </div>
+
       <article class="panel activity overview-activity"><div class="panel-head"><div><span class="eyebrow">Recent activity</span><h2>Latest calls</h2></div><button data-view="calls">View call history →</button></div><div id="overviewActivity"></div></article>
     </section>
 
