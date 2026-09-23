@@ -168,7 +168,7 @@ async function loadOperations(){
     phoneRoutingData={number:'(509) 555-0100',label:'Primary',provider:'Vapi',forwardingFrom:'(509) 555-0199',transferNumber:'(509) 555-0101',afterHours:'ai',smsEnabled:false,status:'active'};
     locationsData=[{id:'loc-demo',name:'Spokane',phone:'(509) 555-0199',address:'Spokane, WA',timezone:'America/Los_Angeles',active:true}];locationsLimit=PLAN_DATA[currentPlan].locations||1;
     analyticsData=buildLocalAnalytics();followupState={};
-    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientSetupStatus();renderClientChecklist();renderBillingConnection();renderPhoneRouting();renderLocations();return;
+    renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientSetupStatus();renderBillingConnection();renderPhoneRouting();renderLocations();return;
   }
   try{
     const jobs=[
@@ -202,7 +202,7 @@ async function loadOperations(){
     if(has('automations')){if(results[idx].ok)automationsData=(await results[idx].json()).automations||[]}
   }catch(err){console.error('Operations data failed',err);setDataHealth('clientDataHealth',true)}
   await loadFollowupState();
-  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderClientChecklist();renderBillingConnection();renderPhoneRouting();renderLocations();
+  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderSupport();renderBillingConnection();renderPhoneRouting();renderLocations();
 }
 
 function recordTime(x){
@@ -217,7 +217,7 @@ function formatFullDateTime(x){
 }
 function renderOverview(){
   const callTimes=callsData.map(recordTime).filter(Boolean),todayCalls=callsData.filter(x=>sameLocalDay(recordTime(x))).length,weekCalls=callsData.filter(x=>withinDays(recordTime(x),7)).length,monthCalls=callsData.filter(x=>withinDays(recordTime(x),30)).length;
-  const weekLeads=leadsData.filter(x=>withinDays(recordTime(x),7)).length;
+  const weekLeads=callsData.filter(x=>withinDays(recordTime(x),7)&&/qualif/i.test(String(x.outcome||''))).length;
   const followups=followupCandidates().filter(x=>withinDays(recordTime(x),7)&&!followupIsHandled(x)).length;
   const qualified30=callsData.filter(x=>withinDays(recordTime(x),30)&&/book|qualif/i.test(String(x.outcome||''))).length;
   const activeDays=new Set(callsData.filter(x=>withinDays(recordTime(x),30)).map(x=>new Date(recordTime(x)).toDateString())).size;
@@ -288,6 +288,9 @@ function openCall(id){
   const x=callsData.find(c=>String(c.id)===String(id));if(!x)return;
   activeCallContactKey=contactKey(x);
   document.getElementById('drawerCaller').textContent=x.caller||'Unknown caller';
+  const digits=String(x.phone||'').replace(/\D/g,'');const callLink=document.getElementById('drawerCallLink'),textLink=document.getElementById('drawerTextLink');if(callLink){callLink.href=digits?'tel:'+digits:'#';callLink.classList.toggle('disabled-link',!digits)}if(textLink){textLink.href=digits?'sms:'+digits:'#';textLink.classList.toggle('disabled-link',!digits)}
+  const followBtn=document.getElementById('drawerFollowupButton');if(followBtn){const isCandidate=followupCandidates().some(c=>String(c.id)===String(x.id));followBtn.hidden=!isCandidate;followBtn.dataset.callId=x.id;followBtn.textContent=followupIsHandled(x)?'Reopen follow-up':'Mark handled'}
+  const note=document.getElementById('drawerInternalNote');if(note)note.value=followupState[String(x.id)]?.note||'';const ns=document.getElementById('drawerNoteStatus');if(ns)ns.textContent='';
   const when=document.getElementById('drawerWhen');if(when)when.textContent=formatFullDateTime(x);
   document.getElementById('drawerMeta').innerHTML=[x.phone,x.duration,x.outcome,x.agent].filter(Boolean).map(v=>'<span>'+esc(v)+'</span>').join('');
   const addr=document.getElementById('drawerAddress');if(addr)addr.textContent=x.address||contactForRecord(x)?.address||'No address was captured on this call.';
@@ -310,7 +313,7 @@ function followupType(call){
 }
 function followupLabel(type){return ({urgent:'Urgent',callback:'Callback',qualified:'Qualified request',review:'Review'})[type]||'Review'}
 function followupCandidates(){
-  return callsData.filter(x=>/miss|follow|book|qualif/i.test(String(x.outcome||''))||/urgent|emergency|no heat|gas|carbon monoxide/i.test(String(x.reason||''))).sort((a,b)=>recordTime(b)-recordTime(a));
+  return callsData.filter(x=>/miss|follow|qualif/i.test(String(x.outcome||''))||/urgent|emergency|no heat|gas|carbon monoxide/i.test(String(x.reason||''))).sort((a,b)=>recordTime(b)-recordTime(a));
 }
 async function loadFollowupState(){
   if(demoMode)return;
@@ -341,11 +344,16 @@ function renderLeads(){
   board.querySelectorAll('[data-followup-toggle]').forEach(b=>b.addEventListener('click',()=>toggleFollowup(b.dataset.followupToggle)));
 }
 async function toggleFollowup(id){
-  const handled=followupState[id]?.status==='handled',next=handled?'open':'handled',previous=followupState[id];
-  followupState[id]={status:next,updatedAt:Date.now()};renderLeads();renderOverview();
+  const handled=followupState[id]?.status==='handled',next=handled?'open':'handled',previous=followupState[id],note=followupState[id]?.note||'';
+  followupState[id]={status:next,note,updatedAt:Date.now()};renderLeads();renderOverview();const x=callsData.find(c=>String(c.id)===String(id));const drawerBtn=document.getElementById('drawerFollowupButton');if(x&&drawerBtn&&drawerBtn.dataset.callId===String(id))drawerBtn.textContent=next==='handled'?'Reopen follow-up':'Mark handled';
   if(demoMode)return;
-  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:next})});if(!r.ok)throw new Error('Could not update follow-up');followupState=(await r.json()).state||followupState}
+  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:next,note})});if(!r.ok)throw new Error('Could not update follow-up');followupState=(await r.json()).state||followupState}
   catch(err){if(previous)followupState[id]=previous;else delete followupState[id];renderLeads();renderOverview();console.error(err)}
+}
+async function saveCallNote(){
+  const id=document.getElementById('drawerFollowupButton')?.dataset.callId||callsData.find(x=>contactKey(x)===activeCallContactKey)?.id;if(!id)return;const input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),note=String(input?.value||'').trim().slice(0,2000),current=followupState[String(id)]||{},nextStatus=current.status||'open';if(status)status.textContent='Saving…';
+  if(demoMode){followupState[String(id)]={...current,status:nextStatus,note,updatedAt:Date.now()};if(status)status.textContent='Saved';return}
+  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:nextStatus,note})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save note');followupState=data.state||followupState;if(status)status.textContent='Saved'}catch(err){if(status)status.textContent=err.message||'Could not save note'}
 }
 async function moveLead(id,stage){
   const lead=leadsData.find(x=>String(x.id)===String(id));if(!lead||lead.stage===stage)return;
@@ -437,6 +445,7 @@ function openContact(key){
   const drawer=document.getElementById('contactDrawer'),back=document.getElementById('contactDrawerBackdrop');if(!drawer||!back)return;
   document.getElementById('contactDrawerName').textContent=c.name;
   document.getElementById('contactDrawerMeta').textContent=c.lastAt?'Last interaction '+new Date(c.lastAt).toLocaleString():'No recent interaction date';
+  const digits=String(c.phone||'').replace(/\D/g,'');const callLink=document.getElementById('contactCallLink'),textLink=document.getElementById('contactTextLink');if(callLink){callLink.href=digits?'tel:'+digits:'#';callLink.classList.toggle('disabled-link',!digits)}if(textLink){textLink.href=digits?'sms:'+digits:'#';textLink.classList.toggle('disabled-link',!digits)}
   document.getElementById('contactDrawerDetails').innerHTML=[
     ['Phone',c.phone||'Not captured'],['Address',c.address||'Not captured'],['Calls',c.calls.length],['Conversations',c.conversations.length]
   ].map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('');
@@ -456,6 +465,8 @@ document.getElementById('contactSearch')?.addEventListener('input',renderContact
 document.getElementById('closeContactDrawer')?.addEventListener('click',closeContact);
 document.getElementById('contactDrawerBackdrop')?.addEventListener('click',closeContact);
 document.getElementById('drawerContactButton')?.addEventListener('click',()=>{if(activeCallContactKey){closeCall();openContact(activeCallContactKey)}});
+document.getElementById('drawerFollowupButton')?.addEventListener('click',e=>{const id=e.currentTarget.dataset.callId;if(id)toggleFollowup(id)});
+document.getElementById('drawerSaveNote')?.addEventListener('click',saveCallNote);
 
 function renderAppointments(){
   if(!has('appointments'))return;
@@ -701,7 +712,7 @@ function openLocationModal(id=''){
 function closeLocationModal(){const m=document.getElementById('locationModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
 async function persistLocations(next){
   const r=await fetch('/api/account?action=locations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:next})}),data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not save locations.');return false}locationsData=data.locations||[];locationsLimit=Number(data.limit||locationsLimit);renderLocations();renderClientChecklist();return true;
+  if(!r.ok){alert(data.error||'Could not save locations.');return false}locationsData=data.locations||[];locationsLimit=Number(data.limit||locationsLimit);renderLocations();return true;
 }
 async function saveLocation(){
   const modal=document.getElementById('locationModal'),id=modal?.dataset.editId||'',item={id:id||undefined,name:document.getElementById('locationName')?.value||'',phone:document.getElementById('locationPhone')?.value||'',address:document.getElementById('locationAddress')?.value||'',timezone:document.getElementById('locationTimezone')?.value||'America/Los_Angeles',active:!!document.getElementById('locationActive')?.checked};
@@ -1300,7 +1311,6 @@ function renderAdmin(){
     adminClientsData.filter(x=>x.subscriptionStatus==='past_due').forEach(x=>rows.push('<div class="admin-event redline"><b>'+esc(x.name)+'</b><span>Stripe payment needs attention</span><small>Billing</small></div>'));
     adminClientsData.filter(x=>x.status==='onboarding').forEach(x=>rows.push('<div class="admin-event"><b>'+esc(x.name)+'</b><span>Workspace onboarding in progress</span><small>Onboarding</small></div>'));
     adminClientsData.filter(x=>x.status==='suspended').forEach(x=>rows.push('<div class="admin-event redline"><b>'+esc(x.name)+'</b><span>Workspace access is suspended</span><small>Workspace</small></div>'));
-    adminClientsData.filter(x=>x.status==='suspended').forEach(x=>rows.push('<div class="admin-event redline"><b>'+esc(x.name)+'</b><span>Workspace access is suspended</span><small>Workspace</small></div>'));
     attention.innerHTML=rows.slice(0,6).join('')||'<div class="empty-state"><h3>Nothing needs attention</h3><p>Billing and onboarding alerts will appear here.</p></div>';
   }
   renderAdminClients();
@@ -1312,7 +1322,7 @@ function renderAdmin(){
   const usage=document.getElementById('adminUsageList');if(usage){
     usage.innerHTML=adminClientsData.map(x=>{
       const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0),pct=lim?Math.round(used/lim*100):null;
-      return '<div class="admin-event"><b>'+esc(x.name)+'</b><span>'+used.toLocaleString()+' min'+(lim?' · '+pct+'% of '+lim:' · unlimited')+'</span><small>'+esc(x.plan)+'</small></div>';
+      return '<div class="admin-event"><b>'+esc(x.name)+'</b><span>'+used.toLocaleString()+' min'+(lim?' · '+pct+'% of '+lim:' · high-volume plan')+'</span><small>'+esc(x.plan)+'</small></div>';
     }).join('')||'<div class="empty-state"><h3>No usage yet</h3></div>';
   }
 }
