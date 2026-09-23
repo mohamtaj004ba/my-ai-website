@@ -1291,14 +1291,19 @@ async function followups(req,res){
 }
 async function followupUpdate(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
-  const callId=String((req.body||{}).callId||'').slice(0,120),status=String((req.body||{}).status||''),note=String((req.body||{}).note||'').trim().slice(0,2000);
+  const body=req.body||{},callId=String(body.callId||'').slice(0,120),status=String(body.status||''),legacyNote=String(body.note||'').trim().slice(0,2000),appendNote=String(body.appendNote||'').trim().slice(0,2000);
   if(!callId||!['open','handled'].includes(status))return res.status(400).json({error:'Invalid follow-up update'});
   const calls=await kv.get('calls:'+s.workspaceId)||[];
   if(!Array.isArray(calls)||!calls.some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
-  const key='followup:state:'+s.workspaceId,state=await kv.get(key)||{},next={...(state&&typeof state==='object'&&!Array.isArray(state)?state:{})};
-  next[callId]={status,note,updatedAt:Date.now(),updatedBy:s.email||''};
+  const key='followup:state:'+s.workspaceId,state=await kv.get(key)||{},base=state&&typeof state==='object'&&!Array.isArray(state)?state:{},next={...base},previous=base[callId]&&typeof base[callId]==='object'?base[callId]:{};
+  let notes=Array.isArray(previous.notes)?previous.notes.slice(-100):[];
+  if(previous.note&&String(previous.note).trim()&&!notes.some(n=>n&&n.text===previous.note))notes.unshift({id:'legacy',text:String(previous.note).slice(0,2000),at:Number(previous.updatedAt||0),by:previous.updatedBy||''});
+  if(legacyNote&&!appendNote&&!notes.length)notes.push({id:'legacy_'+Date.now(),text:legacyNote,at:Date.now(),by:s.email||''});
+  if(appendNote)notes.push({id:'note_'+Date.now().toString(36),text:appendNote,at:Date.now(),by:s.email||''});
+  notes=notes.slice(-100);
+  next[callId]={status,notes,updatedAt:Date.now(),updatedBy:s.email||''};
   await kv.set(key,next);
-  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'followup_'+status,section:'calls',before:state&&state[callId]||null,after:next[callId],meta:{callId}});
+  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:appendNote?'followup_note_added':'followup_'+status,section:'calls',before:previous||null,after:next[callId],meta:{callId}});
   return res.status(200).json({ok:true,state:next});
 }
 
@@ -1763,6 +1768,7 @@ async function saveSettings(req,res){
     postalCode:clean(body.postalCode,30),
     industry:clean(body.industry,120),
     serviceArea:clean(body.serviceArea,500),
+    logoDataUrl:String(body.logoDataUrl||'').trim().slice(0,450000),
     timezone:clean(body.timezone,100)||'America/Los_Angeles',
     notificationEmail:clean(body.notificationEmail,200).toLowerCase(),
     smsAlerts:process.env.CALLERCORE_SMS_ENABLED==='true'&&body.smsAlerts!==false,emailAlerts:body.emailAlerts!==false,
@@ -1776,6 +1782,7 @@ async function saveSettings(req,res){
   if(settings.state&&!/^[A-Za-z]{2}$/.test(settings.state))return res.status(400).json({error:'State / region must be a 2-letter code'});
   if(settings.postalCode&&!/^\d{5}(?:-\d{4})?$/.test(settings.postalCode))return res.status(400).json({error:'Valid ZIP code required'});
   if(settings.website&&!/^https?:\/\//i.test(settings.website))return res.status(400).json({error:'Website must begin with http:// or https://'});
+  if(settings.logoDataUrl&&!/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(settings.logoDataUrl))return res.status(400).json({error:'Business logo must be a JPG, PNG, or WebP image'});
   const previous=await kv.get('settings:'+s.workspaceId)||null;
   await kv.set('settings:'+s.workspaceId,settings);
   await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'settings_save',section:'settings',before:previous,after:settings});
