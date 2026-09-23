@@ -282,7 +282,7 @@ function renderOverview(){
     }).slice(0,4);
     attention.innerHTML=open.length?open.map(x=>{
       const type=followupType(x),label=followupLabel(type),time=recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):'';
-      return '<button class="attention-call '+(type==='urgent'?'urgent':'')+'" data-call-id="'+esc(x.id)+'"><span class="attention-call-badge">'+esc(label)+'</span><span class="attention-call-copy"><b>'+esc(x.caller||'Unknown caller')+'</b><small>'+esc(x.reason||'Call requires review')+'</small><em>'+esc(time)+'</em></span><span class="attention-call-arrow">→</span></button>';
+      return '<button class="attention-call '+(type==='urgent'?'urgent':'')+'" data-call-id="'+esc(x.id)+'" title="Open '+esc(x.caller||'caller')+' call details"><span class="attention-call-badge">'+esc(label)+'</span><span class="attention-call-copy"><b>'+esc(x.caller||'Unknown caller')+'</b><small title="'+esc(x.reason||'Call requires review')+'">'+esc(x.reason||'Call requires review')+'</small><em>'+esc(time)+'</em></span><span class="attention-call-arrow" aria-hidden="true">→</span></button>';
     }).join(''):'<div class="attention-clear"><b>You’re caught up.</b><span>No calls are waiting for your team.</span></div>';
     attention.querySelectorAll('[data-call-id]').forEach(b=>b.addEventListener('click',()=>openCall(b.dataset.callId)));
   }
@@ -317,7 +317,7 @@ function renderCalls(){
   wrap.innerHTML=rows.map(x=>{
     const group=dateGroupLabel(recordTime(x)),header=group!==lastGroup?'<div class="call-day-heading"><b>'+esc(group)+'</b><span>'+new Date(recordTime(x)||Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</span></div>':'';lastGroup=group;
     const candidate=followupCandidates().some(c=>String(c.id)===String(x.id)),handled=candidate&&followupIsHandled(x),pending=candidate&&!handled,stateClass=pending?'call-pending':handled?'call-handled':'call-resolved',status=pending?'Needs follow-up':handled?'Handled':(x.outcome||'Handled');
-    return header+'<button class="call-row data '+stateClass+'" data-call-id="'+esc(x.id)+'"><span><strong>'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(x.agent||'Maya')+'</small></span><span><i class="call-type-pill">'+esc(x.category||'General question')+'</i></span><span>'+esc(x.reason||'—')+'</span><span class="tag '+(pending?'amber':'green')+'">'+esc(status)+'</span><span>'+esc(x.duration||'—')+'</span></button>';
+    return header+'<button class="call-row data '+stateClass+'" data-call-id="'+esc(x.id)+'" title="Open call details"><span><strong title="'+esc(x.caller||'Unknown')+'">'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(x.agent||'Maya')+'</small></span><span><i class="call-type-pill" title="'+esc(x.category||'General question')+'">'+esc(x.category||'General question')+'</i></span><span class="call-reason" title="'+esc(x.reason||'—')+'">'+esc(x.reason||'—')+'</span><span class="tag '+(pending?'amber':'green')+'">'+esc(status)+'</span><span>'+esc(x.duration||'—')+'</span></button>';
   }).join('');
   const pendingShown=rows.filter(x=>followupCandidates().some(c=>String(c.id)===String(x.id))&&!followupIsHandled(x)).length,resolvedShown=rows.length-pendingShown;const shownEl=document.getElementById('callsShownCount'),followEl=document.getElementById('callsFollowupCount'),resolvedEl=document.getElementById('callsResolvedCount');if(shownEl)shownEl.textContent=rows.length+' call'+(rows.length===1?'':'s');if(followEl)followEl.textContent=pendingShown+' need follow-up';if(resolvedEl)resolvedEl.textContent=resolvedShown+' handled / resolved';
   document.getElementById('callsEmpty').hidden=rows.length!==0;
@@ -340,9 +340,9 @@ async function openCall(id){
   const t=Array.isArray(x.transcript)?x.transcript:[];
   document.getElementById('drawerTranscript').innerHTML=t.map(pair=>'<div class="'+(String(pair[0]).toLowerCase()==='maya'?'ai':'')+'"><b>'+esc(pair[0])+'</b>'+esc(pair[1])+'</div>').join('')||'<span class="muted">Transcript unavailable.</span>';
   const historyBtn=document.getElementById('drawerContactButton');if(historyBtn)historyBtn.onclick=()=>{const key=activeCallContactKey;closeCall();setTimeout(()=>openContact(key),30)};
-  document.getElementById('callDrawer').classList.add('open');document.getElementById('drawerBackdrop').classList.add('open');document.getElementById('callDrawer').setAttribute('aria-hidden','false');
+  document.getElementById('callDrawer').classList.add('open');document.getElementById('drawerBackdrop').classList.add('open');document.getElementById('callDrawer').setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>document.getElementById('closeCallDrawer')?.focus(),20);
 }
-function closeCall(){document.getElementById('callDrawer')?.classList.remove('open');document.getElementById('drawerBackdrop')?.classList.remove('open');document.getElementById('callDrawer')?.setAttribute('aria-hidden','true')}
+function closeCall(){document.getElementById('callDrawer')?.classList.remove('open');document.getElementById('drawerBackdrop')?.classList.remove('open');document.getElementById('callDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('contactDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}
 function money(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
 function followupType(call){
   const reason=String(call?.reason||''),outcome=String(call?.outcome||'');
@@ -514,9 +514,9 @@ function openContact(key){
   ].sort((a,b)=>b.at-a.at);
   document.getElementById('contactDrawerTimeline').innerHTML=events.slice(0,80).map(e=>'<'+(e.callId?'button':'div')+' class="contact-event" '+(e.callId?'data-contact-call="'+esc(e.callId)+'"':'')+'><span class="contact-event-dot"></span><span><small>'+esc(e.kind)+' · '+esc(e.at?new Date(e.at).toLocaleString():'Date unavailable')+'</small><b>'+esc(e.title)+'</b><p>'+esc(e.copy)+'</p></span></'+(e.callId?'button':'div')+'>').join('')||'<p class="muted">No activity is available yet.</p>';
   document.getElementById('contactDrawerTimeline').querySelectorAll('[data-contact-call]').forEach(b=>b.addEventListener('click',()=>{closeContact();openCall(b.dataset.contactCall)}));
-  drawer.classList.add('open');back.classList.add('open');drawer.setAttribute('aria-hidden','false');
+  drawer.classList.add('open');back.classList.add('open');drawer.setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>document.getElementById('closeContactDrawer')?.focus(),20);
 }
-function closeContact(){document.getElementById('contactDrawer')?.classList.remove('open');document.getElementById('contactDrawerBackdrop')?.classList.remove('open');document.getElementById('contactDrawer')?.setAttribute('aria-hidden','true')}
+function closeContact(){document.getElementById('contactDrawer')?.classList.remove('open');document.getElementById('contactDrawerBackdrop')?.classList.remove('open');document.getElementById('contactDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('callDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}
 document.getElementById('contactSearch')?.addEventListener('input',renderContacts);
 document.getElementById('closeContactDrawer')?.addEventListener('click',closeContact);
 document.getElementById('contactDrawerBackdrop')?.addEventListener('click',closeContact);
@@ -1803,3 +1803,10 @@ helpButton?.addEventListener('click',e=>{e.stopPropagation();const opening=!!hel
 document.addEventListener('click',e=>{if(helpShell&&!helpShell.contains(e.target))closeHelpPanel()});
 helpPanel?.querySelectorAll('[data-help-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.helpAction;closeHelpPanel();if(action==='billing'){showView('billing');return}showView('support');setTimeout(()=>{const subject=document.getElementById('supportSubject'),message=document.getElementById('supportMessage');if(action==='call-issue'&&subject){subject.value='Call review / issue';if(message&&!message.value)message.placeholder='Include the caller, approximate time, phone number, and what looked wrong.';subject.focus()}else subject?.focus()},50)}));
 document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(btn=>btn.addEventListener('click',()=>{overviewChartDays=Number(btn.dataset.chartDays||14);document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(x=>x.classList.toggle('active',x===btn));renderOverview()}));
+
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  closeHelpPanel?.();
+  const np=document.getElementById('notificationPanel'),nb=document.getElementById('notificationBell');if(np&&!np.hidden){np.hidden=true;nb?.setAttribute('aria-expanded','false')}
+  const openModalEl=document.querySelector('.modal.open');if(openModalEl)openModalEl.querySelector('.modal-close')?.click();
+});
