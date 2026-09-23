@@ -53,7 +53,7 @@
     <div class="data-health-banner" id="clientDataHealth" role="status" aria-live="polite" hidden><div><b>Some CallerCore data could not be loaded.</b><span>Numbers shown on this page may be incomplete. Your underlying account data has not been replaced.</span></div><button type="button" id="clientDataRetry">Retry</button></div>
 
     <section class="view active" id="view-overview">
-      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore handled, and what still needs your team.</p></div><div class="plan-demo"><label>Preview plan<select id="planSelector"><option>Starter</option><option selected>Growth</option><option>Pro</option></select></label></div></div>
+      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>What happened on your phones, what CallerCore handled, and what still needs your team.</p></div></div>
       <div class="metric-grid overview-metrics">
         <article><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Today</small></article>
         <article><span>Calls · last 7 days</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">Recent volume</small></article>
@@ -91,7 +91,7 @@
     </section>
 
     <section class="view" id="view-calls">
-      <div class="page-head"><div><span class="eyebrow">Calls</span><h1>Every conversation, organized.</h1><p>Search recordings, transcripts, summaries and outcomes in one place.</p></div></div>
+      <div class="page-head"><div><span class="eyebrow">Calls</span><h1>Every conversation, organized.</h1><p>Review call summaries, transcripts when available, customer details, and outcomes in one place.</p></div></div>
       <div class="toolbar call-toolbar"><input id="callSearch" type="search" placeholder="Search caller, phone, reason…"><select id="callDateFilter"><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="60" selected>Last 60 days</option><option value="all">All history</option></select><select id="callFilter"><option value="all">All outcomes</option><option value="Booked">Booked</option><option value="Qualified">Qualified</option><option value="Follow-up">Follow-up</option><option value="Missed">Missed</option></select></div>
       <article class="panel table-panel call-history-panel"><div class="call-row head"><span>Caller</span><span>Date & time</span><span>Reason</span><span>Outcome</span><span>Duration</span></div><div id="callsTable"></div></article>
       <div class="empty-state" id="callsEmpty" hidden><h3>No calls yet</h3><p>Caller activity for this workspace will appear here once your AI number begins handling calls.</p></div>
@@ -187,7 +187,7 @@
         <div class="metric-grid">
           <article><span>Answer rate</span><strong id="analyticsAnswerRate">0%</strong><small id="analyticsAnswerMeta">AI handled calls</small></article>
           <article><span>High-intent calls</span><strong id="analyticsQualified">0%</strong><small>Qualified or booked</small></article>
-          <article><span>After-hours demand</span><strong id="analyticsAfterHours">0%</strong><small>Outside business hours</small></article>
+          <article><span>After-hours demand</span><strong id="analyticsAfterHours">0%</strong><small>Before 8 AM / after 6 PM</small></article>
           <article><span>Average daily calls</span><strong id="analyticsDailyAvg">0</strong><small id="analyticsCalls">0 total calls</small></article>
         </div>
         <div class="two-col">
@@ -206,7 +206,7 @@
       <div class="connection-health-grid">
         <article class="panel connection-health"><span class="connection-icon">☎</span><div><small>PHONE ROUTING</small><h3 id="connectionPhoneTitle">Checking line…</h3><p id="connectionPhoneCopy">Verifying your CallerCore number and transfer path.</p></div><span class="tag" id="connectionPhoneStatus">Checking</span></article>
         <article class="panel connection-health"><span class="connection-icon">AI</span><div><small>AI RECEPTIONIST</small><h3 id="connectionAgentTitle">Checking Maya…</h3><p id="connectionAgentCopy">Verifying the active call-handling configuration.</p></div><span class="tag" id="connectionAgentStatus">Checking</span></article>
-        <article class="panel connection-health"><span class="connection-icon">↻</span><div><small>CRM / FIELD SERVICE</small><h3>Not connected</h3><p>Connect your system of record so CallerCore can hand off customer and job information automatically.</p></div><span class="tag amber">Not connected</span></article>
+        <article class="panel connection-health"><span class="connection-icon">↻</span><div><small>CRM / FIELD SERVICE</small><h3>Not connected</h3><p>Connect your system of record so CallerCore can hand off customer and job information automatically.</p><button class="inline-link" data-view="support">Request an integration →</button></div><span class="tag amber">Not connected</span></article>
         <article class="panel connection-health"><span class="connection-icon">▦</span><div><small>CALENDAR / SCHEDULING</small><b>Google Calendar</b><p>Calendar booking is planned for a later release. Scheduling remains outside CallerCore until the calendar capability is explicitly enabled.</p></div><span class="tag amber" id="googleCalendarStatus">Not connected</span></article>
       </div>
       <article class="panel routing-overview"><div class="panel-head"><div><span class="eyebrow">Voice path</span><h2>How a customer reaches your team</h2></div><button class="secondary-btn" data-view="support">Request routing change</button></div><div class="routing-flow"><div><small>Customer calls</small><b id="connectionBusinessNumber">Your business line</b></div><span>→</span><div><small>CallerCore answers</small><b id="connectionCallerCoreNumber">AI line</b></div><span>→</span><div><small>Escalates to</small><b id="connectionTransferNumber">Your team</b></div></div></article>
@@ -244,15 +244,18 @@
 <aside class="call-drawer" id="callDrawer" aria-hidden="true">
   <div class="drawer-head"><div><span class="eyebrow">Call details</span><h2 id="drawerCaller">Caller</h2><p id="drawerWhen" class="drawer-when"></p></div><button id="closeCallDrawer" aria-label="Close">×</button></div>
   <div class="drawer-meta" id="drawerMeta"></div>
-  <button class="secondary-btn full drawer-contact-button" id="drawerContactButton" type="button">Open full contact history</button>
+  <div class="drawer-action-bar"><a class="secondary-btn action-link" id="drawerCallLink" href="#">Call</a><a class="secondary-btn action-link" id="drawerTextLink" href="#">Text</a><button class="primary" id="drawerFollowupButton" type="button">Mark handled</button></div>
+  <button class="secondary-btn full drawer-contact-button" id="drawerContactButton" type="button">Open full customer history</button>
   <section><span class="eyebrow">Location</span><p id="drawerAddress">No address captured.</p></section>
   <section><span class="eyebrow">AI summary</span><p id="drawerSummary"></p></section>
   <section><span class="eyebrow">Call details</span><div id="drawerQualification" class="detail-grid"></div></section>
+  <section><span class="eyebrow">Internal note</span><textarea id="drawerInternalNote" class="drawer-note" placeholder="Add a note for your team…"></textarea><div class="drawer-note-actions"><small id="drawerNoteStatus"></small><button class="secondary-btn" id="drawerSaveNote" type="button">Save note</button></div></section>
   <section><span class="eyebrow">Full transcript</span><div id="drawerTranscript" class="transcript"></div></section>
 </aside>
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
 <aside class="call-drawer contact-drawer" id="contactDrawer" aria-hidden="true">
   <div class="drawer-head"><div><span class="eyebrow">Contact history</span><h2 id="contactDrawerName">Contact</h2><p id="contactDrawerMeta" class="drawer-when"></p></div><button id="closeContactDrawer" aria-label="Close">×</button></div>
+  <div class="drawer-action-bar"><a class="secondary-btn action-link" id="contactCallLink" href="#">Call</a><a class="secondary-btn action-link" id="contactTextLink" href="#">Text</a></div>
   <section><span class="eyebrow">Contact information</span><div id="contactDrawerDetails" class="detail-grid"></div></section>
   <section><span class="eyebrow">What we know</span><p id="contactDrawerSummary"></p></section>
   <section><span class="eyebrow">Complete activity</span><div id="contactDrawerTimeline" class="contact-timeline"></div></section>
