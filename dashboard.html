@@ -130,7 +130,7 @@
       </div>
     </section>
     <section class="view" id="view-agent">
-      <div class="page-head"><div><span class="eyebrow">AI Receptionist</span><h1>Train your receptionist safely.</h1><p>Review how CallerCore answers and escalates. Changes stay locked until you explicitly choose Edit.</p></div><div class="page-actions"><span class="tag green" id="agentSaveStatus">Saved</span><a class="secondary-btn agent-test-call" id="agentTestCall" href="#" hidden>Call Maya</a><button class="secondary-btn" id="agentEditButton" type="button">Edit receptionist</button><button class="secondary-btn" id="agentCancelButton" type="button" hidden>Cancel</button><button class="primary" id="saveAgentButton" type="button" hidden>Save changes</button></div></div>
+      <div class="page-head"><div><span class="eyebrow">AI Receptionist</span><h1>Train your receptionist safely.</h1><p>Review how CallerCore answers and escalates. Changes stay locked until you explicitly choose Edit.</p></div><div class="page-actions"><span class="tag green" id="agentSaveStatus">Saved</span><a class="secondary-btn agent-test-call disabled-link" id="agentTestCall" aria-disabled="true" tabindex="-1" hidden>Call Maya</a><button class="secondary-btn" id="agentEditButton" type="button">Edit receptionist</button><button class="secondary-btn" id="agentCancelButton" type="button" hidden>Cancel</button><button class="primary" id="saveAgentButton" type="button" hidden>Save changes</button></div></div>
       <div class="agent-layout">
         <article class="panel form-card">
           <span class="eyebrow">Identity & voice</span>
@@ -247,7 +247,7 @@
 <aside class="call-drawer" id="callDrawer" aria-hidden="true">
   <div class="drawer-head"><div><span class="eyebrow">Call details</span><h2 id="drawerCaller">Caller</h2><p id="drawerWhen" class="drawer-when"></p></div><button id="closeCallDrawer" aria-label="Close">×</button></div>
   <div class="drawer-meta" id="drawerMeta"></div>
-  <div class="drawer-action-bar"><a class="secondary-btn action-link" id="drawerCallLink" href="#">Call</a><a class="secondary-btn action-link" id="drawerTextLink" href="#">Text</a><button class="primary" id="drawerFollowupButton" type="button">Mark handled</button></div>
+  <div class="drawer-action-bar"><a class="secondary-btn action-link disabled-link" id="drawerCallLink" aria-disabled="true" tabindex="-1">Call</a><a class="secondary-btn action-link disabled-link" id="drawerTextLink" aria-disabled="true" tabindex="-1">Text</a><button class="primary" id="drawerFollowupButton" type="button">Mark handled</button></div>
   <button class="secondary-btn full drawer-contact-button" id="drawerContactButton" type="button">Open full customer history</button>
   <section><span class="eyebrow">Call classification</span><div class="call-classification" id="drawerClassification"></div></section><section><span class="eyebrow">Location</span><p id="drawerAddress">No address captured.</p></section>
   <section><span class="eyebrow">AI summary</span><p id="drawerSummary"></p></section>
@@ -257,9 +257,9 @@
 </aside>
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
 <aside class="call-drawer contact-drawer" id="contactDrawer" aria-hidden="true">
-  <div class="drawer-head"><div><span class="eyebrow">Contact history</span><h2 id="contactDrawerName">Contact</h2><p id="contactDrawerMeta" class="drawer-when"></p></div><button id="closeContactDrawer" aria-label="Close">×</button></div>
-  <div class="drawer-action-bar"><a class="secondary-btn action-link" id="contactCallLink" href="#">Call</a><a class="secondary-btn action-link" id="contactTextLink" href="#">Text</a></div>
-  <section><span class="eyebrow">Contact information</span><div id="contactDrawerDetails" class="detail-grid"></div></section>
+  <div class="drawer-head"><div><span class="eyebrow">Customer history</span><h2 id="contactDrawerName">Customer</h2><p id="contactDrawerMeta" class="drawer-when"></p></div><button id="closeContactDrawer" aria-label="Close">×</button></div>
+  <div class="drawer-action-bar"><a class="secondary-btn action-link disabled-link" id="contactCallLink" aria-disabled="true" tabindex="-1">Call</a><a class="secondary-btn action-link disabled-link" id="contactTextLink" aria-disabled="true" tabindex="-1">Text</a></div>
+  <section><span class="eyebrow">Customer information</span><div id="contactDrawerDetails" class="detail-grid"></div></section>
   <section><span class="eyebrow">What we know</span><p id="contactDrawerSummary"></p></section>
   <section><span class="eyebrow">Complete activity</span><div id="contactDrawerTimeline" class="contact-timeline"></div></section>
 </aside>
