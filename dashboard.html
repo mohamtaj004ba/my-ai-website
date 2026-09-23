@@ -72,7 +72,14 @@
           <div class="overview-spark" id="overviewSpark"></div>
         </article>
         <article class="panel overview-attention-card">
-          <div class="panel-head"><div><span class="eyebrow">Right now</span><h2>What needs attention</h2></div><button data-view="calls">Review calls →</button></div>
+          <div class="panel-head"><div><span class="eyebrow">Call health</span><h2>How CallerCore is performing</h2></div></div>
+          <div class="health-rings">
+            <div class="health-ring-wrap"><div class="health-ring" id="overviewAnswerRing"><span id="overviewAnswerPct">0%</span></div><b>Answer rate</b><small>Calls completed by AI</small></div>
+            <div class="health-ring-wrap"><div class="health-ring" id="overviewQualifiedRing"><span id="overviewQualifiedPct">0%</span></div><b>High-intent rate</b><small>Qualified or booked</small></div>
+            <div class="health-ring-wrap"><div class="health-ring" id="overviewRecoveryRing"><span id="overviewRecoveryPct">0%</span></div><b>Handled cleanly</b><small>No follow-up needed</small></div>
+          </div>
+          <div class="overview-attention-divider"></div>
+          <div class="panel-head compact"><div><span class="eyebrow">Right now</span><h3>Needs attention</h3></div><button data-view="calls">Review →</button></div>
           <div id="overviewAttention"></div>
         </article>
       </div>
