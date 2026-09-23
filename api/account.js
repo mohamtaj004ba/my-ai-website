@@ -110,6 +110,14 @@ async function seedPreviewData(req,res){
   const workspaceId=member.workspaceId,now=Date.now(),dataset=previewSeed.makePrimaryDataset();
   const workspace=previewSeed.primaryWorkspace(workspaceId,email,now);
   workspace.usage.minutes=dataset.minutes;
+  const seededFollowups={};
+  dataset.calls.forEach((call,index)=>{
+    const outcome=String(call&&call.outcome||''),reason=String(call&&call.reason||''),requires=/miss|follow|qualif/i.test(outcome)||/urgent|emergency|no heat|gas|carbon monoxide/i.test(reason);
+    if(!requires)return;
+    const ageDays=Math.max(0,(now-Number(call.createdAt||now))/86400000),urgent=/urgent|emergency|no heat|gas|carbon monoxide/i.test(reason),missed=/miss/i.test(outcome),qualified=/qualif/i.test(outcome),follow=/follow/i.test(outcome);
+    const keepOpen=ageDays<2.25&&(urgent||missed||(follow&&index%3===0)||(qualified&&index%6===0));
+    seededFollowups[String(call.id)]={status:keepOpen?'open':'handled',note:'',updatedAt:keepOpen?Number(call.createdAt||now):Math.min(now,Number(call.createdAt||now)+Math.round((4+(index%36))*3600000)),updatedBy:keepOpen?'':'office@summitheatingair.com'};
+  });
   await Promise.all([
     kv.set('workspace:'+workspaceId,workspace),
     kv.set('settings:'+workspaceId,previewSeed.primarySettings(email)),
@@ -119,6 +127,7 @@ async function seedPreviewData(req,res){
     kv.set('calls:'+workspaceId,dataset.calls),
     kv.set('leads:'+workspaceId,dataset.leads),
     kv.set('conversations:'+workspaceId,dataset.conversations),
+    kv.set('followup:state:'+workspaceId,seededFollowups),
     kv.set('appointments:'+workspaceId,dataset.appointments),
     kv.set('integrations:'+workspaceId,{googleCalendar:false,stripe:false,webhookUrl:'',apiAccess:true,updatedAt:now}),
     kv.set('onboarding:workspace:'+workspaceId,{status:'live',completionPercent:100,checklist:{payment:true,accountReview:true,onboardingSent:true,agreement:true,intake:true,businessProfile:true,agentDraft:true,routingCaptured:true,phoneAssigned:true,adminReview:true,testCall:true,clientApproval:true,live:true},updatedAt:now})
