@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false;
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest';
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callQuickFilter='all';
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -279,22 +279,18 @@ function renderOverview(){
   set('overviewAgentCalls',monthCalls);set('overviewAgentLeads',qualified30);set('overviewDailyAvg',dailyAvg);
   const chart=document.getElementById('overviewLineChart');
   if(chart){
-    const followSet=new Set(followupCandidates().map(x=>String(x.id))),days=[];
+    const followSet=new Set(followupCandidates().filter(x=>!followupIsHandled(x)).map(x=>String(x.id))),days=[];
     for(let i=overviewChartDays-1;i>=0;i--){
       const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);const next=d.getTime()+86400000;
-      const dayCalls=callsData.filter(x=>{const t=recordTime(x);return t>=d.getTime()&&t<next});
-      days.push({label:d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}),short:d.toLocaleDateString(undefined,overviewChartDays>14?{month:'numeric',day:'numeric'}:{weekday:'short'}),n:dayCalls.length,q:dayCalls.filter(x=>/qualif/i.test(String(x.outcome||''))).length,f:dayCalls.filter(x=>followSet.has(String(x.id))).length});
+      const dayCalls=callsData.filter(x=>{const t=recordTime(x);return t>=d.getTime()&&t<next}),follow=dayCalls.filter(x=>followSet.has(String(x.id))).length,handled=Math.max(0,dayCalls.length-follow);
+      days.push({date:callLocalDateValue(d.getTime()),label:d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}),short:d.toLocaleDateString(undefined,overviewChartDays>14?{month:'numeric',day:'numeric'}:{weekday:'short'}),n:dayCalls.length,handled,follow,q:dayCalls.filter(x=>/qualif/i.test(String(x.outcome||''))).length});
     }
-    const max=Math.max(1,...days.map(d=>d.n)),w=760,h=224,pad={l:38,r:14,t:20,b:38},plotW=w-pad.l-pad.r,plotH=h-pad.t-pad.b;
-    const pts=days.map((d,i)=>({x:pad.l+(plotW*(days.length===1?.5:i/(days.length-1))),y:pad.t+plotH-d.n/max*plotH,fy:pad.t+plotH-d.f/max*plotH,...d}));
-    const callsPath=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' '),followPath=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.fy.toFixed(1)).join(' '),area=callsPath+' L '+pts[pts.length-1].x.toFixed(1)+' '+(pad.t+plotH)+' L '+pts[0].x.toFixed(1)+' '+(pad.t+plotH)+' Z';
-    const grid=[0,.25,.5,.75,1].map(r=>{const y=pad.t+plotH*(1-r),v=Math.round(max*r);return '<line x1="'+pad.l+'" y1="'+y+'" x2="'+(w-pad.r)+'" y2="'+y+'" class="chart-grid"/><text x="'+(pad.l-9)+'" y="'+(y+3)+'" class="chart-axis" text-anchor="end">'+v+'</text>'}).join('');
-    const labelEvery=Math.max(1,Math.ceil(days.length/7)),labels=pts.map((p,i)=>i%labelEvery===0||i===pts.length-1?'<text x="'+p.x+'" y="'+(h-11)+'" class="chart-axis" text-anchor="middle">'+esc(p.short)+'</text>':'').join('');
-    const step=days.length>1?plotW/(days.length-1):plotW,hits=pts.map((p,i)=>'<g class="chart-hit-group" data-index="'+i+'"><line x1="'+p.x+'" x2="'+p.x+'" y1="'+pad.t+'" y2="'+(pad.t+plotH)+'" class="chart-hover-line"/><circle cx="'+p.x+'" cy="'+p.y+'" r="4" class="chart-dot calls-dot"/><circle cx="'+p.x+'" cy="'+p.fy+'" r="3" class="chart-follow-dot"/><rect x="'+Math.max(pad.l,p.x-step/2)+'" y="'+pad.t+'" width="'+Math.min(step,pad.l+plotW-Math.max(pad.l,p.x-step/2))+'" height="'+plotH+'" class="chart-hit" data-index="'+i+'"/></g>').join('');
-    chart.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img"><defs><linearGradient id="callArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#c85d35" stop-opacity=".19"/><stop offset="100%" stop-color="#c85d35" stop-opacity=".015"/></linearGradient></defs>'+grid+'<path d="'+area+'" class="chart-area"/><path d="'+callsPath+'" class="chart-line"/><path d="'+followPath+'" class="chart-follow-line"/>'+hits+labels+'</svg>';
-    const total=days.reduce((n,d)=>n+d.n,0),avg=Math.round(total/days.length*10)/10,peak=Math.max(...days.map(d=>d.n)),summary=document.getElementById('overviewChartSummary'),peakEl=document.getElementById('overviewChartPeak');if(summary)summary.textContent=avg+' calls/day · '+overviewChartDays+' day view';if(peakEl)peakEl.textContent='Peak '+peak+' calls';
+    const max=Math.max(1,...days.map(d=>d.n)),total=days.reduce((n,d)=>n+d.n,0),handledTotal=days.reduce((n,d)=>n+d.handled,0),followTotal=days.reduce((n,d)=>n+d.follow,0),handledPct=total?Math.round(handledTotal/total*100):0,followPct=total?Math.round(followTotal/total*100):0,busiest=[...days].sort((a,b)=>b.n-a.n)[0];
+    chart.innerHTML='<div class="bar-chart-grid">'+days.map((d,i)=>{const totalPct=Math.max(d.n?8:2,d.n/max*100),followPart=d.n?d.follow/d.n*100:0,handledPart=d.n?100-followPart:0,showLabel=overviewChartDays<=14||i%Math.ceil(overviewChartDays/8)===0||i===days.length-1;return '<button class="activity-day-bar" data-chart-date="'+d.date+'" aria-label="'+esc(d.label)+': '+d.n+' calls, '+d.handled+' handled, '+d.follow+' need follow-up"><span class="activity-bar-total" style="height:'+totalPct+'%"><i class="bar-handled" style="height:'+handledPart+'%"></i><i class="bar-followup" style="height:'+followPart+'%"></i><em>'+d.n+'</em></span><small '+(showLabel?'':'class="visually-muted"')+'>'+esc(showLabel?d.short:'·')+'</small></button>'}).join('')+'</div>';
+    const summary=document.getElementById('overviewChartSummary'),peakEl=document.getElementById('overviewChartPeak'),handledEl=document.getElementById('overviewChartHandledPct'),busiestEl=document.getElementById('overviewChartBusiest'),followEl=document.getElementById('overviewChartFollowupPct');
+    if(summary)summary.textContent=total+' calls across the last '+overviewChartDays+' days';if(peakEl)peakEl.textContent='Peak '+(busiest?.n||0)+' calls';if(handledEl)handledEl.textContent=handledPct+'%';if(busiestEl)busiestEl.textContent=busiest?busiest.label.replace(/,.*/, ''):'—';if(followEl)followEl.textContent=followPct+'%';
     const tip=document.getElementById('overviewChartTooltip');
-    chart.querySelectorAll('.chart-hit').forEach(hit=>{const group=hit.parentElement,index=Number(hit.dataset.index),row=days[index];hit.addEventListener('mouseenter',()=>{group?.classList.add('active');if(!tip)return;tip.innerHTML='<b>'+esc(row.label)+'</b><div><span>Total calls</span><strong>'+row.n+'</strong></div><div><span>Qualified</span><strong>'+row.q+'</strong></div><div><span>Needed follow-up</span><strong>'+row.f+'</strong></div>';tip.hidden=false});hit.addEventListener('mousemove',e=>{if(!tip)return;const r=chart.getBoundingClientRect(),left=Math.min(r.width-150,Math.max(8,e.clientX-r.left+12)),top=Math.max(8,e.clientY-r.top-8);tip.style.left=left+'px';tip.style.top=top+'px'});hit.addEventListener('mouseleave',()=>{group?.classList.remove('active');if(tip)tip.hidden=true})});
+    chart.querySelectorAll('[data-chart-date]').forEach((bar,index)=>{const row=days[index];bar.addEventListener('mouseenter',()=>{if(!tip)return;tip.innerHTML='<b>'+esc(row.label)+'</b><div><span>Total calls</span><strong>'+row.n+'</strong></div><div><span>Handled by CallerCore</span><strong>'+row.handled+'</strong></div><div><span>Needs your team</span><strong>'+row.follow+'</strong></div><div><span>Qualified</span><strong>'+row.q+'</strong></div>';tip.hidden=false});bar.addEventListener('mousemove',e=>{if(!tip)return;const r=chart.getBoundingClientRect();tip.style.left=Math.min(r.width-165,Math.max(8,e.clientX-r.left+10))+'px';tip.style.top=Math.max(8,e.clientY-r.top-8)+'px'});bar.addEventListener('mouseleave',()=>{if(tip)tip.hidden=true});bar.addEventListener('click',()=>{showView('calls');const date=document.getElementById('callDateFilter'),from=document.getElementById('callDateFrom'),to=document.getElementById('callDateTo');if(date)date.value='custom';if(from)from.value=row.date;if(to)to.value=row.date;callQuickFilter='all';updateCustomDateVisibility();renderCalls();setTimeout(()=>document.getElementById('callsTable')?.scrollIntoView({behavior:'smooth',block:'start'}),50)})});
   }
   const attention=document.getElementById('overviewAttention');
   if(attention){
@@ -326,6 +322,14 @@ function dateGroupLabel(ts){
   if(sameLocalDay(ts,yesterday))return 'Yesterday';
   return d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:d.getFullYear()!==today.getFullYear()?'numeric':undefined});
 }
+function callDateBoundary(value,end=false){
+  if(!value)return null;const p=String(value).split('-').map(Number);if(p.length!==3||p.some(Number.isNaN))return null;
+  return new Date(p[0],p[1]-1,p[2],end?23:0,end?59:0,end?59:0,end?999:0).getTime();
+}
+function callLocalDateValue(ts){
+  const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function updateCustomDateVisibility(){const range=document.getElementById('customDateRange'),sel=document.getElementById('callDateFilter');if(range)range.hidden=sel?.value!=='custom'}
 function callLogPrefsKey(){return 'callercore:calllog:prefs:'+(sessionWorkspace?.id||'default')}
 function loadCallLogPrefs(){
   try{const p=JSON.parse(localStorage.getItem(callLogPrefsKey())||'{}');if(['day','type','outcome','none'].includes(p.groupBy))callLogGroupBy=p.groupBy;if(['newest','oldest'].includes(p.sort))callLogSort=p.sort}catch(_){}
@@ -343,13 +347,20 @@ function callGroupLabel(x,mode){
 }
 function renderCalls(){
   const wrap=document.getElementById('callsTable');if(!wrap)return;
-  const q=(document.getElementById('callSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('callFilter')?.value||'all',categoryFilter=document.getElementById('callCategoryFilter')?.value||'all',dateFilter=document.getElementById('callDateFilter')?.value||'60';
-  callLogGroupBy=document.getElementById('callGroupBy')?.value||callLogGroupBy;callLogSort=document.getElementById('callSort')?.value||callLogSort;
-  let rows=[...callsData].filter(x=>{
+  const q=(document.getElementById('callSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('callFilter')?.value||'all',categoryFilter=document.getElementById('callCategoryFilter')?.value||'all',dateFilter=document.getElementById('callDateFilter')?.value||'7',from=callDateBoundary(document.getElementById('callDateFrom')?.value||''),to=callDateBoundary(document.getElementById('callDateTo')?.value||'',true);
+  updateCustomDateVisibility();callLogGroupBy=document.getElementById('callGroupBy')?.value||callLogGroupBy;callLogSort=document.getElementById('callSort')?.value||callLogSort;
+  const isPending=x=>followupCandidates().some(c=>String(c.id)===String(x.id))&&!followupIsHandled(x);
+  const dateMatches=t=>{
+    if(dateFilter==='all')return true;
+    if(dateFilter==='custom')return (!from||t>=from)&&(!to||t<=to);
+    return withinDays(t,Number(dateFilter));
+  };
+  let baseRows=[...callsData].filter(x=>{
     const hay=[x.caller,x.phone,x.category,x.reason,x.outcome,x.agent,x.address].join(' ').toLowerCase(),t=recordTime(x);
-    const dateOk=dateFilter==='all'||withinDays(t,Number(dateFilter));
-    return (!q||hay.includes(q))&&(filter==='all'||String(x.outcome||'').includes(filter))&&(categoryFilter==='all'||String(x.category||'General question')===categoryFilter)&&dateOk;
-  }).sort((a,b)=>callLogSort==='oldest'?recordTime(a)-recordTime(b):recordTime(b)-recordTime(a));
+    return (!q||hay.includes(q))&&(filter==='all'||String(x.outcome||'').includes(filter))&&(categoryFilter==='all'||String(x.category||'General question')===categoryFilter)&&dateMatches(t);
+  });
+  const pendingCount=baseRows.filter(isPending).length,resolvedCount=baseRows.length-pendingCount;
+  let rows=baseRows.filter(x=>callQuickFilter==='followup'?isPending(x):callQuickFilter==='resolved'?!isPending(x):true).sort((a,b)=>callLogSort==='oldest'?recordTime(a)-recordTime(b):recordTime(b)-recordTime(a));
   const renderRow=x=>{
     const candidate=followupCandidates().some(c=>String(c.id)===String(x.id)),handled=candidate&&followupIsHandled(x),pending=candidate&&!handled,stateClass=pending?'call-pending':handled?'call-handled':'call-resolved',status=pending?'Needs follow-up':handled?'Handled':(x.outcome||'Handled');
     return '<button class="call-row data '+stateClass+'" data-call-id="'+esc(x.id)+'" title="Open call details"><span><strong title="'+esc(x.caller||'Unknown')+'">'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span><span><i class="call-type-pill" title="'+esc(x.category||'General question')+'">'+esc(x.category||'General question')+'</i></span><span class="call-reason" title="'+esc(x.reason||'—')+'">'+esc(x.reason||'—')+'</span><span class="tag '+(pending?'amber':'green')+'">'+esc(status)+'</span><span>'+esc(x.duration||'—')+'</span></button>';
@@ -359,7 +370,9 @@ function renderCalls(){
     const groups=new Map();for(const x of rows){const label=callGroupLabel(x,callLogGroupBy);if(!groups.has(label))groups.set(label,[]);groups.get(label).push(x)}
     wrap.innerHTML=[...groups.entries()].map(([label,items])=>{const meta=callLogGroupBy==='day'?(items[0]?new Date(recordTime(items[0])||Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'}):''):(items.length+' call'+(items.length===1?'':'s'));return '<div class="call-day-heading"><b>'+esc(label)+'</b><span>'+esc(meta)+'</span></div>'+items.map(renderRow).join('')}).join('');
   }
-  const pendingShown=rows.filter(x=>followupCandidates().some(c=>String(c.id)===String(x.id))&&!followupIsHandled(x)).length,resolvedShown=rows.length-pendingShown;const shownEl=document.getElementById('callsShownCount'),followEl=document.getElementById('callsFollowupCount'),resolvedEl=document.getElementById('callsResolvedCount');if(shownEl)shownEl.textContent=rows.length+' call'+(rows.length===1?'':'s');if(followEl)followEl.textContent=pendingShown+' need follow-up';if(resolvedEl)resolvedEl.textContent=resolvedShown+' handled / resolved';
+  const allBtn=document.getElementById('callsShownCount'),followBtn=document.getElementById('callsFollowupCount'),resolvedBtn=document.getElementById('callsResolvedCount');
+  if(allBtn)allBtn.textContent=baseRows.length+' call'+(baseRows.length===1?'':'s');if(followBtn)followBtn.textContent=pendingCount+' need follow-up';if(resolvedBtn)resolvedBtn.textContent=resolvedCount+' handled / resolved';
+  document.querySelectorAll('[data-call-quick]').forEach(b=>b.classList.toggle('active',b.dataset.callQuick===callQuickFilter));
   document.getElementById('callsEmpty').hidden=rows.length!==0;
   wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
 }
@@ -456,8 +469,9 @@ async function moveLead(id,stage){
   }catch(err){lead.stage=previous;renderLeads();console.error(err)}
 }
 document.getElementById('callSearch')?.addEventListener('input',renderCalls);
-document.getElementById('callFilter')?.addEventListener('change',renderCalls);
-document.getElementById('callDateFilter')?.addEventListener('change',renderCalls);
+document.getElementById('callFilter')?.addEventListener('change',()=>{callQuickFilter='all';renderCalls()});
+document.getElementById('callDateFilter')?.addEventListener('change',()=>{updateCustomDateVisibility();renderCalls()});
+document.getElementById('callDateFrom')?.addEventListener('change',renderCalls);document.getElementById('callDateTo')?.addEventListener('change',renderCalls);
 document.getElementById('callCategoryFilter')?.addEventListener('change',renderCalls);
 document.getElementById('callGroupBy')?.addEventListener('change',()=>{saveCallLogPrefs();renderCalls()});
 document.getElementById('callSort')?.addEventListener('change',()=>{saveCallLogPrefs();renderCalls()});
@@ -526,24 +540,30 @@ function buildContacts(){
   return [...map.values()].sort((a,b)=>b.lastAt-a.lastAt);
 }
 function contactType(c){
-  const cats=new Set((c.calls||[]).map(x=>String(x.category||'')));
-  if(cats.has('Vendor'))return 'Vendor';
-  if(cats.has('Employment'))return 'Applicant';
-  if(c.leads?.length||[...cats].some(x=>['New service','Existing job','Estimate follow-up','Billing','Complaint','Warranty'].includes(x)))return 'Customer';
+  const calls=[...(c.calls||[])].sort((a,b)=>recordTime(b)-recordTime(a)),latest=String(calls[0]?.category||''),customerCats=['New service','Existing job','Estimate follow-up','Billing','Complaint','Warranty'];
+  if(customerCats.includes(latest)||c.leads?.length)return 'Customer';
+  if(latest==='Vendor')return 'Vendor';
+  if(latest==='Employment')return 'Applicant';
+  if(calls.some(x=>customerCats.includes(String(x.category||''))))return 'Customer';
+  if(calls.some(x=>String(x.category||'')==='Vendor'))return 'Vendor';
+  if(calls.some(x=>String(x.category||'')==='Employment'))return 'Applicant';
   return 'Contact';
 }
 function contactForRecord(x){return buildContacts().find(c=>c.key===contactKey(x))||null}
 function renderContacts(){
   const wrap=document.getElementById('contactsTable');if(!wrap)return;
   const q=(document.getElementById('contactSearch')?.value||'').trim().toLowerCase(),all=buildContacts(),rows=all.filter(c=>!q||[c.name,c.phone,c.address,contactType(c),...c.services].join(' ').toLowerCase().includes(q));
-  const customerCount=document.getElementById('customerCount'),repeatCount=document.getElementById('repeatCustomerCount'),attentionCount=document.getElementById('customerAttentionCount');if(customerCount)customerCount.textContent=all.length;if(repeatCount)repeatCount.textContent=all.filter(c=>c.calls.length>1).length;if(attentionCount)attentionCount.textContent=all.filter(c=>c.calls.some(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x))).length;
+  const totalInteractions=c=>c.calls.length+c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0);
+  const contactCount=document.getElementById('customerCount'),customerCount=document.getElementById('repeatCustomerCount'),interactionCount=document.getElementById('customerAttentionCount');
+  if(contactCount)contactCount.textContent=all.length;if(customerCount)customerCount.textContent=all.filter(c=>contactType(c)==='Customer').length;if(interactionCount)interactionCount.textContent=all.reduce((n,c)=>n+totalInteractions(c),0);
   wrap.innerHTML=rows.map(c=>{
-    const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0),openCount=c.calls.filter(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x)).length,latestCall=[...c.calls].sort((a,b)=>recordTime(b)-recordTime(a))[0],latestText=latestCall?.reason||[...c.services][0]||'General activity',kind=contactType(c);
-    return '<button class="contact-row data '+(openCount?'customer-attention':'')+'" data-contact-row="'+esc(c.key)+'" title="Open '+esc(c.name)+' contact history"><span><strong>'+esc(c.name)+'</strong><small>'+esc(c.phone||'No phone captured')+(openCount?' · '+openCount+' open follow-up'+(openCount===1?'':'s'):'')+'</small></span><span><i class="contact-type-pill '+kind.toLowerCase()+'">'+esc(kind)+'</i></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span class="contact-count">'+c.calls.length+'</span><span class="contact-count">'+msgCount+'</span><span class="latest-need-link" title="'+esc(latestText)+'">'+esc(latestText)+'</span></button>';
+    const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0),openCount=c.calls.filter(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x)).length,latestCall=[...c.calls].sort((a,b)=>recordTime(b)-recordTime(a))[0],latestText=latestCall?.reason||[...c.services][0]||'General activity',kind=contactType(c),key=encodeURIComponent(c.key);
+    return '<div class="contact-row data '+(openCount?'customer-attention':'')+'" role="button" tabindex="0" data-contact-key="'+key+'" aria-label="Open '+esc(c.name)+' contact history"><span><strong>'+esc(c.name)+'</strong><small>'+esc(c.phone||'No phone captured')+(openCount?' · '+openCount+' open follow-up'+(openCount===1?'':'s'):'')+'</small></span><span><i class="contact-type-pill '+kind.toLowerCase()+'">'+esc(kind)+'</i></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span class="contact-count">'+c.calls.length+'</span><span class="contact-count">'+msgCount+'</span><span class="latest-need-link" title="'+esc(latestText)+'">'+esc(latestText)+'</span></div>';
   }).join('');
   document.getElementById('contactsEmpty').hidden=rows.length!==0;
-  wrap.querySelectorAll('[data-contact-row]').forEach(row=>row.addEventListener('click',()=>openContact(row.dataset.contactRow)));
 }
+function openContactFromRow(row){if(!row)return;let key='';try{key=decodeURIComponent(row.dataset.contactKey||'')}catch(_){key=row.dataset.contactKey||''}if(key)openContact(key)}
+
 function openContact(key){
   const c=buildContacts().find(x=>x.key===key);if(!c)return;
   const drawer=document.getElementById('contactDrawer'),back=document.getElementById('contactDrawerBackdrop');if(!drawer||!back)return;
@@ -567,6 +587,7 @@ function openContact(key){
 }
 function closeContact(){document.getElementById('contactDrawer')?.classList.remove('open');document.getElementById('contactDrawerBackdrop')?.classList.remove('open');document.getElementById('contactDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('callDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}
 document.getElementById('contactSearch')?.addEventListener('input',renderContacts);
+const contactsTable=document.getElementById('contactsTable');contactsTable?.addEventListener('click',e=>openContactFromRow(e.target.closest('[data-contact-key]')));contactsTable?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const row=e.target.closest('[data-contact-key]');if(row){e.preventDefault();openContactFromRow(row)}}});
 document.getElementById('closeContactDrawer')?.addEventListener('click',closeContact);
 document.getElementById('contactDrawerBackdrop')?.addEventListener('click',closeContact);
 document.getElementById('drawerFollowupButton')?.addEventListener('click',e=>{const id=e.currentTarget.dataset.callId;if(id)toggleFollowup(id)});
@@ -1885,3 +1906,9 @@ document.addEventListener('keydown',e=>{
 });
 
 document.getElementById('toggleAiAnsweringButton')?.addEventListener('click',toggleAiAnswering);
+
+document.querySelectorAll('[data-call-quick]').forEach(btn=>btn.addEventListener('click',()=>{callQuickFilter=btn.dataset.callQuick||'all';renderCalls()}));
+document.getElementById('resetCallFilters')?.addEventListener('click',()=>{
+  const q=document.getElementById('callSearch'),date=document.getElementById('callDateFilter'),type=document.getElementById('callCategoryFilter'),outcome=document.getElementById('callFilter'),from=document.getElementById('callDateFrom'),to=document.getElementById('callDateTo');
+  if(q)q.value='';if(date)date.value='7';if(type)type.value='all';if(outcome)outcome.value='all';if(from)from.value='';if(to)to.value='';callQuickFilter='all';updateCustomDateVisibility();renderCalls();
+});
