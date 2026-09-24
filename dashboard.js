@@ -1904,7 +1904,7 @@ function adminPhoneFor(id){return (adminPhoneData||[]).find(x=>String(x.workspac
 function adminStatusLabel(v){return String(v||'active').replaceAll('_',' ').replace(/\b\w/g,m=>m.toUpperCase())}
 async function openAdminAttentionItem(item){
   if(!item)return;
-  if(item.type==='workspace'){showView('clients');await openAdminClient(item.workspaceId);return}
+  if(item.type==='workspace'||item.type==='billing'){showView('clients');await openAdminClient(item.workspaceId);return}
   showView(item.view||'overview');
   setTimeout(()=>{
     let target=null;
@@ -2358,6 +2358,7 @@ async function navigateNotification(n){
     }
   }
   if(document.body.dataset.dashboard==='admin'){
+    if(meta.workspaceId&&(view==='clients'||view==='revenue')){showView('clients');await openAdminClient(String(meta.workspaceId));return true}
     showView(view);
     await new Promise(resolve=>setTimeout(resolve,60));
     let target=null;
