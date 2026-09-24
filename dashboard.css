@@ -1512,3 +1512,8 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
   .health-readiness-visual{flex-direction:column;align-items:flex-start}.health-service-nodes{grid-template-columns:1fr}.launch-gate-grid{grid-template-columns:1fr}
   .document-row{grid-template-columns:1fr auto}.document-row>div:nth-child(3),.document-row>div:nth-child(4){display:none}
 }
+
+.inbox-thread-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.secondary-btn.compact{padding:7px 9px;font-size:7px}
+.modal-action-row{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:2px}
+.modal-action-row .primary{margin-left:auto}
