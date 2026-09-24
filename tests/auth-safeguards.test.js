@@ -35,3 +35,13 @@ test('pending deletion disables customer magic-link access',()=>{
   assert.match(account,/loginWs&&loginWs\.status==='pending_deletion'/);
   assert.match(account,/member\.disabled\|\|!loginWs\|\|loginWs\.status==='pending_deletion'/);
 });
+
+
+test('admin-generated login links never store raw bearer tokens',()=>{
+  assert.doesNotMatch(account,/kv\.set\('login:'\+token/);
+  const start=account.indexOf('async function adminSendClientLogin');
+  assert.ok(start>=0,'adminSendClientLogin missing');
+  const end=account.indexOf('\nasync function ',start+1);
+  const body=account.slice(start,end>=0?end:account.length);
+  assert.match(body,/kv\.set\(loginTokenKey\(token\)/);
+});
