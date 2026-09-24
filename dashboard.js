@@ -2162,7 +2162,11 @@ function renderAdminFinance(){
   const d=adminFinanceData||{},set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
   set('financeMrr',financeMoney(d.mrr));set('financeRecurringExpenses',financeMoney(d.recurringExpenses));set('financeNetRecurring',financeMoney(d.netRecurring));set('financeMargin',Number(d.margin||0).toFixed(1).replace('.0','')+'%');
   set('adminMonthlyCosts',financeMoney(d.recurringExpenses));set('adminNetRecurring',financeMoney(d.netRecurring));set('adminMarginMeta',Number(d.margin||0).toFixed(1).replace('.0','')+'% operating margin');
-  const summary=document.getElementById('adminFinanceChartSummary');if(summary)summary.textContent=(d.history?.length||0)+' monthly snapshot'+((d.history?.length||0)===1?'':'s')+' · '+financeMoney(d.netRecurring)+' net recurring';
+  const summary=document.getElementById('adminFinanceChartSummary');if(summary){
+    const history=Array.isArray(d.history)?d.history:[],last=history.at(-1),prior=history.at(-2),lastMrr=Number(last?.revenue??d.mrr??0),priorMrr=Number(prior?.revenue||0),delta=lastMrr-priorMrr,pct=priorMrr?delta/priorMrr*100:null;
+    const trend=history.length>1?(delta===0?'MRR flat vs prior month':('MRR '+(delta>0?'+':'')+(pct!==null?pct.toFixed(1).replace('.0','')+'%':financeMoney(delta))+' vs prior month')):'Building monthly history';
+    summary.textContent=trend+' · '+financeMoney(d.netRecurring)+' net recurring';
+  }
   document.querySelectorAll('[data-finance-range]').forEach(btn=>{btn.classList.toggle('active',Number(btn.dataset.financeRange)===adminFinanceRange);btn.onclick=e=>{e.stopPropagation();adminFinanceRange=Number(btn.dataset.financeRange)||6;renderAdminFinance()}});
   renderFinanceChart('adminFinanceChart','adminFinanceTooltip');renderFinanceChart('financePageChart','financePageTooltip');
 
