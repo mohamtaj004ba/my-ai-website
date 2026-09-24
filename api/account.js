@@ -1808,6 +1808,20 @@ async function verify(req,res){
   return res.redirect(302,destination);
 }
 
+function clientOnboardingView(state,{needsCompletion=false,url=''}={}){
+  const source=state&&typeof state==='object'&&!Array.isArray(state)?state:null;
+  if(!source)return {needsCompletion:!!needsCompletion,url:needsCompletion?String(url||''):''};
+  const raw=source.checklist&&typeof source.checklist==='object'&&!Array.isArray(source.checklist)?source.checklist:{};
+  const keys=['payment','accountReview','onboardingSent','agreement','intake','businessProfile','agentDraft','routingCaptured','phoneAssigned','adminReview','testCall','clientApproval','live'];
+  return {
+    status:String(source.status||'').slice(0,60),
+    completionPercent:Math.max(0,Math.min(100,Number(source.completionPercent||0))),
+    checklist:Object.fromEntries(keys.map(k=>[k,!!raw[k]])),
+    needsCompletion:!!needsCompletion,
+    url:needsCompletion?String(url||'').slice(0,500):''
+  };
+}
+
 async function session(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);
@@ -1821,7 +1835,7 @@ async function session(req,res){
   const needsOnboarding=!!onboardingToken&&!!onboardingState?.onboardingLinkSent&&!['intake_complete','building_review','qa_complete','client_test','ready','live'].includes(onboardingState.status);
   return res.status(200).json({
     user:{email:s.email,role:member&&member.role||s.role,adminView:!!s.adminView,profile:profileData},
-    onboarding:onboardingState?{...onboardingState,needsCompletion:needsOnboarding,url:needsOnboarding?('/onboarding?token='+onboardingToken):''}:{needsCompletion:needsOnboarding,url:needsOnboarding?('/onboarding?token='+onboardingToken):''},
+    onboarding:clientOnboardingView(onboardingState,{needsCompletion:needsOnboarding,url:needsOnboarding?('/onboarding?token='+onboardingToken):''}),
     workspace:{
       id:ws.id,name:ws.name,plan:ent.plan,status:ws.status||'active',
       subscriptionStatus:ws.subscriptionStatus||'active',
@@ -2260,7 +2274,7 @@ async function clientDashboardData(req,res){
     conversations:ent.features.unifiedInbox&&Array.isArray(conversationsRaw)?conversationsRaw:[],
     appointments:calendarLive&&ent.features.appointments&&Array.isArray(appointmentsRaw)?appointmentsRaw:[],
     automations:ent.features.automations&&Array.isArray(automationsRaw)?automationsRaw:[],
-    onboarding:onboardingRaw&&typeof onboardingRaw==='object'&&!Array.isArray(onboardingRaw)?onboardingRaw:null,
+    onboarding:onboardingRaw&&typeof onboardingRaw==='object'&&!Array.isArray(onboardingRaw)?clientOnboardingView(onboardingRaw):null,
     followupState:followupRaw&&typeof followupRaw==='object'&&!Array.isArray(followupRaw)?followupRaw:{},
     viewedCallIds:Array.isArray(viewedRaw)?viewedRaw.map(String).slice(-2000):[],
     loadedAt:Date.now()
