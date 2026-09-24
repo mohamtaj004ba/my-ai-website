@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callQuickFilter='all',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set();
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callQuickFilter='all',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -99,6 +99,14 @@ function showView(name){
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
 window.addEventListener('beforeunload',e=>{if(document.body.dataset.dashboard==='client'&&(agentEditing||settingsEditing)){e.preventDefault();e.returnValue=''}});
+
+function resetSurfaceScroll(surface){
+  if(!surface)return;
+  const reset=()=>{surface.scrollTop=0;const card=surface.querySelector?.('.modal-card');if(card)card.scrollTop=0};
+  reset();requestAnimationFrame(reset);
+}
+const surfaceOpenObserver=new MutationObserver(entries=>entries.forEach(entry=>{const el=entry.target;if(el.classList?.contains('open'))resetSurfaceScroll(el)}));
+document.querySelectorAll('.modal,.call-drawer').forEach(el=>surfaceOpenObserver.observe(el,{attributes:true,attributeFilter:['class']}));
 
 function has(feature){
   if(!demoMode&&sessionWorkspace?.entitlements?.features&&Object.prototype.hasOwnProperty.call(sessionWorkspace.entitlements.features,feature))return !!sessionWorkspace.entitlements.features[feature];
@@ -270,7 +278,7 @@ function renderOverview(){
   set('overviewCallsMeta',todayCalls===1?'1 inbound call today':todayCalls+' inbound calls today');
   set('overviewLeadsMeta',todayCaptured===1?'1 request or message captured':todayCaptured+' requests or messages captured');
   set('overviewWeekCallsMeta',todayResolved===1?'1 caller needed no staff action':todayResolved+' callers needed no staff action');
-  set('overviewFollowupMeta',activeFollowups.length?(urgentActive?urgentActive+' urgent · '+activeFollowups.length+' open':'Open team actions'):'Nothing waiting');
+  set('overviewFollowupMeta',activeFollowups.length?(urgentActive?urgentActive+' priority · '+activeFollowups.length+' still open':activeFollowups.length+' requests/messages still open'):'Nothing waiting');
 
   const attentionCard=document.getElementById('overviewAttentionCard');if(attentionCard)attentionCard.classList.toggle('has-attention',activeFollowups.length>0);
   const name=agentData?.name||'Maya';set('overviewAgentName',name);renderAiCoverage();
@@ -295,7 +303,7 @@ function renderOverview(){
     const tip=document.getElementById('overviewChartTooltip');
     chart.querySelectorAll('.combo-day').forEach((group,index)=>{
       const row=days[index],hit=group.querySelector('.combo-hit');
-      hit?.addEventListener('mouseenter',()=>{group.classList.add('active');if(!tip)return;tip.innerHTML='<b>'+esc(row.label)+'</b><div><span>Total calls</span><strong>'+row.n+'</strong></div><div><span>Requests captured</span><strong>'+row.captured+'</strong></div><div><span>Resolved by AI</span><strong>'+row.resolved+'</strong></div><div><span>Needs your team</span><strong>'+row.needs+'</strong></div>';tip.hidden=false});
+      hit?.addEventListener('mouseenter',()=>{group.classList.add('active');if(!tip)return;tip.innerHTML='<b>'+esc(row.label)+'</b><div><span>Total calls</span><strong>'+row.n+'</strong></div><div><span>Requests captured</span><strong>'+row.captured+'</strong></div><div><span>Resolved by AI</span><strong>'+row.resolved+'</strong></div><div><span>Still open now</span><strong>'+row.needs+'</strong></div>';tip.hidden=false});
       hit?.addEventListener('mousemove',e=>{if(!tip)return;const r=chart.getBoundingClientRect();tip.style.left=Math.min(r.width-165,Math.max(8,e.clientX-r.left+10))+'px';tip.style.top=Math.max(8,e.clientY-r.top-8)+'px'});
       hit?.addEventListener('mouseleave',()=>{group.classList.remove('active');if(tip)tip.hidden=true});
       hit?.addEventListener('click',()=>{showView('calls');const date=document.getElementById('callDateFilter'),from=document.getElementById('callDateFrom'),to=document.getElementById('callDateTo');if(date)date.value='custom';if(from)from.value=row.date;if(to)to.value=row.date;callQuickFilter='all';updateCustomDateVisibility();renderCalls();setTimeout(()=>document.getElementById('callsTable')?.scrollIntoView({behavior:'smooth',block:'start'}),50)});
@@ -305,7 +313,7 @@ function renderOverview(){
   const attention=document.getElementById('overviewAttention');
   if(attention){
     const open=[...activeFollowups].sort((a,b)=>{const ap=followupType(a)==='urgent'?1:0,bp=followupType(b)==='urgent'?1:0;return bp-ap||recordTime(b)-recordTime(a)}).slice(0,5);
-    attention.innerHTML=open.length?open.map(x=>{const type=followupType(x),time=recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):'';return '<button class="attention-call '+(type==='urgent'?'urgent':'')+'" data-call-id="'+esc(x.id)+'"><span class="attention-call-badge">'+esc(followupLabel(type))+'</span><span class="attention-call-copy"><b>'+esc(x.caller||'Unknown caller')+'</b><small>'+esc(x.reason||'Call requires review')+'</small><em>'+esc(teamStatusLabel(x))+' · '+esc(time)+'</em></span><span class="attention-call-arrow">→</span></button>'}).join(''):'<div class="attention-clear"><b>You’re caught up.</b><span>No calls are waiting for your team.</span></div>';
+    attention.innerHTML=open.length?open.map(x=>{const type=followupType(x),time=recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):'';return '<button class="attention-call '+(type==='urgent'?'urgent':'')+'" data-call-id="'+esc(x.id)+'"><span class="attention-call-badge">'+esc(followupLabel(type))+'</span><span class="attention-call-copy"><b>'+esc(x.caller||'Unknown caller')+'</b><small>'+esc(x.reason||'Call requires review')+'</small><em>'+esc(teamStatusLabel(x))+' · '+esc(time)+'</em></span><span class="attention-call-arrow">→</span></button>'}).join(''):'<div class="attention-clear"><b>You’re caught up.</b><span>No open team actions right now.</span></div>';
     attention.querySelectorAll('[data-call-id]').forEach(b=>b.addEventListener('click',()=>openCall(b.dataset.callId)));
   }
 
@@ -404,7 +412,7 @@ async function openCall(id){
   const t=Array.isArray(x.transcript)?x.transcript:[];document.getElementById('drawerTranscript').innerHTML=t.map(pair=>'<div class="'+(String(pair[0]).toLowerCase()==='maya'?'ai':'')+'"><b>'+esc(pair[0])+'</b>'+esc(pair[1])+'</div>').join('')||'<span class="muted">Transcript unavailable.</span>';
   const historyBtn=document.getElementById('drawerContactButton');if(historyBtn)historyBtn.onclick=()=>{const key=activeCallContactKey;closeCall();setTimeout(()=>openContact(key),30)};
   const feedbackBtn=document.getElementById('drawerAiFeedbackButton');if(feedbackBtn){feedbackBtn.dataset.callId=activeCallId;feedbackBtn.dataset.callContext=[x.caller||x.phone||'Caller',x.reason||x.category||'Call'].filter(Boolean).join(' · ')}
-  document.getElementById('callDrawer').classList.add('open');document.getElementById('drawerBackdrop').classList.add('open');document.getElementById('callDrawer').setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>document.getElementById('closeCallDrawer')?.focus(),20);
+  const drawer=document.getElementById('callDrawer');resetSurfaceScroll(drawer);drawer.classList.add('open');document.getElementById('drawerBackdrop').classList.add('open');drawer.setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>{resetSurfaceScroll(drawer);document.getElementById('closeCallDrawer')?.focus()},20);
 }
 function closeCall(){document.getElementById('callDrawer')?.classList.remove('open');document.getElementById('drawerBackdrop')?.classList.remove('open');document.getElementById('callDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('contactDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}
 function money(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
@@ -522,15 +530,33 @@ function normalizedCallNotes(id){
   if(state.note&&String(state.note).trim()&&!notes.some(n=>n&&n.text===state.note))notes.unshift({id:'legacy',text:String(state.note),at:Number(state.updatedAt||0),by:state.updatedBy||''});
   return notes.filter(n=>n&&String(n.text||'').trim()).sort((a,b)=>Number(b.at||0)-Number(a.at||0));
 }
+function resetNoteComposer(){
+  activeNoteEditId='';
+  const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),save=document.getElementById('drawerSaveNote'),cancel=document.getElementById('drawerCancelNoteEdit');
+  if(input)input.value='';if(status)status.textContent='';if(save)save.textContent='Save note';if(cancel)cancel.hidden=true;if(composer)composer.hidden=true;
+}
 function renderCallNotes(id=activeCallId){
   const list=document.getElementById('drawerNotesList'),count=document.getElementById('drawerNoteCount'),toggle=document.getElementById('drawerAddNoteToggle');if(!list)return;const notes=normalizedCallNotes(id);
-  if(count)count.textContent=notes.length+' note'+(notes.length===1?'':'s');const composer=document.getElementById('drawerInternalNote');if(composer)composer.placeholder=notes.length?'Add another note for your team…':'Add a note for your team…';if(toggle)toggle.textContent=notes.length?'Add another':'Add note';
-  list.innerHTML=notes.length?notes.map(n=>'<article class="internal-note-card"><p>'+esc(n.text)+'</p><small>'+esc(n.by||'Team')+(n.at?' · '+new Date(Number(n.at)).toLocaleString():'')+'</small></article>').join(''):'<div class="notes-empty compact">No internal notes yet.</div>';
+  if(count)count.textContent=notes.length+' note'+(notes.length===1?'':'s');const composer=document.getElementById('drawerInternalNote');if(composer)composer.placeholder=activeNoteEditId?'Update this internal note…':(notes.length?'Add another note for your team…':'Add a note for your team…');if(toggle)toggle.textContent=notes.length?'Add another':'Add note';
+  list.innerHTML=notes.length?notes.map(n=>'<article class="internal-note-card"><div class="internal-note-copy"><p>'+esc(n.text)+'</p><small>'+esc(n.by||'Team')+(n.at?' · '+new Date(Number(n.at)).toLocaleString():'')+'</small></div><div class="internal-note-actions"><button type="button" data-edit-call-note="'+esc(n.id)+'">Edit</button><button type="button" class="danger-link" data-delete-call-note="'+esc(n.id)+'">Delete</button></div></article>').join(''):'<div class="notes-empty compact">No internal notes yet.</div>';
+  list.querySelectorAll('[data-edit-call-note]').forEach(btn=>btn.addEventListener('click',()=>startEditCallNote(btn.dataset.editCallNote)));
+  list.querySelectorAll('[data-delete-call-note]').forEach(btn=>btn.addEventListener('click',()=>deleteCallNote(btn.dataset.deleteCallNote)));
+}
+function startEditCallNote(noteId){
+  const note=normalizedCallNotes(activeCallId).find(n=>String(n.id)===String(noteId));if(!note)return;
+  activeNoteEditId=String(noteId);const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote'),save=document.getElementById('drawerSaveNote'),cancel=document.getElementById('drawerCancelNoteEdit'),status=document.getElementById('drawerNoteStatus');
+  if(composer)composer.hidden=false;if(input){input.value=note.text||'';input.placeholder='Update this internal note…'}if(save)save.textContent='Update note';if(cancel)cancel.hidden=false;if(status)status.textContent='Editing note';setTimeout(()=>input?.focus(),20);
 }
 async function saveCallNote(){
-  const id=activeCallId;if(!id)return;const input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),text=String(input?.value||'').trim().slice(0,2000),current=followupState[String(id)]||{},call=callsData.find(x=>String(x.id)===String(id)),nextStatus=normalizedTeamStatusValue(current.status)||(call&&callNeedsTeam(call)?'needs_action':'no_action');if(!text){if(status)status.textContent='Write a note first.';return}if(status)status.textContent='Saving…';
-  if(demoMode){const notes=[...(current.notes||[]),{id:'note_'+Date.now(),text,at:Date.now(),by:currentUserProfile.email||'Team'}];followupState[String(id)]={...current,status:nextStatus,notes,updatedAt:Date.now()};input.value='';renderCallNotes(id);const composer=document.getElementById('drawerNoteComposer');if(composer)composer.hidden=true;if(status)status.textContent='Note added';return}
-  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:nextStatus,appendNote:text})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save note');followupState=data.state||followupState;input.value='';renderCallNotes(id);const composer=document.getElementById('drawerNoteComposer');if(composer)composer.hidden=true;if(status)status.textContent='Note added'}catch(err){if(status)status.textContent=err.message||'Could not save note'}
+  const id=activeCallId;if(!id)return;const input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),text=String(input?.value||'').trim().slice(0,2000),current=followupState[String(id)]||{},call=callsData.find(x=>String(x.id)===String(id)),nextStatus=normalizedTeamStatusValue(current.status)||(call&&callNeedsTeam(call)?'needs_action':'no_action'),editId=activeNoteEditId;if(!text){if(status)status.textContent='Write a note first.';return}if(status)status.textContent='Saving…';
+  if(demoMode){let notes=normalizedCallNotes(id);if(editId)notes=notes.map(n=>String(n.id)===editId?{...n,text,editedAt:Date.now()}:n);else notes=[...notes,{id:'note_'+Date.now(),text,at:Date.now(),by:currentUserProfile.email||'Team'}];followupState[String(id)]={...current,status:nextStatus,notes,updatedAt:Date.now()};resetNoteComposer();renderCallNotes(id);return}
+  try{const payload=editId?{callId:id,status:nextStatus,updateNoteId:editId,updateNoteText:text}:{callId:id,status:nextStatus,appendNote:text},r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save note');followupState=data.state||followupState;resetNoteComposer();renderCallNotes(id)}catch(err){if(status)status.textContent=err.message||'Could not save note'}
+}
+async function deleteCallNote(noteId){
+  const id=activeCallId;if(!id||!noteId)return;if(!confirm('Delete this internal note?'))return;
+  const current=followupState[String(id)]||{},call=callsData.find(x=>String(x.id)===String(id)),nextStatus=normalizedTeamStatusValue(current.status)||(call&&callNeedsTeam(call)?'needs_action':'no_action');
+  if(demoMode){const notes=normalizedCallNotes(id).filter(n=>String(n.id)!==String(noteId));followupState[String(id)]={...current,status:nextStatus,notes,updatedAt:Date.now(),note:''};if(activeNoteEditId===String(noteId))resetNoteComposer();renderCallNotes(id);return}
+  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:nextStatus,deleteNoteId:String(noteId)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not delete note');followupState=data.state||followupState;if(activeNoteEditId===String(noteId))resetNoteComposer();renderCallNotes(id)}catch(err){alert(err.message||'Could not delete note')}
 }
 async function moveLead(id,stage){
   const lead=leadsData.find(x=>String(x.id)===String(id));if(!lead||lead.stage===stage)return;
@@ -753,7 +779,7 @@ function openContact(key){
   const summaryParts=[];if(latestCall)summaryParts.push('Latest call: '+(latestCall.reason||'phone call')+'.');if(activeActions)summaryParts.push(activeActions+' open team action'+(activeActions===1?'':'s')+'.');else if(c.calls.length)summaryParts.push('No open team actions.');if(latestLead?.service)summaryParts.push('Service history includes '+latestLead.service.toLowerCase()+'.');
   document.getElementById('contactDrawerSummary').textContent=summaryParts.join(' ')||'CallerCore has activity for this contact.';
   renderContactHistoryTimeline(c);
-  drawer.classList.add('open');back.classList.add('open');drawer.setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>document.getElementById('closeContactDrawer')?.focus(),20);
+  resetSurfaceScroll(drawer);drawer.classList.add('open');back.classList.add('open');drawer.setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>{resetSurfaceScroll(drawer);document.getElementById('closeContactDrawer')?.focus()},20);
 }
 function closeContact(){document.getElementById('contactDrawer')?.classList.remove('open');document.getElementById('contactDrawerBackdrop')?.classList.remove('open');document.getElementById('contactDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('callDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}
 document.getElementById('contactSearch')?.addEventListener('input',renderContacts);
@@ -763,7 +789,8 @@ document.getElementById('closeContactDrawer')?.addEventListener('click',closeCon
 document.getElementById('contactDrawerBackdrop')?.addEventListener('click',closeContact);
 document.getElementById('drawerFollowupButton')?.addEventListener('click',e=>{const id=e.currentTarget.dataset.callId,status=document.getElementById('drawerTeamStatus')?.value;if(id&&status)requestTeamStatusChange(id,status)});
 document.getElementById('drawerSaveNote')?.addEventListener('click',saveCallNote);
-document.getElementById('drawerAddNoteToggle')?.addEventListener('click',()=>{const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote');if(!composer)return;composer.hidden=!composer.hidden;if(!composer.hidden)setTimeout(()=>input?.focus(),20)});
+document.getElementById('drawerCancelNoteEdit')?.addEventListener('click',resetNoteComposer);
+document.getElementById('drawerAddNoteToggle')?.addEventListener('click',()=>{const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote');if(!composer)return;if(activeNoteEditId)resetNoteComposer();composer.hidden=false;if(input)input.value='';const save=document.getElementById('drawerSaveNote'),cancel=document.getElementById('drawerCancelNoteEdit'),status=document.getElementById('drawerNoteStatus');if(save)save.textContent='Save note';if(cancel)cancel.hidden=true;if(status)status.textContent='';setTimeout(()=>input?.focus(),20)});
 
 function renderAppointments(){
   if(!has('appointments'))return;
@@ -842,7 +869,7 @@ async function saveAgent(section=activeAgentSection()){
 function feedbackStatusLabel(status){return ({submitted:'Submitted',reviewed:'Reviewed',applied:'Applied',dismissed:'Closed'})[status]||'Submitted'}
 function renderClientFeedback(){
   const wrap=document.getElementById('clientFeedbackList');if(!wrap)return;
-  const items=(clientFeedbackData||[]).slice(0,8);
+  const items=(clientFeedbackData||[]).slice(0,8),count=document.getElementById('agentFeedbackCount');if(count)count.textContent=String(clientFeedbackData.length||0);
   wrap.classList.add('feedback-list');
   wrap.innerHTML=items.map(x=>'<article class="feedback-item"><div><b>'+esc((x.category||'Feedback').replaceAll('_',' '))+'</b><small>'+esc(x.source==='call'?'Call feedback'+(x.context?' · '+x.context:''):'AI receptionist feedback')+' · '+(x.createdAt?new Date(x.createdAt).toLocaleString():'')+'</small></div><span class="feedback-status '+esc(x.status||'submitted')+'">'+esc(feedbackStatusLabel(x.status))+'</span><p>'+esc(x.message||'')+'</p></article>').join('')||'<p class="muted">No feedback submitted yet.</p>';
 }
@@ -863,7 +890,7 @@ async function submitAiFeedback({source='receptionist',callId='',category='',mes
 }
 function openCallFeedbackModal(callId,context=''){
   const modal=document.getElementById('aiFeedbackModal');if(!modal)return;
-  document.getElementById('aiFeedbackCallId').value=callId||'';document.getElementById('aiFeedbackMessage').value='';document.getElementById('aiFeedbackCategory').value='incorrect_information';document.getElementById('aiFeedbackStatus').textContent='';modal.dataset.context=context||'';modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>document.getElementById('aiFeedbackCategory')?.focus(),20);
+  closeCall();closeContact();document.getElementById('aiFeedbackCallId').value=callId||'';document.getElementById('aiFeedbackMessage').value='';document.getElementById('aiFeedbackCategory').value='incorrect_information';document.getElementById('aiFeedbackStatus').textContent='';modal.dataset.context=context||'';resetSurfaceScroll(modal);modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>{resetSurfaceScroll(modal);document.getElementById('aiFeedbackCategory')?.focus()},20);
 }
 function closeCallFeedbackModal(){const modal=document.getElementById('aiFeedbackModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}}
 function renderAutomations(){
@@ -943,6 +970,11 @@ function renderAnalytics(){
   const hours=Array.from({length:12},(_,i)=>({h:i+7,n:0}));rows.forEach(x=>{const h=new Date(recordTime(x)).getHours(),slot=hours.find(v=>v.h===h);if(slot)slot.n++});const hourWrap=document.getElementById('insightHourBars');if(hourWrap){const max=Math.max(1,...hours.map(x=>x.n));hourWrap.innerHTML=hours.map(x=>'<div><small>'+new Date(2020,1,1,x.h).toLocaleTimeString(undefined,{hour:'numeric'})+'</small><span><i style="width:'+Math.round(x.n/max*100)+'%"></i></span><b>'+x.n+'</b></div>').join('')}
   const outcomes={};rows.forEach(x=>{const k=callDispositionLabel(x);outcomes[k]=(outcomes[k]||0)+1});const donut=document.getElementById('outcomeDonut'),legend=document.getElementById('outcomeLegend'),colors=['#4f9b6a','#5f7f9a','#d88736','#c65d4a','#87919b','#8b78a8','#5f6b73'];if(donut){let cursor=0,parts=Object.values(outcomes).map((v,i)=>{const pct=total?(v/total*100):0,start=cursor;cursor+=pct;return colors[i%colors.length]+' '+start+'% '+cursor+'%'});donut.style.background='conic-gradient('+(parts.join(',')||'#e8ebee 0 100%')+')';set('outcomeDonutLabel',total)}if(legend)legend.innerHTML=Object.entries(outcomes).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>'<div><span><i style="background:'+colors[i%colors.length]+'"></i>'+esc(k)+'</span><b>'+v+' · '+(total?Math.round(v/total*100):0)+'%</b></div>').join('');
 }
+function setWebhookEditing(editing){
+  webhookEditing=!!editing;const editor=document.getElementById('webhookEditor'),edit=document.getElementById('editWebhookButton'),url=document.getElementById('webhookUrl'),status=document.getElementById('webhookEditStatus');
+  if(editor)editor.hidden=!webhookEditing;if(edit){edit.hidden=webhookEditing;edit.textContent=(integrationsData?.webhookUrl?'Edit webhook':'Configure webhook')}if(url){url.disabled=!webhookEditing;if(webhookEditing)url.value=integrationsData?.webhookUrl||''}if(status)status.textContent='';
+  if(webhookEditing)setTimeout(()=>url?.focus(),20);
+}
 function renderIntegrations(){
   if(!integrationsData)integrationsData={googleCalendar:false,stripe:!!sessionWorkspace?.stripe?.customerLinked,webhookUrl:'',apiAccess:has('apiAccess')};
   const routeReady=!!phoneRoutingData?.number,agentReady=!!agentData?.name;
@@ -952,15 +984,15 @@ function renderIntegrations(){
   set('connectionAgentTitle',agentReady?(agentData.name+' is configured'):'AI receptionist needs setup');set('connectionAgentCopy',agentReady?'Business hours, service area, and escalation rules are loaded.':'Finish your AI receptionist configuration before going live.');tag('connectionAgentStatus',agentReady,'Ready','Needs setup');
   const g=document.getElementById('googleCalendarStatus');if(g){const ok=capability('calendar')&&integrationsData.googleCalendar;g.textContent=ok?'Connected':'Not connected';g.className='tag '+(ok?'green':'amber')}
   set('connectionBusinessNumber',phoneRoutingData?.forwardingFrom||settingsData?.businessPhone||'Your business line');set('connectionCallerCoreNumber',phoneRoutingData?.number||'Not assigned');set('connectionTransferNumber',phoneRoutingData?.transferNumber||agentData?.transferNumber||'Not configured');
-  const panel=document.getElementById('webhookPanel');if(panel)panel.hidden=!has('apiAccess');const url=document.getElementById('webhookUrl');if(url)url.value=integrationsData.webhookUrl||'';
+  const panel=document.getElementById('webhookPanel');if(panel)panel.hidden=!has('apiAccess');set('webhookDisplay',integrationsData.webhookUrl||'Not configured');setWebhookEditing(webhookEditing);
 }
 async function saveWebhook(){
   if(!has('apiAccess'))return openModal('Pro');
-  const webhookUrl=document.getElementById('webhookUrl')?.value.trim()||'';
-  if(demoMode){integrationsData={...(integrationsData||{}),webhookUrl};return}
+  const webhookUrl=document.getElementById('webhookUrl')?.value.trim()||'',status=document.getElementById('webhookEditStatus');if(status)status.textContent='Saving…';
+  if(demoMode){integrationsData={...(integrationsData||{}),webhookUrl};webhookEditing=false;renderIntegrations();return}
   const r=await fetch('/api/account?action=integrations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl})});
-  if(!r.ok){alert('Could not save webhook. Make sure it uses HTTPS.');return}
-  integrationsData={...(integrationsData||{}),...((await r.json()).integrations||{})};renderIntegrations();
+  if(!r.ok){if(status)status.textContent='Could not save. Make sure the URL uses HTTPS.';return}
+  integrationsData={...(integrationsData||{}),...((await r.json()).integrations||{})};webhookEditing=false;renderIntegrations();
 }
 function settingsControlIds(){return ['settingsBusinessName','settingsContactName','settingsPrimaryEmail','settingsBusinessPhone','settingsWebsite','settingsIndustry','settingsServiceArea','settingsStreetAddress','settingsCity','settingsState','settingsPostalCode','settingsTimezone','settingsNotificationEmail','settingsEmailAlerts','settingsNotifyBilling','settingsNotifySetup','settingsNotifyCalls','settingsNotifySupport','settingsNotifyUsage']}
 function businessInitials(name=''){const parts=String(name||'Business').trim().split(/\s+/).filter(Boolean);return (parts.length>1?(parts[0][0]+parts[1][0]):String(parts[0]||'B').slice(0,2)).toUpperCase()}
@@ -1185,6 +1217,8 @@ async function submitSupportTicket(){
 }
 document.getElementById('submitSupportButton')?.addEventListener('click',submitSupportTicket);
 
+document.getElementById('editWebhookButton')?.addEventListener('click',()=>setWebhookEditing(true));
+document.getElementById('cancelWebhookButton')?.addEventListener('click',()=>{webhookEditing=false;renderIntegrations()});
 document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebhook);
 document.getElementById('insightsRange')?.addEventListener('change',renderAnalytics);
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
