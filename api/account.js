@@ -1210,6 +1210,8 @@ async function buildClientNotifications(s){
     billing:savedSettings.notifyBilling!==false,setup:savedSettings.notifySetup!==false,calls:savedSettings.notifyCalls!==false,support:savedSettings.notifySupport!==false,usage:savedSettings.notifyUsage!==false
   };
   const items=[],now=Date.now(),plan=entitlementsFor(ws.plan),usage=Number(ws.usage?.minutes||0);
+  const feedbackItems=await aiFeedbackListForWorkspace(ws.id,20);
+  for(const f of feedbackItems){if(['reviewed','applied'].includes(f.status))items.push(notificationItem('feedback:'+f.id+':'+f.status+':'+f.updatedAt,{title:f.status==='applied'?'AI feedback applied':'AI feedback reviewed',body:(f.context?f.context+' · ':'')+(f.status==='applied'?'CallerCore marked your feedback as applied.':'CallerCore has reviewed your feedback.'),kind:f.status==='applied'?'success':'info',view:'agent',createdAt:f.updatedAt||f.createdAt||now,meta:{feedbackId:f.id,callId:f.callId||''}}));}
   if(prefs.billing&&ws.subscriptionStatus==='past_due')items.push(notificationItem('billing:'+ws.id+':past_due',{title:'Billing needs attention',body:'Your CallerCore subscription is past due.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
   if(prefs.billing&&ws.subscriptionStatus==='canceled')items.push(notificationItem('billing:'+ws.id+':canceled',{title:'Subscription canceled',body:'Your CallerCore subscription is canceled.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
   if(prefs.support&&ws.status==='suspended')items.push(notificationItem('workspace:'+ws.id+':suspended',{title:'Workspace suspended',body:'Your CallerCore workspace is currently suspended. Contact support for help.',kind:'danger',view:'support',createdAt:ws.updatedAt||now}));
@@ -1249,9 +1251,10 @@ async function buildClientNotifications(s){
 }
 async function buildAdminNotifications(admin){
   const items=[],now=Date.now();
-  const [supportIndex,workspaceIndex,prospectIds,gmailConn]=await Promise.all([
-    kv.get('support:index'),kv.get('workspace:index'),kv.lrange('site:prospect:index',0,99),getGmailConnection(admin.email)
+  const [supportIndex,workspaceIndex,prospectIds,gmailConn,feedbackIndex]=await Promise.all([
+    kv.get('support:index'),kv.get('workspace:index'),kv.lrange('site:prospect:index',0,99),getGmailConnection(admin.email),kv.get('ai-feedback:index')
   ]);
+  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!f||f.status!=='submitted')continue;items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'New AI feedback',body:(f.workspaceName||'Client')+' · '+(f.context||String(f.category||'feedback').replaceAll('_',' ')),kind:'info',view:'feedback',createdAt:f.createdAt||now,meta:{feedbackId:f.id,callId:f.callId||''}}));}
   for(const id of Array.isArray(supportIndex)?supportIndex.slice(0,100):[]){
     const t=await kv.get('support:'+id);if(!t||t.status==='resolved')continue;
     items.push(notificationItem('admin-support:'+t.id+':'+t.status,{title:(t.priority==='urgent'?'Urgent support request':'Client support request'),body:(t.workspaceName||'Client')+' · '+t.subject,kind:t.priority==='urgent'?'danger':'warning',view:'admin-support',createdAt:t.updatedAt||t.createdAt||now,meta:{ticketId:t.id}}));
@@ -1316,6 +1319,50 @@ async function followupUpdate(req,res){
   await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:appendNote?'team_note_added':'team_status_'+status,section:'calls',before:previous||null,after:next[callId],meta:{callId}});
   return res.status(200).json({ok:true,state:next});
 }
+function aiFeedbackWorkspaceIndexKey(workspaceId){return 'ai-feedback:workspace:'+String(workspaceId||'')}
+async function aiFeedbackListForWorkspace(workspaceId,limit=50){
+  const ids=await kv.get(aiFeedbackWorkspaceIndexKey(workspaceId))||[],items=[];
+  for(const id of Array.isArray(ids)?ids.slice(0,limit):[]){const item=await kv.get('ai-feedback:'+id);if(item&&item.workspaceId===workspaceId)items.push(item)}
+  return items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
+}
+async function aiFeedback(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  return res.status(200).json({feedback:await aiFeedbackListForWorkspace(s.workspaceId,60)});
+}
+async function aiFeedbackSubmit(req,res){
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const body=req.body||{},clean=(v,n)=>String(v||'').trim().slice(0,n),message=clean(body.message,2400);
+  if(!message)return res.status(400).json({error:'Feedback details are required'});
+  const source=['call','receptionist'].includes(body.source)?body.source:'receptionist',now=Date.now(),id='fb_'+crypto.randomBytes(8).toString('hex');
+  const item={id,workspaceId:s.workspaceId,workspaceName:ws.name||'',actorEmail:s.email||'',source,callId:source==='call'?clean(body.callId,160):'',category:clean(body.category,80)||'other',message,context:clean(body.context,240),status:'submitted',createdAt:now,updatedAt:now};
+  const wk=aiFeedbackWorkspaceIndexKey(s.workspaceId),workspaceIds=await kv.get(wk)||[],globalIds=await kv.get('ai-feedback:index')||[];
+  await Promise.all([
+    kv.set('ai-feedback:'+id,item),
+    kv.set(wk,[id,...(Array.isArray(workspaceIds)?workspaceIds:[]).filter(x=>x!==id)].slice(0,250)),
+    kv.set('ai-feedback:index',[id,...(Array.isArray(globalIds)?globalIds:[]).filter(x=>x!==id)].slice(0,1500))
+  ]);
+  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'ai_feedback_submitted',section:'agent',before:null,after:item,meta:{feedbackId:id,callId:item.callId}});
+  return res.status(201).json({ok:true,feedback:item});
+}
+async function adminAiFeedback(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const ids=await kv.get('ai-feedback:index')||[],items=[];
+  for(const id of Array.isArray(ids)?ids.slice(0,500):[]){const item=await kv.get('ai-feedback:'+id);if(item)items.push(item)}
+  items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
+  return res.status(200).json({feedback:items});
+}
+async function adminAiFeedbackUpdate(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String(req.body?.id||'').slice(0,160),status=String(req.body?.status||'').slice(0,40);
+  if(!id||!['submitted','reviewed','applied','dismissed'].includes(status))return res.status(400).json({error:'Invalid feedback update'});
+  const key='ai-feedback:'+id,previous=await kv.get(key);if(!previous)return res.status(404).json({error:'Feedback not found'});
+  const next={...previous,status,updatedAt:Date.now(),reviewedBy:admin.email||'',reviewedAt:status==='submitted'?null:Date.now()};
+  await kv.set(key,next);
+  await appendAudit(previous.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'ai_feedback_'+status,section:'agent',before:previous,after:next,meta:{feedbackId:id,callId:previous.callId||''}});
+  return res.status(200).json({ok:true,feedback:next});
+}
+
 async function notifications(req,res){
   const scope=String((req.query||{}).scope||'client')==='admin'?'admin':'client';
   let sessionData;
@@ -1648,6 +1695,7 @@ async function saveAgent(req,res){
     serviceArea:clean(body.serviceArea,500),
     businessHours:clean(body.businessHours,500),
     emergencyInstructions:clean(body.emergencyInstructions,1200),
+    handlingInstructions:clean(body.handlingInstructions,1800),
     qualificationQuestions:Array.isArray(body.qualificationQuestions)?body.qualificationQuestions.map(v=>clean(v,240)).filter(Boolean).slice(0,12):[],
     transferNumber:clean(body.transferNumber,40),
     updatedAt:Date.now()
@@ -1998,6 +2046,10 @@ module.exports=async function handler(req,res){
   if(action==='profile-save'&&req.method==='POST')return profileSave(req,res);
   if(action==='notifications'&&req.method==='GET')return notifications(req,res);
   if(action==='notifications-read'&&req.method==='POST')return notificationsRead(req,res);
+  if(action==='ai-feedback'&&req.method==='GET')return aiFeedback(req,res);
+  if(action==='ai-feedback-submit'&&req.method==='POST')return aiFeedbackSubmit(req,res);
+  if(action==='admin-ai-feedback'&&req.method==='GET')return adminAiFeedback(req,res);
+  if(action==='admin-ai-feedback-update'&&req.method==='POST')return adminAiFeedbackUpdate(req,res);
   if(action==='notifications-read-all'&&req.method==='POST')return notificationsReadAll(req,res);
   if(action==='followups'&&req.method==='GET')return followups(req,res);
   if(action==='followup-update'&&req.method==='POST')return followupUpdate(req,res);
