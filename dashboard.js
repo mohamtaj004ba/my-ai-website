@@ -1426,9 +1426,9 @@ function renderGrowth(){
   if(empty)empty.hidden=(adminCampaignData||[]).length!==0;campaignEl?.querySelectorAll('[data-edit-campaign]').forEach(c=>c.addEventListener('click',()=>openCampaignModal(c.dataset.editCampaign)));
 }
 function toLocalDateTimeInput(ms){if(!ms)return'';const d=new Date(Number(ms));return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
-function openProspectModal(id=''){
-  const p=id?(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id)):null,m=document.getElementById('prospectModal');if(!m)return;m.dataset.editId=id||'';document.getElementById('prospectModalTitle').textContent=p?'Edit prospect':'Add prospect';
-  document.getElementById('prospectNameInput').value=p?.name||'';document.getElementById('prospectBusinessInput').value=p?.business||'';document.getElementById('prospectEmailInput').value=p?.email||'';document.getElementById('prospectPhoneInput').value=p?.phone||'';document.getElementById('prospectStageInput').value=p?.stage||'new';document.getElementById('prospectSourceInput').value=(p?.source||'Website').replace(/^website$/i,'Website');document.getElementById('prospectCampaignInput').value=p?.campaign||p?.utmCampaign||'';document.getElementById('prospectPlanInput').value=p?.plan||'';document.getElementById('prospectMrrInput').value=p?.monthlyValue||'';document.getElementById('prospectFollowupInput').value=toLocalDateTimeInput(p?.nextFollowUpAt);document.getElementById('prospectNotesInput').value=p?.notes||'';const s=document.getElementById('prospectFormStatus');if(s)s.textContent='';m.classList.add('open');m.setAttribute('aria-hidden','false');
+function openProspectModal(id='',prefill={}){
+  const p=id?(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id)):null,data=p||prefill||{},m=document.getElementById('prospectModal');if(!m)return;m.dataset.editId=p?.id||'';document.getElementById('prospectModalTitle').textContent=p?'Edit prospect':'Add prospect';
+  document.getElementById('prospectNameInput').value=data.name||'';document.getElementById('prospectBusinessInput').value=data.business||'';document.getElementById('prospectEmailInput').value=data.email||'';document.getElementById('prospectPhoneInput').value=data.phone||'';document.getElementById('prospectStageInput').value=data.stage||'new';document.getElementById('prospectSourceInput').value=(data.source||'Website').replace(/^website$/i,'Website');document.getElementById('prospectCampaignInput').value=data.campaign||data.utmCampaign||'';document.getElementById('prospectPlanInput').value=data.plan||'';document.getElementById('prospectMrrInput').value=data.monthlyValue||'';document.getElementById('prospectFollowupInput').value=toLocalDateTimeInput(data.nextFollowUpAt);document.getElementById('prospectNotesInput').value=data.notes||'';const s=document.getElementById('prospectFormStatus');if(s)s.textContent='';m.classList.add('open');m.setAttribute('aria-hidden','false');
 }
 function closeProspectModal(){const m=document.getElementById('prospectModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 async function saveProspect(){
@@ -1573,6 +1573,18 @@ async function openInboxItem(kind,id){
   }
   renderInboxThread();renderAdminInbox();
 }
+function inboxContactParts(){
+  if(!currentInboxItem)return {name:'',email:''};
+  const p=currentInboxItem.prospect||{};if(p.email)return {name:p.name||'',email:p.email};
+  const messages=currentInboxItem.messages||[],inbound=[...messages].reverse().find(m=>m.direction==='inbound')||messages[0]||{},raw=String(inbound.from||'').trim(),match=raw.match(/^(.*?)\s*<([^>]+)>$/);
+  return {name:(match?.[1]||'').replace(/^["']|["']$/g,'').trim(),email:(match?.[2]||raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]||'').trim().toLowerCase()};
+}
+function promoteInboxToGrowth(){
+  if(!currentInboxItem)return;
+  if(currentInboxItem.prospect?.id){showView('growth');openProspectModal(currentInboxItem.prospect.id);return}
+  const contact=inboxContactParts(),subject=currentInboxItem.kind==='gmail'?(currentInboxItem.thread?.subject||'Email inquiry'):'Website inquiry';
+  showView('growth');openProspectModal('',{name:contact.name,email:contact.email,source:currentInboxItem.kind==='gmail'?'Email':'Website',stage:'inquiry',notes:'Added from '+(currentInboxItem.kind==='gmail'?'Gmail':'website inbox')+' · '+subject});
+}
 function preferredInboxFrom(){
   const aliases=adminInboxData.aliases||[];if(!aliases.length)return '';
   if(currentInboxItem?.kind==='gmail'){
@@ -1599,7 +1611,8 @@ function renderInboxThread(){
   document.getElementById('inboxThreadChannel').textContent=website?(p.source==='chatbot'?'Website · Chatbot':'Website · Contact'):'Gmail';
   document.getElementById('inboxThreadSubject').textContent=subject;
   document.getElementById('inboxThreadMeta').textContent=contact+(p.business?' · '+p.business:'');
-  const lead=document.getElementById('inboxThreadLead');if(lead)lead.textContent=p.stage?('Lead · '+p.stage.replaceAll('_',' ')):(currentInboxItem.prospect?'Linked lead':'Email');
+  const lead=document.getElementById('inboxThreadLead');if(lead)lead.textContent=p.stage?('Growth · '+p.stage.replaceAll('_',' ')):(currentInboxItem.prospect?'Linked prospect':'Not in Growth');
+  const promote=document.getElementById('inboxPromoteLead');if(promote){promote.textContent=currentInboxItem.prospect?'Open in Growth':'Add to Growth';promote.onclick=()=>promoteInboxToGrowth()}
   const box=document.getElementById('inboxMessages');
   if(box)box.innerHTML=messages.map(m=>'<div class="inbox-message '+(m.direction==='outbound'?'outbound':'inbound')+'"><div><b>'+(m.direction==='outbound'?'You':esc(m.from||p.email||'Visitor'))+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+' · '+esc(m.channel||currentInboxItem.kind)+'</small></div><p>'+esc(m.body||m.snippet||'')+'</p></div>').join('');
   if(box)box.scrollTop=box.scrollHeight;
