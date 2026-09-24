@@ -1680,7 +1680,9 @@ function renderPhones(){
 function renderHealth(){
   const wrap=document.getElementById('systemHealthGrid');if(!wrap)return;
   wrap.innerHTML=adminHealthData.map(x=>'<article class="panel integration-card"><div><b>'+esc(x.name)+'</b><p>'+esc(x.detail||'')+'</p></div><span class="tag '+(x.status==='operational'||x.status==='configured'||x.status==='confirmed'?'green':x.status==='error'?'red':'amber')+'">'+esc(x.status.replace('_',' '))+'</span></article>').join('');
-  const bad=adminHealthData.filter(x=>['error','not_configured','pending'].includes(x.status)).length,side=document.getElementById('adminSidebarHealth');if(side)side.textContent=bad?bad+' system item'+(bad===1?'':'s')+' need attention':'All systems operational';
+  const issueItems=adminHealthData.filter(x=>['error','not_configured','pending'].includes(x.status)),blockerKeys=new Set((adminReadinessData?.blockers||[]).map(x=>x.key)),critical=issueItems.filter(x=>blockerKeys.has(x.key)).length,optional=Math.max(0,issueItems.length-critical),side=document.getElementById('adminSidebarHealth'),meta=document.getElementById('adminSidebarHealthMeta');
+  if(side)side.textContent=critical?critical+' launch blocker'+(critical===1?'':'s'):(optional?'Core systems ready':'All systems operational');
+  if(meta)meta.textContent=critical?(optional?optional+' additional setup / optional item'+(optional===1?'':'s'):'Required launch items need attention'):(optional?optional+' optional or pre-launch item'+(optional===1?'':'s'):'No open system issues');
   const title=document.getElementById('productionReadinessTitle'),copy=document.getElementById('productionReadinessCopy'),blockers=document.getElementById('productionReadinessBlockers'),card=document.getElementById('productionReadinessCard');
   if(adminReadinessData&&title&&copy&&blockers){
     title.textContent=adminReadinessData.ready?'Core launch dependencies are ready.':adminReadinessData.blockers.length+' launch blocker'+(adminReadinessData.blockers.length===1?'':'s')+' remain.';
@@ -1743,43 +1745,89 @@ document.getElementById('phoneModal')?.addEventListener('click',e=>{if(e.target.
 function adminMoney(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
 function adminPlanMinutes(plan){return plan==='Starter'?300:plan==='Growth'?600:null}
 function adminBillingTag(status){return status==='past_due'?'red':status==='canceled'?'amber':'green'}
+function adminAttentionItems(){
+  const items=[];
+  for(const x of adminClientsData){
+    if(x.subscriptionStatus==='past_due')items.push({id:'billing:'+x.id,type:'billing',workspaceId:x.id,title:x.name||'Client',message:'Stripe payment needs attention',category:'Billing',severity:'critical',view:'revenue'});
+    if(x.status==='suspended')items.push({id:'workspace:'+x.id,type:'workspace',workspaceId:x.id,title:x.name||'Client',message:'Workspace access is suspended',category:'Workspace',severity:'critical',view:'clients'});
+    if(x.status==='onboarding')items.push({id:'onboarding:'+x.id,type:'onboarding',workspaceId:x.id,title:x.name||'Client',message:'Workspace onboarding is still in progress',category:'Onboarding',severity:'attention',view:'provisioning'});
+  }
+  for(const t of adminSupportData||[]){
+    if(t.status==='resolved')continue;
+    items.push({id:'support:'+t.id,type:'support',ticketId:t.id,title:t.workspaceName||'Client',message:t.subject||'Open support request',category:'Support',severity:t.priority==='urgent'?'critical':'attention',view:'admin-support',createdAt:t.updatedAt||t.createdAt||0});
+  }
+  for(const fb of adminFeedbackData||[]){
+    if(fb.status!=='submitted')continue;
+    items.push({id:'feedback:'+fb.id,type:'feedback',feedbackId:fb.id,title:fb.workspaceName||'Client',message:'AI feedback awaiting review',category:'AI feedback',severity:'attention',view:'feedback',createdAt:fb.createdAt||0});
+  }
+  const rank={critical:0,attention:1,info:2};
+  return items.sort((a,b)=>(rank[a.severity]??9)-(rank[b.severity]??9)||Number(b.createdAt||0)-Number(a.createdAt||0));
+}
+function adminProvisioningFor(id){return (adminProvisioningData||[]).find(x=>String(x.id)===String(id))||null}
+function adminPhoneFor(id){return (adminPhoneData||[]).find(x=>String(x.workspaceId||'')===String(id))||null}
+function adminStatusLabel(v){return String(v||'active').replaceAll('_',' ').replace(/\b\w/g,m=>m.toUpperCase())}
+async function openAdminAttentionItem(item){
+  if(!item)return;
+  if(item.type==='workspace'){showView('clients');await openAdminClient(item.workspaceId);return}
+  showView(item.view||'overview');
+  setTimeout(()=>{
+    let target=null;
+    if(item.type==='billing')target=document.querySelector('[data-admin-revenue-id="'+CSS.escape(String(item.workspaceId))+'"]');
+    else if(item.type==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(item.workspaceId))+'"]');
+    else if(item.type==='support')target=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(item.ticketId))+'"]');
+    else if(item.type==='feedback')target=document.getElementById('feedback-'+String(item.feedbackId));
+    if(target){if(target.tagName==='DETAILS')target.open=true;flashAdminSearchTarget(target)}
+  },100);
+}
+function bindAdminCommandCenter(){
+  document.querySelectorAll('[data-admin-attention-id]').forEach(btn=>btn.addEventListener('click',()=>openAdminAttentionItem((window.__adminAttentionItems||[]).find(x=>x.id===btn.dataset.adminAttentionId))));
+  document.querySelectorAll('[data-admin-client-row]').forEach(row=>row.addEventListener('click',e=>{if(e.target.closest('button,a,select,input'))return;openAdminClient(row.dataset.adminClientRow)}));
+  document.querySelectorAll('[data-admin-metric-view]').forEach(card=>{card.tabIndex=0;card.setAttribute('role','button');const go=()=>{const view=card.dataset.adminMetricView;if(view==='overview'){document.getElementById('adminAttention')?.scrollIntoView({behavior:'smooth',block:'center'})}else showView(view)};card.onclick=go;card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
+}
 function renderAdmin(){
   if(!adminSummaryData)return;
   const s=adminSummaryData,set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  const attentionItems=adminAttentionItems();window.__adminAttentionItems=attentionItems;
   set('adminMrr',adminMoney(s.mrr));set('adminActiveClients',s.activeClients||0);set('adminOnboarding',(s.onboarding||0)+' onboarding');
   set('adminMinutes',Number(s.totalMinutes||0).toLocaleString());set('adminPastDue',s.pastDue||0);
-  const clientTotal=Math.max(1,Number(s.clients||adminClientsData.length||0)),activePct=Math.round(Number(s.activeClients||0)/clientTotal*100),billingPct=Math.round((clientTotal-Number(s.pastDue||0))/clientTotal*100),livePct=Math.round((clientTotal-Number(s.onboarding||0))/clientTotal*100);
+  set('adminAttentionCount',attentionItems.length);
+  const criticalCount=attentionItems.filter(x=>x.severity==='critical').length;
+  set('adminAttentionMeta',attentionItems.length?(criticalCount?criticalCount+' critical · '+attentionItems.length+' total open':attentionItems.length+' open operational item'+(attentionItems.length===1?'':'s')):'No open operational issues');
+  const total=Math.max(0,Number(s.clients||adminClientsData.length||0)),den=Math.max(1,total),active=Number(s.activeClients||0),healthy=Math.max(0,total-Number(s.pastDue||0)),live=Math.max(0,total-Number(s.onboarding||0));
+  const activePct=Math.round(active/den*100),billingPct=Math.round(healthy/den*100),livePct=Math.round(live/den*100);
   [['adminActiveRing','adminActivePct',activePct],['adminBillingRing','adminBillingPct',billingPct],['adminLiveRing','adminLivePct',livePct]].forEach(([ringId,textId,pct])=>{const ring=document.getElementById(ringId),txt=document.getElementById(textId);if(ring)ring.style.setProperty('--pct',pct);if(txt)txt.textContent=pct+'%'});
+  set('adminActiveCount',active+' of '+total+' workspaces');set('adminBillingCount',healthy+' of '+total+' current');set('adminLiveCount',live+' of '+total+' live');
   set('revenueMrr',adminMoney(s.mrr));set('revenueActive',s.activeClients||0);set('revenuePastDue',s.pastDue||0);set('revenueOnboarding',s.onboarding||0);
   const mix=document.getElementById('adminPlanMix');if(mix){
     const pm=s.planMix||{},max=Math.max(1,...Object.values(pm).map(Number));
-    mix.innerHTML=['Starter','Growth','Pro'].map(p=>'<div><span>'+p+' · '+Number(pm[p]||0)+' clients</span><i style="width:'+Math.round(Number(pm[p]||0)/max*100)+'%"></i></div>').join('');
+    mix.innerHTML=['Starter','Growth','Pro'].map(p=>{const count=Number(pm[p]||0),mrr=count*Number(PLAN_DATA[p]?.price||0);return '<div><span><b>'+p+'</b><small>'+count+' client'+(count===1?'':'s')+' · '+adminMoney(mrr)+' MRR</small></span><i style="width:'+Math.round(count/max*100)+'%"></i></div>'}).join('');
   }
   const attention=document.getElementById('adminAttention');if(attention){
-    const rows=[];
-    adminClientsData.filter(x=>x.subscriptionStatus==='past_due').forEach(x=>rows.push('<div class="admin-event redline"><b>'+esc(x.name)+'</b><span>Stripe payment needs attention</span><small>Billing</small></div>'));
-    adminClientsData.filter(x=>x.status==='onboarding').forEach(x=>rows.push('<div class="admin-event"><b>'+esc(x.name)+'</b><span>Workspace onboarding in progress</span><small>Onboarding</small></div>'));
-    adminClientsData.filter(x=>x.status==='suspended').forEach(x=>rows.push('<div class="admin-event redline"><b>'+esc(x.name)+'</b><span>Workspace access is suspended</span><small>Workspace</small></div>'));
-    attention.innerHTML=rows.slice(0,6).join('')||'<div class="empty-state"><h3>Nothing needs attention</h3><p>Billing and onboarding alerts will appear here.</p></div>';
+    attention.innerHTML=attentionItems.slice(0,8).map(item=>'<button type="button" class="admin-event admin-attention-item '+(item.severity==='critical'?'critical':'')+'" data-admin-attention-id="'+esc(item.id)+'"><span class="attention-severity-dot '+esc(item.severity)+'"></span><b>'+esc(item.title)+'</b><span>'+esc(item.message)+'</span><small>'+esc(item.category)+' →</small></button>').join('')||'<div class="empty-state"><h3>Nothing needs attention</h3><p>Account, billing, onboarding, support, and platform issues will appear here.</p></div>';
   }
   renderAdminClients();
   const recent=document.getElementById('adminRecentClients');if(recent){
-    recent.innerHTML=adminClientsData.slice(0,5).map(x=>adminClientRow(x,true)).join('')||'<div class="empty-state"><h3>No clients yet</h3></div>';
-    recent.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.adminClient)));
+    recent.innerHTML=adminClientsData.slice(0,6).map(x=>adminClientRow(x,true)).join('')||'<div class="empty-state"><h3>No clients yet</h3></div>';
+    recent.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openAdminClient(b.dataset.adminClient)}));
   }
-  const revenue=document.getElementById('adminRevenueList');if(revenue){revenue.innerHTML=adminClientsData.map(x=>'<div class="admin-event"><b>'+esc(x.name)+'</b><span>'+esc(x.plan)+' · '+esc(x.subscriptionStatus||'active')+'</span><small>'+adminMoney(PLAN_DATA[x.plan]?.price||0)+'/mo</small></div>').join('')||'<div class="empty-state"><h3>No revenue yet</h3></div>'}
+  const revenue=document.getElementById('adminRevenueList');if(revenue){revenue.innerHTML=adminClientsData.map(x=>'<div class="admin-event" data-admin-revenue-id="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span>'+esc(x.plan)+' · '+esc(x.subscriptionStatus||'active')+'</span><small>'+adminMoney(PLAN_DATA[x.plan]?.price||0)+'/mo</small></div>').join('')||'<div class="empty-state"><h3>No revenue yet</h3></div>'}
   const usage=document.getElementById('adminUsageList');if(usage){
     usage.innerHTML=adminClientsData.map(x=>{
       const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0),pct=lim?Math.round(used/lim*100):null;
       return '<div class="admin-event"><b>'+esc(x.name)+'</b><span>'+used.toLocaleString()+' min'+(lim?' · '+pct+'% of '+lim:' · high-volume plan')+'</span><small>'+esc(x.plan)+'</small></div>';
     }).join('')||'<div class="empty-state"><h3>No usage yet</h3></div>';
   }
+  bindAdminCommandCenter();
 }
 function adminClientRow(x,activity=false){
   const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0);
   const usage=lim?used+' / '+lim:used.toLocaleString()+' min';
   const initials=String(x.name||'?').split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase()||'?';
-  if(activity)return '<div class="activity-row"><span class="time">'+esc(x.plan)+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.name)+'</strong><small>'+esc(usage)+' · Billing '+esc(x.subscriptionStatus||'active')+'</small></span></div><span class="tag '+(x.status==='active'?'green':x.status==='suspended'?'red':'amber')+'">'+esc(x.status||'active')+'</span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></div>';
+  if(activity){
+    const provision=adminProvisioningFor(x.id),phone=adminPhoneFor(x.id),stage=provision?.stage||(x.status==='onboarding'?'Onboarding':'Live');
+    const workspaceClass=x.status==='active'?'green':x.status==='suspended'?'red':'amber',billingClass=adminBillingTag(x.subscriptionStatus);
+    return '<div class="activity-row admin-recent-row" data-admin-client-row="'+esc(x.id)+'"><span class="plan-pill">'+esc(x.plan)+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.name)+'</strong><small>'+esc(usage)+' · '+esc(stage)+'</small></span></div><div class="admin-recent-statuses"><span class="tag '+workspaceClass+'">'+esc(adminStatusLabel(x.status))+'</span><span class="tag '+billingClass+'">'+esc(adminStatusLabel(x.subscriptionStatus))+'</span><span class="tag '+(phone?'green':'amber')+'">'+(phone?'Phone ready':'Phone pending')+'</span></div><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></div>';
+  }
   return '<div class="admin-client-row"><span><strong>'+esc(x.name)+'</strong><small class="subtle">'+esc(x.ownerEmail||'')+'</small></span><span>'+esc(x.plan)+'</span><span>'+esc(usage)+'</span><span class="tag '+(x.status==='active'?'green':x.status==='suspended'?'red':'amber')+'">'+esc(x.status||'active')+'</span><span class="tag '+adminBillingTag(x.subscriptionStatus)+'">'+esc(x.subscriptionStatus||'active')+'</span><span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></span></div>';
 }
 function renderAdminClients(){
@@ -1897,6 +1945,8 @@ function adminGlobalSearchItems(q){
   for(const t of adminSupportData||[])if(match([t.subject,t.workspaceName,t.email,t.message,t.priority,t.status]))items.push({type:'support',id:t.id,title:t.subject||'Support request',meta:[t.workspaceName,t.status,'Support'].filter(Boolean).join(' · '),view:'admin-support'});
   for(const x of adminFleetData.calls||[])if(match([x.id,x.callId,x.caller,x.phone,x.reason,x.summary,x.workspaceName,x.outcome]))items.push({type:'call',id:String(x.id||x.callId||''),title:x.caller||x.phone||'Call',meta:[x.workspaceName,x.reason,x.outcome,'Call'].filter(Boolean).join(' · '),view:'calls'});
   for(const x of adminFleetData.leads||[])if(match([x.id,x.name,x.email,x.phone,x.stage,x.workspaceName,x.source]))items.push({type:'lead',id:String(x.id||''),title:x.name||x.email||x.phone||'Lead',meta:[x.workspaceName,x.stage,'Lead'].filter(Boolean).join(' · '),view:'admin-leads'});
+  for(const x of adminPhoneData||[])if(match([x.id,x.number,x.forwardingFrom,x.transferNumber,x.workspaceName,x.provider]))items.push({type:'phone',id:String(x.id||''),title:x.number||'Phone number',meta:[x.workspaceName,x.provider,'Phone'].filter(Boolean).join(' · '),view:'phones'});
+  for(const x of adminFeedbackData||[])if(match([x.id,x.workspaceName,x.actorEmail,x.category,x.message,x.status]))items.push({type:'feedback',id:String(x.id||''),title:x.workspaceName||'AI feedback',meta:[String(x.category||'feedback').replaceAll('_',' '),x.status,'AI feedback'].filter(Boolean).join(' · '),view:'feedback'});
   for(const t of adminInboxData.gmail?.threads||[])if(match([t.subject,t.last?.from,t.last?.to,t.last?.snippet]))items.push({type:'gmail',id:t.id,title:t.subject||'Gmail thread',meta:[t.last?.from,'Gmail'].filter(Boolean).join(' · '),view:'inbox'});
   return items.slice(0,14);
 }
@@ -1921,6 +1971,8 @@ async function openAdminGlobalSearchResult(type,id,view){
     else if(type==='support')flashAdminSearchTarget(document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]'));
     else if(type==='call')flashAdminSearchTarget(document.querySelector('[data-admin-call-id="'+CSS.escape(id)+'"]'));
     else if(type==='lead')flashAdminSearchTarget(document.querySelector('[data-admin-lead-id="'+CSS.escape(id)+'"]'));
+    else if(type==='phone')flashAdminSearchTarget(document.querySelector('[data-edit-phone="'+CSS.escape(id)+'"]')?.closest('.call-row'));
+    else if(type==='feedback')flashAdminSearchTarget(document.getElementById('feedback-'+id));
   },80);
 }
 document.getElementById('adminSearch')?.addEventListener('input',renderAdminGlobalSearch);
@@ -2142,6 +2194,17 @@ async function navigateNotification(n){
       }
       if(thread){thread.open=true;thread.scrollIntoView({behavior:'smooth',block:'center'});return true}return false;
     }
+  }
+  if(document.body.dataset.dashboard==='admin'){
+    showView(view);
+    await new Promise(resolve=>setTimeout(resolve,60));
+    let target=null;
+    if(meta.ticketId){target=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]');if(target?.tagName==='DETAILS')target.open=true}
+    else if(meta.feedbackId)target=document.getElementById('feedback-'+String(meta.feedbackId));
+    else if(meta.workspaceId&&view==='provisioning')target=document.querySelector('[data-provision-id="'+CSS.escape(String(meta.workspaceId))+'"]');
+    else if(meta.workspaceId&&view==='usage')target=[...document.querySelectorAll('#adminUsageList .admin-event')].find(el=>el.textContent.includes(adminClientsData.find(x=>String(x.id)===String(meta.workspaceId))?.name||''));
+    if(target){flashAdminSearchTarget(target);return true}
+    const viewTarget=document.getElementById('view-'+view);return !!viewTarget;
   }
   const target=document.getElementById('view-'+view);if(target){showView(view);return true}
   return false;
