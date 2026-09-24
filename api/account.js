@@ -12,6 +12,10 @@ const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getG
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
 const WINDOW=10*60,MAX=5;
 
+function loginTokenKey(token){return 'login:v2:'+crypto.createHash('sha256').update(String(token||'')).digest('hex')}
+async function readLoginToken(token){return (await kv.get(loginTokenKey(token)))||(await kv.get('login:'+token))}
+async function deleteLoginToken(token){await Promise.allSettled([kv.del(loginTokenKey(token)),kv.del('login:'+token)])}
+
 function requestOrigin(req){
   const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
   const proto=String(req.headers['x-forwarded-proto']||'https').toLowerCase().split(',')[0].trim()==='http'?'http':'https';
@@ -1770,7 +1774,7 @@ async function requestLogin(req,res){
     const loginWs=await kv.get('workspace:'+member.workspaceId);
     if(loginWs&&loginWs.status==='pending_deletion')return res.status(200).json({ok:true});
     const token=crypto.randomBytes(32).toString('hex'),role=member.role||'owner',destination=role==='admin'?'/admin-dashboard':(next||'/dashboard');
-    await kv.set('login:'+token,{email,workspaceId:member.workspaceId,role,next:destination,authVersion:Number(member.sessionVersion||0)},{ex:15*60});
+    await kv.set(loginTokenKey(token),{email,workspaceId:member.workspaceId,role,next:destination,authVersion:Number(member.sessionVersion||0)},{ex:15*60});
     const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
     try{
       {const emailBody=authEmail({
@@ -1792,9 +1796,9 @@ async function requestLogin(req,res){
 async function verify(req,res){
   const token=String((req.query||{}).token||'');
   if(!/^[a-f0-9]{64}$/.test(token))return res.redirect(302,'/login?error=invalid');
-  const key='login:'+token,record=await kv.get(key);
+  const record=await readLoginToken(token);
   if(!record||!record.workspaceId)return res.redirect(302,'/login?error=expired');
-  await kv.del(key);
+  await deleteLoginToken(token);
   const member=await kv.get('user:email:'+cleanEmail(record.email)),loginWs=await kv.get('workspace:'+record.workspaceId);
   if(!member||member.disabled||!loginWs||loginWs.status==='pending_deletion')return res.redirect(302,'/login?error=disabled');
   const role=member.role||record.role||'owner',authVersion=Number(member.sessionVersion||record.authVersion||0),destination=role==='admin'?'/admin-dashboard':(record.next==='/dashboard'?'/dashboard':'/dashboard');
