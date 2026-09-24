@@ -2055,6 +2055,33 @@ function onboardingNextAction(x){
   if(!ck.live)return {label:'Launch client',type:'check',field:'live'};
   return {label:'Continue setup',type:'wait'};
 }
+function closeOnboardingDrawer(){
+  const drawer=document.getElementById('onboardingDetailDrawer'),backdrop=document.getElementById('onboardingDrawerBackdrop');
+  drawer?.classList.remove('open');drawer?.setAttribute('aria-hidden','true');if(backdrop)backdrop.hidden=true;
+}
+function bindOnboardingDrawerActions(){
+  const drawer=document.getElementById('onboardingDetailDrawer');if(!drawer)return;
+  drawer.querySelectorAll('[data-auto-stage]').forEach(b=>b.onclick=async e=>{e.preventDefault();await clearProvisioningOverride(b.dataset.autoStage);closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-provision-stage-select]').forEach(sel=>sel.onchange=async e=>{e.stopPropagation();await moveProvisioningStage(sel.dataset.provisionStageSelect,sel.value);closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-provision-check]').forEach(b=>b.onclick=async e=>{e.preventDefault();await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done'));closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-send-onboarding]').forEach(b=>b.onclick=async e=>{e.preventDefault();await sendOnboardingInvite(b.dataset.sendOnboarding,b);closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-approve-build]').forEach(b=>b.onclick=async e=>{e.preventDefault();await approveProvisioningBuild(b.dataset.approveBuild,b);closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-open-documents],[data-onboarding-documents]').forEach(b=>b.onclick=e=>{e.preventDefault();closeOnboardingDrawer();showView('documents')});
+  drawer.querySelectorAll('[data-onboarding-open-client]').forEach(b=>b.onclick=e=>{e.preventDefault();closeOnboardingDrawer();openAdminClient(b.dataset.onboardingOpenClient)});
+}
+function openOnboardingDrawer(id,row){
+  const item=adminProvisioningData.find(x=>String(x.id)===String(id)),drawer=document.getElementById('onboardingDetailDrawer'),backdrop=document.getElementById('onboardingDrawerBackdrop'),content=document.getElementById('onboardingDrawerContent');
+  if(!item||!drawer||!content)return;
+  const body=row?.querySelector('.onboarding-row-body'),done=Number(item.checklistDone||0),total=Math.max(1,Number(item.checklistTotal||0)),pct=Math.round(done/total*100);
+  document.getElementById('onboardingDrawerTitle').textContent=item.name||'Client onboarding';
+  document.getElementById('onboardingDrawerMeta').textContent=(item.plan||'Plan')+' · '+(item.stage||'Setup')+' · '+pct+'% complete';
+  content.innerHTML='<div class="onboarding-drawer-quick"><button type="button" class="primary" data-onboarding-open-client="'+esc(item.id)+'">Open client account</button><button type="button" class="secondary-btn" data-onboarding-documents>Documents</button></div>'+(body?body.innerHTML:'');
+  bindOnboardingDrawerActions();
+  drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');if(backdrop)backdrop.hidden=false;
+}
+document.getElementById('closeOnboardingDrawer')?.addEventListener('click',closeOnboardingDrawer);
+document.getElementById('onboardingDrawerBackdrop')?.addEventListener('click',closeOnboardingDrawer);
+
 function renderProvisioning(){
   const board=document.getElementById('provisioningBoard');if(!board)return;
   const stages=['Paid','Review','Intake','Building','QA','Client Test','Ready','Live'],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
@@ -2079,8 +2106,9 @@ function renderProvisioning(){
     const checklist=Object.entries(labels).map(([k,label])=>'<button type="button" class="provision-check '+(ck[k]?'done':'')+'" '+(['testCall','clientApproval','live'].includes(k)?'data-provision-check="'+k+'" data-provision-id="'+esc(x.id)+'"':'disabled')+'><span>'+(ck[k]?'✓':'○')+'</span>'+label+'</button>').join('');
     const stageSelect='<label class="provision-stage-select">Manual stage<select data-provision-stage-select="'+esc(x.id)+'">'+stages.map(s=>'<option value="'+s+'" '+(x.stage===s?'selected':'')+'>'+s+'</option>').join('')+'</select></label>';
     const agreementDetails='<div class="onboarding-detail-block"><span class="eyebrow">Agreement</span><b>'+esc(agreementStatus)+(x.agreementVersion?' · v'+esc(x.agreementVersion):'')+'</b><small>'+(x.agreementSignedAt?'Signed '+new Date(x.agreementSignedAt).toLocaleDateString()+(x.agreementSignedName?' by '+esc(x.agreementSignedName):''):'Client service agreement status')+'</small>'+(doc?.downloadUrl?'<a class="admin-link" href="'+esc(doc.downloadUrl)+'" target="_blank" rel="noopener">Open signed PDF →</a>':'<button class="admin-link" data-open-documents>Open Documents →</button>')+'</div>';
-    return '<details class="onboarding-row" data-provision-id="'+esc(x.id)+'"><summary><span class="onboarding-client"><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+(x.manualOverride?' · manual stage':'')+'</small></span><span><span class="tag '+(x.stage==='Live'?'green':onboardingNeedsAction(x)?'amber':'')+'">'+esc(x.stage)+'</span></span><span class="onboarding-progress-cell"><i><em style="width:'+pct+'%"></em></i><small>'+pct+'% · '+done+'/'+total+'</small></span><span><span class="tag '+agreementClass+'">'+agreementStatus+'</span></span><span class="onboarding-next-summary">'+esc(next.label)+'</span><span class="onboarding-chevron">⌄</span></summary><div class="onboarding-row-body"><div class="onboarding-checklist"><span class="eyebrow">Launch checklist</span><div class="provision-checks">'+checklist+'</div></div><div class="onboarding-actions">'+agreementDetails+'<div class="onboarding-detail-block"><span class="eyebrow">Next action</span>'+action+(x.websiteScan?'<small>Website scan · '+Number(x.websiteScan.pagesScanned||0)+' page'+(Number(x.websiteScan.pagesScanned||0)===1?'':'s')+'</small>':'')+'</div><div class="onboarding-detail-block"><span class="eyebrow">Stage control</span>'+stageSelect+'<small>Auto stage: '+esc(x.autoStage||x.stage)+'</small>'+(x.manualOverride?'<button class="admin-link" data-auto-stage="'+esc(x.id)+'">Restore automatic stage</button>':'')+'</div></div></div></details>';
+    return '<details class="onboarding-row" data-provision-id="'+esc(x.id)+'"><summary><span class="onboarding-client"><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+(x.manualOverride?' · manual stage':'')+'</small></span><span><span class="tag '+(x.stage==='Live'?'green':onboardingNeedsAction(x)?'amber':'')+'">'+esc(x.stage)+'</span></span><span class="onboarding-progress-cell"><i><em style="width:'+pct+'%"></em></i><small>'+pct+'% · '+done+'/'+total+'</small></span><span><span class="tag '+agreementClass+'">'+agreementStatus+'</span></span><span class="onboarding-next-summary">'+esc(next.label)+'</span><span class="onboarding-chevron">→</span></summary><div class="onboarding-row-body"><div class="onboarding-checklist"><span class="eyebrow">Launch checklist</span><div class="provision-checks">'+checklist+'</div></div><div class="onboarding-actions">'+agreementDetails+'<div class="onboarding-detail-block"><span class="eyebrow">Next action</span>'+action+(x.websiteScan?'<small>Website scan · '+Number(x.websiteScan.pagesScanned||0)+' page'+(Number(x.websiteScan.pagesScanned||0)===1?'':'s')+'</small>':'')+'</div><div class="onboarding-detail-block"><span class="eyebrow">Stage control</span>'+stageSelect+'<small>Auto stage: '+esc(x.autoStage||x.stage)+'</small>'+(x.manualOverride?'<button class="admin-link" data-auto-stage="'+esc(x.id)+'">Restore automatic stage</button>':'')+'</div></div></div></details>';
   }).join('')||'<div class="empty-state"><h3>No onboarding accounts in this view</h3><p>Change the filter or search another client.</p></div>';
+  board.querySelectorAll('.onboarding-row>summary').forEach(summary=>summary.addEventListener('click',e=>{e.preventDefault();const row=summary.closest('.onboarding-row');openOnboardingDrawer(row?.dataset.provisionId,row)}));
   board.querySelectorAll('[data-auto-stage]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();clearProvisioningOverride(b.dataset.autoStage)}));
   board.querySelectorAll('[data-provision-stage-select]').forEach(sel=>sel.addEventListener('change',e=>{e.stopPropagation();moveProvisioningStage(sel.dataset.provisionStageSelect,sel.value)}));
   board.querySelectorAll('[data-provision-check]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done'))}));
