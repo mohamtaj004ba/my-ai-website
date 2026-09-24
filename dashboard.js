@@ -95,7 +95,7 @@ function showView(name){
     if(agentEditing){if(agentEditSnapshot)agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent()}
     if(settingsEditing){settingsEditing=false;pendingBusinessLogo=String(settingsData?.logoDataUrl||'');renderSettings()}
   }
-  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,left:0,behavior:'auto'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent'){document.getElementById('agentFeedbackComposerDetails')?.removeAttribute('open');document.getElementById('agentFeedbackHistoryDetails')?.removeAttribute('open');renderAgent();loadClientFeedback({silent:true})};if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations'){webhookEditing=false;renderIntegrations()};if(name==='settings')renderSettings();if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,left:0,behavior:'auto'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent'){document.getElementById('agentFeedbackComposerDetails')?.removeAttribute('open');document.getElementById('agentFeedbackHistoryDetails')?.removeAttribute('open');renderAgent();loadClientFeedback({silent:true})};if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations'){webhookEditing=false;renderIntegrations()};if(name==='settings')renderSettings();if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();if(document.body.dataset.dashboard==='admin'&&name!=='inbox')refreshAdminView(name,{force:false}).catch(()=>{});
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
@@ -1231,7 +1231,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pen
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminDataSyncAt={},adminDataSyncInFlight={};
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -1243,6 +1243,7 @@ async function bootstrapAdmin(){
     if(!sr.ok||!cr.ok)throw new Error('admin bootstrap');
     adminSummaryData=(await sr.json()).summary||{};
     adminClientsData=(await cr.json()).clients||[];
+    adminDataSyncAt.summary=Date.now();adminDataSyncAt.clients=Date.now();
     const sess=await fetch('/api/account?action=session',{headers:{Accept:'application/json'},cache:'no-store'});
     if(sess.ok){
       const data=await sess.json(),email=data.user?.email||'admin';
@@ -1286,8 +1287,86 @@ async function loadAdminOps(){
     if(fin.ok)adminFinanceData=(await fin.json()).finance||adminFinanceData;
     if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];
     if(dr.ok)adminDocumentsData=(await dr.json()).documents||adminDocumentsData;
+    const freshAt=Date.now();
+    [[pr,'provisioning'],[ph,'phones'],[hr,'health'],[fr,'fleet'],[sr,'support'],[ps,'platform'],[wr,'website'],[fbr,'feedback'],[fin,'finance'],[cr,'campaigns'],[dr,'documents']].forEach(([response,key])=>{if(response.ok)adminDataSyncAt[key]=freshAt});
   }catch(e){console.error('Admin ops load failed',e);setDataHealth('adminDataHealth',true)}
   renderProvisioning();renderPhones();renderHealth();renderWebsiteAnalytics();renderGrowth();renderDocuments();renderAdminFleet();renderAdminSupport();renderAdminFeedback();renderAdminFinance();renderPlatformSettings();renderAdmin();
+}
+
+function currentAdminView(){return document.querySelector('.view.active')?.id?.replace('view-','')||'overview'}
+function setAdminSyncState(state='live',message=''){
+  const wrap=document.getElementById('adminLiveStatus'),label=document.getElementById('adminLiveLabel'),stamp=document.getElementById('adminLastRefresh');
+  if(wrap){wrap.classList.toggle('syncing',state==='syncing');wrap.classList.toggle('sync-error',state==='error')}
+  if(label)label.textContent=state==='syncing'?'Syncing':state==='error'?'Sync issue':'Live';
+  if(stamp&&message)stamp.textContent=message;
+}
+async function adminSyncFetch(key,url,{ttl=45000,force=false}={}){
+  const last=Number(adminDataSyncAt[key]||0);
+  if(!force&&last&&Date.now()-last<ttl)return null;
+  if(adminDataSyncInFlight[key])return adminDataSyncInFlight[key];
+  const task=(async()=>{
+    const r=await fetch(url,{headers:{Accept:'application/json'},cache:'no-store'});
+    if(r.status===401){location.replace('/login?next=%2Fadmin-dashboard');throw new Error('Authentication required')}
+    if(!r.ok)throw new Error('Could not sync '+key);
+    const data=await r.json();adminDataSyncAt[key]=Date.now();return data;
+  })();
+  adminDataSyncInFlight[key]=task;
+  try{return await task}finally{delete adminDataSyncInFlight[key]}
+}
+async function refreshAdminView(view=currentAdminView(),{force=false,announce=true}={}){
+  if(document.body.dataset.dashboard!=='admin')return;
+  if(view==='inbox'){await loadAdminInbox({silent:true,force});return}
+  if(announce)setAdminSyncState('syncing','Syncing '+String(view||'overview').replaceAll('-',' ')+'…');
+  const jobs=[],add=(key,url,ttl,apply)=>jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(data)apply(data)}));
+  if(view==='overview'||view==='clients'){
+    add('summary','/api/account?action=admin-summary',30000,d=>{adminSummaryData=d.summary||{}});
+    add('clients','/api/account?action=admin-clients',30000,d=>{adminClientsData=d.clients||[]});
+  }
+  if(view==='overview'){
+    add('provisioning','/api/account?action=admin-provisioning',60000,d=>{adminProvisioningData=d.provisioning||[]});
+    add('support','/api/account?action=admin-support',60000,d=>{adminSupportData=d.tickets||[]});
+    add('feedback','/api/account?action=admin-ai-feedback',60000,d=>{adminFeedbackData=d.feedback||[]});
+    add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,90000,d=>{adminWebsiteData=d.analytics||adminWebsiteData});
+    add('finance','/api/account?action=admin-finance',180000,d=>{adminFinanceData=d.finance||adminFinanceData});
+    add('health','/api/account?action=admin-system-health',300000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
+  }else if(view==='onboarding'){
+    add('provisioning','/api/account?action=admin-provisioning',30000,d=>{adminProvisioningData=d.provisioning||[]});
+    add('documents','/api/account?action=admin-documents',60000,d=>{adminDocumentsData=d.documents||adminDocumentsData});
+  }else if(view==='agents'||view==='admin-automations'){
+    add('fleet','/api/account?action=admin-fleet',60000,d=>{adminFleetData=d});
+  }else if(view==='phones'){
+    add('phones','/api/account?action=admin-phone-numbers',45000,d=>{adminPhoneData=d.numbers||[]});
+  }else if(view==='finance'){
+    add('finance','/api/account?action=admin-finance',90000,d=>{adminFinanceData=d.finance||adminFinanceData});
+  }else if(view==='growth'){
+    add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,60000,d=>{adminWebsiteData=d.analytics||adminWebsiteData});
+    add('campaigns','/api/account?action=admin-marketing-campaigns',60000,d=>{adminCampaignData=d.campaigns||[]});
+  }else if(view==='website'){
+    add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,60000,d=>{adminWebsiteData=d.analytics||adminWebsiteData});
+  }else if(view==='documents'){
+    add('documents','/api/account?action=admin-documents',60000,d=>{adminDocumentsData=d.documents||adminDocumentsData});
+  }else if(view==='client-care'){
+    add('support','/api/account?action=admin-support',45000,d=>{adminSupportData=d.tickets||[]});
+    add('feedback','/api/account?action=admin-ai-feedback',45000,d=>{adminFeedbackData=d.feedback||[]});
+  }else if(view==='health'){
+    add('health','/api/account?action=admin-system-health',120000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
+  }else if(view==='platform-settings'){
+    add('platform','/api/account?action=admin-platform-settings',60000,d=>{adminPlatformData=d.settings||adminPlatformData});
+  }
+  const results=await Promise.allSettled(jobs),failed=results.filter(x=>x.status==='rejected');
+  if(failed.length){setDataHealth('adminDataHealth',true);if(announce)setAdminSyncState('error','Some data could not sync');throw failed[0].reason}
+  if(view==='onboarding')renderProvisioning();
+  if(view==='agents'||view==='admin-automations')renderAdminFleet();
+  if(view==='phones')renderPhones();
+  if(view==='finance')renderAdminFinance();
+  if(view==='growth'){renderWebsiteAnalytics();renderGrowth()}
+  if(view==='website')renderWebsiteAnalytics();
+  if(view==='documents')renderDocuments();
+  if(view==='client-care'){renderAdminSupport();renderAdminFeedback();renderClientCareTabs()}
+  if(view==='health')renderHealth();
+  if(view==='platform-settings')renderPlatformSettings();
+  renderAdmin();
+  if(announce)updateAdminRefreshStamp();
 }
 
 function adminAgentGroup(health){
@@ -2051,7 +2130,7 @@ async function deleteExpense(id){
   const r=await fetch('/api/account?action=admin-finance-expense-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not delete expense.');return}await loadAdminOps();
 }
 function updateAdminRefreshStamp(){
-  const el=document.getElementById('adminLastRefresh');if(el)el.textContent='Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  setAdminSyncState('live','Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
 }
 function adminAttentionItems(){
   const items=[];
@@ -2313,14 +2392,21 @@ async function refreshAdminCore(){
     fetch('/api/account?action=admin-summary',{headers:{Accept:'application/json'},cache:'no-store'}),
     fetch('/api/account?action=admin-clients',{headers:{Accept:'application/json'},cache:'no-store'})
   ]);
-  if(sr.ok)adminSummaryData=(await sr.json()).summary||{};
-  if(cr.ok)adminClientsData=(await cr.json()).clients||[];
+  if(sr.ok){adminSummaryData=(await sr.json()).summary||{};adminDataSyncAt.summary=Date.now()}
+  if(cr.ok){adminClientsData=(await cr.json()).clients||[];adminDataSyncAt.clients=Date.now()}
   renderAdmin();
 }
 async function refreshAdminDashboard({button=null}={}){
+  if(adminRefreshInFlight)return;
+  adminRefreshInFlight=true;
   if(button){button.disabled=true;button.textContent='Refreshing…'}
-  try{await refreshAdminCore();await loadAdminOps();updateAdminRefreshStamp();await loadNotifications({silent:true})}
-  finally{if(button){button.disabled=false;button.textContent='Refresh'}}
+  setAdminSyncState('syncing',button?'Refreshing all operational data…':'Syncing current view…');
+  try{
+    if(button){await refreshAdminCore();await loadAdminOps();await loadNotifications({silent:true})}
+    else await refreshAdminView(currentAdminView(),{force:false,announce:false});
+    updateAdminRefreshStamp();
+  }catch(err){console.error('Admin refresh failed',err);setAdminSyncState('error','Some data could not sync')}
+  finally{adminRefreshInFlight=false;if(button){button.disabled=false;button.textContent='Refresh'}}
 }
 function initAdminLiveRefresh(){
   const btn=document.getElementById('refreshAdminCommand');if(btn)btn.onclick=()=>refreshAdminDashboard({button:btn});
