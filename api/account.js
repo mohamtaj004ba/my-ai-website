@@ -145,22 +145,38 @@ async function seedPreviewData(req,res){
   const currentIndex=await kv.get('workspace:index')||[],index=Array.isArray(currentIndex)?currentIndex:[];
   const seedPrefix=workspaceId.slice(0,8);
   const keep=index.filter(id=>!String(id).startsWith('seed_'+seedPrefix+'_'));
-  const adminIds=[];
+  const adminIds=[],seedPhones=[],seedSupport=[],seedFeedback=[];
   for(let i=0;i<previewSeed.ADMIN_CLIENTS.length;i++){
     const ws=previewSeed.adminWorkspace(seedPrefix,i,now);adminIds.push(ws.id);
-    const settings={businessName:ws.name,primaryEmail:ws.ownerEmail,contactName:ws.ownerName,businessPhone:ws.phone,website:'https://example-client.test',streetAddress:(1200+i*113)+' W Riverside Ave',city:'Spokane',state:'WA',postalCode:'99201',industry:ws.industry,serviceArea:'Spokane metro and surrounding communities.',timezone:'America/Los_Angeles',notificationEmail:ws.ownerEmail,emailAlerts:true,smsAlerts:false,notifyBilling:true,notifySetup:true,notifyCalls:true,notifySupport:true,notifyUsage:true,updatedAt:now};
-    const autos=i%3===0?[]:[{id:'seed_auto_'+i,name:'New lead alert',trigger:'new_lead',action:'notify_team',enabled:true}];
-    const onboarding=ws.status==='onboarding'
-      ?{status:'building_review',completionPercent:66,checklist:{payment:true,accountReview:true,onboardingSent:true,agreement:true,intake:true,businessProfile:true,agentDraft:true,routingCaptured:true,phoneAssigned:false,adminReview:false,testCall:false,clientApproval:false,live:false},updatedAt:now}
-      :{status:'live',completionPercent:100,checklist:{payment:true,accountReview:true,onboardingSent:true,agreement:true,intake:true,businessProfile:true,agentDraft:true,routingCaptured:true,phoneAssigned:true,adminReview:true,testCall:true,clientApproval:true,live:true},updatedAt:now};
+    const settings={businessName:ws.name,primaryEmail:ws.ownerEmail,contactName:ws.ownerName,businessPhone:ws.phone||('(509) 555-'+String(5200+i*19).padStart(4,'0')),website:'https://example-client.test',streetAddress:(1200+i*113)+' W Riverside Ave',city:'Spokane',state:'WA',postalCode:'99201',industry:ws.industry,serviceArea:'Spokane metro and surrounding communities.',timezone:'America/Los_Angeles',notificationEmail:ws.ownerEmail,emailAlerts:true,smsAlerts:false,notifyBilling:true,notifySetup:true,notifyCalls:true,notifySupport:true,notifyUsage:true,updatedAt:now};
+    const calls=previewSeed.adminSeedCalls(i,ws.name),leads=previewSeed.adminSeedLeads(i),agent=previewSeed.adminSeedAgent(i,ws.industry),autos=previewSeed.adminSeedAutomations(i),onboarding=previewSeed.adminSeedOnboarding(i,now),phone=previewSeed.adminSeedPhone(i,ws),support=previewSeed.adminSeedSupport(i,ws,now),feedback=previewSeed.adminSeedFeedback(i,ws,calls,now);
+    if(phone)seedPhones.push(phone);if(support)seedSupport.push(support);if(feedback)seedFeedback.push(feedback);
+    const routing=onboarding?.checklist?.routingCaptured?{routingChoice:i===9?'forward_existing':'new_number',forwardingNumber:settings.businessPhone,transferNumber:phone?.transferNumber||'',updatedAt:now-2*3600000}:null;
     await Promise.all([
-      kv.set('workspace:'+ws.id,ws),kv.set('settings:'+ws.id,settings),kv.set('agent:'+ws.id,previewSeed.adminSeedAgent(ws.industry)),
-      kv.set('automations:'+ws.id,autos),kv.set('calls:'+ws.id,previewSeed.adminSeedCalls(i,ws.name)),kv.set('leads:'+ws.id,previewSeed.adminSeedLeads(i)),
-      kv.set('conversations:'+ws.id,[]),kv.set('appointments:'+ws.id,[]),kv.set('locations:'+ws.id,[{id:'loc_'+i,name:'Main office',phone:ws.phone,address:(1200+i*113)+' W Riverside Ave, Spokane, WA 99201',timezone:'America/Los_Angeles',active:true}]),
-      kv.set('onboarding:workspace:'+ws.id,onboarding)
+      kv.set('workspace:'+ws.id,ws),kv.set('settings:'+ws.id,settings),
+      agent?kv.set('agent:'+ws.id,agent):kv.del('agent:'+ws.id),
+      kv.set('automations:'+ws.id,autos),kv.set('calls:'+ws.id,calls),kv.set('leads:'+ws.id,leads),
+      kv.set('conversations:'+ws.id,[]),kv.set('appointments:'+ws.id,[]),kv.set('locations:'+ws.id,[{id:'loc_'+i,name:'Main office',phone:settings.businessPhone,address:(1200+i*113)+' W Riverside Ave, Spokane, WA 99201',timezone:'America/Los_Angeles',active:true}]),
+      kv.set('onboarding:workspace:'+ws.id,onboarding),
+      routing?kv.set('routing-request:'+ws.id,routing):kv.del('routing-request:'+ws.id)
     ]);
   }
   await kv.set('workspace:index',[workspaceId,...adminIds,...keep.filter(id=>id!==workspaceId)].slice(0,250));
+
+  const refreshedPhoneIndex=await kv.get('phone:index')||[];
+  const retainedPhones=(Array.isArray(refreshedPhoneIndex)?refreshedPhoneIndex:[]).filter(x=>x&&x.workspaceId!==workspaceId&&!adminIds.includes(x.workspaceId));
+  await kv.set('phone:index',[previewSeed.primaryPhone(workspaceId),...seedPhones,...retainedPhones].slice(0,500));
+
+  const supportIndex=await kv.get('support:index')||[],retainedSupportIds=(Array.isArray(supportIndex)?supportIndex:[]).filter(id=>!String(id).startsWith('seed_support_seed_'+seedPrefix+'_'));
+  for(const ticket of seedSupport)await kv.set('support:'+ticket.id,ticket);
+  await kv.set('support:index',[...seedSupport.map(x=>x.id),...retainedSupportIds].slice(0,500));
+
+  const feedbackIndex=await kv.get('ai-feedback:index')||[],retainedFeedbackIds=(Array.isArray(feedbackIndex)?feedbackIndex:[]).filter(id=>!String(id).startsWith('seed_feedback_seed_'+seedPrefix+'_'));
+  for(const item of seedFeedback){
+    await kv.set('ai-feedback:'+item.id,item);
+    await kv.set(aiFeedbackWorkspaceIndexKey(item.workspaceId),[item.id]);
+  }
+  await kv.set('ai-feedback:index',[...seedFeedback.map(x=>x.id),...retainedFeedbackIds].slice(0,1500));
   await appendAudit(workspaceId,{actorEmail:email,actorRole:'owner',action:'preview_seed_realistic_dataset',section:'workspace',before:null,after:{calls:dataset.calls.length,leads:dataset.leads.length,conversations:dataset.conversations.length,days:60,adminClients:adminIds.length}});
   return res.status(200).json({ok:true,workspaceId,businessName:workspace.name,days:60,calls:dataset.calls.length,leads:dataset.leads.length,conversations:dataset.conversations.length,appointments:dataset.appointments.length,adminClients:adminIds.length,plan:workspace.plan,minutes:dataset.minutes});
 }
@@ -1255,7 +1271,7 @@ async function buildAdminNotifications(admin){
   const [supportIndex,workspaceIndex,prospectIds,gmailConn,feedbackIndex]=await Promise.all([
     kv.get('support:index'),kv.get('workspace:index'),kv.lrange('site:prospect:index',0,99),getGmailConnection(admin.email),kv.get('ai-feedback:index')
   ]);
-  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!f||f.status!=='submitted')continue;items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'New AI feedback',body:(f.workspaceName||'Client')+' · '+(f.context||String(f.category||'feedback').replaceAll('_',' ')),kind:'info',view:'feedback',createdAt:f.createdAt||now,meta:{feedbackId:f.id,callId:f.callId||''}}));}
+  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!f||f.status!=='submitted')continue;const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'feedback',createdAt:f.createdAt||now,meta:{feedbackId:f.id,workspaceId:f.workspaceId||''}}));}
   for(const id of Array.isArray(supportIndex)?supportIndex.slice(0,100):[]){
     const t=await kv.get('support:'+id);if(!t||t.status==='resolved')continue;
     items.push(notificationItem('admin-support:'+t.id+':'+t.status,{title:(t.priority==='urgent'?'Urgent support request':'Client support request'),body:(t.workspaceName||'Client')+' · '+t.subject,kind:t.priority==='urgent'?'danger':'warning',view:'admin-support',createdAt:t.updatedAt||t.createdAt||now,meta:{ticketId:t.id}}));
