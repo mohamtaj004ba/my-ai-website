@@ -1473,7 +1473,7 @@ async function buildAdminNotifications(admin){
   const prospectList=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,100).map(id=>kv.get('site:prospect:'+id)))).filter(Boolean);
   prospectList.filter(p=>['new','inquiry','checkout_started'].includes(p.stage)).slice(0,25).forEach(p=>{
     const title=p.stage==='checkout_started'?'Signup checkout started':'New website inquiry';
-    items.push(notificationItem('prospect:'+p.id+':'+p.stage,{title,body:(p.name||p.business||p.email||'Website prospect')+(p.plan?' · '+p.plan:''),kind:'info',view:'website',createdAt:p.updatedAt||p.createdAt||now,meta:{prospectId:p.id}}));
+    items.push(notificationItem('prospect:'+p.id+':'+p.stage,{title,body:(p.name||p.business||p.email||'Website prospect')+(p.plan?' · '+p.plan:''),kind:'info',view:'growth',createdAt:p.updatedAt||p.createdAt||now,meta:{prospectId:p.id}}));
   });
   if(gmailConn){
     try{
