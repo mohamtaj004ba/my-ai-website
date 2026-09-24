@@ -1299,7 +1299,7 @@ async function followups(req,res){
 }
 async function followupUpdate(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
-  const body=req.body||{},callId=String(body.callId||'').slice(0,120),rawStatus=String(body.status||''),legacyNote=String(body.note||'').trim().slice(0,2000),appendNote=String(body.appendNote||'').trim().slice(0,2000);
+  const body=req.body||{},callId=String(body.callId||'').slice(0,120),rawStatus=String(body.status||''),legacyNote=String(body.note||'').trim().slice(0,2000),appendNote=String(body.appendNote||'').trim().slice(0,2000),updateNoteId=String(body.updateNoteId||'').slice(0,140),updateNoteText=String(body.updateNoteText||'').trim().slice(0,2000),deleteNoteId=String(body.deleteNoteId||'').slice(0,140);
   const status=rawStatus==='open'?'needs_action':rawStatus==='handled'?'completed':rawStatus;
   const allowed=['no_action','needs_action','in_progress','completed','dismissed'];
   if(!callId||!allowed.includes(status))return res.status(400).json({error:'Invalid team-status update'});
@@ -1311,12 +1311,20 @@ async function followupUpdate(req,res){
   let notes=Array.isArray(previous.notes)?previous.notes.slice(-100):[];
   if(previous.note&&String(previous.note).trim()&&!notes.some(n=>n&&n.text===previous.note))notes.unshift({id:'legacy',text:String(previous.note).slice(0,2000),at:Number(previous.updatedAt||0),by:previous.updatedBy||''});
   if(legacyNote&&!appendNote&&!notes.length)notes.push({id:'legacy_'+Date.now(),text:legacyNote,at:Date.now(),by:s.email||''});
-  if(appendNote)notes.push({id:'note_'+Date.now().toString(36),text:appendNote,at:Date.now(),by:s.email||''});
+  let noteAction='';
+  if(updateNoteId){
+    if(!updateNoteText)return res.status(400).json({error:'Updated note text is required'});
+    let found=false;notes=notes.map(n=>String(n?.id||'')===updateNoteId?(found=true,{...n,text:updateNoteText,editedAt:Date.now(),editedBy:s.email||''}):n);
+    if(!found)return res.status(404).json({error:'Note not found'});noteAction='team_note_updated';
+  }else if(deleteNoteId){
+    const beforeCount=notes.length;notes=notes.filter(n=>String(n?.id||'')!==deleteNoteId);
+    if(notes.length===beforeCount)return res.status(404).json({error:'Note not found'});noteAction='team_note_deleted';
+  }else if(appendNote){notes.push({id:'note_'+Date.now().toString(36),text:appendNote,at:Date.now(),by:s.email||''});noteAction='team_note_added'}
   notes=notes.slice(-100);
   const finalCompletionReason=status==='completed'?(body.completionReason!==undefined?completionReason:String(previous.completionReason||'')):'',finalCompletionNote=status==='completed'?(body.completionNote!==undefined?completionNote:String(previous.completionNote||'')):'';
   next[callId]={status,notes,completionReason:finalCompletionReason,completionNote:finalCompletionNote,updatedAt:Date.now(),updatedBy:s.email||''};
   await kv.set(key,next);
-  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:appendNote?'team_note_added':'team_status_'+status,section:'calls',before:previous||null,after:next[callId],meta:{callId}});
+  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:noteAction||('team_status_'+status),section:'calls',before:previous||null,after:next[callId],meta:{callId,noteId:updateNoteId||deleteNoteId||''}});
   return res.status(200).json({ok:true,state:next});
 }
 function aiFeedbackWorkspaceIndexKey(workspaceId){return 'ai-feedback:workspace:'+String(workspaceId||'')}
