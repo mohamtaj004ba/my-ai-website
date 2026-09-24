@@ -2366,6 +2366,7 @@ async function navigateNotification(n){
     let target=null;
     if(meta.ticketId){target=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]');if(target?.tagName==='DETAILS')target.open=true}
     else if(meta.feedbackId)target=document.getElementById('feedback-'+String(meta.feedbackId));
+    else if(meta.prospectId)target=document.querySelector('[data-website-prospect-id="'+CSS.escape(String(meta.prospectId))+'"]');
     else if(meta.workspaceId&&view==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(meta.workspaceId))+'"]');
     else if(meta.workspaceId&&view==='clients')target=document.querySelector('[data-admin-client-row="'+CSS.escape(String(meta.workspaceId))+'"]');
     if(target){flashAdminSearchTarget(target);return true}
