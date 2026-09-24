@@ -2129,7 +2129,11 @@ async function settings(req,res){
     notifySetup:saved.notifySetup!==false,
     notifyCalls:saved.notifyCalls!==false,
     notifySupport:saved.notifySupport!==false,
-    notifyUsage:saved.notifyUsage!==false
+    notifyUsage:saved.notifyUsage!==false,
+    aiAnsweringPaused:saved.aiAnsweringPaused===true,
+    aiPauseFallbackNumber:saved.aiPauseFallbackNumber||'',
+    aiPausedAt:Number(saved.aiPausedAt||0),
+    aiPausedBy:saved.aiPausedBy||''
   }});
 }
 
