@@ -1231,7 +1231,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pen
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminCallSearch='',adminCallWorkspaceFilter='all',adminCallDispositionFilter='all',adminLeadScope='callercore',adminRefreshTimer=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminCallSearch='',adminCallWorkspaceFilter='all',adminCallDispositionFilter='all',adminLeadScope='callercore',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminRefreshTimer=null;
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -1351,7 +1351,17 @@ function renderAdminFleet(){
   }
   const visibleLeadCount=adminLeadScope==='callercore'?webProspects.length:adminLeadScope==='clients'?workspaceLeads.length:totalLeads;
   const le=document.getElementById('adminLeadsEmpty');if(le)le.hidden=visibleLeadCount!==0;
-  const aw=document.getElementById('adminAutomationGrid');if(aw){aw.innerHTML=autos.filter(x=>x.total).map(x=>'<article class="panel integration-card"><div><b>'+esc(x.workspaceName)+'</b><p>'+x.enabled+' enabled of '+x.total+' configured</p></div><span class="tag '+(x.enabled===x.total?'green':x.enabled?'amber':'red')+'">'+(x.enabled===x.total?'Covered':x.enabled?'Partial':'Off')+'</span></article>').join('');document.getElementById('adminAutomationsEmpty').hidden=autos.some(x=>x.total)}
+  const configured=autos.filter(x=>x.total>0),fully=configured.filter(x=>x.enabled===x.total),partial=configured.filter(x=>x.enabled>0&&x.enabled<x.total),off=autos.filter(x=>x.enabled===0);
+  set('automationConfiguredWorkspaces',configured.length);set('automationFullyCovered',fully.length);set('automationPartial',partial.length);set('automationOff',off.length);
+  const automationSearch=document.getElementById('adminAutomationSearch'),automationFilter=document.getElementById('adminAutomationFilter');
+  if(automationSearch){automationSearch.value=adminAutomationSearch;automationSearch.oninput=()=>{adminAutomationSearch=automationSearch.value;renderAdminFleet()}}
+  if(automationFilter){automationFilter.value=adminAutomationFilter;automationFilter.onchange=()=>{adminAutomationFilter=automationFilter.value;renderAdminFleet()}}
+  const aq=adminAutomationSearch.trim().toLowerCase(),visibleAutos=autos.filter(x=>{
+    const state=x.total>0&&x.enabled===x.total?'covered':x.enabled>0?'partial':'off';
+    if(adminAutomationFilter!=='all'&&state!==adminAutomationFilter)return false;
+    return !aq||String(x.workspaceName||'').toLowerCase().includes(aq);
+  });
+  const aw=document.getElementById('adminAutomationGrid');if(aw){aw.innerHTML=visibleAutos.map(x=>{const state=x.total>0&&x.enabled===x.total?'covered':x.enabled>0?'partial':'off',tone=state==='covered'?'green':state==='partial'?'amber':'red',label=state==='covered'?'Fully covered':state==='partial'?'Partial':'None / off';return '<article class="panel integration-card admin-automation-card" data-automation-client="'+esc(x.workspaceId)+'"><div><b>'+esc(x.workspaceName)+'</b><p>'+x.enabled+' enabled of '+x.total+' configured</p><small>'+esc(x.plan)+' plan</small></div><span class="tag '+tone+'">'+label+'</span></article>'}).join('');document.getElementById('adminAutomationsEmpty').hidden=visibleAutos.length!==0;aw.querySelectorAll('[data-automation-client]').forEach(card=>card.addEventListener('click',()=>openAdminClient(card.dataset.automationClient)))}
 }
 function renderAdminFeedback(){
   const list=document.getElementById('adminFeedbackList'),empty=document.getElementById('adminFeedbackEmpty'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
