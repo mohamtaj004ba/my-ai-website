@@ -1559,3 +1559,9 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
   .company-document-row.head{display:none}
   .company-document-row>span{display:block!important}
 }
+
+/* Client live workspace sync */
+.client-live-status{min-width:118px}
+.client-live-status+button{align-self:center}
+@media(max-width:760px){.overview-head>.page-actions{width:100%;justify-content:flex-start}.client-live-status{min-width:0}}
+@media(prefers-reduced-motion:reduce){.admin-live-status.syncing>i{animation:none!important}}
