@@ -1278,8 +1278,8 @@ async function buildAdminNotifications(admin){
   }
   for(const id of Array.isArray(workspaceIndex)?workspaceIndex.slice(0,300):[]){
     const ws=await kv.get('workspace:'+id);if(!ws)continue;
-    if(ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'revenue',createdAt:ws.updatedAt||now}));
-    if(ws.status==='suspended')items.push(notificationItem('admin-workspace:'+id+':suspended',{title:'Client workspace suspended',body:(ws.name||'Client')+' is currently suspended.',kind:'warning',view:'clients',createdAt:ws.updatedAt||now}));
+    if(ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'revenue',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
+    if(ws.status==='suspended')items.push(notificationItem('admin-workspace:'+id+':suspended',{title:'Client workspace suspended',body:(ws.name||'Client')+' is currently suspended.',kind:'warning',view:'clients',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
     const plan=entitlementsFor(ws.plan),usage=Number(ws.usage?.minutes||0);
     if(plan.minutes){
       const pct=Math.round((usage/plan.minutes)*100),threshold=pct>=100?100:pct>=85?85:0;
