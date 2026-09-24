@@ -1763,7 +1763,7 @@ async function savePlatformSettings(){
   try{
     const r=await fetch('/api/account?action=admin-platform-settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save platform settings.');
-    adminPlatformData=data.settings;adminWebsiteDays=Number(data.settings?.analyticsWindowDays||adminWebsiteDays||30);renderPlatformSettings();initAdminLiveRefresh();renderGrowth();await loadWebsiteAnalytics(adminWebsiteDays);
+    adminPlatformData=data.settings;adminWebsiteDays=Number(data.settings?.analyticsWindowDays||adminWebsiteDays||30);renderPlatformSettings();initAdminLiveRefresh();renderGrowth();renderAdmin();await loadWebsiteAnalytics(adminWebsiteDays);await loadNotifications({silent:true});
     if(status){status.textContent='Platform settings saved and applied.';status.className='form-status-line success'}
     const tag=document.getElementById('platformSettingsStatus');if(tag){tag.textContent='Saved';tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1500)}
   }catch(err){if(status){status.textContent=err.message||'Could not save platform settings.';status.className='form-status-line error'}}
@@ -2072,7 +2072,7 @@ function adminAttentionItems(){
     items.push({id:'feedback:'+fb.id,type:'feedback',feedbackId:fb.id,title:fb.workspaceName||'Client',message:'AI feedback awaiting review',category:'Client care',severity:'attention',view:'client-care',createdAt:fb.createdAt||0});
   }
   const blockers=adminReadinessData?.blockers||[];
-  if(blockers.length)items.push({id:'platform:readiness',type:'system',title:'Platform launch readiness',message:blockers.length+' required launch item'+(blockers.length===1?'':'s')+' still need attention',category:'System health',severity:'critical',view:'health'});
+  if(blockers.length&&adminPlatformData?.alertPrefs?.system!==false)items.push({id:'platform:readiness',type:'system',title:'Platform launch readiness',message:blockers.length+' required launch item'+(blockers.length===1?'':'s')+' still need attention',category:'System health',severity:'critical',view:'health'});
   const rank={critical:0,attention:1,info:2};
   return items.sort((a,b)=>(rank[a.severity]??9)-(rank[b.severity]??9)||Number(b.createdAt||0)-Number(a.createdAt||0));
 }
@@ -2269,6 +2269,7 @@ function adminGlobalSearchItems(q){
   for(const x of adminPhoneData||[])if(match([x.id,x.number,x.forwardingFrom,x.transferNumber,x.workspaceName,x.provider]))items.push({type:'phone',id:String(x.id||''),title:x.number||'Phone number',meta:[x.workspaceName,x.provider,'Phone'].filter(Boolean).join(' · '),view:'phones'});
   for(const x of adminFeedbackData||[])if(match([x.id,x.workspaceName,x.actorEmail,x.category,x.message,x.status]))items.push({type:'feedback',id:String(x.id||''),title:x.workspaceName||'AI feedback',meta:[String(x.category||'feedback').replaceAll('_',' '),x.status,'Client care'].filter(Boolean).join(' · '),view:'client-care'});
   for(const x of adminFinanceData.expenses||[])if(match([x.id,x.name,x.vendor,x.category,x.notes]))items.push({type:'expense',id:String(x.id||''),title:x.name||'Expense',meta:[x.vendor,x.category,financeMoney(x.amount)].filter(Boolean).join(' · '),view:'finance'});
+  for(const x of adminDocumentsData.company||[])if(match([x.id,x.name,x.type,x.status,x.notes]))items.push({type:'company-document',id:String(x.id||''),title:x.name||'Company record',meta:[x.type,x.status,'Documents'].filter(Boolean).join(' · '),view:'documents'});
   for(const c of adminCampaignData||[])if(match([c.id,c.name,c.channel,c.status,c.utmSource,c.utmMedium,c.utmCampaign,c.goal]))items.push({type:'campaign',id:String(c.id||''),title:c.name||'Campaign',meta:[c.channel,c.status,'Growth campaign'].filter(Boolean).join(' · '),view:'growth'});
   for(const d of adminDocumentsData.agreements||[])if(match([d.workspaceName,d.ownerEmail,d.signedName,d.agreementVersion,d.status]))items.push({type:'document',id:String(d.workspaceId||''),title:(d.workspaceName||'Client')+' agreement',meta:[d.status,d.agreementVersion?'v'+d.agreementVersion:''].filter(Boolean).join(' · '),view:'documents'});
   for(const t of adminInboxData.gmail?.threads||[])if(match([t.subject,t.last?.from,t.last?.to,t.last?.snippet]))items.push({type:'gmail',id:t.id,title:t.subject||'Gmail thread',meta:[t.last?.from,'Gmail'].filter(Boolean).join(' · '),view:'inbox'});
@@ -2298,6 +2299,7 @@ async function openAdminGlobalSearchResult(type,id,view){
     else if(type==='phone')flashAdminSearchTarget(document.querySelector('[data-edit-phone="'+CSS.escape(id)+'"]')?.closest('.call-row'));
     else if(type==='feedback')flashAdminSearchTarget(document.getElementById('feedback-'+id));
     else if(type==='expense')flashAdminSearchTarget(document.querySelector('[data-edit-expense="'+CSS.escape(id)+'"]')?.closest('.admin-expense-row'));
+    else if(type==='company-document')flashAdminSearchTarget(document.querySelector('[data-edit-company-document="'+CSS.escape(id)+'"]')?.closest('.company-document-row'));
   },80);
 }
 document.getElementById('adminSearch')?.addEventListener('input',renderAdminGlobalSearch);
