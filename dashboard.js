@@ -1231,7 +1231,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pen
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminCallSearch='',adminCallWorkspaceFilter='all',adminCallDispositionFilter='all',adminLeadScope='callercore',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminRefreshTimer=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFeedbackData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminRefreshTimer=null;
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -1258,7 +1258,7 @@ async function bootstrapAdmin(){
 
 async function loadAdminOps(){
   try{
-    const [pr,ph,hr,fr,sr,ps,wr,fbr]=await Promise.all([
+    const [pr,ph,hr,fr,sr,ps,wr,fbr,fin]=await Promise.all([
       fetch('/api/account?action=admin-provisioning',{cache:'no-store'}),
       fetch('/api/account?action=admin-phone-numbers',{cache:'no-store'}),
       fetch('/api/account?action=admin-system-health',{cache:'no-store'}),
@@ -1266,9 +1266,10 @@ async function loadAdminOps(){
       fetch('/api/account?action=admin-support',{cache:'no-store'}),
       fetch('/api/account?action=admin-platform-settings',{cache:'no-store'}),
       fetch('/api/account?action=admin-website-analytics',{cache:'no-store'}),
-      fetch('/api/account?action=admin-ai-feedback',{cache:'no-store'})
+      fetch('/api/account?action=admin-ai-feedback',{cache:'no-store'}),
+      fetch('/api/account?action=admin-finance',{cache:'no-store'})
     ]);
-    setDataHealth('adminDataHealth',[pr,ph,hr,fr,sr,ps,wr,fbr].some(r=>!r.ok));
+    setDataHealth('adminDataHealth',[pr,ph,hr,fr,sr,ps,wr,fbr,fin].some(r=>!r.ok));
     if(pr.ok)adminProvisioningData=(await pr.json()).provisioning||[];
     if(ph.ok)adminPhoneData=(await ph.json()).numbers||[];
     if(hr.ok){const health=await hr.json();adminHealthData=health.services||[];adminReadinessData=health.readiness||null;}
@@ -1277,8 +1278,9 @@ async function loadAdminOps(){
     if(ps.ok)adminPlatformData=(await ps.json()).settings||null;
     if(wr.ok)adminWebsiteData=(await wr.json()).analytics||adminWebsiteData;
     if(fbr.ok)adminFeedbackData=(await fbr.json()).feedback||[];
+    if(fin.ok)adminFinanceData=(await fin.json()).finance||adminFinanceData;
   }catch(e){console.error('Admin ops load failed',e);setDataHealth('adminDataHealth',true)}
-  renderProvisioning();renderPhones();renderHealth();renderWebsiteAnalytics();renderAdminFleet();renderAdminSupport();renderAdminFeedback();renderPlatformSettings();renderAdmin();
+  renderProvisioning();renderPhones();renderHealth();renderWebsiteAnalytics();renderAdminFleet();renderAdminSupport();renderAdminFeedback();renderAdminFinance();renderPlatformSettings();renderAdmin();
 }
 
 function adminAgentGroup(health){
