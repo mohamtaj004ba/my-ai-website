@@ -1589,6 +1589,11 @@ function renderAdminSupport(){
   wrap.querySelectorAll('[data-ticket-status]').forEach(s=>s.addEventListener('change',e=>{e.stopPropagation();updateSupportStatus(s.dataset.ticketStatus,s.value)}));
   wrap.querySelectorAll('[data-support-admin-reply]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();replyAdminSupportTicket(b.dataset.supportAdminReply,b)}));
 }
+function renderClientCareTabs(){
+  document.querySelectorAll('[data-care-tab]').forEach(btn=>{btn.classList.toggle('active',btn.dataset.careTab===adminCareTab);btn.onclick=()=>{adminCareTab=btn.dataset.careTab||'support';renderClientCareTabs()}});
+  const support=document.getElementById('clientCareSupportPane'),feedback=document.getElementById('clientCareFeedbackPane');if(support)support.hidden=adminCareTab!=='support';if(feedback)feedback.hidden=adminCareTab!=='feedback';
+}
+function openClientCare(tab='support'){adminCareTab=tab;showView('client-care');renderClientCareTabs()}
 async function replyAdminSupportTicket(id,button){
   const input=document.querySelector('[data-support-admin-input="'+CSS.escape(id)+'"]'),message=String(input?.value||'').trim();if(!message)return;
   if(button){button.disabled=true;button.textContent='Sending…'}
@@ -1888,17 +1893,17 @@ function updateAdminRefreshStamp(){
 function adminAttentionItems(){
   const items=[];
   for(const x of adminClientsData){
-    if(x.subscriptionStatus==='past_due')items.push({id:'billing:'+x.id,type:'billing',workspaceId:x.id,title:x.name||'Client',message:'Stripe payment needs attention',category:'Billing',severity:'critical',view:'revenue'});
+    if(x.subscriptionStatus==='past_due')items.push({id:'billing:'+x.id,type:'billing',workspaceId:x.id,title:x.name||'Client',message:'Stripe payment needs attention',category:'Billing',severity:'critical',view:'finance'});
     if(x.status==='suspended')items.push({id:'workspace:'+x.id,type:'workspace',workspaceId:x.id,title:x.name||'Client',message:'Workspace access is suspended',category:'Workspace',severity:'critical',view:'clients'});
-    if(x.status==='onboarding')items.push({id:'onboarding:'+x.id,type:'onboarding',workspaceId:x.id,title:x.name||'Client',message:'Workspace onboarding is still in progress',category:'Onboarding',severity:'attention',view:'provisioning'});
+    if(x.status==='onboarding')items.push({id:'onboarding:'+x.id,type:'onboarding',workspaceId:x.id,title:x.name||'Client',message:'Onboarding is still in progress',category:'Onboarding',severity:'attention',view:'onboarding'});
   }
   for(const t of adminSupportData||[]){
     if(t.status==='resolved')continue;
-    items.push({id:'support:'+t.id,type:'support',ticketId:t.id,title:t.workspaceName||'Client',message:t.subject||'Open support request',category:'Support',severity:t.priority==='urgent'?'critical':'attention',view:'admin-support',createdAt:t.updatedAt||t.createdAt||0});
+    items.push({id:'support:'+t.id,type:'support',ticketId:t.id,title:t.workspaceName||'Client',message:t.subject||'Open support request',category:'Client care',severity:t.priority==='urgent'?'critical':'attention',view:'client-care',createdAt:t.updatedAt||t.createdAt||0});
   }
   for(const fb of adminFeedbackData||[]){
     if(fb.status!=='submitted')continue;
-    items.push({id:'feedback:'+fb.id,type:'feedback',feedbackId:fb.id,title:fb.workspaceName||'Client',message:'AI feedback awaiting review',category:'AI feedback',severity:'attention',view:'feedback',createdAt:fb.createdAt||0});
+    items.push({id:'feedback:'+fb.id,type:'feedback',feedbackId:fb.id,title:fb.workspaceName||'Client',message:'AI feedback awaiting review',category:'Client care',severity:'attention',view:'client-care',createdAt:fb.createdAt||0});
   }
   const blockers=adminReadinessData?.blockers||[];
   if(blockers.length)items.push({id:'platform:readiness',type:'system',title:'Platform launch readiness',message:blockers.length+' required launch item'+(blockers.length===1?'':'s')+' still need attention',category:'System health',severity:'critical',view:'health'});
@@ -1911,11 +1916,10 @@ function adminStatusLabel(v){return String(v||'active').replaceAll('_',' ').repl
 async function openAdminAttentionItem(item){
   if(!item)return;
   if(item.type==='workspace'||item.type==='billing'){showView('clients');await openAdminClient(item.workspaceId);return}
-  showView(item.view||'overview');
+  if(item.type==='support')openClientCare('support');else if(item.type==='feedback')openClientCare('feedback');else showView(item.view||'overview');
   setTimeout(()=>{
     let target=null;
-    if(item.type==='billing')target=document.querySelector('[data-admin-revenue-id="'+CSS.escape(String(item.workspaceId))+'"]');
-    else if(item.type==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(item.workspaceId))+'"]');
+    if(item.type==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(item.workspaceId))+'"]');
     else if(item.type==='support')target=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(item.ticketId))+'"]');
     else if(item.type==='feedback')target=document.getElementById('feedback-'+String(item.feedbackId));
     else if(item.type==='system')target=document.getElementById('productionReadinessCard')||document.getElementById('systemHealthGrid');
