@@ -568,23 +568,27 @@ async function adminSavePhoneNumber(req,res){
   if(!/^\+?[0-9() .-]{7,30}$/.test(number))return res.status(400).json({error:'Valid phone number required'});
   if(forwardingFrom&&!/^\+?[0-9() .-]{7,30}$/.test(forwardingFrom))return res.status(400).json({error:'Forwarding source number is invalid'});
   if(transferNumber&&!/^\+?[0-9() .-]{7,30}$/.test(transferNumber))return res.status(400).json({error:'Transfer destination is invalid'});
-  let workspaceName='';
+  const current=await kv.get('phone:index')||[],list=Array.isArray(current)?current.slice():[],previous=list.find(x=>x&&String(x.id)===id),digits=v=>String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
+  const duplicateNumber=list.find(x=>x&&String(x.id)!==id&&digits(x.number)===digits(number));
+  if(duplicateNumber)return res.status(409).json({error:'That CallerCore number is already in the routing inventory. Edit the existing number instead.'});
+  const duplicateWorkspace=workspaceId&&list.find(x=>x&&String(x.id)!==id&&String(x.workspaceId||'')===workspaceId);
+  if(duplicateWorkspace)return res.status(409).json({error:'That workspace already has a CallerCore number. Edit its existing number instead.'});
+  let workspaceName='',workspaceBefore=null;
   if(workspaceId){
-    const ws=await kv.get('workspace:'+workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
-    workspaceName=ws.name||'';
-    await kv.set('workspace:'+workspaceId,{...ws,phone:number,updatedAt:Date.now()});
+    workspaceBefore=await kv.get('workspace:'+workspaceId);if(!workspaceBefore)return res.status(404).json({error:'Workspace not found'});
+    workspaceName=workspaceBefore.name||'';
   }
-  const current=await kv.get('phone:index')||[];
-  const list=Array.isArray(current)?current:[];
-  const previous=list.find(x=>x&&String(x.id)===id);
   if(previous&&previous.workspaceId&&previous.workspaceId!==workspaceId){
     const oldKey='workspace:'+previous.workspaceId,oldWs=await kv.get(oldKey);
-    if(oldWs&&String(oldWs.phone||'')===String(previous.number||''))await kv.set(oldKey,{...oldWs,phone:'',updatedAt:Date.now()});
+    if(oldWs&&digits(oldWs.phone)===digits(previous.number))await kv.set(oldKey,{...oldWs,phone:'',updatedAt:Date.now()});
   }
+  if(workspaceId&&workspaceBefore)await kv.set('workspace:'+workspaceId,{...workspaceBefore,phone:number,updatedAt:Date.now()});
   const item={id,number,workspaceId,workspaceName,provider,label,forwardingFrom,transferNumber,afterHours,smsEnabled,status:'active',updatedAt:Date.now()};
   const i=list.findIndex(x=>x&&String(x.id)===id);
   if(i>=0)list[i]=item;else list.push(item);
   await kv.set('phone:index',list.slice(0,500));
+  const auditWorkspace=workspaceId||previous?.workspaceId||admin.workspaceId;
+  if(auditWorkspace)await appendAudit(auditWorkspace,{actorEmail:admin.email,actorRole:'admin',action:previous?'phone_routing_update':'phone_routing_create',section:'routing',before:previous||null,after:item});
   return res.status(200).json({ok:true,number:item});
 }
 
@@ -604,6 +608,7 @@ async function adminDeletePhoneNumber(req,res){
       await kv.set(key,{...ws,phone:'',updatedAt:Date.now()});
     }
   }
+  if(item.workspaceId)await appendAudit(item.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'phone_routing_delete',section:'routing',before:item,after:null});
   return res.status(200).json({ok:true,deleted:{id:item.id,number:item.number}});
 }
 
@@ -1213,7 +1218,7 @@ async function adminSendClientLogin(req,res){
   const member=await kv.get('user:email:'+email);
   if(!member||member.workspaceId!==id)return res.status(409).json({error:'Client access mapping is broken. Repair access first.'});
   const token=crypto.randomBytes(32).toString('hex');
-  await kv.set('login:'+token,{email,workspaceId:id,role:member.role||'owner',next:'/dashboard',authVersion:Number(member.sessionVersion||0)},{ex:15*60});
+  await kv.set(loginTokenKey(token),{email,workspaceId:id,role:member.role||'owner',next:'/dashboard',authVersion:Number(member.sessionVersion||0)},{ex:15*60});
   const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
   {const emailBody=authEmail({
     preheader:'CallerCore support sent you a secure sign-in link.',
