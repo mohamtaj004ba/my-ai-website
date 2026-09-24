@@ -1025,3 +1025,68 @@ body.drawer-open{overflow:hidden}
   .webhook-editor-actions{flex-direction:column-reverse}
   .webhook-editor-actions>*{width:100%}
 }
+
+
+/* 2026-09-23 admin command center refinement */
+body[data-dashboard="admin"] .view{max-width:1780px;width:100%;margin:0 auto}
+.admin-workspace-card{display:grid!important;grid-template-columns:36px minmax(0,1fr);gap:10px;align-items:center;padding:11px 12px!important;border-radius:13px!important;background:linear-gradient(145deg,#20262d,#191e24)!important}
+.admin-workspace-card .admin-workspace-mark{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;border:1px solid #39424b;background:#252c34;color:#e9edf0;font-size:9px;font-weight:900;letter-spacing:.05em}
+.admin-workspace-card>div:last-child{display:grid;gap:1px;min-width:0}
+.admin-workspace-card span{font-size:8px!important;text-transform:uppercase;letter-spacing:.08em;color:#8f9aa5!important;font-weight:900}
+.admin-workspace-card strong{font-size:12px!important;margin:0!important}
+.admin-workspace-card small{font-size:7.5px!important;color:#a9b2bb!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.admin-sidebar-status{border-top:1px solid rgba(255,255,255,.08);padding-top:11px!important}
+.admin-sidebar-status strong{font-size:10px!important;line-height:1.35}
+.admin-sidebar-status span{font-size:7.5px!important;color:#8f99a3!important;line-height:1.35}
+
+.admin-command-metrics .command-metric-link{cursor:pointer;position:relative}
+.admin-command-metrics .command-metric-link:after{content:"→";position:absolute;right:18px;top:18px;color:#a2a9af;font-weight:900;opacity:.7}
+.admin-command-metrics .command-metric-link:focus-visible{outline:2px solid rgba(200,93,53,.45);outline-offset:3px}
+.admin-command-metrics .attention-metric strong{color:#8b4a2f}
+.admin-command-grid{align-items:stretch}
+.admin-attention-panel .panel-head small,.admin-recent-accounts .panel-head small{display:block;margin-top:4px;color:var(--muted);font-size:8px;line-height:1.45}
+
+.admin-attention-item{appearance:none;width:100%;border:0;border-top:1px solid #edf0f2;background:#fff;display:grid;grid-template-columns:10px minmax(150px,.85fr) minmax(220px,1.6fr) auto;gap:10px;align-items:center;padding:12px 0;text-align:left;color:var(--ink);font:inherit;cursor:pointer}
+.admin-attention-item:first-child{border-top:0}
+.admin-attention-item:hover{background:#fafbfc}
+.admin-attention-item b{font-size:9px}
+.admin-attention-item>span:not(.attention-severity-dot){font-size:9px;color:#4f5962}
+.admin-attention-item small{font-size:7.5px;color:#7d8790;font-weight:800;white-space:nowrap}
+.attention-severity-dot{width:7px;height:7px;border-radius:50%;background:#aab2b8}
+.attention-severity-dot.attention{background:#d28a3b}
+.attention-severity-dot.critical{background:#c65042}
+.admin-attention-item.critical{box-shadow:inset 2px 0 0 #c65042;padding-left:9px}
+
+.admin-health-card .health-ring-wrap small{font-size:8px!important}
+.admin-health-card .bar-list>div{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;margin-top:12px}
+.admin-health-card .bar-list span{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.admin-health-card .bar-list span b{font-size:9px}
+.admin-health-card .bar-list span small{font-size:7px;color:var(--muted)}
+.admin-health-card .bar-list i{height:6px;border-radius:999px}
+
+.admin-recent-row{grid-template-columns:74px minmax(240px,1fr) minmax(285px,.95fr) 72px!important;gap:12px!important;min-height:62px;cursor:pointer}
+.admin-recent-row .plan-pill{font-size:7px;font-weight:900;color:#65707a;text-transform:uppercase;letter-spacing:.05em}
+.admin-recent-statuses{display:flex;gap:5px;align-items:center;justify-content:flex-start;flex-wrap:wrap}
+.admin-recent-statuses .tag{font-size:6.5px!important;padding:4px 6px!important}
+.admin-recent-row .person small{font-size:7px!important}
+.admin-recent-row .admin-link{justify-self:end}
+
+.admin-agent-card{align-items:flex-start!important}
+.admin-agent-card>div{min-width:0}
+.admin-agent-card p{margin:3px 0!important}
+.admin-agent-card small{display:block;margin-top:7px;color:var(--muted);font-size:8px;line-height:1.4}
+.admin-agent-card .tag{flex:0 0 auto}
+
+@media(min-width:1500px){
+  body[data-dashboard="admin"] .view{padding-left:52px;padding-right:52px}
+}
+@media(max-width:1050px){
+  .admin-attention-item{grid-template-columns:10px minmax(120px,.8fr) minmax(170px,1.4fr) auto}
+  .admin-recent-row{grid-template-columns:65px minmax(190px,1fr) minmax(220px,.9fr) 64px!important}
+}
+@media(max-width:760px){
+  .admin-attention-item{grid-template-columns:10px 1fr auto}
+  .admin-attention-item>span:not(.attention-severity-dot){grid-column:2/4}
+  .admin-recent-row{grid-template-columns:1fr!important}
+  .admin-recent-statuses{justify-content:flex-start}
+}
