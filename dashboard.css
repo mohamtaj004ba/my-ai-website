@@ -1517,3 +1517,42 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 .secondary-btn.compact{padding:7px 9px;font-size:7px}
 .modal-action-row{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:2px}
 .modal-action-row .primary{margin-left:auto}
+
+
+/* 2026-09-24 company operations refinement */
+.company-documents-panel{margin-top:18px;overflow:hidden}
+.company-documents-panel .panel-head{align-items:flex-end;gap:18px}
+.admin-section-toolbar.compact{margin:0;display:flex;gap:8px;align-items:center}
+.admin-section-toolbar.compact input{min-width:210px}
+.company-document-row{display:grid;grid-template-columns:minmax(220px,1.45fr) .7fr .7fr .7fr .8fr .7fr;gap:14px;align-items:center;padding:13px 15px;border-bottom:1px solid #e8edef;font-size:8.5px}
+.company-document-row.head{background:#f8fafb;color:#68727a;font-size:7px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+.company-document-row:not(.head):hover{background:#fafbfc}
+.company-document-row strong{display:block;font-size:9px}
+.company-document-row small{display:block;margin-top:3px;color:#879198;font-size:7px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.company-document-row .phone-actions{justify-content:flex-end}
+#companyDocumentModal .form-card{display:grid;gap:12px}
+#companyDocumentModal textarea{min-height:92px;resize:vertical}
+.platform-settings-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.platform-settings-grid>.panel{min-height:100%}
+.platform-settings-grid .setting-row{border-top:1px solid #edf0f2;padding-top:12px}
+.platform-settings-grid .setting-row span{display:grid;gap:3px}
+.platform-settings-grid .setting-row small{font-weight:500;line-height:1.35}
+.platform-settings-grid input[type="checkbox"]{accent-color:#d0643e}
+.health-service-node.ok .health-node-pulse,.admin-health-item.healthy .health-card-indicator i{animation:healthLivePulse 1.8s ease-in-out infinite}
+@keyframes healthLivePulse{0%,100%{transform:scale(.9);opacity:.55}50%{transform:scale(1.2);opacity:1}}
+.health-core-orbit i{animation:healthOrbitGlow 2.4s ease-in-out infinite}
+@keyframes healthOrbitGlow{0%,100%{opacity:.45;transform:scale(.88)}50%{opacity:1;transform:scale(1.08)}}
+@media(max-width:1180px){
+  .platform-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .company-document-row{grid-template-columns:minmax(200px,1.4fr) .7fr .7fr .7fr .7fr}
+  .company-document-row>span:nth-child(4),.company-document-row.head>span:nth-child(4){display:none}
+}
+@media(max-width:760px){
+  .platform-settings-grid{grid-template-columns:1fr!important}
+  .company-documents-panel .panel-head{align-items:stretch}
+  .admin-section-toolbar.compact{flex-direction:column;align-items:stretch}
+  .admin-section-toolbar.compact input{min-width:0;width:100%}
+  .company-document-row{grid-template-columns:1fr!important;padding:13px}
+  .company-document-row.head{display:none}
+  .company-document-row>span{display:block!important}
+}
