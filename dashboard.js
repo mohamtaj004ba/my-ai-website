@@ -2014,6 +2014,9 @@ function updateAdminRefreshStamp(){
 }
 function adminAttentionItems(){
   const items=[];
+  for(const p of adminWebsiteData.prospects||[]){
+    if(prospectDue(p))items.push({id:'prospect:'+p.id,type:'prospect',prospectId:p.id,title:p.business||p.name||p.email||'Prospect',message:p.nextFollowUpAt?'Sales follow-up is due':'Prospect has not been contacted within the target window',category:'Growth',severity:'attention',view:'growth',createdAt:p.nextFollowUpAt||p.updatedAt||p.createdAt||0});
+  }
   for(const x of adminClientsData){
     if(x.subscriptionStatus==='past_due')items.push({id:'billing:'+x.id,type:'billing',workspaceId:x.id,title:x.name||'Client',message:'Stripe payment needs attention',category:'Billing',severity:'critical',view:'finance'});
     if(x.status==='suspended')items.push({id:'workspace:'+x.id,type:'workspace',workspaceId:x.id,title:x.name||'Client',message:'Workspace access is suspended',category:'Workspace',severity:'critical',view:'clients'});
@@ -2038,6 +2041,7 @@ function adminStatusLabel(v){return String(v||'active').replaceAll('_',' ').repl
 async function openAdminAttentionItem(item){
   if(!item)return;
   if(item.type==='workspace'||item.type==='billing'){showView('clients');await openAdminClient(item.workspaceId);return}
+  if(item.type==='prospect'){showView('growth');openProspectModal(item.prospectId);return}
   if(item.type==='support')openClientCare('support');else if(item.type==='feedback')openClientCare('feedback');else showView(item.view||'overview');
   setTimeout(()=>{
     let target=null;
@@ -2066,7 +2070,7 @@ function renderAdmin(){
   const attentionItems=adminAttentionItems();window.__adminAttentionItems=attentionItems;
   set('adminMrr',financeMoney(finance.mrr??s.mrr));set('adminActiveClients',s.activeClients||0);set('adminOnboarding',(s.onboarding||0)+' onboarding');
   set('adminMonthlyCosts',financeMoney(finance.recurringExpenses||0));set('adminNetRecurring',financeMoney(finance.netRecurring||0));set('adminMarginMeta',Number(finance.margin||0).toFixed(1).replace('.0','')+'% operating margin');
-  set('adminPastDue',s.pastDue||0);set('adminSnapshotOnboarding',s.onboarding||0);set('adminLaunchBlockers',(adminReadinessData?.blockers||[]).length);
+  set('adminPastDue',s.pastDue||0);set('adminSnapshotOnboarding',s.onboarding||0);set('adminLaunchBlockers',(adminReadinessData?.blockers||[]).length);set('adminGrowthDue',(adminWebsiteData.prospects||[]).filter(prospectDue).length);
   const openCare=(adminSupportData||[]).filter(x=>x.status!=='resolved').length+(adminFeedbackData||[]).filter(x=>x.status==='submitted').length;set('adminOpenCare',openCare);
   const total=Math.max(0,Number(s.currentClients??adminClientsData.filter(x=>adminClientLifecycle(x)!=='past').length)),den=Math.max(1,total),active=Number(s.activeClients||0),healthy=Math.max(0,total-Number(s.pastDue||0)),onboarded=Number(s.onboarded??Math.max(0,total-Number(s.onboarding||0)));
   const activePct=Math.round(active/den*100),billingPct=Math.round(healthy/den*100),livePct=Math.round(onboarded/den*100);
@@ -2077,7 +2081,7 @@ function renderAdmin(){
     mix.innerHTML=['Starter','Growth','Pro'].map(p=>{const count=Number(pm[p]||0),mrr=count*Number(PLAN_DATA[p]?.price||0);return '<button type="button" data-plan-client-filter="'+p+'"><span><b>'+p+'</b><small>'+count+' client'+(count===1?'':'s')+' · '+financeMoney(mrr)+' MRR</small></span><i><em style="width:'+Math.round(count/max*100)+'%"></em></i></button>'}).join('');
   }
   const attention=document.getElementById('adminAttention');if(attention){
-    attention.innerHTML=attentionItems.slice(0,7).map(item=>'<button type="button" class="admin-event admin-attention-item '+(item.severity==='critical'?'critical':'')+'" data-admin-attention-id="'+esc(item.id)+'"><span class="attention-severity-dot '+esc(item.severity)+'"></span><b>'+esc(item.title)+'</b><span>'+esc(item.message)+'</span><small>'+esc(item.category)+' →</small></button>').join('')||'<div class="empty-state"><h3>Nothing needs attention</h3><p>Billing, onboarding, client care, and platform blockers will appear here.</p></div>';
+    attention.innerHTML=attentionItems.slice(0,7).map(item=>'<button type="button" class="admin-event admin-attention-item '+(item.severity==='critical'?'critical':'')+'" data-admin-attention-id="'+esc(item.id)+'"><span class="attention-severity-dot '+esc(item.severity)+'"></span><b>'+esc(item.title)+'</b><span>'+esc(item.message)+'</span><small>'+esc(item.category)+' →</small></button>').join('')||'<div class="empty-state"><h3>Nothing needs attention</h3><p>Sales follow-ups, billing, onboarding, client care, and platform blockers will appear here.</p></div>';
   }
   renderAdminClients();
   const recent=document.getElementById('adminRecentClients');if(recent){
