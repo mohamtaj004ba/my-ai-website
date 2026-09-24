@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callQuickFilter='all',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false;
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callQuickFilter='all',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -95,7 +95,7 @@ function showView(name){
     if(agentEditing){if(agentEditSnapshot)agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent()}
     if(settingsEditing){settingsEditing=false;pendingBusinessLogo=String(settingsData?.logoDataUrl||'');renderSettings()}
   }
-  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,left:0,behavior:'auto'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent'){document.getElementById('agentFeedbackComposerDetails')?.removeAttribute('open');document.getElementById('agentFeedbackHistoryDetails')?.removeAttribute('open');renderAgent();loadClientFeedback({silent:true})};if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations'){webhookEditing=false;renderIntegrations()};if(name==='settings')renderSettings();if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();if(document.body.dataset.dashboard==='admin'&&name!=='inbox')refreshAdminView(name,{force:false}).catch(()=>{});
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,left:0,behavior:'auto'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent'){document.getElementById('agentFeedbackComposerDetails')?.removeAttribute('open');document.getElementById('agentFeedbackHistoryDetails')?.removeAttribute('open');renderAgent();loadClientFeedback({silent:true})};if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations'){webhookEditing=false;renderIntegrations()};if(name==='settings')renderSettings();if(name==='support'&&document.body.dataset.dashboard==='client'){renderSupport();fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:6000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(()=>{})}if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();if(document.body.dataset.dashboard==='admin'&&name!=='inbox')refreshAdminView(name,{force:false}).catch(()=>{});
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
@@ -202,12 +202,46 @@ async function loadSecondaryClientData(){
   const tasks=[
     ['leads',d=>{leadsData=d.leads||[]}],
     ['conversations',d=>{conversationsData=d.conversations||[]}],
+    ['appointments',d=>{appointmentsData=d.appointments||[]}],
     ['automations',d=>{automationsData=d.automations||[]}],
     ['locations',d=>{locationsData=d.locations||locationsData;locationsLimit=Number(d.limit||locationsLimit||1)}]
   ];
   await Promise.allSettled(tasks.map(async([action,apply])=>{try{const data=await fetchJsonRetry('/api/account?action='+action,{attempts:1,timeout:8000});apply(data)}catch(_){}}));
-  renderContacts();renderConversations();renderAutomations();renderLocations();
+  renderContacts();renderConversations();renderAppointments();renderAutomations();renderLocations();
 }
+function applyClientDashboardData(data={}){
+  applyClientDashboardData(data);updateClientRefreshStamp();
+}
+function setClientSyncState(state='live',message=''){
+  const wrap=document.getElementById('clientLiveStatus'),label=document.getElementById('clientLiveLabel'),stamp=document.getElementById('clientLastRefresh');
+  if(wrap){wrap.classList.toggle('syncing',state==='syncing');wrap.classList.toggle('sync-error',state==='error')}
+  if(label)label.textContent=state==='syncing'?'Syncing':state==='error'?'Sync issue':'Live';
+  if(stamp&&message)stamp.textContent=message;
+}
+function updateClientRefreshStamp(){
+  clientLastSyncAt=Date.now();setClientSyncState('live','Updated '+new Date(clientLastSyncAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
+}
+async function refreshClientDashboard({button=null,silent=false}={}){
+  if(demoMode||document.body.dataset.dashboard!=='client'||clientRefreshInFlight)return;
+  if((agentEditing||settingsEditing)&&!button)return;
+  clientRefreshInFlight=true;
+  if(button){button.disabled=true;button.textContent='Refreshing…'}
+  if(!silent)setClientSyncState('syncing','Refreshing workspace…');else setClientSyncState('syncing','Checking for updates…');
+  try{
+    const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:1,timeout:12000});
+    applyClientDashboardData(data);renderClientData();setDataHealth('clientDataHealth',false);updateClientRefreshStamp();
+  }catch(err){
+    console.error('Client live refresh failed',err);setClientSyncState('error','Could not refresh · showing last good data');
+  }finally{
+    clientRefreshInFlight=false;if(button){button.disabled=false;button.textContent='Refresh'}
+  }
+}
+function initClientLiveRefresh(){
+  const btn=document.getElementById('refreshClientCommand');if(btn)btn.onclick=()=>refreshClientDashboard({button:btn});
+  if(clientRefreshTimer)clearInterval(clientRefreshTimer);
+  clientRefreshTimer=setInterval(()=>{if(!document.hidden&&!agentEditing&&!settingsEditing)refreshClientDashboard({silent:true}).catch(()=>{})},60000);
+}
+
 function renderClientData(){
   loadCallLogPrefs();if(callsData.length&&agentData&&settingsData)setDataHealth('clientDataHealth',false);
   renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderBillingConnection();renderPhoneRouting();renderLocations();
@@ -223,7 +257,6 @@ async function loadOperations(){
     renderClientData();setClientLoading(false);
     // Non-critical support history loads separately so it can never block Today.
     fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:5000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(()=>{});
-    loadSecondaryClientData();
     return;
   }catch(err){console.warn('Bundled dashboard load failed; using fallback',err);setClientLoading(true,'Still loading — retrying your workspace data…')}
   try{
@@ -241,7 +274,7 @@ async function loadOperations(){
     await loadFollowupState();try{const viewed=await fetchJsonRetry('/api/account?action=calls-viewed',{attempts:1,timeout:5000});callViewedIds=new Set((viewed.ids||[]).map(String))}catch(_){callViewedIds=new Set()}analyticsData=buildLocalAnalytics();renderClientData();
     const failedActions=settled.map((x,i)=>x.status==='rejected'?requests[i][0]:'').filter(Boolean),criticalFailed=failedActions.filter(x=>['calls','agent','settings'].includes(x));
     setDataHealth('clientDataHealth',criticalFailed.length>0);setClientLoading(false);
-    if(failedActions.length&&!criticalFailed.length)console.warn('Optional dashboard data delayed:',failedActions.join(', '));
+    if(failedActions.length&&!criticalFailed.length)console.warn('Optional dashboard data delayed:',failedActions.join(', '));loadSecondaryClientData();
   }catch(err){console.error('Operations data failed',err);setClientLoading(false);setDataHealth('clientDataHealth',true)}
 }
 
@@ -2658,10 +2691,10 @@ function initNotifications(){
   setInterval(()=>{if(!document.hidden)loadNotifications({silent:true})},60000);
 }
 
-(async()=>{if(document.body.dataset.dashboard==='admin'){const ok=await bootstrapAdmin();if(ok){initProfileControls();initNotifications()}return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations();initProfileControls();initNotifications()}else{renderBilling()}})();
+(async()=>{if(document.body.dataset.dashboard==='admin'){const ok=await bootstrapAdmin();if(ok){initProfileControls();initNotifications()}return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations();initProfileControls();initNotifications();initClientLiveRefresh()}else{renderBilling()}})();
 document.getElementById('logoutButton')?.addEventListener('click',logout);
 
-document.getElementById('clientDataRetry')?.addEventListener('click',async()=>{setDataHealth('clientDataHealth',false);await loadOperations()});
+document.getElementById('clientDataRetry')?.addEventListener('click',async()=>{setDataHealth('clientDataHealth',false);setClientSyncState('syncing','Retrying workspace sync…');await loadOperations()});
 document.getElementById('adminDataRetry')?.addEventListener('click',async()=>{setDataHealth('adminDataHealth',false);await loadAdminOps()});
 
 document.querySelectorAll('[data-overview-jump]').forEach(card=>{const go=()=>showView(card.dataset.overviewJump);card.addEventListener('click',e=>{if(e.target.closest('button,a'))return;go()});card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})});
