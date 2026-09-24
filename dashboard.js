@@ -2059,7 +2059,7 @@ async function saveProfile(){
 function initProfileControls(){
   const button=document.getElementById('accountButton'),panel=document.getElementById('accountPanel'),photoInput=document.getElementById('profilePhotoInput');
   if(!button||!panel)return;renderUserProfile();
-  button.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)document.getElementById('profileNameInput')?.focus()});
+  button.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){resetSurfaceScroll(panel);document.getElementById('profileNameInput')?.focus()}});
   panel.addEventListener('click',e=>e.stopPropagation());
   document.getElementById('profilePhotoButton')?.addEventListener('click',()=>photoInput?.click());
   photoInput?.addEventListener('change',async()=>{
@@ -2158,7 +2158,7 @@ async function markAllNotifications(){
 }
 function initNotifications(){
   const bell=document.getElementById('notificationBell'),panel=document.getElementById('notificationPanel');if(!bell||!panel)return;
-  bell.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;bell.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)loadNotifications({silent:true})});
+  bell.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;bell.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){resetSurfaceScroll(panel);loadNotifications({silent:true})}});
   panel.addEventListener('click',e=>e.stopPropagation());
   document.getElementById('notificationReadAll')?.addEventListener('click',markAllNotifications);
   panel.querySelectorAll('[data-notification-mode]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();notificationMode=btn.dataset.notificationMode||'unread';renderNotifications()}));
@@ -2178,7 +2178,7 @@ document.querySelectorAll('[data-overview-jump]').forEach(card=>{const go=()=>sh
 
 const helpButton=document.getElementById('helpButton'),helpPanel=document.getElementById('helpPanel'),helpShell=helpButton?.closest('.help-shell');
 function closeHelpPanel(){if(helpPanel)helpPanel.hidden=true;if(helpButton)helpButton.setAttribute('aria-expanded','false')}
-helpButton?.addEventListener('click',e=>{e.stopPropagation();const opening=!!helpPanel?.hidden;if(helpPanel)helpPanel.hidden=!opening;if(helpButton)helpButton.setAttribute('aria-expanded',opening?'true':'false')});
+helpButton?.addEventListener('click',e=>{e.stopPropagation();const opening=!!helpPanel?.hidden;if(helpPanel){helpPanel.hidden=!opening;if(opening)resetSurfaceScroll(helpPanel)}if(helpButton)helpButton.setAttribute('aria-expanded',opening?'true':'false')});
 document.addEventListener('click',e=>{if(helpShell&&!helpShell.contains(e.target))closeHelpPanel()});
 helpPanel?.querySelectorAll('[data-help-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.helpAction;closeHelpPanel();if(action==='billing'){showView('billing');return}showView('support');setTimeout(()=>{const subject=document.getElementById('supportSubject'),message=document.getElementById('supportMessage');if(action==='call-issue'&&subject){subject.value='Call review / issue';if(message&&!message.value)message.placeholder='Include the caller, approximate time, phone number, and what looked wrong.';subject.focus()}else subject?.focus()},50)}));
 document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(btn=>btn.addEventListener('click',()=>{overviewChartDays=Number(btn.dataset.chartDays||14);document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(x=>x.classList.toggle('active',x===btn));renderOverview()}));
