@@ -993,13 +993,75 @@ async function adminWebsiteAnalytics(req,res){
 async function adminWebsiteProspectUpdate(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,100),key='site:prospect:'+id,old=await kv.get(key);
-  if(!old)return res.status(404).json({error:'Website prospect not found'});
-  const allowed=['new','inquiry','checkout_started','follow_up','qualified','lost','converted'];
+  if(!old)return res.status(404).json({error:'Prospect not found'});
+  const allowed=['new','inquiry','checkout_started','follow_up','qualified','proposal','lost','converted'];
   const stage=body.stage!==undefined?String(body.stage):old.stage;
   if(!allowed.includes(stage))return res.status(400).json({error:'Invalid prospect stage'});
-  const next={...old,stage,notes:body.notes!==undefined?String(body.notes||'').trim().slice(0,3000):(old.notes||''),updatedAt:Date.now(),updatedBy:admin.email};
+  const next={...old,stage,
+    name:body.name!==undefined?String(body.name||'').trim().slice(0,120):old.name,
+    business:body.business!==undefined?String(body.business||'').trim().slice(0,160):old.business,
+    phone:body.phone!==undefined?String(body.phone||'').trim().slice(0,80):old.phone,
+    plan:body.plan!==undefined?String(body.plan||'').trim().slice(0,30):old.plan,
+    owner:body.owner!==undefined?String(body.owner||'').trim().slice(0,120):(old.owner||''),
+    source:body.source!==undefined?String(body.source||'').trim().slice(0,80):(old.source||'website'),
+    campaign:body.campaign!==undefined?String(body.campaign||'').trim().slice(0,160):(old.campaign||old.utmCampaign||''),
+    notes:body.notes!==undefined?String(body.notes||'').trim().slice(0,3000):(old.notes||''),
+    nextFollowUpAt:body.nextFollowUpAt!==undefined?(Number(body.nextFollowUpAt)||null):(old.nextFollowUpAt||null),
+    lastContactAt:body.lastContactAt!==undefined?(Number(body.lastContactAt)||null):(old.lastContactAt||old.lastRepliedAt||null),
+    monthlyValue:body.monthlyValue!==undefined?Math.max(0,Number(body.monthlyValue)||0):Number(old.monthlyValue||0),
+    setupValue:body.setupValue!==undefined?Math.max(0,Number(body.setupValue)||0):Number(old.setupValue||0),
+    tags:Array.isArray(body.tags)?body.tags.map(x=>String(x||'').trim().slice(0,60)).filter(Boolean).slice(0,12):(old.tags||[]),
+    convertedAt:stage==='converted'?(old.convertedAt||Date.now()):(stage!==old.stage&&old.stage==='converted'?null:old.convertedAt||null),
+    updatedAt:Date.now(),updatedBy:admin.email};
   await kv.set(key,next);
   return res.status(200).json({ok:true,prospect:next});
+}
+async function adminProspectSave(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},email=String(body.email||'').trim().toLowerCase();
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email or leave it blank'});
+  if(!String(body.name||body.business||email||body.phone||'').trim())return res.status(400).json({error:'Add a name, business, email, or phone'});
+  const allowed=['new','inquiry','checkout_started','follow_up','qualified','proposal','lost','converted'],stage=allowed.includes(body.stage)?body.stage:'new';
+  const base=await upsertWebsiteProspect({id:String(body.id||'').slice(0,100),name:body.name,business:body.business,email,phone:body.phone,industry:body.industry,plan:body.plan,source:body.source||'manual',stage,utmSource:body.utmSource||'',utmMedium:body.utmMedium||'',utmCampaign:body.campaign||body.utmCampaign||''});
+  const next={...base,owner:String(body.owner||base.owner||'').trim().slice(0,120),campaign:String(body.campaign||base.campaign||base.utmCampaign||'').trim().slice(0,160),notes:String(body.notes||base.notes||'').trim().slice(0,3000),nextFollowUpAt:Number(body.nextFollowUpAt)||base.nextFollowUpAt||null,lastContactAt:Number(body.lastContactAt)||base.lastContactAt||null,monthlyValue:Math.max(0,Number(body.monthlyValue??base.monthlyValue)||0),setupValue:Math.max(0,Number(body.setupValue??base.setupValue)||0),tags:Array.isArray(body.tags)?body.tags.map(x=>String(x||'').trim().slice(0,60)).filter(Boolean).slice(0,12):(base.tags||[]),updatedAt:Date.now(),updatedBy:admin.email};
+  await kv.set('site:prospect:'+next.id,next);
+  return res.status(200).json({ok:true,prospect:next});
+}
+async function adminMarketingCampaigns(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const ids=await kv.get('marketing:campaign:index')||[],campaigns=[];
+  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){const c=await kv.get('marketing:campaign:'+id);if(c)campaigns.push(c)}
+  campaigns.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
+  return res.status(200).json({campaigns});
+}
+async function adminMarketingCampaignSave(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const b=req.body||{},id=String(b.id||crypto.randomUUID()).slice(0,100),name=String(b.name||'').trim().slice(0,160);
+  if(!name)return res.status(400).json({error:'Campaign name is required'});
+  const allowedChannels=['Email','Organic','Paid Search','Paid Social','Referral','Partnership','Outbound','Other'],allowedStatuses=['draft','scheduled','active','paused','completed'];
+  const old=await kv.get('marketing:campaign:'+id)||{},campaign={...old,id,name,channel:allowedChannels.includes(b.channel)?b.channel:(old.channel||'Email'),status:allowedStatuses.includes(b.status)?b.status:(old.status||'draft'),utmSource:String(b.utmSource||old.utmSource||'').trim().slice(0,120),utmMedium:String(b.utmMedium||old.utmMedium||'').trim().slice(0,120),utmCampaign:String(b.utmCampaign||old.utmCampaign||name.toLowerCase().replace(/[^a-z0-9]+/g,'-')).trim().slice(0,160),budget:Math.max(0,Number(b.budget??old.budget)||0),startAt:Number(b.startAt)||old.startAt||null,endAt:Number(b.endAt)||old.endAt||null,goal:String(b.goal||old.goal||'').trim().slice(0,300),notes:String(b.notes||old.notes||'').trim().slice(0,2000),createdAt:old.createdAt||Date.now(),updatedAt:Date.now(),updatedBy:admin.email};
+  await kv.set('marketing:campaign:'+id,campaign);
+  const index=await kv.get('marketing:campaign:index')||[],list=Array.isArray(index)?index:[];
+  await kv.set('marketing:campaign:index',[id,...list.filter(x=>x!==id)].slice(0,500));
+  return res.status(200).json({ok:true,campaign});
+}
+async function adminMarketingCampaignDelete(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).id||'').slice(0,100);if(!id)return res.status(400).json({error:'Campaign id required'});
+  await kv.del('marketing:campaign:'+id);const index=await kv.get('marketing:campaign:index')||[];await kv.set('marketing:campaign:index',(Array.isArray(index)?index:[]).filter(x=>x!==id));
+  return res.status(200).json({ok:true});
+}
+async function adminDocuments(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const ids=await kv.get('workspace:index')||[],agreements=[];
+  for(const id of Array.isArray(ids)?ids.slice(0,300):[]){
+    const [ws,onboarding,token]=await Promise.all([kv.get('workspace:'+id),kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
+    if(!ws)continue;
+    const signed=!!(onboarding?.agreementSignedAt||onboarding?.checklist?.agreement);
+    agreements.push({workspaceId:id,workspaceName:ws.name||'Unnamed client',ownerEmail:ws.ownerEmail||'',plan:ws.plan||'Starter',signed,agreementVersion:onboarding?.agreementVersion||'',signedAt:onboarding?.agreementSignedAt||null,signedName:onboarding?.agreementSignedName||'',downloadUrl:signed&&token?('/api/agreement-pdf?token='+encodeURIComponent(token)):'',status:signed?'signed':onboarding?.onboardingLinkSent?'awaiting_signature':'not_sent'});
+  }
+  agreements.sort((a,b)=>Number(b.signedAt||0)-Number(a.signedAt||0)||String(a.workspaceName).localeCompare(String(b.workspaceName)));
+  return res.status(200).json({documents:{agreements,standard:[{id:'terms',name:'Terms of Service',type:'Legal',url:'/terms.html'},{id:'privacy',name:'Privacy Policy',type:'Legal',url:'/privacy.html'}]}});
 }
 
 async function adminTechSupport(req,res){
@@ -2164,6 +2226,11 @@ module.exports=async function handler(req,res){
   if(action==='admin-website-reply'&&req.method==='POST')return adminWebsiteReply(req,res);
   if(action==='admin-website-analytics'&&req.method==='GET')return adminWebsiteAnalytics(req,res);
   if(action==='admin-website-prospect-update'&&req.method==='POST')return adminWebsiteProspectUpdate(req,res);
+  if(action==='admin-prospect-save'&&req.method==='POST')return adminProspectSave(req,res);
+  if(action==='admin-marketing-campaigns'&&req.method==='GET')return adminMarketingCampaigns(req,res);
+  if(action==='admin-marketing-campaign-save'&&req.method==='POST')return adminMarketingCampaignSave(req,res);
+  if(action==='admin-marketing-campaign-delete'&&req.method==='POST')return adminMarketingCampaignDelete(req,res);
+  if(action==='admin-documents'&&req.method==='GET')return adminDocuments(req,res);
   if(action==='admin-tech-support'&&req.method==='GET')return adminTechSupport(req,res);
   if(action==='admin-send-client-login'&&req.method==='POST')return adminSendClientLogin(req,res);
   if(action==='admin-force-logout'&&req.method==='POST')return adminForceLogout(req,res);
