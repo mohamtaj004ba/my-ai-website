@@ -1461,7 +1461,7 @@ async function updateWebsiteProspect(id,stage){
   const p=(adminWebsiteData.prospects||[]).find(x=>x.id===id);if(p)Object.assign(p,data.prospect);renderGrowth();renderWebsiteAnalytics();
 }
 
-async function loadAdminInboxasync function loadAdminInbox({silent=false,force=false}={}){
+async function loadAdminInbox({silent=false,force=false}={}){
   if(adminInboxData.loading)return;
   adminInboxData.loading=true;
   const refresh=document.getElementById('inboxRefreshButton'),auto=document.getElementById('inboxAutoStatus');
