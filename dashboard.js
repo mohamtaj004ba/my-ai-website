@@ -58,6 +58,7 @@ async function bootstrapClient(){
     if(r.status===401){location.replace('/login?next=%2Fdashboard');return false}
     if(!r.ok)throw new Error('session');
     const data=await r.json();sessionWorkspace=data.workspace;sessionOnboarding=data.onboarding||null;applyUserProfile(data.user||{},data.workspace||{});
+    if(data.user?.role==='admin'&&!data.user?.adminView){location.replace('/admin-dashboard');return false}
     if(data.onboarding?.needsCompletion&&!data.user?.adminView&&data.onboarding?.url){location.replace(data.onboarding.url);return false}
     if(data.user?.adminView){
       document.body.classList.add('admin-client-view');
