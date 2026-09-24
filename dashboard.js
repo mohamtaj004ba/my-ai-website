@@ -163,7 +163,8 @@ function formatCoreIntelligenceAnswer(raw){
 }
 
 async function askAdminAi(question){
-  const status=document.getElementById('adminAiStatus'),send=document.getElementById('adminAiSend'),conversation=document.getElementById('adminAiConversation'),copy=document.getElementById('adminAiCopy'),q=String(question||'').trim();if(!q)return;
+  const status=document.getElementById('adminAiStatus'),send=document.getElementById('adminAiSend'),conversation=document.getElementById('adminAiConversation'),copy=document.getElementById('adminAiCopy'),input=document.getElementById('adminAiInput'),q=String(question||'').trim();if(!q)return;
+  if(input)input.value='';
   if(send){send.disabled=true;send.textContent='Thinking…'}if(status)status.textContent='Reading the current admin snapshot…';
   if(conversation)conversation.innerHTML='<div class="admin-ai-question"><span>You</span><p>'+esc(q)+'</p></div><div class="admin-ai-thinking"><i></i><span>CallerCore is analyzing your operation…</span></div>';
   try{
