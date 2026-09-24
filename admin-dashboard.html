@@ -62,6 +62,7 @@
     <aside class="panel admin-business-snapshot">
       <div class="panel-head"><div><span class="eyebrow">Business health</span><h2>Current snapshot</h2><small>Only company-level operating signals.</small></div></div>
       <div class="admin-snapshot-list">
+        <button type="button" data-admin-jump="growth"><span>Sales follow-ups</span><strong id="adminGrowthDue">0</strong><small>Prospects needing a touch</small></button>
         <button type="button" data-admin-jump="client-care"><span>Open client care</span><strong id="adminOpenCare">0</strong><small>Support + AI feedback</small></button>
         <button type="button" data-admin-jump="onboarding"><span>In onboarding</span><strong id="adminSnapshotOnboarding">0</strong><small>Accounts not live yet</small></button>
         <button type="button" data-admin-client-filter="past_due"><span>Past due</span><strong id="adminPastDue">0</strong><small>Billing follow-up</small></button>
@@ -71,7 +72,7 @@
   </div>
 
   <div class="two-col admin-command-grid">
-    <article class="panel admin-attention-panel"><div class="panel-head"><div><span class="eyebrow">Priority queue</span><h2>What needs attention</h2><small>Client billing, onboarding, support, feedback, and platform blockers.</small></div></div><div id="adminAttention"></div></article>
+    <article class="panel admin-attention-panel"><div class="panel-head"><div><span class="eyebrow">Priority queue</span><h2>What needs attention</h2><small>Sales follow-ups, client billing, onboarding, client care, and platform blockers.</small></div></div><div id="adminAttention"></div></article>
     <article class="panel admin-health-card"><span class="eyebrow">Client portfolio</span><h2>Account mix</h2><div class="health-rings admin-rings"><button type="button" class="health-ring-wrap" data-admin-client-filter="active"><div class="health-ring" id="adminActiveRing"><span id="adminActivePct">0%</span></div><b>Active</b><small id="adminActiveCount">0 of 0 current</small></button><button type="button" class="health-ring-wrap" data-admin-client-filter="past_due"><div class="health-ring" id="adminBillingRing"><span id="adminBillingPct">0%</span></div><b>Billing current</b><small id="adminBillingCount">0 of 0 current</small></button><button type="button" class="health-ring-wrap" data-admin-jump="onboarding"><div class="health-ring" id="adminLiveRing"><span id="adminLivePct">0%</span></div><b>Onboarded</b><small id="adminLiveCount">0 of 0 complete</small></button></div><div class="bar-list admin-plan-mix" id="adminPlanMix"></div></article>
   </div>
   <article class="panel activity admin-recent-accounts"><div class="panel-head"><div><span class="eyebrow">Accounts</span><h2>Recently updated clients</h2><small>Plan, usage, account state, and billing—without exposing their customer records.</small></div><button data-view="clients">Manage clients →</button></div><div id="adminRecentClients"></div></article>
