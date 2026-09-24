@@ -1290,12 +1290,12 @@ function adminAgentGroup(health){
   return 'setup';
 }
 function renderAdminFleet(){
-  const agents=adminFleetData.agents||[],calls=adminFleetData.calls||[],workspaceLeads=adminFleetData.leads||[],autos=adminFleetData.automations||[],webProspects=adminWebsiteData.prospects||[];
-  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
-
+  const agents=adminFleetData.agents||[],autos=adminFleetData.automations||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   const agentRows=agents.map(x=>{
-    const agent=x.agent||null,health=agent?.health||(agent?(x.phone?'ready':'setup'):'missing'),group=adminAgentGroup(health),issue=agent?.issue||(!agent?'No AI receptionist draft exists yet.':(!x.phone?'No CallerCore phone number is assigned yet.':'Configuration looks ready.')),tone=group==='ready'?'green':group==='attention'?'red':'amber',label=({ready:'Ready',review:'Needs review',warning:'Attention',setup:'Setup',test:'Client test',missing:'Missing'})[health]||'Review';
-    return {...x,agent,health,group,issue,tone,label};
+    const agent=x.agent||null,phone=adminPhoneFor(x.workspaceId),health=agent?.health||(agent?(phone?'ready':'setup'):'missing'),group=adminAgentGroup(health);
+    const issue=agent?.issue||(!agent?'No AI receptionist configuration exists yet.':(!phone?'Phone routing is not assigned yet.':'Configuration looks ready.'));
+    const tone=group==='ready'?'green':group==='attention'?'red':'amber',label=({ready:'Ready',review:'Needs review',warning:'Attention',setup:'Setup',test:'Client test',missing:'Missing'})[health]||'Review';
+    return {...x,agent,phone,health,group,issue,tone,label};
   });
   set('agentReadyCount',agentRows.filter(x=>x.group==='ready').length);
   set('agentReviewCount',agentRows.filter(x=>x.group==='review').length);
@@ -1307,52 +1307,14 @@ function renderAdminFleet(){
   const visibleAgents=agentRows.filter(x=>{
     if(adminAgentFilter!=='all'&&x.group!==adminAgentFilter)return false;
     const q=adminAgentSearch.trim().toLowerCase();if(!q)return true;
-    return [x.workspaceName,x.agent?.name,x.agent?.role,x.issue,x.phone].filter(Boolean).join(' ').toLowerCase().includes(q);
+    return [x.workspaceName,x.agent?.name,x.agent?.role,x.issue,x.phone?.number].filter(Boolean).join(' ').toLowerCase().includes(q);
   });
   if(ag){
-    ag.innerHTML=visibleAgents.map(x=>'<article class="panel integration-card admin-agent-card" data-admin-agent-client="'+esc(x.workspaceId)+'"><div><div class="admin-agent-title"><b>'+esc((x.agent?.name||'No receptionist')+' · '+x.workspaceName)+'</b><span class="tag '+x.tone+'">'+esc(x.label)+'</span></div><p>'+esc(x.agent?.role||'AI receptionist not configured')+(x.phone?' · '+esc(x.phone):' · No phone assigned')+'</p><small>'+esc(x.issue)+'</small></div><button class="admin-link" type="button">Manage client →</button></article>').join('');
+    ag.innerHTML=visibleAgents.map(x=>'<article class="panel integration-card admin-agent-card" data-admin-agent-client="'+esc(x.workspaceId)+'"><div><div class="admin-agent-title"><b>'+esc((x.agent?.name||'Not configured')+' · '+x.workspaceName)+'</b><span class="tag '+x.tone+'">'+esc(x.label)+'</span></div><p>'+esc(x.agent?.role||'AI receptionist not configured')+(x.phone?' · '+esc(x.phone.number||'Phone assigned'):' · Phone not assigned')+'</p><small>'+esc(x.issue)+'</small></div><button class="admin-link" type="button">Open account →</button></article>').join('');
     ag.querySelectorAll('[data-admin-agent-client]').forEach(card=>card.addEventListener('click',()=>openAdminClient(card.dataset.adminAgentClient)));
-    document.getElementById('adminAgentsEmpty').hidden=visibleAgents.length!==0
+    document.getElementById('adminAgentsEmpty').hidden=visibleAgents.length!==0;
   }
 
-  set('adminCallsTotal',calls.length);set('adminCallsQualified',calls.filter(callCaptured).length);set('adminCallsMissed',calls.filter(x=>callDispositionKey(x)==='incomplete').length);set('adminCallsWorkspaces',new Set(calls.map(x=>x.workspaceId)).size);
-  const workspaceSelect=document.getElementById('adminCallWorkspaceFilter'),dispositionSelect=document.getElementById('adminCallDispositionFilter'),callSearch=document.getElementById('adminCallSearch');
-  if(workspaceSelect){
-    const current=adminCallWorkspaceFilter,names=[...new Map(calls.map(x=>[x.workspaceId,x.workspaceName])).entries()].filter(([id])=>id).sort((a,b)=>String(a[1]).localeCompare(String(b[1])));
-    workspaceSelect.innerHTML='<option value="all">All workspaces</option>'+names.map(([id,name])=>'<option value="'+esc(String(id))+'">'+esc(name||id)+'</option>').join('');
-    workspaceSelect.value=names.some(([id])=>String(id)===String(current))?current:'all';adminCallWorkspaceFilter=workspaceSelect.value;
-    workspaceSelect.onchange=()=>{adminCallWorkspaceFilter=workspaceSelect.value;renderAdminFleet()}
-  }
-  if(dispositionSelect){dispositionSelect.value=adminCallDispositionFilter;dispositionSelect.onchange=()=>{adminCallDispositionFilter=dispositionSelect.value;renderAdminFleet()}}
-  if(callSearch){callSearch.value=adminCallSearch;callSearch.oninput=()=>{adminCallSearch=callSearch.value;renderAdminFleet()}}
-  const callQ=adminCallSearch.trim().toLowerCase(),visibleCalls=calls.filter(x=>{
-    if(adminCallWorkspaceFilter!=='all'&&String(x.workspaceId)!==String(adminCallWorkspaceFilter))return false;
-    if(adminCallDispositionFilter!=='all'&&callDispositionKey(x)!==adminCallDispositionFilter)return false;
-    if(callQ&&!([x.caller,x.phone,x.reason,x.workspaceName,x.outcome,x.disposition].filter(Boolean).join(' ').toLowerCase().includes(callQ)))return false;
-    return true;
-  });
-  const ct=document.getElementById('adminCallsTable');if(ct)ct.innerHTML=visibleCalls.slice(0,150).map(x=>'<div class="call-row" data-admin-call-id="'+esc(String(x.id||x.callId||''))+'"><span><strong>'+esc(x.caller||x.phone||'Unknown caller')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span>'+esc(x.workspaceName)+'</span><span>'+esc(x.reason||'General')+'</span><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(callDispositionLabel(x))+'</span><span>'+esc(x.time||'—')+'</span></div>').join('');
-  const ce=document.getElementById('adminCallsEmpty');if(ce)ce.hidden=visibleCalls.length!==0;
-
-  const totalLeads=workspaceLeads.length+webProspects.length;
-  const qualified=workspaceLeads.filter(x=>x.stage==='Qualified').length+webProspects.filter(x=>x.stage==='qualified').length;
-  const checkoutStarts=webProspects.filter(x=>x.stage==='checkout_started').length;
-  const won=workspaceLeads.filter(x=>x.stage==='Won').length+webProspects.filter(x=>x.stage==='converted').length;
-  set('adminLeadsTotal',totalLeads);set('adminLeadsQualified',qualified);set('adminLeadsAppointments',checkoutStarts);set('adminLeadsWon',won);set('adminLeadCallerCoreCount',webProspects.length);set('adminLeadClientCount',workspaceLeads.length);set('adminLeadAllCount',totalLeads);
-  document.querySelectorAll('[data-admin-lead-scope]').forEach(b=>{b.classList.toggle('active',b.dataset.adminLeadScope===adminLeadScope);b.onclick=()=>{adminLeadScope=b.dataset.adminLeadScope;renderAdminFleet()}});
-  const lt=document.getElementById('adminLeadsTable');
-  if(lt){
-    const webRows=webProspects.slice(0,100).map(p=>{
-      const interest=p.plan||p.category||p.industry||'Website inquiry';
-      return '<div class="lead-admin-row"><span><strong>'+esc(p.name||p.business||p.email||'Website prospect')+'</strong><small class="subtle">'+esc(p.business||p.email||'')+'</small></span><span><span class="tag amber">CallerCore</span><small class="subtle">'+esc(p.source||'website')+'</small></span><span>'+esc(interest)+'</span><span><select class="prospect-stage" data-prospect-stage="'+esc(p.id)+'">'+['new','inquiry','checkout_started','follow_up','qualified','lost','converted'].map(s=>'<option value="'+s+'" '+(p.stage===s?'selected':'')+'>'+s.replaceAll('_',' ')+'</option>').join('')+'</select></span><span><button class="admin-link" data-view="website">Journey</button></span></div>'
-    }).join('');
-    const clientRows=workspaceLeads.slice(0,100).map(x=>'<div class="lead-admin-row" data-admin-lead-id="'+esc(String(x.id||''))+'"><span><strong>'+esc(x.name||'Unnamed lead')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><span class="tag">Client activity</span><small class="subtle">'+esc(x.workspaceName||'Workspace')+'</small></span><span>'+esc(x.service||'General inquiry')+'</span><span><span class="tag">'+esc(x.stage||'New')+'</span></span><span>'+money(x.value)+'</span></div>').join('');
-    lt.innerHTML=adminLeadScope==='callercore'?webRows:adminLeadScope==='clients'?clientRows:webRows+clientRows;
-    lt.querySelectorAll('[data-prospect-stage]').forEach(sel=>sel.addEventListener('change',()=>updateWebsiteProspect(sel.dataset.prospectStage,sel.value)));
-    lt.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
-  }
-  const visibleLeadCount=adminLeadScope==='callercore'?webProspects.length:adminLeadScope==='clients'?workspaceLeads.length:totalLeads;
-  const le=document.getElementById('adminLeadsEmpty');if(le)le.hidden=visibleLeadCount!==0;
   const configured=autos.filter(x=>x.total>0),fully=configured.filter(x=>x.enabled===x.total),partial=configured.filter(x=>x.enabled>0&&x.enabled<x.total),off=autos.filter(x=>x.enabled===0);
   set('automationConfiguredWorkspaces',configured.length);set('automationFullyCovered',fully.length);set('automationPartial',partial.length);set('automationOff',off.length);
   const automationSearch=document.getElementById('adminAutomationSearch'),automationFilter=document.getElementById('adminAutomationFilter');
@@ -1363,7 +1325,11 @@ function renderAdminFleet(){
     if(adminAutomationFilter!=='all'&&state!==adminAutomationFilter)return false;
     return !aq||String(x.workspaceName||'').toLowerCase().includes(aq);
   });
-  const aw=document.getElementById('adminAutomationGrid');if(aw){aw.innerHTML=visibleAutos.map(x=>{const state=x.total>0&&x.enabled===x.total?'covered':x.enabled>0?'partial':'off',tone=state==='covered'?'green':state==='partial'?'amber':'red',label=state==='covered'?'Fully covered':state==='partial'?'Partial':'None / off';return '<article class="panel integration-card admin-automation-card" data-automation-client="'+esc(x.workspaceId)+'"><div><b>'+esc(x.workspaceName)+'</b><p>'+x.enabled+' enabled of '+x.total+' configured</p><small>'+esc(x.plan)+' plan</small></div><span class="tag '+tone+'">'+label+'</span></article>'}).join('');document.getElementById('adminAutomationsEmpty').hidden=visibleAutos.length!==0;aw.querySelectorAll('[data-automation-client]').forEach(card=>card.addEventListener('click',()=>openAdminClient(card.dataset.automationClient)))}
+  const aw=document.getElementById('adminAutomationGrid');if(aw){
+    aw.innerHTML=visibleAutos.map(x=>{const state=x.total>0&&x.enabled===x.total?'covered':x.enabled>0?'partial':'off',tone=state==='covered'?'green':state==='partial'?'amber':'red',label=state==='covered'?'Fully covered':state==='partial'?'Partial':'None / off';return '<article class="panel integration-card admin-automation-card" data-automation-client="'+esc(x.workspaceId)+'"><div><b>'+esc(x.workspaceName)+'</b><p>'+x.enabled+' enabled of '+x.total+' configured</p><small>'+esc(x.plan)+' plan</small></div><span class="tag '+tone+'">'+label+'</span></article>'}).join('');
+    const empty=document.getElementById('adminAutomationsEmpty');if(empty)empty.hidden=visibleAutos.length!==0;
+    aw.querySelectorAll('[data-automation-client]').forEach(card=>card.addEventListener('click',()=>openAdminClient(card.dataset.automationClient)));
+  }
 }
 function renderAdminFeedback(){
   const list=document.getElementById('adminFeedbackList'),empty=document.getElementById('adminFeedbackEmpty'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
@@ -1373,10 +1339,11 @@ function renderAdminFeedback(){
   if(search){search.value=adminFeedbackSearch;search.oninput=()=>{adminFeedbackSearch=search.value;renderAdminFeedback()}}
   if(filter){filter.value=adminFeedbackFilter;filter.onchange=()=>{adminFeedbackFilter=filter.value;renderAdminFeedback()}}
   const q=adminFeedbackSearch.trim().toLowerCase(),visible=items.filter(x=>(adminFeedbackFilter==='all'||x.status===adminFeedbackFilter)&&(!q||[x.workspaceName,x.workspaceId,x.category,x.message,x.context,x.source].filter(Boolean).join(' ').toLowerCase().includes(q)));
-  if(list){list.classList.add('admin-feedback-list');list.innerHTML=visible.map(x=>'<article class="admin-feedback-card" id="feedback-'+esc(x.id)+'"><div class="admin-feedback-card-head"><div><b>'+esc(x.workspaceName||x.workspaceId||'Client workspace')+'</b><small>'+esc(x.source==='call'?'Call-specific coaching':'AI receptionist feedback')+(x.context?' · '+esc(x.context):'')+' · '+(x.createdAt?new Date(x.createdAt).toLocaleString():'')+'</small></div><span class="feedback-status '+esc(x.status||'submitted')+'">'+esc(feedbackStatusLabel(x.status))+'</span></div><p><b>'+esc((x.category||'feedback').replaceAll('_',' '))+'</b> · '+esc(x.message||'')+'</p><div class="feedback-admin-actions"><select data-admin-feedback-status="'+esc(x.id)+'">'+['submitted','reviewed','applied','dismissed'].map(s=>'<option value="'+s+'" '+(x.status===s?'selected':'')+'>'+feedbackStatusLabel(s)+'</option>').join('')+'</select>'+(x.callId?'<button class="admin-link" data-feedback-call="'+esc(x.callId)+'">Open related call</button>':'')+'</div></article>').join('')}
+  if(list){list.classList.add('admin-feedback-list');list.innerHTML=visible.map(x=>'<article class="admin-feedback-card" id="feedback-'+esc(x.id)+'"><div class="admin-feedback-card-head"><div><b>'+esc(x.workspaceName||x.workspaceId||'Client workspace')+'</b><small>'+esc(x.source==='call'?'Call-specific client feedback':'AI receptionist feedback')+(x.context?' · '+esc(x.context):'')+' · '+(x.createdAt?new Date(x.createdAt).toLocaleString():'')+'</small></div><span class="feedback-status '+esc(x.status||'submitted')+'">'+esc(feedbackStatusLabel(x.status))+'</span></div><p><b>'+esc((x.category||'feedback').replaceAll('_',' '))+'</b> · '+esc(x.message||'')+'</p><div class="feedback-admin-actions"><select data-admin-feedback-status="'+esc(x.id)+'">'+['submitted','reviewed','applied','dismissed'].map(s=>'<option value="'+s+'" '+(x.status===s?'selected':'')+'>'+feedbackStatusLabel(s)+'</option>').join('')+'</select>'+(x.workspaceId?'<button class="admin-link" data-feedback-client="'+esc(x.workspaceId)+'">Open client →</button>':'')+'</div></article>').join('')}
   if(empty)empty.hidden=visible.length!==0;
   list?.querySelectorAll('[data-admin-feedback-status]').forEach(sel=>sel.addEventListener('change',()=>updateAdminFeedback(sel.dataset.adminFeedbackStatus,sel.value)));
-  list?.querySelectorAll('[data-feedback-call]').forEach(btn=>btn.addEventListener('click',()=>{showView('calls');adminCallSearch=btn.dataset.feedbackCall;renderAdminFleet();const row=document.querySelector('[data-admin-call-id="'+CSS.escape(btn.dataset.feedbackCall)+'"]');row?.scrollIntoView({behavior:'smooth',block:'center'});flashAdminSearchTarget(row)}));
+  list?.querySelectorAll('[data-feedback-client]').forEach(btn=>btn.addEventListener('click',()=>openAdminClient(btn.dataset.feedbackClient)));
+  renderClientCareTabs();
 }
 async function updateAdminFeedback(id,status){
   const item=adminFeedbackData.find(x=>x.id===id);if(!item)return;const before=item.status;item.status=status;item.updatedAt=Date.now();renderAdminFeedback();
