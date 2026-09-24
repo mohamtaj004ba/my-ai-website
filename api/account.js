@@ -245,7 +245,7 @@ function currentBillableWorkspaces(workspaces){
 }
 function financeRevenueForMonth(workspaces,monthKey){
   const prices={Starter:349,Growth:599,Pro:999},end=financeMonthEnd(monthKey);
-  return workspaces.filter(w=>Number(w.createdAt||0)<=end&&String(w.status||'active')!=='pending_deletion').reduce((sum,w)=>sum+(prices[w.plan]||0),0);
+  return workspaces.filter(w=>Number(w.createdAt||0)<=end&&String(w.status||'active')!=='pending_deletion'&&String(w.subscriptionStatus||'active')!=='canceled').reduce((sum,w)=>sum+(prices[w.plan]||0),0);
 }
 function financeExpenseForMonth(expenses,monthKey){
   return expenses.reduce((sum,e)=>{
