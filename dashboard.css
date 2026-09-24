@@ -1617,3 +1617,11 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 .admin-automation-flow-list.empty{color:#8a949a;font-size:7px}
 @media(max-width:950px){.admin-phone-row{grid-template-columns:1.15fr 1fr 1.2fr auto!important}.admin-phone-row>span:nth-child(3){display:none}}
 @media(max-width:650px){.admin-phone-row{grid-template-columns:1fr auto!important}.admin-phone-row>span:nth-child(2),.admin-phone-row>span:nth-child(3),.admin-phone-row>span:nth-child(4){display:none}.admin-automation-card-action{justify-items:start}}
+
+
+/* Admin account list scalability */
+.admin-client-toolbar-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.admin-client-toolbar-right select{min-width:145px;border:1px solid #dde2e5;border-radius:11px;background:#fff;padding:10px 34px 10px 11px;font:inherit;color:inherit}
+.admin-client-toolbar-right input{min-width:260px}
+@media(max-width:850px){.admin-client-toolbar{align-items:stretch;flex-direction:column}.admin-client-toolbar-right{width:100%;margin-left:0}.admin-client-toolbar-right select{flex:0 0 150px}.admin-client-toolbar-right input{min-width:0;flex:1}}
+@media(max-width:560px){.admin-client-toolbar-right{display:grid;grid-template-columns:1fr}.admin-client-toolbar-right select,.admin-client-toolbar-right input{width:100%;min-width:0}}
