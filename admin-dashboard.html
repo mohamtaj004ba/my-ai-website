@@ -7,19 +7,19 @@
 <button class="nav-item active" data-view="overview">Command Center</button>
 <div class="nav-label">Clients</div>
 <button class="nav-item" data-view="clients">Client Accounts</button>
-<button class="nav-item" data-view="onboarding">Onboarding</button>
+<button class="nav-item" data-view="onboarding"><span>Onboarding</span><b class="admin-nav-badge" id="navBadgeOnboarding" hidden>0</b></button>
 <button class="nav-item" data-view="agents">AI Receptionists</button>
 <button class="nav-item" data-view="phones">Phone Numbers</button>
 <div class="nav-label">Business</div>
-<button class="nav-item" data-view="finance">Finance</button>
-<button class="nav-item" data-view="growth">Growth</button>
+<button class="nav-item" data-view="finance"><span>Finance</span><b class="admin-nav-badge critical" id="navBadgeFinance" hidden>0</b></button>
+<button class="nav-item" data-view="growth"><span>Growth</span><b class="admin-nav-badge" id="navBadgeGrowth" hidden>0</b></button>
 <button class="nav-item" data-view="website">Analytics</button>
 <button class="nav-item" data-view="inbox">Inbox</button>
 <button class="nav-item" data-view="documents">Documents</button>
-<button class="nav-item" data-view="client-care">Client Care</button>
+<button class="nav-item" data-view="client-care"><span>Client Care</span><b class="admin-nav-badge" id="navBadgeClientCare" hidden>0</b></button>
 <div class="nav-label">Platform</div>
 <button class="nav-item" data-view="admin-automations">Automations</button>
-<button class="nav-item" data-view="health">System Health</button>
+<button class="nav-item" data-view="health"><span>System Health</span><b class="admin-nav-badge critical" id="navBadgeHealth" hidden>0</b></button>
 <button class="nav-item" data-view="platform-settings">Platform Settings</button>
 </nav>
 <div class="sidebar-plan admin-sidebar-status"><small>Platform health</small><strong id="adminSidebarHealth">Checking systems…</strong><span id="adminSidebarHealthMeta">Evaluating launch requirements</span><button data-view="health">Review system health →</button></div></aside>
@@ -137,6 +137,11 @@
 <section class="view" id="view-growth">
   <div class="page-head"><div><span class="eyebrow">Growth</span><h1>Turn interest into paying clients.</h1><p>One sales and marketing workspace for prospects from the website, Gmail, referrals, outbound outreach, and campaigns.</p></div><div class="page-actions"><button class="secondary-btn" id="addCampaignButton">+ Campaign</button><button class="primary" id="addProspectButton">+ Prospect</button></div></div>
   <div class="metric-grid"><article><span>Open prospects</span><strong id="growthOpen">0</strong><small>Still in the sales cycle</small></article><article><span>Follow-ups due</span><strong id="growthDue">0</strong><small>Needs a touch now</small></article><article><span>Qualified / proposal</span><strong id="growthQualified">0</strong><small>High-intent opportunities</small></article><article><span>Won this month</span><strong id="growthWon">0</strong><small id="growthWonMrr">$0 MRR converted</small></article></div>
+  <div class="growth-hygiene-strip" aria-label="Sales pipeline hygiene">
+    <article><span class="growth-hygiene-icon">↗</span><div><b id="growthNoNextStep">0</b><strong>Open prospects without a next follow-up</strong><small>Every active opportunity should have a scheduled next touch.</small></div></article>
+    <article><span class="growth-hygiene-icon">◎</span><div><b id="growthUnowned">0</b><strong>Open prospects without an owner</strong><small>Assign ownership so opportunities do not quietly stall.</small></div></article>
+    <article><span class="growth-hygiene-icon">⌁</span><div><b id="growthUnattributed">0</b><strong>Prospects missing attribution</strong><small>Source data helps show which marketing work is actually paying off.</small></div></article>
+  </div>
   <div class="growth-toolbar"><div class="admin-client-tabs" id="growthStageTabs"><button class="active" data-growth-filter="open">Open</button><button data-growth-filter="new">New</button><button data-growth-filter="nurture">Nurture</button><button data-growth-filter="qualified">Qualified</button><button data-growth-filter="converted">Won</button><button data-growth-filter="lost">Lost</button><button data-growth-filter="all">All</button></div><input id="growthSearch" type="search" placeholder="Search prospect, company, email, campaign…"></div>
   <div class="growth-main-grid"><article class="panel"><div class="panel-head"><div><span class="eyebrow">Sales pipeline</span><h2>Prospect progression</h2></div><strong id="growthPipelineValue">$0 pipeline MRR</strong></div><div id="growthPipeline" class="growth-pipeline"></div></article><aside class="panel"><div class="panel-head"><div><span class="eyebrow">Follow-up queue</span><h2>Who needs attention</h2></div></div><div id="growthFollowupList"></div></aside></div>
   <div class="two-col"><article class="panel"><div class="panel-head"><div><span class="eyebrow">Marketing attribution</span><h2>Prospects by source</h2></div><button data-view="website">Open analytics →</button></div><div id="growthSourceChart"></div></article><article class="panel"><div class="panel-head"><div><span class="eyebrow">Campaigns</span><h2>Active growth initiatives</h2></div><button id="growthCampaignQuickAdd">+ Add</button></div><div id="growthCampaignList"></div><div class="empty-state" id="growthCampaignEmpty" hidden><h3>No campaigns yet</h3><p>Create a campaign to track channel, UTM attribution, goals, and budget.</p></div></article></div>
