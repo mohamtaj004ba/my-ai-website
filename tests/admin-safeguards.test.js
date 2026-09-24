@@ -131,3 +131,16 @@ test('launch-gate changes are audit logged',()=>{
   assert.match(src,/before:launchGateState\(previous\.launchGates\)/);
   assert.match(src,/after:launchGates/);
 });
+
+
+test('phone routing rejects duplicate numbers and duplicate workspace assignments',()=>{
+  const start=src.indexOf('async function adminSavePhoneNumber');
+  assert.ok(start>=0,'adminSavePhoneNumber missing');
+  const end=src.indexOf('\nasync function ',start+1);
+  const body=src.slice(start,end>=0?end:src.length);
+  assert.match(body,/duplicateNumber/);
+  assert.match(body,/duplicateWorkspace/);
+  assert.match(body,/already in the routing inventory/);
+  assert.match(body,/already has a CallerCore number/);
+  assert.match(body,/phone_routing_update/);
+});
