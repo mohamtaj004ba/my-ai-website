@@ -2717,12 +2717,25 @@ function flashAdminSearchTarget(el){
   if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('search-target-flash');setTimeout(()=>el.classList.remove('search-target-flash'),2200);
 }
 async function openAdminGlobalSearchResult(type,id,view){
-  const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(wrap)wrap.hidden=true;if(input)input.value='';
+  const input=document.getElementById('adminSearch');closeAdminGlobalSearch();if(input)input.value='';
+  if(type==='ai'){openAdminAiGuide();return}
+  if(type==='page'){showView(view);return}
   if(type==='client'){showView('clients');await openAdminClient(id);return}
-  if(type==='gmail'){showView('inbox');await openInboxItem('gmail',id);setTimeout(()=>flashAdminSearchTarget(document.querySelector('[data-inbox-kind="gmail"][data-inbox-id="'+CSS.escape(id)+'"]')),80);return}
+  if(type==='gmail'){showView('inbox');await openInboxItem('gmail',id);setTimeout(()=>flashAdminSearchTarget(document.querySelector('[data-inbox-kind="gmail"][data-inbox-id="'+CSS.escape(id)+'"]')),100);return}
   if(type==='prospect'){showView('growth');openProspectModal(id);return}
   if(type==='campaign'){showView('growth');openCampaignModal(id);return}
   if(type==='document'){documentSearch=(adminDocumentsData.agreements||[]).find(x=>String(x.workspaceId)===String(id))?.workspaceName||'';showView('documents');renderDocuments();return}
+  if(type==='onboarding'){
+    showView('onboarding');setTimeout(()=>{const row=document.querySelector('.onboarding-row[data-provision-id="'+CSS.escape(id)+'"]');if(row)openOnboardingDrawer(id,row);else flashAdminSearchTarget(document.getElementById('provisioningBoard'))},120);return;
+  }
+  if(type==='settings'){
+    showView('platform-settings');setTimeout(()=>{const b=document.querySelector('[data-settings-jump="'+CSS.escape(id)+'"]');if(b)b.click()},100);return;
+  }
+  if(type==='agent'){showView('agents');setTimeout(()=>flashAdminSearchTarget(document.querySelector('[data-admin-agent-client="'+CSS.escape(id)+'"]')),100);return}
+  if(type==='automation'){showView('admin-automations');setTimeout(()=>flashAdminSearchTarget(document.querySelector('[data-automation-client="'+CSS.escape(id)+'"]')),100);return}
+  if(type==='health'){showView('health');setTimeout(()=>flashAdminSearchTarget(document.getElementById('systemHealthGrid')),100);return}
+  if(type==='analytics'){showView('website');return}
+  if(type==='standard-document'){showView('documents');setTimeout(()=>flashAdminSearchTarget(document.querySelector('.standard-documents-card')),100);return}
   if(type==='support')openClientCare('support');else if(type==='feedback')openClientCare('feedback');else showView(view);
   setTimeout(()=>{
     if(type==='support'){const el=document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]');if(el)el.open=true;flashAdminSearchTarget(el)}
@@ -2730,10 +2743,8 @@ async function openAdminGlobalSearchResult(type,id,view){
     else if(type==='feedback')flashAdminSearchTarget(document.getElementById('feedback-'+id));
     else if(type==='expense')flashAdminSearchTarget(document.querySelector('[data-edit-expense="'+CSS.escape(id)+'"]')?.closest('.admin-expense-row'));
     else if(type==='company-document')flashAdminSearchTarget(document.querySelector('[data-edit-company-document="'+CSS.escape(id)+'"]')?.closest('.company-document-row'));
-  },80);
+  },100);
 }
-document.getElementById('adminSearch')?.addEventListener('input',renderAdminGlobalSearch);
-document.getElementById('adminSearch')?.addEventListener('keydown',e=>{if(e.key==='Escape'){const r=document.getElementById('adminSearchResults');if(r)r.hidden=true}});
 
 document.getElementById('closeAdminClient')?.addEventListener('click',closeAdminClient);
 document.getElementById('adminClientBackdrop')?.addEventListener('click',closeAdminClient);
