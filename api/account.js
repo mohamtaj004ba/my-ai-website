@@ -939,48 +939,54 @@ async function adminWebsiteAnalytics(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   try{
     const [eventsRaw,sessionIds,prospectIds]=await Promise.all([
-      kv.lrange('site:events',0,4999),kv.lrange('site:session:index',0,999),kv.lrange('site:prospect:index',0,999)
+      kv.lrange('site:events',0,4999),kv.lrange('site:session:index',0,1999),kv.lrange('site:prospect:index',0,1999)
     ]);
     const events=Array.isArray(eventsRaw)?eventsRaw.filter(Boolean):[];
-    const sessions=(await Promise.all((Array.isArray(sessionIds)?sessionIds:[]).slice(0,500).map(id=>kv.get('site:session:'+id)))).filter(Boolean);
-    const prospects=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,1000).map(id=>kv.get('site:prospect:'+id)))).filter(Boolean).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-    const now=Date.now(),cut30=now-30*24*60*60*1000,cut7=now-7*24*60*60*1000;
-    const s30=sessions.filter(s=>(s.firstAt||0)>=cut30),e30=events.filter(e=>(e.at||0)>=cut30),e7=events.filter(e=>(e.at||0)>=cut7);
-    const uniqueVisitors=new Set(s30.map(s=>s.visitorId).filter(Boolean)).size;
-    const pageViews=e30.filter(e=>e.type==='page_view').length;
-    const avgActive=s30.length?Math.round(s30.reduce((n,s)=>n+Number(s.activeMs||0),0)/s30.length/1000):0;
-    const bounced=s30.filter(s=>(s.pages||[]).length<=1&&Number(s.activeMs||0)<15000).length;
-    const bounceRate=s30.length?Math.round((bounced/s30.length)*100):0;
-    const uniqueEventSessions=(type,label='')=>new Set(e30.filter(e=>e.type===type&&(!label||e.label===label)).map(e=>e.sessionId).filter(Boolean)).size;
-    const funnel={
-      visitors:s30.length,
-      getStarted:new Set(e30.filter(e=>e.type==='page_view'&&String(e.path||'').startsWith('/get-started')).map(e=>e.sessionId).filter(Boolean)).size,
-      formStarted:uniqueEventSessions('form_start','startForm'),
-      checkoutStarted:uniqueEventSessions('checkout_start'),
-      converted:prospects.filter(p=>p.stage==='converted'&&(p.updatedAt||0)>=cut30).length
-    };
-    const pageMap={},sourceMap={},conversionMap={};
-    e30.filter(e=>e.type==='page_view').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=pageMap[p]||{count:0,totalMs:0,exits:0};pageMap[p].count++});
-    e30.filter(e=>e.type==='page_exit').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=pageMap[p]||{count:0,totalMs:0,exits:0};pageMap[p].totalMs+=Number(e.activeMs||0);pageMap[p].exits++});
-    s30.forEach(s=>{const source=s.utmSource||s.source||'direct';sourceMap[source]=(sourceMap[source]||0)+1});
-    prospects.filter(p=>p.stage==='converted'&&Number(p.convertedAt||p.updatedAt||0)>=cut30).forEach(p=>{
-      const source=p.firstUtmSource||p.utmSource||p.firstSource||p.source||'direct',row=conversionMap[source]||(conversionMap[source]={conversions:0,mrr:0,setupRevenue:0});
-      row.conversions++;row.mrr+=Number(p.monthlyValue||0);row.setupRevenue+=Number(p.setupValue||0);
+    const sessions=(await Promise.all((Array.isArray(sessionIds)?sessionIds:[]).slice(0,1000).map(id=>kv.get('site:session:'+id)))).filter(Boolean);
+    const prospects=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,1500).map(id=>kv.get('site:prospect:'+id)))).filter(Boolean).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    const now=Date.now(),days=clampInt(req.query?.days,7,90,30),cut=now-days*86400000,activeCut=now-15*60000;
+    const periodSessions=sessions.filter(s=>Number(s.firstAt||0)>=cut),periodEvents=events.filter(e=>Number(e.at||0)>=cut);
+    const uniqueVisitors=new Set(periodSessions.map(s=>s.visitorId).filter(Boolean)).size,pageViews=periodEvents.filter(e=>e.type==='page_view').length;
+    const avgActive=periodSessions.length?Math.round(periodSessions.reduce((n,s)=>n+Number(s.activeMs||0),0)/periodSessions.length/1000):0;
+    const bounced=periodSessions.filter(s=>(s.pages||[]).length<=1&&Number(s.activeMs||0)<15000).length,bounceRate=periodSessions.length?Math.round((bounced/periodSessions.length)*100):0;
+    const engaged=periodSessions.filter(s=>Number(s.activeMs||0)>=30000||(s.pages||[]).length>=2).length,engagedRate=periodSessions.length?Math.round(engaged/periodSessions.length*100):0;
+    const pagesPerSession=periodSessions.length?Math.round((pageViews/periodSessions.length)*10)/10:0;
+    const activeNow=sessions.filter(s=>Number(s.lastAt||0)>=activeCut).length;
+    const visitorFirst={};sessions.forEach(s=>{if(!s.visitorId)return;const at=Number(s.firstAt||0);visitorFirst[s.visitorId]=visitorFirst[s.visitorId]?Math.min(visitorFirst[s.visitorId],at):at});
+    const newVisitors=[...new Set(periodSessions.map(s=>s.visitorId).filter(Boolean))].filter(id=>Number(visitorFirst[id]||0)>=cut).length,returningVisitors=Math.max(0,uniqueVisitors-newVisitors);
+    const uniqueEventSessions=(type,label='')=>new Set(periodEvents.filter(e=>e.type===type&&(!label||e.label===label)).map(e=>e.sessionId).filter(Boolean)).size;
+    const funnel={sessions:periodSessions.length,getStarted:new Set(periodEvents.filter(e=>e.type==='page_view'&&String(e.path||'').startsWith('/get-started')).map(e=>e.sessionId).filter(Boolean)).size,formStarted:uniqueEventSessions('form_start','startForm'),checkoutStarted:uniqueEventSessions('checkout_start'),converted:prospects.filter(p=>p.stage==='converted'&&Number(p.convertedAt||p.updatedAt||0)>=cut).length};
+    const pageMap={},sourceMap={},campaignMap={},deviceMap={},locationMap={},dailyMap={},conversionMap={};
+    const dayKey=at=>{const d=new Date(Number(at||0));return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
+    for(let i=days-1;i>=0;i--){const d=new Date(now-i*86400000);dailyMap[dayKey(d)]={date:dayKey(d),sessions:0,visitors:new Set(),pageViews:0,conversions:0}}
+    periodSessions.forEach(s=>{
+      const key=dayKey(s.firstAt),row=dailyMap[key];if(row){row.sessions++;if(s.visitorId)row.visitors.add(s.visitorId)}
+      const source=s.utmSource||s.source||'direct';sourceMap[source]=(sourceMap[source]||0)+1;
+      const campaign=s.utmCampaign||'(none)',medium=s.utmMedium||'none',cKey=campaign+'|'+medium;campaignMap[cKey]=campaignMap[cKey]||{campaign,medium,sessions:0,visitors:new Set(),conversions:0};campaignMap[cKey].sessions++;if(s.visitorId)campaignMap[cKey].visitors.add(s.visitorId);
+      const device=s.device||'unknown';deviceMap[device]=(deviceMap[device]||0)+1;
+      const location=[s.city,s.region,s.country].filter(Boolean).join(', ')||'Unknown';locationMap[location]=(locationMap[location]||0)+1;
     });
-    const topPages=Object.entries(pageMap).sort((a,b)=>b[1].count-a[1].count).slice(0,10).map(([path,v])=>({path,count:v.count,avgSeconds:v.exits?Math.round(v.totalMs/v.exits/1000):0}));
-    const sourceNames=[...new Set([...Object.keys(sourceMap),...Object.keys(conversionMap)])];
-    const sources=sourceNames.map(source=>({source,count:sourceMap[source]||0,...(conversionMap[source]||{conversions:0,mrr:0,setupRevenue:0})})).sort((a,b)=>(b.mrr-a.mrr)||(b.count-a.count)).slice(0,10);
+    periodEvents.filter(e=>e.type==='page_view').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=pageMap[p]||{count:0,totalMs:0,exits:0};pageMap[p].count++;const row=dailyMap[dayKey(e.at)];if(row)row.pageViews++});
+    periodEvents.filter(e=>e.type==='page_exit').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=pageMap[p]||{count:0,totalMs:0,exits:0};pageMap[p].totalMs+=Number(e.activeMs||0);pageMap[p].exits++});
+    prospects.filter(p=>p.stage==='converted'&&Number(p.convertedAt||p.updatedAt||0)>=cut).forEach(p=>{
+      const source=p.firstUtmSource||p.utmSource||p.firstSource||p.source||'direct',row=conversionMap[source]||(conversionMap[source]={conversions:0,mrr:0,setupRevenue:0});row.conversions++;row.mrr+=Number(p.monthlyValue||0);row.setupRevenue+=Number(p.setupValue||0);
+      const key=dayKey(p.convertedAt||p.updatedAt),day=dailyMap[key];if(day)day.conversions++;
+      const campaign=p.firstUtmCampaign||p.utmCampaign||'(none)',medium=p.firstUtmMedium||p.utmMedium||'none',cKey=campaign+'|'+medium;if(!campaignMap[cKey])campaignMap[cKey]={campaign,medium,sessions:0,visitors:new Set(),conversions:0};campaignMap[cKey].conversions++;
+    });
+    const topPages=Object.entries(pageMap).sort((a,b)=>b[1].count-a[1].count).slice(0,12).map(([path,v])=>({path,count:v.count,avgSeconds:v.exits?Math.round(v.totalMs/v.exits/1000):0,share:pageViews?Math.round(v.count/pageViews*100):0}));
+    const sourceNames=[...new Set([...Object.keys(sourceMap),...Object.keys(conversionMap)])],sources=sourceNames.map(source=>({source,count:sourceMap[source]||0,...(conversionMap[source]||{conversions:0,mrr:0,setupRevenue:0})})).sort((a,b)=>(b.mrr-a.mrr)||(b.count-a.count)).slice(0,12);
+    const campaigns=Object.values(campaignMap).map(x=>({campaign:x.campaign,medium:x.medium,sessions:x.sessions,visitors:x.visitors.size,conversions:x.conversions,conversionRate:x.sessions?Math.round(x.conversions/x.sessions*1000)/10:0})).sort((a,b)=>b.sessions-a.sessions).slice(0,15);
+    const devices=Object.entries(deviceMap).map(([device,count])=>({device,count,pct:periodSessions.length?Math.round(count/periodSessions.length*100):0})).sort((a,b)=>b.count-a.count);
+    const locations=Object.entries(locationMap).map(([location,count])=>({location,count,pct:periodSessions.length?Math.round(count/periodSessions.length*100):0})).sort((a,b)=>b.count-a.count).slice(0,10);
+    const daily=Object.values(dailyMap).map(x=>({date:x.date,sessions:x.sessions,visitors:x.visitors.size,pageViews:x.pageViews,conversions:x.conversions}));
     const attributedMrr=Object.values(conversionMap).reduce((n,x)=>n+Number(x.mrr||0),0),attributedSetupRevenue=Object.values(conversionMap).reduce((n,x)=>n+Number(x.setupRevenue||0),0);
-    const eventBySession={};e30.forEach(e=>{if(!e.sessionId)return;(eventBySession[e.sessionId]||(eventBySession[e.sessionId]=[])).push(e)});
-    const recentSessions=sessions.sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).slice(0,60).map(s=>({
-      ...s,journey:(eventBySession[s.id]||[]).sort((a,b)=>(a.at||0)-(b.at||0)).slice(-40).map(e=>({type:e.type,at:e.at,path:e.path,label:e.label,value:e.value,activeMs:e.activeMs}))
-    }));
+    const eventBySession={};periodEvents.forEach(e=>{if(!e.sessionId)return;(eventBySession[e.sessionId]||(eventBySession[e.sessionId]=[])).push(e)});
+    const recentSessions=sessions.sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).slice(0,20).map(s=>({...s,journey:(eventBySession[s.id]||[]).sort((a,b)=>(a.at||0)-(b.at||0)).slice(-20).map(e=>({type:e.type,at:e.at,path:e.path,label:e.label,value:e.value,activeMs:e.activeMs}))}));
     return res.status(200).json({analytics:{
-      periodDays:30,sessions:s30.length,visitors:uniqueVisitors,pageViews,avgActiveSeconds:avgActive,bounceRate,
-      contactInquiries:e30.filter(e=>e.type==='contact_submit').length,chatSessions:uniqueEventSessions('chat_open'),
-      formAbandons:uniqueEventSessions('form_abandon'),checkoutStarts:uniqueEventSessions('checkout_start'),
-      checkoutAbandoned:prospects.filter(p=>p.stage==='checkout_started').length,conversions:funnel.converted,
-      attributedMrr,attributedSetupRevenue,last7Events:e7.length,funnel,topPages,sources,recentSessions,prospects
+      periodDays:days,sessions:periodSessions.length,visitors:uniqueVisitors,newVisitors,returningVisitors,activeNow,pageViews,pagesPerSession,avgActiveSeconds:avgActive,bounceRate,engagedRate,
+      contactInquiries:periodEvents.filter(e=>e.type==='contact_submit').length,chatSessions:uniqueEventSessions('chat_open'),ctaClicks:periodEvents.filter(e=>e.type==='cta_click').length,
+      formAbandons:uniqueEventSessions('form_abandon'),checkoutStarts:uniqueEventSessions('checkout_start'),checkoutAbandoned:prospects.filter(p=>p.stage==='checkout_started').length,conversions:funnel.converted,
+      attributedMrr,attributedSetupRevenue,funnel,topPages,sources,campaigns,devices,locations,daily,recentSessions,prospects
     }});
   }catch(err){console.error('admin website analytics failed',safeError(err));return res.status(500).json({error:'Website analytics unavailable'})}
 }
