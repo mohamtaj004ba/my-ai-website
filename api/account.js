@@ -174,7 +174,8 @@ async function promotePreviewAdmin(req,res){
   const email=cleanEmail((req.body||{}).email);
   const member=await kv.get('user:email:'+email);
   if(!member||!member.workspaceId)return res.status(404).json({error:'User not found'});
-  await kv.set('user:email:'+email,{...member,email,role:'admin'});
+  const sessionVersion=Number(member.sessionVersion||0)+1;
+  await kv.set('user:email:'+email,{...member,email,role:'admin',sessionVersion});
   const index=await kv.get('workspace:index')||[];
   if(Array.isArray(index)&&!index.includes(member.workspaceId))await kv.set('workspace:index',[...index,member.workspaceId]);
   return res.status(200).json({ok:true,email,role:'admin'});
@@ -1462,8 +1463,8 @@ async function requestLogin(req,res){
   if(member&&member.workspaceId&&!member.disabled){
     const loginWs=await kv.get('workspace:'+member.workspaceId);
     if(loginWs&&loginWs.status==='pending_deletion')return res.status(200).json({ok:true});
-    const token=crypto.randomBytes(32).toString('hex');
-    await kv.set('login:'+token,{email,workspaceId:member.workspaceId,role:member.role||'owner',next,authVersion:Number(member.sessionVersion||0)},{ex:15*60});
+    const token=crypto.randomBytes(32).toString('hex'),role=member.role||'owner',destination=role==='admin'?'/admin-dashboard':(next||'/dashboard');
+    await kv.set('login:'+token,{email,workspaceId:member.workspaceId,role,next:destination,authVersion:Number(member.sessionVersion||0)},{ex:15*60});
     const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
     try{
       {const emailBody=authEmail({
@@ -1490,8 +1491,8 @@ async function verify(req,res){
   await kv.del(key);
   const member=await kv.get('user:email:'+cleanEmail(record.email)),loginWs=await kv.get('workspace:'+record.workspaceId);
   if(!member||member.disabled||!loginWs||loginWs.status==='pending_deletion')return res.redirect(302,'/login?error=disabled');
-  await createSession(res,{email:record.email,workspaceId:record.workspaceId,role:record.role||'owner',authVersion:Number(record.authVersion||0)});
-  const destination=record.next||((record.role||'owner')==='admin'?'/admin-dashboard':'/dashboard');
+  const role=member.role||record.role||'owner',authVersion=Number(member.sessionVersion||record.authVersion||0),destination=role==='admin'?'/admin-dashboard':(record.next==='/dashboard'?'/dashboard':'/dashboard');
+  await createSession(res,{email:record.email,workspaceId:record.workspaceId,role,authVersion});
   return res.redirect(302,destination);
 }
 
