@@ -1,6 +1,6 @@
 const crypto=require('crypto');
 const {kv,storageEnvironment}=require('../lib/kv');
-const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession}=require('../lib/auth');
+const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession,destroySessionToken}=require('../lib/auth');
 const {sendMail}=require('../lib/mail');
 const {lifecycleEmail,authEmail,esc:escapeEmailHtml}=require('../lib/email-template');
 const {entitlementsFor}=require('../lib/plans');
@@ -435,7 +435,7 @@ async function adminViewClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).id||'').slice(0,80);
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
-  const old=parseCookies(req).cc_session;if(old)await kv.del('session:'+old);
+  const old=parseCookies(req).cc_session;if(old)await destroySessionToken(old);
   await createSession(res,{email:admin.email,workspaceId:id,role:'admin',adminView:true,adminHomeWorkspaceId:admin.workspaceId});
   return res.status(200).json({ok:true,redirect:'/dashboard',workspace:{id:ws.id,name:ws.name}});
 }
@@ -446,7 +446,7 @@ async function adminExitClientView(req,res){
   if(!member||member.role!=='admin')return res.status(403).json({error:'Admin access required'});
   const home=String(s.adminHomeWorkspaceId||member.workspaceId||'');
   if(!home)return res.status(409).json({error:'Admin home workspace unavailable'});
-  const old=parseCookies(req).cc_session;if(old)await kv.del('session:'+old);
+  const old=parseCookies(req).cc_session;if(old)await destroySessionToken(old);
   await createSession(res,{email:s.email,workspaceId:home,role:'admin'});
   return res.status(200).json({ok:true,redirect:'/admin-dashboard'});
 }
@@ -2309,7 +2309,7 @@ async function billingPortal(req,res){
 }
 
 async function logout(req,res){
-  const token=parseCookies(req).cc_session;if(token)await kv.del('session:'+token);
+  const token=parseCookies(req).cc_session;if(token)await destroySessionToken(token);
   clearSessionCookie(res);return res.status(200).json({ok:true});
 }
 
