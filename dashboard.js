@@ -89,7 +89,7 @@ async function logout(){try{await fetch('/api/account?action=logout',{method:'PO
 
 let adminAiLastAnswer='';
 function adminAiSnapshot(){
-  const clients=(adminClientsData||[]).slice(0,120).map(x=>({name:x.name,plan:x.plan,status:x.status,subscriptionStatus:x.subscriptionStatus,usageMinutes:Number(x.usage?.minutes||0),createdAt:x.createdAt,updatedAt:x.updatedAt}));
+  const clients=(adminClientsData||[]).slice(0,120).map(x=>({name:x.name,plan:x.plan,monthlyRevenue:Number(PLAN_DATA[x.plan]?.price||0),status:x.status,subscriptionStatus:x.subscriptionStatus,usageMinutes:Number(x.usage?.minutes||0),createdAt:x.createdAt,updatedAt:x.updatedAt}));
   const prospects=(adminWebsiteData.prospects||[]).slice(0,120).map(x=>({business:x.business,name:x.name,stage:x.stage,source:x.source||x.utmSource,campaign:x.campaign||x.utmCampaign,plan:x.plan,monthlyValue:Number(x.monthlyValue||0),owner:x.owner,nextFollowUpAt:x.nextFollowUpAt,lastContactAt:x.lastContactAt,updatedAt:x.updatedAt}));
   const onboarding=(adminProvisioningData||[]).slice(0,120).map(x=>({name:x.name,plan:x.plan,stage:x.stage,checklistDone:x.checklistDone,checklistTotal:x.checklistTotal,agreementSignedAt:x.agreementSignedAt,onboardingStatus:x.onboardingStatus,manualOverride:!!x.manualOverride,updatedAt:x.updatedAt}));
   const support=(adminSupportData||[]).slice(0,80).map(x=>({workspaceName:x.workspaceName,subject:x.subject,status:x.status,priority:x.priority,createdAt:x.createdAt,updatedAt:x.updatedAt}));
@@ -118,6 +118,17 @@ function adminAiSnapshot(){
     },
     selectedInbox:currentInboxItem?{kind:currentInboxItem.kind,contact:inboxContact,subject:currentInboxItem.kind==='gmail'?(currentInboxItem.thread?.subject||''):(currentInboxItem.prospect?.category||'Website inquiry'),linkedGrowthStage:currentInboxItem.prospect?.stage||'',messageCount:currentInboxItem.messages?.length||0,lastActivity:lastInboxMessage?.at||null}:null,
     summary:adminSummaryData||{},
+    computed:{
+      collectionsAtRisk:clients.filter(x=>x.subscriptionStatus==='past_due').reduce((n,x)=>n+x.monthlyRevenue,0),
+      pastDueClients:clients.filter(x=>x.subscriptionStatus==='past_due').length,
+      suspendedClients:clients.filter(x=>x.status==='suspended').length,
+      activeClients:clients.filter(x=>x.status==='active').length,
+      onboardingClients:clients.filter(x=>x.status==='onboarding').length,
+      openSupport:(adminSupportData||[]).filter(x=>x.status!=='resolved').length,
+      urgentSupport:(adminSupportData||[]).filter(x=>x.status!=='resolved'&&x.priority==='urgent').length,
+      followupsDue:(adminWebsiteData.prospects||[]).filter(prospectDue).length,
+      launchBlockers:(adminReadinessData?.blockers||[]).length
+    },
     finance:{mrr:adminFinanceData?.mrr||0,recurringExpenses:adminFinanceData?.recurringExpenses||0,netRecurring:adminFinanceData?.netRecurring||0,margin:adminFinanceData?.margin||0,history:(adminFinanceData?.history||[]).slice(-12)},
     clients,onboarding,prospects,support,feedback,agents,automations,
     phones:(adminPhoneData||[]).slice(0,120).map(x=>({workspaceName:x.workspaceName,provider:x.provider,status:x.status,hasTransfer:!!x.transferNumber,afterHours:x.afterHours})),
