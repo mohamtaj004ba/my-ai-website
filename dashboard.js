@@ -319,7 +319,7 @@ function applyClientDashboardData(data={}){
   conversationsData=Array.isArray(data.conversations)?data.conversations:[];
   appointmentsData=Array.isArray(data.appointments)?data.appointments:[];
   automationsData=Array.isArray(data.automations)?data.automations:[];
-  sessionOnboarding=data.onboarding||sessionOnboarding;
+  sessionOnboarding=data.onboarding?{...(sessionOnboarding||{}),...data.onboarding}:sessionOnboarding;
   followupState=data.followupState&&typeof data.followupState==='object'?data.followupState:{};
   callViewedIds=new Set((Array.isArray(data.viewedCallIds)?data.viewedCallIds:[]).map(String));
   analyticsData=buildLocalAnalytics();
