@@ -1718,7 +1718,7 @@ function renderPlatformSettings(){
   set('platformRefreshSeconds',adminPlatformData.adminRefreshSeconds||60);
   set('platformLeadFollowupHours',adminPlatformData.leadFollowupHours||24);
   const mm=document.getElementById('platformMaintenanceMode');if(mm)mm.checked=!!adminPlatformData.maintenanceMode;
-  const brand=document.querySelector('.dash-brand span');if(brand&&document.body.dataset.dashboard==='admin')brand.textContent=adminPlatformData.brandName||'CallerCore';
+  const brand=document.querySelector('.dash-brand span');if(brand&&document.body.dataset.dashboard==='admin'){const name=adminPlatformData.brandName||'CallerCore';brand.innerHTML=name==='CallerCore'?'Caller<b>Core</b>':esc(name)}
   const gates=adminPlatformData.launchGates||{},gateMap={launchGatePreviewIsolation:'previewIsolation',launchGateDisposableE2E:'disposableE2E',launchGateVoiceLifecycle:'voiceLifecycle',launchGateProductionEnvScope:'productionEnvScope',launchGateSupportEmail:'supportEmail',launchGateBusinessTax:'businessTax',launchGateLegalReview:'legalReview'};
   Object.entries(gateMap).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.checked=!!gates[key]});
 }
