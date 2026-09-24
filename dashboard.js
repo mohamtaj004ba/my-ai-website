@@ -1692,77 +1692,88 @@ async function updateSupportStatus(id,status){
 }
 function renderPlatformSettings(){
   if(!adminPlatformData)return;
-  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v};
-  set('platformAgentName',adminPlatformData.defaultAgentName||'Maya');set('platformTimezone',adminPlatformData.defaultTimezone||'America/Los_Angeles');set('platformSupportEmail',adminPlatformData.supportEmail||'');
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=String(v??'')};
+  set('platformBrandName',adminPlatformData.brandName||'CallerCore');
+  set('platformAgentName',adminPlatformData.defaultAgentName||'Maya');
+  set('platformTimezone',adminPlatformData.defaultTimezone||'America/Los_Angeles');
+  set('platformSupportEmail',adminPlatformData.supportEmail||'');
+  set('platformDefaultAfterHours',adminPlatformData.defaultAfterHours||'ai');
+  set('platformAnalyticsWindow',adminPlatformData.analyticsWindowDays||30);
+  set('platformRefreshSeconds',adminPlatformData.adminRefreshSeconds||60);
+  set('platformLeadFollowupHours',adminPlatformData.leadFollowupHours||24);
   const mm=document.getElementById('platformMaintenanceMode');if(mm)mm.checked=!!adminPlatformData.maintenanceMode;
   const gates=adminPlatformData.launchGates||{},gateMap={launchGatePreviewIsolation:'previewIsolation',launchGateDisposableE2E:'disposableE2E',launchGateVoiceLifecycle:'voiceLifecycle',launchGateProductionEnvScope:'productionEnvScope',launchGateSupportEmail:'supportEmail',launchGateBusinessTax:'businessTax',launchGateLegalReview:'legalReview'};
   Object.entries(gateMap).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.checked=!!gates[key]});
 }
 async function savePlatformSettings(){
-  const emailEl=document.getElementById('platformSupportEmail'),agentEl=document.getElementById('platformAgentName'),status=document.getElementById('platformSettingsFormStatus'),btn=document.getElementById('savePlatformSettings');
-  const email=String(emailEl?.value||'').trim(),agentName=String(agentEl?.value||'').trim(),badEmail=email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  settingsFieldError('platformSupportEmail',badEmail?'Enter a valid support email.':'');
-  settingsFieldError('platformAgentName',!agentName?'Enter a default agent name.':'');
-  if(badEmail||!agentName){if(status){status.textContent='Please correct the highlighted fields.';status.className='form-status-line error'};return}
-  const payload={defaultAgentName:agentName,defaultTimezone:document.getElementById('platformTimezone')?.value||'America/Los_Angeles',supportEmail:email,maintenanceMode:!!document.getElementById('platformMaintenanceMode')?.checked,launchGates:{previewIsolation:!!document.getElementById('launchGatePreviewIsolation')?.checked,disposableE2E:!!document.getElementById('launchGateDisposableE2E')?.checked,voiceLifecycle:!!document.getElementById('launchGateVoiceLifecycle')?.checked,productionEnvScope:!!document.getElementById('launchGateProductionEnvScope')?.checked,supportEmail:!!document.getElementById('launchGateSupportEmail')?.checked,businessTax:!!document.getElementById('launchGateBusinessTax')?.checked,legalReview:!!document.getElementById('launchGateLegalReview')?.checked}};
+  const emailEl=document.getElementById('platformSupportEmail'),agentEl=document.getElementById('platformAgentName'),brandEl=document.getElementById('platformBrandName'),status=document.getElementById('platformSettingsFormStatus'),btn=document.getElementById('savePlatformSettings');
+  const email=String(emailEl?.value||'').trim(),agentName=String(agentEl?.value||'').trim(),brandName=String(brandEl?.value||'').trim(),badEmail=email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  settingsFieldError('platformSupportEmail',badEmail?'Enter a valid support email.':'');settingsFieldError('platformAgentName',!agentName?'Enter a default receptionist name.':'');settingsFieldError('platformBrandName',!brandName?'Enter the platform name.':'');
+  if(badEmail||!agentName||!brandName){if(status){status.textContent='Please correct the highlighted fields.';status.className='form-status-line error'};return}
+  const payload={brandName,defaultAgentName:agentName,defaultTimezone:document.getElementById('platformTimezone')?.value||'America/Los_Angeles',supportEmail:email,defaultAfterHours:document.getElementById('platformDefaultAfterHours')?.value||'ai',analyticsWindowDays:Number(document.getElementById('platformAnalyticsWindow')?.value||30),adminRefreshSeconds:Number(document.getElementById('platformRefreshSeconds')?.value||60),leadFollowupHours:Number(document.getElementById('platformLeadFollowupHours')?.value||24),maintenanceMode:!!document.getElementById('platformMaintenanceMode')?.checked,launchGates:{previewIsolation:!!document.getElementById('launchGatePreviewIsolation')?.checked,disposableE2E:!!document.getElementById('launchGateDisposableE2E')?.checked,voiceLifecycle:!!document.getElementById('launchGateVoiceLifecycle')?.checked,productionEnvScope:!!document.getElementById('launchGateProductionEnvScope')?.checked,supportEmail:!!document.getElementById('launchGateSupportEmail')?.checked,businessTax:!!document.getElementById('launchGateBusinessTax')?.checked,legalReview:!!document.getElementById('launchGateLegalReview')?.checked}};
   if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status){status.textContent='';status.className='form-status-line'}
   try{
     const r=await fetch('/api/account?action=admin-platform-settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save platform settings.');
-    adminPlatformData=data.settings;if(status){status.textContent='Platform settings saved.';status.className='form-status-line success'}
-    const tag=document.getElementById('platformSettingsStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1500)}
+    adminPlatformData=data.settings;adminWebsiteDays=Number(data.settings?.analyticsWindowDays||adminWebsiteDays||30);renderPlatformSettings();initAdminLiveRefresh();renderGrowth();
+    if(status){status.textContent='Platform settings saved and applied.';status.className='form-status-line success'}
+    const tag=document.getElementById('platformSettingsStatus');if(tag){tag.textContent='Saved';tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1500)}
   }catch(err){if(status){status.textContent=err.message||'Could not save platform settings.';status.className='form-status-line error'}}
-  finally{if(btn){btn.disabled=false;btn.textContent='Save platform settings'}}
+  finally{if(btn){btn.disabled=false;btn.textContent='Save all changes'}}
 }
 document.getElementById('savePlatformSettings')?.addEventListener('click',savePlatformSettings);
 
+function onboardingNeedsAction(x){
+  const ck=x.checklist||{},now=Date.now();
+  if(x.stage==='Live')return false;
+  if(x.onboardingStatus==='awaiting_review'&&!x.onboardingLinkSent&&Number(x.reviewEligibleAt||0)<=now)return true;
+  if(x.onboardingStatus==='building_review'&&!ck.adminReview&&Number(x.buildEligibleAt||0)<=now)return true;
+  if(ck.adminReview&&!ck.testCall)return true;
+  if(ck.testCall&&!ck.clientApproval)return true;
+  if(ck.clientApproval&&!ck.live)return true;
+  return false;
+}
+function onboardingNextAction(x){
+  const ck=x.checklist||{},now=Date.now(),reviewAt=Number(x.reviewEligibleAt||0),buildAt=Number(x.buildEligibleAt||0);
+  if(x.stage==='Live'||ck.live)return {label:'Launch complete',type:'done'};
+  if(x.onboardingStatus==='awaiting_review'&&!x.onboardingLinkSent)return reviewAt>now?{label:'Review available '+new Date(reviewAt).toLocaleString(),type:'wait'}:{label:'Approve & send onboarding',type:'send'};
+  if(!ck.agreement&&x.onboardingLinkSent)return {label:'Waiting for agreement',type:'wait'};
+  if(!ck.intake&&x.onboardingLinkSent)return {label:'Waiting for client intake',type:'wait'};
+  if(x.onboardingStatus==='building_review'&&!ck.adminReview)return buildAt>now?{label:'Build review '+new Date(buildAt).toLocaleString(),type:'wait'}:{label:'Approve build',type:'approve'};
+  if(!ck.adminReview)return {label:'Review configuration',type:'approve'};
+  if(!ck.testCall)return {label:'Mark test call complete',type:'check',field:'testCall'};
+  if(!ck.clientApproval)return {label:'Record client approval',type:'check',field:'clientApproval'};
+  if(!ck.live)return {label:'Launch client',type:'check',field:'live'};
+  return {label:'Continue setup',type:'wait'};
+}
 function renderProvisioning(){
   const board=document.getElementById('provisioningBoard');if(!board)return;
   const stages=['Paid','Review','Intake','Building','QA','Client Test','Ready','Live'],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
-  set('provisionNeedsReview',adminProvisioningData.filter(x=>['Paid','Review','Intake'].includes(x.stage)||((x.onboardingStatus==='awaiting_review'||x.onboardingStatus==='building_review')&&!x.checklist?.adminReview)).length);
+  set('provisionNeedsReview',adminProvisioningData.filter(onboardingNeedsAction).length);
   set('provisionBuilding',adminProvisioningData.filter(x=>['Building','QA'].includes(x.stage)).length);
   set('provisionClientTest',adminProvisioningData.filter(x=>x.stage==='Client Test').length);
   set('provisionLive',adminProvisioningData.filter(x=>x.stage==='Live').length);
-  const labels={payment:'Paid',accountReview:'Account review',onboardingSent:'Onboarding sent',agreement:'Agreement',intake:'Intake',businessProfile:'Profile',agentDraft:'Agent draft',routingCaptured:'Routing',phoneAssigned:'Phone',adminReview:'Admin review',testCall:'Test call',clientApproval:'Client approval',live:'Live'};
-  board.innerHTML=stages.map(stage=>{
-    const rows=adminProvisioningData.filter(x=>x.stage===stage);
-    return '<div class="provision-column" data-provision-stage="'+stage+'"><h3>'+stage+' <span>'+rows.length+'</span></h3>'+rows.map(x=>{
-      const ck=x.checklist||{},chips=Object.entries(labels).map(([k,label])=>'<button type="button" class="provision-check '+(ck[k]?'done':'')+'" '+(['testCall','clientApproval','live'].includes(k)?'data-provision-check="'+k+'" data-provision-id="'+esc(x.id)+'"':'disabled')+'><span>'+(ck[k]?'✓':'○')+'</span>'+label+'</button>').join('');
-      const scan=x.websiteScan?('<span class="provision-scan">Website scan · '+Number(x.websiteScan.pagesScanned||0)+' page'+(Number(x.websiteScan.pagesScanned||0)===1?'':'s')+'</span>'):'';
-      const agreement=x.agreementVersion?('<span class="provision-scan">Agreement v'+esc(x.agreementVersion)+(x.agreementSignedName?' · '+esc(x.agreementSignedName):'')+'</span>'):'';
-      const now=Date.now(),reviewAt=Number(x.reviewEligibleAt||0),buildAt=Number(x.buildEligibleAt||0);
-      let action='';
-      if(x.onboardingStatus==='awaiting_review'&&!x.onboardingLinkSent){
-        action=reviewAt>now
-          ? '<div class="provision-wait">Onboarding invite available '+esc(new Date(reviewAt).toLocaleString())+'</div>'
-          : '<button class="primary provision-action" data-send-onboarding="'+esc(x.id)+'">Approve & send onboarding</button>';
-      }else if(x.onboardingStatus==='building_review'&&!ck.adminReview){
-        action=buildAt>now
-          ? '<div class="provision-wait">Build review available '+esc(new Date(buildAt).toLocaleString())+'</div>'
-          : '<button class="primary provision-action" data-approve-build="'+esc(x.id)+'">Approve build</button>';
-      }
-      const stageSelect='<label class="provision-stage-select">Stage<select data-provision-stage-select="'+esc(x.id)+'">'+stages.map(s=>'<option value="'+s+'" '+(x.stage===s?'selected':'')+'>'+s+'</option>').join('')+'</select></label>';
-      return '<article draggable="true" data-provision-id="'+esc(x.id)+'"><div class="provision-card-head"><b>'+esc(x.name)+'</b>'+(x.manualOverride?'<span class="tag amber">Manual</span>':'')+'</div><small>'+esc(x.plan)+(x.phone?' · '+esc(x.phone):'')+'</small><div class="provision-progress"><i style="width:'+Math.round((Number(x.checklistDone||0)/Math.max(1,Number(x.checklistTotal||1)))*100)+'%"></i></div><div class="provision-checks">'+chips+'</div>'+agreement+scan+action+stageSelect+'<div class="provision-foot"><span>Auto: '+esc(x.autoStage||x.stage)+'</span>'+(x.manualOverride?'<button data-auto-stage="'+esc(x.id)+'">Use auto</button>':'')+'</div></article>';
-    }).join('')+'</div>';
-  }).join('');
-  board.querySelectorAll('[draggable="true"]').forEach(card=>{
-    card.addEventListener('dragstart',e=>{if(e.target.closest('button')){e.preventDefault();return}card.classList.add('dragging');card.dataset.dragging='1'});
-    card.addEventListener('dragend',()=>{card.classList.remove('dragging');delete card.dataset.dragging});
-  });
-  board.querySelectorAll('.provision-column').forEach(col=>{
-    col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drop-active')});
-    col.addEventListener('dragleave',()=>col.classList.remove('drop-active'));
-    col.addEventListener('drop',async e=>{
-      e.preventDefault();col.classList.remove('drop-active');
-      const card=board.querySelector('[data-dragging="1"]');if(!card)return;
-      await moveProvisioningStage(card.dataset.provisionId,col.dataset.provisionStage);
-    });
-  });
+  const rail=document.getElementById('onboardingStageRail');if(rail)rail.innerHTML=stages.map((stage,i)=>{const n=adminProvisioningData.filter(x=>x.stage===stage).length;return '<div class="onboarding-stage-step '+(n?'has-items':'')+'"><span>'+(i+1)+'</span><b>'+esc(stage)+'</b><small>'+n+'</small></div>'}).join('');
+  const search=document.getElementById('onboardingSearch');if(search){search.value=onboardingSearch;search.oninput=()=>{onboardingSearch=search.value;renderProvisioning()}}
+  document.querySelectorAll('[data-onboarding-filter]').forEach(btn=>{btn.classList.toggle('active',btn.dataset.onboardingFilter===onboardingFilter);btn.onclick=()=>{onboardingFilter=btn.dataset.onboardingFilter;renderProvisioning()}});
+  const q=onboardingSearch.trim().toLowerCase(),filterOk=x=>onboardingFilter==='all'||onboardingFilter==='live'?x.stage==='Live':onboardingFilter==='needs_action'?onboardingNeedsAction(x):x.stage!=='Live';
+  const rows=adminProvisioningData.filter(x=>filterOk(x)&&(!q||[x.name,x.plan,x.stage,x.onboardingStatus,x.agreementSignedName].filter(Boolean).join(' ').toLowerCase().includes(q)));
+  const labels={payment:'Paid',accountReview:'Account review',onboardingSent:'Onboarding sent',agreement:'Agreement',intake:'Intake',businessProfile:'Business profile',agentDraft:'AI draft',routingCaptured:'Routing',phoneAssigned:'Phone',adminReview:'Admin review',testCall:'Test call',clientApproval:'Client approval',live:'Live'};
+  board.innerHTML=rows.map(x=>{
+    const ck=x.checklist||{},done=Number(x.checklistDone||0),total=Math.max(1,Number(x.checklistTotal||Object.keys(labels).length)),pct=Math.round(done/total*100),next=onboardingNextAction(x),doc=(adminDocumentsData.agreements||[]).find(d=>String(d.workspaceId)===String(x.id));
+    const agreementStatus=doc?.status==='signed'||x.agreementSignedAt?'Signed':x.onboardingLinkSent?'Awaiting':'Not sent',agreementClass=agreementStatus==='Signed'?'green':agreementStatus==='Awaiting'?'amber':'';
+    const action=next.type==='send'?'<button class="primary" data-send-onboarding="'+esc(x.id)+'">'+esc(next.label)+'</button>':next.type==='approve'?'<button class="primary" data-approve-build="'+esc(x.id)+'">'+esc(next.label)+'</button>':next.type==='check'?'<button class="primary" data-provision-check="'+esc(next.field)+'" data-provision-id="'+esc(x.id)+'">'+esc(next.label)+'</button>':'<span class="onboarding-next-copy '+next.type+'">'+esc(next.label)+'</span>';
+    const checklist=Object.entries(labels).map(([k,label])=>'<button type="button" class="provision-check '+(ck[k]?'done':'')+'" '+(['testCall','clientApproval','live'].includes(k)?'data-provision-check="'+k+'" data-provision-id="'+esc(x.id)+'"':'disabled')+'><span>'+(ck[k]?'✓':'○')+'</span>'+label+'</button>').join('');
+    const stageSelect='<label class="provision-stage-select">Manual stage<select data-provision-stage-select="'+esc(x.id)+'">'+stages.map(s=>'<option value="'+s+'" '+(x.stage===s?'selected':'')+'>'+s+'</option>').join('')+'</select></label>';
+    const agreementDetails='<div class="onboarding-detail-block"><span class="eyebrow">Agreement</span><b>'+esc(agreementStatus)+(x.agreementVersion?' · v'+esc(x.agreementVersion):'')+'</b><small>'+(x.agreementSignedAt?'Signed '+new Date(x.agreementSignedAt).toLocaleDateString()+(x.agreementSignedName?' by '+esc(x.agreementSignedName):''):'Client service agreement status')+'</small>'+(doc?.downloadUrl?'<a class="admin-link" href="'+esc(doc.downloadUrl)+'" target="_blank" rel="noopener">Open signed PDF →</a>':'<button class="admin-link" data-open-documents>Open Documents →</button>')+'</div>';
+    return '<details class="onboarding-row" data-provision-id="'+esc(x.id)+'"><summary><span class="onboarding-client"><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+(x.manualOverride?' · manual stage':'')+'</small></span><span><span class="tag '+(x.stage==='Live'?'green':onboardingNeedsAction(x)?'amber':'')+'">'+esc(x.stage)+'</span></span><span class="onboarding-progress-cell"><i><em style="width:'+pct+'%"></em></i><small>'+pct+'% · '+done+'/'+total+'</small></span><span><span class="tag '+agreementClass+'">'+agreementStatus+'</span></span><span class="onboarding-next-summary">'+esc(next.label)+'</span><span class="onboarding-chevron">⌄</span></summary><div class="onboarding-row-body"><div class="onboarding-checklist"><span class="eyebrow">Launch checklist</span><div class="provision-checks">'+checklist+'</div></div><div class="onboarding-actions">'+agreementDetails+'<div class="onboarding-detail-block"><span class="eyebrow">Next action</span>'+action+(x.websiteScan?'<small>Website scan · '+Number(x.websiteScan.pagesScanned||0)+' page'+(Number(x.websiteScan.pagesScanned||0)===1?'':'s')+'</small>':'')+'</div><div class="onboarding-detail-block"><span class="eyebrow">Stage control</span>'+stageSelect+'<small>Auto stage: '+esc(x.autoStage||x.stage)+'</small>'+(x.manualOverride?'<button class="admin-link" data-auto-stage="'+esc(x.id)+'">Restore automatic stage</button>':'')+'</div></div></div></details>';
+  }).join('')||'<div class="empty-state"><h3>No onboarding accounts in this view</h3><p>Change the filter or search another client.</p></div>';
   board.querySelectorAll('[data-auto-stage]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();clearProvisioningOverride(b.dataset.autoStage)}));
   board.querySelectorAll('[data-provision-stage-select]').forEach(sel=>sel.addEventListener('change',e=>{e.stopPropagation();moveProvisioningStage(sel.dataset.provisionStageSelect,sel.value)}));
   board.querySelectorAll('[data-provision-check]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done'))}));
   board.querySelectorAll('[data-send-onboarding]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await sendOnboardingInvite(b.dataset.sendOnboarding,b)}));
   board.querySelectorAll('[data-approve-build]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await approveProvisioningBuild(b.dataset.approveBuild,b)}));
+  board.querySelectorAll('[data-open-documents]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showView('documents')}));
 }
 async function sendOnboardingInvite(id,button){
   if(button){button.disabled=true;button.textContent='Sending…'}
