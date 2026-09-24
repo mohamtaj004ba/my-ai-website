@@ -15,8 +15,8 @@ const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='
 let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
-let notificationData=[],notificationUnreadCount=0,notificationsLoading=false;
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callQuickFilter='all',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all';
+let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread';
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callQuickFilter='all',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set();
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -94,7 +94,7 @@ function showView(name){
     if(agentEditing){if(agentEditSnapshot)agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent()}
     if(settingsEditing){settingsEditing=false;pendingBusinessLogo=String(settingsData?.logoDataUrl||'');renderSettings()}
   }
-  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});markViewNotificationsRead(name);if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
@@ -210,7 +210,7 @@ async function loadOperations(){
   setClientLoading(true);setDataHealth('clientDataHealth',false);
   try{
     const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:2,timeout:15000});
-    callsData=data.calls||[];leadsData=data.leads||[];agentData=data.agent||null;settingsData=data.settings||null;integrationsData=data.integrations||null;phoneRoutingData=data.routing||null;locationsData=data.locations||[];locationsLimit=Number(data.locationsLimit||1);conversationsData=data.conversations||[];appointmentsData=data.appointments||[];automationsData=data.automations||[];followupState=data.followupState||{};analyticsData=buildLocalAnalytics();
+    callsData=data.calls||[];leadsData=data.leads||[];agentData=data.agent||null;settingsData=data.settings||null;integrationsData=data.integrations||null;phoneRoutingData=data.routing||null;locationsData=data.locations||[];locationsLimit=Number(data.locationsLimit||1);conversationsData=data.conversations||[];appointmentsData=data.appointments||[];automationsData=data.automations||[];followupState=data.followupState||{};callViewedIds=new Set((data.viewedCallIds||[]).map(String));analyticsData=buildLocalAnalytics();
     renderClientData();setClientLoading(false);
     // Non-critical support history loads separately so it can never block Today.
     fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:5000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(()=>{});
@@ -229,7 +229,7 @@ async function loadOperations(){
       retryIndexes.forEach((idx,k)=>{if(retried[k].status==='fulfilled')settled[idx]=retried[k]});
     }
     for(let i=0;i<settled.length;i++){if(settled[i].status!=='fulfilled')continue;const [action,key]=requests[i],data=settled[i].value;if(action==='calls')callsData=data.calls||[];else if(action==='leads')leadsData=data.leads||[];else if(action==='agent')agentData=data.agent||null;else if(action==='settings')settingsData=data.settings||null;else if(action==='integrations')integrationsData=data.integrations||null;else if(action==='phone-routing')phoneRoutingData=data.routing||null;else if(action==='locations'){locationsData=data.locations||[];locationsLimit=Number(data.limit||1)}}
-    await loadFollowupState();analyticsData=buildLocalAnalytics();renderClientData();
+    await loadFollowupState();try{const viewed=await fetchJsonRetry('/api/account?action=calls-viewed',{attempts:1,timeout:5000});callViewedIds=new Set((viewed.ids||[]).map(String))}catch(_){callViewedIds=new Set()}analyticsData=buildLocalAnalytics();renderClientData();
     const failedActions=settled.map((x,i)=>x.status==='rejected'?requests[i][0]:'').filter(Boolean),criticalFailed=failedActions.filter(x=>['calls','agent','settings'].includes(x));
     setDataHealth('clientDataHealth',criticalFailed.length>0);setClientLoading(false);
     if(failedActions.length&&!criticalFailed.length)console.warn('Optional dashboard data delayed:',failedActions.join(', '));
@@ -347,10 +347,22 @@ function callGroupLabel(x,mode){
   if(mode==='day')return dateGroupLabel(recordTime(x));
   return '';
 }
+function callWasViewed(id){return callViewedIds.has(String(id||''))}
+function markCallViewed(id){
+  const key=String(id||'');if(!key||callViewedIds.has(key))return;
+  callViewedIds.add(key);renderCalls();
+  if(!demoMode)fetch('/api/account?action=call-viewed-mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:key})}).catch(()=>{});
+}
+function syncCallSortHeader(){
+  const btn=document.getElementById('callDateSortButton'),arrow=document.getElementById('callDateSortArrow'),sort=document.getElementById('callSort');
+  if(sort&&sort.value!==callLogSort)sort.value=callLogSort;
+  if(arrow)arrow.textContent=callLogSort==='oldest'?'↑':'↓';
+  if(btn)btn.setAttribute('aria-label','Sort calls by date and time, '+(callLogSort==='oldest'?'oldest first':'newest first'));
+}
 function renderCalls(){
   const wrap=document.getElementById('callsTable');if(!wrap)return;
   const q=(document.getElementById('callSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('callFilter')?.value||'all',categoryFilter=document.getElementById('callCategoryFilter')?.value||'all',dateFilter=document.getElementById('callDateFilter')?.value||'7',from=callDateBoundary(document.getElementById('callDateFrom')?.value||''),to=callDateBoundary(document.getElementById('callDateTo')?.value||'',true);
-  updateCustomDateVisibility();callLogGroupBy=document.getElementById('callGroupBy')?.value||callLogGroupBy;callLogSort=document.getElementById('callSort')?.value||callLogSort;
+  updateCustomDateVisibility();callLogGroupBy=document.getElementById('callGroupBy')?.value||callLogGroupBy;callLogSort=document.getElementById('callSort')?.value||callLogSort;syncCallSortHeader();
   const dateMatches=t=>dateFilter==='all'?true:dateFilter==='custom'?((!from||t>=from)&&(!to||t<=to)):withinDays(t,Number(dateFilter));
   let baseRows=[...callsData].filter(x=>{
     const disposition=callDispositionKey(x),hay=[x.caller,x.phone,x.category,x.reason,callDispositionLabel(x),teamStatusLabel(x),x.agent,x.address].join(' ').toLowerCase(),t=recordTime(x);
@@ -359,8 +371,8 @@ function renderCalls(){
   const needsCount=baseRows.filter(teamStatusActive).length,resolvedCount=baseRows.filter(callResolvedByAi).length;
   let rows=baseRows.filter(x=>callQuickFilter==='followup'?teamStatusActive(x):callQuickFilter==='resolved'?callResolvedByAi(x):true).sort((a,b)=>callLogSort==='oldest'?recordTime(a)-recordTime(b):recordTime(b)-recordTime(a));
   const renderRow=x=>{
-    const disposition=callDispositionMeta(x),team=TEAM_STATUS_META[teamStatusForCall(x)]||TEAM_STATUS_META.no_action,stateClass=teamStatusActive(x)?'call-pending':callResolvedByAi(x)?'call-resolved':'call-neutral';
-    return '<button class="call-row data '+stateClass+'" data-call-id="'+esc(x.id)+'" title="Open call details"><span><strong title="'+esc(x.caller||'Unknown')+'">'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span><span><i class="call-type-pill" title="'+esc(x.category||'General question')+'">'+esc(x.category||'General question')+'</i></span><span class="call-reason" title="'+esc(x.reason||'—')+'">'+esc(x.reason||'—')+'</span><span><i class="disposition-pill '+callDispositionClass(x)+'">'+esc(disposition.label)+'</i></span><span><i class="team-status-pill '+team.tone+'">'+esc(team.label)+'</i></span><span>'+esc(x.duration||'—')+'</span></button>';
+    const disposition=callDispositionMeta(x),team=TEAM_STATUS_META[teamStatusForCall(x)]||TEAM_STATUS_META.no_action,stateClass=teamStatusActive(x)?'call-pending':callResolvedByAi(x)?'call-resolved':'call-neutral',unviewed=!callWasViewed(x.id);
+    return '<button class="call-row data '+stateClass+(unviewed?' call-unviewed':' call-viewed')+'" data-call-id="'+esc(x.id)+'" aria-label="Open '+esc(x.caller||'caller')+' call details"><span class="call-caller-cell">'+(unviewed?'<i class="call-new-dot" title="Not opened yet"></i>':'')+'<span><strong title="'+esc(x.caller||'Unknown')+'">'+esc(x.caller||'Unknown')+'</strong><small class="subtle">'+esc(x.phone||'')+(unviewed?' · New':'')+'</small></span></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class="subtle">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span><span><i class="call-type-pill" title="'+esc(x.category||'General question')+'">'+esc(x.category||'General question')+'</i></span><span class="call-reason" title="'+esc(x.reason||'—')+'">'+esc(x.reason||'—')+'</span><span><i class="disposition-pill '+callDispositionClass(x)+'">'+esc(disposition.label)+'</i></span><span><i class="team-status-pill '+team.tone+'">'+esc(team.label)+'</i></span><span class="call-duration"><b>'+esc(x.duration||'—')+'</b><small class="call-view-cue">View details →</small></span></button>';
   };
   if(callLogGroupBy==='none')wrap.innerHTML=rows.map(renderRow).join('');
   else{
@@ -368,7 +380,7 @@ function renderCalls(){
     wrap.innerHTML=[...groups.entries()].map(([label,items])=>{const meta=callLogGroupBy==='day'?(items[0]?new Date(recordTime(items[0])||Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'}):''):(items.length+' call'+(items.length===1?'':'s'));return '<div class="call-day-heading"><b>'+esc(label)+'</b><span>'+esc(meta)+'</span></div>'+items.map(renderRow).join('')}).join('');
   }
   const allBtn=document.getElementById('callsShownCount'),followBtn=document.getElementById('callsFollowupCount'),resolvedBtn=document.getElementById('callsResolvedCount');
-  if(allBtn)allBtn.textContent=baseRows.length+' call'+(baseRows.length===1?'':'s')+' in view';if(followBtn)followBtn.textContent=needsCount+' active follow-up'+(needsCount===1?'':'s')+' in view';if(resolvedBtn)resolvedBtn.textContent=resolvedCount+' AI-resolved in view';
+  if(allBtn)allBtn.textContent=baseRows.length+' call'+(baseRows.length===1?'':'s');if(followBtn)followBtn.textContent=needsCount+' need action';if(resolvedBtn)resolvedBtn.textContent=resolvedCount+' resolved by AI';
   document.querySelectorAll('[data-call-quick]').forEach(b=>b.classList.toggle('active',b.dataset.callQuick===callQuickFilter));
   document.getElementById('callsEmpty').hidden=rows.length!==0;
   wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
@@ -376,14 +388,14 @@ function renderCalls(){
 async function openCall(id){
   let x=callsData.find(c=>String(c.id)===String(id));if(!x)return;
   if(!x.transcript&&!demoMode){try{const data=await fetchJsonRetry('/api/account?action=call-detail&id='+encodeURIComponent(id),{attempts:2,timeout:7000});if(data.call){x=data.call;const idx=callsData.findIndex(c=>String(c.id)===String(id));if(idx>=0)callsData[idx]={...callsData[idx],...x}}}catch(err){console.warn('Call details delayed',err)}}
-  activeCallContactKey=contactKey(x);activeCallId=String(x.id||'');
+  activeCallContactKey=contactKey(x);activeCallId=String(x.id||'');markCallViewed(activeCallId);
   document.getElementById('drawerCaller').textContent=x.caller||'Unknown caller';
   const digits=String(x.phone||'').replace(/\D/g,''),setActionLink=(el,href)=>{if(!el)return;const enabled=!!href;if(enabled)el.setAttribute('href',href);else el.removeAttribute('href');el.classList.toggle('disabled-link',!enabled);el.setAttribute('aria-disabled',enabled?'false':'true');el.tabIndex=enabled?0:-1};setActionLink(document.getElementById('drawerCallLink'),digits?'tel:'+digits:'');setActionLink(document.getElementById('drawerTextLink'),digits?'sms:'+digits:'');
   syncDrawerTeamStatus(x);const select=document.getElementById('drawerTeamStatus'),statusButton=document.getElementById('drawerFollowupButton');if(select){const requires=callNeedsTeam(x),noActionOption=select.querySelector('option[value="no_action"]');if(noActionOption)noActionOption.disabled=requires;select.disabled=!requires&&teamStatusForCall(x)==='no_action';select.title=select.disabled?'CallerCore resolved this call without requiring staff action.':'';if(statusButton)statusButton.disabled=select.disabled}
   const note=document.getElementById('drawerInternalNote'),composer=document.getElementById('drawerNoteComposer');if(note)note.value='';if(composer)composer.hidden=true;const ns=document.getElementById('drawerNoteStatus');if(ns)ns.textContent='';renderCallNotes(x.id);
   const when=document.getElementById('drawerWhen');if(when)when.textContent=formatFullDateTime(x);
   const disposition=callDispositionMeta(x),team=TEAM_STATUS_META[teamStatusForCall(x)]||TEAM_STATUS_META.no_action;
-  document.getElementById('drawerMeta').innerHTML=[['Phone',x.phone],['Duration',x.duration],['AI result',disposition.label],['Team status',team.label],['Answered by',x.agent||'Maya']].filter(([,v])=>v).map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('');
+  document.getElementById('drawerMeta').innerHTML=[['Phone',x.phone],['Duration',x.duration],['Call disposition',disposition.label],['Team status',team.label],['Answered by',x.agent||'Maya']].filter(([,v])=>v).map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('');
   const classification=document.getElementById('drawerClassification');if(classification)classification.innerHTML='<span class="call-type-pill large">'+esc(x.category||'General question')+'</span><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(disposition.label)+'</span><span class="team-status-pill '+team.tone+'">'+esc(team.label)+'</span>';
   const explain=document.getElementById('drawerStatusExplainer');if(explain)explain.innerHTML='<b>What CallerCore did</b><span>'+esc(disposition.copy)+'</span>'+(followupState[String(x.id)]?.completionReason?'<b>Team completion</b><span>'+esc(String(followupState[String(x.id)].completionReason).replaceAll('_',' ')+(followupState[String(x.id)].completionNote?' · '+followupState[String(x.id)].completionNote:''))+'</span>':'');
   const addr=document.getElementById('drawerAddress');if(addr)addr.textContent=x.address||contactForRecord(x)?.address||'No address was captured on this call.';
@@ -535,6 +547,7 @@ document.getElementById('callDateFrom')?.addEventListener('change',renderCalls);
 document.getElementById('callCategoryFilter')?.addEventListener('change',renderCalls);
 document.getElementById('callGroupBy')?.addEventListener('change',()=>{saveCallLogPrefs();renderCalls()});
 document.getElementById('callSort')?.addEventListener('change',()=>{saveCallLogPrefs();renderCalls()});
+document.getElementById('callDateSortButton')?.addEventListener('click',()=>{callLogSort=callLogSort==='newest'?'oldest':'newest';const sort=document.getElementById('callSort');if(sort)sort.value=callLogSort;saveCallLogPrefs();renderCalls()});
 document.getElementById('leadSearch')?.addEventListener('input',renderLeads);
 document.getElementById('leadFilter')?.addEventListener('change',renderLeads);
 document.getElementById('showHandledFollowups')?.addEventListener('click',e=>{showHandledFollowups=!showHandledFollowups;e.currentTarget.textContent=showHandledFollowups?'Show active':'Show completed';renderLeads()});
@@ -671,7 +684,7 @@ function contactHistoryEvents(c){
 function contactInlineCallHtml(call){
   const disposition=callDispositionMeta(call),team=TEAM_STATUS_META[teamStatusForCall(call)]||TEAM_STATUS_META.no_action,notes=normalizedCallNotes(call.id),transcript=Array.isArray(call.transcript)?call.transcript:[];
   const details=[
-    ['AI result',disposition.label],
+    ['Call disposition',disposition.label],
     ['Team status',team.label],
     ['Duration',call.duration||'—'],
     ['Answered by',call.agent||'Maya']
@@ -683,7 +696,7 @@ function contactInlineCallHtml(call){
     +'<div class="contact-inline-block"><span>Transcript</span><div class="contact-inline-transcript">'+(transcript.length?transcript.map(pair=>'<div class="'+(String(pair[0]).toLowerCase()==='maya'?'ai':'caller')+'"><b>'+esc(pair[0])+'</b><p>'+esc(pair[1])+'</p></div>').join(''):'<p class="muted contact-transcript-loading">Open call details loaded without a transcript yet.</p>')+'</div></div>';
 }
 async function hydrateContactCallDetails(callId,details){
-  if(!details||details.dataset.loaded==='1')return;
+  if(!details||details.dataset.loaded==='1')return;markCallViewed(callId);
   details.dataset.loaded='1';
   let call=callsData.find(x=>String(x.id)===String(callId));if(!call)return;
   const body=details.querySelector('[data-contact-inline-call-body]');
@@ -1100,7 +1113,7 @@ function renderSupport(){
   wrap.innerHTML=supportTicketsData.map(t=>{
     const messages=(Array.isArray(t.messages)&&t.messages.length?t.messages:[{direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||Date.now()}]);
     const thread=messages.map(m=>'<div class="support-message '+(m.direction==='support'?'support':'client')+'"><div><b>'+(m.direction==='support'?'CallerCore Support':'You')+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+'</small></div><p>'+esc(m.body||'').replace(/\n/g,'<br>')+'</p></div>').join('');
-    return '<details class="support-ticket-thread"><summary><div><b>'+esc(t.subject)+'</b><small>'+new Date(t.createdAt).toLocaleString()+' · '+esc(t.priority||'normal')+'</small></div><span class="tag '+(t.status==='resolved'?'green':t.status==='in_progress'?'amber':'')+'">'+esc(String(t.status||'open').replace('_',' '))+'</span></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-client-input="'+esc(t.id)+'" placeholder="Reply to CallerCore support…"></textarea><button class="secondary-btn" type="button" data-support-client-reply="'+esc(t.id)+'">Send reply</button></div></details>';
+    return '<details class="support-ticket-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+new Date(t.createdAt).toLocaleString()+' · '+esc(t.priority||'normal')+'</small></div><span class="tag '+(t.status==='resolved'?'green':t.status==='in_progress'?'amber':'')+'">'+esc(String(t.status||'open').replace('_',' '))+'</span></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-client-input="'+esc(t.id)+'" placeholder="Reply to CallerCore support…"></textarea><button class="secondary-btn" type="button" data-support-client-reply="'+esc(t.id)+'">Send reply</button></div></details>';
   }).join('');
   if(empty)empty.hidden=supportTicketsData.length!==0;
   wrap.querySelectorAll('[data-support-client-reply]').forEach(b=>b.addEventListener('click',()=>replyClientSupportTicket(b.dataset.supportClientReply,b)));
@@ -1980,12 +1993,13 @@ async function loadNotifications({silent=true}={}){
   finally{notificationsLoading=false}
 }
 function renderNotifications(){
-  const badge=document.getElementById('notificationBadge'),list=document.getElementById('notificationList'),empty=document.getElementById('notificationEmpty');
+  const badge=document.getElementById('notificationBadge'),list=document.getElementById('notificationList'),empty=document.getElementById('notificationEmpty'),items=notificationMode==='history'?notificationData:notificationData.filter(n=>!n.read);
   if(badge){badge.textContent=notificationUnreadCount>99?'99+':String(notificationUnreadCount);badge.hidden=notificationUnreadCount===0}
+  document.querySelectorAll('[data-notification-mode]').forEach(btn=>btn.classList.toggle('active',btn.dataset.notificationMode===notificationMode));
   if(!list)return;
-  list.innerHTML=notificationData.map(n=>'<button class="notification-item '+(n.read?'read':'unread')+'" data-notification-id="'+esc(n.id)+'" data-notification-view="'+esc(n.view||'overview')+'"><span class="notification-dot '+esc(n.kind||'info')+'">'+notificationKindIcon(n.kind)+'</span><span class="notification-copy"><b>'+esc(n.title||'Notification')+'</b><span>'+esc(n.body||'')+'</span><small>'+formatNotificationTime(n.createdAt)+'</small></span></button>').join('');
-  if(empty)empty.hidden=notificationData.length!==0;
-  list.querySelectorAll('[data-notification-id]').forEach(b=>b.addEventListener('click',()=>openNotification(b.dataset.notificationId,b.dataset.notificationView)));
+  list.innerHTML=items.map(n=>'<button class="notification-item '+(n.read?'read':'unread')+'" data-notification-id="'+esc(n.id)+'"><span class="notification-dot '+esc(n.kind||'info')+'">'+notificationKindIcon(n.kind)+'</span><span class="notification-copy"><b>'+esc(n.title||'Notification')+'</b><span>'+esc(n.body||'')+'</span><small>'+formatNotificationTime(n.createdAt)+(n.read?' · Read':'')+'</small></span><span class="notification-open-cue">→</span></button>').join('');
+  if(empty){empty.hidden=items.length!==0;empty.textContent=notificationMode==='history'?'No notification history yet.':'No unread notifications.'}
+  list.querySelectorAll('[data-notification-id]').forEach(b=>b.addEventListener('click',()=>openNotification(b.dataset.notificationId)));
   renderSidebarNotificationDots();
 }
 function renderSidebarNotificationDots(){
@@ -2015,10 +2029,25 @@ async function markNotifications(ids){
   await fetch('/api/account?action=notifications-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope,ids})}).catch(()=>{});
   const set=new Set(ids);notificationData.forEach(n=>{if(set.has(n.id))n.read=true});notificationUnreadCount=notificationData.filter(n=>!n.read).length;renderNotifications();
 }
-async function openNotification(id,view){
-  await markNotifications([id]);
+async function navigateNotification(n){
+  if(!n)return false;const view=n.view||'overview',meta=n.meta||{};
+  if(document.body.dataset.dashboard==='client'){
+    if(meta.callId){
+      const call=callsData.find(x=>String(x.id)===String(meta.callId));if(!call)return false;
+      showView('calls');await openCall(String(meta.callId));return true;
+    }
+    if(meta.ticketId){
+      showView('support');renderSupport();const thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]');if(thread){thread.open=true;thread.scrollIntoView({behavior:'smooth',block:'center'});return true}return false;
+    }
+  }
+  const target=document.getElementById('view-'+view);if(target){showView(view);return true}
+  return false;
+}
+async function openNotification(id){
+  const n=notificationData.find(x=>x.id===id);if(!n)return;
+  const opened=await navigateNotification(n);if(!opened)return;
+  if(!n.read)await markNotifications([id]);
   const panel=document.getElementById('notificationPanel'),bell=document.getElementById('notificationBell');if(panel)panel.hidden=true;if(bell)bell.setAttribute('aria-expanded','false');
-  if(view)showView(view);
 }
 async function markAllNotifications(){
   const scope=notificationScope();
@@ -2030,6 +2059,7 @@ function initNotifications(){
   bell.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;bell.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)loadNotifications({silent:true})});
   panel.addEventListener('click',e=>e.stopPropagation());
   document.getElementById('notificationReadAll')?.addEventListener('click',markAllNotifications);
+  panel.querySelectorAll('[data-notification-mode]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();notificationMode=btn.dataset.notificationMode||'unread';renderNotifications()}));
   document.addEventListener('click',()=>{panel.hidden=true;bell.setAttribute('aria-expanded','false')});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){panel.hidden=true;bell.setAttribute('aria-expanded','false')}});
   loadNotifications({silent:true});
