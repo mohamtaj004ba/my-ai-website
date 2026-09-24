@@ -896,6 +896,10 @@ async function adminGmailSend(req,res){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||!subject||!body)return res.status(400).json({error:'Valid recipient, subject, and message required'});
   try{
     const from=await validatedGmailFrom(admin.email,requestedFrom);const sent=await sendGmailMessage(admin.email,{to,subject,body,from,threadId:String(b.threadId||''),inReplyTo:String(b.inReplyTo||''),references:String(b.references||'')});
+    try{
+      const pid=await kv.get('site:prospect:email:'+emailKey(to));
+      if(pid){const p=await kv.get('site:prospect:'+pid);if(p){const now=Date.now(),next={...p,stage:['new','inquiry'].includes(p.stage)?'follow_up':p.stage,lastContactAt:now,lastRepliedAt:now,updatedAt:now,updatedBy:admin.email};await kv.set('site:prospect:'+pid,next)}}
+    }catch(_){}
     return res.status(200).json({ok:true,id:sent.id||'',threadId:sent.threadId||b.threadId||''});
   }catch(err){console.error('gmail send failed',safeError(err));return res.status(502).json({error:'Could not send Gmail message'})}
 }
