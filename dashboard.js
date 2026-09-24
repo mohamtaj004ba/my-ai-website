@@ -133,6 +133,24 @@ function openAdminAiGuide(prefill=''){
 function closeAdminAiGuide(){
   const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),launch=document.getElementById('adminAiLaunch');panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(backdrop)backdrop.hidden=true;if(launch)launch.setAttribute('aria-expanded','false');
 }
+function formatCoreIntelligenceAnswer(raw){
+  const text=String(raw||'').replace(/\r\n?/g,'\n').trim();if(!text)return '';
+  const inline=(value)=>esc(value).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/\`([^\`]+)\`/g,'<code>$1</code>');
+  const lines=text.split('\n'),out=[];let listType='',listItems=[];
+  const flush=()=>{if(!listItems.length)return;out.push('<'+listType+'>'+listItems.join('')+'</'+listType+'>');listItems=[];listType=''};
+  for(const original of lines){
+    const line=original.trim();
+    if(!line){flush();continue}
+    if(/^[-_]{3,}$/.test(line)){flush();out.push('<hr>');continue}
+    let m=line.match(/^(#{1,4})\s+(.+)$/);if(m){flush();const level=Math.min(4,m[1].length+1);out.push('<h'+level+'>'+inline(m[2])+'</h'+level+'>');continue}
+    m=line.match(/^\*\*(.+)\*\*$/);if(m){flush();out.push('<h4>'+inline(m[1])+'</h4>');continue}
+    m=line.match(/^[-•]\s+(.+)$/);if(m){if(listType&&listType!=='ul')flush();listType='ul';listItems.push('<li>'+inline(m[1])+'</li>');continue}
+    m=line.match(/^(\d+)[.)]\s+(.+)$/);if(m){if(listType&&listType!=='ol')flush();listType='ol';listItems.push('<li>'+inline(m[2])+'</li>');continue}
+    flush();out.push('<p>'+inline(line)+'</p>');
+  }
+  flush();return out.join('');
+}
+
 async function askAdminAi(question){
   const status=document.getElementById('adminAiStatus'),send=document.getElementById('adminAiSend'),conversation=document.getElementById('adminAiConversation'),copy=document.getElementById('adminAiCopy'),q=String(question||'').trim();if(!q)return;
   if(send){send.disabled=true;send.textContent='Thinking…'}if(status)status.textContent='Reading the current admin snapshot…';
@@ -141,7 +159,7 @@ async function askAdminAi(question){
     const r=await fetch('/api/account?action=admin-ai-guide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,snapshot:adminAiSnapshot()})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Core Intelligence unavailable');
     adminAiLastAnswer=String(data.answer||'');
-    if(conversation)conversation.innerHTML='<div class="admin-ai-question"><span>You</span><p>'+esc(q)+'</p></div><div class="admin-ai-answer"><div><span>✦</span><b>Core Intelligence</b></div><pre>'+esc(adminAiLastAnswer)+'</pre></div>';
+    if(conversation)conversation.innerHTML='<div class="admin-ai-question"><span>You</span><p>'+esc(q)+'</p></div><div class="admin-ai-answer"><div><span>✦</span><b>Core Intelligence</b></div><div class="admin-ai-rich">'+formatCoreIntelligenceAnswer(adminAiLastAnswer)+'</div></div>';
     if(copy)copy.hidden=!adminAiLastAnswer;if(status)status.textContent='Generated from the latest loaded admin snapshot.';
   }catch(err){
     adminAiLastAnswer='';if(conversation)conversation.innerHTML='<div class="admin-ai-error"><b>Could not answer that yet.</b><p>'+esc(err.message||'AI guide unavailable')+'</p></div>';if(copy)copy.hidden=true;if(status)status.textContent='';
