@@ -677,3 +677,104 @@ body.drawer-open{overflow:hidden}
   .drawer-status-row .primary{width:100%}
   .contact-history-stats{grid-template-columns:repeat(3,1fr)}
 }
+
+
+/* Contact history accordion + message sessions */
+.contact-history-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:0 0 4px}
+.contact-history-stats>button{appearance:none;text-align:left;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:linear-gradient(145deg,#fff,#f8fafb);cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.contact-history-stats>button:hover{transform:translateY(-1px);border-color:#cfd5da;box-shadow:0 7px 18px rgba(31,38,45,.07)}
+.contact-history-stats strong,.contact-history-stats span,.contact-history-stats small{display:block}
+.contact-history-stats strong{font-size:18px;color:var(--ink)}
+.contact-history-stats span{margin-top:2px;font-size:8px;color:#606a73;font-weight:900}
+.contact-history-stats small{margin-top:4px;font-size:7px;color:var(--accent);font-weight:900}
+
+.contact-history-day{display:grid;gap:7px;margin-top:12px}
+.contact-history-day:first-child{margin-top:4px}
+.contact-history-day-head{position:sticky;top:72px;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 2px;background:rgba(255,255,255,.94);backdrop-filter:blur(6px)}
+.contact-history-day-head b{font-size:9px;color:#4d5660}
+.contact-history-day-head span{font-size:7px;color:var(--muted)}
+
+.contact-history-card{border:1px solid #e4e7ea;border-radius:12px;background:#fff;overflow:hidden;box-shadow:0 2px 8px rgba(25,32,38,.025);transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.contact-history-card:hover{border-color:#d2d8dd;box-shadow:0 7px 20px rgba(28,36,44,.065)}
+.contact-history-card[open]{border-color:#cfd9df;box-shadow:0 10px 25px rgba(27,36,44,.08)}
+.contact-history-card summary{list-style:none;display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 11px;cursor:pointer}
+.contact-history-card summary::-webkit-details-marker{display:none}
+.history-icon{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:11px;font-weight:900}
+.history-icon.call{background:#edf4f8;color:#54748b}
+.history-icon.message{background:#f0f4fb;color:#5d7395}
+.history-icon.request{background:#fff2e5;color:#b56a2a}
+.history-icon.note{background:#f4f0fb;color:#735d98}
+.history-summary-copy{display:grid;gap:3px;min-width:0}
+.history-summary-copy small{font-size:7px;color:var(--muted);font-weight:800}
+.history-summary-copy>b{font-size:10px;line-height:1.3}
+.history-summary-copy>p{margin:0!important;font-size:8.5px!important;line-height:1.35!important;color:#69727b!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-summary-copy>span{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.history-chevron{align-self:center;color:#8a929a;font-size:15px;transition:transform .18s ease}
+.contact-history-card[open] .history-chevron{transform:rotate(180deg)}
+.contact-expand-body{border-top:1px solid #edf0f2;padding:11px;background:linear-gradient(180deg,#fbfcfd,#fff);animation:contactExpand .18s ease both}
+@keyframes contactExpand{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+
+.contact-inline-call-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.contact-inline-call-grid>div{padding:8px 9px;border:1px solid #e5e8eb;border-radius:9px;background:#fff}
+.contact-inline-call-grid span,.contact-inline-call-grid b{display:block}
+.contact-inline-call-grid span{font-size:7px;color:var(--muted);font-weight:800}
+.contact-inline-call-grid b{margin-top:3px;font-size:9px}
+.contact-inline-block{margin-top:10px}
+.contact-inline-block>span{display:block;margin-bottom:5px;font-size:7px;text-transform:uppercase;letter-spacing:.08em;color:#7c858e;font-weight:900}
+.contact-inline-block>p{margin:0!important;font-size:9px!important;line-height:1.5!important;color:#4e5760!important}
+.inline-team-note{padding:7px 8px;border-radius:8px;background:#fff8f3!important;border:1px solid #efddd2}
+.inline-team-note small{display:block;margin-top:4px;color:var(--muted);font-size:7px}
+.contact-inline-transcript{display:grid;gap:6px}
+.contact-inline-transcript>div{max-width:88%;padding:7px 8px;border-radius:9px;background:#f2f5f7}
+.contact-inline-transcript>div.ai{margin-left:auto;background:#fff1e9}
+.contact-inline-transcript b{display:block;font-size:7px;color:#7b848d;text-transform:uppercase;letter-spacing:.06em}
+.contact-inline-transcript p{margin:2px 0 0!important;font-size:8.5px!important;line-height:1.45!important;color:var(--ink)!important}
+.contact-inline-loading{display:flex;align-items:center;gap:8px;padding:10px;color:var(--muted);font-size:8px}
+.contact-inline-loading i{width:14px;height:14px;border:2px solid #d9dee2;border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.contact-message-thread{display:grid;gap:7px}
+.contact-message{max-width:87%;padding:8px 9px;border-radius:11px;background:#f2f5f7;border:1px solid #e5e9ec}
+.contact-message.out{margin-left:auto;background:#fff1e9;border-color:#f0d9cc}
+.contact-message small{display:block;font-size:7px;color:#7c858e;font-weight:800}
+.contact-message p{margin:3px 0 0!important;font-size:9px!important;line-height:1.45!important;color:var(--ink)!important}
+.contact-history-card.note.static{display:grid;grid-template-columns:30px 1fr;gap:10px;padding:10px 11px;background:#fcfaff}
+.contact-history-card.note.static:hover{transform:none}
+
+/* Subtle visual energy across the client dashboard */
+.dashboard-main{background:
+  radial-gradient(circle at 82% 7%,rgba(200,93,53,.045),transparent 22rem),
+  radial-gradient(circle at 14% 42%,rgba(90,126,153,.035),transparent 28rem),
+  #f7f8fa}
+.view.active{animation:viewEnter .25s ease both}
+@keyframes viewEnter{from{opacity:.55;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+.panel,.metric-grid article,.followup-card,.plan-option,.support-card,.settings-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.panel:hover{border-color:#d9dde1}
+.overview-metric{box-shadow:0 5px 18px rgba(25,33,40,.035)}
+.overview-metric.metric-calls{background:linear-gradient(145deg,#fff,#f7fafc)}
+.overview-metric.metric-qualified{background:linear-gradient(145deg,#fff,#f5fbf8)}
+.overview-metric.metric-resolved{background:linear-gradient(145deg,#fff,#f3faf5)}
+.overview-metric.metric-followup{background:linear-gradient(145deg,#fff,#fff7ef)}
+.overview-metric[role="button"]:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(27,35,43,.075)}
+
+.nav-item{position:relative;overflow:hidden;transition:background .16s ease,color .16s ease,transform .16s ease}
+.nav-item:hover{transform:translateX(2px)}
+.nav-item.active:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 4px 4px 0;background:var(--accent)}
+.primary,.secondary-btn,.drawer-action-button,.icon-btn,.help-button,.account-button{transition:transform .15s ease,box-shadow .15s ease,background .15s ease,border-color .15s ease}
+.primary:hover,.secondary-btn:hover,.drawer-action-button:hover{transform:translateY(-1px)}
+.primary:active,.secondary-btn:active,.drawer-action-button:active{transform:translateY(0)}
+.primary:hover{box-shadow:0 7px 18px rgba(22,28,34,.16)}
+.call-row.data,.contact-row.data,.activity-row,.thread-item,.attention-call{transition:background .14s ease,box-shadow .14s ease,transform .14s ease}
+.call-row.data:hover,.contact-row.data:hover,.activity-row:hover{transform:translateX(2px)}
+.call-drawer.open{animation:drawerArrival .24s cubic-bezier(.2,.8,.2,1) both}
+@keyframes drawerArrival{from{opacity:.72;transform:translateX(10px)}to{opacity:1;transform:none}}
+
+.disposition-pill,.team-status-pill,.contact-type-pill,.tag{transition:transform .14s ease,filter .14s ease}
+.contact-history-card:hover .disposition-pill,.contact-history-card:hover .team-status-pill{filter:saturate(1.08)}
+.ai-live-banner.active{box-shadow:0 8px 24px rgba(36,168,102,.07)}
+
+@media(prefers-reduced-motion:reduce){
+  .view.active,.contact-expand-body,.call-drawer.open,.contact-inline-loading i{animation:none!important}
+  .contact-history-card,.contact-history-stats>button,.overview-metric,.nav-item,.primary,.secondary-btn,.drawer-action-button,.call-row.data,.contact-row.data,.activity-row{transition:none!important;transform:none!important}
+}
