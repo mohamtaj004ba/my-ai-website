@@ -139,19 +139,20 @@ async function askAdminAi(question){
   if(conversation)conversation.innerHTML='<div class="admin-ai-question"><span>You</span><p>'+esc(q)+'</p></div><div class="admin-ai-thinking"><i></i><span>CallerCore is analyzing your operation…</span></div>';
   try{
     const r=await fetch('/api/account?action=admin-ai-guide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,snapshot:adminAiSnapshot()})}),data=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(data.error||'AI guide unavailable');
+    if(!r.ok)throw new Error(data.error||'Core Intelligence unavailable');
     adminAiLastAnswer=String(data.answer||'');
-    if(conversation)conversation.innerHTML='<div class="admin-ai-question"><span>You</span><p>'+esc(q)+'</p></div><div class="admin-ai-answer"><div><span>✦</span><b>CallerCore</b></div><pre>'+esc(adminAiLastAnswer)+'</pre></div>';
+    if(conversation)conversation.innerHTML='<div class="admin-ai-question"><span>You</span><p>'+esc(q)+'</p></div><div class="admin-ai-answer"><div><span>✦</span><b>Core Intelligence</b></div><pre>'+esc(adminAiLastAnswer)+'</pre></div>';
     if(copy)copy.hidden=!adminAiLastAnswer;if(status)status.textContent='Generated from the latest loaded admin snapshot.';
   }catch(err){
     adminAiLastAnswer='';if(conversation)conversation.innerHTML='<div class="admin-ai-error"><b>Could not answer that yet.</b><p>'+esc(err.message||'AI guide unavailable')+'</p></div>';if(copy)copy.hidden=true;if(status)status.textContent='';
-  }finally{if(send){send.disabled=false;send.textContent='Ask'}}
+  }finally{if(send){send.disabled=false;send.textContent='Send'}}
 }
 document.getElementById('adminAiLaunch')?.addEventListener('click',()=>openAdminAiGuide());
 document.getElementById('adminAiClose')?.addEventListener('click',closeAdminAiGuide);
 document.getElementById('adminAiBackdrop')?.addEventListener('click',closeAdminAiGuide);
 document.querySelectorAll('[data-ai-prompt]').forEach(btn=>btn.addEventListener('click',()=>{const q=btn.dataset.aiPrompt||'';openAdminAiGuide(q);askAdminAi(q)}));
-document.getElementById('adminAiForm')?.addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('adminAiInput'),q=input?.value||'';askAdminAi(q)});
+document.getElementById('adminAiForm')?.addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('adminAiInput'),q=input?.value||'';if(!String(q).trim())return;askAdminAi(q);if(input)input.value=''});
+document.getElementById('adminAiInput')?.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.isComposing)return;e.preventDefault();document.getElementById('adminAiForm')?.requestSubmit()});
 document.getElementById('adminAiCopy')?.addEventListener('click',async()=>{if(!adminAiLastAnswer)return;try{await navigator.clipboard.writeText(adminAiLastAnswer);const b=document.getElementById('adminAiCopy');b.textContent='Copied';setTimeout(()=>b.textContent='Copy answer',1200)}catch{}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('adminAiPanel')?.classList.contains('open'))closeAdminAiGuide()});
 
