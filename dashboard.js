@@ -354,9 +354,9 @@ function markCallViewed(id){
   if(!demoMode)fetch('/api/account?action=call-viewed-mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:key})}).catch(()=>{});
 }
 function syncCallSortHeader(){
-  const btn=document.getElementById('callDateSortButton'),arrow=document.getElementById('callDateSortArrow'),sort=document.getElementById('callSort');
+  const btn=document.getElementById('callDateSortButton'),arrow=document.getElementById('callDateSortArrow'),label=document.getElementById('callDateSortLabel'),sort=document.getElementById('callSort');
   if(sort&&sort.value!==callLogSort)sort.value=callLogSort;
-  if(arrow)arrow.textContent=callLogSort==='oldest'?'↑':'↓';
+  if(arrow)arrow.textContent=callLogSort==='oldest'?'↑':'↓';if(label)label.textContent=callLogSort==='oldest'?'Oldest':'Newest';
   if(btn)btn.setAttribute('aria-label','Sort calls by date and time, '+(callLogSort==='oldest'?'oldest first':'newest first'));
 }
 function renderCalls(){
@@ -2037,7 +2037,11 @@ async function navigateNotification(n){
       showView('calls');await openCall(String(meta.callId));return true;
     }
     if(meta.ticketId){
-      showView('support');renderSupport();const thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]');if(thread){thread.open=true;thread.scrollIntoView({behavior:'smooth',block:'center'});return true}return false;
+      showView('support');renderSupport();let thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]');
+      if(!thread){
+        try{const data=await fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:6000});supportTicketsData=data.tickets||[];renderSupport();thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]')}catch(_){}
+      }
+      if(thread){thread.open=true;thread.scrollIntoView({behavior:'smooth',block:'center'});return true}return false;
     }
   }
   const target=document.getElementById('view-'+view);if(target){showView(view);return true}
