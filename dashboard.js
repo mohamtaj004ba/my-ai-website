@@ -1756,7 +1756,7 @@ function renderProvisioning(){
   const rail=document.getElementById('onboardingStageRail');if(rail)rail.innerHTML=stages.map((stage,i)=>{const n=adminProvisioningData.filter(x=>x.stage===stage).length;return '<div class="onboarding-stage-step '+(n?'has-items':'')+'"><span>'+(i+1)+'</span><b>'+esc(stage)+'</b><small>'+n+'</small></div>'}).join('');
   const search=document.getElementById('onboardingSearch');if(search){search.value=onboardingSearch;search.oninput=()=>{onboardingSearch=search.value;renderProvisioning()}}
   document.querySelectorAll('[data-onboarding-filter]').forEach(btn=>{btn.classList.toggle('active',btn.dataset.onboardingFilter===onboardingFilter);btn.onclick=()=>{onboardingFilter=btn.dataset.onboardingFilter;renderProvisioning()}});
-  const q=onboardingSearch.trim().toLowerCase(),filterOk=x=>onboardingFilter==='all'||onboardingFilter==='live'?x.stage==='Live':onboardingFilter==='needs_action'?onboardingNeedsAction(x):x.stage!=='Live';
+  const q=onboardingSearch.trim().toLowerCase(),filterOk=x=>onboardingFilter==='all'?true:onboardingFilter==='live'?x.stage==='Live':onboardingFilter==='needs_action'?onboardingNeedsAction(x):x.stage!=='Live';
   const rows=adminProvisioningData.filter(x=>filterOk(x)&&(!q||[x.name,x.plan,x.stage,x.onboardingStatus,x.agreementSignedName].filter(Boolean).join(' ').toLowerCase().includes(q)));
   const labels={payment:'Paid',accountReview:'Account review',onboardingSent:'Onboarding sent',agreement:'Agreement',intake:'Intake',businessProfile:'Business profile',agentDraft:'AI draft',routingCaptured:'Routing',phoneAssigned:'Phone',adminReview:'Admin review',testCall:'Test call',clientApproval:'Client approval',live:'Live'};
   board.innerHTML=rows.map(x=>{
@@ -2232,7 +2232,7 @@ async function openAdminGlobalSearchResult(type,id,view){
   if(type==='prospect'){showView('growth');openProspectModal(id);return}
   if(type==='support')openClientCare('support');else if(type==='feedback')openClientCare('feedback');else showView(view);
   setTimeout(()=>{
-    else if(type==='support'){const el=document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]');if(el)el.open=true;flashAdminSearchTarget(el)}
+    if(type==='support'){const el=document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]');if(el)el.open=true;flashAdminSearchTarget(el)}
     else if(type==='phone')flashAdminSearchTarget(document.querySelector('[data-edit-phone="'+CSS.escape(id)+'"]')?.closest('.call-row'));
     else if(type==='feedback')flashAdminSearchTarget(document.getElementById('feedback-'+id));
     else if(type==='expense')flashAdminSearchTarget(document.querySelector('[data-edit-expense="'+CSS.escape(id)+'"]')?.closest('.admin-expense-row'));
