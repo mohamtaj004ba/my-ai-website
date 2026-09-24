@@ -2096,13 +2096,12 @@ function closeAdminClient(){document.getElementById('adminClientDrawer')?.classL
 function adminGlobalSearchItems(q){
   const needle=String(q||'').trim().toLowerCase();if(needle.length<2)return[];
   const match=(parts)=>parts.filter(Boolean).join(' ').toLowerCase().includes(needle),items=[];
-  for(const x of adminClientsData)if(match([x.name,x.ownerEmail,x.id,x.plan,x.subscriptionStatus]))items.push({type:'client',id:x.id,title:x.name||'Client',meta:[x.ownerEmail,x.plan,'Client'].filter(Boolean).join(' · '),view:'clients'});
-  for(const p of adminWebsiteData.prospects||[])if(match([p.name,p.business,p.email,p.phone,p.source,p.stage,p.plan,p.industry]))items.push({type:'prospect',id:p.id,title:p.name||p.business||p.email||'Website prospect',meta:[p.business,p.email,p.stage,'Website prospect'].filter(Boolean).join(' · '),view:'website'});
-  for(const t of adminSupportData||[])if(match([t.subject,t.workspaceName,t.email,t.message,t.priority,t.status]))items.push({type:'support',id:t.id,title:t.subject||'Support request',meta:[t.workspaceName,t.status,'Support'].filter(Boolean).join(' · '),view:'admin-support'});
-  for(const x of adminFleetData.calls||[])if(match([x.id,x.callId,x.caller,x.phone,x.reason,x.summary,x.workspaceName,x.outcome]))items.push({type:'call',id:String(x.id||x.callId||''),title:x.caller||x.phone||'Call',meta:[x.workspaceName,x.reason,x.outcome,'Call'].filter(Boolean).join(' · '),view:'calls'});
-  for(const x of adminFleetData.leads||[])if(match([x.id,x.name,x.email,x.phone,x.stage,x.workspaceName,x.source]))items.push({type:'lead',id:String(x.id||''),title:x.name||x.email||x.phone||'Lead',meta:[x.workspaceName,x.stage,'Lead'].filter(Boolean).join(' · '),view:'admin-leads'});
+  for(const x of adminClientsData)if(match([x.name,x.ownerEmail,x.id,x.plan,x.subscriptionStatus]))items.push({type:'client',id:x.id,title:x.name||'Client',meta:[x.ownerEmail,x.plan,'Client account'].filter(Boolean).join(' · '),view:'clients'});
+  for(const p of adminWebsiteData.prospects||[])if(match([p.name,p.business,p.email,p.phone,p.source,p.stage,p.plan,p.industry]))items.push({type:'prospect',id:p.id,title:p.name||p.business||p.email||'Website prospect',meta:[p.business,p.email,p.stage,'CallerCore prospect'].filter(Boolean).join(' · '),view:'website'});
+  for(const t of adminSupportData||[])if(match([t.subject,t.workspaceName,t.email,t.message,t.priority,t.status]))items.push({type:'support',id:t.id,title:t.subject||'Support request',meta:[t.workspaceName,t.status,'Client care'].filter(Boolean).join(' · '),view:'client-care'});
   for(const x of adminPhoneData||[])if(match([x.id,x.number,x.forwardingFrom,x.transferNumber,x.workspaceName,x.provider]))items.push({type:'phone',id:String(x.id||''),title:x.number||'Phone number',meta:[x.workspaceName,x.provider,'Phone'].filter(Boolean).join(' · '),view:'phones'});
-  for(const x of adminFeedbackData||[])if(match([x.id,x.workspaceName,x.actorEmail,x.category,x.message,x.status]))items.push({type:'feedback',id:String(x.id||''),title:x.workspaceName||'AI feedback',meta:[String(x.category||'feedback').replaceAll('_',' '),x.status,'AI feedback'].filter(Boolean).join(' · '),view:'feedback'});
+  for(const x of adminFeedbackData||[])if(match([x.id,x.workspaceName,x.actorEmail,x.category,x.message,x.status]))items.push({type:'feedback',id:String(x.id||''),title:x.workspaceName||'AI feedback',meta:[String(x.category||'feedback').replaceAll('_',' '),x.status,'Client care'].filter(Boolean).join(' · '),view:'client-care'});
+  for(const x of adminFinanceData.expenses||[])if(match([x.id,x.name,x.vendor,x.category,x.notes]))items.push({type:'expense',id:String(x.id||''),title:x.name||'Expense',meta:[x.vendor,x.category,financeMoney(x.amount)].filter(Boolean).join(' · '),view:'finance'});
   for(const t of adminInboxData.gmail?.threads||[])if(match([t.subject,t.last?.from,t.last?.to,t.last?.snippet]))items.push({type:'gmail',id:t.id,title:t.subject||'Gmail thread',meta:[t.last?.from,'Gmail'].filter(Boolean).join(' · '),view:'inbox'});
   return items.slice(0,14);
 }
@@ -2121,14 +2120,13 @@ async function openAdminGlobalSearchResult(type,id,view){
   const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(wrap)wrap.hidden=true;if(input)input.value='';
   if(type==='client'){showView('clients');await openAdminClient(id);return}
   if(type==='gmail'){showView('inbox');await openInboxItem('gmail',id);setTimeout(()=>flashAdminSearchTarget(document.querySelector('[data-inbox-kind="gmail"][data-inbox-id="'+CSS.escape(id)+'"]')),80);return}
-  showView(view);
+  if(type==='support')openClientCare('support');else if(type==='feedback')openClientCare('feedback');else showView(view);
   setTimeout(()=>{
     if(type==='prospect')flashAdminSearchTarget(document.querySelector('[data-website-prospect-id="'+CSS.escape(id)+'"]'));
-    else if(type==='support')flashAdminSearchTarget(document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]'));
-    else if(type==='call')flashAdminSearchTarget(document.querySelector('[data-admin-call-id="'+CSS.escape(id)+'"]'));
-    else if(type==='lead')flashAdminSearchTarget(document.querySelector('[data-admin-lead-id="'+CSS.escape(id)+'"]'));
+    else if(type==='support'){const el=document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]');if(el)el.open=true;flashAdminSearchTarget(el)}
     else if(type==='phone')flashAdminSearchTarget(document.querySelector('[data-edit-phone="'+CSS.escape(id)+'"]')?.closest('.call-row'));
     else if(type==='feedback')flashAdminSearchTarget(document.getElementById('feedback-'+id));
+    else if(type==='expense')flashAdminSearchTarget(document.querySelector('[data-edit-expense="'+CSS.escape(id)+'"]')?.closest('.admin-expense-row'));
   },80);
 }
 document.getElementById('adminSearch')?.addEventListener('input',renderAdminGlobalSearch);
