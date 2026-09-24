@@ -1923,6 +1923,7 @@ async function agent(req,res){
     serviceArea:saved.serviceArea||'',
     businessHours:saved.businessHours||'',
     emergencyInstructions:saved.emergencyInstructions||'',
+    handlingInstructions:saved.handlingInstructions||saved.callHandling||'',
     qualificationQuestions:Array.isArray(saved.qualificationQuestions)?saved.qualificationQuestions:[],
     transferNumber:saved.transferNumber||'',
     updatedAt:saved.updatedAt||null
@@ -2161,8 +2162,8 @@ async function clientDashboardData(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   const ent=entitlementsFor(ws.plan);
-  const keys=['calls:index:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index',callViewedKey(s.workspaceId,s.email)];
-  const [callIndexRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,followupRaw,platformRaw,phoneIndex,viewedRaw]=await Promise.all(keys.map(k=>kv.get(k)));
+  const keys=['calls:index:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index',callViewedKey(s.workspaceId,s.email),'leads:'+s.workspaceId,'conversations:'+s.workspaceId,'appointments:'+s.workspaceId,'automations:'+s.workspaceId,'onboarding:workspace:'+s.workspaceId];
+  const [callIndexRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,followupRaw,platformRaw,phoneIndex,viewedRaw,leadsRaw,conversationsRaw,appointmentsRaw,automationsRaw,onboardingRaw]=await Promise.all(keys.map(k=>kv.get(k)));
   const callsRaw=Array.isArray(callIndexRaw)?callIndexRaw:(await kv.get('calls:'+s.workspaceId)||[]);
   const savedAgent=agentRaw||{},savedSettings=settingsRaw||{},platform=platformRaw||{},savedIntegrations=integrationsRaw||{},numbers=Array.isArray(phoneIndex)?phoneIndex:[],phone=numbers.find(x=>x&&x.workspaceId===s.workspaceId)||null;
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true',calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true';
@@ -2170,13 +2171,17 @@ async function clientDashboardData(req,res){
     businessName:savedSettings.businessName||ws.name||'',primaryEmail:savedSettings.primaryEmail||ws.ownerEmail||s.email||'',contactName:savedSettings.contactName||ws.ownerName||'',businessPhone:savedSettings.businessPhone||'',website:savedSettings.website||'',streetAddress:savedSettings.streetAddress||'',city:savedSettings.city||'',state:savedSettings.state||'',postalCode:savedSettings.postalCode||'',industry:savedSettings.industry||ws.industry||'',serviceArea:savedSettings.serviceArea||'',logoDataUrl:savedSettings.logoDataUrl||'',timezone:savedSettings.timezone||platform.defaultTimezone||'America/Los_Angeles',notificationEmail:savedSettings.notificationEmail||ws.ownerEmail||s.email||'',smsAlerts:smsLive&&savedSettings.smsAlerts!==false,emailAlerts:savedSettings.emailAlerts!==false,notifyBilling:savedSettings.notifyBilling!==false,notifySetup:savedSettings.notifySetup!==false,notifyCalls:savedSettings.notifyCalls!==false,notifySupport:savedSettings.notifySupport!==false,notifyUsage:savedSettings.notifyUsage!==false,
     aiAnsweringPaused:savedSettings.aiAnsweringPaused===true,aiPauseFallbackNumber:savedSettings.aiPauseFallbackNumber||'',aiPausedAt:Number(savedSettings.aiPausedAt||0),aiPausedBy:savedSettings.aiPausedBy||''
   };
-  const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
+  const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',handlingInstructions:savedAgent.handlingInstructions||savedAgent.callHandling||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
   const routing=phone?{number:phone.number||'',label:phone.label||'Primary',provider:phone.provider||'Vapi',forwardingFrom:phone.forwardingFrom||'',transferNumber:phone.transferNumber||'',afterHours:phone.afterHours||'ai',smsEnabled:smsLive&&phone.smsEnabled!==false,status:phone.status||'active',pauseFallbackNumber:phone.pauseFallbackNumber||''}:null;
   return res.status(200).json({
-    calls:Array.isArray(callsRaw)?callsRaw.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,disposition:x.disposition||'',duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x):[],leads:[],agent,settings,
+    calls:Array.isArray(callsRaw)?callsRaw.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,disposition:x.disposition||'',duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x):[],
+    leads:Array.isArray(leadsRaw)?leadsRaw:[],agent,settings,
     integrations:{googleCalendar:calendarLive&&!!savedIntegrations.googleCalendar,stripe:!!ws.stripeCustomerId,webhookUrl:savedIntegrations.webhookUrl||'',apiAccess:!!ent.features.apiAccess},
     locations:Array.isArray(locationsRaw)?locationsRaw:[],locationsLimit:ent.locations,routing,
-    conversations:[],appointments:[],automations:[],
+    conversations:ent.features.unifiedInbox&&Array.isArray(conversationsRaw)?conversationsRaw:[],
+    appointments:calendarLive&&ent.features.appointments&&Array.isArray(appointmentsRaw)?appointmentsRaw:[],
+    automations:ent.features.automations&&Array.isArray(automationsRaw)?automationsRaw:[],
+    onboarding:onboardingRaw&&typeof onboardingRaw==='object'&&!Array.isArray(onboardingRaw)?onboardingRaw:null,
     followupState:followupRaw&&typeof followupRaw==='object'&&!Array.isArray(followupRaw)?followupRaw:{},
     viewedCallIds:Array.isArray(viewedRaw)?viewedRaw.map(String).slice(-2000):[],
     loadedAt:Date.now()
