@@ -1,4 +1,5 @@
 const {kv}=require('../lib/kv');
+const {rateLimit,requestIp}=require('../lib/rate-limit');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { LEGACY_CLAUSES, LEGACY_AGREEMENT_VERSION } = require('./_lib/agreement-clauses');
 
@@ -9,6 +10,8 @@ module.exports = async function handler(req, res) {
 
   const { token } = req.query;
   if (!validToken(token)) return res.status(400).json({ error: 'Invalid token' });
+  const rl=await rateLimit({scope:'agreement-pdf',identifier:requestIp(req),limit:20,windowSeconds:600,failClosed:true});
+  if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many download attempts. Try again shortly.'})}
 
   const record = await kv.get(`onboarding:${token}`);
   if (!record || !record.agreementSigned) {
