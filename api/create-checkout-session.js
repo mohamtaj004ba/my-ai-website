@@ -53,6 +53,8 @@ module.exports=async function handler(req,res){
   if(!allowedOrigin(req))return res.status(403).json({error:'Forbidden'});
   if(process.env.CALLERCORE_CHECKOUT_ENABLED!=='true')return res.status(503).json({error:'CallerCore checkout is not open yet'});
   if(!STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe checkout is not configured'});
+  if(process.env.VERCEL_ENV==='preview'&&/^sk_live_/i.test(STRIPE_SECRET_KEY))return res.status(503).json({error:'Preview checkout refuses live Stripe credentials'});
+  if(process.env.VERCEL_ENV==='preview'&&(!process.env.STRIPE_STARTER_PRICE_ID||!process.env.STRIPE_GROWTH_PRICE_ID||!process.env.STRIPE_PRO_PRICE_ID||!process.env.STRIPE_SETUP_PRICE_ID))return res.status(503).json({error:'Preview checkout requires explicit Stripe test Price IDs'});
 
   const rl=await rateLimit({scope:'embedded-checkout',identifier:requestIp(req),limit:req.method==='GET'?30:10,windowSeconds:600,failClosed:true});
   if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests'})}
