@@ -10,19 +10,24 @@ test('magic-link requests are limited by both IP and recipient',()=>{
   assert.match(account,/count>MAX\|\|emailCount>MAX/);
 });
 
-test('magic links are one-time and expire quickly',()=>{
-  assert.match(account,/login:'\+token/);
+test('magic links are hashed at rest, one-time, and expire quickly',()=>{
+  assert.match(account,/function loginTokenKey\(token\)/);
+  assert.match(account,/kv\.set\(loginTokenKey\(token\)/);
   assert.match(account,/\{ex:15\*60\}/);
   const verifyStart=account.indexOf('async function verify(');
   const verifyBody=account.slice(verifyStart,account.indexOf('\nasync function ',verifyStart+1));
-  assert.match(verifyBody,/await kv\.del\(key\)/);
+  assert.match(verifyBody,/readLoginToken\(token\)/);
+  assert.match(verifyBody,/deleteLoginToken\(token\)/);
   assert.match(verifyBody,/createSession/);
 });
 
-test('session cookies are HttpOnly SameSite and Secure in production',()=>{
+test('session cookies are protected and session ids are hashed at rest',()=>{
   assert.match(auth,/HttpOnly; SameSite=Lax/);
   assert.match(auth,/NODE_ENV==='production'\?'\; Secure'/);
   assert.match(auth,/SESSION_TTL=60\*60\*24\*7/);
+  assert.match(auth,/function sessionKey\(token\)/);
+  assert.match(auth,/kv\.set\(sessionKey\(token\)/);
+  assert.match(auth,/readSessionToken\(token\)/);
 });
 
 test('pending deletion disables customer magic-link access',()=>{
