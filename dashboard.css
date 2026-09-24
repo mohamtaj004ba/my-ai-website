@@ -1694,3 +1694,138 @@ body[data-dashboard="admin"] #view-overview{max-width:1940px;padding-left:clamp(
   #view-overview .admin-command-metrics article,.admin-attention-item,.admin-snapshot-list button,.admin-recent-row{transition:none}
   #view-overview .admin-command-metrics article:hover,.admin-attention-item:hover{transform:none}
 }
+
+
+/* 2026-09-24 admin workspace specialization */
+body[data-dashboard="admin"] #view-clients,
+body[data-dashboard="admin"] #view-onboarding,
+body[data-dashboard="admin"] #view-website,
+body[data-dashboard="admin"] #view-inbox,
+body[data-dashboard="admin"] #view-documents{max-width:1880px}
+body[data-dashboard="admin"] #view-finance{max-width:1780px}
+body[data-dashboard="admin"] #view-health{max-width:1840px}
+body[data-dashboard="admin"] #view-agents,
+body[data-dashboard="admin"] #view-admin-automations,
+body[data-dashboard="admin"] #view-growth,
+body[data-dashboard="admin"] #view-client-care{max-width:1700px}
+body[data-dashboard="admin"] #view-platform-settings{max-width:1600px}
+
+/* Inbox becomes a real communications console */
+#view-inbox .inbox-layout{grid-template-columns:minmax(300px,.72fr) minmax(600px,1.55fr) minmax(260px,.58fr);gap:14px}
+#view-inbox .inbox-list-panel,#view-inbox .inbox-thread-panel,#view-inbox .inbox-context-panel{min-height:680px;max-height:76vh}
+#view-inbox .inbox-thread-panel{padding:0;overflow:hidden}
+#view-inbox #inboxThread{display:flex;flex-direction:column;min-height:0;height:100%;padding:20px}
+#view-inbox .inbox-thread-head{position:sticky;top:0;z-index:2;background:#fff;padding:0 0 14px}
+#view-inbox .inbox-messages{min-height:0;padding:16px 2px;scrollbar-gutter:stable}
+#view-inbox .inbox-message{max-width:min(92%,840px);padding:14px 15px}
+#view-inbox .inbox-message p{font-size:11.5px;line-height:1.58}
+#view-inbox .inbox-reply{background:#fff;padding:14px 0 0}
+#view-inbox .inbox-list-panel{min-width:0}
+#view-inbox #inboxList{max-height:calc(76vh - 92px);scrollbar-gutter:stable}
+#view-inbox .inbox-item{padding:14px 15px;transition:background .14s ease,box-shadow .14s ease}
+#view-inbox .inbox-item.active{background:#f8fafb;box-shadow:inset 3px 0 0 #c85d35}
+.inbox-context-panel{overflow:auto;padding:20px!important;position:sticky;top:86px}
+.inbox-context-empty{display:grid;gap:7px;color:#7a858c}.inbox-context-empty h3{margin:0;color:#31393f}.inbox-context-empty p{margin:0;font-size:9px;line-height:1.55}
+.inbox-context-person{display:grid;gap:3px;padding:14px 0;border-bottom:1px solid #edf0f2}.inbox-context-person b{font-size:16px}.inbox-context-person span{font-size:8px;color:#7f8990;word-break:break-word}
+.inbox-context-facts{display:grid;gap:0;margin-top:8px}.inbox-context-facts>div{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #edf0f2}.inbox-context-facts span{font-size:7px;color:#879198;text-transform:uppercase;letter-spacing:.05em;font-weight:850}.inbox-context-facts b{font-size:8px;text-align:right;max-width:58%;word-break:break-word}
+.inbox-context-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:14px}.inbox-context-actions button{padding:9px 8px}
+.inbox-context-note{display:grid;gap:4px;margin-top:14px;padding:12px;border-radius:11px;background:#f7f5f3;border:1px solid #ece3df}.inbox-context-note b{font-size:8px}.inbox-context-note span{font-size:7px;line-height:1.5;color:#737d84}
+
+/* AI receptionist fleet density */
+#view-agents .admin-agent-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px}
+#view-agents .admin-agent-card{min-height:170px;padding:17px!important}
+.admin-agent-health-strip{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.admin-agent-health-strip span{display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border-radius:999px;border:1px solid #e3e7e9;background:#f8faf9;color:#68727a;font-size:6.8px;font-weight:800}
+.admin-agent-health-strip span:before{content:"";width:5px;height:5px;border-radius:50%;background:#9fa8ad}
+.admin-agent-health-strip span.ok{background:#f3faf6;border-color:#d8eade;color:#42705d}.admin-agent-health-strip span.ok:before{background:#3b9a72}
+.admin-agent-health-strip span.missing{background:#fff8f5;border-color:#efddd6;color:#96553e}.admin-agent-health-strip span.missing:before{background:#c85d35}
+.admin-agent-health-strip span.neutral:before{background:#aab2b7}
+
+/* Finance operating layer */
+.finance-ops-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:-2px 0 18px}
+.finance-ops-strip article{display:grid;gap:5px;padding:14px 15px;border:1px solid #e2e6e8;border-radius:12px;background:linear-gradient(145deg,#fff,#fafbfb)}
+.finance-ops-strip span{font-size:7px;text-transform:uppercase;letter-spacing:.06em;color:#7f8990;font-weight:850}
+.finance-ops-strip strong{font-size:18px}.finance-ops-strip small{font-size:7px;color:#879198}
+
+/* Growth pipeline interaction */
+.growth-column{transition:border-color .15s ease,background .15s ease,box-shadow .15s ease}
+.growth-column.drag-over{border-color:#c85d35;background:#fff9f6;box-shadow:inset 0 0 0 2px rgba(200,93,53,.08)}
+.growth-card.dragging{opacity:.45;transform:scale(.985);box-shadow:none}
+.growth-card[draggable="true"]{cursor:grab}.growth-card[draggable="true"]:active{cursor:grabbing}
+
+/* System Health uses the canvas instead of stacking everything */
+.health-ops-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(360px,.7fr);gap:18px;align-items:start;margin-bottom:18px}
+.health-ops-grid>.health-map-panel,.health-ops-grid>.readiness-card{margin:0;height:100%}
+#view-health .admin-health-groups{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+#view-health .health-service-map{min-height:300px}
+
+/* Platform settings: wider, navigable, less like one long form */
+.platform-settings-nav{position:sticky;top:76px;z-index:4;display:flex;gap:5px;align-items:center;overflow:auto;margin:-8px 0 16px;padding:7px;border:1px solid #e2e6e8;border-radius:13px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);box-shadow:0 7px 20px rgba(30,36,40,.035)}
+.platform-settings-nav button{flex:0 0 auto;border:0;border-radius:999px;background:transparent;padding:8px 11px;color:#69747c;font:800 7.5px inherit;cursor:pointer}
+.platform-settings-nav button:hover,.platform-settings-nav button.active{background:#252c32;color:#fff}
+#view-platform-settings .platform-settings-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+#view-platform-settings [data-settings-section]{scroll-margin-top:132px}
+#view-platform-settings .launch-gates-panel{scroll-margin-top:132px}
+
+/* Analytics gets the visual real estate it deserves */
+#view-website .website-traffic-panel{padding:24px 26px 18px!important}
+#view-website .website-traffic-chart{height:365px}
+#view-website .website-analytics-three{grid-template-columns:1.15fr .9fr 1fr;gap:16px}
+#view-website .website-session-table{font-size:1.02em}
+
+/* Onboarding and Client Care use wider work areas without filler */
+#view-onboarding .onboarding-list-head,#view-onboarding .onboarding-row>summary{grid-template-columns:minmax(240px,1.4fr) .6fr 1.05fr .72fr minmax(220px,1.25fr) 30px}
+#view-onboarding .onboarding-row-body{padding:18px 20px}
+#view-client-care .admin-feedback-card,#view-client-care .support-ticket-card{max-width:none}
+
+/* Topbar AI guide */
+.admin-ai-launch{display:inline-flex;align-items:center;gap:7px;border:1px solid #dfd7d2;border-radius:10px;background:#fffaf7;color:#81452f;padding:9px 11px;font:850 8px inherit;cursor:pointer;white-space:nowrap;transition:.15s ease}
+.admin-ai-launch span{font-size:12px;color:#c85d35}.admin-ai-launch:hover{border-color:#d3aa99;background:#fff6f0;transform:translateY(-1px)}
+.admin-ai-panel{position:fixed;z-index:80;top:0;right:0;width:min(520px,calc(100vw - 24px));height:100vh;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;background:#fff;border-left:1px solid #dfe3e5;box-shadow:-24px 0 70px rgba(23,29,33,.15);transform:translateX(104%);transition:transform .24s cubic-bezier(.2,.8,.2,1)}
+.admin-ai-panel.open{transform:translateX(0)}
+.admin-ai-backdrop{position:fixed;z-index:79;inset:0;background:rgba(21,25,29,.18);backdrop-filter:blur(1px)}
+.admin-ai-head{display:flex;justify-content:space-between;gap:18px;padding:22px 22px 17px;border-bottom:1px solid #e8ebed;background:linear-gradient(145deg,#fff,#fffaf7)}
+.admin-ai-head>div{display:grid;gap:4px}.admin-ai-head h2{margin:0;font-size:22px}.admin-ai-head p{margin:0;color:#747f87;font-size:8px;line-height:1.5}
+.admin-ai-head>button{width:34px;height:34px;border:1px solid #e0e4e6;border-radius:9px;background:#fff;font-size:20px;cursor:pointer}
+.admin-ai-suggestions{display:flex;gap:6px;overflow:auto;padding:12px 16px;border-bottom:1px solid #edf0f2;background:#fbfcfc}
+.admin-ai-suggestions button{flex:0 0 auto;border:1px solid #e0e4e6;border-radius:999px;background:#fff;padding:7px 9px;color:#59646c;font:800 7px inherit;cursor:pointer}.admin-ai-suggestions button:hover{border-color:#d3aa99;color:#9d5035;background:#fff9f5}
+.admin-ai-conversation{overflow:auto;padding:20px;scrollbar-gutter:stable;background:#f8fafb}
+.admin-ai-welcome{display:grid;justify-items:start;gap:7px;padding:18px;border:1px dashed #dce2e5;border-radius:14px;background:#fff}.admin-ai-welcome>span{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#fff1e9;color:#c85d35;font-size:16px}.admin-ai-welcome b{font-size:11px}.admin-ai-welcome p{margin:0;color:#737e86;font-size:8.5px;line-height:1.6}
+.admin-ai-question{display:grid;gap:5px;margin-left:45px;padding:12px 14px;border-radius:13px 13px 3px 13px;background:#252c32;color:#fff}.admin-ai-question span{font-size:6.5px;text-transform:uppercase;letter-spacing:.07em;color:#bac1c6;font-weight:900}.admin-ai-question p{margin:0;font-size:9px;line-height:1.55}
+.admin-ai-answer{display:grid;gap:10px;margin-top:12px;padding:16px;border:1px solid #e0e5e7;border-radius:3px 13px 13px 13px;background:#fff}.admin-ai-answer>div{display:flex;gap:7px;align-items:center}.admin-ai-answer>div span{color:#c85d35}.admin-ai-answer>div b{font-size:9px}.admin-ai-answer pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 9px/1.65 inherit;color:#384249}
+.admin-ai-thinking{display:flex;align-items:center;gap:9px;margin-top:12px;padding:14px;border:1px solid #e2e6e8;border-radius:12px;background:#fff;color:#6f7981;font-size:8px}.admin-ai-thinking i{width:9px;height:9px;border:2px solid #e4c6ba;border-top-color:#c85d35;border-radius:50%;animation:adminAiSpin .7s linear infinite}
+.admin-ai-error{margin-top:12px;padding:14px;border:1px solid #edd6d2;border-radius:12px;background:#fff8f7}.admin-ai-error b{font-size:9px;color:#9d4339}.admin-ai-error p{margin:5px 0 0;font-size:8px;color:#7b6662}
+.admin-ai-form{display:grid;gap:9px;padding:15px 16px 18px;border-top:1px solid #e4e8ea;background:#fff}.admin-ai-form textarea{width:100%;min-height:92px;max-height:190px;resize:vertical;border:1px solid #dce1e4;border-radius:12px;padding:11px 12px;font:inherit}.admin-ai-form>div{display:flex;justify-content:flex-end;align-items:center;gap:8px}.admin-ai-form small{margin-right:auto;color:#818b92;font-size:7px}.admin-ai-form .primary{min-width:70px}
+@keyframes adminAiSpin{to{transform:rotate(360deg)}}
+
+@media(max-width:1450px){
+  #view-inbox .inbox-layout{grid-template-columns:minmax(280px,.75fr) minmax(520px,1.5fr)}
+  #view-inbox .inbox-context-panel{grid-column:1/-1;position:static;min-height:0;max-height:none}
+  #view-inbox .inbox-context-facts{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.inbox-context-facts>div{display:grid;padding:10px;border:1px solid #edf0f2;border-radius:9px}.inbox-context-facts b{max-width:none;text-align:left}
+  #view-agents .admin-agent-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #view-platform-settings .platform-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:1100px){
+  .health-ops-grid{grid-template-columns:1fr}
+  #view-health .admin-health-groups{grid-template-columns:1fr}
+  .finance-ops-strip{grid-template-columns:1fr 1fr}
+}
+@media(max-width:980px){
+  #view-inbox .inbox-layout{grid-template-columns:1fr}
+  #view-inbox .inbox-list-panel,#view-inbox .inbox-thread-panel,#view-inbox .inbox-context-panel{max-height:none;min-height:0}
+  #view-inbox #inboxList{max-height:420px}
+  #view-inbox .inbox-context-facts{grid-template-columns:1fr 1fr}
+  #view-agents .admin-agent-grid{grid-template-columns:1fr!important}
+  #view-platform-settings .platform-settings-grid{grid-template-columns:1fr}
+  .platform-settings-nav{top:70px}
+}
+@media(max-width:650px){
+  .finance-ops-strip{grid-template-columns:1fr}
+  #view-inbox .inbox-context-facts{grid-template-columns:1fr}
+  .admin-ai-launch{width:36px;height:36px;padding:0;justify-content:center;font-size:0}.admin-ai-launch span{font-size:14px}
+  .admin-ai-panel{width:100vw}
+}
+@media(prefers-reduced-motion:reduce){
+  .admin-ai-launch,.admin-ai-panel,.growth-column,.growth-card,.inbox-item{transition:none!important}
+  .admin-ai-launch:hover{transform:none}.admin-ai-thinking i{animation:none}
+}
