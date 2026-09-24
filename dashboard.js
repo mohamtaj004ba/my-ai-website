@@ -486,7 +486,7 @@ function updateFollowupCounts(){
   const all=followupCandidates(),active=all.filter(teamStatusActive),urgent=active.filter(x=>followupType(x)==='urgent'),inProgress=active.filter(x=>teamStatusForCall(x)==='in_progress'),completedToday=all.filter(x=>{const st=followupState[String(x.id)];return normalizedTeamStatusValue(st?.status)==='completed'&&sameLocalDay(Number(st?.updatedAt||0))});
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};set('followupOpenCount',active.filter(x=>teamStatusForCall(x)==='needs_action').length);set('followupUrgentCount',urgent.length);set('followupCallbackCount',inProgress.length);set('followupHandledCount',completedToday.length);
   const nav=document.getElementById('followupNavCount');if(nav){nav.textContent=active.length>99?'99+':active.length;nav.hidden=active.length===0}
-  const overview=document.getElementById('overviewFollowup');if(overview)overview.textContent=active.filter(x=>withinDays(recordTime(x),7)).length;
+  const overview=document.getElementById('overviewFollowup');if(overview)overview.textContent=active.length;
 }
 function renderLeads(){
   const board=document.getElementById('leadKanban');if(!board)return;
@@ -659,7 +659,7 @@ function renderContacts(){
   if(contactCount)contactCount.textContent=all.length;if(customerCount)customerCount.textContent=all.filter(c=>contactType(c)==='Customer').length;if(interactionCount)interactionCount.textContent=all.reduce((n,c)=>n+totalInteractions(c),0);
   wrap.innerHTML=rows.map(c=>{
     const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0),openCount=c.calls.filter(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x)).length,latestCall=[...c.calls].sort((a,b)=>recordTime(b)-recordTime(a))[0],latestText=latestCall?.reason||[...c.services][0]||'General activity',kind=contactType(c),key=encodeURIComponent(c.key);
-    return '<div class="contact-row data '+(openCount?'customer-attention':'')+'" role="button" tabindex="0" data-contact-key="'+key+'" aria-label="Open '+esc(c.name)+' contact history"><span><strong>'+esc(c.name)+'</strong><small>'+esc(c.phone||'No phone captured')+(openCount?' · '+openCount+' open follow-up'+(openCount===1?'':'s'):'')+'</small></span><span><i class="contact-type-pill '+kind.toLowerCase()+'">'+esc(kind)+'</i></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span class="contact-count">'+c.calls.length+'</span><span class="contact-count">'+msgCount+'</span><span class="latest-need-link" title="'+esc(latestText)+'">'+esc(latestText)+'</span></div>';
+    return '<div class="contact-row data '+(openCount?'customer-attention':'')+'" role="button" tabindex="0" data-contact-key="'+key+'" aria-label="Open '+esc(c.name)+' contact history"><span><strong>'+esc(c.name)+'</strong><small>'+esc(c.phone||'No phone captured')+(openCount?' · '+openCount+' open team action'+(openCount===1?'':'s'):'')+'</small></span><span><i class="contact-type-pill '+kind.toLowerCase()+'">'+esc(kind)+'</i></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span class="contact-count">'+c.calls.length+'</span><span class="contact-count">'+msgCount+'</span><span class="latest-need-link" title="'+esc(latestText)+'">'+esc(latestText)+'</span></div>';
   }).join('');
   document.getElementById('contactsEmpty').hidden=rows.length!==0;
   wrap.querySelectorAll('[data-contact-key]').forEach(row=>{
