@@ -212,15 +212,18 @@ async function adminSummary(req,res){
     const ws=await kv.get('workspace:'+id);if(ws)workspaces.push(ws);
   }
   const prices={Starter:349,Growth:599,Pro:999};
-  const billable=workspaces.filter(w=>String(w.subscriptionStatus||'active')!=='canceled');
-  const active=workspaces.filter(w=>(w.status||'active')==='active'&&String(w.subscriptionStatus||'active')!=='canceled');
+  const current=workspaces.filter(w=>String(w.subscriptionStatus||'active')!=='canceled'&&String(w.status||'active')!=='pending_deletion');
+  const former=workspaces.filter(w=>String(w.subscriptionStatus||'active')==='canceled'||String(w.status||'active')==='pending_deletion');
+  const billable=current;
+  const active=current.filter(w=>(w.status||'active')==='active');
   const mrr=billable.reduce((sum,w)=>sum+(prices[w.plan]||0),0);
-  const pastDue=workspaces.filter(w=>w.subscriptionStatus==='past_due').length;
-  const onboarding=workspaces.filter(w=>w.status==='onboarding').length;
-  const suspended=workspaces.filter(w=>w.status==='suspended').length;
-  const totalMinutes=workspaces.reduce((sum,w)=>sum+Number(w.usage&&w.usage.minutes||0),0);
-  const planMix={Starter:0,Growth:0,Pro:0};workspaces.forEach(w=>{if(planMix[w.plan]!==undefined)planMix[w.plan]++});
-  return res.status(200).json({summary:{mrr,clients:workspaces.length,activeClients:active.length,pastDue,onboarding,suspended,totalMinutes,planMix}});
+  const pastDue=current.filter(w=>w.subscriptionStatus==='past_due').length;
+  const onboarding=current.filter(w=>w.status==='onboarding').length;
+  const suspended=current.filter(w=>w.status==='suspended').length;
+  const onboarded=Math.max(0,current.length-onboarding);
+  const totalMinutes=current.reduce((sum,w)=>sum+Number(w.usage&&w.usage.minutes||0),0);
+  const planMix={Starter:0,Growth:0,Pro:0};billable.forEach(w=>{if(planMix[w.plan]!==undefined)planMix[w.plan]++});
+  return res.status(200).json({summary:{mrr,clients:workspaces.length,currentClients:current.length,formerClients:former.length,activeClients:active.length,pastDue,onboarding,suspended,onboarded,totalMinutes,planMix}});
 }
 
 async function adminClients(req,res){
