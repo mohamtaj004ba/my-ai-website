@@ -4,7 +4,7 @@ const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession}=
 const {sendMail}=require('../lib/mail');
 const {lifecycleEmail,authEmail,esc:escapeEmailHtml}=require('../lib/email-template');
 const {entitlementsFor}=require('../lib/plans');
-const {emailKey}=require('../lib/site-analytics');
+const {emailKey,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
@@ -758,21 +758,43 @@ function launchGateState(saved={}){
   return Object.fromEntries(LAUNCH_GATE_DEFS.map(x=>[x.key,!!raw[x.key]]));
 }
 
+function clampInt(v,min,max,fallback){const n=Math.round(Number(v));return Number.isFinite(n)?Math.min(max,Math.max(min,n)):fallback}
 async function adminPlatformSettings(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const saved=await kv.get('platform:settings')||{};
-  return res.status(200).json({settings:{supportEmail:saved.supportEmail||process.env.SUPPORT_EMAIL||'',defaultAgentName:saved.defaultAgentName||'Maya',defaultTimezone:saved.defaultTimezone||'America/Los_Angeles',maintenanceMode:!!saved.maintenanceMode,launchGates:launchGateState(saved.launchGates),updatedAt:saved.updatedAt||null}});
+  return res.status(200).json({settings:{
+    brandName:String(saved.brandName||'CallerCore').slice(0,80),
+    supportEmail:saved.supportEmail||process.env.SUPPORT_EMAIL||'',
+    defaultAgentName:saved.defaultAgentName||'Maya',
+    defaultTimezone:saved.defaultTimezone||'America/Los_Angeles',
+    defaultAfterHours:['ai','transfer','voicemail'].includes(saved.defaultAfterHours)?saved.defaultAfterHours:'ai',
+    analyticsWindowDays:clampInt(saved.analyticsWindowDays,7,90,30),
+    adminRefreshSeconds:clampInt(saved.adminRefreshSeconds,30,300,60),
+    leadFollowupHours:clampInt(saved.leadFollowupHours,4,168,24),
+    maintenanceMode:!!saved.maintenanceMode,
+    launchGates:launchGateState(saved.launchGates),
+    updatedAt:saved.updatedAt||null
+  }});
 }
 
 async function adminPlatformSettingsSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const body=req.body||{},supportEmail=cleanEmail(body.supportEmail),defaultAgentName=String(body.defaultAgentName||'Maya').trim().slice(0,80),defaultTimezone=String(body.defaultTimezone||'America/Los_Angeles').trim().slice(0,100);
+  const body=req.body||{},supportEmail=cleanEmail(body.supportEmail),defaultAgentName=String(body.defaultAgentName||'Maya').trim().slice(0,80),defaultTimezone=String(body.defaultTimezone||'America/Los_Angeles').trim().slice(0,100),brandName=String(body.brandName||'CallerCore').trim().slice(0,80);
   if(supportEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail))return res.status(400).json({error:'Valid support email required'});
+  if(!brandName)return res.status(400).json({error:'Platform name is required'});
   const previous=await kv.get('platform:settings')||{},launchGates=body.launchGates&&typeof body.launchGates==='object'?launchGateState(body.launchGates):launchGateState(previous.launchGates);
-  const settings={supportEmail,defaultAgentName:defaultAgentName||'Maya',defaultTimezone,maintenanceMode:!!body.maintenanceMode,launchGates,updatedAt:Date.now(),updatedBy:admin.email};
+  const settings={
+    brandName,supportEmail,defaultAgentName:defaultAgentName||'Maya',defaultTimezone,
+    defaultAfterHours:['ai','transfer','voicemail'].includes(body.defaultAfterHours)?body.defaultAfterHours:'ai',
+    analyticsWindowDays:clampInt(body.analyticsWindowDays,7,90,30),
+    adminRefreshSeconds:clampInt(body.adminRefreshSeconds,30,300,60),
+    leadFollowupHours:clampInt(body.leadFollowupHours,4,168,24),
+    maintenanceMode:!!body.maintenanceMode,launchGates,updatedAt:Date.now(),updatedBy:admin.email
+  };
   await kv.set('platform:settings',settings);
   const changedGates=LAUNCH_GATE_DEFS.filter(g=>!!launchGateState(previous.launchGates)[g.key]!==!!launchGates[g.key]).map(g=>({key:g.key,from:!!launchGateState(previous.launchGates)[g.key],to:!!launchGates[g.key]}));
   if(changedGates.length)await appendAudit(admin.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'platform_launch_gates_update',section:'platform',before:launchGateState(previous.launchGates),after:launchGates,meta:{changedGates}});
+  await appendAudit(admin.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'platform_settings_update',section:'platform',before:{brandName:previous.brandName||'CallerCore',defaultAfterHours:previous.defaultAfterHours||'ai',analyticsWindowDays:previous.analyticsWindowDays||30,adminRefreshSeconds:previous.adminRefreshSeconds||60,leadFollowupHours:previous.leadFollowupHours||24,maintenanceMode:!!previous.maintenanceMode},after:{brandName:settings.brandName,defaultAfterHours:settings.defaultAfterHours,analyticsWindowDays:settings.analyticsWindowDays,adminRefreshSeconds:settings.adminRefreshSeconds,leadFollowupHours:settings.leadFollowupHours,maintenanceMode:settings.maintenanceMode}});
   return res.status(200).json({ok:true,settings});
 }
 
