@@ -1855,7 +1855,7 @@ function openPhoneModal(id=null){
   document.getElementById('phoneProviderInput').value=item?.provider||'Vapi';
   document.getElementById('phoneForwardingInput').value=item?.forwardingFrom||'';
   document.getElementById('phoneTransferInput').value=item?.transferNumber||'';
-  document.getElementById('phoneAfterHoursInput').value=item?.afterHours||'ai';
+  document.getElementById('phoneAfterHoursInput').value=item?.afterHours||adminPlatformData?.defaultAfterHours||'ai';
   const smsBox=document.getElementById('phoneSmsInput');if(smsBox){smsBox.checked=false;smsBox.disabled=true}
   const sel=document.getElementById('phoneWorkspaceInput');
   sel.innerHTML='<option value="">Unassigned</option>'+adminClientsData.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
@@ -1889,6 +1889,15 @@ document.getElementById('expenseModal')?.addEventListener('click',e=>{if(e.targe
 document.getElementById('closePhoneModal')?.addEventListener('click',closePhoneModal);
 document.getElementById('savePhoneButton')?.addEventListener('click',savePhone);
 document.getElementById('phoneModal')?.addEventListener('click',e=>{if(e.target.id==='phoneModal')closePhoneModal()});
+document.getElementById('addProspectButton')?.addEventListener('click',()=>openProspectModal());
+document.getElementById('closeProspectModal')?.addEventListener('click',closeProspectModal);
+document.getElementById('saveProspectButton')?.addEventListener('click',saveProspect);
+document.getElementById('prospectModal')?.addEventListener('click',e=>{if(e.target.id==='prospectModal')closeProspectModal()});
+document.getElementById('addCampaignButton')?.addEventListener('click',()=>openCampaignModal());
+document.getElementById('growthCampaignQuickAdd')?.addEventListener('click',()=>openCampaignModal());
+document.getElementById('closeCampaignModal')?.addEventListener('click',closeCampaignModal);
+document.getElementById('saveCampaignButton')?.addEventListener('click',saveCampaign);
+document.getElementById('campaignModal')?.addEventListener('click',e=>{if(e.target.id==='campaignModal')closeCampaignModal()});
 
 function adminMoney(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
 function adminPlanMinutes(plan){return plan==='Starter'?300:plan==='Growth'?600:null}
@@ -2197,7 +2206,7 @@ function adminGlobalSearchItems(q){
   const needle=String(q||'').trim().toLowerCase();if(needle.length<2)return[];
   const match=(parts)=>parts.filter(Boolean).join(' ').toLowerCase().includes(needle),items=[];
   for(const x of adminClientsData)if(match([x.name,x.ownerEmail,x.id,x.plan,x.subscriptionStatus]))items.push({type:'client',id:x.id,title:x.name||'Client',meta:[x.ownerEmail,x.plan,'Client account'].filter(Boolean).join(' · '),view:'clients'});
-  for(const p of adminWebsiteData.prospects||[])if(match([p.name,p.business,p.email,p.phone,p.source,p.stage,p.plan,p.industry]))items.push({type:'prospect',id:p.id,title:p.name||p.business||p.email||'Website prospect',meta:[p.business,p.email,p.stage,'CallerCore prospect'].filter(Boolean).join(' · '),view:'website'});
+  for(const p of adminWebsiteData.prospects||[])if(match([p.name,p.business,p.email,p.phone,p.source,p.stage,p.plan,p.industry,p.campaign,p.utmCampaign]))items.push({type:'prospect',id:p.id,title:p.business||p.name||p.email||'Prospect',meta:[p.email,p.stage,'Growth prospect'].filter(Boolean).join(' · '),view:'growth'});
   for(const t of adminSupportData||[])if(match([t.subject,t.workspaceName,t.email,t.message,t.priority,t.status]))items.push({type:'support',id:t.id,title:t.subject||'Support request',meta:[t.workspaceName,t.status,'Client care'].filter(Boolean).join(' · '),view:'client-care'});
   for(const x of adminPhoneData||[])if(match([x.id,x.number,x.forwardingFrom,x.transferNumber,x.workspaceName,x.provider]))items.push({type:'phone',id:String(x.id||''),title:x.number||'Phone number',meta:[x.workspaceName,x.provider,'Phone'].filter(Boolean).join(' · '),view:'phones'});
   for(const x of adminFeedbackData||[])if(match([x.id,x.workspaceName,x.actorEmail,x.category,x.message,x.status]))items.push({type:'feedback',id:String(x.id||''),title:x.workspaceName||'AI feedback',meta:[String(x.category||'feedback').replaceAll('_',' '),x.status,'Client care'].filter(Boolean).join(' · '),view:'client-care'});
@@ -2220,9 +2229,9 @@ async function openAdminGlobalSearchResult(type,id,view){
   const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(wrap)wrap.hidden=true;if(input)input.value='';
   if(type==='client'){showView('clients');await openAdminClient(id);return}
   if(type==='gmail'){showView('inbox');await openInboxItem('gmail',id);setTimeout(()=>flashAdminSearchTarget(document.querySelector('[data-inbox-kind="gmail"][data-inbox-id="'+CSS.escape(id)+'"]')),80);return}
+  if(type==='prospect'){showView('growth');openProspectModal(id);return}
   if(type==='support')openClientCare('support');else if(type==='feedback')openClientCare('feedback');else showView(view);
   setTimeout(()=>{
-    if(type==='prospect')flashAdminSearchTarget(document.querySelector('[data-website-prospect-id="'+CSS.escape(id)+'"]'));
     else if(type==='support'){const el=document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]');if(el)el.open=true;flashAdminSearchTarget(el)}
     else if(type==='phone')flashAdminSearchTarget(document.querySelector('[data-edit-phone="'+CSS.escape(id)+'"]')?.closest('.call-row'));
     else if(type==='feedback')flashAdminSearchTarget(document.getElementById('feedback-'+id));
@@ -2252,7 +2261,8 @@ async function refreshAdminDashboard({button=null}={}){
 function initAdminLiveRefresh(){
   const btn=document.getElementById('refreshAdminCommand');if(btn)btn.onclick=()=>refreshAdminDashboard({button:btn});
   if(adminRefreshTimer)clearInterval(adminRefreshTimer);
-  adminRefreshTimer=setInterval(()=>{if(!document.hidden&&document.body.dataset.dashboard==='admin')refreshAdminDashboard().catch(()=>{})},60000);
+  const ms=Math.max(30000,Number(adminPlatformData?.adminRefreshSeconds||60)*1000);
+  adminRefreshTimer=setInterval(()=>{if(!document.hidden&&document.body.dataset.dashboard==='admin')refreshAdminDashboard().catch(()=>{})},ms);
 }
 async function saveAdminClient(){
   if(!currentAdminClient)return;
@@ -2466,7 +2476,7 @@ async function navigateNotification(n){
     let target=null;
     if(meta.ticketId){target=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]');if(target?.tagName==='DETAILS')target.open=true}
     else if(meta.feedbackId)target=document.getElementById('feedback-'+String(meta.feedbackId));
-    else if(meta.prospectId)target=document.querySelector('[data-website-prospect-id="'+CSS.escape(String(meta.prospectId))+'"]');
+    else if(meta.prospectId){showView('growth');openProspectModal(String(meta.prospectId));return true}
     else if(meta.workspaceId&&view==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(meta.workspaceId))+'"]');
     else if(meta.workspaceId&&view==='clients')target=document.querySelector('[data-admin-client-row="'+CSS.escape(String(meta.workspaceId))+'"]');
     if(target){flashAdminSearchTarget(target);return true}
