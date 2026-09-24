@@ -1811,8 +1811,19 @@ setInterval(()=>{
 },180000);
 
 
+function adminElapsedAge(ms){
+  const diff=Math.max(0,Date.now()-Number(ms||Date.now())),mins=Math.floor(diff/60000);
+  if(mins<60)return Math.max(1,mins)+'m old';
+  const hours=Math.floor(mins/60);if(hours<48)return hours+'h old';
+  return Math.floor(hours/24)+'d old';
+}
 function renderAdminSupport(){
-  const tickets=adminSupportData||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  const tickets=[...(adminSupportData||[])].sort((a,b)=>{
+    const ar=a.status==='resolved',br=b.status==='resolved';if(ar!==br)return ar?1:-1;
+    const au=a.priority==='urgent',bu=b.priority==='urgent';if(au!==bu)return au?-1:1;
+    if(!ar)return Number(a.createdAt||0)-Number(b.createdAt||0);
+    return Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0);
+  }),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   set('supportOpen',tickets.filter(x=>x.status==='open').length);set('supportProgress',tickets.filter(x=>x.status==='in_progress').length);set('supportResolved',tickets.filter(x=>x.status==='resolved').length);set('supportUrgent',tickets.filter(x=>x.priority==='urgent'&&x.status!=='resolved').length);
   const search=document.getElementById('adminSupportSearch'),filter=document.getElementById('adminSupportFilter');
   if(search){search.value=adminSupportSearch;search.oninput=()=>{adminSupportSearch=search.value;renderAdminSupport()}}
@@ -1826,7 +1837,7 @@ function renderAdminSupport(){
   wrap.innerHTML=visible.map(t=>{
     const messages=(Array.isArray(t.messages)&&t.messages.length?t.messages:[{direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||Date.now()}]);
     const thread=messages.map(m=>'<div class="support-message '+(m.direction==='support'?'support':'client')+'"><div><b>'+(m.direction==='support'?'CallerCore Support':esc(t.workspaceName||'Client'))+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+'</small></div><p>'+esc(m.body||'').replace(/\n/g,'<br>')+'</p></div>').join('');
-    return '<details class="support-admin-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+esc(t.workspaceName||'Workspace')+' · '+esc(t.email||'')+' · '+new Date(t.createdAt).toLocaleString()+'</small></div><div><span class="tag '+(t.priority==='urgent'?'red':'')+'">'+esc(t.priority||'normal')+'</span><select class="support-status-select" data-ticket-status="'+esc(t.id)+'"><option value="open" '+(t.status==='open'?'selected':'')+'>Open</option><option value="in_progress" '+(t.status==='in_progress'?'selected':'')+'>In progress</option><option value="resolved" '+(t.status==='resolved'?'selected':'')+'>Resolved</option></select></div></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-admin-input="'+esc(t.id)+'" placeholder="Reply to the client…"></textarea><button class="primary" type="button" data-support-admin-reply="'+esc(t.id)+'">Send reply</button></div></details>';
+    return '<details class="support-admin-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+esc(t.workspaceName||'Workspace')+' · '+esc(t.email||'')+' · '+esc(adminElapsedAge(t.createdAt))+'</small></div><div><span class="tag '+(t.priority==='urgent'?'red':'')+'">'+esc(t.priority||'normal')+'</span><select class="support-status-select" data-ticket-status="'+esc(t.id)+'"><option value="open" '+(t.status==='open'?'selected':'')+'>Open</option><option value="in_progress" '+(t.status==='in_progress'?'selected':'')+'>In progress</option><option value="resolved" '+(t.status==='resolved'?'selected':'')+'>Resolved</option></select></div></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-admin-input="'+esc(t.id)+'" placeholder="Reply to the client…"></textarea><button class="primary" type="button" data-support-admin-reply="'+esc(t.id)+'">Send reply</button></div></details>';
   }).join('');
   const empty=document.getElementById('adminSupportEmpty');if(empty)empty.hidden=visible.length!==0;
   wrap.querySelectorAll('[data-ticket-status]').forEach(s=>s.addEventListener('change',e=>{e.stopPropagation();updateSupportStatus(s.dataset.ticketStatus,s.value)}));
