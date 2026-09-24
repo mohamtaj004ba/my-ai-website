@@ -632,19 +632,93 @@ function openContactFromRow(row){if(!row)return;let key='';try{key=decodeURIComp
 function serviceRequestStageLabel(stage){
   const value=String(stage||'').trim();return ({New:'New request',Contacted:'Team contacted',Qualified:'Qualified request',Won:'Completed',Lost:'Closed'})[value]||value||'Service request';
 }
+function contactDateKey(at){
+  const d=new Date(Number(at||0));if(!Number.isFinite(d.getTime()))return 'unknown';
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function contactDateLabel(at){
+  const d=new Date(Number(at||0));if(!Number.isFinite(d.getTime()))return 'Date unavailable';
+  const today=new Date(),yesterday=new Date();yesterday.setDate(today.getDate()-1);
+  if(d.toDateString()===today.toDateString())return 'Today';
+  if(d.toDateString()===yesterday.toDateString())return 'Yesterday';
+  return d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric',year:d.getFullYear()===today.getFullYear()?undefined:'numeric'});
+}
+function contactTimeLabel(at){
+  const d=new Date(Number(at||0));return Number.isFinite(d.getTime())?d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):'';
+}
+function contactMessageSessions(c){
+  const flat=c.conversations.flatMap(conv=>(conv.messages||[]).map((m,index)=>({
+    at:Number(m.at||recordTime(conv)||0),dir:m.dir==='out'?'out':'in',who:m.who||conv.name||c.name||'',text:m.text||'',conversationId:conv.id||'',index
+  }))).filter(m=>m.text||m.at).sort((a,b)=>a.at-b.at);
+  const sessions=[];let current=null;
+  for(const m of flat){
+    const day=contactDateKey(m.at),gap=current?m.at-current.lastAt:Infinity;
+    if(!current||current.day!==day||gap>3*60*60*1000){
+      current={day,firstAt:m.at,lastAt:m.at,messages:[]};sessions.push(current);
+    }
+    current.messages.push(m);current.lastAt=Math.max(current.lastAt,m.at||0);
+  }
+  return sessions;
+}
 function contactHistoryEvents(c){
   return [
-    ...c.calls.map(x=>({at:recordTime(x),filter:'call',kind:'Call',title:x.reason||'Phone call',copy:[callDispositionLabel(x),teamStatusLabel(x),x.duration].filter(Boolean).join(' · '),callId:x.id})),
-    ...c.conversations.flatMap(x=>(x.messages||[]).map(m=>({at:Number(m.at||recordTime(x)||0),filter:'message',kind:m.dir==='in'?'Message received':'Message sent',title:m.who||x.name,copy:m.text||''}))),
-    ...c.leads.map(x=>({at:recordTime(x),filter:'request',kind:'Service request',title:x.service||'Service request',copy:serviceRequestStageLabel(x.stage)})),
-    ...c.calls.flatMap(x=>normalizedCallNotes(x.id).map(n=>({at:Number(n.at||recordTime(x)||0),filter:'note',kind:'Internal note',title:n.by||'Team note',copy:n.text||''})))
+    ...c.calls.map(x=>({at:recordTime(x),filter:'call',kind:'Call',title:x.reason||'Phone call',call:x})),
+    ...contactMessageSessions(c).map(session=>({at:session.lastAt,filter:'message',kind:'Messages',title:session.messages.length+' message'+(session.messages.length===1?'':'s'),session})),
+    ...c.leads.map(x=>({at:recordTime(x),filter:'request',kind:'Service request',title:x.service||'Service request',request:x})),
+    ...c.calls.flatMap(x=>normalizedCallNotes(x.id).map(n=>({at:Number(n.at||recordTime(x)||0),filter:'note',kind:'Internal note',title:n.by||'Team note',note:n,call:x})))
   ].sort((a,b)=>b.at-a.at);
+}
+function contactInlineCallHtml(call){
+  const disposition=callDispositionMeta(call),team=TEAM_STATUS_META[teamStatusForCall(call)]||TEAM_STATUS_META.no_action,notes=normalizedCallNotes(call.id),transcript=Array.isArray(call.transcript)?call.transcript:[];
+  const details=[
+    ['AI result',disposition.label],
+    ['Team status',team.label],
+    ['Duration',call.duration||'—'],
+    ['Answered by',call.agent||'Maya']
+  ];
+  return '<div class="contact-inline-call-grid">'+details.map(([k,v])=>'<div><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>').join('')+'</div>'
+    +(call.address?'<div class="contact-inline-block"><span>Location</span><p>'+esc(call.address)+'</p></div>':'')
+    +'<div class="contact-inline-block"><span>AI summary</span><p>'+esc(call.summary||'No AI summary is available yet.')+'</p></div>'
+    +(notes.length?'<div class="contact-inline-block"><span>Team notes</span>'+notes.map(n=>'<p class="inline-team-note">'+esc(n.text)+'<small>'+esc(n.by||'Team')+(n.at?' · '+new Date(Number(n.at)).toLocaleString():'')+'</small></p>').join('')+'</div>':'')
+    +'<div class="contact-inline-block"><span>Transcript</span><div class="contact-inline-transcript">'+(transcript.length?transcript.map(pair=>'<div class="'+(String(pair[0]).toLowerCase()==='maya'?'ai':'caller')+'"><b>'+esc(pair[0])+'</b><p>'+esc(pair[1])+'</p></div>').join(''):'<p class="muted contact-transcript-loading">Open call details loaded without a transcript yet.</p>')+'</div></div>';
+}
+async function hydrateContactCallDetails(callId,details){
+  if(!details||details.dataset.loaded==='1')return;
+  details.dataset.loaded='1';
+  let call=callsData.find(x=>String(x.id)===String(callId));if(!call)return;
+  const body=details.querySelector('[data-contact-inline-call-body]');
+  if(!call.transcript&&!demoMode){
+    if(body)body.innerHTML='<div class="contact-inline-loading"><i></i><span>Loading call details…</span></div>';
+    try{
+      const data=await fetchJsonRetry('/api/account?action=call-detail&id='+encodeURIComponent(callId),{attempts:2,timeout:7000});
+      if(data.call){const idx=callsData.findIndex(x=>String(x.id)===String(callId));if(idx>=0)callsData[idx]={...callsData[idx],...data.call};call=callsData[idx>=0?idx:callsData.findIndex(x=>String(x.id)===String(callId))]||data.call}
+    }catch(err){console.warn('Inline contact call detail delayed',err)}
+  }
+  if(body)body.innerHTML=contactInlineCallHtml(call);
+}
+function renderContactHistoryItem(e){
+  if(e.filter==='call'){
+    const x=e.call,disp=callDispositionMeta(x),team=TEAM_STATUS_META[teamStatusForCall(x)]||TEAM_STATUS_META.no_action;
+    return '<details class="contact-history-card call" data-contact-inline-call="'+esc(x.id)+'"><summary><span class="history-icon call">☎</span><span class="history-summary-copy"><small>'+esc(contactTimeLabel(e.at))+' · '+esc(x.category||'Call')+'</small><b>'+esc(x.reason||'Phone call')+'</b><span><i class="disposition-pill '+callDispositionClass(x)+'">'+esc(disp.label)+'</i><i class="team-status-pill '+team.tone+'">'+esc(team.label)+'</i></span></span><span class="history-chevron">⌄</span></summary><div class="contact-expand-body" data-contact-inline-call-body="'+esc(x.id)+'">'+contactInlineCallHtml(x)+'</div></details>';
+  }
+  if(e.filter==='message'){
+    const s=e.session,count=s.messages.length,start=contactTimeLabel(s.firstAt),finish=contactTimeLabel(s.lastAt),preview=s.messages[s.messages.length-1]?.text||'';
+    return '<details class="contact-history-card message"><summary><span class="history-icon message">✉</span><span class="history-summary-copy"><small>'+esc(start+(finish&&finish!==start?'–'+finish:''))+'</small><b>'+count+' message'+(count===1?'':'s')+'</b><p>'+esc(preview)+'</p></span><span class="history-chevron">⌄</span></summary><div class="contact-expand-body"><div class="contact-message-thread">'+s.messages.map(m=>'<div class="contact-message '+(m.dir==='out'?'out':'in')+'"><small>'+esc(m.dir==='out'?'CallerCore / team':m.who||'Caller')+' · '+esc(contactTimeLabel(m.at))+'</small><p>'+esc(m.text)+'</p></div>').join('')+'</div></div></details>';
+  }
+  if(e.filter==='request'){
+    const r=e.request;
+    return '<details class="contact-history-card request"><summary><span class="history-icon request">◆</span><span class="history-summary-copy"><small>'+esc(contactTimeLabel(e.at))+' · Service request</small><b>'+esc(r.service||'Service request')+'</b><p>'+esc(serviceRequestStageLabel(r.stage))+'</p></span><span class="history-chevron">⌄</span></summary><div class="contact-expand-body"><div class="contact-inline-call-grid"><div><span>Status</span><b>'+esc(serviceRequestStageLabel(r.stage))+'</b></div><div><span>Source</span><b>'+esc(r.source||'CallerCore')+'</b></div></div></div></details>';
+  }
+  const n=e.note||{};
+  return '<article class="contact-history-card note static"><span class="history-icon note">✎</span><span class="history-summary-copy"><small>'+esc(contactTimeLabel(e.at))+' · Internal note</small><b>'+esc(n.by||'Team note')+'</b><p>'+esc(n.text||'')+'</p></span></article>';
 }
 function renderContactHistoryTimeline(c){
   const timeline=document.getElementById('contactDrawerTimeline');if(!timeline||!c)return;
   const events=contactHistoryEvents(c).filter(e=>contactHistoryFilter==='all'||e.filter===contactHistoryFilter);
-  timeline.innerHTML=events.slice(0,120).map(e=>'<'+(e.callId?'button':'div')+' class="contact-event '+esc(e.filter)+'" '+(e.callId?'data-contact-call="'+esc(e.callId)+'"':'')+'><span class="contact-event-dot"></span><span><small>'+esc(e.kind)+' · '+esc(e.at?new Date(e.at).toLocaleString():'Date unavailable')+'</small><b>'+esc(e.title)+'</b><p>'+esc(e.copy)+'</p></span></'+(e.callId?'button':'div')+'>').join('')||'<div class="contact-history-empty">No '+esc(contactHistoryFilter==='all'?'activity':contactHistoryFilter+' activity')+' yet.</div>';
-  timeline.querySelectorAll('[data-contact-call]').forEach(b=>b.addEventListener('click',()=>{const callId=b.dataset.contactCall;closeContact();setTimeout(()=>openCall(callId),30)}));
+  const groups=new Map();
+  for(const e of events){const key=contactDateKey(e.at);if(!groups.has(key))groups.set(key,{at:e.at,items:[]});groups.get(key).items.push(e)}
+  timeline.innerHTML=[...groups.values()].map(group=>'<section class="contact-history-day"><div class="contact-history-day-head"><b>'+esc(contactDateLabel(group.at))+'</b><span>'+group.items.length+' item'+(group.items.length===1?'':'s')+'</span></div>'+group.items.map(renderContactHistoryItem).join('')+'</section>').join('')||'<div class="contact-history-empty">No '+esc(contactHistoryFilter==='all'?'activity':contactHistoryFilter+' activity')+' yet.</div>';
+  timeline.querySelectorAll('[data-contact-inline-call]').forEach(details=>details.addEventListener('toggle',()=>{if(details.open)hydrateContactCallDetails(details.dataset.contactInlineCall,details)}));
   document.querySelectorAll('[data-contact-history-filter]').forEach(btn=>btn.classList.toggle('active',btn.dataset.contactHistoryFilter===contactHistoryFilter));
 }
 
@@ -670,6 +744,7 @@ function openContact(key){
 function closeContact(){document.getElementById('contactDrawer')?.classList.remove('open');document.getElementById('contactDrawerBackdrop')?.classList.remove('open');document.getElementById('contactDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('callDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}
 document.getElementById('contactSearch')?.addEventListener('input',renderContacts);
 document.querySelectorAll('[data-contact-history-filter]').forEach(btn=>btn.addEventListener('click',()=>{contactHistoryFilter=btn.dataset.contactHistoryFilter||'all';const c=buildContacts().find(x=>x.key===activeContactKey);if(c)renderContactHistoryTimeline(c)}));
+document.querySelectorAll('[data-contact-stat-filter]').forEach(btn=>btn.addEventListener('click',()=>{contactHistoryFilter=btn.dataset.contactStatFilter||'all';const c=buildContacts().find(x=>x.key===activeContactKey);if(c)renderContactHistoryTimeline(c);document.querySelector('.contact-activity-section')?.scrollIntoView({behavior:'smooth',block:'start'})}));
 document.getElementById('closeContactDrawer')?.addEventListener('click',closeContact);
 document.getElementById('contactDrawerBackdrop')?.addEventListener('click',closeContact);
 document.getElementById('drawerFollowupButton')?.addEventListener('click',e=>{const id=e.currentTarget.dataset.callId,status=document.getElementById('drawerTeamStatus')?.value;if(id&&status)requestTeamStatusChange(id,status)});
