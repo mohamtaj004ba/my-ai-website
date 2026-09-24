@@ -837,3 +837,6 @@ body.drawer-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
   .call-new-dot{animation:none!important}
 }
+
+.sortable-table-head small{font-size:6.5px;line-height:1;text-transform:uppercase;letter-spacing:.06em;color:#7c8790;background:#fff;border:1px solid #dde3e7;border-radius:999px;padding:4px 6px}
+.sortable-table-head:hover small,.sortable-table-head:focus-visible small{border-color:#cfd7dc;color:#3f4b55}
