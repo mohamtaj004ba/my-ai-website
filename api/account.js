@@ -612,7 +612,7 @@ async function adminFleet(req,res){
     const [agent,wsAutos]=await Promise.all([kv.get('agent:'+id),kv.get('automations:'+id)]);
     agents.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',agent:agent||null});
     const autos=Array.isArray(wsAutos)?wsAutos:[];
-    automations.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length});
+    automations.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length,workflows:autos.slice(0,20).filter(Boolean).map(x=>({id:x.id||'',name:String(x.name||'Automation').slice(0,120),trigger:String(x.trigger||'').slice(0,80),action:String(x.action||'').slice(0,80),enabled:x.enabled!==false}))});
   }
   return res.status(200).json({agents,automations});
 }
