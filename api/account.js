@@ -78,7 +78,7 @@ async function getWorkspaceConfigSnapshot(workspaceId){
 
 async function bootstrapPreview(req,res){
   const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
-  if(!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
+  if(process.env.VERCEL_ENV!=='preview'||!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
   const configured=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||'');
   const supplied=String(req.headers['x-bootstrap-secret']||'');
   if(!configured||!supplied||supplied!==configured)return res.status(403).json({error:'Forbidden'});
@@ -187,7 +187,7 @@ async function seedPreviewData(req,res){
 
 async function promotePreviewAdmin(req,res){
   const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
-  if(!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
+  if(process.env.VERCEL_ENV!=='preview'||!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
   const configured=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||'');
   const supplied=String(req.headers['x-bootstrap-secret']||'');
   if(!configured||!supplied||supplied!==configured)return res.status(403).json({error:'Forbidden'});
