@@ -1265,7 +1265,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pen
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminDataSyncAt={},adminDataSyncInFlight={};
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -1943,7 +1943,11 @@ function renderProvisioning(){
   const search=document.getElementById('onboardingSearch');if(search){search.value=onboardingSearch;search.oninput=()=>{onboardingSearch=search.value;renderProvisioning()}}
   document.querySelectorAll('[data-onboarding-filter]').forEach(btn=>{btn.classList.toggle('active',btn.dataset.onboardingFilter===onboardingFilter);btn.onclick=()=>{onboardingFilter=btn.dataset.onboardingFilter;renderProvisioning()}});
   const q=onboardingSearch.trim().toLowerCase(),filterOk=x=>onboardingFilter==='all'?true:onboardingFilter==='live'?x.stage==='Live':onboardingFilter==='needs_action'?onboardingNeedsAction(x):x.stage!=='Live';
-  const rows=adminProvisioningData.filter(x=>filterOk(x)&&(!q||[x.name,x.plan,x.stage,x.onboardingStatus,x.agreementSignedName].filter(Boolean).join(' ').toLowerCase().includes(q)));
+  const rows=adminProvisioningData.filter(x=>filterOk(x)&&(!q||[x.name,x.plan,x.stage,x.onboardingStatus,x.agreementSignedName].filter(Boolean).join(' ').toLowerCase().includes(q))).sort((a,b)=>{
+    const actionDelta=Number(onboardingNeedsAction(b))-Number(onboardingNeedsAction(a));if(actionDelta)return actionDelta;
+    const stageDelta=stages.indexOf(a.stage)-stages.indexOf(b.stage);if(stageDelta)return stageDelta;
+    return Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0);
+  });
   const labels={payment:'Paid',accountReview:'Account review',onboardingSent:'Onboarding sent',agreement:'Agreement',intake:'Intake',businessProfile:'Business profile',agentDraft:'AI draft',routingCaptured:'Routing',phoneAssigned:'Phone',adminReview:'Admin review',testCall:'Test call',clientApproval:'Client approval',live:'Live'};
   board.innerHTML=rows.map(x=>{
     const ck=x.checklist||{},done=Number(x.checklistDone||0),total=Math.max(1,Number(x.checklistTotal||Object.keys(labels).length)),pct=Math.round(done/total*100),next=onboardingNextAction(x),doc=(adminDocumentsData.agreements||[]).find(d=>String(d.workspaceId)===String(x.id));
@@ -2298,7 +2302,14 @@ function renderAdminClients(){
   [['clientActiveCount','active'],['clientOnboardingCount','onboarding'],['clientSuspendedCount','suspended'],['clientPastCount','past']].forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.textContent=counts[key]});
   document.querySelectorAll('[data-client-filter]').forEach(btn=>btn.classList.toggle('active',btn.dataset.clientFilter===adminClientFilter));
   const search=document.getElementById('adminClientSearchInput');if(search){search.value=adminClientSearch;search.oninput=()=>{adminClientSearch=search.value;renderAdminClients()}}
-  const filtered=all.filter(x=>adminClientMatchesFilter(x)&&(!q||[x.name,x.ownerEmail,x.plan,x.status,x.subscriptionStatus].filter(Boolean).join(' ').toLowerCase().includes(q)));
+  const sort=document.getElementById('adminClientSort');if(sort){sort.value=adminClientSort;sort.onchange=()=>{adminClientSort=sort.value;renderAdminClients()}}
+  const filtered=all.filter(x=>adminClientMatchesFilter(x)&&(!q||[x.name,x.ownerEmail,x.plan,x.status,x.subscriptionStatus].filter(Boolean).join(' ').toLowerCase().includes(q))).sort((a,b)=>{
+    if(adminClientSort==='name')return String(a.name||'').localeCompare(String(b.name||''));
+    if(adminClientSort==='mrr')return Number(PLAN_DATA[b.plan]?.price||0)-Number(PLAN_DATA[a.plan]?.price||0);
+    if(adminClientSort==='usage')return Number(b.usage?.minutes||0)-Number(a.usage?.minutes||0);
+    if(adminClientSort==='newest')return Number(b.createdAt||0)-Number(a.createdAt||0);
+    return Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0);
+  });
   const groups=adminClientFilter==='all'
     ?[['Onboarding','onboarding'],['Active clients','active'],['Suspended','suspended'],['Past clients','past']].map(([label,key])=>[label,filtered.filter(x=>adminClientLifecycle(x)===key)]).filter(([,rows])=>rows.length)
     :[[adminClientFilter==='past_due'?'Past due accounts':adminClientFilter==='past'?'Past clients':adminClientFilter.charAt(0).toUpperCase()+adminClientFilter.slice(1),filtered]];
