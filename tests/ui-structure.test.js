@@ -42,3 +42,16 @@ test('admin client drawer exposes the recovery drill action',()=>{
   const js=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
   assert.match(js,/admin-recovery-drill/);
 });
+
+
+test('client live dashboard bundle applies data without self-recursion',()=>{
+  const src=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  const start=src.indexOf('function applyClientDashboardData(');
+  assert.ok(start>=0,'applyClientDashboardData missing');
+  const end=src.indexOf('\nfunction ',start+1);
+  const body=src.slice(start,end>=0?end:src.length);
+  assert.doesNotMatch(body,/applyClientDashboardData\s*\(/,'bundle applicator must not call itself');
+  for(const target of ['callsData=','leadsData=','agentData=','settingsData=','phoneRoutingData=','locationsData=','conversationsData=','automationsData=','followupState=']){
+    assert.ok(body.includes(target),target+' assignment missing from client bundle applicator');
+  }
+});
