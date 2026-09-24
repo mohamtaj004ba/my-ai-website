@@ -87,6 +87,55 @@ async function bootstrapClient(){
 async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
 
 
+let adminAiLastAnswer='';
+function adminAiSnapshot(){
+  const clients=(adminClientsData||[]).slice(0,120).map(x=>({name:x.name,plan:x.plan,status:x.status,subscriptionStatus:x.subscriptionStatus,usageMinutes:Number(x.usage?.minutes||0),createdAt:x.createdAt,updatedAt:x.updatedAt}));
+  const prospects=(adminWebsiteData.prospects||[]).slice(0,120).map(x=>({business:x.business,name:x.name,stage:x.stage,source:x.source||x.utmSource,campaign:x.campaign||x.utmCampaign,plan:x.plan,monthlyValue:Number(x.monthlyValue||0),owner:x.owner,nextFollowUpAt:x.nextFollowUpAt,lastContactAt:x.lastContactAt,updatedAt:x.updatedAt}));
+  const onboarding=(adminProvisioningData||[]).slice(0,120).map(x=>({name:x.name,plan:x.plan,stage:x.stage,checklistDone:x.checklistDone,checklistTotal:x.checklistTotal,agreementSignedAt:x.agreementSignedAt,onboardingStatus:x.onboardingStatus,manualOverride:!!x.manualOverride,updatedAt:x.updatedAt}));
+  const support=(adminSupportData||[]).slice(0,80).map(x=>({workspaceName:x.workspaceName,subject:x.subject,status:x.status,priority:x.priority,createdAt:x.createdAt,updatedAt:x.updatedAt}));
+  const feedback=(adminFeedbackData||[]).slice(0,80).map(x=>({workspaceName:x.workspaceName,category:x.category,status:x.status,source:x.source,createdAt:x.createdAt,updatedAt:x.updatedAt}));
+  const agents=(adminFleetData.agents||[]).slice(0,120).map(x=>({workspaceName:x.workspaceName,plan:x.plan,status:x.status,agentName:x.agent?.name||'',agentHealth:x.agent?.health||'missing',businessHoursConfigured:!!String(x.agent?.businessHours||'').trim(),transferConfigured:!!String(x.agent?.transferNumber||'').trim(),updatedAt:x.agent?.updatedAt||null}));
+  const automations=(adminFleetData.automations||[]).slice(0,120).map(x=>({workspaceName:x.workspaceName,plan:x.plan,total:x.total,enabled:x.enabled,workflowNames:(x.workflows||[]).map(w=>w.name).slice(0,10)}));
+  return {
+    generatedAt:new Date().toISOString(),
+    summary:adminSummaryData||{},
+    finance:{mrr:adminFinanceData?.mrr||0,recurringExpenses:adminFinanceData?.recurringExpenses||0,netRecurring:adminFinanceData?.netRecurring||0,margin:adminFinanceData?.margin||0,history:(adminFinanceData?.history||[]).slice(-12)},
+    clients,onboarding,prospects,support,feedback,agents,automations,
+    phones:(adminPhoneData||[]).slice(0,120).map(x=>({workspaceName:x.workspaceName,provider:x.provider,status:x.status,hasTransfer:!!x.transferNumber,afterHours:x.afterHours})),
+    campaigns:(adminCampaignData||[]).slice(0,80).map(x=>({name:x.name,channel:x.channel,status:x.status,budget:x.budget,goal:x.goal,startAt:x.startAt,endAt:x.endAt})),
+    website:{sources:(adminWebsiteData.sources||[]).slice(0,15),funnel:adminWebsiteData.funnel||{},daily:(adminWebsiteData.daily||[]).slice(-30),devices:(adminWebsiteData.devices||[]).slice(0,10),locations:(adminWebsiteData.locations||[]).slice(0,10)},
+    readiness:{blockers:adminReadinessData?.blockers||[],requiredForLaunch:adminReadinessData?.requiredForLaunch||[],checks:(adminHealthData?.checks||[]).slice(0,60)}
+  };
+}
+function openAdminAiGuide(prefill=''){
+  const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),input=document.getElementById('adminAiInput'),launch=document.getElementById('adminAiLaunch');
+  if(!panel)return;panel.classList.add('open');panel.setAttribute('aria-hidden','false');if(backdrop)backdrop.hidden=false;if(launch)launch.setAttribute('aria-expanded','true');if(prefill&&input)input.value=prefill;setTimeout(()=>input?.focus(),80);
+}
+function closeAdminAiGuide(){
+  const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),launch=document.getElementById('adminAiLaunch');panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(backdrop)backdrop.hidden=true;if(launch)launch.setAttribute('aria-expanded','false');
+}
+async function askAdminAi(question){
+  const status=document.getElementById('adminAiStatus'),send=document.getElementById('adminAiSend'),conversation=document.getElementById('adminAiConversation'),copy=document.getElementById('adminAiCopy'),q=String(question||'').trim();if(!q)return;
+  if(send){send.disabled=true;send.textContent='Thinking…'}if(status)status.textContent='Reading the current admin snapshot…';
+  if(conversation)conversation.innerHTML='<div class="admin-ai-question"><span>You</span><p>'+esc(q)+'</p></div><div class="admin-ai-thinking"><i></i><span>CallerCore is analyzing your operation…</span></div>';
+  try{
+    const r=await fetch('/api/account?action=admin-ai-guide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,snapshot:adminAiSnapshot()})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'AI guide unavailable');
+    adminAiLastAnswer=String(data.answer||'');
+    if(conversation)conversation.innerHTML='<div class="admin-ai-question"><span>You</span><p>'+esc(q)+'</p></div><div class="admin-ai-answer"><div><span>✦</span><b>CallerCore</b></div><pre>'+esc(adminAiLastAnswer)+'</pre></div>';
+    if(copy)copy.hidden=!adminAiLastAnswer;if(status)status.textContent='Generated from the latest loaded admin snapshot.';
+  }catch(err){
+    adminAiLastAnswer='';if(conversation)conversation.innerHTML='<div class="admin-ai-error"><b>Could not answer that yet.</b><p>'+esc(err.message||'AI guide unavailable')+'</p></div>';if(copy)copy.hidden=true;if(status)status.textContent='';
+  }finally{if(send){send.disabled=false;send.textContent='Ask'}}
+}
+document.getElementById('adminAiLaunch')?.addEventListener('click',()=>openAdminAiGuide());
+document.getElementById('adminAiClose')?.addEventListener('click',closeAdminAiGuide);
+document.getElementById('adminAiBackdrop')?.addEventListener('click',closeAdminAiGuide);
+document.querySelectorAll('[data-ai-prompt]').forEach(btn=>btn.addEventListener('click',()=>{const q=btn.dataset.aiPrompt||'';openAdminAiGuide(q);askAdminAi(q)}));
+document.getElementById('adminAiForm')?.addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('adminAiInput'),q=input?.value||'';askAdminAi(q)});
+document.getElementById('adminAiCopy')?.addEventListener('click',async()=>{if(!adminAiLastAnswer)return;try{await navigator.clipboard.writeText(adminAiLastAnswer);const b=document.getElementById('adminAiCopy');b.textContent='Copied';setTimeout(()=>b.textContent='Copy answer',1200)}catch{}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('adminAiPanel')?.classList.contains('open'))closeAdminAiGuide()});
+
 function showView(name){
   const active=document.querySelector('.view.active')?.id?.replace('view-','')||'';
   if(active!==name&&document.body.dataset.dashboard==='client'&&(agentEditing||settingsEditing)){
@@ -1433,7 +1482,7 @@ function renderAdminFleet(){
     return [x.workspaceName,x.agent?.name,x.agent?.role,x.issue].filter(Boolean).join(' ').toLowerCase().includes(q);
   });
   if(ag){
-    ag.innerHTML=visibleAgents.map(x=>'<article class="panel integration-card admin-agent-card" data-admin-agent-client="'+esc(x.workspaceId)+'"><div><div class="admin-agent-title"><b>'+esc((x.agent?.name||'Not configured')+' · '+x.workspaceName)+'</b><span class="tag '+x.tone+'">'+esc(x.label)+'</span></div><p>'+esc(x.agent?.role||'AI receptionist not configured')+' · '+esc(x.plan||'Starter')+' plan</p><small>'+esc(x.issue)+'</small></div><button class="admin-link" type="button">Open account →</button></article>').join('');
+    ag.innerHTML=visibleAgents.map(x=>{const phone=adminPhoneData.find(p=>String(p.workspaceId)===String(x.workspaceId)),hours=!!String(x.agent?.businessHours||'').trim(),transfer=!!String(x.agent?.transferNumber||phone?.transferNumber||'').trim(),updated=x.agent?.updatedAt?new Date(x.agent.updatedAt).toLocaleDateString():'';return '<article class="panel integration-card admin-agent-card" data-admin-agent-client="'+esc(x.workspaceId)+'"><div><div class="admin-agent-title"><b>'+esc((x.agent?.name||'Not configured')+' · '+x.workspaceName)+'</b><span class="tag '+x.tone+'">'+esc(x.label)+'</span></div><p>'+esc(x.agent?.role||'AI receptionist not configured')+' · '+esc(x.plan||'Starter')+' plan</p><div class="admin-agent-health-strip"><span class="'+(phone?'ok':'missing')+'">Phone '+(phone?'attached':'missing')+'</span><span class="'+(hours?'ok':'missing')+'">Hours '+(hours?'set':'missing')+'</span><span class="'+(transfer?'ok':'neutral')+'">Transfer '+(transfer?'set':'optional')+'</span>'+(updated?'<span class="neutral">Updated '+esc(updated)+'</span>':'')+'</div><small>'+esc(x.issue)+'</small></div><button class="admin-link" type="button">Open account →</button></article>'}).join('');
     ag.querySelectorAll('[data-admin-agent-client]').forEach(card=>card.addEventListener('click',()=>openAdminClient(card.dataset.adminAgentClient)));
     document.getElementById('adminAgentsEmpty').hidden=visibleAgents.length!==0;
   }
@@ -1532,14 +1581,33 @@ function renderGrowth(){
   document.querySelectorAll('[data-growth-filter]').forEach(btn=>{btn.classList.toggle('active',btn.dataset.growthFilter===growthFilter);btn.onclick=()=>{growthFilter=btn.dataset.growthFilter;renderGrowth()}});
   const q=growthSearch.trim().toLowerCase(),matches=p=>!q||[p.name,p.business,p.email,p.phone,p.source,p.campaign,p.utmCampaign,p.plan,p.stage].filter(Boolean).join(' ').toLowerCase().includes(q),filterOk=p=>growthFilter==='all'?true:growthFilter==='open'?!['converted','lost'].includes(p.stage):growthBucket(p.stage)===growthFilter,visible=all.filter(p=>filterOk(p)&&matches(p));
   const allGroups=[['new','New'],['nurture','Nurture'],['qualified','Qualified / proposal'],['converted','Won'],['lost','Lost']],groups=growthFilter==='all'?allGroups:growthFilter==='converted'?[allGroups[3]]:growthFilter==='lost'?[allGroups[4]]:growthFilter==='new'?[allGroups[0]]:growthFilter==='nurture'?[allGroups[1]]:growthFilter==='qualified'?[allGroups[2]]:allGroups.slice(0,3),pipeline=document.getElementById('growthPipeline');
-  if(pipeline)pipeline.innerHTML=groups.map(([key,label])=>{const rows=visible.filter(p=>growthBucket(p.stage)===key);return '<section class="growth-column"><div class="growth-column-head"><b>'+label+'</b><span>'+rows.length+'</span></div>'+rows.slice(0,12).map(p=>'<article class="growth-card '+(prospectDue(p)?'due':'')+'" data-edit-prospect="'+esc(p.id)+'"><div><b>'+esc(p.business||p.name||p.email||'Prospect')+'</b><small>'+esc(p.name&&p.business?p.name:(p.email||p.phone||''))+'</small></div><div class="growth-card-meta"><span>'+esc((p.source||'website').replaceAll('_',' '))+'</span><span>'+esc(p.plan||'Plan unknown')+'</span></div><div class="growth-card-foot"><strong>'+financeMoney(prospectValue(p))+'/mo</strong><span>'+(prospectDue(p)?'Follow-up due':p.nextFollowUpAt?'Next '+new Date(p.nextFollowUpAt).toLocaleDateString():'No follow-up set')+'</span></div></article>').join('')+(rows.length? '':'<div class="growth-empty-column">No prospects</div>')+'</section>'}).join('');
-  pipeline?.querySelectorAll('[data-edit-prospect]').forEach(card=>card.addEventListener('click',()=>openProspectModal(card.dataset.editProspect)));
+  if(pipeline)pipeline.innerHTML=groups.map(([key,label])=>{const rows=visible.filter(p=>growthBucket(p.stage)===key);return '<section class="growth-column" data-growth-drop="'+key+'"><div class="growth-column-head"><b>'+label+'</b><span>'+rows.length+'</span></div>'+rows.slice(0,12).map(p=>'<article class="growth-card '+(prospectDue(p)?'due':'')+'" draggable="true" data-edit-prospect="'+esc(p.id)+'" data-growth-drag="'+esc(p.id)+'"><div><b>'+esc(p.business||p.name||p.email||'Prospect')+'</b><small>'+esc(p.name&&p.business?p.name:(p.email||p.phone||''))+'</small></div><div class="growth-card-meta"><span>'+esc((p.source||'website').replaceAll('_',' '))+'</span><span>'+esc(p.plan||'Plan unknown')+'</span></div><div class="growth-card-foot"><strong>'+financeMoney(prospectValue(p))+'/mo</strong><span>'+(prospectDue(p)?'Follow-up due':p.nextFollowUpAt?'Next '+new Date(p.nextFollowUpAt).toLocaleDateString():'No follow-up set')+'</span></div></article>').join('')+(rows.length? '':'<div class="growth-empty-column">Drop prospect here</div>')+'</section>'}).join('');
+  pipeline?.querySelectorAll('[data-edit-prospect]').forEach(card=>card.addEventListener('click',()=>{if(!card.dataset.wasDragged)openProspectModal(card.dataset.editProspect);delete card.dataset.wasDragged}));
+  pipeline?.querySelectorAll('[data-growth-drag]').forEach(card=>{
+    card.addEventListener('dragstart',e=>{card.dataset.wasDragged='1';card.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/prospect-id',card.dataset.growthDrag)});
+    card.addEventListener('dragend',()=>{card.classList.remove('dragging');pipeline.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'))});
+  });
+  pipeline?.querySelectorAll('[data-growth-drop]').forEach(col=>{
+    col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drag-over');e.dataTransfer.dropEffect='move'});
+    col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
+    col.addEventListener('drop',async e=>{e.preventDefault();col.classList.remove('drag-over');const id=e.dataTransfer.getData('text/prospect-id');if(id)await moveGrowthProspectStage(id,col.dataset.growthDrop)});
+  });
   const follow=document.getElementById('growthFollowupList');if(follow)follow.innerHTML=due.slice(0,10).map(p=>'<button class="growth-followup" data-followup-prospect="'+esc(p.id)+'"><span><b>'+esc(p.business||p.name||p.email||'Prospect')+'</b><small>'+esc(p.email||p.phone||'No contact')+'</small></span><strong>'+esc(p.nextFollowUpAt?'Due '+new Date(p.nextFollowUpAt).toLocaleString():'Needs follow-up')+'</strong></button>').join('')||'<div class="admin-clear-state"><b>Follow-up queue is clear</b><span>No open prospect is overdue.</span></div>';
   follow?.querySelectorAll('[data-followup-prospect]').forEach(b=>b.addEventListener('click',()=>openProspectModal(b.dataset.followupProspect)));
   const sourceMap={};all.forEach(p=>{const s=p.firstUtmSource||p.utmSource||p.source||'direct';sourceMap[s]=(sourceMap[s]||0)+1});const sources=Object.entries(sourceMap).sort((a,b)=>b[1]-a[1]),sourceEl=document.getElementById('growthSourceChart'),max=Math.max(1,...sources.map(x=>x[1]));if(sourceEl)sourceEl.innerHTML=sources.map(([s,n])=>'<div class="analytics-rank-row"><div><b>'+esc(s)+'</b><span>'+n+' prospect'+(n===1?'':'s')+'</span></div><i><em style="width:'+Math.round(n/max*100)+'%"></em></i></div>').join('')||'<p class="muted">No prospect attribution yet.</p>';
   const campaignEl=document.getElementById('growthCampaignList'),empty=document.getElementById('growthCampaignEmpty'),analytics=adminWebsiteData.campaigns||[];
   if(campaignEl)campaignEl.innerHTML=(adminCampaignData||[]).map(c=>{const a=analytics.find(x=>String(x.campaign||'').toLowerCase()===String(c.utmCampaign||'').toLowerCase())||{};return '<article class="growth-campaign-card" data-edit-campaign="'+esc(c.id)+'"><div><b>'+esc(c.name)+'</b><small>'+esc(c.channel)+' · '+esc(c.status)+'</small></div><div><strong>'+Number(a.sessions||0)+'</strong><span>sessions</span></div><div><strong>'+Number(a.conversions||0)+'</strong><span>conversions</span></div><div><strong>'+financeMoney(c.budget||0)+'</strong><span>budget</span></div></article>'}).join('');
   if(empty)empty.hidden=(adminCampaignData||[]).length!==0;campaignEl?.querySelectorAll('[data-edit-campaign]').forEach(c=>c.addEventListener('click',()=>openCampaignModal(c.dataset.editCampaign)));
+}
+async function moveGrowthProspectStage(id,bucket){
+  const map={new:'new',nurture:'follow_up',qualified:'qualified',converted:'converted',lost:'lost'},stage=map[bucket];
+  const item=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id));if(!item||!stage||item.stage===stage)return;
+  const before=item.stage;item.stage=stage;item.updatedAt=Date.now();renderGrowth();
+  try{
+    const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not move prospect.');
+    Object.assign(item,data.prospect||{});renderGrowth();loadNotifications({silent:true});
+  }catch(err){item.stage=before;renderGrowth();alert(err.message||'Could not move prospect.')}
 }
 function toLocalDateTimeInput(ms){if(!ms)return'';const d=new Date(Number(ms));return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
 function openProspectModal(id='',prefill={}){
@@ -1747,10 +1815,26 @@ function renderInboxFromOptions(){
   sel.innerHTML=aliases.map(a=>'<option value="'+esc(a.email)+'" '+((current||preferred)===a.email?'selected':'')+'>'+esc((a.displayName?a.displayName+' · ':'')+a.email)+'</option>').join('');
   if(hint)hint.textContent=aliases.length>1?'Choose which CallerCore address the recipient sees.':(aliases[0]?.email||'');
 }
+function renderInboxContext(){
+  const empty=document.getElementById('inboxContextEmpty'),wrap=document.getElementById('inboxContext');
+  if(!empty||!wrap)return;
+  if(!currentInboxItem){empty.hidden=false;wrap.hidden=true;return}
+  empty.hidden=true;wrap.hidden=false;
+  const p=currentInboxItem.prospect||{},messages=currentInboxItem.messages||[],contact=inboxContactParts(),last=messages[messages.length-1]||{},website=currentInboxItem.kind==='website';
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  set('inboxContextName',p.business||p.name||contact.name||'Contact');
+  set('inboxContextContact',p.email||contact.email||p.phone||last.from||last.to||'No contact detail');
+  set('inboxContextChannel',website?(p.source==='chatbot'?'Website chatbot':'Website inquiry'):'Gmail');
+  set('inboxContextStage',p.stage?String(p.stage).replaceAll('_',' '):'Not in Growth');
+  set('inboxContextMessages',messages.length);
+  set('inboxContextLast',last.at?new Date(last.at).toLocaleString():'—');
+  const growth=document.getElementById('inboxContextGrowth');if(growth){growth.textContent=p.id?'Open Growth record':'Add to Growth';growth.onclick=()=>promoteInboxToGrowth()}
+  const copy=document.getElementById('inboxContextCopy');if(copy)copy.onclick=async()=>{const value=[p.name||contact.name,p.business,p.email||contact.email,p.phone].filter(Boolean).join(' · ');try{await navigator.clipboard.writeText(value);copy.textContent='Copied';setTimeout(()=>copy.textContent='Copy contact',1200)}catch{copy.textContent='Copy unavailable'}}
+}
 function renderInboxThread(){
   const ph=document.getElementById('inboxThreadPlaceholder'),wrap=document.getElementById('inboxThread');if(!ph||!wrap)return;
-  if(!currentInboxItem){ph.hidden=false;wrap.hidden=true;return}
-  ph.hidden=true;wrap.hidden=false;
+  if(!currentInboxItem){ph.hidden=false;wrap.hidden=true;renderInboxContext();return}
+  ph.hidden=true;wrap.hidden=false;renderInboxContext();
   const website=currentInboxItem.kind==='website',p=currentInboxItem.prospect||{},messages=currentInboxItem.messages||[],last=messages[messages.length-1]||{};
   const subject=website?(p.category||'Website inquiry'):(currentInboxItem.thread?.subject||last.subject||'Gmail thread');
   const contact=website?(p.email||p.phone||'Website visitor'):([...(messages||[])].reverse().find(m=>m.direction==='inbound')?.from||last.from||last.to||'Gmail contact');
@@ -1883,6 +1967,11 @@ function bindPlatformSettingsDirtyTracking(){
     el.addEventListener('change',mark);
   });
 }
+document.querySelectorAll('[data-settings-jump]').forEach(btn=>btn.addEventListener('click',()=>{
+  const target=document.querySelector('[data-settings-section="'+btn.dataset.settingsJump+'"]');if(!target)return;
+  document.querySelectorAll('[data-settings-jump]').forEach(x=>x.classList.toggle('active',x===btn));
+  target.scrollIntoView({behavior:'smooth',block:'start'});
+}));
 function renderPlatformSettings(){
   if(!adminPlatformData||adminPlatformDirty)return;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=String(v??'')};
@@ -2161,6 +2250,8 @@ function renderFinanceChart(shellId,tooltipId){
 function renderAdminFinance(){
   const d=adminFinanceData||{},set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
   set('financeMrr',financeMoney(d.mrr));set('financeRecurringExpenses',financeMoney(d.recurringExpenses));set('financeNetRecurring',financeMoney(d.netRecurring));set('financeMargin',Number(d.margin||0).toFixed(1).replace('.0','')+'%');
+  const currentClients=adminClientsData.filter(x=>adminClientLifecycle(x)!=='past'),pastDueClients=currentClients.filter(x=>x.subscriptionStatus==='past_due'),collectionsRisk=pastDueClients.reduce((n,x)=>n+Number(PLAN_DATA[x.plan]?.price||0),0),expenses=Array.isArray(d.expenses)?d.expenses:[],vendorSpend=expenses.filter(x=>x.status!=='paused'&&x.frequency!=='one_time').reduce((n,x)=>n+(x.frequency==='annual'?Number(x.amount||0)/12:Number(x.amount||0)),0),today=new Date(),monthKey=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0'),oneTimeSpend=expenses.filter(x=>x.frequency==='one_time'&&String(x.date||'').startsWith(monthKey)).reduce((n,x)=>n+Number(x.amount||0),0),history=Array.isArray(d.history)?d.history:[],last=history.at(-1),prior=history.at(-2),mrrDelta=Number(last?.revenue??d.mrr??0)-Number(prior?.revenue??last?.revenue??d.mrr??0);
+  set('financeCollectionsRisk',financeMoney(collectionsRisk));set('financeCollectionsRiskMeta',pastDueClients.length?pastDueClients.length+' past-due account'+(pastDueClients.length===1?'':'s'):'No past-due MRR');set('financeVendorSpend',financeMoney(vendorSpend));set('financeOneTimeSpend',financeMoney(oneTimeSpend));set('financeMrrMovement',history.length>1?((mrrDelta>=0?'+':'')+financeMoney(mrrDelta)):'—');set('financeMrrMovementMeta',history.length>1?'vs. previous monthly snapshot':'Building history');
   set('adminMonthlyCosts',financeMoney(d.recurringExpenses));set('adminNetRecurring',financeMoney(d.netRecurring));set('adminMarginMeta',Number(d.margin||0).toFixed(1).replace('.0','')+'% operating margin');
   const summary=document.getElementById('adminFinanceChartSummary');if(summary){
     const history=Array.isArray(d.history)?d.history:[],last=history.at(-1),prior=history.at(-2),lastMrr=Number(last?.revenue??d.mrr??0),priorMrr=Number(prior?.revenue||0),delta=lastMrr-priorMrr,pct=priorMrr?delta/priorMrr*100:null;
