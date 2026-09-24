@@ -1336,7 +1336,8 @@ function renderAdminFleet(){
   const qualified=workspaceLeads.filter(x=>x.stage==='Qualified').length+webProspects.filter(x=>x.stage==='qualified').length;
   const checkoutStarts=webProspects.filter(x=>x.stage==='checkout_started').length;
   const won=workspaceLeads.filter(x=>x.stage==='Won').length+webProspects.filter(x=>x.stage==='converted').length;
-  set('adminLeadsTotal',totalLeads);set('adminLeadsQualified',qualified);set('adminLeadsAppointments',checkoutStarts);set('adminLeadsWon',won);
+  set('adminLeadsTotal',totalLeads);set('adminLeadsQualified',qualified);set('adminLeadsAppointments',checkoutStarts);set('adminLeadsWon',won);set('adminLeadCallerCoreCount',webProspects.length);set('adminLeadClientCount',workspaceLeads.length);set('adminLeadAllCount',totalLeads);
+  document.querySelectorAll('[data-admin-lead-scope]').forEach(b=>{b.classList.toggle('active',b.dataset.adminLeadScope===adminLeadScope);b.onclick=()=>{adminLeadScope=b.dataset.adminLeadScope;renderAdminFleet()}});
   const lt=document.getElementById('adminLeadsTable');
   if(lt){
     const webRows=webProspects.slice(0,100).map(p=>{
@@ -1344,11 +1345,12 @@ function renderAdminFleet(){
       return '<div class="lead-admin-row"><span><strong>'+esc(p.name||p.business||p.email||'Website prospect')+'</strong><small class="subtle">'+esc(p.business||p.email||'')+'</small></span><span><span class="tag amber">CallerCore</span><small class="subtle">'+esc(p.source||'website')+'</small></span><span>'+esc(interest)+'</span><span><select class="prospect-stage" data-prospect-stage="'+esc(p.id)+'">'+['new','inquiry','checkout_started','follow_up','qualified','lost','converted'].map(s=>'<option value="'+s+'" '+(p.stage===s?'selected':'')+'>'+s.replaceAll('_',' ')+'</option>').join('')+'</select></span><span><button class="admin-link" data-view="website">Journey</button></span></div>'
     }).join('');
     const clientRows=workspaceLeads.slice(0,100).map(x=>'<div class="lead-admin-row" data-admin-lead-id="'+esc(String(x.id||''))+'"><span><strong>'+esc(x.name||'Unnamed lead')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><span class="tag">Client activity</span><small class="subtle">'+esc(x.workspaceName||'Workspace')+'</small></span><span>'+esc(x.service||'General inquiry')+'</span><span><span class="tag">'+esc(x.stage||'New')+'</span></span><span>'+money(x.value)+'</span></div>').join('');
-    lt.innerHTML=webRows+clientRows;
+    lt.innerHTML=adminLeadScope==='callercore'?webRows:adminLeadScope==='clients'?clientRows:webRows+clientRows;
     lt.querySelectorAll('[data-prospect-stage]').forEach(sel=>sel.addEventListener('change',()=>updateWebsiteProspect(sel.dataset.prospectStage,sel.value)));
     lt.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
   }
-  const le=document.getElementById('adminLeadsEmpty');if(le)le.hidden=totalLeads!==0;
+  const visibleLeadCount=adminLeadScope==='callercore'?webProspects.length:adminLeadScope==='clients'?workspaceLeads.length:totalLeads;
+  const le=document.getElementById('adminLeadsEmpty');if(le)le.hidden=visibleLeadCount!==0;
   const aw=document.getElementById('adminAutomationGrid');if(aw){aw.innerHTML=autos.filter(x=>x.total).map(x=>'<article class="panel integration-card"><div><b>'+esc(x.workspaceName)+'</b><p>'+x.enabled+' enabled of '+x.total+' configured</p></div><span class="tag '+(x.enabled===x.total?'green':x.enabled?'amber':'red')+'">'+(x.enabled===x.total?'Covered':x.enabled?'Partial':'Off')+'</span></article>').join('');document.getElementById('adminAutomationsEmpty').hidden=autos.some(x=>x.total)}
 }
 function renderAdminFeedback(){
@@ -1644,7 +1646,11 @@ document.getElementById('savePlatformSettings')?.addEventListener('click',savePl
 
 function renderProvisioning(){
   const board=document.getElementById('provisioningBoard');if(!board)return;
-  const stages=['Paid','Review','Intake','Building','QA','Client Test','Ready','Live'];
+  const stages=['Paid','Review','Intake','Building','QA','Client Test','Ready','Live'],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
+  set('provisionNeedsReview',adminProvisioningData.filter(x=>['Paid','Review','Intake'].includes(x.stage)||((x.onboardingStatus==='awaiting_review'||x.onboardingStatus==='building_review')&&!x.checklist?.adminReview)).length);
+  set('provisionBuilding',adminProvisioningData.filter(x=>['Building','QA'].includes(x.stage)).length);
+  set('provisionClientTest',adminProvisioningData.filter(x=>x.stage==='Client Test').length);
+  set('provisionLive',adminProvisioningData.filter(x=>x.stage==='Live').length);
   const labels={payment:'Paid',accountReview:'Account review',onboardingSent:'Onboarding sent',agreement:'Agreement',intake:'Intake',businessProfile:'Profile',agentDraft:'Agent draft',routingCaptured:'Routing',phoneAssigned:'Phone',adminReview:'Admin review',testCall:'Test call',clientApproval:'Client approval',live:'Live'};
   board.innerHTML=stages.map(stage=>{
     const rows=adminProvisioningData.filter(x=>x.stage===stage);
@@ -1663,7 +1669,8 @@ function renderProvisioning(){
           ? '<div class="provision-wait">Build review available '+esc(new Date(buildAt).toLocaleString())+'</div>'
           : '<button class="primary provision-action" data-approve-build="'+esc(x.id)+'">Approve build</button>';
       }
-      return '<article draggable="true" data-provision-id="'+esc(x.id)+'"><div class="provision-card-head"><b>'+esc(x.name)+'</b>'+(x.manualOverride?'<span class="tag amber">Manual</span>':'')+'</div><small>'+esc(x.plan)+(x.phone?' · '+esc(x.phone):'')+'</small><div class="provision-progress"><i style="width:'+Math.round((Number(x.checklistDone||0)/Math.max(1,Number(x.checklistTotal||1)))*100)+'%"></i></div><div class="provision-checks">'+chips+'</div>'+agreement+scan+action+'<div class="provision-foot"><span>Auto: '+esc(x.autoStage||x.stage)+'</span>'+(x.manualOverride?'<button data-auto-stage="'+esc(x.id)+'">Use auto</button>':'')+'</div></article>';
+      const stageSelect='<label class="provision-stage-select">Stage<select data-provision-stage-select="'+esc(x.id)+'">'+stages.map(s=>'<option value="'+s+'" '+(x.stage===s?'selected':'')+'>'+s+'</option>').join('')+'</select></label>';
+      return '<article draggable="true" data-provision-id="'+esc(x.id)+'"><div class="provision-card-head"><b>'+esc(x.name)+'</b>'+(x.manualOverride?'<span class="tag amber">Manual</span>':'')+'</div><small>'+esc(x.plan)+(x.phone?' · '+esc(x.phone):'')+'</small><div class="provision-progress"><i style="width:'+Math.round((Number(x.checklistDone||0)/Math.max(1,Number(x.checklistTotal||1)))*100)+'%"></i></div><div class="provision-checks">'+chips+'</div>'+agreement+scan+action+stageSelect+'<div class="provision-foot"><span>Auto: '+esc(x.autoStage||x.stage)+'</span>'+(x.manualOverride?'<button data-auto-stage="'+esc(x.id)+'">Use auto</button>':'')+'</div></article>';
     }).join('')+'</div>';
   }).join('');
   board.querySelectorAll('[draggable="true"]').forEach(card=>{
@@ -1680,6 +1687,7 @@ function renderProvisioning(){
     });
   });
   board.querySelectorAll('[data-auto-stage]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();clearProvisioningOverride(b.dataset.autoStage)}));
+  board.querySelectorAll('[data-provision-stage-select]').forEach(sel=>sel.addEventListener('change',e=>{e.stopPropagation();moveProvisioningStage(sel.dataset.provisionStageSelect,sel.value)}));
   board.querySelectorAll('[data-provision-check]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done'))}));
   board.querySelectorAll('[data-send-onboarding]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await sendOnboardingInvite(b.dataset.sendOnboarding,b)}));
   board.querySelectorAll('[data-approve-build]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await approveProvisioningBuild(b.dataset.approveBuild,b)}));
@@ -1713,8 +1721,9 @@ async function clearProvisioningOverride(id){
   await loadAdminOps();
 }
 function renderPhones(){
-  const wrap=document.getElementById('phoneTable');if(!wrap)return;
-  wrap.innerHTML=adminPhoneData.map(x=>'<div class="call-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+(x.forwardingFrom?' · from '+esc(x.forwardingFrom):'')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span><span class="tag green">'+esc(x.status||'active')+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>').join('');
+  const wrap=document.getElementById('phoneTable');if(!wrap)return,set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
+  set('phoneAssignedCount',adminPhoneData.filter(x=>x.workspaceId).length);set('phoneUnassignedCount',adminPhoneData.filter(x=>!x.workspaceId).length);set('phoneMissingTransferCount',adminPhoneData.filter(x=>x.workspaceId&&!x.transferNumber).length);set('phoneAfterHoursTransferCount',adminPhoneData.filter(x=>x.afterHours==='transfer').length);
+  wrap.innerHTML=adminPhoneData.map(x=>'<div class="call-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+(x.forwardingFrom?' · from '+esc(x.forwardingFrom):'')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span><span class="tag '+(x.workspaceId&&!x.transferNumber?'amber':'green')+'">'+(x.workspaceId&&!x.transferNumber?'Transfer missing':esc(x.status||'active'))+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>').join('');
   const empty=document.getElementById('phoneEmpty');if(empty)empty.hidden=adminPhoneData.length!==0;
   wrap.querySelectorAll('[data-edit-phone]').forEach(b=>b.addEventListener('click',()=>openPhoneModal(b.dataset.editPhone)));
   wrap.querySelectorAll('[data-delete-phone]').forEach(b=>b.addEventListener('click',()=>deletePhone(b.dataset.deletePhone)));
