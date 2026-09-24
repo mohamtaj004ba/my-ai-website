@@ -1231,7 +1231,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pen
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminCallSearch='',adminCallWorkspaceFilter='all',adminCallDispositionFilter='all',adminRefreshTimer=null;
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -1249,7 +1249,7 @@ async function bootstrapAdmin(){
       const identity=document.getElementById('adminIdentity');if(identity)identity.textContent=email;
       applyUserProfile(data.user||{},data.workspace||{});
     }
-    renderAdmin();await loadAdminOps();
+    renderAdmin();await loadAdminOps();initAdminLiveRefresh();
     const qp=new URLSearchParams(location.search);
     if(qp.get('gmail')){showView('inbox');await loadAdminInbox();history.replaceState({},'',location.pathname)}
     return true;
@@ -1281,19 +1281,56 @@ async function loadAdminOps(){
   renderProvisioning();renderPhones();renderHealth();renderWebsiteAnalytics();renderAdminFleet();renderAdminSupport();renderAdminFeedback();renderPlatformSettings();renderAdmin();
 }
 
+function adminAgentGroup(health){
+  if(health==='ready')return 'ready';
+  if(health==='review')return 'review';
+  if(health==='warning')return 'attention';
+  return 'setup';
+}
 function renderAdminFleet(){
   const agents=adminFleetData.agents||[],calls=adminFleetData.calls||[],workspaceLeads=adminFleetData.leads||[],autos=adminFleetData.automations||[],webProspects=adminWebsiteData.prospects||[];
-  const ag=document.getElementById('adminAgentsGrid');if(ag){
-    ag.innerHTML=agents.map(x=>{
-      const agent=x.agent||null,health=agent?.health||(agent?(x.phone?'ready':'setup'):'missing'),issue=agent?.issue||(!agent?'No AI receptionist draft exists yet.':(!x.phone?'No CallerCore phone number is assigned yet.':'Configuration looks ready.')),tone=health==='ready'?'green':health==='warning'||x.status==='suspended'?'red':'amber',label=({ready:'Ready',review:'Review',warning:'Attention',setup:'Setup',test:'Client test',missing:'Missing'})[health]||'Review';
-      return '<article class="panel integration-card admin-agent-card"><div><b>'+esc((agent?.name||'No agent')+' · '+x.workspaceName)+'</b><p>'+esc(agent?.role||'AI receptionist not configured')+(x.phone?' · '+esc(x.phone):' · No phone assigned')+'</p><small>'+esc(issue)+'</small></div><span class="tag '+tone+'">'+esc(label)+'</span></article>'
-    }).join('');
-    document.getElementById('adminAgentsEmpty').hidden=agents.length!==0
-  }
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+
+  const agentRows=agents.map(x=>{
+    const agent=x.agent||null,health=agent?.health||(agent?(x.phone?'ready':'setup'):'missing'),group=adminAgentGroup(health),issue=agent?.issue||(!agent?'No AI receptionist draft exists yet.':(!x.phone?'No CallerCore phone number is assigned yet.':'Configuration looks ready.')),tone=group==='ready'?'green':group==='attention'?'red':'amber',label=({ready:'Ready',review:'Needs review',warning:'Attention',setup:'Setup',test:'Client test',missing:'Missing'})[health]||'Review';
+    return {...x,agent,health,group,issue,tone,label};
+  });
+  set('agentReadyCount',agentRows.filter(x=>x.group==='ready').length);
+  set('agentReviewCount',agentRows.filter(x=>x.group==='review').length);
+  set('agentAttentionCount',agentRows.filter(x=>x.group==='attention').length);
+  set('agentSetupCount',agentRows.filter(x=>x.group==='setup').length);
+  const ag=document.getElementById('adminAgentsGrid'),agentSearch=document.getElementById('adminAgentSearch'),agentFilter=document.getElementById('adminAgentHealthFilter');
+  if(agentSearch){agentSearch.value=adminAgentSearch;agentSearch.oninput=()=>{adminAgentSearch=agentSearch.value;renderAdminFleet()}}
+  if(agentFilter){agentFilter.value=adminAgentFilter;agentFilter.onchange=()=>{adminAgentFilter=agentFilter.value;renderAdminFleet()}}
+  const visibleAgents=agentRows.filter(x=>{
+    if(adminAgentFilter!=='all'&&x.group!==adminAgentFilter)return false;
+    const q=adminAgentSearch.trim().toLowerCase();if(!q)return true;
+    return [x.workspaceName,x.agent?.name,x.agent?.role,x.issue,x.phone].filter(Boolean).join(' ').toLowerCase().includes(q);
+  });
+  if(ag){
+    ag.innerHTML=visibleAgents.map(x=>'<article class="panel integration-card admin-agent-card" data-admin-agent-client="'+esc(x.workspaceId)+'"><div><div class="admin-agent-title"><b>'+esc((x.agent?.name||'No receptionist')+' · '+x.workspaceName)+'</b><span class="tag '+x.tone+'">'+esc(x.label)+'</span></div><p>'+esc(x.agent?.role||'AI receptionist not configured')+(x.phone?' · '+esc(x.phone):' · No phone assigned')+'</p><small>'+esc(x.issue)+'</small></div><button class="admin-link" type="button">Manage client →</button></article>').join('');
+    ag.querySelectorAll('[data-admin-agent-client]').forEach(card=>card.addEventListener('click',()=>openAdminClient(card.dataset.adminAgentClient)));
+    document.getElementById('adminAgentsEmpty').hidden=visibleAgents.length!==0
+  }
+
   set('adminCallsTotal',calls.length);set('adminCallsQualified',calls.filter(callCaptured).length);set('adminCallsMissed',calls.filter(x=>callDispositionKey(x)==='incomplete').length);set('adminCallsWorkspaces',new Set(calls.map(x=>x.workspaceId)).size);
-  const ct=document.getElementById('adminCallsTable');if(ct)ct.innerHTML=calls.slice(0,100).map(x=>'<div class="call-row" data-admin-call-id="'+esc(String(x.id||x.callId||''))+'"><span><strong>'+esc(x.caller||x.phone||'Unknown caller')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span>'+esc(x.workspaceName)+'</span><span>'+esc(x.reason||'General')+'</span><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(callDispositionLabel(x))+'</span><span>'+esc(x.time||'—')+'</span></div>').join('');
-  const ce=document.getElementById('adminCallsEmpty');if(ce)ce.hidden=calls.length!==0;
+  const workspaceSelect=document.getElementById('adminCallWorkspaceFilter'),dispositionSelect=document.getElementById('adminCallDispositionFilter'),callSearch=document.getElementById('adminCallSearch');
+  if(workspaceSelect){
+    const current=adminCallWorkspaceFilter,names=[...new Map(calls.map(x=>[x.workspaceId,x.workspaceName])).entries()].filter(([id])=>id).sort((a,b)=>String(a[1]).localeCompare(String(b[1])));
+    workspaceSelect.innerHTML='<option value="all">All workspaces</option>'+names.map(([id,name])=>'<option value="'+esc(String(id))+'">'+esc(name||id)+'</option>').join('');
+    workspaceSelect.value=names.some(([id])=>String(id)===String(current))?current:'all';adminCallWorkspaceFilter=workspaceSelect.value;
+    workspaceSelect.onchange=()=>{adminCallWorkspaceFilter=workspaceSelect.value;renderAdminFleet()}
+  }
+  if(dispositionSelect){dispositionSelect.value=adminCallDispositionFilter;dispositionSelect.onchange=()=>{adminCallDispositionFilter=dispositionSelect.value;renderAdminFleet()}}
+  if(callSearch){callSearch.value=adminCallSearch;callSearch.oninput=()=>{adminCallSearch=callSearch.value;renderAdminFleet()}}
+  const callQ=adminCallSearch.trim().toLowerCase(),visibleCalls=calls.filter(x=>{
+    if(adminCallWorkspaceFilter!=='all'&&String(x.workspaceId)!==String(adminCallWorkspaceFilter))return false;
+    if(adminCallDispositionFilter!=='all'&&callDispositionKey(x)!==adminCallDispositionFilter)return false;
+    if(callQ&&!([x.caller,x.phone,x.reason,x.workspaceName,x.outcome,x.disposition].filter(Boolean).join(' ').toLowerCase().includes(callQ)))return false;
+    return true;
+  });
+  const ct=document.getElementById('adminCallsTable');if(ct)ct.innerHTML=visibleCalls.slice(0,150).map(x=>'<div class="call-row" data-admin-call-id="'+esc(String(x.id||x.callId||''))+'"><span><strong>'+esc(x.caller||x.phone||'Unknown caller')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span>'+esc(x.workspaceName)+'</span><span>'+esc(x.reason||'General')+'</span><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(callDispositionLabel(x))+'</span><span>'+esc(x.time||'—')+'</span></div>').join('');
+  const ce=document.getElementById('adminCallsEmpty');if(ce)ce.hidden=visibleCalls.length!==0;
 
   const totalLeads=workspaceLeads.length+webProspects.length;
   const qualified=workspaceLeads.filter(x=>x.stage==='Qualified').length+webProspects.filter(x=>x.stage==='qualified').length;
@@ -1304,17 +1341,16 @@ function renderAdminFleet(){
   if(lt){
     const webRows=webProspects.slice(0,100).map(p=>{
       const interest=p.plan||p.category||p.industry||'Website inquiry';
-      return '<div class="lead-admin-row"><span><strong>'+esc(p.name||p.business||p.email||'Website prospect')+'</strong><small class="subtle">'+esc(p.business||p.email||'')+'</small></span><span><span class="tag amber">Website</span><small class="subtle">'+esc(p.source||'website')+'</small></span><span>'+esc(interest)+'</span><span><select class="prospect-stage" data-prospect-stage="'+esc(p.id)+'">'+['new','inquiry','checkout_started','follow_up','qualified','lost','converted'].map(s=>'<option value="'+s+'" '+(p.stage===s?'selected':'')+'>'+s.replaceAll('_',' ')+'</option>').join('')+'</select></span><span><button class="admin-link" data-view="website">Journey</button></span></div>'
+      return '<div class="lead-admin-row"><span><strong>'+esc(p.name||p.business||p.email||'Website prospect')+'</strong><small class="subtle">'+esc(p.business||p.email||'')+'</small></span><span><span class="tag amber">CallerCore</span><small class="subtle">'+esc(p.source||'website')+'</small></span><span>'+esc(interest)+'</span><span><select class="prospect-stage" data-prospect-stage="'+esc(p.id)+'">'+['new','inquiry','checkout_started','follow_up','qualified','lost','converted'].map(s=>'<option value="'+s+'" '+(p.stage===s?'selected':'')+'>'+s.replaceAll('_',' ')+'</option>').join('')+'</select></span><span><button class="admin-link" data-view="website">Journey</button></span></div>'
     }).join('');
-    const clientRows=workspaceLeads.slice(0,100).map(x=>'<div class="lead-admin-row" data-admin-lead-id="'+esc(String(x.id||''))+'"><span><strong>'+esc(x.name||'Unnamed lead')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><span class="tag">Client</span><small class="subtle">'+esc(x.workspaceName||'Workspace')+'</small></span><span>'+esc(x.service||'General inquiry')+'</span><span><span class="tag">'+esc(x.stage||'New')+'</span></span><span>'+money(x.value)+'</span></div>').join('');
+    const clientRows=workspaceLeads.slice(0,100).map(x=>'<div class="lead-admin-row" data-admin-lead-id="'+esc(String(x.id||''))+'"><span><strong>'+esc(x.name||'Unnamed lead')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span><span class="tag">Client activity</span><small class="subtle">'+esc(x.workspaceName||'Workspace')+'</small></span><span>'+esc(x.service||'General inquiry')+'</span><span><span class="tag">'+esc(x.stage||'New')+'</span></span><span>'+money(x.value)+'</span></div>').join('');
     lt.innerHTML=webRows+clientRows;
     lt.querySelectorAll('[data-prospect-stage]').forEach(sel=>sel.addEventListener('change',()=>updateWebsiteProspect(sel.dataset.prospectStage,sel.value)));
     lt.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
   }
   const le=document.getElementById('adminLeadsEmpty');if(le)le.hidden=totalLeads!==0;
-  const aw=document.getElementById('adminAutomationGrid');if(aw){aw.innerHTML=autos.filter(x=>x.total).map(x=>'<article class="panel integration-card"><div><b>'+esc(x.workspaceName)+'</b><p>'+x.enabled+' enabled of '+x.total+' configured</p></div><span class="tag '+(x.enabled?'green':'amber')+'">'+esc(x.plan)+'</span></article>').join('');document.getElementById('adminAutomationsEmpty').hidden=autos.some(x=>x.total)}
+  const aw=document.getElementById('adminAutomationGrid');if(aw){aw.innerHTML=autos.filter(x=>x.total).map(x=>'<article class="panel integration-card"><div><b>'+esc(x.workspaceName)+'</b><p>'+x.enabled+' enabled of '+x.total+' configured</p></div><span class="tag '+(x.enabled===x.total?'green':x.enabled?'amber':'red')+'">'+(x.enabled===x.total?'Covered':x.enabled?'Partial':'Off')+'</span></article>').join('');document.getElementById('adminAutomationsEmpty').hidden=autos.some(x=>x.total)}
 }
-
 function renderAdminFeedback(){
   const list=document.getElementById('adminFeedbackList'),empty=document.getElementById('adminFeedbackEmpty'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   const items=[...(adminFeedbackData||[])].sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
@@ -1751,6 +1787,70 @@ document.getElementById('phoneModal')?.addEventListener('click',e=>{if(e.target.
 function adminMoney(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
 function adminPlanMinutes(plan){return plan==='Starter'?300:plan==='Growth'?600:null}
 function adminBillingTag(status){return status==='past_due'?'red':status==='canceled'?'amber':'green'}
+function adminClientLifecycle(x){
+  const subscription=String(x.subscriptionStatus||'active'),status=String(x.status||'active');
+  if(subscription==='canceled'||status==='pending_deletion')return 'past';
+  if(status==='onboarding')return 'onboarding';
+  if(status==='suspended')return 'suspended';
+  return 'active';
+}
+function adminBillingLabel(status){
+  status=String(status||'active');
+  return status==='past_due'?'Past due':status==='canceled'?'Canceled':'Billing current';
+}
+function adminWorkspaceLabel(status){
+  status=String(status||'active');
+  return status==='onboarding'?'Onboarding':status==='suspended'?'Suspended':status==='pending_deletion'?'Pending deletion':'Active';
+}
+function adminDayKey(ts){
+  const d=new Date(Number(ts||0));return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function adminRecentDays(n=14){
+  const out=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);out.push({key:adminDayKey(d.getTime()),label:d.toLocaleDateString(undefined,{month:'short',day:'numeric'}),date:d})}return out;
+}
+function renderAdminActivityChart(){
+  const shell=document.getElementById('adminActivityChart');if(!shell)return;
+  const calls=adminFleetData.calls||[],days=adminRecentDays(14),rows=days.map(d=>{const list=calls.filter(x=>adminDayKey(x.createdAt||x.at||x.timestamp)===d.key);return {...d,total:list.length,captured:list.filter(callCaptured).length}});
+  const max=Math.max(1,...rows.map(x=>x.total)),w=900,h=290,left=42,right=18,top=20,bottom=42,plotW=w-left-right,plotH=h-top-bottom,step=plotW/rows.length,barW=Math.max(8,step*.52);
+  const y=v=>top+plotH-(v/max)*plotH,x=i=>left+step*i+step/2;
+  const bars=rows.map((r,i)=>'<rect class="admin-chart-bar" x="'+(x(i)-barW/2).toFixed(1)+'" y="'+y(r.total).toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+Math.max(0,top+plotH-y(r.total)).toFixed(1)+'" rx="5"><title>'+esc(r.label+': '+r.total+' calls')+'</title></rect>').join('');
+  const points=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.captured).toFixed(1)).join(' ');
+  const labels=rows.map((r,i)=>i%2===0||i===rows.length-1?'<text x="'+x(i).toFixed(1)+'" y="'+(h-13)+'" text-anchor="middle">'+esc(r.label)+'</text>':'').join('');
+  const grid=[0,.25,.5,.75,1].map(p=>{const val=Math.round(max*p),yy=y(val);return '<g><line x1="'+left+'" x2="'+(w-right)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'"></line><text x="'+(left-8)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end">'+val+'</text></g>'}).join('');
+  shell.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Calls and requests captured over the last fourteen days"><g class="admin-chart-grid">'+grid+'</g><g class="admin-chart-bars">'+bars+'</g><polyline class="admin-chart-line" points="'+points+'"></polyline><g class="admin-chart-labels">'+labels+'</g></svg>';
+  const total=rows.reduce((n,r)=>n+r.total,0),captured=rows.reduce((n,r)=>n+r.captured,0),peak=rows.reduce((a,b)=>b.total>a.total?b:a,rows[0]||{total:0,label:'—'});
+  const summary=document.getElementById('adminActivityChartSummary'),peakEl=document.getElementById('adminActivityPeak');if(summary)summary.textContent=total+' calls · '+captured+' requests captured';if(peakEl)peakEl.textContent='Peak '+peak.total+' · '+peak.label;
+}
+function setAdminLiveMetric(id,value){
+  const el=document.getElementById(id);if(!el)return;const next=String(value);if(el.textContent!==next){el.textContent=next;el.classList.remove('metric-updated');void el.offsetWidth;el.classList.add('metric-updated')}
+}
+function renderAdminPulse(){
+  const calls=adminFleetData.calls||[],leads=[...(adminFleetData.leads||[]),...(adminWebsiteData.prospects||[])],today=adminDayKey(Date.now()),weekAgo=Date.now()-7*86400000;
+  const callsToday=calls.filter(x=>adminDayKey(x.createdAt||x.at||x.timestamp)===today),leads7=leads.filter(x=>Number(x.createdAt||x.updatedAt||0)>=weekAgo),openSupport=(adminSupportData||[]).filter(x=>x.status!=='resolved'),urgent=openSupport.filter(x=>x.priority==='urgent'),feedback=(adminFeedbackData||[]).filter(x=>x.status==='submitted');
+  setAdminLiveMetric('adminPulseCalls',callsToday.length);setAdminLiveMetric('adminPulseLeads',leads7.length);setAdminLiveMetric('adminPulseSupport',openSupport.length);setAdminLiveMetric('adminPulseFeedback',feedback.length);
+  const cm=document.getElementById('adminPulseCallsMeta'),sm=document.getElementById('adminPulseSupportMeta'),ticker=document.getElementById('adminLiveTicker');if(cm)cm.textContent=new Set(callsToday.map(x=>x.workspaceId)).size+' active workspaces today';if(sm)sm.textContent=urgent.length+' urgent';
+  if(ticker)ticker.textContent=callsToday.length+' calls today · '+leads7.length+' leads in 7 days · '+openSupport.length+' open support · '+feedback.length+' AI feedback awaiting review';
+}
+function renderAdminRevenueAndUsage(){
+  const prices={Starter:PLAN_DATA.Starter?.price||349,Growth:PLAN_DATA.Growth?.price||599,Pro:PLAN_DATA.Pro?.price||999},chart=document.getElementById('adminRevenuePlanChart'),past=document.getElementById('adminPastDueAccounts');
+  if(chart){
+    const rows=['Starter','Growth','Pro'].map(plan=>{const clients=adminClientsData.filter(x=>x.plan===plan&&x.subscriptionStatus!=='canceled'),mrr=clients.length*prices[plan];return {plan,count:clients.length,mrr}});
+    const max=Math.max(1,...rows.map(x=>x.mrr));chart.innerHTML=rows.map(x=>'<button type="button" data-revenue-plan="'+x.plan+'"><span><b>'+x.plan+'</b><small>'+x.count+' client'+(x.count===1?'':'s')+'</small></span><strong>'+adminMoney(x.mrr)+'</strong><i><em style="width:'+Math.round(x.mrr/max*100)+'%"></em></i></button>').join('');
+    chart.querySelectorAll('[data-revenue-plan]').forEach(b=>b.addEventListener('click',()=>{adminClientFilter='all';adminClientSearch=b.dataset.revenuePlan;showView('clients');renderAdminClients()}));
+  }
+  const pastDue=adminClientsData.filter(x=>x.subscriptionStatus==='past_due');
+  if(past)past.innerHTML=pastDue.map(x=>'<button type="button" class="admin-billing-alert" data-open-billing-client="'+esc(x.id)+'"><span><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+' · '+Number(x.usage?.minutes||0).toLocaleString()+' minutes</small></span><span class="tag red">Past due</span></button>').join('')||'<div class="admin-clear-state"><b>Billing is current</b><span>No past-due client accounts.</span></div>';
+  past?.querySelectorAll('[data-open-billing-client]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.openBillingClient)));
+
+  const usageRows=adminClientsData.map(x=>{const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0),pct=lim?Math.round(used/lim*100):null;return {...x,lim,used,pct}}),fixed=usageRows.filter(x=>x.lim),high=fixed.filter(x=>x.pct>=85),over=fixed.filter(x=>x.pct>=100),pro=usageRows.filter(x=>!x.lim&&x.plan==='Pro');
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=String(v)};set('usageTotalMinutes',usageRows.reduce((n,x)=>n+x.used,0).toLocaleString());set('usageHighCount',high.length);set('usageOverCount',over.length);set('usageProCount',pro.length);
+  const usageChart=document.getElementById('adminUsageChart');if(usageChart)usageChart.innerHTML=usageRows.sort((a,b)=>(b.pct??Math.min(100,b.used/20))-(a.pct??Math.min(100,a.used/20))).map(x=>'<button type="button" data-usage-client="'+esc(x.id)+'"><span><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+(x.lim?' · '+x.used+' / '+x.lim+' min':' · '+x.used.toLocaleString()+' min')+'</small></span><strong>'+(x.pct===null?'High volume':x.pct+'%')+'</strong><i><em class="'+(x.pct>=100?'danger':x.pct>=85?'warning':'')+'" style="width:'+(x.pct===null?Math.min(100,Math.max(18,x.used/20)):Math.min(100,x.pct))+'%"></em></i></button>').join('');
+  usageChart?.querySelectorAll('[data-usage-client]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.usageClient)));
+  const usage=document.getElementById('adminUsageList');if(usage)usage.innerHTML=usageRows.map(x=>'<div class="admin-event"><b>'+esc(x.name)+'</b><span>'+x.used.toLocaleString()+' min'+(x.lim?' · '+x.pct+'% of '+x.lim:' · high-volume plan')+'</span><small>'+esc(x.plan)+'</small></div>').join('')||'<div class="empty-state"><h3>No usage yet</h3></div>';
+}
+function updateAdminRefreshStamp(){
+  const el=document.getElementById('adminLastRefresh');if(el)el.textContent='Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+}
 function adminAttentionItems(){
   const items=[];
   for(const x of adminClientsData){
@@ -1788,10 +1888,17 @@ async function openAdminAttentionItem(item){
     if(target){if(target.tagName==='DETAILS')target.open=true;flashAdminSearchTarget(target)}
   },100);
 }
+function openAdminClientFilter(filter){
+  adminClientFilter=filter||'active';adminClientSearch='';showView('clients');renderAdminClients();
+}
 function bindAdminCommandCenter(){
-  document.querySelectorAll('[data-admin-attention-id]').forEach(btn=>btn.addEventListener('click',()=>openAdminAttentionItem((window.__adminAttentionItems||[]).find(x=>x.id===btn.dataset.adminAttentionId))));
-  document.querySelectorAll('[data-admin-client-row]').forEach(row=>row.addEventListener('click',e=>{if(e.target.closest('button,a,select,input'))return;openAdminClient(row.dataset.adminClientRow)}));
+  document.querySelectorAll('[data-admin-attention-id]').forEach(btn=>btn.onclick=()=>openAdminAttentionItem((window.__adminAttentionItems||[]).find(x=>x.id===btn.dataset.adminAttentionId)));
+  document.querySelectorAll('[data-admin-client-row]').forEach(row=>row.onclick=e=>{if(e.target.closest('button,a,select,input'))return;openAdminClient(row.dataset.adminClientRow)});
   document.querySelectorAll('[data-admin-metric-view]').forEach(card=>{card.tabIndex=0;card.setAttribute('role','button');const go=()=>{const view=card.dataset.adminMetricView;if(view==='overview'){document.getElementById('adminAttention')?.scrollIntoView({behavior:'smooth',block:'center'})}else showView(view)};card.onclick=go;card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
+  document.querySelectorAll('[data-admin-client-filter]').forEach(el=>{el.onclick=()=>openAdminClientFilter(el.dataset.adminClientFilter)});
+  document.querySelectorAll('[data-client-filter]').forEach(el=>{el.onclick=()=>{adminClientFilter=el.dataset.clientFilter;renderAdminClients()}});
+  document.querySelectorAll('[data-admin-jump]').forEach(el=>{const go=()=>showView(el.dataset.adminJump);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
+  document.querySelectorAll('[data-plan-client-filter]').forEach(el=>el.onclick=()=>{adminClientFilter='all';adminClientSearch=el.dataset.planClientFilter;showView('clients');renderAdminClients()});
 }
 function renderAdmin(){
   if(!adminSummaryData)return;
@@ -1809,42 +1916,50 @@ function renderAdmin(){
   set('revenueMrr',adminMoney(s.mrr));set('revenueActive',s.activeClients||0);set('revenuePastDue',s.pastDue||0);set('revenueOnboarding',s.onboarding||0);
   const mix=document.getElementById('adminPlanMix');if(mix){
     const pm=s.planMix||{},max=Math.max(1,...Object.values(pm).map(Number));
-    mix.innerHTML=['Starter','Growth','Pro'].map(p=>{const count=Number(pm[p]||0),mrr=count*Number(PLAN_DATA[p]?.price||0);return '<div><span><b>'+p+'</b><small>'+count+' client'+(count===1?'':'s')+' · '+adminMoney(mrr)+' MRR</small></span><i style="width:'+Math.round(count/max*100)+'%"></i></div>'}).join('');
+    mix.innerHTML=['Starter','Growth','Pro'].map(p=>{const count=Number(pm[p]||0),mrr=count*Number(PLAN_DATA[p]?.price||0);return '<button type="button" data-plan-client-filter="'+p+'"><span><b>'+p+'</b><small>'+count+' client'+(count===1?'':'s')+' · '+adminMoney(mrr)+' MRR</small></span><i><em style="width:'+Math.round(count/max*100)+'%"></em></i></button>'}).join('');
   }
   const attention=document.getElementById('adminAttention');if(attention){
     attention.innerHTML=attentionItems.slice(0,8).map(item=>'<button type="button" class="admin-event admin-attention-item '+(item.severity==='critical'?'critical':'')+'" data-admin-attention-id="'+esc(item.id)+'"><span class="attention-severity-dot '+esc(item.severity)+'"></span><b>'+esc(item.title)+'</b><span>'+esc(item.message)+'</span><small>'+esc(item.category)+' →</small></button>').join('')||'<div class="empty-state"><h3>Nothing needs attention</h3><p>Account, billing, onboarding, support, and platform issues will appear here.</p></div>';
   }
   renderAdminClients();
   const recent=document.getElementById('adminRecentClients');if(recent){
-    recent.innerHTML=adminClientsData.slice(0,6).map(x=>adminClientRow(x,true)).join('')||'<div class="empty-state"><h3>No clients yet</h3></div>';
+    recent.innerHTML=adminClientsData.filter(x=>adminClientLifecycle(x)!=='past').slice(0,6).map(x=>adminClientRow(x,true)).join('')||'<div class="empty-state"><h3>No clients yet</h3></div>';
     recent.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openAdminClient(b.dataset.adminClient)}));
   }
-  const revenue=document.getElementById('adminRevenueList');if(revenue){revenue.innerHTML=adminClientsData.map(x=>'<div class="admin-event" data-admin-revenue-id="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span>'+esc(x.plan)+' · '+esc(x.subscriptionStatus||'active')+'</span><small>'+adminMoney(PLAN_DATA[x.plan]?.price||0)+'/mo</small></div>').join('')||'<div class="empty-state"><h3>No revenue yet</h3></div>'}
-  const usage=document.getElementById('adminUsageList');if(usage){
-    usage.innerHTML=adminClientsData.map(x=>{
-      const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0),pct=lim?Math.round(used/lim*100):null;
-      return '<div class="admin-event"><b>'+esc(x.name)+'</b><span>'+used.toLocaleString()+' min'+(lim?' · '+pct+'% of '+lim:' · high-volume plan')+'</span><small>'+esc(x.plan)+'</small></div>';
-    }).join('')||'<div class="empty-state"><h3>No usage yet</h3></div>';
-  }
-  bindAdminCommandCenter();
+  const revenue=document.getElementById('adminRevenueList');if(revenue){revenue.innerHTML=adminClientsData.map(x=>'<button type="button" class="admin-event admin-revenue-row" data-admin-revenue-id="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span>'+esc(x.plan)+' · '+esc(adminBillingLabel(x.subscriptionStatus))+'</span><small>'+adminMoney(PLAN_DATA[x.plan]?.price||0)+'/mo</small></button>').join('')||'<div class="empty-state"><h3>No revenue yet</h3></div>';revenue.querySelectorAll('[data-admin-revenue-id]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.adminRevenueId)))}
+  renderAdminActivityChart();renderAdminPulse();renderAdminRevenueAndUsage();bindAdminCommandCenter();updateAdminRefreshStamp();
 }
 function adminClientRow(x,activity=false){
   const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0);
   const usage=lim?used+' / '+lim:used.toLocaleString()+' min';
   const initials=String(x.name||'?').split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase()||'?';
+  const phone=adminPhoneFor(x.id),fleet=(adminFleetData.agents||[]).find(a=>String(a.workspaceId)===String(x.id)),agent=fleet?.agent||null,health=agent?.health||(agent?(phone?'ready':'setup'):'missing'),agentGroup=adminAgentGroup(health);
+  const workspaceLabel=adminWorkspaceLabel(x.status),billingLabel=adminBillingLabel(x.subscriptionStatus),workspaceClass=x.status==='active'?'green':x.status==='suspended'?'red':'amber',billingClass=adminBillingTag(x.subscriptionStatus),agentClass=agentGroup==='ready'?'green':agentGroup==='attention'?'red':'amber';
   if(activity){
-    const provision=adminProvisioningFor(x.id),phone=adminPhoneFor(x.id),stage=provision?.stage||(x.status==='onboarding'?'Onboarding':'Live');
-    const workspaceClass=x.status==='active'?'green':x.status==='suspended'?'red':'amber',billingClass=adminBillingTag(x.subscriptionStatus);
-    return '<div class="activity-row admin-recent-row" data-admin-client-row="'+esc(x.id)+'"><span class="plan-pill">'+esc(x.plan)+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.name)+'</strong><small>'+esc(usage)+' · '+esc(stage)+'</small></span></div><div class="admin-recent-statuses"><span class="tag '+workspaceClass+'">'+esc(adminStatusLabel(x.status))+'</span><span class="tag '+billingClass+'">'+esc(adminStatusLabel(x.subscriptionStatus))+'</span><span class="tag '+(phone?'green':'amber')+'">'+(phone?'Phone ready':'Phone pending')+'</span></div><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></div>';
+    const provision=adminProvisioningFor(x.id),stage=provision?.stage||(x.status==='onboarding'?'Onboarding':'Live');
+    return '<div class="activity-row admin-recent-row" data-admin-client-row="'+esc(x.id)+'"><span class="plan-pill">'+esc(x.plan)+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.name)+'</strong><small>'+esc(usage)+' · '+esc(stage)+'</small></span></div><div class="admin-recent-statuses"><span class="tag '+workspaceClass+'">'+esc(workspaceLabel)+'</span><span class="tag '+billingClass+'">'+esc(billingLabel)+'</span><span class="tag '+(phone?'green':'amber')+'">'+(phone?'Phone ready':'Phone pending')+'</span></div><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></div>';
   }
-  return '<div class="admin-client-row"><span><strong>'+esc(x.name)+'</strong><small class="subtle">'+esc(x.ownerEmail||'')+'</small></span><span>'+esc(x.plan)+'</span><span>'+esc(usage)+'</span><span class="tag '+(x.status==='active'?'green':x.status==='suspended'?'red':'amber')+'">'+esc(x.status||'active')+'</span><span class="tag '+adminBillingTag(x.subscriptionStatus)+'">'+esc(x.subscriptionStatus||'active')+'</span><span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></span></div>';
+  return '<div class="admin-client-row admin-client-row-rich" data-admin-client-row="'+esc(x.id)+'"><span><strong>'+esc(x.name)+'</strong><small class="subtle">'+esc(x.ownerEmail||'')+'</small></span><span>'+esc(x.plan)+'</span><span>'+esc(usage)+'</span><span><span class="tag '+agentClass+'">'+esc(agentGroup==='ready'?'AI ready':agentGroup==='attention'?'AI attention':agentGroup==='review'?'AI review':'AI setup')+'</span></span><span><span class="tag '+(phone?'green':'amber')+'">'+(phone?'Phone ready':'Phone pending')+'</span></span><span><span class="tag '+workspaceClass+'">'+esc(workspaceLabel)+'</span></span><span><span class="tag '+billingClass+'">'+esc(billingLabel)+'</span></span><span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></span></div>';
+}
+function adminClientMatchesFilter(x,filter=adminClientFilter){
+  const lifecycle=adminClientLifecycle(x);
+  if(filter==='all')return true;if(filter==='past_due')return x.subscriptionStatus==='past_due';return lifecycle===filter;
 }
 function renderAdminClients(){
   const wrap=document.getElementById('adminClientsTable');if(!wrap)return;
-  const rows=adminClientsData;
-  wrap.innerHTML=rows.map(x=>adminClientRow(x)).join('');
-  const empty=document.getElementById('adminClientsEmpty');if(empty)empty.hidden=rows.length!==0;
-  wrap.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.adminClient)));
+  const q=adminClientSearch.trim().toLowerCase(),all=adminClientsData;
+  const counts={active:all.filter(x=>adminClientLifecycle(x)==='active').length,onboarding:all.filter(x=>adminClientLifecycle(x)==='onboarding').length,suspended:all.filter(x=>adminClientLifecycle(x)==='suspended').length,past:all.filter(x=>adminClientLifecycle(x)==='past').length};
+  [['clientActiveCount','active'],['clientOnboardingCount','onboarding'],['clientSuspendedCount','suspended'],['clientPastCount','past']].forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.textContent=counts[key]});
+  document.querySelectorAll('[data-client-filter]').forEach(btn=>btn.classList.toggle('active',btn.dataset.clientFilter===adminClientFilter));
+  const search=document.getElementById('adminClientSearchInput');if(search){search.value=adminClientSearch;search.oninput=()=>{adminClientSearch=search.value;renderAdminClients()}}
+  const filtered=all.filter(x=>adminClientMatchesFilter(x)&&(!q||[x.name,x.ownerEmail,x.plan,x.status,x.subscriptionStatus].filter(Boolean).join(' ').toLowerCase().includes(q)));
+  const groups=adminClientFilter==='all'
+    ?[['Onboarding','onboarding'],['Active clients','active'],['Suspended','suspended'],['Past clients','past']].map(([label,key])=>[label,filtered.filter(x=>adminClientLifecycle(x)===key)]).filter(([,rows])=>rows.length)
+    :[[adminClientFilter==='past_due'?'Past due accounts':adminClientFilter==='past'?'Past clients':adminClientFilter.charAt(0).toUpperCase()+adminClientFilter.slice(1),filtered]];
+  wrap.innerHTML=groups.map(([label,rows])=>'<section class="admin-client-group"><div class="admin-client-group-head"><div><span class="eyebrow">'+esc(label)+'</span><b>'+rows.length+' account'+(rows.length===1?'':'s')+'</b></div></div><div class="admin-client-row head admin-client-row-rich"><span>Client</span><span>Plan</span><span>Usage</span><span>AI</span><span>Phone</span><span>Workspace</span><span>Billing</span><span>Action</span></div>'+rows.map(x=>adminClientRow(x)).join('')+'</section>').join('');
+  const empty=document.getElementById('adminClientsEmpty');if(empty)empty.hidden=filtered.length!==0;
+  wrap.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openAdminClient(b.dataset.adminClient)}));
+  wrap.querySelectorAll('[data-admin-client-row]').forEach(row=>row.addEventListener('click',e=>{if(e.target.closest('button,a,select,input'))return;openAdminClient(row.dataset.adminClientRow)}));
 }
 async function openAdminClient(id){
   const r=await fetch('/api/account?action=admin-client&id='+encodeURIComponent(id),{headers:{Accept:'application/json'},cache:'no-store'});
@@ -1998,6 +2113,16 @@ async function refreshAdminCore(){
   if(sr.ok)adminSummaryData=(await sr.json()).summary||{};
   if(cr.ok)adminClientsData=(await cr.json()).clients||[];
   renderAdmin();
+}
+async function refreshAdminDashboard({button=null}={}){
+  if(button){button.disabled=true;button.textContent='Refreshing…'}
+  try{await refreshAdminCore();await loadAdminOps();updateAdminRefreshStamp();await loadNotifications({silent:true})}
+  finally{if(button){button.disabled=false;button.textContent='Refresh'}}
+}
+function initAdminLiveRefresh(){
+  const btn=document.getElementById('refreshAdminCommand');if(btn)btn.onclick=()=>refreshAdminDashboard({button:btn});
+  if(adminRefreshTimer)clearInterval(adminRefreshTimer);
+  adminRefreshTimer=setInterval(()=>{if(!document.hidden&&document.body.dataset.dashboard==='admin')refreshAdminDashboard().catch(()=>{})},60000);
 }
 async function saveAdminClient(){
   if(!currentAdminClient)return;
