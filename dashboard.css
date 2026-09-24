@@ -1904,3 +1904,14 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
   body[data-dashboard="admin"] .admin-search-shell:focus-within .admin-search-results{top:58px}
 }
 @media(prefers-reduced-motion:reduce){body[data-dashboard="admin"] .admin-search-shell .admin-search,body[data-dashboard="admin"] .admin-search-result{transition:none}}
+
+
+/* Core Intelligence rich response formatting */
+.admin-ai-answer{gap:12px!important}
+.admin-ai-rich{display:grid;gap:9px;color:#384249;font-size:9.25px;line-height:1.62}
+.admin-ai-rich h2,.admin-ai-rich h3,.admin-ai-rich h4{margin:7px 0 0;color:#273139;letter-spacing:-.02em}
+.admin-ai-rich h2{font-size:15px}.admin-ai-rich h3{font-size:12px}.admin-ai-rich h4{font-size:10px}
+.admin-ai-rich p{margin:0}.admin-ai-rich strong{font-weight:850;color:#252d33}.admin-ai-rich em{color:#5f6970}
+.admin-ai-rich ul,.admin-ai-rich ol{display:grid;gap:6px;margin:0;padding-left:20px}.admin-ai-rich li{padding-left:2px}
+.admin-ai-rich hr{width:100%;height:1px;border:0;background:#e7eaec;margin:3px 0}
+.admin-ai-rich code{padding:2px 4px;border:1px solid #e2e6e8;border-radius:5px;background:#f5f7f8;font:700 .92em ui-monospace,SFMono-Regular,Consolas,monospace}
