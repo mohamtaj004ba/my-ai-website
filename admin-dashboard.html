@@ -94,7 +94,7 @@
     <button type="button" data-client-filter="past_due">Past due</button>
     <button type="button" data-client-filter="all">All</button>
   </div>
-  <input id="adminClientSearchInput" type="search" placeholder="Search clients, email, plan, status…">
+  <div class="admin-client-toolbar-right"><select id="adminClientSort" aria-label="Sort client accounts"><option value="updated">Recently updated</option><option value="newest">Newest clients</option><option value="name">Name A–Z</option><option value="mrr">Highest MRR</option><option value="usage">Highest usage</option></select><input id="adminClientSearchInput" type="search" placeholder="Search clients, email, plan, status…"></div>
 </div>
 <div id="adminClientsTable" class="admin-client-groups"></div><div class="empty-state" id="adminClientsEmpty" hidden><h3>No clients in this view</h3><p>Try another status or clear your search.</p></div></section>
 
