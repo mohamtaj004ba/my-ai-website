@@ -1231,7 +1231,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pen
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminRefreshTimer=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminRefreshTimer=null;
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -1292,25 +1292,28 @@ function adminAgentGroup(health){
 function renderAdminFleet(){
   const agents=adminFleetData.agents||[],autos=adminFleetData.automations||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   const agentRows=agents.map(x=>{
-    const agent=x.agent||null,phone=adminPhoneFor(x.workspaceId),health=agent?.health||(agent?(phone?'ready':'setup'):'missing'),group=adminAgentGroup(health);
-    const issue=agent?.issue||(!agent?'No AI receptionist configuration exists yet.':(!phone?'Phone routing is not assigned yet.':'Configuration looks ready.'));
-    const tone=group==='ready'?'green':group==='attention'?'red':'amber',label=({ready:'Ready',review:'Needs review',warning:'Attention',setup:'Setup',test:'Client test',missing:'Missing'})[health]||'Review';
-    return {...x,agent,phone,health,group,issue,tone,label};
+    const agent=x.agent||null,rawHealth=agent?.health||'missing',paused=x.status==='suspended';
+    let group=paused?'paused':!agent?'setup':rawHealth==='ready'?'ready':rawHealth==='setup'||rawHealth==='test'?'setup':'review';
+    let issue=agent?.issue||(!agent?'No AI receptionist configuration exists yet.':'Configuration looks ready.');
+    if(/billing|past due/i.test(issue)){group=paused?'paused':'ready';issue='AI configuration is retained. Billing is handled separately in Finance.'}
+    if(/transfer destination|phone number|phone routing/i.test(issue)){group=paused?'paused':rawHealth==='setup'?'setup':'ready';issue='AI configuration is retained. Phone routing is handled separately under Phone Numbers.'}
+    const tone=group==='ready'?'green':group==='paused'?'':'amber',label=group==='ready'?'Ready':group==='paused'?'Paused':group==='setup'?'Setup / test':'Needs review';
+    return {...x,agent,health:rawHealth,group,issue,tone,label};
   });
   set('agentReadyCount',agentRows.filter(x=>x.group==='ready').length);
   set('agentReviewCount',agentRows.filter(x=>x.group==='review').length);
-  set('agentAttentionCount',agentRows.filter(x=>x.group==='attention').length);
   set('agentSetupCount',agentRows.filter(x=>x.group==='setup').length);
+  set('agentPausedCount',agentRows.filter(x=>x.group==='paused').length);
   const ag=document.getElementById('adminAgentsGrid'),agentSearch=document.getElementById('adminAgentSearch'),agentFilter=document.getElementById('adminAgentHealthFilter');
   if(agentSearch){agentSearch.value=adminAgentSearch;agentSearch.oninput=()=>{adminAgentSearch=agentSearch.value;renderAdminFleet()}}
   if(agentFilter){agentFilter.value=adminAgentFilter;agentFilter.onchange=()=>{adminAgentFilter=agentFilter.value;renderAdminFleet()}}
   const visibleAgents=agentRows.filter(x=>{
     if(adminAgentFilter!=='all'&&x.group!==adminAgentFilter)return false;
     const q=adminAgentSearch.trim().toLowerCase();if(!q)return true;
-    return [x.workspaceName,x.agent?.name,x.agent?.role,x.issue,x.phone?.number].filter(Boolean).join(' ').toLowerCase().includes(q);
+    return [x.workspaceName,x.agent?.name,x.agent?.role,x.issue].filter(Boolean).join(' ').toLowerCase().includes(q);
   });
   if(ag){
-    ag.innerHTML=visibleAgents.map(x=>'<article class="panel integration-card admin-agent-card" data-admin-agent-client="'+esc(x.workspaceId)+'"><div><div class="admin-agent-title"><b>'+esc((x.agent?.name||'Not configured')+' · '+x.workspaceName)+'</b><span class="tag '+x.tone+'">'+esc(x.label)+'</span></div><p>'+esc(x.agent?.role||'AI receptionist not configured')+(x.phone?' · '+esc(x.phone.number||'Phone assigned'):' · Phone not assigned')+'</p><small>'+esc(x.issue)+'</small></div><button class="admin-link" type="button">Open account →</button></article>').join('');
+    ag.innerHTML=visibleAgents.map(x=>'<article class="panel integration-card admin-agent-card" data-admin-agent-client="'+esc(x.workspaceId)+'"><div><div class="admin-agent-title"><b>'+esc((x.agent?.name||'Not configured')+' · '+x.workspaceName)+'</b><span class="tag '+x.tone+'">'+esc(x.label)+'</span></div><p>'+esc(x.agent?.role||'AI receptionist not configured')+' · '+esc(x.plan||'Starter')+' plan</p><small>'+esc(x.issue)+'</small></div><button class="admin-link" type="button">Open account →</button></article>').join('');
     ag.querySelectorAll('[data-admin-agent-client]').forEach(card=>card.addEventListener('click',()=>openAdminClient(card.dataset.adminAgentClient)));
     document.getElementById('adminAgentsEmpty').hidden=visibleAgents.length!==0;
   }
@@ -1579,13 +1582,21 @@ setInterval(()=>{
 function renderAdminSupport(){
   const tickets=adminSupportData||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   set('supportOpen',tickets.filter(x=>x.status==='open').length);set('supportProgress',tickets.filter(x=>x.status==='in_progress').length);set('supportResolved',tickets.filter(x=>x.status==='resolved').length);set('supportUrgent',tickets.filter(x=>x.priority==='urgent'&&x.status!=='resolved').length);
+  const search=document.getElementById('adminSupportSearch'),filter=document.getElementById('adminSupportFilter');
+  if(search){search.value=adminSupportSearch;search.oninput=()=>{adminSupportSearch=search.value;renderAdminSupport()}}
+  if(filter){filter.value=adminSupportFilter;filter.onchange=()=>{adminSupportFilter=filter.value;renderAdminSupport()}}
+  const q=adminSupportSearch.trim().toLowerCase(),visible=tickets.filter(t=>{
+    const stateOk=adminSupportFilter==='all'||(adminSupportFilter==='active'&&t.status!=='resolved')||(adminSupportFilter==='urgent'&&t.priority==='urgent'&&t.status!=='resolved')||t.status===adminSupportFilter;
+    const searchOk=!q||[t.subject,t.workspaceName,t.email,t.message,...(Array.isArray(t.messages)?t.messages.map(m=>m.body):[])].filter(Boolean).join(' ').toLowerCase().includes(q);
+    return stateOk&&searchOk;
+  });
   const wrap=document.getElementById('adminSupportList');if(!wrap)return;
-  wrap.innerHTML=tickets.map(t=>{
+  wrap.innerHTML=visible.map(t=>{
     const messages=(Array.isArray(t.messages)&&t.messages.length?t.messages:[{direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||Date.now()}]);
     const thread=messages.map(m=>'<div class="support-message '+(m.direction==='support'?'support':'client')+'"><div><b>'+(m.direction==='support'?'CallerCore Support':esc(t.workspaceName||'Client'))+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+'</small></div><p>'+esc(m.body||'').replace(/\n/g,'<br>')+'</p></div>').join('');
     return '<details class="support-admin-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+esc(t.workspaceName||'Workspace')+' · '+esc(t.email||'')+' · '+new Date(t.createdAt).toLocaleString()+'</small></div><div><span class="tag '+(t.priority==='urgent'?'red':'')+'">'+esc(t.priority||'normal')+'</span><select class="support-status-select" data-ticket-status="'+esc(t.id)+'"><option value="open" '+(t.status==='open'?'selected':'')+'>Open</option><option value="in_progress" '+(t.status==='in_progress'?'selected':'')+'>In progress</option><option value="resolved" '+(t.status==='resolved'?'selected':'')+'>Resolved</option></select></div></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-admin-input="'+esc(t.id)+'" placeholder="Reply to the client…"></textarea><button class="primary" type="button" data-support-admin-reply="'+esc(t.id)+'">Send reply</button></div></details>';
   }).join('');
-  const empty=document.getElementById('adminSupportEmpty');if(empty)empty.hidden=tickets.length!==0;
+  const empty=document.getElementById('adminSupportEmpty');if(empty)empty.hidden=visible.length!==0;
   wrap.querySelectorAll('[data-ticket-status]').forEach(s=>s.addEventListener('change',e=>{e.stopPropagation();updateSupportStatus(s.dataset.ticketStatus,s.value)}));
   wrap.querySelectorAll('[data-support-admin-reply]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();replyAdminSupportTicket(b.dataset.supportAdminReply,b)}));
 }
@@ -1835,7 +1846,7 @@ function renderFinanceChart(shellId,tooltipId){
   shell.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Monthly revenue and company expenses"><g class="admin-chart-grid">'+grid+'</g><polyline class="finance-line revenue" points="'+revenuePoints+'"></polyline><polyline class="finance-line expense" points="'+expensePoints+'"></polyline><g>'+revenueDots+expenseDots+'</g><g class="admin-chart-labels">'+labels+'</g><g>'+hits+'</g></svg>'+(tooltip?'<div class="admin-chart-tooltip" id="'+tooltipId+'"></div>':'');
   const tip=document.getElementById(tooltipId);
   shell.querySelectorAll('[data-finance-index]').forEach(hit=>{
-    const show=()=>{const i=Number(hit.dataset.financeIndex),r=rows[i];if(!tip||!r)return;tip.hidden=false;tip.innerHTML='<b>'+esc(financeMonthLabel(r.month))+'</b><span>Revenue <strong>'+financeMoney(r.revenue)+'</strong></span><span>Expenses <strong>'+financeMoney(r.expenses)+'</strong></span><span>Net <strong>'+financeMoney(Number(r.revenue||0)-Number(r.expenses||0))+'</strong></span>';tip.style.left=Math.min(88,Math.max(8,(x(i)/w)*100))+'%';tip.style.top='18px'};
+    const show=()=>{const i=Number(hit.dataset.financeIndex),r=rows[i];if(!tip||!r)return;tip.hidden=false;tip.innerHTML='<b>'+esc(financeMonthLabel(r.month))+'</b><span>MRR <strong>'+financeMoney(r.revenue)+'</strong></span><span>Expenses <strong>'+financeMoney(r.expenses)+'</strong></span><span>Net run-rate <strong>'+financeMoney(Number(r.revenue||0)-Number(r.expenses||0))+'</strong></span>';tip.style.left=Math.min(88,Math.max(8,(x(i)/w)*100))+'%';tip.style.top='18px'};
     hit.addEventListener('mouseenter',show);hit.addEventListener('mousemove',show);hit.addEventListener('mouseleave',()=>{if(tip)tip.hidden=true});
   });
 }
