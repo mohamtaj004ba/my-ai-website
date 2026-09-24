@@ -1777,6 +1777,10 @@ async function savePhone(){
   finally{if(btn){btn.disabled=false;btn.textContent='Save number'}}
 }
 document.getElementById('addPhoneButton')?.addEventListener('click',()=>openPhoneModal());
+document.getElementById('addExpenseButton')?.addEventListener('click',()=>openExpenseModal());
+document.getElementById('closeExpenseModal')?.addEventListener('click',closeExpenseModal);
+document.getElementById('saveExpenseButton')?.addEventListener('click',saveExpense);
+document.getElementById('expenseModal')?.addEventListener('click',e=>{if(e.target.id==='expenseModal')closeExpenseModal()});
 document.getElementById('closePhoneModal')?.addEventListener('click',closePhoneModal);
 document.getElementById('savePhoneButton')?.addEventListener('click',savePhone);
 document.getElementById('phoneModal')?.addEventListener('click',e=>{if(e.target.id==='phoneModal')closePhoneModal()});
@@ -1805,45 +1809,78 @@ function adminDayKey(ts){
 function adminRecentDays(n=14){
   const out=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);out.push({key:adminDayKey(d.getTime()),label:d.toLocaleDateString(undefined,{month:'short',day:'numeric'}),date:d})}return out;
 }
-function renderAdminActivityChart(){
-  const shell=document.getElementById('adminActivityChart');if(!shell)return;
-  const calls=adminFleetData.calls||[],days=adminRecentDays(14),rows=days.map(d=>{const list=calls.filter(x=>adminDayKey(x.createdAt||x.at||x.timestamp)===d.key);return {...d,total:list.length,captured:list.filter(callCaptured).length}});
-  const max=Math.max(1,...rows.map(x=>x.total)),w=900,h=290,left=42,right=18,top=20,bottom=42,plotW=w-left-right,plotH=h-top-bottom,step=plotW/rows.length,barW=Math.max(8,step*.52);
-  const y=v=>top+plotH-(v/max)*plotH,x=i=>left+step*i+step/2;
-  const bars=rows.map((r,i)=>'<rect class="admin-chart-bar" x="'+(x(i)-barW/2).toFixed(1)+'" y="'+y(r.total).toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+Math.max(0,top+plotH-y(r.total)).toFixed(1)+'" rx="5"><title>'+esc(r.label+': '+r.total+' calls')+'</title></rect>').join('');
-  const points=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.captured).toFixed(1)).join(' ');
-  const labels=rows.map((r,i)=>i%2===0||i===rows.length-1?'<text x="'+x(i).toFixed(1)+'" y="'+(h-13)+'" text-anchor="middle">'+esc(r.label)+'</text>':'').join('');
-  const grid=[0,.25,.5,.75,1].map(p=>{const val=Math.round(max*p),yy=y(val);return '<g><line x1="'+left+'" x2="'+(w-right)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'"></line><text x="'+(left-8)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end">'+val+'</text></g>'}).join('');
-  shell.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Calls and requests captured over the last fourteen days"><g class="admin-chart-grid">'+grid+'</g><g class="admin-chart-bars">'+bars+'</g><polyline class="admin-chart-line" points="'+points+'"></polyline><g class="admin-chart-labels">'+labels+'</g></svg>';
-  const total=rows.reduce((n,r)=>n+r.total,0),captured=rows.reduce((n,r)=>n+r.captured,0),peak=rows.reduce((a,b)=>b.total>a.total?b:a,rows[0]||{total:0,label:'—'});
-  const summary=document.getElementById('adminActivityChartSummary'),peakEl=document.getElementById('adminActivityPeak');if(summary)summary.textContent=total+' calls · '+captured+' requests captured';if(peakEl)peakEl.textContent='Peak '+peak.total+' · '+peak.label;
+function financeMonthLabel(key){
+  const [y,m]=String(key||'').split('-').map(Number);if(!y||!m)return key||'';
+  return new Date(y,m-1,1).toLocaleDateString(undefined,{month:'short',year:'2-digit'});
 }
-function setAdminLiveMetric(id,value){
-  const el=document.getElementById(id);if(!el)return;const next=String(value);if(el.textContent!==next){el.textContent=next;el.classList.remove('metric-updated');void el.offsetWidth;el.classList.add('metric-updated')}
+function financeMoney(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
+function renderFinanceChart(shellId,tooltipId){
+  const shell=document.getElementById(shellId);if(!shell)return;
+  const rows=(adminFinanceData.history||[]).slice(-adminFinanceRange),tooltip=document.getElementById(tooltipId);
+  if(!rows.length){shell.innerHTML='<div class="empty-state"><h3>No finance history yet</h3><p>Monthly snapshots will appear automatically.</p></div>';return}
+  const w=920,h=300,left=52,right=20,top=22,bottom=45,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...rows.flatMap(r=>[Number(r.revenue||0),Number(r.expenses||0)])),step=rows.length>1?plotW/(rows.length-1):plotW;
+  const x=i=>left+(rows.length===1?plotW/2:i*step),y=v=>top+plotH-(Number(v||0)/max)*plotH;
+  const revenuePoints=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.revenue).toFixed(1)).join(' '),expensePoints=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.expenses).toFixed(1)).join(' ');
+  const grid=[0,.25,.5,.75,1].map(p=>{const val=max*p,yy=y(val);return '<g><line x1="'+left+'" x2="'+(w-right)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'"></line><text x="'+(left-9)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end">'+esc(val>=1000?'$'+(val/1000).toFixed(val>=10000?0:1)+'k':'$'+Math.round(val))+'</text></g>'}).join('');
+  const labels=rows.map((r,i)=>'<text x="'+x(i).toFixed(1)+'" y="'+(h-14)+'" text-anchor="middle">'+esc(financeMonthLabel(r.month))+'</text>').join('');
+  const revenueDots=rows.map((r,i)=>'<circle class="finance-dot revenue" cx="'+x(i).toFixed(1)+'" cy="'+y(r.revenue).toFixed(1)+'" r="4"></circle>').join('');
+  const expenseDots=rows.map((r,i)=>'<circle class="finance-dot expense" cx="'+x(i).toFixed(1)+'" cy="'+y(r.expenses).toFixed(1)+'" r="4"></circle>').join('');
+  const hitWidth=Math.max(30,plotW/Math.max(1,rows.length));
+  const hits=rows.map((r,i)=>'<rect class="finance-hit" data-finance-index="'+i+'" x="'+(x(i)-hitWidth/2).toFixed(1)+'" y="'+top+'" width="'+hitWidth.toFixed(1)+'" height="'+plotH+'" fill="transparent"></rect>').join('');
+  shell.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Monthly revenue and company expenses"><g class="admin-chart-grid">'+grid+'</g><polyline class="finance-line revenue" points="'+revenuePoints+'"></polyline><polyline class="finance-line expense" points="'+expensePoints+'"></polyline><g>'+revenueDots+expenseDots+'</g><g class="admin-chart-labels">'+labels+'</g><g>'+hits+'</g></svg>'+(tooltip?'<div class="admin-chart-tooltip" id="'+tooltipId+'"></div>':'');
+  const tip=document.getElementById(tooltipId);
+  shell.querySelectorAll('[data-finance-index]').forEach(hit=>{
+    const show=()=>{const i=Number(hit.dataset.financeIndex),r=rows[i];if(!tip||!r)return;tip.hidden=false;tip.innerHTML='<b>'+esc(financeMonthLabel(r.month))+'</b><span>Revenue <strong>'+financeMoney(r.revenue)+'</strong></span><span>Expenses <strong>'+financeMoney(r.expenses)+'</strong></span><span>Net <strong>'+financeMoney(Number(r.revenue||0)-Number(r.expenses||0))+'</strong></span>';tip.style.left=Math.min(88,Math.max(8,(x(i)/w)*100))+'%';tip.style.top='18px'};
+    hit.addEventListener('mouseenter',show);hit.addEventListener('mousemove',show);hit.addEventListener('mouseleave',()=>{if(tip)tip.hidden=true});
+  });
 }
-function renderAdminPulse(){
-  const calls=adminFleetData.calls||[],leads=[...(adminFleetData.leads||[]),...(adminWebsiteData.prospects||[])],today=adminDayKey(Date.now()),weekAgo=Date.now()-7*86400000;
-  const callsToday=calls.filter(x=>adminDayKey(x.createdAt||x.at||x.timestamp)===today),leads7=leads.filter(x=>Number(x.createdAt||x.updatedAt||0)>=weekAgo),openSupport=(adminSupportData||[]).filter(x=>x.status!=='resolved'),urgent=openSupport.filter(x=>x.priority==='urgent'),feedback=(adminFeedbackData||[]).filter(x=>x.status==='submitted');
-  setAdminLiveMetric('adminPulseCalls',callsToday.length);setAdminLiveMetric('adminPulseLeads',leads7.length);setAdminLiveMetric('adminPulseSupport',openSupport.length);setAdminLiveMetric('adminPulseFeedback',feedback.length);
-  const cm=document.getElementById('adminPulseCallsMeta'),sm=document.getElementById('adminPulseSupportMeta'),ticker=document.getElementById('adminLiveTicker');if(cm)cm.textContent=new Set(callsToday.map(x=>x.workspaceId)).size+' active workspaces today';if(sm)sm.textContent=urgent.length+' urgent';
-  if(ticker)ticker.textContent=callsToday.length+' calls today · '+leads7.length+' leads in 7 days · '+openSupport.length+' open support · '+feedback.length+' AI feedback awaiting review';
-}
-function renderAdminRevenueAndUsage(){
+function renderAdminFinance(){
+  const d=adminFinanceData||{},set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  set('financeMrr',financeMoney(d.mrr));set('financeRecurringExpenses',financeMoney(d.recurringExpenses));set('financeNetRecurring',financeMoney(d.netRecurring));set('financeMargin',Number(d.margin||0).toFixed(1).replace('.0','')+'%');
+  set('adminMonthlyCosts',financeMoney(d.recurringExpenses));set('adminNetRecurring',financeMoney(d.netRecurring));set('adminMarginMeta',Number(d.margin||0).toFixed(1).replace('.0','')+'% operating margin');
+  const summary=document.getElementById('adminFinanceChartSummary');if(summary)summary.textContent=(d.history?.length||0)+' monthly snapshot'+((d.history?.length||0)===1?'':'s')+' · '+financeMoney(d.netRecurring)+' net recurring';
+  document.querySelectorAll('[data-finance-range]').forEach(btn=>{btn.classList.toggle('active',Number(btn.dataset.financeRange)===adminFinanceRange);btn.onclick=e=>{e.stopPropagation();adminFinanceRange=Number(btn.dataset.financeRange)||6;renderAdminFinance()}});
+  renderFinanceChart('adminFinanceChart','adminFinanceTooltip');renderFinanceChart('financePageChart','financePageTooltip');
+
   const prices={Starter:PLAN_DATA.Starter?.price||349,Growth:PLAN_DATA.Growth?.price||599,Pro:PLAN_DATA.Pro?.price||999},chart=document.getElementById('adminRevenuePlanChart'),past=document.getElementById('adminPastDueAccounts');
   if(chart){
-    const rows=['Starter','Growth','Pro'].map(plan=>{const clients=adminClientsData.filter(x=>x.plan===plan&&x.subscriptionStatus!=='canceled'),mrr=clients.length*prices[plan];return {plan,count:clients.length,mrr}});
-    const max=Math.max(1,...rows.map(x=>x.mrr));chart.innerHTML=rows.map(x=>'<button type="button" data-revenue-plan="'+x.plan+'"><span><b>'+x.plan+'</b><small>'+x.count+' client'+(x.count===1?'':'s')+'</small></span><strong>'+adminMoney(x.mrr)+'</strong><i><em style="width:'+Math.round(x.mrr/max*100)+'%"></em></i></button>').join('');
+    const rows=['Starter','Growth','Pro'].map(plan=>{const clients=adminClientsData.filter(x=>x.plan===plan&&adminClientLifecycle(x)!=='past'),mrr=clients.length*prices[plan];return {plan,count:clients.length,mrr}});
+    const max=Math.max(1,...rows.map(x=>x.mrr));chart.innerHTML=rows.map(x=>'<button type="button" data-revenue-plan="'+x.plan+'"><span><b>'+x.plan+'</b><small>'+x.count+' client'+(x.count===1?'':'s')+'</small></span><strong>'+financeMoney(x.mrr)+'</strong><i><em style="width:'+Math.round(x.mrr/max*100)+'%"></em></i></button>').join('');
     chart.querySelectorAll('[data-revenue-plan]').forEach(b=>b.addEventListener('click',()=>{adminClientFilter='all';adminClientSearch=b.dataset.revenuePlan;showView('clients');renderAdminClients()}));
   }
   const pastDue=adminClientsData.filter(x=>x.subscriptionStatus==='past_due');
-  if(past)past.innerHTML=pastDue.map(x=>'<button type="button" class="admin-billing-alert" data-open-billing-client="'+esc(x.id)+'"><span><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+' · '+Number(x.usage?.minutes||0).toLocaleString()+' minutes</small></span><span class="tag red">Past due</span></button>').join('')||'<div class="admin-clear-state"><b>Billing is current</b><span>No past-due client accounts.</span></div>';
+  if(past)past.innerHTML=pastDue.map(x=>'<button type="button" class="admin-billing-alert" data-open-billing-client="'+esc(x.id)+'"><span><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+' · '+financeMoney(PLAN_DATA[x.plan]?.price||0)+'/mo</small></span><span class="tag red">Past due</span></button>').join('')||'<div class="admin-clear-state"><b>Billing is current</b><span>No past-due client accounts.</span></div>';
   past?.querySelectorAll('[data-open-billing-client]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.openBillingClient)));
 
-  const usageRows=adminClientsData.map(x=>{const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0),pct=lim?Math.round(used/lim*100):null;return {...x,lim,used,pct}}),fixed=usageRows.filter(x=>x.lim),high=fixed.filter(x=>x.pct>=85),over=fixed.filter(x=>x.pct>=100),pro=usageRows.filter(x=>!x.lim&&x.plan==='Pro');
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=String(v)};set('usageTotalMinutes',usageRows.reduce((n,x)=>n+x.used,0).toLocaleString());set('usageHighCount',high.length);set('usageOverCount',over.length);set('usageProCount',pro.length);
-  const usageChart=document.getElementById('adminUsageChart');if(usageChart)usageChart.innerHTML=usageRows.sort((a,b)=>(b.pct??Math.min(100,b.used/20))-(a.pct??Math.min(100,a.used/20))).map(x=>'<button type="button" data-usage-client="'+esc(x.id)+'"><span><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+(x.lim?' · '+x.used+' / '+x.lim+' min':' · '+x.used.toLocaleString()+' min')+'</small></span><strong>'+(x.pct===null?'High volume':x.pct+'%')+'</strong><i><em class="'+(x.pct>=100?'danger':x.pct>=85?'warning':'')+'" style="width:'+(x.pct===null?Math.min(100,Math.max(18,x.used/20)):Math.min(100,x.pct))+'%"></em></i></button>').join('');
-  usageChart?.querySelectorAll('[data-usage-client]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.usageClient)));
-  const usage=document.getElementById('adminUsageList');if(usage)usage.innerHTML=usageRows.map(x=>'<div class="admin-event"><b>'+esc(x.name)+'</b><span>'+x.used.toLocaleString()+' min'+(x.lim?' · '+x.pct+'% of '+x.lim:' · high-volume plan')+'</span><small>'+esc(x.plan)+'</small></div>').join('')||'<div class="empty-state"><h3>No usage yet</h3></div>';
+  const filter=document.getElementById('expenseCategoryFilter');if(filter){filter.value=adminExpenseFilter;filter.onchange=()=>{adminExpenseFilter=filter.value;renderAdminFinance()}}
+  const expenses=(d.expenses||[]).filter(x=>adminExpenseFilter==='all'||x.category===adminExpenseFilter),list=document.getElementById('adminExpenseList'),empty=document.getElementById('adminExpenseEmpty');
+  if(list)list.innerHTML=expenses.map(x=>{
+    const monthly=x.frequency==='monthly'?Number(x.amount||0):x.frequency==='annual'?Number(x.amount||0)/12:0,freq=x.frequency==='one_time'?'One-time':x.frequency==='annual'?'Annual':'Monthly';
+    return '<div class="admin-expense-row"><span><strong>'+esc(x.name)+'</strong><small>'+esc(x.vendor||'No vendor')+(x.notes?' · '+esc(x.notes):'')+'</small></span><span>'+esc(x.category||'Other')+'</span><span>'+freq+(x.date?'<small>'+esc(x.date)+'</small>':'')+'</span><span>'+financeMoney(x.amount)+'</span><span>'+(x.frequency==='one_time'?'—':financeMoney(monthly))+'</span><span><span class="tag '+(x.status==='paused'?'amber':'green')+'">'+esc(x.status==='paused'?'Paused':'Active')+'</span></span><span class="phone-actions"><button class="admin-link" data-edit-expense="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-expense="'+esc(x.id)+'">Delete</button></span></div>'
+  }).join('');
+  if(empty)empty.hidden=expenses.length!==0;
+  list?.querySelectorAll('[data-edit-expense]').forEach(b=>b.addEventListener('click',()=>openExpenseModal(b.dataset.editExpense)));
+  list?.querySelectorAll('[data-delete-expense]').forEach(b=>b.addEventListener('click',()=>deleteExpense(b.dataset.deleteExpense)));
+}
+function openExpenseModal(id=''){
+  const item=id?(adminFinanceData.expenses||[]).find(x=>String(x.id)===String(id)):null,modal=document.getElementById('expenseModal');if(!modal)return;
+  modal.dataset.editId=id||'';document.getElementById('expenseModalTitle').textContent=item?'Edit expense':'Add expense';
+  document.getElementById('expenseNameInput').value=item?.name||'';document.getElementById('expenseVendorInput').value=item?.vendor||'';document.getElementById('expenseCategoryInput').value=item?.category||'Software';document.getElementById('expenseAmountInput').value=item?.amount??'';document.getElementById('expenseFrequencyInput').value=item?.frequency||'monthly';document.getElementById('expenseDateInput').value=item?.date||'';document.getElementById('expenseStatusInput').value=item?.status||'active';document.getElementById('expenseNotesInput').value=item?.notes||'';const status=document.getElementById('expenseFormStatus');if(status)status.textContent='';
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+}
+function closeExpenseModal(){const modal=document.getElementById('expenseModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true')}
+async function saveExpense(){
+  const modal=document.getElementById('expenseModal'),button=document.getElementById('saveExpenseButton'),status=document.getElementById('expenseFormStatus'),name=String(document.getElementById('expenseNameInput')?.value||'').trim(),amount=Number(document.getElementById('expenseAmountInput')?.value);
+  if(!name||!Number.isFinite(amount)||amount<0){if(status){status.textContent='Enter an expense name and valid amount.';status.className='form-status-line error'}return}
+  const payload={id:modal?.dataset.editId||undefined,name,vendor:document.getElementById('expenseVendorInput')?.value||'',category:document.getElementById('expenseCategoryInput')?.value||'Other',amount,frequency:document.getElementById('expenseFrequencyInput')?.value||'monthly',date:document.getElementById('expenseDateInput')?.value||'',status:document.getElementById('expenseStatusInput')?.value||'active',notes:document.getElementById('expenseNotesInput')?.value||''};
+  if(button){button.disabled=true;button.textContent='Saving…'}
+  try{const r=await fetch('/api/account?action=admin-finance-expense-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save expense.');closeExpenseModal();await loadAdminOps()}
+  catch(err){if(status){status.textContent=err.message||'Could not save expense.';status.className='form-status-line error'}}
+  finally{if(button){button.disabled=false;button.textContent='Save expense'}}
+}
+async function deleteExpense(id){
+  const item=(adminFinanceData.expenses||[]).find(x=>String(x.id)===String(id));if(!item||!confirm('Delete '+item.name+' from company expenses?'))return;
+  const r=await fetch('/api/account?action=admin-finance-expense-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not delete expense.');return}await loadAdminOps();
 }
 function updateAdminRefreshStamp(){
   const el=document.getElementById('adminLastRefresh');if(el)el.textContent='Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
