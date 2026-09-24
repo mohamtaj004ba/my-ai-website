@@ -778,3 +778,62 @@ body.drawer-open{overflow:hidden}
   .view.active,.contact-expand-body,.call-drawer.open,.contact-inline-loading i{animation:none!important}
   .contact-history-card,.contact-history-stats>button,.overview-metric,.nav-item,.primary,.secondary-btn,.drawer-action-button,.call-row.data,.contact-row.data,.activity-row{transition:none!important;transform:none!important}
 }
+
+
+/* Operational call log: sticky headers, read state, stronger row focus */
+.call-history-panel,.contact-list-panel{overflow:visible;position:relative}
+.sticky-table-head{position:sticky!important;top:70px;z-index:9;background:rgba(247,249,250,.97)!important;backdrop-filter:blur(10px);border-bottom:1px solid #d9dee2!important;box-shadow:0 5px 14px rgba(29,37,44,.055)}
+.call-row.head,.contact-row.head{min-height:48px;color:#4e5862!important;font-size:10px!important;letter-spacing:.045em;font-weight:900!important}
+.call-row.head>span,.contact-row.head>span{display:flex;align-items:center}
+.sortable-table-head{appearance:none;border:0;background:transparent;color:#3e4852;display:flex;align-items:center;gap:7px;padding:0;text-transform:uppercase;font:900 10px inherit;letter-spacing:.045em;cursor:pointer;text-align:left}
+.sortable-table-head i{width:20px;height:20px;border-radius:6px;background:#e9eef2;display:grid;place-items:center;font-style:normal;font-size:12px;color:#26313a;transition:background .14s ease,transform .14s ease}
+.sortable-table-head:hover i,.sortable-table-head:focus-visible i{background:#dbe4ea;transform:translateY(-1px)}
+.sortable-table-head:focus-visible{outline:2px solid rgba(200,93,53,.35);outline-offset:3px;border-radius:5px}
+
+.call-day-heading{position:sticky!important;top:118px!important;z-index:8!important;background:rgba(246,248,249,.97)!important;backdrop-filter:blur(8px);border-top:0!important;border-bottom:1px solid #e1e5e8;box-shadow:0 2px 5px rgba(31,38,45,.025)}
+.call-day-heading b{font-size:10px!important;text-transform:none}
+.call-day-heading span{font-size:8px!important}
+
+.call-row.data{position:relative;cursor:pointer;transition:background .14s ease,box-shadow .14s ease,transform .14s ease,border-color .14s ease}
+.call-row.data:hover,.call-row.data:focus-visible{z-index:2;transform:translateX(2px);background:#f8fbfd!important;box-shadow:inset 4px 0 0 #738fa4,0 6px 18px rgba(27,36,44,.07);outline:0}
+.call-row.data.call-unviewed{font-weight:inherit}
+.call-row.data.call-unviewed:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#d96b43}
+.call-caller-cell{display:flex!important;align-items:center;gap:8px}
+.call-caller-cell>span{min-width:0}
+.call-new-dot{width:8px;height:8px;flex:0 0 auto;border-radius:50%;background:#d95e3c;box-shadow:0 0 0 4px rgba(217,94,60,.09);animation:callNewPulse 2.4s ease-in-out infinite}
+.call-row.data.call-unviewed .call-caller-cell strong{font-weight:950}
+.call-row.data.call-viewed .call-caller-cell strong{font-weight:760}
+.call-duration{display:grid!important;gap:3px;align-content:center}
+.call-duration>b{font-size:9px}
+.call-view-cue{font-size:7px!important;font-weight:900;color:#647684!important;opacity:0;transform:translateX(-3px);transition:opacity .14s ease,transform .14s ease;white-space:nowrap}
+.call-row.data:hover .call-view-cue,.call-row.data:focus-visible .call-view-cue{opacity:1;transform:none}
+@keyframes callNewPulse{0%,100%{box-shadow:0 0 0 4px rgba(217,94,60,.08)}50%{box-shadow:0 0 0 7px rgba(217,94,60,.025)}}
+
+/* Contacts get the same persistent directory headings */
+.contact-list-panel .contact-row.head{top:70px;z-index:9}
+.contact-row.data:hover,.contact-row.data:focus-visible{z-index:2;background:#f8fbfd!important;box-shadow:inset 4px 0 0 #7d95a7,0 5px 16px rgba(27,36,44,.055);outline:0}
+
+/* Notification inbox and exact-item affordance */
+.notification-tabs{display:flex;gap:5px;padding:8px 10px;border-bottom:1px solid var(--line);background:#fafbfc}
+.notification-tabs button{border:1px solid transparent;background:transparent;border-radius:999px;padding:6px 9px;font:800 8px inherit;color:#68727b;cursor:pointer}
+.notification-tabs button:hover{background:#f0f2f4}
+.notification-tabs button.active{background:#222a31;color:#fff;border-color:#222a31}
+.notification-item{grid-template-columns:auto minmax(0,1fr) auto!important}
+.notification-item.read{opacity:.72}
+.notification-item.unread{background:#fffaf6}
+.notification-item.unread .notification-copy b{font-weight:950}
+.notification-open-cue{align-self:center;color:#9aa2aa;font-size:14px;font-weight:900;transition:transform .14s ease,color .14s ease}
+.notification-item:hover .notification-open-cue{transform:translateX(2px);color:var(--accent)}
+.notification-empty{padding:20px 14px!important;color:var(--muted);font-size:9px;text-align:center}
+
+/* Professional terminology helper */
+.disposition-pill{letter-spacing:.005em}
+
+@media(max-width:1050px){
+  .call-history-panel,.contact-list-panel{overflow-x:auto}
+  .sticky-table-head,.contact-list-panel .contact-row.head,.call-day-heading{position:relative!important;top:auto!important}
+  .call-view-cue{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .call-new-dot{animation:none!important}
+}
