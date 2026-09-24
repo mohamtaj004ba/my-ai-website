@@ -771,6 +771,15 @@ async function adminPlatformSettings(req,res){
     analyticsWindowDays:clampInt(saved.analyticsWindowDays,7,90,30),
     adminRefreshSeconds:clampInt(saved.adminRefreshSeconds,30,300,60),
     leadFollowupHours:clampInt(saved.leadFollowupHours,4,168,24),
+    defaultSalesOwner:String(saved.defaultSalesOwner||'').slice(0,120),
+    autoScheduleFirstFollowup:saved.autoScheduleFirstFollowup!==false,
+    alertPrefs:{
+      prospects:saved.alertPrefs?.prospects!==false,
+      billing:saved.alertPrefs?.billing!==false,
+      onboarding:saved.alertPrefs?.onboarding!==false,
+      clientCare:saved.alertPrefs?.clientCare!==false,
+      system:saved.alertPrefs?.system!==false
+    },
     maintenanceMode:!!saved.maintenanceMode,
     launchGates:launchGateState(saved.launchGates),
     updatedAt:saved.updatedAt||null
@@ -789,12 +798,21 @@ async function adminPlatformSettingsSave(req,res){
     analyticsWindowDays:clampInt(body.analyticsWindowDays,7,90,30),
     adminRefreshSeconds:clampInt(body.adminRefreshSeconds,30,300,60),
     leadFollowupHours:clampInt(body.leadFollowupHours,4,168,24),
+    defaultSalesOwner:String(body.defaultSalesOwner||'').trim().slice(0,120),
+    autoScheduleFirstFollowup:body.autoScheduleFirstFollowup!==false,
+    alertPrefs:{
+      prospects:body.alertPrefs?.prospects!==false,
+      billing:body.alertPrefs?.billing!==false,
+      onboarding:body.alertPrefs?.onboarding!==false,
+      clientCare:body.alertPrefs?.clientCare!==false,
+      system:body.alertPrefs?.system!==false
+    },
     maintenanceMode:!!body.maintenanceMode,launchGates,updatedAt:Date.now(),updatedBy:admin.email
   };
   await kv.set('platform:settings',settings);
   const changedGates=LAUNCH_GATE_DEFS.filter(g=>!!launchGateState(previous.launchGates)[g.key]!==!!launchGates[g.key]).map(g=>({key:g.key,from:!!launchGateState(previous.launchGates)[g.key],to:!!launchGates[g.key]}));
   if(changedGates.length)await appendAudit(admin.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'platform_launch_gates_update',section:'platform',before:launchGateState(previous.launchGates),after:launchGates,meta:{changedGates}});
-  await appendAudit(admin.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'platform_settings_update',section:'platform',before:{brandName:previous.brandName||'CallerCore',defaultAfterHours:previous.defaultAfterHours||'ai',analyticsWindowDays:previous.analyticsWindowDays||30,adminRefreshSeconds:previous.adminRefreshSeconds||60,leadFollowupHours:previous.leadFollowupHours||24,maintenanceMode:!!previous.maintenanceMode},after:{brandName:settings.brandName,defaultAfterHours:settings.defaultAfterHours,analyticsWindowDays:settings.analyticsWindowDays,adminRefreshSeconds:settings.adminRefreshSeconds,leadFollowupHours:settings.leadFollowupHours,maintenanceMode:settings.maintenanceMode}});
+  await appendAudit(admin.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'platform_settings_update',section:'platform',before:{brandName:previous.brandName||'CallerCore',defaultAfterHours:previous.defaultAfterHours||'ai',analyticsWindowDays:previous.analyticsWindowDays||30,adminRefreshSeconds:previous.adminRefreshSeconds||60,leadFollowupHours:previous.leadFollowupHours||24,defaultSalesOwner:previous.defaultSalesOwner||'',autoScheduleFirstFollowup:previous.autoScheduleFirstFollowup!==false,alertPrefs:previous.alertPrefs||{},maintenanceMode:!!previous.maintenanceMode},after:{brandName:settings.brandName,defaultAfterHours:settings.defaultAfterHours,analyticsWindowDays:settings.analyticsWindowDays,adminRefreshSeconds:settings.adminRefreshSeconds,leadFollowupHours:settings.leadFollowupHours,defaultSalesOwner:settings.defaultSalesOwner,autoScheduleFirstFollowup:settings.autoScheduleFirstFollowup,alertPrefs:settings.alertPrefs,maintenanceMode:settings.maintenanceMode}});
   return res.status(200).json({ok:true,settings});
 }
 
@@ -1065,7 +1083,27 @@ async function adminDocuments(req,res){
     agreements.push({workspaceId:id,workspaceName:ws.name||'Unnamed client',ownerEmail:ws.ownerEmail||'',plan:ws.plan||'Starter',signed,agreementVersion:onboarding?.agreementVersion||'',signedAt:onboarding?.agreementSignedAt||null,signedName:onboarding?.agreementSignedName||'',downloadUrl:signed&&token?('/api/agreement-pdf?token='+encodeURIComponent(token)):'',status:signed?'signed':onboarding?.onboardingLinkSent?'awaiting_signature':'not_sent'});
   }
   agreements.sort((a,b)=>Number(b.signedAt||0)-Number(a.signedAt||0)||String(a.workspaceName).localeCompare(String(b.workspaceName)));
-  return res.status(200).json({documents:{agreements,standard:[{id:'terms',name:'Terms of Service',type:'Legal',url:'/terms.html'},{id:'privacy',name:'Privacy Policy',type:'Legal',url:'/privacy.html'}]}});
+  const company=await kv.get('admin:documents')||[];
+  return res.status(200).json({documents:{agreements,company:Array.isArray(company)?company:[],standard:[{id:'terms',name:'Terms of Service',type:'Legal',url:'/terms.html'},{id:'privacy',name:'Privacy Policy',type:'Legal',url:'/privacy.html'}]}});
+}
+async function adminDocumentSave(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const b=req.body||{},list=await kv.get('admin:documents')||[],items=Array.isArray(list)?list.slice():[],id=String(b.id||crypto.randomUUID()).slice(0,100),index=items.findIndex(x=>x&&x.id===id);
+  const name=String(b.name||'').trim().slice(0,160),url=String(b.url||'').trim().slice(0,1200);
+  if(!name)return res.status(400).json({error:'Document name is required'});
+  if(url&&!/^https?:\/\//i.test(url)&&!url.startsWith('/'))return res.status(400).json({error:'Document link must be an http(s) URL or CallerCore path'});
+  const types=['Legal','Insurance','Tax','Finance','Security','Vendor','Corporate','Other'],statuses=['active','review','expired','archived'],old=index>=0?items[index]:{};
+  const doc={...old,id,name,type:types.includes(b.type)?b.type:(old.type||'Other'),status:statuses.includes(b.status)?b.status:(old.status||'active'),url,effectiveDate:String(b.effectiveDate||'').slice(0,10),expiresAt:String(b.expiresAt||'').slice(0,10),notes:String(b.notes||'').trim().slice(0,2000),createdAt:old.createdAt||Date.now(),updatedAt:Date.now(),updatedBy:admin.email};
+  if(index>=0)items[index]=doc;else items.unshift(doc);
+  await kv.set('admin:documents',items.slice(0,500));
+  return res.status(200).json({ok:true,document:doc});
+}
+async function adminDocumentDelete(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).id||'').slice(0,100);if(!id)return res.status(400).json({error:'Document id required'});
+  const list=await kv.get('admin:documents')||[],items=Array.isArray(list)?list:[],next=items.filter(x=>x&&x.id!==id);
+  if(next.length===items.length)return res.status(404).json({error:'Document not found'});
+  await kv.set('admin:documents',next);return res.status(200).json({ok:true});
 }
 
 async function adminTechSupport(req,res){
@@ -1446,18 +1484,20 @@ async function buildClientNotifications(s){
   return items;
 }
 async function buildAdminNotifications(admin){
-  const items=[],now=Date.now();
+  const items=[],now=Date.now(),platform=await kv.get('platform:settings')||{},alerts={
+    prospects:platform.alertPrefs?.prospects!==false,billing:platform.alertPrefs?.billing!==false,onboarding:platform.alertPrefs?.onboarding!==false,clientCare:platform.alertPrefs?.clientCare!==false,system:platform.alertPrefs?.system!==false
+  };
   const [supportIndex,workspaceIndex,prospectIds,gmailConn,feedbackIndex]=await Promise.all([
     kv.get('support:index'),kv.get('workspace:index'),kv.lrange('site:prospect:index',0,99),getGmailConnection(admin.email),kv.get('ai-feedback:index')
   ]);
-  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!f||f.status!=='submitted')continue;const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'client-care',createdAt:f.createdAt||now,meta:{feedbackId:f.id,workspaceId:f.workspaceId||'',careTab:'feedback'}}));}
+  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!alerts.clientCare||!f||f.status!=='submitted')continue;const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'client-care',createdAt:f.createdAt||now,meta:{feedbackId:f.id,workspaceId:f.workspaceId||'',careTab:'feedback'}}));}
   for(const id of Array.isArray(supportIndex)?supportIndex.slice(0,100):[]){
-    const t=await kv.get('support:'+id);if(!t||t.status==='resolved')continue;
+    const t=await kv.get('support:'+id);if(!alerts.clientCare||!t||t.status==='resolved')continue;
     items.push(notificationItem('admin-support:'+t.id+':'+t.status,{title:(t.priority==='urgent'?'Urgent support request':'Client support request'),body:(t.workspaceName||'Client')+' · '+t.subject,kind:t.priority==='urgent'?'danger':'warning',view:'client-care',createdAt:t.updatedAt||t.createdAt||now,meta:{ticketId:t.id,careTab:'support'}}));
   }
   for(const id of Array.isArray(workspaceIndex)?workspaceIndex.slice(0,300):[]){
     const ws=await kv.get('workspace:'+id);if(!ws)continue;
-    if(ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'finance',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
+    if(alerts.billing&&ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'finance',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
     if(ws.status==='suspended')items.push(notificationItem('admin-workspace:'+id+':suspended',{title:'Client workspace suspended',body:(ws.name||'Client')+' is currently suspended.',kind:'warning',view:'clients',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
     const plan=entitlementsFor(ws.plan),usage=Number(ws.usage?.minutes||0);
     if(plan.minutes){
@@ -1465,17 +1505,17 @@ async function buildAdminNotifications(admin){
       if(threshold)items.push(notificationItem('admin-usage:'+id+':'+threshold,{title:(ws.name||'Client')+' usage at '+Math.min(pct,100)+'%',body:usage+' of '+plan.minutes+' included minutes used. Review usage; no overage policy is implied by this notice.',kind:threshold>=100?'danger':'warning',view:'clients',createdAt:ws.updatedAt||now,meta:{workspaceId:id,usage,limit:plan.minutes,threshold}}));
     }
     const onboarding=await kv.get('onboarding:workspace:'+id);
-    if(onboarding?.status==='awaiting_review'){
+    if(alerts.onboarding&&onboarding?.status==='awaiting_review'){
       const eligible=Number(onboarding.reviewEligibleAt||0)<=now;
       items.push(notificationItem('admin-onboarding:'+id+':account-review',{title:eligible?'Paid client ready for onboarding review':'New paid client in review hold',body:(ws.name||'Client')+(eligible?' is ready for account review and onboarding approval.':' has paid. The onboarding invite will become eligible during business hours.'),kind:eligible?'warning':'info',view:'onboarding',createdAt:onboarding.paidAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
     }
-    if(onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview){
+    if(alerts.onboarding&&onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview){
       const eligible=Number(onboarding.buildEligibleAt||0)<=now;
       items.push(notificationItem('admin-onboarding:'+id+':build-review',{title:eligible?'Build ready for QA review':'Build in QA hold',body:(ws.name||'Client')+' submitted intake and has an AI-agent draft '+(eligible?'ready for review.':'waiting for the review window.'),kind:eligible?'warning':'info',view:'onboarding',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
     }
   }
   const prospectList=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,100).map(id=>kv.get('site:prospect:'+id)))).filter(Boolean);
-  prospectList.filter(p=>['new','inquiry','checkout_started'].includes(p.stage)).slice(0,25).forEach(p=>{
+  if(alerts.prospects)prospectList.filter(p=>['new','inquiry','checkout_started'].includes(p.stage)).slice(0,25).forEach(p=>{
     const title=p.stage==='checkout_started'?'Signup checkout started':'New website inquiry';
     items.push(notificationItem('prospect:'+p.id+':'+p.stage,{title,body:(p.name||p.business||p.email||'Website prospect')+(p.plan?' · '+p.plan:''),kind:'info',view:'growth',createdAt:p.updatedAt||p.createdAt||now,meta:{prospectId:p.id}}));
   });
@@ -2235,6 +2275,8 @@ module.exports=async function handler(req,res){
   if(action==='admin-marketing-campaign-save'&&req.method==='POST')return adminMarketingCampaignSave(req,res);
   if(action==='admin-marketing-campaign-delete'&&req.method==='POST')return adminMarketingCampaignDelete(req,res);
   if(action==='admin-documents'&&req.method==='GET')return adminDocuments(req,res);
+  if(action==='admin-document-save'&&req.method==='POST')return adminDocumentSave(req,res);
+  if(action==='admin-document-delete'&&req.method==='POST')return adminDocumentDelete(req,res);
   if(action==='admin-tech-support'&&req.method==='GET')return adminTechSupport(req,res);
   if(action==='admin-send-client-login'&&req.method==='POST')return adminSendClientLogin(req,res);
   if(action==='admin-force-logout'&&req.method==='POST')return adminForceLogout(req,res);
