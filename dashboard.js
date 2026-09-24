@@ -1258,6 +1258,7 @@ async function bootstrapAdmin(){
 
 async function loadAdminOps(){
   try{
+    const requestedAnalyticsDays=adminWebsiteDays;
     const [pr,ph,hr,fr,sr,ps,wr,fbr,fin,cr,dr]=await Promise.all([
       fetch('/api/account?action=admin-provisioning',{cache:'no-store'}),
       fetch('/api/account?action=admin-phone-numbers',{cache:'no-store'}),
@@ -1279,6 +1280,8 @@ async function loadAdminOps(){
     if(sr.ok)adminSupportData=(await sr.json()).tickets||[];
     if(ps.ok)adminPlatformData=(await ps.json()).settings||null;
     if(wr.ok)adminWebsiteData=(await wr.json()).analytics||adminWebsiteData;
+    const preferredDays=Number(adminPlatformData?.analyticsWindowDays||requestedAnalyticsDays||30);
+    if(preferredDays!==requestedAnalyticsDays){adminWebsiteDays=preferredDays;const rr=await fetch('/api/account?action=admin-website-analytics&days='+preferredDays,{cache:'no-store'});if(rr.ok)adminWebsiteData=(await rr.json()).analytics||adminWebsiteData}else adminWebsiteDays=requestedAnalyticsDays;
     if(fbr.ok)adminFeedbackData=(await fbr.json()).feedback||[];
     if(fin.ok)adminFinanceData=(await fin.json()).finance||adminFinanceData;
     if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];
@@ -1715,6 +1718,7 @@ function renderPlatformSettings(){
   set('platformRefreshSeconds',adminPlatformData.adminRefreshSeconds||60);
   set('platformLeadFollowupHours',adminPlatformData.leadFollowupHours||24);
   const mm=document.getElementById('platformMaintenanceMode');if(mm)mm.checked=!!adminPlatformData.maintenanceMode;
+  const brand=document.querySelector('.dash-brand span');if(brand&&document.body.dataset.dashboard==='admin')brand.textContent=adminPlatformData.brandName||'CallerCore';
   const gates=adminPlatformData.launchGates||{},gateMap={launchGatePreviewIsolation:'previewIsolation',launchGateDisposableE2E:'disposableE2E',launchGateVoiceLifecycle:'voiceLifecycle',launchGateProductionEnvScope:'productionEnvScope',launchGateSupportEmail:'supportEmail',launchGateBusinessTax:'businessTax',launchGateLegalReview:'legalReview'};
   Object.entries(gateMap).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.checked=!!gates[key]});
 }
@@ -1728,7 +1732,7 @@ async function savePlatformSettings(){
   try{
     const r=await fetch('/api/account?action=admin-platform-settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save platform settings.');
-    adminPlatformData=data.settings;adminWebsiteDays=Number(data.settings?.analyticsWindowDays||adminWebsiteDays||30);renderPlatformSettings();initAdminLiveRefresh();renderGrowth();
+    adminPlatformData=data.settings;adminWebsiteDays=Number(data.settings?.analyticsWindowDays||adminWebsiteDays||30);renderPlatformSettings();initAdminLiveRefresh();renderGrowth();await loadWebsiteAnalytics(adminWebsiteDays);
     if(status){status.textContent='Platform settings saved and applied.';status.className='form-status-line success'}
     const tag=document.getElementById('platformSettingsStatus');if(tag){tag.textContent='Saved';tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1500)}
   }catch(err){if(status){status.textContent=err.message||'Could not save platform settings.';status.className='form-status-line error'}}
