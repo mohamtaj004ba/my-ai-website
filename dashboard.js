@@ -2232,6 +2232,8 @@ function adminGlobalSearchItems(q){
   for(const x of adminPhoneData||[])if(match([x.id,x.number,x.forwardingFrom,x.transferNumber,x.workspaceName,x.provider]))items.push({type:'phone',id:String(x.id||''),title:x.number||'Phone number',meta:[x.workspaceName,x.provider,'Phone'].filter(Boolean).join(' · '),view:'phones'});
   for(const x of adminFeedbackData||[])if(match([x.id,x.workspaceName,x.actorEmail,x.category,x.message,x.status]))items.push({type:'feedback',id:String(x.id||''),title:x.workspaceName||'AI feedback',meta:[String(x.category||'feedback').replaceAll('_',' '),x.status,'Client care'].filter(Boolean).join(' · '),view:'client-care'});
   for(const x of adminFinanceData.expenses||[])if(match([x.id,x.name,x.vendor,x.category,x.notes]))items.push({type:'expense',id:String(x.id||''),title:x.name||'Expense',meta:[x.vendor,x.category,financeMoney(x.amount)].filter(Boolean).join(' · '),view:'finance'});
+  for(const c of adminCampaignData||[])if(match([c.id,c.name,c.channel,c.status,c.utmSource,c.utmMedium,c.utmCampaign,c.goal]))items.push({type:'campaign',id:String(c.id||''),title:c.name||'Campaign',meta:[c.channel,c.status,'Growth campaign'].filter(Boolean).join(' · '),view:'growth'});
+  for(const d of adminDocumentsData.agreements||[])if(match([d.workspaceName,d.ownerEmail,d.signedName,d.agreementVersion,d.status]))items.push({type:'document',id:String(d.workspaceId||''),title:(d.workspaceName||'Client')+' agreement',meta:[d.status,d.agreementVersion?'v'+d.agreementVersion:''].filter(Boolean).join(' · '),view:'documents'});
   for(const t of adminInboxData.gmail?.threads||[])if(match([t.subject,t.last?.from,t.last?.to,t.last?.snippet]))items.push({type:'gmail',id:t.id,title:t.subject||'Gmail thread',meta:[t.last?.from,'Gmail'].filter(Boolean).join(' · '),view:'inbox'});
   return items.slice(0,14);
 }
@@ -2251,6 +2253,8 @@ async function openAdminGlobalSearchResult(type,id,view){
   if(type==='client'){showView('clients');await openAdminClient(id);return}
   if(type==='gmail'){showView('inbox');await openInboxItem('gmail',id);setTimeout(()=>flashAdminSearchTarget(document.querySelector('[data-inbox-kind="gmail"][data-inbox-id="'+CSS.escape(id)+'"]')),80);return}
   if(type==='prospect'){showView('growth');openProspectModal(id);return}
+  if(type==='campaign'){showView('growth');openCampaignModal(id);return}
+  if(type==='document'){documentSearch=(adminDocumentsData.agreements||[]).find(x=>String(x.workspaceId)===String(id))?.workspaceName||'';showView('documents');renderDocuments();return}
   if(type==='support')openClientCare('support');else if(type==='feedback')openClientCare('feedback');else showView(view);
   setTimeout(()=>{
     if(type==='support'){const el=document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]');if(el)el.open=true;flashAdminSearchTarget(el)}
