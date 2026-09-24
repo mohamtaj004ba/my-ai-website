@@ -2588,29 +2588,131 @@ document.getElementById('adminRepairAccessButton')?.addEventListener('click',rep
 
 function closeAdminClient(){document.getElementById('adminClientDrawer')?.classList.remove('open');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
 
+let adminSearchActiveIndex=0,adminSearchInboxCacheLoaded=false,adminSearchInboxLoading=false;
+
+function adminSearchScore(query,parts,title=''){
+  const raw=String(query||'').trim().toLowerCase(),tokens=raw.split(/\s+/).filter(Boolean),text=parts.filter(Boolean).join(' ').toLowerCase(),heading=String(title||'').toLowerCase();
+  if(!tokens.length||!tokens.every(t=>text.includes(t)))return -1;
+  let score=0;
+  if(heading===raw)score+=120;
+  if(heading.startsWith(raw))score+=70;
+  else if(heading.includes(raw))score+=42;
+  for(const t of tokens){
+    if(heading.startsWith(t))score+=16;
+    else if(heading.includes(t))score+=10;
+    const pos=text.indexOf(t);score+=Math.max(1,8-Math.floor(Math.max(0,pos)/35));
+  }
+  return score;
+}
 function adminGlobalSearchItems(q){
-  const needle=String(q||'').trim().toLowerCase();if(needle.length<2)return[];
-  const match=(parts)=>parts.filter(Boolean).join(' ').toLowerCase().includes(needle),items=[];
-  for(const x of adminClientsData)if(match([x.name,x.ownerEmail,x.id,x.plan,x.subscriptionStatus]))items.push({type:'client',id:x.id,title:x.name||'Client',meta:[x.ownerEmail,x.plan,'Client account'].filter(Boolean).join(' · '),view:'clients'});
-  for(const p of adminWebsiteData.prospects||[])if(match([p.name,p.business,p.email,p.phone,p.source,p.stage,p.plan,p.industry,p.campaign,p.utmCampaign]))items.push({type:'prospect',id:p.id,title:p.business||p.name||p.email||'Prospect',meta:[p.email,p.stage,'Growth prospect'].filter(Boolean).join(' · '),view:'growth'});
-  for(const t of adminSupportData||[])if(match([t.subject,t.workspaceName,t.email,t.message,t.priority,t.status]))items.push({type:'support',id:t.id,title:t.subject||'Support request',meta:[t.workspaceName,t.status,'Client care'].filter(Boolean).join(' · '),view:'client-care'});
-  for(const x of adminPhoneData||[])if(match([x.id,x.number,x.forwardingFrom,x.transferNumber,x.workspaceName,x.provider]))items.push({type:'phone',id:String(x.id||''),title:x.number||'Phone number',meta:[x.workspaceName,x.provider,'Phone'].filter(Boolean).join(' · '),view:'phones'});
-  for(const x of adminFeedbackData||[])if(match([x.id,x.workspaceName,x.actorEmail,x.category,x.message,x.status]))items.push({type:'feedback',id:String(x.id||''),title:x.workspaceName||'AI feedback',meta:[String(x.category||'feedback').replaceAll('_',' '),x.status,'Client care'].filter(Boolean).join(' · '),view:'client-care'});
-  for(const x of adminFinanceData.expenses||[])if(match([x.id,x.name,x.vendor,x.category,x.notes]))items.push({type:'expense',id:String(x.id||''),title:x.name||'Expense',meta:[x.vendor,x.category,financeMoney(x.amount)].filter(Boolean).join(' · '),view:'finance'});
-  for(const x of adminDocumentsData.company||[])if(match([x.id,x.name,x.type,x.status,x.notes]))items.push({type:'company-document',id:String(x.id||''),title:x.name||'Company record',meta:[x.type,x.status,'Documents'].filter(Boolean).join(' · '),view:'documents'});
-  for(const c of adminCampaignData||[])if(match([c.id,c.name,c.channel,c.status,c.utmSource,c.utmMedium,c.utmCampaign,c.goal]))items.push({type:'campaign',id:String(c.id||''),title:c.name||'Campaign',meta:[c.channel,c.status,'Growth campaign'].filter(Boolean).join(' · '),view:'growth'});
-  for(const d of adminDocumentsData.agreements||[])if(match([d.workspaceName,d.ownerEmail,d.signedName,d.agreementVersion,d.status]))items.push({type:'document',id:String(d.workspaceId||''),title:(d.workspaceName||'Client')+' agreement',meta:[d.status,d.agreementVersion?'v'+d.agreementVersion:''].filter(Boolean).join(' · '),view:'documents'});
-  for(const t of adminInboxData.gmail?.threads||[])if(match([t.subject,t.last?.from,t.last?.to,t.last?.snippet]))items.push({type:'gmail',id:t.id,title:t.subject||'Gmail thread',meta:[t.last?.from,'Gmail'].filter(Boolean).join(' · '),view:'inbox'});
-  return items.slice(0,14);
+  const query=String(q||'').trim();if(query.length<2)return[];
+  const items=[],add=(item,parts)=>{
+    const score=adminSearchScore(query,[item.title,item.meta,item.group,...parts],item.title);
+    if(score>=0)items.push({...item,score});
+  };
+  const pages=[
+    ['overview','Command Center','Dashboard, company KPIs, priority queue, company performance, client health, open actions','Navigation'],
+    ['clients','Client Accounts','Clients, customers, businesses, plans, MRR, usage, billing, account lifecycle','Navigation'],
+    ['onboarding','Onboarding','Client setup, launch, agreement, intake, build, QA, test call, approval','Navigation'],
+    ['agents','AI Receptionists','AI agents, Maya, voice configuration, prompt, hours, transfer, receptionist health','Navigation'],
+    ['phones','Phone Numbers','Voice routing, forwarding, transfer destinations, after-hours routing, Vapi numbers','Navigation'],
+    ['finance','Finance','MRR, recurring revenue, costs, expenses, margin, subscriptions, collections','Navigation'],
+    ['growth','Growth','CRM, prospects, leads, sales pipeline, follow-ups, campaigns, attribution','Navigation'],
+    ['website','Website Analytics','Website traffic, sessions, visitors, sources, conversions, UTM, analytics','Navigation'],
+    ['inbox','Inbox','Gmail, email, website conversations, messages, replies','Navigation'],
+    ['documents','Documents','Agreements, contracts, legal, Terms, Privacy, company records','Navigation'],
+    ['client-care','Client Care','Support tickets, feedback, requests, SLA, client improvement','Navigation'],
+    ['admin-automations','Automations','Workflows, triggers, actions, coverage, client automations','Navigation'],
+    ['health','System Health','Readiness, blockers, dependencies, platform health, environment, launch checks','Navigation'],
+    ['platform-settings','Platform Settings','Settings, defaults, notifications, maintenance, owner confirmations, launch gates','Navigation']
+  ];
+  pages.forEach(([view,title,meta,group])=>add({type:'page',id:view,title,meta,view,group},[view,meta]));
+  add({type:'ai',id:'core-intelligence',title:'Core Intelligence',meta:'Operational questions, analysis, reports and admin guidance',view:'overview',group:'Navigation'},['AI copilot assistant intelligence report briefing help']);
+
+  for(const x of adminClientsData||[])add({type:'client',id:String(x.id||''),title:x.name||'Client',meta:[x.ownerEmail,x.plan,x.subscriptionStatus,'Client account'].filter(Boolean).join(' · '),view:'clients',group:'Clients'},[x.id,x.ownerEmail,x.plan,x.status,x.subscriptionStatus,x.usage?.minutes]);
+  for(const x of adminProvisioningData||[])add({type:'onboarding',id:String(x.id||''),title:(x.name||'Client')+' onboarding',meta:[x.stage,x.plan,(x.checklistDone!=null&&x.checklistTotal!=null)?x.checklistDone+'/'+x.checklistTotal+' steps':''].filter(Boolean).join(' · '),view:'onboarding',group:'Clients'},[x.ownerEmail,x.onboardingStatus,x.agreementSignedName,x.manualOverride?'manual override':'']);
+  for(const x of adminFleetData.agents||[])add({type:'agent',id:String(x.workspaceId||''),title:(x.agent?.name||'AI receptionist')+' · '+(x.workspaceName||'Workspace'),meta:[x.plan,x.status,'AI receptionist'].filter(Boolean).join(' · '),view:'agents',group:'Clients'},[x.workspaceName,x.agent?.role,x.agent?.businessHours,x.agent?.transferNumber,x.issue]);
+  for(const x of adminPhoneData||[])add({type:'phone',id:String(x.id||''),title:x.number||'Phone number',meta:[x.workspaceName,x.provider,'Phone routing'].filter(Boolean).join(' · '),view:'phones',group:'Clients'},[x.forwardingFrom,x.transferNumber,x.afterHours,x.status,x.label]);
+  for(const x of adminFleetData.automations||[])add({type:'automation',id:String(x.workspaceId||''),title:(x.workspaceName||'Workspace')+' automations',meta:[x.enabled+' enabled of '+x.total,x.plan].filter(Boolean).join(' · '),view:'admin-automations',group:'Operations'},[(x.workflows||[]).map(w=>[w.name,w.trigger,w.action,w.enabled?'enabled':'disabled'].join(' ')).join(' ')]);
+  for(const p of adminWebsiteData.prospects||[])add({type:'prospect',id:String(p.id||''),title:p.business||p.name||p.email||'Prospect',meta:[p.email,p.stage,p.source,'Growth prospect'].filter(Boolean).join(' · '),view:'growth',group:'Growth'},[p.phone,p.plan,p.industry,p.campaign,p.utmCampaign,p.utmSource,p.owner,p.notes,p.message]);
+  for(const c of adminCampaignData||[])add({type:'campaign',id:String(c.id||''),title:c.name||'Campaign',meta:[c.channel,c.status,'Growth campaign'].filter(Boolean).join(' · '),view:'growth',group:'Growth'},[c.utmSource,c.utmMedium,c.utmCampaign,c.goal,c.budget]);
+  for(const t of adminSupportData||[])add({type:'support',id:String(t.id||''),title:t.subject||'Support request',meta:[t.workspaceName,t.status,t.priority,'Client Care'].filter(Boolean).join(' · '),view:'client-care',group:'Client Care'},[t.email,t.message,(t.thread||[]).map(m=>m.message||m.body||'').join(' ')]);
+  for(const x of adminFeedbackData||[])add({type:'feedback',id:String(x.id||''),title:x.workspaceName||'AI feedback',meta:[String(x.category||'feedback').replaceAll('_',' '),x.status,'Client Care'].filter(Boolean).join(' · '),view:'client-care',group:'Client Care'},[x.actorEmail,x.message,x.source,x.notes]);
+  for(const x of adminFinanceData.expenses||[])add({type:'expense',id:String(x.id||''),title:x.name||'Expense',meta:[x.vendor,x.category,financeMoney(x.amount),'Finance'].filter(Boolean).join(' · '),view:'finance',group:'Finance'},[x.notes,x.frequency,x.status,x.date]);
+  for(const d of adminDocumentsData.agreements||[])add({type:'document',id:String(d.workspaceId||''),title:(d.workspaceName||'Client')+' agreement',meta:[d.status,d.agreementVersion?'v'+d.agreementVersion:'','Documents'].filter(Boolean).join(' · '),view:'documents',group:'Documents'},[d.ownerEmail,d.signedName,d.signedEmail,d.signedAt]);
+  for(const x of adminDocumentsData.company||[])add({type:'company-document',id:String(x.id||''),title:x.name||'Company record',meta:[x.type,x.status,'Company record'].filter(Boolean).join(' · '),view:'documents',group:'Documents'},[x.notes,x.location,x.expiresAt,x.owner]);
+  for(const x of adminDocumentsData.standard||[])add({type:'standard-document',id:String(x.id||x.name||''),title:x.name||'Standard document',meta:[x.type,'CallerCore legal'].filter(Boolean).join(' · '),view:'documents',group:'Documents'},[x.href,x.description]);
+  for(const x of adminHealthData||[])add({type:'health',id:String(x.id||x.name||''),title:x.name||'System check',meta:[x.status,x.detail,'System Health'].filter(Boolean).join(' · '),view:'health',group:'Platform'},[x.category,x.message,x.service]);
+  for(const x of adminReadinessData?.blockers||[])add({type:'health',id:String(x.key||x.name||''),title:x.name||'Launch blocker',meta:[x.detail,'Launch blocker'].filter(Boolean).join(' · '),view:'health',group:'Platform'},[x.key,x.status]);
+  const settings=[
+    ['general','Company identity','brand name support email timezone'],
+    ['clients','Client defaults','default AI receptionist after hours client workspace defaults'],
+    ['growth','Sales & growth settings','lead follow-up sales owner attribution prospect defaults'],
+    ['admin','Admin console settings','refresh cadence analytics window admin console'],
+    ['alerts','Notification settings','billing onboarding prospects client care system alerts'],
+    ['safety','Operations & safety','maintenance mode environment controls production safeguards'],
+    ['launch','Launch gates','preview isolation E2E voice lifecycle production environment legal readiness']
+  ];
+  settings.forEach(([id,title,terms])=>add({type:'settings',id,title,meta:'Platform Settings',view:'platform-settings',group:'Platform'},[terms]));
+  for(const x of adminWebsiteData.topPages||[])add({type:'analytics',id:'page',title:x.path||x.page||'Website page',meta:[x.views!=null?x.views+' views':'','Website Analytics'].filter(Boolean).join(' · '),view:'website',group:'Analytics'},[x.title,x.sessions,x.visitors]);
+  for(const x of adminWebsiteData.sources||[])add({type:'analytics',id:'source',title:(x.source||x.name||'Traffic source'),meta:[x.sessions!=null?x.sessions+' sessions':'','Acquisition source'].filter(Boolean).join(' · '),view:'website',group:'Analytics'},[x.medium,x.campaign,x.visitors,x.conversions]);
+  for(const t of adminInboxData.gmail?.threads||[]){
+    const messages=t.messages||[],searchBody=messages.slice(-8).map(m=>[m.from,m.to,m.subject,m.snippet,m.body].filter(Boolean).join(' ')).join(' ');
+    add({type:'gmail',id:String(t.id||''),title:t.subject||'Gmail thread',meta:[t.last?.from||messages.at(-1)?.from,'Gmail'].filter(Boolean).join(' · '),view:'inbox',group:'Inbox'},[t.last?.to,t.last?.snippet,searchBody]);
+  }
+  return items.sort((a,b)=>b.score-a.score||a.title.localeCompare(b.title)).slice(0,48);
+}
+async function loadAdminSearchInboxCache(){
+  if(adminSearchInboxCacheLoaded||adminSearchInboxLoading)return;
+  adminSearchInboxLoading=true;
+  try{
+    const sr=await fetch('/api/account?action=admin-gmail-status',{headers:{Accept:'application/json'},cache:'no-store'});
+    if(sr.ok)adminInboxData.gmailStatus=await sr.json();
+    if(adminInboxData.gmailStatus?.connected){
+      const gr=await fetch('/api/account?action=admin-gmail-inbox&cached=1',{headers:{Accept:'application/json'},cache:'no-store'});
+      if(gr.ok){const d=await gr.json();if(Array.isArray(d.threads)){adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||0)}}
+    }
+  }catch(err){console.warn('Global search inbox cache unavailable',err)}
+  finally{adminSearchInboxCacheLoaded=true;adminSearchInboxLoading=false;if(String(document.getElementById('adminSearch')?.value||'').trim().length>=2)renderAdminGlobalSearch()}
+}
+function setAdminSearchActive(index){
+  const wrap=document.getElementById('adminSearchResults'),rows=[...(wrap?.querySelectorAll('.admin-search-result')||[])];if(!rows.length)return;
+  adminSearchActiveIndex=(index+rows.length)%rows.length;
+  rows.forEach((row,i)=>row.classList.toggle('active',i===adminSearchActiveIndex));
+  rows[adminSearchActiveIndex]?.scrollIntoView({block:'nearest'});
+}
+function closeAdminGlobalSearch(){
+  const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(wrap)wrap.hidden=true;if(input)input.setAttribute('aria-expanded','false');
 }
 function renderAdminGlobalSearch(){
   const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(!input||!wrap)return;
   const q=input.value.trim(),items=adminGlobalSearchItems(q);
-  if(q.length<2){wrap.hidden=true;wrap.innerHTML='';return}
-  wrap.hidden=false;
-  wrap.innerHTML=items.length?items.map(x=>'<button type="button" class="admin-search-result" data-global-search-type="'+esc(x.type)+'" data-global-search-id="'+esc(x.id||'')+'" data-global-search-view="'+esc(x.view)+'"><span>'+esc(x.title)+'</span><small>'+esc(x.meta||'')+'</small></button>').join(''):'<div class="admin-search-empty">No CallerCore records match “'+esc(q)+'”.</div>';
-  wrap.querySelectorAll('[data-global-search-type]').forEach(b=>b.addEventListener('click',()=>openAdminGlobalSearchResult(b.dataset.globalSearchType,b.dataset.globalSearchId,b.dataset.globalSearchView)));
+  if(q.length<2){closeAdminGlobalSearch();wrap.innerHTML='';return}
+  const groups=[...new Set(items.map(x=>x.group||'Other'))];
+  wrap.hidden=false;input.setAttribute('aria-expanded','true');adminSearchActiveIndex=0;
+  const body=groups.map(group=>{
+    const rows=items.filter(x=>x.group===group);
+    return '<section class="admin-search-group"><div class="admin-search-group-title"><span>'+esc(group)+'</span><small>'+rows.length+'</small></div>'+rows.map(x=>'<button type="button" class="admin-search-result" role="option" data-global-search-type="'+esc(x.type)+'" data-global-search-id="'+esc(x.id||'')+'" data-global-search-view="'+esc(x.view)+'"><span class="admin-search-result-copy"><b>'+esc(x.title)+'</b><small>'+esc(x.meta||'')+'</small></span><em>'+esc(x.type==='page'?'Open page':x.group||'Result')+'</em></button>').join('')+'</section>';
+  }).join('');
+  wrap.innerHTML='<div class="admin-search-results-head"><div><b>Search all CallerCore</b><span>'+items.length+' result'+(items.length===1?'':'s')+(adminSearchInboxLoading?' · loading inbox cache…':'')+'</span></div><kbd>↑ ↓ Enter</kbd></div>'+(items.length?body:'<div class="admin-search-empty"><b>No matches for “'+esc(q)+'”</b><span>Try a client name, email, phone number, prospect, document, support subject, workflow, setting, or admin page.</span></div>')+'<div class="admin-search-footer"><span>Search includes navigation, client operations, Growth, Finance, Documents, Client Care, Platform and cached Gmail.</span><kbd>Esc to close</kbd></div>';
+  const rows=[...wrap.querySelectorAll('[data-global-search-type]')];
+  rows.forEach((b,i)=>{b.addEventListener('mouseenter',()=>setAdminSearchActive(i));b.addEventListener('click',()=>openAdminGlobalSearchResult(b.dataset.globalSearchType,b.dataset.globalSearchId,b.dataset.globalSearchView))});
+  if(rows.length)setAdminSearchActive(0);
 }
+document.getElementById('adminSearch')?.addEventListener('focus',()=>loadAdminSearchInboxCache());
+document.getElementById('adminSearch')?.addEventListener('input',()=>{renderAdminGlobalSearch();loadAdminSearchInboxCache()});
+document.getElementById('adminSearch')?.addEventListener('keydown',e=>{
+  const wrap=document.getElementById('adminSearchResults'),rows=[...(wrap?.querySelectorAll('.admin-search-result')||[])];
+  if(e.key==='ArrowDown'&&rows.length){e.preventDefault();setAdminSearchActive(adminSearchActiveIndex+1)}
+  else if(e.key==='ArrowUp'&&rows.length){e.preventDefault();setAdminSearchActive(adminSearchActiveIndex-1)}
+  else if(e.key==='Enter'&&rows.length&&!wrap.hidden){e.preventDefault();rows[adminSearchActiveIndex]?.click()}
+  else if(e.key==='Escape'){e.preventDefault();closeAdminGlobalSearch();e.currentTarget.blur()}
+});
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();const input=document.getElementById('adminSearch');input?.focus();input?.select();loadAdminSearchInboxCache()}
+});
+document.addEventListener('click',e=>{const shell=document.querySelector('.admin-search-shell');if(shell&&!shell.contains(e.target))closeAdminGlobalSearch()});
+
 function flashAdminSearchTarget(el){
   if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('search-target-flash');setTimeout(()=>el.classList.remove('search-target-flash'),2200);
 }
