@@ -322,10 +322,10 @@ async function adminClients(req,res){
       id:ws.id,name:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',
       status:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',
       ownerEmail:ws.ownerEmail||'',usage:ws.usage||{minutes:0},
-      stripeLinked:!!ws.stripeCustomerId,createdAt:ws.createdAt||null
+      stripeLinked:!!ws.stripeCustomerId,createdAt:ws.createdAt||null,updatedAt:ws.updatedAt||ws.createdAt||null
     });
   }
-  clients.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  clients.sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
   return res.status(200).json({clients});
 }
 
