@@ -754,6 +754,8 @@ async function adminAiGuide(req,res){
   if(!hasOpenAI&&!hasAnthropic)return res.status(503).json({error:'Core Intelligence does not have an AI provider configured yet.'});
   const body=req.body||{},question=String(body.question||'').trim().slice(0,4000);
   if(!question)return res.status(400).json({error:'Ask a question first.'});
+  let history=Array.isArray(body.history)?body.history.slice(-8):[],historyChars=0;
+  history=history.map(m=>({role:m&&m.role==='assistant'?'assistant':'user',content:String(m&&m.content||'').trim().slice(0,5000)})).filter(m=>m.content).filter(m=>{historyChars+=m.content.length;return historyChars<=18000});
   const minute=Math.floor(Date.now()/60000),rateKey='admin:ai:rate:'+String(admin.email||'admin').toLowerCase()+':'+minute;
   try{
     const count=await kv.incr(rateKey);if(count===1)await kv.expire(rateKey,120);
@@ -771,7 +773,8 @@ async function adminAiGuide(req,res){
     'For reports, use concise headings: Executive summary, Key metrics, Risks / attention, Growth, Client operations, Platform readiness, Recommended next actions.',
     'Prioritize concrete operational observations and next actions. Keep ordinary answers concise unless the user asks for detail.'
   ].join(' ');
-  const prompt='ADMIN QUESTION:\n'+question+'\n\nCALLERCORE ADMIN SNAPSHOT:\n'+snapshotText;
+  const historyText=history.map(m=>(m.role==='assistant'?'CORE INTELLIGENCE':'ADMIN')+': '+m.content).join('\n\n');
+  const prompt=(historyText?('RECENT CONVERSATION:\n'+historyText+'\n\n'):'')+'ADMIN QUESTION:\n'+question+'\n\nCALLERCORE ADMIN SNAPSHOT:\n'+snapshotText;
   async function callOpenAI(){
     const r=await fetch('https://api.openai.com/v1/responses',{
       method:'POST',
