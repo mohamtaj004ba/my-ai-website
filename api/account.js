@@ -1237,12 +1237,12 @@ async function buildClientNotifications(s){
   const missed=(Array.isArray(calls)?calls:[]).filter(x=>String(x.disposition||'')==='incomplete'||/missed|failed/i.test(String(x.outcome||''))).slice(-8).reverse();
   if(prefs.calls)missed.forEach((x,i)=>{
     const id=String(x.id||x.callId||x.phone||i),at=Number(x.createdAt||x.at||x.timestamp||Date.now());
-    items.push(notificationItem('call:'+id+':missed',{title:'Missed call',body:(x.caller||x.phone||'A caller')+' disconnected or ended before CallerCore could complete the intake.',kind:'warning',view:'calls',createdAt:at}));
+    items.push(notificationItem('call:'+id+':missed',{title:'Missed call',body:(x.caller||x.phone||'A caller')+' disconnected or ended before CallerCore could complete the intake.',kind:'warning',view:'calls',createdAt:at,meta:{callId:id}}));
   });
   for(const id of Array.isArray(index)?index.slice(0,100):[]){
     const t=await kv.get('support:'+id);if(!t||t.workspaceId!==ws.id)continue;
     if(prefs.support&&t.updatedAt&&t.updatedAt>t.createdAt){
-      items.push(notificationItem('support:'+t.id+':'+t.status+':'+t.updatedAt,{title:'Support request updated',body:'“'+t.subject+'” is now '+String(t.status||'').replace('_',' ')+'.',kind:t.status==='resolved'?'success':'info',view:'support',createdAt:t.updatedAt}));
+      items.push(notificationItem('support:'+t.id+':'+t.status+':'+t.updatedAt,{title:'Support request updated',body:'“'+t.subject+'” is now '+String(t.status||'').replace('_',' ')+'.',kind:t.status==='resolved'?'success':'info',view:'support',createdAt:t.updatedAt,meta:{ticketId:t.id}}));
     }
   }
   return items;
@@ -1847,12 +1847,28 @@ async function saveIntegrations(req,res){
   return res.status(200).json({ok:true,integrations:next});
 }
 
+function callViewedKey(workspaceId,email){
+  return 'calls:viewed:'+String(workspaceId||'')+':'+crypto.createHash('sha256').update(cleanEmail(email||'')).digest('hex');
+}
+async function callsViewed(req,res){
+  const s=await requireSession(req,res);if(!s)return;
+  const ids=await kv.get(callViewedKey(s.workspaceId,s.email))||[];
+  return res.status(200).json({ids:Array.isArray(ids)?ids.map(String).slice(-2000):[]});
+}
+async function callViewedMark(req,res){
+  const s=await requireWritableSession(req,res);if(!s)return;
+  const callId=String((req.body||{}).callId||'').slice(0,120);if(!callId)return res.status(400).json({error:'Call ID is required'});
+  const calls=await kv.get('calls:'+s.workspaceId)||[];if(!Array.isArray(calls)||!calls.some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
+  const key=callViewedKey(s.workspaceId,s.email),current=await kv.get(key)||[],set=new Set(Array.isArray(current)?current.map(String):[]);set.add(callId);
+  const next=[...set].slice(-2000);await kv.set(key,next);return res.status(200).json({ok:true});
+}
+
 async function clientDashboardData(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   const ent=entitlementsFor(ws.plan);
-  const keys=['calls:index:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index'];
-  const [callIndexRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,followupRaw,platformRaw,phoneIndex]=await Promise.all(keys.map(k=>kv.get(k)));
+  const keys=['calls:index:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index',callViewedKey(s.workspaceId,s.email)];
+  const [callIndexRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,followupRaw,platformRaw,phoneIndex,viewedRaw]=await Promise.all(keys.map(k=>kv.get(k)));
   const callsRaw=Array.isArray(callIndexRaw)?callIndexRaw:(await kv.get('calls:'+s.workspaceId)||[]);
   const savedAgent=agentRaw||{},savedSettings=settingsRaw||{},platform=platformRaw||{},savedIntegrations=integrationsRaw||{},numbers=Array.isArray(phoneIndex)?phoneIndex:[],phone=numbers.find(x=>x&&x.workspaceId===s.workspaceId)||null;
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true',calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true';
@@ -1868,6 +1884,7 @@ async function clientDashboardData(req,res){
     locations:Array.isArray(locationsRaw)?locationsRaw:[],locationsLimit:ent.locations,routing,
     conversations:[],appointments:[],automations:[],
     followupState:followupRaw&&typeof followupRaw==='object'&&!Array.isArray(followupRaw)?followupRaw:{},
+    viewedCallIds:Array.isArray(viewedRaw)?viewedRaw.map(String).slice(-2000):[],
     loadedAt:Date.now()
   });
 }
@@ -2006,6 +2023,8 @@ module.exports=async function handler(req,res){
   if(action==='integrations-save'&&req.method==='POST')return saveIntegrations(req,res);
   if(action==='client-dashboard-data'&&req.method==='GET')return clientDashboardData(req,res);
   if(action==='call-detail'&&req.method==='GET')return callDetail(req,res);
+  if(action==='calls-viewed'&&req.method==='GET')return callsViewed(req,res);
+  if(action==='call-viewed-mark'&&req.method==='POST')return callViewedMark(req,res);
   if(action==='calls'&&req.method==='GET')return calls(req,res);
   if(action==='conversations'&&req.method==='GET')return conversations(req,res);
   if(action==='appointments'&&req.method==='GET')return appointments(req,res);
