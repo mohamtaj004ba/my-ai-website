@@ -1940,44 +1940,36 @@ function bindAdminCommandCenter(){
 }
 function renderAdmin(){
   if(!adminSummaryData)return;
-  const s=adminSummaryData,set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  const s=adminSummaryData,set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v},finance=adminFinanceData||{};
   const attentionItems=adminAttentionItems();window.__adminAttentionItems=attentionItems;
-  set('adminMrr',adminMoney(s.mrr));set('adminActiveClients',s.activeClients||0);set('adminOnboarding',(s.onboarding||0)+' onboarding');
-  set('adminMinutes',Number(s.totalMinutes||0).toLocaleString());set('adminPastDue',s.pastDue||0);
-  set('adminAttentionCount',attentionItems.length);
-  const criticalCount=attentionItems.filter(x=>x.severity==='critical').length;
-  set('adminAttentionMeta',attentionItems.length?(criticalCount?criticalCount+' critical · '+attentionItems.length+' total open':attentionItems.length+' open operational item'+(attentionItems.length===1?'':'s')):'No open operational issues');
-  const total=Math.max(0,Number(s.currentClients??s.clients??adminClientsData.filter(x=>adminClientLifecycle(x)!=='past').length)),den=Math.max(1,total),active=Number(s.activeClients||0),healthy=Math.max(0,total-Number(s.pastDue||0)),onboarded=Number(s.onboarded??Math.max(0,total-Number(s.onboarding||0)));
+  set('adminMrr',financeMoney(finance.mrr??s.mrr));set('adminActiveClients',s.activeClients||0);set('adminOnboarding',(s.onboarding||0)+' onboarding');
+  set('adminMonthlyCosts',financeMoney(finance.recurringExpenses||0));set('adminNetRecurring',financeMoney(finance.netRecurring||0));set('adminMarginMeta',Number(finance.margin||0).toFixed(1).replace('.0','')+'% operating margin');
+  set('adminPastDue',s.pastDue||0);set('adminSnapshotOnboarding',s.onboarding||0);set('adminLaunchBlockers',(adminReadinessData?.blockers||[]).length);
+  const openCare=(adminSupportData||[]).filter(x=>x.status!=='resolved').length+(adminFeedbackData||[]).filter(x=>x.status==='submitted').length;set('adminOpenCare',openCare);
+  const total=Math.max(0,Number(s.currentClients??adminClientsData.filter(x=>adminClientLifecycle(x)!=='past').length)),den=Math.max(1,total),active=Number(s.activeClients||0),healthy=Math.max(0,total-Number(s.pastDue||0)),onboarded=Number(s.onboarded??Math.max(0,total-Number(s.onboarding||0)));
   const activePct=Math.round(active/den*100),billingPct=Math.round(healthy/den*100),livePct=Math.round(onboarded/den*100);
   [['adminActiveRing','adminActivePct',activePct],['adminBillingRing','adminBillingPct',billingPct],['adminLiveRing','adminLivePct',livePct]].forEach(([ringId,textId,pct])=>{const ring=document.getElementById(ringId),txt=document.getElementById(textId);if(ring)ring.style.setProperty('--pct',pct);if(txt)txt.textContent=pct+'%'});
-  set('adminActiveCount',active+' of '+total+' workspaces');set('adminBillingCount',healthy+' of '+total+' current');set('adminLiveCount',onboarded+' of '+total+' onboarded');
-  set('revenueMrr',adminMoney(s.mrr));set('revenueActive',s.activeClients||0);set('revenuePastDue',s.pastDue||0);set('revenueOnboarding',s.onboarding||0);
+  set('adminActiveCount',active+' of '+total+' current');set('adminBillingCount',healthy+' of '+total+' current');set('adminLiveCount',onboarded+' of '+total+' complete');
   const mix=document.getElementById('adminPlanMix');if(mix){
     const pm=s.planMix||{},max=Math.max(1,...Object.values(pm).map(Number));
-    mix.innerHTML=['Starter','Growth','Pro'].map(p=>{const count=Number(pm[p]||0),mrr=count*Number(PLAN_DATA[p]?.price||0);return '<button type="button" data-plan-client-filter="'+p+'"><span><b>'+p+'</b><small>'+count+' client'+(count===1?'':'s')+' · '+adminMoney(mrr)+' MRR</small></span><i><em style="width:'+Math.round(count/max*100)+'%"></em></i></button>'}).join('');
+    mix.innerHTML=['Starter','Growth','Pro'].map(p=>{const count=Number(pm[p]||0),mrr=count*Number(PLAN_DATA[p]?.price||0);return '<button type="button" data-plan-client-filter="'+p+'"><span><b>'+p+'</b><small>'+count+' client'+(count===1?'':'s')+' · '+financeMoney(mrr)+' MRR</small></span><i><em style="width:'+Math.round(count/max*100)+'%"></em></i></button>'}).join('');
   }
   const attention=document.getElementById('adminAttention');if(attention){
-    attention.innerHTML=attentionItems.slice(0,8).map(item=>'<button type="button" class="admin-event admin-attention-item '+(item.severity==='critical'?'critical':'')+'" data-admin-attention-id="'+esc(item.id)+'"><span class="attention-severity-dot '+esc(item.severity)+'"></span><b>'+esc(item.title)+'</b><span>'+esc(item.message)+'</span><small>'+esc(item.category)+' →</small></button>').join('')||'<div class="empty-state"><h3>Nothing needs attention</h3><p>Account, billing, onboarding, support, and platform issues will appear here.</p></div>';
+    attention.innerHTML=attentionItems.slice(0,7).map(item=>'<button type="button" class="admin-event admin-attention-item '+(item.severity==='critical'?'critical':'')+'" data-admin-attention-id="'+esc(item.id)+'"><span class="attention-severity-dot '+esc(item.severity)+'"></span><b>'+esc(item.title)+'</b><span>'+esc(item.message)+'</span><small>'+esc(item.category)+' →</small></button>').join('')||'<div class="empty-state"><h3>Nothing needs attention</h3><p>Billing, onboarding, client care, and platform blockers will appear here.</p></div>';
   }
   renderAdminClients();
   const recent=document.getElementById('adminRecentClients');if(recent){
     recent.innerHTML=adminClientsData.filter(x=>adminClientLifecycle(x)!=='past').slice(0,6).map(x=>adminClientRow(x,true)).join('')||'<div class="empty-state"><h3>No clients yet</h3></div>';
     recent.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openAdminClient(b.dataset.adminClient)}));
   }
-  const revenue=document.getElementById('adminRevenueList');if(revenue){revenue.innerHTML=adminClientsData.map(x=>'<button type="button" class="admin-event admin-revenue-row" data-admin-revenue-id="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span>'+esc(x.plan)+' · '+esc(adminBillingLabel(x.subscriptionStatus))+'</span><small>'+adminMoney(PLAN_DATA[x.plan]?.price||0)+'/mo</small></button>').join('')||'<div class="empty-state"><h3>No revenue yet</h3></div>';revenue.querySelectorAll('[data-admin-revenue-id]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.adminRevenueId)))}
-  renderAdminActivityChart();renderAdminPulse();renderAdminRevenueAndUsage();bindAdminCommandCenter();updateAdminRefreshStamp();
+  renderAdminFinance();renderClientCareTabs();bindAdminCommandCenter();updateAdminRefreshStamp();
 }
 function adminClientRow(x,activity=false){
-  const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0);
-  const usage=lim?used+' / '+lim:used.toLocaleString()+' min';
-  const initials=String(x.name||'?').split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase()||'?';
-  const phone=adminPhoneFor(x.id),fleet=(adminFleetData.agents||[]).find(a=>String(a.workspaceId)===String(x.id)),agent=fleet?.agent||null,health=agent?.health||(agent?(phone?'ready':'setup'):'missing'),agentGroup=adminAgentGroup(health);
-  const workspaceLabel=adminWorkspaceLabel(x.status),billingLabel=adminBillingLabel(x.subscriptionStatus),workspaceClass=x.status==='active'?'green':x.status==='suspended'?'red':'amber',billingClass=adminBillingTag(x.subscriptionStatus),agentClass=agentGroup==='ready'?'green':agentGroup==='attention'?'red':'amber';
-  if(activity){
-    const provision=adminProvisioningFor(x.id),stage=provision?.stage||(x.status==='onboarding'?'Onboarding':'Live');
-    return '<div class="activity-row admin-recent-row" data-admin-client-row="'+esc(x.id)+'"><span class="plan-pill">'+esc(x.plan)+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.name)+'</strong><small>'+esc(usage)+' · '+esc(stage)+'</small></span></div><div class="admin-recent-statuses"><span class="tag '+workspaceClass+'">'+esc(workspaceLabel)+'</span><span class="tag '+billingClass+'">'+esc(billingLabel)+'</span><span class="tag '+(phone?'green':'amber')+'">'+(phone?'Phone ready':'Phone pending')+'</span></div><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></div>';
-  }
-  return '<div class="admin-client-row admin-client-row-rich" data-admin-client-row="'+esc(x.id)+'"><span><strong>'+esc(x.name)+'</strong><small class="subtle">'+esc(x.ownerEmail||'')+'</small></span><span>'+esc(x.plan)+'</span><span>'+esc(usage)+'</span><span><span class="tag '+agentClass+'">'+esc(agentGroup==='ready'?'AI ready':agentGroup==='attention'?'AI attention':agentGroup==='review'?'AI review':'AI setup')+'</span></span><span><span class="tag '+(phone?'green':'amber')+'">'+(phone?'Phone ready':'Phone pending')+'</span></span><span><span class="tag '+workspaceClass+'">'+esc(workspaceLabel)+'</span></span><span><span class="tag '+billingClass+'">'+esc(billingLabel)+'</span></span><span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></span></div>';
+  const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0),usage=lim?used+' / '+lim+' min':used.toLocaleString()+' min',initials=String(x.name||'?').split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase()||'?';
+  const lifecycle=adminClientLifecycle(x),accountLabel=lifecycle==='past'?'Past client':lifecycle==='onboarding'?'Onboarding':lifecycle==='suspended'?'Suspended':'Active',accountClass=lifecycle==='active'?'green':lifecycle==='suspended'||lifecycle==='past'?'red':'amber';
+  const billingLabel=x.subscriptionStatus==='past_due'?'Past due':x.subscriptionStatus==='canceled'?'Canceled':'Current',billingClass=adminBillingTag(x.subscriptionStatus),mrr=lifecycle==='past'?0:Number(PLAN_DATA[x.plan]?.price||0),since=x.createdAt?new Date(x.createdAt).toLocaleDateString(undefined,{month:'short',year:'numeric'}):'—';
+  if(activity)return '<div class="activity-row admin-recent-row" data-admin-client-row="'+esc(x.id)+'"><span class="plan-pill">'+esc(x.plan)+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.name)+'</strong><small>'+esc(usage)+' · '+financeMoney(mrr)+'/mo</small></span></div><div class="admin-recent-statuses"><span class="tag '+accountClass+'">'+esc(accountLabel)+'</span><span class="tag '+billingClass+'">'+esc(billingLabel)+'</span></div><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></div>';
+  return '<div class="admin-client-row admin-client-row-business" data-admin-client-row="'+esc(x.id)+'"><span><strong>'+esc(x.name)+'</strong><small class="subtle">'+esc(x.ownerEmail||'')+'</small></span><span>'+esc(x.plan)+'</span><span>'+financeMoney(mrr)+'</span><span>'+esc(usage)+'</span><span><span class="tag '+accountClass+'">'+esc(accountLabel)+'</span></span><span><span class="tag '+billingClass+'">'+esc(billingLabel)+'</span></span><span>'+esc(since)+'</span><span><button class="admin-link" data-admin-client="'+esc(x.id)+'">Manage</button></span></div>';
 }
 function adminClientMatchesFilter(x,filter=adminClientFilter){
   const lifecycle=adminClientLifecycle(x);
@@ -1994,7 +1986,7 @@ function renderAdminClients(){
   const groups=adminClientFilter==='all'
     ?[['Onboarding','onboarding'],['Active clients','active'],['Suspended','suspended'],['Past clients','past']].map(([label,key])=>[label,filtered.filter(x=>adminClientLifecycle(x)===key)]).filter(([,rows])=>rows.length)
     :[[adminClientFilter==='past_due'?'Past due accounts':adminClientFilter==='past'?'Past clients':adminClientFilter.charAt(0).toUpperCase()+adminClientFilter.slice(1),filtered]];
-  wrap.innerHTML=groups.map(([label,rows])=>'<section class="admin-client-group"><div class="admin-client-group-head"><div><span class="eyebrow">'+esc(label)+'</span><b>'+rows.length+' account'+(rows.length===1?'':'s')+'</b></div></div><div class="admin-client-row head admin-client-row-rich"><span>Client</span><span>Plan</span><span>Usage</span><span>AI</span><span>Phone</span><span>Workspace</span><span>Billing</span><span>Action</span></div>'+rows.map(x=>adminClientRow(x)).join('')+'</section>').join('');
+  wrap.innerHTML=groups.map(([label,rows])=>'<section class="admin-client-group"><div class="admin-client-group-head"><div><span class="eyebrow">'+esc(label)+'</span><b>'+rows.length+' account'+(rows.length===1?'':'s')+'</b></div></div><div class="admin-client-row head admin-client-row-business"><span>Client</span><span>Plan</span><span>MRR</span><span>Usage</span><span>Account</span><span>Billing</span><span>Since</span><span>Action</span></div>'+rows.map(x=>adminClientRow(x)).join('')+'</section>').join('');
   const empty=document.getElementById('adminClientsEmpty');if(empty)empty.hidden=filtered.length!==0;
   wrap.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openAdminClient(b.dataset.adminClient)}));
   wrap.querySelectorAll('[data-admin-client-row]').forEach(row=>row.addEventListener('click',e=>{if(e.target.closest('button,a,select,input'))return;openAdminClient(row.dataset.adminClientRow)}));
