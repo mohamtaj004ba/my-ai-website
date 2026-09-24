@@ -114,7 +114,7 @@
           <button class="call-reset-link" id="resetCallFilters" type="button">Reset</button>
         </div>
       </div>
-      <div class="calls-summary-strip" aria-label="Quick call filters"><button class="active" id="callsShownCount" data-call-quick="all" type="button">0 calls</button><button id="callsFollowupCount" data-call-quick="followup" type="button">0 need follow-up</button><button id="callsResolvedCount" data-call-quick="resolved" type="button">0 resolved by AI</button></div>
+      <div class="calls-summary-strip" aria-label="Quick call filters"><button class="active" id="callsShownCount" data-call-quick="all" type="button">0 calls</button><button id="callsFollowupCount" data-call-quick="followup" type="button">0 open team actions</button><button id="callsResolvedCount" data-call-quick="resolved" type="button">0 resolved by AI</button></div>
       <article class="panel table-panel call-history-panel"><div class="call-row head sticky-table-head"><span>Caller</span><button class="sortable-table-head active" id="callDateSortButton" type="button" aria-label="Sort calls by date and time, newest first" title="Newest first"><span>Date & time</span><i id="callDateSortArrow">↓</i></button><span>Call type</span><span>Reason</span><span>Call disposition</span><span>Team status</span><span>Duration</span></div><div id="callsTable"></div></article>
       <div class="empty-state" id="callsEmpty" hidden><h3>No calls yet</h3><p>Caller activity for this workspace will appear here once your AI number begins handling calls.</p></div>
     </section>
@@ -137,7 +137,7 @@
       </div>
       <div class="toolbar"><input id="leadSearch" type="search" placeholder="Search customer, phone, service or address…"><select id="leadFilter"><option value="all">All active items</option><option value="urgent">Urgent</option><option value="callback">Callback / message</option><option value="qualified">Service request</option></select></div>
       <div class="followup-list" id="leadKanban"></div>
-      <div class="empty-state" id="leadsEmpty" hidden><h3>You’re caught up</h3><p>When a caller needs your team, CallerCore will put the action here.</p></div>
+      <div class="empty-state" id="leadsEmpty" hidden><h3>You’re caught up</h3><p>When a call creates an open team action, CallerCore will put it here.</p></div>
     </section>
 
     <section class="view" id="view-appointments">
@@ -229,7 +229,7 @@
       <div class="connection-health-grid">
         <article class="panel connection-health"><span class="connection-icon">☎</span><div><small>PHONE ROUTING</small><h3 id="connectionPhoneTitle">Checking line…</h3><p id="connectionPhoneCopy">Verifying your CallerCore number and transfer path.</p></div><span class="tag" id="connectionPhoneStatus">Checking</span></article>
         <article class="panel connection-health"><span class="connection-icon">AI</span><div><small>AI RECEPTIONIST</small><h3 id="connectionAgentTitle">Checking Maya…</h3><p id="connectionAgentCopy">Verifying the active call-handling configuration.</p></div><span class="tag" id="connectionAgentStatus">Checking</span></article>
-        <article class="panel connection-health"><span class="connection-icon">↻</span><div><small>CRM / FIELD SERVICE</small><h3>Not connected</h3><p>Connect your system of record so CallerCore can hand off customer and job information automatically.</p><button class="inline-link" data-view="support">Request an integration →</button></div><span class="tag amber">Not connected</span></article>
+        <article class="panel connection-health"><span class="connection-icon">↻</span><div><small>CRM / FIELD SERVICE</small><h3>Optional connection</h3><p>If your team uses another CRM or field-service platform, CallerCore can hand off captured requests there. Otherwise, no setup is required.</p><button class="inline-link" data-view="support">Request an integration →</button></div><span class="tag">Optional</span></article>
         <article class="panel connection-health"><span class="connection-icon">▦</span><div><small>CALENDAR / SCHEDULING</small><b>Google Calendar</b><p>Calendar booking is planned for a later release. Scheduling remains outside CallerCore until the calendar capability is explicitly enabled.</p></div><span class="tag amber" id="googleCalendarStatus">Not connected</span></article>
       </div>
       <article class="panel routing-overview"><div class="panel-head"><div><span class="eyebrow">Voice path</span><h2>How a customer reaches your team</h2></div><button class="secondary-btn" data-view="support">Request routing change</button></div><div class="routing-flow"><div><small>Customer calls</small><b id="connectionBusinessNumber">Your business line</b></div><span>→</span><div><small>CallerCore answers</small><b id="connectionCallerCoreNumber">AI line</b></div><span>→</span><div><small>Escalates to</small><b id="connectionTransferNumber">Your team</b></div></div></article>
