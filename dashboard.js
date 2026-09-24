@@ -1969,18 +1969,18 @@ async function sendOnboardingInvite(id,button){
   if(button){button.disabled=true;button.textContent='Sending…'}
   const r=await fetch('/api/account?action=admin-onboarding-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));if(button){button.disabled=false;button.textContent='Approve & send onboarding'};return}
-  await loadAdminOps();await loadNotifications({silent:true});
+  await refreshAdminView('onboarding',{force:true,announce:false});await loadNotifications({silent:true});
 }
 async function approveProvisioningBuild(id,button){
   if(button){button.disabled=true;button.textContent='Approving…'}
   const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field:'adminReview',value:true})}),data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));if(button){button.disabled=false;button.textContent='Approve build'};return}
-  await loadAdminOps();await loadNotifications({silent:true});
+  await refreshAdminView('onboarding',{force:true,announce:false});await loadNotifications({silent:true});
 }
 async function updateProvisioningChecklist(id,field,value){
   const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field,value})}),data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not update provisioning checklist.');return}
-  await loadAdminOps();
+  await refreshAdminView('onboarding',{force:true,announce:false});
 }
 async function moveProvisioningStage(id,stage){
   const item=adminProvisioningData.find(x=>String(x.id)===String(id));if(!item||item.stage===stage)return;
@@ -1991,7 +1991,7 @@ async function moveProvisioningStage(id,stage){
 async function clearProvisioningOverride(id){
   const r=await fetch('/api/account?action=admin-provisioning-stage-clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
   if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'Could not restore automatic stage.');return}
-  await loadAdminOps();
+  await refreshAdminView('onboarding',{force:true,announce:false});
 }
 function renderPhones(){
   const wrap=document.getElementById('phoneTable'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
@@ -2033,7 +2033,7 @@ async function deletePhone(id){
   const r=await fetch('/api/account?action=admin-phone-number-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
   const data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not delete phone number.');return}
-  await loadAdminOps();
+  await refreshAdminView('phones',{force:true,announce:false});
 }
 
 function openPhoneModal(id=null){
@@ -2067,7 +2067,7 @@ async function savePhone(){
   try{
     const r=await fetch('/api/account?action=admin-phone-number-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save phone number.');
-    closePhoneModal();await loadAdminOps();
+    closePhoneModal();await refreshAdminView('phones',{force:true,announce:false});
   }catch(err){if(status){status.textContent=err.message||'Could not save phone number.';status.className='form-status-line error'}}
   finally{if(btn){btn.disabled=false;btn.textContent='Save number'}}
 }
@@ -2184,13 +2184,13 @@ async function saveExpense(){
   if(!name||!Number.isFinite(amount)||amount<0){if(status){status.textContent='Enter an expense name and valid amount.';status.className='form-status-line error'}return}
   const payload={id:modal?.dataset.editId||undefined,name,vendor:document.getElementById('expenseVendorInput')?.value||'',category:document.getElementById('expenseCategoryInput')?.value||'Other',amount,frequency:document.getElementById('expenseFrequencyInput')?.value||'monthly',date:document.getElementById('expenseDateInput')?.value||'',status:document.getElementById('expenseStatusInput')?.value||'active',notes:document.getElementById('expenseNotesInput')?.value||''};
   if(button){button.disabled=true;button.textContent='Saving…'}
-  try{const r=await fetch('/api/account?action=admin-finance-expense-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save expense.');closeExpenseModal();await loadAdminOps()}
+  try{const r=await fetch('/api/account?action=admin-finance-expense-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save expense.');closeExpenseModal();await refreshAdminView('finance',{force:true,announce:false})}
   catch(err){if(status){status.textContent=err.message||'Could not save expense.';status.className='form-status-line error'}}
   finally{if(button){button.disabled=false;button.textContent='Save expense'}}
 }
 async function deleteExpense(id){
   const item=(adminFinanceData.expenses||[]).find(x=>String(x.id)===String(id));if(!item||!confirm('Delete '+item.name+' from company expenses?'))return;
-  const r=await fetch('/api/account?action=admin-finance-expense-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not delete expense.');return}await loadAdminOps();
+  const r=await fetch('/api/account?action=admin-finance-expense-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not delete expense.');return}await refreshAdminView('finance',{force:true,announce:false});
 }
 function updateAdminRefreshStamp(){
   setAdminSyncState('live','Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
