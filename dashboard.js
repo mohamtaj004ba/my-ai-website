@@ -1231,7 +1231,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pen
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminCallSearch='',adminCallWorkspaceFilter='all',adminCallDispositionFilter='all',adminRefreshTimer=null;
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminFleetData={agents:[],calls:[],leads:[],automations:[]},adminSupportData=[],adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{}},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminCallSearch='',adminCallWorkspaceFilter='all',adminCallDispositionFilter='all',adminLeadScope='callercore',adminRefreshTimer=null;
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -1909,10 +1909,10 @@ function renderAdmin(){
   set('adminAttentionCount',attentionItems.length);
   const criticalCount=attentionItems.filter(x=>x.severity==='critical').length;
   set('adminAttentionMeta',attentionItems.length?(criticalCount?criticalCount+' critical · '+attentionItems.length+' total open':attentionItems.length+' open operational item'+(attentionItems.length===1?'':'s')):'No open operational issues');
-  const total=Math.max(0,Number(s.clients||adminClientsData.length||0)),den=Math.max(1,total),active=Number(s.activeClients||0),healthy=Math.max(0,total-Number(s.pastDue||0)),live=Math.max(0,total-Number(s.onboarding||0));
-  const activePct=Math.round(active/den*100),billingPct=Math.round(healthy/den*100),livePct=Math.round(live/den*100);
+  const total=Math.max(0,Number(s.currentClients??s.clients??adminClientsData.filter(x=>adminClientLifecycle(x)!=='past').length)),den=Math.max(1,total),active=Number(s.activeClients||0),healthy=Math.max(0,total-Number(s.pastDue||0)),onboarded=Number(s.onboarded??Math.max(0,total-Number(s.onboarding||0)));
+  const activePct=Math.round(active/den*100),billingPct=Math.round(healthy/den*100),livePct=Math.round(onboarded/den*100);
   [['adminActiveRing','adminActivePct',activePct],['adminBillingRing','adminBillingPct',billingPct],['adminLiveRing','adminLivePct',livePct]].forEach(([ringId,textId,pct])=>{const ring=document.getElementById(ringId),txt=document.getElementById(textId);if(ring)ring.style.setProperty('--pct',pct);if(txt)txt.textContent=pct+'%'});
-  set('adminActiveCount',active+' of '+total+' workspaces');set('adminBillingCount',healthy+' of '+total+' current');set('adminLiveCount',live+' of '+total+' live');
+  set('adminActiveCount',active+' of '+total+' workspaces');set('adminBillingCount',healthy+' of '+total+' current');set('adminLiveCount',onboarded+' of '+total+' onboarded');
   set('revenueMrr',adminMoney(s.mrr));set('revenueActive',s.activeClients||0);set('revenuePastDue',s.pastDue||0);set('revenueOnboarding',s.onboarding||0);
   const mix=document.getElementById('adminPlanMix');if(mix){
     const pm=s.planMix||{},max=Math.max(1,...Object.values(pm).map(Number));
