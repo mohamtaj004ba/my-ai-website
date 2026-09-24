@@ -1996,17 +1996,19 @@ async function openAdminClient(id){
   if(!r.ok)return;
   const x=(await r.json()).client;if(!x)return;
   document.getElementById('adminClientName').textContent=x.name||'Client';
-  document.getElementById('adminClientMeta').innerHTML=[x.plan,x.subscriptionStatus,x.ownerEmail].filter(Boolean).map(v=>'<span>'+esc(v)+'</span>').join('');
+  document.getElementById('adminClientMeta').innerHTML=[x.plan,adminWorkspaceLabel(x.status),adminBillingLabel(x.subscriptionStatus),x.ownerEmail].filter(Boolean).map(v=>'<span>'+esc(v)+'</span>').join('');
   document.getElementById('adminClientAccount').innerHTML=[
-    ['Plan',x.plan],['Status',x.status],['Billing',x.subscriptionStatus],['Minutes',Number(x.usage?.minutes||0).toLocaleString()],['Stripe customer',x.stripe?.customerLinked?'Linked':'Not linked'],['Stripe subscription',x.stripe?.subscriptionLinked?'Linked':'Not linked']
+    ['Plan',x.plan],['Account',adminWorkspaceLabel(x.status)],['Billing',adminBillingLabel(x.subscriptionStatus)],['MRR',financeMoney(adminClientLifecycle(x)==='past'?0:(PLAN_DATA[x.plan]?.price||0))],['Usage',Number(x.usage?.minutes||0).toLocaleString()+' min'],['Stripe',x.stripe?.subscriptionLinked?'Subscription linked':x.stripe?.customerLinked?'Customer linked':'Not linked']
   ].map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('');
-  document.getElementById('adminClientCounts').innerHTML=[['Calls',x.counts?.calls||0],['Leads',x.counts?.leads||0],['Appointments',x.counts?.appointments||0],['Locations',x.counts?.locations||0]].map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('');
-  document.getElementById('adminClientAgent').textContent=x.agent?(x.agent.name||'Maya')+' · '+(x.agent.role||'AI Receptionist'):'No agent configured yet.';
+  document.getElementById('adminClientCounts').innerHTML=[
+    ['Locations',x.counts?.locations||0],['AI receptionist',x.agent?'Configured':'Not configured'],['Phone routing',x.phoneRouting?'Assigned':'Not assigned'],['Onboarding',x.onboarding?.completionPercent?x.onboarding.completionPercent+'%':(x.status==='active'?'Complete':'—')]
+  ].map(([k,v])=>'<div><b>'+esc(String(v))+'</b><span>'+esc(k)+'</span></div>').join('');
+  document.getElementById('adminClientAgent').textContent=x.agent?(x.agent.name||'Maya')+' · '+(x.agent.role||'AI Receptionist')+(x.agent.health?' · '+adminStatusLabel(x.agent.health):''):'No AI receptionist configured yet.';
   currentAdminClient=x;
   const planSel=document.getElementById('adminClientPlan'),statusSel=document.getElementById('adminClientStatus');
   if(planSel){planSel.value=x.plan||'Starter';planSel.disabled=!!x.stripe?.subscriptionLinked}
   if(statusSel)statusSel.value=x.status||'active';
-  const note=document.getElementById('adminClientManageNote');if(note)note.textContent=(x.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Workspace status controls access/readiness; billing status is tracked separately.';
+  const note=document.getElementById('adminClientManageNote');if(note)note.textContent=(x.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
   document.getElementById('adminClientDrawer').classList.add('open');document.getElementById('adminClientBackdrop').classList.add('open');
   await loadAdminTechSupport(id);
 }
