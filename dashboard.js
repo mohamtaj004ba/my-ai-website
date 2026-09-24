@@ -308,7 +308,21 @@ async function loadSecondaryClientData(){
   renderContacts();renderConversations();renderAppointments();renderAutomations();renderLocations();
 }
 function applyClientDashboardData(data={}){
-  applyClientDashboardData(data);updateClientRefreshStamp();
+  callsData=Array.isArray(data.calls)?data.calls:[];
+  leadsData=Array.isArray(data.leads)?data.leads:[];
+  agentData=data.agent||null;
+  settingsData=data.settings||null;
+  integrationsData=data.integrations||null;
+  phoneRoutingData=data.routing||null;
+  locationsData=Array.isArray(data.locations)?data.locations:[];
+  locationsLimit=Number(data.locationsLimit||data.limit||1);
+  conversationsData=Array.isArray(data.conversations)?data.conversations:[];
+  appointmentsData=Array.isArray(data.appointments)?data.appointments:[];
+  automationsData=Array.isArray(data.automations)?data.automations:[];
+  sessionOnboarding=data.onboarding||sessionOnboarding;
+  followupState=data.followupState&&typeof data.followupState==='object'?data.followupState:{};
+  callViewedIds=new Set((Array.isArray(data.viewedCallIds)?data.viewedCallIds:[]).map(String));
+  analyticsData=buildLocalAnalytics();
 }
 function setClientSyncState(state='live',message=''){
   const wrap=document.getElementById('clientLiveStatus'),label=document.getElementById('clientLiveLabel'),stamp=document.getElementById('clientLastRefresh');
@@ -351,7 +365,7 @@ async function loadOperations(){
   setClientLoading(true);setDataHealth('clientDataHealth',false);
   try{
     const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:2,timeout:15000});
-    callsData=data.calls||[];leadsData=data.leads||[];agentData=data.agent||null;settingsData=data.settings||null;integrationsData=data.integrations||null;phoneRoutingData=data.routing||null;locationsData=data.locations||[];locationsLimit=Number(data.locationsLimit||1);conversationsData=data.conversations||[];appointmentsData=data.appointments||[];automationsData=data.automations||[];sessionOnboarding=data.onboarding||sessionOnboarding;followupState=data.followupState||{};callViewedIds=new Set((data.viewedCallIds||[]).map(String));analyticsData=buildLocalAnalytics();
+    applyClientDashboardData(data);
     renderClientData();setClientLoading(false);
     // Non-critical support history loads separately so it can never block Today.
     fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:5000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(()=>{});
