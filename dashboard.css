@@ -1298,3 +1298,13 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 @media(prefers-reduced-motion:reduce){
   .admin-live-status>i,.pulse-orbit:before,.pulse-orbit:after,.admin-chart-bar,.admin-chart-line,.metric-updated,.admin-plan-mix button i em,.admin-horizontal-chart em,.admin-usage-chart em{animation:none!important}
 }
+
+
+.admin-lead-scope-tabs{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:2px 0 14px}
+.admin-lead-scope-tabs button{display:flex;gap:7px;align-items:center;border:1px solid #dde2e5;border-radius:999px;background:#fff;color:#626d75;padding:8px 11px;font:800 8px inherit;cursor:pointer}
+.admin-lead-scope-tabs button span{display:grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#f0f2f4;color:#6f7880;font-size:7px}
+.admin-lead-scope-tabs button.active{background:#252c32;border-color:#252c32;color:#fff}
+.admin-lead-scope-tabs button.active span{background:rgba(255,255,255,.15);color:#fff}
+
+.provision-stage-select{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid #edf0f2;color:#7b858d;font-size:7px;font-weight:800}
+.provision-stage-select select{min-width:0;border:1px solid #dfe4e7;border-radius:7px;background:#fff;padding:6px 7px;font:inherit;color:#48535c}
