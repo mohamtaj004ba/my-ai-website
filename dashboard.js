@@ -1265,7 +1265,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pen
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminDataSyncAt={},adminDataSyncInFlight={};
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -1385,7 +1385,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   }else if(view==='health'){
     add('health','/api/account?action=admin-system-health',120000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
   }else if(view==='platform-settings'){
-    add('platform','/api/account?action=admin-platform-settings',60000,d=>{adminPlatformData=d.settings||adminPlatformData});
+    if(!adminPlatformDirty)add('platform','/api/account?action=admin-platform-settings',60000,d=>{adminPlatformData=d.settings||adminPlatformData});
   }
   const results=await Promise.allSettled(jobs),failed=results.filter(x=>x.status==='rejected');
   if(failed.length){setDataHealth('adminDataHealth',true);if(announce)setAdminSyncState('error','Some data could not sync');throw failed[0].reason}
@@ -1398,7 +1398,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   if(view==='documents')renderDocuments();
   if(view==='client-care'){renderAdminSupport();renderAdminFeedback();renderClientCareTabs()}
   if(view==='health')renderHealth();
-  if(view==='platform-settings')renderPlatformSettings();
+  if(view==='platform-settings'&&!adminPlatformDirty)renderPlatformSettings();
   renderAdmin();
   if(announce)updateAdminRefreshStamp();
 }
@@ -1527,7 +1527,7 @@ function prospectDue(p){
 function renderGrowth(){
   const all=[...(adminWebsiteData.prospects||[])].sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0)),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v},now=new Date(),monthStart=new Date(now.getFullYear(),now.getMonth(),1).getTime();
   const open=all.filter(p=>!['converted','lost'].includes(p.stage)),due=open.filter(prospectDue),qualified=open.filter(p=>['qualified','proposal','checkout_started'].includes(p.stage)),won=all.filter(p=>p.stage==='converted'&&Number(p.convertedAt||p.updatedAt||0)>=monthStart);
-  set('growthOpen',open.length);set('growthDue',due.length);set('growthQualified',qualified.length);set('growthWon',won.length);set('growthWonMrr',financeMoney(won.reduce((n,p)=>n+prospectValue(p),0))+' MRR converted');set('growthPipelineValue',financeMoney(open.reduce((n,p)=>n+prospectValue(p),0))+' pipeline MRR');
+  set('growthOpen',open.length);set('growthDue',due.length);set('growthQualified',qualified.length);set('growthWon',won.length);set('growthNoNextStep',open.filter(p=>!Number(p.nextFollowUpAt||0)).length);set('growthUnowned',open.filter(p=>!String(p.owner||'').trim()).length);set('growthUnattributed',open.filter(p=>![p.source,p.firstUtmSource,p.utmSource,p.campaign,p.utmCampaign].some(Boolean)).length);set('growthWonMrr',financeMoney(won.reduce((n,p)=>n+prospectValue(p),0))+' MRR converted');set('growthPipelineValue',financeMoney(open.reduce((n,p)=>n+prospectValue(p),0))+' pipeline MRR');
   const search=document.getElementById('growthSearch');if(search){search.value=growthSearch;search.oninput=()=>{growthSearch=search.value;renderGrowth()}}
   document.querySelectorAll('[data-growth-filter]').forEach(btn=>{btn.classList.toggle('active',btn.dataset.growthFilter===growthFilter);btn.onclick=()=>{growthFilter=btn.dataset.growthFilter;renderGrowth()}});
   const q=growthSearch.trim().toLowerCase(),matches=p=>!q||[p.name,p.business,p.email,p.phone,p.source,p.campaign,p.utmCampaign,p.plan,p.stage].filter(Boolean).join(' ').toLowerCase().includes(q),filterOk=p=>growthFilter==='all'?true:growthFilter==='open'?!['converted','lost'].includes(p.stage):growthBucket(p.stage)===growthFilter,visible=all.filter(p=>filterOk(p)&&matches(p));
@@ -1846,8 +1846,31 @@ async function updateSupportStatus(id,status){
   const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})});if(!r.ok)return;
   const t=adminSupportData.find(x=>x.id===id);if(t)t.status=status;renderAdminSupport();
 }
+function setPlatformSettingsDirty(dirty=true){
+  adminPlatformDirty=!!dirty;
+  const tag=document.getElementById('platformSettingsStatus');
+  if(tag){
+    tag.textContent=adminPlatformDirty?'Unsaved changes':'Saved';
+    tag.classList.toggle('dirty',adminPlatformDirty);
+    tag.classList.toggle('green',!adminPlatformDirty);
+  }
+}
+function bindPlatformSettingsDirtyTracking(){
+  const root=document.getElementById('view-platform-settings');if(!root)return;
+  root.querySelectorAll('input,select').forEach(el=>{
+    if(el.dataset.platformDirtyBound)return;
+    el.dataset.platformDirtyBound='1';
+    const mark=()=>{
+      setPlatformSettingsDirty(true);
+      const status=document.getElementById('platformSettingsFormStatus');
+      if(status&&status.classList.contains('success')){status.textContent='';status.className='form-status-line'}
+    };
+    el.addEventListener('input',mark);
+    el.addEventListener('change',mark);
+  });
+}
 function renderPlatformSettings(){
-  if(!adminPlatformData)return;
+  if(!adminPlatformData||adminPlatformDirty)return;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=String(v??'')};
   set('platformBrandName',adminPlatformData.brandName||'CallerCore');
   set('platformAgentName',adminPlatformData.defaultAgentName||'Maya');
@@ -1865,6 +1888,8 @@ function renderPlatformSettings(){
   const brand=document.querySelector('.dash-brand span');if(brand&&document.body.dataset.dashboard==='admin'){const name=adminPlatformData.brandName||'CallerCore';brand.innerHTML=name==='CallerCore'?'Caller<b>Core</b>':esc(name)}
   const gates=adminPlatformData.launchGates||{},gateMap={launchGatePreviewIsolation:'previewIsolation',launchGateDisposableE2E:'disposableE2E',launchGateVoiceLifecycle:'voiceLifecycle',launchGateProductionEnvScope:'productionEnvScope',launchGateSupportEmail:'supportEmail',launchGateBusinessTax:'businessTax',launchGateLegalReview:'legalReview'};
   Object.entries(gateMap).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.checked=!!gates[key]});
+  bindPlatformSettingsDirtyTracking();
+  setPlatformSettingsDirty(false);
 }
 async function savePlatformSettings(){
   const emailEl=document.getElementById('platformSupportEmail'),agentEl=document.getElementById('platformAgentName'),brandEl=document.getElementById('platformBrandName'),status=document.getElementById('platformSettingsFormStatus'),btn=document.getElementById('savePlatformSettings');
@@ -1876,7 +1901,7 @@ async function savePlatformSettings(){
   try{
     const r=await fetch('/api/account?action=admin-platform-settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save platform settings.');
-    adminPlatformData=data.settings;adminWebsiteDays=Number(data.settings?.analyticsWindowDays||adminWebsiteDays||30);renderPlatformSettings();initAdminLiveRefresh();renderGrowth();renderAdmin();await loadWebsiteAnalytics(adminWebsiteDays);await loadNotifications({silent:true});
+    adminPlatformData=data.settings;adminPlatformDirty=false;adminWebsiteDays=Number(data.settings?.analyticsWindowDays||adminWebsiteDays||30);renderPlatformSettings();initAdminLiveRefresh();renderGrowth();renderAdmin();await loadWebsiteAnalytics(adminWebsiteDays);await loadNotifications({silent:true});
     if(status){status.textContent='Platform settings saved and applied.';status.className='form-status-line success'}
     const tag=document.getElementById('platformSettingsStatus');if(tag){tag.textContent='Saved';tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1500)}
   }catch(err){if(status){status.textContent=err.message||'Could not save platform settings.';status.className='form-status-line error'}}
@@ -2218,6 +2243,17 @@ function bindAdminCommandCenter(){
   document.querySelectorAll('[data-admin-jump]').forEach(el=>{const go=()=>showView(el.dataset.adminJump);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
   document.querySelectorAll('[data-plan-client-filter]').forEach(el=>el.onclick=()=>{adminClientFilter='all';adminClientSearch=el.dataset.planClientFilter;showView('clients');renderAdminClients()});
 }
+function setAdminNavBadge(id,count){
+  const el=document.getElementById(id);if(!el)return;
+  const n=Math.max(0,Number(count||0));el.textContent=n>99?'99+':String(n);el.hidden=n===0;
+}
+function renderAdminNavBadges(){
+  setAdminNavBadge('navBadgeOnboarding',(adminProvisioningData||[]).filter(onboardingNeedsAction).length);
+  setAdminNavBadge('navBadgeGrowth',(adminWebsiteData.prospects||[]).filter(prospectDue).length);
+  setAdminNavBadge('navBadgeFinance',(adminClientsData||[]).filter(x=>x.subscriptionStatus==='past_due').length);
+  setAdminNavBadge('navBadgeClientCare',(adminSupportData||[]).filter(x=>x.status!=='resolved').length+(adminFeedbackData||[]).filter(x=>x.status==='submitted').length);
+  setAdminNavBadge('navBadgeHealth',(adminReadinessData?.blockers||[]).length);
+}
 function renderAdmin(){
   if(!adminSummaryData)return;
   const s=adminSummaryData,set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v},finance=adminFinanceData||{};
@@ -2242,7 +2278,7 @@ function renderAdmin(){
     recent.innerHTML=adminClientsData.filter(x=>adminClientLifecycle(x)!=='past').slice(0,6).map(x=>adminClientRow(x,true)).join('')||'<div class="empty-state"><h3>No clients yet</h3></div>';
     recent.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openAdminClient(b.dataset.adminClient)}));
   }
-  renderAdminFinance();renderClientCareTabs();bindAdminCommandCenter();updateAdminRefreshStamp();
+  renderAdminFinance();renderClientCareTabs();renderAdminNavBadges();bindAdminCommandCenter();updateAdminRefreshStamp();
 }
 function adminClientRow(x,activity=false){
   const lim=adminPlanMinutes(x.plan),used=Number(x.usage?.minutes||0),usage=lim?used+' / '+lim+' min':used.toLocaleString()+' min',initials=String(x.name||'?').split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase()||'?';
