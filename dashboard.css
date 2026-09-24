@@ -1565,3 +1565,15 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 .client-live-status+button{align-self:center}
 @media(max-width:760px){.overview-head>.page-actions{width:100%;justify-content:flex-start}.client-live-status{min-width:0}}
 @media(prefers-reduced-motion:reduce){.admin-live-status.syncing>i{animation:none!important}}
+
+/* Client onboarding progress: visible only until launch */
+.client-setup-status-card{margin:16px 0;overflow:hidden;background:linear-gradient(135deg,#fff 0%,#fbf8f2 100%)}
+.client-setup-head{display:flex;justify-content:space-between;gap:22px;align-items:flex-start}
+.client-setup-head h2{margin:5px 0 7px;font-size:20px}.client-setup-head p{margin:0;max-width:720px;color:var(--muted);line-height:1.55}
+.client-setup-pill{flex:0 0 auto;border:1px solid #e6d7ca;background:#fff5ef;color:#9a5136;border-radius:999px;padding:7px 10px;font-size:8px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+.client-setup-progress{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:12px;align-items:center;margin:18px 0 14px}
+.client-setup-progress>div{height:7px;border-radius:999px;background:#ece7df;overflow:hidden}.client-setup-progress i{display:block;width:5%;height:100%;border-radius:inherit;background:var(--accent);transition:width .5s cubic-bezier(.22,1,.36,1)}
+.client-setup-progress small{color:var(--muted);font-size:9px;white-space:nowrap}
+.client-setup-checklist{grid-template-columns:repeat(2,minmax(0,1fr));margin:0}.client-setup-checklist .onboarding-item{min-height:48px;transition:transform .18s ease,border-color .18s ease,background .18s ease}.client-setup-checklist .onboarding-item:hover{transform:translateY(-1px);border-color:#d8cabb}.client-setup-checklist .onboarding-item.done span{color:#2f946b}
+@media(max-width:760px){.client-setup-head{display:grid}.client-setup-pill{justify-self:start}.client-setup-progress{grid-template-columns:1fr}.client-setup-checklist{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.client-setup-progress i,.client-setup-checklist .onboarding-item{transition:none}}
