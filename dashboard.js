@@ -2360,14 +2360,14 @@ async function navigateNotification(n){
     }
   }
   if(document.body.dataset.dashboard==='admin'){
-    if(meta.workspaceId&&(view==='clients'||view==='revenue')){showView('clients');await openAdminClient(String(meta.workspaceId));return true}
-    showView(view);
+    if(meta.workspaceId&&(view==='clients'||view==='finance')){showView('clients');await openAdminClient(String(meta.workspaceId));return true}
+    if(view==='client-care')openClientCare(meta.careTab|| (meta.feedbackId?'feedback':'support'));else showView(view);
     await new Promise(resolve=>setTimeout(resolve,60));
     let target=null;
     if(meta.ticketId){target=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]');if(target?.tagName==='DETAILS')target.open=true}
     else if(meta.feedbackId)target=document.getElementById('feedback-'+String(meta.feedbackId));
-    else if(meta.workspaceId&&view==='provisioning')target=document.querySelector('[data-provision-id="'+CSS.escape(String(meta.workspaceId))+'"]');
-    else if(meta.workspaceId&&view==='usage')target=[...document.querySelectorAll('#adminUsageList .admin-event')].find(el=>el.textContent.includes(adminClientsData.find(x=>String(x.id)===String(meta.workspaceId))?.name||''));
+    else if(meta.workspaceId&&view==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(meta.workspaceId))+'"]');
+    else if(meta.workspaceId&&view==='clients')target=document.querySelector('[data-admin-client-row="'+CSS.escape(String(meta.workspaceId))+'"]');
     if(target){flashAdminSearchTarget(target);return true}
     const viewTarget=document.getElementById('view-'+view);return !!viewTarget;
   }
