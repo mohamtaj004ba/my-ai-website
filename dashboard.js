@@ -1721,7 +1721,8 @@ async function clearProvisioningOverride(id){
   await loadAdminOps();
 }
 function renderPhones(){
-  const wrap=document.getElementById('phoneTable');if(!wrap)return,set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
+  const wrap=document.getElementById('phoneTable'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
+  if(!wrap)return;
   set('phoneAssignedCount',adminPhoneData.filter(x=>x.workspaceId).length);set('phoneUnassignedCount',adminPhoneData.filter(x=>!x.workspaceId).length);set('phoneMissingTransferCount',adminPhoneData.filter(x=>x.workspaceId&&!x.transferNumber).length);set('phoneAfterHoursTransferCount',adminPhoneData.filter(x=>x.afterHours==='transfer').length);
   wrap.innerHTML=adminPhoneData.map(x=>'<div class="call-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+(x.forwardingFrom?' · from '+esc(x.forwardingFrom):'')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span><span class="tag '+(x.workspaceId&&!x.transferNumber?'amber':'green')+'">'+(x.workspaceId&&!x.transferNumber?'Transfer missing':esc(x.status||'active'))+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>').join('');
   const empty=document.getElementById('phoneEmpty');if(empty)empty.hidden=adminPhoneData.length!==0;
