@@ -1056,7 +1056,8 @@ async function persistAutomations(){
 }
 async function toggleAutomation(id){
   const item=automationsData.find(x=>String(x.id)===String(id));if(!item)return;
-  item.enabled=!item.enabled;renderAutomations();await persistAutomations();
+  const before=item.enabled;item.enabled=!item.enabled;renderAutomations();
+  if(!await persistAutomations()){item.enabled=before;renderAutomations()}
 }
 let editingAutomationId=null;
 function openAutomation(id=null,preset=null){
@@ -1081,8 +1082,11 @@ function closeAutomation(){const modal=document.getElementById('automationModal'
 async function saveAutomation(){
   const name=document.getElementById('automationName').value.trim();if(!name)return;
   const item={id:editingAutomationId||('auto_'+Date.now()),name,trigger:document.getElementById('automationTrigger').value,action:document.getElementById('automationAction').value,enabled:true};
-  const i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
-  renderAutomations();closeAutomation();await persistAutomations();
+  const before=automationsData.map(x=>({...x})),i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));
+  if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
+  renderAutomations();
+  if(await persistAutomations())closeAutomation();
+  else{automationsData=before;renderAutomations()}
 }
 document.querySelectorAll('[data-agent-edit]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(btn.dataset.agentEdit)));
 document.querySelectorAll('[data-agent-cancel]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(false,{restore:true})));
