@@ -1815,9 +1815,14 @@ function renderPhones(){
 function renderHealth(){
   const wrap=document.getElementById('systemHealthGrid');if(!wrap)return;
   const requiredKeys=new Set(adminReadinessData?.requiredForLaunch||[]),blockerKeys=new Set((adminReadinessData?.blockers||[]).map(x=>x.key)),healthy=x=>['operational','configured','confirmed'].includes(x.status);
-  const required=adminHealthData.filter(x=>requiredKeys.has(x.key)),optional=adminHealthData.filter(x=>!requiredKeys.has(x.key)),critical=required.filter(x=>!healthy(x)).length,requiredReady=required.filter(healthy).length,optionalIssues=optional.filter(x=>!healthy(x)).length;
-  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};set('healthRequiredBlockers',critical);set('healthRequiredReady',requiredReady);set('healthOptionalIssues',optionalIssues);set('healthTotalChecks',adminHealthData.length);
-  const card=x=>'<article class="panel integration-card admin-health-item '+(blockerKeys.has(x.key)?'blocking':'')+'"><div><b>'+esc(x.name)+'</b><p>'+esc(x.detail||'')+'</p></div><span class="tag '+(healthy(x)?'green':x.status==='error'?'red':'amber')+'">'+esc(x.status.replace('_',' '))+'</span></article>';
+  const required=adminHealthData.filter(x=>requiredKeys.has(x.key)),optional=adminHealthData.filter(x=>!requiredKeys.has(x.key)),critical=required.filter(x=>!healthy(x)).length,requiredReady=required.filter(healthy).length,optionalIssues=optional.filter(x=>!healthy(x)).length,totalRequired=Math.max(1,required.length),pct=Math.round(requiredReady/totalRequired*100);
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
+  set('healthRequiredBlockers',critical);set('healthRequiredReady',requiredReady);set('healthOptionalIssues',optionalIssues);set('healthTotalChecks',adminHealthData.length);set('healthReadinessPct',pct+'%');
+  const gauge=document.getElementById('healthReadinessGauge');if(gauge)gauge.style.setProperty('--pct',pct);
+  const checked=document.getElementById('healthCheckedAt');if(checked)checked.textContent=adminHealthCheckedAt?'Checked '+new Date(adminHealthCheckedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'Checking…';
+  const coreServices=adminHealthData.filter(x=>!String(x.key||'').startsWith('gate-')),map=document.getElementById('healthServiceMap');
+  if(map)map.innerHTML='<div class="health-core-node"><span class="health-core-orbit"><i></i></span><b>CallerCore</b><small>Platform core</small></div><div class="health-service-nodes">'+coreServices.map(x=>'<article class="health-service-node '+(healthy(x)?'ok':x.status==='error'?'error':'pending')+'"><span class="health-node-pulse"></span><div><b>'+esc(x.name)+'</b><small>'+esc(x.status.replaceAll('_',' '))+'</small></div><i class="health-connector"></i></article>').join('')+'</div>';
+  const card=x=>'<article class="panel integration-card admin-health-item '+(blockerKeys.has(x.key)?'blocking':'')+' '+(healthy(x)?'healthy':'')+'"><span class="health-card-indicator '+(healthy(x)?'ok':x.status==='error'?'error':'pending')+'"><i></i></span><div><b>'+esc(x.name)+'</b><p>'+esc(x.detail||'')+'</p></div><span class="tag '+(healthy(x)?'green':x.status==='error'?'red':'amber')+'">'+esc(x.status.replaceAll('_',' '))+'</span></article>';
   wrap.innerHTML='<section class="admin-health-group"><div class="admin-health-group-head"><div><span class="eyebrow">Required for launch</span><h2>Launch dependencies</h2></div><span>'+requiredReady+' / '+required.length+' ready</span></div><div class="integration-grid">'+required.map(card).join('')+'</div></section><section class="admin-health-group"><div class="admin-health-group-head"><div><span class="eyebrow">Optional & supporting services</span><h2>Additional platform services</h2></div><span>'+optionalIssues+' need setup</span></div><div class="integration-grid">'+optional.map(card).join('')+'</div></section>';
   const side=document.getElementById('adminSidebarHealth'),meta=document.getElementById('adminSidebarHealthMeta');
   if(side)side.textContent=critical?critical+' launch blocker'+(critical===1?'':'s'):(optionalIssues?'Core systems ready':'All systems operational');
@@ -1829,8 +1834,8 @@ function renderHealth(){
     blockers.innerHTML=(adminReadinessData.blockers||[]).map(x=>'<div class="readiness-blocker"><b>'+esc(x.name)+'</b><span>'+esc(x.detail||'Needs attention')+'</span></div>').join('')||'<div class="readiness-ok">No dependency blockers detected.</div>';
     readinessCard?.classList.toggle('ready',!!adminReadinessData.ready);
   }
+  const refresh=document.getElementById('refreshSystemHealth');if(refresh)refresh.onclick=async()=>{refresh.disabled=true;refresh.textContent='Checking…';try{const r=await fetch('/api/account?action=admin-system-health',{cache:'no-store'}),data=await r.json().catch(()=>({}));if(r.ok){adminHealthData=data.services||[];adminReadinessData=data.readiness||null;adminHealthCheckedAt=Number(data.checkedAt||Date.now());renderHealth();renderAdmin()}}finally{refresh.disabled=false;refresh.textContent='Run checks'}};
 }
-
 async function deletePhone(id){
   const item=adminPhoneData.find(x=>String(x.id)===String(id));if(!item)return;
   const assigned=item.workspaceName?' assigned to '+item.workspaceName:'';
