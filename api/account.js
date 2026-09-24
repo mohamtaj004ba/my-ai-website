@@ -1016,11 +1016,14 @@ async function adminWebsiteProspectUpdate(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,100),key='site:prospect:'+id,old=await kv.get(key);
   if(!old)return res.status(404).json({error:'Prospect not found'});
+  const email=body.email!==undefined?cleanEmail(body.email):String(old.email||'');
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email or leave it blank'});
   const allowed=['new','inquiry','checkout_started','follow_up','qualified','proposal','lost','converted'];
   const stage=body.stage!==undefined?String(body.stage):old.stage;
   if(!allowed.includes(stage))return res.status(400).json({error:'Invalid prospect stage'});
   const next={...old,stage,
     name:body.name!==undefined?String(body.name||'').trim().slice(0,120):old.name,
+    email,
     business:body.business!==undefined?String(body.business||'').trim().slice(0,160):old.business,
     phone:body.phone!==undefined?String(body.phone||'').trim().slice(0,80):old.phone,
     plan:body.plan!==undefined?String(body.plan||'').trim().slice(0,30):old.plan,
