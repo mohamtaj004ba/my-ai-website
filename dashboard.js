@@ -1283,10 +1283,16 @@ async function loadAdminOps(){
 
 function renderAdminFleet(){
   const agents=adminFleetData.agents||[],calls=adminFleetData.calls||[],workspaceLeads=adminFleetData.leads||[],autos=adminFleetData.automations||[],webProspects=adminWebsiteData.prospects||[];
-  const ag=document.getElementById('adminAgentsGrid');if(ag){ag.innerHTML=agents.filter(x=>x.agent).map(x=>'<article class="panel integration-card"><div><b>'+esc(x.agent.name||'Maya')+' · '+esc(x.workspaceName)+'</b><p>'+esc(x.agent.role||'AI Receptionist')+(x.phone?' · '+esc(x.phone):' · No phone assigned')+'</p></div><span class="tag '+(x.status==='active'&&x.phone?'green':'amber')+'">'+(x.status==='active'&&x.phone?'Ready':'Setup')+'</span></article>').join('');document.getElementById('adminAgentsEmpty').hidden=agents.some(x=>x.agent)}
+  const ag=document.getElementById('adminAgentsGrid');if(ag){
+    ag.innerHTML=agents.map(x=>{
+      const agent=x.agent||null,health=agent?.health||(agent?(x.phone?'ready':'setup'):'missing'),issue=agent?.issue||(!agent?'No AI receptionist draft exists yet.':(!x.phone?'No CallerCore phone number is assigned yet.':'Configuration looks ready.')),tone=health==='ready'?'green':health==='warning'||x.status==='suspended'?'red':'amber',label=({ready:'Ready',review:'Review',warning:'Attention',setup:'Setup',test:'Client test',missing:'Missing'})[health]||'Review';
+      return '<article class="panel integration-card admin-agent-card"><div><b>'+esc((agent?.name||'No agent')+' · '+x.workspaceName)+'</b><p>'+esc(agent?.role||'AI receptionist not configured')+(x.phone?' · '+esc(x.phone):' · No phone assigned')+'</p><small>'+esc(issue)+'</small></div><span class="tag '+tone+'">'+esc(label)+'</span></article>'
+    }).join('');
+    document.getElementById('adminAgentsEmpty').hidden=agents.length!==0
+  }
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   set('adminCallsTotal',calls.length);set('adminCallsQualified',calls.filter(callCaptured).length);set('adminCallsMissed',calls.filter(x=>callDispositionKey(x)==='incomplete').length);set('adminCallsWorkspaces',new Set(calls.map(x=>x.workspaceId)).size);
-  const ct=document.getElementById('adminCallsTable');if(ct)ct.innerHTML=calls.slice(0,100).map(x=>'<div class="call-row" data-admin-call-id="'+esc(String(x.id||x.callId||''))+'"><span><strong>'+esc(x.caller||x.phone||'Unknown caller')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span>'+esc(x.workspaceName)+'</span><span>'+esc(x.reason||'General')+'</span><span class="tag '+outcomeClass(x.outcome)+'">'+esc(x.outcome||'Completed')+'</span><span>'+esc(x.time||'—')+'</span></div>').join('');
+  const ct=document.getElementById('adminCallsTable');if(ct)ct.innerHTML=calls.slice(0,100).map(x=>'<div class="call-row" data-admin-call-id="'+esc(String(x.id||x.callId||''))+'"><span><strong>'+esc(x.caller||x.phone||'Unknown caller')+'</strong><small class="subtle">'+esc(x.phone||'')+'</small></span><span>'+esc(x.workspaceName)+'</span><span>'+esc(x.reason||'General')+'</span><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(callDispositionLabel(x))+'</span><span>'+esc(x.time||'—')+'</span></div>').join('');
   const ce=document.getElementById('adminCallsEmpty');if(ce)ce.hidden=calls.length!==0;
 
   const totalLeads=workspaceLeads.length+webProspects.length;
@@ -1760,6 +1766,8 @@ function adminAttentionItems(){
     if(fb.status!=='submitted')continue;
     items.push({id:'feedback:'+fb.id,type:'feedback',feedbackId:fb.id,title:fb.workspaceName||'Client',message:'AI feedback awaiting review',category:'AI feedback',severity:'attention',view:'feedback',createdAt:fb.createdAt||0});
   }
+  const blockers=adminReadinessData?.blockers||[];
+  if(blockers.length)items.push({id:'platform:readiness',type:'system',title:'Platform launch readiness',message:blockers.length+' required launch item'+(blockers.length===1?'':'s')+' still need attention',category:'System health',severity:'critical',view:'health'});
   const rank={critical:0,attention:1,info:2};
   return items.sort((a,b)=>(rank[a.severity]??9)-(rank[b.severity]??9)||Number(b.createdAt||0)-Number(a.createdAt||0));
 }
@@ -1776,6 +1784,7 @@ async function openAdminAttentionItem(item){
     else if(item.type==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(item.workspaceId))+'"]');
     else if(item.type==='support')target=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(item.ticketId))+'"]');
     else if(item.type==='feedback')target=document.getElementById('feedback-'+String(item.feedbackId));
+    else if(item.type==='system')target=document.getElementById('productionReadinessCard')||document.getElementById('systemHealthGrid');
     if(target){if(target.tagName==='DETAILS')target.open=true;flashAdminSearchTarget(target)}
   },100);
 }
