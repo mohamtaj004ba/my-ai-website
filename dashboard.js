@@ -87,7 +87,7 @@ async function bootstrapClient(){
 async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
 
 
-let adminAiLastAnswer='';
+let adminAiLastAnswer='',adminAiHistory=[];
 function adminAiSnapshot(){
   const clients=(adminClientsData||[]).slice(0,120).map(x=>({name:x.name,plan:x.plan,monthlyRevenue:Number(PLAN_DATA[x.plan]?.price||0),status:x.status,subscriptionStatus:x.subscriptionStatus,usageMinutes:Number(x.usage?.minutes||0),createdAt:x.createdAt,updatedAt:x.updatedAt}));
   const prospects=(adminWebsiteData.prospects||[]).slice(0,120).map(x=>({business:x.business,name:x.name,stage:x.stage,source:x.source||x.utmSource,campaign:x.campaign||x.utmCampaign,plan:x.plan,monthlyValue:Number(x.monthlyValue||0),owner:x.owner,nextFollowUpAt:x.nextFollowUpAt,lastContactAt:x.lastContactAt,updatedAt:x.updatedAt}));
@@ -162,19 +162,36 @@ function formatCoreIntelligenceAnswer(raw){
   flush();return out.join('');
 }
 
+function renderAdminAiConversation({thinking=false,error=''}={}){
+  const conversation=document.getElementById('adminAiConversation'),copy=document.getElementById('adminAiCopy'),fresh=document.getElementById('adminAiNew');if(!conversation)return;
+  if(!adminAiHistory.length&&!thinking&&!error){
+    conversation.innerHTML='<div class="admin-ai-welcome"><span>✦</span><b>Operational help, grounded in CallerCore.</b><p>I can summarize what is happening, explain dashboard data, find priorities, and draft reports. I will say when the available snapshot does not contain the answer.</p></div>';
+  }else{
+    conversation.innerHTML=adminAiHistory.map(m=>m.role==='user'
+      ?'<div class="admin-ai-question"><span>You</span><p>'+esc(m.content)+'</p></div>'
+      :'<div class="admin-ai-answer"><div><span>✦</span><b>Core Intelligence</b></div><div class="admin-ai-rich">'+formatCoreIntelligenceAnswer(m.content)+'</div></div>').join('')
+      +(thinking?'<div class="admin-ai-thinking"><i></i><span>Core Intelligence is analyzing the latest operation snapshot…</span></div>':'')
+      +(error?'<div class="admin-ai-error"><b>Could not answer that yet.</b><p>'+esc(error)+'</p></div>':'');
+  }
+  if(copy)copy.hidden=!adminAiLastAnswer;if(fresh)fresh.hidden=!adminAiHistory.length;
+  requestAnimationFrame(()=>{conversation.scrollTop=conversation.scrollHeight});
+}
 async function askAdminAi(question){
-  const status=document.getElementById('adminAiStatus'),send=document.getElementById('adminAiSend'),conversation=document.getElementById('adminAiConversation'),copy=document.getElementById('adminAiCopy'),input=document.getElementById('adminAiInput'),q=String(question||'').trim();if(!q)return;
+  const status=document.getElementById('adminAiStatus'),send=document.getElementById('adminAiSend'),input=document.getElementById('adminAiInput'),q=String(question||'').trim();if(!q)return;
+  const priorHistory=adminAiHistory.slice(-8);
   if(input)input.value='';
-  if(send){send.disabled=true;send.textContent='Thinking…'}if(status)status.textContent='Reading the current admin snapshot…';
-  if(conversation)conversation.innerHTML='<div class="admin-ai-question"><span>You</span><p>'+esc(q)+'</p></div><div class="admin-ai-thinking"><i></i><span>CallerCore is analyzing your operation…</span></div>';
+  adminAiHistory.push({role:'user',content:q});adminAiHistory=adminAiHistory.slice(-9);
+  if(send){send.disabled=true;send.textContent='Thinking…'}if(status)status.textContent='Reading the latest admin snapshot…';
+  renderAdminAiConversation({thinking:true});
   try{
-    const r=await fetch('/api/account?action=admin-ai-guide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,snapshot:adminAiSnapshot()})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-ai-guide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,history:priorHistory,snapshot:adminAiSnapshot()})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Core Intelligence unavailable');
     adminAiLastAnswer=String(data.answer||'');
-    if(conversation)conversation.innerHTML='<div class="admin-ai-question"><span>You</span><p>'+esc(q)+'</p></div><div class="admin-ai-answer"><div><span>✦</span><b>Core Intelligence</b></div><div class="admin-ai-rich">'+formatCoreIntelligenceAnswer(adminAiLastAnswer)+'</div></div>';
-    if(copy)copy.hidden=!adminAiLastAnswer;if(status)status.textContent='Generated from the latest loaded admin snapshot.';
+    adminAiHistory.push({role:'assistant',content:adminAiLastAnswer});adminAiHistory=adminAiHistory.slice(-10);
+    renderAdminAiConversation();
+    if(status)status.textContent='Generated from the latest loaded admin snapshot.';
   }catch(err){
-    adminAiLastAnswer='';if(conversation)conversation.innerHTML='<div class="admin-ai-error"><b>Could not answer that yet.</b><p>'+esc(err.message||'AI guide unavailable')+'</p></div>';if(copy)copy.hidden=true;if(status)status.textContent='';
+    adminAiLastAnswer='';renderAdminAiConversation({error:err.message||'Core Intelligence unavailable'});if(status)status.textContent='';
   }finally{if(send){send.disabled=false;send.textContent='Send'}}
 }
 document.getElementById('adminAiLaunch')?.addEventListener('click',()=>openAdminAiGuide());
@@ -184,6 +201,7 @@ document.querySelectorAll('[data-ai-prompt]').forEach(btn=>btn.addEventListener(
 document.getElementById('adminAiForm')?.addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('adminAiInput'),q=input?.value||'';if(!String(q).trim())return;askAdminAi(q);if(input)input.value=''});
 document.getElementById('adminAiInput')?.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.isComposing)return;e.preventDefault();document.getElementById('adminAiForm')?.requestSubmit()});
 document.getElementById('adminAiCopy')?.addEventListener('click',async()=>{if(!adminAiLastAnswer)return;try{await navigator.clipboard.writeText(adminAiLastAnswer);const b=document.getElementById('adminAiCopy');b.textContent='Copied';setTimeout(()=>b.textContent='Copy answer',1200)}catch{}});
+document.getElementById('adminAiNew')?.addEventListener('click',()=>{adminAiHistory=[];adminAiLastAnswer='';const s=document.getElementById('adminAiStatus');if(s)s.textContent='';renderAdminAiConversation();document.getElementById('adminAiInput')?.focus()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('adminAiPanel')?.classList.contains('open'))closeAdminAiGuide()});
 
 function showView(name){
