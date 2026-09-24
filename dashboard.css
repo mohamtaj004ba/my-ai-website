@@ -1167,6 +1167,9 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 .admin-live-status>i{width:8px;height:8px;border-radius:50%;background:#2f946b;box-shadow:0 0 0 0 rgba(47,148,107,.35);animation:adminPulse 2s ease-out infinite}
 .admin-live-status>span{font-size:8px;font-weight:900;color:#336f58;letter-spacing:.04em;text-transform:uppercase}
 .admin-live-status>small{grid-column:2;font-size:6.5px;color:#7b858d;white-space:nowrap}
+.admin-live-status.syncing{border-color:#ead9d0;background:#fffaf7}.admin-live-status.syncing>i{background:var(--accent);animation:adminSyncPulse .8s ease-in-out infinite}.admin-live-status.syncing>span{color:#9a5136}
+.admin-live-status.sync-error{border-color:#efd4d1;background:#fff8f7}.admin-live-status.sync-error>i{background:var(--red);animation:none}.admin-live-status.sync-error>span{color:#a63f3b}
+@keyframes adminSyncPulse{0%,100%{transform:scale(.78);opacity:.55;box-shadow:0 0 0 0 rgba(200,93,53,.18)}50%{transform:scale(1.08);opacity:1;box-shadow:0 0 0 6px rgba(200,93,53,0)}}
 @keyframes adminPulse{0%{box-shadow:0 0 0 0 rgba(47,148,107,.30)}70%{box-shadow:0 0 0 7px rgba(47,148,107,0)}100%{box-shadow:0 0 0 0 rgba(47,148,107,0)}}
 
 .admin-command-metrics article{overflow:hidden}
