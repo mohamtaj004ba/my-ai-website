@@ -96,8 +96,27 @@ function adminAiSnapshot(){
   const feedback=(adminFeedbackData||[]).slice(0,80).map(x=>({workspaceName:x.workspaceName,category:x.category,status:x.status,source:x.source,createdAt:x.createdAt,updatedAt:x.updatedAt}));
   const agents=(adminFleetData.agents||[]).slice(0,120).map(x=>({workspaceName:x.workspaceName,plan:x.plan,status:x.status,agentName:x.agent?.name||'',agentHealth:x.agent?.health||'missing',businessHoursConfigured:!!String(x.agent?.businessHours||'').trim(),transferConfigured:!!String(x.agent?.transferNumber||'').trim(),updatedAt:x.agent?.updatedAt||null}));
   const automations=(adminFleetData.automations||[]).slice(0,120).map(x=>({workspaceName:x.workspaceName,plan:x.plan,total:x.total,enabled:x.enabled,workflowNames:(x.workflows||[]).map(w=>w.name).slice(0,10)}));
+  const inboxContact=currentInboxItem?inboxContactParts():null,lastInboxMessage=currentInboxItem?.messages?.[currentInboxItem.messages.length-1]||null;
   return {
     generatedAt:new Date().toISOString(),
+    currentView:currentAdminView(),
+    consoleGuide:{
+      overview:'Command Center: company KPIs, finance trend, priority queue, account health and recently updated clients.',
+      clients:'Client Accounts: lifecycle, plan, MRR, usage, billing state and account management.',
+      onboarding:'Onboarding: paid-client launch stages, checklist progress, agreement state and next actions.',
+      agents:'AI Receptionists: configuration health for each client receptionist.',
+      phones:'Phone Numbers: CallerCore numbers, forwarding, transfer destinations and after-hours routing.',
+      finance:'Finance: MRR, recurring expenses, net recurring, margin, plan revenue and operating expenses.',
+      growth:'Growth: prospect pipeline, follow-ups, attribution and campaigns.',
+      website:'Website Analytics: traffic, acquisition, engagement, conversion and campaign performance.',
+      inbox:'Inbox: Gmail and website conversations with Growth promotion and replies.',
+      documents:'Documents: client service agreements, standard legal documents and company records.',
+      'client-care':'Client Care: support queue and client AI feedback.',
+      'admin-automations':'Automations: workflow coverage by client workspace.',
+      health:'System Health: dependency checks, launch blockers and production-readiness gates.',
+      'platform-settings':'Platform Settings: company defaults, sales behavior, admin alerts, maintenance state and owner launch confirmations.'
+    },
+    selectedInbox:currentInboxItem?{kind:currentInboxItem.kind,contact:inboxContact,subject:currentInboxItem.kind==='gmail'?(currentInboxItem.thread?.subject||''):(currentInboxItem.prospect?.category||'Website inquiry'),linkedGrowthStage:currentInboxItem.prospect?.stage||'',messageCount:currentInboxItem.messages?.length||0,lastActivity:lastInboxMessage?.at||null}:null,
     summary:adminSummaryData||{},
     finance:{mrr:adminFinanceData?.mrr||0,recurringExpenses:adminFinanceData?.recurringExpenses||0,netRecurring:adminFinanceData?.netRecurring||0,margin:adminFinanceData?.margin||0,history:(adminFinanceData?.history||[]).slice(-12)},
     clients,onboarding,prospects,support,feedback,agents,automations,
