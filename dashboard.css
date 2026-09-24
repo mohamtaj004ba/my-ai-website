@@ -1308,3 +1308,20 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 
 .provision-stage-select{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid #edf0f2;color:#7b858d;font-size:7px;font-weight:800}
 .provision-stage-select select{min-width:0;border:1px solid #dfe4e7;border-radius:7px;background:#fff;padding:6px 7px;font:inherit;color:#48535c}
+
+
+/* Admin operational coverage + system health grouping */
+.admin-automation-card{cursor:pointer;align-items:flex-start!important}
+.admin-automation-card:hover{border-color:#d5dade;background:#fcfdfd}
+.admin-automation-card small{display:block;margin-top:5px;color:#89929a;font-size:7px}
+.admin-health-groups{display:grid;gap:18px;margin-top:18px}
+.admin-health-group{display:grid;gap:10px}
+.admin-health-group-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;padding:0 2px}
+.admin-health-group-head>div{display:grid;gap:2px}
+.admin-health-group-head h2{margin:0;font-size:16px}
+.admin-health-group-head>span{font-size:8px;color:#7b858d;font-weight:800}
+.admin-health-item.blocking{border-color:#e5c1b6;box-shadow:inset 3px 0 0 #c6533f}
+.admin-health-item.blocking b{color:#6d3025}
+@media(max-width:760px){
+  .admin-health-group-head{align-items:flex-start;flex-direction:column}
+}
