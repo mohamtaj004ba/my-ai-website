@@ -244,7 +244,7 @@ function initClientLiveRefresh(){
 
 function renderClientData(){
   loadCallLogPrefs();if(callsData.length&&agentData&&settingsData)setDataHealth('clientDataHealth',false);
-  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderBillingConnection();renderPhoneRouting();renderLocations();
+  renderCalls();renderLeads();renderConversations();renderAppointments();renderAgent();renderAutomations();renderAnalytics();renderIntegrations();renderSettings();renderOverview();renderBillingConnection();renderPhoneRouting();renderLocations();renderClientSetupStatus();renderClientChecklist();
 }
 async function loadOperations(){
   if(demoMode){setDataHealth('clientDataHealth',false);
@@ -253,7 +253,7 @@ async function loadOperations(){
   setClientLoading(true);setDataHealth('clientDataHealth',false);
   try{
     const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:2,timeout:15000});
-    callsData=data.calls||[];leadsData=data.leads||[];agentData=data.agent||null;settingsData=data.settings||null;integrationsData=data.integrations||null;phoneRoutingData=data.routing||null;locationsData=data.locations||[];locationsLimit=Number(data.locationsLimit||1);conversationsData=data.conversations||[];appointmentsData=data.appointments||[];automationsData=data.automations||[];followupState=data.followupState||{};callViewedIds=new Set((data.viewedCallIds||[]).map(String));analyticsData=buildLocalAnalytics();
+    callsData=data.calls||[];leadsData=data.leads||[];agentData=data.agent||null;settingsData=data.settings||null;integrationsData=data.integrations||null;phoneRoutingData=data.routing||null;locationsData=data.locations||[];locationsLimit=Number(data.locationsLimit||1);conversationsData=data.conversations||[];appointmentsData=data.appointments||[];automationsData=data.automations||[];sessionOnboarding=data.onboarding||sessionOnboarding;followupState=data.followupState||{};callViewedIds=new Set((data.viewedCallIds||[]).map(String));analyticsData=buildLocalAnalytics();
     renderClientData();setClientLoading(false);
     // Non-critical support history loads separately so it can never block Today.
     fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:5000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(()=>{});
@@ -1183,9 +1183,10 @@ document.getElementById('saveLocationButton')?.addEventListener('click',saveLoca
 document.getElementById('locationModal')?.addEventListener('click',e=>{if(e.target.id==='locationModal')closeLocationModal()});
 
 function renderClientSetupStatus(){
-  const title=document.getElementById('clientSetupStatusTitle'),copy=document.getElementById('clientSetupStatusCopy'),pill=document.getElementById('clientSetupStatusPill');
-  if(!title||!copy||!pill)return;
-  const s=sessionOnboarding?.status||'',ck=sessionOnboarding?.checklist||{};
+  const card=document.getElementById('clientSetupStatusCard'),title=document.getElementById('clientSetupStatusTitle'),copy=document.getElementById('clientSetupStatusCopy'),pill=document.getElementById('clientSetupStatusPill'),bar=document.getElementById('clientSetupProgressBar'),label=document.getElementById('clientSetupProgressLabel');
+  if(!card||!title||!copy||!pill)return;
+  const s=sessionOnboarding?.status||'',ck=sessionOnboarding?.checklist||{},live=s==='live'||!!ck.live;
+  card.hidden=!sessionOnboarding||live;if(card.hidden)return;
   let t='Get your workspace live.',p='CallerCore will track the core steps required before your AI receptionist can take production traffic.',b='Setup in progress';
   if(s==='awaiting_review'){t='Your account is under review.';p='Payment is confirmed. Our team is reviewing your order and business details before sending your onboarding workspace. No action is needed from you right now.';b='Awaiting CallerCore review'}
   else if(['awaiting_agreement','intake_in_progress'].includes(s)){t='Complete your onboarding.';p='Your secure onboarding workspace is ready. Complete the service agreement and business intake so we can begin the build.';b='Action needed'}
@@ -1193,8 +1194,8 @@ function renderClientSetupStatus(){
   else if(s==='qa_complete'||(ck.adminReview&&!ck.testCall)){t='Initial review complete.';p='Your agent configuration has passed our initial review. We’re finishing phone routing and preparing the test-call step.';b='Preparing test call'}
   else if(s==='client_test'||(ck.testCall&&!ck.clientApproval)){t='Your test stage is ready.';p='Your setup has reached the test-call stage. Review the agent experience before final launch approval.';b='Test & review'}
   else if(s==='ready'||(ck.clientApproval&&!ck.live)){t='Ready for launch.';p='Your configuration is approved and awaiting final activation.';b='Ready'}
-  else if(s==='live'||ck.live){t='CallerCore is live.';p='Your AI receptionist is active. Monitor calls, leads, conversations, and performance from this dashboard.';b='Live'}
-  title.textContent=t;copy.textContent=p;pill.textContent=b;pill.classList.toggle('live',s==='live'||!!ck.live);
+  const steps=['payment','accountReview','onboardingSent','intake','businessProfile','agentDraft','phoneAssigned','adminReview','testCall','clientApproval'],done=steps.filter(k=>!!ck[k]).length,pct=Math.max(5,Math.round(done/steps.length*100));
+  title.textContent=t;copy.textContent=p;pill.textContent=b;if(bar)bar.style.width=pct+'%';if(label)label.textContent=done+' of '+steps.length+' setup steps complete';
 }
 function renderClientChecklist(){
   const wrap=document.getElementById('clientOnboardingChecklist');if(!wrap)return;
