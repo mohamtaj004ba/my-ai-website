@@ -15,7 +15,7 @@ const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='
 let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
-let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread';
+let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
 let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callQuickFilter='all',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set();
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
@@ -94,7 +94,7 @@ function showView(name){
     if(agentEditing){if(agentEditSnapshot)agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent()}
     if(settingsEditing){settingsEditing=false;pendingBusinessLogo=String(settingsData?.logoDataUrl||'');renderSettings()}
   }
-  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent')renderAgent();if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent'){renderAgent();loadClientFeedback({silent:true})};if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations')renderIntegrations();if(name==='settings')renderSettings();if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
@@ -354,10 +354,10 @@ function markCallViewed(id){
   if(!demoMode)fetch('/api/account?action=call-viewed-mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:key})}).catch(()=>{});
 }
 function syncCallSortHeader(){
-  const btn=document.getElementById('callDateSortButton'),arrow=document.getElementById('callDateSortArrow'),label=document.getElementById('callDateSortLabel'),sort=document.getElementById('callSort');
+  const btn=document.getElementById('callDateSortButton'),arrow=document.getElementById('callDateSortArrow'),sort=document.getElementById('callSort');
   if(sort&&sort.value!==callLogSort)sort.value=callLogSort;
-  if(arrow)arrow.textContent=callLogSort==='oldest'?'↑':'↓';if(label)label.textContent=callLogSort==='oldest'?'Oldest':'Newest';
-  if(btn)btn.setAttribute('aria-label','Sort calls by date and time, '+(callLogSort==='oldest'?'oldest first':'newest first'));
+  if(arrow)arrow.textContent=callLogSort==='oldest'?'↑':'↓';
+  if(btn){const copy=callLogSort==='oldest'?'Oldest first':'Newest first';btn.setAttribute('aria-label','Sort calls by date and time, '+copy.toLowerCase());btn.title=copy;}
 }
 function renderCalls(){
   const wrap=document.getElementById('callsTable');if(!wrap)return;
@@ -403,6 +403,7 @@ async function openCall(id){
   const q=x.qualification||{};document.getElementById('drawerQualification').innerHTML=Object.entries(q).filter(([k])=>String(k).toLowerCase()!=='value').map(([k,v])=>'<div><b>'+esc(v)+'</b><span>'+esc(k)+'</span></div>').join('')||'<span class="muted">No additional call details yet.</span>';
   const t=Array.isArray(x.transcript)?x.transcript:[];document.getElementById('drawerTranscript').innerHTML=t.map(pair=>'<div class="'+(String(pair[0]).toLowerCase()==='maya'?'ai':'')+'"><b>'+esc(pair[0])+'</b>'+esc(pair[1])+'</div>').join('')||'<span class="muted">Transcript unavailable.</span>';
   const historyBtn=document.getElementById('drawerContactButton');if(historyBtn)historyBtn.onclick=()=>{const key=activeCallContactKey;closeCall();setTimeout(()=>openContact(key),30)};
+  const feedbackBtn=document.getElementById('drawerAiFeedbackButton');if(feedbackBtn){feedbackBtn.dataset.callId=activeCallId;feedbackBtn.dataset.callContext=[x.caller||x.phone||'Caller',x.reason||x.category||'Call'].filter(Boolean).join(' · ')}
   document.getElementById('callDrawer').classList.add('open');document.getElementById('drawerBackdrop').classList.add('open');document.getElementById('callDrawer').setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>document.getElementById('closeCallDrawer')?.focus(),20);
 }
 function closeCall(){document.getElementById('callDrawer')?.classList.remove('open');document.getElementById('drawerBackdrop')?.classList.remove('open');document.getElementById('callDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('contactDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}
@@ -786,13 +787,25 @@ document.querySelectorAll('[data-conversation-filter]').forEach(b=>b.addEventLis
 document.getElementById('conversationContactButton')?.addEventListener('click',e=>{const key=e.currentTarget.dataset.contactKey;if(key)openContact(key)});
 
 
-function agentControlIds(){return ['agentName','agentRole','agentTone','agentOpening','agentServiceArea','agentHours','agentTransfer','agentEmergency']}
-function setAgentEditing(editing,{restore=false}={}){
-  if(editing&&!agentEditing&&agentData)agentEditSnapshot=JSON.parse(JSON.stringify(agentData));
-  agentEditing=!!editing;if(restore&&agentEditSnapshot){agentData=JSON.parse(JSON.stringify(agentEditSnapshot));renderAgent();return}
-  agentControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!agentEditing});
-  const edit=document.getElementById('agentEditButton'),cancel=document.getElementById('agentCancelButton'),save=document.getElementById('saveAgentButton'),add=document.getElementById('addQuestionButton');
-  if(edit)edit.hidden=agentEditing;if(cancel)cancel.hidden=!agentEditing;if(save)save.hidden=!agentEditing;if(add)add.hidden=!agentEditing;
+const AGENT_SECTION_FIELDS={
+  identity:['agentName','agentRole','agentTone','agentOpening'],
+  knowledge:['agentServiceArea','agentHours','agentTransfer','agentEmergency'],
+  qualification:[],
+  handling:['agentHandlingInstructions']
+};
+function agentControlIds(){return Object.values(AGENT_SECTION_FIELDS).flat()}
+function activeAgentSection(){return typeof agentEditing==='string'?agentEditing:''}
+function setAgentEditing(section,{restore=false}={}){
+  const next=typeof section==='string'&&section?section:'';
+  if(next&&!agentEditing&&agentData)agentEditSnapshot=JSON.parse(JSON.stringify(agentData));
+  if(restore&&agentEditSnapshot){agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent();return}
+  agentEditing=next||false;const active=activeAgentSection();
+  agentControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!(active&&AGENT_SECTION_FIELDS[active]?.includes(id))});
+  document.querySelectorAll('[data-agent-section-card]').forEach(card=>card.dataset.agentEditing=card.dataset.agentSectionCard===active?'true':'false');
+  document.querySelectorAll('[data-agent-edit]').forEach(btn=>{btn.hidden=!!active;btn.disabled=!!active});
+  document.querySelectorAll('[data-agent-save]').forEach(btn=>btn.hidden=btn.dataset.agentSave!==active);
+  document.querySelectorAll('[data-agent-cancel]').forEach(btn=>btn.hidden=btn.dataset.agentCancel!==active);
+  const add=document.getElementById('addQuestionButton');if(add)add.hidden=active!=='qualification';
   renderQuestions();
 }
 function renderAgent(){
@@ -801,30 +814,59 @@ function renderAgent(){
   set('agentName',agentData.name);set('agentRole',agentData.role);set('agentTone',agentData.tone);
   set('agentOpening',agentData.openingMessage);set('agentServiceArea',agentData.serviceArea);
   set('agentHours',agentData.businessHours);set('agentTransfer',agentData.transferNumber);set('agentEmergency',agentData.emergencyInstructions);
+  set('agentHandlingInstructions',agentData.handlingInstructions);
   const test=document.getElementById('agentTestCall'),digits=String(phoneRoutingData?.number||'').replace(/\D/g,'');if(test){test.hidden=!digits;if(digits)test.setAttribute('href','tel:'+digits);else test.removeAttribute('href');test.classList.toggle('disabled-link',!digits);test.setAttribute('aria-disabled',digits?'false':'true');test.tabIndex=digits?0:-1;test.title=digits?'Call '+phoneRoutingData.number+' to test '+(agentData.name||'Maya'):''}
-  renderQuestions();setAgentEditing(agentEditing);
+  renderQuestions();setAgentEditing(activeAgentSection());
 }
 function renderQuestions(){
   const wrap=document.getElementById('qualificationQuestions');if(!wrap||!agentData)return;
-  const qs=Array.isArray(agentData.qualificationQuestions)?agentData.qualificationQuestions:[];
-  wrap.innerHTML=agentEditing
+  const qs=Array.isArray(agentData.qualificationQuestions)?agentData.qualificationQuestions:[],editing=activeAgentSection()==='qualification';
+  wrap.innerHTML=editing
     ?qs.map((q,i)=>'<div class="question-row editing"><input data-question-index="'+i+'" value="'+esc(q)+'" aria-label="Qualification question '+(i+1)+'"><button data-remove-question="'+i+'" aria-label="Remove question '+(i+1)+'">×</button></div>').join('')
     :qs.map((q,i)=>'<div class="question-row locked"><span class="question-number">'+String(i+1).padStart(2,'0')+'</span><p>'+esc(q||'Untitled question')+'</p></div>').join('');
-  if(agentEditing){wrap.querySelectorAll('[data-question-index]').forEach(input=>input.addEventListener('input',()=>{agentData.qualificationQuestions[Number(input.dataset.questionIndex)]=input.value}));wrap.querySelectorAll('[data-remove-question]').forEach(btn=>btn.addEventListener('click',()=>{agentData.qualificationQuestions.splice(Number(btn.dataset.removeQuestion),1);renderQuestions()}))}
+  if(editing){wrap.querySelectorAll('[data-question-index]').forEach(input=>input.addEventListener('input',()=>{agentData.qualificationQuestions[Number(input.dataset.questionIndex)]=input.value}));wrap.querySelectorAll('[data-remove-question]').forEach(btn=>btn.addEventListener('click',()=>{agentData.qualificationQuestions.splice(Number(btn.dataset.removeQuestion),1);renderQuestions()}))}
 }
 function collectAgent(){
   const val=id=>document.getElementById(id)?.value||'';
-  return {name:val('agentName'),role:val('agentRole'),tone:val('agentTone'),openingMessage:val('agentOpening'),serviceArea:val('agentServiceArea'),businessHours:val('agentHours'),transferNumber:val('agentTransfer'),emergencyInstructions:val('agentEmergency'),qualificationQuestions:[...(agentData?.qualificationQuestions||[])]};
+  return {name:val('agentName'),role:val('agentRole'),tone:val('agentTone'),openingMessage:val('agentOpening'),serviceArea:val('agentServiceArea'),businessHours:val('agentHours'),transferNumber:val('agentTransfer'),emergencyInstructions:val('agentEmergency'),handlingInstructions:val('agentHandlingInstructions'),qualificationQuestions:[...(agentData?.qualificationQuestions||[])]};
 }
-async function saveAgent(){
-  if(!agentEditing)return;const next=collectAgent(),btn=document.getElementById('saveAgentButton');if(btn){btn.disabled=true;btn.textContent='Saving…'}
+async function saveAgent(section=activeAgentSection()){
+  if(!section)return;const next=collectAgent(),btn=document.querySelector('[data-agent-save="'+CSS.escape(section)+'"]');if(btn){btn.disabled=true;btn.textContent='Saving…'}
   try{
     if(!demoMode){const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save the AI receptionist.');agentData=data.agent||next}else agentData=next;
-    agentEditSnapshot=null;setAgentEditing(false);const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
+    agentEditSnapshot=null;agentEditing=false;renderAgent();const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
   }catch(err){alert(err.message||'Could not save the AI receptionist.')}
-  finally{if(btn){btn.disabled=false;btn.textContent='Save changes'}}
+  finally{if(btn){btn.disabled=false;btn.textContent='Save'}}
 }
-function renderAutomations(){
+
+function feedbackStatusLabel(status){return ({submitted:'Submitted',reviewed:'Reviewed',applied:'Applied',dismissed:'Closed'})[status]||'Submitted'}
+function renderClientFeedback(){
+  const wrap=document.getElementById('clientFeedbackList');if(!wrap)return;
+  const items=(clientFeedbackData||[]).slice(0,8);
+  wrap.classList.add('feedback-list');
+  wrap.innerHTML=items.map(x=>'<article class="feedback-item"><div><b>'+esc((x.category||'Feedback').replaceAll('_',' '))+'</b><small>'+esc(x.source==='call'?'Call feedback'+(x.context?' · '+x.context:''):'AI receptionist feedback')+' · '+(x.createdAt?new Date(x.createdAt).toLocaleString():'')+'</small></div><span class="feedback-status '+esc(x.status||'submitted')+'">'+esc(feedbackStatusLabel(x.status))+'</span><p>'+esc(x.message||'')+'</p></article>').join('')||'<p class="muted">No feedback submitted yet.</p>';
+}
+async function loadClientFeedback({silent=false}={}){
+  const wrap=document.getElementById('clientFeedbackList');if(!wrap)return;
+  if(demoMode){renderClientFeedback();return}
+  try{const r=await fetch('/api/account?action=ai-feedback',{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok)throw new Error('feedback load');const data=await r.json();clientFeedbackData=data.feedback||[];renderClientFeedback()}catch(e){if(!silent)console.error(e);if(wrap&&!clientFeedbackData.length)wrap.innerHTML='<p class="muted">Feedback history is temporarily unavailable.</p>'}
+}
+async function submitAiFeedback({source='receptionist',callId='',category='',message='',context='',button,statusEl}={}){
+  const textValue=String(message||'').trim();if(!textValue){if(statusEl)statusEl.textContent='Add a short description first.';return false}
+  if(button){button.disabled=true;button.textContent='Sending…'}if(statusEl)statusEl.textContent='Sending feedback…';
+  try{
+    let item={id:'demo_feedback_'+Date.now(),source,callId,category,message:textValue,context,status:'submitted',createdAt:Date.now(),updatedAt:Date.now()};
+    if(!demoMode){const r=await fetch('/api/account?action=ai-feedback-submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source,callId,category,message:textValue,context})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not send feedback.');item=data.feedback||item}
+    clientFeedbackData=[item,...clientFeedbackData.filter(x=>x.id!==item.id)];renderClientFeedback();if(statusEl)statusEl.textContent='Submitted for review.';return true;
+  }catch(err){if(statusEl)statusEl.textContent=err.message||'Could not send feedback.';return false}
+  finally{if(button){button.disabled=false;button.textContent=source==='call'?'Send feedback':'Send feedback'}}
+}
+function openCallFeedbackModal(callId,context=''){
+  const modal=document.getElementById('aiFeedbackModal');if(!modal)return;
+  document.getElementById('aiFeedbackCallId').value=callId||'';document.getElementById('aiFeedbackMessage').value='';document.getElementById('aiFeedbackCategory').value='incorrect_information';document.getElementById('aiFeedbackStatus').textContent='';modal.dataset.context=context||'';modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>document.getElementById('aiFeedbackCategory')?.focus(),20);
+}
+function closeCallFeedbackModal(){const modal=document.getElementById('aiFeedbackModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}}
+function renderAutomations(){function renderAutomations(){
   if(!has('automations'))return;
   const wrap=document.getElementById('automationList');if(!wrap)return;
   wrap.innerHTML=automationsData.map(x=>'<article class="automation-card"><div><h3>'+esc(x.name)+'</h3><p>When <b>'+esc(triggerLabel(x.trigger))+'</b> → '+esc(actionLabel(x.action))+'</p></div><div class="automation-actions"><button data-edit-auto="'+esc(x.id)+'">Edit</button><button class="danger-link" data-delete-auto="'+esc(x.id)+'">Delete</button><button class="switch '+(x.enabled?'on':'')+'" data-toggle-auto="'+esc(x.id)+'" aria-label="Toggle automation"><i></i></button></div></article>').join('');
@@ -869,10 +911,15 @@ async function saveAutomation(){
   const i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
   renderAutomations();closeAutomation();await persistAutomations();
 }
-document.getElementById('saveAgentButton')?.addEventListener('click',saveAgent);
-document.getElementById('agentEditButton')?.addEventListener('click',()=>setAgentEditing(true));
-document.getElementById('agentCancelButton')?.addEventListener('click',()=>{if(agentEditSnapshot)agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent()});
-document.getElementById('addQuestionButton')?.addEventListener('click',()=>{if(!agentEditing)return;if(!agentData)agentData={...DEMO_AGENT,qualificationQuestions:[]};agentData.qualificationQuestions=agentData.qualificationQuestions||[];if(agentData.qualificationQuestions.length<12){agentData.qualificationQuestions.push('');renderQuestions()}});
+document.querySelectorAll('[data-agent-edit]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(btn.dataset.agentEdit)));
+document.querySelectorAll('[data-agent-cancel]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(false,{restore:true})));
+document.querySelectorAll('[data-agent-save]').forEach(btn=>btn.addEventListener('click',()=>saveAgent(btn.dataset.agentSave)));
+document.getElementById('addQuestionButton')?.addEventListener('click',()=>{if(activeAgentSection()!=='qualification')return;if(!agentData)agentData={...DEMO_AGENT,qualificationQuestions:[]};agentData.qualificationQuestions=agentData.qualificationQuestions||[];if(agentData.qualificationQuestions.length<12){agentData.qualificationQuestions.push('');renderQuestions()}});
+document.getElementById('submitAgentFeedback')?.addEventListener('click',async()=>{const button=document.getElementById('submitAgentFeedback'),statusEl=document.getElementById('agentFeedbackStatus'),message=document.getElementById('agentFeedbackMessage'),category=document.getElementById('agentFeedbackCategory');const ok=await submitAiFeedback({source:'receptionist',category:category?.value||'other',message:message?.value||'',context:agentData?.name||'AI receptionist',button,statusEl});if(ok&&message)message.value=''});
+document.getElementById('drawerAiFeedbackButton')?.addEventListener('click',e=>openCallFeedbackModal(e.currentTarget.dataset.callId||activeCallId,e.currentTarget.dataset.callContext||''));
+document.getElementById('closeAiFeedbackModal')?.addEventListener('click',closeCallFeedbackModal);
+document.getElementById('aiFeedbackModal')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeCallFeedbackModal()});
+document.getElementById('submitCallFeedback')?.addEventListener('click',async()=>{const button=document.getElementById('submitCallFeedback'),statusEl=document.getElementById('aiFeedbackStatus'),message=document.getElementById('aiFeedbackMessage'),category=document.getElementById('aiFeedbackCategory'),modal=document.getElementById('aiFeedbackModal');const ok=await submitAiFeedback({source:'call',callId:document.getElementById('aiFeedbackCallId')?.value||'',category:category?.value||'other',message:message?.value||'',context:modal?.dataset.context||'',button,statusEl});if(ok)setTimeout(closeCallFeedbackModal,450)});
 document.getElementById('newAutomationButton')?.addEventListener('click',()=>openAutomation());
 document.querySelectorAll('[data-preset]').forEach(btn=>btn.addEventListener('click',()=>openAutomation(null,btn.dataset.preset)));
 document.getElementById('saveAutomationButton')?.addEventListener('click',saveAutomation);
@@ -1176,16 +1223,17 @@ async function bootstrapAdmin(){
 
 async function loadAdminOps(){
   try{
-    const [pr,ph,hr,fr,sr,ps,wr]=await Promise.all([
+    const [pr,ph,hr,fr,sr,ps,wr,fbr]=await Promise.all([
       fetch('/api/account?action=admin-provisioning',{cache:'no-store'}),
       fetch('/api/account?action=admin-phone-numbers',{cache:'no-store'}),
       fetch('/api/account?action=admin-system-health',{cache:'no-store'}),
       fetch('/api/account?action=admin-fleet',{cache:'no-store'}),
       fetch('/api/account?action=admin-support',{cache:'no-store'}),
       fetch('/api/account?action=admin-platform-settings',{cache:'no-store'}),
-      fetch('/api/account?action=admin-website-analytics',{cache:'no-store'})
+      fetch('/api/account?action=admin-website-analytics',{cache:'no-store'}),
+      fetch('/api/account?action=admin-ai-feedback',{cache:'no-store'})
     ]);
-    setDataHealth('adminDataHealth',[pr,ph,hr,fr,sr,ps,wr].some(r=>!r.ok));
+    setDataHealth('adminDataHealth',[pr,ph,hr,fr,sr,ps,wr,fbr].some(r=>!r.ok));
     if(pr.ok)adminProvisioningData=(await pr.json()).provisioning||[];
     if(ph.ok)adminPhoneData=(await ph.json()).numbers||[];
     if(hr.ok){const health=await hr.json();adminHealthData=health.services||[];adminReadinessData=health.readiness||null;}
@@ -1193,8 +1241,9 @@ async function loadAdminOps(){
     if(sr.ok)adminSupportData=(await sr.json()).tickets||[];
     if(ps.ok)adminPlatformData=(await ps.json()).settings||null;
     if(wr.ok)adminWebsiteData=(await wr.json()).analytics||adminWebsiteData;
+    if(fbr.ok)adminFeedbackData=(await fbr.json()).feedback||[];
   }catch(e){console.error('Admin ops load failed',e);setDataHealth('adminDataHealth',true)}
-  renderProvisioning();renderPhones();renderHealth();renderWebsiteAnalytics();renderAdminFleet();renderAdminSupport();renderPlatformSettings();renderAdmin();
+  renderProvisioning();renderPhones();renderHealth();renderWebsiteAnalytics();renderAdminFleet();renderAdminSupport();renderAdminFeedback();renderPlatformSettings();renderAdmin();
 }
 
 function renderAdminFleet(){
@@ -1223,6 +1272,21 @@ function renderAdminFleet(){
   }
   const le=document.getElementById('adminLeadsEmpty');if(le)le.hidden=totalLeads!==0;
   const aw=document.getElementById('adminAutomationGrid');if(aw){aw.innerHTML=autos.filter(x=>x.total).map(x=>'<article class="panel integration-card"><div><b>'+esc(x.workspaceName)+'</b><p>'+x.enabled+' enabled of '+x.total+' configured</p></div><span class="tag '+(x.enabled?'green':'amber')+'">'+esc(x.plan)+'</span></article>').join('');document.getElementById('adminAutomationsEmpty').hidden=autos.some(x=>x.total)}
+}
+
+function renderAdminFeedback(){
+  const list=document.getElementById('adminFeedbackList'),empty=document.getElementById('adminFeedbackEmpty'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  const items=[...(adminFeedbackData||[])].sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
+  set('adminFeedbackOpen',items.filter(x=>x.status==='submitted').length);set('adminFeedbackReviewed',items.filter(x=>x.status==='reviewed').length);set('adminFeedbackApplied',items.filter(x=>x.status==='applied').length);set('adminFeedbackCalls',items.filter(x=>x.source==='call').length);
+  if(list){list.classList.add('admin-feedback-list');list.innerHTML=items.map(x=>'<article class="admin-feedback-card" id="feedback-'+esc(x.id)+'"><div class="admin-feedback-card-head"><div><b>'+esc(x.workspaceName||x.workspaceId||'Client workspace')+'</b><small>'+esc(x.source==='call'?'Call feedback':'AI receptionist feedback')+(x.context?' · '+esc(x.context):'')+' · '+(x.createdAt?new Date(x.createdAt).toLocaleString():'')+'</small></div><span class="feedback-status '+esc(x.status||'submitted')+'">'+esc(feedbackStatusLabel(x.status))+'</span></div><p><b>'+esc((x.category||'feedback').replaceAll('_',' '))+'</b> · '+esc(x.message||'')+'</p><div class="feedback-admin-actions"><select data-admin-feedback-status="'+esc(x.id)+'">'+['submitted','reviewed','applied','dismissed'].map(s=>'<option value="'+s+'" '+(x.status===s?'selected':'')+'>'+feedbackStatusLabel(s)+'</option>').join('')+'</select>'+(x.callId?'<button class="admin-link" data-feedback-call="'+esc(x.callId)+'">Call '+esc(x.callId)+'</button>':'')+'</div></article>').join('')}
+  if(empty)empty.hidden=items.length!==0;
+  list?.querySelectorAll('[data-admin-feedback-status]').forEach(sel=>sel.addEventListener('change',()=>updateAdminFeedback(sel.dataset.adminFeedbackStatus,sel.value)));
+  list?.querySelectorAll('[data-feedback-call]').forEach(btn=>btn.addEventListener('click',()=>{showView('calls');const row=document.querySelector('[data-admin-call-id="'+CSS.escape(btn.dataset.feedbackCall)+'"]');row?.scrollIntoView({behavior:'smooth',block:'center'})}));
+}
+async function updateAdminFeedback(id,status){
+  const item=adminFeedbackData.find(x=>x.id===id);if(!item)return;const before=item.status;item.status=status;item.updatedAt=Date.now();renderAdminFeedback();
+  try{const r=await fetch('/api/account?action=admin-ai-feedback-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update feedback.');Object.assign(item,data.feedback||{});renderAdminFeedback();loadNotifications({silent:true})}
+  catch(err){item.status=before;renderAdminFeedback();alert(err.message||'Could not update feedback.')}
 }
 
 function renderWebsiteAnalytics(){
