@@ -866,7 +866,7 @@ function openCallFeedbackModal(callId,context=''){
   document.getElementById('aiFeedbackCallId').value=callId||'';document.getElementById('aiFeedbackMessage').value='';document.getElementById('aiFeedbackCategory').value='incorrect_information';document.getElementById('aiFeedbackStatus').textContent='';modal.dataset.context=context||'';modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>document.getElementById('aiFeedbackCategory')?.focus(),20);
 }
 function closeCallFeedbackModal(){const modal=document.getElementById('aiFeedbackModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}}
-function renderAutomations(){function renderAutomations(){
+function renderAutomations(){
   if(!has('automations'))return;
   const wrap=document.getElementById('automationList');if(!wrap)return;
   wrap.innerHTML=automationsData.map(x=>'<article class="automation-card"><div><h3>'+esc(x.name)+'</h3><p>When <b>'+esc(triggerLabel(x.trigger))+'</b> → '+esc(actionLabel(x.action))+'</p></div><div class="automation-actions"><button data-edit-auto="'+esc(x.id)+'">Edit</button><button class="danger-link" data-delete-auto="'+esc(x.id)+'">Delete</button><button class="switch '+(x.enabled?'on':'')+'" data-toggle-auto="'+esc(x.id)+'" aria-label="Toggle automation"><i></i></button></div></article>').join('');
