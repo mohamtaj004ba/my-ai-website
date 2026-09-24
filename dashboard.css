@@ -1625,3 +1625,11 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 .admin-client-toolbar-right input{min-width:260px}
 @media(max-width:850px){.admin-client-toolbar{align-items:stretch;flex-direction:column}.admin-client-toolbar-right{width:100%;margin-left:0}.admin-client-toolbar-right select{flex:0 0 150px}.admin-client-toolbar-right input{min-width:0;flex:1}}
 @media(max-width:560px){.admin-client-toolbar-right{display:grid;grid-template-columns:1fr}.admin-client-toolbar-right select,.admin-client-toolbar-right input{width:100%;min-width:0}}
+
+
+/* Growth operating shortcuts */
+.prospect-quick-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:-1px 0 3px}
+.prospect-quick-actions>span{margin-right:3px;color:#899197;font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.prospect-quick-actions button{border:1px solid #dfe4e6;border-radius:999px;background:#fafbfb;padding:7px 9px;color:#536068;font-size:7px;font-weight:800;cursor:pointer;transition:.16s ease}
+.prospect-quick-actions button:hover{border-color:#cfb8ad;background:#fff6f1;color:#934d34;transform:translateY(-1px)}
+@media(prefers-reduced-motion:reduce){.prospect-quick-actions button{transition:none}.prospect-quick-actions button:hover{transform:none}}
