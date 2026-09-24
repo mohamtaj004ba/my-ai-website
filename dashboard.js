@@ -976,8 +976,10 @@ function renderAppointments(){
 async function updateAppointment(id,status){
   const item=appointmentsData.find(x=>String(x.id)===String(id));if(!item)return;
   const previous=item.status;item.status=status;renderAppointments();if(demoMode)return;
-  try{const r=await fetch('/api/account?action=appointment-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})});if(!r.ok)throw new Error('update failed')}
-  catch(err){item.status=previous;renderAppointments();console.error(err)}
+  try{
+    const r=await fetch('/api/account?action=appointment-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not update appointment.');
+  }catch(err){item.status=previous;renderAppointments();alert(err.message||'Could not update appointment. Check your connection and try again.')}
 }
 document.getElementById('conversationSearch')?.addEventListener('input',renderConversations);
 document.querySelectorAll('[data-conversation-filter]').forEach(b=>b.addEventListener('click',()=>{conversationFilter=b.dataset.conversationFilter;renderConversations()}));
@@ -1164,9 +1166,11 @@ async function saveWebhook(){
   if(!has('apiAccess'))return openModal('Pro');
   const webhookUrl=document.getElementById('webhookUrl')?.value.trim()||'',status=document.getElementById('webhookEditStatus');if(status)status.textContent='Saving…';
   if(demoMode){integrationsData={...(integrationsData||{}),webhookUrl};webhookEditing=false;renderIntegrations();return}
-  const r=await fetch('/api/account?action=integrations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl})});
-  if(!r.ok){if(status)status.textContent='Could not save. Make sure the URL uses HTTPS.';return}
-  integrationsData={...(integrationsData||{}),...((await r.json()).integrations||{})};webhookEditing=false;renderIntegrations();
+  try{
+    const r=await fetch('/api/account?action=integrations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not save webhook.');
+    integrationsData={...(integrationsData||{}),...(data.integrations||{})};webhookEditing=false;renderIntegrations();
+  }catch(err){if(status)status.textContent=err.message||'Could not save webhook. Check your connection and try again.'}
 }
 function settingsControlIds(){return ['settingsBusinessName','settingsContactName','settingsPrimaryEmail','settingsBusinessPhone','settingsWebsite','settingsIndustry','settingsServiceArea','settingsStreetAddress','settingsCity','settingsState','settingsPostalCode','settingsTimezone','settingsNotificationEmail','settingsEmailAlerts','settingsNotifyBilling','settingsNotifySetup','settingsNotifyCalls','settingsNotifySupport','settingsNotifyUsage']}
 function businessInitials(name=''){const parts=String(name||'Business').trim().split(/\s+/).filter(Boolean);return (parts.length>1?(parts[0][0]+parts[1][0]):String(parts[0]||'B').slice(0,2)).toUpperCase()}
@@ -1309,8 +1313,11 @@ function openLocationModal(id=''){
 }
 function closeLocationModal(){const m=document.getElementById('locationModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
 async function persistLocations(next){
-  const r=await fetch('/api/account?action=locations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:next})}),data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not save locations.');return false}locationsData=data.locations||[];locationsLimit=Number(data.limit||locationsLimit);renderLocations();return true;
+  try{
+    const r=await fetch('/api/account?action=locations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:next})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not save locations.');
+    locationsData=data.locations||[];locationsLimit=Number(data.limit||locationsLimit);renderLocations();return true;
+  }catch(err){alert(err.message||'Could not save locations. Check your connection and try again.');return false}
 }
 async function saveLocation(){
   const modal=document.getElementById('locationModal'),id=modal?.dataset.editId||'',item={id:id||undefined,name:document.getElementById('locationName')?.value||'',phone:document.getElementById('locationPhone')?.value||'',address:document.getElementById('locationAddress')?.value||'',timezone:document.getElementById('locationTimezone')?.value||'America/Los_Angeles',active:!!document.getElementById('locationActive')?.checked};
