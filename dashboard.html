@@ -53,7 +53,7 @@
     <div class="client-sync-toast" id="clientDataHealth" role="status" aria-live="polite" hidden><span class="sync-dot"></span><div><b>Still syncing</b><span>Some background data is taking longer than usual.</span></div><button type="button" id="clientDataRetry">Retry</button></div>
 
     <section class="view active" id="view-overview">
-      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>A simple view of today: what came in, what CallerCore resolved, and what your team still has open.</p></div></div>
+      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>A simple view of today: what came in, what CallerCore resolved, and what your team still has open.</p></div><div class="page-actions"><span class="admin-live-status client-live-status" id="clientLiveStatus" role="status" aria-live="polite"><i></i><span id="clientLiveLabel">Live</span><small id="clientLastRefresh">Syncing…</small></span><button class="secondary-btn" id="refreshClientCommand" type="button">Refresh</button></div></div>
 
       <div class="metric-grid overview-metrics overview-metrics-clean">
         <article class="overview-metric metric-calls" role="button" tabindex="0" data-overview-jump="calls"><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Inbound calls today</small></article>
