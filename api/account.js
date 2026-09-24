@@ -204,13 +204,99 @@ async function requireAdmin(req,res){
   return {...s,role:'admin'};
 }
 
+function financeMonthKey(value=Date.now()){
+  const d=new Date(Number(value)||Date.now());return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0');
+}
+function financeMonthEnd(monthKey){
+  const [y,m]=String(monthKey).split('-').map(Number);return Date.UTC(y,m,1)-1;
+}
+function expenseMonthlyEquivalent(expense){
+  const amount=Math.max(0,Number(expense?.amount||0));
+  return expense?.frequency==='annual'?amount/12:expense?.frequency==='monthly'?amount:0;
+}
+function cleanFinanceExpense(raw={},existing={}){
+  const frequency=['monthly','annual','one_time'].includes(raw.frequency)?raw.frequency:(existing.frequency||'monthly');
+  const status=['active','paused'].includes(raw.status)?raw.status:(existing.status||'active');
+  const categories=['Infrastructure','AI & Voice','Software','Marketing','Professional Services','Payroll & Contractors','Insurance','Taxes & Fees','Other'];
+  const category=categories.includes(raw.category)?raw.category:(existing.category||'Software');
+  const amount=Number(raw.amount);
+  if(!String(raw.name||existing.name||'').trim())throw new Error('Expense name is required');
+  if(!Number.isFinite(amount)&&raw.amount!==undefined)throw new Error('Expense amount must be a number');
+  const now=Date.now();
+  return {...existing,
+    id:existing.id||crypto.randomUUID(),
+    name:String(raw.name??existing.name??'').trim().slice(0,120),
+    vendor:String(raw.vendor??existing.vendor??'').trim().slice(0,120),
+    category,
+    amount:raw.amount===undefined?Number(existing.amount||0):Math.max(0,amount),
+    frequency,status,
+    date:String(raw.date??existing.date??'').slice(0,10),
+    notes:String(raw.notes??existing.notes??'').trim().slice(0,500),
+    createdAt:existing.createdAt||now,updatedAt:now
+  };
+}
+async function loadAdminWorkspaces(){
+  const ids=await kv.get('workspace:index')||[],workspaces=[];
+  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){const ws=await kv.get('workspace:'+id);if(ws)workspaces.push(ws)}
+  return workspaces;
+}
+function currentBillableWorkspaces(workspaces){
+  return workspaces.filter(w=>String(w.subscriptionStatus||'active')!=='canceled'&&String(w.status||'active')!=='pending_deletion');
+}
+function financeRevenueForMonth(workspaces,monthKey){
+  const prices={Starter:349,Growth:599,Pro:999},end=financeMonthEnd(monthKey);
+  return workspaces.filter(w=>Number(w.createdAt||0)<=end&&String(w.status||'active')!=='pending_deletion').reduce((sum,w)=>sum+(prices[w.plan]||0),0);
+}
+function financeExpenseForMonth(expenses,monthKey){
+  return expenses.reduce((sum,e)=>{
+    if(e.status==='paused')return sum;
+    if(e.frequency==='monthly')return sum+Number(e.amount||0);
+    if(e.frequency==='annual')return sum+Number(e.amount||0)/12;
+    return financeMonthKey(e.date?Date.parse(e.date+'T12:00:00Z'):e.createdAt)===monthKey?sum+Number(e.amount||0):sum;
+  },0);
+}
+async function adminFinance(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const [workspaces,storedExpenses,storedHistory]=await Promise.all([loadAdminWorkspaces(),kv.get('finance:expenses'),kv.get('finance:history')]);
+  const expenses=Array.isArray(storedExpenses)?storedExpenses:[],history=Array.isArray(storedHistory)?storedHistory.slice():[],now=Date.now(),currentMonth=financeMonthKey(now),prices={Starter:349,Growth:599,Pro:999};
+  const billable=currentBillableWorkspaces(workspaces),mrr=billable.reduce((sum,w)=>sum+(prices[w.plan]||0),0);
+  const recurringExpenses=expenses.filter(e=>e.status!=='paused').reduce((sum,e)=>sum+expenseMonthlyEquivalent(e),0);
+  const currentMonthOneTime=expenses.filter(e=>e.status!=='paused'&&e.frequency==='one_time'&&financeMonthKey(e.date?Date.parse(e.date+'T12:00:00Z'):e.createdAt)===currentMonth).reduce((sum,e)=>sum+Number(e.amount||0),0);
+  const operatingExpenses=recurringExpenses+currentMonthOneTime,netRecurring=mrr-recurringExpenses,margin=mrr?Math.round((netRecurring/mrr)*1000)/10:0;
+
+  if(process.env.VERCEL_ENV==='preview'&&history.length===0){
+    for(let i=11;i>=1;i--){
+      const d=new Date();d.setUTCDate(1);d.setUTCHours(0,0,0,0);d.setUTCMonth(d.getUTCMonth()-i);
+      const key=financeMonthKey(d.getTime()),revenue=financeRevenueForMonth(workspaces,key),costs=financeExpenseForMonth(expenses,key);
+      history.push({month:key,revenue,expenses:Math.round(costs*100)/100,net:Math.round((revenue-costs)*100)/100,activeClients:workspaces.filter(w=>Number(w.createdAt||0)<=financeMonthEnd(key)&&String(w.status||'active')!=='pending_deletion').length,source:'preview_reconstruction'});
+    }
+  }
+  const snapshot={month:currentMonth,revenue:mrr,expenses:Math.round(operatingExpenses*100)/100,net:Math.round((mrr-operatingExpenses)*100)/100,activeClients:billable.length,recordedAt:now,source:'snapshot'};
+  const nextHistory=[...history.filter(x=>x&&x.month!==currentMonth),snapshot].sort((a,b)=>String(a.month).localeCompare(String(b.month))).slice(-24);
+  await kv.set('finance:history',nextHistory);
+  return res.status(200).json({finance:{mrr,recurringExpenses:Math.round(recurringExpenses*100)/100,currentMonthExpenses:Math.round(operatingExpenses*100)/100,netRecurring:Math.round(netRecurring*100)/100,margin,expenses:expenses.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))),history:nextHistory}});
+}
+async function adminFinanceExpenseSave(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const list=await kv.get('finance:expenses')||[],items=Array.isArray(list)?list.slice():[],body=req.body||{},id=String(body.id||'').slice(0,80),index=id?items.findIndex(x=>x&&x.id===id):-1;
+  try{
+    const expense=cleanFinanceExpense(body,index>=0?items[index]:{});
+    if(index>=0)items[index]=expense;else items.push(expense);
+    await kv.set('finance:expenses',items);
+    return res.status(index>=0?200:201).json({ok:true,expense});
+  }catch(err){return res.status(400).json({error:String(err.message||'Invalid expense')})}
+}
+async function adminFinanceExpenseDelete(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const id=String((req.body||{}).id||'').slice(0,80);if(!id)return res.status(400).json({error:'Expense id required'});
+  const list=await kv.get('finance:expenses')||[],items=Array.isArray(list)?list:[],next=items.filter(x=>x&&x.id!==id);
+  if(next.length===items.length)return res.status(404).json({error:'Expense not found'});
+  await kv.set('finance:expenses',next);return res.status(200).json({ok:true});
+}
+
 async function adminSummary(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const ids=await kv.get('workspace:index')||[];
-  const workspaces=[];
-  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
-    const ws=await kv.get('workspace:'+id);if(ws)workspaces.push(ws);
-  }
+  const workspaces=await loadAdminWorkspaces();
   const prices={Starter:349,Growth:599,Pro:999};
   const current=workspaces.filter(w=>String(w.subscriptionStatus||'active')!=='canceled'&&String(w.status||'active')!=='pending_deletion');
   const former=workspaces.filter(w=>String(w.subscriptionStatus||'active')==='canceled'||String(w.status||'active')==='pending_deletion');
@@ -520,21 +606,15 @@ async function adminDeletePhoneNumber(req,res){
 async function adminFleet(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const ids=await kv.get('workspace:index')||[];
-  const agents=[],calls=[],leads=[],automations=[];
+  const agents=[],automations=[];
   for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
     const ws=await kv.get('workspace:'+id);if(!ws)continue;
-    const [agent,wsCalls,wsLeads,wsAutos]=await Promise.all([
-      kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('automations:'+id)
-    ]);
-    agents.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',phone:ws.phone||'',agent:agent||null});
-    (Array.isArray(wsCalls)?wsCalls:[]).slice(0,200).forEach(x=>calls.push({...x,workspaceId:id,workspaceName:ws.name||'Unnamed workspace'}));
-    (Array.isArray(wsLeads)?wsLeads:[]).slice(0,200).forEach(x=>leads.push({...x,workspaceId:id,workspaceName:ws.name||'Unnamed workspace'}));
+    const [agent,wsAutos]=await Promise.all([kv.get('agent:'+id),kv.get('automations:'+id)]);
+    agents.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',agent:agent||null});
     const autos=Array.isArray(wsAutos)?wsAutos:[];
     automations.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length});
   }
-  const time=x=>Number(x?.createdAt||x?.timestamp||x?.dateMs||x?.updatedAt||0);
-  calls.sort((a,b)=>time(b)-time(a));leads.sort((a,b)=>time(b)-time(a));
-  return res.status(200).json({agents,calls:calls.slice(0,500),leads:leads.slice(0,500),automations});
+  return res.status(200).json({agents,automations});
 }
 
 async function createSupportTicket(req,res){
@@ -1196,16 +1276,18 @@ async function adminClient(req,res){
   const id=String((req.query||{}).id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Client id required'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
-  const [agent,calls,leads,appointments,locations]=await Promise.all([
-    kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('appointments:'+id),kv.get('locations:'+id)
+  const [agent,locations,numbers,onboarding]=await Promise.all([
+    kv.get('agent:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('onboarding:workspace:'+id)
   ]);
+  const phone=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===id)||null;
   return res.status(200).json({client:{
     id:ws.id,name:ws.name,plan:ws.plan,status:ws.status||'active',
     subscriptionStatus:ws.subscriptionStatus||'active',ownerEmail:ws.ownerEmail||'',
     phone:ws.phone||'',industry:ws.industry||'',usage:ws.usage||{minutes:0},
     stripe:{customerLinked:!!ws.stripeCustomerId,subscriptionLinked:!!ws.stripeSubscriptionId},
-    agent:agent||null,
-    counts:{calls:Array.isArray(calls)?calls.length:0,leads:Array.isArray(leads)?leads.length:0,appointments:Array.isArray(appointments)?appointments.length:0,locations:Array.isArray(locations)?locations.length:0}
+    agent:agent||null,phoneRouting:phone?{number:phone.number||'',provider:phone.provider||'',transferConfigured:!!phone.transferNumber,status:phone.status||'active'}:null,
+    onboarding:onboarding?{status:onboarding.status||'',completionPercent:Number(onboarding.completionPercent||0),stage:onboarding.stage||''}:null,
+    counts:{locations:Array.isArray(locations)?locations.length:0}
   }});
 }
 
@@ -1274,28 +1356,28 @@ async function buildAdminNotifications(admin){
   const [supportIndex,workspaceIndex,prospectIds,gmailConn,feedbackIndex]=await Promise.all([
     kv.get('support:index'),kv.get('workspace:index'),kv.lrange('site:prospect:index',0,99),getGmailConnection(admin.email),kv.get('ai-feedback:index')
   ]);
-  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!f||f.status!=='submitted')continue;const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'feedback',createdAt:f.createdAt||now,meta:{feedbackId:f.id,workspaceId:f.workspaceId||''}}));}
+  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!f||f.status!=='submitted')continue;const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'client-care',createdAt:f.createdAt||now,meta:{feedbackId:f.id,workspaceId:f.workspaceId||'',careTab:'feedback'}}));}
   for(const id of Array.isArray(supportIndex)?supportIndex.slice(0,100):[]){
     const t=await kv.get('support:'+id);if(!t||t.status==='resolved')continue;
-    items.push(notificationItem('admin-support:'+t.id+':'+t.status,{title:(t.priority==='urgent'?'Urgent support request':'Client support request'),body:(t.workspaceName||'Client')+' · '+t.subject,kind:t.priority==='urgent'?'danger':'warning',view:'admin-support',createdAt:t.updatedAt||t.createdAt||now,meta:{ticketId:t.id}}));
+    items.push(notificationItem('admin-support:'+t.id+':'+t.status,{title:(t.priority==='urgent'?'Urgent support request':'Client support request'),body:(t.workspaceName||'Client')+' · '+t.subject,kind:t.priority==='urgent'?'danger':'warning',view:'client-care',createdAt:t.updatedAt||t.createdAt||now,meta:{ticketId:t.id,careTab:'support'}}));
   }
   for(const id of Array.isArray(workspaceIndex)?workspaceIndex.slice(0,300):[]){
     const ws=await kv.get('workspace:'+id);if(!ws)continue;
-    if(ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'revenue',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
+    if(ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'finance',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
     if(ws.status==='suspended')items.push(notificationItem('admin-workspace:'+id+':suspended',{title:'Client workspace suspended',body:(ws.name||'Client')+' is currently suspended.',kind:'warning',view:'clients',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
     const plan=entitlementsFor(ws.plan),usage=Number(ws.usage?.minutes||0);
     if(plan.minutes){
       const pct=Math.round((usage/plan.minutes)*100),threshold=pct>=100?100:pct>=85?85:0;
-      if(threshold)items.push(notificationItem('admin-usage:'+id+':'+threshold,{title:(ws.name||'Client')+' usage at '+Math.min(pct,100)+'%',body:usage+' of '+plan.minutes+' included minutes used. Review usage; no overage policy is implied by this notice.',kind:threshold>=100?'danger':'warning',view:'usage',createdAt:ws.updatedAt||now,meta:{workspaceId:id,usage,limit:plan.minutes,threshold}}));
+      if(threshold)items.push(notificationItem('admin-usage:'+id+':'+threshold,{title:(ws.name||'Client')+' usage at '+Math.min(pct,100)+'%',body:usage+' of '+plan.minutes+' included minutes used. Review usage; no overage policy is implied by this notice.',kind:threshold>=100?'danger':'warning',view:'clients',createdAt:ws.updatedAt||now,meta:{workspaceId:id,usage,limit:plan.minutes,threshold}}));
     }
     const onboarding=await kv.get('onboarding:workspace:'+id);
     if(onboarding?.status==='awaiting_review'){
       const eligible=Number(onboarding.reviewEligibleAt||0)<=now;
-      items.push(notificationItem('admin-onboarding:'+id+':account-review',{title:eligible?'Paid client ready for onboarding review':'New paid client in review hold',body:(ws.name||'Client')+(eligible?' is ready for account review and onboarding approval.':' has paid. The onboarding invite will become eligible during business hours.'),kind:eligible?'warning':'info',view:'provisioning',createdAt:onboarding.paidAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
+      items.push(notificationItem('admin-onboarding:'+id+':account-review',{title:eligible?'Paid client ready for onboarding review':'New paid client in review hold',body:(ws.name||'Client')+(eligible?' is ready for account review and onboarding approval.':' has paid. The onboarding invite will become eligible during business hours.'),kind:eligible?'warning':'info',view:'onboarding',createdAt:onboarding.paidAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
     }
     if(onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview){
       const eligible=Number(onboarding.buildEligibleAt||0)<=now;
-      items.push(notificationItem('admin-onboarding:'+id+':build-review',{title:eligible?'Build ready for QA review':'Build in QA hold',body:(ws.name||'Client')+' submitted intake and has an AI-agent draft '+(eligible?'ready for review.':'waiting for the review window.'),kind:eligible?'warning':'info',view:'provisioning',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
+      items.push(notificationItem('admin-onboarding:'+id+':build-review',{title:eligible?'Build ready for QA review':'Build in QA hold',body:(ws.name||'Client')+' submitted intake and has an AI-agent draft '+(eligible?'ready for review.':'waiting for the review window.'),kind:eligible?'warning':'info',view:'onboarding',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
     }
   }
   const prospectList=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,100).map(id=>kv.get('site:prospect:'+id)))).filter(Boolean);
@@ -2030,6 +2112,9 @@ module.exports=async function handler(req,res){
   if(action==='seed-preview-data'&&req.method==='POST')return seedPreviewData(req,res);
   if(action==='promote-preview-admin'&&req.method==='POST')return promotePreviewAdmin(req,res);
   if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
+  if(action==='admin-finance'&&req.method==='GET')return adminFinance(req,res);
+  if(action==='admin-finance-expense-save'&&req.method==='POST')return adminFinanceExpenseSave(req,res);
+  if(action==='admin-finance-expense-delete'&&req.method==='POST')return adminFinanceExpenseDelete(req,res);
   if(action==='admin-clients'&&req.method==='GET')return adminClients(req,res);
   if(action==='admin-client'&&req.method==='GET')return adminClient(req,res);
   if(action==='admin-provisioning'&&req.method==='GET')return adminProvisioning(req,res);
