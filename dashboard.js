@@ -352,6 +352,11 @@ function initClientLiveRefresh(){
   const btn=document.getElementById('refreshClientCommand');if(btn)btn.onclick=()=>refreshClientDashboard({button:btn});
   if(clientRefreshTimer)clearInterval(clientRefreshTimer);
   clientRefreshTimer=setInterval(()=>{if(!document.hidden&&!agentEditing&&!settingsEditing)refreshClientDashboard({silent:true}).catch(()=>{})},60000);
+  if(!window.__callerCoreClientResumeSync){
+    window.__callerCoreClientResumeSync=true;
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.dataset.dashboard==='client'&&!agentEditing&&!settingsEditing&&Date.now()-Number(clientLastSyncAt||0)>90000)refreshClientDashboard({silent:true}).catch(()=>{})});
+    window.addEventListener('online',()=>{if(document.body.dataset.dashboard==='client'&&!agentEditing&&!settingsEditing)refreshClientDashboard({silent:true}).catch(()=>{})});
+  }
 }
 
 function renderClientData(){
@@ -366,7 +371,7 @@ async function loadOperations(){
   try{
     const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:2,timeout:15000});
     applyClientDashboardData(data);
-    renderClientData();setClientLoading(false);
+    renderClientData();setClientLoading(false);updateClientRefreshStamp();
     // Non-critical support history loads separately so it can never block Today.
     fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:5000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(()=>{});
     return;
@@ -385,7 +390,7 @@ async function loadOperations(){
     for(let i=0;i<settled.length;i++){if(settled[i].status!=='fulfilled')continue;const [action,key]=requests[i],data=settled[i].value;if(action==='calls')callsData=data.calls||[];else if(action==='leads')leadsData=data.leads||[];else if(action==='agent')agentData=data.agent||null;else if(action==='settings')settingsData=data.settings||null;else if(action==='integrations')integrationsData=data.integrations||null;else if(action==='phone-routing')phoneRoutingData=data.routing||null;else if(action==='locations'){locationsData=data.locations||[];locationsLimit=Number(data.limit||1)}}
     await loadFollowupState();try{const viewed=await fetchJsonRetry('/api/account?action=calls-viewed',{attempts:1,timeout:5000});callViewedIds=new Set((viewed.ids||[]).map(String))}catch(_){callViewedIds=new Set()}analyticsData=buildLocalAnalytics();renderClientData();
     const failedActions=settled.map((x,i)=>x.status==='rejected'?requests[i][0]:'').filter(Boolean),criticalFailed=failedActions.filter(x=>['calls','agent','settings'].includes(x));
-    setDataHealth('clientDataHealth',criticalFailed.length>0);setClientLoading(false);
+    setDataHealth('clientDataHealth',criticalFailed.length>0);setClientLoading(false);updateClientRefreshStamp();
     if(failedActions.length&&!criticalFailed.length)console.warn('Optional dashboard data delayed:',failedActions.join(', '));loadSecondaryClientData();
   }catch(err){console.error('Operations data failed',err);setClientLoading(false);setDataHealth('clientDataHealth',true)}
 }
@@ -1381,7 +1386,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pen
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -2398,7 +2403,7 @@ async function deleteExpense(id){
   const r=await fetch('/api/account?action=admin-finance-expense-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not delete expense.');return}await refreshAdminView('finance',{force:true,announce:false});
 }
 function updateAdminRefreshStamp(){
-  setAdminSyncState('live','Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
+  adminLastRefreshAt=Date.now();setAdminSyncState('live','Updated '+new Date(adminLastRefreshAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
 }
 function adminAttentionItems(){
   const items=[];
@@ -2822,6 +2827,11 @@ function initAdminLiveRefresh(){
   if(adminRefreshTimer)clearInterval(adminRefreshTimer);
   const ms=Math.max(30000,Number(adminPlatformData?.adminRefreshSeconds||60)*1000);
   adminRefreshTimer=setInterval(()=>{if(!document.hidden&&document.body.dataset.dashboard==='admin')refreshAdminDashboard().catch(()=>{})},ms);
+  if(!window.__callerCoreAdminResumeSync){
+    window.__callerCoreAdminResumeSync=true;
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.dataset.dashboard==='admin'&&Date.now()-Number(adminLastRefreshAt||0)>90000)refreshAdminDashboard().catch(()=>{})});
+    window.addEventListener('online',()=>{if(document.body.dataset.dashboard==='admin')refreshAdminDashboard().catch(()=>{})});
+  }
 }
 async function saveAdminClient(){
   if(!currentAdminClient)return;
