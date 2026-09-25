@@ -2026,3 +2026,26 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
     overflow-wrap:anywhere;
   }
 }
+
+
+/* Compact admin command controls on phone widths. Fixed control footprints
+   prevent the account avatar from overflowing a flex-shrunk account button. */
+@media(max-width:560px){
+  body[data-dashboard="admin"] .topbar{padding-left:10px;padding-right:10px;gap:8px}
+  body[data-dashboard="admin"] .topbar>div:first-child{flex:0 0 auto}
+  body[data-dashboard="admin"] .top-actions{flex:0 1 auto;min-width:0;gap:4px;justify-content:flex-end}
+  body[data-dashboard="admin"] .admin-ai-launch{width:36px;height:36px;flex:0 0 36px}
+  body[data-dashboard="admin"] .admin-search-shell{width:40px;min-width:40px;flex:0 0 40px}
+  body[data-dashboard="admin"] .admin-search-shell .admin-search{width:40px;height:36px}
+  body[data-dashboard="admin"] .notification-bell{width:36px;height:36px;flex:0 0 36px}
+  body[data-dashboard="admin"] .account-shell{flex:0 0 38px}
+  body[data-dashboard="admin"] .account-button{
+    width:38px;
+    height:38px;
+    padding:3px;
+    justify-content:center;
+    overflow:hidden;
+    flex:0 0 38px;
+  }
+  body[data-dashboard="admin"] .profile-avatar{width:30px;height:30px;flex:0 0 30px}
+}
