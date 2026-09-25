@@ -92,7 +92,7 @@ async function bootstrapPreview(req,res){
   const now=Date.now();
   const workspace={
     id:workspaceId,name,ownerName:'TJ',ownerEmail:email,phone:'',industry:'Testing',
-    plan,status:'active',subscriptionStatus:'active',
+    plan,status:'active',subscriptionStatus:'active',previewQa:true,
     stripeCustomerId:null,stripeSubscriptionId:null,stripeCheckoutSessionId:null,
     usage:{minutes:0},createdAt:now,updatedAt:now
   };
@@ -113,6 +113,7 @@ async function seedPreviewData(req,res){
   if(!member||!member.workspaceId)return res.status(404).json({error:'Create the workspace first'});
   const workspaceId=member.workspaceId,now=Date.now(),dataset=previewSeed.makePrimaryDataset();
   const workspace=previewSeed.primaryWorkspace(workspaceId,email,now);
+  workspace.previewQa=true;
   workspace.usage.minutes=dataset.minutes;
   const compactCalls=dataset.calls.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,disposition:x.disposition||'',duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x);
   const seededFollowups={};
@@ -199,6 +200,24 @@ async function promotePreviewAdmin(req,res){
   const index=await kv.get('workspace:index')||[];
   if(Array.isArray(index)&&!index.includes(member.workspaceId))await kv.set('workspace:index',[...index,member.workspaceId]);
   return res.status(200).json({ok:true,email,role:'admin'});
+}
+
+async function previewQaSession(req,res){
+  const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+  if(process.env.VERCEL_ENV!=='preview'||!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
+  const configured=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||''),supplied=String(req.headers['x-bootstrap-secret']||'');
+  if(!configured||!supplied||supplied!==configured)return res.status(403).json({error:'Forbidden'});
+  const email=cleanEmail((req.body||{}).email),mode=String((req.body||{}).mode||'client').toLowerCase();
+  if(!['client','admin'].includes(mode))return res.status(400).json({error:'Invalid QA session mode'});
+  const member=await kv.get('user:email:'+email);
+  if(!member||!member.workspaceId)return res.status(404).json({error:'Preview QA user not found'});
+  const workspace=await kv.get('workspace:'+member.workspaceId);
+  if(!workspace||workspace.previewQa!==true)return res.status(403).json({error:'Workspace is not approved for Preview QA'});
+  const role=mode==='admin'?'admin':'owner',sessionVersion=Number(member.sessionVersion||0)+1;
+  await kv.set('user:email:'+email,{...member,email,role,sessionVersion});
+  const old=parseCookies(req).cc_session;if(old)await destroySessionToken(old);
+  await createSession(res,{email,workspaceId:member.workspaceId,role,authVersion:sessionVersion});
+  return res.status(200).json({ok:true,role,redirect:role==='admin'?'/admin-dashboard':'/dashboard'});
 }
 
 async function requireAdmin(req,res){
@@ -2521,6 +2540,7 @@ module.exports=async function handler(req,res){
   if(action==='bootstrap-preview'&&req.method==='POST')return bootstrapPreview(req,res);
   if(action==='seed-preview-data'&&req.method==='POST')return seedPreviewData(req,res);
   if(action==='promote-preview-admin'&&req.method==='POST')return promotePreviewAdmin(req,res);
+  if(action==='preview-session'&&req.method==='POST')return previewQaSession(req,res);
   if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
   if(action==='admin-finance'&&req.method==='GET')return adminFinance(req,res);
   if(action==='admin-finance-expense-save'&&req.method==='POST')return adminFinanceExpenseSave(req,res);
