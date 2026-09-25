@@ -332,6 +332,18 @@ async function loadSecondaryClientData(){
   renderContacts();renderConversations();renderAppointments();renderAutomations();renderLocations();
 }
 function applyClientDashboardData(data={}){
+  if(data.workspace&&typeof data.workspace==='object'){
+    const previousPlan=currentPlan,previousName=String(sessionWorkspace?.name||'');
+    sessionWorkspace={...(sessionWorkspace||{}),...data.workspace};
+    currentPlan=sessionWorkspace.plan&&PLAN_DATA[sessionWorkspace.plan]?sessionWorkspace.plan:currentPlan;
+    if(sessionWorkspace.usage&&Number.isFinite(Number(sessionWorkspace.usage.minutes)))PLAN_DATA[currentPlan].used=Number(sessionWorkspace.usage.minutes);
+    const name=String(sessionWorkspace.name||'CallerCore Client');
+    const wName=document.getElementById('workspaceName');if(wName)wName.textContent=name;
+    const wMeta=document.getElementById('workspaceMeta');if(wMeta)wMeta.textContent=currentPlan+' plan';
+    document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=name);
+    const avatar=document.querySelector('.avatar');if(avatar&&name!==previousName)avatar.textContent=name.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
+    if(currentPlan!==previousPlan){renderBilling();renderStages();renderOverviewUnlocks();renderEntitledApps()}
+  }
   callsData=Array.isArray(data.calls)?data.calls:[];
   leadsData=Array.isArray(data.leads)?data.leads:[];
   agentData=data.agent||null;
