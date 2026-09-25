@@ -264,9 +264,10 @@ function renderOverviewUnlocks(){
 
 function renderBillingConnection(){
   const box=document.getElementById('billingConnection'),btn=document.getElementById('paymentButton');if(!box||!btn)return;
-  const linked=!!sessionWorkspace?.stripe?.customerLinked;
-  box.innerHTML=linked?'<b>Stripe customer linked</b><small>Your subscription is connected to secure Stripe billing.</small>':'<b>Billing account not linked</b><small>This workspace does not currently have a Stripe customer attached.</small>';
-  btn.disabled=!linked||!sessionWorkspace?.stripe?.customerLinked;btn.textContent=linked?'Manage billing':'Billing unavailable';
+  const linked=!!sessionWorkspace?.stripe?.customerLinked,subscription=String(sessionWorkspace?.subscriptionStatus||'active').toLowerCase(),needsAttention=['past_due','unpaid','incomplete','incomplete_expired'].includes(subscription),canceled=subscription==='canceled';
+  box.classList.toggle('needs-attention',needsAttention);
+  box.innerHTML=!linked?'<b>Billing account not linked</b><small>This workspace does not currently have a Stripe customer attached.</small>':needsAttention?'<b>Payment needs attention</b><small>Your subscription is linked to Stripe, but the current billing status is '+esc(subscription.replaceAll('_',' '))+'. Open billing to review payment details.</small>':canceled?'<b>Subscription canceled</b><small>Your Stripe customer remains linked so you can review billing history and account details.</small>':'<b>Stripe customer linked</b><small>Your subscription is connected to secure Stripe billing and is currently '+esc(subscription.replaceAll('_',' '))+'.</small>';
+  btn.disabled=!linked;btn.textContent=linked?'Manage billing':'Billing unavailable';
 }
 function planFeatures(name){
   const starter=[
@@ -287,7 +288,8 @@ function planLosses(from,to){
   return losses;
 }
 function renderBilling(){
-  const d=PLAN_DATA[currentPlan];
+  const d=PLAN_DATA[currentPlan],subscription=String(sessionWorkspace?.subscriptionStatus||'active').toLowerCase(),statusTag=document.getElementById('billingSubscriptionStatus'),statusMeta=subscription==='past_due'?{label:'Past due',tone:'red'}:subscription==='canceled'?{label:'Canceled',tone:'red'}:['unpaid','incomplete','incomplete_expired'].includes(subscription)?{label:'Payment issue',tone:'red'}:['trialing'].includes(subscription)?{label:'Trialing',tone:'amber'}:subscription==='paused'?{label:'Paused',tone:'amber'}:{label:'Active',tone:'green'};
+  if(statusTag){statusTag.textContent=statusMeta.label;statusTag.className='tag '+statusMeta.tone}
   document.getElementById('billingPlan')&&(document.getElementById('billingPlan').textContent=currentPlan);
   document.getElementById('billingPrice')&&(document.getElementById('billingPrice').textContent='$'+d.price+'/month');
   const usageText=d.minutes?d.used+' / '+d.minutes:d.used+' min · usage policy pending';
