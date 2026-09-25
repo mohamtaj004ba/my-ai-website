@@ -62,7 +62,7 @@ Current verified implementation: 246/246 local tests pass. Executable regression
 
 ## Next authorized development backlog
 
-1. Continue client/admin shared-state consistency and accessibility review. Current regression coverage is not a claim that every dashboard action has been tested.
+1. Verify the admin workspace Plan/Status mutation batch in authenticated Preview, then continue client/admin shared-state consistency and accessibility review. Current regression coverage is not a claim that every dashboard action has been tested.
 2. Keep the normalized-conversation migration and rollback contract ready for a separately authorized production migration; the existing authenticated Preview workflow now verifies version 2 reads without changing production.
 3. Run dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios only when the required provider test configuration is available. Live activation, production changes and new charges still need owner authorization.
 
@@ -288,3 +288,11 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Embedded Checkout applies the same validation before rate limiting, lead creation or any Stripe request. Stripe configuration health and Billing Portal also stop before provider calls when the environment mode is invalid. Production test keys and Preview live keys fail closed; matching test Preview and live Production modes remain eligible for their later gates.
 - The environment scope matrix now makes these enforced mode requirements explicit. Checkout remains disabled unless the separate `CALLERCORE_CHECKOUT_ENABLED=true` release authorization is present.
 - Added executable environment-mode, isolated Preview catalog, checkout, health-check and Billing Portal ordering safeguards. Local suite: 228 tests passed; syntax and diff checks passed. Included in successful full Preview QA `36120426827`. No provider request, charge or production configuration change was made.
+
+## Admin workspace mutation consistency — implemented, Preview verification pending
+
+- The admin client drawer now locks Plan, Status, account actions, support/configuration controls and dismissal through a Plan/Status save, shared-data refresh and same-client rehydration. Duplicate submissions and client switches are ignored while the mutation is pending.
+- The save captures the selected workspace ID and revision. Failures unlock the drawer without replacing the selected draft; successful responses apply the returned revision before refresh.
+- The backend now requires the displayed workspace revision and commits the workspace through one compare-and-set operation. Stale snapshots and concurrent writes return 409; ambiguous storage failures return 503 without reporting success or attempting an unsafe rollback.
+- Admin client detail responses expose the revision used by this contract. Added behavioral regressions for atomic writes, stale/conflicting/ambiguous failures, pending locks, duplicate suppression, successful rehydration and failure retry state.
+- Local verification: 250 tests passed; full build, JavaScript syntax and diff checks passed. Authenticated Preview and remote CI/security gates are pending the feature-branch push. Production remains unchanged.

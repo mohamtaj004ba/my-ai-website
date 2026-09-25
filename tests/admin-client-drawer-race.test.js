@@ -12,7 +12,7 @@ function fixture(){
     return nodes.get(id);
   };
   const requests=new Map(),fetch=async url=>{const id=new URL('https://example.test'+url).searchParams.get('id'),pending=deferred();requests.set(id,pending);return pending.promise};
-  const context=vm.createContext({adminTechSaving:false,adminClientOpenRequest:0,currentAdminClient:null,fetch,encodeURIComponent,PLAN_DATA:{Growth:{price:399}},financeMoney:value=>'$'+value,adminClientLifecycle:()=> 'active',adminWorkspaceLabel:String,adminBillingLabel:String,esc:String,loadAdminTechSupport:async()=>{},document:{getElementById:node}});
+  const context=vm.createContext({adminTechSaving:false,adminClientSaving:false,adminClientOpenRequest:0,currentAdminClient:null,fetch,encodeURIComponent,PLAN_DATA:{Growth:{price:399}},financeMoney:value=>'$'+value,adminClientLifecycle:()=> 'active',adminWorkspaceLabel:String,adminBillingLabel:String,esc:String,loadAdminTechSupport:async()=>{},document:{getElementById:node}});
   const openStart=source.indexOf('async function openAdminClient('),openEnd=source.indexOf('\nfunction adminTechMessage(',openStart);vm.runInContext(source.slice(openStart,openEnd),context);
   const closeStart=source.indexOf('function closeAdminClient('),closeEnd=source.indexOf('\nlet adminSearchActiveIndex',closeStart);vm.runInContext(source.slice(closeStart,closeEnd),context);
   return {context,node,requests};

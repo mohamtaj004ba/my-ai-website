@@ -377,6 +377,7 @@ async function adminUpdateClient(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Client id required'});
   const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(ws.updatedAt||ws.createdAt||0))return res.status(409).json({error:'This workspace changed while you were editing. Reopen it to load the latest account settings.'});
   const next={...ws};
   if(body.status!==undefined){
     const allowedStatus=['active','onboarding','suspended'];
@@ -389,9 +390,11 @@ async function adminUpdateClient(req,res){
     next.plan=body.plan;
   }
   next.updatedAt=Date.now();
-  await kv.set(key,next);
+  try{
+    if(!await compareAndSetConfig(kv,[{key,before:ws,after:next}]))return res.status(409).json({error:'This workspace changed during the save. Reopen it to load the latest account settings.'});
+  }catch(err){console.error('admin client save failed',safeError(err));return res.status(503).json({error:'Could not confirm that the workspace was saved. Reopen it before retrying.'})}
   await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'workspace_update',section:'workspace',before:ws,after:next});
-  return res.status(200).json({ok:true,client:{id:next.id,name:next.name,plan:next.plan,status:next.status,subscriptionStatus:next.subscriptionStatus||'active'}});
+  return res.status(200).json({ok:true,client:{id:next.id,name:next.name,plan:next.plan,status:next.status,subscriptionStatus:next.subscriptionStatus||'active',updatedAt:next.updatedAt}});
 }
 
 async function adminDeleteClient(req,res){
@@ -1680,6 +1683,7 @@ async function adminClient(req,res){
   return res.status(200).json({client:{
     id:ws.id,name:ws.name,plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',
     subscriptionStatus:ws.subscriptionStatus||'active',ownerEmail:ws.ownerEmail||'',
+    createdAt:ws.createdAt||null,updatedAt:ws.updatedAt||ws.createdAt||null,
     phone:ws.phone||'',industry:ws.industry||'',usage:ws.usage||{minutes:0},
     stripe:{customerLinked:!!ws.stripeCustomerId,subscriptionLinked:!!ws.stripeSubscriptionId},
     agent:agent||null,phoneRouting:phone?{number:phone.number||'',provider:phone.provider||'',transferConfigured:!!phone.transferNumber,status:phone.status||'configured',voice:voiceStatus(phone)}:null,

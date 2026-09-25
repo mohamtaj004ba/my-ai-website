@@ -13,7 +13,7 @@ function fixture(fetch){
   };
   node('adminConfigSection').value='settings';node('adminConfigEditor').value=JSON.stringify({businessName:'New name'});
   const ctx=vm.createContext({
-    currentAdminClient:{id:'ws-1'},currentAdminTech:{config:{settings:{businessName:'Old name'}},diagnostics:{},audit:[]},adminTechSaving:false,adminTechMutationTarget:'',
+    currentAdminClient:{id:'ws-1'},currentAdminTech:{config:{settings:{businessName:'Old name'}},diagnostics:{},audit:[]},adminTechSaving:false,adminTechMutationTarget:'',adminClientSaving:false,
     fetch,confirm:()=>true,refreshAdminCore:async()=>{},loadAdminOps:async()=>{},esc:value=>String(value??''),console,
     document:{getElementById:node,querySelectorAll:selector=>selector==='[data-restore-audit]'?[restoreButton]:[]}
   });

@@ -1570,7 +1570,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{res
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -2757,8 +2757,8 @@ function renderAdminClients(){
   wrap.querySelectorAll('[data-admin-client]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openAdminClient(b.dataset.adminClient)}));
   wrap.querySelectorAll('[data-admin-client-row]').forEach(row=>row.addEventListener('click',e=>{if(e.target.closest('button,a,select,input'))return;openAdminClient(row.dataset.adminClientRow)}));
 }
-async function openAdminClient(id){
-  if(adminTechSaving)return;const request=++adminClientOpenRequest;
+async function openAdminClient(id,{allowLocked=false}={}){
+  if((adminTechSaving||adminClientSaving)&&!allowLocked)return;const request=++adminClientOpenRequest;
   const r=await fetch('/api/account?action=admin-client&id='+encodeURIComponent(id),{headers:{Accept:'application/json'},cache:'no-store'});
   if(!r.ok||request!==adminClientOpenRequest)return;
   const x=(await r.json()).client;if(!x||request!==adminClientOpenRequest)return;
@@ -2773,8 +2773,8 @@ async function openAdminClient(id){
   document.getElementById('adminClientAgent').textContent=x.agent?(x.agent.name||'Maya')+' · '+(x.agent.role||'AI Receptionist')+(x.agent.health?' · '+adminStatusLabel(x.agent.health):''):'No AI receptionist configured yet.';
   currentAdminClient=x;
   const planSel=document.getElementById('adminClientPlan'),statusSel=document.getElementById('adminClientStatus');
-  if(planSel){planSel.value=x.plan||'Starter';planSel.disabled=!!x.stripe?.subscriptionLinked}
-  if(statusSel)statusSel.value=x.status||'active';
+  if(planSel){planSel.value=x.plan||'Starter';planSel.disabled=adminClientSaving||adminTechSaving||!!x.stripe?.subscriptionLinked}
+  if(statusSel){statusSel.value=x.status||'active';statusSel.disabled=adminClientSaving||adminTechSaving}
   const note=document.getElementById('adminClientManageNote');if(note)note.textContent=(x.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
   const drawer=document.getElementById('adminClientDrawer');drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');document.getElementById('adminClientBackdrop').classList.add('open');
   await loadAdminTechSupport(id);if(request!==adminClientOpenRequest)return;
@@ -2786,10 +2786,20 @@ function adminTechMessage(message,error=false){
 function setAdminTechMutationState(saving,target=''){
   adminTechSaving=!!saving;adminTechMutationTarget=adminTechSaving?String(target||'override'):'';
   const ids=['adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','closeAdminClient'];
-  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminTechSaving});
-  document.querySelectorAll('[data-restore-audit]').forEach(button=>button.disabled=adminTechSaving);
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminTechSaving||adminClientSaving});
+  document.querySelectorAll('[data-restore-audit]').forEach(button=>button.disabled=adminTechSaving||adminClientSaving);
   const apply=document.getElementById('adminApplyOverrideButton');if(apply)apply.textContent=adminTechSaving&&adminTechMutationTarget==='override'?'Applying…':'Apply admin override';
-  const drawer=document.getElementById('adminClientDrawer');if(drawer)drawer.setAttribute('aria-busy',String(adminTechSaving));
+  const drawer=document.getElementById('adminClientDrawer');if(drawer)drawer.setAttribute('aria-busy',String(adminTechSaving||adminClientSaving));
+}
+function setAdminClientMutationState(saving){
+  adminClientSaving=!!saving;
+  const plan=document.getElementById('adminClientPlan'),status=document.getElementById('adminClientStatus');
+  if(plan)plan.disabled=adminClientSaving||!!currentAdminClient?.stripe?.subscriptionLinked;
+  if(status)status.disabled=adminClientSaving;
+  ['adminSaveClientButton','adminDeleteClientButton','adminViewClientButton','adminExportClientButton','adminRecoveryDrillButton','adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','adminSendLoginButton','adminForceLogoutButton','adminRepairAccessButton','closeAdminClient'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminClientSaving||adminTechSaving});
+  document.querySelectorAll('[data-restore-audit]').forEach(button=>button.disabled=adminClientSaving||adminTechSaving);
+  const save=document.getElementById('adminSaveClientButton');if(save)save.textContent=adminClientSaving?'Saving…':'Save changes';
+  const drawer=document.getElementById('adminClientDrawer');if(drawer)drawer.setAttribute('aria-busy',String(adminClientSaving||adminTechSaving));
 }
 async function loadAdminTechSupport(id=currentAdminClient?.id,request=adminClientOpenRequest){
   if(!id)return;
@@ -2877,7 +2887,7 @@ document.getElementById('adminSendLoginButton')?.addEventListener('click',sendCl
 document.getElementById('adminForceLogoutButton')?.addEventListener('click',forceClientLogout);
 document.getElementById('adminRepairAccessButton')?.addEventListener('click',repairClientAccess);
 
-function closeAdminClient(){if(adminTechSaving)return;adminClientOpenRequest++;const drawer=document.getElementById('adminClientDrawer');drawer?.classList.remove('open');drawer?.setAttribute('aria-hidden','true');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
+function closeAdminClient(){if(adminTechSaving||adminClientSaving)return;adminClientOpenRequest++;const drawer=document.getElementById('adminClientDrawer');drawer?.classList.remove('open');drawer?.setAttribute('aria-hidden','true');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
 
 let adminSearchActiveIndex=0,adminSearchInboxCacheLoaded=false,adminSearchInboxLoading=false;
 
@@ -3074,14 +3084,18 @@ function initAdminLiveRefresh(){
   }
 }
 async function saveAdminClient(){
-  if(!currentAdminClient)return;
-  const plan=document.getElementById('adminClientPlan')?.value;
-  const status=document.getElementById('adminClientStatus')?.value;
-  const r=await fetch('/api/account?action=admin-client-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,plan,status})});
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not update client.');return}
-  currentAdminClient={...currentAdminClient,plan:data.client.plan,status:data.client.status};
-  await refreshAdminCore();await loadAdminOps();openAdminClient(currentAdminClient.id);
+  if(!currentAdminClient||adminClientSaving||adminTechSaving)return;
+  const targetId=String(currentAdminClient.id),expectedUpdatedAt=Number(currentAdminClient.updatedAt||currentAdminClient.createdAt||0),plan=document.getElementById('adminClientPlan')?.value,status=document.getElementById('adminClientStatus')?.value;
+  setAdminClientMutationState(true);
+  try{
+    const r=await fetch('/api/account?action=admin-client-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:targetId,plan,status,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not update client.');
+    if(String(currentAdminClient?.id)!==targetId)return;
+    currentAdminClient={...currentAdminClient,...data.client};
+    await Promise.all([refreshAdminCore(),loadAdminOps()]);
+    if(String(currentAdminClient?.id)===targetId)await openAdminClient(targetId,{allowLocked:true});
+  }catch(err){alert(err.message||'Could not update client.')}
+  finally{setAdminClientMutationState(false)}
 }
 async function deleteAdminClient(){
   if(!currentAdminClient)return;
