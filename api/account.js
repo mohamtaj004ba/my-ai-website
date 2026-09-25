@@ -592,25 +592,44 @@ async function adminSavePhoneNumber(req,res){
   if(duplicateNumber)return res.status(409).json({error:'That CallerCore number is already in the routing inventory. Edit the existing number instead.'});
   const duplicateWorkspace=workspaceId&&list.find(x=>x&&String(x.id)!==id&&String(x.workspaceId||'')===workspaceId);
   if(duplicateWorkspace)return res.status(409).json({error:'That workspace already has a CallerCore number. Edit its existing number instead.'});
-  let workspaceName='',workspaceBefore=null;
+  let workspaceName='',workspaceBefore=null,previousWorkspaceBefore=null,previousOnboardingBefore=null,targetOnboardingBefore=null,savedAgent=null,routingRequest=null;
   if(workspaceId){
     workspaceBefore=await kv.get('workspace:'+workspaceId);if(!workspaceBefore)return res.status(404).json({error:'Workspace not found'});
     workspaceName=workspaceBefore.name||'';
+    [targetOnboardingBefore,savedAgent,routingRequest]=await Promise.all([kv.get('onboarding:workspace:'+workspaceId),kv.get('agent:'+workspaceId),kv.get('routing-request:'+workspaceId)]);
   }
   if(previous&&previous.workspaceId&&previous.workspaceId!==workspaceId){
-    const oldKey='workspace:'+previous.workspaceId,oldWs=await kv.get(oldKey);
-    if(oldWs&&digits(oldWs.phone)===digits(previous.number))await kv.set(oldKey,{...oldWs,phone:'',updatedAt:Date.now()});
-    await syncOnboardingPhoneAssignment(previous.workspaceId,false);
+    [previousWorkspaceBefore,previousOnboardingBefore]=await Promise.all([kv.get('workspace:'+previous.workspaceId),kv.get('onboarding:workspace:'+previous.workspaceId)]);
   }
-  if(workspaceId&&workspaceBefore){await kv.set('workspace:'+workspaceId,{...workspaceBefore,phone:number,updatedAt:Date.now()});await syncOnboardingPhoneAssignment(workspaceId,true)}
   const item={id,number,workspaceId,workspaceName,provider,label,forwardingFrom,transferNumber,afterHours,smsEnabled,status:'active',updatedAt:Date.now()};
-  const i=list.findIndex(x=>x&&String(x.id)===id);
-  if(i>=0)list[i]=item;else list.push(item);
-  await kv.set('phone:index',list.slice(0,500));
-  if(workspaceId){
-    const [savedAgent,routingRequest]=await Promise.all([kv.get('agent:'+workspaceId),kv.get('routing-request:'+workspaceId)]);
-    if(savedAgent)await kv.set('agent:'+workspaceId,{...savedAgent,transferNumber,updatedAt:Date.now()});
-    if(routingRequest)await kv.set('routing-request:'+workspaceId,{...routingRequest,transferNumber,updatedAt:Date.now()});
+  const nextList=list.slice(),i=nextList.findIndex(x=>x&&String(x.id)===id);
+  if(i>=0)nextList[i]=item;else nextList.push(item);
+  try{
+    if(previous&&previous.workspaceId&&previous.workspaceId!==workspaceId){
+      const oldKey='workspace:'+previous.workspaceId,oldWs=previousWorkspaceBefore;
+      if(oldWs&&digits(oldWs.phone)===digits(previous.number))await kv.set(oldKey,{...oldWs,phone:'',updatedAt:Date.now()});
+      await syncOnboardingPhoneAssignment(previous.workspaceId,false);
+    }
+    if(workspaceId&&workspaceBefore){
+      await kv.set('workspace:'+workspaceId,{...workspaceBefore,phone:number,updatedAt:Date.now()});
+      await syncOnboardingPhoneAssignment(workspaceId,true);
+    }
+    await kv.set('phone:index',nextList.slice(0,500));
+    if(workspaceId){
+      if(savedAgent)await kv.set('agent:'+workspaceId,{...savedAgent,transferNumber,updatedAt:Date.now()});
+      if(routingRequest)await kv.set('routing-request:'+workspaceId,{...routingRequest,transferNumber,updatedAt:Date.now()});
+    }
+  }catch(err){
+    const restore=[kv.set('phone:index',list.slice(0,500))];
+    if(previousWorkspaceBefore&&previous?.workspaceId)restore.push(kv.set('workspace:'+previous.workspaceId,previousWorkspaceBefore));
+    if(previousOnboardingBefore&&previous?.workspaceId)restore.push(kv.set('onboarding:workspace:'+previous.workspaceId,previousOnboardingBefore));
+    if(workspaceBefore&&workspaceId)restore.push(kv.set('workspace:'+workspaceId,workspaceBefore));
+    if(targetOnboardingBefore&&workspaceId)restore.push(kv.set('onboarding:workspace:'+workspaceId,targetOnboardingBefore));
+    if(savedAgent&&workspaceId)restore.push(kv.set('agent:'+workspaceId,savedAgent));
+    if(routingRequest&&workspaceId)restore.push(kv.set('routing-request:'+workspaceId,routingRequest));
+    await Promise.allSettled(restore);
+    console.error('admin phone routing save failed',safeError(err));
+    return res.status(503).json({error:'Could not save phone routing. No changes were kept.'});
   }
   const auditWorkspace=workspaceId||previous?.workspaceId||admin.workspaceId;
   if(auditWorkspace)await appendAudit(auditWorkspace,{actorEmail:admin.email,actorRole:'admin',action:previous?'phone_routing_update':'phone_routing_create',section:'routing',before:previous||null,after:item,meta:{agentTransferSynced:!!workspaceId}});
@@ -626,13 +645,22 @@ async function adminDeletePhoneNumber(req,res){
   const item=list.find(x=>x&&String(x.id)===id);
   if(!item)return res.status(404).json({error:'Phone number not found'});
   const next=list.filter(x=>!x||String(x.id)!==id);
-  await kv.set('phone:index',next);
-  if(item.workspaceId){
-    const key='workspace:'+item.workspaceId,ws=await kv.get(key);
-    if(ws&&String(ws.phone||'')===String(item.number||'')){
-      await kv.set(key,{...ws,phone:'',updatedAt:Date.now()});
+  const workspaceBefore=item.workspaceId?await kv.get('workspace:'+item.workspaceId):null;
+  const onboardingBefore=item.workspaceId?await kv.get('onboarding:workspace:'+item.workspaceId):null;
+  try{
+    await kv.set('phone:index',next);
+    if(item.workspaceId){
+      const key='workspace:'+item.workspaceId,ws=workspaceBefore;
+      if(ws&&String(ws.phone||'')===String(item.number||''))await kv.set(key,{...ws,phone:'',updatedAt:Date.now()});
+      await syncOnboardingPhoneAssignment(item.workspaceId,false);
     }
-    await syncOnboardingPhoneAssignment(item.workspaceId,false);
+  }catch(err){
+    const restore=[kv.set('phone:index',list)];
+    if(workspaceBefore&&item.workspaceId)restore.push(kv.set('workspace:'+item.workspaceId,workspaceBefore));
+    if(onboardingBefore&&item.workspaceId)restore.push(kv.set('onboarding:workspace:'+item.workspaceId,onboardingBefore));
+    await Promise.allSettled(restore);
+    console.error('admin phone routing delete failed',safeError(err));
+    return res.status(503).json({error:'Could not delete phone routing. No changes were kept.'});
   }
   if(item.workspaceId)await appendAudit(item.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'phone_routing_delete',section:'routing',before:item,after:null});
   return res.status(200).json({ok:true,deleted:{id:item.id,number:item.number}});
