@@ -803,6 +803,7 @@ async function adminAiGuide(req,res){
     'monthlySubscriptionExposure is the sum of listed monthly prices for past-due clients, NOT unpaid invoice balance or verified actual losses. Label it as monthly subscription exposure. Do not present it as collected debt, an unpaid invoice total, or actual revenue lost.',
     'Never replace a named client monthly price with total company MRR, even if the browser snapshot contains a conflicting number.',
     'Browser-supplied records can be stale or partial. State the snapshot timestamp and relevant coverage limits in operational reports.',
+    'Finance history rows whose source is preview_reconstruction are synthetic preview estimates, not recorded historical revenue or invoices. Never infer verified past performance or month-over-month growth from those rows.',
     'Use snapshot.computed for nonfinancial support, follow-up and blocker totals; financialGroundTruth always wins for billing and revenue.',
     'For a client-specific dollar amount, use that client monthlyRevenue. If it is zero or unavailable, do not invent a value.',
     'For reports, use concise headings: Executive summary, Key metrics, Risks / attention, Growth, Client operations, Platform readiness, Recommended next actions.',
