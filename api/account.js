@@ -160,7 +160,10 @@ async function seedPreviewData(req,res){
 
   const currentIndex=await kv.get('workspace:index')||[],index=Array.isArray(currentIndex)?currentIndex:[];
   const seedPrefix=workspaceId.slice(0,8);
-  const keep=index.filter(id=>!String(id).startsWith('seed_'+seedPrefix+'_'));
+  const staleSeedWorkspaceIds=index.filter(id=>String(id).startsWith('seed_'));
+  const staleSeedPrefixes=['workspace:','settings:','agent:','automations:','calls:','calls:index:','leads:','conversations:','appointments:','locations:','onboarding:workspace:','routing-request:','integrations:','followup:state:'];
+  await Promise.allSettled(staleSeedWorkspaceIds.flatMap(id=>staleSeedPrefixes.map(prefix=>kv.del(prefix+id))));
+  const keep=index.filter(id=>!String(id).startsWith('seed_'));
   const adminIds=[],seedPhones=[],seedSupport=[],seedFeedback=[];
   for(let i=0;i<previewSeed.ADMIN_CLIENTS.length;i++){
     const ws=previewSeed.adminWorkspace(seedPrefix,i,now);adminIds.push(ws.id);
@@ -180,14 +183,20 @@ async function seedPreviewData(req,res){
   await kv.set('workspace:index',[workspaceId,...adminIds,...keep.filter(id=>id!==workspaceId)].slice(0,250));
 
   const refreshedPhoneIndex=await kv.get('phone:index')||[];
-  const retainedPhones=(Array.isArray(refreshedPhoneIndex)?refreshedPhoneIndex:[]).filter(x=>x&&x.workspaceId!==workspaceId&&!adminIds.includes(x.workspaceId));
+  const retainedPhones=(Array.isArray(refreshedPhoneIndex)?refreshedPhoneIndex:[]).filter(x=>x&&x.workspaceId!==workspaceId&&!String(x.workspaceId||'').startsWith('seed_'));
   await kv.set('phone:index',[previewSeed.primaryPhone(workspaceId),...seedPhones,...retainedPhones].slice(0,500));
 
-  const supportIndex=await kv.get('support:index')||[],retainedSupportIds=(Array.isArray(supportIndex)?supportIndex:[]).filter(id=>!String(id).startsWith('seed_support_seed_'+seedPrefix+'_'));
+  const supportIndex=await kv.get('support:index')||[],supportIds=Array.isArray(supportIndex)?supportIndex:[];
+  const staleSupportIds=supportIds.filter(id=>String(id).startsWith('seed_support_seed_'));
+  await Promise.allSettled(staleSupportIds.map(id=>kv.del('support:'+id)));
+  const retainedSupportIds=supportIds.filter(id=>!String(id).startsWith('seed_support_seed_'));
   for(const ticket of seedSupport)await kv.set('support:'+ticket.id,ticket);
   await kv.set('support:index',[...seedSupport.map(x=>x.id),...retainedSupportIds].slice(0,500));
 
-  const feedbackIndex=await kv.get('ai-feedback:index')||[],retainedFeedbackIds=(Array.isArray(feedbackIndex)?feedbackIndex:[]).filter(id=>!String(id).startsWith('seed_feedback_seed_'+seedPrefix+'_'));
+  const feedbackIndex=await kv.get('ai-feedback:index')||[],feedbackIds=Array.isArray(feedbackIndex)?feedbackIndex:[];
+  const staleFeedbackIds=feedbackIds.filter(id=>String(id).startsWith('seed_feedback_seed_'));
+  await Promise.allSettled(staleFeedbackIds.map(id=>kv.del('ai-feedback:'+id)));
+  const retainedFeedbackIds=feedbackIds.filter(id=>!String(id).startsWith('seed_feedback_seed_'));
   for(const item of seedFeedback){
     await kv.set('ai-feedback:'+item.id,item);
     await kv.set(aiFeedbackWorkspaceIndexKey(item.workspaceId),[item.id]);
@@ -198,11 +207,7 @@ async function seedPreviewData(req,res){
 }
 
 async function promotePreviewAdmin(req,res){
-  const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
-  if(process.env.VERCEL_ENV!=='preview'||!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
-  const configured=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||'');
-  const supplied=String(req.headers['x-bootstrap-secret']||'');
-  if(!configured||!supplied||supplied!==configured)return res.status(403).json({error:'Forbidden'});
+  if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
   const email=cleanEmail((req.body||{}).email);
   const member=await kv.get('user:email:'+email);
   if(!member||!member.workspaceId)return res.status(404).json({error:'User not found'});
