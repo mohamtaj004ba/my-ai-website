@@ -13,7 +13,9 @@ test('live client dashboard bundle includes current workspace billing and entitl
 test('client live refresh reapplies plan usage billing and entitlements without a reload',()=>{
   assert.match(dashboard,/if\(data\.workspace&&typeof data\.workspace==='object'\)/);
   assert.match(dashboard,/sessionWorkspace=\{\.\.\.\(sessionWorkspace\|\|\{\}\),\.\.\.data\.workspace\}/);
-  assert.match(dashboard,/if\(currentPlan!==previousPlan\)\{renderBilling\(\);renderStages\(\);renderOverviewUnlocks\(\);renderEntitledApps\(\)\}/);
+  assert.match(dashboard,/const planChanged=currentPlan!==previousPlan,billingChanged=/);
+  assert.match(dashboard,/if\(planChanged\)\{renderStages\(\);renderOverviewUnlocks\(\);renderEntitledApps\(\)\}/);
+  assert.match(dashboard,/if\(billingChanged\)\{renderBilling\(\);renderBillingConnection\(\);renderPlanStrip\(\)\}/);
 });
 
 
