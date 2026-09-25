@@ -1929,3 +1929,6 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
   .admin-ai-suggestions{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
   .admin-ai-suggestions::-webkit-scrollbar{display:none}
 }
+
+/* Distinguish synthetic Preview finance history from recorded monthly snapshots */
+.finance-estimate-notice{margin:0 0 8px;padding:7px 10px;border:1px solid #efdcc5;border-radius:9px;background:#fff9ef;color:#8b642d;font-size:8px;line-height:1.5}
