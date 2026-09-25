@@ -2163,10 +2163,11 @@ async function updateAppointment(req,res){
   const status=String((req.body||{}).status||'').slice(0,40);
   if(!id||!['Scheduled','Confirmed','Completed','Canceled'].includes(status))return res.status(400).json({error:'Invalid appointment update'});
   const key='appointments:'+access.session.workspaceId;
-  const items=await kv.get(key)||[];if(!Array.isArray(items))return res.status(200).json({ok:true,updated:false});
+  const items=await kv.get(key)||[];if(!Array.isArray(items))return res.status(500).json({error:'Appointment data is unavailable'});
   let updated=false;const next=items.map(item=>item&&String(item.id)===id?(updated=true,{...item,status,updatedAt:Date.now()}):item);
-  if(updated)await kv.set(key,next);
-  return res.status(200).json({ok:true,updated});
+  if(!updated)return res.status(404).json({error:'Appointment not found'});
+  await kv.set(key,next);
+  return res.status(200).json({ok:true,updated:true});
 }
 
 async function analytics(req,res){
@@ -2380,11 +2381,12 @@ async function updateLead(req,res){
   if(!id||!allowed.includes(stage))return res.status(400).json({error:'Invalid lead update'});
   const key='leads:'+s.workspaceId;
   const items=await kv.get(key)||[];
-  if(!Array.isArray(items))return res.status(200).json({ok:true,updated:false});
+  if(!Array.isArray(items))return res.status(500).json({error:'Lead data is unavailable'});
   let updated=false;
   const next=items.map(item=>item&&String(item.id)===id?(updated=true,{...item,stage,updatedAt:Date.now()}):item);
-  if(updated)await kv.set(key,next);
-  return res.status(200).json({ok:true,updated});
+  if(!updated)return res.status(404).json({error:'Lead not found'});
+  await kv.set(key,next);
+  return res.status(200).json({ok:true,updated:true});
 }
 
 async function billingPortal(req,res){
