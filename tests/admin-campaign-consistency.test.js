@@ -59,7 +59,7 @@ test('campaign edits reject stale and competing saves, including same-millisecon
 test('campaign deletes remove record and index together or change neither',async()=>{
   const r=await fixture('delete').run();
   assert.equal(r.code,200);
-  assert.deepEqual(r.deleted,['marketing:campaign:campaign-1']);
+  assert.deepEqual(Array.from(r.deleted),['marketing:campaign:campaign-1']);
   assert.equal(r.updates[1].after.length,0);
   assert.equal(r.setCalls,0);
   assert.equal((await fixture('delete',{expectedUpdatedAt:9}).run()).code,409);
