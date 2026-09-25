@@ -90,3 +90,11 @@ test('closed admin side panels are removed from scroll geometry',()=>{
   assert.match(css,/#adminClientDrawer\.open\{display:block\}/);
   assert.match(css,/\.onboarding-detail-drawer\.open,\s*\.admin-ai-panel\.open\{display:grid\}/);
 });
+
+
+test('recent admin client rows shrink text beside avatars on mobile',()=>{
+  const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
+  assert.match(css,/\.admin-recent-row \.person\{min-width:0;width:100%\}/);
+  assert.match(css,/\.admin-recent-row \.person>span\{flex:1 1 auto;min-width:0;width:auto;max-width:100%\}/);
+  assert.match(css,/\.admin-recent-accounts \.panel-head\{flex-direction:column;align-items:flex-start;gap:10px\}/);
+});
