@@ -8,7 +8,7 @@ const {emailKey,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
-const {compareAndSetConfig,compareAndAudit}=require('../lib/config-transaction');
+const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete}=require('../lib/config-transaction');
 const {recordFinanceSnapshot}=require('../lib/finance-history');
 const {prependAuditEvent}=require('../lib/audit-log');
 const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
@@ -1298,26 +1298,51 @@ async function adminProspectSave(req,res){
 }
 async function adminMarketingCampaigns(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const ids=await kv.get('marketing:campaign:index')||[],campaigns=[];
-  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){const c=await kv.get('marketing:campaign:'+id);if(c)campaigns.push(c)}
+  const index=await kv.get('marketing:campaign:index'),ids=index==null?[]:index,campaigns=[];
+  if(!Array.isArray(ids)||ids.length>500)return res.status(503).json({error:'Campaign index is unavailable or exceeds supported capacity. No partial campaign list was returned.'});
+  for(let offset=0;offset<ids.length;offset+=40){
+    const batch=await Promise.all(ids.slice(offset,offset+40).map(id=>kv.get('marketing:campaign:'+id)));
+    for(const campaign of batch){if(campaign)campaigns.push(campaign)}
+  }
   campaigns.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
   return res.status(200).json({campaigns});
 }
 async function adminMarketingCampaignSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const b=req.body||{},id=String(b.id||crypto.randomUUID()).slice(0,100),name=String(b.name||'').trim().slice(0,160);
+  const b=req.body||{},editing=!!b.id,id=String(b.id||crypto.randomUUID()).slice(0,100),name=String(b.name||'').trim().slice(0,160);
   if(!name)return res.status(400).json({error:'Campaign name is required'});
-  const allowedChannels=['Email','Organic','Paid Search','Paid Social','Referral','Partnership','Outbound','Other'],allowedStatuses=['draft','scheduled','active','paused','completed'];
-  const old=await kv.get('marketing:campaign:'+id)||{},campaign={...old,id,name,channel:allowedChannels.includes(b.channel)?b.channel:(old.channel||'Email'),status:allowedStatuses.includes(b.status)?b.status:(old.status||'draft'),utmSource:String(b.utmSource||old.utmSource||'').trim().slice(0,120),utmMedium:String(b.utmMedium||old.utmMedium||'').trim().slice(0,120),utmCampaign:String(b.utmCampaign||old.utmCampaign||name.toLowerCase().replace(/[^a-z0-9]+/g,'-')).trim().slice(0,160),budget:Math.max(0,Number(b.budget??old.budget)||0),startAt:Number(b.startAt)||old.startAt||null,endAt:Number(b.endAt)||old.endAt||null,goal:String(b.goal||old.goal||'').trim().slice(0,300),notes:String(b.notes||old.notes||'').trim().slice(0,2000),createdAt:old.createdAt||Date.now(),updatedAt:Date.now(),updatedBy:admin.email};
-  await kv.set('marketing:campaign:'+id,campaign);
-  const index=await kv.get('marketing:campaign:index')||[],list=Array.isArray(index)?index:[];
-  await kv.set('marketing:campaign:index',[id,...list.filter(x=>x!==id)].slice(0,500));
-  return res.status(200).json({ok:true,campaign});
+  if(!id)return res.status(400).json({error:'Campaign id is required'});
+  const key='marketing:campaign:'+id,indexKey='marketing:campaign:index';
+  const [saved,rawIndex]=await Promise.all([kv.get(key),kv.get(indexKey)]);
+  const list=rawIndex==null?[]:rawIndex;
+  if(!Array.isArray(list)||list.length>500)return res.status(503).json({error:'Campaign index is unavailable. No changes were made.'});
+  if(editing&&!saved)return res.status(404).json({error:'Campaign not found. Refresh the campaign list before editing.'});
+  if(!editing&&saved)return res.status(409).json({error:'A campaign with this identifier already exists.'});
+  if(editing&&(b.expectedUpdatedAt===undefined||Number(b.expectedUpdatedAt||0)!==Number(saved.updatedAt||saved.createdAt||0)))return res.status(409).json({error:'Campaign changed since you opened it. Refresh the list and reopen this campaign.'});
+  if(!editing&&list.length>=500)return res.status(409).json({error:'Campaign directory reached its 500-record capacity.'});
+  if(editing&&!list.includes(id))return res.status(409).json({error:'Campaign directory changed. Refresh the list and reopen the campaign.'});
+  const budget=Number(b.budget??saved?.budget??0);
+  if(!Number.isFinite(budget)||budget<0)return res.status(400).json({error:'Campaign budget must be a nonnegative number.'});
+  const old=saved||{},now=Date.now(),campaign={...old,id,name,channel:['Email','Organic','Paid Search','Paid Social','Referral','Partnership','Outbound','Other'].includes(b.channel)?b.channel:(old.channel||'Email'),status:['draft','scheduled','active','paused','completed'].includes(b.status)?b.status:(old.status||'draft'),utmSource:String(b.utmSource??old.utmSource??'').trim().slice(0,120),utmMedium:String(b.utmMedium??old.utmMedium??'').trim().slice(0,120),utmCampaign:String(b.utmCampaign??old.utmCampaign??name.toLowerCase().replace(/[^a-z0-9]+/g,'-')).trim().slice(0,160),budget,startAt:Number(b.startAt)||old.startAt||null,endAt:Number(b.endAt)||old.endAt||null,goal:String(b.goal??old.goal??'').trim().slice(0,300),notes:String(b.notes??old.notes??'').trim().slice(0,2000),createdAt:old.createdAt||now,updatedAt:Math.max(now,Number(old.updatedAt||old.createdAt||0)+1),updatedBy:admin.email};
+  const nextIndex=[id,...list.filter(x=>x!==id)];
+  try{
+    if(!await compareAndSetConfig(kv,[{key,before:saved,after:campaign},{key:indexKey,before:rawIndex,after:nextIndex}]))return res.status(409).json({error:'Campaign or directory changed during the save. Refresh the list before retrying.'});
+  }catch(err){console.error('admin campaign save failed',safeError(err));return res.status(503).json({error:'Could not confirm the campaign and directory were saved together. Refresh before retrying.'})}
+  return res.status(editing?200:201).json({ok:true,campaign});
 }
 async function adminMarketingCampaignDelete(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const id=String((req.body||{}).id||'').slice(0,100);if(!id)return res.status(400).json({error:'Campaign id required'});
-  await kv.del('marketing:campaign:'+id);const index=await kv.get('marketing:campaign:index')||[];await kv.set('marketing:campaign:index',(Array.isArray(index)?index:[]).filter(x=>x!==id));
+  const b=req.body||{},id=String(b.id||'').slice(0,100);if(!id)return res.status(400).json({error:'Campaign id required'});
+  const key='marketing:campaign:'+id,indexKey='marketing:campaign:index';
+  const [saved,rawIndex]=await Promise.all([kv.get(key),kv.get(indexKey)]);
+  if(!saved)return res.status(404).json({error:'Campaign not found. Refresh the campaign list before retrying.'});
+  if(b.expectedUpdatedAt===undefined||Number(b.expectedUpdatedAt||0)!==Number(saved.updatedAt||saved.createdAt||0))return res.status(409).json({error:'Campaign changed since you opened it. Refresh the list before deleting.'});
+  const list=rawIndex==null?[]:rawIndex;
+  if(!Array.isArray(list)||!list.includes(id))return res.status(409).json({error:'Campaign directory changed. Refresh the list before deleting.'});
+  const nextIndex=list.filter(x=>x!==id);
+  try{
+    if(!await compareAndSetWithDelete(kv,[{key,before:saved,after:null},{key:indexKey,before:rawIndex,after:nextIndex}],{deleteKeys:[key]}))return res.status(409).json({error:'Campaign or directory changed during deletion. Refresh the list before retrying.'});
+  }catch(err){console.error('admin campaign delete failed',safeError(err));return res.status(503).json({error:'Could not confirm campaign deletion. Refresh the list before retrying.'})}
   return res.status(200).json({ok:true});
 }
 async function adminDocuments(req,res){
