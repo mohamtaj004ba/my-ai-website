@@ -41,6 +41,18 @@ test('missing, stale, malformed and concurrent expense mutations fail closed',as
   r=await backend('adminFinanceExpenseDelete',{body:{id:'expense-1',expectedUpdatedAt:10},transaction:'error'});assert.equal(r.status,503);
 });
 
+test('blank expense amount is rejected rather than silently saved as zero',async()=>{
+  for(const body of [{name:'Hosting',amount:''},{name:'Hosting',amount:'  '},{name:'Hosting'}]){
+    const result=await backend('adminFinanceExpenseSave',{body});
+    assert.equal(result.status,400);
+    assert.match(result.result.error,/Expense amount is required/);
+    assert.equal(result.updates,undefined);
+  }
+  const explicitZero=await backend('adminFinanceExpenseSave',{body:{name:'No-cost service',amount:0}});
+  assert.equal(explicitZero.status,201);
+  assert.equal(explicitZero.result.expense.amount,0);
+});
+
 function frontendFixture(response){
   const nodes=new Map(),node=id=>{
     if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',disabled:false,dataset:{},className:'',classList:{add(){},remove(){}},setAttribute(name,value){this[name]=value}});
@@ -114,4 +126,14 @@ test('confirmed expense deletion is not reported as failed when ledger refresh f
   assert.deepEqual(f.alerts,[]);
   assert.equal(f.sync.length,1);
   assert.match(f.sync[0][1],/Expense deleted, but the finance view could not refresh/);
+});
+
+
+test('expense form rejects blank amount before sending any API request',async()=>{
+  const f=frontendFixture();
+  f.node('expenseAmountInput').value='  ';
+  await vm.runInContext('saveExpense()',f.context);
+  assert.equal(f.requests.length,0);
+  assert.equal(f.context.adminExpenseSaving,false);
+  assert.match(f.node('expenseFormStatus').textContent,/valid amount/);
 });
