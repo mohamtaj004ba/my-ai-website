@@ -249,7 +249,13 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Opening a modal moves focus inside when the opener did not already choose a field. Tab and Shift+Tab wrap within the active modal, Escape uses the modal's guarded close control, and closing restores focus to a still-connected and visible trigger.
 - Implementation `0c440ad13ce3c9b2634f48285b6f78f3b4d793e9`: 239 local tests and the full build passed; CallerCore CI `36132976173` and `36132969862`, CodeQL `36132976255` and `36132969880`, Jekyll `36132976182`, and authenticated Preview Browser QA `36132969888` passed. Preview `dpl_8ouuFQHtquYY4PMCu12eb6t45Cu3` is READY at https://my-ai-website-nah039xzd-mohamtaj004bas-projects.vercel.app. Production remained unchanged.
 - Follow-up extends the same focus and keyboard contract to blocking client/admin detail drawers without bypassing pending-save dismissal guards. Authenticated Preview QA now also checks the real admin client drawer semantics; the existing phone-editor checks cover focus wrapping and trigger restoration at laptop, tablet and mobile widths.
-- Follow-up local verification: 239 tests passed; full build, shared script, Preview QA syntax and diff checks passed. Push gates and Preview browser verification remain to be recorded for the drawer extension.
+- Follow-up implementation `ccc01acc1efaaf6771d5065b1489bbcb21b8d922` passed both CI runs, both CodeQL runs and Jekyll; Preview `dpl_3c6TR172nTmvAQKz9etB9LgJqZsy` is READY. Authenticated QA `36133372442` completed every client/admin interaction and responsive capture, then failed strict diagnostics on one 401 from a client conversation-detail request that remained in flight while the disposable session intentionally rotated to admin. The browser report showed no page errors and no other API errors. The harness now closes the client page before revoking that session and opens a freshly diagnosed admin page; corrected full Preview verification is pending the next push.
+
+## Client call drawer request consistency
+
+- Rapid call selections now use a monotonic request generation, so a slower earlier call-detail response cannot replace the newer drawer selection or merge stale detail into client state.
+- Closing the call drawer invalidates an in-flight detail request. A late response cannot reopen or repaint the closed drawer.
+- Added behavioral regressions for out-of-order call-detail responses and close-during-load cancellation. Local suite: 241 tests passed; the full build, JavaScript, Preview QA syntax and diff checks passed. Push gates and authenticated Preview QA remain to be recorded.
 
 ## Admin client drawer request consistency
 

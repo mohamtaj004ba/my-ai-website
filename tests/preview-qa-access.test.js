@@ -120,6 +120,7 @@ test('mobile admin topbar gives profile controls fixed compact footprints',()=>{
 test('responsive QA closes each context before issuing another session',()=>{
   const qa=fs.readFileSync(path.join(root,'scripts','preview-browser-qa.mjs'),'utf8');
   assert.match(qa,/async function runResponsive[\s\S]*finally\{\s*await context\.close\(\)\.catch/);
+  assert.match(qa,/await runClientInteractions\(desktop\.page\);[\s\S]*await desktop\.page\.close\(\);[\s\S]*desktop\.page=await desktop\.context\.newPage\(\);[\s\S]*await startSession\(desktop\.context,'admin'\)/);
   assert.match(qa,/await runAdminInteractions\(desktop\.page\);[\s\S]*await desktop\.context\.close\(\);[\s\S]*await runResponsive\('client'/);
 });
 

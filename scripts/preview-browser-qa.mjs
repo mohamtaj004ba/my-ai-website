@@ -594,6 +594,12 @@ try{
   await sweepViews(desktop.page,'client');
   await runClientInteractions(desktop.page);
 
+  // Close the client page before rotating the disposable session. Background
+  // detail hydration must not survive into the admin login and report the
+  // intentionally revoked client cookie as a product authentication failure.
+  await desktop.page.close();
+  desktop.page=await desktop.context.newPage();
+  attachDiagnostics(desktop.page,'desktop-admin');
   await startSession(desktop.context,'admin');
   await gotoAuthed(desktop.page,'/admin-dashboard','button.nav-item[data-view="overview"]');
   await assertLayout(desktop.page,'admin-desktop-overview');
