@@ -1101,6 +1101,14 @@ function openCallFeedbackModal(callId,context=''){
   closeCall();closeContact();document.getElementById('aiFeedbackCallId').value=callId||'';document.getElementById('aiFeedbackMessage').value='';document.getElementById('aiFeedbackCategory').value='incorrect_information';document.getElementById('aiFeedbackStatus').textContent='';modal.dataset.context=context||'';resetSurfaceScroll(modal);modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>{resetSurfaceScroll(modal);document.getElementById('aiFeedbackCategory')?.focus()},20);
 }
 function closeCallFeedbackModal(){const modal=document.getElementById('aiFeedbackModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}}
+function triggerLabel(value=''){
+  const labels={missed_call:'Missed call',new_lead:'New lead captured',qualified_lead:'Lead qualified',after_hours_call:'After-hours call'};
+  return labels[String(value||'')]||String(value||'Automation trigger').replace(/_/g,' ');
+}
+function actionLabel(value=''){
+  const labels={notify_team:'Notify team',create_followup:'Create follow-up task',mark_priority:'Mark lead priority'};
+  return labels[String(value||'')]||String(value||'Automation action').replace(/_/g,' ');
+}
 function renderAutomations(){
   if(!has('automations'))return;
   const wrap=document.getElementById('automationList');if(!wrap)return;
