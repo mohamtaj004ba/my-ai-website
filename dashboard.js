@@ -552,10 +552,16 @@ function callGroupLabel(x,mode){
   return '';
 }
 function callWasViewed(id){return callViewedIds.has(String(id||''))}
-function markCallViewed(id){
+async function markCallViewed(id){
   const key=String(id||'');if(!key||callViewedIds.has(key))return;
   callViewedIds.add(key);renderCalls();
-  if(!demoMode)fetch('/api/account?action=call-viewed-mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:key})}).catch(()=>{});
+  if(demoMode)return;
+  try{
+    const r=await fetch('/api/account?action=call-viewed-mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:key})});
+    if(!r.ok)throw new Error('Could not persist call read state');
+  }catch(err){
+    callViewedIds.delete(key);renderCalls();console.warn('Call read state sync failed',err);
+  }
 }
 function syncCallSortHeader(){
   const btn=document.getElementById('callDateSortButton'),arrow=document.getElementById('callDateSortArrow'),sort=document.getElementById('callSort');
