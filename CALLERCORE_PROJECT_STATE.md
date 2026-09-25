@@ -62,7 +62,7 @@ Current verified implementation: 246/246 local tests pass. Executable regression
 
 ## Next authorized development backlog
 
-1. Verify the admin workspace Plan/Status mutation batch in authenticated Preview, then continue client/admin shared-state consistency and accessibility review. Current regression coverage is not a claim that every dashboard action has been tested.
+1. Verify the local admin workspace and company-expense mutation batches in authenticated Preview once feature-branch publication is available, then continue client/admin shared-state consistency and accessibility review. Current regression coverage is not a claim that every dashboard action has been tested.
 2. Keep the normalized-conversation migration and rollback contract ready for a separately authorized production migration; the existing authenticated Preview workflow now verifies version 2 reads without changing production.
 3. Run dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios only when the required provider test configuration is available. Live activation, production changes and new charges still need owner authorization.
 
@@ -296,3 +296,11 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - The backend now requires the displayed workspace revision and commits the workspace through one compare-and-set operation. Stale snapshots and concurrent writes return 409; ambiguous storage failures return 503 without reporting success or attempting an unsafe rollback.
 - Admin client detail responses expose the revision used by this contract. Added behavioral regressions for atomic writes, stale/conflicting/ambiguous failures, pending locks, duplicate suppression, successful rehydration and failure retry state.
 - Local verification: 250 tests passed; full build, JavaScript syntax and diff checks passed. Authenticated Preview and remote CI/security gates are pending the feature-branch push. Production remains unchanged.
+
+## Admin company-expense mutation consistency — implemented, Preview verification pending
+
+- Expense edits and deletions now carry the displayed record revision and update the shared ledger through one compare-and-set operation. Missing edited records return 404 instead of being silently recreated under a new ID.
+- Malformed ledgers, stale revisions, concurrent writers and ambiguous storage failures fail closed without replacing newer financial records. New ledger entries are capped at 500, and returned revisions are monotonic.
+- The expense modal locks its controls and dismissal while saving, ignores duplicate submissions, preserves the draft on failure and applies the server-returned record before refreshing. Delete actions lock per expense, suppress duplicates and remove only the confirmed record.
+- Added behavioral regressions for atomic edit/delete operations, stale/missing/malformed/conflicting storage, pending modal state, duplicate suppression, failure retry state and delete revision payloads.
+- Local verification: 255 tests passed; full build, JavaScript syntax and diff checks passed. This is an internal operating-expense ledger change only; no Stripe request, customer billing action or charge was made. Authenticated Preview and remote gates are pending because external feature-branch publication was blocked by the workspace safety gate. Production remains unchanged.

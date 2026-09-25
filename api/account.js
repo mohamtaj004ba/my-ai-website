@@ -275,7 +275,7 @@ function cleanFinanceExpense(raw={},existing={}){
     frequency,status,
     date:String(raw.date??existing.date??'').slice(0,10),
     notes:String(raw.notes??existing.notes??'').trim().slice(0,500),
-    createdAt:existing.createdAt||now,updatedAt:now
+    createdAt:existing.createdAt||now,updatedAt:Math.max(now,Number(existing.updatedAt||0)+1)
   };
 }
 async function loadAdminWorkspaces(){
@@ -321,20 +321,33 @@ async function adminFinance(req,res){
 }
 async function adminFinanceExpenseSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const list=await kv.get('finance:expenses')||[],items=Array.isArray(list)?list.slice():[],body=req.body||{},id=String(body.id||'').slice(0,80),index=id?items.findIndex(x=>x&&x.id===id):-1;
+  const key='finance:expenses',raw=await kv.get(key),list=raw||[];
+  if(!Array.isArray(list))return res.status(503).json({error:'Company expense records are unavailable. No changes were made.'});
+  const items=list.slice(),body=req.body||{},id=String(body.id||'').slice(0,80),index=id?items.findIndex(x=>x&&x.id===id):-1;
+  if(id&&index<0)return res.status(404).json({error:'This expense no longer exists. Refresh the ledger before editing.'});
+  if(index>=0&&(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(items[index].updatedAt||0)))return res.status(409).json({error:'This expense changed while you were editing. Reopen it to load the latest values.'});
+  if(index<0&&items.length>=500)return res.status(409).json({error:'The company expense ledger has reached its 500-record limit.'});
   try{
     const expense=cleanFinanceExpense(body,index>=0?items[index]:{});
     if(index>=0)items[index]=expense;else items.push(expense);
-    await kv.set('finance:expenses',items);
+    try{
+      if(!await compareAndSetConfig(kv,[{key,before:raw,after:items}]))return res.status(409).json({error:'Company expenses changed during this save. Refresh the ledger and retry.'});
+    }catch(err){console.error('admin expense save failed',safeError(err));return res.status(503).json({error:'Could not confirm that the expense was saved. Refresh the ledger before retrying.'})}
     return res.status(index>=0?200:201).json({ok:true,expense});
   }catch(err){return res.status(400).json({error:String(err.message||'Invalid expense')})}
 }
 async function adminFinanceExpenseDelete(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const id=String((req.body||{}).id||'').slice(0,80);if(!id)return res.status(400).json({error:'Expense id required'});
-  const list=await kv.get('finance:expenses')||[],items=Array.isArray(list)?list:[],next=items.filter(x=>x&&x.id!==id);
+  const body=req.body||{},id=String(body.id||'').slice(0,80);if(!id)return res.status(400).json({error:'Expense id required'});
+  const key='finance:expenses',raw=await kv.get(key),list=raw||[];if(!Array.isArray(list))return res.status(503).json({error:'Company expense records are unavailable. No changes were made.'});
+  const items=list.slice(),item=items.find(x=>x&&x.id===id);if(!item)return res.status(404).json({error:'Expense not found'});
+  if(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(item.updatedAt||0))return res.status(409).json({error:'This expense changed before deletion. Refresh the ledger and review it again.'});
+  const next=items.filter(x=>x&&x.id!==id);
   if(next.length===items.length)return res.status(404).json({error:'Expense not found'});
-  await kv.set('finance:expenses',next);return res.status(200).json({ok:true});
+  try{
+    if(!await compareAndSetConfig(kv,[{key,before:raw,after:next}]))return res.status(409).json({error:'Company expenses changed during deletion. Refresh the ledger and review it again.'});
+  }catch(err){console.error('admin expense delete failed',safeError(err));return res.status(503).json({error:'Could not confirm that the expense was deleted. Refresh the ledger before retrying.'})}
+  return res.status(200).json({ok:true,deleted:{id:item.id,updatedAt:item.updatedAt||0}});
 }
 
 async function adminSummary(req,res){
