@@ -80,3 +80,19 @@ test('finance and AI explicitly distinguish estimates from recorded financial hi
   assert.match(dashboard,/Preview estimate: earlier months are reconstructed/);
   assert.match(dashboard,/verifiedHistory=history.filter\(x=>x.source!=='preview_reconstruction'\)/);
 });
+
+test('malformed cookie encoding is ignored instead of crashing the auth handler',async()=>{
+  const {auth}=authHarness();
+  assert.equal(await auth.getSession(cookieRequest('cc_session=%ZZ')),null);
+  assert.equal(await auth.getSession(cookieRequest('not_session=%E0%A4%A; cc_session=%GG')),null);
+});
+test('server verified finance is placed before a potentially truncated browser snapshot',()=>{
+  const api=fs.readFileSync(path.join(__dirname,'..','api','account.js'),'utf8');
+  const start=api.indexOf('async function adminAiGuide');
+  const end=api.indexOf('const LAUNCH_GATE_DEFS',start);
+  assert.ok(start>=0&&end>start);
+  const content=api.slice(start,end);
+  assert.match(content,/const snapshot=\{\s*financialGroundTruth:verifiedFinance/);
+  assert.match(content,/delete uiSnapshot\.financialGroundTruth/);
+  assert.match(content,/delete uiSnapshot\.finance/);
+});
