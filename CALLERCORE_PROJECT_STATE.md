@@ -22,11 +22,11 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `6587792907ae334466b90ac99485d1655231a24b`.
-- Preview READY: `dpl_ovFzBJbs3zuCNtRRdKMSsHfz3r6F` — https://my-ai-website-6glghr2pj-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36135882139` and `36135875540`, CodeQL `36135882109` and `36135875613`, and Jekyll `36135882157`: success on that exact SHA.
-- Authenticated Preview Browser QA `36135875530`: success on that exact SHA.
-- Local regression suite: 246 passed, 0 failed. The full build, JavaScript syntax and diff checks passed.
+- Implementation SHA: `452ae304353f095763b2c19e5ca6b95eb8366fae` (includes the two recovered GitHub-app commits).
+- Preview READY: `dpl_J6mYGjDDDSQDMD1ZteoWk7CQo9Hz` — https://my-ai-website-q3ayyjv7l-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36179295573`, CodeQL `36179295594`, Jekyll `36179295624`: success on that exact SHA.
+- Authenticated Preview Browser QA `36179292162`: success on that exact SHA, including both recovered mutations.
+- Local regression suite at the recovered implementation: 255 passed, 0 failed (as reported by the originating checkout); GitHub's full CI test suite also succeeded. The full build, JavaScript syntax and diff checks passed.
 - Browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks.
 - Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, legacy restore/delete safeguards, and 50 → 100 → 122 message batches in Conversations and Contacts.
 - Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
@@ -51,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current verified implementation: 246/246 local tests pass. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, serialized Client Care status writes, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
+Current recovered implementation: 255/255 local tests reported by the originating checkout; GitHub full CI succeeded on `452ae304`. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, serialized Client Care status writes, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -62,7 +62,7 @@ Current verified implementation: 246/246 local tests pass. Executable regression
 
 ## Next authorized development backlog
 
-1. Verify the local admin workspace and company-expense mutation batches in authenticated Preview once feature-branch publication is available, then continue client/admin shared-state consistency and accessibility review. Current regression coverage is not a claim that every dashboard action has been tested.
+1. Continue client/admin shared-state consistency and accessibility review. The admin workspace and company-expense mutation batches are published and their shared Preview QA passed at `452ae304`; review targeted user flows again if later changes affect them. Current regression coverage is not a claim that every dashboard action has been tested.
 2. Keep the normalized-conversation migration and rollback contract ready for a separately authorized production migration; the existing authenticated Preview workflow now verifies version 2 reads without changing production.
 3. Run dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios only when the required provider test configuration is available. Live activation, production changes and new charges still need owner authorization.
 
@@ -289,18 +289,24 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - The environment scope matrix now makes these enforced mode requirements explicit. Checkout remains disabled unless the separate `CALLERCORE_CHECKOUT_ENABLED=true` release authorization is present.
 - Added executable environment-mode, isolated Preview catalog, checkout, health-check and Billing Portal ordering safeguards. Local suite: 228 tests passed; syntax and diff checks passed. Included in successful full Preview QA `36120426827`. No provider request, charge or production configuration change was made.
 
-## Admin workspace mutation consistency — implemented, Preview verification pending
+## Admin workspace mutation consistency — published and Preview verified
 
 - The admin client drawer now locks Plan, Status, account actions, support/configuration controls and dismissal through a Plan/Status save, shared-data refresh and same-client rehydration. Duplicate submissions and client switches are ignored while the mutation is pending.
 - The save captures the selected workspace ID and revision. Failures unlock the drawer without replacing the selected draft; successful responses apply the returned revision before refresh.
 - The backend now requires the displayed workspace revision and commits the workspace through one compare-and-set operation. Stale snapshots and concurrent writes return 409; ambiguous storage failures return 503 without reporting success or attempting an unsafe rollback.
 - Admin client detail responses expose the revision used by this contract. Added behavioral regressions for atomic writes, stale/conflicting/ambiguous failures, pending locks, duplicate suppression, successful rehydration and failure retry state.
-- Local verification: 250 tests passed; full build, JavaScript syntax and diff checks passed. Authenticated Preview and remote CI/security gates are pending the feature-branch push. Production remains unchanged.
+- Original local verification: 250 tests passed; full build, JavaScript syntax and diff checks passed. Recreated as published commit `9a8436277ffab6b518bb448e8b88183955baf9b4` through the connected GitHub app; the combined implementation `452ae304` passed full GitHub CI, CodeQL, Jekyll and authenticated Preview QA (run IDs above). Production remains unchanged.
 
-## Admin company-expense mutation consistency — implemented, Preview verification pending
+## Admin company-expense mutation consistency — published and Preview verified
 
 - Expense edits and deletions now carry the displayed record revision and update the shared ledger through one compare-and-set operation. Missing edited records return 404 instead of being silently recreated under a new ID.
 - Malformed ledgers, stale revisions, concurrent writers and ambiguous storage failures fail closed without replacing newer financial records. New ledger entries are capped at 500, and returned revisions are monotonic.
 - The expense modal locks its controls and dismissal while saving, ignores duplicate submissions, preserves the draft on failure and applies the server-returned record before refreshing. Delete actions lock per expense, suppress duplicates and remove only the confirmed record.
 - Added behavioral regressions for atomic edit/delete operations, stale/missing/malformed/conflicting storage, pending modal state, duplicate suppression, failure retry state and delete revision payloads.
-- Local verification: 255 tests passed; full build, JavaScript syntax and diff checks passed. This is an internal operating-expense ledger change only; no Stripe request, customer billing action or charge was made. Authenticated Preview and remote gates are pending because external feature-branch publication was blocked by the workspace safety gate. Production remains unchanged.
+- Original local verification: 255 tests passed; full build, JavaScript syntax and diff checks passed. Recreated as published commit `452ae304353f095763b2c19e5ca6b95eb8366fae` through the connected GitHub app after the local push lacked credentials. GitHub CI `36179295573`, CodeQL `36179295594`, Jekyll `36179295624` and authenticated Preview QA `36179292162` succeeded on that exact commit; Vercel Preview `dpl_J6mYGjDDDSQDMD1ZteoWk7CQo9Hz` is READY. This is an internal operating-expense ledger change only; no Stripe request, customer billing action or charge was made. Production remains unchanged.
+
+## Recovery note — 2026-09-25
+
+- Work's local Git push could not authenticate. The two intended batches are already published through the connected GitHub app as `9a8436277ffab6b518bb448e8b88183955baf9b4` (admin workspace) and `452ae304353f095763b2c19e5ca6b95eb8366fae` (admin finance). The original unpublished local SHA abbreviations `894a43a` and `b66e759` are not resolvable as remote commits; do not attempt to push or recreate them again without identifying an actual missing code difference.
+- The published feature branch was read back at `452ae304`; its GitHub CI/CodeQL/Jekyll and authenticated Preview QA are successful, and Vercel reports a READY Preview for that exact source SHA. Reconciliation checked published filenames and commit descriptions, not byte-for-byte identity with unavailable local Git objects. No claim of local-object equivalence is made.
+- `main` remained `37ef5cfcdccae35952822859f64fe83f0b9f09f0` at recovery inspection. Do not merge into main without explicit release authorization.
