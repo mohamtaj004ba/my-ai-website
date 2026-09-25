@@ -82,7 +82,7 @@ test('opening the expense editor leaves phone form validation intact',()=>{
   f.node('phoneFormStatus').textContent='A phone number is required.';
   f.node('phoneFormStatus').className='form-status-line error';
   f.context.settingsFieldError=()=>assert.fail('Expense editor must not reset phone field errors');
-  const start=dashboardSource.indexOf('function openExpenseModal('),end=dashboardSource.indexOf('\\nfunction closeExpenseModal(',start);
+  const start=dashboardSource.indexOf('function openExpenseModal('),end=dashboardSource.indexOf('\nfunction closeExpenseModal(',start);
   assert.ok(start>=0&&end>start);
   vm.runInContext(dashboardSource.slice(start,end),f.context);
   vm.runInContext("openExpenseModal('expense-1')",f.context);
