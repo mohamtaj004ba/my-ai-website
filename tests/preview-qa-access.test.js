@@ -38,3 +38,25 @@ test('Preview reseeding removes stale generated admin fixtures',()=>{
   assert.match(account,/staleSupportIds=supportIds\.filter\(id=>String\(id\)\.startsWith\('seed_support_seed_'\)\)/);
   assert.match(account,/staleFeedbackIds=feedbackIds\.filter\(id=>String\(id\)\.startsWith\('seed_feedback_seed_'\)\)/);
 });
+
+
+test('Preview browser QA covers interactions responsive layouts and strict API failures',()=>{
+  const qa=fs.readFileSync(path.join(root,'scripts','preview-browser-qa.mjs'),'utf8');
+  const visual=fs.readFileSync(path.join(root,'scripts','visual-diff.mjs'),'utf8');
+  const workflow=fs.readFileSync(path.join(root,'.github','workflows','preview-browser-qa.yml'),'utf8');
+  const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+  assert.match(qa,/runClientInteractions/);
+  assert.match(qa,/runAdminInteractions/);
+  assert.match(qa,/width:390,height:844/);
+  assert.match(qa,/width:768,height:1024/);
+  assert.match(qa,/horizontally overflows viewport/);
+  assert.match(qa,/Unexpected API errors/);
+  assert.doesNotMatch(qa,/!\\[401,404\\]\\.includes/);
+  assert.equal(pkg.devDependencies.playwright,'1.55.0');
+  assert.equal(pkg.devDependencies.pixelmatch,'7.1.0');
+  assert.equal(pkg.devDependencies.pngjs,'7.0.0');
+  assert.match(workflow,/Cache Playwright browser/);
+  assert.match(workflow,/Restore previous successful visual baseline/);
+  assert.match(workflow,/Compare visual drift/);
+  assert.match(visual,/pixelmatch/);
+});
