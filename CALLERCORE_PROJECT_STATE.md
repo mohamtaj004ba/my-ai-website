@@ -257,6 +257,12 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Closing the call drawer invalidates an in-flight detail request. A late response cannot reopen or repaint the closed drawer.
 - Added behavioral regressions for out-of-order call-detail responses and close-during-load cancellation. Local suite: 241 tests passed; the full build, JavaScript, Preview QA syntax and diff checks passed. Push gates and authenticated Preview QA remain to be recorded.
 
+## Admin inbox request consistency
+
+- Website-conversation selections now use a monotonic request generation, so a slower earlier response cannot replace a newer website or Gmail thread selection.
+- Stale website failures are discarded with their response instead of surfacing an alert after the operator has moved to another thread.
+- Added behavioral regressions for out-of-order website responses and website-to-Gmail selection changes. Local suite: 243 tests passed; the full build passed. Push gates and authenticated Preview QA remain to be recorded.
+
 ## Admin client drawer request consistency
 
 - Rapid client selections now use a monotonic request generation, so a slower earlier client response cannot replace the newer selected workspace.
