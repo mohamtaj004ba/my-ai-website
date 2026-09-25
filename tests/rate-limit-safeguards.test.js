@@ -14,3 +14,15 @@ test('sensitive public endpoints fail closed when rate-limit storage is unavaila
     assert.match(src,/rateLimit\(\{[\s\S]*?failClosed:true\}\)/,name+' must fail closed');
   }
 });
+
+
+test('Core Intelligence has per-minute, per-hour and per-day usage limits',()=>{
+  const src=fs.readFileSync(path.join(root,'api','account.js'),'utf8');
+  const start=src.indexOf('async function adminAiGuide');
+  const end=src.indexOf('\nconst LAUNCH_GATE_DEFS',start);
+  const body=src.slice(start,end>=0?end:src.length);
+  for(const key of ['admin:ai:rate:','admin:ai:hour:','admin:ai:day:'])assert.ok(body.includes(key),key+' limit missing');
+  for(const check of ['minuteCount>20','hourCount>120','dayCount>500'])assert.ok(body.includes(check),check+' limit missing');
+  assert.match(body,/admin ai rate limit unavailable/);
+  assert.match(body,/res\.status\(503\)\.json\(\{error:'Core Intelligence is temporarily unavailable/);
+});
