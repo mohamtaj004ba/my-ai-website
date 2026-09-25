@@ -1307,11 +1307,14 @@ async function adminMarketingCampaignDelete(req,res){
 async function adminDocuments(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const workspaces=await loadAdminWorkspaces(),agreements=[];
-  for(const ws of workspaces){
-    const id=ws.id;
-    const [onboarding,token]=await Promise.all([kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
-    const signed=!!(onboarding?.agreementSignedAt||onboarding?.checklist?.agreement);
-    agreements.push({workspaceId:id,workspaceName:ws.name||'Unnamed client',ownerEmail:ws.ownerEmail||'',plan:entitlementsFor(ws.plan).plan,signed,agreementVersion:onboarding?.agreementVersion||'',signedAt:onboarding?.agreementSignedAt||null,signedName:onboarding?.agreementSignedName||'',downloadUrl:signed&&token?('/api/agreement-pdf?token='+encodeURIComponent(token)):'',status:signed?'signed':onboarding?.onboardingLinkSent?'awaiting_signature':'not_sent'});
+  for(let offset=0;offset<workspaces.length;offset+=20){
+    const batch=await Promise.all(workspaces.slice(offset,offset+20).map(async ws=>{
+      const id=ws.id;
+      const [onboarding,token]=await Promise.all([kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
+      const signed=!!(onboarding?.agreementSignedAt||onboarding?.checklist?.agreement);
+      return {workspaceId:id,workspaceName:ws.name||'Unnamed client',ownerEmail:ws.ownerEmail||'',plan:entitlementsFor(ws.plan).plan,signed,agreementVersion:onboarding?.agreementVersion||'',signedAt:onboarding?.agreementSignedAt||null,signedName:onboarding?.agreementSignedName||'',downloadUrl:signed&&token?('/api/agreement-pdf?token='+encodeURIComponent(token)):'',status:signed?'signed':onboarding?.onboardingLinkSent?'awaiting_signature':'not_sent'};
+    }));
+    agreements.push(...batch);
   }
   agreements.sort((a,b)=>Number(b.signedAt||0)-Number(a.signedAt||0)||String(a.workspaceName).localeCompare(String(b.workspaceName)));
   const company=await kv.get('admin:documents')||[];
