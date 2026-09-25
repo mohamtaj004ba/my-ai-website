@@ -102,13 +102,17 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
       activeView:active?.id||'',
       activeBox:box(active),
       topbarBox:box(topbar),
-      mainBox:box(main)
+      mainBox:box(main),
+      overflowers:[...document.querySelectorAll('body *')].map(el=>{
+        const r=el.getBoundingClientRect(),style=getComputedStyle(el);
+        return {tag:el.tagName.toLowerCase(),id:el.id||'',className:String(el.className||'').slice(0,160),left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width),position:style.position,display:style.display,overflowX:style.overflowX};
+      }).filter(x=>x.display!=='none'&&(x.right>window.innerWidth+4||x.left<-4)).sort((a,b)=>(b.right-window.innerWidth)-(a.right-window.innerWidth)).slice(0,12)
     };
   });
   report.layoutContracts.push({label,...state});
   if(!state.activeView)throw new Error(label+' has no active dashboard view');
   if(!allowHorizontalOverflow&&state.scrollWidth>state.viewport.width+4){
-    throw new Error(label+' horizontally overflows viewport: '+state.scrollWidth+'px > '+state.viewport.width+'px');
+    throw new Error(label+' horizontally overflows viewport: '+state.scrollWidth+'px > '+state.viewport.width+'px; offenders='+JSON.stringify(state.overflowers));
   }
   if(!state.activeBox||state.activeBox.width<=0||state.activeBox.height<=0)throw new Error(label+' active view is not rendered');
 }
