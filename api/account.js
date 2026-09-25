@@ -36,6 +36,20 @@ function mutationOriginAllowed(req){
   }catch(_){return false}
 }
 
+function secretMatches(supplied,configured){
+  const a=Buffer.from(String(supplied||'')),b=Buffer.from(String(configured||''));
+  return !!a.length&&a.length===b.length&&crypto.timingSafeEqual(a,b);
+}
+function previewQaRequestAllowed(req){
+  const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+  if(process.env.VERCEL_ENV!=='preview'||!host.endsWith('.vercel.app'))return false;
+  const bootstrap=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||'');
+  const automation=String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET||'');
+  const suppliedBootstrap=String(req.headers['x-bootstrap-secret']||'');
+  const suppliedAutomation=String(req.headers['x-qa-secret']||req.headers['x-vercel-protection-bypass']||'');
+  return secretMatches(suppliedBootstrap,bootstrap)||secretMatches(suppliedBootstrap,automation)||secretMatches(suppliedAutomation,automation);
+}
+
 async function kvHealthCheck(timeoutMs=2500){
   const stamp=Date.now(),key='health:last_check';
   try{
@@ -77,15 +91,15 @@ async function getWorkspaceConfigSnapshot(workspaceId){
 }
 
 async function bootstrapPreview(req,res){
-  const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
-  if(process.env.VERCEL_ENV!=='preview'||!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
-  const configured=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||'');
-  const supplied=String(req.headers['x-bootstrap-secret']||'');
-  if(!configured||!supplied||supplied!==configured)return res.status(403).json({error:'Forbidden'});
+  if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
   const email=cleanEmail((req.body||{}).email);
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Valid email required'});
   const existing=await kv.get('user:email:'+email);
-  if(existing&&existing.workspaceId)return res.status(409).json({error:'User already provisioned',workspaceId:existing.workspaceId});
+  if(existing&&existing.workspaceId){
+    const existingWorkspace=await kv.get('workspace:'+existing.workspaceId);
+    if(existingWorkspace&&existingWorkspace.previewQa===true)return res.status(200).json({ok:true,reused:true,workspaceId:existing.workspaceId,email,plan:entitlementsFor(existingWorkspace.plan).plan});
+    return res.status(409).json({error:'User already provisioned',workspaceId:existing.workspaceId});
+  }
   const workspaceId=crypto.randomUUID();
   const name=String((req.body||{}).businessName||'CallerCore Test Workspace').trim().slice(0,160);
   const plan=['Starter','Growth','Pro'].includes((req.body||{}).plan)?(req.body||{}).plan:'Pro';
@@ -104,10 +118,7 @@ async function bootstrapPreview(req,res){
 }
 
 async function seedPreviewData(req,res){
-  const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
-  if(process.env.VERCEL_ENV!=='preview'||!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
-  const configured=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||''),supplied=String(req.headers['x-bootstrap-secret']||'');
-  if(!configured||!supplied||supplied!==configured)return res.status(403).json({error:'Forbidden'});
+  if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
   const email=cleanEmail((req.body||{}).email);
   const member=await kv.get('user:email:'+email);
   if(!member||!member.workspaceId)return res.status(404).json({error:'Create the workspace first'});
@@ -203,10 +214,7 @@ async function promotePreviewAdmin(req,res){
 }
 
 async function previewQaSession(req,res){
-  const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
-  if(process.env.VERCEL_ENV!=='preview'||!host.endsWith('.vercel.app'))return res.status(404).json({error:'Not found'});
-  const configured=String(process.env.CALLERCORE_BOOTSTRAP_SECRET||''),supplied=String(req.headers['x-bootstrap-secret']||'');
-  if(!configured||!supplied||supplied!==configured)return res.status(403).json({error:'Forbidden'});
+  if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
   const email=cleanEmail((req.body||{}).email),mode=String((req.body||{}).mode||'client').toLowerCase();
   if(!['client','admin'].includes(mode))return res.status(400).json({error:'Invalid QA session mode'});
   const member=await kv.get('user:email:'+email);
