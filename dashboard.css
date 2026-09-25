@@ -1954,3 +1954,9 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
    cannot override the open state. */
 .call-drawer.open{right:0}
 #adminClientDrawer.open{right:0}
+
+
+/* Admin client drawer: keep the closed layout box inside the viewport.
+   A negative right offset caused document-level horizontal overflow on phones. */
+#adminClientDrawer{right:0;transform:translateX(calc(100% + 24px));visibility:hidden;pointer-events:none}
+#adminClientDrawer.open{right:0;transform:translateX(0);visibility:visible;pointer-events:auto}
