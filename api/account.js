@@ -281,7 +281,8 @@ function cleanFinanceExpense(raw={},existing={}){
 }
 async function loadAdminWorkspaces(){
   const ids=await kv.get('workspace:index')||[],workspaces=[];
-  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){const ws=await kv.get('workspace:'+id);if(ws)workspaces.push(ws)}
+  if(!Array.isArray(ids)||ids.length>250)throw new Error('Admin workspace index exceeds supported capacity; totals cannot be reported safely');
+  for(const id of ids){const ws=await kv.get('workspace:'+id);if(ws)workspaces.push(ws)}
   return workspaces;
 }
 function currentBillableWorkspaces(workspaces){
