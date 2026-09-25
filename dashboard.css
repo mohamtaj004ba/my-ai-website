@@ -2128,3 +2128,54 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
   .admin-client-toolbar-right input{min-width:0}
   .admin-client-row-business .admin-link{min-height:34px;padding:7px 10px}
 }
+
+
+/* Premium System Health layout: service cards need enough width for readable
+   dependency names/details and status badges must remain inside each card. */
+.admin-health-groups{
+  grid-template-columns:1fr;
+  gap:24px;
+}
+.admin-health-group .integration-grid{
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:12px;
+}
+.admin-health-item{
+  min-width:0;
+  min-height:104px;
+  padding:16px!important;
+  gap:12px!important;
+  align-items:flex-start!important;
+}
+.admin-health-item>div{min-width:0}
+.admin-health-item>div b{
+  display:block;
+  font-size:11px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.admin-health-item>div p{
+  margin-top:6px;
+  font-size:8px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+.admin-health-item>.tag{
+  justify-self:end;
+  align-self:start;
+  max-width:110px;
+  white-space:normal;
+  text-align:center;
+  line-height:1.2;
+}
+@media(max-width:720px){
+  .admin-health-group .integration-grid{grid-template-columns:1fr}
+  .admin-health-item{
+    grid-template-columns:auto minmax(0,1fr)!important;
+  }
+  .admin-health-item>.tag{
+    grid-column:2;
+    justify-self:start;
+    max-width:100%;
+  }
+}
