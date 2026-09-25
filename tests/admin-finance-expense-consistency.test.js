@@ -75,3 +75,19 @@ test('expense deletion sends its revision and suppresses a duplicate action',asy
   f.pending.resolve({ok:true,json:async()=>({deleted:{id:'expense-1',updatedAt:10}})});await Promise.all([first,ignored]);
   assert.equal(f.context.adminFinanceData.expenses.length,0);assert.equal(f.context.adminExpenseDeletePending.size,0);
 });
+
+
+test('opening the expense editor leaves phone form validation intact',()=>{
+  const f=frontendFixture();
+  f.node('phoneFormStatus').textContent='A phone number is required.';
+  f.node('phoneFormStatus').className='form-status-line error';
+  f.context.settingsFieldError=()=>assert.fail('Expense editor must not reset phone field errors');
+  const start=dashboardSource.indexOf('function openExpenseModal('),end=dashboardSource.indexOf('\\nfunction closeExpenseModal(',start);
+  assert.ok(start>=0&&end>start);
+  vm.runInContext(dashboardSource.slice(start,end),f.context);
+  vm.runInContext("openExpenseModal('expense-1')",f.context);
+  assert.equal(f.node('phoneFormStatus').textContent,'A phone number is required.');
+  assert.equal(f.node('phoneFormStatus').className,'form-status-line error');
+  assert.equal(f.node('expenseModalTitle').textContent,'Edit expense');
+  assert.equal(f.node('expenseModal')['aria-hidden'],'false');
+});
