@@ -14,8 +14,8 @@ async function runBackend({expectedUpdatedAt=10,transaction=true,now}={}){
   const context=vm.createContext({
     requireAdmin:async()=>({email:'admin@example.com'}),
     kv:{get:async()=>workspace,set:()=>assert.fail('Workspace updates must use the atomic transaction')},
-    compareAndSetConfig:async(_,next)=>{updates=next;if(transaction==='error')throw Error('network');return transaction},
-    appendAudit:async()=>audits++,safeError:()=>'',console:{error(){}},Date:now===undefined?Date:{now:()=>now},
+    compareAndAudit:async(_,update,auditKey,event)=>{updates=[update];assert.equal(auditKey,'audit:client-1');assert.equal(event.action,'workspace_update');assert.equal(event.after,update.after);if(transaction==='error')throw Error('network');if(transaction)audits++;return transaction},
+    crypto:{randomUUID:()=> 'audit-1'},safeError:()=>'',console:{error(){}},Date:now===undefined?Date:{now:()=>now},
     req:{body:{id:'client-1',plan:'Growth',status:'suspended',expectedUpdatedAt}},
     res:{status(value){status=value;return this},json(value){result=value}}
   });
