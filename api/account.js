@@ -10,6 +10,7 @@ const previewSeed=require('../lib/preview-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig}=require('../lib/config-transaction');
 const {prependAuditEvent}=require('../lib/audit-log');
+const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
@@ -2280,7 +2281,28 @@ async function saveAutomations(req,res){
 async function conversations(req,res){
   const access=await requireFeature(req,res,'unifiedInbox');if(!access)return;
   const items=await kv.get('conversations:'+access.session.workspaceId)||[];
-  return res.status(200).json({conversations:Array.isArray(items)?items:[]});
+  if(!Array.isArray(items))return res.status(500).json({error:'Conversation data is unavailable'});
+  try{return res.status(200).json(paginateConversations(items,req.query||{}))}
+  catch(err){if(err&&err.code==='INVALID_CURSOR')return res.status(400).json({error:err.message});throw err}
+}
+
+async function conversationDetail(req,res){
+  const access=await requireFeature(req,res,'unifiedInbox');if(!access)return;
+  const id=String((req.query&&req.query.id)||'').slice(0,120);if(!id)return res.status(400).json({error:'Conversation ID is required'});
+  const items=await kv.get('conversations:'+access.session.workspaceId)||[];
+  const conversation=Array.isArray(items)?items.find(item=>item&&String(item.id)===id):null;
+  if(!conversation)return res.status(404).json({error:'Conversation not found'});
+  return res.status(200).json({conversation});
+}
+
+async function conversationMessages(req,res){
+  const access=await requireFeature(req,res,'unifiedInbox');if(!access)return;
+  const id=String((req.query&&req.query.id)||'').slice(0,120);if(!id)return res.status(400).json({error:'Conversation ID is required'});
+  const items=await kv.get('conversations:'+access.session.workspaceId)||[];
+  const conversation=Array.isArray(items)?items.find(item=>item&&String(item.id)===id):null;
+  if(!conversation)return res.status(404).json({error:'Conversation not found'});
+  try{return res.status(200).json(paginateMessages(conversation,req.query||{}))}
+  catch(err){if(err&&err.code==='INVALID_CURSOR')return res.status(400).json({error:err.message});throw err}
 }
 
 async function appointments(req,res){
@@ -2644,6 +2666,8 @@ module.exports=async function handler(req,res){
   if(action==='call-viewed-mark'&&req.method==='POST')return callViewedMark(req,res);
   if(action==='calls'&&req.method==='GET')return calls(req,res);
   if(action==='conversations'&&req.method==='GET')return conversations(req,res);
+  if(action==='conversation-detail'&&req.method==='GET')return conversationDetail(req,res);
+  if(action==='conversation-messages'&&req.method==='GET')return conversationMessages(req,res);
   if(action==='appointments'&&req.method==='GET')return appointments(req,res);
   if(action==='appointment-update'&&req.method==='POST')return updateAppointment(req,res);
   if(action==='leads'&&req.method==='GET')return leads(req,res);

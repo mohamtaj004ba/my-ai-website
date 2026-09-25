@@ -16,19 +16,19 @@ CallerCore is an AI front office for service businesses, with a public acquisiti
 
 ## Current development pass — 2026-09-25
 
-COMPLETED AND VERIFIED within the coverage below: truthful voice readiness; atomic receptionist, Settings and admin phone configuration saves; stale-edit/capacity guards; pending-save locks; background-refresh and logo-processing draft protection; admin phone search/filter/batching; responsive routing cards and reachable editor actions; long Conversations message batches.
+COMPLETED AND VERIFIED within the coverage below: truthful voice readiness; atomic receptionist, Settings and admin phone configuration saves; conflict-safe legacy configuration mutations; atomic audit-history append; stale-edit/capacity guards; pending-save locks; background-refresh and logo-processing draft protection; admin phone search/filter/batching; responsive routing cards and reachable editor actions; bounded Conversations and contact-history rendering.
 
 This is a dashboard and shared-backend checkpoint, not provider activation or production release. The detailed entries below preserve findings, failures, corrections and verification history.
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `aadccad3a40368bf05b78a0b72d027135340e3a8`.
-- Preview READY: `dpl_68VakCp9FmhDKB1bEhQ5eqt1BQqz` — https://my-ai-website-9t52kkyfs-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36115636259`, CodeQL `36115636270`, Jekyll `36115636254`: success on that exact SHA. Push CI/CodeQL also passed.
-- Authenticated Preview Browser QA `36115629985`: success on that exact SHA; artifact `10854653969`.
-- Local regression suite: 196 passed, 0 failed. JavaScript syntax and diff checks passed.
+- Implementation SHA: `e6e5034fe3ae437a7504accfdc6962c614a0410c`.
+- Preview READY: `dpl_BTu5DvuY4RiBEeNCuoowksNjwXum` — https://my-ai-website-nt5m6s1rx-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36117571653`, CodeQL `36117571613`, Jekyll `36117571669`: success on that exact SHA. Push CI `36117566398` and CodeQL `36117566347` also passed.
+- Authenticated Preview Browser QA `36117566334`: success on that exact SHA.
+- Local regression suite: 206 passed, 0 failed. JavaScript syntax and diff checks passed.
 - Browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks.
-- Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, and 50 → 100 → 122 message batches.
+- Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, legacy restore/delete safeguards, and 50 → 100 → 122 message batches in Conversations and Contacts.
 - Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
 - Visual inspection: inventory laptop/tablet/mobile screenshots and mobile phone editor reviewed. Transfer/after-hours text is separated, actions remain visible, and Save is reachable inside the scrolling modal.
 - This documentation-only follow-up records the verified implementation; it does not claim a browser run against its own future commit.
@@ -51,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current implementation: 196/196 local tests pass. Executable regressions cover 125-thread/1,000-message rendering, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
+Current verified implementation: 206/206 local tests pass. Executable regressions cover 125-thread/1,000-message rendering, contact history batching, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -62,10 +62,9 @@ Current implementation: 196/196 local tests pass. Executable regressions cover 1
 
 ## Next authorized development backlog
 
-1. Review legacy admin restore/delete configuration writers and audit append concurrency. The three updated configuration paths are atomic, but audit append remains a separate operation. Use mocked failure/concurrency tests; do not exercise destructive operations against real data.
-2. Extend scale work to contact-drawer histories and tenant-scoped backend pagination. Preserve filters, contact links, entitlements and newest-message behavior.
-3. Continue client/admin shared-state consistency and accessibility review using the existing authenticated Preview workflow and screenshots. Current regression coverage is not a claim that every dashboard action has been tested.
-4. Inspect provider/billing test-environment readiness before dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios. Live activation, production changes and new charges still need owner authorization.
+1. Complete the client integration for tenant-scoped conversation and message pagination while preserving full contact-directory counts, search, contact links, entitlements and newest-message behavior.
+2. Continue client/admin shared-state consistency and accessibility review using the existing authenticated Preview workflow and screenshots. Current regression coverage is not a claim that every dashboard action has been tested.
+3. Inspect provider/billing test-environment readiness before dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios. Live activation, production changes and new charges still need owner authorization.
 
 ## Known limitations and remaining work
 
@@ -73,7 +72,7 @@ Current implementation: 196/196 local tests pass. Executable regressions cover 1
 - Client Conversations is a history viewer. No client reply composer or shared unread state was found. Do not invent working messaging or change SMS launch scope to expose it.
 - Conversation records link to derived contact history; admin Gmail/website Inbox is a separate data source. A shared client/admin message-delivery pipeline has not been verified.
 - Live voice remains unavailable: shared readiness now reports awaiting activation; fake pause/resume is blocked. A real provider adapter and verification remain required before activation.
-- Conversations thread rendering now uses 50-message batches; contact-drawer message sessions and server data transfer still warrant further scale work.
+- Contact-drawer and Conversations rendering now use 50-item/message batches. The new server pagination helpers still need client integration before the initial dashboard payload can omit complete message histories.
 - Some release docs predate implementation: README's unlimited Pro statement corrected; environment matrix/DEPLOY contain historical isolation and QA notes; production readiness still describes the already-replaced `@vercel/kv` client. Use actual code and current evidence.
 - Older rollback deployment references are historical and differ from current main SHA. Re-verify the appropriate production rollback target before an authorized release.
 
@@ -196,5 +195,14 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Long message sessions inside contact history show the newest 50 messages and load earlier messages in 50-message batches while reopening the active session. The existing Conversations timeline and contact link behavior are preserved.
 - Malformed conversation message collections are ignored instead of crashing contact aggregation.
 - Added executable 125-activity and 1,000-message contact history tests. The isolated Preview seed now keeps its 122-message history in one contact session, and authenticated QA verifies 50 → 100 → 122 loading through the contact drawer as well as Conversations.
-- Local verification: 206 tests passed; JavaScript syntax and diff checks passed. Full authenticated Preview verification pending the feature push.
+- Local verification: 206 tests passed; JavaScript syntax and diff checks passed. Full authenticated Preview QA `36117566334` and all CI/CodeQL/Jekyll gates passed on implementation `e6e5034fe3ae437a7504accfdc6962c614a0410c`.
 - The underlying tenant conversation array still loads from KV as one record. This batch bounds browser rendering; API payload pagination remains the next scale task.
+
+## Tenant-scoped conversation pagination API batch
+
+- Added bounded conversation list pages with newest/oldest sorting, exact Active and Closed filters, follow-up attention filtering, full-history search, stable query-bound cursors, 100-record maximum pages, and message-free summaries.
+- Added authenticated per-thread detail and newest-first message-page routes. Message cursors walk backward without duplication and cannot be reused for a different thread.
+- Every route derives the conversation key from the authenticated session workspace and preserves the unified-inbox entitlement check; request-supplied workspace IDs are never used.
+- Malformed stored conversation arrays fail closed. Invalid, oversized, expired or query-mismatched cursors return a bounded client error instead of resetting silently.
+- Added executable pagination, cursor, filter, full-history search, malformed-message and tenant-scope regressions. Local suite: 212 passed; syntax and diff checks passed.
+- This layer bounds API responses but still reads the legacy tenant array internally. Client integration and a separately designed storage normalization/migration remain the next scale steps.
