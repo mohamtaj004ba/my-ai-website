@@ -8,7 +8,7 @@ const {emailKey,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
-const {compareAndSetConfig}=require('../lib/config-transaction');
+const {compareAndSetConfig,compareAndAudit}=require('../lib/config-transaction');
 const {prependAuditEvent}=require('../lib/audit-log');
 const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
 const {readConversationDirectory,readConversationPage,readConversation,readContactConversations,readAllConversations,publishNormalizedConversations,deleteNormalizedConversations}=require('../lib/conversation-store');
@@ -407,10 +407,10 @@ async function adminUpdateClient(req,res){
     next.plan=body.plan;
   }
   next.updatedAt=Math.max(Date.now(),Number(ws.updatedAt||ws.createdAt||0)+1);
+  const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'workspace_update',section:'workspace',before:ws,after:next,meta:{},at:Date.now()};
   try{
-    if(!await compareAndSetConfig(kv,[{key,before:ws,after:next}]))return res.status(409).json({error:'This workspace changed during the save. Reopen it to load the latest account settings.'});
-  }catch(err){console.error('admin client save failed',safeError(err));return res.status(503).json({error:'Could not confirm that the workspace was saved. Reopen it before retrying.'})}
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'workspace_update',section:'workspace',before:ws,after:next});
+    if(!await compareAndAudit(kv,{key,before:ws,after:next},'audit:'+id,audit))return res.status(409).json({error:'This workspace changed during the save. Reopen it to load the latest account settings.'});
+  }catch(err){console.error('admin client save failed',safeError(err));return res.status(503).json({error:'Could not confirm that workspace changes and audit history were saved together. Reopen the client before retrying.'})}
   return res.status(200).json({ok:true,client:{id:next.id,name:next.name,plan:next.plan,status:next.status,subscriptionStatus:next.subscriptionStatus||'active',updatedAt:next.updatedAt}});
 }
 
