@@ -455,16 +455,15 @@ function formatFullDateTime(x){
   return [x?.date,x?.time].filter(Boolean).join(' · ')||'Date unavailable';
 }
 function aiAnsweringState(){
-  const paused=settingsData?.aiAnsweringPaused===true||phoneRoutingData?.status==='paused',number=phoneRoutingData?.number||'',routingReady=!!number&&!!phoneRoutingData;
-  return {paused,number,routingReady,active:routingReady&&!paused&&(phoneRoutingData?.status||'active')==='active',fallback:settingsData?.aiPauseFallbackNumber||phoneRoutingData?.pauseFallbackNumber||''};
+  const number=phoneRoutingData?.number||'',voice=phoneRoutingData?.voice;
+  return {number,assigned:!!number,active:false,paused:false,routingReady:false,controlsAvailable:false,label:voice?.label||(number?'Awaiting activation':'Not assigned'),detail:voice?.detail||(number?'Number and routing settings are saved. Live calling has not been activated and verified.':'A CallerCore number has not been assigned yet.')};
 }
 function renderAiCoverage(){
   const state=aiAnsweringState(),banner=document.getElementById('aiCoverageBanner'),title=document.getElementById('aiCoverageTitle'),copy=document.getElementById('aiCoverageCopy'),eyebrow=document.getElementById('aiCoverageEyebrow');
-  if(!banner||!title||!copy)return;banner.classList.remove('active','paused','setup');
-  if(state.active){banner.classList.add('active');if(eyebrow)eyebrow.textContent='AI ANSWERING · ON';title.textContent='CallerCore is set to answer calls';copy.textContent=state.number?'Maya is active on '+state.number+'.':'Maya is ready for incoming calls.'}
-  else if(state.paused){banner.classList.add('paused');if(eyebrow)eyebrow.textContent='AI ANSWERING · PAUSED';title.textContent='AI answering is temporarily paused';copy.textContent=state.fallback?'Temporary handoff: '+state.fallback+'.':'Resume answering when your team is ready.'}
-  else{banner.classList.add('setup');if(eyebrow)eyebrow.textContent='AI ANSWERING · SETUP NEEDED';title.textContent='Phone routing is not ready yet';copy.textContent='Finish phone setup before relying on CallerCore for inbound coverage.'}
-  const name=agentData?.name||'Maya',nameEl=document.getElementById('overviewAgentName');if(nameEl)nameEl.textContent=name;
+  if(!banner||!title||!copy)return;banner.classList.remove('active','paused','setup');banner.classList.add('setup');
+  if(eyebrow)eyebrow.textContent='AI ANSWERING · '+(state.assigned?'AWAITING ACTIVATION':'SETUP NEEDED');
+  title.textContent=state.assigned?'Your receptionist is awaiting activation':'Phone setup is still needed';copy.textContent=state.detail;
+  const nameEl=document.getElementById('overviewAgentName');if(nameEl)nameEl.textContent=agentData?.name||'Maya';
 }
 function renderOverview(){
   const todayRows=callsData.filter(x=>sameLocalDay(recordTime(x))),todayCalls=todayRows.length,todayCaptured=todayRows.filter(callCaptured).length,todayResolved=todayRows.filter(callResolvedByAi).length;
@@ -1087,7 +1086,7 @@ function renderAgent(){
   set('agentOpening',agentData.openingMessage);set('agentServiceArea',agentData.serviceArea);
   set('agentHours',agentData.businessHours);set('agentTransfer',agentData.transferNumber);set('agentEmergency',agentData.emergencyInstructions);
   set('agentHandlingInstructions',agentData.handlingInstructions);
-  const test=document.getElementById('agentTestCall'),digits=String(phoneRoutingData?.number||'').replace(/\D/g,'');if(test){test.textContent='Call '+(agentData.name||'receptionist');test.hidden=!digits;if(digits)test.setAttribute('href','tel:'+digits);else test.removeAttribute('href');test.classList.toggle('disabled-link',!digits);test.setAttribute('aria-disabled',digits?'false':'true');test.tabIndex=digits?0:-1;test.title=digits?'Call '+phoneRoutingData.number+' to test '+(agentData.name||'Maya'):''}
+  const test=document.getElementById('agentTestCall'),digits=aiAnsweringState().active?String(phoneRoutingData?.number||'').replace(/\D/g,''):'';if(test){test.textContent='Call '+(agentData.name||'receptionist');test.hidden=!digits;if(digits)test.setAttribute('href','tel:'+digits);else test.removeAttribute('href');test.classList.toggle('disabled-link',!digits);test.setAttribute('aria-disabled',digits?'false':'true');test.tabIndex=digits?0:-1;test.title=digits?'Call '+phoneRoutingData.number+' to test '+(agentData.name||'Maya'):''}
   renderQuestions();setAgentEditing(activeAgentSection());
 }
 function renderQuestions(){
@@ -1103,7 +1102,7 @@ function collectAgent(){
   return {name:val('agentName'),role:val('agentRole'),tone:val('agentTone'),openingMessage:val('agentOpening'),serviceArea:val('agentServiceArea'),businessHours:val('agentHours'),transferNumber:val('agentTransfer'),emergencyInstructions:val('agentEmergency'),handlingInstructions:val('agentHandlingInstructions'),qualificationQuestions:[...(agentData?.qualificationQuestions||[])]};
 }
 async function saveAgent(section=activeAgentSection()){
-  if(!section)return;const formStatus=document.getElementById('agentFormStatus');if(formStatus){formStatus.textContent='Saving receptionist settings…';formStatus.className='form-status-line'}const next=collectAgent(),btn=document.querySelector('[data-agent-save="'+CSS.escape(section)+'"]');if(btn){btn.disabled=true;btn.textContent='Saving…'}
+  if(!section)return;const formStatus=document.getElementById('agentFormStatus');if(formStatus){formStatus.textContent='Saving receptionist settings…';formStatus.className='form-status-line'}const next={...collectAgent(),section,expectedUpdatedAt:agentEditSnapshot?.updatedAt||agentData?.updatedAt||null},btn=document.querySelector('[data-agent-save="'+CSS.escape(section)+'"]');if(btn){btn.disabled=true;btn.textContent='Saving…'}
   try{
     if(!demoMode){const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save the AI receptionist.');agentData=data.agent||next;if(data.routing)phoneRoutingData=data.routing}else agentData=next;
     agentEditSnapshot=null;agentEditing=false;renderAgent();if(formStatus){formStatus.textContent='Receptionist settings saved.';formStatus.className='form-status-line success'}const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
@@ -1234,11 +1233,11 @@ function setWebhookEditing(editing){
 }
 function renderIntegrations(){
   if(!integrationsData)integrationsData={googleCalendar:false,stripe:!!sessionWorkspace?.stripe?.customerLinked,webhookUrl:'',apiAccess:has('apiAccess')};
-  const routeReady=!!phoneRoutingData?.number,agentReady=!!agentData?.name;
+  const routeReady=false,agentReady=!!agentData?.name,voiceState=aiAnsweringState();
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
   const tag=(id,ok,yes,no)=>{const el=document.getElementById(id);if(el){el.textContent=ok?yes:no;el.className='tag '+(ok?'green':'amber')}};
-  set('connectionPhoneTitle',routeReady?'Phone routing active':'Phone routing not ready');set('connectionPhoneCopy',routeReady?(phoneRoutingData.number+' is answering through CallerCore.'):'A CallerCore number has not been assigned yet.');tag('connectionPhoneStatus',routeReady,'Active','Needs setup');
-  set('connectionAgentTitle',agentReady?(agentData.name+' is configured'):'AI receptionist needs setup');set('connectionAgentCopy',agentReady?'Business hours, service area, and escalation rules are loaded.':'Finish your AI receptionist configuration before going live.');tag('connectionAgentStatus',agentReady,'Ready','Needs setup');
+  set('connectionPhoneTitle',voiceState.assigned?'Phone settings saved':'Phone setup needed');set('connectionPhoneCopy',voiceState.detail);tag('connectionPhoneStatus',routeReady,'Active',voiceState.label);
+  set('connectionAgentTitle',agentReady?(agentData.name+' is configured'):'AI receptionist needs setup');set('connectionAgentCopy',agentReady?'Business hours, service area, and escalation rules are loaded.':'Finish your AI receptionist configuration before going live.');tag('connectionAgentStatus',agentReady,'Configured','Needs setup');
   const g=document.getElementById('googleCalendarStatus');if(g){const ok=capability('calendar')&&integrationsData.googleCalendar;g.textContent=ok?'Connected':'Not connected';g.className='tag '+(ok?'green':'amber')}
   set('connectionBusinessNumber',phoneRoutingData?.forwardingFrom||settingsData?.businessPhone||'Your business line');set('connectionCallerCoreNumber',phoneRoutingData?.number||'Not assigned');set('connectionTransferNumber',phoneRoutingData?.transferNumber||agentData?.transferNumber||'Not configured');
   const panel=document.getElementById('webhookPanel');if(panel)panel.hidden=!has('apiAccess');set('webhookDisplay',integrationsData.webhookUrl||'Not configured');setWebhookEditing(webhookEditing);
@@ -1272,25 +1271,15 @@ function setSettingsEditing(editing,{restore=false}={}){
 }
 function renderAiAnsweringControl(){
   const state=aiAnsweringState(),title=document.getElementById('settingsAiTitle'),copy=document.getElementById('settingsAiCopy'),button=document.getElementById('toggleAiAnsweringButton'),input=document.getElementById('aiPauseFallbackNumber'),visual=document.getElementById('settingsAiVisual'),note=document.getElementById('aiAnsweringStatusNote');
-  if(!title||!button)return;if(visual)visual.classList.remove('active','paused','setup');
-  if(input&&!input.matches(':focus'))input.value=state.fallback||'';
-  if(state.active){visual?.classList.add('active');title.textContent='AI answering is active';copy.textContent=(state.number?'CallerCore is set to answer '+state.number+'. ':'')+'Use Pause only when you intentionally need your team or another phone to take over.';button.textContent='Pause AI answering';button.className='danger-btn ai-pause-button';button.disabled=false;if(note)note.textContent='Optional: enter a temporary handoff number before pausing.'}
-  else if(state.paused){visual?.classList.add('paused');title.textContent='AI answering is paused';copy.textContent=state.fallback?'Temporary handoff number saved: '+state.fallback+'.':'CallerCore AI answering is paused for this workspace.';button.textContent='Resume AI answering';button.className='primary ai-pause-button';button.disabled=!state.routingReady;if(note)note.textContent='Resume when you want CallerCore to take inbound calls again.'}
-  else{visual?.classList.add('setup');title.textContent='Phone routing is not configured';copy.textContent='There is no active CallerCore number to pause or resume yet.';button.textContent='AI answering unavailable';button.className='secondary-btn ai-pause-button';button.disabled=true;if(note)note.textContent='Finish phone routing before using emergency answering controls.'}
+  if(!title||!button)return;
+  visual?.classList.remove('active','paused');visual?.classList.add('setup');
+  title.textContent=state.assigned?'Live calling awaits activation':'Phone setup is still needed';copy.textContent=state.detail;
+  button.textContent='Live controls unavailable';button.className='secondary-btn ai-pause-button';button.disabled=true;
+  if(input){input.disabled=true;input.value=settingsData?.aiPauseFallbackNumber||phoneRoutingData?.pauseFallbackNumber||''}
+  if(note)note.textContent='Pause, resume, and temporary handoff will be available after live call controls are connected and tested.';
 }
 async function toggleAiAnswering(){
-  const state=aiAnsweringState(),targetPaused=!state.paused,input=document.getElementById('aiPauseFallbackNumber'),status=document.getElementById('aiAnsweringActionStatus'),button=document.getElementById('toggleAiAnsweringButton'),fallback=normalizePhone(input?.value||'');
-  if(fallback&&!validUsPhone(fallback)){if(status)status.textContent='Enter a valid 10-digit handoff number or leave it blank.';input?.focus();return}
-  if(targetPaused&&!confirm('Pause CallerCore AI answering for this workspace? You can resume it from Settings at any time.'))return;
-  if(status)status.textContent=targetPaused?'Pausing AI answering…':'Resuming AI answering…';if(button)button.disabled=true;
-  try{
-    if(demoMode){settingsData={...(settingsData||{}),aiAnsweringPaused:targetPaused,aiPauseFallbackNumber:fallback,aiPausedAt:targetPaused?Date.now():0};phoneRoutingData={...(phoneRoutingData||{}),status:targetPaused?'paused':'active',pauseFallbackNumber:fallback}}
-    else{
-      const r=await fetch('/api/account?action=ai-answering-control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paused:targetPaused,fallbackNumber:fallback})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not change AI answering status');
-      settingsData={...(settingsData||{}),...(data.settings||{})};if(data.routing)phoneRoutingData=data.routing;else if(phoneRoutingData)phoneRoutingData={...phoneRoutingData,status:targetPaused?'paused':'active',pauseFallbackNumber:fallback};
-    }
-    renderAiAnsweringControl();renderOverview();renderPhoneRouting();if(status)status.textContent=targetPaused?'AI answering paused.':'AI answering resumed.';
-  }catch(err){if(status)status.textContent=err.message||'Could not change AI answering status';renderAiAnsweringControl()}
+  const status=document.getElementById('aiAnsweringActionStatus');if(status)status.textContent='Live call controls are not available yet. Your saved routing settings have not changed.';
 }
 function renderSettings(){
   if(!settingsData)return;
@@ -1375,12 +1364,12 @@ function renderPhoneRouting(){
   const d=phoneRoutingData,set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   if(!document.getElementById('clientPhoneNumber'))return;
   set('clientPhoneNumber',d?.number||sessionWorkspace?.phone||'Not assigned');
-  set('clientPhoneProvider',d?.provider?d.provider+' · '+((d.status||'active')==='paused'?'AI answering paused':(d.status||'active')):'Awaiting provisioning');
+  set('clientPhoneProvider',d?.provider?d.provider+' · '+aiAnsweringState().label:'Awaiting provisioning');
   set('clientForwardingFrom',d?.forwardingFrom||'—');set('clientTransferNumber',d?.transferNumber||agentData?.transferNumber||'—');
-  set('clientAfterHours',d?({ai:'AI answers',transfer:'Transfer',voicemail:'Voicemail'}[d.afterHours]||d.afterHours):'—');
+  set('clientAfterHours',d?({ai:'AI answering (saved preference)',transfer:'Transfer (saved preference)',voicemail:'Voicemail (saved preference)'}[d.afterHours]||d.afterHours):'—');
   set('clientSmsStatus',capability('sms')?(d&&d.smsEnabled?'SMS enabled':'SMS disabled'):'Messaging not enabled at launch');
-  set('clientRoutingHeadline',d?(d.status==='paused'?'AI answering is paused.':'Your CallerCore routing is configured.'):'Phone routing has not been provisioned yet.');
-  set('clientRoutingCopy',d?(d.status==='paused'?'Resume AI answering from Settings when you are ready for CallerCore to take calls again.':'Routing changes are managed carefully to prevent accidental call disruption.'):'CallerCore support will configure the AI-facing number and routing details during onboarding.');
+  set('clientRoutingHeadline',d?'Routing settings saved. Activation pending.':'Phone routing has not been assigned yet.');
+  set('clientRoutingCopy',aiAnsweringState().detail);
 }
 function renderLocations(){
   const wrap=document.getElementById('locationsGrid'),empty=document.getElementById('locationsEmpty'),label=document.getElementById('locationsLimitLabel'),add=document.getElementById('addLocationButton');if(!wrap)return;
@@ -1646,7 +1635,7 @@ function renderAdminFleet(){
     let issue=agent?.issue||(!agent?'No AI receptionist configuration exists yet.':'Configuration looks ready.');
     if(/billing|past due/i.test(issue)){group=paused?'paused':'ready';issue='AI configuration is retained. Billing is handled separately in Finance.'}
     if(/transfer destination|phone number|phone routing/i.test(issue)){group=paused?'paused':rawHealth==='setup'?'setup':'ready';issue='AI configuration is retained. Phone routing is handled separately under Phone Numbers.'}
-    const tone=group==='ready'?'green':group==='paused'?'':'amber',label=group==='ready'?'Ready':group==='paused'?'Paused':group==='setup'?'Setup / test':'Needs review';
+    const tone=group==='ready'?'green':group==='paused'?'':'amber',label=group==='ready'?'Configured':group==='paused'?'Paused':group==='setup'?'Setup / test':'Needs review';
     return {...x,agent,health:rawHealth,group,issue,tone,label};
   });
   set('agentReadyCount',agentRows.filter(x=>x.group==='ready').length);
@@ -2317,7 +2306,7 @@ function renderPhones(){
   const wrap=document.getElementById('phoneTable'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
   if(!wrap)return;
   set('phoneAssignedCount',adminPhoneData.filter(x=>x.workspaceId).length);set('phoneUnassignedCount',adminPhoneData.filter(x=>!x.workspaceId).length);set('phoneTransferCount',adminPhoneData.filter(x=>x.transferNumber).length);set('phoneAfterHoursTransferCount',adminPhoneData.filter(x=>x.afterHours==='transfer').length);
-  wrap.innerHTML=adminPhoneData.map(x=>{const after=x.afterHours==='transfer'?'Human transfer':x.afterHours==='voicemail'?'Voicemail':'AI answers',routing='<span class="admin-phone-routing"><b>'+(x.transferNumber?'Transfer '+esc(x.transferNumber):'No transfer destination')+'</b><small>After hours · '+esc(after)+'</small></span>';return '<div class="call-row admin-phone-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+(x.forwardingFrom?' · forwards from '+esc(x.forwardingFrom):'')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span>'+routing+'<span class="tag '+((x.status||'active')==='active'?'green':'amber')+'">'+esc(adminStatusLabel(x.status||'active'))+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>'}).join('');
+  wrap.innerHTML=adminPhoneData.map(x=>{const after=x.afterHours==='transfer'?'Human transfer':x.afterHours==='voicemail'?'Voicemail':'AI answers',routing='<span class="admin-phone-routing"><b>'+(x.transferNumber?'Transfer '+esc(x.transferNumber):'No transfer destination')+'</b><small>After hours · '+esc(after)+'</small></span>';return '<div class="call-row admin-phone-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+(x.forwardingFrom?' · forwards from '+esc(x.forwardingFrom):'')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span>'+routing+'<span class="tag amber">'+esc(x.voice?.label||'Awaiting activation')+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>'}).join('');
   const empty=document.getElementById('phoneEmpty');if(empty)empty.hidden=adminPhoneData.length!==0;
   wrap.querySelectorAll('[data-edit-phone]').forEach(b=>b.addEventListener('click',()=>openPhoneModal(b.dataset.editPhone)));
   wrap.querySelectorAll('[data-delete-phone]').forEach(b=>b.addEventListener('click',()=>deletePhone(b.dataset.deletePhone)));

@@ -7,6 +7,8 @@ const {entitlementsFor,PLANS}=require('../lib/plans');
 const {emailKey,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
+const {voiceStatus,clientRouting}=require('../lib/voice-status');
+const {compareAndSetConfig}=require('../lib/config-transaction');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
@@ -584,7 +586,7 @@ async function adminClearProvisioningStage(req,res){
 async function adminPhoneNumbers(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const numbers=await kv.get('phone:index')||[];
-  return res.status(200).json({numbers:Array.isArray(numbers)?numbers:[]});
+  return res.status(200).json({numbers:Array.isArray(numbers)?numbers.map(item=>({...item,voice:voiceStatus(item)})):[]});
 }
 
 async function syncOnboardingPhoneAssignment(workspaceId,assigned){
@@ -657,7 +659,7 @@ async function adminSavePhoneNumber(req,res){
   }
   const auditWorkspace=workspaceId||previous?.workspaceId||admin.workspaceId;
   if(auditWorkspace)await appendAudit(auditWorkspace,{actorEmail:admin.email,actorRole:'admin',action:previous?'phone_routing_update':'phone_routing_create',section:'routing',before:previous||null,after:item,meta:{agentTransferSynced:!!workspaceId}});
-  return res.status(200).json({ok:true,number:item});
+  return res.status(200).json({ok:true,number:{...item,voice:voiceStatus(item)}});
 }
 
 async function adminDeletePhoneNumber(req,res){
@@ -1494,6 +1496,7 @@ async function adminProvisioningChecklistSave(req,res){
     const normalized=value=>String(value||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
     const assigned=(Array.isArray(phoneIndex)?phoneIndex:[]).find(phone=>phone&&phone.workspaceId===id&&phone.status==='active'&&normalized(phone.number)===normalized(ws.phone));
     if(!assigned||!normalized(ws.phone))return res.status(409).json({error:'Assign an active CallerCore phone number to this workspace before launch'});
+    if(!voiceStatus(assigned).operational)return res.status(409).json({error:'Live voice activation and provider verification are required before launch.'});
   }
   const next={...state,checklist:{...(state.checklist||{}),phoneAssigned:!!String(ws.phone||'').trim(),[field]:value},updatedAt:Date.now(),updatedBy:admin.email};
   const to=String(ws.ownerEmail||'').trim().toLowerCase(),firstName=String(ws.ownerName||'').split(' ')[0]||'there';
@@ -1667,7 +1670,7 @@ async function adminClient(req,res){
     subscriptionStatus:ws.subscriptionStatus||'active',ownerEmail:ws.ownerEmail||'',
     phone:ws.phone||'',industry:ws.industry||'',usage:ws.usage||{minutes:0},
     stripe:{customerLinked:!!ws.stripeCustomerId,subscriptionLinked:!!ws.stripeSubscriptionId},
-    agent:agent||null,phoneRouting:phone?{number:phone.number||'',provider:phone.provider||'',transferConfigured:!!phone.transferNumber,status:phone.status||'active'}:null,
+    agent:agent||null,phoneRouting:phone?{number:phone.number||'',provider:phone.provider||'',transferConfigured:!!phone.transferNumber,status:phone.status||'configured',voice:voiceStatus(phone)}:null,
     onboarding:onboarding?{status:onboarding.status||'',completionPercent:Number(onboarding.completionPercent||0),stage:onboarding.stage||''}:null,
     counts:{locations:Array.isArray(locations)?locations.length:0}
   }});
@@ -2139,7 +2142,7 @@ async function phoneRouting(req,res){
   const numbers=await kv.get('phone:index')||[];
   const item=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===s.workspaceId)||null;
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true';
-  return res.status(200).json({routing:item?{number:item.number||'',label:item.label||'Primary',provider:item.provider||'Vapi',forwardingFrom:item.forwardingFrom||'',transferNumber:item.transferNumber||'',afterHours:item.afterHours||'ai',smsEnabled:smsLive&&item.smsEnabled!==false,status:item.status||'active',pauseFallbackNumber:item.pauseFallbackNumber||''}:null});
+  return res.status(200).json({routing:clientRouting(item,{smsLive})});
 }
 
 async function locations(req,res){
@@ -2198,31 +2201,45 @@ async function saveAgent(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
   if(!await requireOperationalWorkspace(s,res))return;
   const body=req.body||{};
+  const previous=await kv.get('agent:'+s.workspaceId)||null;
+  if(body.expectedUpdatedAt!==undefined&&Number(body.expectedUpdatedAt||0)!==Number(previous?.updatedAt||0))return res.status(409).json({error:'Receptionist settings changed since you opened them. Reload to load the latest version before retrying.',code:'CONFIG_CONFLICT'});
+  const sectionFields={identity:['name','role','tone','openingMessage'],knowledge:['serviceArea','businessHours','transferNumber','emergencyInstructions'],qualification:['qualificationQuestions'],handling:['handlingInstructions']};
+  if(body.section&&!sectionFields[body.section])return res.status(400).json({error:'Unknown receptionist section'});
+  const incoming=body.section?{...(previous||{}),...Object.fromEntries(sectionFields[body.section].filter(key=>Object.hasOwn(body,key)).map(key=>[key,body[key]]))}:body;
   const clean=(v,n)=>String(v||'').trim().slice(0,n);
   const agent={
-    name:clean(body.name,80)||'Maya',
-    role:clean(body.role,120)||'AI Receptionist',
-    openingMessage:clean(body.openingMessage,1200),
-    tone:clean(body.tone,80)||'Warm & professional',
-    serviceArea:clean(body.serviceArea,500),
-    businessHours:clean(body.businessHours,500),
-    emergencyInstructions:clean(body.emergencyInstructions,1200),
-    handlingInstructions:clean(body.handlingInstructions,1800),
-    qualificationQuestions:Array.isArray(body.qualificationQuestions)?body.qualificationQuestions.map(v=>clean(v,240)).filter(Boolean).slice(0,12):[],
-    transferNumber:clean(body.transferNumber,40),
-    updatedAt:Date.now()
+    ...(previous||{}),
+    name:clean(incoming.name,80)||'Maya',
+    role:clean(incoming.role,120)||'AI Receptionist',
+    openingMessage:clean(incoming.openingMessage,1200),
+    tone:clean(incoming.tone,80)||'Warm & professional',
+    serviceArea:clean(incoming.serviceArea,500),
+    businessHours:clean(incoming.businessHours,500),
+    emergencyInstructions:clean(incoming.emergencyInstructions,1200),
+    handlingInstructions:clean(incoming.handlingInstructions,1800),
+    qualificationQuestions:Array.isArray(incoming.qualificationQuestions)?incoming.qualificationQuestions.map(v=>clean(v,240)).filter(Boolean).slice(0,12):[],
+    transferNumber:clean(incoming.transferNumber,40),
+    updatedAt:Math.max(Date.now(),Number(previous?.updatedAt||0)+1)
   };
   if(agent.transferNumber&&!/^\+?[0-9() .-]{7,30}$/.test(agent.transferNumber))return res.status(400).json({error:'Transfer destination is invalid'});
-  const previous=await kv.get('agent:'+s.workspaceId)||null;
-  const phoneIndexRaw=await kv.get('phone:index')||[],phoneIndex=Array.isArray(phoneIndexRaw)?phoneIndexRaw.slice():[],phonePos=phoneIndex.findIndex(x=>x&&String(x.workspaceId||'')===String(s.workspaceId)),phoneBefore=phonePos>=0?phoneIndex[phonePos]:null;
-  let routing=null;
-  if(phonePos>=0){
-    const phoneAfter={...phoneBefore,transferNumber:agent.transferNumber,updatedAt:Date.now()};phoneIndex[phonePos]=phoneAfter;await kv.set('phone:index',phoneIndex);
-    routing={number:phoneAfter.number||'',label:phoneAfter.label||'Primary',provider:phoneAfter.provider||'Vapi',forwardingFrom:phoneAfter.forwardingFrom||'',transferNumber:phoneAfter.transferNumber||'',afterHours:phoneAfter.afterHours||'ai',smsEnabled:process.env.CALLERCORE_SMS_ENABLED==='true'&&phoneAfter.smsEnabled!==false,status:phoneAfter.status||'active',pauseFallbackNumber:phoneAfter.pauseFallbackNumber||''};
-  }
+  const phoneIndexRaw=await kv.get('phone:index');
+  if(phoneIndexRaw!=null&&!Array.isArray(phoneIndexRaw))return res.status(503).json({error:'Phone routing data is unavailable. No changes were made.'});
+  const phoneIndex=(phoneIndexRaw||[]).slice(),phonePos=phoneIndex.findIndex(x=>x&&String(x.workspaceId||'')===String(s.workspaceId)),phoneBefore=phonePos>=0?phoneIndex[phonePos]:null;
   const routingRequest=await kv.get('routing-request:'+s.workspaceId);
-  if(routingRequest)await kv.set('routing-request:'+s.workspaceId,{...routingRequest,transferNumber:agent.transferNumber,updatedAt:Date.now()});
-  await kv.set('agent:'+s.workspaceId,agent);
+  const updates=[{key:'agent:'+s.workspaceId,before:previous,after:agent}];
+  let routing=clientRouting(phoneBefore,{smsLive:process.env.CALLERCORE_SMS_ENABLED==='true'});
+  if(phonePos>=0&&String(phoneBefore.transferNumber||'')!==agent.transferNumber){
+    const phoneAfter={...phoneBefore,transferNumber:agent.transferNumber,updatedAt:Date.now()};phoneIndex[phonePos]=phoneAfter;
+    updates.push({key:'phone:index',before:phoneIndexRaw,after:phoneIndex});
+    routing=clientRouting(phoneAfter,{smsLive:process.env.CALLERCORE_SMS_ENABLED==='true'});
+  }
+  if(routingRequest&&String(routingRequest.transferNumber||'')!==agent.transferNumber)updates.push({key:'routing-request:'+s.workspaceId,before:routingRequest,after:{...routingRequest,transferNumber:agent.transferNumber,updatedAt:Date.now()}});
+  try{
+    if(!await compareAndSetConfig(kv,updates))return res.status(409).json({error:'Receptionist or routing settings changed during this save. Reload the latest settings before retrying.',code:'CONFIG_CONFLICT'});
+  }catch(err){
+    console.error('agent configuration save failed',safeError(err));
+    return res.status(503).json({error:'Could not confirm the save. Your draft is preserved; reload to check the latest saved settings before retrying.'});
+  }
   await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'agent_save',section:'agent',before:previous,after:agent,meta:{routingTransferSynced:phonePos>=0}});
   if(phonePos>=0&&String(phoneBefore?.transferNumber||'')!==agent.transferNumber)await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'transfer_routing_sync',section:'routing',before:{transferNumber:phoneBefore?.transferNumber||''},after:{transferNumber:agent.transferNumber}});
   return res.status(200).json({ok:true,agent,routing});
@@ -2385,19 +2402,7 @@ async function saveSettings(req,res){
 async function aiAnsweringControl(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
   if(!await requireOperationalWorkspace(s,res))return;
-  const body=req.body||{},paused=body.paused===true,fallback=String(body.fallbackNumber||'').trim().slice(0,40);
-  if(fallback&&!/^\+?[0-9() .-]{7,30}$/.test(fallback))return res.status(400).json({error:'Enter a valid temporary handoff number'});
-  const key='settings:'+s.workspaceId,previous=await kv.get(key)||{},now=Date.now(),next={...previous,aiAnsweringPaused:paused,aiPauseFallbackNumber:fallback,aiPausedAt:paused?now:0,aiPausedBy:paused?s.email:''};
-  await kv.set(key,next);
-  const raw=await kv.get('phone:index')||[],list=Array.isArray(raw)?raw:[],idx=list.findIndex(x=>x&&x.workspaceId===s.workspaceId);
-  let routing=null;
-  if(idx>=0){
-    const before=list[idx],after={...before,status:paused?'paused':'active',pauseFallbackNumber:fallback,updatedAt:now};
-    list[idx]=after;await kv.set('phone:index',list);
-    routing={number:after.number||'',label:after.label||'Primary',provider:after.provider||'Vapi',forwardingFrom:after.forwardingFrom||'',transferNumber:after.transferNumber||'',afterHours:after.afterHours||'ai',smsEnabled:after.smsEnabled!==false,status:after.status||'active',pauseFallbackNumber:after.pauseFallbackNumber||''};
-  }
-  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:paused?'ai_answering_paused':'ai_answering_resumed',section:'routing',before:{aiAnsweringPaused:previous.aiAnsweringPaused===true,aiPauseFallbackNumber:previous.aiPauseFallbackNumber||''},after:{aiAnsweringPaused:paused,aiPauseFallbackNumber:fallback}});
-  return res.status(200).json({ok:true,settings:{aiAnsweringPaused:paused,aiPauseFallbackNumber:fallback,aiPausedAt:next.aiPausedAt,aiPausedBy:next.aiPausedBy},routing});
+  return res.status(409).json({error:'Live call controls are unavailable until the voice provider is connected and verified. No routing changes were made.',code:'VOICE_CONTROL_UNAVAILABLE'});
 }
 
 async function integrations(req,res){
@@ -2457,7 +2462,7 @@ async function clientDashboardData(req,res){
     aiAnsweringPaused:savedSettings.aiAnsweringPaused===true,aiPauseFallbackNumber:savedSettings.aiPauseFallbackNumber||'',aiPausedAt:Number(savedSettings.aiPausedAt||0),aiPausedBy:savedSettings.aiPausedBy||''
   };
   const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',handlingInstructions:savedAgent.handlingInstructions||savedAgent.callHandling||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
-  const routing=phone?{number:phone.number||'',label:phone.label||'Primary',provider:phone.provider||'Vapi',forwardingFrom:phone.forwardingFrom||'',transferNumber:phone.transferNumber||'',afterHours:phone.afterHours||'ai',smsEnabled:smsLive&&phone.smsEnabled!==false,status:phone.status||'active',pauseFallbackNumber:phone.pauseFallbackNumber||''}:null;
+  const routing=clientRouting(phone,{smsLive});
   return res.status(200).json({
     workspace:{
       id:ws.id,name:ws.name||'',plan:ent.plan,status:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',

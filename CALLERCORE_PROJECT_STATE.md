@@ -14,6 +14,14 @@ CallerCore is an AI front office for service businesses, with a public acquisiti
 - Stripe billing, Mailgun lifecycle email, admin-only Gmail OAuth, Anthropic-assisted onboarding are present. Provider-complete launch verification remains separate.
 - Voice/Vapi is a dedicated unfinished workstream. Do not imply live telephony from seeded dashboard data.
 
+## Current development pass — 2026-09-25
+
+IMPLEMENTED BUT NOT FULLY VERIFIED: voice readiness is shared across client routing APIs/admin inventory; saved numbers no longer imply active service. Live pause/resume API fails closed without data writes; launch checklist also requires provider-backed readiness. Test-call action stays unavailable until real voice activation.
+
+IMPLEMENTED BUT NOT FULLY VERIFIED: receptionist section saves preserve internal metadata, reject stale revisions, and atomically compare/write agent plus changed routing snapshots through Redis EVAL. Conflict responses keep drafts open. Local suite: 171 passed. Expanded isolated Preview QA exercises persisted save/restore and transfer sync; pending deployment verification.
+
+IN PROGRESS: admin phone inventory scale/search and safe edit/capacity handling. Provider activation, live billing, and production changes remain outside this pass.
+
 ## Latest verified implementation checkpoint
 
 - Implementation SHA: `5d70fc76e7a338df73b9fd2648d3ea4f210f5314`.

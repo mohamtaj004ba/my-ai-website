@@ -278,8 +278,33 @@ async function runClientInteractions(page){
   await page.locator('[data-agent-cancel="identity"]').click();
   if(await page.locator('#agentName').inputValue()!==savedAgentName)throw new Error('Receptionist cancel did not restore saved name');
   report.client.interactions.push('receptionist explicit editing + draft cancellation');
+  await page.locator('[data-agent-edit="identity"]').click();
+  await page.locator('#agentName').fill(savedAgentName+' QA');
+  await page.locator('[data-agent-save="identity"]').click();
+  await page.locator('#agentFormStatus.success').waitFor({state:'visible',timeout:10000});
+  const savedAgent=await page.request.get(baseURL+'/api/account?action=agent');
+  if(!savedAgent.ok()||(await savedAgent.json()).agent.name!==savedAgentName+' QA')throw new Error('Receptionist name did not persist');
+  await page.locator('[data-agent-edit="identity"]').click();
+  await page.locator('#agentName').fill(savedAgentName);
+  await page.locator('[data-agent-save="identity"]').click();
+  await page.locator('#agentFormStatus.success').waitFor({state:'visible',timeout:10000});
+  const originalTransfer=await page.locator('#agentTransfer').inputValue();
+  await page.locator('[data-agent-edit="knowledge"]').click();
+  await page.locator('#agentTransfer').fill('(509) 555-0109');
+  await page.locator('[data-agent-save="knowledge"]').click();
+  await page.locator('#agentFormStatus.success').waitFor({state:'visible',timeout:10000});
+  const route=await page.request.get(baseURL+'/api/account?action=phone-routing');
+  if(!route.ok()||(await route.json()).routing.transferNumber!=='(509) 555-0109')throw new Error('Receptionist transfer did not synchronize to routing');
+  await page.locator('[data-agent-edit="knowledge"]').click();
+  await page.locator('#agentTransfer').fill(originalTransfer);
+  await page.locator('[data-agent-save="knowledge"]').click();
+  await page.locator('#agentFormStatus.success').waitFor({state:'visible',timeout:10000});
+  if(await page.locator('#agentTestCall').isVisible())throw new Error('Unverified voice number offered as a live test call');
+  report.client.interactions.push('receptionist persisted save/restore + routing synchronization');
+
 
   await ensureView(page,'settings');
+  if(await page.locator('#toggleAiAnsweringButton').isEnabled())throw new Error('Unconnected live call control is enabled');
   const originalName=await page.locator('#settingsBusinessName').inputValue();
   await page.locator('#settingsEditButton').click();
   await page.locator('#saveSettingsButton').waitFor({state:'visible'});
