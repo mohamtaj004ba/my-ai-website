@@ -158,6 +158,36 @@ async function runClientInteractions(page){
   await ensureView(page,'calls');
   await page.locator('#callDateFilter').selectOption('all');
   await page.waitForTimeout(250);
+
+  const initialCallCount=await page.locator('#callsTable [data-call-id]').count();
+  const metaText=await page.locator('#callListMeta').textContent();
+  const match=String(metaText||'').match(/Showing\s+(\d+)\s+of\s+(\d+)/i);
+  if(!match)throw new Error('Call history did not expose progressive-load count context');
+  const shown=Number(match[1]),total=Number(match[2]);
+  if(shown!==initialCallCount)throw new Error('Call history visible-row count does not match footer');
+  if(total>50){
+    if(initialCallCount!==50)throw new Error('High-volume call history did not start at 50 rows');
+    const more=page.locator('#loadMoreCalls');
+    if(!(await more.isVisible()))throw new Error('High-volume call history hid Load more too early');
+    await more.click();
+    await page.waitForTimeout(180);
+    const expanded=await page.locator('#callsTable [data-call-id]').count();
+    if(expanded<=initialCallCount)throw new Error('Load more did not increase visible calls');
+  }
+  report.client.interactions.push('call progressive loading');
+
+  await page.locator('#callDensity').selectOption('compact');
+  if(!(await page.locator('.call-history-panel').evaluate(el=>el.classList.contains('call-density-compact'))))throw new Error('Compact call density did not apply');
+  await page.locator('#callDensity').selectOption('comfortable');
+  report.client.interactions.push('call density preference');
+
+  const unopened=page.locator('#callsUnviewedCount');
+  await unopened.click();
+  await page.waitForTimeout(120);
+  if(!(await unopened.evaluate(el=>el.classList.contains('active'))))throw new Error('Not opened quick filter did not activate');
+  await page.locator('#callsShownCount').click();
+  report.client.interactions.push('not-opened call filter');
+
   const firstCall=page.locator('#callsTable [data-call-id]').first();
   await firstCall.waitFor({state:'visible',timeout:10000});
   await firstCall.click();
