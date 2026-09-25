@@ -115,3 +115,10 @@ test('mobile admin topbar gives profile controls fixed compact footprints',()=>{
   assert.match(css,/body\[data-dashboard="admin"\] \.account-button\{\s*width:38px;\s*height:38px;\s*padding:3px;\s*justify-content:center;\s*overflow:hidden;\s*flex:0 0 38px;/);
   assert.match(css,/body\[data-dashboard="admin"\] \.profile-avatar\{width:30px;height:30px;flex:0 0 30px\}/);
 });
+
+
+test('responsive QA closes each context before issuing another session',()=>{
+  const qa=fs.readFileSync(path.join(root,'scripts','preview-browser-qa.mjs'),'utf8');
+  assert.match(qa,/async function runResponsive[\s\S]*finally\{\s*await context\.close\(\)\.catch/);
+  assert.match(qa,/await runAdminInteractions\(desktop\.page\);[\s\S]*await desktop\.context\.close\(\);[\s\S]*await runResponsive\('client'/);
+});
