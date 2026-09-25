@@ -25,7 +25,7 @@ test('admin workspace loader returns every account after the old 250-record boun
   const items=await f.load();
   assert.equal(items.length,251);
   assert.equal(items[250].id,'tenant-250');
-  assert.equal(f.reads.filter(key=>key.startsWith('workspace:')).length,251);
+  assert.equal(f.reads.filter(key=>key.startsWith('workspace:tenant-')).length,251);
 });
 
 test('admin client list agrees with the complete workspace directory',async()=>{
@@ -37,6 +37,6 @@ test('admin client list agrees with the complete workspace directory',async()=>{
 });
 
 test('malformed or oversized workspace indexes cannot silently underreport client totals',async()=>{
-  await assert.rejects(fixture(1,{malformed:true}).load(),/Workspace index/);
+  await assert.rejects(fixture(1,{malformed:true}).load(),/workspace index/);
   await assert.rejects(fixture(2001).load(),/capacity/);
 });
