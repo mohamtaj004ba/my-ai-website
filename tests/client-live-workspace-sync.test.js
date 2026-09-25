@@ -15,3 +15,10 @@ test('client live refresh reapplies plan usage billing and entitlements without 
   assert.match(dashboard,/sessionWorkspace=\{\.\.\.\(sessionWorkspace\|\|\{\}\),\.\.\.data\.workspace\}/);
   assert.match(dashboard,/if\(currentPlan!==previousPlan\)\{renderBilling\(\);renderStages\(\);renderOverviewUnlocks\(\);renderEntitledApps\(\)\}/);
 });
+
+
+test('billing surface repaints when live subscription usage or Stripe state changes',()=>{
+  assert.match(dashboard,/const planChanged=currentPlan!==previousPlan,billingChanged=/);
+  assert.match(dashboard,/if\(billingChanged\)\{renderBilling\(\);renderBillingConnection\(\);renderPlanStrip\(\)\}/);
+  assert.match(dashboard,/sessionWorkspace=\{\.\.\.\(sessionWorkspace\|\|\{\}\),name:settingsData\.businessName\}/);
+});
