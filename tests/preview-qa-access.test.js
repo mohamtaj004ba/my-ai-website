@@ -100,3 +100,10 @@ test('recent admin client rows shrink text beside avatars on mobile',()=>{
   assert.match(css,/\.admin-recent-row \.person>span\{\s*min-width:0;\s*width:auto;\s*max-width:none;/);
   assert.match(css,/\.admin-recent-accounts \.panel-head\{flex-direction:column;align-items:flex-start;gap:10px\}/);
 });
+
+
+test('mobile Command Center attention rows stay inside their cards',()=>{
+  const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
+  assert.match(css,/\.admin-attention-item\{\s*width:100%!important;\s*margin:0!important;\s*padding:12px 0!important;\s*grid-template-columns:8px minmax\(0,1fr\) auto!important;/);
+  assert.match(css,/\.admin-attention-item>span:not\(\.attention-severity-dot\)\{\s*grid-column:2\/-1;\s*width:auto;\s*max-width:100%;\s*white-space:normal;\s*overflow-wrap:anywhere;/);
+});
