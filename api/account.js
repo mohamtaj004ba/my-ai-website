@@ -7,6 +7,7 @@ const {entitlementsFor,PLANS}=require('../lib/plans');
 const {emailKey,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
+const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
@@ -526,17 +527,9 @@ async function adminProvisioning(req,res){
       clientApproval:!!onboarding?.checklist?.clientApproval,
       live:!!onboarding?.checklist?.live
     };
-    let autoStage='Paid';
-    if(onboarding?.status==='awaiting_review')autoStage='Review';
-    else if(['awaiting_agreement','intake_in_progress'].includes(onboarding?.status)||checklist.onboardingSent&&!checklist.intake)autoStage='Intake';
-    else if(onboarding?.status==='building_review'||checklist.intake&&!checklist.adminReview)autoStage='Building';
-    else if(onboarding?.status==='qa_complete'||checklist.adminReview&&!checklist.testCall)autoStage='QA';
-    else if(onboarding?.status==='client_test'||checklist.testCall&&!checklist.clientApproval)autoStage='Client Test';
-    else if(onboarding?.status==='ready'||checklist.clientApproval&&!checklist.live)autoStage='Ready';
-    if(checklist.live||onboarding?.status==='live')autoStage='Live';
+    const autoStage=deriveOnboardingStage(onboarding,checklist);
     const override=await kv.get('provisioning:override:'+id);
-    const allowedStages=['Paid','Review','Intake','Building','QA','Client Test','Ready','Live'];
-    const stage=override&&allowedStages.includes(override.stage)?override.stage:autoStage;
+    const stage=override&&ONBOARDING_STAGES.includes(override.stage)?override.stage:autoStage;
     const doneCount=Object.values(checklist).filter(Boolean).length,totalCount=Object.keys(checklist).length;
     items.push({
       id:ws.id,name:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',
@@ -565,12 +558,11 @@ async function adminProvisioning(req,res){
 async function adminSaveProvisioningStage(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80),stage=String(body.stage||'');
-  const allowed=['Paid','Review','Intake','Building','QA','Client Test','Ready','Live'];
-  if(!id||!allowed.includes(stage))return res.status(400).json({error:'Invalid provisioning stage'});
+  if(!id||!ONBOARDING_STAGES.includes(stage))return res.status(400).json({error:'Invalid provisioning stage'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Workspace not found'});
   if(stage==='Live'){
     const onboarding=await kv.get('onboarding:workspace:'+id);
-    if(onboarding?.checklist?.live!==true||onboarding?.status!=='live'||ws.status!=='active')return res.status(409).json({error:'A manual label cannot mark a client Live. Complete the verified launch checklist first.'});
+    if(!canManuallyMarkLive({workspace:ws,onboarding}))return res.status(409).json({error:'A manual label cannot mark a client Live. Complete the verified launch checklist first.'});
   }
   const record={stage,updatedAt:Date.now(),updatedBy:admin.email};
   await kv.set('provisioning:override:'+id,record);
