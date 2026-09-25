@@ -598,8 +598,13 @@ async function adminSavePhoneNumber(req,res){
   const i=list.findIndex(x=>x&&String(x.id)===id);
   if(i>=0)list[i]=item;else list.push(item);
   await kv.set('phone:index',list.slice(0,500));
+  if(workspaceId){
+    const [savedAgent,routingRequest]=await Promise.all([kv.get('agent:'+workspaceId),kv.get('routing-request:'+workspaceId)]);
+    if(savedAgent)await kv.set('agent:'+workspaceId,{...savedAgent,transferNumber,updatedAt:Date.now()});
+    if(routingRequest)await kv.set('routing-request:'+workspaceId,{...routingRequest,transferNumber,updatedAt:Date.now()});
+  }
   const auditWorkspace=workspaceId||previous?.workspaceId||admin.workspaceId;
-  if(auditWorkspace)await appendAudit(auditWorkspace,{actorEmail:admin.email,actorRole:'admin',action:previous?'phone_routing_update':'phone_routing_create',section:'routing',before:previous||null,after:item});
+  if(auditWorkspace)await appendAudit(auditWorkspace,{actorEmail:admin.email,actorRole:'admin',action:previous?'phone_routing_update':'phone_routing_create',section:'routing',before:previous||null,after:item,meta:{agentTransferSynced:!!workspaceId}});
   return res.status(200).json({ok:true,number:item});
 }
 
@@ -2112,10 +2117,20 @@ async function saveAgent(req,res){
     transferNumber:clean(body.transferNumber,40),
     updatedAt:Date.now()
   };
+  if(agent.transferNumber&&!/^\+?[0-9() .-]{7,30}$/.test(agent.transferNumber))return res.status(400).json({error:'Transfer destination is invalid'});
   const previous=await kv.get('agent:'+s.workspaceId)||null;
+  const phoneIndexRaw=await kv.get('phone:index')||[],phoneIndex=Array.isArray(phoneIndexRaw)?phoneIndexRaw.slice():[],phonePos=phoneIndex.findIndex(x=>x&&String(x.workspaceId||'')===String(s.workspaceId)),phoneBefore=phonePos>=0?phoneIndex[phonePos]:null;
+  let routing=null;
+  if(phonePos>=0){
+    const phoneAfter={...phoneBefore,transferNumber:agent.transferNumber,updatedAt:Date.now()};phoneIndex[phonePos]=phoneAfter;await kv.set('phone:index',phoneIndex);
+    routing={number:phoneAfter.number||'',label:phoneAfter.label||'Primary',provider:phoneAfter.provider||'Vapi',forwardingFrom:phoneAfter.forwardingFrom||'',transferNumber:phoneAfter.transferNumber||'',afterHours:phoneAfter.afterHours||'ai',smsEnabled:process.env.CALLERCORE_SMS_ENABLED==='true'&&phoneAfter.smsEnabled!==false,status:phoneAfter.status||'active',pauseFallbackNumber:phoneAfter.pauseFallbackNumber||''};
+  }
+  const routingRequest=await kv.get('routing-request:'+s.workspaceId);
+  if(routingRequest)await kv.set('routing-request:'+s.workspaceId,{...routingRequest,transferNumber:agent.transferNumber,updatedAt:Date.now()});
   await kv.set('agent:'+s.workspaceId,agent);
-  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'agent_save',section:'agent',before:previous,after:agent});
-  return res.status(200).json({ok:true,agent});
+  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'agent_save',section:'agent',before:previous,after:agent,meta:{routingTransferSynced:phonePos>=0}});
+  if(phonePos>=0&&String(phoneBefore?.transferNumber||'')!==agent.transferNumber)await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'transfer_routing_sync',section:'routing',before:{transferNumber:phoneBefore?.transferNumber||''},after:{transferNumber:agent.transferNumber}});
+  return res.status(200).json({ok:true,agent,routing});
 }
 
 async function automations(req,res){
