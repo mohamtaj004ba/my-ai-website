@@ -440,7 +440,7 @@ async function adminViewClient(req,res){
   const id=String((req.body||{}).id||'').slice(0,80);
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
   const old=parseCookies(req).cc_session;if(old)await destroySessionToken(old);
-  await createSession(res,{email:admin.email,workspaceId:id,role:'admin',adminView:true,adminHomeWorkspaceId:admin.workspaceId});
+  await createSession(res,{email:admin.email,workspaceId:id,role:'admin',adminView:true,adminHomeWorkspaceId:admin.workspaceId,authVersion:Number((await kv.get('user:email:'+cleanEmail(admin.email)))?.sessionVersion||0)});
   return res.status(200).json({ok:true,redirect:'/dashboard',workspace:{id:ws.id,name:ws.name}});
 }
 
@@ -451,7 +451,7 @@ async function adminExitClientView(req,res){
   const home=String(s.adminHomeWorkspaceId||member.workspaceId||'');
   if(!home)return res.status(409).json({error:'Admin home workspace unavailable'});
   const old=parseCookies(req).cc_session;if(old)await destroySessionToken(old);
-  await createSession(res,{email:s.email,workspaceId:home,role:'admin'});
+  await createSession(res,{email:s.email,workspaceId:home,role:'admin',authVersion:Number(member.sessionVersion||0)});
   return res.status(200).json({ok:true,redirect:'/admin-dashboard'});
 }
 
