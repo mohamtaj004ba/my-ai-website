@@ -15,6 +15,7 @@
       <button class="nav-item active" data-view="overview">Today</button>
       <button class="nav-item" data-view="calls">Call log</button>
       <button class="nav-item" data-view="contacts">Contacts</button>
+      <button class="nav-item" data-view="conversations" data-feature="unifiedInbox">Conversations <span class="lock">GROWTH</span></button>
       <button class="nav-item" data-view="leads">Follow-ups <span class="nav-count" id="followupNavCount" hidden>0</span></button>
       <div class="nav-label">CallerCore</div>
       <button class="nav-item" data-view="agent">AI Receptionist</button>
@@ -99,8 +100,9 @@
 
     <section class="view" id="view-contacts">
       <div class="page-head"><div><span class="eyebrow">Contacts</span><h1>People and organizations, one shared history.</h1><p>Customer, vendor, applicant, and other meaningful contacts stay connected to their calls, messages, addresses, notes, and follow-ups.</p></div></div>
-      <div class="toolbar"><input id="contactSearch" type="search" placeholder="Search contacts by name, phone, address or activity…"></div><div class="customer-summary-strip"><div><strong id="customerCount">0</strong><span>Contacts</span></div><div><strong id="repeatCustomerCount">0</strong><span>Customers</span></div><div><strong id="customerAttentionCount">0</strong><span>Total interactions</span></div></div>
+      <div class="toolbar contact-toolbar"><input id="contactSearch" type="search" placeholder="Search contacts by name, phone, address or activity…"><select id="contactTypeFilter" aria-label="Filter contacts by type"><option value="all">All contact types</option><option value="Customer">Customers</option><option value="Vendor">Vendors</option><option value="Applicant">Applicants</option><option value="Contact">Other contacts</option></select><select id="contactSort" aria-label="Sort contacts"><option value="recent">Most recent</option><option value="name">Name A–Z</option></select></div><div class="customer-summary-strip"><div><strong id="customerCount">0</strong><span>Contacts</span></div><div><strong id="repeatCustomerCount">0</strong><span>Customers</span></div><div><strong id="customerAttentionCount">0</strong><span>Total interactions</span></div></div>
       <article class="panel contact-list-panel"><div class="contact-row head sticky-table-head"><span>Contact</span><span>Type</span><span>Last interaction</span><span>Calls</span><span>Messages</span><span>Latest activity</span></div><div id="contactsTable"></div></article>
+      <div class="contact-list-footer" id="contactListFooter" hidden><span id="contactListMeta">Showing 0 of 0 contacts</span><button class="secondary-btn compact" id="loadMoreContacts" type="button">Load more contacts</button></div>
       <div class="empty-state" id="contactsEmpty" hidden><h3>No contacts yet</h3><p>CallerCore creates contact records automatically from meaningful call and conversation history. Spam and wrong numbers stay in the Call log instead.</p></div>
     </section>
 
