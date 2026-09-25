@@ -1960,3 +1960,13 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
    A negative right offset caused document-level horizontal overflow on phones. */
 #adminClientDrawer{right:0;transform:translateX(calc(100% + 24px));visibility:hidden;pointer-events:none}
 #adminClientDrawer.open{right:0;transform:translateX(0);visibility:visible;pointer-events:auto}
+
+
+/* Closed admin side panels must not participate in root scroll geometry.
+   Their existing .open class restores the correct layout display type. */
+#adminClientDrawer:not(.open),
+.onboarding-detail-drawer:not(.open),
+.admin-ai-panel:not(.open){display:none}
+#adminClientDrawer.open{display:block}
+.onboarding-detail-drawer.open,
+.admin-ai-panel.open{display:grid}
