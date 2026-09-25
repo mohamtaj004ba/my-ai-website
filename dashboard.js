@@ -1468,7 +1468,7 @@ async function loadAdminOps(){
     if(hr.ok){const health=await hr.json();adminHealthData=health.services||[];adminReadinessData=health.readiness||null;adminHealthCheckedAt=Number(health.checkedAt||Date.now());}
     if(fr.ok)adminFleetData=await fr.json();
     if(sr.ok)adminSupportData=(await sr.json()).tickets||[];
-    if(ps.ok)adminPlatformData=(await ps.json()).settings||null;
+    if(ps.ok&&!adminPlatformDirty)adminPlatformData=(await ps.json()).settings||null;
     if(wr.ok)adminWebsiteData=(await wr.json()).analytics||adminWebsiteData;
     const preferredDays=Number(adminPlatformData?.analyticsWindowDays||requestedAnalyticsDays||30);
     if(preferredDays!==requestedAnalyticsDays){adminWebsiteDays=preferredDays;const rr=await fetch('/api/account?action=admin-website-analytics&days='+preferredDays,{cache:'no-store'});if(rr.ok)adminWebsiteData=(await rr.json()).analytics||adminWebsiteData}else adminWebsiteDays=requestedAnalyticsDays;
