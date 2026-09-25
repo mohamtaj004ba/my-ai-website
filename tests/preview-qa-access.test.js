@@ -29,3 +29,12 @@ test('Preview launcher supports direct client and admin QA sessions',()=>{
   assert.match(launcherClient,/openQaSession\(adminLogin, 'admin'\)/);
   assert.match(launcherClient,/window\.location\.assign\(data\.redirect\)/);
 });
+
+
+test('Preview reseeding removes stale generated admin fixtures',()=>{
+  assert.match(account,/staleSeedWorkspaceIds=index\.filter\(id=>String\(id\)\.startsWith\('seed_'\)\)/);
+  assert.match(account,/keep=index\.filter\(id=>!String\(id\)\.startsWith\('seed_'\)\)/);
+  assert.match(account,/!String\(x\.workspaceId\|\|''\)\.startsWith\('seed_'\)/);
+  assert.match(account,/staleSupportIds=supportIds\.filter\(id=>String\(id\)\.startsWith\('seed_support_seed_'\)\)/);
+  assert.match(account,/staleFeedbackIds=feedbackIds\.filter\(id=>String\(id\)\.startsWith\('seed_feedback_seed_'\)\)/);
+});
