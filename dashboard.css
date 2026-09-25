@@ -2002,3 +2002,27 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
     max-width:none;
   }
 }
+
+
+/* Mobile Command Center attention rows must stay inside the card.
+   Desktop intentionally bleeds these rows by 10px; phones cannot afford that
+   extra width, and the message column must be allowed to shrink/wrap. */
+@media(max-width:760px){
+  .admin-attention-item{
+    width:100%!important;
+    margin:0!important;
+    padding:12px 0!important;
+    grid-template-columns:8px minmax(0,1fr) auto!important;
+    gap:8px;
+  }
+  .admin-attention-item>b,
+  .admin-attention-item>span:not(.attention-severity-dot),
+  .admin-attention-item>small{min-width:0}
+  .admin-attention-item>span:not(.attention-severity-dot){
+    grid-column:2/-1;
+    width:auto;
+    max-width:100%;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+}
