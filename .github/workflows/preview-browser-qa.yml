@@ -1,0 +1,81 @@
+name: CallerCore Preview Browser QA
+
+on:
+  push:
+    branches:
+      - feature/callercore-dashboards
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: read
+  checks: read
+
+concurrency:
+  group: callercore-preview-browser-qa
+  cancel-in-progress: true
+
+jobs:
+  authenticated-preview-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PREVIEW_URL: https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      CALLERCORE_QA_EMAIL: preview-qa@callercore.test
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+
+      - name: Require Preview automation secret
+        shell: bash
+        run: |
+          if [ -z "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            echo "::error::Add the Vercel Protection Bypass secret to GitHub Actions as VERCEL_AUTOMATION_BYPASS_SECRET."
+            exit 1
+          fi
+
+      - name: Wait for this commit's Vercel Preview
+        shell: bash
+        run: |
+          state=""
+          for attempt in $(seq 1 72); do
+            state="$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/status" --jq '.statuses | map(select(.context=="Vercel")) | first | .state // ""')"
+            echo "Vercel status: ${state:-pending} (attempt $attempt)"
+            if [ "$state" = "success" ]; then
+              exit 0
+            fi
+            if [ "$state" = "failure" ] || [ "$state" = "error" ]; then
+              echo "::error::Vercel deployment failed for $GITHUB_SHA."
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "::error::Timed out waiting for the Vercel Preview deployment."
+          exit 1
+
+      - name: Set up Node for browser QA
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install browser runner
+        run: |
+          npm ci
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Run authenticated client and admin QA
+        run: node scripts/preview-browser-qa.mjs
+
+      - name: Upload QA screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caller-core-preview-browser-qa-${{ github.run_id }}
+          path: qa-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
