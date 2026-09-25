@@ -2219,6 +2219,7 @@ async function updateProvisioningChecklist(id,field,value){
   const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field,value})}),data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not update provisioning checklist.');return}
   await refreshAdminView('onboarding',{force:true,announce:false});
+  if(data.warning)alert(data.warning);
 }
 async function moveProvisioningStage(id,stage){
   const item=adminProvisioningData.find(x=>String(x.id)===String(id));if(!item||item.stage===stage)return;
