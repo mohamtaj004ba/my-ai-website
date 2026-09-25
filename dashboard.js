@@ -58,6 +58,10 @@ async function bootstrapClient(){
     if(r.status===401){location.replace('/login?next=%2Fdashboard');return false}
     if(!r.ok)throw new Error('session');
     const data=await r.json();sessionWorkspace=data.workspace;sessionOnboarding=data.onboarding||null;applyUserProfile(data.user||{},data.workspace||{});
+    if(capability('calendar')){
+      PLAN_DATA.Growth.features.appointments=true;PLAN_DATA.Pro.features.appointments=true;
+      FEATURE_INFO.appointments.copy='Calendar booking is enabled for eligible CallerCore plans.';
+    }
     if(data.user?.role==='admin'&&!data.user?.adminView){location.replace('/admin-dashboard');return false}
     if(data.onboarding?.needsCompletion&&!data.user?.adminView&&data.onboarding?.url){location.replace(data.onboarding.url);return false}
     if(data.user?.adminView){
@@ -234,12 +238,13 @@ function capability(name){
   if(!demoMode&&sessionWorkspace?.entitlements?.capabilities)return !!sessionWorkspace.entitlements.capabilities[name];
   return false;
 }
-function featureStage(el,feature){const info=FEATURE_INFO[feature],ok=has(feature);if(info?.deferred){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Coming later.</h2><p class="muted">'+info.copy+'</p></article><article class="panel gate-card"><small>NOT ENABLED AT LAUNCH</small><h2>'+info.title+' is not active yet</h2><p>CallerCore will only expose this feature after the calendar integration is production-ready.</p></article></div>';return}if(ok){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Included with '+currentPlan+'</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel"><span class="eyebrow">Active feature</span><h2>Included in your plan</h2><p class="muted">Use the live controls on this page to configure the feature for your workspace.</p></article></div>'}else{el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>See what this could do for your business.</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel gate-card"><small>AVAILABLE ON '+info.tier.toUpperCase()+'</small><h2>Unlock '+info.title+'</h2><p>'+info.copy+'</p><ul>'+info.items.map(x=>'<li>'+x+'</li>').join('')+'</ul><button class="primary" data-upgrade="'+info.tier+'">Upgrade to '+info.tier+'</button></article></div>'}}
+function featureDeferred(feature){return feature==='appointments'?!capability('calendar'):!!FEATURE_INFO[feature]?.deferred}
+function featureStage(el,feature){const info=FEATURE_INFO[feature],ok=has(feature);if(featureDeferred(feature)){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Coming later.</h2><p class="muted">'+info.copy+'</p></article><article class="panel gate-card"><small>NOT ENABLED AT LAUNCH</small><h2>'+info.title+' is not active yet</h2><p>CallerCore will only expose this feature after the calendar integration is production-ready.</p></article></div>';return}if(ok){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Included with '+currentPlan+'</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel"><span class="eyebrow">Active feature</span><h2>Included in your plan</h2><p class="muted">Use the live controls on this page to configure the feature for your workspace.</p></article></div>'}else{el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>See what this could do for your business.</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel gate-card"><small>AVAILABLE ON '+info.tier.toUpperCase()+'</small><h2>Unlock '+info.title+'</h2><p>'+info.copy+'</p><ul>'+info.items.map(x=>'<li>'+x+'</li>').join('')+'</ul><button class="primary" data-upgrade="'+info.tier+'">Upgrade to '+info.tier+'</button></article></div>'}}
 function renderStages(){
   document.querySelectorAll('[data-feature-card]').forEach(el=>featureStage(el,el.dataset.featureCard));
   document.querySelectorAll('[data-feature]').forEach(el=>{
     const f=el.dataset.feature,allowed=has(f),info=FEATURE_INFO[f];
-    if(info?.deferred){el.hidden=true;return}
+    if(featureDeferred(f)){el.hidden=true;return}
     el.hidden=false;el.classList.toggle('feature-locked',!allowed);el.setAttribute('aria-disabled',allowed?'false':'true');
     const lock=el.querySelector('.lock');
     if(lock){lock.textContent=allowed?'ON':(info?.tier||'Locked').toUpperCase();lock.className='lock '+(allowed?'lock-on':'')}
