@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -1277,7 +1277,7 @@ function setSettingsEditing(editing,{restore=false}={}){
   if(settingsSaving)return;
   if(editing&&!settingsEditing)clientEditGeneration++;
   settingsEditing=!!editing;if(restore)renderSettings();
-  if(!settingsEditing){settingsControlIds().forEach(id=>settingsFieldError(id,''));const status=document.getElementById('settingsFormStatus');if(status){status.textContent='';status.className='form-status-line'}}
+  if(!settingsEditing){resetBusinessLogoProcessing();settingsControlIds().forEach(id=>settingsFieldError(id,''));const status=document.getElementById('settingsFormStatus');if(status){status.textContent='';status.className='form-status-line'}}
   settingsControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!settingsEditing});
   const sms=document.getElementById('settingsSmsAlerts');if(sms)sms.disabled=true;
   const edit=document.getElementById('settingsEditButton'),cancel=document.getElementById('settingsCancelButton'),save=document.getElementById('saveSettingsButton'),logo=document.getElementById('businessLogoButton');
@@ -1308,6 +1308,26 @@ async function resizeBusinessLogo(file){
   if(!file||!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('Choose a JPG, PNG, or WebP image.');if(file.size>8*1024*1024)throw new Error('Choose an image smaller than 8 MB.');
   const src=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error('Could not read image'));r.readAsDataURL(file)}),img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error('Could not load image'));i.src=src});
   const w=420,h=220,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,w,h);const scale=Math.min((w-24)/img.width,(h-24)/img.height),dw=img.width*scale,dh=img.height*scale;ctx.drawImage(img,(w-dw)/2,(h-dh)/2,dw,dh);return canvas.toDataURL('image/webp',.82);
+}
+function resetBusinessLogoProcessing(){
+  businessLogoRequest++;businessLogoProcessing=false;
+  const save=document.getElementById('saveSettingsButton');if(save&&!settingsSaving)save.disabled=false;
+}
+async function prepareBusinessLogo(file){
+  if(!file||!settingsEditing||settingsSaving)return;
+  const request=++businessLogoRequest,editGeneration=clientEditGeneration,status=document.getElementById('settingsFormStatus'),save=document.getElementById('saveSettingsButton');
+  businessLogoProcessing=true;if(save)save.disabled=true;
+  if(status){status.textContent='Preparing logo…';status.className='form-status-line'}
+  try{
+    const data=await resizeBusinessLogo(file);
+    if(request!==businessLogoRequest||editGeneration!==clientEditGeneration||!settingsEditing)return;
+    pendingBusinessLogo=data;renderBusinessLogo();
+    if(status){status.textContent='Logo ready — save changes to apply it.';status.className='form-status-line'}
+  }catch(err){
+    if(request===businessLogoRequest&&editGeneration===clientEditGeneration&&settingsEditing&&status){status.textContent=err.message||'Could not use that logo.';status.className='form-status-line error'}
+  }finally{
+    if(request===businessLogoRequest){businessLogoProcessing=false;if(save)save.disabled=settingsSaving}
+  }
 }
 function settingsFieldError(id,message=''){
   const input=document.getElementById(id);if(!input)return;
@@ -1352,7 +1372,7 @@ function validateSettingsForm(){
   return Object.keys(errors).length===0;
 }
 async function saveSettings(){
-  if(settingsSaving||!validateSettingsForm())return;
+  if(settingsSaving||businessLogoProcessing||!validateSettingsForm())return;
   const phoneEl=document.getElementById('settingsBusinessPhone'),webEl=document.getElementById('settingsWebsite'),stateEl=document.getElementById('settingsState');
   if(phoneEl)phoneEl.value=normalizePhone(phoneEl.value);
   if(webEl)webEl.value=normalizeWebsite(webEl.value);
@@ -1494,8 +1514,8 @@ document.getElementById('saveSettingsButton')?.addEventListener('click',saveSett
 document.getElementById('settingsEditButton')?.addEventListener('click',()=>setSettingsEditing(true));
 document.getElementById('settingsCancelButton')?.addEventListener('click',()=>{if(settingsSaving)return;settingsEditing=false;pendingBusinessLogo=String(settingsData?.logoDataUrl||'');renderSettings()});
 document.getElementById('businessLogoButton')?.addEventListener('click',()=>document.getElementById('businessLogoInput')?.click());
-document.getElementById('businessLogoInput')?.addEventListener('change',async e=>{const status=document.getElementById('settingsFormStatus');try{pendingBusinessLogo=await resizeBusinessLogo(e.target.files?.[0]);renderBusinessLogo();if(status){status.textContent='Logo ready — save changes to apply it.';status.className='form-status-line'}}catch(err){if(status){status.textContent=err.message||'Could not use that logo.';status.className='form-status-line error'}}e.target.value=''});
-document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pendingBusinessLogo='';renderBusinessLogo()});
+document.getElementById('businessLogoInput')?.addEventListener('change',e=>{const file=e.target.files?.[0];e.target.value='';prepareBusinessLogo(file)});
+document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{resetBusinessLogoProcessing();pendingBusinessLogo='';renderBusinessLogo()});
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 

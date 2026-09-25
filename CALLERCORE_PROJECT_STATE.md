@@ -165,3 +165,9 @@ Only commit/push routine changes to the authorized development branch. No merge 
 - Reviewed the successful `4c0d7ab` run's laptop/tablet/mobile screenshots and clean report (1,200 calls; 153 conversations; 11 admin clients; zero API/page/console errors; 22 layout checks). Visual review found inherited table styles hid phone edit actions at tablet/mobile widths, despite passing overflow checks. Desktop headers also inherited a wider minimum width than their rows.
 - Narrow phone tables now use scoped card rows with visible workspace, routing, readiness and Edit/Delete actions; mobile count cards use two columns. Desktop phone headers use the actual container width. Added responsive QA that opens/closes the phone editor and captures it at laptop/tablet/mobile sizes.
 - Phone modal opening is explicitly blocked while its save is pending. Local suite remains 193 passing. Visual verification pending feature push.
+
+## Settings logo preparation race protection
+
+- Background refresh guard `0188635bf5a14933357d7c76be5df5db17c2cfe8` passed authenticated Preview QA `36114650092`, including the held-response draft test.
+- Settings image preparation now disables Save until processing completes, ignores canceled/superseded requests, preserves the existing logo on processing errors, and prevents a late image from replacing a newer draft. Removing/canceling a logo invalidates pending work.
+- Added deferred image-processing tests and real browser file preparation/cancel coverage (no saved logo mutation). Local suite: 196 passed. New browser coverage pending Preview verification.

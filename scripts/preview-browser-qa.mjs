@@ -358,6 +358,16 @@ async function runClientInteractions(page){
   if(await page.locator('#settingsBusinessName').inputValue()!==originalName)throw new Error('Settings cancel did not restore business name');
   if(await page.locator('#settingsBusinessName').getAttribute('aria-invalid')==='true')throw new Error('Settings cancel retained validation errors');
   report.client.interactions.push('settings validation + edit/cancel rollback');
+  const originalLogo=await page.locator('#businessLogoImage').getAttribute('src');
+  await page.locator('#settingsEditButton').click();
+  await page.locator('#businessLogoInput').setInputFiles({name:'qa-logo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1cAAAAASUVORK5CYII=','base64')});
+  await page.waitForFunction(()=>document.getElementById('settingsFormStatus').textContent.includes('Logo ready'));
+  if(!await page.locator('#saveSettingsButton').isEnabled())throw new Error('Prepared logo left Settings save disabled');
+  if(!(await page.locator('#businessLogoImage').getAttribute('src'))?.startsWith('data:image/webp'))throw new Error('Logo preview was not prepared');
+  await page.locator('#settingsCancelButton').click();
+  if(await page.locator('#businessLogoImage').getAttribute('src')!==originalLogo)throw new Error('Cancel retained an unsaved logo');
+  report.client.interactions.push('logo preparation + cancellation');
+
   await page.locator('#settingsEditButton').click();
   await page.locator('#settingsBusinessName').fill(originalName+' QA');
   await assertPendingSave(page,'settings-save','#saveSettingsButton','#settingsBusinessName','#settingsCancelButton');
