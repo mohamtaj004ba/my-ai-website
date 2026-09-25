@@ -22,11 +22,11 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `40379addae3417751e78966b47fe88c225d16e42`.
-- Preview READY: `dpl_9HhmPZsZXXLSW6j6TC3VYvmMrxRL` — https://my-ai-website-a5setjr8z-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36119150532`, CodeQL `36119150396`, Jekyll `36119150456`: success on that exact SHA. Push CI `36119141613` and CodeQL `36119141603` also passed.
-- Authenticated Preview Browser QA `36119141579`: success on that exact SHA.
-- Local regression suite: 218 passed, 0 failed. JavaScript syntax and diff checks passed.
+- Implementation SHA: `31bc2598bb24f6373f899531d6c7410fdfa20801`.
+- Preview READY: `dpl_DLGbka1Jo9EQ2sQpnp7sdgdqrymM` — https://my-ai-website-mx4758yxh-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36120431104`, CodeQL `36120431205`, Jekyll `36120431142`: success on that exact SHA. Push CI `36120426824` and CodeQL `36120426823` also passed.
+- Authenticated Preview Browser QA `36120426827`: success on that exact SHA.
+- Local regression suite: 228 passed, 0 failed. JavaScript syntax and diff checks passed.
 - Browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks.
 - Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, legacy restore/delete safeguards, and 50 → 100 → 122 message batches in Conversations and Contacts.
 - Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
@@ -51,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current verified implementation: 218/218 local tests pass. Executable regressions cover tenant-scoped conversation pages, 125-thread/1,000-message rendering, contact history batching, admin mutation locks, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
+Current verified implementation: 228/228 local tests pass. Executable regressions cover tenant-scoped conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer races, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -230,16 +230,16 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Selecting a Conversations thread hydrates only that tenant thread. Opening a contact with message history hydrates only conversations whose normalized phone/name key matches that contact, then merges the results into the existing directory without dropping calls, leads or unrelated contacts.
 - Contact history requests retain the unified-inbox entitlement check and derive the storage key from the authenticated workspace. Phone formatting and fallback names normalize consistently on both server and client.
 - Background refresh clears hydration markers with the refreshed summaries; duplicate contact requests are suppressed, failures show a retry state, and demo data remains local.
-- Added executable contact-key, tenant-route, message-free bundle, on-demand merge and duplicate-hydration regressions. Local verification: 221 tests passed; syntax and diff checks passed. Preview verification pending.
+- Added executable contact-key, tenant-route, message-free bundle, on-demand merge and duplicate-hydration regressions. Local verification: 221 tests passed; syntax and diff checks passed.
 - Server reads still scan the legacy tenant conversation array. A reversible normalized-storage migration with compatibility reads remains the next backend scale boundary.
-- Preview run `36119757372` on the following drawer checkpoint reached the on-demand contact flow with zero page/console/API errors, then failed because the browser test clicked an earlier-message control while the contact hydration repaint was still replacing that element. The drawer now exposes `aria-busy` during hydration and Preview QA waits for the settled state before interacting; verification is pending the next feature run.
+- Preview run `36119757372` on an intermediate drawer checkpoint reached the on-demand contact flow with zero page/console/API errors, then failed because the browser test clicked an earlier-message control while the contact hydration repaint was still replacing that element. The drawer now exposes `aria-busy` during hydration and Preview QA waits for the settled state before interacting. Full corrected Preview QA `36120426827` passed.
 
 ## Admin client drawer request consistency
 
 - Rapid client selections now use a monotonic request generation, so a slower earlier client response cannot replace the newer selected workspace.
 - Closing the drawer invalidates an in-flight open request. Support diagnostics also verify both the request generation and current client before applying a response.
 - Drawer open/close now updates `aria-hidden` consistently, Escape closes an open drawer, and pending configuration mutations continue to block dismissal.
-- Added behavioral regressions for out-of-order client responses, close-during-load cancellation and accessibility state. Local suite: 223 tests passed; syntax and diff checks passed. Preview verification pending.
+- Added behavioral regressions for out-of-order client responses, close-during-load cancellation and accessibility state. Local suite: 223 tests passed; syntax and diff checks passed. Included in successful full Preview QA `36120426827`.
 
 ## Stripe environment-mode fail-closed readiness
 
@@ -247,4 +247,4 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Preview test credentials also require all four explicit test Price IDs, preventing the live catalog defaults from being paired with a test account.
 - Embedded Checkout applies the same validation before rate limiting, lead creation or any Stripe request. Stripe configuration health and Billing Portal also stop before provider calls when the environment mode is invalid. Production test keys and Preview live keys fail closed; matching test Preview and live Production modes remain eligible for their later gates.
 - The environment scope matrix now makes these enforced mode requirements explicit. Checkout remains disabled unless the separate `CALLERCORE_CHECKOUT_ENABLED=true` release authorization is present.
-- Added executable environment-mode, isolated Preview catalog, checkout, health-check and Billing Portal ordering safeguards. Local suite: 228 tests passed; syntax and diff checks passed. No provider request, charge or production configuration change was made.
+- Added executable environment-mode, isolated Preview catalog, checkout, health-check and Billing Portal ordering safeguards. Local suite: 228 tests passed; syntax and diff checks passed. Included in successful full Preview QA `36120426827`. No provider request, charge or production configuration change was made.
