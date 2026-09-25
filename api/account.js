@@ -311,7 +311,7 @@ async function adminFinance(req,res){
   const billable=currentBillableWorkspaces(workspaces),mrr=billable.reduce((sum,w)=>sum+(prices[w.plan]||0),0);
   const recurringExpenses=expenses.filter(e=>e.status!=='paused').reduce((sum,e)=>sum+expenseMonthlyEquivalent(e),0);
   const currentMonthOneTime=expenses.filter(e=>e.status!=='paused'&&e.frequency==='one_time'&&financeMonthKey(e.date?Date.parse(e.date+'T12:00:00Z'):e.createdAt)===currentMonth).reduce((sum,e)=>sum+Number(e.amount||0),0);
-  const operatingExpenses=recurringExpenses+currentMonthOneTime,netRecurring=mrr-recurringExpenses,margin=mrr?Math.round((netRecurring/mrr)*1000)/10:0;
+  const operatingExpenses=recurringExpenses+currentMonthOneTime,netRecurring=mrr-recurringExpenses,margin=mrr?Math.round(((mrr-operatingExpenses)/mrr)*1000)/10:0;
 
   if(process.env.VERCEL_ENV==='preview'&&history.length===0){
     for(let i=11;i>=1;i--){
