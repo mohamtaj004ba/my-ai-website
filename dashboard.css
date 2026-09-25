@@ -2049,3 +2049,82 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
   }
   body[data-dashboard="admin"] .profile-avatar{width:30px;height:30px;flex:0 0 30px}
 }
+
+
+/* Premium finishing pass: admin client management + unified inbox.
+   Keep these refinements intentionally scoped so dense operational surfaces
+   feel deliberate without changing information architecture. */
+.admin-client-toolbar-right select,
+.admin-client-toolbar-right input{
+  height:40px;
+  border:1px solid #dce2e6;
+  border-radius:11px;
+  background:#fff;
+  color:var(--ink);
+  font:inherit;
+  box-shadow:0 1px 2px rgba(25,31,38,.025);
+}
+.admin-client-toolbar-right input{
+  padding:10px 12px;
+  min-width:260px;
+}
+.admin-client-toolbar-right select{
+  padding-top:0;
+  padding-bottom:0;
+}
+.admin-client-toolbar-right input:hover,
+.admin-client-toolbar-right select:hover{border-color:#ccd4d9}
+.admin-client-toolbar-right input:focus,
+.admin-client-toolbar-right select:focus{
+  outline:none;
+  border-color:#d0a08d;
+  box-shadow:0 0 0 3px rgba(200,93,53,.09),0 1px 2px rgba(25,31,38,.03);
+}
+.admin-client-row-business .admin-link{
+  min-height:30px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 9px;
+  border:1px solid #eadbd4;
+  border-radius:9px;
+  background:#fffaf7;
+  color:#9d4e32;
+  font-size:8px;
+  letter-spacing:.01em;
+  transition:background .14s ease,border-color .14s ease,box-shadow .14s ease,transform .14s ease;
+}
+.admin-client-row-business .admin-link:hover{
+  background:#fff4ee;
+  border-color:#ddb9aa;
+  box-shadow:0 4px 12px rgba(113,66,47,.07);
+  transform:translateY(-1px);
+}
+#view-inbox .empty-state:before{
+  display:grid;
+  place-items:center;
+  color:#a55a3d;
+  font-size:15px;
+  font-weight:800;
+  background:linear-gradient(145deg,#fff7f2,#f4f6f7);
+  box-shadow:inset 0 0 0 1px #e8dfdb,0 4px 14px rgba(37,42,48,.045);
+}
+#inboxEmpty:before{content:"✉"}
+#inboxThreadPlaceholder:before{content:"↗"}
+#view-inbox .empty-state h3{font-size:15px;letter-spacing:-.015em}
+#view-inbox .empty-state p{max-width:300px;margin:0 auto;line-height:1.5}
+.gmail-connect-panel{
+  box-shadow:0 1px 2px rgba(25,31,38,.025);
+  border-color:#dfe4e7;
+}
+.gmail-connect-panel .gmail-connect-copy h3{letter-spacing:-.015em}
+.inbox-list-panel,
+#view-inbox .inbox-thread-panel,
+#view-inbox .inbox-context-panel{
+  box-shadow:0 1px 2px rgba(25,31,38,.025),0 10px 30px rgba(27,33,39,.02);
+}
+.inbox-tools input{background:#fbfcfc}
+@media(max-width:560px){
+  .admin-client-toolbar-right input{min-width:0}
+  .admin-client-row-business .admin-link{min-height:34px;padding:7px 10px}
+}
