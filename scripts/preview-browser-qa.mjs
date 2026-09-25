@@ -297,6 +297,7 @@ async function runClientInteractions(page){
   if(await page.locator('#messageStream .message').count()!==50)throw new Error('Message batch did not reset when changing threads');
   await page.locator('#conversationContactButton').click();
   await page.locator('#contactDrawer.open').waitFor({state:'visible',timeout:5000});
+  await page.waitForFunction(()=>document.querySelector('#contactDrawer')?.getAttribute('aria-busy')==='false');
   await page.locator('[data-contact-history-filter="message"]').click();
   const contactMessageSession=page.locator('[data-contact-message-session]').first();await contactMessageSession.waitFor({state:'visible'});await contactMessageSession.locator('summary').click();
   if(await contactMessageSession.locator('.contact-message').count()!==50)throw new Error('Contact message history did not start with its latest 50 messages');

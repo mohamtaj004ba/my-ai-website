@@ -1040,7 +1040,7 @@ function renderContactHistoryTimeline(c){
 async function hydrateContactHistory(key){
   const current=buildContacts().find(contact=>contact.key===key);if(!current||contactHistoryHydratedKeys.has(key)||contactHistoryLoadingKeys.has(key))return;
   const missing=current.conversations.some(item=>!Array.isArray(item.messages)&&Number(item.messageCount||0)>0);if(!missing||(typeof demoMode!=='undefined'&&demoMode)){contactHistoryHydratedKeys.add(key);return}
-  contactHistoryLoadingKeys.add(key);const timeline=document.getElementById('contactDrawerTimeline');if(timeline&&activeContactKey===key)timeline.innerHTML='<div class="contact-inline-loading"><i></i><span>Loading message history…</span></div>';
+  contactHistoryLoadingKeys.add(key);const timeline=document.getElementById('contactDrawerTimeline'),drawer=document.getElementById('contactDrawer');if(activeContactKey===key){drawer?.setAttribute('aria-busy','true');if(timeline)timeline.innerHTML='<div class="contact-inline-loading"><i></i><span>Loading message history…</span></div>'}
   try{
     const data=await fetchJsonRetry('/api/account?action=contact-conversations&key='+encodeURIComponent(key),{attempts:2,timeout:10000}),items=Array.isArray(data.conversations)?data.conversations:[];
     const byId=new Map(items.map(item=>[String(item&&item.id),item]));conversationsData=conversationsData.map(item=>byId.has(String(item&&item.id))?{...item,...byId.get(String(item.id))}:item);
@@ -1048,7 +1048,7 @@ async function hydrateContactHistory(key){
     if(activeContactKey===key){const refreshed=buildContacts().find(contact=>contact.key===key);if(refreshed)renderContactHistoryTimeline(refreshed)}
   }catch(err){
     if(timeline&&activeContactKey===key){timeline.innerHTML='<div class="empty-state"><h3>Message history is delayed</h3><p>'+esc(err.message||'Try again shortly.')+'</p><button type="button" class="secondary-btn" id="retryContactHistory">Try again</button></div>';document.getElementById('retryContactHistory')?.addEventListener('click',()=>hydrateContactHistory(key))}
-  }finally{contactHistoryLoadingKeys.delete(key)}
+  }finally{contactHistoryLoadingKeys.delete(key);if(activeContactKey===key)drawer?.setAttribute('aria-busy','false')}
 }
 
 function openContact(key){
@@ -1068,7 +1068,7 @@ function openContact(key){
   const summaryParts=[];if(latestCall)summaryParts.push('Latest call: '+(latestCall.reason||'phone call')+'.');if(activeActions)summaryParts.push(activeActions+' open team action'+(activeActions===1?'':'s')+'.');else if(c.calls.length)summaryParts.push('No open team actions.');if(latestLead?.service)summaryParts.push('Service history includes '+latestLead.service.toLowerCase()+'.');
   document.getElementById('contactDrawerSummary').textContent=summaryParts.join(' ')||'CallerCore has activity for this contact.';
   renderContactHistoryTimeline(c);
-  resetSurfaceScroll(drawer);drawer.classList.add('open');back.classList.add('open');drawer.setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>{resetSurfaceScroll(drawer);document.getElementById('closeContactDrawer')?.focus()},20);
+  resetSurfaceScroll(drawer);drawer.classList.add('open');back.classList.add('open');drawer.setAttribute('aria-hidden','false');drawer.setAttribute('aria-busy','false');document.body.classList.add('drawer-open');setTimeout(()=>{resetSurfaceScroll(drawer);document.getElementById('closeContactDrawer')?.focus()},20);
   hydrateContactHistory(key);
 }
 function closeContact(){document.getElementById('contactDrawer')?.classList.remove('open');document.getElementById('contactDrawerBackdrop')?.classList.remove('open');document.getElementById('contactDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('callDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}

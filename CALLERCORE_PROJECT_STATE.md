@@ -232,6 +232,7 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Background refresh clears hydration markers with the refreshed summaries; duplicate contact requests are suppressed, failures show a retry state, and demo data remains local.
 - Added executable contact-key, tenant-route, message-free bundle, on-demand merge and duplicate-hydration regressions. Local verification: 221 tests passed; syntax and diff checks passed. Preview verification pending.
 - Server reads still scan the legacy tenant conversation array. A reversible normalized-storage migration with compatibility reads remains the next backend scale boundary.
+- Preview run `36119757372` on the following drawer checkpoint reached the on-demand contact flow with zero page/console/API errors, then failed because the browser test clicked an earlier-message control while the contact hydration repaint was still replacing that element. The drawer now exposes `aria-busy` during hydration and Preview QA waits for the settled state before interacting; verification is pending the next feature run.
 
 ## Admin client drawer request consistency
 
