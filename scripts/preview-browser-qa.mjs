@@ -176,10 +176,14 @@ async function runClientInteractions(page){
   }
   report.client.interactions.push('call progressive loading');
 
+  if(!(await page.locator('#callDensity').isVisible())){
+    await page.locator('#toggleCallMoreFilters').click();
+    await page.locator('#callMoreFilters').waitFor({state:'visible',timeout:5000});
+  }
   await page.locator('#callDensity').selectOption('compact');
   if(!(await page.locator('.call-history-panel').evaluate(el=>el.classList.contains('call-density-compact'))))throw new Error('Compact call density did not apply');
   await page.locator('#callDensity').selectOption('comfortable');
-  report.client.interactions.push('call density preference');
+  report.client.interactions.push('advanced call filters + density preference');
 
   const unopened=page.locator('#callsUnviewedCount');
   await unopened.click();
