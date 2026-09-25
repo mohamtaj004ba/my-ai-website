@@ -3,7 +3,7 @@ const {kv,storageEnvironment}=require('../lib/kv');
 const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession,destroySessionToken}=require('../lib/auth');
 const {sendMail}=require('../lib/mail');
 const {lifecycleEmail,authEmail,esc:escapeEmailHtml}=require('../lib/email-template');
-const {entitlementsFor}=require('../lib/plans');
+const {entitlementsFor,PLANS}=require('../lib/plans');
 const {emailKey,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
@@ -765,11 +765,11 @@ async function adminAiGuide(req,res){
   try{
     const count=await kv.incr(rateKey);if(count===1)await kv.expire(rateKey,120);
     if(count>20)return res.status(429).json({error:'Core Intelligence limit reached for this minute. Try again shortly.'});
-  }catch(err){console.warn('admin ai rate limit unavailable',safeError(err))}
+  }catch(err){console.error('admin ai rate limit unavailable',safeError(err));return res.status(503).json({error:'Core Intelligence is temporarily unavailable. Please try again shortly.'})}
   // The browser snapshot is useful for UI context, but never an authoritative accounting source.
   const untrusted=body.snapshot&&typeof body.snapshot==='object'&&!Array.isArray(body.snapshot)?body.snapshot:{};
   const [liveWorkspaces,liveExpenses]=await Promise.all([loadAdminWorkspaces(),kv.get('finance:expenses')]);
-  const planPrices={Starter:349,Growth:599,Pro:999};
+  const planPrices=Object.fromEntries(Object.entries(PLANS).map(([name,plan])=>[name,Number(plan.price||0)]));
   const liveBillable=currentBillableWorkspaces(liveWorkspaces);
   const livePastDue=liveBillable.filter(w=>w.subscriptionStatus==='past_due');
   const liveMrr=liveBillable.reduce((sum,w)=>sum+Number(planPrices[w.plan]||0),0);
