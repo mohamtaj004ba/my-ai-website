@@ -16,17 +16,17 @@ CallerCore is an AI front office for service businesses, with a public acquisiti
 
 ## Current development pass — 2026-09-25
 
-COMPLETED AND VERIFIED within the coverage below: truthful voice readiness; atomic receptionist, Settings and admin phone configuration saves; conflict-safe legacy configuration mutations; atomic audit-history append; stale-edit/capacity guards; pending-save locks; background-refresh and logo-processing draft protection; admin phone search/filter/batching; responsive routing cards and reachable editor actions; bounded Conversations and contact-history rendering.
+COMPLETED AND VERIFIED within the coverage below: truthful voice readiness; atomic receptionist, Settings and admin phone configuration saves; conflict-safe legacy configuration mutations; atomic audit-history append; stale-edit/capacity guards; pending-save locks; background-refresh and logo-processing draft protection; admin phone search/filter/batching; responsive routing cards and reachable editor actions; bounded normalized Conversations/contact-history reads; shared modal/drawer accessibility; and stale-response protection for client call details, admin inbox selections and website analytics ranges.
 
 This is a dashboard and shared-backend checkpoint, not provider activation or production release. The detailed entries below preserve findings, failures, corrections and verification history.
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `31bc2598bb24f6373f899531d6c7410fdfa20801`.
-- Preview READY: `dpl_DLGbka1Jo9EQ2sQpnp7sdgdqrymM` — https://my-ai-website-mx4758yxh-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36120431104`, CodeQL `36120431205`, Jekyll `36120431142`: success on that exact SHA. Push CI `36120426824` and CodeQL `36120426823` also passed.
-- Authenticated Preview Browser QA `36120426827`: success on that exact SHA.
-- Local regression suite: 228 passed, 0 failed. JavaScript syntax and diff checks passed.
+- Implementation SHA: `20918152371ed68c3cd4fd7cc6ffb7b95a0767d2`.
+- Preview READY: `dpl_4t8RVdTEXF2zT7FSzXUwyS314G19` — https://my-ai-website-7xurk1p7v-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36135087160` and `36135080963`, CodeQL `36135087142` and `36135080910`, and Jekyll `36135087409`: success on that exact SHA.
+- Authenticated Preview Browser QA `36135080891`: success on that exact SHA.
+- Local regression suite: 244 passed, 0 failed. The full build, JavaScript syntax and diff checks passed.
 - Browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks.
 - Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, legacy restore/delete safeguards, and 50 → 100 → 122 message batches in Conversations and Contacts.
 - Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
@@ -51,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current verified implementation: 228/228 local tests pass. Executable regressions cover tenant-scoped conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer races, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
+Current verified implementation: 244/244 local tests pass. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -62,8 +62,8 @@ Current verified implementation: 228/228 local tests pass. Executable regression
 
 ## Next authorized development backlog
 
-1. Verify normalized conversation reads through the existing authenticated Preview workflow and screenshots. The isolated seed now dual-populates legacy and version 2; no production migration is authorized or performed.
-2. Continue client/admin shared-state consistency and accessibility review. Current regression coverage is not a claim that every dashboard action has been tested.
+1. Continue client/admin shared-state consistency and accessibility review. Current regression coverage is not a claim that every dashboard action has been tested.
+2. Keep the normalized-conversation migration and rollback contract ready for a separately authorized production migration; the existing authenticated Preview workflow now verifies version 2 reads without changing production.
 3. Run dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios only when the required provider test configuration is available. Live activation, production changes and new charges still need owner authorization.
 
 ## Known limitations and remaining work
@@ -261,12 +261,12 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 
 - Website-conversation selections now use a monotonic request generation, so a slower earlier response cannot replace a newer website or Gmail thread selection.
 - Stale website failures are discarded with their response instead of surfacing an alert after the operator has moved to another thread.
-- Added behavioral regressions for out-of-order website responses and website-to-Gmail selection changes. Local suite: 243 tests passed; the full build passed. Push gates and authenticated Preview QA remain to be recorded.
+- Added behavioral regressions for out-of-order website responses and website-to-Gmail selection changes. Implementation `21536c28cf7bc583fbda3a2be723d001d0a743ae`: 243 local tests and the full build passed; CallerCore CI `36134842059` and `36134836922`, CodeQL `36134842079` and `36134836806`, and Jekyll `36134842168` passed. Preview `dpl_6WeoMgDpHXw31D9wVVBTbLmNWRmt` is READY. Its browser run was superseded by the next head, whose successful authenticated workflow includes this implementation.
 
 ## Admin website analytics request consistency
 
 - Date-range loads now use a monotonic request generation, so a slower response for an earlier range cannot repaint metrics, charts or Growth context after the operator selects a newer range.
-- Added an executable out-of-order range regression. Local suite: 244 tests passed; the full build passed. Push gates and authenticated Preview QA remain to be recorded.
+- Added an executable out-of-order range regression. Implementation `20918152371ed68c3cd4fd7cc6ffb7b95a0767d2`: 244 local tests and the full build passed; CallerCore CI `36135087160` and `36135080963`, CodeQL `36135087142` and `36135080910`, Jekyll `36135087409`, and authenticated Preview Browser QA `36135080891` passed. Preview `dpl_4t8RVdTEXF2zT7FSzXUwyS314G19` is READY at https://my-ai-website-7xurk1p7v-mohamtaj004bas-projects.vercel.app. Production/main was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`.
 
 ## Admin client drawer request consistency
 
