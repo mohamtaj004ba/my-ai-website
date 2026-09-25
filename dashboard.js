@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',contactHistoryVisibleLimit=50,contactHistoryLastSignature='',contactMessageSessionLimits={},pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -928,7 +928,7 @@ function contactTimeLabel(at){
   const d=new Date(Number(at||0));return Number.isFinite(d.getTime())?d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):'';
 }
 function contactMessageSessions(c){
-  const flat=c.conversations.flatMap(conv=>(conv.messages||[]).map((m,index)=>({
+  const flat=c.conversations.flatMap(conv=>(Array.isArray(conv.messages)?conv.messages:[]).map((m,index)=>({
     at:Number(m.at||recordTime(conv)||0),dir:m.dir==='out'?'out':'in',who:m.who||conv.name||c.name||'',text:m.text||'',conversationId:conv.id||'',index
   }))).filter(m=>m.text||m.at).sort((a,b)=>a.at-b.at);
   const sessions=[];let current=null;
@@ -948,6 +948,11 @@ function contactHistoryEvents(c){
     ...c.leads.map(x=>({at:recordTime(x),filter:'request',kind:'Service request',title:x.service||'Service request',request:x})),
     ...c.calls.flatMap(x=>normalizedCallNotes(x.id).map(n=>({at:Number(n.at||recordTime(x)||0),filter:'note',kind:'Internal note',title:n.by||'Team note',note:n,call:x})))
   ].sort((a,b)=>b.at-a.at);
+}
+function contactMessageSessionKey(session){return [session.day,session.firstAt,session.lastAt,session.messages.length].join(':')}
+function contactMessageSessionHtml(session,key){
+  const count=session.messages.length,limit=Number(contactMessageSessionLimits[key]||50),visible=session.messages.slice(-limit),remaining=count-visible.length;
+  return '<div class="contact-message-history-meta"><span>Showing '+visible.length+' of '+count+' messages</span>'+(remaining?'<button type="button" class="secondary-btn" data-load-contact-messages="'+esc(key)+'">Load '+Math.min(50,remaining)+' earlier</button>':'')+'</div><div class="contact-message-thread">'+visible.map(m=>'<div class="contact-message '+(m.dir==='out'?'out':'in')+'"><small>'+esc(m.dir==='out'?'CallerCore / team':m.who||'Caller')+' · '+esc(contactTimeLabel(m.at))+'</small><p>'+esc(m.text)+'</p></div>').join('')+'</div>';
 }
 function contactInlineCallHtml(call){
   const disposition=callDispositionMeta(call),team=TEAM_STATUS_META[teamStatusForCall(call)]||TEAM_STATUS_META.no_action,notes=normalizedCallNotes(call.id),transcript=Array.isArray(call.transcript)?call.transcript:[];
@@ -983,8 +988,8 @@ function renderContactHistoryItem(e){
     return '<details class="contact-history-card call" data-contact-inline-call="'+esc(x.id)+'"><summary><span class="history-icon call">☎</span><span class="history-summary-copy"><small>'+esc(contactTimeLabel(e.at))+' · '+esc(x.category||'Call')+'</small><b>'+esc(x.reason||'Phone call')+'</b><span><i class="disposition-pill '+callDispositionClass(x)+'">'+esc(disp.label)+'</i><i class="team-status-pill '+team.tone+'">'+esc(team.label)+'</i></span></span><span class="history-chevron">⌄</span></summary><div class="contact-expand-body" data-contact-inline-call-body="'+esc(x.id)+'">'+contactInlineCallHtml(x)+'</div></details>';
   }
   if(e.filter==='message'){
-    const s=e.session,count=s.messages.length,start=contactTimeLabel(s.firstAt),finish=contactTimeLabel(s.lastAt),preview=s.messages[s.messages.length-1]?.text||'';
-    return '<details class="contact-history-card message"><summary><span class="history-icon message">✉</span><span class="history-summary-copy"><small>'+esc(start+(finish&&finish!==start?'–'+finish:''))+'</small><b>'+count+' message'+(count===1?'':'s')+'</b><p>'+esc(preview)+'</p></span><span class="history-chevron">⌄</span></summary><div class="contact-expand-body"><div class="contact-message-thread">'+s.messages.map(m=>'<div class="contact-message '+(m.dir==='out'?'out':'in')+'"><small>'+esc(m.dir==='out'?'CallerCore / team':m.who||'Caller')+' · '+esc(contactTimeLabel(m.at))+'</small><p>'+esc(m.text)+'</p></div>').join('')+'</div></div></details>';
+    const s=e.session,key=contactMessageSessionKey(s),count=s.messages.length,start=contactTimeLabel(s.firstAt),finish=contactTimeLabel(s.lastAt),preview=s.messages[s.messages.length-1]?.text||'';
+    return '<details class="contact-history-card message" data-contact-message-session="'+esc(key)+'"><summary><span class="history-icon message">✉</span><span class="history-summary-copy"><small>'+esc(start+(finish&&finish!==start?'–'+finish:''))+'</small><b>'+count+' message'+(count===1?'':'s')+'</b><p>'+esc(preview)+'</p></span><span class="history-chevron">⌄</span></summary><div class="contact-expand-body">'+contactMessageSessionHtml(s,key)+'</div></details>';
   }
   if(e.filter==='request'){
     const r=e.request;
@@ -996,17 +1001,21 @@ function renderContactHistoryItem(e){
 function renderContactHistoryTimeline(c){
   const timeline=document.getElementById('contactDrawerTimeline');if(!timeline||!c)return;
   const events=contactHistoryEvents(c).filter(e=>contactHistoryFilter==='all'||e.filter===contactHistoryFilter);
+  const signature=c.key+'|'+contactHistoryFilter;if(signature!==contactHistoryLastSignature){contactHistoryLastSignature=signature;contactHistoryVisibleLimit=50;contactMessageSessionLimits={}}
+  const visibleEvents=events.slice(0,contactHistoryVisibleLimit);
   const groups=new Map();
-  for(const e of events){const key=contactDateKey(e.at);if(!groups.has(key))groups.set(key,{at:e.at,items:[]});groups.get(key).items.push(e)}
-  timeline.innerHTML=[...groups.values()].map(group=>'<section class="contact-history-day"><div class="contact-history-day-head"><b>'+esc(contactDateLabel(group.at))+'</b><span>'+group.items.length+' item'+(group.items.length===1?'':'s')+'</span></div>'+group.items.map(renderContactHistoryItem).join('')+'</section>').join('')||'<div class="contact-history-empty">No '+esc(contactHistoryFilter==='all'?'activity':contactHistoryFilter+' activity')+' yet.</div>';
+  for(const e of visibleEvents){const key=contactDateKey(e.at);if(!groups.has(key))groups.set(key,{at:e.at,items:[]});groups.get(key).items.push(e)}
+  timeline.innerHTML=([...groups.values()].map(group=>'<section class="contact-history-day"><div class="contact-history-day-head"><b>'+esc(contactDateLabel(group.at))+'</b><span>'+group.items.length+' shown</span></div>'+group.items.map(renderContactHistoryItem).join('')+'</section>').join('')||'<div class="contact-history-empty">No '+esc(contactHistoryFilter==='all'?'activity':contactHistoryFilter+' activity')+' yet.</div>')+(events.length?'<div class="contact-history-load"><span>Showing '+visibleEvents.length+' of '+events.length+' activity items</span>'+(visibleEvents.length<events.length?'<button type="button" class="secondary-btn" id="loadMoreContactHistory">Load '+Math.min(50,events.length-visibleEvents.length)+' more</button>':'')+'</div>':'');
   timeline.querySelectorAll('[data-contact-inline-call]').forEach(details=>details.addEventListener('toggle',()=>{if(details.open)hydrateContactCallDetails(details.dataset.contactInlineCall,details)}));
+  document.getElementById('loadMoreContactHistory')?.addEventListener('click',()=>{contactHistoryVisibleLimit+=50;renderContactHistoryTimeline(c)});
+  timeline.querySelectorAll('[data-load-contact-messages]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.loadContactMessages,details=button.closest('[data-contact-message-session]');contactMessageSessionLimits[key]=Number(contactMessageSessionLimits[key]||50)+50;renderContactHistoryTimeline(c);const reopened=timeline.querySelector('[data-contact-message-session="'+CSS.escape(key)+'"]');if(reopened){reopened.open=true;reopened.scrollIntoView({block:'nearest'})}}));
   document.querySelectorAll('[data-contact-history-filter]').forEach(btn=>btn.classList.toggle('active',btn.dataset.contactHistoryFilter===contactHistoryFilter));
 }
 
 function openContact(key){
   const c=buildContacts().find(x=>x.key===key);if(!c)return;
   const drawer=document.getElementById('contactDrawer'),back=document.getElementById('contactDrawerBackdrop');if(!drawer||!back)return;
-  activeContactKey=c.key;contactHistoryFilter='all';
+  activeContactKey=c.key;contactHistoryFilter='all';contactHistoryLastSignature='';contactHistoryVisibleLimit=50;contactMessageSessionLimits={};
   document.getElementById('contactDrawerName').textContent=c.name;
   document.getElementById('contactDrawerMeta').textContent=c.lastAt?'Last interaction '+new Date(c.lastAt).toLocaleString():'No recent interaction date';
   const digits=String(c.phone||'').replace(/\D/g,''),setActionLink=(el,href)=>{if(!el)return;const enabled=!!href;if(enabled)el.setAttribute('href',href);else el.removeAttribute('href');el.classList.toggle('disabled-link',!enabled);el.setAttribute('aria-disabled',enabled?'false':'true');el.tabIndex=enabled?0:-1};setActionLink(document.getElementById('contactCallLink'),digits?'tel:'+digits:'');setActionLink(document.getElementById('contactTextLink'),digits?'sms:'+digits:'');

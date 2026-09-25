@@ -275,7 +275,18 @@ async function runClientInteractions(page){
   await page.locator('#conversationThreads .thread-item').nth(1).click();
   await page.locator('#conversationThreads .thread-item').first().click();
   if(await page.locator('#messageStream .message').count()!==50)throw new Error('Message batch did not reset when changing threads');
+  await page.locator('#conversationContactButton').click();
+  await page.locator('#contactDrawer.open').waitFor({state:'visible',timeout:5000});
+  await page.locator('[data-contact-history-filter="message"]').click();
+  const contactMessageSession=page.locator('[data-contact-message-session]').first();await contactMessageSession.waitFor({state:'visible'});await contactMessageSession.locator('summary').click();
+  if(await contactMessageSession.locator('.contact-message').count()!==50)throw new Error('Contact message history did not start with its latest 50 messages');
+  await contactMessageSession.locator('[data-load-contact-messages]').click();
+  if(await page.locator('[data-contact-message-session][open] .contact-message').count()!==100)throw new Error('Contact message history did not load an earlier batch');
+  await page.locator('[data-contact-message-session][open] [data-load-contact-messages]').click();
+  if(await page.locator('[data-contact-message-session][open] .contact-message').count()!==122||await page.locator('[data-contact-message-session][open] [data-load-contact-messages]').count())throw new Error('Contact message history did not expose the complete seeded session');
+  await page.locator('#closeContactDrawer').click();
   report.client.interactions.push('long conversation history progressive loading');
+  report.client.interactions.push('contact message session progressive loading');
   const conversationTotal=report.seed.conversations;
   const initialThreads=await page.locator('#conversationThreads .thread-item').count();
   if(initialThreads!==Math.min(50,conversationTotal))throw new Error('Conversations initial page size is incorrect');

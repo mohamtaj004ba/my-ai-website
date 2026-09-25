@@ -189,3 +189,12 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Audit history now prepends and trims through one Redis Lua operation. Concurrent audit events no longer use read/modify/write and cannot silently overwrite one another; malformed stored history fails closed.
 - Added behavioral transaction tests for phone deletion, admin agent override/restore, derived state, stale/conflicting writes, malformed inventory, local delete consistency, and 250 concurrent audit appends. Local verification: 202 tests passed; JavaScript syntax and diff checks passed.
 - Configuration state and its audit event are still separate Redis operations. The state transaction completes before audit append; a dedicated transactional audit/outbox design remains future work if strict all-or-nothing audit persistence becomes a launch requirement.
+
+## Contact history scale batch
+
+- Contact drawers now render activity in 50-item batches with visible counts and incremental loading. Changing contacts or activity filters resets the batch and per-session state.
+- Long message sessions inside contact history show the newest 50 messages and load earlier messages in 50-message batches while reopening the active session. The existing Conversations timeline and contact link behavior are preserved.
+- Malformed conversation message collections are ignored instead of crashing contact aggregation.
+- Added executable 125-activity and 1,000-message contact history tests. The isolated Preview seed now keeps its 122-message history in one contact session, and authenticated QA verifies 50 → 100 → 122 loading through the contact drawer as well as Conversations.
+- Local verification: 206 tests passed; JavaScript syntax and diff checks passed. Full authenticated Preview verification pending the feature push.
+- The underlying tenant conversation array still loads from KV as one record. This batch bounds browser rendering; API payload pagination remains the next scale task.
