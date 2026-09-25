@@ -3102,8 +3102,12 @@ async function saveAdminClient(){
     if(!r.ok)throw new Error(data.error||'Could not update client.');
     if(String(currentAdminClient?.id)!==targetId)return;
     currentAdminClient={...currentAdminClient,...data.client};
-    await Promise.all([refreshAdminCore(),loadAdminOps()]);
-    if(String(currentAdminClient?.id)===targetId)await openAdminClient(targetId,{allowLocked:true});
+    try{
+      await Promise.all([refreshAdminCore(),loadAdminOps()]);
+      if(String(currentAdminClient?.id)===targetId)await openAdminClient(targetId,{allowLocked:true});
+    }catch(refreshError){
+      alert('Workspace changes were saved, but the admin view could not refresh. Reopen this client to verify the latest account settings.');
+    }
   }catch(err){alert(err.message||'Could not update client.')}
   finally{setAdminClientMutationState(false)}
 }
