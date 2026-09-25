@@ -281,8 +281,11 @@ function cleanFinanceExpense(raw={},existing={}){
 }
 async function loadAdminWorkspaces(){
   const ids=await kv.get('workspace:index')||[],workspaces=[];
-  if(!Array.isArray(ids)||ids.length>250)throw new Error('Admin workspace index exceeds supported capacity; totals cannot be reported safely');
-  for(const id of ids){const ws=await kv.get('workspace:'+id);if(ws)workspaces.push(ws)}
+  if(!Array.isArray(ids)||ids.length>2000)throw new Error('Admin workspace index exceeds supported capacity; totals cannot be reported safely');
+  for(let i=0;i<ids.length;i+=40){
+    const batch=await Promise.all(ids.slice(i,i+40).map(id=>kv.get('workspace:'+id)));
+    for(const ws of batch){if(ws)workspaces.push(ws)}
+  }
   return workspaces;
 }
 function currentBillableWorkspaces(workspaces){
