@@ -22,11 +22,11 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `8f535eb4b95e3fc2f63d159b4a73e2d39a51b566` (admin workspace scaling and atomic audit follow-up; earlier recovered and expense UX fixes remain present).
-- Preview READY: `dpl_4Mpn1Qk8nBhpB4KwSzYMuVgvSMxL` — https://my-ai-website-jg3ar9clc-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36190466298` and `36190461861`, CodeQL `36190466395` and `36190461857`, Jekyll `36190466304`: success on that exact SHA.
-- Authenticated Preview Browser QA `36190462050`: success on that exact SHA. Prior recovery acceptance also succeeded on `452ae304` (QA `36179292162`).
-- GitHub full CI regression suite at this implementation: 266 passed, 0 failed (`36190461861`); build, JavaScript syntax and diff checks passed. The recovered implementation earlier had 255 locally reported passing tests.
+- Implementation SHA: `b1fcf26dc1e24be9274e29345de7ab473b9c0287` (concurrency-safe finance history and operating-margin follow-up; earlier recovered, expense UX, scaling, and audit safeguards remain present).
+- Preview READY: `dpl_7RfNC5ZhBjfHSubrAzgQCf9pnizQ` — https://my-ai-website-2ohunnh46-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36191985064` and `36191977620`, CodeQL `36191985579` and `36191977589`, Jekyll `36191985018`: success on that exact SHA.
+- Authenticated Preview Browser QA `36191977690` attempt 2: success on that exact SHA. Its first attempt was superseded by an older commit's delayed workflow; the job was explicitly re-run on the intended head. Prior recovery acceptance succeeded on `452ae304` (QA `36179292162`).
+- GitHub full CI regression suite at this implementation: 273 passed, 0 failed (`36191985064`); build, JavaScript syntax and diff checks passed. The recovered implementation earlier had 255 locally reported passing tests.
 - Earlier authenticated browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks. This report belongs to the earlier verified dashboard run, not an independently extracted report for `2213219`; the latest QA run is recorded above.
 - Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, legacy restore/delete safeguards, and 50 → 100 → 122 message batches in Conversations and Contacts.
 - Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
@@ -51,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current implementation: 266/266 tests passed in GitHub CI on `8f535eb`; the recovered batch also passed CI on `452ae304`. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, serialized Client Care status writes, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
+Current implementation: 273/273 tests passed in GitHub CI on `b1fcf26`; the recovered batch also passed CI on `452ae304`. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, serialized Client Care status writes, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -62,7 +62,7 @@ Current implementation: 266/266 tests passed in GitHub CI on `8f535eb`; the reco
 
 ## Next authorized development backlog
 
-1. Continue client/admin shared-state consistency and accessibility review. Admin workspace Plan/Status writes now commit with the audit event atomically, and client directory/finance totals no longer silently truncate after 250 workspaces. Review other non-atomic operational mutations and provider validation, without repeating this verified scope. Current regression coverage is not a claim that every dashboard action has been tested.
+1. Continue client/admin shared-state consistency and accessibility review. Admin Plan/Status writes and monthly finance snapshots now have transaction safeguards; the client directory/finance totals no longer silently truncate after 250 workspaces. Review remaining non-atomic operational mutations and provider validation without repeating the verified scope. Current regression coverage is not a claim that every dashboard action has been tested.
 2. Keep the normalized-conversation migration and rollback contract ready for a separately authorized production migration; the existing authenticated Preview workflow now verifies version 2 reads without changing production.
 3. Run dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios only when the required provider test configuration is available. Live activation, production changes and new charges still need owner authorization.
 
@@ -329,3 +329,10 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Added executable boundary/partial-index regressions and combined audit transaction/error regressions. Initial new workspace-scale tests exposed two incorrect test assertions; both were corrected after inspecting actual CI failures, without weakening the coverage.
 - Implementation `8f535eb4b95e3fc2f63d159b4a73e2d39a51b566`: GitHub CI 266 passed, 0 failed (`36190461861`), CodeQL `36190466395` / `36190461857`, Jekyll `36190466304`, authenticated Preview Browser QA `36190462050`: success. Vercel Preview `dpl_4Mpn1Qk8nBhpB4KwSzYMuVgvSMxL`: READY. No changes were merged into main; no live records, billing or provider activation were touched.
 - This subsequent documentation-only commit is not described as receiving the earlier implementation's Preview verification. Continue from actual Git refs, not historical headings.
+
+## Finance history concurrency and operating margin — verified 2026-09-25
+
+- The admin Finance GET previously replaced `finance:history` with a plain `kv.set` on every read, so concurrent refreshes could silently overwrite newly recorded months or replace a newer current-month snapshot. Added `lib/finance-history.js` with a revision-checked compare-and-set, up to three reconciliation attempts, preservation of a later snapshot, sorted/24-month retention, and a fail-closed error when malformed history or unresolved writers prevent a reliable result. The Preview-only initial reconstruction remains available when the original history key is absent; it is not represented as real historical revenue.
+- Operating-margin percentage now includes this month's one-time company costs, matching its operational label; net recurring revenue remains separately based on recurring costs only. Added behavioral tests covering lost-update conflicts, newer current-month protection, absent and malformed history, retry exhaustion, Preview seed preservation, and margin calculation with one-time expenses.
+- Implementation `b1fcf26dc1e24be9274e29345de7ab473b9c0287`: GitHub CI 273 passed, 0 failed (`36191985064`), CodeQL `36191985579` / `36191977589`, Jekyll `36191985018`, authenticated Preview QA `36191977690` attempt 2: success. Vercel Preview `dpl_7RfNC5ZhBjfHSubrAzgQCf9pnizQ`: READY. The first QA attempt for this SHA was superseded due to workflow scheduling and re-run explicitly to completion. No production merge or deployment, billing, customer data or provider activation occurred.
+- This documentation-only follow-up is not claimed to have received the implementation's QA run. Current production/main remained `37ef5cfcdccae35952822859f64fe83f0b9f09f0` when inspected.
