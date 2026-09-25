@@ -135,3 +135,12 @@ test('premium admin polish keeps controls and Inbox terminology consistent',()=>
   assert.match(html,/Open Core Intelligence from the top bar/);
   assert.doesNotMatch(html,/Ask CallerCore/);
 });
+
+
+test('System Health service cards stay readable and contained',()=>{
+  const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
+  assert.match(css,/\.admin-health-groups\{\s*grid-template-columns:1fr;\s*gap:24px;/);
+  assert.match(css,/\.admin-health-group \.integration-grid\{\s*grid-template-columns:repeat\(auto-fit,minmax\(260px,1fr\)\);/);
+  assert.match(css,/\.admin-health-item>\.tag\{[\s\S]*max-width:110px;[\s\S]*white-space:normal;/);
+  assert.match(css,/@media\(max-width:720px\)[\s\S]*\.admin-health-item\{\s*grid-template-columns:auto minmax\(0,1fr\)!important;/);
+});
