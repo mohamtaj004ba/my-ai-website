@@ -107,3 +107,11 @@ test('mobile Command Center attention rows stay inside their cards',()=>{
   assert.match(css,/\.admin-attention-item\{\s*width:100%!important;\s*margin:0!important;\s*padding:12px 0!important;\s*grid-template-columns:8px minmax\(0,1fr\) auto!important;/);
   assert.match(css,/\.admin-attention-item>span:not\(\.attention-severity-dot\)\{\s*grid-column:2\/-1;\s*width:auto;\s*max-width:100%;\s*white-space:normal;\s*overflow-wrap:anywhere;/);
 });
+
+
+test('mobile admin topbar gives profile controls fixed compact footprints',()=>{
+  const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
+  assert.match(css,/body\[data-dashboard="admin"\] \.top-actions\{flex:0 1 auto;min-width:0;gap:4px;justify-content:flex-end\}/);
+  assert.match(css,/body\[data-dashboard="admin"\] \.account-button\{\s*width:38px;\s*height:38px;\s*padding:3px;\s*justify-content:center;\s*overflow:hidden;\s*flex:0 0 38px;/);
+  assert.match(css,/body\[data-dashboard="admin"\] \.profile-avatar\{width:30px;height:30px;flex:0 0 30px\}/);
+});
