@@ -2427,7 +2427,7 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
   #view-phones .admin-phone-row:not(.head)>span:nth-child(1){grid-area:number}
   #view-phones .admin-phone-row:not(.head)>span:nth-child(2){grid-area:workspace;font-size:12px;color:var(--muted)}
   #view-phones .admin-phone-row:not(.head)>span:nth-child(3){display:none!important}
-  #view-phones .admin-phone-row:not(.head)>span:nth-child(4){grid-area:routing}
+  #view-phones .admin-phone-row:not(.head)>span:nth-child(4){grid-area:routing;display:grid!important;gap:4px}
   #view-phones .admin-phone-row:not(.head)>span:nth-child(5){grid-area:status;align-self:start}
   #view-phones .admin-phone-row:not(.head)>span:nth-child(6){grid-area:actions;display:flex!important;gap:10px}
   #view-phones .admin-phone-row:not(.head)>span:nth-child(4) b,#view-phones .admin-phone-row:not(.head)>span:nth-child(4) small{white-space:normal;overflow:visible;text-overflow:clip}

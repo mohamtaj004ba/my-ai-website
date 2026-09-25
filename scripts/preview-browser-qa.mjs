@@ -513,6 +513,8 @@ async function runResponsive(kind,viewport,name){
       const edit=page.locator('#phoneTable [data-edit-phone]').first();
       if(!await edit.isVisible())throw new Error('Phone edit action is hidden at '+name+' width');
       await edit.click();await page.locator('#phoneModal.open').waitFor({state:'visible'});
+      await page.locator('#savePhoneButton').scrollIntoViewIfNeeded();
+      const saveBox=await page.locator('#savePhoneButton').boundingBox();if(!saveBox||saveBox.y<0||saveBox.y+saveBox.height>viewport.height+1)throw new Error('Phone save action is not reachable at '+name+' width');
       await assertLayout(page,kind+'-'+name+'-phone-editor');await shot(page,kind+'-'+name+'-phone-editor');
       await page.locator('#closePhoneModal').click();
     }

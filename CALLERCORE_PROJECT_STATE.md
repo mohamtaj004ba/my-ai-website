@@ -171,3 +171,9 @@ Only commit/push routine changes to the authorized development branch. No merge 
 - Background refresh guard `0188635bf5a14933357d7c76be5df5db17c2cfe8` passed authenticated Preview QA `36114650092`, including the held-response draft test.
 - Settings image preparation now disables Save until processing completes, ignores canceled/superseded requests, preserves the existing logo on processing errors, and prevents a late image from replacing a newer draft. Removing/canceling a logo invalidates pending work.
 - Added deferred image-processing tests and real browser file preparation/cancel coverage (no saved logo mutation). Local suite: 196 passed. New browser coverage pending Preview verification.
+
+## Phone editor visual acceptance follow-up
+
+- Implementation `437d2fdf3e61c696b2fcedce328d8f3da38e0ea3` passed full Preview QA `36114960190`, CI/CodeQL/Jekyll, with 25 layout checks and zero API/page/console errors. Reviewed tablet inventory and mobile editor screenshots: Edit/Delete actions are visible and editor controls fit their container.
+- One small visual refinement separates transfer destination and after-hours text into distinct lines. Responsive QA now also scrolls to Save and asserts it is reachable within the viewport; it does not submit changes during responsive checks.
+- Remaining backend hardening: older admin restore/delete writers and audit append concurrency still use legacy paths. Settings/agent/admin phone config snapshots are atomic, but audit append remains a separate step. No claim of complete transactional audit coverage.
