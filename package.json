@@ -7,7 +7,8 @@
     "dev": "python3 -m http.server 8000",
     "build": "npm test && echo \"CallerCore static build checks passed\"",
     "test": "node --test tests/*.test.js",
-    "preflight": "npm test"
+    "preflight": "npm test",
+    "qa:preview": "node scripts/preview-browser-qa.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^1.1.1",
@@ -15,7 +16,9 @@
     "@upstash/redis": "^1.39.0",
     "pdf-lib": "^1.17.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "playwright": "1.55.0"
+  },
   "keywords": [
     "vercel",
     "analytics",
