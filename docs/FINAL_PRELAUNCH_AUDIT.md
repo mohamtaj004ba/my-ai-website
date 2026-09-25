@@ -1,6 +1,6 @@
 # CallerCore Final Prelaunch Audit
 
-Updated: 2026-09-21
+Updated: 2026-09-24
 
 This is the final prelaunch matrix for CallerCore. It is organized from the customer, operator/admin, technical, compliance, and business perspectives.
 
@@ -24,6 +24,9 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Customer/admin degraded-data banners so API failures are not displayed as trustworthy zero-value business data.
 - Standard onboarding blocks Medical & Dental and rejects regulated medical onboarding server-side.
 - GitHub CI regression suite.
+- Protected Preview browser QA is automated through GitHub Actions using Vercel's automation bypass: authenticated client/admin sessions, all dashboard navigation views, targeted interaction checks, strict API/console/page-error detection, responsive laptop/tablet/mobile layout contracts, screenshots, and visual-drift reports.
+- Preview QA dependencies are pinned with a committed package lock; Chromium/npm downloads are cached by the QA workflow.
+- CallerCore's internal onboarding lifecycle stage derivation is isolated and regression-tested from Paid through Live; manual stage labels cannot bypass the verified Live gate.
 - CodeQL workflow and Dependabot configuration.
 - Production health checks for KV and live Stripe webhook/Customer Portal readiness.
 - Vercel Pro commercial hosting confirmed.
@@ -46,6 +49,7 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 ## Customer journey — required before sales open
 
 ### Checkout / billing
+- CallerCore's Stripe lifecycle decision logic is regression-tested for stale events, subscription replacement, past-due recovery, cancellation, and event idempotency. This does not replace provider-side Stripe test-mode validation.
 - Keep `CALLERCORE_CHECKOUT_ENABLED` closed until the final launch authorization.
 - Complete Washington tax registration/classification and configure Stripe Tax registrations/product tax treatment.
 - Enable Stripe automatic tax only after the tax setup is legally correct.
@@ -55,8 +59,10 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - Starter/Growth policy-neutral usage warnings at 70% / 85% / 100% are implemented; no automatic overage charge is implied or applied.
 
 ### Onboarding
-- Run one disposable customer from prospect -> checkout -> payment -> review -> agreement -> intake -> build -> QA -> test call -> approval -> live.
-- Verify every email is received, links work, holds/approval gates behave correctly and support replies work.
+- CallerCore's internal managed lifecycle (Paid -> Review -> Intake -> Building -> QA -> Client Test -> Ready -> Live) is now deterministic and regression-tested. ✅
+- Protected Preview uses a reusable disposable QA workspace with deterministic reseeding, so browser checks do not accumulate stale test clients. ✅
+- Still run one provider-complete disposable customer from prospect -> Stripe test checkout/payment -> review -> agreement -> intake -> build -> Vapi test call -> approval -> live before commercial release.
+- Verify every lifecycle email is received, links work, holds/approval gates behave correctly and support replies work during that provider-complete release rehearsal.
 - Confirm clients cannot accidentally bypass managed review or onboarding state gates.
 - Verify customer-visible empty/degraded/error states in a real browser.
 
@@ -77,12 +83,13 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 - SMS campaigns/automated follow-up are removed from active launch promises. Before enabling them, choose a provider/number strategy, implement consent provenance, transactional-vs-marketing separation, STOP/HELP suppression, delivery status and required carrier/A2P registration.
 
 ## Admin / operations — required before launch
-- Protected Preview access was verified with Vercel Automation Protection Bypass.
+- Protected Preview access is verified and continuously exercised through the Vercel Protection Bypass for Automation without exposing the bypass value in source or chat. Rotate it only if it is actually exposed or access needs to be revoked.
 - Preview KV connectivity is verified operational through the health endpoint.
 - Protected preview static/legal/dashboard assets and unauthenticated API access-control smoke tests passed on the cleaned release head.
 - Temporary preview diagnostics were removed and verified 404 before release.
-- Regenerate the automation-bypass secret after this QA cycle because the test value was handled interactively.
-- Full authenticated POST/browser E2E with a disposable client is still required before release.
+- Authenticated disposable-workspace browser QA now runs automatically on the feature branch and covers client/admin navigation, selected interactive flows, responsive layouts, and browser/API errors. ✅
+- CallerCore-internal onboarding state progression and Live gating are covered by deterministic regression tests. ✅
+- External-provider lifecycle validation remains separate: Stripe must still be exercised in Stripe test mode and Vapi must still be exercised with real provider webhooks/number/call scenarios before release.
 - Preview KV is isolated from Production KV and verified at runtime: health reports `database: operational` and `storage: preview-isolated`. ✅
 - support@callercore.com inbound and outbound Gmail behavior verified from recent CallerCore mailbox history. ✅
 - Tighten DMARC from monitoring toward enforcement after continued Google Workspace/Mailgun alignment is verified.
@@ -114,8 +121,8 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 
 ## Security items to revisit after core launch
 - Replace CSP `unsafe-inline` with nonces/hashes as the frontend is modularized.
-- Split `api/account.js` into feature-specific modules to reduce authorization-review surface.
-- Split `dashboard.js` into client/admin feature modules.
+- Continue incremental extraction of pure feature logic from `api/account.js` into tested modules; onboarding-stage derivation is the first completed extraction. Avoid a high-risk one-shot rewrite.
+- Split `dashboard.js` into client/admin feature modules incrementally behind the automated Preview browser suite.
 - Re-run tenant/auth review after every new authenticated integration.
 - Add provider-specific webhook verification tests for Vapi/SMS/calendar.
 - Perform an independent penetration test before enterprise/regulated customers.
@@ -129,8 +136,8 @@ This is the final prelaunch matrix for CallerCore. It is organized from the cust
 4. Vapi/voice implemented and tested.
 5. Calendar/SMS removed from active launch promises; integrations may be added later.
 6. Email authentication verified; monitoring fallback requires post-merge production test.
-7. Protected preview browser QA passes.
-8. Disposable-client E2E passes.
+7. Protected Preview browser QA passes on the release head, including interaction and responsive checks.
+8. CallerCore-internal disposable-client/state E2E passes; Stripe/Vapi provider-complete release rehearsal passes.
 9. GitHub main protection enabled. ✅
 10. TJ authorizes production merge.
 11. Merge PR #5.
