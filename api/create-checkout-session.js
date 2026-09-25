@@ -85,6 +85,9 @@ module.exports=async function handler(req,res){
 
   if(!name||!business||!email||!phone||!industry||!PLAN_PRICE[plan])return res.status(400).json({error:'Please complete all required fields'});
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email address'});
+  const existingMember=await kv.get('user:email:'+email);
+  if(existingMember?.role==='admin')return res.status(409).json({error:'This email is reserved for CallerCore administration. Please use a separate customer email address.'});
+  if(existingMember?.disabled)return res.status(409).json({error:'This account requires support review before a new checkout. Please contact CallerCore.'});
 
   let prospect,leadId;
   try{
