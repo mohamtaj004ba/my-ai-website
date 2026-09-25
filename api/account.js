@@ -1616,6 +1616,7 @@ function environmentScopeHealth(){
   if(secretMode&&publishableMode&&secretMode!==publishableMode)issues.push('Stripe secret and publishable key modes do not match');
   if(env==='preview'){
     if(secretMode==='live'||publishableMode==='live')issues.push('Preview is using live Stripe credentials');
+    if((secretMode==='test'||publishableMode==='test')&&(!process.env.STRIPE_STARTER_PRICE_ID||!process.env.STRIPE_GROWTH_PRICE_ID||!process.env.STRIPE_PRO_PRICE_ID||!process.env.STRIPE_SETUP_PRICE_ID))issues.push('Preview Stripe test credentials require explicit test Price IDs');
     if(process.env.CALLERCORE_CHECKOUT_ENABLED==='true')issues.push('Preview checkout launch gate is enabled');
   }
   if(env==='production'&&(secretMode==='test'||publishableMode==='test'))issues.push('Production is using Stripe test credentials');

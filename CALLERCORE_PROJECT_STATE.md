@@ -244,6 +244,7 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 ## Stripe environment-mode fail-closed readiness
 
 - System Health now detects unrecognized Stripe key formats, mixed secret/publishable modes, live credentials in Preview and test credentials in Production.
+- Preview test credentials also require all four explicit test Price IDs, preventing the live catalog defaults from being paired with a test account.
 - Embedded Checkout applies the same validation before rate limiting, lead creation or any Stripe request. Stripe configuration health and Billing Portal also stop before provider calls when the environment mode is invalid. Production test keys and Preview live keys fail closed; matching test Preview and live Production modes remain eligible for their later gates.
 - The environment scope matrix now makes these enforced mode requirements explicit. Checkout remains disabled unless the separate `CALLERCORE_CHECKOUT_ENABLED=true` release authorization is present.
-- Added executable environment-mode regressions and checkout, health-check and Billing Portal ordering safeguards. Local suite: 227 tests passed; syntax and diff checks passed. No provider request, charge or production configuration change was made.
+- Added executable environment-mode, isolated Preview catalog, checkout, health-check and Billing Portal ordering safeguards. Local suite: 228 tests passed; syntax and diff checks passed. No provider request, charge or production configuration change was made.

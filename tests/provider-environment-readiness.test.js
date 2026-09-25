@@ -19,8 +19,14 @@ test('environment health rejects live Preview, test Production and mixed Stripe 
 });
 
 test('matching Stripe modes pass scope checks only in their intended environment',()=>{
-  assert.equal(environmentHealth({VERCEL_ENV:'preview',STRIPE_SECRET_KEY:'sk_test_example',STRIPE_PUBLISHABLE_KEY:'pk_test_example'}).ok,true);
+  const preview={VERCEL_ENV:'preview',STRIPE_SECRET_KEY:'sk_test_example',STRIPE_PUBLISHABLE_KEY:'pk_test_example',STRIPE_STARTER_PRICE_ID:'price_test_starter',STRIPE_GROWTH_PRICE_ID:'price_test_growth',STRIPE_PRO_PRICE_ID:'price_test_pro',STRIPE_SETUP_PRICE_ID:'price_test_setup'};
+  assert.equal(environmentHealth(preview).ok,true);
   assert.equal(environmentHealth({VERCEL_ENV:'production',STRIPE_SECRET_KEY:'sk_live_example',STRIPE_PUBLISHABLE_KEY:'pk_live_example'}).ok,true);
+});
+
+test('Preview test credentials require an explicit isolated Price catalog',()=>{
+  const result=environmentHealth({VERCEL_ENV:'preview',STRIPE_SECRET_KEY:'sk_test_example',STRIPE_PUBLISHABLE_KEY:'pk_test_example'});
+  assert.equal(result.ok,false);assert.ok(Array.from(result.issues).some(issue=>/explicit test Price IDs/.test(issue)));
 });
 
 test('checkout rejects invalid environment modes before starting a Stripe request',()=>{
