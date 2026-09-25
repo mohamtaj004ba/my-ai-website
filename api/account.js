@@ -1015,7 +1015,8 @@ async function adminPlatformSettingsSave(req,res){
   const body=req.body||{},supportEmail=cleanEmail(body.supportEmail),defaultAgentName=String(body.defaultAgentName||'Maya').trim().slice(0,80),defaultTimezone=String(body.defaultTimezone||'America/Los_Angeles').trim().slice(0,100),brandName=String(body.brandName||'CallerCore').trim().slice(0,80);
   if(supportEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail))return res.status(400).json({error:'Valid support email required'});
   if(!brandName)return res.status(400).json({error:'Platform name is required'});
-  const previous=await kv.get('platform:settings')||{},launchGates=body.launchGates&&typeof body.launchGates==='object'?launchGateState(body.launchGates):launchGateState(previous.launchGates);
+  const saved=await kv.get('platform:settings'),previous=saved||{},launchGates=body.launchGates&&typeof body.launchGates==='object'?launchGateState(body.launchGates):launchGateState(previous.launchGates);
+  if(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(previous.updatedAt||0))return res.status(409).json({error:'Platform settings changed while you were editing. Reload this section before saving again.'});
   const settings={
     brandName,supportEmail,defaultAgentName:defaultAgentName||'Maya',defaultTimezone,
     defaultAfterHours:['ai','transfer','voicemail'].includes(body.defaultAfterHours)?body.defaultAfterHours:'ai',
@@ -1031,12 +1032,13 @@ async function adminPlatformSettingsSave(req,res){
       clientCare:body.alertPrefs?.clientCare!==false,
       system:body.alertPrefs?.system!==false
     },
-    maintenanceMode:!!body.maintenanceMode,launchGates,updatedAt:Date.now(),updatedBy:admin.email
+    maintenanceMode:!!body.maintenanceMode,launchGates,updatedAt:Math.max(Date.now(),Number(previous.updatedAt||0)+1),updatedBy:admin.email
   };
-  await kv.set('platform:settings',settings);
   const changedGates=LAUNCH_GATE_DEFS.filter(g=>!!launchGateState(previous.launchGates)[g.key]!==!!launchGates[g.key]).map(g=>({key:g.key,from:!!launchGateState(previous.launchGates)[g.key],to:!!launchGates[g.key]}));
-  if(changedGates.length)await appendAudit(admin.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'platform_launch_gates_update',section:'platform',before:launchGateState(previous.launchGates),after:launchGates,meta:{changedGates}});
-  await appendAudit(admin.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'platform_settings_update',section:'platform',before:{brandName:previous.brandName||'CallerCore',defaultAfterHours:previous.defaultAfterHours||'ai',analyticsWindowDays:previous.analyticsWindowDays||30,adminRefreshSeconds:previous.adminRefreshSeconds||60,leadFollowupHours:previous.leadFollowupHours||24,defaultSalesOwner:previous.defaultSalesOwner||'',autoScheduleFirstFollowup:previous.autoScheduleFirstFollowup!==false,alertPrefs:previous.alertPrefs||{},maintenanceMode:!!previous.maintenanceMode},after:{brandName:settings.brandName,defaultAfterHours:settings.defaultAfterHours,analyticsWindowDays:settings.analyticsWindowDays,adminRefreshSeconds:settings.adminRefreshSeconds,leadFollowupHours:settings.leadFollowupHours,defaultSalesOwner:settings.defaultSalesOwner,autoScheduleFirstFollowup:settings.autoScheduleFirstFollowup,alertPrefs:settings.alertPrefs,maintenanceMode:settings.maintenanceMode}});
+  const audit={id:crypto.randomUUID(),workspaceId:admin.workspaceId,actorEmail:admin.email,actorRole:'admin',action:'platform_settings_update',section:'platform',before:{brandName:previous.brandName||'CallerCore',supportEmail:previous.supportEmail||'',defaultAgentName:previous.defaultAgentName||'Maya',defaultTimezone:previous.defaultTimezone||'America/Los_Angeles',defaultAfterHours:previous.defaultAfterHours||'ai',analyticsWindowDays:previous.analyticsWindowDays||30,adminRefreshSeconds:previous.adminRefreshSeconds||60,leadFollowupHours:previous.leadFollowupHours||24,defaultSalesOwner:previous.defaultSalesOwner||'',autoScheduleFirstFollowup:previous.autoScheduleFirstFollowup!==false,alertPrefs:previous.alertPrefs||{},maintenanceMode:!!previous.maintenanceMode,launchGates:launchGateState(previous.launchGates)},after:{brandName:settings.brandName,supportEmail:settings.supportEmail,defaultAgentName:settings.defaultAgentName,defaultTimezone:settings.defaultTimezone,defaultAfterHours:settings.defaultAfterHours,analyticsWindowDays:settings.analyticsWindowDays,adminRefreshSeconds:settings.adminRefreshSeconds,leadFollowupHours:settings.leadFollowupHours,defaultSalesOwner:settings.defaultSalesOwner,autoScheduleFirstFollowup:settings.autoScheduleFirstFollowup,alertPrefs:settings.alertPrefs,maintenanceMode:settings.maintenanceMode,launchGates},meta:{changedGates},at:Date.now()};
+  try{
+    if(!await compareAndAudit(kv,{key:'platform:settings',before:saved,after:settings},'audit:'+admin.workspaceId,audit))return res.status(409).json({error:'Platform settings changed during this save. Reload before making further changes.'});
+  }catch(err){console.error('admin platform settings save failed',safeError(err));return res.status(503).json({error:'Could not confirm that platform settings and audit history were saved together. Reload this section before retrying.'})}
   return res.status(200).json({ok:true,settings});
 }
 
