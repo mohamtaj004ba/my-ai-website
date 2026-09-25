@@ -75,3 +75,10 @@ test('Preview QA uses the committed dependency lockfile',()=>{
   assert.equal(lock.lockfileVersion,3);
   assert.equal(lock.packages[''].devDependencies.playwright,'1.55.0');
 });
+
+
+test('closed admin client drawer does not widen mobile viewport',()=>{
+  const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
+  assert.match(css,/#adminClientDrawer\{right:0;transform:translateX\(calc\(100% \+ 24px\)\);visibility:hidden;pointer-events:none\}/);
+  assert.match(css,/#adminClientDrawer\.open\{right:0;transform:translateX\(0\);visibility:visible;pointer-events:auto\}/);
+});
