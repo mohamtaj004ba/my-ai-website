@@ -2377,6 +2377,7 @@ async function deletePhone(id){
 }
 
 function openPhoneModal(id=null){
+  if(phoneSaving)return;
   const item=id?adminPhoneData.find(x=>String(x.id)===String(id)):null;
   const modal=document.getElementById('phoneModal');if(!modal)return;
   modal.dataset.editId=id||'';modal.dataset.expectedUpdatedAt=String(item?.updatedAt||0);

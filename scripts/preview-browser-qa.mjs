@@ -498,7 +498,14 @@ async function runResponsive(kind,viewport,name){
       await assertLayout(page,kind+'-'+name+'-secondary',{allowHorizontalOverflow:false});
       await shot(page,kind+'-'+name+'-'+(kind==='admin'?'clients':'calls'));
     }
-    if(kind==='admin'){await ensureView(page,'phones');await assertLayout(page,kind+'-'+name+'-phones');await shot(page,kind+'-'+name+'-phones')}
+    if(kind==='admin'){
+      await ensureView(page,'phones');await assertLayout(page,kind+'-'+name+'-phones');await shot(page,kind+'-'+name+'-phones');
+      const edit=page.locator('#phoneTable [data-edit-phone]').first();
+      if(!await edit.isVisible())throw new Error('Phone edit action is hidden at '+name+' width');
+      await edit.click();await page.locator('#phoneModal.open').waitFor({state:'visible'});
+      await assertLayout(page,kind+'-'+name+'-phone-editor');await shot(page,kind+'-'+name+'-phone-editor');
+      await page.locator('#closePhoneModal').click();
+    }
     if(kind==='client'){
       for(const view of ['conversations','agent','settings']){
         await ensureView(page,view);

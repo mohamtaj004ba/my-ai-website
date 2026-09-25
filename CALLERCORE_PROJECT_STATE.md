@@ -159,3 +159,9 @@ Only commit/push routine changes to the authorized development branch. No merge 
 - Implementation `4c0d7ab715e3fb4836e839a8d785dfab632cf79c`: 190 tests passed locally; CI `36114279107`, CodeQL `36114279055`, Jekyll `36114279103` passed. Full authenticated Preview QA `36114274239` passed, including client and admin persisted-save/restore, pending-save locks, long message batches and laptop/tablet/mobile layouts.
 - Preview READY: `dpl_iDTBVDLoqfDGy4JowpPgPitZW8Ad`, https://my-ai-website-6d1soigps-mohamtaj004bas-projects.vercel.app .
 - Next queued implementation is the background-refresh draft guard (193 local tests); it still requires its own expanded Preview run.
+
+## Screenshot-driven phone inventory usability correction
+
+- Reviewed the successful `4c0d7ab` run's laptop/tablet/mobile screenshots and clean report (1,200 calls; 153 conversations; 11 admin clients; zero API/page/console errors; 22 layout checks). Visual review found inherited table styles hid phone edit actions at tablet/mobile widths, despite passing overflow checks. Desktop headers also inherited a wider minimum width than their rows.
+- Narrow phone tables now use scoped card rows with visible workspace, routing, readiness and Edit/Delete actions; mobile count cards use two columns. Desktop phone headers use the actual container width. Added responsive QA that opens/closes the phone editor and captures it at laptop/tablet/mobile sizes.
+- Phone modal opening is explicitly blocked while its save is pending. Local suite remains 193 passing. Visual verification pending feature push.

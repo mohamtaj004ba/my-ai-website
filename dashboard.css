@@ -2415,3 +2415,23 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
 @media(max-width:760px){.phone-inventory-toolbar{align-items:stretch;flex-direction:column}.phone-list-footer{align-items:stretch;flex-direction:column}}
 
 .message-history-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;color:var(--muted);font-size:11px}.message-history-controls .secondary-btn{font-size:11px}
+
+/* Keep routing details and actions usable when the sidebar leaves little table space. */
+#view-phones .admin-phone-row.head{min-width:0}
+#view-phones .admin-phone-row.head>span{display:block!important}
+@media(max-width:1150px){
+  #view-phones .page-head{align-items:flex-start;flex-direction:column;gap:16px}
+  #view-phones .admin-phone-row.head{display:none!important}
+  #view-phones .admin-phone-row:not(.head){display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-areas:"number status" "workspace workspace" "routing routing" "actions actions";gap:10px 12px;padding:18px}
+  #view-phones .admin-phone-row:not(.head)>span{display:block!important;min-width:0;white-space:normal;overflow-wrap:anywhere}
+  #view-phones .admin-phone-row:not(.head)>span:nth-child(1){grid-area:number}
+  #view-phones .admin-phone-row:not(.head)>span:nth-child(2){grid-area:workspace;font-size:12px;color:var(--muted)}
+  #view-phones .admin-phone-row:not(.head)>span:nth-child(3){display:none!important}
+  #view-phones .admin-phone-row:not(.head)>span:nth-child(4){grid-area:routing}
+  #view-phones .admin-phone-row:not(.head)>span:nth-child(5){grid-area:status;align-self:start}
+  #view-phones .admin-phone-row:not(.head)>span:nth-child(6){grid-area:actions;display:flex!important;gap:10px}
+  #view-phones .admin-phone-row:not(.head)>span:nth-child(4) b,#view-phones .admin-phone-row:not(.head)>span:nth-child(4) small{white-space:normal;overflow:visible;text-overflow:clip}
+  #view-phones .admin-phone-routing b{font-size:12px}#view-phones .admin-phone-routing small,#view-phones .admin-phone-row:not(.head)>span:first-child small{font-size:11px;line-height:1.5}
+  #view-phones .admin-phone-row .admin-link{padding:8px 12px;min-height:36px;border-radius:8px;background:#f5f6f8}
+}
+@media(max-width:650px){#view-phones .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#view-phones .metric-grid article{min-width:0;padding:18px}#view-phones .admin-phone-row:not(.head){grid-template-areas:"number number" "workspace workspace" "status status" "routing routing" "actions actions"}}
