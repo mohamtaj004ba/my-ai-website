@@ -2489,6 +2489,7 @@ async function clientDashboardData(req,res){
   };
   const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',handlingInstructions:savedAgent.handlingInstructions||savedAgent.callHandling||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
   const routing=clientRouting(phone,{smsLive});
+  const conversationItems=ent.features.unifiedInbox&&Array.isArray(conversationsRaw)?conversationsRaw:[],conversationPage=paginateConversations(conversationItems,{limit:50});
   return res.status(200).json({
     workspace:{
       id:ws.id,name:ws.name||'',plan:ent.plan,status:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',
@@ -2500,7 +2501,7 @@ async function clientDashboardData(req,res){
     leads:Array.isArray(leadsRaw)?leadsRaw:[],agent,settings,
     integrations:{googleCalendar:calendarLive&&!!savedIntegrations.googleCalendar,stripe:!!ws.stripeCustomerId,webhookUrl:savedIntegrations.webhookUrl||'',apiAccess:!!ent.features.apiAccess},
     locations:Array.isArray(locationsRaw)?locationsRaw:[],locationsLimit:ent.locations,routing,
-    conversations:ent.features.unifiedInbox&&Array.isArray(conversationsRaw)?conversationsRaw:[],
+    conversations:conversationItems,conversationPage,
     appointments:calendarLive&&ent.features.appointments&&Array.isArray(appointmentsRaw)?appointmentsRaw:[],
     automations:ent.features.automations&&Array.isArray(automationsRaw)?automationsRaw:[],
     onboarding:onboardingRaw&&typeof onboardingRaw==='object'&&!Array.isArray(onboardingRaw)?clientOnboardingView(onboardingRaw):null,

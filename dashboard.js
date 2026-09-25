@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',contactHistoryVisibleLimit=50,contactHistoryLastSignature='',contactMessageSessionLimits={},pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
+let callsData=[],leadsData=[],conversationsData=[],conversationThreadsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',conversationPageTotal=0,conversationNextCursor=null,conversationPageLoading=false,conversationPageError='',conversationPageRequest=0,conversationBackendPaging=false,conversationSearchTimer=null,activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',contactHistoryVisibleLimit=50,contactHistoryLastSignature='',contactMessageSessionLimits={},pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -327,7 +327,7 @@ async function fetchJsonRetry(url,{attempts=2,timeout=9000}={}){
 async function loadSecondaryClientData(){
   const tasks=[
     ['leads',d=>{leadsData=d.leads||[]}],
-    ['conversations',d=>{conversationsData=d.conversations||[]}],
+    ['conversations',d=>{conversationThreadsData=d.conversations||[];conversationPageTotal=Number(d.total||conversationThreadsData.length);conversationNextCursor=d.nextCursor||null;conversationBackendPaging=true;if(!conversationsData.length)conversationsData=conversationThreadsData}],
     ['appointments',d=>{appointmentsData=d.appointments||[]}],
     ['automations',d=>{automationsData=d.automations||[]}],
     ['locations',d=>{locationsData=d.locations||locationsData;locationsLimit=Number(d.limit||locationsLimit||1)}]
@@ -365,6 +365,9 @@ function applyClientDashboardData(data={}){
   locationsData=Array.isArray(data.locations)?data.locations:[];
   locationsLimit=Number(data.locationsLimit||data.limit||1);
   conversationsData=Array.isArray(data.conversations)?data.conversations:[];
+  const page=data.conversationPage&&typeof data.conversationPage==='object'?data.conversationPage:null;
+  conversationThreadsData=page&&Array.isArray(page.conversations)?page.conversations:conversationsData;
+  conversationPageTotal=Number(page?.total||conversationThreadsData.length);conversationNextCursor=page?.nextCursor||null;conversationBackendPaging=!!page;conversationLastFilterSignature=JSON.stringify(['','all','newest']);
   appointmentsData=Array.isArray(data.appointments)?data.appointments:[];
   automationsData=Array.isArray(data.automations)?data.automations:[];
   sessionOnboarding=data.onboarding?{...(sessionOnboarding||{}),...data.onboarding}:sessionOnboarding;
@@ -393,7 +396,7 @@ async function refreshClientDashboard({button=null,silent=false}={}){
   try{
     const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:1,timeout:12000});
     if(agentEditing||settingsEditing||editGeneration!==clientEditGeneration){setClientSyncState('live','Refresh deferred to preserve your latest edits.');return}
-    applyClientDashboardData(data);renderClientData();setDataHealth('clientDataHealth',false);updateClientRefreshStamp();
+    applyClientDashboardData(data);renderClientData();const conversationQueryState=conversationQuery();if(conversationBackendPaging&&(conversationQueryState.q||conversationQueryState.filter!=='all'||conversationQueryState.sort!=='newest'))loadConversationPage();setDataHealth('clientDataHealth',false);updateClientRefreshStamp();
   }catch(err){
     console.error('Client live refresh failed',err);setClientSyncState('error','Could not refresh · showing last good data');
   }finally{
@@ -417,7 +420,7 @@ function renderClientData(){
 }
 async function loadOperations(){
   if(demoMode){setDataHealth('clientDataHealth',false);
-    callsData=DEMO_CALLS.map(x=>({...x}));leadsData=DEMO_LEADS.map(x=>({...x}));conversationsData=DEMO_CONVERSATIONS.map(x=>({...x}));appointmentsData=DEMO_APPOINTMENTS.map(x=>({...x}));agentData={...DEMO_AGENT,qualificationQuestions:[...DEMO_AGENT.qualificationQuestions]};automationsData=DEMO_AUTOMATIONS.map(x=>({...x}));settingsData={...DEMO_SETTINGS};integrationsData={...DEMO_INTEGRATIONS,apiAccess:has('apiAccess')};phoneRoutingData={number:'(509) 555-0100',label:'Primary',provider:'Vapi',forwardingFrom:'(509) 555-0199',transferNumber:'(509) 555-0101',afterHours:'ai',smsEnabled:false,status:'active'};locationsData=[{id:'loc-demo',name:'Spokane',phone:'(509) 555-0199',address:'Spokane, WA',timezone:'America/Los_Angeles',active:true}];locationsLimit=PLAN_DATA[currentPlan].locations||1;analyticsData=buildLocalAnalytics();followupState={};renderClientData();renderSupport();renderClientSetupStatus();return;
+    callsData=DEMO_CALLS.map(x=>({...x}));leadsData=DEMO_LEADS.map(x=>({...x}));conversationsData=DEMO_CONVERSATIONS.map(x=>({...x}));conversationThreadsData=conversationsData;conversationPageTotal=conversationsData.length;conversationNextCursor=null;conversationBackendPaging=false;appointmentsData=DEMO_APPOINTMENTS.map(x=>({...x}));agentData={...DEMO_AGENT,qualificationQuestions:[...DEMO_AGENT.qualificationQuestions]};automationsData=DEMO_AUTOMATIONS.map(x=>({...x}));settingsData={...DEMO_SETTINGS};integrationsData={...DEMO_INTEGRATIONS,apiAccess:has('apiAccess')};phoneRoutingData={number:'(509) 555-0100',label:'Primary',provider:'Vapi',forwardingFrom:'(509) 555-0199',transferNumber:'(509) 555-0101',afterHours:'ai',smsEnabled:false,status:'active'};locationsData=[{id:'loc-demo',name:'Spokane',phone:'(509) 555-0199',address:'Spokane, WA',timezone:'America/Los_Angeles',active:true}];locationsLimit=PLAN_DATA[currentPlan].locations||1;analyticsData=buildLocalAnalytics();followupState={};renderClientData();renderSupport();renderClientSetupStatus();return;
   }
   setClientLoading(true);setDataHealth('clientDataHealth',false);
   try{
@@ -819,7 +822,22 @@ function renderEntitledApps(){
 }
 function conversationActivity(x){
   const timestamp=value=>{const n=Number(value);if(Number.isFinite(n)&&n>0)return n;const d=Date.parse(value);return Number.isFinite(d)?d:0};
-  return (Array.isArray(x.messages)?x.messages:[]).reduce((latest,m)=>Math.max(latest,timestamp(m.at)),Math.max(recordTime(x)||0,timestamp(x.updatedAt)));
+  return (Array.isArray(x.messages)?x.messages:[]).reduce((latest,m)=>Math.max(latest,timestamp(m.at)),Math.max(recordTime(x)||0,timestamp(x.updatedAt),timestamp(x.activityAt)));
+}
+function conversationQuery(){
+  return {q:(document.getElementById('conversationSearch')?.value||'').trim(),filter:conversationFilter,sort:document.getElementById('conversationSort')?.value||'newest'};
+}
+async function loadConversationPage({append=false}={}){
+  if(!conversationBackendPaging||(append&&conversationPageLoading))return;
+  const query=conversationQuery(),signature=JSON.stringify([query.q.toLowerCase(),query.filter,query.sort]),cursor=append?conversationNextCursor:null;if(append&&!cursor)return;
+  const request=++conversationPageRequest;conversationPageLoading=true;conversationPageError='';conversationLastFilterSignature=signature;renderConversations();
+  try{
+    const params=new URLSearchParams({action:'conversations',limit:'50',q:query.q,filter:query.filter,sort:query.sort});if(cursor)params.set('cursor',cursor);
+    const data=await fetchJsonRetry('/api/account?'+params.toString(),{attempts:2,timeout:10000});if(request!==conversationPageRequest)return;
+    const incoming=Array.isArray(data.conversations)?data.conversations:[];conversationThreadsData=append?[...conversationThreadsData,...incoming]:incoming;conversationPageTotal=Number(data.total||0);conversationNextCursor=data.nextCursor||null;
+    if(!append&&activeConversationId&&!conversationThreadsData.some(item=>String(item.id)===String(activeConversationId)))activeConversationId=null;
+  }catch(err){if(request===conversationPageRequest){console.warn('Conversation page delayed',err);conversationPageError='Could not update conversations · showing last loaded page'}}
+  finally{if(request===conversationPageRequest){conversationPageLoading=false;renderConversations()}}
 }
 function renderConversations(){
   if(!has('unifiedInbox'))return;
@@ -828,17 +846,17 @@ function renderConversations(){
   const sort=document.getElementById('conversationSort')?.value||'newest';
   const signature=JSON.stringify([q,conversationFilter,sort]);
   if(signature!==conversationLastFilterSignature){conversationVisibleLimit=50;conversationLastFilterSignature=signature;list.scrollTop=0}
-  const rows=conversationsData.filter(x=>{
+  const localRows=conversationsData.filter(x=>{
     const searchOk=!q||[x.name,x.phone,x.last,x.status,...(Array.isArray(x.messages)?x.messages:[]).map(m=>m.text)].join(' ').toLowerCase().includes(q);
     const status=String(x.status||'').trim().toLowerCase();
     const filterOk=conversationFilter==='all'||(conversationFilter==='attention'&&/follow/i.test(status))||(conversationFilter==='active'&&status==='active')||(conversationFilter==='closed'&&status==='closed');
     return searchOk&&filterOk;
   }).map(x=>({record:x,at:conversationActivity(x)})).sort((a,b)=>sort==='oldest'?a.at-b.at:b.at-a.at).map(x=>x.record);
-  const visibleRows=rows.slice(0,conversationVisibleLimit);
+  const rows=conversationBackendPaging?conversationThreadsData:localRows,visibleRows=conversationBackendPaging?rows:rows.slice(0,conversationVisibleLimit),resultTotal=conversationBackendPaging?conversationPageTotal:rows.length;
   list.innerHTML=visibleRows.map(x=>'<button type="button" class="thread-item" data-thread-id="'+esc(x.id)+'"><div class="thread-top"><strong>'+esc(x.name||'Unknown')+'</strong><small>'+esc(conversationActivity(x)?new Date(conversationActivity(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.time||''))+'</small></div><small>'+esc(x.phone||'')+' · '+esc(x.status||'')+'</small><p>'+esc(x.last||'')+'</p></button>').join('')||'<div class="empty-state"><h3>'+(conversationsData.length?'No matching conversations':'No conversations yet')+'</h3><p>'+(conversationsData.length?'Try another search or clear the filters.':'Conversation history will appear here when available.')+'</p></div>';
   list.querySelectorAll('[data-thread-id]').forEach(btn=>btn.addEventListener('click',()=>openConversation(btn.dataset.threadId)));
-  document.getElementById('conversationCount').textContent='Showing '+visibleRows.length+' of '+rows.length+' conversations'+(q||conversationFilter!=='all'?' matching filters':'');
-  document.getElementById('loadMoreConversations').hidden=visibleRows.length>=rows.length;
+  document.getElementById('conversationCount').textContent=conversationPageError||(conversationPageLoading?'Updating · ':'Showing ')+visibleRows.length+' of '+resultTotal+' conversations'+(q||conversationFilter!=='all'?' matching filters':'');
+  const more=document.getElementById('loadMoreConversations');more.hidden=conversationBackendPaging?!conversationNextCursor:visibleRows.length>=rows.length;more.disabled=conversationPageLoading;more.textContent=conversationPageLoading?'Loading…':'Load 50 more';
   document.getElementById('resetConversationFilters').hidden=!q&&conversationFilter==='all'&&sort==='newest';
   const active=visibleRows.find(x=>String(x.id)===String(activeConversationId))||visibleRows[0];
   if(active)openConversation(active.id);else{
@@ -853,7 +871,13 @@ function openConversation(id,{loadEarlier=false}={}){
   const at=conversationActivity(x),meta=document.getElementById('conversationMeta');if(meta)meta.textContent=[x.phone,at?'Last activity '+new Date(at).toLocaleString():x.time].filter(Boolean).join(' · ');
   const status=document.getElementById('conversationStatus');status.hidden=false;status.textContent=x.status||'Status unavailable';status.className='tag '+(/^active$|recover/i.test(x.status||'')?'green':'amber');
   const contactButton=document.getElementById('conversationContactButton');if(contactButton){contactButton.hidden=false;contactButton.dataset.contactKey=contactKey(x)}
-  const stream=document.getElementById('messageStream'),oldHeight=stream.scrollHeight,oldTop=stream.scrollTop,messages=Array.isArray(x.messages)?x.messages:[],visible=messages.slice(-conversationMessageLimit);
+  const stream=document.getElementById('messageStream');
+  if(!Array.isArray(x.messages)&&Number(x.messageCount||0)>0){
+    stream.innerHTML='<div class="contact-inline-loading"><i></i><span>Loading message history…</span></div>';
+    if(!x.__detailLoading){x.__detailLoading=true;fetchJsonRetry('/api/account?action=conversation-detail&id='+encodeURIComponent(id),{attempts:2,timeout:8000}).then(data=>{if(data.conversation){const index=conversationsData.findIndex(item=>String(item.id)===String(id));if(index>=0)conversationsData[index]={...conversationsData[index],...data.conversation,__detailLoading:false};if(String(activeConversationId)===String(id))openConversation(id)}}).catch(err=>{x.__detailLoading=false;if(String(activeConversationId)===String(id))stream.innerHTML='<div class="empty-state"><h3>Message history is delayed</h3><p>'+esc(err.message||'Try again shortly.')+'</p></div>'})}
+    return;
+  }
+  const oldHeight=stream.scrollHeight,oldTop=stream.scrollTop,messages=Array.isArray(x.messages)?x.messages:[],visible=messages.slice(-conversationMessageLimit);
   stream.innerHTML=(messages.length?'<div class="message-history-controls"><span>Showing '+visible.length+' of '+messages.length+' messages</span>'+(visible.length<messages.length?'<button type="button" class="secondary-btn" id="loadEarlierMessages">Load earlier messages</button>':'')+'</div>':'')+visible.map(m=>'<div class="message '+(m.dir==='out'?'out':m.dir==='system'?'system':'')+'">'+(m.dir==='system'?'':'<b>'+esc(m.who||'Customer')+'</b>')+esc(m.text||'')+(m.at?'<small>'+esc(new Date(m.at).toLocaleString())+'</small>':'')+'</div>').join('')||'<div class="empty-state"><h3>No messages yet</h3></div>';
   document.getElementById('loadEarlierMessages')?.addEventListener('click',()=>openConversation(id,{loadEarlier:true}));
   stream.scrollTop=changed?stream.scrollHeight:loadEarlier?oldTop+stream.scrollHeight-oldHeight:oldTop;
@@ -893,11 +917,11 @@ function renderContacts(){
   let rows=all.filter(c=>{const kind=contactType(c),searchOk=!q||[c.name,c.phone,c.address,kind,...c.services].join(' ').toLowerCase().includes(q);return searchOk&&(typeFilter==='all'||kind===typeFilter)});
   rows.sort((a,b)=>sort==='name'?String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}):b.lastAt-a.lastAt);
   const totalRows=rows.length,visibleRows=rows.slice(0,contactVisibleLimit);
-  const totalInteractions=c=>c.calls.length+c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0);
+  const totalInteractions=c=>c.calls.length+c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:Number(x.messageCount||0)),0);
   const contactCount=document.getElementById('customerCount'),customerCount=document.getElementById('repeatCustomerCount'),interactionCount=document.getElementById('customerAttentionCount');
   if(contactCount)contactCount.textContent=all.length;if(customerCount)customerCount.textContent=all.filter(c=>contactType(c)==='Customer').length;if(interactionCount)interactionCount.textContent=all.reduce((n,c)=>n+totalInteractions(c),0);
   wrap.innerHTML=visibleRows.map(c=>{
-    const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0),openCount=c.calls.filter(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x)).length,latestCall=[...c.calls].sort((a,b)=>recordTime(b)-recordTime(a))[0],latestText=latestCall?.reason||[...c.services][0]||'General activity',kind=contactType(c),key=encodeURIComponent(c.key);
+    const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:Number(x.messageCount||0)),0),openCount=c.calls.filter(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x)).length,latestCall=[...c.calls].sort((a,b)=>recordTime(b)-recordTime(a))[0],latestText=latestCall?.reason||[...c.services][0]||'General activity',kind=contactType(c),key=encodeURIComponent(c.key);
     return '<div class="contact-row data '+(openCount?'customer-attention':'')+'" role="button" tabindex="0" data-contact-key="'+key+'" aria-label="Open '+esc(c.name)+' contact history"><span><strong>'+esc(c.name)+'</strong><small>'+esc(c.phone||'No phone captured')+(openCount?' · '+openCount+' open team action'+(openCount===1?'':'s'):'')+'</small></span><span><i class="contact-type-pill '+kind.toLowerCase()+'">'+esc(kind)+'</i></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span class="contact-count">'+c.calls.length+'</span><span class="contact-count">'+msgCount+'</span><span class="latest-need-link" title="'+esc(latestText)+'">'+esc(latestText)+'</span></div>';
   }).join('');
   const footer=document.getElementById('contactListFooter'),meta=document.getElementById('contactListMeta'),loadMore=document.getElementById('loadMoreContacts'),shown=Math.min(visibleRows.length,totalRows),remaining=Math.max(0,totalRows-shown);
@@ -1019,7 +1043,7 @@ function openContact(key){
   document.getElementById('contactDrawerName').textContent=c.name;
   document.getElementById('contactDrawerMeta').textContent=c.lastAt?'Last interaction '+new Date(c.lastAt).toLocaleString():'No recent interaction date';
   const digits=String(c.phone||'').replace(/\D/g,''),setActionLink=(el,href)=>{if(!el)return;const enabled=!!href;if(enabled)el.setAttribute('href',href);else el.removeAttribute('href');el.classList.toggle('disabled-link',!enabled);el.setAttribute('aria-disabled',enabled?'false':'true');el.tabIndex=enabled?0:-1};setActionLink(document.getElementById('contactCallLink'),digits?'tel:'+digits:'');setActionLink(document.getElementById('contactTextLink'),digits?'sms:'+digits:'');
-  const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:0),0);
+  const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:Number(x.messageCount||0)),0);
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
   set('contactHistoryCalls',c.calls.length);set('contactHistoryMessages',msgCount);set('contactHistoryRequests',c.leads.length);
   document.getElementById('contactDrawerDetails').innerHTML=[
@@ -1064,11 +1088,11 @@ async function updateAppointment(id,status){
     if(!r.ok||data.updated!==true)throw new Error(data.error||'Could not update appointment.');
   }catch(err){item.status=previous;renderAppointments();alert(err.message||'Could not update appointment. Check your connection and try again.')}
 }
-document.getElementById('conversationSearch')?.addEventListener('input',renderConversations);
-document.getElementById('conversationSort')?.addEventListener('change',renderConversations);
-document.getElementById('loadMoreConversations')?.addEventListener('click',()=>{conversationVisibleLimit+=50;renderConversations()});
-document.getElementById('resetConversationFilters')?.addEventListener('click',()=>{document.getElementById('conversationSearch').value='';document.getElementById('conversationSort').value='newest';conversationFilter='all';renderConversations();document.getElementById('conversationSearch').focus()});
-document.querySelectorAll('[data-conversation-filter]').forEach(b=>b.addEventListener('click',()=>{conversationFilter=b.dataset.conversationFilter;renderConversations()}));
+document.getElementById('conversationSearch')?.addEventListener('input',()=>{if(!conversationBackendPaging)return renderConversations();clearTimeout(conversationSearchTimer);conversationSearchTimer=setTimeout(()=>loadConversationPage(),250)});
+document.getElementById('conversationSort')?.addEventListener('change',()=>conversationBackendPaging?loadConversationPage():renderConversations());
+document.getElementById('loadMoreConversations')?.addEventListener('click',()=>{if(conversationBackendPaging)return loadConversationPage({append:true});conversationVisibleLimit+=50;renderConversations()});
+document.getElementById('resetConversationFilters')?.addEventListener('click',()=>{document.getElementById('conversationSearch').value='';document.getElementById('conversationSort').value='newest';conversationFilter='all';if(conversationBackendPaging)loadConversationPage();else renderConversations();document.getElementById('conversationSearch').focus()});
+document.querySelectorAll('[data-conversation-filter]').forEach(b=>b.addEventListener('click',()=>{conversationFilter=b.dataset.conversationFilter;if(conversationBackendPaging)loadConversationPage();else renderConversations()}));
 document.getElementById('conversationContactButton')?.addEventListener('click',e=>{const key=e.currentTarget.dataset.contactKey;if(key)openContact(key)});
 
 

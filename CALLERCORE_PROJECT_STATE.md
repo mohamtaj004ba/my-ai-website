@@ -62,7 +62,7 @@ Current verified implementation: 206/206 local tests pass. Executable regression
 
 ## Next authorized development backlog
 
-1. Complete the client integration for tenant-scoped conversation and message pagination while preserving full contact-directory counts, search, contact links, entitlements and newest-message behavior.
+1. Reduce the initial full conversation-history bundle without losing complete contact-directory counts or contact-drawer histories; design storage normalization as a separate migration rather than rewriting the legacy record in place.
 2. Continue client/admin shared-state consistency and accessibility review using the existing authenticated Preview workflow and screenshots. Current regression coverage is not a claim that every dashboard action has been tested.
 3. Inspect provider/billing test-environment readiness before dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios. Live activation, production changes and new charges still need owner authorization.
 
@@ -72,7 +72,7 @@ Current verified implementation: 206/206 local tests pass. Executable regression
 - Client Conversations is a history viewer. No client reply composer or shared unread state was found. Do not invent working messaging or change SMS launch scope to expose it.
 - Conversation records link to derived contact history; admin Gmail/website Inbox is a separate data source. A shared client/admin message-delivery pipeline has not been verified.
 - Live voice remains unavailable: shared readiness now reports awaiting activation; fake pause/resume is blocked. A real provider adapter and verification remain required before activation.
-- Contact-drawer and Conversations rendering now use 50-item/message batches. The new server pagination helpers still need client integration before the initial dashboard payload can omit complete message histories.
+- Contact-drawer and Conversations rendering now use 50-item/message batches. Conversations list/search/filter/sort requests use bounded server pages, while the initial dashboard bundle still carries complete histories for contact aggregation.
 - Some release docs predate implementation: README's unlimited Pro statement corrected; environment matrix/DEPLOY contain historical isolation and QA notes; production readiness still describes the already-replaced `@vercel/kv` client. Use actual code and current evidence.
 - Older rollback deployment references are historical and differ from current main SHA. Re-verify the appropriate production rollback target before an authorized release.
 
@@ -205,4 +205,13 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Every route derives the conversation key from the authenticated session workspace and preserves the unified-inbox entitlement check; request-supplied workspace IDs are never used.
 - Malformed stored conversation arrays fail closed. Invalid, oversized, expired or query-mismatched cursors return a bounded client error instead of resetting silently.
 - Added executable pagination, cursor, filter, full-history search, malformed-message and tenant-scope regressions. Local suite: 212 passed; syntax and diff checks passed.
-- This layer bounds API responses but still reads the legacy tenant array internally. Client integration and a separately designed storage normalization/migration remain the next scale steps.
+- This layer bounds API responses but still reads the legacy tenant array internally. A separately designed storage normalization/migration remains a later scale step.
+
+## Dashboard conversation pagination integration
+
+- The client dashboard bundle now includes a precomputed first conversation page. Subsequent Load more, newest/oldest sort, attention/active/closed filters and full-history searches use the tenant-scoped page endpoint.
+- Page changes keep complete conversation data available to Contacts, while the Conversations list renders only returned summaries. The UI reports server totals, disables duplicate page loads and discards superseded search/filter responses.
+- Background refresh replays a non-default active conversation query after applying the latest workspace bundle, so refresh cannot silently replace filtered results with the default page.
+- Summary-only fallback data hydrates the selected thread through the authenticated detail route before rendering messages. Contact counts use server message counts when a full message array is not present.
+- Preview QA waits for asynchronous page results during load-more, sort, search, reset and attention-filter checks. Local verification: 215 tests passed; syntax and diff checks passed.
+- Complete conversation histories remain in the initial bundle because Contacts currently derives its full directory and message timelines from them. Removing that payload requires a contact-summary/history contract or normalized storage and remains the next scale task.

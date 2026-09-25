@@ -292,22 +292,26 @@ async function runClientInteractions(page){
   if(initialThreads!==Math.min(50,conversationTotal))throw new Error('Conversations initial page size is incorrect');
   if(conversationTotal>50){
     await page.locator('#loadMoreConversations').click();
+    await page.waitForFunction(expected=>document.querySelectorAll('#conversationThreads .thread-item').length===expected,Math.min(100,conversationTotal));
     if(await page.locator('#conversationThreads .thread-item').count()!==Math.min(100,conversationTotal))throw new Error('Conversations Load more did not expand the list');
   }
   await page.locator('#conversationSort').selectOption('oldest');
+  await page.waitForFunction(expected=>document.querySelectorAll('#conversationThreads .thread-item').length===expected,Math.min(50,conversationTotal));
   if(await page.locator('#conversationThreads .thread-item').count()!==Math.min(50,conversationTotal))throw new Error('Conversation sort did not reset page size');
   await page.locator('#conversationContactButton').click();
   await page.locator('#contactDrawer.open').waitFor({state:'visible',timeout:5000});
   await page.locator('#closeContactDrawer').click();
   await page.locator('#conversationSearch').fill('__qa_no_match__');
-  await page.waitForTimeout(120);
+  await page.waitForFunction(()=>document.querySelectorAll('#conversationThreads .thread-item').length===0);
   if(await page.locator('#conversationThreads .thread-item').count()!==0)throw new Error('Conversation search did not filter unmatched query');
   if(await page.locator('#conversationStatus').isVisible())throw new Error('Empty search retained a stale status');
   await page.locator('#resetConversationFilters').click();
+  await page.waitForFunction(()=>document.querySelectorAll('#conversationThreads .thread-item').length>0);
   if(await page.locator('#conversationSort').inputValue()!=='newest')throw new Error('Clear filters did not restore latest activity order');
   await page.locator('[data-conversation-filter="attention"]').click();
-  await page.waitForTimeout(100);
+  await page.waitForFunction(()=>!document.querySelector('#loadMoreConversations')?.disabled);
   await page.locator('[data-conversation-filter="all"]').click();
+  await page.waitForFunction(()=>!document.querySelector('#loadMoreConversations')?.disabled);
   report.client.interactions.push('Conversations progressive loading + sorting + contact drawer + search/empty/reset');
 
   await ensureView(page,'leads');
