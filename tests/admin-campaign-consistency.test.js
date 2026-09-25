@@ -95,3 +95,23 @@ test('campaign form submits snapshot revisions and keeps confirmed saves after r
   assert.match(text,/expectedUpdatedAt:editing\?Number\(editing.updatedAt\|\|editing.createdAt\|\|0\):undefined/);
   assert.match(text,/adminCampaignData=\[data.campaign/);
 });
+
+test('campaign list includes items beyond 250 and rejects malformed indexes',async()=>{
+  const index=Array.from({length:251},(_,i)=>'campaign-'+i);
+  let output,code=0;
+  const context=vm.createContext({
+    requireAdmin:async()=>({email:'admin@example.test'}),
+    kv:{get:async key=>key==='marketing:campaign:index'?index:{id:key.slice('marketing:campaign:'.length),updatedAt:10}},
+    req:{},res:{status(n){code=n;return this},json(x){output=x;return x}},Promise,Array,Number,String
+  });
+  const start=api.indexOf('async function adminMarketingCampaigns('),end=api.indexOf('\\nasync function adminMarketingCampaignSave(',start);
+  assert.ok(start>=0&&end>start);
+  vm.runInContext(api.slice(start,end),context);
+  await vm.runInContext('adminMarketingCampaigns(req,res)',context);
+  assert.equal(code,200);assert.equal(output.campaigns.length,251);
+  assert.equal(output.campaigns.some(x=>x.id==='campaign-250'),true);
+  context.kv.get=async key=>key==='marketing:campaign:index'?{bad:true}:null;
+  await vm.runInContext('adminMarketingCampaigns(req,res)',context);
+  assert.equal(code,503);
+  assert.match(output.error,/No partial campaign list/);
+});
