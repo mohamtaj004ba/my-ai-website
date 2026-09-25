@@ -2207,7 +2207,7 @@ async function replyAdminSupportTicket(id,button){
 }
 async function updateSupportStatus(id,status){
   const key=String(id),t=adminSupportData.find(x=>String(x.id)===key);if(!t||adminSupportStatusPending.has(key))return;const previous=t.status;adminSupportStatusPending.add(key);t.status=status;renderAdminSupport();
-  try{const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update support status.');Object.assign(t,data.ticket||{status})}
+  try{const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,expectedUpdatedAt:Number(t.updatedAt||t.createdAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update support status.');Object.assign(t,data.ticket||{status})}
   catch(err){t.status=previous;alert(err.message||'Could not update support status.')}
   finally{adminSupportStatusPending.delete(key);renderAdminSupport()}
 }
