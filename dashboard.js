@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0;
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -815,28 +815,43 @@ function renderEntitledApps(){
   if(has('advancedAnalytics'))renderAnalytics();
   renderIntegrations();
 }
+function conversationActivity(x){
+  const timestamp=value=>{const n=Number(value);if(Number.isFinite(n)&&n>0)return n;const d=Date.parse(value);return Number.isFinite(d)?d:0};
+  return (Array.isArray(x.messages)?x.messages:[]).reduce((latest,m)=>Math.max(latest,timestamp(m.at)),Math.max(recordTime(x)||0,timestamp(x.updatedAt)));
+}
 function renderConversations(){
   if(!has('unifiedInbox'))return;
   const list=document.getElementById('conversationThreads'),stream=document.getElementById('messageStream');if(!list||!stream)return;
   const q=(document.getElementById('conversationSearch')?.value||'').trim().toLowerCase();
-  const rows=[...conversationsData].filter(x=>{
-    const searchOk=!q||[x.name,x.phone,x.last,x.status,...(x.messages||[]).map(m=>m.text)].join(' ').toLowerCase().includes(q);
-    const filterOk=conversationFilter==='all'||(conversationFilter==='attention'&&/follow/i.test(x.status||''))||(conversationFilter==='active'&&/active/i.test(x.status||''));
+  const sort=document.getElementById('conversationSort')?.value||'newest';
+  const signature=JSON.stringify([q,conversationFilter,sort]);
+  if(signature!==conversationLastFilterSignature){conversationVisibleLimit=50;conversationLastFilterSignature=signature;list.scrollTop=0}
+  const rows=conversationsData.filter(x=>{
+    const searchOk=!q||[x.name,x.phone,x.last,x.status,...(Array.isArray(x.messages)?x.messages:[]).map(m=>m.text)].join(' ').toLowerCase().includes(q);
+    const status=String(x.status||'').trim().toLowerCase();
+    const filterOk=conversationFilter==='all'||(conversationFilter==='attention'&&/follow/i.test(status))||(conversationFilter==='active'&&status==='active')||(conversationFilter==='closed'&&status==='closed');
     return searchOk&&filterOk;
-  }).sort((a,b)=>recordTime(b)-recordTime(a));
-  list.innerHTML=rows.map(x=>'<button class="thread-item '+(String(activeConversationId)===String(x.id)?'active':'')+'" data-thread-id="'+esc(x.id)+'"><div class="thread-top"><strong>'+esc(x.name||'Unknown')+'</strong><small>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.time||''))+'</small></div><small>'+esc(x.phone||'')+' · '+esc(x.status||'')+'</small><p>'+esc(x.last||'')+'</p></button>').join('');
+  }).map(x=>({record:x,at:conversationActivity(x)})).sort((a,b)=>sort==='oldest'?a.at-b.at:b.at-a.at).map(x=>x.record);
+  const visibleRows=rows.slice(0,conversationVisibleLimit);
+  list.innerHTML=visibleRows.map(x=>'<button type="button" class="thread-item" data-thread-id="'+esc(x.id)+'"><div class="thread-top"><strong>'+esc(x.name||'Unknown')+'</strong><small>'+esc(conversationActivity(x)?new Date(conversationActivity(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.time||''))+'</small></div><small>'+esc(x.phone||'')+' · '+esc(x.status||'')+'</small><p>'+esc(x.last||'')+'</p></button>').join('')||'<div class="empty-state"><h3>'+(conversationsData.length?'No matching conversations':'No conversations yet')+'</h3><p>'+(conversationsData.length?'Try another search or clear the filters.':'Conversation history will appear here when available.')+'</p></div>';
   list.querySelectorAll('[data-thread-id]').forEach(btn=>btn.addEventListener('click',()=>openConversation(btn.dataset.threadId)));
-  const active=rows.find(x=>String(x.id)===String(activeConversationId))||rows[0];if(active)openConversation(active.id);else{activeConversationId=null;document.getElementById('conversationName').textContent='No conversations';document.getElementById('conversationMeta').textContent='';document.getElementById('conversationContactButton').hidden=true;stream.innerHTML='<div class="empty-state"><h3>No conversations in this view</h3><p>Try another filter or search.</p></div>'}
-  document.querySelectorAll('[data-conversation-filter]').forEach(b=>b.classList.toggle('active',b.dataset.conversationFilter===conversationFilter));
+  document.getElementById('conversationCount').textContent='Showing '+visibleRows.length+' of '+rows.length+' conversations'+(q||conversationFilter!=='all'?' matching filters':'');
+  document.getElementById('loadMoreConversations').hidden=visibleRows.length>=rows.length;
+  document.getElementById('resetConversationFilters').hidden=!q&&conversationFilter==='all'&&sort==='newest';
+  const active=visibleRows.find(x=>String(x.id)===String(activeConversationId))||visibleRows[0];
+  if(active)openConversation(active.id);else{
+    activeConversationId=null;document.getElementById('conversationName').textContent='No conversation selected';document.getElementById('conversationMeta').textContent='';document.getElementById('conversationContactButton').hidden=true;document.getElementById('conversationStatus').hidden=true;stream.innerHTML='<div class="empty-state"><h3>No conversation selected</h3><p>Select a conversation to view its history.</p></div>';
+  }
+  document.querySelectorAll('[data-conversation-filter]').forEach(b=>{const selected=b.dataset.conversationFilter===conversationFilter;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
 }
 function openConversation(id){
   const x=conversationsData.find(v=>String(v.id)===String(id));if(!x)return;activeConversationId=id;
-  document.querySelectorAll('.thread-item').forEach(b=>b.classList.toggle('active',b.dataset.threadId===String(id)));
+  document.querySelectorAll('#conversationThreads .thread-item').forEach(b=>{const selected=b.dataset.threadId===String(id);b.classList.toggle('active',selected);b.setAttribute('aria-current',String(selected))});
   document.getElementById('conversationName').textContent=x.name||'Unknown';
-  const meta=document.getElementById('conversationMeta');if(meta)meta.textContent=[x.phone,recordTime(x)?'Last activity '+new Date(recordTime(x)).toLocaleString():x.time].filter(Boolean).join(' · ');
-  const status=document.getElementById('conversationStatus');status.textContent=x.status||'Active';status.className='tag '+(/active|recover/i.test(x.status||'')?'green':'amber');
+  const at=conversationActivity(x),meta=document.getElementById('conversationMeta');if(meta)meta.textContent=[x.phone,at?'Last activity '+new Date(at).toLocaleString():x.time].filter(Boolean).join(' · ');
+  const status=document.getElementById('conversationStatus');status.hidden=false;status.textContent=x.status||'Status unavailable';status.className='tag '+(/^active$|recover/i.test(x.status||'')?'green':'amber');
   const contactButton=document.getElementById('conversationContactButton');if(contactButton){contactButton.hidden=false;contactButton.dataset.contactKey=contactKey(x)}
-  document.getElementById('messageStream').innerHTML=(Array.isArray(x.messages)?x.messages:[]).map(m=>'<div class="message '+(m.dir==='out'?'out':m.dir==='system'?'system':'')+'">'+(m.dir==='system'?'':'<b>'+esc(m.who||'Customer')+'</b>')+esc(m.text||'')+(m.at?'<small>'+new Date(m.at).toLocaleString()+'</small>':'')+'</div>').join('')||'<div class="empty-state"><h3>No messages yet</h3></div>';
+  document.getElementById('messageStream').innerHTML=(Array.isArray(x.messages)?x.messages:[]).map(m=>'<div class="message '+(m.dir==='out'?'out':m.dir==='system'?'system':'')+'">'+(m.dir==='system'?'':'<b>'+esc(m.who||'Customer')+'</b>')+esc(m.text||'')+(m.at?'<small>'+esc(new Date(m.at).toLocaleString())+'</small>':'')+'</div>').join('')||'<div class="empty-state"><h3>No messages yet</h3></div>';
 }
 function contactKey(x){
   const phone=String(x?.phone||'').replace(/\D/g,'');if(phone)return 'p:'+phone;
@@ -1036,6 +1051,9 @@ async function updateAppointment(id,status){
   }catch(err){item.status=previous;renderAppointments();alert(err.message||'Could not update appointment. Check your connection and try again.')}
 }
 document.getElementById('conversationSearch')?.addEventListener('input',renderConversations);
+document.getElementById('conversationSort')?.addEventListener('change',renderConversations);
+document.getElementById('loadMoreConversations')?.addEventListener('click',()=>{conversationVisibleLimit+=50;renderConversations()});
+document.getElementById('resetConversationFilters')?.addEventListener('click',()=>{document.getElementById('conversationSearch').value='';document.getElementById('conversationSort').value='newest';conversationFilter='all';renderConversations();document.getElementById('conversationSearch').focus()});
 document.querySelectorAll('[data-conversation-filter]').forEach(b=>b.addEventListener('click',()=>{conversationFilter=b.dataset.conversationFilter;renderConversations()}));
 document.getElementById('conversationContactButton')?.addEventListener('click',e=>{const key=e.currentTarget.dataset.contactKey;if(key)openContact(key)});
 

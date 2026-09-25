@@ -236,14 +236,28 @@ async function runClientInteractions(page){
   await ensureView(page,'conversations');
   await page.locator('#conversationApp').waitFor({state:'visible',timeout:5000});
   if(await page.locator('#conversationThreads .thread-item').count()<1)throw new Error('Conversations navigation opened without seeded threads');
+  const conversationTotal=report.seed.conversations;
+  const initialThreads=await page.locator('#conversationThreads .thread-item').count();
+  if(initialThreads!==Math.min(50,conversationTotal))throw new Error('Conversations initial page size is incorrect');
+  if(conversationTotal>50){
+    await page.locator('#loadMoreConversations').click();
+    if(await page.locator('#conversationThreads .thread-item').count()!==Math.min(100,conversationTotal))throw new Error('Conversations Load more did not expand the list');
+  }
+  await page.locator('#conversationSort').selectOption('oldest');
+  if(await page.locator('#conversationThreads .thread-item').count()!==Math.min(50,conversationTotal))throw new Error('Conversation sort did not reset page size');
+  await page.locator('#conversationContactButton').click();
+  await page.locator('#contactDrawer.open').waitFor({state:'visible',timeout:5000});
+  await page.locator('#closeContactDrawer').click();
   await page.locator('#conversationSearch').fill('__qa_no_match__');
   await page.waitForTimeout(120);
   if(await page.locator('#conversationThreads .thread-item').count()!==0)throw new Error('Conversation search did not filter unmatched query');
-  await page.locator('#conversationSearch').fill('');
+  if(await page.locator('#conversationStatus').isVisible())throw new Error('Empty search retained a stale status');
+  await page.locator('#resetConversationFilters').click();
+  if(await page.locator('#conversationSort').inputValue()!=='newest')throw new Error('Clear filters did not restore latest activity order');
   await page.locator('[data-conversation-filter="attention"]').click();
   await page.waitForTimeout(100);
   await page.locator('[data-conversation-filter="all"]').click();
-  report.client.interactions.push('Conversations navigation + search/filter');
+  report.client.interactions.push('Conversations progressive loading + sorting + contact drawer + search/empty/reset');
 
   await ensureView(page,'leads');
   const firstFollowup=page.locator('#leadKanban .followup-card').first();

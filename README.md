@@ -91,6 +91,10 @@ The Vercel build also runs the critical-path test suite.
 
 Do not merge the feature branch into production casually. It represents a substantial product release.
 
+## Project continuity
+
+Read `CALLERCORE_PROJECT_STATE.md` for the latest verified checkpoint, active work, and production restrictions.
+
 ## Release documentation
 
 Read these before any production launch:
@@ -105,7 +109,7 @@ Current published plans are:
 
 - Starter — $349/month — 300 minutes — 1 location
 - Growth — $599/month — 600 minutes — up to 2 locations
-- Pro — $999/month — unlimited minutes — up to 5 locations
+- Pro — $999/month — high-volume plan; usage allowance/fair-use policy pending approval — up to 5 locations
 - Professional setup — $500 one time
 
 Pricing should not be changed in code or copy without an explicit business decision.
