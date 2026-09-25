@@ -375,10 +375,9 @@ async function adminSummary(req,res){
 
 async function adminClients(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const ids=await kv.get('workspace:index')||[];
+  const workspaces=await loadAdminWorkspaces();
   const clients=[];
-  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
-    const ws=await kv.get('workspace:'+id);if(!ws)continue;
+  for(const ws of workspaces){
     clients.push({
       id:ws.id,name:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,
       status:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',
