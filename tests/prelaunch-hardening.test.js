@@ -96,3 +96,18 @@ test('server verified finance is placed before a potentially truncated browser s
   assert.match(content,/delete uiSnapshot\.financialGroundTruth/);
   assert.match(content,/delete uiSnapshot\.finance/);
 });
+
+test('checkout preserves owner session revocation data and cannot repurpose an admin identity',()=>{
+  const checkout=fs.readFileSync(path.join(__dirname,'..','api','create-checkout-session.js'),'utf8');
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(checkout,/existingMember\?\.role==='admin'/);
+  assert.match(webhook,/existingMember\?\.role==='admin'\|\|existingMember\?\.disabled/);
+  assert.match(webhook,/\{\.\.\.\(existingMember\|\|\{\}\),workspaceId,role:existingMember\?\.role\|\|'owner',email\}/);
+});
+test('client calendar launch gate follows server capability rather than a static disabled flag',()=>{
+  const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(dashboard,/function featureDeferred\(feature\)/);
+  assert.match(dashboard,/feature==='appointments'\?!capability\('calendar'\)/);
+  assert.match(dashboard,/PLAN_DATA\.Growth\.features\.appointments=true/);
+  assert.match(dashboard,/PLAN_DATA\.Pro\.features\.appointments=true/);
+});
