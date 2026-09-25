@@ -1318,6 +1318,7 @@ async function adminRepairAccess(req,res){
 function sanitizeAdminOverride(section,value,current){
   if(section==='settings'||section==='agent'||section==='integrations'){
     if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Section must be a JSON object');
+    if(section==='agent'&&value.transferNumber&& !/^\+?[0-9() .-]{7,30}$/.test(String(value.transferNumber||'')))throw new Error('Transfer destination is invalid');
     return {...value,updatedAt:Date.now()};
   }
   if(section==='automations'||section==='locations'){
@@ -1337,6 +1338,18 @@ function sanitizeAdminOverride(section,value,current){
   }
   throw new Error('Unsupported section');
 }
+async function syncConfigDerivedState(workspaceId,section,value){
+  if(section==='settings'&&value?.businessName){
+    const current=await kv.get('workspace:'+workspaceId);
+    if(current)await kv.set('workspace:'+workspaceId,{...current,name:String(value.businessName).trim().slice(0,160),updatedAt:Date.now()});
+  }
+  if(section==='agent'){
+    const transferNumber=String(value?.transferNumber||'').trim().slice(0,40),[rawPhones,routingRequest]=await Promise.all([kv.get('phone:index'),kv.get('routing-request:'+workspaceId)]);
+    const phones=Array.isArray(rawPhones)?rawPhones.slice():[],index=phones.findIndex(x=>x&&String(x.workspaceId||'')===String(workspaceId));
+    if(index>=0){phones[index]={...phones[index],transferNumber,updatedAt:Date.now()};await kv.set('phone:index',phones)}
+    if(routingRequest)await kv.set('routing-request:'+workspaceId,{...routingRequest,transferNumber,updatedAt:Date.now()});
+  }
+}
 async function adminOverrideConfig(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80),section=String(body.section||'');
@@ -1345,7 +1358,7 @@ async function adminOverrideConfig(req,res){
   const before=await kv.get(key);
   let after;try{after=sanitizeAdminOverride(section,body.value,before||ws)}catch(err){return res.status(400).json({error:err.message})}
   await kv.set(key,after);
-  if(section==='settings'&&after.businessName){const current=await kv.get('workspace:'+id);await kv.set('workspace:'+id,{...current,name:after.businessName,updatedAt:Date.now()})}
+  await syncConfigDerivedState(id,section,after);
   await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'admin_override',section,before:before||null,after});
   return res.status(200).json({ok:true,section,value:after});
 }
@@ -1356,9 +1369,11 @@ async function adminRestoreAudit(req,res){
   if(!entry)return res.status(404).json({error:'Audit entry not found'});
   const key=configKey(entry.section,id);if(!key)return res.status(400).json({error:'This change cannot be restored automatically'});
   if(entry.before===undefined)return res.status(400).json({error:'No prior snapshot is available'});
-  const current=await kv.get(key),restored=entry.before===null?(entry.section==='automations'||entry.section==='locations'?[]:{}):entry.before;
+  const current=await kv.get(key),rawRestored=entry.before===null?(entry.section==='automations'||entry.section==='locations'?[]:{}):entry.before;
+  let restored;try{restored=sanitizeAdminOverride(entry.section,rawRestored,current||await kv.get('workspace:'+id)||{})}catch(err){return res.status(409).json({error:'This snapshot can no longer be restored safely: '+err.message})}
   await kv.set(key,restored);
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'restore_snapshot',section:entry.section,before:current||null,after:restored,meta:{restoredFrom:auditId}});
+  await syncConfigDerivedState(id,entry.section,restored);
+  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'restore_snapshot',section:entry.section,before:current||null,after:restored,meta:{restoredFrom:auditId,sanitized:true}});
   return res.status(200).json({ok:true,section:entry.section,value:restored});
 }
 
