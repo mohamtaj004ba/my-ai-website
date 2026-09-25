@@ -245,6 +245,16 @@ async function runClientInteractions(page){
   await page.locator('[data-conversation-filter="all"]').click();
   report.client.interactions.push('Conversations navigation + search/filter');
 
+  await ensureView(page,'leads');
+  const firstFollowup=page.locator('#leadKanban .followup-card').first();
+  await firstFollowup.waitFor({state:'visible',timeout:5000});
+  if(await firstFollowup.locator('[data-team-status]').count()!==1)throw new Error('Follow-up row lost its team status control');
+  const viewCall=firstFollowup.locator('.followup-view-call');
+  await viewCall.click();
+  await page.locator('#callDrawer.open').waitFor({state:'visible',timeout:5000});
+  await page.locator('#closeCallDrawer').click();
+  report.client.interactions.push('Follow-ups action hierarchy + call detail');
+
   await ensureView(page,'settings');
   const originalName=await page.locator('#settingsBusinessName').inputValue();
   await page.locator('#settingsEditButton').click();
