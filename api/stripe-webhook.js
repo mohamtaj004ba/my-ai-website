@@ -6,6 +6,7 @@ const {lifecycleEmail}=require('../lib/email-template');
 const {normalizePlan,entitlementsFor}=require('../lib/plans');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {addBusinessHours}=require('../lib/business-hours');
+const {lifecycleDecision}=require('../lib/stripe-lifecycle');
 module.exports.config={api:{bodyParser:false}};
 const STRIPE_WEBHOOK_SECRET=process.env.STRIPE_WEBHOOK_SECRET;
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
@@ -99,22 +100,12 @@ module.exports=async function handler(req,res){
     if(!workspaceId){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,unmapped:true})}
     const key='workspace:'+workspaceId,ws=await kv.get(key);
     if(!ws){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,workspace_missing:true})}
-    const eventCreatedAt=Number(event.created||0)*1000,previousEventAt=Number(ws.stripeBilling?.lastEventCreatedAt||0);
-    if(eventCreatedAt&&previousEventAt&&eventCreatedAt<previousEventAt){
+    const decision=lifecycleDecision(ws,event,subscriptionId);
+    if(!decision.apply){
       if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
-      return res.status(200).json({received:true,stale:true});
+      return res.status(200).json({received:true,[decision.reason]:true});
     }
-    const knownSubscription=String(ws.stripeSubscriptionId||''),incomingSubscription=String(subscriptionId||'');
-    if(knownSubscription&&incomingSubscription&&knownSubscription!==incomingSubscription&&event.type!=='customer.subscription.created'){
-      if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
-      return res.status(200).json({received:true,subscription_mismatch:true});
-    }
-
-    let status=ws.subscriptionStatus||'active';
-    if(event.type==='customer.subscription.deleted')status='canceled';
-    else if(event.type==='invoice.payment_failed')status='past_due';
-    else if(event.type==='invoice.paid')status=status==='canceled'?'canceled':'active';
-    else if(event.type.startsWith('customer.subscription.'))status=obj.status||status;
+    const {eventCreatedAt,previousEventAt,status}=decision;
 
     const billing={...(ws.stripeBilling||{}),customerId:customerId||ws.stripeCustomerId||null,subscriptionId:subscriptionId||ws.stripeSubscriptionId||null,lastEvent:event.type,lastEventAt:Date.now(),lastEventCreatedAt:eventCreatedAt||previousEventAt||0};
     if(event.type.startsWith('customer.subscription.')){
