@@ -790,6 +790,7 @@ async function adminAiGuide(req,res){
     pastDueCount:livePastDue.length,
     monthlySubscriptionExposure:livePastDue.reduce((sum,w)=>sum+Number(planPrices[w.plan]||0),0),
     monthlyExposureIsUnpaidInvoiceBalance:false,
+    billingBasis:'Subscription plan run rate from workspace records; not reconciled Stripe invoices, payments, discounts, or cash collected.',
     pastDueClients:livePastDue.map(w=>({name:w.name||'Unnamed workspace',plan:w.plan||'Unknown',monthlySubscriptionPrice:Number(planPrices[w.plan]||0),subscriptionStatus:w.subscriptionStatus})),
     coveredWorkspaces:liveWorkspaces.length
   };
@@ -811,6 +812,7 @@ async function adminAiGuide(req,res){
     'When information is missing, say what is unavailable instead of guessing.',
     'Use snapshot.financialGroundTruth for MRR, expenses, net recurring, past-due count, and past-due client monthly subscription prices. It comes from server records and overrides conflicting browser snapshot values.',
     'monthlySubscriptionExposure is the sum of listed monthly prices for past-due clients, NOT unpaid invoice balance or verified actual losses. Label it as monthly subscription exposure. Do not present it as collected debt, an unpaid invoice total, or actual revenue lost.',
+    'MRR is the modeled subscription plan run rate based on workspace records, not Stripe-settled payments. Do not describe it as cash collected or verified invoice receipts.',
     'Never replace a named client monthly price with total company MRR, even if the browser snapshot contains a conflicting number.',
     'Browser-supplied records can be stale or partial. State the snapshot timestamp and relevant coverage limits in operational reports.',
     'Finance history rows whose source is preview_reconstruction are synthetic preview estimates, not recorded historical revenue or invoices. Never infer verified past performance or month-over-month growth from those rows.',
