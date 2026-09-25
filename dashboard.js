@@ -354,7 +354,10 @@ function updateClientRefreshStamp(){
 }
 async function refreshClientDashboard({button=null,silent=false}={}){
   if(demoMode||document.body.dataset.dashboard!=='client'||clientRefreshInFlight)return;
-  if((agentEditing||settingsEditing)&&!button)return;
+  if(agentEditing||settingsEditing){
+    if(!button)return;
+    if(!confirm('You have unsaved AI receptionist or business settings edits. Refreshing will discard those changes. Continue?'))return;
+  }
   clientRefreshInFlight=true;
   if(button){button.disabled=true;button.textContent='Refreshing…'}
   if(!silent)setClientSyncState('syncing','Refreshing workspace…');else setClientSyncState('syncing','Checking for updates…');
@@ -3044,10 +3047,13 @@ function formatNotificationTime(ts){
   return new Date(t).toLocaleDateString();
 }
 async function markNotifications(ids){
-  if(!ids?.length)return;
+  if(!ids?.length)return false;
   const scope=notificationScope();
-  await fetch('/api/account?action=notifications-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope,ids})}).catch(()=>{});
-  const set=new Set(ids);notificationData.forEach(n=>{if(set.has(n.id))n.read=true});notificationUnreadCount=notificationData.filter(n=>!n.read).length;renderNotifications();
+  try{
+    const r=await fetch('/api/account?action=notifications-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope,ids})});
+    if(!r.ok)throw new Error('Could not sync notification read state ('+r.status+')');
+  }catch(err){console.warn('Notification read sync failed',err);return false}
+  const set=new Set(ids);notificationData.forEach(n=>{if(set.has(n.id))n.read=true});notificationUnreadCount=notificationData.filter(n=>!n.read).length;renderNotifications();return true;
 }
 async function navigateNotification(n){
   if(!n)return false;const view=n.view||'overview',meta=n.meta||{};
@@ -3088,8 +3094,11 @@ async function openNotification(id){
 }
 async function markAllNotifications(){
   const scope=notificationScope();
-  await fetch('/api/account?action=notifications-read-all',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope})}).catch(()=>{});
-  notificationData.forEach(n=>n.read=true);notificationUnreadCount=0;renderNotifications();
+  try{
+    const r=await fetch('/api/account?action=notifications-read-all',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope})});
+    if(!r.ok)throw new Error('Could not sync all notifications ('+r.status+')');
+  }catch(err){console.warn('Mark-all notification sync failed',err);return false}
+  notificationData.forEach(n=>n.read=true);notificationUnreadCount=0;renderNotifications();return true;
 }
 function initNotifications(){
   const bell=document.getElementById('notificationBell'),panel=document.getElementById('notificationPanel');if(!bell||!panel)return;
