@@ -14,6 +14,19 @@ CallerCore is an AI front office for service businesses, with a public acquisiti
 - Stripe billing, Mailgun lifecycle email, admin-only Gmail OAuth, Anthropic-assisted onboarding are present. Provider-complete launch verification remains separate.
 - Voice/Vapi is a dedicated unfinished workstream. Do not imply live telephony from seeded dashboard data.
 
+## Latest verified implementation checkpoint
+
+- Implementation SHA: `5d70fc76e7a338df73b9fd2648d3ea4f210f5314`.
+- Preview READY: `dpl_5b7Kt4TqqypvDcdVd3UoJCwxS8Ao` — https://my-ai-website-8nbyfvvrw-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36110016321`, CodeQL `36110016332`, Jekyll `36110016355`: success on that exact SHA.
+- Authenticated Preview Browser QA `36110012998`: success on that exact SHA; artifact `10852826303`.
+- Local regression suite: 165 passed, 0 failed.
+- Browser report: 1,200 calls, 153 conversations; client/admin flows; client Conversations, AI Receptionist and Settings layout checks at 1280, 768 and 390 pixels; no page/console/API errors.
+- Visual inspection: desktop/tablet/mobile Conversations and corrected tablet Settings screenshots reviewed.
+- First batch COMPLETED AND VERIFIED within the coverage above: Conversations batching/filtering/sorting, receptionist save feedback and field limits, Settings cancellation validation cleanup and responsive containment, mobile QA navigation correction.
+- This documentation-only checkpoint records the last verified implementation; it does not claim a new browser run against its own future commit.
+- Production/main remains `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; no production release, billing, customer communications, or provider activation performed.
+
 ## Verified starting checkpoint
 
 Read-only inspection on 2026-09-25 confirmed:
@@ -38,13 +51,13 @@ Current local Conversations changes: 165/165 tests pass, including executable re
 - Existing customer areas: Overview, Calls, Contacts, Conversations, Follow-ups/Leads, AI Receptionist, routing, locations, automations, analytics, integrations, billing, settings, support. Entitlements and runtime flags determine visibility.
 - Existing admin areas include client operations, calls, agents, Gmail/website inbox, prospects, analytics, revenue/usage, provisioning, phone numbers, support, health, platform settings.
 - Existing auth/tenant isolation, session revocation, read-only admin client view, agreements, export/redaction, audit and recovery safeguards have regression coverage. Full security assurance is not established by automated tests alone.
-- First Conversations scaling pass: 50-thread batches, counts, activity sorting, Closed filter, clear filters, accessible selected states, bounded responsive list, long-message wrapping, stale empty-result cleanup. Preview READY for Conversations implementation `871970346cd44cca7544f3d6163c134538f6c683` (deployment `dpl_G6Deu1YVnjFj6KWiNrQc29ANZ3xs`). Conversations authenticated QA run `36108934848` passed with 153 conversations, 1,200 calls, and no console/page/API errors. Combined forms run `36109277532` passed interactions but exposed a pre-existing Settings overflow at 768px. Settings grid/field containment corrected; run `36109630708` passed laptop/tablet including Settings. Mobile follow-on navigation exposed a QA helper error: CSS-visible off-screen sidebar links were mistaken for accessible links. Helper now opens the collapsed mobile menu before navigation; full rerun pending.
+- First Conversations scaling pass: 50-thread batches, counts, activity sorting, Closed filter, clear filters, accessible selected states, bounded responsive list, long-message wrapping, stale empty-result cleanup. Preview READY for Conversations implementation `871970346cd44cca7544f3d6163c134538f6c683` (deployment `dpl_G6Deu1YVnjFj6KWiNrQc29ANZ3xs`). Conversations authenticated QA run `36108934848` passed with 153 conversations, 1,200 calls, and no console/page/API errors. Combined forms run `36109277532` passed interactions but exposed a pre-existing Settings overflow at 768px. Settings grid/field containment corrected; run `36109630708` passed laptop/tablet including Settings. Mobile follow-on navigation exposed a QA helper error: CSS-visible off-screen sidebar links were mistaken for accessible links. Helper now opens the collapsed mobile menu before navigation; full rerun `36110012998` passed.
 
 ## IN PROGRESS
 
-Conversations at scale. Extend existing interface, not a replacement. Existing Preview QA was expanded to exercise batching, sorting, empty state, reset and contact navigation.
+First planned dashboard batch is complete; continue extending existing interfaces. Next priority: truthful voice/routing status and the remaining AI Receptionist/Settings edge cases. Do not activate telephony while correcting status presentation.
 
-AI Receptionist/Settings first inspection completed: section editing, rollback, refresh draft protection already existed. Added persistent receptionist save/error feedback, backend-aligned field limits, configured agent name on test-call action, and Settings cancellation validation cleanup. Added success/failure save tests and authenticated edit/cancel, validation recovery, and responsive checks for all three areas. Next: finish combined Preview verification and inspect screenshot evidence. Preserve existing architecture, safeguards, styling direction, and plan entitlements.
+AI Receptionist/Settings first inspection completed: section editing, rollback, refresh draft protection already existed. Added persistent receptionist save/error feedback, backend-aligned field limits, configured agent name on test-call action, and Settings cancellation validation cleanup. Added success/failure save tests and authenticated edit/cancel, validation recovery, and responsive checks for all three areas. Combined Preview verification and screenshot review completed. Next: distinguish saved routing/configuration from provider-verified operational status, then review remaining form save/persistence edge cases in the isolated Preview workspace. Preserve existing architecture, safeguards, styling direction, and plan entitlements.
 
 ## Known limitations and remaining work
 
