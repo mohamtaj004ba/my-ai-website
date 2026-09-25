@@ -835,7 +835,14 @@ async function adminSupportUpdate(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80),status=String(body.status||'');
   if(!id||!['open','in_progress','resolved'].includes(status))return res.status(400).json({error:'Invalid support update'});
   const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
-  const previousStatus=t.status||'open',next={...t,status,updatedAt:Date.now(),updatedBy:admin.email};await kv.set(key,next);
+  if(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(t.updatedAt||t.createdAt||0))return res.status(409).json({error:'This support request changed while you were editing. Refresh it before retrying.'});
+  const previousStatus=t.status||'open';
+  if(status===previousStatus)return res.status(200).json({ok:true,ticket:t,unchanged:true});
+  const next={...t,status,updatedAt:Math.max(Date.now(),Number(t.updatedAt||t.createdAt||0)+1),updatedBy:admin.email};
+  const audit={id:crypto.randomUUID(),workspaceId:t.workspaceId,actorEmail:admin.email,actorRole:'admin',action:'support_status_update',section:'support',before:{status:previousStatus},after:{status},meta:{ticketId:id,from:previousStatus,to:status},at:Date.now()};
+  try{
+    if(!await compareAndAudit(kv,{key,before:t,after:next},'audit:'+t.workspaceId,audit))return res.status(409).json({error:'This support request changed during the save. Refresh it before retrying.'});
+  }catch(err){console.error('admin support status failed',safeError(err));return res.status(503).json({error:'Could not confirm the support status and audit entry were saved together. Refresh this request before retrying.'})}
   if(t.email&&status!==previousStatus){
     const clientSettings=await kv.get('settings:'+t.workspaceId)||{};
     if(clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false&&(status==='in_progress'||status==='resolved')){
@@ -854,7 +861,7 @@ async function adminSupportUpdate(req,res){
       }catch(err){console.error('support status email failed',safeError(err))}
     }
   }
-  await appendAudit(t.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'support_status_update',section:'support',meta:{ticketId:id,from:previousStatus,to:status}});
+
   return res.status(200).json({ok:true,ticket:next});
 }
 
