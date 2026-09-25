@@ -59,6 +59,21 @@ async function assertPendingSave(page,action,saveSelector,fieldSelector,cancelSe
   }finally{release()}
 }
 
+async function assertRefreshPreservesDraft(page,savedName){
+  let release,started;
+  const held=new Promise(resolve=>release=resolve),seen=new Promise(resolve=>started=resolve);
+  await page.route('**/api/account?action=client-dashboard-data',async route=>{started();await held;await route.continue()},{times:1});
+  try{
+    await page.evaluate(()=>{window.__qaPendingRefresh=refreshClientDashboard({silent:true})});
+    await Promise.race([seen,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Refresh request not received')),10000))]);
+    await page.locator('[data-agent-edit="identity"]').click();
+    await page.locator('#agentName').fill(savedName+' protected draft');
+    release();await page.evaluate(()=>window.__qaPendingRefresh);
+    if(await page.locator('#agentName').inputValue()!==savedName+' protected draft')throw new Error('An in-flight refresh replaced the receptionist draft');
+    await page.locator('[data-agent-cancel="identity"]').click();
+  }finally{release()}
+}
+
 async function makeContext(viewport,label){
   const context=await browser.newContext({
     viewport,
@@ -296,6 +311,8 @@ async function runClientInteractions(page){
 
   await ensureView(page,'agent');
   const savedAgentName=await page.locator('#agentName').inputValue();
+  await assertRefreshPreservesDraft(page,savedAgentName);
+  report.client.interactions.push('in-flight refresh preserves newer draft');
   if(await page.locator('#agentName').isEnabled())throw new Error('Receptionist field editable before Edit');
   await page.locator('[data-agent-edit="identity"]').click();
   await page.locator('#agentName').fill(savedAgentName+' draft');

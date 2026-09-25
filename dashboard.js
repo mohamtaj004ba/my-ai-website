@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0;
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -384,14 +384,15 @@ function updateClientRefreshStamp(){
 async function refreshClientDashboard({button=null,silent=false}={}){
   if(demoMode||document.body.dataset.dashboard!=='client'||clientRefreshInFlight)return;
   if(agentEditing||settingsEditing){
-    if(!button)return;
-    if(!confirm('You have unsaved AI receptionist or business settings edits. Refreshing will discard those changes. Continue?'))return;
+    if(button)setClientSyncState('live','Save or cancel your draft before refreshing.');
+    return;
   }
-  clientRefreshInFlight=true;
+  clientRefreshInFlight=true;const editGeneration=clientEditGeneration;
   if(button){button.disabled=true;button.textContent='Refreshing…'}
   if(!silent)setClientSyncState('syncing','Refreshing workspace…');else setClientSyncState('syncing','Checking for updates…');
   try{
     const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:1,timeout:12000});
+    if(agentEditing||settingsEditing||editGeneration!==clientEditGeneration){setClientSyncState('live','Refresh deferred to preserve your latest edits.');return}
     applyClientDashboardData(data);renderClientData();setDataHealth('clientDataHealth',false);updateClientRefreshStamp();
   }catch(err){
     console.error('Client live refresh failed',err);setClientSyncState('error','Could not refresh · showing last good data');
@@ -1073,7 +1074,7 @@ function activeAgentSection(){return typeof agentEditing==='string'?agentEditing
 function setAgentEditing(section,{restore=false}={}){
   if(agentSaving)return;
   const next=typeof section==='string'&&section?section:'';
-  if(next&&!agentEditing&&agentData)agentEditSnapshot=JSON.parse(JSON.stringify(agentData));
+  if(next&&!agentEditing){clientEditGeneration++;if(agentData)agentEditSnapshot=JSON.parse(JSON.stringify(agentData))}
   if(restore&&agentEditSnapshot){agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent();return}
   agentEditing=next||false;const active=activeAgentSection();
   const formStatus=document.getElementById('agentFormStatus');if(formStatus){formStatus.textContent=active?'Editing draft. Save to keep your changes.':'';formStatus.className='form-status-line'}
@@ -1274,6 +1275,7 @@ function renderBusinessLogo(){
 }
 function setSettingsEditing(editing,{restore=false}={}){
   if(settingsSaving)return;
+  if(editing&&!settingsEditing)clientEditGeneration++;
   settingsEditing=!!editing;if(restore)renderSettings();
   if(!settingsEditing){settingsControlIds().forEach(id=>settingsFieldError(id,''));const status=document.getElementById('settingsFormStatus');if(status){status.textContent='';status.className='form-status-line'}}
   settingsControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!settingsEditing});

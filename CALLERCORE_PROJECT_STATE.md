@@ -16,11 +16,11 @@ CallerCore is an AI front office for service businesses, with a public acquisiti
 
 ## Current development pass — 2026-09-25
 
-IMPLEMENTED BUT NOT FULLY VERIFIED: voice readiness is shared across client routing APIs/admin inventory; saved numbers no longer imply active service. Live pause/resume API fails closed without data writes; launch checklist also requires provider-backed readiness. Test-call action stays unavailable until real voice activation.
+VERIFIED: shared voice readiness is fail-closed across client/admin APIs and UI. Receptionist section saves preserve metadata and atomically compare/write changed agent/routing records. Authenticated QA `36112569864` passed implementation `ddf184f5850d73b8634bf377abb44a662dd1ddd3`.
 
-IMPLEMENTED BUT NOT FULLY VERIFIED: receptionist section saves preserve internal metadata, reject stale revisions, and atomically compare/write agent plus changed routing snapshots through Redis EVAL. Conflict responses keep drafts open. Local suite: 171 passed. Expanded isolated Preview QA exercises persisted save/restore and transfer sync; pending deployment verification.
+IMPLEMENTED; EXPANDED QA IN PROGRESS: admin phone inventory search/filter/batching; stale-edit/capacity guards; atomic admin routing and Settings transactions; pending-save locks; immediate saved-record consistency; long-message batching. See dated verification/failure entries below. Do not treat failed full runs as complete acceptance.
 
-IN PROGRESS: admin phone inventory scale/search and safe edit/capacity handling. Provider activation, live billing, and production changes remain outside this pass.
+Current local follow-up: protect drafts/newer saves from background refresh responses that started before editing. Local suite: 193 passed. Preview QA exercises real isolated settings/receptionist/admin-phone save/readback/restoration and responsive layouts. Provider activation, billing and production changes remain separate.
 
 ## Latest verified implementation checkpoint
 
@@ -147,3 +147,15 @@ Only commit/push routine changes to the authorized development branch. No merge 
 - Long Conversations threads now initially render the latest 50 messages, provide earlier-message batches/counts, reset limits when selecting another thread, and preserve scroll position while loading earlier history. Full history still transfers from the API; this is rendering pagination.
 - Added a 1,000-message unit fixture and a 122-message fictional Preview seed thread. Authenticated QA checks 50 → 100 → 122 messages and selection reset.
 - Local suite: 190 passed; syntax/diff checks passed. Latest changes await feature Preview verification.
+
+## Background refresh draft protection
+
+- Found a second client draft-loss race: a refresh begun before editing could apply its response after a draft was opened or saved. Refresh now captures an edit generation, rechecks it after the request, and defers stale responses. Explicit refresh leaves open drafts intact and directs users to save/cancel first.
+- Added deferred-response regression tests for an open draft, a completed newer edit, and normal refresh. Authenticated Preview QA now holds a refresh response, opens/edits a receptionist draft, then verifies the released response preserves it.
+- Local suite: 193 passed, 0 failed. Syntax check passed. Preview verification pending.
+
+## Verified expanded dashboard checkpoint
+
+- Implementation `4c0d7ab715e3fb4836e839a8d785dfab632cf79c`: 190 tests passed locally; CI `36114279107`, CodeQL `36114279055`, Jekyll `36114279103` passed. Full authenticated Preview QA `36114274239` passed, including client and admin persisted-save/restore, pending-save locks, long message batches and laptop/tablet/mobile layouts.
+- Preview READY: `dpl_iDTBVDLoqfDGy4JowpPgPitZW8Ad`, https://my-ai-website-6d1soigps-mohamtaj004bas-projects.vercel.app .
+- Next queued implementation is the background-refresh draft guard (193 local tests); it still requires its own expanded Preview run.
