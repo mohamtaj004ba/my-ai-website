@@ -741,8 +741,8 @@ async function moveLead(id,stage){
   const previous=lead.stage;lead.stage=stage;renderLeads();
   if(demoMode)return;
   try{
-    const r=await fetch('/api/account?action=lead-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})});
-    if(!r.ok)throw new Error('update failed');
+    const r=await fetch('/api/account?action=lead-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})}),data=await r.json().catch(()=>({}));
+    if(!r.ok||data.updated!==true)throw new Error(data.error||'Could not update this lead.');
   }catch(err){lead.stage=previous;renderLeads();console.error(err)}
 }
 document.getElementById('callSearch')?.addEventListener('input',renderCalls);
@@ -986,7 +986,7 @@ async function updateAppointment(id,status){
   const previous=item.status;item.status=status;renderAppointments();if(demoMode)return;
   try{
     const r=await fetch('/api/account?action=appointment-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})}),data=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(data.error||'Could not update appointment.');
+    if(!r.ok||data.updated!==true)throw new Error(data.error||'Could not update appointment.');
   }catch(err){item.status=previous;renderAppointments();alert(err.message||'Could not update appointment. Check your connection and try again.')}
 }
 document.getElementById('conversationSearch')?.addEventListener('input',renderConversations);
