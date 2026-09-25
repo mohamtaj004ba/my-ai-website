@@ -338,16 +338,18 @@ function renderWorkspaceAccessState(){
 }
 function applyClientDashboardData(data={}){
   if(data.workspace&&typeof data.workspace==='object'){
-    const previousPlan=currentPlan,previousName=String(sessionWorkspace?.name||'');
+    const previousPlan=currentPlan,previousName=String(sessionWorkspace?.name||''),previousSubscription=String(sessionWorkspace?.subscriptionStatus||''),previousStatus=String(sessionWorkspace?.status||''),previousUsage=Number(sessionWorkspace?.usage?.minutes||0),previousStripeCustomer=!!sessionWorkspace?.stripe?.customerLinked,previousStripeSubscription=!!sessionWorkspace?.stripe?.subscriptionLinked;
     sessionWorkspace={...(sessionWorkspace||{}),...data.workspace};
     currentPlan=sessionWorkspace.plan&&PLAN_DATA[sessionWorkspace.plan]?sessionWorkspace.plan:currentPlan;
-    if(sessionWorkspace.usage&&Number.isFinite(Number(sessionWorkspace.usage.minutes)))PLAN_DATA[currentPlan].used=Number(sessionWorkspace.usage.minutes);
+    const nextUsage=Number(sessionWorkspace?.usage?.minutes||0);if(Number.isFinite(nextUsage))PLAN_DATA[currentPlan].used=nextUsage;
     const name=String(sessionWorkspace.name||'CallerCore Client');
     const wName=document.getElementById('workspaceName');if(wName)wName.textContent=name;
     const wMeta=document.getElementById('workspaceMeta');if(wMeta)wMeta.textContent=currentPlan+' plan';
     document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=name);
     const avatar=document.querySelector('.avatar');if(avatar&&name!==previousName)avatar.textContent=name.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
-    if(currentPlan!==previousPlan){renderBilling();renderStages();renderOverviewUnlocks();renderEntitledApps()}
+    const planChanged=currentPlan!==previousPlan,billingChanged=planChanged||String(sessionWorkspace?.subscriptionStatus||'')!==previousSubscription||String(sessionWorkspace?.status||'')!==previousStatus||nextUsage!==previousUsage||!!sessionWorkspace?.stripe?.customerLinked!==previousStripeCustomer||!!sessionWorkspace?.stripe?.subscriptionLinked!==previousStripeSubscription;
+    if(planChanged){renderStages();renderOverviewUnlocks();renderEntitledApps()}
+    if(billingChanged){renderBilling();renderBillingConnection();renderPlanStrip()}
     renderWorkspaceAccessState();
   }
   callsData=Array.isArray(data.calls)?data.calls:[];
@@ -1312,7 +1314,7 @@ async function saveSettings(){
       const r=await fetch('/api/account?action=settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not save workspace settings.');
       settingsData=data.settings||payload;
-      if(settingsData.businessName){document.getElementById('workspaceName').textContent=settingsData.businessName;document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=settingsData.businessName)}
+      if(settingsData.businessName){sessionWorkspace={...(sessionWorkspace||{}),name:settingsData.businessName};document.getElementById('workspaceName').textContent=settingsData.businessName;document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=settingsData.businessName);const avatar=document.querySelector('.avatar');if(avatar)avatar.textContent=settingsData.businessName.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase()}
     }
     pendingBusinessLogo=String(settingsData.logoDataUrl||payload.logoDataUrl||'');setSettingsEditing(false);if(status){status.textContent='Settings saved successfully.';status.className='form-status-line success'}
     const tag=document.getElementById('settingsSaveStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1600)}
