@@ -120,9 +120,10 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
 async function ensureView(page,view){
   const btn=page.locator('button.nav-item[data-view="'+view+'"]').first();
   if(!(await btn.count()))throw new Error('Missing nav view '+view);
-  if(!(await btn.isVisible())){
-    const menu=page.locator('.mobile-menu').first();
-    if(await menu.isVisible()){await menu.click();await page.waitForTimeout(120)}
+  const menu=page.locator('.mobile-menu').first();
+  if(await menu.isVisible()){
+    const sidebarOpen=await page.locator('.sidebar').evaluate(el=>el.classList.contains('open'));
+    if(!sidebarOpen){await menu.click();await page.waitForTimeout(250)}
   }
   await btn.click();
   await page.waitForTimeout(450);
@@ -402,6 +403,9 @@ async function runResponsive(kind,viewport,name){
       }
     }
     report[kind].responsive.push({name,...viewport});
+  }catch(err){
+    await shot(page,kind+'-'+name+'-failure').catch(()=>{});
+    throw err;
   }finally{
     await context.close().catch(()=>{});
   }
