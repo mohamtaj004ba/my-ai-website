@@ -126,11 +126,16 @@ test('usage notifications warn at 70 85 and 100 percent without implying charges
   assert.match(src,/no overage policy is implied by this notice/);
 });
 
-test('launch-gate changes are audit logged',()=>{
-  assert.match(src,/platform_launch_gates_update/);
-  assert.match(src,/changedGates/);
-  assert.match(src,/before:launchGateState\(previous\.launchGates\)/);
-  assert.match(src,/after:launchGates/);
+test('launch-gate changes are recorded in the atomic platform settings audit event',()=>{
+  const start=src.indexOf('async function adminPlatformSettingsSave('),end=src.indexOf('\nasync function validatedGmailFrom(',start);
+  assert.ok(start>=0&&end>start);
+  const handler=src.slice(start,end);
+  assert.match(handler,/changedGates/);
+  assert.match(handler,/launchGates:launchGateState\(previous\.launchGates\)/);
+  assert.match(handler,/maintenanceMode:settings\.maintenanceMode,launchGates/);
+  assert.match(handler,/meta:\{changedGates\}/);
+  assert.match(handler,/compareAndAudit\(kv,\{key:'platform:settings',before:saved,after:settings\},'audit:'\+admin\.workspaceId,audit\)/);
+  assert.doesNotMatch(handler,/kv\.set\('platform:settings'/);
 });
 
 
