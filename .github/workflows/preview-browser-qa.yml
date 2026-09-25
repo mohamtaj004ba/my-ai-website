@@ -72,7 +72,7 @@ jobs:
             ${{ runner.os }}-callercore-qa-npm-
 
       - name: Install pinned QA dependencies
-        run: npm install --ignore-scripts
+        run: npm ci --ignore-scripts
 
       - name: Cache Playwright browser
         id: playwright-cache
@@ -115,13 +115,11 @@ jobs:
         continue-on-error: true
         run: node scripts/visual-diff.mjs qa-artifacts "$PREVIOUS_QA_DIR"
 
-      - name: Upload QA screenshots, reports, and generated lockfile
+      - name: Upload QA screenshots and reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: caller-core-preview-browser-qa-${{ github.run_id }}
-          path: |
-            qa-artifacts/
-            package-lock.json
+          path: qa-artifacts/
           if-no-files-found: warn
           retention-days: 14
