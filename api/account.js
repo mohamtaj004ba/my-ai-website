@@ -402,7 +402,7 @@ async function adminUpdateClient(req,res){
     if(!['Starter','Growth','Pro'].includes(body.plan))return res.status(400).json({error:'Invalid plan'});
     next.plan=body.plan;
   }
-  next.updatedAt=Date.now();
+  next.updatedAt=Math.max(Date.now(),Number(ws.updatedAt||ws.createdAt||0)+1);
   try{
     if(!await compareAndSetConfig(kv,[{key,before:ws,after:next}]))return res.status(409).json({error:'This workspace changed during the save. Reopen it to load the latest account settings.'});
   }catch(err){console.error('admin client save failed',safeError(err));return res.status(503).json({error:'Could not confirm that the workspace was saved. Reopen it before retrying.'})}
