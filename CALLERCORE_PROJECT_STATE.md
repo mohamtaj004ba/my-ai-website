@@ -22,11 +22,11 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `20918152371ed68c3cd4fd7cc6ffb7b95a0767d2`.
-- Preview READY: `dpl_4t8RVdTEXF2zT7FSzXUwyS314G19` — https://my-ai-website-7xurk1p7v-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36135087160` and `36135080963`, CodeQL `36135087142` and `36135080910`, and Jekyll `36135087409`: success on that exact SHA.
-- Authenticated Preview Browser QA `36135080891`: success on that exact SHA.
-- Local regression suite: 244 passed, 0 failed. The full build, JavaScript syntax and diff checks passed.
+- Implementation SHA: `6587792907ae334466b90ac99485d1655231a24b`.
+- Preview READY: `dpl_ovFzBJbs3zuCNtRRdKMSsHfz3r6F` — https://my-ai-website-6glghr2pj-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36135882139` and `36135875540`, CodeQL `36135882109` and `36135875613`, and Jekyll `36135882157`: success on that exact SHA.
+- Authenticated Preview Browser QA `36135875530`: success on that exact SHA.
+- Local regression suite: 246 passed, 0 failed. The full build, JavaScript syntax and diff checks passed.
 - Browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks.
 - Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, legacy restore/delete safeguards, and 50 → 100 → 122 message batches in Conversations and Contacts.
 - Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
@@ -51,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current verified implementation: 244/244 local tests pass. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
+Current verified implementation: 246/246 local tests pass. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, serialized Client Care status writes, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -272,7 +272,7 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 
 - Feedback and support status selectors now lock per record while a write is pending, preventing overlapping writes from making final state response-order dependent without blocking unrelated records.
 - Both flows apply the selected state immediately, reconcile the server response, roll back on failure, and always unlock for retry. Pending selectors expose disabled and busy state.
-- Added behavioral regressions for duplicate suppression, successful sequential changes, failed rollback and retry. Local suite: 246 tests passed; the full build passed. Push gates and authenticated Preview QA remain to be recorded.
+- Added behavioral regressions for duplicate suppression, successful sequential changes, failed rollback and retry. Implementation `6587792907ae334466b90ac99485d1655231a24b`: 246 local tests and the full build passed; CallerCore CI `36135882139` and `36135875540`, CodeQL `36135882109` and `36135875613`, Jekyll `36135882157`, and authenticated Preview Browser QA `36135875530` passed. Preview `dpl_ovFzBJbs3zuCNtRRdKMSsHfz3r6F` is READY at https://my-ai-website-6glghr2pj-mohamtaj004bas-projects.vercel.app. Production/main was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`.
 
 ## Admin client drawer request consistency
 
