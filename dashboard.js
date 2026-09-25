@@ -2302,15 +2302,30 @@ async function clearProvisioningOverride(id){
   if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'Could not restore automatic stage.');return}
   await refreshAdminView('onboarding',{force:true,announce:false});
 }
+let phoneVisibleLimit=50,phoneFilterSignature='';
 function renderPhones(){
   const wrap=document.getElementById('phoneTable'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
   if(!wrap)return;
   set('phoneAssignedCount',adminPhoneData.filter(x=>x.workspaceId).length);set('phoneUnassignedCount',adminPhoneData.filter(x=>!x.workspaceId).length);set('phoneTransferCount',adminPhoneData.filter(x=>x.transferNumber).length);set('phoneAfterHoursTransferCount',adminPhoneData.filter(x=>x.afterHours==='transfer').length);
-  wrap.innerHTML=adminPhoneData.map(x=>{const after=x.afterHours==='transfer'?'Human transfer':x.afterHours==='voicemail'?'Voicemail':'AI answers',routing='<span class="admin-phone-routing"><b>'+(x.transferNumber?'Transfer '+esc(x.transferNumber):'No transfer destination')+'</b><small>After hours · '+esc(after)+'</small></span>';return '<div class="call-row admin-phone-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+(x.forwardingFrom?' · forwards from '+esc(x.forwardingFrom):'')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span>'+routing+'<span class="tag amber">'+esc(x.voice?.label||'Awaiting activation')+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>'}).join('');
-  const empty=document.getElementById('phoneEmpty');if(empty)empty.hidden=adminPhoneData.length!==0;
+  const q=(document.getElementById('phoneSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('phoneAssignmentFilter')?.value||'all',signature=JSON.stringify([q,filter]);
+  if(signature!==phoneFilterSignature){phoneVisibleLimit=50;phoneFilterSignature=signature}
+  const rows=adminPhoneData.filter(x=>{
+    const matches=!q||[x.number,x.label,x.workspaceName,x.provider,x.forwardingFrom,x.transferNumber].join(' ').toLowerCase().includes(q)||(/^[\d()+ .-]+$/.test(q)&&q.replace(/\D/g,'').length>=3&&[x.number,x.forwardingFrom,x.transferNumber].some(n=>String(n||'').replace(/\D/g,'').includes(q.replace(/\D/g,''))));
+    return matches&&(filter==='all'||filter==='assigned'&&!!x.workspaceId||filter==='unassigned'&&!x.workspaceId||filter==='missing-transfer'&&!x.transferNumber);
+  });
+  const visible=rows.slice(0,phoneVisibleLimit);
+  set('phoneListCount','Showing '+visible.length+' of '+rows.length+' numbers'+(q||filter!=='all'?' matching filters':''));
+  const more=document.getElementById('loadMorePhones');if(more)more.hidden=visible.length>=rows.length;
+  const reset=document.getElementById('resetPhoneFilters');if(reset)reset.hidden=!q&&filter==='all';
+  wrap.innerHTML=visible.map(x=>{const after=x.afterHours==='transfer'?'Human transfer':x.afterHours==='voicemail'?'Voicemail':'AI answers',routing='<span class="admin-phone-routing"><b>'+(x.transferNumber?'Transfer '+esc(x.transferNumber):'No transfer destination')+'</b><small>After hours · '+esc(after)+'</small></span>';return '<div class="call-row admin-phone-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+(x.forwardingFrom?' · forwards from '+esc(x.forwardingFrom):'')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span>'+routing+'<span class="tag amber">'+esc(x.voice?.label||'Awaiting activation')+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>'}).join('');
+  const empty=document.getElementById('phoneEmpty');if(empty){empty.hidden=rows.length!==0;const title=empty.querySelector('h3'),copy=empty.querySelector('p');if(title)title.textContent=adminPhoneData.length?'No matching numbers':'No phone numbers yet';if(copy)copy.textContent=adminPhoneData.length?'Clear the filters or search another number or workspace.':'Add a number to start recording its routing settings.'}
   wrap.querySelectorAll('[data-edit-phone]').forEach(b=>b.addEventListener('click',()=>openPhoneModal(b.dataset.editPhone)));
   wrap.querySelectorAll('[data-delete-phone]').forEach(b=>b.addEventListener('click',()=>deletePhone(b.dataset.deletePhone)));
 }
+document.getElementById('phoneSearch')?.addEventListener('input',renderPhones);
+document.getElementById('phoneAssignmentFilter')?.addEventListener('change',renderPhones);
+document.getElementById('loadMorePhones')?.addEventListener('click',()=>{phoneVisibleLimit+=50;renderPhones()});
+document.getElementById('resetPhoneFilters')?.addEventListener('click',()=>{document.getElementById('phoneSearch').value='';document.getElementById('phoneAssignmentFilter').value='all';renderPhones();document.getElementById('phoneSearch').focus()});
 function renderHealth(){
   const wrap=document.getElementById('systemHealthGrid');if(!wrap)return;
   const requiredKeys=new Set(adminReadinessData?.requiredForLaunch||[]),blockerKeys=new Set((adminReadinessData?.blockers||[]).map(x=>x.key)),healthy=x=>['operational','configured','confirmed'].includes(x.status);
@@ -2348,7 +2363,9 @@ async function deletePhone(id){
 function openPhoneModal(id=null){
   const item=id?adminPhoneData.find(x=>String(x.id)===String(id)):null;
   const modal=document.getElementById('phoneModal');if(!modal)return;
-  modal.dataset.editId=id||'';
+  modal.dataset.editId=id||'';modal.dataset.expectedUpdatedAt=String(item?.updatedAt||0);
+  ['phoneNumberInput','phoneForwardingInput','phoneTransferInput'].forEach(key=>settingsFieldError(key,''));
+  const formStatus=document.getElementById('phoneFormStatus');if(formStatus){formStatus.textContent='';formStatus.className='form-status-line'}
   document.getElementById('phoneNumberInput').value=item?.number||'';
   document.getElementById('phoneLabelInput').value=item?.label||'Primary';
   document.getElementById('phoneProviderInput').value=item?.provider||'Vapi';
@@ -2371,7 +2388,7 @@ async function savePhone(){
   ['phoneNumberInput','phoneForwardingInput','phoneTransferInput'].forEach(id=>settingsFieldError(id,errors[id]||''));
   if(Object.keys(errors).length){if(status){status.textContent='Please correct the highlighted phone fields.';status.className='form-status-line error'};document.getElementById(Object.keys(errors)[0])?.focus();return}
   if(numberEl)numberEl.value=normalizePhone(number);if(forwardEl)forwardEl.value=normalizePhone(forwarding);if(transferEl)transferEl.value=normalizePhone(transfer);
-  const payload={id:modal?.dataset.editId||undefined,number:numberEl?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||'',forwardingFrom:forwardEl?.value||'',transferNumber:transferEl?.value||'',afterHours:document.getElementById('phoneAfterHoursInput')?.value||'ai',smsEnabled:false};
+  const payload={id:modal?.dataset.editId||undefined,expectedUpdatedAt:Number(modal?.dataset.expectedUpdatedAt||0),number:numberEl?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||'',forwardingFrom:forwardEl?.value||'',transferNumber:transferEl?.value||'',afterHours:document.getElementById('phoneAfterHoursInput')?.value||'ai',smsEnabled:false};
   if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status){status.textContent='';status.className='form-status-line'}
   try{
     const r=await fetch('/api/account?action=admin-phone-number-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
@@ -2489,7 +2506,9 @@ function renderAdminFinance(){
 }
 function openExpenseModal(id=''){
   const item=id?(adminFinanceData.expenses||[]).find(x=>String(x.id)===String(id)):null,modal=document.getElementById('expenseModal');if(!modal)return;
-  modal.dataset.editId=id||'';document.getElementById('expenseModalTitle').textContent=item?'Edit expense':'Add expense';
+  modal.dataset.editId=id||'';modal.dataset.expectedUpdatedAt=String(item?.updatedAt||0);
+  ['phoneNumberInput','phoneForwardingInput','phoneTransferInput'].forEach(key=>settingsFieldError(key,''));
+  const formStatus=document.getElementById('phoneFormStatus');if(formStatus){formStatus.textContent='';formStatus.className='form-status-line'}document.getElementById('expenseModalTitle').textContent=item?'Edit expense':'Add expense';
   document.getElementById('expenseNameInput').value=item?.name||'';document.getElementById('expenseVendorInput').value=item?.vendor||'';document.getElementById('expenseCategoryInput').value=item?.category||'Software';document.getElementById('expenseAmountInput').value=item?.amount??'';document.getElementById('expenseFrequencyInput').value=item?.frequency||'monthly';document.getElementById('expenseDateInput').value=item?.date||'';document.getElementById('expenseStatusInput').value=item?.status||'active';document.getElementById('expenseNotesInput').value=item?.notes||'';const status=document.getElementById('expenseFormStatus');if(status)status.textContent='';
   modal.classList.add('open');modal.setAttribute('aria-hidden','false');
 }

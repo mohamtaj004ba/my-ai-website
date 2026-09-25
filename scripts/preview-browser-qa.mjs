@@ -345,6 +345,31 @@ async function runClientInteractions(page){
 }
 
 async function runAdminInteractions(page){
+  await ensureView(page,'phones');
+  const initialPhones=await page.locator('#phoneTable [data-edit-phone]').count();
+  if(initialPhones<1)throw new Error('Phone inventory has no seeded numbers');
+  await page.locator('#phoneSearch').fill('__no_phone_match__');
+  if(await page.locator('#phoneTable [data-edit-phone]').count())throw new Error('Phone inventory search did not filter');
+  await page.locator('#resetPhoneFilters').click();
+  if(await page.locator('#phoneTable [data-edit-phone]').count()!==initialPhones)throw new Error('Phone inventory reset did not restore rows');
+  await page.locator('#phoneAssignmentFilter').selectOption('assigned');
+  const phoneResponse=await page.request.get(baseURL+'/api/account?action=admin-phone-numbers');
+  const phoneItems=(await phoneResponse.json()).numbers||[];
+  if(!phoneResponse.ok()||phoneItems.some(x=>x.voice?.operational!==false))throw new Error('Phone inventory claims unverified operational status');
+  const qaPhone=phoneItems.find(x=>x.workspaceId===report.workspaceId);
+  if(!qaPhone)throw new Error('QA workspace phone is missing');
+  await page.locator('[data-edit-phone="'+qaPhone.id+'"]').click();
+  const originalLabel=await page.locator('#phoneLabelInput').inputValue();
+  await page.locator('#phoneLabelInput').fill(originalLabel+' QA');
+  await page.locator('#savePhoneButton').click();
+  await page.locator('#phoneModal.open').waitFor({state:'hidden',timeout:10000});
+  await page.locator('[data-edit-phone="'+qaPhone.id+'"]').click();
+  if(await page.locator('#phoneLabelInput').inputValue()!==originalLabel+' QA')throw new Error('Admin phone edit did not persist');
+  await page.locator('#phoneLabelInput').fill(originalLabel);
+  await page.locator('#savePhoneButton').click();
+  await page.locator('#phoneModal.open').waitFor({state:'hidden',timeout:10000});
+  report.admin.interactions.push('phone search/reset + truthful readiness + saved edit/restore');
+
   await page.locator('#adminSearch').fill('North Ridge Plumbing');
   const clientResult=page.locator('[data-global-search-type="client"]').first();
   await clientResult.waitFor({state:'visible',timeout:8000});
@@ -420,6 +445,7 @@ async function runResponsive(kind,viewport,name){
       await assertLayout(page,kind+'-'+name+'-secondary',{allowHorizontalOverflow:false});
       await shot(page,kind+'-'+name+'-'+(kind==='admin'?'clients':'calls'));
     }
+    if(kind==='admin'){await ensureView(page,'phones');await assertLayout(page,kind+'-'+name+'-phones');await shot(page,kind+'-'+name+'-phones')}
     if(kind==='client'){
       for(const view of ['conversations','agent','settings']){
         await ensureView(page,view);

@@ -614,6 +614,10 @@ async function adminSavePhoneNumber(req,res){
   if(forwardingFrom&&!/^\+?[0-9() .-]{7,30}$/.test(forwardingFrom))return res.status(400).json({error:'Forwarding source number is invalid'});
   if(transferNumber&&!/^\+?[0-9() .-]{7,30}$/.test(transferNumber))return res.status(400).json({error:'Transfer destination is invalid'});
   const current=await kv.get('phone:index')||[],list=Array.isArray(current)?current.slice():[],previous=list.find(x=>x&&String(x.id)===id),digits=v=>String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
+  if(!Array.isArray(current))return res.status(503).json({error:'Phone inventory is unavailable. No changes were made.'});
+  if(body.id&&!previous)return res.status(404).json({error:'This phone record no longer exists. Refresh the inventory before editing.'});
+  if(previous&&body.expectedUpdatedAt!==undefined&&Number(body.expectedUpdatedAt||0)!==Number(previous.updatedAt||0))return res.status(409).json({error:'This phone record changed while you were editing. Reopen it to load the latest settings.'});
+  if(!previous&&list.length>=500)return res.status(409).json({error:'Phone inventory has reached its 500-record limit. No number was added.'});
   const duplicateNumber=list.find(x=>x&&String(x.id)!==id&&digits(x.number)===digits(number));
   if(duplicateNumber)return res.status(409).json({error:'That CallerCore number is already in the routing inventory. Edit the existing number instead.'});
   const duplicateWorkspace=workspaceId&&list.find(x=>x&&String(x.id)!==id&&String(x.workspaceId||'')===workspaceId);

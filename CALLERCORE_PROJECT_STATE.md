@@ -72,7 +72,7 @@ AI Receptionist/Settings first inspection completed: section editing, rollback, 
 - Conversations currently reads a tenant-scoped KV array via `requireFeature(...,'unifiedInbox')`; full data still transfers to the client. Rendering batches are not server pagination.
 - Client Conversations is a history viewer. No client reply composer or shared unread state was found. Do not invent working messaging or change SMS launch scope to expose it.
 - Conversation records link to derived contact history; admin Gmail/website Inbox is a separate data source. A shared client/admin message-delivery pipeline has not been verified.
-- Live voice gap confirmed in code: `aiAnsweringControl` updates KV settings/phone metadata and audit only; it does not contact a telephony provider. Existing answering-status labels must not be treated as evidence of real call routing. Provider-backed pause/resume and truthful status presentation need dedicated follow-up before launch.
+- Live voice remains unavailable: shared readiness now reports awaiting activation; fake pause/resume is blocked. A real provider adapter and verification remain required before activation.
 - Thread rendering remains unbounded within an individual message history; further high-volume thread work may be needed.
 - Some release docs predate implementation: README's unlimited Pro statement corrected; environment matrix/DEPLOY contain historical isolation and QA notes; production readiness still describes the already-replaced `@vercel/kv` client. Use actual code and current evidence.
 - Older rollback deployment references are historical and differ from current main SHA. Re-verify the appropriate production rollback target before an authorized release.
@@ -118,3 +118,10 @@ Only commit/push routine changes to the authorized development branch. No merge 
 ## Supporting documents
 
 `README.md`, `DEPLOY.md`, `docs/FINAL_PRELAUNCH_AUDIT.md`, `docs/PRODUCTION_READINESS.md`, `docs/TJ_DECISION_BACKLOG.md`, `docs/DATA_RETENTION_POLICY.md`, `docs/BACKUP_AND_RECOVERY.md`, `docs/DATA_RECOVERY.md`, `docs/INCIDENT_RESPONSE.md`, `docs/ENVIRONMENT_SCOPE_MATRIX.md`, `docs/ANALYTICS_ROLLUP_DESIGN.md`, `docs/VOICE_UNIT_ECONOMICS.md`.
+
+## Verified voice/configuration checkpoint and admin inventory follow-up
+
+- Implementation `ddf184f5850d73b8634bf377abb44a662dd1ddd3`: 171 local tests passed; CI, CodeQL, Jekyll and authenticated Preview browser QA run `36112569864` passed. The QA includes real receptionist identity and transfer saves/readback/restoration in the isolated test workspace, exercising the atomic configuration transaction.
+- Admin phone inventory now has search, assignment filters, result counts, 50-record batches, reset and empty states. Stale edits, missing edited records, malformed inventory and the 500-record capacity are rejected before mutation. Existing admin multi-record persistence is not yet an atomic transaction.
+- Added behavioral tests for inventory pagination/search and backend save guards; 175 local tests passed. Added Preview admin phone label save/readback/restore and responsive phone checks; these new checks await the next feature push.
+- Next: prevent edits/cancellation/navigation while client saves are pending, then verify the expanded admin Preview checks.
