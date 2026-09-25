@@ -563,6 +563,15 @@ async function adminPhoneNumbers(req,res){
   return res.status(200).json({numbers:Array.isArray(numbers)?numbers:[]});
 }
 
+async function syncOnboardingPhoneAssignment(workspaceId,assigned){
+  if(!workspaceId)return;
+  const key='onboarding:workspace:'+workspaceId,state=await kv.get(key);
+  if(!state||typeof state!=='object'||Array.isArray(state))return;
+  const current=state.checklist&&typeof state.checklist==='object'&&!Array.isArray(state.checklist)?state.checklist:{};
+  if(current.phoneAssigned===!!assigned)return;
+  await kv.set(key,{...state,checklist:{...current,phoneAssigned:!!assigned},updatedAt:Date.now()});
+}
+
 async function adminSavePhoneNumber(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{};
@@ -591,8 +600,9 @@ async function adminSavePhoneNumber(req,res){
   if(previous&&previous.workspaceId&&previous.workspaceId!==workspaceId){
     const oldKey='workspace:'+previous.workspaceId,oldWs=await kv.get(oldKey);
     if(oldWs&&digits(oldWs.phone)===digits(previous.number))await kv.set(oldKey,{...oldWs,phone:'',updatedAt:Date.now()});
+    await syncOnboardingPhoneAssignment(previous.workspaceId,false);
   }
-  if(workspaceId&&workspaceBefore)await kv.set('workspace:'+workspaceId,{...workspaceBefore,phone:number,updatedAt:Date.now()});
+  if(workspaceId&&workspaceBefore){await kv.set('workspace:'+workspaceId,{...workspaceBefore,phone:number,updatedAt:Date.now()});await syncOnboardingPhoneAssignment(workspaceId,true)}
   const item={id,number,workspaceId,workspaceName,provider,label,forwardingFrom,transferNumber,afterHours,smsEnabled,status:'active',updatedAt:Date.now()};
   const i=list.findIndex(x=>x&&String(x.id)===id);
   if(i>=0)list[i]=item;else list.push(item);
@@ -622,6 +632,7 @@ async function adminDeletePhoneNumber(req,res){
     if(ws&&String(ws.phone||'')===String(item.number||'')){
       await kv.set(key,{...ws,phone:'',updatedAt:Date.now()});
     }
+    await syncOnboardingPhoneAssignment(item.workspaceId,false);
   }
   if(item.workspaceId)await appendAudit(item.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'phone_routing_delete',section:'routing',before:item,after:null});
   return res.status(200).json({ok:true,deleted:{id:item.id,number:item.number}});
