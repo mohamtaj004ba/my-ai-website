@@ -60,3 +60,18 @@ test('Preview browser QA covers interactions responsive layouts and strict API f
   assert.match(workflow,/Compare visual drift/);
   assert.match(visual,/pixelmatch/);
 });
+
+
+test('drawer open state wins over off-canvas resting offsets',()=>{
+  const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
+  assert.ok(css.lastIndexOf('.call-drawer.open{right:0}')>css.lastIndexOf('.call-drawer{right:-590px'));
+  assert.ok(css.lastIndexOf('#adminClientDrawer.open{right:0}')>css.lastIndexOf('#adminClientDrawer{right:-760px'));
+});
+
+test('Preview QA uses the committed dependency lockfile',()=>{
+  const workflow=fs.readFileSync(path.join(root,'.github','workflows','preview-browser-qa.yml'),'utf8');
+  const lock=JSON.parse(fs.readFileSync(path.join(root,'package-lock.json'),'utf8'));
+  assert.match(workflow,/npm ci --ignore-scripts/);
+  assert.equal(lock.lockfileVersion,3);
+  assert.equal(lock.packages[''].devDependencies.playwright,'1.55.0');
+});
