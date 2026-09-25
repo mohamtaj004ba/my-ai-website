@@ -51,8 +51,12 @@ test('account conversation reads stay tenant scoped and expose bounded history r
   const source=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','api','account.js'),'utf8');
   for(const handler of ['conversations','conversationDetail','conversationMessages','contactConversations']){
     const start=source.indexOf('async function '+handler+'('),end=source.indexOf('\nasync function ',start+20),body=source.slice(start,end<0?source.length:end);
-    assert.match(body,/requireFeature\(req,res,'unifiedInbox'\)/);assert.match(body,/conversations:'\+access\.session\.workspaceId/);assert.doesNotMatch(body,/req\.query\.workspaceId/);
+    assert.match(body,/requireFeature\(req,res,'unifiedInbox'\)/);assert.match(body,/access\.session\.workspaceId/);assert.doesNotMatch(body,/req\.query\.workspaceId/);
   }
+  assert.match(source,/require\('\.\.\/lib\/conversation-store'\)/);
+  assert.match(source,/publishNormalizedConversations\(kv,workspaceId,dataset\.conversations/);
+  assert.match(source,/deleteNormalizedConversations\(kv,id\)/);
+  assert.match(source,/readAllConversations\(kv,id\)/);
   assert.match(source,/action==='conversation-detail'/);assert.match(source,/action==='conversation-messages'/);
   assert.match(source,/action==='contact-conversations'/);
   assert.match(source,/conversations:conversationDirectory,conversationPage/);

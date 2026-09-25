@@ -24,6 +24,7 @@ test('workspace deletion uses a 30-day recoverable state before purge',()=>{
 
 test('permanent purge cleans customer-content stores only after recovery gate',()=>{
   for(const prefix of ["'routing-request:'","'onboarding:workspace:'","'onboarding:workspace-token:'","'audit:'"])assert.ok(src.includes(prefix),prefix+' cleanup missing');
+  assert.match(src,/deleteNormalizedConversations\(kv,id\)/);
   assert.match(src,/30-day recovery window has not ended/);
 });
 

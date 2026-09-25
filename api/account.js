@@ -10,7 +10,8 @@ const previewSeed=require('../lib/preview-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig}=require('../lib/config-transaction');
 const {prependAuditEvent}=require('../lib/audit-log');
-const {conversationSummary,conversationContactKey,paginateConversations,paginateMessages}=require('../lib/conversation-history');
+const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
+const {readConversationDirectory,readConversationPage,readConversation,readContactConversations,readAllConversations,publishNormalizedConversations,deleteNormalizedConversations}=require('../lib/conversation-store');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
@@ -156,6 +157,7 @@ async function seedPreviewData(req,res){
     kv.set('integrations:'+workspaceId,{googleCalendar:false,stripe:false,webhookUrl:'',apiAccess:true,updatedAt:now}),
     kv.set('onboarding:workspace:'+workspaceId,{status:'live',completionPercent:100,checklist:{payment:true,accountReview:true,onboardingSent:true,agreement:true,intake:true,businessProfile:true,agentDraft:true,routingCaptured:true,phoneAssigned:true,adminReview:true,testCall:true,clientApproval:true,live:true},updatedAt:now})
   ]);
+  await publishNormalizedConversations(kv,workspaceId,dataset.conversations,{now});
   const phoneIndex=await kv.get('phone:index')||[],primaryPhone=previewSeed.primaryPhone(workspaceId);
   const phoneList=(Array.isArray(phoneIndex)?phoneIndex:[]).filter(x=>x&&x.workspaceId!==workspaceId&&x.id!==primaryPhone.id);
   phoneList.unshift(primaryPhone);
@@ -166,6 +168,7 @@ async function seedPreviewData(req,res){
   const staleSeedWorkspaceIds=index.filter(id=>String(id).startsWith('seed_'));
   const staleSeedPrefixes=['workspace:','settings:','agent:','automations:','calls:','calls:index:','leads:','conversations:','appointments:','locations:','onboarding:workspace:','routing-request:','integrations:','followup:state:'];
   await Promise.allSettled(staleSeedWorkspaceIds.flatMap(id=>staleSeedPrefixes.map(prefix=>kv.del(prefix+id))));
+  await Promise.allSettled(staleSeedWorkspaceIds.map(id=>deleteNormalizedConversations(kv,id)));
   const keep=index.filter(id=>!String(id).startsWith('seed_'));
   const adminIds=[],seedPhones=[],seedSupport=[],seedFeedback=[];
   for(let i=0;i<previewSeed.ADMIN_CLIENTS.length;i++){
@@ -182,6 +185,7 @@ async function seedPreviewData(req,res){
       kv.set('onboarding:workspace:'+ws.id,onboarding),
       routing?kv.set('routing-request:'+ws.id,routing):kv.del('routing-request:'+ws.id)
     ]);
+    await publishNormalizedConversations(kv,ws.id,[],{now});
   }
   await kv.set('workspace:index',[workspaceId,...adminIds,...keep.filter(id=>id!==workspaceId)].slice(0,250));
 
@@ -467,6 +471,7 @@ async function adminPurgeClient(req,res){
     'settings:','integrations:','locations:','routing-request:','onboarding:workspace:',
     'onboarding:workspace-token:','provisioning:override:','provisioning:history:','audit:'
   ].map(prefix=>kv.del(prefix+id)));
+  await deleteNormalizedConversations(kv,id);
   if(onboardingToken)await kv.del('onboarding:'+onboardingToken);
   return res.status(200).json({ok:true,purged:{id,name:ws.name||'Workspace'},retainedUntil:Date.now()+60*60*24*365*7*1000});
 }
@@ -2043,10 +2048,11 @@ function redactExportSecrets(value){
 }
 
 async function buildWorkspaceExportData(id){
-  const [workspace,settings,agent,calls,leads,conversations,appointments,automations,integrations,locations,phones,supportIndex,onboarding,audit]=await Promise.all([
-    kv.get('workspace:'+id),kv.get('settings:'+id),kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('conversations:'+id),kv.get('appointments:'+id),kv.get('automations:'+id),kv.get('integrations:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('support:index'),kv.get('onboarding:workspace:'+id),kv.get('audit:'+id)
+  const [workspace,settings,agent,calls,leads,appointments,automations,integrations,locations,phones,supportIndex,onboarding,audit]=await Promise.all([
+    kv.get('workspace:'+id),kv.get('settings:'+id),kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('appointments:'+id),kv.get('automations:'+id),kv.get('integrations:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('support:index'),kv.get('onboarding:workspace:'+id),kv.get('audit:'+id)
   ]);
   if(!workspace)return null;
+  const conversations=await readAllConversations(kv,id);
   const support=[];
   for(const ticketId of Array.isArray(supportIndex)?supportIndex:[]){
     const t=await kv.get('support:'+ticketId);if(t&&t.workspaceId===id)support.push(t);
@@ -2286,17 +2292,14 @@ async function saveAutomations(req,res){
 
 async function conversations(req,res){
   const access=await requireFeature(req,res,'unifiedInbox');if(!access)return;
-  const items=await kv.get('conversations:'+access.session.workspaceId)||[];
-  if(!Array.isArray(items))return res.status(500).json({error:'Conversation data is unavailable'});
-  try{return res.status(200).json(paginateConversations(items,req.query||{}))}
+  try{return res.status(200).json(await readConversationPage(kv,access.session.workspaceId,req.query||{}))}
   catch(err){if(err&&err.code==='INVALID_CURSOR')return res.status(400).json({error:err.message});throw err}
 }
 
 async function conversationDetail(req,res){
   const access=await requireFeature(req,res,'unifiedInbox');if(!access)return;
   const id=String((req.query&&req.query.id)||'').slice(0,120);if(!id)return res.status(400).json({error:'Conversation ID is required'});
-  const items=await kv.get('conversations:'+access.session.workspaceId)||[];
-  const conversation=Array.isArray(items)?items.find(item=>item&&String(item.id)===id):null;
+  const conversation=await readConversation(kv,access.session.workspaceId,id);
   if(!conversation)return res.status(404).json({error:'Conversation not found'});
   return res.status(200).json({conversation});
 }
@@ -2304,8 +2307,7 @@ async function conversationDetail(req,res){
 async function conversationMessages(req,res){
   const access=await requireFeature(req,res,'unifiedInbox');if(!access)return;
   const id=String((req.query&&req.query.id)||'').slice(0,120);if(!id)return res.status(400).json({error:'Conversation ID is required'});
-  const items=await kv.get('conversations:'+access.session.workspaceId)||[];
-  const conversation=Array.isArray(items)?items.find(item=>item&&String(item.id)===id):null;
+  const conversation=await readConversation(kv,access.session.workspaceId,id);
   if(!conversation)return res.status(404).json({error:'Conversation not found'});
   try{return res.status(200).json(paginateMessages(conversation,req.query||{}))}
   catch(err){if(err&&err.code==='INVALID_CURSOR')return res.status(400).json({error:err.message});throw err}
@@ -2315,9 +2317,7 @@ async function contactConversations(req,res){
   const access=await requireFeature(req,res,'unifiedInbox');if(!access)return;
   const key=String((req.query&&req.query.key)||'').trim().slice(0,180);
   if(!/^[pn]:.+/.test(key))return res.status(400).json({error:'Contact key is required'});
-  const items=await kv.get('conversations:'+access.session.workspaceId)||[];
-  if(!Array.isArray(items))return res.status(500).json({error:'Conversation data is unavailable'});
-  return res.status(200).json({conversations:items.filter(item=>item&&conversationContactKey(item)===key)});
+  return res.status(200).json({conversations:await readContactConversations(kv,access.session.workspaceId,key)});
 }
 
 async function appointments(req,res){
@@ -2493,8 +2493,8 @@ async function clientDashboardData(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   const ent=entitlementsFor(ws.plan);
-  const keys=['calls:index:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index',callViewedKey(s.workspaceId,s.email),'leads:'+s.workspaceId,'conversations:'+s.workspaceId,'appointments:'+s.workspaceId,'automations:'+s.workspaceId,'onboarding:workspace:'+s.workspaceId];
-  const [callIndexRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,followupRaw,platformRaw,phoneIndex,viewedRaw,leadsRaw,conversationsRaw,appointmentsRaw,automationsRaw,onboardingRaw]=await Promise.all(keys.map(k=>kv.get(k)));
+  const keys=['calls:index:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index',callViewedKey(s.workspaceId,s.email),'leads:'+s.workspaceId,'appointments:'+s.workspaceId,'automations:'+s.workspaceId,'onboarding:workspace:'+s.workspaceId];
+  const [callIndexRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,followupRaw,platformRaw,phoneIndex,viewedRaw,leadsRaw,appointmentsRaw,automationsRaw,onboardingRaw]=await Promise.all(keys.map(k=>kv.get(k)));
   const callsRaw=Array.isArray(callIndexRaw)&&callIndexRaw.length?callIndexRaw:(await kv.get('calls:'+s.workspaceId)||[]);
   const savedAgent=agentRaw||{},savedSettings=settingsRaw||{},platform=platformRaw||{},savedIntegrations=integrationsRaw||{},numbers=Array.isArray(phoneIndex)?phoneIndex:[],phone=numbers.find(x=>x&&x.workspaceId===s.workspaceId)||null;
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true',calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true';
@@ -2504,7 +2504,8 @@ async function clientDashboardData(req,res){
   };
   const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',handlingInstructions:savedAgent.handlingInstructions||savedAgent.callHandling||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
   const routing=clientRouting(phone,{smsLive});
-  const conversationItems=ent.features.unifiedInbox&&Array.isArray(conversationsRaw)?conversationsRaw:[],conversationPage=paginateConversations(conversationItems,{limit:50}),conversationDirectory=conversationItems.map(conversationSummary);
+  const conversationStore=ent.features.unifiedInbox?await readConversationDirectory(kv,s.workspaceId):{conversations:[]};
+  const conversationDirectory=conversationStore.conversations,conversationPage=ent.features.unifiedInbox?await readConversationPage(kv,s.workspaceId,{limit:50}):paginateConversations([],{limit:50});
   return res.status(200).json({
     workspace:{
       id:ws.id,name:ws.name||'',plan:ent.plan,status:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',

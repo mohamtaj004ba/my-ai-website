@@ -62,13 +62,13 @@ Current verified implementation: 228/228 local tests pass. Executable regression
 
 ## Next authorized development backlog
 
-1. Design storage normalization and migration for the legacy tenant conversation array; do not rewrite existing records in place without a reversible migration and compatibility read path.
-2. Continue client/admin shared-state consistency and accessibility review using the existing authenticated Preview workflow and screenshots. Current regression coverage is not a claim that every dashboard action has been tested.
-3. Inspect provider/billing test-environment readiness before dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios. Live activation, production changes and new charges still need owner authorization.
+1. Verify normalized conversation reads through the existing authenticated Preview workflow and screenshots. The isolated seed now dual-populates legacy and version 2; no production migration is authorized or performed.
+2. Continue client/admin shared-state consistency and accessibility review. Current regression coverage is not a claim that every dashboard action has been tested.
+3. Run dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios only when the required provider test configuration is available. Live activation, production changes and new charges still need owner authorization.
 
 ## Known limitations and remaining work
 
-- Conversations currently reads a tenant-scoped KV array via `requireFeature(...,'unifiedInbox')`; full data still transfers to the client. Rendering batches are not server pagination.
+- Conversation reads prefer a versioned tenant-scoped summary index and per-thread details, with the untouched legacy tenant array as the compatibility/rollback source. Production data has not been migrated.
 - Client Conversations is a history viewer. No client reply composer or shared unread state was found. Do not invent working messaging or change SMS launch scope to expose it.
 - Conversation records link to derived contact history; admin Gmail/website Inbox is a separate data source. A shared client/admin message-delivery pipeline has not been verified.
 - Live voice remains unavailable: shared readiness now reports awaiting activation; fake pause/resume is blocked. A real provider adapter and verification remain required before activation.
@@ -231,8 +231,17 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Contact history requests retain the unified-inbox entitlement check and derive the storage key from the authenticated workspace. Phone formatting and fallback names normalize consistently on both server and client.
 - Background refresh clears hydration markers with the refreshed summaries; duplicate contact requests are suppressed, failures show a retry state, and demo data remains local.
 - Added executable contact-key, tenant-route, message-free bundle, on-demand merge and duplicate-hydration regressions. Local verification: 221 tests passed; syntax and diff checks passed.
-- Server reads still scan the legacy tenant conversation array. A reversible normalized-storage migration with compatibility reads remains the next backend scale boundary.
+- At this checkpoint server reads still scanned the legacy tenant conversation array. The reversible normalized-storage implementation recorded below resolves that backend boundary for migrated workspaces.
 - Preview run `36119757372` on an intermediate drawer checkpoint reached the on-demand contact flow with zero page/console/API errors, then failed because the browser test clicked an earlier-message control while the contact hydration repaint was still replacing that element. The drawer now exposes `aria-busy` during hydration and Preview QA waits for the settled state before interacting. Full corrected Preview QA `36120426827` passed.
+
+## Reversible normalized conversation storage
+
+- Added a version 2 message-free conversation index and per-thread detail records. Ordinary list/filter pages no longer read every message body after migration; full-history text search reads normalized details in bounded batches without duplicating message content into the index.
+- Reads remain backward compatible: an absent version 2 index uses the untouched legacy tenant array; an unexpectedly missing indexed detail falls back to the matching legacy record. Malformed indexes fail closed.
+- Publication validates unique IDs, writes detail records in bounded batches, publishes the index last, and removes obsolete version 2 details only after the replacement index is readable. A failed detail write cannot replace the active index.
+- The isolated Preview seed now retains the legacy array and also publishes version 2, exercising the new path without changing production. No production migration route or dashboard action was added.
+- Workspace export reconstructs complete normalized histories, while permanent purge and Preview stale-fixture cleanup remove version 2 indexes/details as well as legacy storage.
+- The migration and rollback contract is documented in `docs/CONVERSATION_STORAGE_MIGRATION.md`. Local verification: 236 tests passed; JavaScript syntax passed. Full build, push gates, Preview deployment and authenticated browser QA remain to be recorded for this implementation.
 
 ## Admin client drawer request consistency
 
