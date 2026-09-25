@@ -104,7 +104,7 @@ test('campaign list includes items beyond 250 and rejects malformed indexes',asy
     kv:{get:async key=>key==='marketing:campaign:index'?index:{id:key.slice('marketing:campaign:'.length),updatedAt:10}},
     req:{},res:{status(n){code=n;return this},json(x){output=x;return x}},Promise,Array,Number,String
   });
-  const start=api.indexOf('async function adminMarketingCampaigns('),end=api.indexOf('\\nasync function adminMarketingCampaignSave(',start);
+  const start=api.indexOf('async function adminMarketingCampaigns('),end=api.indexOf('\nasync function adminMarketingCampaignSave(',start);
   assert.ok(start>=0&&end>start);
   vm.runInContext(api.slice(start,end),context);
   await vm.runInContext('adminMarketingCampaigns(req,res)',context);
