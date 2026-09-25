@@ -1552,7 +1552,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{res
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -2737,6 +2737,7 @@ function renderAdminClients(){
   wrap.querySelectorAll('[data-admin-client-row]').forEach(row=>row.addEventListener('click',e=>{if(e.target.closest('button,a,select,input'))return;openAdminClient(row.dataset.adminClientRow)}));
 }
 async function openAdminClient(id){
+  if(adminTechSaving)return;
   const r=await fetch('/api/account?action=admin-client&id='+encodeURIComponent(id),{headers:{Accept:'application/json'},cache:'no-store'});
   if(!r.ok)return;
   const x=(await r.json()).client;if(!x)return;
@@ -2760,6 +2761,14 @@ async function openAdminClient(id){
 
 function adminTechMessage(message,error=false){
   const el=document.getElementById('adminTechStatus');if(!el)return;el.textContent=message||'';el.classList.toggle('error-text',!!error)
+}
+function setAdminTechMutationState(saving,target=''){
+  adminTechSaving=!!saving;adminTechMutationTarget=adminTechSaving?String(target||'override'):'';
+  const ids=['adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','closeAdminClient'];
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminTechSaving});
+  document.querySelectorAll('[data-restore-audit]').forEach(button=>button.disabled=adminTechSaving);
+  const apply=document.getElementById('adminApplyOverrideButton');if(apply)apply.textContent=adminTechSaving&&adminTechMutationTarget==='override'?'Applying…':'Apply admin override';
+  const drawer=document.getElementById('adminClientDrawer');if(drawer)drawer.setAttribute('aria-busy',String(adminTechSaving));
 }
 async function loadAdminTechSupport(id=currentAdminClient?.id){
   if(!id)return;
@@ -2786,7 +2795,7 @@ function renderAdminTechSupport(){
   if(list)list.innerHTML=audit.map(entry=>{
     const when=new Date(entry.at).toLocaleString(),who=entry.actorRole==='admin'?'Admin':'Client';
     const restorable=['workspace','settings','agent','automations','integrations','locations'].includes(entry.section)&&entry.before!==undefined;
-    return '<article class="audit-entry"><div class="audit-head"><div><b>'+esc(entry.action.replaceAll('_',' '))+'</b><small>'+esc(when)+' · '+esc(who)+' · '+esc(entry.actorEmail||'unknown')+'</small></div><span class="tag">'+esc(entry.section||'system')+'</span></div><details><summary>Inspect change</summary><div class="audit-diff"><div><span>Before</span><pre>'+esc(JSON.stringify(entry.before,null,2))+'</pre></div><div><span>After</span><pre>'+esc(JSON.stringify(entry.after,null,2))+'</pre></div></div></details>'+(restorable?'<button class="secondary-btn audit-restore" data-restore-audit="'+esc(entry.id)+'">Restore previous snapshot</button>':'')+'</article>'
+    return '<article class="audit-entry"><div class="audit-head"><div><b>'+esc(entry.action.replaceAll('_',' '))+'</b><small>'+esc(when)+' · '+esc(who)+' · '+esc(entry.actorEmail||'unknown')+'</small></div><span class="tag">'+esc(entry.section||'system')+'</span></div><details><summary>Inspect change</summary><div class="audit-diff"><div><span>Before</span><pre>'+esc(JSON.stringify(entry.before,null,2))+'</pre></div><div><span>After</span><pre>'+esc(JSON.stringify(entry.after,null,2))+'</pre></div></div></details>'+(restorable?'<button class="secondary-btn audit-restore" data-restore-audit="'+esc(entry.id)+'" '+(adminTechSaving?'disabled':'')+'>'+(adminTechSaving&&adminTechMutationTarget===entry.id?'Restoring…':'Restore previous snapshot')+'</button>':'')+'</article>'
   }).join('');
   if(empty)empty.hidden=audit.length!==0;
   list?.querySelectorAll('[data-restore-audit]').forEach(b=>b.addEventListener('click',()=>restoreAdminAudit(b.dataset.restoreAudit)));
@@ -2816,18 +2825,28 @@ async function repairClientAccess(){
   if(r.ok){await refreshAdminCore();await loadAdminTechSupport()}
 }
 async function applyAdminConfigOverride(){
-  if(!currentAdminClient)return;const section=document.getElementById('adminConfigSection')?.value||'settings',raw=document.getElementById('adminConfigEditor')?.value||'';
+  if(!currentAdminClient||adminTechSaving)return;const section=document.getElementById('adminConfigSection')?.value||'settings',raw=document.getElementById('adminConfigEditor')?.value||'';
   let value;try{value=JSON.parse(raw)}catch(_){adminTechMessage('Configuration JSON is invalid.',true);return}
   if(!confirm('Apply this admin override to '+section+'? The previous value will remain available in Change History.'))return;
-  const r=await fetch('/api/account?action=admin-config-override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,section,value})}),data=await r.json().catch(()=>({}));
-  adminTechMessage(r.ok?'Admin override applied to '+section+'.':(data.error||'Could not apply override.'),!r.ok);
-  if(r.ok){await refreshAdminCore();await loadAdminOps();await loadAdminTechSupport()}
+  setAdminTechMutationState(true,'override');adminTechMessage('Applying '+section+' override…');
+  try{
+    const r=await fetch('/api/account?action=admin-config-override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,section,value})}),data=await r.json().catch(()=>({}));
+    if(!r.ok){adminTechMessage(data.error||'Could not apply override.',true);return}
+    if(currentAdminTech?.config)currentAdminTech.config[section]=data.value;renderAdminConfigEditor();adminTechMessage('Admin override applied to '+section+'.');
+    await Promise.all([refreshAdminCore(),loadAdminOps()]);await loadAdminTechSupport();
+  }catch(err){adminTechMessage(err.message||'Could not apply override.',true)}
+  finally{setAdminTechMutationState(false)}
 }
 async function restoreAdminAudit(auditId){
-  if(!currentAdminClient||!confirm('Restore the configuration that existed before this change? A new audit entry will record the rollback.'))return;
-  const r=await fetch('/api/account?action=admin-audit-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,auditId})}),data=await r.json().catch(()=>({}));
-  adminTechMessage(r.ok?'Previous '+data.section+' configuration restored.':(data.error||'Could not restore snapshot.'),!r.ok);
-  if(r.ok){await refreshAdminCore();await loadAdminOps();await loadAdminTechSupport()}
+  if(!currentAdminClient||adminTechSaving||!confirm('Restore the configuration that existed before this change? A new audit entry will record the rollback.'))return;
+  setAdminTechMutationState(true,auditId);renderAdminTechSupport();adminTechMessage('Restoring previous configuration…');
+  try{
+    const r=await fetch('/api/account?action=admin-audit-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,auditId})}),data=await r.json().catch(()=>({}));
+    if(!r.ok){adminTechMessage(data.error||'Could not restore snapshot.',true);return}
+    if(currentAdminTech?.config)currentAdminTech.config[data.section]=data.value;renderAdminConfigEditor();adminTechMessage('Previous '+data.section+' configuration restored.');
+    await Promise.all([refreshAdminCore(),loadAdminOps()]);await loadAdminTechSupport();
+  }catch(err){adminTechMessage(err.message||'Could not restore snapshot.',true)}
+  finally{setAdminTechMutationState(false);renderAdminTechSupport()}
 }
 document.getElementById('adminConfigSection')?.addEventListener('change',renderAdminConfigEditor);
 document.getElementById('adminReloadConfigButton')?.addEventListener('click',()=>loadAdminTechSupport());
@@ -2836,7 +2855,7 @@ document.getElementById('adminSendLoginButton')?.addEventListener('click',sendCl
 document.getElementById('adminForceLogoutButton')?.addEventListener('click',forceClientLogout);
 document.getElementById('adminRepairAccessButton')?.addEventListener('click',repairClientAccess);
 
-function closeAdminClient(){document.getElementById('adminClientDrawer')?.classList.remove('open');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
+function closeAdminClient(){if(adminTechSaving)return;document.getElementById('adminClientDrawer')?.classList.remove('open');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
 
 let adminSearchActiveIndex=0,adminSearchInboxCacheLoaded=false,adminSearchInboxLoading=false;
 

@@ -59,6 +59,25 @@ async function assertPendingSave(page,action,saveSelector,fieldSelector,cancelSe
   }finally{release()}
 }
 
+async function assertAdminTechPendingOverride(page){
+  await page.locator('#adminConfigEditor').waitFor({state:'visible',timeout:8000});
+  await page.waitForFunction(()=>document.querySelector('#adminConfigEditor')?.value.trim().length>1);
+  let release,started;const held=new Promise(resolve=>release=resolve),seen=new Promise(resolve=>started=resolve);
+  await page.route('**/api/account?action=admin-config-override',async route=>{started();await held;await route.continue()},{times:1});
+  page.once('dialog',dialog=>dialog.accept());
+  try{
+    await page.locator('#adminApplyOverrideButton').click();
+    await Promise.race([seen,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Admin override request not received')),10000))]);
+    for(const selector of ['#adminConfigSection','#adminConfigEditor','#adminReloadConfigButton','#adminApplyOverrideButton','#closeAdminClient']){
+      if(await page.locator(selector).isEnabled())throw new Error('Pending admin override left '+selector+' enabled');
+    }
+    await page.evaluate(()=>closeAdminClient());
+    if(!await page.locator('#adminClientDrawer').evaluate(el=>el.classList.contains('open')))throw new Error('Pending admin override allowed the client drawer to close');
+  }finally{release()}
+  await page.locator('#adminApplyOverrideButton').waitFor({state:'visible'});
+  await page.waitForFunction(()=>!document.querySelector('#adminApplyOverrideButton')?.disabled);
+}
+
 async function assertRefreshPreservesDraft(page,savedName){
   let release,started;
   const held=new Promise(resolve=>release=resolve),seen=new Promise(resolve=>started=resolve);
@@ -453,7 +472,9 @@ async function runAdminInteractions(page){
   await clientResult.waitFor({state:'visible',timeout:8000});
   await clientResult.click();
   await page.locator('#adminClientDrawer.open').waitFor({state:'visible',timeout:8000});
+  await assertAdminTechPendingOverride(page);
   report.admin.interactions.push('global search → client deep link');
+  report.admin.interactions.push('configuration override pending lock + immediate refresh');
   await page.locator('#closeAdminClient').click();
 
   await page.locator('#adminSearch').fill('System Health');

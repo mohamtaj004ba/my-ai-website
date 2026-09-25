@@ -215,3 +215,11 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Summary-only fallback data hydrates the selected thread through the authenticated detail route before rendering messages. Contact counts use server message counts when a full message array is not present.
 - Preview QA waits for asynchronous page results during load-more, sort, search, reset and attention-filter checks. Local verification: 215 tests passed; syntax and diff checks passed.
 - Complete conversation histories remain in the initial bundle because Contacts currently derives its full directory and message timelines from them. Removing that payload requires a contact-summary/history contract or normalized storage and remains the next scale task.
+
+## Admin configuration mutation state
+
+- Admin configuration overrides and audit restores now lock the section selector, JSON editor, reload/apply controls, restore actions and client-drawer dismissal until the request and refresh complete. Duplicate mutation attempts are ignored.
+- Successful responses apply the server-returned sanitized value locally before background admin data refreshes, so an immediate editor repaint cannot show the stale pre-save snapshot.
+- Network and API failures unlock the controls while preserving the editable JSON for correction or retry. The drawer exposes `aria-busy` during the operation and buttons show Applying/Restoring progress labels.
+- Added behavioral tests for pending locks, duplicate-submit prevention, failure retry state, immediate override/restore consistency and dismissal blocking. Authenticated Preview QA now holds an override request and verifies the lock before releasing the non-destructive same-value Preview update.
+- Local verification: 218 tests passed; JavaScript and Preview QA syntax plus diff checks passed. Feature Preview verification pending.
