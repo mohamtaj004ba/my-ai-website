@@ -2393,13 +2393,17 @@ async function saveSettings(req,res){
   if(settings.website&&!/^https?:\/\//i.test(settings.website))return res.status(400).json({error:'Website must begin with http:// or https://'});
   if(settings.logoDataUrl&&!/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(settings.logoDataUrl))return res.status(400).json({error:'Business logo must be a JPG, PNG, or WebP image'});
   const previous=await kv.get('settings:'+s.workspaceId)||null;
+  if(body.expectedUpdatedAt!=null&&Number(body.expectedUpdatedAt)!==Number(previous?.updatedAt||0))return res.status(409).json({error:'Settings changed since you opened this draft. Cancel and refresh before editing again.'});
+  settings.updatedAt=Math.max(Date.now(),Number(previous?.updatedAt||0)+1);
   settings.aiAnsweringPaused=previous?.aiAnsweringPaused===true;settings.aiPauseFallbackNumber=previous?.aiPauseFallbackNumber||'';settings.aiPausedAt=Number(previous?.aiPausedAt||0);settings.aiPausedBy=previous?.aiPausedBy||'';
-  await kv.set('settings:'+s.workspaceId,settings);
+  const key='workspace:'+s.workspaceId,ws=await kv.get(key);
+  if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const nextWorkspace={...ws,name:settings.businessName,ownerName:settings.contactName||ws.ownerName,industry:settings.industry||ws.industry,updatedAt:Date.now()};
+  try{
+    const saved=await compareAndSetConfig(kv,[{key:'settings:'+s.workspaceId,before:previous,after:settings},{key,before:ws,after:nextWorkspace}]);
+    if(!saved)return res.status(409).json({error:'Workspace settings changed during this save. Cancel and refresh before editing again.'});
+  }catch{return res.status(503).json({error:'Could not confirm that settings were saved. Refresh to check the saved values before retrying.'})}
   await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'settings_save',section:'settings',before:previous,after:settings});
-  if(settings.businessName){
-    const key='workspace:'+s.workspaceId,ws=await kv.get(key);
-    if(ws)await kv.set(key,{...ws,name:settings.businessName,ownerName:settings.contactName||ws.ownerName,industry:settings.industry||ws.industry,updatedAt:Date.now()});
-  }
   return res.status(200).json({ok:true,settings});
 }
 

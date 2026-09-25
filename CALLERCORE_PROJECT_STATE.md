@@ -125,3 +125,10 @@ Only commit/push routine changes to the authorized development branch. No merge 
 - Admin phone inventory now has search, assignment filters, result counts, 50-record batches, reset and empty states. Stale edits, missing edited records, malformed inventory and the 500-record capacity are rejected before mutation. Existing admin multi-record persistence is not yet an atomic transaction.
 - Added behavioral tests for inventory pagination/search and backend save guards; 175 local tests passed. Added Preview admin phone label save/readback/restore and responsive phone checks; these new checks await the next feature push.
 - Next: prevent edits/cancellation/navigation while client saves are pending, then verify the expanded admin Preview checks.
+
+## Shared form persistence and race protection
+
+- Admin inventory implementation `8db84a6c75f21ec5f0fa366d470bf0a597235527` passed CI/CodeQL/Jekyll. Preview QA `36113094987` failed at the new phone-save check because two primary Preview fixtures shared `(509) 555-0188`. The existing duplicate-number guard correctly rejected the edit. Screenshot and report reviewed; seed primary numbers now use stable workspace-specific fictional 555-01xx values. No production data changed.
+- Client receptionist and Settings forms now lock editable controls/cancellation during pending saves, prevent duplicate submissions and guard navigation. Clicking the current navigation item no longer resets an open draft. Failure keeps the draft available for correction/retry.
+- Settings writes now compare revisions and atomically commit settings plus workspace display fields; conflicts return 409 and ambiguous storage failures return 503 without claiming success. Plan and existing owner metadata remain intact.
+- Added executable pending-request, failure, navigation and Settings transaction tests, plus Preview pending-save assertions and Settings save/readback/restore. Local verification: 184 tests passed, JavaScript syntax and diff checks passed. Expanded Preview verification pending the next feature push.

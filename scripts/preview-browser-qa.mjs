@@ -44,6 +44,21 @@ function attachDiagnostics(page,label){
   });
 }
 
+async function assertPendingSave(page,action,saveSelector,fieldSelector,cancelSelector){
+  const pattern='**/api/account?action='+action;
+  let release,started;
+  const held=new Promise(resolve=>release=resolve),seen=new Promise(resolve=>started=resolve);
+  await page.route(pattern,async route=>{started();await held;await route.continue()},{times:1});
+  try{
+    await page.locator(saveSelector).click();
+    await Promise.race([seen,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Save request not received')),10000))]);
+    if(await page.locator(fieldSelector).isEnabled()||await page.locator(cancelSelector).isEnabled())throw new Error('Pending save left editable controls enabled');
+    const active=await page.locator('.view.active').getAttribute('id');
+    await page.evaluate(()=>document.querySelector('[data-view="overview"]').click());
+    if(await page.locator('.view.active').getAttribute('id')!==active)throw new Error('Navigation interrupted a pending save');
+  }finally{release()}
+}
+
 async function makeContext(viewport,label){
   const context=await browser.newContext({
     viewport,
@@ -280,7 +295,7 @@ async function runClientInteractions(page){
   report.client.interactions.push('receptionist explicit editing + draft cancellation');
   await page.locator('[data-agent-edit="identity"]').click();
   await page.locator('#agentName').fill(savedAgentName+' QA');
-  await page.locator('[data-agent-save="identity"]').click();
+  await assertPendingSave(page,'agent-save','[data-agent-save="identity"]','#agentName','[data-agent-cancel="identity"]');
   await page.locator('#agentFormStatus.success').waitFor({state:'visible',timeout:10000});
   const savedAgent=await page.request.get(baseURL+'/api/account?action=agent');
   if(!savedAgent.ok()||(await savedAgent.json()).agent.name!==savedAgentName+' QA')throw new Error('Receptionist name did not persist');
@@ -317,6 +332,18 @@ async function runClientInteractions(page){
   if(await page.locator('#settingsBusinessName').inputValue()!==originalName)throw new Error('Settings cancel did not restore business name');
   if(await page.locator('#settingsBusinessName').getAttribute('aria-invalid')==='true')throw new Error('Settings cancel retained validation errors');
   report.client.interactions.push('settings validation + edit/cancel rollback');
+  await page.locator('#settingsEditButton').click();
+  await page.locator('#settingsBusinessName').fill(originalName+' QA');
+  await assertPendingSave(page,'settings-save','#saveSettingsButton','#settingsBusinessName','#settingsCancelButton');
+  await page.locator('#settingsFormStatus.success').waitFor({state:'visible',timeout:10000});
+  const savedSettings=await page.request.get(baseURL+'/api/account?action=settings');
+  if(!savedSettings.ok()||(await savedSettings.json()).settings.businessName!==originalName+' QA')throw new Error('Settings name did not persist');
+  await page.locator('#settingsEditButton').click();
+  await page.locator('#settingsBusinessName').fill(originalName);
+  await page.locator('#saveSettingsButton').click();
+  await page.locator('#settingsFormStatus.success').waitFor({state:'visible',timeout:10000});
+  report.client.interactions.push('pending-save locks + settings persisted save/restore');
+
 
   await ensureView(page,'support');
   await page.locator('#supportSubject').fill('QA unsent support draft');

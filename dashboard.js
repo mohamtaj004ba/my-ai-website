@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0;
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -209,7 +209,9 @@ document.getElementById('adminAiNew')?.addEventListener('click',()=>{adminAiHist
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('adminAiPanel')?.classList.contains('open'))closeAdminAiGuide()});
 
 function showView(name){
+  if(agentSaving||settingsSaving)return;
   const active=document.querySelector('.view.active')?.id?.replace('view-','')||'';
+  if(active===name&&(agentEditing||settingsEditing))return;
   if(active!==name&&document.body.dataset.dashboard==='client'&&(agentEditing||settingsEditing)){
     const area=agentEditing?'AI receptionist':'settings';
     if(!confirm('You are editing '+area+'. Leave without saving these changes?'))return;
@@ -1066,6 +1068,7 @@ const AGENT_SECTION_FIELDS={
 function agentControlIds(){return Object.values(AGENT_SECTION_FIELDS).flat()}
 function activeAgentSection(){return typeof agentEditing==='string'?agentEditing:''}
 function setAgentEditing(section,{restore=false}={}){
+  if(agentSaving)return;
   const next=typeof section==='string'&&section?section:'';
   if(next&&!agentEditing&&agentData)agentEditSnapshot=JSON.parse(JSON.stringify(agentData));
   if(restore&&agentEditSnapshot){agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent();return}
@@ -1101,13 +1104,19 @@ function collectAgent(){
   const val=id=>document.getElementById(id)?.value||'';
   return {name:val('agentName'),role:val('agentRole'),tone:val('agentTone'),openingMessage:val('agentOpening'),serviceArea:val('agentServiceArea'),businessHours:val('agentHours'),transferNumber:val('agentTransfer'),emergencyInstructions:val('agentEmergency'),handlingInstructions:val('agentHandlingInstructions'),qualificationQuestions:[...(agentData?.qualificationQuestions||[])]};
 }
+function lockFormControls(rootId){
+  const controls=Array.from(document.getElementById(rootId)?.querySelectorAll('input,select,textarea,button')||[]).map(el=>({el,disabled:el.disabled}));
+  controls.forEach(({el})=>el.disabled=true);let released=false;
+  return ()=>{if(released)return;released=true;controls.forEach(({el,disabled})=>el.disabled=disabled)};
+}
 async function saveAgent(section=activeAgentSection()){
-  if(!section)return;const formStatus=document.getElementById('agentFormStatus');if(formStatus){formStatus.textContent='Saving receptionist settings…';formStatus.className='form-status-line'}const next={...collectAgent(),section,expectedUpdatedAt:agentEditSnapshot?.updatedAt||agentData?.updatedAt||null},btn=document.querySelector('[data-agent-save="'+CSS.escape(section)+'"]');if(btn){btn.disabled=true;btn.textContent='Saving…'}
+  if(!section||agentSaving)return;
+  agentSaving=true;const unlock=lockFormControls('view-agent');const formStatus=document.getElementById('agentFormStatus');if(formStatus){formStatus.textContent='Saving receptionist settings…';formStatus.className='form-status-line'}const next={...collectAgent(),section,expectedUpdatedAt:agentEditSnapshot?.updatedAt||agentData?.updatedAt||null},btn=document.querySelector('[data-agent-save="'+CSS.escape(section)+'"]');if(btn){btn.disabled=true;btn.textContent='Saving…'}
   try{
     if(!demoMode){const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save the AI receptionist.');agentData=data.agent||next;if(data.routing)phoneRoutingData=data.routing}else agentData=next;
-    agentEditSnapshot=null;agentEditing=false;renderAgent();if(formStatus){formStatus.textContent='Receptionist settings saved.';formStatus.className='form-status-line success'}const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
+    unlock();agentSaving=false;agentEditSnapshot=null;agentEditing=false;renderAgent();if(formStatus){formStatus.textContent='Receptionist settings saved.';formStatus.className='form-status-line success'}const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
   }catch(err){if(formStatus){formStatus.textContent=(err.message||'Could not save the AI receptionist.')+' Your draft is still open. Try saving again.';formStatus.className='form-status-line error'}}
-  finally{if(btn){btn.disabled=false;btn.textContent='Save'}}
+  finally{unlock();agentSaving=false;if(btn){btn.disabled=false;btn.textContent='Save'}}
 }
 
 function feedbackStatusLabel(status){return ({submitted:'Submitted',reviewed:'Reviewed',applied:'Applied',dismissed:'Closed'})[status]||'Submitted'}
@@ -1261,6 +1270,7 @@ function renderBusinessLogo(){
   if(workspaceInitials)workspaceInitials.textContent=businessInitials(settingsData?.businessName||sessionWorkspace?.name);if(workspaceImg){if(settingsData?.logoDataUrl){workspaceImg.src=settingsData.logoDataUrl;workspaceImg.hidden=false;if(workspaceInitials)workspaceInitials.hidden=true}else{workspaceImg.removeAttribute('src');workspaceImg.hidden=true;if(workspaceInitials)workspaceInitials.hidden=false}}
 }
 function setSettingsEditing(editing,{restore=false}={}){
+  if(settingsSaving)return;
   settingsEditing=!!editing;if(restore)renderSettings();
   if(!settingsEditing){settingsControlIds().forEach(id=>settingsFieldError(id,''));const status=document.getElementById('settingsFormStatus');if(status){status.textContent='';status.className='form-status-line'}}
   settingsControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!settingsEditing});
@@ -1337,13 +1347,14 @@ function validateSettingsForm(){
   return Object.keys(errors).length===0;
 }
 async function saveSettings(){
-  if(!validateSettingsForm())return;
+  if(settingsSaving||!validateSettingsForm())return;
   const phoneEl=document.getElementById('settingsBusinessPhone'),webEl=document.getElementById('settingsWebsite'),stateEl=document.getElementById('settingsState');
   if(phoneEl)phoneEl.value=normalizePhone(phoneEl.value);
   if(webEl)webEl.value=normalizeWebsite(webEl.value);
   if(stateEl)stateEl.value=stateEl.value.trim().toUpperCase();
-  const payload={businessName:document.getElementById('settingsBusinessName')?.value.trim()||'',contactName:document.getElementById('settingsContactName')?.value.trim()||'',primaryEmail:document.getElementById('settingsPrimaryEmail')?.value.trim()||'',businessPhone:phoneEl?.value||'',website:webEl?.value||'',industry:document.getElementById('settingsIndustry')?.value.trim()||'',serviceArea:document.getElementById('settingsServiceArea')?.value.trim()||'',streetAddress:document.getElementById('settingsStreetAddress')?.value.trim()||'',city:document.getElementById('settingsCity')?.value.trim()||'',state:stateEl?.value||'',postalCode:document.getElementById('settingsPostalCode')?.value.trim()||'',timezone:document.getElementById('settingsTimezone')?.value||'America/Los_Angeles',notificationEmail:document.getElementById('settingsNotificationEmail')?.value.trim()||'',emailAlerts:!!document.getElementById('settingsEmailAlerts')?.checked,smsAlerts:!!document.getElementById('settingsSmsAlerts')?.checked,notifyBilling:!!document.getElementById('settingsNotifyBilling')?.checked,notifySetup:!!document.getElementById('settingsNotifySetup')?.checked,notifyCalls:!!document.getElementById('settingsNotifyCalls')?.checked,notifySupport:!!document.getElementById('settingsNotifySupport')?.checked,notifyUsage:!!document.getElementById('settingsNotifyUsage')?.checked,logoDataUrl:pendingBusinessLogo!=null?pendingBusinessLogo:String(settingsData?.logoDataUrl||'')};
+  const payload={expectedUpdatedAt:settingsData?.updatedAt||0,businessName:document.getElementById('settingsBusinessName')?.value.trim()||'',contactName:document.getElementById('settingsContactName')?.value.trim()||'',primaryEmail:document.getElementById('settingsPrimaryEmail')?.value.trim()||'',businessPhone:phoneEl?.value||'',website:webEl?.value||'',industry:document.getElementById('settingsIndustry')?.value.trim()||'',serviceArea:document.getElementById('settingsServiceArea')?.value.trim()||'',streetAddress:document.getElementById('settingsStreetAddress')?.value.trim()||'',city:document.getElementById('settingsCity')?.value.trim()||'',state:stateEl?.value||'',postalCode:document.getElementById('settingsPostalCode')?.value.trim()||'',timezone:document.getElementById('settingsTimezone')?.value||'America/Los_Angeles',notificationEmail:document.getElementById('settingsNotificationEmail')?.value.trim()||'',emailAlerts:!!document.getElementById('settingsEmailAlerts')?.checked,smsAlerts:!!document.getElementById('settingsSmsAlerts')?.checked,notifyBilling:!!document.getElementById('settingsNotifyBilling')?.checked,notifySetup:!!document.getElementById('settingsNotifySetup')?.checked,notifyCalls:!!document.getElementById('settingsNotifyCalls')?.checked,notifySupport:!!document.getElementById('settingsNotifySupport')?.checked,notifyUsage:!!document.getElementById('settingsNotifyUsage')?.checked,logoDataUrl:pendingBusinessLogo!=null?pendingBusinessLogo:String(settingsData?.logoDataUrl||'')};
   const btn=document.getElementById('saveSettingsButton'),status=document.getElementById('settingsFormStatus');
+  settingsSaving=true;const unlock=lockFormControls('view-settings');
   if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status){status.textContent='';status.className='form-status-line'}
   try{
     if(demoMode)settingsData={...payload};
@@ -1353,10 +1364,10 @@ async function saveSettings(){
       settingsData=data.settings||payload;
       if(settingsData.businessName){sessionWorkspace={...(sessionWorkspace||{}),name:settingsData.businessName};document.getElementById('workspaceName').textContent=settingsData.businessName;document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=settingsData.businessName);const avatar=document.querySelector('.avatar');if(avatar)avatar.textContent=settingsData.businessName.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase()}
     }
-    pendingBusinessLogo=String(settingsData.logoDataUrl||payload.logoDataUrl||'');setSettingsEditing(false);if(status){status.textContent='Settings saved successfully.';status.className='form-status-line success'}
+    unlock();settingsSaving=false;pendingBusinessLogo=String(settingsData.logoDataUrl||payload.logoDataUrl||'');setSettingsEditing(false);if(status){status.textContent='Settings saved successfully.';status.className='form-status-line success'}
     const tag=document.getElementById('settingsSaveStatus');if(tag){tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1600)}
   }catch(err){if(status){status.textContent=err.message||'Could not save workspace settings.';status.className='form-status-line error'}}
-  finally{if(btn){btn.disabled=false;btn.textContent='Save settings'}}
+  finally{unlock();settingsSaving=false;if(btn){btn.disabled=false;btn.textContent='Save settings'}}
 }
 
 
@@ -1476,7 +1487,7 @@ document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebho
 document.getElementById('insightsRange')?.addEventListener('change',renderAnalytics);
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
 document.getElementById('settingsEditButton')?.addEventListener('click',()=>setSettingsEditing(true));
-document.getElementById('settingsCancelButton')?.addEventListener('click',()=>{settingsEditing=false;pendingBusinessLogo=String(settingsData?.logoDataUrl||'');renderSettings()});
+document.getElementById('settingsCancelButton')?.addEventListener('click',()=>{if(settingsSaving)return;settingsEditing=false;pendingBusinessLogo=String(settingsData?.logoDataUrl||'');renderSettings()});
 document.getElementById('businessLogoButton')?.addEventListener('click',()=>document.getElementById('businessLogoInput')?.click());
 document.getElementById('businessLogoInput')?.addEventListener('change',async e=>{const status=document.getElementById('settingsFormStatus');try{pendingBusinessLogo=await resizeBusinessLogo(e.target.files?.[0]);renderBusinessLogo();if(status){status.textContent='Logo ready — save changes to apply it.';status.className='form-status-line'}}catch(err){if(status){status.textContent=err.message||'Could not use that logo.';status.className='form-status-line error'}}e.target.value=''});
 document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{pendingBusinessLogo='';renderBusinessLogo()});
