@@ -60,11 +60,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
 
       - name: Install browser runner
         run: |
-          npm ci
+          npm install --ignore-scripts
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
 
