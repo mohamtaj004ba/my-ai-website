@@ -264,6 +264,7 @@ function cleanFinanceExpense(raw={},existing={}){
   const category=categories.includes(raw.category)?raw.category:(existing.category||'Software');
   const amount=Number(raw.amount);
   if(!String(raw.name||existing.name||'').trim())throw new Error('Expense name is required');
+  if((raw.amount===undefined&&existing.amount===undefined)||(raw.amount!==undefined&&String(raw.amount??'').trim()===''))throw new Error('Expense amount is required');
   if(!Number.isFinite(amount)&&raw.amount!==undefined)throw new Error('Expense amount must be a number');
   const now=Date.now();
   return {...existing,
