@@ -1983,3 +1983,22 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
   .admin-recent-accounts .panel-head>div:first-child{display:grid;gap:3px;min-width:0}
   .admin-recent-accounts .panel-head>button{align-self:flex-start}
 }
+
+
+/* Phone layout: make Recent clients identity rows explicitly two-column so
+   the text column can never claim the avatar's space and widen the viewport. */
+@media(max-width:760px){
+  .admin-recent-row .person{
+    display:grid;
+    grid-template-columns:32px minmax(0,1fr);
+    align-items:center;
+    gap:10px;
+    width:auto;
+    max-width:100%;
+  }
+  .admin-recent-row .person>span{
+    min-width:0;
+    width:auto;
+    max-width:none;
+  }
+}
