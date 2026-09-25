@@ -16,24 +16,23 @@ CallerCore is an AI front office for service businesses, with a public acquisiti
 
 ## Current development pass — 2026-09-25
 
-VERIFIED: shared voice readiness is fail-closed across client/admin APIs and UI. Receptionist section saves preserve metadata and atomically compare/write changed agent/routing records. Authenticated QA `36112569864` passed implementation `ddf184f5850d73b8634bf377abb44a662dd1ddd3`.
+COMPLETED AND VERIFIED within the coverage below: truthful voice readiness; atomic receptionist, Settings and admin phone configuration saves; stale-edit/capacity guards; pending-save locks; background-refresh and logo-processing draft protection; admin phone search/filter/batching; responsive routing cards and reachable editor actions; long Conversations message batches.
 
-IMPLEMENTED; EXPANDED QA IN PROGRESS: admin phone inventory search/filter/batching; stale-edit/capacity guards; atomic admin routing and Settings transactions; pending-save locks; immediate saved-record consistency; long-message batching. See dated verification/failure entries below. Do not treat failed full runs as complete acceptance.
-
-Current local follow-up: protect drafts/newer saves from background refresh responses that started before editing. Local suite: 193 passed. Preview QA exercises real isolated settings/receptionist/admin-phone save/readback/restoration and responsive layouts. Provider activation, billing and production changes remain separate.
+This is a dashboard and shared-backend checkpoint, not provider activation or production release. The detailed entries below preserve findings, failures, corrections and verification history.
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `5d70fc76e7a338df73b9fd2648d3ea4f210f5314`.
-- Preview READY: `dpl_5b7Kt4TqqypvDcdVd3UoJCwxS8Ao` — https://my-ai-website-8nbyfvvrw-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36110016321`, CodeQL `36110016332`, Jekyll `36110016355`: success on that exact SHA.
-- Authenticated Preview Browser QA `36110012998`: success on that exact SHA; artifact `10852826303`.
-- Local regression suite: 165 passed, 0 failed.
-- Browser report: 1,200 calls, 153 conversations; client/admin flows; client Conversations, AI Receptionist and Settings layout checks at 1280, 768 and 390 pixels; no page/console/API errors.
-- Visual inspection: desktop/tablet/mobile Conversations and corrected tablet Settings screenshots reviewed.
-- First batch COMPLETED AND VERIFIED within the coverage above: Conversations batching/filtering/sorting, receptionist save feedback and field limits, Settings cancellation validation cleanup and responsive containment, mobile QA navigation correction.
-- This documentation-only checkpoint records the last verified implementation; it does not claim a new browser run against its own future commit.
-- Production/main remains `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; no production release, billing, customer communications, or provider activation performed.
+- Implementation SHA: `aadccad3a40368bf05b78a0b72d027135340e3a8`.
+- Preview READY: `dpl_68VakCp9FmhDKB1bEhQ5eqt1BQqz` — https://my-ai-website-9t52kkyfs-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36115636259`, CodeQL `36115636270`, Jekyll `36115636254`: success on that exact SHA. Push CI/CodeQL also passed.
+- Authenticated Preview Browser QA `36115629985`: success on that exact SHA; artifact `10854653969`.
+- Local regression suite: 196 passed, 0 failed. JavaScript syntax and diff checks passed.
+- Browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks.
+- Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, and 50 → 100 → 122 message batches.
+- Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
+- Visual inspection: inventory laptop/tablet/mobile screenshots and mobile phone editor reviewed. Transfer/after-hours text is separated, actions remain visible, and Save is reachable inside the scrolling modal.
+- This documentation-only follow-up records the verified implementation; it does not claim a browser run against its own future commit.
+- Production/main rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No production release, customer communications, billing changes or provider activation performed.
 
 ## Verified starting checkpoint
 
@@ -52,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current local Conversations changes: 165/165 tests pass, including executable renderer regressions with 125 threads, filter reset, message-based recency, empty-result status cleanup, exact Active matching, and malformed message-array handling.
+Current implementation: 196/196 local tests pass. Executable regressions cover 125-thread/1,000-message rendering, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -61,11 +60,12 @@ Current local Conversations changes: 165/165 tests pass, including executable re
 - Existing auth/tenant isolation, session revocation, read-only admin client view, agreements, export/redaction, audit and recovery safeguards have regression coverage. Full security assurance is not established by automated tests alone.
 - First Conversations scaling pass: 50-thread batches, counts, activity sorting, Closed filter, clear filters, accessible selected states, bounded responsive list, long-message wrapping, stale empty-result cleanup. Preview READY for Conversations implementation `871970346cd44cca7544f3d6163c134538f6c683` (deployment `dpl_G6Deu1YVnjFj6KWiNrQc29ANZ3xs`). Conversations authenticated QA run `36108934848` passed with 153 conversations, 1,200 calls, and no console/page/API errors. Combined forms run `36109277532` passed interactions but exposed a pre-existing Settings overflow at 768px. Settings grid/field containment corrected; run `36109630708` passed laptop/tablet including Settings. Mobile follow-on navigation exposed a QA helper error: CSS-visible off-screen sidebar links were mistaken for accessible links. Helper now opens the collapsed mobile menu before navigation; full rerun `36110012998` passed.
 
-## IN PROGRESS
+## Next authorized development backlog
 
-First planned dashboard batch is complete; continue extending existing interfaces. Next priority: truthful voice/routing status and the remaining AI Receptionist/Settings edge cases. Do not activate telephony while correcting status presentation.
-
-AI Receptionist/Settings first inspection completed: section editing, rollback, refresh draft protection already existed. Added persistent receptionist save/error feedback, backend-aligned field limits, configured agent name on test-call action, and Settings cancellation validation cleanup. Added success/failure save tests and authenticated edit/cancel, validation recovery, and responsive checks for all three areas. Combined Preview verification and screenshot review completed. Next: distinguish saved routing/configuration from provider-verified operational status, then review remaining form save/persistence edge cases in the isolated Preview workspace. Preserve existing architecture, safeguards, styling direction, and plan entitlements.
+1. Review legacy admin restore/delete configuration writers and audit append concurrency. The three updated configuration paths are atomic, but audit append remains a separate operation. Use mocked failure/concurrency tests; do not exercise destructive operations against real data.
+2. Extend scale work to contact-drawer histories and tenant-scoped backend pagination. Preserve filters, contact links, entitlements and newest-message behavior.
+3. Continue client/admin shared-state consistency and accessibility review using the existing authenticated Preview workflow and screenshots. Current regression coverage is not a claim that every dashboard action has been tested.
+4. Inspect provider/billing test-environment readiness before dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios. Live activation, production changes and new charges still need owner authorization.
 
 ## Known limitations and remaining work
 
@@ -79,7 +79,7 @@ AI Receptionist/Settings first inspection completed: section editing, rollback, 
 
 ## NOT STARTED / dedicated remaining work
 
-Further AI Receptionist and Settings review remains; this pass addresses save feedback, field limits and validation recovery, not provider activation.
+Receptionist/Settings persistence, conflict handling, pending-save, background-refresh and logo-processing fixes are verified above. Provider lifecycle implementation/acceptance remains a separate workstream.
 
 Roadmap: production voice lifecycle; provider-complete disposable onboarding; Stripe test-mode subscription/payment/recovery scenarios; provider restore drill; logging/privacy and release review. Check actual implementation before marking any historical roadmap item not started.
 
@@ -177,3 +177,7 @@ Only commit/push routine changes to the authorized development branch. No merge 
 - Implementation `437d2fdf3e61c696b2fcedce328d8f3da38e0ea3` passed full Preview QA `36114960190`, CI/CodeQL/Jekyll, with 25 layout checks and zero API/page/console errors. Reviewed tablet inventory and mobile editor screenshots: Edit/Delete actions are visible and editor controls fit their container.
 - One small visual refinement separates transfer destination and after-hours text into distinct lines. Responsive QA now also scrolls to Save and asserts it is reachable within the viewport; it does not submit changes during responsive checks.
 - Remaining backend hardening: older admin restore/delete writers and audit append concurrency still use legacy paths. Settings/agent/admin phone config snapshots are atomic, but audit append remains a separate step. No claim of complete transactional audit coverage.
+
+## Final combined verification record
+
+The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full combined workflow described at the top of this record. Earlier pending/failure entries are historical and resolved by this checkpoint except where explicitly listed in the remaining backlog. Progress was recorded after each substantive change; all work remains on the authorized feature branch.
