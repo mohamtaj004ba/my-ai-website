@@ -47,14 +47,14 @@ function frontendFixture(response){
     return nodes.get(id);
   };
   Object.assign(node('expenseModal').dataset,{editId:'expense-1',expectedUpdatedAt:'10'});node('expenseNameInput').value='Hosting Plus';node('expenseAmountInput').value='20';node('expenseVendorInput').value='Vendor';node('expenseCategoryInput').value='Software';node('expenseFrequencyInput').value='monthly';node('expenseDateInput').value='2026-09-25';node('expenseStatusInput').value='active';node('expenseNotesInput').value='Updated';
-  const pending=deferred(),alerts=[],requests=[];
+  const pending=deferred(),alerts=[],requests=[],sync=[];
   const context=vm.createContext({
     adminExpenseSaving:false,adminExpenseDeletePending:new Set(),adminFinanceData:{expenses:[{id:'expense-1',name:'Hosting',updatedAt:10}]},
-    document:{getElementById:node},String,Number,JSON,fetch:(url,options)=>{requests.push({url,options});return pending.promise},alert:value=>alerts.push(value),refreshAdminView:async()=>{},renderAdminFinance(){},confirm:()=>true
+    document:{getElementById:node},String,Number,JSON,fetch:(url,options)=>{requests.push({url,options});return pending.promise},alert:value=>alerts.push(value),refreshAdminView:async()=>{},setAdminSyncState:(...args)=>sync.push(args),renderAdminFinance(){},confirm:()=>true
   });
   const start=dashboardSource.indexOf('function closeExpenseModal('),end=dashboardSource.indexOf('\nfunction updateAdminRefreshStamp(',start);
   vm.runInContext(dashboardSource.slice(start,end),context);
-  return {context,node,pending,alerts,requests,response};
+  return {context,node,pending,alerts,requests,sync,response};
 }
 
 test('expense save locks the modal, ignores duplicates and applies the server revision',async()=>{
@@ -90,4 +90,28 @@ test('opening the expense editor leaves phone form validation intact',()=>{
   assert.equal(f.node('phoneFormStatus').className,'form-status-line error');
   assert.equal(f.node('expenseModalTitle').textContent,'Edit expense');
   assert.equal(f.node('expenseModal')['aria-hidden'],'false');
+});
+
+
+test('confirmed expense save remains successful when the subsequent ledger refresh fails',async()=>{
+  const f=frontendFixture();f.context.refreshAdminView=async()=>{throw Error('refresh offline')};
+  const saving=vm.runInContext('saveExpense()',f.context);
+  f.pending.resolve({ok:true,json:async()=>({expense:{id:'expense-1',name:'Hosting Plus',updatedAt:20}})});
+  await saving;
+  assert.equal(f.node('expenseModal')['aria-hidden'],'true');
+  assert.equal(f.context.adminFinanceData.expenses[0].updatedAt,20);
+  assert.equal(f.node('expenseFormStatus').textContent,'');
+  assert.equal(f.sync.length,1);
+  assert.match(f.sync[0][1],/Expense saved, but the finance view could not refresh/);
+});
+
+test('confirmed expense deletion is not reported as failed when ledger refresh fails',async()=>{
+  const f=frontendFixture();f.context.refreshAdminView=async()=>{throw Error('refresh offline')};
+  const deleting=vm.runInContext("deleteExpense('expense-1')",f.context);
+  f.pending.resolve({ok:true,json:async()=>({deleted:{id:'expense-1',updatedAt:10}})});
+  await deleting;
+  assert.equal(f.context.adminFinanceData.expenses.length,0);
+  assert.deepEqual(f.alerts,[]);
+  assert.equal(f.sync.length,1);
+  assert.match(f.sync[0][1],/Expense deleted, but the finance view could not refresh/);
 });
