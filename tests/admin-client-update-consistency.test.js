@@ -8,14 +8,14 @@ const dashboardSource=fs.readFileSync('dashboard.js','utf8');
 
 function deferred(){let resolve;const promise=new Promise(ok=>resolve=ok);return {promise,resolve}}
 
-async function runBackend({expectedUpdatedAt=10,transaction=true}={}){
+async function runBackend({expectedUpdatedAt=10,transaction=true,now}={}){
   const workspace={id:'client-1',name:'Client',plan:'Starter',status:'active',subscriptionStatus:'active',createdAt:1,updatedAt:10};
   let updates,audits=0,status=0,result;
   const context=vm.createContext({
     requireAdmin:async()=>({email:'admin@example.com'}),
     kv:{get:async()=>workspace,set:()=>assert.fail('Workspace updates must use the atomic transaction')},
     compareAndSetConfig:async(_,next)=>{updates=next;if(transaction==='error')throw Error('network');return transaction},
-    appendAudit:async()=>audits++,safeError:()=>'',console:{error(){}},Date,
+    appendAudit:async()=>audits++,safeError:()=>'',console:{error(){}},Date:now===undefined?Date:{now:()=>now},
     req:{body:{id:'client-1',plan:'Growth',status:'suspended',expectedUpdatedAt}},
     res:{status(value){status=value;return this},json(value){result=value}}
   });
@@ -30,6 +30,13 @@ test('admin workspace save compares its revision and commits one atomic record',
   assert.equal(saved.status,200);assert.equal(saved.audits,1);assert.equal(saved.updates.length,1);
   assert.equal(saved.updates[0].before.updatedAt,10);assert.equal(saved.updates[0].after.plan,'Growth');assert.equal(saved.updates[0].after.status,'suspended');
   assert.ok(saved.result.client.updatedAt>10);
+});
+
+test('admin workspace revision advances even when the clock shares its previous millisecond',async()=>{
+  const saved=await runBackend({now:10});
+  assert.equal(saved.status,200);
+  assert.equal(saved.updates[0].after.updatedAt,11);
+  assert.equal(saved.result.client.updatedAt,11);
 });
 
 test('stale, concurrent and ambiguous admin workspace saves fail closed',async()=>{
@@ -69,4 +76,19 @@ test('failed admin workspace save unlocks controls and preserves the selected dr
   const f=frontendFixture(),saving=vm.runInContext('saveAdminClient()',f.context);
   f.pending.resolve({ok:false,json:async()=>({error:'Workspace changed'})});await saving;
   assert.equal(f.context.adminClientSaving,false);assert.equal(f.node('adminClientPlan').value,'Growth');assert.equal(f.node('adminClientStatus').value,'suspended');assert.deepEqual(f.alerts,['Workspace changed']);assert.equal(f.reopened.length,0);
+});
+
+
+test('confirmed workspace save is not misreported as failed when admin refresh fails',async()=>{
+  const f=frontendFixture();
+  f.context.refreshAdminCore=async()=>{throw Error('refresh offline')};
+  const saving=vm.runInContext('saveAdminClient()',f.context);
+  f.pending.resolve({ok:true,json:async()=>({client:{id:'client-1',plan:'Growth',status:'suspended',updatedAt:20}})});
+  await saving;
+  assert.equal(f.context.adminClientSaving,false);
+  assert.equal(f.context.currentAdminClient.updatedAt,20);
+  assert.equal(f.reopened.length,0);
+  assert.equal(f.alerts.length,1);
+  assert.match(f.alerts[0],/changes were saved, but the admin view could not refresh/);
+  assert.doesNotMatch(f.alerts[0],/Could not update client/);
 });
