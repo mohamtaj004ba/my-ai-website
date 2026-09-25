@@ -474,6 +474,8 @@ async function runAdminInteractions(page){
   await clientResult.waitFor({state:'visible',timeout:8000});
   await clientResult.click();
   await page.locator('#adminClientDrawer.open').waitFor({state:'visible',timeout:8000});
+  const clientDrawer=page.locator('#adminClientDrawer'),clientDrawerLabel=await clientDrawer.getAttribute('aria-labelledby');
+  if(await clientDrawer.getAttribute('role')!=='dialog'||await clientDrawer.getAttribute('aria-modal')!=='true'||!clientDrawerLabel||!await page.locator('#'+clientDrawerLabel).count())throw new Error('Admin client drawer is missing accessible dialog semantics');
   await assertAdminTechPendingOverride(page);
   report.admin.interactions.push('global search → client deep link');
   report.admin.interactions.push('configuration override pending lock + immediate refresh');

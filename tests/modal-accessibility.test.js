@@ -14,7 +14,7 @@ function fixture(){
   const modal={id:'testModal',tabIndex:0,attrs:{},classList:{contains:name=>name==='open'&&open},contains:value=>value===close||value===field||value===modal,
     setAttribute(key,value){this.attrs[key]=String(value)},getAttribute:key=>key==='aria-hidden'?hidden:modal.attrs[key],querySelector:q=>q==='h1,h2,h3'?title:q.includes('.modal-close')?close:null,
     querySelectorAll:()=>[close,field],addEventListener(type,fn){if(type==='keydown')keydown=fn},focus(){document.activeElement=this}};
-  const document={activeElement:trigger,body:{},querySelectorAll:()=>[modal]};
+  const document={activeElement:trigger,body:{},querySelectorAll:selector=>{assert.match(selector,/call-drawer/);assert.match(selector,/onboarding-detail-drawer/);return [modal]}};
   class MutationObserver{constructor(callback){observerCallback=callback}observe(){}}
   vm.runInNewContext(source,{document,MutationObserver,queueMicrotask:fn=>fn(),WeakMap});
   return {document,modal,trigger,close,field,open(){open=true;hidden='false';observerCallback()},keydown:event=>keydown({currentTarget:modal,preventDefault(){event.prevented=true},stopPropagation(){event.stopped=true},...event})};
