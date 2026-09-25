@@ -2179,3 +2179,76 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
     max-width:100%;
   }
 }
+
+
+/* Premium call-history scaling: progressive loading + density controls. */
+.call-toolbar-secondary{
+  grid-template-columns:minmax(300px,1.3fr) minmax(125px,.55fr) minmax(125px,.55fr) minmax(125px,.5fr) auto;
+}
+.calls-summary-strip button[data-call-quick="unread"].active{
+  background:#a95536;
+  border-color:#a95536;
+}
+.call-list-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin:10px 0 0;
+  padding:12px 14px;
+  border:1px solid #e4e8eb;
+  border-radius:12px;
+  background:linear-gradient(180deg,#fff,#fafbfc);
+  box-shadow:0 1px 2px rgba(25,31,38,.025);
+}
+.call-list-footer[hidden]{display:none}
+.call-list-footer>span{
+  color:#6f7982;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.025em;
+}
+.call-list-footer .secondary-btn{
+  min-width:128px;
+  justify-content:center;
+}
+.call-history-panel.call-density-compact .call-row.data{
+  min-height:48px;
+  padding-top:9px;
+  padding-bottom:9px;
+}
+.call-history-panel.call-density-compact .call-row.data .subtle{
+  margin-top:1px;
+  line-height:1.15;
+}
+.call-history-panel.call-density-compact .call-day-heading{
+  min-height:32px;
+  padding-top:7px;
+  padding-bottom:7px;
+}
+.call-history-panel.call-density-compact .call-type-pill,
+.call-history-panel.call-density-compact .disposition-pill,
+.call-history-panel.call-density-compact .team-status-pill{
+  padding-top:4px;
+  padding-bottom:4px;
+}
+@media(max-width:1100px){
+  .call-toolbar-secondary{
+    grid-template-columns:repeat(3,minmax(0,1fr)) auto;
+  }
+  .call-toolbar-secondary .custom-date-range.compact{grid-column:1/-1}
+}
+@media(max-width:720px){
+  .call-toolbar-secondary{grid-template-columns:1fr 1fr}
+  .call-toolbar-secondary .custom-date-range.compact{grid-column:1/-1}
+  .call-reset-link{grid-column:1/-1;justify-self:start}
+}
+@media(max-width:520px){
+  .call-toolbar-secondary{grid-template-columns:1fr}
+  .call-toolbar-secondary .custom-date-range.compact,.call-reset-link{grid-column:auto}
+  .call-list-footer{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .call-list-footer .secondary-btn{width:100%}
+}
