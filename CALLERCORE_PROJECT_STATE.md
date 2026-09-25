@@ -22,11 +22,11 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `849bad8cabe1fd9606c6e5e43643c04bd9daf21d`.
-- Preview READY: `dpl_GqT6JQ53dn2MvxY3WNt1dHsAFiXa` — https://my-ai-website-kl6lrkoen-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36118779489`, CodeQL `36118779413`, Jekyll `36118779437`: success on that exact SHA. Push CI `36118775231` and CodeQL `36118775270` also passed.
-- Authenticated Preview Browser QA `36118775247`: success on that exact SHA.
-- Local regression suite: 215 passed, 0 failed. JavaScript syntax and diff checks passed.
+- Implementation SHA: `40379addae3417751e78966b47fe88c225d16e42`.
+- Preview READY: `dpl_9HhmPZsZXXLSW6j6TC3VYvmMrxRL` — https://my-ai-website-a5setjr8z-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36119150532`, CodeQL `36119150396`, Jekyll `36119150456`: success on that exact SHA. Push CI `36119141613` and CodeQL `36119141603` also passed.
+- Authenticated Preview Browser QA `36119141579`: success on that exact SHA.
+- Local regression suite: 218 passed, 0 failed. JavaScript syntax and diff checks passed.
 - Browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks.
 - Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, legacy restore/delete safeguards, and 50 → 100 → 122 message batches in Conversations and Contacts.
 - Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
@@ -51,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current verified implementation: 215/215 local tests pass. Executable regressions cover tenant-scoped conversation pages, 125-thread/1,000-message rendering, contact history batching, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
+Current verified implementation: 218/218 local tests pass. Executable regressions cover tenant-scoped conversation pages, 125-thread/1,000-message rendering, contact history batching, admin mutation locks, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -222,7 +222,7 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Successful responses apply the server-returned sanitized value locally before background admin data refreshes, so an immediate editor repaint cannot show the stale pre-save snapshot.
 - Network and API failures unlock the controls while preserving the editable JSON for correction or retry. The drawer exposes `aria-busy` during the operation and buttons show Applying/Restoring progress labels.
 - Added behavioral tests for pending locks, duplicate-submit prevention, failure retry state, immediate override/restore consistency and dismissal blocking. Authenticated Preview QA now holds an override request and verifies the lock before releasing the non-destructive same-value Preview update.
-- Local verification: 218 tests passed; JavaScript and Preview QA syntax plus diff checks passed. Feature Preview verification pending.
+- Local verification: 218 tests passed; JavaScript and Preview QA syntax plus diff checks passed. Full authenticated Preview QA `36119141579` and all CI/CodeQL/Jekyll gates passed on implementation `40379addae3417751e78966b47fe88c225d16e42`.
 
 ## Message-free dashboard bundle and on-demand contact history
 
@@ -232,3 +232,10 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Background refresh clears hydration markers with the refreshed summaries; duplicate contact requests are suppressed, failures show a retry state, and demo data remains local.
 - Added executable contact-key, tenant-route, message-free bundle, on-demand merge and duplicate-hydration regressions. Local verification: 221 tests passed; syntax and diff checks passed. Preview verification pending.
 - Server reads still scan the legacy tenant conversation array. A reversible normalized-storage migration with compatibility reads remains the next backend scale boundary.
+
+## Admin client drawer request consistency
+
+- Rapid client selections now use a monotonic request generation, so a slower earlier client response cannot replace the newer selected workspace.
+- Closing the drawer invalidates an in-flight open request. Support diagnostics also verify both the request generation and current client before applying a response.
+- Drawer open/close now updates `aria-hidden` consistently, Escape closes an open drawer, and pending configuration mutations continue to block dismissal.
+- Added behavioral regressions for out-of-order client responses, close-during-load cancellation and accessibility state. Local suite: 223 tests passed; syntax and diff checks passed. Preview verification pending.
