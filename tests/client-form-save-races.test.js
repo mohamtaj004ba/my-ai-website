@@ -24,7 +24,7 @@ for(const kind of ['agent','settings'])for(const ok of [true,false])test(`${kind
   if(!ok)assert.match(f.status.textContent,/Unavailable/);
 });
 test('navigation cannot reset an open draft or interrupt a pending save',()=>{
-  const context=vm.createContext({agentSaving:true,settingsSaving:false,agentEditing:'identity',settingsEditing:false,document:{querySelector:()=>({id:'view-agent'})}});
+  const context=vm.createContext({agentSaving:true,settingsSaving:false,phoneSaving:false,agentEditing:'identity',settingsEditing:false,document:{querySelector:()=>({id:'view-agent'})}});
   vm.runInContext(part('function showView(',"document.querySelectorAll('[data-view]')"),context);
   vm.runInContext("showView('settings')",context);
   context.agentSaving=false;vm.runInContext("showView('agent')",context);

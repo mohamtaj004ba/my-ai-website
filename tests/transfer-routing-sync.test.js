@@ -13,8 +13,8 @@ test('client receptionist transfer destination syncs into assigned phone routing
 });
 
 test('admin phone routing transfer changes sync back into receptionist config',()=>{
-  assert.match(api,/if\(savedAgent\)await kv\.set\('agent:'\+workspaceId,\{\.\.\.savedAgent,transferNumber/);
-  assert.match(api,/if\(routingRequest\)await kv\.set\('routing-request:'\+workspaceId,\{\.\.\.routingRequest,transferNumber/);
+  assert.match(api,/key:'agent:'\+workspaceId,before:savedAgent,after:\{\.\.\.savedAgent,transferNumber/);
+  assert.match(api,/key:'routing-request:'\+workspaceId,before:routingRequest,after:\{\.\.\.routingRequest,transferNumber/);
 });
 
 test('client transfer destination uses the same server validation as routing inventory',()=>{

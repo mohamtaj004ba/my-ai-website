@@ -132,3 +132,11 @@ Only commit/push routine changes to the authorized development branch. No merge 
 - Client receptionist and Settings forms now lock editable controls/cancellation during pending saves, prevent duplicate submissions and guard navigation. Clicking the current navigation item no longer resets an open draft. Failure keeps the draft available for correction/retry.
 - Settings writes now compare revisions and atomically commit settings plus workspace display fields; conflicts return 409 and ambiguous storage failures return 503 without claiming success. Plan and existing owner metadata remain intact.
 - Added executable pending-request, failure, navigation and Settings transaction tests, plus Preview pending-save assertions and Settings save/readback/restore. Local verification: 184 tests passed, JavaScript syntax and diff checks passed. Expanded Preview verification pending the next feature push.
+
+## Admin routing transaction and Settings read-contract correction
+
+- Preview QA `36113572790` on `f8fdaaa0d1febf9211961983b1b9f461add0b579` exposed a missing Settings revision in both settings read responses. Saves failed closed with 409, preserving the draft. Both read paths now expose the saved revision, with executable regression coverage.
+- Admin phone saves now stage inventory, target/previous workspace phone fields, onboarding assignment checkpoints, and changed target agent/routing-request transfer values in one atomic compare-and-set operation. Concurrent modifications reject the entire save; ambiguous failures no longer attempt a rollback that could overwrite another writer. Label-only updates avoid touching unchanged agent configuration.
+- Phone modal inputs and dismissal/navigation are locked during save; duplicate submissions are ignored. Preview QA now checks this pending state.
+- Local verification: 188 tests passed; expanded tests cover reassignment snapshots, metadata preservation, conflict/failure handling and read/write revision consistency. Preview verification pending feature push.
+- Legacy phone deletion still uses its existing rollback path and is not exercised against real records. It remains a dedicated follow-up, along with other older admin configuration writers.

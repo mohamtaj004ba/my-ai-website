@@ -19,3 +19,13 @@ test('settings revision conflicts and missing workspaces do not start a write',a
 test('concurrent settings changes and ambiguous storage failures never report success',async()=>{
   for(const transaction of [false,'error']){const r=await run({transaction});assert.equal(r.status,transaction===false?409:503);assert.equal(r.audits,0)}
 });
+test('both settings read paths expose the revision used by the save contract',async()=>{
+  const saved={businessName:'Saved',updatedAt:123};let result;
+  const ctx=vm.createContext({requireSession:async()=>({workspaceId:'tenant'}),kv:{get:async key=>key.startsWith('settings:')?saved:{}},process:{env:{}},req:{},res:{status(){return this},json(x){result=x}}});
+  vm.runInContext(source.slice(source.indexOf('async function settings('),source.indexOf('async function saveSettings(')),ctx);
+  await vm.runInContext('settings(req,res)',ctx);assert.equal(result.settings.updatedAt,123);
+  const bundleStart=source.indexOf('const settings={',source.indexOf('const savedAgent=agentRaw'));
+  const bundle=source.slice(bundleStart,source.indexOf('  const agent=',bundleStart));
+  const bundleContext=vm.createContext({savedSettings:saved,ws:{},s:{},platform:{},smsLive:false});
+  vm.runInContext(bundle,bundleContext);assert.equal(vm.runInContext('settings.updatedAt',bundleContext),123);
+});

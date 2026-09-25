@@ -388,7 +388,7 @@ async function runAdminInteractions(page){
   await page.locator('[data-edit-phone="'+qaPhone.id+'"]').click();
   const originalLabel=await page.locator('#phoneLabelInput').inputValue();
   await page.locator('#phoneLabelInput').fill(originalLabel+' QA');
-  await page.locator('#savePhoneButton').click();
+  await assertPendingSave(page,'admin-phone-number-save','#savePhoneButton','#phoneLabelInput','#closePhoneModal');
   await page.locator('#phoneModal.open').waitFor({state:'hidden',timeout:10000});
   await page.locator('[data-edit-phone="'+qaPhone.id+'"]').click();
   if(await page.locator('#phoneLabelInput').inputValue()!==originalLabel+' QA')throw new Error('Admin phone edit did not persist');

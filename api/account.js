@@ -613,7 +613,7 @@ async function adminSavePhoneNumber(req,res){
   if(!/^\+?[0-9() .-]{7,30}$/.test(number))return res.status(400).json({error:'Valid phone number required'});
   if(forwardingFrom&&!/^\+?[0-9() .-]{7,30}$/.test(forwardingFrom))return res.status(400).json({error:'Forwarding source number is invalid'});
   if(transferNumber&&!/^\+?[0-9() .-]{7,30}$/.test(transferNumber))return res.status(400).json({error:'Transfer destination is invalid'});
-  const current=await kv.get('phone:index')||[],list=Array.isArray(current)?current.slice():[],previous=list.find(x=>x&&String(x.id)===id),digits=v=>String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
+  const rawCurrent=await kv.get('phone:index'),current=rawCurrent||[],list=Array.isArray(current)?current.slice():[],previous=list.find(x=>x&&String(x.id)===id),digits=v=>String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
   if(!Array.isArray(current))return res.status(503).json({error:'Phone inventory is unavailable. No changes were made.'});
   if(body.id&&!previous)return res.status(404).json({error:'This phone record no longer exists. Refresh the inventory before editing.'});
   if(previous&&body.expectedUpdatedAt!==undefined&&Number(body.expectedUpdatedAt||0)!==Number(previous.updatedAt||0))return res.status(409).json({error:'This phone record changed while you were editing. Reopen it to load the latest settings.'});
@@ -631,35 +631,30 @@ async function adminSavePhoneNumber(req,res){
   if(previous&&previous.workspaceId&&previous.workspaceId!==workspaceId){
     [previousWorkspaceBefore,previousOnboardingBefore]=await Promise.all([kv.get('workspace:'+previous.workspaceId),kv.get('onboarding:workspace:'+previous.workspaceId)]);
   }
-  const item={id,number,workspaceId,workspaceName,provider,label,forwardingFrom,transferNumber,afterHours,smsEnabled,status:'active',updatedAt:Date.now()};
+  const item={...(previous||{}),id,number,workspaceId,workspaceName,provider,label,forwardingFrom,transferNumber,afterHours,smsEnabled,status:previous?.status||'configured',updatedAt:Math.max(Date.now(),Number(previous?.updatedAt||0)+1)};
   const nextList=list.slice(),i=nextList.findIndex(x=>x&&String(x.id)===id);
   if(i>=0)nextList[i]=item;else nextList.push(item);
+  const updates=[{key:'phone:index',before:rawCurrent,after:nextList}];
+  const stageOnboarding=(workspace,state,assigned)=>{
+    if(!state||typeof state!=='object'||Array.isArray(state))return;
+    const checklist=state.checklist&&typeof state.checklist==='object'&&!Array.isArray(state.checklist)?state.checklist:{};
+    if(checklist.phoneAssigned!==assigned)updates.push({key:'onboarding:workspace:'+workspace,before:state,after:{...state,checklist:{...checklist,phoneAssigned:assigned},updatedAt:Date.now()}});
+  };
+  if(previous&&previous.workspaceId&&previous.workspaceId!==workspaceId){
+    if(previousWorkspaceBefore&&digits(previousWorkspaceBefore.phone)===digits(previous.number))updates.push({key:'workspace:'+previous.workspaceId,before:previousWorkspaceBefore,after:{...previousWorkspaceBefore,phone:'',updatedAt:Date.now()}});
+    stageOnboarding(previous.workspaceId,previousOnboardingBefore,false);
+  }
+  if(workspaceId&&workspaceBefore){
+    updates.push({key:'workspace:'+workspaceId,before:workspaceBefore,after:{...workspaceBefore,phone:number,updatedAt:Date.now()}});
+    stageOnboarding(workspaceId,targetOnboardingBefore,true);
+    if(savedAgent&&savedAgent.transferNumber!==transferNumber)updates.push({key:'agent:'+workspaceId,before:savedAgent,after:{...savedAgent,transferNumber,updatedAt:Math.max(Date.now(),Number(savedAgent.updatedAt||0)+1)}});
+    if(routingRequest&&routingRequest.transferNumber!==transferNumber)updates.push({key:'routing-request:'+workspaceId,before:routingRequest,after:{...routingRequest,transferNumber,updatedAt:Date.now()}});
+  }
   try{
-    if(previous&&previous.workspaceId&&previous.workspaceId!==workspaceId){
-      const oldKey='workspace:'+previous.workspaceId,oldWs=previousWorkspaceBefore;
-      if(oldWs&&digits(oldWs.phone)===digits(previous.number))await kv.set(oldKey,{...oldWs,phone:'',updatedAt:Date.now()});
-      await syncOnboardingPhoneAssignment(previous.workspaceId,false);
-    }
-    if(workspaceId&&workspaceBefore){
-      await kv.set('workspace:'+workspaceId,{...workspaceBefore,phone:number,updatedAt:Date.now()});
-      await syncOnboardingPhoneAssignment(workspaceId,true);
-    }
-    await kv.set('phone:index',nextList.slice(0,500));
-    if(workspaceId){
-      if(savedAgent)await kv.set('agent:'+workspaceId,{...savedAgent,transferNumber,updatedAt:Date.now()});
-      if(routingRequest)await kv.set('routing-request:'+workspaceId,{...routingRequest,transferNumber,updatedAt:Date.now()});
-    }
+    if(!await compareAndSetConfig(kv,updates))return res.status(409).json({error:'Phone or workspace settings changed during this save. Refresh the inventory and reopen the record.'});
   }catch(err){
-    const restore=[kv.set('phone:index',list.slice(0,500))];
-    if(previousWorkspaceBefore&&previous?.workspaceId)restore.push(kv.set('workspace:'+previous.workspaceId,previousWorkspaceBefore));
-    if(previousOnboardingBefore&&previous?.workspaceId)restore.push(kv.set('onboarding:workspace:'+previous.workspaceId,previousOnboardingBefore));
-    if(workspaceBefore&&workspaceId)restore.push(kv.set('workspace:'+workspaceId,workspaceBefore));
-    if(targetOnboardingBefore&&workspaceId)restore.push(kv.set('onboarding:workspace:'+workspaceId,targetOnboardingBefore));
-    if(savedAgent&&workspaceId)restore.push(kv.set('agent:'+workspaceId,savedAgent));
-    if(routingRequest&&workspaceId)restore.push(kv.set('routing-request:'+workspaceId,routingRequest));
-    await Promise.allSettled(restore);
     console.error('admin phone routing save failed',safeError(err));
-    return res.status(503).json({error:'Could not save phone routing. No changes were kept.'});
+    return res.status(503).json({error:'Could not confirm that phone routing was saved. Refresh to check the saved values before retrying.'});
   }
   const auditWorkspace=workspaceId||previous?.workspaceId||admin.workspaceId;
   if(auditWorkspace)await appendAudit(auditWorkspace,{actorEmail:admin.email,actorRole:'admin',action:previous?'phone_routing_update':'phone_routing_create',section:'routing',before:previous||null,after:item,meta:{agentTransferSynced:!!workspaceId}});
@@ -2357,7 +2352,7 @@ async function settings(req,res){
     aiAnsweringPaused:saved.aiAnsweringPaused===true,
     aiPauseFallbackNumber:saved.aiPauseFallbackNumber||'',
     aiPausedAt:Number(saved.aiPausedAt||0),
-    aiPausedBy:saved.aiPausedBy||''
+    aiPausedBy:saved.aiPausedBy||'',updatedAt:Number(saved.updatedAt||0)
   }});
 }
 
@@ -2467,7 +2462,7 @@ async function clientDashboardData(req,res){
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true',calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true';
   const settings={
     businessName:savedSettings.businessName||ws.name||'',primaryEmail:savedSettings.primaryEmail||ws.ownerEmail||s.email||'',contactName:savedSettings.contactName||ws.ownerName||'',businessPhone:savedSettings.businessPhone||'',website:savedSettings.website||'',streetAddress:savedSettings.streetAddress||'',city:savedSettings.city||'',state:savedSettings.state||'',postalCode:savedSettings.postalCode||'',industry:savedSettings.industry||ws.industry||'',serviceArea:savedSettings.serviceArea||'',logoDataUrl:savedSettings.logoDataUrl||'',timezone:savedSettings.timezone||platform.defaultTimezone||'America/Los_Angeles',notificationEmail:savedSettings.notificationEmail||ws.ownerEmail||s.email||'',smsAlerts:smsLive&&savedSettings.smsAlerts!==false,emailAlerts:savedSettings.emailAlerts!==false,notifyBilling:savedSettings.notifyBilling!==false,notifySetup:savedSettings.notifySetup!==false,notifyCalls:savedSettings.notifyCalls!==false,notifySupport:savedSettings.notifySupport!==false,notifyUsage:savedSettings.notifyUsage!==false,
-    aiAnsweringPaused:savedSettings.aiAnsweringPaused===true,aiPauseFallbackNumber:savedSettings.aiPauseFallbackNumber||'',aiPausedAt:Number(savedSettings.aiPausedAt||0),aiPausedBy:savedSettings.aiPausedBy||''
+    aiAnsweringPaused:savedSettings.aiAnsweringPaused===true,aiPauseFallbackNumber:savedSettings.aiPauseFallbackNumber||'',aiPausedAt:Number(savedSettings.aiPausedAt||0),aiPausedBy:savedSettings.aiPausedBy||'',updatedAt:Number(savedSettings.updatedAt||0)
   };
   const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',handlingInstructions:savedAgent.handlingInstructions||savedAgent.callHandling||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
   const routing=clientRouting(phone,{smsLive});

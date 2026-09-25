@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
-let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0;
+let callsData=[],leadsData=[],conversationsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationLastFilterSignature='',activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -209,7 +209,7 @@ document.getElementById('adminAiNew')?.addEventListener('click',()=>{adminAiHist
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('adminAiPanel')?.classList.contains('open'))closeAdminAiGuide()});
 
 function showView(name){
-  if(agentSaving||settingsSaving)return;
+  if(agentSaving||settingsSaving||phoneSaving)return;
   const active=document.querySelector('.view.active')?.id?.replace('view-','')||'';
   if(active===name&&(agentEditing||settingsEditing))return;
   if(active!==name&&document.body.dataset.dashboard==='client'&&(agentEditing||settingsEditing)){
@@ -2389,8 +2389,9 @@ function openPhoneModal(id=null){
   sel.value=item?.workspaceId||'';
   modal.classList.add('open');modal.setAttribute('aria-hidden','false');
 }
-function closePhoneModal(){const m=document.getElementById('phoneModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
+function closePhoneModal(){if(phoneSaving)return;const m=document.getElementById('phoneModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 async function savePhone(){
+  if(phoneSaving)return;
   const modal=document.getElementById('phoneModal'),numberEl=document.getElementById('phoneNumberInput'),forwardEl=document.getElementById('phoneForwardingInput'),transferEl=document.getElementById('phoneTransferInput'),status=document.getElementById('phoneFormStatus'),btn=document.getElementById('savePhoneButton');
   const number=String(numberEl?.value||'').trim(),forwarding=String(forwardEl?.value||'').trim(),transfer=String(transferEl?.value||'').trim(),errors={};
   if(!validUsPhone(number,true))errors.phoneNumberInput='Enter a valid 10-digit phone number.';
@@ -2400,13 +2401,14 @@ async function savePhone(){
   if(Object.keys(errors).length){if(status){status.textContent='Please correct the highlighted phone fields.';status.className='form-status-line error'};document.getElementById(Object.keys(errors)[0])?.focus();return}
   if(numberEl)numberEl.value=normalizePhone(number);if(forwardEl)forwardEl.value=normalizePhone(forwarding);if(transferEl)transferEl.value=normalizePhone(transfer);
   const payload={id:modal?.dataset.editId||undefined,expectedUpdatedAt:Number(modal?.dataset.expectedUpdatedAt||0),number:numberEl?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||'',forwardingFrom:forwardEl?.value||'',transferNumber:transferEl?.value||'',afterHours:document.getElementById('phoneAfterHoursInput')?.value||'ai',smsEnabled:false};
+  phoneSaving=true;const unlock=lockFormControls('phoneModal');
   if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status){status.textContent='';status.className='form-status-line'}
   try{
     const r=await fetch('/api/account?action=admin-phone-number-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save phone number.');
-    closePhoneModal();await refreshAdminView('phones',{force:true,announce:false});
+    unlock();phoneSaving=false;closePhoneModal();await refreshAdminView('phones',{force:true,announce:false});
   }catch(err){if(status){status.textContent=err.message||'Could not save phone number.';status.className='form-status-line error'}}
-  finally{if(btn){btn.disabled=false;btn.textContent='Save number'}}
+  finally{unlock();phoneSaving=false;if(btn){btn.disabled=false;btn.textContent='Save number'}}
 }
 document.getElementById('addPhoneButton')?.addEventListener('click',()=>openPhoneModal());
 document.getElementById('addExpenseButton')?.addEventListener('click',()=>openExpenseModal());
