@@ -460,12 +460,11 @@ async function requireWritableSession(req,res){
   if(s.adminView)return res.status(403).json({error:'Admin client view is read-only'}),null;
   return s;
 }
-async function requireOperationalWritableSession(req,res){
-  const s=await requireWritableSession(req,res);if(!s)return null;
+async function requireOperationalWorkspace(s,res){
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'}),null;
   if(ws.status==='suspended')return res.status(423).json({error:'Workspace service is suspended. Billing and support remain available.'}),null;
   if(ws.status==='pending_deletion')return res.status(423).json({error:'Workspace is pending deletion'}),null;
-  return s;
+  return ws;
 }
 
 async function adminProvisioning(req,res){
@@ -1692,7 +1691,8 @@ async function followups(req,res){
   return res.status(200).json({state:state&&typeof state==='object'&&!Array.isArray(state)?state:{}});
 }
 async function followupUpdate(req,res){
-  const s=await requireOperationalWritableSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  if(!await requireOperationalWorkspace(s,res))return;
   const body=req.body||{},callId=String(body.callId||'').slice(0,120),rawStatus=String(body.status||''),legacyNote=String(body.note||'').trim().slice(0,2000),appendNote=String(body.appendNote||'').trim().slice(0,2000),updateNoteId=String(body.updateNoteId||'').slice(0,140),updateNoteText=String(body.updateNoteText||'').trim().slice(0,2000),deleteNoteId=String(body.deleteNoteId||'').slice(0,140);
   const status=rawStatus==='open'?'needs_action':rawStatus==='handled'?'completed':rawStatus;
   const allowed=['no_action','needs_action','in_progress','completed','dismissed'];
@@ -2058,7 +2058,8 @@ async function locations(req,res){
 }
 
 async function saveLocations(req,res){
-  const s=await requireOperationalWritableSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  if(!await requireOperationalWorkspace(s,res))return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   const ent=entitlementsFor(ws.plan),incoming=Array.isArray((req.body||{}).locations)?req.body.locations:[];
   if(incoming.length>ent.locations)return res.status(403).json({error:'Your '+ent.plan+' plan supports up to '+ent.locations+' location'+(ent.locations===1?'':'s')});
@@ -2101,7 +2102,8 @@ async function agent(req,res){
 }
 
 async function saveAgent(req,res){
-  const s=await requireOperationalWritableSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  if(!await requireOperationalWorkspace(s,res))return;
   const body=req.body||{};
   const clean=(v,n)=>String(v||'').trim().slice(0,n);
   const agent={
@@ -2140,7 +2142,8 @@ async function automations(req,res){
 }
 
 async function saveAutomations(req,res){
-  const s=await requireOperationalWritableSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  if(!await requireOperationalWorkspace(s,res))return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   if(!entitlementsFor(ws.plan).features.automations)return res.status(403).json({error:'Upgrade required',feature:'automations'});
   const access={session:s,workspace:ws};
@@ -2177,7 +2180,8 @@ async function appointments(req,res){
 }
 
 async function updateAppointment(req,res){
-  const s=await requireOperationalWritableSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  if(!await requireOperationalWorkspace(s,res))return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   if(!entitlementsFor(ws.plan).features.appointments)return res.status(403).json({error:'Upgrade required',feature:'appointments'});
   const access={session:s,workspace:ws};
@@ -2244,7 +2248,8 @@ async function settings(req,res){
 }
 
 async function saveSettings(req,res){
-  const s=await requireOperationalWritableSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  if(!await requireOperationalWorkspace(s,res))return;
   const body=req.body||{},clean=(v,n)=>String(v||'').trim().slice(0,n);
   const settings={
     businessName:clean(body.businessName,160),
@@ -2285,7 +2290,8 @@ async function saveSettings(req,res){
 }
 
 async function aiAnsweringControl(req,res){
-  const s=await requireOperationalWritableSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  if(!await requireOperationalWorkspace(s,res))return;
   const body=req.body||{},paused=body.paused===true,fallback=String(body.fallbackNumber||'').trim().slice(0,40);
   if(fallback&&!/^\+?[0-9() .-]{7,30}$/.test(fallback))return res.status(400).json({error:'Enter a valid temporary handoff number'});
   const key='settings:'+s.workspaceId,previous=await kv.get(key)||{},now=Date.now(),next={...previous,aiAnsweringPaused:paused,aiPauseFallbackNumber:fallback,aiPausedAt:paused?now:0,aiPausedBy:paused?s.email:''};
@@ -2314,7 +2320,8 @@ async function integrations(req,res){
 }
 
 async function saveIntegrations(req,res){
-  const s=await requireOperationalWritableSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  if(!await requireOperationalWorkspace(s,res))return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   if(!entitlementsFor(ws.plan).features.apiAccess)return res.status(403).json({error:'Upgrade required',feature:'apiAccess'});
   const access={session:s,workspace:ws};
@@ -2402,7 +2409,8 @@ async function leads(req,res){
 }
 
 async function updateLead(req,res){
-  const s=await requireOperationalWritableSession(req,res);if(!s)return;
+  const s=await requireWritableSession(req,res);if(!s)return;
+  if(!await requireOperationalWorkspace(s,res))return;
   const id=String((req.body||{}).id||'').slice(0,120);
   const stage=String((req.body||{}).stage||'').slice(0,40);
   const allowed=['New','Contacted','Qualified','Appointment','Won','Lost'];
