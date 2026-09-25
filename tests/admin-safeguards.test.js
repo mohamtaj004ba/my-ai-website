@@ -162,7 +162,7 @@ test('manual stage label cannot bypass verified client launch',()=>{
   const end=src.indexOf('\nasync function ',start+1);
   const body=src.slice(start,end>=0?end:src.length);
   assert.match(body,/if\(stage==='Live'\)/);
-  assert.match(body,/onboarding\?\.checklist\?\.live!==true/);
+  assert.match(body,/canManuallyMarkLive\(\{workspace:ws,onboarding\}\)/);
 });
 test('onboarding status persists before email notification and warns on delivery failure',()=>{
   const start=src.indexOf('async function adminProvisioningChecklistSave');
