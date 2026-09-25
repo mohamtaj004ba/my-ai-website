@@ -1970,3 +1970,16 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
 #adminClientDrawer.open{display:block}
 .onboarding-detail-drawer.open,
 .admin-ai-panel.open{display:grid}
+
+
+/* Mobile-safe command-center client rows. The text block must consume only
+   the flex space remaining after the avatar, not a second full row width. */
+.admin-recent-row .person{min-width:0;width:100%}
+.admin-recent-row .person>span{flex:1 1 auto;min-width:0;width:auto;max-width:100%}
+.admin-recent-row .person>span b,
+.admin-recent-row .person>span small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:760px){
+  .admin-recent-accounts .panel-head{flex-direction:column;align-items:flex-start;gap:10px}
+  .admin-recent-accounts .panel-head>div:first-child{display:grid;gap:3px;min-width:0}
+  .admin-recent-accounts .panel-head>button{align-self:flex-start}
+}
