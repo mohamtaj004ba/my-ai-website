@@ -76,7 +76,8 @@ async function upsertWorkspace({lead,session,plan,email}){
     updatedAt:Date.now()
   };
   await kv.set(key,workspace);
-  await kv.set(userKey,{workspaceId,role:'owner',email});
+  // Preserve sessionVersion and profile/security metadata across repeat purchases.
+  await kv.set(userKey,{...(existingMember||{}),workspaceId,role:existingMember?.role||'owner',email});
   if(session.customer)await kv.set('stripe:customer:'+session.customer,workspaceId);
   if(session.subscription)await kv.set('stripe:subscription:'+session.subscription,workspaceId);
   return workspace;
