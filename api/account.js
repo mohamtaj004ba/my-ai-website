@@ -323,7 +323,7 @@ async function adminClients(req,res){
   for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
     const ws=await kv.get('workspace:'+id);if(!ws)continue;
     clients.push({
-      id:ws.id,name:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',
+      id:ws.id,name:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,
       status:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',
       ownerEmail:ws.ownerEmail||'',usage:ws.usage||{minutes:0},
       stripeLinked:!!ws.stripeCustomerId,createdAt:ws.createdAt||null,updatedAt:ws.updatedAt||ws.createdAt||null
@@ -507,7 +507,7 @@ async function adminProvisioning(req,res){
     const stage=override&&allowedStages.includes(override.stage)?override.stage:autoStage;
     const doneCount=Object.values(checklist).filter(Boolean).length,totalCount=Object.keys(checklist).length;
     items.push({
-      id:ws.id,name:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',
+      id:ws.id,name:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',
       stage,autoStage,manualOverride:!!override,stageUpdatedAt:override&&override.updatedAt||null,
       hasIntake,hasAgent,hasPhone,phone:ws.phone||'',checklist,
       checklistDone:doneCount,checklistTotal:totalCount,
@@ -645,9 +645,9 @@ async function adminFleet(req,res){
   for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
     const ws=await kv.get('workspace:'+id);if(!ws)continue;
     const [agent,wsAutos]=await Promise.all([kv.get('agent:'+id),kv.get('automations:'+id)]);
-    agents.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',status:ws.status||'active',agent:agent||null});
+    agents.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',agent:agent||null});
     const autos=Array.isArray(wsAutos)?wsAutos:[];
-    automations.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:ws.plan||'Starter',total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length,workflows:autos.slice(0,20).filter(Boolean).map(x=>({id:x.id||'',name:String(x.name||'Automation').slice(0,120),trigger:String(x.trigger||'').slice(0,80),action:String(x.action||'').slice(0,80),enabled:x.enabled!==false}))});
+    automations.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length,workflows:autos.slice(0,20).filter(Boolean).map(x=>({id:x.id||'',name:String(x.name||'Automation').slice(0,120),trigger:String(x.trigger||'').slice(0,80),action:String(x.action||'').slice(0,80),enabled:x.enabled!==false}))});
   }
   return res.status(200).json({agents,automations});
 }
@@ -1230,7 +1230,7 @@ async function adminDocuments(req,res){
     const [ws,onboarding,token]=await Promise.all([kv.get('workspace:'+id),kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
     if(!ws)continue;
     const signed=!!(onboarding?.agreementSignedAt||onboarding?.checklist?.agreement);
-    agreements.push({workspaceId:id,workspaceName:ws.name||'Unnamed client',ownerEmail:ws.ownerEmail||'',plan:ws.plan||'Starter',signed,agreementVersion:onboarding?.agreementVersion||'',signedAt:onboarding?.agreementSignedAt||null,signedName:onboarding?.agreementSignedName||'',downloadUrl:signed&&token?('/api/agreement-pdf?token='+encodeURIComponent(token)):'',status:signed?'signed':onboarding?.onboardingLinkSent?'awaiting_signature':'not_sent'});
+    agreements.push({workspaceId:id,workspaceName:ws.name||'Unnamed client',ownerEmail:ws.ownerEmail||'',plan:entitlementsFor(ws.plan).plan,signed,agreementVersion:onboarding?.agreementVersion||'',signedAt:onboarding?.agreementSignedAt||null,signedName:onboarding?.agreementSignedName||'',downloadUrl:signed&&token?('/api/agreement-pdf?token='+encodeURIComponent(token)):'',status:signed?'signed':onboarding?.onboardingLinkSent?'awaiting_signature':'not_sent'});
   }
   agreements.sort((a,b)=>Number(b.signedAt||0)-Number(a.signedAt||0)||String(a.workspaceName).localeCompare(String(b.workspaceName)));
   const company=await kv.get('admin:documents')||[];
@@ -1596,7 +1596,7 @@ async function adminClient(req,res){
   ]);
   const phone=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===id)||null;
   return res.status(200).json({client:{
-    id:ws.id,name:ws.name,plan:ws.plan,status:ws.status||'active',
+    id:ws.id,name:ws.name,plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',
     subscriptionStatus:ws.subscriptionStatus||'active',ownerEmail:ws.ownerEmail||'',
     phone:ws.phone||'',industry:ws.industry||'',usage:ws.usage||{minutes:0},
     stripe:{customerLinked:!!ws.stripeCustomerId,subscriptionLinked:!!ws.stripeSubscriptionId},
@@ -2053,7 +2053,7 @@ async function workspace(req,res){
   const ws=await kv.get('workspace:'+s.workspaceId);
   if(!ws)return res.status(404).json({error:'Workspace not found'});
   return res.status(200).json({workspace:{
-    id:ws.id,name:ws.name,plan:ws.plan,status:ws.status,ownerEmail:ws.ownerEmail,
+    id:ws.id,name:ws.name,plan:entitlementsFor(ws.plan).plan,status:ws.status,ownerEmail:ws.ownerEmail,
     usage:ws.usage||{minutes:0},createdAt:ws.createdAt
   }});
 }
