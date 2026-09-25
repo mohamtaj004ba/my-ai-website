@@ -102,7 +102,7 @@ test('system health detects dangerous production and preview environment scoping
   assert.match(src,/Preview checkout launch gate is enabled/);
   assert.match(src,/Preview bootstrap secret is present in Production/);
   assert.match(src,/key:'environment-scope'/);
-  assert.match(src,/requiredForLaunch=\['database','environment-scope','checkout'/);
+  assert.match(src,/requiredForLaunch=\['database','environment-scope','data-integrity','checkout'/);
 });
 
 test('workspace recovery drill validates export structure without writing customer data',()=>{
