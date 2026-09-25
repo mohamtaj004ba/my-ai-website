@@ -268,22 +268,26 @@ async function runResponsive(kind,viewport,name){
   const route=kind==='admin'?'/admin-dashboard':'/dashboard';
   const required='button.nav-item[data-view="overview"]';
   const {context,page}=await makeContext(viewport,kind+'-'+name);
-  await startSession(context,kind);
-  await gotoAuthed(page,route,required);
-  await assertLayout(page,kind+'-'+name+'-overview');
-  await shot(page,kind+'-'+name+'-overview');
+  try{
+    await startSession(context,kind);
+    await gotoAuthed(page,route,required);
+    await assertLayout(page,kind+'-'+name+'-overview');
+    await shot(page,kind+'-'+name+'-overview');
 
-  const menu=page.locator('.mobile-menu');
-  if(viewport.width<=760){
-    await menu.waitFor({state:'visible',timeout:5000});
-    await menu.click();
-    if(!(await page.locator('.sidebar').evaluate(el=>el.classList.contains('open'))))throw new Error(kind+' '+name+' mobile menu did not open sidebar');
-    await shot(page,kind+'-'+name+'-menu',{fullPage:false});
-    await ensureView(page,kind==='admin'?'clients':'calls');
-    await assertLayout(page,kind+'-'+name+'-secondary',{allowHorizontalOverflow:false});
-    await shot(page,kind+'-'+name+'-'+(kind==='admin'?'clients':'calls'));
+    const menu=page.locator('.mobile-menu');
+    if(viewport.width<=760){
+      await menu.waitFor({state:'visible',timeout:5000});
+      await menu.click();
+      if(!(await page.locator('.sidebar').evaluate(el=>el.classList.contains('open'))))throw new Error(kind+' '+name+' mobile menu did not open sidebar');
+      await shot(page,kind+'-'+name+'-menu',{fullPage:false});
+      await ensureView(page,kind==='admin'?'clients':'calls');
+      await assertLayout(page,kind+'-'+name+'-secondary',{allowHorizontalOverflow:false});
+      await shot(page,kind+'-'+name+'-'+(kind==='admin'?'clients':'calls'));
+    }
+    report[kind].responsive.push({name,...viewport});
+  }finally{
+    await context.close().catch(()=>{});
   }
-  report[kind].responsive.push({name,...viewport});
 }
 
 try{
@@ -308,6 +312,11 @@ try{
   await sweepViews(desktop.page,'admin');
   await runAdminInteractions(desktop.page);
 
+  // Preview QA sessions deliberately revoke older sessions. Close the desktop
+  // context before issuing the next session so strict 401 detection only sees
+  // authentication failures from the context currently under test.
+  await desktop.context.close();
+
   await runResponsive('client',{width:1280,height:800},'laptop');
   await runResponsive('admin',{width:1280,height:800},'laptop');
   await runResponsive('client',{width:768,height:1024},'tablet');
@@ -315,7 +324,6 @@ try{
   await runResponsive('client',{width:390,height:844},'mobile');
   await runResponsive('admin',{width:390,height:844},'mobile');
 
-  await desktop.page.waitForTimeout(500);
   if(report.pageErrors.length)throw new Error('Page errors: '+JSON.stringify(report.pageErrors));
   if(report.consoleErrors.length)throw new Error('Console errors: '+JSON.stringify(report.consoleErrors));
   if(report.apiErrors.length)throw new Error('Unexpected API errors: '+JSON.stringify(report.apiErrors));
