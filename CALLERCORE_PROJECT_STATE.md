@@ -249,19 +249,24 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Opening a modal moves focus inside when the opener did not already choose a field. Tab and Shift+Tab wrap within the active modal, Escape uses the modal's guarded close control, and closing restores focus to a still-connected and visible trigger.
 - Implementation `0c440ad13ce3c9b2634f48285b6f78f3b4d793e9`: 239 local tests and the full build passed; CallerCore CI `36132976173` and `36132969862`, CodeQL `36132976255` and `36132969880`, Jekyll `36132976182`, and authenticated Preview Browser QA `36132969888` passed. Preview `dpl_8ouuFQHtquYY4PMCu12eb6t45Cu3` is READY at https://my-ai-website-nah039xzd-mohamtaj004bas-projects.vercel.app. Production remained unchanged.
 - Follow-up extends the same focus and keyboard contract to blocking client/admin detail drawers without bypassing pending-save dismissal guards. Authenticated Preview QA now also checks the real admin client drawer semantics; the existing phone-editor checks cover focus wrapping and trigger restoration at laptop, tablet and mobile widths.
-- Follow-up implementation `ccc01acc1efaaf6771d5065b1489bbcb21b8d922` passed both CI runs, both CodeQL runs and Jekyll; Preview `dpl_3c6TR172nTmvAQKz9etB9LgJqZsy` is READY. Authenticated QA `36133372442` completed every client/admin interaction and responsive capture, then failed strict diagnostics on one 401 from a client conversation-detail request that remained in flight while the disposable session intentionally rotated to admin. The browser report showed no page errors and no other API errors. The harness now closes the client page before revoking that session and opens a freshly diagnosed admin page; corrected full Preview verification is pending the next push.
+- Follow-up implementation `ccc01acc1efaaf6771d5065b1489bbcb21b8d922` passed both CI runs, both CodeQL runs and Jekyll; Preview `dpl_3c6TR172nTmvAQKz9etB9LgJqZsy` is READY. Authenticated QA `36133372442` completed every client/admin interaction and responsive capture, then failed strict diagnostics on one 401 from a client conversation-detail request that remained in flight while the disposable session intentionally rotated to admin. The browser report showed no page errors and no other API errors. The harness correction was fully verified with the next implementation below.
 
 ## Client call drawer request consistency
 
 - Rapid call selections now use a monotonic request generation, so a slower earlier call-detail response cannot replace the newer drawer selection or merge stale detail into client state.
 - Closing the call drawer invalidates an in-flight detail request. A late response cannot reopen or repaint the closed drawer.
-- Added behavioral regressions for out-of-order call-detail responses and close-during-load cancellation. Local suite: 241 tests passed; the full build, JavaScript, Preview QA syntax and diff checks passed. Push gates and authenticated Preview QA remain to be recorded.
+- Added behavioral regressions for out-of-order call-detail responses and close-during-load cancellation. Implementation `6041ad6bfb7d65e696ab634e70687fcb1cd56574`: 241 local tests and the full build passed; CallerCore CI `36134525911` and `36134519423`, CodeQL `36134525818` and `36134519409`, Jekyll `36134525986`, and authenticated Preview Browser QA `36134519432` passed. Preview `dpl_3xayUqsKYaEnT8xL39DVnkKnovWA` is READY at https://my-ai-website-b1ta1ilir-mohamtaj004bas-projects.vercel.app. Production remained unchanged.
 
 ## Admin inbox request consistency
 
 - Website-conversation selections now use a monotonic request generation, so a slower earlier response cannot replace a newer website or Gmail thread selection.
 - Stale website failures are discarded with their response instead of surfacing an alert after the operator has moved to another thread.
 - Added behavioral regressions for out-of-order website responses and website-to-Gmail selection changes. Local suite: 243 tests passed; the full build passed. Push gates and authenticated Preview QA remain to be recorded.
+
+## Admin website analytics request consistency
+
+- Date-range loads now use a monotonic request generation, so a slower response for an earlier range cannot repaint metrics, charts or Growth context after the operator selects a newer range.
+- Added an executable out-of-order range regression. Local suite: 244 tests passed; the full build passed. Push gates and authenticated Preview QA remain to be recorded.
 
 ## Admin client drawer request consistency
 
