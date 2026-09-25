@@ -78,10 +78,13 @@
   }
 
   const create = byId('create');
+  const seed = byId('seed');
+  const clientLogin = byId('clientLogin');
+  const adminLogin = byId('adminLogin');
   const promote = byId('promote');
   const login = byId('login');
 
-  if (!create || !seed || !promote || !login) {
+  if (!create || !seed || !clientLogin || !adminLogin || !promote || !login) {
     out('Launcher failed to initialize. Refresh the page.', false);
     return;
   }
@@ -114,6 +117,18 @@
       'Plan: ' + data.plan
     );
   }));
+
+  const openQaSession = (button, mode) => run(button, mode === 'admin' ? 'Opening admin dashboard' : 'Opening client dashboard', async () => {
+    const data = await post('preview-session', {
+      email: value('email'),
+      mode
+    }, true);
+    if (!data.redirect) throw new Error('QA session was created without a redirect.');
+    window.location.assign(data.redirect);
+  });
+
+  clientLogin.addEventListener('click', () => openQaSession(clientLogin, 'client'));
+  adminLogin.addEventListener('click', () => openQaSession(adminLogin, 'admin'));
 
   promote.addEventListener('click', () => run(promote, 'Promoting user', async () => {
     const data = await post('promote-preview-admin', { email: value('email') }, true);
