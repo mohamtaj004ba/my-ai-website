@@ -206,6 +206,45 @@ async function runClientInteractions(page){
   await page.locator('#callSearch').fill('');
   report.client.interactions.push('call search filter');
 
+  await ensureView(page,'contacts');
+  const initialContacts=await page.locator('#contactsTable [data-contact-key]').count();
+  const contactMetaText=await page.locator('#contactListMeta').textContent();
+  const contactMatch=String(contactMetaText||'').match(/Showing\s+(\d+)\s+of\s+(\d+)/i);
+  if(!contactMatch)throw new Error('Contacts did not expose progressive-load count context');
+  const contactShown=Number(contactMatch[1]),contactTotal=Number(contactMatch[2]);
+  if(contactShown!==initialContacts)throw new Error('Contacts visible-row count does not match footer');
+  if(contactTotal>50){
+    if(initialContacts!==50)throw new Error('High-volume Contacts did not start at 50 rows');
+    const moreContacts=page.locator('#loadMoreContacts');
+    if(!(await moreContacts.isVisible()))throw new Error('High-volume Contacts hid Load more too early');
+    await moreContacts.click();
+    await page.waitForTimeout(160);
+    if(await page.locator('#contactsTable [data-contact-key]').count()<=initialContacts)throw new Error('Load more did not increase visible contacts');
+  }
+  await page.locator('#contactTypeFilter').selectOption('Customer');
+  await page.waitForTimeout(120);
+  if(await page.locator('#contactsTable [data-contact-key]').count()<1)throw new Error('Customer contact filter returned no seeded contacts');
+  await page.locator('#contactTypeFilter').selectOption('all');
+  await page.locator('#contactSort').selectOption('name');
+  await page.waitForTimeout(100);
+  const firstContact=page.locator('#contactsTable [data-contact-key]').first();
+  await firstContact.click();
+  await page.locator('#contactDrawer.open').waitFor({state:'visible',timeout:5000});
+  await page.locator('#closeContactDrawer').click();
+  report.client.interactions.push('contact scaling + filters + detail drawer');
+
+  await ensureView(page,'conversations');
+  await page.locator('#conversationApp').waitFor({state:'visible',timeout:5000});
+  if(await page.locator('#conversationThreads .thread-item').count()<1)throw new Error('Conversations navigation opened without seeded threads');
+  await page.locator('#conversationSearch').fill('__qa_no_match__');
+  await page.waitForTimeout(120);
+  if(await page.locator('#conversationThreads .thread-item').count()!==0)throw new Error('Conversation search did not filter unmatched query');
+  await page.locator('#conversationSearch').fill('');
+  await page.locator('[data-conversation-filter="attention"]').click();
+  await page.waitForTimeout(100);
+  await page.locator('[data-conversation-filter="all"]').click();
+  report.client.interactions.push('Conversations navigation + search/filter');
+
   await ensureView(page,'settings');
   const originalName=await page.locator('#settingsBusinessName').inputValue();
   await page.locator('#settingsEditButton').click();
