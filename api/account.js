@@ -9,6 +9,7 @@ const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig}=require('../lib/config-transaction');
+const {prependAuditEvent}=require('../lib/audit-log');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
@@ -74,10 +75,8 @@ async function publicHealth(req,res){
 
 async function appendAudit(workspaceId,{actorEmail='',actorRole='client',action='',section='',before=null,after=null,meta={}}={}){
   if(!workspaceId)return;
-  const key='audit:'+workspaceId,list=await kv.get(key)||[];
   const item={id:crypto.randomUUID(),workspaceId,actorEmail,actorRole,action,section,before,after,meta,at:Date.now()};
-  const next=Array.isArray(list)?list:[];
-  next.unshift(item);await kv.set(key,next.slice(0,200));
+  await prependAuditEvent(kv,'audit:'+workspaceId,item,200);
   return item;
 }
 function configKey(section,workspaceId){
@@ -665,27 +664,26 @@ async function adminDeletePhoneNumber(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).id||'').slice(0,100);
   if(!id)return res.status(400).json({error:'Phone id required'});
-  const current=await kv.get('phone:index')||[];
-  const list=Array.isArray(current)?current:[];
+  const rawCurrent=await kv.get('phone:index'),current=rawCurrent||[];
+  if(!Array.isArray(current))return res.status(503).json({error:'Phone inventory is unavailable. No changes were made.'});
+  const list=current.slice();
   const item=list.find(x=>x&&String(x.id)===id);
   if(!item)return res.status(404).json({error:'Phone number not found'});
+  if(req.body?.expectedUpdatedAt!==undefined&&Number(req.body.expectedUpdatedAt||0)!==Number(item.updatedAt||0))return res.status(409).json({error:'This phone record changed before deletion. Refresh the inventory and review it again.'});
   const next=list.filter(x=>!x||String(x.id)!==id);
   const workspaceBefore=item.workspaceId?await kv.get('workspace:'+item.workspaceId):null;
   const onboardingBefore=item.workspaceId?await kv.get('onboarding:workspace:'+item.workspaceId):null;
+  const updates=[{key:'phone:index',before:rawCurrent,after:next}];
+  if(item.workspaceId&&workspaceBefore&&String(workspaceBefore.phone||'')===String(item.number||''))updates.push({key:'workspace:'+item.workspaceId,before:workspaceBefore,after:{...workspaceBefore,phone:'',updatedAt:Date.now()}});
+  if(item.workspaceId&&onboardingBefore&&typeof onboardingBefore==='object'&&!Array.isArray(onboardingBefore)){
+    const checklist=onboardingBefore.checklist&&typeof onboardingBefore.checklist==='object'&&!Array.isArray(onboardingBefore.checklist)?onboardingBefore.checklist:{};
+    if(checklist.phoneAssigned!==false)updates.push({key:'onboarding:workspace:'+item.workspaceId,before:onboardingBefore,after:{...onboardingBefore,checklist:{...checklist,phoneAssigned:false},updatedAt:Date.now()}});
+  }
   try{
-    await kv.set('phone:index',next);
-    if(item.workspaceId){
-      const key='workspace:'+item.workspaceId,ws=workspaceBefore;
-      if(ws&&String(ws.phone||'')===String(item.number||''))await kv.set(key,{...ws,phone:'',updatedAt:Date.now()});
-      await syncOnboardingPhoneAssignment(item.workspaceId,false);
-    }
+    if(!await compareAndSetConfig(kv,updates))return res.status(409).json({error:'Phone or workspace settings changed during deletion. Refresh the inventory and review the record again.'});
   }catch(err){
-    const restore=[kv.set('phone:index',list)];
-    if(workspaceBefore&&item.workspaceId)restore.push(kv.set('workspace:'+item.workspaceId,workspaceBefore));
-    if(onboardingBefore&&item.workspaceId)restore.push(kv.set('onboarding:workspace:'+item.workspaceId,onboardingBefore));
-    await Promise.allSettled(restore);
     console.error('admin phone routing delete failed',safeError(err));
-    return res.status(503).json({error:'Could not delete phone routing. No changes were kept.'});
+    return res.status(503).json({error:'Could not confirm that phone routing was deleted. Refresh to check the inventory before retrying.'});
   }
   if(item.workspaceId)await appendAudit(item.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'phone_routing_delete',section:'routing',before:item,after:null});
   return res.status(200).json({ok:true,deleted:{id:item.id,number:item.number}});
@@ -1402,17 +1400,22 @@ function sanitizeAdminOverride(section,value,current){
   }
   throw new Error('Unsupported section');
 }
-async function syncConfigDerivedState(workspaceId,section,value){
+async function configTransactionUpdates(workspaceId,section,key,before,value){
+  const updates=[{key,before,after:value}];
   if(section==='settings'&&value?.businessName){
     const current=await kv.get('workspace:'+workspaceId);
-    if(current)await kv.set('workspace:'+workspaceId,{...current,name:String(value.businessName).trim().slice(0,160),updatedAt:Date.now()});
+    if(!current)throw new Error('Workspace not found');
+    const name=String(value.businessName).trim().slice(0,160);
+    if(current.name!==name)updates.push({key:'workspace:'+workspaceId,before:current,after:{...current,name,updatedAt:Date.now()}});
   }
   if(section==='agent'){
     const transferNumber=String(value?.transferNumber||'').trim().slice(0,40),[rawPhones,routingRequest]=await Promise.all([kv.get('phone:index'),kv.get('routing-request:'+workspaceId)]);
+    if(rawPhones!=null&&!Array.isArray(rawPhones))throw new Error('Phone inventory is malformed');
     const phones=Array.isArray(rawPhones)?rawPhones.slice():[],index=phones.findIndex(x=>x&&String(x.workspaceId||'')===String(workspaceId));
-    if(index>=0){phones[index]={...phones[index],transferNumber,updatedAt:Date.now()};await kv.set('phone:index',phones)}
-    if(routingRequest)await kv.set('routing-request:'+workspaceId,{...routingRequest,transferNumber,updatedAt:Date.now()});
+    if(index>=0&&phones[index].transferNumber!==transferNumber){phones[index]={...phones[index],transferNumber,updatedAt:Date.now()};updates.push({key:'phone:index',before:rawPhones,after:phones})}
+    if(routingRequest&&routingRequest.transferNumber!==transferNumber)updates.push({key:'routing-request:'+workspaceId,before:routingRequest,after:{...routingRequest,transferNumber,updatedAt:Date.now()}});
   }
+  return updates;
 }
 async function adminOverrideConfig(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
@@ -1421,8 +1424,7 @@ async function adminOverrideConfig(req,res){
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
   const before=await kv.get(key);
   let after;try{after=sanitizeAdminOverride(section,body.value,before||ws)}catch(err){return res.status(400).json({error:err.message})}
-  await kv.set(key,after);
-  await syncConfigDerivedState(id,section,after);
+  let updates;try{updates=await configTransactionUpdates(id,section,key,before,after);if(!await compareAndSetConfig(kv,updates))return res.status(409).json({error:'Client configuration changed during this save. Reload the client before retrying.'})}catch(err){console.error('admin override save failed',safeError(err));return res.status(503).json({error:'Could not confirm that the configuration was saved. Reload the client before retrying.'})}
   await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'admin_override',section,before:before||null,after});
   return res.status(200).json({ok:true,section,value:after});
 }
@@ -1435,8 +1437,7 @@ async function adminRestoreAudit(req,res){
   if(entry.before===undefined)return res.status(400).json({error:'No prior snapshot is available'});
   const current=await kv.get(key),rawRestored=entry.before===null?(entry.section==='automations'||entry.section==='locations'?[]:{}):entry.before;
   let restored;try{restored=sanitizeAdminOverride(entry.section,rawRestored,current||await kv.get('workspace:'+id)||{})}catch(err){return res.status(409).json({error:'This snapshot can no longer be restored safely: '+err.message})}
-  await kv.set(key,restored);
-  await syncConfigDerivedState(id,entry.section,restored);
+  let updates;try{updates=await configTransactionUpdates(id,entry.section,key,current,restored);if(!await compareAndSetConfig(kv,updates))return res.status(409).json({error:'Client configuration changed during restoration. Reload the client before retrying.'})}catch(err){console.error('admin snapshot restore failed',safeError(err));return res.status(503).json({error:'Could not confirm that the snapshot was restored. Reload the client before retrying.'})}
   await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'restore_snapshot',section:entry.section,before:current||null,after:restored,meta:{restoredFrom:auditId,sanitized:true}});
   return res.status(200).json({ok:true,section:entry.section,value:restored});
 }

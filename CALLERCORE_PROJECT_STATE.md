@@ -181,3 +181,11 @@ Only commit/push routine changes to the authorized development branch. No merge 
 ## Final combined verification record
 
 The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full combined workflow described at the top of this record. Earlier pending/failure entries are historical and resolved by this checkpoint except where explicitly listed in the remaining backlog. Progress was recorded after each substantive change; all work remains on the authorized feature branch.
+
+## Atomic legacy configuration mutation batch
+
+- Phone deletion now validates the displayed record revision and atomically removes the inventory item while clearing the matching workspace phone and onboarding assignment checkpoint. Concurrent changes return 409; ambiguous storage failures return 503 without an unsafe rollback.
+- Admin configuration overrides and audit snapshot restoration now stage their primary record plus derived workspace name or agent routing records in one compare-and-set transaction. Agent restores cannot partially update the phone inventory or routing request.
+- Audit history now prepends and trims through one Redis Lua operation. Concurrent audit events no longer use read/modify/write and cannot silently overwrite one another; malformed stored history fails closed.
+- Added behavioral transaction tests for phone deletion, admin agent override/restore, derived state, stale/conflicting writes, malformed inventory, local delete consistency, and 250 concurrent audit appends. Local verification: 202 tests passed; JavaScript syntax and diff checks passed.
+- Configuration state and its audit event are still separate Redis operations. The state transaction completes before audit append; a dedicated transactional audit/outbox design remains future work if strict all-or-nothing audit persistence becomes a launch requirement.

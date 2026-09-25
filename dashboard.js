@@ -2390,9 +2390,10 @@ async function deletePhone(id){
   const item=adminPhoneData.find(x=>String(x.id)===String(id));if(!item)return;
   const assigned=item.workspaceName?' assigned to '+item.workspaceName:'';
   if(!confirm('Delete '+item.number+assigned+'? This will remove the number from CallerCore'+(item.workspaceId?' and clear it from that workspace.':'.')))return;
-  const r=await fetch('/api/account?action=admin-phone-number-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  const r=await fetch('/api/account?action=admin-phone-number-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt:Number(item.updatedAt||0)})});
   const data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not delete phone number.');return}
+  adminPhoneData=adminPhoneData.filter(x=>String(x.id)!==String(id));renderPhones();
   await refreshAdminView('phones',{force:true,announce:false});
 }
 
