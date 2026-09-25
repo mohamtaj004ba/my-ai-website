@@ -2,6 +2,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
+const {compareAndAudit,CONFIG_COMPARE_AND_AUDIT}=require('../lib/config-transaction');
 
 const apiSource=fs.readFileSync('api/account.js','utf8');
 const dashboardSource=fs.readFileSync('dashboard.js','utf8');
@@ -91,4 +92,24 @@ test('confirmed workspace save is not misreported as failed when admin refresh f
   assert.equal(f.alerts.length,1);
   assert.match(f.alerts[0],/changes were saved, but the admin view could not refresh/);
   assert.doesNotMatch(f.alerts[0],/Could not update client/);
+});
+
+test('combined audit transaction checks revisions and validates the event before any writes',async()=>{
+  let calls=0;
+  const update={key:'workspace:client-1',before:{updatedAt:10},after:{updatedAt:11}};
+  const event={id:'audit-1',action:'workspace_update'};
+  const ok=await compareAndAudit({eval:async(script,keys,args)=>{
+    calls++;
+    assert.deepEqual(keys,['workspace:client-1','audit:client-1']);
+    assert.deepEqual(args,[JSON.stringify(update.before),JSON.stringify(update.after),JSON.stringify(event)]);
+    assert.equal(script,CONFIG_COMPARE_AND_AUDIT);
+    return 1;
+  }},update,'audit:client-1',event);
+  assert.equal(ok,true);
+  assert.equal(calls,1);
+  assert.ok(CONFIG_COMPARE_AND_AUDIT.indexOf("current ~= ARGV[1]")<CONFIG_COMPARE_AND_AUDIT.indexOf("redis.call('SET',KEYS[1]"));
+  assert.ok(CONFIG_COMPARE_AND_AUDIT.indexOf("cjson.encode(events)")<CONFIG_COMPARE_AND_AUDIT.indexOf("redis.call('SET',KEYS[1]"));
+  assert.equal(await compareAndAudit({eval:async()=>0},update,'audit:client-1',event),false);
+  await assert.rejects(compareAndAudit({eval:async()=>-1},update,'audit:client-1',event),/Audit history is malformed/);
+  await assert.rejects(compareAndAudit({eval:async()=>-2},update,'audit:client-1',event),/Audit event could not be serialized/);
 });
