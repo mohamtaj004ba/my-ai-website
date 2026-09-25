@@ -1383,10 +1383,18 @@ async function adminProvisioningChecklistSave(req,res){
   const wsKey='workspace:'+id,ws=await kv.get(wsKey);if(!ws)return res.status(404).json({error:'Client not found'});
   const key='onboarding:workspace:'+id,state=await kv.get(key)||{workspaceId:id,status:'building_review',completionPercent:100,checklist:{}};
   if(field==='adminReview'&&value&&Number(state.buildEligibleAt||0)>Date.now())return res.status(409).json({error:'The build is still in its review hold.',eligibleAt:state.buildEligibleAt});
+  if(field==='adminReview'&&value&&(!state.checklist?.agreement||!state.checklist?.intake))return res.status(409).json({error:'The signed agreement and completed intake are required before build approval.'});
+  if(field==='testCall'&&value&&!state.checklist?.adminReview)return res.status(409).json({error:'Complete the CallerCore build review before marking the test call complete.'});
+  if(field==='clientApproval'&&value&&!state.checklist?.testCall)return res.status(409).json({error:'Complete the test call before recording client approval.'});
   if(field==='live'&&value){
-    const agent=await kv.get('agent:'+id);
+    const required=['agreement','intake','adminReview','testCall','clientApproval'];
+    const missing=required.filter(step=>state.checklist?.[step]!==true);
+    if(missing.length)return res.status(409).json({error:'Complete all launch checkpoints before activating this client.',missing});
+    const [agent,phoneIndex]=await Promise.all([kv.get('agent:'+id),kv.get('phone:index')]);
     if(!agent||!String(agent.openingMessage||agent.name||'').trim())return res.status(409).json({error:'An AI agent must be configured before launch'});
-    if(!String(ws.phone||'').trim())return res.status(409).json({error:'Assign a CallerCore phone number before launch'});
+    const normalized=value=>String(value||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
+    const assigned=(Array.isArray(phoneIndex)?phoneIndex:[]).find(phone=>phone&&phone.workspaceId===id&&phone.status==='active'&&normalized(phone.number)===normalized(ws.phone));
+    if(!assigned||!normalized(ws.phone))return res.status(409).json({error:'Assign an active CallerCore phone number to this workspace before launch'});
   }
   const next={...state,checklist:{...(state.checklist||{}),phoneAssigned:!!String(ws.phone||'').trim(),[field]:value},updatedAt:Date.now(),updatedBy:admin.email};
   const to=String(ws.ownerEmail||'').trim().toLowerCase(),firstName=String(ws.ownerName||'').split(' ')[0]||'there';
@@ -1436,7 +1444,6 @@ async function adminProvisioningChecklistSave(req,res){
     });await sendMail({to,subject:'CallerCore is preparing your launch',...emailBody});}
   }
   if(field==='live'&&value){
-    next.checklist.adminReview=true;next.checklist.testCall=true;next.checklist.clientApproval=true;
     next.status='live';next.liveAt=Date.now();await kv.set(wsKey,{...ws,status:'active',updatedAt:Date.now()});
     if(to){const emailBody=lifecycleEmail({
       preheader:'Your CallerCore AI receptionist is now live.',
