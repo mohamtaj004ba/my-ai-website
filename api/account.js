@@ -1304,10 +1304,10 @@ async function adminMarketingCampaignDelete(req,res){
 }
 async function adminDocuments(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const ids=await kv.get('workspace:index')||[],agreements=[];
-  for(const id of Array.isArray(ids)?ids.slice(0,300):[]){
-    const [ws,onboarding,token]=await Promise.all([kv.get('workspace:'+id),kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
-    if(!ws)continue;
+  const workspaces=await loadAdminWorkspaces(),agreements=[];
+  for(const ws of workspaces){
+    const id=ws.id;
+    const [onboarding,token]=await Promise.all([kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
     const signed=!!(onboarding?.agreementSignedAt||onboarding?.checklist?.agreement);
     agreements.push({workspaceId:id,workspaceName:ws.name||'Unnamed client',ownerEmail:ws.ownerEmail||'',plan:entitlementsFor(ws.plan).plan,signed,agreementVersion:onboarding?.agreementVersion||'',signedAt:onboarding?.agreementSignedAt||null,signedName:onboarding?.agreementSignedName||'',downloadUrl:signed&&token?('/api/agreement-pdf?token='+encodeURIComponent(token)):'',status:signed?'signed':onboarding?.onboardingLinkSent?'awaiting_signature':'not_sent'});
   }
