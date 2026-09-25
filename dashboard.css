@@ -1942,3 +1942,8 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
 .workspace-hold-banner b{display:block;font-size:10px;color:#713c2f}.workspace-hold-banner small{display:block;margin-top:3px;color:#806e68;font-size:8px;line-height:1.45}
 .workspace-suspended [data-agent-edit],.workspace-suspended #newAutomationButton,.workspace-suspended #addLocationButton,.workspace-suspended #settingsEditButton,.workspace-suspended #toggleAiAnsweringButton{opacity:.45;pointer-events:none}
 @media(max-width:760px){.workspace-hold-banner{margin:12px 14px 0;align-items:flex-start;flex-direction:column}.workspace-hold-banner>div:last-child{width:100%}.workspace-hold-banner>div:last-child button{flex:1}}
+
+
+/* Billing attention state */
+.billing-status-card.needs-attention{border-color:#efc9c1;background:#fff8f6}
+.billing-status-card.needs-attention b{color:#9c4638}
