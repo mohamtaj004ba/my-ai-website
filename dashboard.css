@@ -2318,3 +2318,69 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
   }
   .contact-list-footer .secondary-btn{width:100%}
 }
+
+
+/* Premium Follow-ups action hierarchy: separate contact actions from workflow state. */
+.followup-actions{
+  display:grid;
+  grid-template-columns:auto minmax(132px,150px);
+  gap:12px;
+  align-items:end;
+  justify-content:end;
+}
+.followup-contact-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.followup-quick-action{
+  min-height:36px;
+  padding:7px 10px;
+  gap:5px;
+  justify-content:center;
+}
+.followup-quick-action span[aria-hidden="true"]{
+  font-size:11px;
+  line-height:1;
+  opacity:.72;
+}
+.followup-view-call{
+  min-height:36px;
+  border:0;
+  background:transparent;
+  color:#697681;
+  padding:7px 5px;
+  font:850 8px inherit;
+  cursor:pointer;
+  text-decoration:underline;
+  text-decoration-color:#d6dce0;
+  text-underline-offset:3px;
+}
+.followup-view-call:hover{
+  color:var(--ink);
+  text-decoration-color:#9ea8b0;
+}
+.followup-status-select{
+  min-width:0;
+  padding-left:12px;
+  border-left:1px solid #edf0f2;
+}
+.followup-status-select select{
+  width:100%;
+  min-height:36px;
+}
+@media(max-width:900px){
+  .followup-actions{
+    width:100%;
+    grid-template-columns:1fr;
+    justify-content:stretch;
+  }
+  .followup-contact-actions{justify-content:flex-start}
+  .followup-status-select{
+    max-width:210px;
+    padding-left:0;
+    border-left:0;
+  }
+}
