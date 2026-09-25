@@ -144,3 +144,31 @@ test('phone routing rejects duplicate numbers and duplicate workspace assignment
   assert.match(body,/already has a CallerCore number/);
   assert.match(body,/phone_routing_update/);
 });
+
+
+test('launch checklist cannot invent review, testing, or client approval',()=>{
+  const start=src.indexOf('async function adminProvisioningChecklistSave');
+  const end=src.indexOf('\nasync function ',start+1);
+  const body=src.slice(start,end>=0?end:src.length);
+  assert.match(body,/const required=\['agreement','intake','adminReview','testCall','clientApproval'\]/);
+  assert.match(body,/missing\.length\)return res\.status\(409\)/);
+  assert.match(body,/phone\.status==='active'/);
+  assert.doesNotMatch(body,/next\.checklist\.adminReview=true/);
+  assert.doesNotMatch(body,/next\.checklist\.testCall=true/);
+  assert.doesNotMatch(body,/next\.checklist\.clientApproval=true/);
+});
+test('manual stage label cannot bypass verified client launch',()=>{
+  const start=src.indexOf('async function adminSaveProvisioningStage');
+  const end=src.indexOf('\nasync function ',start+1);
+  const body=src.slice(start,end>=0?end:src.length);
+  assert.match(body,/if\(stage==='Live'\)/);
+  assert.match(body,/onboarding\?\.checklist\?\.live!==true/);
+});
+test('onboarding status persists before email notification and warns on delivery failure',()=>{
+  const start=src.indexOf('async function adminProvisioningChecklistSave');
+  const end=src.indexOf('\nasync function ',start+1);
+  const body=src.slice(start,end>=0?end:src.length);
+  assert.ok(body.indexOf('await kv.set(key,next);')<body.indexOf('try{await sendMail(mailNotification)}'));
+  assert.match(body,/warning='The setup status was saved/);
+  assert.match(body,/onboarding_email_failed/);
+});
