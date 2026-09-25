@@ -530,6 +530,10 @@ async function adminSaveProvisioningStage(req,res){
   const allowed=['Paid','Review','Intake','Building','QA','Client Test','Ready','Live'];
   if(!id||!allowed.includes(stage))return res.status(400).json({error:'Invalid provisioning stage'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(stage==='Live'){
+    const onboarding=await kv.get('onboarding:workspace:'+id);
+    if(onboarding?.checklist?.live!==true||onboarding?.status!=='live'||ws.status!=='active')return res.status(409).json({error:'A manual label cannot mark a client Live. Complete the verified launch checklist first.'});
+  }
   const record={stage,updatedAt:Date.now(),updatedBy:admin.email};
   await kv.set('provisioning:override:'+id,record);
   const history=await kv.get('provisioning:history:'+id)||[];
