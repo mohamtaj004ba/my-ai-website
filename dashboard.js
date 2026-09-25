@@ -1911,8 +1911,13 @@ async function openInboxItem(kind,id){
     const thread=(adminInboxData.gmail?.threads||[]).find(x=>x.id===id);if(!thread)return;
     currentInboxItem={kind,id,thread,prospect:thread.prospect||null,messages:thread.messages||[]};
     if(thread.unread){
-      fetch('/api/account?action=admin-gmail-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({threadId:id})}).catch(()=>{});
       thread.unread=false;if(adminInboxData.gmail?.analytics?.unread>0)adminInboxData.gmail.analytics.unread--;
+      fetch('/api/account?action=admin-gmail-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({threadId:id})}).then(r=>{
+        if(r.ok)return;
+        thread.unread=true;if(adminInboxData.gmail?.analytics)adminInboxData.gmail.analytics.unread=Number(adminInboxData.gmail.analytics.unread||0)+1;renderAdminInbox();
+      }).catch(()=>{
+        thread.unread=true;if(adminInboxData.gmail?.analytics)adminInboxData.gmail.analytics.unread=Number(adminInboxData.gmail.analytics.unread||0)+1;renderAdminInbox();
+      });
     }
   }
   renderInboxThread();renderAdminInbox();
@@ -2072,8 +2077,10 @@ async function replyAdminSupportTicket(id,button){
   renderAdminSupport();loadNotifications({silent:true});
 }
 async function updateSupportStatus(id,status){
-  const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})});if(!r.ok)return;
-  const t=adminSupportData.find(x=>x.id===id);if(t)t.status=status;renderAdminSupport();
+  const t=adminSupportData.find(x=>x.id===id),previous=t?.status;
+  const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})}),data=await r.json().catch(()=>({}));
+  if(!r.ok){if(t&&previous)t.status=previous;renderAdminSupport();alert(data.error||'Could not update support status.');return}
+  if(t)Object.assign(t,data.ticket||{status});renderAdminSupport();
 }
 function setPlatformSettingsDirty(dirty=true){
   adminPlatformDirty=!!dirty;
