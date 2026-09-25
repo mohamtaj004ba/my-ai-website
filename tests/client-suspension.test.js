@@ -7,11 +7,11 @@ const dashboard=fs.readFileSync('dashboard.js','utf8');
 const html=fs.readFileSync('dashboard.html','utf8');
 
 test('suspended workspaces are read-only for operational client changes',()=>{
-  assert.match(api,/async function requireOperationalWritableSession\(req,res\)/);
+  assert.match(api,/async function requireOperationalWorkspace\(s,res\)/);
   assert.match(api,/ws\.status==='suspended'[\s\S]*?status\(423\)/);
   for(const name of ['followupUpdate','saveLocations','saveAgent','saveAutomations','updateAppointment','saveSettings','aiAnsweringControl','saveIntegrations','updateLead']){
-    const marker='async function '+name+'(req,res){\n  const s=await requireOperationalWritableSession(req,res);';
-    assert.ok(api.includes(marker),name+' must use operational write guard');
+    const marker='async function '+name+'(req,res){\n  const s=await requireWritableSession(req,res);if(!s)return;\n  if(!await requireOperationalWorkspace(s,res))return;';
+    assert.ok(api.includes(marker),name+' must keep the base write guard and suspension guard');
   }
 });
 
