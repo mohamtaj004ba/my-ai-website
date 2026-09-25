@@ -1581,6 +1581,7 @@ async function adminProvisioningChecklistSave(req,res){
 async function stripeConfigurationHealth(){
   const key=process.env.STRIPE_SECRET_KEY||'';
   if(!key)return {ok:false,webhook:false,portal:false,detail:'STRIPE_SECRET_KEY missing'};
+  const scopeIssue=environmentScopeHealth().issues.find(issue=>/Stripe/.test(issue));if(scopeIssue)return {ok:false,webhook:false,portal:false,detail:scopeIssue};
   const headers={Authorization:'Bearer '+key};
   const expected=['checkout.session.completed','checkout.session.async_payment_succeeded','customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.payment_failed','invoice.paid'];
   try{
@@ -1609,11 +1610,15 @@ function environmentScopeHealth(){
   const env=String(process.env.VERCEL_ENV||'').toLowerCase();
   const stripeSecret=String(process.env.STRIPE_SECRET_KEY||'');
   const stripePublishable=String(process.env.STRIPE_PUBLISHABLE_KEY||'');
-  const issues=[];
+  const secretMode=(stripeSecret.match(/^sk_(live|test)_/)||[])[1]||'',publishableMode=(stripePublishable.match(/^pk_(live|test)_/)||[])[1]||'',issues=[];
+  if(stripeSecret&&!secretMode)issues.push('Stripe secret key mode is not recognizable');
+  if(stripePublishable&&!publishableMode)issues.push('Stripe publishable key mode is not recognizable');
+  if(secretMode&&publishableMode&&secretMode!==publishableMode)issues.push('Stripe secret and publishable key modes do not match');
   if(env==='preview'){
-    if(/^sk_live_/.test(stripeSecret)||/^pk_live_/.test(stripePublishable))issues.push('Preview is using live Stripe credentials');
+    if(secretMode==='live'||publishableMode==='live')issues.push('Preview is using live Stripe credentials');
     if(process.env.CALLERCORE_CHECKOUT_ENABLED==='true')issues.push('Preview checkout launch gate is enabled');
   }
+  if(env==='production'&&(secretMode==='test'||publishableMode==='test'))issues.push('Production is using Stripe test credentials');
   if(env==='production'&&process.env.CALLERCORE_BOOTSTRAP_SECRET)issues.push('Preview bootstrap secret is present in Production');
   if(env&& !['production','preview','development'].includes(env))issues.push('Unexpected VERCEL_ENV value');
   return {ok:issues.length===0,env:env||'unknown',issues,detail:issues.length?issues.join('; '):('Environment scope checks passed for '+(env||'unknown'))};
@@ -2564,6 +2569,7 @@ async function billingPortal(req,res){
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   if(!ws.stripeCustomerId)return res.status(409).json({error:'No Stripe customer is linked to this workspace'});
   if(!process.env.STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe billing is not configured'});
+  const scopeIssue=environmentScopeHealth().issues.find(issue=>/Stripe/.test(issue));if(scopeIssue)return res.status(503).json({error:'Stripe billing credentials do not match this environment'});
   try{
     const body=new URLSearchParams({customer:String(ws.stripeCustomerId),return_url:requestOrigin(req)+'/dashboard'});
     const r=await fetch('https://api.stripe.com/v1/billing_portal/sessions',{method:'POST',headers:{Authorization:'Bearer '+process.env.STRIPE_SECRET_KEY,'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});

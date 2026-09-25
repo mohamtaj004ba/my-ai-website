@@ -14,6 +14,14 @@ const PLAN_PRICE={
 };
 const SETUP_PRICE=process.env.STRIPE_SETUP_PRICE_ID||'price_1To9HhF0BXlPng7V0OBFPmQR';
 const ALLOWED_HOSTS=new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
+function stripeCredentialModesValid(){
+  const secretMode=(STRIPE_SECRET_KEY.match(/^sk_(live|test)_/)||[])[1]||'',publishableMode=(STRIPE_PUBLISHABLE_KEY.match(/^pk_(live|test)_/)||[])[1]||'',env=String(process.env.VERCEL_ENV||'').toLowerCase();
+  if(!secretMode||(STRIPE_PUBLISHABLE_KEY&&!publishableMode))return false;
+  if(secretMode&&publishableMode&&secretMode!==publishableMode)return false;
+  if(env==='preview'&&(secretMode==='live'||publishableMode==='live'))return false;
+  if(env==='production'&&(secretMode==='test'||publishableMode==='test'))return false;
+  return true;
+}
 
 function allowedOrigin(req){
   const candidate=req.headers.origin||req.headers.referer||'';
@@ -53,7 +61,7 @@ module.exports=async function handler(req,res){
   if(!allowedOrigin(req))return res.status(403).json({error:'Forbidden'});
   if(process.env.CALLERCORE_CHECKOUT_ENABLED!=='true')return res.status(503).json({error:'CallerCore checkout is not open yet'});
   if(!STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe checkout is not configured'});
-  if(process.env.VERCEL_ENV==='preview'&&/^sk_live_/i.test(STRIPE_SECRET_KEY))return res.status(503).json({error:'Preview checkout refuses live Stripe credentials'});
+  if(!stripeCredentialModesValid())return res.status(503).json({error:'Stripe credentials do not match this environment'});
   if(process.env.VERCEL_ENV==='preview'&&(!process.env.STRIPE_STARTER_PRICE_ID||!process.env.STRIPE_GROWTH_PRICE_ID||!process.env.STRIPE_PRO_PRICE_ID||!process.env.STRIPE_SETUP_PRICE_ID))return res.status(503).json({error:'Preview checkout requires explicit Stripe test Price IDs'});
 
   const rl=await rateLimit({scope:'embedded-checkout',identifier:requestIp(req),limit:req.method==='GET'?30:10,windowSeconds:600,failClosed:true});
