@@ -22,11 +22,11 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `2213219c1c3931f79078a80afa5b0e8d804473fb` (admin workspace revision and expense form/data-integrity follow-up; recovered GitHub-app batches remain present).
-- Preview READY: `dpl_BXx2oqJwLmSfsJtKguZBzhtVUmPt` — https://my-ai-website-kb8poytcs-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36188092609` and `36188087934`, CodeQL `36188092548` and `36188087846`, Jekyll `36188092630`: success on that exact SHA.
-- Authenticated Preview Browser QA `36188087857`: success on that exact SHA. The recovered-mutation acceptance also succeeded earlier on `452ae304` (QA `36179292162`).
-- GitHub full CI regression suite at this implementation: 262 passed, 0 failed (`36188092609`); build, JavaScript syntax and diff checks passed. The recovered implementation earlier had 255 locally reported passing tests.
+- Implementation SHA: `8f535eb4b95e3fc2f63d159b4a73e2d39a51b566` (admin workspace scaling and atomic audit follow-up; earlier recovered and expense UX fixes remain present).
+- Preview READY: `dpl_4Mpn1Qk8nBhpB4KwSzYMuVgvSMxL` — https://my-ai-website-jg3ar9clc-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36190466298` and `36190461861`, CodeQL `36190466395` and `36190461857`, Jekyll `36190466304`: success on that exact SHA.
+- Authenticated Preview Browser QA `36190462050`: success on that exact SHA. Prior recovery acceptance also succeeded on `452ae304` (QA `36179292162`).
+- GitHub full CI regression suite at this implementation: 266 passed, 0 failed (`36190461861`); build, JavaScript syntax and diff checks passed. The recovered implementation earlier had 255 locally reported passing tests.
 - Earlier authenticated browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks. This report belongs to the earlier verified dashboard run, not an independently extracted report for `2213219`; the latest QA run is recorded above.
 - Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, legacy restore/delete safeguards, and 50 → 100 → 122 message batches in Conversations and Contacts.
 - Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
@@ -51,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current implementation: 262/262 tests passed in GitHub CI on `2213219`; the recovered batch also passed CI on `452ae304`. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, serialized Client Care status writes, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
+Current implementation: 266/266 tests passed in GitHub CI on `8f535eb`; the recovered batch also passed CI on `452ae304`. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, serialized Client Care status writes, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -62,7 +62,7 @@ Current implementation: 262/262 tests passed in GitHub CI on `2213219`; the reco
 
 ## Next authorized development backlog
 
-1. Continue client/admin shared-state consistency and accessibility review. The admin workspace, expense form validation and refresh-consistency batches are published; full Preview QA passed on `2213219`. Assess whether failed post-commit audit writes can leave an admin workspace change saved but reported as failed; any fix must preserve durable audit guarantees. Current regression coverage is not a claim that every dashboard action has been tested.
+1. Continue client/admin shared-state consistency and accessibility review. Admin workspace Plan/Status writes now commit with the audit event atomically, and client directory/finance totals no longer silently truncate after 250 workspaces. Review other non-atomic operational mutations and provider validation, without repeating this verified scope. Current regression coverage is not a claim that every dashboard action has been tested.
 2. Keep the normalized-conversation migration and rollback contract ready for a separately authorized production migration; the existing authenticated Preview workflow now verifies version 2 reads without changing production.
 3. Run dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios only when the required provider test configuration is available. Live activation, production changes and new charges still need owner authorization.
 
@@ -75,7 +75,7 @@ Current implementation: 262/262 tests passed in GitHub CI on `2213219`; the reco
 - Contact-drawer and Conversations rendering use 50-item/message batches. The dashboard bundle now carries message-free contact summaries; individual thread and contact histories load on demand.
 - Some release docs predate implementation: README's unlimited Pro statement corrected; environment matrix/DEPLOY contain historical isolation and QA notes; production readiness still describes the already-replaced `@vercel/kv` client. Use actual code and current evidence.
 - Older rollback deployment references are historical and differ from current main SHA. Re-verify the appropriate production rollback target before an authorized release.
-- `loadAdminWorkspaces()` currently reads at most 250 entries from `workspace:index`; before supporting more than 250 workspaces, review admin billing/overview completeness and introduce bounded aggregation or paging. Do not mistake the first 250 for the entire business.
+- Admin workspace reads now fetch all entries in concurrent batches of 40, subject to a 2,000-record fail-closed capacity boundary. Before exceeding that threshold, introduce a properly paginated/aggregated backend; do not turn 2,000 into another silent truncation.
 
 ## NOT STARTED / dedicated remaining work
 
@@ -321,3 +321,11 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Company-expense names cannot be cleared through a direct API edit by falling back to the old name during validation; empty amounts are rejected by both the form and API rather than silently becoming zero. Explicit zero-dollar expenses remain permitted.
 - Eight focused development commits since `b93c949` culminated in implementation `2213219c1c3931f79078a80afa5b0e8d804473fb`. Full GitHub CI: 262 tests passed, 0 failed (runs `36188092609`, `36188087934`). CodeQL `36188092548` / `36188087846`, Jekyll `36188092630`, authenticated Preview Browser QA `36188087857`: success. Vercel Preview `dpl_BXx2oqJwLmSfsJtKguZBzhtVUmPt`: READY.
 - The last verification applied to the implementation SHA above. This subsequent documentation-only commit is not itself claimed to have completed browser QA. Main remained `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; production was not released or changed.
+
+## Admin workspace scale and atomic audit — verified 2026-09-25
+
+- The shared admin workspace loader no longer slices the first 250 workspace IDs. It reads records in bounded 40-item concurrent batches; Admin Clients and the Finance/Overview aggregates now use the same complete loader, preventing their counts from disagreeing on account coverage. Malformed indexes and indexes exceeding 2,000 fail closed rather than reporting partial totals. A full pagination/aggregation redesign is still necessary before going beyond 2,000 workspaces; this change does not certify production-scale performance at that size.
+- Plan/Status updates now use a single revision-checked Redis script that validates and prepends the audit event before writing the updated workspace and bounded audit history together. A conflicting revision, malformed audit history or unconfirmed storage operation does not produce a successful workspace save. Other administrative mutation paths still need separate transaction audit.
+- Added executable boundary/partial-index regressions and combined audit transaction/error regressions. Initial new workspace-scale tests exposed two incorrect test assertions; both were corrected after inspecting actual CI failures, without weakening the coverage.
+- Implementation `8f535eb4b95e3fc2f63d159b4a73e2d39a51b566`: GitHub CI 266 passed, 0 failed (`36190461861`), CodeQL `36190466395` / `36190461857`, Jekyll `36190466304`, authenticated Preview Browser QA `36190462050`: success. Vercel Preview `dpl_4Mpn1Qk8nBhpB4KwSzYMuVgvSMxL`: READY. No changes were merged into main; no live records, billing or provider activation were touched.
+- This subsequent documentation-only commit is not described as receiving the earlier implementation's Preview verification. Continue from actual Git refs, not historical headings.
