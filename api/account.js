@@ -765,10 +765,13 @@ async function adminAiGuide(req,res){
   if(!question)return res.status(400).json({error:'Ask a question first.'});
   let history=Array.isArray(body.history)?body.history.slice(-8):[],historyChars=0;
   history=history.map(m=>({role:m&&m.role==='assistant'?'assistant':'user',content:String(m&&m.content||'').trim().slice(0,5000)})).filter(m=>m.content).filter(m=>{historyChars+=m.content.length;return historyChars<=18000});
-  const minute=Math.floor(Date.now()/60000),rateKey='admin:ai:rate:'+String(admin.email||'admin').toLowerCase()+':'+minute;
+  const now=Date.now(),identity=String(admin.email||'admin').toLowerCase(),rateKey='admin:ai:rate:'+identity+':'+Math.floor(now/60000),hourKey='admin:ai:hour:'+identity+':'+Math.floor(now/3600000),dayKey='admin:ai:day:'+identity+':'+Math.floor(now/86400000);
   try{
-    const count=await kv.incr(rateKey);if(count===1)await kv.expire(rateKey,120);
-    if(count>20)return res.status(429).json({error:'Core Intelligence limit reached for this minute. Try again shortly.'});
+    const [minuteCount,hourCount,dayCount]=await Promise.all([kv.incr(rateKey),kv.incr(hourKey),kv.incr(dayKey)]);
+    await Promise.all([minuteCount===1?kv.expire(rateKey,120):null,hourCount===1?kv.expire(hourKey,7200):null,dayCount===1?kv.expire(dayKey,172800):null].filter(Boolean));
+    if(minuteCount>20)return res.status(429).json({error:'Core Intelligence minute limit reached. Try again shortly.'});
+    if(hourCount>120)return res.status(429).json({error:'Core Intelligence hourly usage limit reached. Try again later.'});
+    if(dayCount>500)return res.status(429).json({error:'Core Intelligence daily usage limit reached. Try again tomorrow.'});
   }catch(err){console.error('admin ai rate limit unavailable',safeError(err));return res.status(503).json({error:'Core Intelligence is temporarily unavailable. Please try again shortly.'})}
   // The browser snapshot is useful for UI context, but never an authoritative accounting source.
   const untrusted=body.snapshot&&typeof body.snapshot==='object'&&!Array.isArray(body.snapshot)?body.snapshot:{};
