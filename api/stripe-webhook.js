@@ -31,6 +31,7 @@ function verifyStripeSignature(rawBody,sigHeader,secret){
 async function upsertWorkspace({lead,session,plan,email}){
   const userKey='user:email:'+email;
   const existingMember=await kv.get(userKey);
+  if(existingMember?.role==='admin'||existingMember?.disabled)throw new Error('Checkout email is reserved or disabled and requires manual account reconciliation');
   let workspaceId=existingMember&&existingMember.workspaceId;
   if(!workspaceId)workspaceId=crypto.randomUUID();
   const key='workspace:'+workspaceId;
