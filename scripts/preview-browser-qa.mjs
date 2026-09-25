@@ -269,15 +269,28 @@ async function runClientInteractions(page){
   await page.locator('#closeCallDrawer').click();
   report.client.interactions.push('Follow-ups action hierarchy + call detail');
 
+  await ensureView(page,'agent');
+  const savedAgentName=await page.locator('#agentName').inputValue();
+  if(await page.locator('#agentName').isEnabled())throw new Error('Receptionist field editable before Edit');
+  await page.locator('[data-agent-edit="identity"]').click();
+  await page.locator('#agentName').fill(savedAgentName+' draft');
+  await page.locator('[data-agent-cancel="identity"]').click();
+  if(await page.locator('#agentName').inputValue()!==savedAgentName)throw new Error('Receptionist cancel did not restore saved name');
+  report.client.interactions.push('receptionist explicit editing + draft cancellation');
+
   await ensureView(page,'settings');
   const originalName=await page.locator('#settingsBusinessName').inputValue();
   await page.locator('#settingsEditButton').click();
   await page.locator('#saveSettingsButton').waitFor({state:'visible'});
+  await page.locator('#settingsBusinessName').fill('');
+  await page.locator('#saveSettingsButton').click();
+  if(await page.locator('#settingsBusinessName').getAttribute('aria-invalid')!=='true')throw new Error('Settings required field not identified');
   await page.locator('#settingsBusinessName').fill(originalName+' QA TEMP');
   await page.locator('#settingsCancelButton').click();
   await page.waitForTimeout(150);
   if(await page.locator('#settingsBusinessName').inputValue()!==originalName)throw new Error('Settings cancel did not restore business name');
-  report.client.interactions.push('settings edit/cancel rollback');
+  if(await page.locator('#settingsBusinessName').getAttribute('aria-invalid')==='true')throw new Error('Settings cancel retained validation errors');
+  report.client.interactions.push('settings validation + edit/cancel rollback');
 
   await ensureView(page,'support');
   await page.locator('#supportSubject').fill('QA unsent support draft');
@@ -380,6 +393,13 @@ async function runResponsive(kind,viewport,name){
       await ensureView(page,kind==='admin'?'clients':'calls');
       await assertLayout(page,kind+'-'+name+'-secondary',{allowHorizontalOverflow:false});
       await shot(page,kind+'-'+name+'-'+(kind==='admin'?'clients':'calls'));
+    }
+    if(kind==='client'){
+      for(const view of ['conversations','agent','settings']){
+        await ensureView(page,view);
+        await assertLayout(page,kind+'-'+name+'-'+view);
+        await shot(page,kind+'-'+name+'-'+view);
+      }
     }
     report[kind].responsive.push({name,...viewport});
   }finally{

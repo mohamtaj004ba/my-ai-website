@@ -31,33 +31,34 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current local Conversations changes: 163/163 tests pass, including executable renderer regressions with 125 threads, filter reset, message-based recency, empty-result status cleanup, exact Active matching, and malformed message-array handling.
+Current local Conversations changes: 165/165 tests pass, including executable renderer regressions with 125 threads, filter reset, message-based recency, empty-result status cleanup, exact Active matching, and malformed message-array handling.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
 - Existing customer areas: Overview, Calls, Contacts, Conversations, Follow-ups/Leads, AI Receptionist, routing, locations, automations, analytics, integrations, billing, settings, support. Entitlements and runtime flags determine visibility.
 - Existing admin areas include client operations, calls, agents, Gmail/website inbox, prospects, analytics, revenue/usage, provisioning, phone numbers, support, health, platform settings.
 - Existing auth/tenant isolation, session revocation, read-only admin client view, agreements, export/redaction, audit and recovery safeguards have regression coverage. Full security assurance is not established by automated tests alone.
-- First Conversations scaling pass: 50-thread batches, counts, activity sorting, Closed filter, clear filters, accessible selected states, bounded responsive list, long-message wrapping, stale empty-result cleanup. Authenticated Preview QA pending for this new commit.
+- First Conversations scaling pass: 50-thread batches, counts, activity sorting, Closed filter, clear filters, accessible selected states, bounded responsive list, long-message wrapping, stale empty-result cleanup. Preview READY for Conversations implementation `871970346cd44cca7544f3d6163c134538f6c683` (deployment `dpl_G6Deu1YVnjFj6KWiNrQc29ANZ3xs`). Full authenticated QA for the combined Conversations/forms pass is pending.
 
 ## IN PROGRESS
 
 Conversations at scale. Extend existing interface, not a replacement. Existing Preview QA was expanded to exercise batching, sorting, empty state, reset and contact navigation.
 
-Next sequence: finish Preview verification, then inspect AI Receptionist saved/edit states, then Settings/forms. Preserve existing architecture, safeguards, styling direction, and plan entitlements.
+AI Receptionist/Settings first inspection completed: section editing, rollback, refresh draft protection already existed. Added persistent receptionist save/error feedback, backend-aligned field limits, configured agent name on test-call action, and Settings cancellation validation cleanup. Added success/failure save tests and authenticated edit/cancel, validation recovery, and responsive checks for all three areas. Next: finish combined Preview verification and inspect screenshot evidence. Preserve existing architecture, safeguards, styling direction, and plan entitlements.
 
 ## Known limitations and remaining work
 
 - Conversations currently reads a tenant-scoped KV array via `requireFeature(...,'unifiedInbox')`; full data still transfers to the client. Rendering batches are not server pagination.
 - Client Conversations is a history viewer. No client reply composer or shared unread state was found. Do not invent working messaging or change SMS launch scope to expose it.
 - Conversation records link to derived contact history; admin Gmail/website Inbox is a separate data source. A shared client/admin message-delivery pipeline has not been verified.
+- Live voice gap confirmed in code: `aiAnsweringControl` updates KV settings/phone metadata and audit only; it does not contact a telephony provider. Existing answering-status labels must not be treated as evidence of real call routing. Provider-backed pause/resume and truthful status presentation need dedicated follow-up before launch.
 - Thread rendering remains unbounded within an individual message history; further high-volume thread work may be needed.
 - Some release docs predate implementation: README's unlimited Pro statement corrected; environment matrix/DEPLOY contain historical isolation and QA notes; production readiness still describes the already-replaced `@vercel/kv` client. Use actual code and current evidence.
 - Older rollback deployment references are historical and differ from current main SHA. Re-verify the appropriate production rollback target before an authorized release.
 
 ## NOT STARTED / dedicated remaining work
 
-Within this continuation session: AI Receptionist and Settings focused review have not started.
+Further AI Receptionist and Settings review remains; this pass addresses save feedback, field limits and validation recovery, not provider activation.
 
 Roadmap: production voice lifecycle; provider-complete disposable onboarding; Stripe test-mode subscription/payment/recovery scenarios; provider restore drill; logging/privacy and release review. Check actual implementation before marking any historical roadmap item not started.
 

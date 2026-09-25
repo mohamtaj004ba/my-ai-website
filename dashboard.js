@@ -1071,6 +1071,7 @@ function setAgentEditing(section,{restore=false}={}){
   if(next&&!agentEditing&&agentData)agentEditSnapshot=JSON.parse(JSON.stringify(agentData));
   if(restore&&agentEditSnapshot){agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent();return}
   agentEditing=next||false;const active=activeAgentSection();
+  const formStatus=document.getElementById('agentFormStatus');if(formStatus){formStatus.textContent=active?'Editing draft. Save to keep your changes.':'';formStatus.className='form-status-line'}
   agentControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!(active&&AGENT_SECTION_FIELDS[active]?.includes(id))});
   document.querySelectorAll('[data-agent-section-card]').forEach(card=>card.dataset.agentEditing=card.dataset.agentSectionCard===active?'true':'false');
   document.querySelectorAll('[data-agent-edit]').forEach(btn=>{btn.hidden=!!active;btn.disabled=!!active});
@@ -1086,14 +1087,14 @@ function renderAgent(){
   set('agentOpening',agentData.openingMessage);set('agentServiceArea',agentData.serviceArea);
   set('agentHours',agentData.businessHours);set('agentTransfer',agentData.transferNumber);set('agentEmergency',agentData.emergencyInstructions);
   set('agentHandlingInstructions',agentData.handlingInstructions);
-  const test=document.getElementById('agentTestCall'),digits=String(phoneRoutingData?.number||'').replace(/\D/g,'');if(test){test.hidden=!digits;if(digits)test.setAttribute('href','tel:'+digits);else test.removeAttribute('href');test.classList.toggle('disabled-link',!digits);test.setAttribute('aria-disabled',digits?'false':'true');test.tabIndex=digits?0:-1;test.title=digits?'Call '+phoneRoutingData.number+' to test '+(agentData.name||'Maya'):''}
+  const test=document.getElementById('agentTestCall'),digits=String(phoneRoutingData?.number||'').replace(/\D/g,'');if(test){test.textContent='Call '+(agentData.name||'receptionist');test.hidden=!digits;if(digits)test.setAttribute('href','tel:'+digits);else test.removeAttribute('href');test.classList.toggle('disabled-link',!digits);test.setAttribute('aria-disabled',digits?'false':'true');test.tabIndex=digits?0:-1;test.title=digits?'Call '+phoneRoutingData.number+' to test '+(agentData.name||'Maya'):''}
   renderQuestions();setAgentEditing(activeAgentSection());
 }
 function renderQuestions(){
   const wrap=document.getElementById('qualificationQuestions');if(!wrap||!agentData)return;
   const qs=Array.isArray(agentData.qualificationQuestions)?agentData.qualificationQuestions:[],editing=activeAgentSection()==='qualification';
   wrap.innerHTML=editing
-    ?qs.map((q,i)=>'<div class="question-row editing"><input data-question-index="'+i+'" value="'+esc(q)+'" aria-label="Qualification question '+(i+1)+'"><button data-remove-question="'+i+'" aria-label="Remove question '+(i+1)+'">×</button></div>').join('')
+    ?qs.map((q,i)=>'<div class="question-row editing"><input maxlength="240" data-question-index="'+i+'" value="'+esc(q)+'" aria-label="Qualification question '+(i+1)+'"><button data-remove-question="'+i+'" aria-label="Remove question '+(i+1)+'">×</button></div>').join('')
     :qs.map((q,i)=>'<div class="question-row locked"><span class="question-number">'+String(i+1).padStart(2,'0')+'</span><p>'+esc(q||'Untitled question')+'</p></div>').join('');
   if(editing){wrap.querySelectorAll('[data-question-index]').forEach(input=>input.addEventListener('input',()=>{agentData.qualificationQuestions[Number(input.dataset.questionIndex)]=input.value}));wrap.querySelectorAll('[data-remove-question]').forEach(btn=>btn.addEventListener('click',()=>{agentData.qualificationQuestions.splice(Number(btn.dataset.removeQuestion),1);renderQuestions()}))}
 }
@@ -1102,11 +1103,11 @@ function collectAgent(){
   return {name:val('agentName'),role:val('agentRole'),tone:val('agentTone'),openingMessage:val('agentOpening'),serviceArea:val('agentServiceArea'),businessHours:val('agentHours'),transferNumber:val('agentTransfer'),emergencyInstructions:val('agentEmergency'),handlingInstructions:val('agentHandlingInstructions'),qualificationQuestions:[...(agentData?.qualificationQuestions||[])]};
 }
 async function saveAgent(section=activeAgentSection()){
-  if(!section)return;const next=collectAgent(),btn=document.querySelector('[data-agent-save="'+CSS.escape(section)+'"]');if(btn){btn.disabled=true;btn.textContent='Saving…'}
+  if(!section)return;const formStatus=document.getElementById('agentFormStatus');if(formStatus){formStatus.textContent='Saving receptionist settings…';formStatus.className='form-status-line'}const next=collectAgent(),btn=document.querySelector('[data-agent-save="'+CSS.escape(section)+'"]');if(btn){btn.disabled=true;btn.textContent='Saving…'}
   try{
     if(!demoMode){const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save the AI receptionist.');agentData=data.agent||next;if(data.routing)phoneRoutingData=data.routing}else agentData=next;
-    agentEditSnapshot=null;agentEditing=false;renderAgent();const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
-  }catch(err){alert(err.message||'Could not save the AI receptionist.')}
+    agentEditSnapshot=null;agentEditing=false;renderAgent();if(formStatus){formStatus.textContent='Receptionist settings saved.';formStatus.className='form-status-line success'}const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
+  }catch(err){if(formStatus){formStatus.textContent=(err.message||'Could not save the AI receptionist.')+' Your draft is still open. Try saving again.';formStatus.className='form-status-line error'}}
   finally{if(btn){btn.disabled=false;btn.textContent='Save'}}
 }
 
@@ -1262,6 +1263,7 @@ function renderBusinessLogo(){
 }
 function setSettingsEditing(editing,{restore=false}={}){
   settingsEditing=!!editing;if(restore)renderSettings();
+  if(!settingsEditing){settingsControlIds().forEach(id=>settingsFieldError(id,''));const status=document.getElementById('settingsFormStatus');if(status){status.textContent='';status.className='form-status-line'}}
   settingsControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!settingsEditing});
   const sms=document.getElementById('settingsSmsAlerts');if(sms)sms.disabled=true;
   const edit=document.getElementById('settingsEditButton'),cancel=document.getElementById('settingsCancelButton'),save=document.getElementById('saveSettingsButton'),logo=document.getElementById('businessLogoButton');
