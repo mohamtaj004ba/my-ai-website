@@ -15,7 +15,7 @@ async function runBackend({expectedUpdatedAt=10,transaction=true,now}={}){
   const context=vm.createContext({
     requireAdmin:async()=>({email:'admin@example.com'}),
     kv:{get:async()=>workspace,set:()=>assert.fail('Workspace updates must use the atomic transaction')},
-    compareAndAudit:async(_,update,auditKey,event)=>{updates=[update];assert.equal(auditKey,'audit:client-1');assert.equal(event.action,'workspace_update');assert.equal(event.after,update.after);if(transaction==='error')throw Error('network');if(transaction)audits++;return transaction},
+    compareAndAudit:async(_,update,auditKey,event)=>{updates=[update];assert.equal(auditKey,'audit:client-1');assert.equal(event.action,'workspace_update');assert.equal(event.after,update.after);if(transaction==='error'||transaction==='audit-malformed')throw Error(transaction==='audit-malformed'?'Audit history is malformed':'network');if(transaction)audits++;return transaction},
     crypto:{randomUUID:()=> 'audit-1'},safeError:()=>'',console:{error(){}},Date:now===undefined?Date:{now:()=>now},
     req:{body:{id:'client-1',plan:'Growth',status:'suspended',expectedUpdatedAt}},
     res:{status(value){status=value;return this},json(value){result=value}}
@@ -44,6 +44,7 @@ test('stale, concurrent and ambiguous admin workspace saves fail closed',async()
   const stale=await runBackend({expectedUpdatedAt:9});assert.equal(stale.status,409);assert.equal(stale.updates,undefined);assert.equal(stale.audits,0);
   const conflict=await runBackend({transaction:false});assert.equal(conflict.status,409);assert.equal(conflict.audits,0);
   const ambiguous=await runBackend({transaction:'error'});assert.equal(ambiguous.status,503);assert.equal(ambiguous.audits,0);
+  const malformed=await runBackend({transaction:'audit-malformed'});assert.equal(malformed.status,503);assert.equal(malformed.audits,0);assert.match(malformed.result.error,/audit history/);
 });
 
 function frontendFixture(){
