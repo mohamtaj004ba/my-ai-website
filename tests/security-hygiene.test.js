@@ -20,3 +20,10 @@ test('demo reveal requires environment secret instead of a hard-coded source fal
     assert.doesNotMatch(src,/DEMO_TOKEN_SECRET\s*\|\|\s*['"][^'"]+['"]/);
   }
 });
+
+test('site analytics identifiers avoid insecure randomness',()=>{
+  const src=fs.readFileSync(path.join(root,'site.js'),'utf8');
+  assert.doesNotMatch(src,/Math\.random\s*\(/);
+  assert.match(src,/crypto\?\.randomUUID|crypto\.randomUUID/);
+  assert.match(src,/getRandomValues/);
+});
