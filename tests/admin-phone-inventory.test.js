@@ -24,3 +24,14 @@ test('phone inventory renders batches and searches formatted phone numbers',()=>
   ctx.phoneVisibleLimit=100;vm.runInContext('renderPhones()',ctx);assert.equal(node('phoneListCount').textContent,'Showing 100 of 125 numbers');
   node('phoneSearch').value='5095550124';vm.runInContext('renderPhones()',ctx);assert.equal(node('phoneListCount').textContent,'Showing 1 of 1 numbers matching filters');assert.equal(ctx.phoneVisibleLimit,50);
 });
+test('successful phone save updates local revision before allowing the modal to reopen',async()=>{
+  const js=fs.readFileSync('dashboard.js','utf8'),nodes=new Map();
+  for(const [id,value] of Object.entries({phoneNumberInput:'5095550100',phoneLabelInput:'New label',phoneProviderInput:'Vapi',phoneWorkspaceInput:'tenant',phoneTransferInput:'',phoneForwardingInput:'',phoneAfterHoursInput:'ai'}))nodes.set(id,{value});
+  nodes.set('phoneModal',{dataset:{editId:'p',expectedUpdatedAt:'10'}});
+  const record={id:'p',label:'New label',updatedAt:11};let closedWith,finishRefresh;
+  const ctx=vm.createContext({phoneSaving:false,adminPhoneData:[{id:'p',label:'Old label',updatedAt:10}],document:{getElementById:id=>nodes.get(id)},validUsPhone:()=>true,settingsFieldError:()=>{},normalizePhone:x=>x,lockFormControls:()=>()=>{},fetch:async()=>({ok:true,json:async()=>({number:record})}),renderPhones:()=>{},closePhoneModal:()=>{closedWith={...ctx.adminPhoneData[0]}},refreshAdminView:()=>new Promise(resolve=>finishRefresh=resolve)});
+  vm.runInContext(js.slice(js.indexOf('async function savePhone(){'),js.indexOf("document.getElementById('addPhoneButton')")),ctx);
+  const pending=vm.runInContext('savePhone()',ctx);await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(closedWith.label,'New label');assert.equal(closedWith.updatedAt,11);assert.equal(ctx.phoneSaving,false);
+  finishRefresh();await pending;
+});

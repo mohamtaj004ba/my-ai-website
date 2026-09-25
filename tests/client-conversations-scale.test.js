@@ -5,8 +5,8 @@ const vm=require('node:vm');
 const source=fs.readFileSync(require('node:path').join(__dirname,'..','dashboard.js'),'utf8');
 function fixture(records){
   const nodes=new Map();
-  const node=id=>{if(!nodes.has(id))nodes.set(id,{dataset:{},value:'',hidden:false,textContent:'',innerHTML:'',scrollTop:0,querySelectorAll:()=>[]});return nodes.get(id)};
-  const ctx=vm.createContext({conversationsData:records,conversationFilter:'all',conversationVisibleLimit:50,conversationLastFilterSignature:'',activeConversationId:null,has:()=>true,esc:v=>String(v??'').replace(/</g,'&lt;'),recordTime:x=>Number(x.createdAt||0),contactKey:x=>x.id,document:{getElementById:node,querySelectorAll:()=>[]}});
+  const node=id=>{if(!nodes.has(id))nodes.set(id,{dataset:{},value:'',hidden:false,textContent:'',innerHTML:'',scrollTop:0,scrollHeight:1000,addEventListener:()=>{},querySelectorAll:()=>[]});return nodes.get(id)};
+  const ctx=vm.createContext({conversationsData:records,conversationFilter:'all',conversationVisibleLimit:50,conversationMessageLimit:50,conversationLastFilterSignature:'',activeConversationId:null,has:()=>true,esc:v=>String(v??'').replace(/</g,'&lt;'),recordTime:x=>Number(x.createdAt||0),contactKey:x=>x.id,document:{getElementById:node,querySelectorAll:()=>[]}});
   vm.runInContext(source.slice(source.indexOf('function conversationActivity('),source.indexOf('function contactKey(')),ctx);
   return {ctx,node,render:()=>vm.runInContext('renderConversations()',ctx)};
 }
@@ -42,4 +42,14 @@ test('Active excludes Inactive; malformed message arrays do not crash search',()
   node('conversationSearch').value='a';render();
   node('conversationSearch').value='';ctx.conversationFilter='active';render();
   assert.equal(ctx.activeConversationId,'2');assert.equal(node('conversationCount').textContent,'Showing 1 of 1 conversations matching filters');
+});
+
+test('large message histories show recent batches and reset on a different thread',()=>{
+  const {ctx,node,render}=fixture([{id:'long',createdAt:100,messages:Array.from({length:1000},(_,i)=>({text:'Message '+i,at:i+1}))},{id:'short',createdAt:1,messages:[{text:'Short'}]}]);
+  render();let html=node('messageStream').innerHTML;
+  assert.equal((html.match(/class="message /g)||[]).length,50);assert.match(html,/Showing 50 of 1000 messages/);assert.match(html,/Message 999/);assert.doesNotMatch(html,/Message 949</);
+  node('messageStream').scrollTop=100;
+  vm.runInContext("openConversation('long',{loadEarlier:true})",ctx);
+  assert.equal((node('messageStream').innerHTML.match(/class="message /g)||[]).length,100);assert.equal(node('messageStream').scrollTop,100);
+  vm.runInContext("openConversation('short')",ctx);assert.equal(ctx.conversationMessageLimit,50);assert.doesNotMatch(node('messageStream').innerHTML,/Load earlier messages/);
 });

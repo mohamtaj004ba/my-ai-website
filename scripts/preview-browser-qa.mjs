@@ -252,6 +252,15 @@ async function runClientInteractions(page){
   await ensureView(page,'conversations');
   await page.locator('#conversationApp').waitFor({state:'visible',timeout:5000});
   if(await page.locator('#conversationThreads .thread-item').count()<1)throw new Error('Conversations navigation opened without seeded threads');
+  if(await page.locator('#messageStream .message').count()!==50)throw new Error('Long conversation did not render its latest message batch');
+  await page.locator('#loadEarlierMessages').click();
+  if(await page.locator('#messageStream .message').count()!==100)throw new Error('Earlier conversation messages did not load');
+  await page.locator('#loadEarlierMessages').click();
+  if(await page.locator('#messageStream .message').count()!==122||await page.locator('#loadEarlierMessages').count())throw new Error('Final message batch did not expose complete seeded history');
+  await page.locator('#conversationThreads .thread-item').nth(1).click();
+  await page.locator('#conversationThreads .thread-item').first().click();
+  if(await page.locator('#messageStream .message').count()!==50)throw new Error('Message batch did not reset when changing threads');
+  report.client.interactions.push('long conversation history progressive loading');
   const conversationTotal=report.seed.conversations;
   const initialThreads=await page.locator('#conversationThreads .thread-item').count();
   if(initialThreads!==Math.min(50,conversationTotal))throw new Error('Conversations initial page size is incorrect');

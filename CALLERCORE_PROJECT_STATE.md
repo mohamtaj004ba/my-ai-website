@@ -73,7 +73,7 @@ AI Receptionist/Settings first inspection completed: section editing, rollback, 
 - Client Conversations is a history viewer. No client reply composer or shared unread state was found. Do not invent working messaging or change SMS launch scope to expose it.
 - Conversation records link to derived contact history; admin Gmail/website Inbox is a separate data source. A shared client/admin message-delivery pipeline has not been verified.
 - Live voice remains unavailable: shared readiness now reports awaiting activation; fake pause/resume is blocked. A real provider adapter and verification remain required before activation.
-- Thread rendering remains unbounded within an individual message history; further high-volume thread work may be needed.
+- Conversations thread rendering now uses 50-message batches; contact-drawer message sessions and server data transfer still warrant further scale work.
 - Some release docs predate implementation: README's unlimited Pro statement corrected; environment matrix/DEPLOY contain historical isolation and QA notes; production readiness still describes the already-replaced `@vercel/kv` client. Use actual code and current evidence.
 - Older rollback deployment references are historical and differ from current main SHA. Re-verify the appropriate production rollback target before an authorized release.
 
@@ -140,3 +140,10 @@ Only commit/push routine changes to the authorized development branch. No merge 
 - Phone modal inputs and dismissal/navigation are locked during save; duplicate submissions are ignored. Preview QA now checks this pending state.
 - Local verification: 188 tests passed; expanded tests cover reassignment snapshots, metadata preservation, conflict/failure handling and read/write revision consistency. Preview verification pending feature push.
 - Legacy phone deletion still uses its existing rollback path and is not exercised against real records. It remains a dedicated follow-up, along with other older admin configuration writers.
+
+## Conversation message scale and immediate admin save consistency
+
+- Preview QA `36113937135` on `68be8f8b5262726d40677fe64ed4766bc9fd54e0` verified all client persisted-save and pending-lock checks with no API/page errors. It exposed an admin UI race: the phone modal closed before inventory refresh finished, allowing an immediate reopen with stale data. The save now applies the server-returned record/revision locally before closing; an executable delayed-refresh regression covers it.
+- Long Conversations threads now initially render the latest 50 messages, provide earlier-message batches/counts, reset limits when selecting another thread, and preserve scroll position while loading earlier history. Full history still transfers from the API; this is rendering pagination.
+- Added a 1,000-message unit fixture and a 122-message fictional Preview seed thread. Authenticated QA checks 50 → 100 → 122 messages and selection reset.
+- Local suite: 190 passed; syntax/diff checks passed. Latest changes await feature Preview verification.
