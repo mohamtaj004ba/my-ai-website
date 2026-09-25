@@ -99,14 +99,24 @@ module.exports=async function handler(req,res){
     if(!workspaceId){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,unmapped:true})}
     const key='workspace:'+workspaceId,ws=await kv.get(key);
     if(!ws){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,workspace_missing:true})}
+    const eventCreatedAt=Number(event.created||0)*1000,previousEventAt=Number(ws.stripeBilling?.lastEventCreatedAt||0);
+    if(eventCreatedAt&&previousEventAt&&eventCreatedAt<previousEventAt){
+      if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+      return res.status(200).json({received:true,stale:true});
+    }
+    const knownSubscription=String(ws.stripeSubscriptionId||''),incomingSubscription=String(subscriptionId||'');
+    if(knownSubscription&&incomingSubscription&&knownSubscription!==incomingSubscription&&event.type!=='customer.subscription.created'){
+      if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+      return res.status(200).json({received:true,subscription_mismatch:true});
+    }
 
     let status=ws.subscriptionStatus||'active';
     if(event.type==='customer.subscription.deleted')status='canceled';
     else if(event.type==='invoice.payment_failed')status='past_due';
-    else if(event.type==='invoice.paid')status='active';
+    else if(event.type==='invoice.paid')status=status==='canceled'?'canceled':'active';
     else if(event.type.startsWith('customer.subscription.'))status=obj.status||status;
 
-    const billing={...(ws.stripeBilling||{}),customerId:customerId||ws.stripeCustomerId||null,subscriptionId:subscriptionId||ws.stripeSubscriptionId||null,lastEvent:event.type,lastEventAt:Date.now()};
+    const billing={...(ws.stripeBilling||{}),customerId:customerId||ws.stripeCustomerId||null,subscriptionId:subscriptionId||ws.stripeSubscriptionId||null,lastEvent:event.type,lastEventAt:Date.now(),lastEventCreatedAt:eventCreatedAt||previousEventAt||0};
     if(event.type.startsWith('customer.subscription.')){
       billing.currentPeriodEnd=obj.current_period_end?Number(obj.current_period_end)*1000:(billing.currentPeriodEnd||null);
       billing.cancelAtPeriodEnd=!!obj.cancel_at_period_end;
@@ -120,7 +130,7 @@ module.exports=async function handler(req,res){
       billing.lastInvoiceUrl=obj.hosted_invoice_url||billing.lastInvoiceUrl||'';
     }
     const next={...ws,subscriptionStatus:status,stripeBilling:billing,updatedAt:Date.now()};
-    if(subscriptionId&&!next.stripeSubscriptionId)next.stripeSubscriptionId=subscriptionId;
+    if(subscriptionId&&(event.type==='customer.subscription.created'||!next.stripeSubscriptionId))next.stripeSubscriptionId=subscriptionId;
     if(billing.detectedPlan&&billing.detectedPlan!==ws.plan)next.plan=billing.detectedPlan;
     await kv.set(key,next);
     if(subscriptionId)await kv.set('stripe:subscription:'+subscriptionId,workspaceId);
