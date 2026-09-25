@@ -82,3 +82,11 @@ test('closed admin client drawer does not widen mobile viewport',()=>{
   assert.match(css,/#adminClientDrawer\{right:0;transform:translateX\(calc\(100% \+ 24px\)\);visibility:hidden;pointer-events:none\}/);
   assert.match(css,/#adminClientDrawer\.open\{right:0;transform:translateX\(0\);visibility:visible;pointer-events:auto\}/);
 });
+
+
+test('closed admin side panels are removed from scroll geometry',()=>{
+  const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
+  assert.match(css,/#adminClientDrawer:not\(\.open\),\s*\.onboarding-detail-drawer:not\(\.open\),\s*\.admin-ai-panel:not\(\.open\)\{display:none\}/);
+  assert.match(css,/#adminClientDrawer\.open\{display:block\}/);
+  assert.match(css,/\.onboarding-detail-drawer\.open,\s*\.admin-ai-panel\.open\{display:grid\}/);
+});
