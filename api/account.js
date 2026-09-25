@@ -782,8 +782,10 @@ async function replySupportTicket(req,res){
   const key='support:'+id,t=await kv.get(key);if(!t||t.workspaceId!==s.workspaceId)return res.status(404).json({error:'Support request not found'});
   const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||s.email,body:t.message||'',at:t.createdAt||now}];
   messages.push({id:crypto.randomUUID(),direction:'client',from:s.email,body:message,at:now});
-  const next={...t,messages:messages.slice(-100),status:t.status==='resolved'?'open':t.status,updatedAt:now,updatedBy:s.email};
-  await kv.set(key,next);
+  const next={...t,messages:messages.slice(-100),status:t.status==='resolved'?'open':t.status,updatedAt:Math.max(now,Number(t.updatedAt||t.createdAt||0)+1),updatedBy:s.email};
+  try{
+    if(!await compareAndSetConfig(kv,[{key,before:t,after:next}]))return res.status(409).json({error:'This support conversation changed while you were replying. Refresh it and resend your preserved draft.'});
+  }catch(err){console.error('support client reply save failed',safeError(err));return res.status(503).json({error:'Could not confirm that your reply was saved. Refresh the conversation before retrying.'})}
   const platform=await kv.get('platform:settings')||{},to=platform.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
   if(to){try{await sendMail({to,subject:'CallerCore support reply · '+t.subject,text:'Workspace: '+(t.workspaceName||'Workspace')+'\nFrom: '+s.email+'\n\n'+message})}catch(err){console.error('support reply email failed',safeError(err))}}
   return res.status(200).json({ok:true,ticket:next});
@@ -808,8 +810,11 @@ async function adminSupportReply(req,res){
   const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
   const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||now}];
   messages.push({id:crypto.randomUUID(),direction:'support',from:admin.email,body:message,at:now});
-  const next={...t,messages:messages.slice(-100),status:t.status==='open'?'in_progress':t.status,updatedAt:now,updatedBy:admin.email};
-  await kv.set(key,next);
+  const next={...t,messages:messages.slice(-100),status:t.status==='open'?'in_progress':t.status,updatedAt:Math.max(now,Number(t.updatedAt||t.createdAt||0)+1),updatedBy:admin.email};
+  const audit={id:crypto.randomUUID(),workspaceId:t.workspaceId,actorEmail:admin.email,actorRole:'admin',action:'support_reply',section:'support',before:{status:t.status||'open',updatedAt:t.updatedAt||0},after:{status:next.status,updatedAt:next.updatedAt},meta:{ticketId:id},at:Date.now()};
+  try{
+    if(!await compareAndAudit(kv,{key,before:t,after:next},'audit:'+t.workspaceId,audit))return res.status(409).json({error:'This support conversation changed while you were replying. Refresh it and resend your preserved draft.'});
+  }catch(err){console.error('admin support reply save failed',safeError(err));return res.status(503).json({error:'Could not confirm the support reply and audit entry were saved together. Refresh before retrying.'})}
   if(t.email){
     const clientSettings=await kv.get('settings:'+t.workspaceId)||{};
     if(clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false){
@@ -830,7 +835,7 @@ async function adminSupportReply(req,res){
       }catch(err){console.error('support client reply email failed',safeError(err))}
     }
   }
-  await appendAudit(t.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'support_reply',section:'support',meta:{ticketId:id}});
+
   return res.status(200).json({ok:true,ticket:next});
 }
 
