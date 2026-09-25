@@ -18,8 +18,10 @@ body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0b0d10;
 <label>Plan</label><select id="plan"><option>Growth</option><option>Starter</option><option selected>Pro</option></select>
 <button id="create">1. Create disposable workspace</button>
 <button class="secondary" id="seed">2. Load realistic 60-day business data</button>
-<button class="secondary" id="promote">3. Promote test user to admin (optional)</button>
-<button class="secondary" id="login">4. Send magic login link</button>
+<button class="secondary" id="clientLogin">3. Open client dashboard (QA session)</button>
+<button class="secondary" id="adminLogin">4. Open admin dashboard (QA session)</button>
+<button class="secondary" id="promote">5. Promote test user to admin (legacy)</button>
+<button class="secondary" id="login">6. Send magic login link (fallback)</button>
 <pre id="out">Ready.</pre>
 <script src="/preview-e2e-client.js" defer></script></main></body></html>`);
 };
