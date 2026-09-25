@@ -1058,7 +1058,7 @@ function collectAgent(){
 async function saveAgent(section=activeAgentSection()){
   if(!section)return;const next=collectAgent(),btn=document.querySelector('[data-agent-save="'+CSS.escape(section)+'"]');if(btn){btn.disabled=true;btn.textContent='Saving…'}
   try{
-    if(!demoMode){const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save the AI receptionist.');agentData=data.agent||next}else agentData=next;
+    if(!demoMode){const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save the AI receptionist.');agentData=data.agent||next;if(data.routing)phoneRoutingData=data.routing}else agentData=next;
     agentEditSnapshot=null;agentEditing=false;renderAgent();const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
   }catch(err){alert(err.message||'Could not save the AI receptionist.')}
   finally{if(btn){btn.disabled=false;btn.textContent='Save'}}
