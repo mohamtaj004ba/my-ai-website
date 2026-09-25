@@ -786,13 +786,16 @@ async function adminAiGuide(req,res){
     pastDueClients:livePastDue.map(w=>({name:w.name||'Unnamed workspace',plan:w.plan||'Unknown',monthlySubscriptionPrice:Number(planPrices[w.plan]||0),subscriptionStatus:w.subscriptionStatus})),
     coveredWorkspaces:liveWorkspaces.length
   };
+  // Keep authoritative values first so large UI snapshots cannot truncate them.
+  const uiSnapshot={...untrusted};
+  delete uiSnapshot.financialGroundTruth;delete uiSnapshot.finance;delete uiSnapshot.computed;
   const snapshot={
-    ...untrusted,
     financialGroundTruth:verifiedFinance,
-    finance:{...untrusted.finance,mrr:verifiedFinance.mrr,recurringExpenses:verifiedFinance.recurringExpenses,netRecurring:verifiedFinance.netRecurring},
-    computed:{...untrusted.computed,collectionsAtRisk:verifiedFinance.monthlySubscriptionExposure,pastDueClients:verifiedFinance.pastDueCount}
+    finance:{mrr:verifiedFinance.mrr,recurringExpenses:verifiedFinance.recurringExpenses,netRecurring:verifiedFinance.netRecurring,history:Array.isArray(untrusted.finance?.history)?untrusted.finance.history.slice(-12):[]},
+    computed:{...untrusted.computed,collectionsAtRisk:verifiedFinance.monthlySubscriptionExposure,pastDueClients:verifiedFinance.pastDueCount},
+    uiSnapshot
   };
-  const snapshotText=JSON.stringify(snapshot).slice(0,70000);
+  const serialized=JSON.stringify(snapshot),snapshotText=serialized.length>70000?serialized.slice(0,70000)+'\n[UI snapshot truncated; financialGroundTruth above remains complete]':serialized;
   const instructions=[
     'You are Core Intelligence, the internal operations copilot for CallerCore, an AI receptionist SaaS business.',
     'Answer only from the provided CallerCore admin snapshot plus general business reasoning. Never invent account facts, totals, events, or customer activity.',
