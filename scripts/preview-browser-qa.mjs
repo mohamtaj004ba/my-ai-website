@@ -270,7 +270,7 @@ async function runResponsive(kind,viewport,name){
   await shot(page,kind+'-'+name+'-overview');
 
   const menu=page.locator('.mobile-menu');
-  if(viewport.width<=820){
+  if(viewport.width<=760){
     await menu.waitFor({state:'visible',timeout:5000});
     await menu.click();
     if(!(await page.locator('.sidebar').evaluate(el=>el.classList.contains('open'))))throw new Error(kind+' '+name+' mobile menu did not open sidebar');
