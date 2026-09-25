@@ -322,7 +322,7 @@ async function adminFinance(req,res){
   }
   const snapshot={month:currentMonth,revenue:mrr,expenses:Math.round(operatingExpenses*100)/100,net:Math.round((mrr-operatingExpenses)*100)/100,activeClients:billable.length,recordedAt:now,source:'snapshot'};
   let nextHistory;
-  try{nextHistory=await recordFinanceSnapshot(kv,storedHistory, snapshot)}
+  try{nextHistory=await recordFinanceSnapshot(kv,storedHistory,snapshot,{seedHistory:history})}
   catch(err){console.error('admin finance history save failed',safeError(err));return res.status(503).json({error:'Finance history could not be reconciled. Refresh to retry.'})}
   return res.status(200).json({finance:{mrr,recurringExpenses:Math.round(recurringExpenses*100)/100,currentMonthExpenses:Math.round(operatingExpenses*100)/100,netRecurring:Math.round(netRecurring*100)/100,margin,expenses:expenses.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))),history:nextHistory}});
 }
