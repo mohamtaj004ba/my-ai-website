@@ -241,7 +241,14 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Publication validates unique IDs, writes detail records in bounded batches, publishes the index last, and removes obsolete version 2 details only after the replacement index is readable. A failed detail write cannot replace the active index.
 - The isolated Preview seed now retains the legacy array and also publishes version 2, exercising the new path without changing production. No production migration route or dashboard action was added.
 - Workspace export reconstructs complete normalized histories, while permanent purge and Preview stale-fixture cleanup remove version 2 indexes/details as well as legacy storage.
-- The migration and rollback contract is documented in `docs/CONVERSATION_STORAGE_MIGRATION.md`. Local verification: 236 tests passed; JavaScript syntax passed. Full build, push gates, Preview deployment and authenticated browser QA remain to be recorded for this implementation.
+- The migration and rollback contract is documented in `docs/CONVERSATION_STORAGE_MIGRATION.md`. Implementation `2b531b85b719f6637a4386d9b457aa9a4d1a6b3e`: 236 local tests and the full build passed; CallerCore CI `36132502834` and `36132496608`, CodeQL `36132502896` and `36132496557`, Jekyll `36132502867`, and authenticated Preview Browser QA `36132496626` passed. Preview `dpl_GQFtvtQAFTATSdMSeBd6XmwXq6JM` is READY at https://my-ai-website-on9kecnnk-mohamtaj004bas-projects.vercel.app. Production remained unchanged.
+
+## Shared modal accessibility consistency
+
+- Client and admin dashboard modals now share one accessibility layer that applies named `dialog` semantics, `aria-modal`, and a programmatic fallback focus target without duplicating attributes across every modal template.
+- Opening a modal moves focus inside when the opener did not already choose a field. Tab and Shift+Tab wrap within the active modal, Escape uses the modal's guarded close control, and closing restores focus to a still-connected trigger.
+- Added behavioral regressions for dialog naming, focus entry/return, keyboard containment and Escape. Authenticated Preview QA now verifies the real admin phone editor semantics, focus wrapping and trigger restoration at laptop, tablet and mobile widths.
+- Local verification: 239 tests passed; shared script, Preview QA script and diff checks passed. Full build, push gates and Preview browser verification remain to be recorded for this accessibility implementation.
 
 ## Admin client drawer request consistency
 

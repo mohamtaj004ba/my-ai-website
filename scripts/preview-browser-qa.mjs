@@ -551,10 +551,15 @@ async function runResponsive(kind,viewport,name){
       const edit=page.locator('#phoneTable [data-edit-phone]').first();
       if(!await edit.isVisible())throw new Error('Phone edit action is hidden at '+name+' width');
       await edit.click();await page.locator('#phoneModal.open').waitFor({state:'visible'});
+      const phoneModal=page.locator('#phoneModal'),labelId=await phoneModal.getAttribute('aria-labelledby');
+      if(await phoneModal.getAttribute('role')!=='dialog'||await phoneModal.getAttribute('aria-modal')!=='true'||!labelId||!await page.locator('#'+labelId).count())throw new Error('Phone editor is missing accessible dialog semantics at '+name+' width');
       await page.locator('#savePhoneButton').scrollIntoViewIfNeeded();
       const saveBox=await page.locator('#savePhoneButton').boundingBox();if(!saveBox||saveBox.y<0||saveBox.y+saveBox.height>viewport.height+1)throw new Error('Phone save action is not reachable at '+name+' width');
       await assertLayout(page,kind+'-'+name+'-phone-editor');await shot(page,kind+'-'+name+'-phone-editor');
-      await page.locator('#closePhoneModal').click();
+      await page.locator('#closePhoneModal').focus();await page.keyboard.press('Shift+Tab');
+      if(await page.evaluate(()=>document.activeElement?.id)!=='savePhoneButton')throw new Error('Phone editor did not wrap keyboard focus at '+name+' width');
+      await page.locator('#closePhoneModal').focus();await page.keyboard.press('Escape');await page.locator('#phoneModal.open').waitFor({state:'hidden'});
+      if(!await edit.evaluate(element=>element===document.activeElement))throw new Error('Phone editor did not restore trigger focus at '+name+' width');
     }
     if(kind==='client'){
       for(const view of ['conversations','agent','settings']){
