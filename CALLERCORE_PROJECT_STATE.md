@@ -268,6 +268,12 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Date-range loads now use a monotonic request generation, so a slower response for an earlier range cannot repaint metrics, charts or Growth context after the operator selects a newer range.
 - Added an executable out-of-order range regression. Implementation `20918152371ed68c3cd4fd7cc6ffb7b95a0767d2`: 244 local tests and the full build passed; CallerCore CI `36135087160` and `36135080963`, CodeQL `36135087142` and `36135080910`, Jekyll `36135087409`, and authenticated Preview Browser QA `36135080891` passed. Preview `dpl_4t8RVdTEXF2zT7FSzXUwyS314G19` is READY at https://my-ai-website-7xurk1p7v-mohamtaj004bas-projects.vercel.app. Production/main was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`.
 
+## Admin Client Care mutation consistency
+
+- Feedback and support status selectors now lock per record while a write is pending, preventing overlapping writes from making final state response-order dependent without blocking unrelated records.
+- Both flows apply the selected state immediately, reconcile the server response, roll back on failure, and always unlock for retry. Pending selectors expose disabled and busy state.
+- Added behavioral regressions for duplicate suppression, successful sequential changes, failed rollback and retry. Local suite: 246 tests passed; the full build passed. Push gates and authenticated Preview QA remain to be recorded.
+
 ## Admin client drawer request consistency
 
 - Rapid client selections now use a monotonic request generation, so a slower earlier client response cannot replace the newer selected workspace.

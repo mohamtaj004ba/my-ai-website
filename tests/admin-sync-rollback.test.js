@@ -11,6 +11,7 @@ test('admin Gmail unread state rolls back if provider read sync fails',()=>{
 
 test('client-care status selector reverts when server update fails',()=>{
   assert.match(dashboard,/async function updateSupportStatus\(id,status\)/);
-  assert.match(dashboard,/previous=t\?\.status/);
-  assert.match(dashboard,/if\(!r\.ok\)\{if\(t&&previous\)t\.status=previous;renderAdminSupport\(\)/);
+  assert.match(dashboard,/const previous=t\.status/);
+  assert.match(dashboard,/catch\(err\)\{t\.status=previous;alert/);
+  assert.match(dashboard,/finally\{adminSupportStatusPending\.delete\(key\);renderAdminSupport\(\)\}/);
 });
