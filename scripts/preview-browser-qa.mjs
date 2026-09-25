@@ -68,7 +68,8 @@ async function gotoAuthed(route,requiredSelector){
   const res=await page.goto(baseURL+route,{waitUntil:'domcontentloaded',timeout:30000});
   if(!res||!res.ok())throw new Error(route+' returned '+(res?res.status():'no response'));
   await page.waitForSelector(requiredSelector,{timeout:20000});
-  await page.waitForTimeout(900);
+  await page.waitForLoadState('networkidle',{timeout:10000}).catch(()=>{});
+  await page.waitForTimeout(1200);
   const body=await page.locator('body').innerText();
   if(/sign in to callercore|authentication required/i.test(body))throw new Error(route+' rendered an authentication screen');
 }
