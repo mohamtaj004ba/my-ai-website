@@ -1947,3 +1947,10 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
 /* Billing attention state */
 .billing-status-card.needs-attention{border-color:#efc9c1;background:#fff8f6}
 .billing-status-card.needs-attention b{color:#9c4638}
+
+
+/* Drawers must remain on-canvas whenever their open state is active.
+   Keep this after dense/mobile drawer sizing rules so off-canvas resting offsets
+   cannot override the open state. */
+.call-drawer.open{right:0}
+#adminClientDrawer.open{right:0}
