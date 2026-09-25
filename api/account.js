@@ -1565,12 +1565,27 @@ function environmentScopeHealth(){
 
 async function adminSystemHealth(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const [kvHealth,stripeHealth,platformSettings]=await Promise.all([kvHealthCheck(),stripeConfigurationHealth(),kv.get('platform:settings')]),kvOk=kvHealth.ok,launchGates=launchGateState(platformSettings?.launchGates),envScope=environmentScopeHealth();
+  const [kvHealth,stripeHealth,platformSettings,workspaces,rawPhones]=await Promise.all([kvHealthCheck(),stripeConfigurationHealth(),kv.get('platform:settings'),loadAdminWorkspaces(),kv.get('phone:index')]),kvOk=kvHealth.ok,launchGates=launchGateState(platformSettings?.launchGates),envScope=environmentScopeHealth();
+  const phones=Array.isArray(rawPhones)?rawPhones:[],workspaceById=new Map(workspaces.map(ws=>[String(ws.id||''),ws])),dataIssues=[],digits=v=>String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
+  if(!Array.isArray(rawPhones)&&rawPhones!=null)dataIssues.push('Phone routing inventory is malformed.');
+  for(const ws of workspaces){
+    const id=String(ws.id||''),label=ws.name||id||'Workspace',effectivePlan=entitlementsFor(ws.plan).plan;
+    if(String(ws.plan||'')!==effectivePlan)dataIssues.push(label+' has invalid stored plan “'+String(ws.plan||'')+'”; effective access is '+effectivePlan+'.');
+    const assigned=phones.filter(p=>p&&String(p.workspaceId||'')===id);
+    if(assigned.length>1)dataIssues.push(label+' has multiple phone routing records assigned.');
+    const primary=assigned[0]||null,workspacePhone=digits(ws.phone),routingPhone=digits(primary?.number);
+    if(workspacePhone&&!primary)dataIssues.push(label+' has a workspace phone but no routing inventory assignment.');
+    if(primary&&workspacePhone!==routingPhone)dataIssues.push(label+' phone does not match its assigned routing record.');
+  }
+  for(const phone of phones){
+    if(phone?.workspaceId&&!workspaceById.has(String(phone.workspaceId)))dataIssues.push((phone.number||'A phone number')+' is assigned to a missing workspace.');
+  }
   const stripeEnv=!!(process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_PUBLISHABLE_KEY&&process.env.STRIPE_WEBHOOK_SECRET);
   const stripeReady=stripeEnv&&stripeHealth.ok;
   const services=[
     {key:'database',name:'Upstash / KV',status:kvOk?'operational':'error',detail:kvOk?'Read/write check passed':('Database check failed ('+kvHealth.error+')')},
     {key:'environment-scope',name:'Environment scope',status:envScope.ok?'operational':'error',detail:envScope.detail,meta:{environment:envScope.env,issueCount:envScope.issues.length}},
+    {key:'data-integrity',name:'Workspace data integrity',status:dataIssues.length?'error':'operational',detail:dataIssues.length?(dataIssues.length+' data consistency issue'+(dataIssues.length===1?'':'s')+' detected'):'Workspace plans and phone assignments are internally consistent',meta:{issueCount:dataIssues.length,issues:dataIssues.slice(0,25)}},
     {key:'checkout',name:'Sales / checkout',status:process.env.CALLERCORE_CHECKOUT_ENABLED==='true'?'operational':'not_configured',detail:process.env.CALLERCORE_CHECKOUT_ENABLED==='true'?'Customer checkout is enabled':'Checkout launch gate is closed'},
     {key:'stripe',name:'Stripe',status:stripeReady?'operational':(stripeEnv?'error':'not_configured'),detail:!stripeEnv?(!process.env.STRIPE_SECRET_KEY?'STRIPE_SECRET_KEY missing':(!process.env.STRIPE_PUBLISHABLE_KEY?'STRIPE_PUBLISHABLE_KEY missing':'STRIPE_WEBHOOK_SECRET missing')):stripeHealth.detail,meta:{webhook:stripeHealth.webhook,portal:stripeHealth.portal,missingEvents:stripeHealth.missingEvents||[]}},
     {key:'mailgun',name:'Mailgun',status:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'configured':'not_configured',detail:(process.env.MAILGUN_API_KEY&&process.env.MAILGUN_DOMAIN)?'API credentials available':'Mailgun credentials incomplete'},
@@ -1580,7 +1595,7 @@ async function adminSystemHealth(req,res){
     {key:'voice',name:'Voice provider',status:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'configured':'not_configured',detail:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'Voice API credentials available; lifecycle validation is tracked separately':'Voice API credentials not configured'},
     ...LAUNCH_GATE_DEFS.map(g=>({key:'gate-'+g.key,name:g.name,status:launchGates[g.key]?'confirmed':'pending',detail:launchGates[g.key]?'Owner/admin confirmation recorded':g.detail,manual:true}))
   ];
-  const requiredForLaunch=['database','environment-scope','checkout','stripe','mailgun','onboarding-ai','voice',...LAUNCH_GATE_DEFS.map(g=>'gate-'+g.key)];
+  const requiredForLaunch=['database','environment-scope','data-integrity','checkout','stripe','mailgun','onboarding-ai','voice',...LAUNCH_GATE_DEFS.map(g=>'gate-'+g.key)];
   const blockers=services.filter(x=>requiredForLaunch.includes(x.key)&&!['operational','configured','confirmed'].includes(x.status));
   const readiness={ready:blockers.length===0,requiredForLaunch,blockers:blockers.map(x=>({key:x.key,name:x.name,detail:x.detail})),configured:services.filter(x=>['operational','configured','confirmed'].includes(x.status)).length,total:services.length};
   return res.status(200).json({services,readiness,checkedAt:Date.now()});
