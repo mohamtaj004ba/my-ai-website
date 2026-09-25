@@ -48,6 +48,10 @@ test('blank expense amount is rejected rather than silently saved as zero',async
     assert.match(result.result.error,/Expense amount is required/);
     assert.equal(result.updates,undefined);
   }
+  const blankExisting=await backend('adminFinanceExpenseSave',{body:{id:'expense-1',name:'',amount:10,expectedUpdatedAt:10}});
+  assert.equal(blankExisting.status,400);
+  assert.match(blankExisting.result.error,/Expense name is required/);
+  assert.equal(blankExisting.updates,undefined);
   const explicitZero=await backend('adminFinanceExpenseSave',{body:{name:'No-cost service',amount:0}});
   assert.equal(explicitZero.status,201);
   assert.equal(explicitZero.result.expense.amount,0);
