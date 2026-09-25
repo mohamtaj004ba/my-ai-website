@@ -122,3 +122,16 @@ test('responsive QA closes each context before issuing another session',()=>{
   assert.match(qa,/async function runResponsive[\s\S]*finally\{\s*await context\.close\(\)\.catch/);
   assert.match(qa,/await runAdminInteractions\(desktop\.page\);[\s\S]*await desktop\.context\.close\(\);[\s\S]*await runResponsive\('client'/);
 });
+
+
+test('premium admin polish keeps controls and Inbox terminology consistent',()=>{
+  const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
+  const html=fs.readFileSync(path.join(root,'admin-dashboard.html'),'utf8');
+  assert.match(css,/\.admin-client-toolbar-right select,\s*\.admin-client-toolbar-right input\{[\s\S]*height:40px;/);
+  assert.match(css,/\.admin-client-row-business \.admin-link\{[\s\S]*border:1px solid #eadbd4;/);
+  assert.match(css,/#inboxEmpty:before\{content:"✉"\}/);
+  assert.match(css,/#inboxThreadPlaceholder:before\{content:"↗"\}/);
+  assert.match(html,/id="inboxAutoStatus">Auto-sync · 3 min/);
+  assert.match(html,/Open Core Intelligence from the top bar/);
+  assert.doesNotMatch(html,/Ask CallerCore/);
+});
