@@ -22,11 +22,11 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `e6e5034fe3ae437a7504accfdc6962c614a0410c`.
-- Preview READY: `dpl_BTu5DvuY4RiBEeNCuoowksNjwXum` — https://my-ai-website-nt5m6s1rx-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36117571653`, CodeQL `36117571613`, Jekyll `36117571669`: success on that exact SHA. Push CI `36117566398` and CodeQL `36117566347` also passed.
-- Authenticated Preview Browser QA `36117566334`: success on that exact SHA.
-- Local regression suite: 206 passed, 0 failed. JavaScript syntax and diff checks passed.
+- Implementation SHA: `849bad8cabe1fd9606c6e5e43643c04bd9daf21d`.
+- Preview READY: `dpl_GqT6JQ53dn2MvxY3WNt1dHsAFiXa` — https://my-ai-website-kl6lrkoen-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36118779489`, CodeQL `36118779413`, Jekyll `36118779437`: success on that exact SHA. Push CI `36118775231` and CodeQL `36118775270` also passed.
+- Authenticated Preview Browser QA `36118775247`: success on that exact SHA.
+- Local regression suite: 215 passed, 0 failed. JavaScript syntax and diff checks passed.
 - Browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks.
 - Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, legacy restore/delete safeguards, and 50 → 100 → 122 message batches in Conversations and Contacts.
 - Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
@@ -51,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current verified implementation: 206/206 local tests pass. Executable regressions cover 125-thread/1,000-message rendering, contact history batching, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
+Current verified implementation: 215/215 local tests pass. Executable regressions cover tenant-scoped conversation pages, 125-thread/1,000-message rendering, contact history batching, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -62,7 +62,7 @@ Current verified implementation: 206/206 local tests pass. Executable regression
 
 ## Next authorized development backlog
 
-1. Reduce the initial full conversation-history bundle without losing complete contact-directory counts or contact-drawer histories; design storage normalization as a separate migration rather than rewriting the legacy record in place.
+1. Design storage normalization and migration for the legacy tenant conversation array; do not rewrite existing records in place without a reversible migration and compatibility read path.
 2. Continue client/admin shared-state consistency and accessibility review using the existing authenticated Preview workflow and screenshots. Current regression coverage is not a claim that every dashboard action has been tested.
 3. Inspect provider/billing test-environment readiness before dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios. Live activation, production changes and new charges still need owner authorization.
 
@@ -72,7 +72,7 @@ Current verified implementation: 206/206 local tests pass. Executable regression
 - Client Conversations is a history viewer. No client reply composer or shared unread state was found. Do not invent working messaging or change SMS launch scope to expose it.
 - Conversation records link to derived contact history; admin Gmail/website Inbox is a separate data source. A shared client/admin message-delivery pipeline has not been verified.
 - Live voice remains unavailable: shared readiness now reports awaiting activation; fake pause/resume is blocked. A real provider adapter and verification remain required before activation.
-- Contact-drawer and Conversations rendering now use 50-item/message batches. Conversations list/search/filter/sort requests use bounded server pages, while the initial dashboard bundle still carries complete histories for contact aggregation.
+- Contact-drawer and Conversations rendering use 50-item/message batches. The dashboard bundle now carries message-free contact summaries; individual thread and contact histories load on demand.
 - Some release docs predate implementation: README's unlimited Pro statement corrected; environment matrix/DEPLOY contain historical isolation and QA notes; production readiness still describes the already-replaced `@vercel/kv` client. Use actual code and current evidence.
 - Older rollback deployment references are historical and differ from current main SHA. Re-verify the appropriate production rollback target before an authorized release.
 
@@ -214,7 +214,7 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Background refresh replays a non-default active conversation query after applying the latest workspace bundle, so refresh cannot silently replace filtered results with the default page.
 - Summary-only fallback data hydrates the selected thread through the authenticated detail route before rendering messages. Contact counts use server message counts when a full message array is not present.
 - Preview QA waits for asynchronous page results during load-more, sort, search, reset and attention-filter checks. Local verification: 215 tests passed; syntax and diff checks passed.
-- Complete conversation histories remain in the initial bundle because Contacts currently derives its full directory and message timelines from them. Removing that payload requires a contact-summary/history contract or normalized storage and remains the next scale task.
+- This verified checkpoint still carried complete histories in the initial bundle. The subsequent message-free contact directory and on-demand history batch is recorded below and awaits Preview verification.
 
 ## Admin configuration mutation state
 
@@ -223,3 +223,12 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Network and API failures unlock the controls while preserving the editable JSON for correction or retry. The drawer exposes `aria-busy` during the operation and buttons show Applying/Restoring progress labels.
 - Added behavioral tests for pending locks, duplicate-submit prevention, failure retry state, immediate override/restore consistency and dismissal blocking. Authenticated Preview QA now holds an override request and verifies the lock before releasing the non-destructive same-value Preview update.
 - Local verification: 218 tests passed; JavaScript and Preview QA syntax plus diff checks passed. Feature Preview verification pending.
+
+## Message-free dashboard bundle and on-demand contact history
+
+- The initial client dashboard bundle now returns the complete contact/conversation directory as message-free summaries with message counts and activity timestamps, plus the first bounded Conversations page. Message bodies no longer scale the initial payload.
+- Selecting a Conversations thread hydrates only that tenant thread. Opening a contact with message history hydrates only conversations whose normalized phone/name key matches that contact, then merges the results into the existing directory without dropping calls, leads or unrelated contacts.
+- Contact history requests retain the unified-inbox entitlement check and derive the storage key from the authenticated workspace. Phone formatting and fallback names normalize consistently on both server and client.
+- Background refresh clears hydration markers with the refreshed summaries; duplicate contact requests are suppressed, failures show a retry state, and demo data remains local.
+- Added executable contact-key, tenant-route, message-free bundle, on-demand merge and duplicate-hydration regressions. Local verification: 221 tests passed; syntax and diff checks passed. Preview verification pending.
+- Server reads still scan the legacy tenant conversation array. A reversible normalized-storage migration with compatibility reads remains the next backend scale boundary.

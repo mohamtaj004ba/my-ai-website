@@ -16,7 +16,7 @@ let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentP
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
-let callsData=[],leadsData=[],conversationsData=[],conversationThreadsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',conversationPageTotal=0,conversationNextCursor=null,conversationPageLoading=false,conversationPageError='',conversationPageRequest=0,conversationBackendPaging=false,conversationSearchTimer=null,activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',contactHistoryVisibleLimit=50,contactHistoryLastSignature='',contactMessageSessionLimits={},pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
+let callsData=[],leadsData=[],conversationsData=[],conversationThreadsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',conversationPageTotal=0,conversationNextCursor=null,conversationPageLoading=false,conversationPageError='',conversationPageRequest=0,conversationBackendPaging=false,conversationSearchTimer=null,activeConversationId=null,activeCallContactKey='',activeCallId='',followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',contactHistoryVisibleLimit=50,contactHistoryLastSignature='',contactMessageSessionLimits={},contactHistoryHydratedKeys=new Set(),contactHistoryLoadingKeys=new Set(),pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
 {id:'c2',caller:'Mike Peterson',phone:'(509) 555-0193',category:'New service',reason:'Storm damage inspection',duration:'3:17',outcome:'Qualified',agent:'Maya',time:'2:57 PM',summary:'Mike reported visible shingle damage after a recent storm. He is the homeowner, is within the service area, and asked for an inspection this week.',qualification:{Intent:'High',Service:'Storm damage',Timeline:'This week',Value:'$4,200'},transcript:[['Maya','Tell me what happened with the roof.'],['Mike','We lost shingles in the wind and I can see damage from the yard.'],['Maya','Got it. Are you the homeowner?'],['Mike','Yes.']]},
@@ -365,6 +365,7 @@ function applyClientDashboardData(data={}){
   locationsData=Array.isArray(data.locations)?data.locations:[];
   locationsLimit=Number(data.locationsLimit||data.limit||1);
   conversationsData=Array.isArray(data.conversations)?data.conversations:[];
+  contactHistoryHydratedKeys=new Set();contactHistoryLoadingKeys=new Set();
   const page=data.conversationPage&&typeof data.conversationPage==='object'?data.conversationPage:null;
   conversationThreadsData=page&&Array.isArray(page.conversations)?page.conversations:conversationsData;
   conversationPageTotal=Number(page?.total||conversationThreadsData.length);conversationNextCursor=page?.nextCursor||null;conversationBackendPaging=!!page;conversationLastFilterSignature=JSON.stringify(['','all','newest']);
@@ -451,7 +452,7 @@ async function loadOperations(){
 }
 
 function recordTime(x){
-  const n=Number(x?.createdAt||x?.at||0);if(n)return n;
+  const n=Number(x?.activityAt||x?.createdAt||x?.at||0);if(n)return n;
   const d=Date.parse([x?.date,x?.time].filter(Boolean).join(' '));return Number.isFinite(d)?d:0;
 }
 function sameLocalDay(ts,date=new Date()){const d=new Date(ts);return d.getFullYear()===date.getFullYear()&&d.getMonth()===date.getMonth()&&d.getDate()===date.getDate()}
@@ -1036,6 +1037,20 @@ function renderContactHistoryTimeline(c){
   document.querySelectorAll('[data-contact-history-filter]').forEach(btn=>btn.classList.toggle('active',btn.dataset.contactHistoryFilter===contactHistoryFilter));
 }
 
+async function hydrateContactHistory(key){
+  const current=buildContacts().find(contact=>contact.key===key);if(!current||contactHistoryHydratedKeys.has(key)||contactHistoryLoadingKeys.has(key))return;
+  const missing=current.conversations.some(item=>!Array.isArray(item.messages)&&Number(item.messageCount||0)>0);if(!missing||(typeof demoMode!=='undefined'&&demoMode)){contactHistoryHydratedKeys.add(key);return}
+  contactHistoryLoadingKeys.add(key);const timeline=document.getElementById('contactDrawerTimeline');if(timeline&&activeContactKey===key)timeline.innerHTML='<div class="contact-inline-loading"><i></i><span>Loading message history…</span></div>';
+  try{
+    const data=await fetchJsonRetry('/api/account?action=contact-conversations&key='+encodeURIComponent(key),{attempts:2,timeout:10000}),items=Array.isArray(data.conversations)?data.conversations:[];
+    const byId=new Map(items.map(item=>[String(item&&item.id),item]));conversationsData=conversationsData.map(item=>byId.has(String(item&&item.id))?{...item,...byId.get(String(item.id))}:item);
+    contactHistoryHydratedKeys.add(key);
+    if(activeContactKey===key){const refreshed=buildContacts().find(contact=>contact.key===key);if(refreshed)renderContactHistoryTimeline(refreshed)}
+  }catch(err){
+    if(timeline&&activeContactKey===key){timeline.innerHTML='<div class="empty-state"><h3>Message history is delayed</h3><p>'+esc(err.message||'Try again shortly.')+'</p><button type="button" class="secondary-btn" id="retryContactHistory">Try again</button></div>';document.getElementById('retryContactHistory')?.addEventListener('click',()=>hydrateContactHistory(key))}
+  }finally{contactHistoryLoadingKeys.delete(key)}
+}
+
 function openContact(key){
   const c=buildContacts().find(x=>x.key===key);if(!c)return;
   const drawer=document.getElementById('contactDrawer'),back=document.getElementById('contactDrawerBackdrop');if(!drawer||!back)return;
@@ -1054,6 +1069,7 @@ function openContact(key){
   document.getElementById('contactDrawerSummary').textContent=summaryParts.join(' ')||'CallerCore has activity for this contact.';
   renderContactHistoryTimeline(c);
   resetSurfaceScroll(drawer);drawer.classList.add('open');back.classList.add('open');drawer.setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>{resetSurfaceScroll(drawer);document.getElementById('closeContactDrawer')?.focus()},20);
+  hydrateContactHistory(key);
 }
 function closeContact(){document.getElementById('contactDrawer')?.classList.remove('open');document.getElementById('contactDrawerBackdrop')?.classList.remove('open');document.getElementById('contactDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('callDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}
 document.getElementById('contactSearch')?.addEventListener('input',renderContacts);

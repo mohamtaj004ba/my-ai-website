@@ -1,6 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {conversationSummary,paginateConversations,paginateMessages}=require('../lib/conversation-history');
+const {conversationSummary,conversationContactKey,paginateConversations,paginateMessages}=require('../lib/conversation-history');
 
 function records(count=125){
   return Array.from({length:count},(_,index)=>({id:'thread-'+index,name:'Customer '+index,phone:'555-'+index,status:index%3===0?'Active':index%3===1?'Closed':'Needs follow-up',createdAt:index+1,privateField:'kept',messages:[{text:'Opening '+index,at:index+1},{text:'Needle '+index,at:index+1000}]}));
@@ -41,11 +41,19 @@ test('malformed conversation messages become an empty safe summary and page',()=
   assert.deepEqual(paginateMessages(conversation),{messages:[],total:0,nextCursor:null,limit:50});
 });
 
+test('contact keys normalize formatted phone numbers and fallback names consistently',()=>{
+  assert.equal(conversationContactKey({phone:'+1 (509) 555-0101',name:'Ignored'}),'p:15095550101');
+  assert.equal(conversationContactKey({name:'  Mary   Rivera  '}),'n:mary rivera');
+  assert.equal(conversationContactKey({caller:'Vendor Desk'}),'n:vendor desk');
+});
+
 test('account conversation reads stay tenant scoped and expose bounded history routes',()=>{
   const source=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','api','account.js'),'utf8');
-  for(const handler of ['conversations','conversationDetail','conversationMessages']){
+  for(const handler of ['conversations','conversationDetail','conversationMessages','contactConversations']){
     const start=source.indexOf('async function '+handler+'('),end=source.indexOf('\nasync function ',start+20),body=source.slice(start,end<0?source.length:end);
     assert.match(body,/requireFeature\(req,res,'unifiedInbox'\)/);assert.match(body,/conversations:'\+access\.session\.workspaceId/);assert.doesNotMatch(body,/req\.query\.workspaceId/);
   }
   assert.match(source,/action==='conversation-detail'/);assert.match(source,/action==='conversation-messages'/);
+  assert.match(source,/action==='contact-conversations'/);
+  assert.match(source,/conversations:conversationDirectory,conversationPage/);
 });

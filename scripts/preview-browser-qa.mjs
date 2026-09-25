@@ -286,6 +286,7 @@ async function runClientInteractions(page){
   await ensureView(page,'conversations');
   await page.locator('#conversationApp').waitFor({state:'visible',timeout:5000});
   if(await page.locator('#conversationThreads .thread-item').count()<1)throw new Error('Conversations navigation opened without seeded threads');
+  await page.waitForFunction(()=>document.querySelectorAll('#messageStream .message').length===50);
   if(await page.locator('#messageStream .message').count()!==50)throw new Error('Long conversation did not render its latest message batch');
   await page.locator('#loadEarlierMessages').click();
   if(await page.locator('#messageStream .message').count()!==100)throw new Error('Earlier conversation messages did not load');

@@ -10,7 +10,7 @@ const previewSeed=require('../lib/preview-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig}=require('../lib/config-transaction');
 const {prependAuditEvent}=require('../lib/audit-log');
-const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
+const {conversationSummary,conversationContactKey,paginateConversations,paginateMessages}=require('../lib/conversation-history');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
@@ -2305,6 +2305,15 @@ async function conversationMessages(req,res){
   catch(err){if(err&&err.code==='INVALID_CURSOR')return res.status(400).json({error:err.message});throw err}
 }
 
+async function contactConversations(req,res){
+  const access=await requireFeature(req,res,'unifiedInbox');if(!access)return;
+  const key=String((req.query&&req.query.key)||'').trim().slice(0,180);
+  if(!/^[pn]:.+/.test(key))return res.status(400).json({error:'Contact key is required'});
+  const items=await kv.get('conversations:'+access.session.workspaceId)||[];
+  if(!Array.isArray(items))return res.status(500).json({error:'Conversation data is unavailable'});
+  return res.status(200).json({conversations:items.filter(item=>item&&conversationContactKey(item)===key)});
+}
+
 async function appointments(req,res){
   const access=await requireFeature(req,res,'appointments');if(!access)return;
   const items=await kv.get('appointments:'+access.session.workspaceId)||[];
@@ -2489,7 +2498,7 @@ async function clientDashboardData(req,res){
   };
   const agent={name:savedAgent.name||platform.defaultAgentName||'Maya',role:savedAgent.role||'AI Receptionist',openingMessage:savedAgent.openingMessage||('Thank you for calling '+(ws.name||'our business')+'. This is Maya. How can I help you today?'),tone:savedAgent.tone||'Warm & professional',serviceArea:savedAgent.serviceArea||'',businessHours:savedAgent.businessHours||'',emergencyInstructions:savedAgent.emergencyInstructions||'',handlingInstructions:savedAgent.handlingInstructions||savedAgent.callHandling||'',qualificationQuestions:Array.isArray(savedAgent.qualificationQuestions)?savedAgent.qualificationQuestions:[],transferNumber:savedAgent.transferNumber||'',updatedAt:savedAgent.updatedAt||null};
   const routing=clientRouting(phone,{smsLive});
-  const conversationItems=ent.features.unifiedInbox&&Array.isArray(conversationsRaw)?conversationsRaw:[],conversationPage=paginateConversations(conversationItems,{limit:50});
+  const conversationItems=ent.features.unifiedInbox&&Array.isArray(conversationsRaw)?conversationsRaw:[],conversationPage=paginateConversations(conversationItems,{limit:50}),conversationDirectory=conversationItems.map(conversationSummary);
   return res.status(200).json({
     workspace:{
       id:ws.id,name:ws.name||'',plan:ent.plan,status:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',
@@ -2501,7 +2510,7 @@ async function clientDashboardData(req,res){
     leads:Array.isArray(leadsRaw)?leadsRaw:[],agent,settings,
     integrations:{googleCalendar:calendarLive&&!!savedIntegrations.googleCalendar,stripe:!!ws.stripeCustomerId,webhookUrl:savedIntegrations.webhookUrl||'',apiAccess:!!ent.features.apiAccess},
     locations:Array.isArray(locationsRaw)?locationsRaw:[],locationsLimit:ent.locations,routing,
-    conversations:conversationItems,conversationPage,
+    conversations:conversationDirectory,conversationPage,
     appointments:calendarLive&&ent.features.appointments&&Array.isArray(appointmentsRaw)?appointmentsRaw:[],
     automations:ent.features.automations&&Array.isArray(automationsRaw)?automationsRaw:[],
     onboarding:onboardingRaw&&typeof onboardingRaw==='object'&&!Array.isArray(onboardingRaw)?clientOnboardingView(onboardingRaw):null,
@@ -2669,6 +2678,7 @@ module.exports=async function handler(req,res){
   if(action==='conversations'&&req.method==='GET')return conversations(req,res);
   if(action==='conversation-detail'&&req.method==='GET')return conversationDetail(req,res);
   if(action==='conversation-messages'&&req.method==='GET')return conversationMessages(req,res);
+  if(action==='contact-conversations'&&req.method==='GET')return contactConversations(req,res);
   if(action==='appointments'&&req.method==='GET')return appointments(req,res);
   if(action==='appointment-update'&&req.method==='POST')return updateAppointment(req,res);
   if(action==='leads'&&req.method==='GET')return leads(req,res);
