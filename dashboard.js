@@ -85,7 +85,7 @@ async function bootstrapClient(){
     if(dateEl)dateEl.textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
     if(greet){const hour=now.getHours();greet.textContent=(hour<12?'Good morning':hour<18?'Good afternoon':'Good evening')+'.'}
     if(data.workspace.usage&&Number.isFinite(data.workspace.usage.minutes)){PLAN_DATA[currentPlan].used=data.workspace.usage.minutes}
-    renderBillingConnection();return true;
+    renderWorkspaceAccessState();renderBillingConnection();return true;
   }catch(err){console.error('Dashboard bootstrap failed',err);location.replace('/login?error=session');return false}
 }
 async function logout(){try{await fetch('/api/account?action=logout',{method:'POST'})}finally{location.href='/login'}}
@@ -331,6 +331,11 @@ async function loadSecondaryClientData(){
   await Promise.allSettled(tasks.map(async([action,apply])=>{try{const data=await fetchJsonRetry('/api/account?action='+action,{attempts:1,timeout:8000});apply(data)}catch(_){}}));
   renderContacts();renderConversations();renderAppointments();renderAutomations();renderLocations();
 }
+function renderWorkspaceAccessState(){
+  const suspended=sessionWorkspace?.status==='suspended',banner=document.getElementById('workspaceHoldBanner');
+  document.body.classList.toggle('workspace-suspended',suspended);
+  if(banner)banner.hidden=!suspended;
+}
 function applyClientDashboardData(data={}){
   if(data.workspace&&typeof data.workspace==='object'){
     const previousPlan=currentPlan,previousName=String(sessionWorkspace?.name||'');
@@ -343,6 +348,7 @@ function applyClientDashboardData(data={}){
     document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=name);
     const avatar=document.querySelector('.avatar');if(avatar&&name!==previousName)avatar.textContent=name.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
     if(currentPlan!==previousPlan){renderBilling();renderStages();renderOverviewUnlocks();renderEntitledApps()}
+    renderWorkspaceAccessState();
   }
   callsData=Array.isArray(data.calls)?data.calls:[];
   leadsData=Array.isArray(data.leads)?data.leads:[];
