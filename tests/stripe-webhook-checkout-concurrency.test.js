@@ -268,3 +268,43 @@ test('distinct Stripe customer IDs sharing one account email also serialize prov
   assert.equal(f.welcomes,2);
   assert.equal(f.locks.size,0);
 });
+
+test('reuses a Stripe-mapped workspace only when checkout email matches its owner',async()=>{
+  const f=fixture();
+  f.store.set('workspace:existing-ws',{id:'existing-ws',ownerEmail:'customer@example.test',name:'Existing business',status:'live'});
+  f.store.set('stripe:customer:cus_same','existing-ws');
+  const result=await f.submit('evt_first','cs_first');
+  assert.equal(result.status,200);
+  assert.equal(result.body.workspaceId,'existing-ws');
+  assert.equal(f.store.get('user:email:customer@example.test').workspaceId,'existing-ws');
+  assert.equal(f.store.get('stripe:customer:cus_same'),'existing-ws');
+});
+test('refuses to reassign existing Stripe customer mapping to an unrelated checkout email',async()=>{
+  const f=fixture();
+  f.store.set('workspace:existing-ws',{id:'existing-ws',ownerEmail:'different@example.test',name:'Other customer'});
+  f.store.set('stripe:customer:cus_same','existing-ws');
+  await assert.rejects(()=>f.submit('evt_first','cs_first'),/manual reconciliation required/);
+  assert.equal(f.store.get('stripe:customer:cus_same'),'existing-ws');
+  assert.equal(f.store.has('user:email:customer@example.test'),false);
+  assert.equal(f.store.has('stripe:event:evt_first'),false);
+  assert.equal(f.locks.size,0);
+  assert.equal(f.welcomes,0);
+});
+test('refuses conflicting Stripe customer and subscription mappings without writing a workspace',async()=>{
+  const f=fixture();
+  f.store.set('stripe:customer:cus_same','workspace-a');
+  f.store.set('stripe:subscription:sub_same','workspace-b');
+  await assert.rejects(()=>f.submit('evt_first','cs_first'),/different workspaces/);
+  assert.equal(f.store.has('stripe:event:evt_first'),false);
+  assert.equal(f.store.has('user:email:customer@example.test'),false);
+  assert.equal(f.locks.size,0);
+});
+test('refuses to rewrite a member workspace when its Stripe customer mapping points elsewhere',async()=>{
+  const f=fixture();
+  f.store.set('user:email:customer@example.test',{workspaceId:'workspace-a',role:'owner',email:'customer@example.test'});
+  f.store.set('stripe:customer:cus_same','workspace-b');
+  await assert.rejects(()=>f.submit('evt_first','cs_first'),/mapping disagree/);
+  assert.equal(f.store.get('user:email:customer@example.test').workspaceId,'workspace-a');
+  assert.equal(f.store.get('stripe:customer:cus_same'),'workspace-b');
+  assert.equal(f.store.has('stripe:event:evt_first'),false);
+});
