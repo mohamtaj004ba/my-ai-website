@@ -1312,8 +1312,8 @@ async function adminProspectSave(req,res){
       id:String(body.id||'').slice(0,100),name:body.name,business:body.business,email,phone:body.phone,
       industry:body.industry,plan:body.plan,source:body.source||'manual',stage,
       utmSource:body.utmSource||'',utmMedium:body.utmMedium||'',utmCampaign:body.campaign||body.utmCampaign||'',
-      owner:body.owner,defaultSalesOwner:platform.defaultSalesOwner,campaign:body.campaign,notes:body.notes,
-      nextFollowUpAt:body.nextFollowUpAt,autoFollowupHours:autoFollowup?clampInt(platform.leadFollowupHours,4,168,24):0,
+      owner:body.owner??'',defaultSalesOwner:platform.defaultSalesOwner,campaign:body.campaign??'',notes:body.notes??'',
+      nextFollowUpAt:body.nextFollowUpAt??null,autoFollowupHours:autoFollowup?clampInt(platform.leadFollowupHours,4,168,24):0,
       lastContactAt:body.lastContactAt,monthlyValue:body.monthlyValue,setupValue:body.setupValue,
       tags:body.tags,updatedBy:admin.email
     });
