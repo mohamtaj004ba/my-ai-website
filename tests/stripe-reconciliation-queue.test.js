@@ -104,3 +104,24 @@ test('malformed reconciliation storage never falsely indicates success',async()=
  await assert.rejects(()=>resolveCheckoutReconciliation(f.kv,'cs_paid'),/record is malformed/);
  await assert.rejects(()=>resolveCheckoutReconciliation(f.kv,''),/Checkout session ID required/);
 });
+
+test('unresolved paid checkouts reach the admin priority queue and Finance navigation badge',()=>{
+ const ui=fs.readFileSync('dashboard.js','utf8');
+ const start=ui.indexOf('function adminAttentionItems(){'),end=ui.indexOf('\nfunction adminProvisioningFor(',start);
+ assert.ok(start>=0&&end>start);
+ const context=vm.createContext({
+   adminWebsiteData:{prospects:[]},adminClientsData:[],adminSupportData:[],adminFeedbackData:[],
+   adminReadinessData:{blockers:[]},adminPlatformData:{},adminFinanceData:{
+     reconciliation:[{sessionId:'cs_unsafe',createdAt:120,reason:'account_mapping_conflict'}]
+   },prospectDue:()=>false
+ });
+ vm.runInContext(ui.slice(start,end),context);
+ const results=vm.runInContext('adminAttentionItems()',context);
+ assert.equal(results.length,1);
+ assert.equal(results[0].type,'checkout-reconciliation');
+ assert.equal(results[0].category,'Payment operations');
+ assert.equal(results[0].severity,'critical');
+ assert.equal(results[0].view,'finance');
+ assert.match(ui,/item.type==='checkout-reconciliation'/);
+ assert.match(ui,/setAdminNavBadge\('navBadgeFinance',\(adminClientsData\|\|\[\]\)\.filter\(x=>x.subscriptionStatus==='past_due'\)\.length\+\(adminFinanceData\.reconciliation\|\|\[\]\)\.length\)/);
+});
