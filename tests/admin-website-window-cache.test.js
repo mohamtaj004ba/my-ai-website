@@ -57,10 +57,12 @@ test('view refresh ignores an old website window arriving after a new selection'
   vm.runInContext(source.slice(begin,finish),ctx);
   const loading=vm.runInContext("refreshAdminView('website',{force:true,announce:false})",ctx);
   ctx.adminWebsiteDays=7;
+  ctx.adminDataSyncAt[url30]=Date.now();
   resolveOld({analytics:{periodDays:30,sessions:30}});
   await loading;
   assert.equal(ctx.adminWebsiteData.periodDays,30);
   assert.equal(ctx.adminWebsiteData.sessions,undefined);
+  assert.equal(ctx.adminDataSyncAt[url30],undefined,'discarded older window must not suppress a future refresh');
   assert.deepEqual(rendered,['website','admin']);
 });
 
@@ -81,10 +83,12 @@ test('background same-window response cannot overwrite newer manually requested 
   vm.runInContext(source.slice(begin,finish),ctx);
   const refreshing=vm.runInContext("refreshAdminView('website',{force:true,announce:false})",ctx);
   ctx.adminWebsiteAnalyticsRequest=1;
+  ctx.adminDataSyncAt[url30]=Date.now();
   ctx.adminWebsiteData={periodDays:30,sessions:18};
   settle({analytics:{periodDays:30,sessions:5}});
   await refreshing;
   assert.equal(ctx.adminWebsiteData.sessions,18);
+  assert.equal(ctx.adminDataSyncAt[url30],undefined,'outdated response must not cache an unrendered range');
   assert.equal(ctx.adminWebsiteLoadError,'');
   assert.deepEqual(rendered,['website','admin']);
 });
@@ -105,8 +109,10 @@ test('obsolete failed background request does not set stale warning after user s
   vm.runInContext(source.slice(begin,finish),ctx);
   const refreshing=vm.runInContext("refreshAdminView('website',{force:true,announce:false})",ctx);
   ctx.adminWebsiteAnalyticsRequest=1;ctx.adminWebsiteDays=7;ctx.adminWebsiteData={periodDays:7};
+  ctx.adminDataSyncAt[url30]=Date.now();
   rejectOld(new Error('obsolete request failed'));
   await refreshing;
+  assert.equal(ctx.adminDataSyncAt[url30],undefined);
   assert.equal(ctx.adminWebsiteLoadError,'');
   assert.equal(ctx.adminWebsiteData.periodDays,7);
 });
