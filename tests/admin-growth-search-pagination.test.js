@@ -21,7 +21,7 @@ function fixture(){
   };
   const context=vm.createContext({
     adminWebsiteData:{prospects,coverage:{isRetentionCapped:false}},adminWebsiteLoadError:'',
-    growthSearch:'',growthFilter:'open',adminCampaignData:[],adminPlatformData:{leadFollowupHours:24},
+    growthSearch:'',growthFilter:'open',adminCampaignData:[],adminPlatformData:{leadFollowupHours:24},prospectStagePending:new Set(),
     document:{getElementById:id=>id==='growthSearch'?search:id==='growthPipeline'?pipeline:id==='growthCoverageNote'?coverage:null,
       querySelectorAll:()=>[]},
     prospectDue:()=>false,prospectValue:()=>0,financeMoney:n=>'$'+n,esc:s=>String(s),
