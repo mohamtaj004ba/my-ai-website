@@ -1258,6 +1258,7 @@ async function adminWebsiteProspectUpdate(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,100),key='site:prospect:'+id,old=await kv.get(key);
   if(!old)return res.status(404).json({error:'Prospect not found'});
+  if(body.expectedUpdatedAt===undefined||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==Number(old.updatedAt||old.createdAt||0))return res.status(409).json({error:'This prospect changed while you were editing. Refresh the pipeline before retrying.'});
   const email=body.email!==undefined?cleanEmail(body.email):String(old.email||'');
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email or leave it blank'});
   const allowed=['new','inquiry','checkout_started','follow_up','qualified','proposal','lost','converted'];
@@ -1279,8 +1280,10 @@ async function adminWebsiteProspectUpdate(req,res){
     setupValue:body.setupValue!==undefined?Math.max(0,Number(body.setupValue)||0):Number(old.setupValue||0),
     tags:Array.isArray(body.tags)?body.tags.map(x=>String(x||'').trim().slice(0,60)).filter(Boolean).slice(0,12):(old.tags||[]),
     convertedAt:stage==='converted'?(old.convertedAt||Date.now()):(stage!==old.stage&&old.stage==='converted'?null:old.convertedAt||null),
-    updatedAt:Date.now(),updatedBy:admin.email};
-  await kv.set(key,next);
+    updatedAt:Math.max(Date.now(),Number(old.updatedAt||old.createdAt||0)+1),updatedBy:admin.email};
+  try{
+    if(!await compareAndSetConfig(kv,[{key,before:old,after:next}]))return res.status(409).json({error:'This prospect changed during the save. Refresh the pipeline before retrying.'});
+  }catch(err){console.error('admin prospect update failed',safeError(err));return res.status(503).json({error:'Could not confirm this prospect update. Refresh the pipeline before retrying.'})}
   return res.status(200).json({ok:true,prospect:next});
 }
 async function adminProspectSave(req,res){
