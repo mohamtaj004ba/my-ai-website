@@ -344,3 +344,24 @@ test('invalid audit Redis key type cannot leave an unaudited manual prospect',as
   assert.equal(f.values.size,0);
   assert.equal(f.index.length,0);
 });
+
+test('repeat paid checkout preserves the original conversion date instead of recounting an existing client',async()=>{
+  const f=fixture();
+  const first=await f.upsert({email:'returning@example.test',stage:'converted',convertedAt:1000,
+    workspaceId:'workspace-1',stripeCustomerId:'cus_first',plan:'Starter',monthlyValue:349});
+  const renewed=await f.upsert({id:first.id,email:first.email,stage:'converted',convertedAt:999999,
+    workspaceId:'workspace-1',stripeCustomerId:'cus_first',plan:'Growth',monthlyValue:599});
+  assert.equal(renewed.id,first.id);
+  assert.equal(renewed.convertedAt,1000);
+  assert.equal(renewed.monthlyValue,599);
+  assert.equal(renewed.plan,'Growth');
+  assert.equal(f.index.length,1);
+});
+test('prospect converting after a documented lost stage accepts its new conversion date',async()=>{
+  const f=fixture();
+  const lost=await f.upsert({email:'reopened@example.test',stage:'lost',convertedAt:null,source:'manual'});
+  const returned=await f.upsert({id:lost.id,email:lost.email,stage:'converted',
+    convertedAt:123456,workspaceId:'workspace-2',plan:'Pro'});
+  assert.equal(returned.convertedAt,123456);
+  assert.equal(returned.stage,'converted');
+});
