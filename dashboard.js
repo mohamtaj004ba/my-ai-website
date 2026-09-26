@@ -1924,7 +1924,7 @@ async function saveCampaign(){
   if(payload.id&&!editing){if(status){status.textContent='This campaign is no longer available. Refresh before editing.';status.className='form-status-line error'}return}
   if(!String(payload.name).trim()){if(status){status.textContent='Campaign name is required.';status.className='form-status-line error'}return}
   setCampaignMutationPending(true,'save');
-  try{const r=await fetch('/api/account?action=admin-marketing-campaign-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save campaign.');adminCampaignData=[data.campaign,...(adminCampaignData||[]).filter(x=>String(x.id)!==String(data.campaign.id))];setCampaignMutationPending(false);closeCampaignModal();renderGrowth();try{const cr=await fetch('/api/account?action=admin-marketing-campaigns',{cache:'no-store'});if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];renderGrowth()}catch(refreshError){/* Saved campaign is already reflected locally; no false save failure. */}}
+  try{const r=await fetch('/api/account?action=admin-marketing-campaign-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save campaign.');adminCampaignData=[data.campaign,...(adminCampaignData||[]).filter(x=>String(x.id)!==String(data.campaign.id))];setCampaignMutationPending(false);closeCampaignModal();renderGrowth()}
   catch(err){if(status){status.textContent=err.message||'Could not save campaign.';status.className='form-status-line error'}}
   finally{setCampaignMutationPending(false)}
 }
