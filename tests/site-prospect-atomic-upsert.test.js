@@ -128,3 +128,40 @@ test('simultaneous same-email submissions converge on one indexed prospect',asyn
   assert.equal(f.values.get('site:prospect:email:'+f.emailKey('same@example.test')),contact.id);
   assert.equal(f.values.get('site:prospect:'+contact.id).firstSource,'contact');
 });
+
+test('manual new-lead collision does not reset an existing converted customer',async()=>{
+ const f=fixture();
+ const paid=await f.upsert({email:'customer@example.test',name:'Paid customer',stage:'converted',source:'get_started',convertedAt:1234,workspaceId:'workspace-1',monthlyValue:400});
+ const writes=f.operations.length;
+ await assert.rejects(()=>f.upsert({email:'customer@example.test',name:'Manual prospect',stage:'new',source:'manual',requireNew:true}),err=>{
+   assert.equal(err.code,'PROSPECT_EXISTS');
+   assert.equal(err.prospectId,paid.id);
+   return true;
+ });
+ assert.equal(f.operations.length,writes);
+ const retained=f.values.get('site:prospect:'+paid.id);
+ assert.equal(retained.stage,'converted');
+ assert.equal(retained.workspaceId,'workspace-1');
+ assert.equal(retained.convertedAt,1234);
+ assert.equal(retained.monthlyValue,400);
+ assert.equal(f.index.length,1);
+});
+test('manual new-lead racing a same-email submission rejects after fresh lookup',async()=>{
+ const f=fixture({injectConflict:true});
+ const original=f.kv.eval;
+ let published=false;
+ f.kv.eval=async(script,keys,args)=>{
+   if(!published){
+     published=true;
+     const owned='site:prospect:email:'+f.emailKey('same@example.test');
+     f.values.set('site:prospect:already',{id:'already',email:'same@example.test',stage:'converted',createdAt:1,updatedAt:2});
+     f.values.set(owned,'already');
+     f.index.push('already');
+     return 0;
+   }
+   return original(script,keys,args);
+ };
+ await assert.rejects(()=>f.upsert({email:'same@example.test',requireNew:true,stage:'new'}),err=>err.code==='PROSPECT_EXISTS');
+ assert.equal(f.values.get('site:prospect:already').stage,'converted');
+ assert.equal(f.index.length,1);
+});
