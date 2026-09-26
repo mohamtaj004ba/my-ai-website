@@ -54,12 +54,12 @@ async function upsertWorkspace({lead,session,plan,email}){
   const workspace={
     ...existing,
     id:workspaceId,
-    name:lead.business||existing.name||'CallerCore Client',
-    ownerName:lead.name||existing.ownerName||'',
+    name:existing.id&&existing.name?existing.name:lead.business||'CallerCore Client',
+    ownerName:existing.id&&existing.ownerName?existing.ownerName:lead.name||'',
     ownerEmail:email,
-    contactPhone:lead.phone||existing.contactPhone||'',
+    contactPhone:existing.id&&existing.contactPhone?existing.contactPhone:lead.phone||'',
     phone:existing.phone||'',
-    industry:lead.industry||existing.industry||'',
+    industry:existing.id&&existing.industry?existing.industry:lead.industry||'',
     plan:ent.plan,
     status:existing.status||'onboarding',
     subscriptionStatus:'active',
@@ -227,6 +227,7 @@ module.exports=async function handler(req,res){
   lead.plan=paidPlan;
   const recipient=String(lead.email||customerEmail||'').trim().toLowerCase();
   if(!recipient)return res.status(500).json({error:'Missing customer email'});
+  if(customerEmail&&recipient!==customerEmail)throw new Error('Checkout email and pre-saved lead disagree; manual reconciliation required');
 
   // Two different checkout sessions can refer to one customer. Serialize by
   // normalized email and Stripe customer ID as well as by checkout session.
