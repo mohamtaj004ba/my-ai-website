@@ -1598,19 +1598,21 @@ async function bootstrapAdmin(){
 
 async function loadAdminOps(){
   try{
+    // One disconnected endpoint must not prevent the remaining admin feeds from loading.
+    const get=async url=>{try{return await fetch(url,{cache:'no-store'})}catch{return {ok:false,json:async()=>({})}}};
     const requestedAnalyticsDays=adminWebsiteDays;
     const [pr,ph,hr,fr,sr,ps,wr,fbr,fin,cr,dr]=await Promise.all([
-      fetch('/api/account?action=admin-provisioning',{cache:'no-store'}),
-      fetch('/api/account?action=admin-phone-numbers',{cache:'no-store'}),
-      fetch('/api/account?action=admin-system-health',{cache:'no-store'}),
-      fetch('/api/account?action=admin-fleet',{cache:'no-store'}),
-      fetch('/api/account?action=admin-support',{cache:'no-store'}),
-      fetch('/api/account?action=admin-platform-settings',{cache:'no-store'}),
-      fetch('/api/account?action=admin-website-analytics&days='+adminWebsiteDays,{cache:'no-store'}),
-      fetch('/api/account?action=admin-ai-feedback',{cache:'no-store'}),
-      fetch('/api/account?action=admin-finance',{cache:'no-store'}),
-      fetch('/api/account?action=admin-marketing-campaigns',{cache:'no-store'}),
-      fetch('/api/account?action=admin-documents',{cache:'no-store'})
+      get('/api/account?action=admin-provisioning'),
+      get('/api/account?action=admin-phone-numbers'),
+      get('/api/account?action=admin-system-health'),
+      get('/api/account?action=admin-fleet'),
+      get('/api/account?action=admin-support'),
+      get('/api/account?action=admin-platform-settings'),
+      get('/api/account?action=admin-website-analytics&days='+adminWebsiteDays),
+      get('/api/account?action=admin-ai-feedback'),
+      get('/api/account?action=admin-finance'),
+      get('/api/account?action=admin-marketing-campaigns'),
+      get('/api/account?action=admin-documents')
     ]);
     setDataHealth('adminDataHealth',[pr,ph,hr,fr,sr,ps,wr,fbr,fin,cr,dr].some(r=>!r.ok));
     if(pr.ok)adminProvisioningData=(await pr.json()).provisioning||[];
@@ -1621,7 +1623,7 @@ async function loadAdminOps(){
     if(ps.ok&&!adminPlatformDirty)adminPlatformData=(await ps.json()).settings||null;
     if(wr.ok){const latest=(await wr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'
     const preferredDays=Number(adminPlatformData?.analyticsWindowDays||requestedAnalyticsDays||30);
-    if(preferredDays!==requestedAnalyticsDays){adminWebsiteDays=preferredDays;const rr=await fetch('/api/account?action=admin-website-analytics&days='+preferredDays,{cache:'no-store'});if(rr.ok){const latest=(await rr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'}else adminWebsiteDays=requestedAnalyticsDays;
+    if(preferredDays!==requestedAnalyticsDays){adminWebsiteDays=preferredDays;const rr=await get('/api/account?action=admin-website-analytics&days='+preferredDays);if(rr.ok){const latest=(await rr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'}else adminWebsiteDays=requestedAnalyticsDays;
     if(fbr.ok)adminFeedbackData=(await fbr.json()).feedback||[];
     if(fin.ok){const latest=(await fin.json()).finance;if(latest){adminFinanceData=latest;adminFinanceLoadError=''}else adminFinanceLoadError='Finance response was incomplete; previously loaded records may be outdated.'}else adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';
     if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];
