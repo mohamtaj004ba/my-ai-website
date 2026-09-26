@@ -60,11 +60,11 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
   },process:{env:{STRIPE_WEBHOOK_SECRET:'test-webhook-secret',SITE_URL:'https://callercore.com'}},
   Buffer,Date,Math,Number,String,Object,Array,Promise,Set,console:{error(){}},URL});
   const handler=module.exports;
-  async function submit(eventId,checkoutId='cs_same'){
+  async function submit(eventId,checkoutId='cs_same',options={}){
     const event={id:eventId,type:'checkout.session.completed',data:{object:{
-      id:checkoutId,payment_status:'paid',client_reference_id:'lead-reference',
-      customer:'cus_same',subscription:'sub_same',metadata:{plan:'Pro'},
-      customer_details:{email:'customer@example.test',name:'Customer'}
+      id:checkoutId,payment_status:'paid',client_reference_id:options.leadId||'lead-reference',
+      customer:options.customerId||'cus_same',subscription:options.subscriptionId||'sub_same',metadata:{plan:'Pro'},
+      customer_details:{email:options.email||'customer@example.test',name:'Customer'}
     }}};
     const raw=JSON.stringify(event),timestamp=String(Math.floor(Date.now()/1000));
     const signature=crypto.createHmac('sha256','test-webhook-secret').update(timestamp+'.'+raw).digest('hex');
@@ -246,5 +246,25 @@ test('failed account provisioning releases session and account identity claims',
   assert.equal(f.locks.size,0);
   const retry=await f.submit('evt_retry','cs_second');
   assert.equal(retry.status,200);
+  assert.equal(f.locks.size,0);
+});
+
+test('distinct Stripe customer IDs sharing one account email also serialize provisioning',async()=>{
+  const f=fixture({blockFirstWorkspace:true});
+  const first=f.submit('evt_a','cs_a',{customerId:'cus_a',subscriptionId:'sub_a'});
+  await f.entered.promise;
+  const overlapping=await f.submit('evt_b','cs_b',{customerId:'cus_b',subscriptionId:'sub_b'});
+  assert.equal(overlapping.status,503);
+  assert.equal(f.store.has('stripe:event:evt_b'),false);
+  assert.equal(f.welcomes,0);
+  assert.equal(f.locks.size,3);
+  f.resume.resolve();
+  const done=await first;
+  assert.equal(done.status,200);
+  assert.equal(f.locks.size,0);
+  const retry=await f.submit('evt_b','cs_b',{customerId:'cus_b',subscriptionId:'sub_b'});
+  assert.equal(retry.status,200);
+  assert.equal(retry.body.workspaceId,done.body.workspaceId);
+  assert.equal(f.welcomes,2);
   assert.equal(f.locks.size,0);
 });
