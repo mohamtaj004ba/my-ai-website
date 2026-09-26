@@ -7,6 +7,7 @@ const {normalizePlan,entitlementsFor}=require('../lib/plans');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {addBusinessHours}=require('../lib/business-hours');
 const {lifecycleDecision}=require('../lib/stripe-lifecycle');
+const {claimCheckoutSession,releaseCheckoutSession}=require('../lib/stripe-session-lock');
 module.exports.config={api:{bodyParser:false}};
 const STRIPE_WEBHOOK_SECRET=process.env.STRIPE_WEBHOOK_SECRET;
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
@@ -185,12 +186,24 @@ module.exports=async function handler(req,res){
   const mappedPlan=PLAN_BY_PAYMENT_LINK[session.payment_link]||(['Starter','Growth','Pro'].includes(metadataPlan)?metadataPlan:null);
   if(!mappedPlan)return res.status(400).json({error:'Unknown checkout plan'});
   const paidPlan=normalizePlan(mappedPlan);
-  const sessionKey=session.id?'stripe:session:'+session.id:null;
+  if(!session.id||typeof session.id!=='string'||session.id.length>200)return res.status(400).json({error:'Invalid checkout session ID'});
+  const sessionKey='stripe:session:'+session.id;
   let sessionState=sessionKey?await kv.get(sessionKey):null;
   if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
     if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
     return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
   }
+
+  const claim=await claimCheckoutSession(kv,session.id);
+  if(!claim){res.setHeader('Retry-After','15');return res.status(503).json({error:'Checkout provisioning is in progress. Stripe should retry.'})}
+  try{
+    // Recheck the durable receipt after taking the claim. A preceding worker
+    // could have completed between the first read and claim acquisition.
+    sessionState=await kv.get(sessionKey);
+    if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
+      if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+      return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
+    }
 
   const leadId=session.client_reference_id;
   const customerEmail=String(session.customer_details?.email||'').trim().toLowerCase();
@@ -255,4 +268,8 @@ module.exports=async function handler(req,res){
   if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
   if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
   return res.status(200).json({received:true,workspaceId:workspace.id});
+  }finally{
+    try{await releaseCheckoutSession(kv,claim)}
+    catch(releaseError){console.error('Stripe checkout claim cleanup failed',safeError(releaseError))}
+  }
 };
