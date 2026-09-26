@@ -42,14 +42,14 @@ test('saving a campaign locks duplicate actions and modal dismissal until succes
   await vm.runInContext('deleteCampaign()',f.context);
   assert.equal(f.requests.length,1,'no concurrent mutation');
   f.requests[0].task.resolve({ok:true,json:async()=>({campaign:{id:'campaign-1',name:'Campaign edited',updatedAt:20}})});
-  for(let n=0;n<4&&f.requests.length<2;n++)await Promise.resolve();
+  for(let n=0;n<20&&f.requests.length<2;n++)await new Promise(resolve=>setImmediate(resolve));
   assert.equal(f.requests.length,2,'campaign list refresh starts only after confirmed save');
   f.requests[1].task.reject(Error('refresh offline'));
   await saving;
   assert.equal(f.modal['aria-hidden'],'true');
   assert.equal(f.context.adminCampaignData[0].updatedAt,20);
   assert.ok(f.controls.every(el=>!el.disabled));
-  assert.equal(f.context.adminCampaignMutationPending,false);
+  assert.equal(vm.runInContext('adminCampaignMutationPending',f.context),false);
 });
 
 test('failed campaign save preserves draft, allows retry and never closes modal',async()=>{
@@ -61,7 +61,7 @@ test('failed campaign save preserves draft, allows retry and never closes modal'
   assert.notEqual(f.modal['aria-hidden'],'true');
   assert.match(f.el('campaignFormStatus').textContent,/Campaign changed/);
   assert.ok(f.controls.every(el=>!el.disabled));
-  assert.equal(f.context.adminCampaignMutationPending,false);
+  assert.equal(vm.runInContext('adminCampaignMutationPending',f.context),false);
   const retry=vm.runInContext('saveCampaign()',f.context);
   assert.equal(f.requests.length,2);
   f.requests[1].task.resolve({ok:false,json:async()=>({error:'Still stale'})});
