@@ -72,3 +72,12 @@ test('changing a prospect email rekeys lookup with the record in one compare tra
   const raced=await backend({id:'lead-1',expectedUpdatedAt:10,email:'new@example.test'},{emailOwners:owners,commit:false}).run();
   assert.equal(raced.code,409);assert.equal(raced.calls,1);
 });
+
+test('duplicate manual prospects expose a deliberate accessible open-existing action',()=>{
+  const editor=ui.slice(ui.indexOf('async function saveProspect('),ui.indexOf('let adminCampaignMutationPending=false;'));
+  assert.match(editor,/r\.status===409&&data\.prospectId/);
+  assert.match(editor,/action\.textContent='Open existing prospect'/);
+  assert.match(editor,/action\.type='button'/);
+  assert.match(editor,/openProspectModal\(err\.prospectId\)/);
+  assert.match(editor,/outside the loaded Growth results/);
+});
