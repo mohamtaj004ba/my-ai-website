@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const source=fs.readFileSync('api/account.js','utf8');
 
-function fixture(count,{delayAgreements=false}={}){
+function fixture(count,{delayAgreements=false,company=[]}={}){
   const ids=Array.from({length:count},(_,i)=>'workspace-'+i),reads=[];
   let activeAgreementReads=0,peakAgreementReads=0;
   const kv={get:async key=>{
@@ -18,7 +18,7 @@ function fixture(count,{delayAgreements=false}={}){
       if(key.startsWith('onboarding:workspace-token:'))return 'preview-agreement-token';
       return {agreementSignedAt:1,agreementVersion:'v1',agreementSignedName:'Owner'};
     }
-    if(key==='admin:documents')return [];
+    if(key==='admin:documents')return company;
     throw Error('Unexpected KV key: '+key);
   }};
   const res={status(n){this.code=n;return this},json(data){this.data=data;return data}};
@@ -55,4 +55,29 @@ test('agreement reads use bounded concurrency instead of a serial N+1 loop',asyn
   assert.equal(result.documents.agreements.length,41);
   assert.ok(f.peak()>2,'agreement reads should not be serial');
   assert.ok(f.peak()<=40,'at most 20 workspaces with 2 agreement reads each');
+});
+
+
+test('malformed company register returns error rather than silently hiding records',async()=>{
+  for(const company of [{bad:true},Array.from({length:501},(_,i)=>({id:'doc-'+i})),[null],[{name:'missing id'}]]){
+    const f=fixture(0,{company});
+    await f.run();
+    assert.equal(f.res.code,503);
+    assert.match(f.res.data.error,/Company document directory/);
+    assert.equal(f.res.data.documents,undefined);
+  }
+  const valid=fixture(0,{company:[{id:'valid-doc',name:'Policy'}]});
+  const response=await valid.run();
+  assert.equal(valid.res.code,200);
+  assert.equal(response.documents.company[0].id,'valid-doc');
+});
+
+test('company document mutations reject malformed records before audited writes',()=>{
+  const api=fs.readFileSync('api/account.js','utf8');
+  const save=api.slice(api.indexOf('async function adminDocumentSave('),api.indexOf('async function adminDocumentDelete('));
+  const remove=api.slice(api.indexOf('async function adminDocumentDelete('),api.indexOf('async function adminTechSupport('));
+  for(const body of [save,remove]){
+    assert.match(body,/list\.length>500\|\|list\.some\(/);
+    assert.ok(body.indexOf('list.some(')<body.indexOf('compareAndAudit('));
+  }
 });
