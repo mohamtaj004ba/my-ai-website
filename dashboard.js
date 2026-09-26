@@ -1619,9 +1619,9 @@ async function loadAdminOps(){
     if(fr.ok)adminFleetData=await fr.json();
     if(sr.ok)adminSupportData=(await sr.json()).tickets||[];
     if(ps.ok&&!adminPlatformDirty)adminPlatformData=(await ps.json()).settings||null;
-    if(wr.ok)adminWebsiteData=(await wr.json()).analytics||adminWebsiteData;
+    if(wr.ok){const latest=(await wr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}}
     const preferredDays=Number(adminPlatformData?.analyticsWindowDays||requestedAnalyticsDays||30);
-    if(preferredDays!==requestedAnalyticsDays){adminWebsiteDays=preferredDays;const rr=await fetch('/api/account?action=admin-website-analytics&days='+preferredDays,{cache:'no-store'});if(rr.ok)adminWebsiteData=(await rr.json()).analytics||adminWebsiteData}else adminWebsiteDays=requestedAnalyticsDays;
+    if(preferredDays!==requestedAnalyticsDays){adminWebsiteDays=preferredDays;const rr=await fetch('/api/account?action=admin-website-analytics&days='+preferredDays,{cache:'no-store'});if(rr.ok){const latest=(await rr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}}}else adminWebsiteDays=requestedAnalyticsDays;
     if(fbr.ok)adminFeedbackData=(await fbr.json()).feedback||[];
     if(fin.ok)adminFinanceData=(await fin.json()).finance||adminFinanceData;
     if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];
@@ -1665,7 +1665,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
     add('provisioning','/api/account?action=admin-provisioning',60000,d=>{adminProvisioningData=d.provisioning||[]});
     add('support','/api/account?action=admin-support',60000,d=>{adminSupportData=d.tickets||[]});
     add('feedback','/api/account?action=admin-ai-feedback',60000,d=>{adminFeedbackData=d.feedback||[]});
-    add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,90000,d=>{adminWebsiteData=d.analytics||adminWebsiteData});
+    add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,90000,d=>{if(d.analytics){adminWebsiteData=d.analytics;adminWebsiteLoadError=''}});
     add('finance','/api/account?action=admin-finance',180000,d=>{adminFinanceData=d.finance||adminFinanceData});
     add('health','/api/account?action=admin-system-health',300000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
   }else if(view==='onboarding'){
@@ -1678,10 +1678,10 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   }else if(view==='finance'){
     add('finance','/api/account?action=admin-finance',90000,d=>{adminFinanceData=d.finance||adminFinanceData});
   }else if(view==='growth'){
-    add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,60000,d=>{adminWebsiteData=d.analytics||adminWebsiteData});
+    add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,60000,d=>{if(d.analytics){adminWebsiteData=d.analytics;adminWebsiteLoadError=''}});
     add('campaigns','/api/account?action=admin-marketing-campaigns',60000,d=>{adminCampaignData=d.campaigns||[]});
   }else if(view==='website'){
-    add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,60000,d=>{adminWebsiteData=d.analytics||adminWebsiteData});
+    add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,60000,d=>{if(d.analytics){adminWebsiteData=d.analytics;adminWebsiteLoadError=''}});
   }else if(view==='documents'){
     add('documents','/api/account?action=admin-documents',60000,d=>{adminDocumentsData=d.documents||adminDocumentsData});
   }else if(view==='client-care'){
