@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const source=fs.readFileSync('lib/site-analytics.js','utf8');
 
-function fixture({injectConflict=false}={}){
+function fixture({injectConflict=false,invalidDirectory=false,invalidAuditType=false}={}){
   const values=new Map(),index=[],operations=[];
   let conflicts=0,uuids=0;
   const clone=x=>x==null?x:JSON.parse(JSON.stringify(x));
@@ -13,6 +13,8 @@ function fixture({injectConflict=false}={}){
     get:async key=>clone(values.get(key)??null),
     eval:async(script,keys,args)=>{
       operations.push({script,keys:[...keys],args:[...args]});
+      if(invalidDirectory)return -3;
+      if(invalidAuditType&&args[9]==='1')return -1;
       if(injectConflict&&conflicts++===0)return 0;
       const before=values.has(keys[0])?JSON.stringify(values.get(keys[0])):'';
       if(before!==args[0])return 0;
@@ -322,4 +324,23 @@ test('verified paid lifecycle update may replace a paid plan while preserving th
   assert.equal(upgraded.plan,'Pro');
   assert.equal(upgraded.workspaceId,'paid-ws');
   assert.equal(f.index.length,1);
+});
+
+test('malformed prospect directory fails before publishing lead email or audit',async()=>{
+  const f=fixture({invalidDirectory:true});
+  await assert.rejects(()=>f.upsert({email:'blocked@example.test',name:'Block',requireNew:true,
+    adminAudit:{workspaceId:'admin-ws',actorEmail:'admin@example.test'}}),/Prospect directory is malformed/);
+  assert.equal(f.values.size,0);
+  assert.equal(f.index.length,0);
+  assert.equal(f.operations.length,1);
+  const script=f.operations[0].script;
+  assert.ok(script.indexOf("redis.call('TYPE',KEYS[2])")<script.indexOf("redis.call('SET',KEYS[1]"));
+  assert.ok(script.indexOf("redis.call('TYPE',KEYS[auditKey])")<script.indexOf("redis.call('SET',KEYS[1]"));
+});
+test('invalid audit Redis key type cannot leave an unaudited manual prospect',async()=>{
+  const f=fixture({invalidAuditType:true});
+  await assert.rejects(()=>f.upsert({email:'blocked@example.test',requireNew:true,
+    adminAudit:{workspaceId:'admin-ws',actorEmail:'admin@example.test'}}),/audit history is malformed/);
+  assert.equal(f.values.size,0);
+  assert.equal(f.index.length,0);
 });
