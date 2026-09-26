@@ -10,7 +10,7 @@ function fixture({finance={ok:true,payload:{finance:{reconciliation:[{id:'fresh'
   const health=[],rendered=[],calls=[];
   const response=(config)=>({ok:config.ok,json:async()=>config.payload||{}});
   const context=vm.createContext({
-    adminWebsiteDays:30,adminWebsiteData:{prospects:[{id:'older'}]},adminWebsiteLoadError:'',
+    adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,adminWebsiteData:{prospects:[{id:'older'}]},adminWebsiteLoadError:'',
     adminFinanceData:{reconciliation:[{id:'older'}]},adminFinanceLoadError:'',
     adminDataSyncAt:{},adminPlatformDirty:false,
     adminPlatformData:{analyticsWindowDays:preferredDays},adminProvisioningData:[],adminDocumentsData:{agreements:[],company:[],standard:[]},
@@ -90,4 +90,28 @@ test('failed preferred analytics window request preserves existing result with d
   assert.match(f.context.adminWebsiteLoadError,/outdated/);
   assert.equal(f.context.adminDataSyncAt.website,undefined);
   assert.equal(f.calls.filter(url=>url.includes('admin-website-analytics')).length,2);
+});
+
+test('later operational reload respects manually selected range rather than platform default',async()=>{
+  const f=fixture({preferredDays:90});
+  f.context.adminWebsiteDays=7;f.context.adminWebsiteAnalyticsRequest=1;
+  await f.run();
+  assert.equal(f.context.adminWebsiteDays,7);
+  assert.equal(f.calls.filter(url=>url.includes('admin-website-analytics')).length,1);
+  assert.ok(f.calls.some(url=>url.includes('admin-website-analytics&days=7')));
+});
+test('in-flight bootstrap cannot replace newer manual analytics selection',async()=>{
+  const f=fixture({preferredDays:90});
+  const original=f.context.fetch;
+  let resolveWebsite;
+  f.context.fetch=async url=>url.includes('admin-website-analytics')?new Promise(ok=>resolveWebsite=ok):original(url);
+  const loading=f.run();
+  await new Promise(resolve=>setImmediate(resolve));
+  f.context.adminWebsiteDays=7;f.context.adminWebsiteAnalyticsRequest=1;
+  f.context.adminWebsiteData={prospects:[{id:'manually-selected'}],periodDays:7};
+  resolveWebsite({ok:true,json:async()=>({analytics:{prospects:[{id:'obsolete'}],periodDays:30}})});
+  await loading;
+  assert.equal(f.context.adminWebsiteDays,7);
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'manually-selected');
+  assert.equal(f.context.adminWebsiteLoadError,'');
 });
