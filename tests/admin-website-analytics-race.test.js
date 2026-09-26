@@ -59,3 +59,8 @@ test('periodic admin analytics refresh clears stale warnings after a successful 
   assert.match(source,/if\(wr\.ok\)\{const latest=\(await wr\.json\(\)\)\.analytics;if\(latest\)\{adminWebsiteData=latest;adminWebsiteLoadError=''\}/);
   assert.match(source,/if\(rr\.ok\)\{const latest=\(await rr\.json\(\)\)\.analytics;if\(latest\)\{adminWebsiteData=latest;adminWebsiteLoadError=''\}/);
 });
+
+test('website and Growth disclose a mismatched loaded analytics date window',()=>{
+  assert.match(source,/Showing '\+Number\(d\.periodDays\)\+'-day data; requested '\+Number\(adminWebsiteDays\)/);
+  assert.match(source,/Website traffic charts show the last loaded '\+Number\(adminWebsiteData\.periodDays\)\+'-day range/);
+});
