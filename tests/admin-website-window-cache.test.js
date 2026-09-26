@@ -48,7 +48,7 @@ test('view refresh ignores an old website window arriving after a new selection'
   const oldFetch=new Promise(resolve=>resolveOld=resolve),rendered=[];
   const ctx=vm.createContext({
     document:{body:{dataset:{dashboard:'admin'}}},
-    currentAdminView:()=> 'website',adminWebsiteDays:30,adminWebsiteData:{periodDays:30},
+    currentAdminView:()=> 'website',adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,adminWebsiteData:{periodDays:30},
     adminWebsiteLoadError:'',adminDataSyncAt:{},adminSyncCacheKey:(k,u)=>k==='website'?u:k,
     adminSyncFetch:async()=>oldFetch,setDataHealth:()=>{},setAdminSyncState:()=>{},
     renderWebsiteAnalytics:()=>rendered.push('website'),renderAdmin:()=>rendered.push('admin'),
