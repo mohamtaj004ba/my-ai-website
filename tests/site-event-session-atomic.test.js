@@ -99,3 +99,20 @@ test('invalid engagement times cannot poison session active-time totals',async()
   assert.equal(large.activeMs,3600000);
   assert.equal(f.values.get('site:session:s1').activeMs,3600000);
 });
+
+test('malformed stored session counters or pages fail closed without logging the event',async()=>{
+  const cases=[
+    {id:'s1',firstAt:100,lastAt:200,activeMs:'invalid',events:1,pages:[]},
+    {id:'s1',firstAt:100,lastAt:200,activeMs:20,events:'not-a-count',pages:[]},
+    {id:'s1',firstAt:100,lastAt:200,activeMs:20,events:1,pages:'not-an-array'},
+    {id:'s1',firstAt:100,lastAt:'invalid',activeMs:20,events:1,pages:[]}
+  ];
+  for(const prior of cases){
+    const f=fixture();
+    f.values.set('site:session:s1',prior);
+    await assert.rejects(()=>f.record({type:'engagement',sessionId:'s1',activeMs:200}),/session is malformed/);
+    assert.equal(f.events.length,0);
+    assert.equal(f.index.length,0);
+    assert.equal(f.values.get('site:session:s1'),prior);
+  }
+});
