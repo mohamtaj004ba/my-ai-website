@@ -224,3 +224,35 @@ test('non-manual checkout and contact lead capture do not insert admin audit ent
   assert.equal(f.operations[0].args[9],'0');
   assert.equal(f.operations[0].keys.includes('audit:admin-ws'),false);
 });
+
+test('a raced manual create never leaves an orphaned audit event',async()=>{
+  const f=fixture();
+  const original=f.kv.eval;let once=true;
+  f.kv.eval=async(script,keys,args)=>{
+    if(once){
+      once=false;
+      const emailKey='site:prospect:email:'+f.emailKey('race@example.test');
+      f.values.set('site:prospect:claimed',{id:'claimed',email:'race@example.test',stage:'converted',createdAt:1,updatedAt:2});
+      f.values.set(emailKey,'claimed');f.index.push('claimed');
+      return 0;
+    }
+    return original(script,keys,args);
+  };
+  await assert.rejects(()=>f.upsert({email:'race@example.test',name:'Manual',requireNew:true,
+    adminAudit:{workspaceId:'admin-ws',actorEmail:'admin@example.test'}}),err=>err.code==='PROSPECT_EXISTS');
+  assert.equal(f.values.has('audit:admin-ws'),false);
+  assert.equal(f.values.get('site:prospect:claimed').stage,'converted');
+  assert.equal(f.index.length,1);
+});
+test('manual audit history remains bounded and keeps the latest creation first',async()=>{
+  const f=fixture();
+  const history=Array.from({length:200},(_,i)=>({id:'older-'+i,action:'sales_prospect_create'}));
+  f.values.set('audit:admin-ws',history);
+  await f.upsert({email:'newlead@example.test',requireNew:true,
+    adminAudit:{workspaceId:'admin-ws',actorEmail:'admin@example.test'}});
+  const events=f.values.get('audit:admin-ws');
+  assert.equal(events.length,200);
+  assert.equal(events[0].meta.prospectId,'test-id-1');
+  assert.equal(events.at(-1).id,'older-198');
+  assert.ok(!events.some(e=>e.id==='older-199'));
+});
