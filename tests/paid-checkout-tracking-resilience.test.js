@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const source=fs.readFileSync('api/stripe-webhook.js','utf8');
 const start=source.indexOf('  const workspace=await upsertWorkspace({lead,session,plan:paidPlan,email:recipient});');
-const end=source.indexOf('\n};',start);
+const end=source.indexOf('\n  }finally{',start);
 assert.ok(start>=0&&end>start);
 const paidPath=source.slice(start,end);
 async function run({trackError=false,workspaceError=false}={}){
@@ -54,7 +54,7 @@ test('paid checkout telemetry is explicitly best effort and uses redacted errors
 });
 
 const guardStart=source.indexOf('  if(sessionState&&(sessionState.status===\'complete\'');
-const guardEnd=source.indexOf('\n\n  const leadId=',guardStart);
+const guardEnd=source.indexOf('\n  const claim=await claimCheckoutSession(',guardStart);
 assert.ok(guardStart>=0&&guardEnd>guardStart);
 const sessionGuard=source.slice(guardStart,guardEnd);
 async function dedupe(sessionState){
@@ -83,4 +83,14 @@ test('incomplete session state can still resume provisioning while complete stat
   const complete=await dedupe({status:'complete',workspaceId:'workspace-1',token:'onboard-token'});
   assert.equal(complete.status,200);
   assert.equal(complete.body.duplicate,true);
+});
+
+test('paid webhook claims checkout before provisioning and releases on success or failure',()=>{
+  const claimAt=source.indexOf('const claim=await claimCheckoutSession(kv,session.id)');
+  const provisionAt=source.indexOf('const workspace=await upsertWorkspace(');
+  const releaseAt=source.indexOf('await releaseCheckoutSession(kv,claim)');
+  assert.ok(claimAt>0&&claimAt<provisionAt&&releaseAt>provisionAt);
+  assert.match(source,/if\(!claim\)\{res\.setHeader\('Retry-After','15'\);return res\.status\(503\)/);
+  assert.match(source,/sessionState=await kv\.get\(sessionKey\)/);
+  assert.match(source,/if\(!session\.id\|\|typeof session\.id!=='string'/);
 });
