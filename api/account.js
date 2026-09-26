@@ -1235,15 +1235,22 @@ async function adminWebsiteAnalytics(req,res){
     const events=eventsRaw.filter(Boolean);
     const loadIndexed=async(ids,prefix)=>{
       const records=[],uniqueIds=[...new Set(ids.map(id=>String(id||'').trim()).filter(Boolean))].slice(0,2000);
+      let missing=0;
       for(let offset=0;offset<uniqueIds.length;offset+=100){
-        const batch=await Promise.all(uniqueIds.slice(offset,offset+100).map(id=>kv.get(prefix+id)));
-        for(const record of batch)if(record)records.push(record);
+        const batchIds=uniqueIds.slice(offset,offset+100),batch=await Promise.all(batchIds.map(id=>kv.get(prefix+id)));
+        for(let i=0;i<batch.length;i++){
+          const record=batch[i];
+          if(record&&typeof record==='object'&&!Array.isArray(record)&&String(record.id||'')===batchIds[i])records.push(record);
+          else missing++;
+        }
       }
-      return records;
+      return {records,missing};
     };
-    const [sessions,prospectsRaw]=await Promise.all([loadIndexed(sessionIds,'site:session:'),loadIndexed(prospectIds,'site:prospect:')]);
-    const prospects=prospectsRaw.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    const [sessionLoad,prospectLoad]=await Promise.all([loadIndexed(sessionIds,'site:session:'),loadIndexed(prospectIds,'site:prospect:')]);
+    const sessions=sessionLoad.records,prospects=prospectLoad.records.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
     const coverage={retainedEvents:eventsRaw.length,retainedSessionIds:sessionIds.length,retainedProspectIds:prospectIds.length,
+      unavailableSessionRecords:sessionLoad.missing,unavailableProspectRecords:prospectLoad.missing,
+      isIncomplete:prospectLoad.missing>0,
       isRetentionCapped:eventsRaw.length>=5000||sessionIds.length>=2000||prospectIds.length>=2000};
     const now=Date.now(),days=clampInt(req.query?.days,7,90,30),cut=now-days*86400000,activeCut=now-15*60000;
     const periodSessions=sessions.filter(s=>Number(s.firstAt||0)>=cut),periodEvents=events.filter(e=>Number(e.at||0)>=cut);
