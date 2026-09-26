@@ -91,3 +91,28 @@ test('transaction errors never commit partial client index or email lookup write
   assert.equal(f.values.size,0);
   f.kv.eval=original;
 });
+
+test('manual prospect follow-up, owner, notes and tags commit with original lead',async()=>{
+  const f=fixture(),start=Date.now();
+  const lead=await f.upsert({email:'manual@example.test',source:'manual',stage:'new',name:'Manual',
+    owner:'Agent',campaign:'fall',notes:'Follow up today',tags:[' priority ','service'],
+    nextFollowUpAt:null,autoFollowupHours:24,updatedBy:'admin@example.test'});
+  assert.equal(f.operations.length,1);
+  assert.equal(f.index.length,1);
+  assert.equal(lead.owner,'Agent');assert.equal(lead.campaign,'fall');
+  assert.equal(lead.notes,'Follow up today');
+  assert.deepEqual(Array.from(lead.tags),['priority','service']);
+  assert.ok(lead.nextFollowUpAt>=start+24*3600000);
+  await f.upsert({id:lead.id,email:lead.email,stage:'checkout_started',source:'get_started'});
+  const later=f.values.get('site:prospect:'+lead.id);
+  assert.equal(later.owner,'Agent');assert.equal(later.notes,'Follow up today');
+  assert.equal(later.nextFollowUpAt,lead.nextFollowUpAt);
+  assert.equal(f.index.length,1);
+});
+test('converted or lost manual prospects do not receive an automatic follow-up',async()=>{
+  for(const stage of ['converted','lost']){
+    const f=fixture();
+    const lead=await f.upsert({email:stage+'@example.test',stage,nextFollowUpAt:null,autoFollowupHours:24});
+    assert.equal(lead.nextFollowUpAt,null);
+  }
+});
