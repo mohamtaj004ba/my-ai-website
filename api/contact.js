@@ -3,6 +3,7 @@ const crypto=require('crypto');
 const {kv}=require('../lib/kv');
 const { sendMail } = require('./_lib/mailgun');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
+const {appendSiteConversation}=require('../lib/site-conversation');
 const {rateLimit,requestIp}=require('../lib/rate-limit');
 
 const ALLOWED_HOSTS = new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
@@ -26,9 +27,7 @@ module.exports=async function handler(req,res){
   const text=['New CallerCore website inquiry','','Category: '+category,'Name: '+name,'Business: '+business,'Email: '+email,'Phone: '+phone,'','Message:',message].join('\n');
   try{
     const prospect=await upsertWebsiteProspect({name,business,email,phone,category,message,source:category==='Chatbot inquiry'?'chatbot':'contact',stage:'inquiry',visitorId,sessionId,utmSource,utmMedium,utmCampaign});
-    const convKey='site:conversation:'+prospect.id,conversation=await kv.get(convKey)||[];
-    conversation.push({id:crypto.randomUUID(),direction:'inbound',channel:category==='Chatbot inquiry'?'chatbot':'website',from:email,to:'support@callercore.com',subject:category||'Website inquiry',body:message,at:Date.now()});
-    await kv.set(convKey,conversation.slice(-200));
+    await appendSiteConversation(kv,prospect.id,{id:crypto.randomUUID(),direction:'inbound',channel:category==='Chatbot inquiry'?'chatbot':'website',from:email,to:'support@callercore.com',subject:category||'Website inquiry',body:message,at:Date.now()});
     await recordSiteEvent({type:'contact_submit',visitorId,sessionId,path:'/contact',label:category||'General',utmSource,utmMedium,utmCampaign},req);
     await sendMail({
       to:'support@callercore.com',
