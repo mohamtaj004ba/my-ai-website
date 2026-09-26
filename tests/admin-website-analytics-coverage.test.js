@@ -107,3 +107,30 @@ test('admin receives incomplete-prospect alerts on both website and Growth scree
   assert.match(ui,/adminWebsiteData\.coverage\?\.isIncomplete/);
   assert.match(ui,/indexed prospects are unavailable; counts and search results may be partial/);
 });
+
+test('period conversions are disclosed as sales outcomes, not falsely reported as a cohort rate',async()=>{
+  const now=Date.now(),sessionIds=['visit-1'],prospectIds=['won-1','won-2'];
+  const records={
+    'site:session:visit-1':{id:'visit-1',visitorId:'visitor-1',firstAt:now,lastAt:now,utmCampaign:'campaign-a',utmMedium:'email'},
+    'site:prospect:won-1':{id:'won-1',stage:'converted',convertedAt:now,updatedAt:now,monthlyValue:100,firstUtmCampaign:'campaign-a',firstUtmMedium:'email'},
+    'site:prospect:won-2':{id:'won-2',stage:'converted',convertedAt:now,updatedAt:now,monthlyValue:100,firstUtmCampaign:'campaign-a',firstUtmMedium:'email'}
+  };
+  const r=await fixture({sessionIds,prospectIds,records}).run();
+  assert.equal(r.code,200);
+  assert.equal(r.body.analytics.sessions,1);
+  assert.equal(r.body.analytics.conversions,2);
+  const campaign=r.body.analytics.campaigns.find(x=>x.campaign==='campaign-a');
+  assert.equal(campaign.conversions,2);
+  assert.equal(campaign.sessions,1);
+  assert.equal(campaign.cohortLinked,false);
+  assert.equal(campaign.conversionRate,undefined);
+});
+test('website dashboard labels period conversions separately from website visitor cohort',()=>{
+  assert.match(html,/Prospects converted/);
+  assert.match(html,/not a same-visit conversion rate/);
+  assert.match(html,/These are not a single visitor cohort/);
+  assert.match(ui,/set\('webConversionRate',Number\(d\.conversions\|\|0\)\.toLocaleString\(\)\)/);
+  assert.match(ui,/Sales outcome \(not session-linked\)/);
+  assert.match(ui,/MRR from period conversions/);
+  assert.doesNotMatch(ui,/x\.conversionRate\|\|0/);
+});
