@@ -228,6 +228,13 @@ module.exports=async function handler(req,res){
   catch(analyticsError){console.error('Paid checkout analytics unavailable',safeError(analyticsError))}
 
   if(!token){
+    const linkedToken=await kv.get('onboarding:workspace-token:'+workspace.id);
+    if(linkedToken){
+      const linkedOnboarding=await kv.get('onboarding:'+linkedToken);
+      if(linkedOnboarding&&linkedOnboarding.workspaceId===workspace.id)token=linkedToken;
+    }
+  }
+  if(!token){
     token=crypto.randomBytes(24).toString('hex');
     await kv.set('onboarding:'+token,{...lead,workspaceId:workspace.id,stripeSessionId:session.id,agreementSigned:false,agreementSignedAt:null,intake:{},status:'awaiting_agreement',createdAt:Date.now()},{ex:60*60*24*30});
   }else{
