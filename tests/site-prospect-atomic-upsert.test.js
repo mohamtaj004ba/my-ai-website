@@ -256,3 +256,27 @@ test('manual audit history remains bounded and keeps the latest creation first',
   assert.equal(events.at(-1).id,'older-198');
   assert.ok(!events.some(e=>e.id==='older-199'));
 });
+
+test('new public inquiry does not demote a qualified, proposal, or follow-up prospect',async()=>{
+  for(const stage of ['checkout_started','follow_up','qualified','proposal']){
+    const f=fixture();
+    const original=await f.upsert({email:stage+'@example.test',stage,source:'manual',updatedBy:'admin@example.test'});
+    const inquiry=await f.upsert({email:original.email,stage:'inquiry',source:'contact',message:'Can we speak?'});
+    assert.equal(inquiry.stage,stage);
+    assert.equal(inquiry.message,'Can we speak?');
+    assert.equal(f.index.length,1);
+  }
+});
+test('public checkout does not demote an active advanced lead but can re-engage a lost prospect',async()=>{
+  for(const stage of ['follow_up','qualified','proposal']){
+    const f=fixture();
+    const original=await f.upsert({email:stage+'@example.test',stage,source:'manual',updatedBy:'admin@example.test'});
+    const checkout=await f.upsert({email:original.email,stage:'checkout_started',source:'get_started'});
+    assert.equal(checkout.stage,stage);
+    assert.equal(f.index.length,1);
+  }
+  const f=fixture();
+  const lost=await f.upsert({email:'lost@example.test',stage:'lost',source:'manual',updatedBy:'admin@example.test'});
+  const renewed=await f.upsert({email:lost.email,stage:'checkout_started',source:'get_started'});
+  assert.equal(renewed.stage,'checkout_started');
+});
