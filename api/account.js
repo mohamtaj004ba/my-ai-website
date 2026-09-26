@@ -1342,7 +1342,7 @@ async function adminProspectSave(req,res){
       owner:body.owner??'',defaultSalesOwner:platform.defaultSalesOwner,campaign:body.campaign??'',notes:body.notes??'',
       nextFollowUpAt:body.nextFollowUpAt??null,autoFollowupHours:autoFollowup?clampInt(platform.leadFollowupHours,4,168,24):0,
       lastContactAt:body.lastContactAt,monthlyValue:body.monthlyValue,setupValue:body.setupValue,
-      tags:body.tags,updatedBy:admin.email
+      tags:body.tags,updatedBy:admin.email,adminAudit:{workspaceId:admin.workspaceId,actorEmail:admin.email}
     });
     return res.status(200).json({ok:true,prospect});
   }catch(err){
