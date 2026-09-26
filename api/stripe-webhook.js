@@ -236,16 +236,19 @@ module.exports=async function handler(req,res){
   }
   await kv.set('onboarding:workspace-token:'+workspace.id,token,{ex:60*60*24*90});
   const existingOnboarding=await kv.get('onboarding:workspace:'+workspace.id)||{};
+  const isRepeatPurchase=!!(existingOnboarding.workspaceId===workspace.id&&existingOnboarding.status);
   const paidAt=Date.now(),reviewEligibleAt=addBusinessHours(paidAt,2);
+  const firstCheckoutChecklist={payment:true,accountReview:false,onboardingSent:false,agreement:false,intake:false,businessProfile:false,agentDraft:false,routingCaptured:false,phoneAssigned:!!String(workspace.phone||'').trim(),adminReview:false,testCall:false,clientApproval:false,live:false};
   await kv.set('onboarding:workspace:'+workspace.id,{
     ...existingOnboarding,
     workspaceId:workspace.id,
-    status:'awaiting_review',
-    paidAt,
-    reviewEligibleAt,
-    onboardingLinkSent:false,
-    completionPercent:0,
-    checklist:{...(existingOnboarding.checklist||{}),payment:true,accountReview:false,onboardingSent:false,agreement:false,intake:false,businessProfile:false,agentDraft:false,routingCaptured:false,phoneAssigned:!!String(workspace.phone||'').trim(),adminReview:false,testCall:false,clientApproval:false,live:false},
+    status:isRepeatPurchase?existingOnboarding.status:'awaiting_review',
+    paidAt:isRepeatPurchase?(existingOnboarding.paidAt||paidAt):paidAt,
+    lastCheckoutAt:paidAt,
+    reviewEligibleAt:isRepeatPurchase?(existingOnboarding.reviewEligibleAt||reviewEligibleAt):reviewEligibleAt,
+    onboardingLinkSent:isRepeatPurchase?!!existingOnboarding.onboardingLinkSent:false,
+    completionPercent:isRepeatPurchase?Number(existingOnboarding.completionPercent||0):0,
+    checklist:isRepeatPurchase?{...existingOnboarding.checklist,payment:true}:firstCheckoutChecklist,
     updatedAt:Date.now()
   });
   if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
