@@ -1753,6 +1753,8 @@ body[data-dashboard="admin"] #view-platform-settings{max-width:1600px}
 .growth-column.drag-over{border-color:#c85d35;background:#fff9f6;box-shadow:inset 0 0 0 2px rgba(200,93,53,.08)}
 .growth-card.dragging{opacity:.45;transform:scale(.985);box-shadow:none}
 .growth-card[draggable="true"]{cursor:grab}.growth-card[draggable="true"]:active{cursor:grabbing}
+.growth-card.pending,.growth-card.pending:hover{opacity:.78;cursor:progress;transform:none;border-color:#d8a18c;box-shadow:inset 3px 0 0 #c85d35,0 1px 1px rgba(30,35,38,.02)}
+.growth-card.pending .growth-card-foot:after{content:'Saving stage…';font-size:8px;font-weight:700;color:#a24c2d;white-space:nowrap}
 
 /* System Health uses the canvas instead of stacking everything */
 .health-ops-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(360px,.7fr);gap:18px;align-items:start;margin-bottom:18px}
