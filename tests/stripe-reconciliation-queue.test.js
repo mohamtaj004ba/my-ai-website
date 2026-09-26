@@ -133,5 +133,43 @@ test('Finance payment exceptions disclose unverified and failed refreshes rather
  assert.match(ui,/else adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated\.'/);
  assert.match(ui,/if\(key==='finance'\)adminFinanceLoadError='Finance could not refresh/);
  assert.equal(ui.split("adminFinanceLoadError=''").length-1,3);
- assert.match(ui,/reconciliationStatus\.textContent=adminFinanceLoadError/);
+ assert.match(ui,/reconciliationStatus\.textContent=\[adminFinanceLoadError,/);
+});
+
+test('Finance reads all 200 retained reconciliation IDs and reports missing records',async()=>{
+ const source=fs.readFileSync('api/account.js','utf8');
+ const start=source.indexOf('async function adminFinance(req,res)'),end=source.indexOf('\nasync function adminFinanceExpenseSave(',start);
+ const f=fixture(),now=Date.now();
+ for(let i=0;i<200;i++){
+   const id='cs_'+i;
+   f.index.push(id);
+   if(i===100)continue;
+   f.values.set('stripe:reconciliation:'+id,{id,sessionId:id,eventId:'evt_'+i,status:i<100?'resolved':'open',reason:'email_mismatch',createdAt:now+i});
+ }
+ let requestedEnd=null;
+ const ctx=vm.createContext({
+   requireAdmin:async()=>({email:'admin@example.test'}),loadAdminWorkspaces:async()=>[],
+   kv:{lrange:async(key,a,b)=>{requestedEnd=b;return f.kv.lrange(key,a,b)},get:async key=>key.startsWith('stripe:reconciliation:')?f.kv.get(key):[]},
+   financeMonthKey:()=> '2026-09',expenseMonthlyEquivalent:()=>0,currentBillableWorkspaces:()=>[],
+   recordFinanceSnapshot:async(_kv,_old,one)=>[one],process:{env:{VERCEL_ENV:'production'}},
+   Date,Number,Math,Set,Promise,console:{error(){}},safeError:()=> 'redacted',
+   req:{},res:{status(n){this.code=n;return this},json(x){this.body=x;return x}}
+ });
+ vm.runInContext(source.slice(start,end),ctx);
+ await vm.runInContext('adminFinance(req,res)',ctx);
+ assert.equal(ctx.res.code,200);
+ assert.equal(requestedEnd,199);
+ const data=ctx.res.body.finance;
+ assert.equal(data.reconciliation.length,99);
+ assert.ok(data.reconciliation.some(x=>x.sessionId==='cs_199'));
+ assert.equal(data.reconciliationCoverage.retainedCaseIds,200);
+ assert.equal(data.reconciliationCoverage.unavailableCaseRecords,1);
+ assert.equal(data.reconciliationCoverage.isRetentionCapped,true);
+ assert.ok(!data.reconciliation.some(x=>x.status==='resolved'));
+});
+test('Finance warns about missing reconciliation records and bounded retention',()=>{
+ const ui=fs.readFileSync('dashboard.js','utf8');
+ assert.match(ui,/coverage\.unavailableCaseRecords/);
+ assert.match(ui,/coverage\.isRetentionCapped/);
+ assert.match(ui,/older cases may be outside the visible history/);
 });
