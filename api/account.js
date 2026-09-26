@@ -1231,9 +1231,20 @@ async function adminWebsiteAnalytics(req,res){
     const [eventsRaw,sessionIds,prospectIds]=await Promise.all([
       kv.lrange('site:events',0,4999),kv.lrange('site:session:index',0,1999),kv.lrange('site:prospect:index',0,1999)
     ]);
-    const events=Array.isArray(eventsRaw)?eventsRaw.filter(Boolean):[];
-    const sessions=(await Promise.all((Array.isArray(sessionIds)?sessionIds:[]).slice(0,1000).map(id=>kv.get('site:session:'+id)))).filter(Boolean);
-    const prospects=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,1500).map(id=>kv.get('site:prospect:'+id)))).filter(Boolean).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    if(!Array.isArray(eventsRaw)||!Array.isArray(sessionIds)||!Array.isArray(prospectIds))return res.status(503).json({error:'Website analytics indexes are unavailable. No partial reporting was returned.'});
+    const events=eventsRaw.filter(Boolean);
+    const loadIndexed=async(ids,prefix)=>{
+      const records=[],uniqueIds=[...new Set(ids.map(id=>String(id||'').trim()).filter(Boolean))].slice(0,2000);
+      for(let offset=0;offset<uniqueIds.length;offset+=100){
+        const batch=await Promise.all(uniqueIds.slice(offset,offset+100).map(id=>kv.get(prefix+id)));
+        for(const record of batch)if(record)records.push(record);
+      }
+      return records;
+    };
+    const [sessions,prospectsRaw]=await Promise.all([loadIndexed(sessionIds,'site:session:'),loadIndexed(prospectIds,'site:prospect:')]);
+    const prospects=prospectsRaw.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    const coverage={retainedEvents:eventsRaw.length,retainedSessionIds:sessionIds.length,retainedProspectIds:prospectIds.length,
+      isRetentionCapped:eventsRaw.length>=5000||sessionIds.length>=2000||prospectIds.length>=2000};
     const now=Date.now(),days=clampInt(req.query?.days,7,90,30),cut=now-days*86400000,activeCut=now-15*60000;
     const periodSessions=sessions.filter(s=>Number(s.firstAt||0)>=cut),periodEvents=events.filter(e=>Number(e.at||0)>=cut);
     const uniqueVisitors=new Set(periodSessions.map(s=>s.visitorId).filter(Boolean)).size,pageViews=periodEvents.filter(e=>e.type==='page_view').length;
@@ -1271,12 +1282,12 @@ async function adminWebsiteAnalytics(req,res){
     const daily=Object.values(dailyMap).map(x=>({date:x.date,sessions:x.sessions,visitors:x.visitors.size,pageViews:x.pageViews,conversions:x.conversions}));
     const attributedMrr=Object.values(conversionMap).reduce((n,x)=>n+Number(x.mrr||0),0),attributedSetupRevenue=Object.values(conversionMap).reduce((n,x)=>n+Number(x.setupRevenue||0),0);
     const eventBySession={};periodEvents.forEach(e=>{if(!e.sessionId)return;(eventBySession[e.sessionId]||(eventBySession[e.sessionId]=[])).push(e)});
-    const recentSessions=sessions.sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).slice(0,20).map(s=>({...s,journey:(eventBySession[s.id]||[]).sort((a,b)=>(a.at||0)-(b.at||0)).slice(-20).map(e=>({type:e.type,at:e.at,path:e.path,label:e.label,value:e.value,activeMs:e.activeMs}))}));
+    const recentSessions=[...periodSessions].sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).slice(0,20).map(s=>({...s,journey:(eventBySession[s.id]||[]).sort((a,b)=>(a.at||0)-(b.at||0)).slice(-20).map(e=>({type:e.type,at:e.at,path:e.path,label:e.label,value:e.value,activeMs:e.activeMs}))}));
     return res.status(200).json({analytics:{
       periodDays:days,sessions:periodSessions.length,visitors:uniqueVisitors,newVisitors,returningVisitors,activeNow,pageViews,pagesPerSession,avgActiveSeconds:avgActive,bounceRate,engagedRate,
       contactInquiries:periodEvents.filter(e=>e.type==='contact_submit').length,chatSessions:uniqueEventSessions('chat_open'),ctaClicks:periodEvents.filter(e=>e.type==='cta_click').length,
-      formAbandons:uniqueEventSessions('form_abandon'),checkoutStarts:uniqueEventSessions('checkout_start'),checkoutAbandoned:prospects.filter(p=>p.stage==='checkout_started').length,conversions:funnel.converted,
-      attributedMrr,attributedSetupRevenue,funnel,topPages,sources,campaigns,devices,locations,daily,recentSessions,prospects
+      formAbandons:uniqueEventSessions('form_abandon'),checkoutStarts:uniqueEventSessions('checkout_start'),checkoutAbandoned:prospects.filter(p=>p.stage==='checkout_started'&&Number(p.updatedAt||p.createdAt||0)>=cut).length,conversions:funnel.converted,
+      attributedMrr,attributedSetupRevenue,coverage,funnel,topPages,sources,campaigns,devices,locations,daily,recentSessions,prospects
     }});
   }catch(err){console.error('admin website analytics failed',safeError(err));return res.status(500).json({error:'Website analytics unavailable'})}
 }
