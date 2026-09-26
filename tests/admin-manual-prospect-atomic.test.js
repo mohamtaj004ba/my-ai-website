@@ -39,3 +39,20 @@ test('manual prospect rejects malformed email before touching storage',async()=>
  const r=await fixture({name:'Prospect',email:'invalid email'}).run();
  assert.equal(r.status,400);assert.equal(r.calls,0);assert.equal(r.sets,0);
 });
+
+test('manual create explicitly refuses an ID that would bypass revision-checked editing',async()=>{
+ const r=await fixture({id:'existing-id',name:'Change an existing prospect'}).run();
+ assert.equal(r.status,400);assert.equal(r.calls,0);
+ assert.match(r.result.error,/existing prospect editor/);
+});
+test('manual new-lead write requires a new record and returns existing-prospect conflicts',async()=>{
+ const created=await fixture({email:'new@example.test',name:'New'}).run();
+ assert.equal(created.status,200);
+ assert.equal(created.payload.requireNew,true);
+ const exists=Object.assign(new Error('exists'),{code:'PROSPECT_EXISTS',prospectId:'existing-id'});
+ const conflict=await fixture({email:'existing@example.test',name:'New'},
+    {error:exists}).run();
+ assert.equal(conflict.status,409);assert.equal(conflict.calls,1);
+ assert.equal(conflict.result.prospectId,'existing-id');
+ assert.equal(conflict.sets,0);
+});
