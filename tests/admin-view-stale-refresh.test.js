@@ -16,6 +16,7 @@ function fixture(view,{fail=[],responses={}}={}){
     setAdminSyncState:(...args)=>sync.push(args),
     setDataHealth:(...args)=>health.push(args),
     adminSyncFetch:async(key,url)=>{calls.push({key,url});if(fail.includes(key))throw Error('Provider '+key+' unavailable');return responses[key]||null},
+    adminDataSyncAt:{finance:123,website:456},
     adminFinanceData:{reconciliation:[{sessionId:'existing'}]},adminFinanceLoadError:'',
     adminWebsiteData:{prospects:[{id:'existing'}]},adminWebsiteLoadError:'',
     adminPlatformDirty:false,adminWebsiteDays:30,
@@ -70,4 +71,21 @@ test('successful Finance refresh clears an earlier stale warning and updates sna
   assert.equal(f.context.adminFinanceData.reconciliation[0].sessionId,'fresh');
   assert.deepEqual(f.rendered,['finance','admin','stamp']);
   assert.deepEqual(f.health,[]);
+});
+
+test('incomplete successful Finance feed stays stale and clears retry throttle',async()=>{
+  const f=fixture('finance',{responses:{finance:{ok:true}}});
+  await assert.rejects(f.run(),/Incomplete finance response/);
+  assert.match(f.context.adminFinanceLoadError,/outdated/);
+  assert.equal(f.context.adminDataSyncAt.finance,undefined);
+  assert.equal(f.context.adminFinanceData.reconciliation[0].sessionId,'existing');
+  assert.deepEqual(f.rendered,['finance','admin']);
+});
+test('incomplete successful analytics feed does not conceal stale Growth data',async()=>{
+  const f=fixture('growth',{responses:{website:{ok:true}}});
+  await assert.rejects(f.run(),/Incomplete website response/);
+  assert.match(f.context.adminWebsiteLoadError,/outdated/);
+  assert.equal(f.context.adminDataSyncAt.website,undefined);
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'existing');
+  assert.deepEqual(f.rendered,['website','growth','admin']);
 });
