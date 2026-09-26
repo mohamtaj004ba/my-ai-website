@@ -208,7 +208,8 @@ module.exports=async function handler(req,res){
       workspaceId:workspace.id,stripeCustomerId:session.customer||'',convertedAt,monthlyValue:paidEnt.price,setupValue:500
     });
   }
-  await recordSiteEvent({type:'checkout_complete',visitorId:lead.visitorId||'',sessionId:lead.sessionId||'',path:'/get-started',label:paidPlan,value:workspace.id});
+  try{await recordSiteEvent({type:'checkout_complete',visitorId:lead.visitorId||'',sessionId:lead.sessionId||'',path:'/get-started',label:paidPlan,value:workspace.id})}
+  catch(analyticsError){console.error('Paid checkout analytics unavailable',safeError(analyticsError))}
 
   if(!token){
     token=crypto.randomBytes(24).toString('hex');
