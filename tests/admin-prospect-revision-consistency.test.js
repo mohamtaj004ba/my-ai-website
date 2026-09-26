@@ -7,18 +7,17 @@ const start=api.indexOf('async function adminWebsiteProspectUpdate('),end=api.in
 assert.ok(start>=0&&end>start);
 
 function backend(body,{stored={id:'lead-1',name:'Old',stage:'new',email:'old@example.test',updatedAt:10},commit=true,now=10,emailOwners={}}={}){
-  let code,result,calls=0,payload,plainWrites=0,deleted=[];
+  let code,result,calls=0,payload,plainWrites=0,deleted=[],auditEvent,auditKey;
   const context=vm.createContext({
-    requireAdmin:async()=>({email:'admin@example.test'}),req:{body},res:{status(n){code=n;return this},json(x){result=x;return x}},
+    requireAdmin:async()=>({email:'admin@example.test',workspaceId:'admin-ws'}),req:{body},res:{status(n){code=n;return this},json(x){result=x;return x}},
     kv:{get:async key=>key==='site:prospect:lead-1'?stored:emailOwners[key]??null,set:async()=>{plainWrites++}},
-    compareAndSetConfig:async(_kv,updates)=>{calls++;payload=updates;if(commit==='error')throw Error('Connection lost');return commit},
-    compareAndSetWithDelete:async(_kv,updates,{deleteKeys=[]}={})=>{calls++;payload=updates;deleted=deleteKeys;if(commit==='error')throw Error('Connection lost');return commit},
+    compareAndAuditBatch:async(_kv,updates,key,event,{deleteKeys=[]}={})=>{calls++;payload=updates;deleted=deleteKeys;auditKey=key;auditEvent=event;if(commit==='error')throw Error('Connection lost');return commit},
     emailKey:x=>x,Promise,
     cleanEmail:x=>String(x||'').toLowerCase(),crypto:{randomUUID:()=> 'uuid'},safeError:()=> 'redacted',
     console:{error(){}},Date:{now:()=>now},Math,Number,String,Array
   });
   vm.runInContext(api.slice(start,end),context);
-  return {run:async()=>{await vm.runInContext('adminWebsiteProspectUpdate(req,res)',context);return {code,result,calls,payload,plainWrites,deleted}}};
+  return {run:async()=>{await vm.runInContext('adminWebsiteProspectUpdate(req,res)',context);return {code,result,calls,payload,plainWrites,deleted,auditEvent,auditKey}}};
 }
 test('prospect edit requires displayed revision and compares full snapshot before write',async()=>{
   const bad=await backend({id:'lead-1',name:'Changed'}).run();
@@ -30,6 +29,13 @@ test('prospect edit requires displayed revision and compares full snapshot befor
   assert.equal(good.payload[0].before.name,'Old');
   assert.equal(good.payload[0].after.name,'Changed');
   assert.equal(good.payload[0].after.updatedAt,11);
+  assert.equal(good.auditKey,'audit:admin-ws');
+  assert.equal(good.auditEvent.action,'sales_prospect_update');
+  assert.equal(good.auditEvent.before.stage,'new');
+  assert.equal(good.auditEvent.after.updatedAt,11);
+  assert.ok(!JSON.stringify(good.auditEvent).includes('old@example.test'));
+  assert.ok(!JSON.stringify(good.auditEvent).includes('Changed'));
+
 });
 test('concurrent prospect change and uncertain write reject without claiming success',async()=>{
   const conflict=await backend({id:'lead-1',expectedUpdatedAt:10,stage:'qualified'},{commit:false}).run();
@@ -58,6 +64,7 @@ test('changing a prospect email rekeys lookup with the record in one compare tra
   assert.equal(good.payload[1].key,'site:prospect:email:new@example.test');
   assert.equal(good.payload[1].after,'lead-1');
   assert.equal(good.payload[2].key,'site:prospect:email:old@example.test');
+  assert.equal(good.auditEvent.meta.emailLookupChanged,true);
   assert.deepEqual(Array.from(good.deleted),['site:prospect:email:old@example.test']);
   const collision=await backend({id:'lead-1',expectedUpdatedAt:10,email:'new@example.test'},{emailOwners:{'site:prospect:email:new@example.test':'another-lead'}}).run();
   assert.equal(collision.code,409);assert.equal(collision.calls,0);
