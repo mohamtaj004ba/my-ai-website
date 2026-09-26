@@ -42,10 +42,8 @@ test('saving a campaign locks duplicate actions and modal dismissal until succes
   await vm.runInContext('deleteCampaign()',f.context);
   assert.equal(f.requests.length,1,'no concurrent mutation');
   f.requests[0].task.resolve({ok:true,json:async()=>({campaign:{id:'campaign-1',name:'Campaign edited',updatedAt:20}})});
-  for(let n=0;n<20&&f.requests.length<2;n++)await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(f.requests.length,2,'campaign list refresh starts only after confirmed save');
-  f.requests[1].task.reject(Error('refresh offline'));
   await saving;
+  assert.equal(f.requests.length,1,'confirmed campaign is applied locally without a stale follow-up list request');
   assert.equal(f.modal['aria-hidden'],'true');
   assert.equal(f.context.adminCampaignData[0].updatedAt,20);
   assert.ok(f.controls.every(el=>!el.disabled));
