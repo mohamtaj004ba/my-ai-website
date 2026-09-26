@@ -1365,22 +1365,40 @@ async function adminDocuments(req,res){
 }
 async function adminDocumentSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const b=req.body||{},list=await kv.get('admin:documents')||[],items=Array.isArray(list)?list.slice():[],id=String(b.id||crypto.randomUUID()).slice(0,100),index=items.findIndex(x=>x&&x.id===id);
+  const b=req.body||{},editing=!!b.id,id=String(b.id||crypto.randomUUID()).slice(0,100),key='admin:documents';
+  const raw=await kv.get(key),list=raw==null?[]:raw;
+  if(!Array.isArray(list)||list.length>500)return res.status(503).json({error:'Company document records are unavailable. No changes were made.'});
+  const items=list.slice(),index=items.findIndex(x=>x&&x.id===id);
+  if(editing&&index<0)return res.status(404).json({error:'Company record not found. Refresh the directory before editing.'});
+  if(!editing&&index>=0)return res.status(409).json({error:'Company record identifier already exists.'});
+  if(editing&&(b.expectedUpdatedAt===undefined||Number(b.expectedUpdatedAt||0)!==Number(items[index].updatedAt||items[index].createdAt||0)))return res.status(409).json({error:'This company record changed while you were editing. Reopen it before saving.'});
+  if(!editing&&items.length>=500)return res.status(409).json({error:'Company document directory has reached its 500-record capacity.'});
   const name=String(b.name||'').trim().slice(0,160),url=String(b.url||'').trim().slice(0,1200);
   if(!name)return res.status(400).json({error:'Document name is required'});
-  if(url&&!/^https?:\/\//i.test(url)&&!url.startsWith('/'))return res.status(400).json({error:'Document link must be an http(s) URL or CallerCore path'});
-  const types=['Legal','Insurance','Tax','Finance','Security','Vendor','Corporate','Other'],statuses=['active','review','expired','archived'],old=index>=0?items[index]:{};
-  const doc={...old,id,name,type:types.includes(b.type)?b.type:(old.type||'Other'),status:statuses.includes(b.status)?b.status:(old.status||'active'),url,effectiveDate:String(b.effectiveDate||'').slice(0,10),expiresAt:String(b.expiresAt||'').slice(0,10),notes:String(b.notes||'').trim().slice(0,2000),createdAt:old.createdAt||Date.now(),updatedAt:Date.now(),updatedBy:admin.email};
+  if(url&&(!(/^https?:\/\//i.test(url)||url.startsWith('/'))||url.startsWith('//')||url.startsWith('/\\')))return res.status(400).json({error:'Document link must be an http(s) URL or CallerCore path'});
+  const types=['Legal','Insurance','Tax','Finance','Security','Vendor','Corporate','Other'],statuses=['active','review','expired','archived'],old=index>=0?items[index]:{},now=Date.now();
+  const doc={...old,id,name,type:types.includes(b.type)?b.type:(old.type||'Other'),status:statuses.includes(b.status)?b.status:(old.status||'active'),url,effectiveDate:String(b.effectiveDate||'').slice(0,10),expiresAt:String(b.expiresAt||'').slice(0,10),notes:String(b.notes||'').trim().slice(0,2000),createdAt:old.createdAt||now,updatedAt:Math.max(now,Number(old.updatedAt||old.createdAt||0)+1),updatedBy:admin.email};
   if(index>=0)items[index]=doc;else items.unshift(doc);
-  await kv.set('admin:documents',items.slice(0,500));
-  return res.status(200).json({ok:true,document:doc});
+  const audit={id:crypto.randomUUID(),workspaceId:admin.workspaceId,actorEmail:admin.email,actorRole:'admin',action:editing?'company_document_update':'company_document_create',section:'documents',before:editing?{id,name:old.name||'',type:old.type||'Other',status:old.status||'active',updatedAt:old.updatedAt||old.createdAt||0}:null,after:{id,name:doc.name,type:doc.type,status:doc.status,updatedAt:doc.updatedAt},meta:{documentId:id},at:now};
+  try{
+    if(!await compareAndAudit(kv,{key,before:raw,after:items},'audit:'+admin.workspaceId,audit))return res.status(409).json({error:'Company document directory changed during the save. Reopen this record before retrying.'});
+  }catch(err){console.error('admin document save failed',safeError(err));return res.status(503).json({error:'Could not confirm that the document and audit record saved together. Refresh the directory before retrying.'})}
+  return res.status(editing?200:201).json({ok:true,document:doc});
 }
 async function adminDocumentDelete(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const id=String((req.body||{}).id||'').slice(0,100);if(!id)return res.status(400).json({error:'Document id required'});
-  const list=await kv.get('admin:documents')||[],items=Array.isArray(list)?list:[],next=items.filter(x=>x&&x.id!==id);
-  if(next.length===items.length)return res.status(404).json({error:'Document not found'});
-  await kv.set('admin:documents',next);return res.status(200).json({ok:true});
+  const b=req.body||{},id=String(b.id||'').slice(0,100);if(!id)return res.status(400).json({error:'Document id required'});
+  const key='admin:documents',raw=await kv.get(key),list=raw==null?[]:raw;
+  if(!Array.isArray(list))return res.status(503).json({error:'Company document directory is unavailable. No changes were made.'});
+  const item=list.find(x=>x&&x.id===id);
+  if(!item)return res.status(404).json({error:'Document not found'});
+  if(b.expectedUpdatedAt===undefined||Number(b.expectedUpdatedAt||0)!==Number(item.updatedAt||item.createdAt||0))return res.status(409).json({error:'This company record changed before deletion. Reopen the record and confirm again.'});
+  const next=list.filter(x=>x&&x.id!==id),now=Date.now();
+  const audit={id:crypto.randomUUID(),workspaceId:admin.workspaceId,actorEmail:admin.email,actorRole:'admin',action:'company_document_delete',section:'documents',before:{id,name:item.name||'',type:item.type||'Other',status:item.status||'active',updatedAt:item.updatedAt||item.createdAt||0},after:null,meta:{documentId:id},at:now};
+  try{
+    if(!await compareAndAudit(kv,{key,before:raw,after:next},'audit:'+admin.workspaceId,audit))return res.status(409).json({error:'Company document directory changed during deletion. Reopen the record and confirm again.'});
+  }catch(err){console.error('admin document delete failed',safeError(err));return res.status(503).json({error:'Could not confirm the document deletion and audit entry. Refresh the directory before retrying.'})}
+  return res.status(200).json({ok:true,deleted:{id,updatedAt:item.updatedAt||item.createdAt||0}});
 }
 
 async function adminTechSupport(req,res){
