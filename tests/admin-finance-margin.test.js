@@ -16,7 +16,7 @@ test('admin finance operating margin includes this month one-time company costs'
   const context=vm.createContext({
     requireAdmin:async()=>({email:'admin@example.test'}),
     loadAdminWorkspaces:async()=>[{id:'client',plan:'Starter',status:'active',subscriptionStatus:'active'}],
-    kv:{get:async key=>key==='finance:expenses'?records:[]},
+    kv:{get:async key=>key==='finance:expenses'?records:[],lrange:async()=>[]},
     financeMonthKey:()=> '2026-09',
     expenseMonthlyEquivalent:x=>x.frequency==='monthly'?x.amount:0,
     currentBillableWorkspaces:ws=>ws,
