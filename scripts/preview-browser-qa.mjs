@@ -500,7 +500,11 @@ async function runAdminInteractions(page){
   if(!financeResponse.ok())throw new Error('Admin Finance reconciliation feed failed ('+financeResponse.status()+')');
   const financePayload=(await financeResponse.json()).finance;
   if(!Array.isArray(financePayload?.reconciliation))throw new Error('Admin Finance response has no reconciliation collection');
-  if(await page.locator('#financeReconciliationCount').innerText()!==(financePayload.reconciliation.length+' open'))throw new Error('Finance reconciliation count differs from authoritative feed');
+  // Admin operational feeds load asynchronously after navigation. Compare only once the
+  // in-page Finance request has completed; an initial `0 open` is not verified data.
+  await page.waitForFunction(()=>!adminFinanceLoadError,{timeout:15000});
+  const displayedCount=await page.locator('#financeReconciliationCount').innerText();
+  if(displayedCount!==(financePayload.reconciliation.length+' open'))throw new Error('Finance reconciliation count differs from authoritative feed: displayed '+displayedCount+', API '+financePayload.reconciliation.length);
   await page.evaluate(()=>{
     window.__qaOriginalFinanceData=adminFinanceData;
     adminFinanceData={...adminFinanceData,reconciliation:[{id:'cs_preview-qa',sessionId:'cs_preview-qa',reason:'account_mapping_conflict',createdAt:Date.now(),status:'open'}]};
