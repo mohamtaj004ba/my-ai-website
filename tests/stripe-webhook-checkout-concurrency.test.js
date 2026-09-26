@@ -49,6 +49,7 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
         if(record.sessionId!==args[0])return -1;
         if(record.status!=='open')return 0;
         store.set(key,{...record,status:'resolved',resolvedAt:Number(args[1])});
+        for(let i=reconciliationIndex.length-1;i>=0;i--)if(reconciliationIndex[i]===args[0])reconciliationIndex.splice(i,1);
         return 1;
       }
       throw Error('Unexpected script');
@@ -400,7 +401,7 @@ test('successful retry resolves only its own previously recorded paid checkout e
  assert.equal(paid.status,200);
  assert.equal(f.store.get('stripe:reconciliation:cs_recover').status,'resolved');
  assert.ok(f.store.get('stripe:reconciliation:cs_recover').resolvedAt>0);
- assert.equal(f.reconciliationIndex.length,1);
+ assert.equal(f.reconciliationIndex.length,0);
  assert.equal(f.store.get('stripe:event:evt_retry'),true);
 });
 test('a still-conflicting checkout keeps its reconciliation case open after retry',async()=>{
