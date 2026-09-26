@@ -2039,6 +2039,7 @@ async function saveCompanyDocument(){
   const payload={id:m.dataset.editId||undefined,name:document.getElementById('companyDocumentName')?.value||'',type:document.getElementById('companyDocumentType')?.value||'Other',status:document.getElementById('companyDocumentStatus')?.value||'active',url:document.getElementById('companyDocumentUrl')?.value||'',effectiveDate:document.getElementById('companyDocumentEffective')?.value||'',expiresAt:document.getElementById('companyDocumentExpires')?.value||'',notes:document.getElementById('companyDocumentNotes')?.value||''};
   if(payload.id)payload.expectedUpdatedAt=Number(m.dataset.expectedUpdatedAt||0);
   if(!String(payload.name).trim()){companyDocumentFeedback('Document name is required.');return}
+  if(payload.effectiveDate&&payload.expiresAt&&payload.expiresAt<payload.effectiveDate){companyDocumentFeedback('Expiration date cannot precede the effective date.');return}
   setCompanyDocumentMutationPending(true,'save');
   try{
     const r=await fetch('/api/account?action=admin-document-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
