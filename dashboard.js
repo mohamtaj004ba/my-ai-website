@@ -2791,6 +2791,9 @@ function adminAttentionItems(){
   for(const p of adminWebsiteData.prospects||[]){
     if(prospectDue(p))items.push({id:'prospect:'+p.id,type:'prospect',prospectId:p.id,title:p.business||p.name||p.email||'Prospect',message:p.nextFollowUpAt?'Sales follow-up is due':'Prospect has not been contacted within the target window',category:'Growth',severity:'attention',view:'growth',createdAt:p.nextFollowUpAt||p.updatedAt||p.createdAt||0});
   }
+  for(const issue of adminFinanceData.reconciliation||[]){
+    items.push({id:'checkout-reconciliation:'+issue.sessionId,type:'checkout-reconciliation',sessionId:issue.sessionId,title:'Paid checkout needs identity review',message:'Checkout '+issue.sessionId+' was held because account or Stripe records disagree',category:'Payment operations',severity:'critical',view:'finance',createdAt:issue.createdAt||0});
+  }
   for(const x of adminClientsData){
     if(x.subscriptionStatus==='past_due')items.push({id:'billing:'+x.id,type:'billing',workspaceId:x.id,title:x.name||'Client',message:'Stripe payment needs attention',category:'Billing',severity:'critical',view:'finance'});
     if(x.status==='suspended')items.push({id:'workspace:'+x.id,type:'workspace',workspaceId:x.id,title:x.name||'Client',message:'Workspace access is suspended',category:'Workspace',severity:'critical',view:'clients'});
@@ -2814,6 +2817,7 @@ function adminPhoneFor(id){return (adminPhoneData||[]).find(x=>String(x.workspac
 function adminStatusLabel(v){return String(v||'active').replaceAll('_',' ').replace(/\b\w/g,m=>m.toUpperCase())}
 async function openAdminAttentionItem(item){
   if(!item)return;
+  if(item.type==='checkout-reconciliation'){showView('finance');document.getElementById('financeReconciliationList')?.scrollIntoView({behavior:'smooth',block:'center'});return}
   if(item.type==='workspace'||item.type==='billing'){showView('clients');await openAdminClient(item.workspaceId);return}
   if(item.type==='prospect'){showView('growth');openProspectModal(item.prospectId);return}
   if(item.type==='support')openClientCare('support');else if(item.type==='feedback')openClientCare('feedback');else showView(item.view||'overview');
@@ -2845,7 +2849,7 @@ function setAdminNavBadge(id,count){
 function renderAdminNavBadges(){
   setAdminNavBadge('navBadgeOnboarding',(adminProvisioningData||[]).filter(onboardingNeedsAction).length);
   setAdminNavBadge('navBadgeGrowth',(adminWebsiteData.prospects||[]).filter(prospectDue).length);
-  setAdminNavBadge('navBadgeFinance',(adminClientsData||[]).filter(x=>x.subscriptionStatus==='past_due').length);
+  setAdminNavBadge('navBadgeFinance',(adminClientsData||[]).filter(x=>x.subscriptionStatus==='past_due').length+(adminFinanceData.reconciliation||[]).length);
   setAdminNavBadge('navBadgeClientCare',(adminSupportData||[]).filter(x=>x.status!=='resolved').length+(adminFeedbackData||[]).filter(x=>x.status==='submitted').length);
   setAdminNavBadge('navBadgeHealth',(adminReadinessData?.blockers||[]).length);const companyDocs=adminDocumentsData?.company||[];setAdminNavBadge('navBadgeDocuments',companyDocs.filter(x=>['review','expired'].includes(x.status)||(x.expiresAt&&new Date(x.expiresAt+'T12:00:00').getTime()<Date.now())).length);
 }
