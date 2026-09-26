@@ -39,3 +39,14 @@ test('malformed history and ambiguous storage failure are never called a success
   }
   await assert.rejects(()=>appendSiteConversation({eval:async()=>{throw Error('provider error')}},'lead-1',message('one')),/provider error/);
 });
+
+test('website inbox read refuses corrupt history instead of pretending the thread is empty',()=>{
+  const account=fs.readFileSync('api/account.js','utf8');
+  const start=account.indexOf('async function adminWebsiteConversation(');
+  const end=account.indexOf('async function adminWebsiteReply(',start);
+  assert.ok(start>=0&&end>start);
+  const read=account.slice(start,end);
+  assert.match(read,/rawMessages!=null&&!Array\.isArray\(rawMessages\)/);
+  assert.match(read,/status\(503\)/);
+  assert.doesNotMatch(read,/Array\.isArray\(messages\)\?messages:\[\]/);
+});
