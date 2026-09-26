@@ -43,6 +43,14 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
         reconciliationIndex.unshift(args[1]);reconciliationIndex.splice(200);
         return 1;
       }
+      if(script===reconciliation.RESOLVE_RECONCILIATION){
+        const record=store.get(key);
+        if(!record)return 0;
+        if(record.sessionId!==args[0])return -1;
+        if(record.status!=='open')return 0;
+        store.set(key,{...record,status:'resolved',resolvedAt:Number(args[1])});
+        return 1;
+      }
       throw Error('Unexpected script');
     }
   };
@@ -378,4 +386,30 @@ test('replayed conflict cannot fill reconciliation directory with duplicate reco
   for(const id of ['evt_one','evt_two'])await assert.rejects(()=>f.submit(id,'cs_conflict'),/manual reconciliation required/);
   assert.equal(f.reconciliationIndex.length,1);
   assert.equal(f.store.get('stripe:reconciliation:cs_conflict').eventId,'evt_one');
+});
+
+test('successful retry resolves only its own previously recorded paid checkout exception',async()=>{
+ const f=fixture();
+ f.store.set('workspace:other',{id:'other',ownerEmail:'not-the-buyer@example.test'});
+ f.store.set('stripe:customer:cus_same','other');
+ await assert.rejects(()=>f.submit('evt_conflict','cs_recover'),/manual reconciliation required/);
+ assert.equal(f.store.get('stripe:reconciliation:cs_recover').status,'open');
+ f.store.delete('stripe:customer:cus_same');
+ f.store.delete('workspace:other');
+ const paid=await f.submit('evt_retry','cs_recover');
+ assert.equal(paid.status,200);
+ assert.equal(f.store.get('stripe:reconciliation:cs_recover').status,'resolved');
+ assert.ok(f.store.get('stripe:reconciliation:cs_recover').resolvedAt>0);
+ assert.equal(f.reconciliationIndex.length,1);
+ assert.equal(f.store.get('stripe:event:evt_retry'),true);
+});
+test('a still-conflicting checkout keeps its reconciliation case open after retry',async()=>{
+ const f=fixture();
+ f.store.set('workspace:other',{id:'other',ownerEmail:'not-the-buyer@example.test'});
+ f.store.set('stripe:customer:cus_same','other');
+ for(const event of ['evt_first','evt_retry'])
+   await assert.rejects(()=>f.submit(event,'cs_unresolved'),/manual reconciliation required/);
+ assert.equal(f.store.get('stripe:reconciliation:cs_unresolved').status,'open');
+ assert.equal(f.reconciliationIndex.length,1);
+ assert.equal(f.welcomes,0);
 });
