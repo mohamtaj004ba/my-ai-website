@@ -5,6 +5,7 @@ const {sendMail}=require('../lib/mail');
 const {lifecycleEmail,authEmail,esc:escapeEmailHtml}=require('../lib/email-template');
 const {entitlementsFor,PLANS}=require('../lib/plans');
 const {emailKey,upsertWebsiteProspect}=require('../lib/site-analytics');
+const {appendSiteConversation}=require('../lib/site-conversation');
 const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
@@ -1190,13 +1191,21 @@ async function adminWebsiteReply(req,res){
       await sendMail({to,subject,text:message,html:'<p>'+message.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])).replace(/\n/g,'<br>')+'</p>'});
     }
   }catch(err){console.error('website reply failed',safeError(err));return res.status(502).json({error:'Unable to send reply'})}
-  const convKey='site:conversation:'+id,conversation=await kv.get(convKey)||[];
   const item={id:crypto.randomUUID(),direction:'outbound',channel,from,to,subject,body:message,actorEmail:admin.email,at:Date.now()};
-  const next=Array.isArray(conversation)?conversation:[];
-  next.push(item);await kv.set(convKey,next.slice(-200));
-  const updated={...prospect,stage:prospect.stage==='new'||prospect.stage==='inquiry'?'follow_up':prospect.stage,lastRepliedAt:Date.now(),updatedAt:Date.now(),updatedBy:admin.email};
-  await kv.set(key,updated);
-  return res.status(200).json({ok:true,message:item,prospect:updated});
+  try{await appendSiteConversation(kv,id,item)}
+  catch(err){
+    console.error('website reply history append failed',safeError(err));
+    return res.status(200).json({ok:true,message:item,warning:'Reply sent, but conversation history could not be confirmed. Refresh before sending another reply.'});
+  }
+  try{
+    for(let attempt=0;attempt<4;attempt++){
+      const current=await kv.get(key);
+      if(!current)break;
+      const now=Date.now(),updated={...current,stage:['new','inquiry'].includes(current.stage)?'follow_up':current.stage,lastRepliedAt:now,updatedAt:Math.max(now,Number(current.updatedAt||current.createdAt||0)+1),updatedBy:admin.email};
+      if(await compareAndSetConfig(kv,[{key,before:current,after:updated}]))return res.status(200).json({ok:true,message:item,prospect:updated});
+    }
+  }catch(err){console.error('website reply prospect update failed',safeError(err))}
+  return res.status(200).json({ok:true,message:item,warning:'Reply sent and saved, but the prospect status could not be confirmed. Refresh the pipeline.'});
 }
 
 async function adminWebsiteAnalytics(req,res){
