@@ -1462,8 +1462,13 @@ async function adminDocumentSave(req,res){
   const name=String(b.name||'').trim().slice(0,160),url=String(b.url||'').trim().slice(0,1200);
   if(!name)return res.status(400).json({error:'Document name is required'});
   if(url&&(!(/^https?:\/\//i.test(url)||url.startsWith('/'))||url.startsWith('//')||url.startsWith('/\\')))return res.status(400).json({error:'Document link must be an http(s) URL or CallerCore path'});
+  // Native date inputs are only a convenience: reject malformed API submissions before audited writes.
+  const validDate=value=>!value||(/^\d{4}-\d{2}-\d{2}$/.test(value)&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value);
+  const effectiveDate=String(b.effectiveDate||''),expiresAt=String(b.expiresAt||'');
+  if(!validDate(effectiveDate)||!validDate(expiresAt))return res.status(400).json({error:'Document dates must be valid calendar dates (YYYY-MM-DD).'});
+  if(effectiveDate&&expiresAt&&expiresAt<effectiveDate)return res.status(400).json({error:'Expiration date cannot precede the effective date.'});
   const types=['Legal','Insurance','Tax','Finance','Security','Vendor','Corporate','Other'],statuses=['active','review','expired','archived'],old=index>=0?items[index]:{},now=Date.now();
-  const doc={...old,id,name,type:types.includes(b.type)?b.type:(old.type||'Other'),status:statuses.includes(b.status)?b.status:(old.status||'active'),url,effectiveDate:String(b.effectiveDate||'').slice(0,10),expiresAt:String(b.expiresAt||'').slice(0,10),notes:String(b.notes||'').trim().slice(0,2000),createdAt:old.createdAt||now,updatedAt:Math.max(now,Number(old.updatedAt||old.createdAt||0)+1),updatedBy:admin.email};
+  const doc={...old,id,name,type:types.includes(b.type)?b.type:(old.type||'Other'),status:statuses.includes(b.status)?b.status:(old.status||'active'),url,effectiveDate,expiresAt,notes:String(b.notes||'').trim().slice(0,2000),createdAt:old.createdAt||now,updatedAt:Math.max(now,Number(old.updatedAt||old.createdAt||0)+1),updatedBy:admin.email};
   if(index>=0)items[index]=doc;else items.unshift(doc);
   const audit={id:crypto.randomUUID(),workspaceId:admin.workspaceId,actorEmail:admin.email,actorRole:'admin',action:editing?'company_document_update':'company_document_create',section:'documents',before:editing?{id,name:old.name||'',type:old.type||'Other',status:old.status||'active',updatedAt:old.updatedAt||old.createdAt||0}:null,after:{id,name:doc.name,type:doc.type,status:doc.status,updatedAt:doc.updatedAt},meta:{documentId:id},at:now};
   try{
