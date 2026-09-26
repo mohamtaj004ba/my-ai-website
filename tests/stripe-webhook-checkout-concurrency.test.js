@@ -149,3 +149,39 @@ test('separate repeat checkout keeps existing review and live setup milestones i
   assert.ok(later.lastCheckoutAt>=later.paidAt);
   assert.equal(f.locks.size,0);
 });
+
+test('repeat checkout reuses valid signed onboarding token instead of starting a new agreement',async()=>{
+  const f=fixture();
+  const first=await f.submit('evt_first','cs_first');
+  assert.equal(first.status,200);
+  const workspaceId=first.body.workspaceId;
+  const priorToken=f.store.get('onboarding:workspace-token:'+workspaceId);
+  assert.ok(priorToken);
+  const onboarding=f.store.get('onboarding:'+priorToken);
+  onboarding.agreementSigned=true;
+  onboarding.agreementSignedAt=123456;
+  onboarding.intake={businessName:'Existing intake'};
+  onboarding.status='intake_complete';
+  const tokensBefore=[...f.store.keys()].filter(k=>k.startsWith('onboarding:')&&!k.startsWith('onboarding:workspace')).length;
+  const next=await f.submit('evt_second','cs_second');
+  assert.equal(next.status,200);
+  assert.equal(f.store.get('onboarding:workspace-token:'+workspaceId),priorToken);
+  const saved=f.store.get('onboarding:'+priorToken);
+  assert.equal(saved.agreementSigned,true);
+  assert.equal(saved.agreementSignedAt,123456);
+  assert.equal(saved.intake.businessName,'Existing intake');
+  assert.equal(saved.status,'intake_complete');
+  const tokensAfter=[...f.store.keys()].filter(k=>k.startsWith('onboarding:')&&!k.startsWith('onboarding:workspace')).length;
+  assert.equal(tokensAfter,tokensBefore);
+});
+test('foreign workspace token cannot be adopted during repeat checkout',async()=>{
+  const f=fixture();
+  const first=await f.submit('evt_first','cs_first');
+  const workspaceId=first.body.workspaceId;
+  f.store.set('onboarding:workspace-token:'+workspaceId,'foreign-token');
+  f.store.set('onboarding:foreign-token',{workspaceId:'someone-else',agreementSigned:true});
+  const next=await f.submit('evt_second','cs_second');
+  assert.equal(next.status,200);
+  assert.notEqual(f.store.get('onboarding:workspace-token:'+workspaceId),'foreign-token');
+  assert.equal(f.store.get('onboarding:foreign-token').workspaceId,'someone-else');
+});
