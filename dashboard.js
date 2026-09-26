@@ -1943,19 +1943,79 @@ function renderDocuments(){
   if(companyList)companyList.innerHTML=companyVisible.map(x=>{const expired=x.expiresAt&&new Date(x.expiresAt+'T12:00:00').getTime()<Date.now(),status=expired?'expired':x.status||'active',tone=status==='active'?'green':status==='expired'?'red':'amber';return '<article class="company-document-row"><span><strong>'+esc(x.name)+'</strong><small>'+esc(x.notes||'No notes')+'</small></span><span>'+esc(x.type||'Other')+'</span><span><span class="tag '+tone+'">'+esc(status.replaceAll('_',' '))+'</span></span><span>'+esc(x.effectiveDate||'—')+'</span><span>'+esc(x.expiresAt||'—')+'</span><span class="phone-actions">'+(x.url?'<a class="admin-link" href="'+esc(x.url)+'" target="_blank" rel="noopener">Open</a>':'')+'<button class="admin-link" data-edit-company-document="'+esc(x.id)+'">Edit</button></span></article>'}).join('');
   if(companyEmpty)companyEmpty.hidden=companyVisible.length!==0;companyList?.querySelectorAll('[data-edit-company-document]').forEach(b=>b.addEventListener('click',()=>openCompanyDocumentModal(b.dataset.editCompanyDocument)));
 }
-function openCompanyDocumentModal(id=''){
-  const x=id?(adminDocumentsData.company||[]).find(v=>String(v.id)===String(id)):null,m=document.getElementById('companyDocumentModal');if(!m)return;m.dataset.editId=x?.id||'';document.getElementById('companyDocumentModalTitle').textContent=x?'Edit company record':'Add company record';document.getElementById('companyDocumentName').value=x?.name||'';document.getElementById('companyDocumentType').value=x?.type||'Legal';document.getElementById('companyDocumentStatus').value=x?.status||'active';document.getElementById('companyDocumentUrl').value=x?.url||'';document.getElementById('companyDocumentEffective').value=x?.effectiveDate||'';document.getElementById('companyDocumentExpires').value=x?.expiresAt||'';document.getElementById('companyDocumentNotes').value=x?.notes||'';const del=document.getElementById('deleteCompanyDocument');if(del)del.hidden=!x;const s=document.getElementById('companyDocumentStatusLine');if(s)s.textContent='';m.classList.add('open');m.setAttribute('aria-hidden','false');
+let companyDocumentMutationPending=false;
+function setCompanyDocumentMutationPending(pending,action='save'){
+  companyDocumentMutationPending=pending;
+  const m=document.getElementById('companyDocumentModal');
+  if(!m)return;
+  m.setAttribute('aria-busy',String(pending));
+  m.querySelectorAll('input,select,textarea,button').forEach(control=>{control.disabled=pending});
+  const save=document.getElementById('saveCompanyDocument');
+  if(save)save.textContent=pending&&action==='save'?'Saving…':'Save record';
+  const del=document.getElementById('deleteCompanyDocument');
+  if(del)del.textContent=pending&&action==='delete'?'Deleting…':'Delete record';
 }
-function closeCompanyDocumentModal(){const m=document.getElementById('companyDocumentModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
-async function reloadDocuments(){const r=await fetch('/api/account?action=admin-documents',{cache:'no-store'});if(r.ok)adminDocumentsData=(await r.json()).documents||adminDocumentsData;renderDocuments()}
+function companyDocumentFeedback(message,isError=true){
+  const status=document.getElementById('companyDocumentStatusLine');
+  if(status){status.textContent=message;status.className='form-status-line '+(isError?'error':'success')}
+}
+function openCompanyDocumentModal(id=''){
+  if(companyDocumentMutationPending)return;
+  const x=id?(adminDocumentsData.company||[]).find(v=>String(v.id)===String(id)):null,m=document.getElementById('companyDocumentModal');if(!m)return;
+  if(id&&!x)return;
+  m.dataset.editId=x?.id||'';
+  m.dataset.expectedUpdatedAt=x?String(x.updatedAt||x.createdAt||0):'';
+  document.getElementById('companyDocumentModalTitle').textContent=x?'Edit company record':'Add company record';
+  document.getElementById('companyDocumentName').value=x?.name||'';
+  document.getElementById('companyDocumentType').value=x?.type||'Legal';
+  document.getElementById('companyDocumentStatus').value=x?.status||'active';
+  document.getElementById('companyDocumentUrl').value=x?.url||'';
+  document.getElementById('companyDocumentEffective').value=x?.effectiveDate||'';
+  document.getElementById('companyDocumentExpires').value=x?.expiresAt||'';
+  document.getElementById('companyDocumentNotes').value=x?.notes||'';
+  const del=document.getElementById('deleteCompanyDocument');if(del)del.hidden=!x;
+  companyDocumentFeedback('',false);
+  m.classList.add('open');m.setAttribute('aria-hidden','false');
+}
+function closeCompanyDocumentModal(){
+  if(companyDocumentMutationPending)return;
+  const m=document.getElementById('companyDocumentModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true');
+}
+async function reloadDocuments(){
+  const r=await fetch('/api/account?action=admin-documents',{cache:'no-store'});
+  if(!r.ok)throw new Error('Could not refresh documents.');
+  adminDocumentsData=(await r.json()).documents||adminDocumentsData;renderDocuments();
+}
 async function saveCompanyDocument(){
-  const m=document.getElementById('companyDocumentModal'),status=document.getElementById('companyDocumentStatusLine'),payload={id:m?.dataset.editId||undefined,name:document.getElementById('companyDocumentName')?.value||'',type:document.getElementById('companyDocumentType')?.value||'Other',status:document.getElementById('companyDocumentStatus')?.value||'active',url:document.getElementById('companyDocumentUrl')?.value||'',effectiveDate:document.getElementById('companyDocumentEffective')?.value||'',expiresAt:document.getElementById('companyDocumentExpires')?.value||'',notes:document.getElementById('companyDocumentNotes')?.value||''},btn=document.getElementById('saveCompanyDocument');if(btn){btn.disabled=true;btn.textContent='Saving…'}
-  try{const r=await fetch('/api/account?action=admin-document-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save document.');closeCompanyDocumentModal();await reloadDocuments()}
-  catch(err){if(status){status.textContent=err.message||'Could not save document.';status.className='form-status-line error'}}
-  finally{if(btn){btn.disabled=false;btn.textContent='Save record'}}
+  if(companyDocumentMutationPending)return;
+  const m=document.getElementById('companyDocumentModal');if(!m)return;
+  const payload={id:m.dataset.editId||undefined,name:document.getElementById('companyDocumentName')?.value||'',type:document.getElementById('companyDocumentType')?.value||'Other',status:document.getElementById('companyDocumentStatus')?.value||'active',url:document.getElementById('companyDocumentUrl')?.value||'',effectiveDate:document.getElementById('companyDocumentEffective')?.value||'',expiresAt:document.getElementById('companyDocumentExpires')?.value||'',notes:document.getElementById('companyDocumentNotes')?.value||''};
+  if(payload.id)payload.expectedUpdatedAt=Number(m.dataset.expectedUpdatedAt||0);
+  if(!String(payload.name).trim()){companyDocumentFeedback('Document name is required.');return}
+  setCompanyDocumentMutationPending(true,'save');
+  try{
+    const r=await fetch('/api/account?action=admin-document-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not save document.');
+    if(!data.document)throw new Error('Document response was incomplete. Refresh the directory before retrying.');
+    adminDocumentsData.company=[data.document,...(adminDocumentsData.company||[]).filter(x=>String(x.id)!==String(data.document.id))];
+    setCompanyDocumentMutationPending(false);closeCompanyDocumentModal();renderDocuments();
+  }catch(err){companyDocumentFeedback(err.message||'Could not save document.')}
+  finally{setCompanyDocumentMutationPending(false)}
 }
 async function deleteCompanyDocument(){
-  const id=document.getElementById('companyDocumentModal')?.dataset.editId;if(!id)return;const x=(adminDocumentsData.company||[]).find(v=>String(v.id)===String(id));if(!confirm('Delete '+(x?.name||'this company record')+'?'))return;const r=await fetch('/api/account?action=admin-document-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not delete document.');return}closeCompanyDocumentModal();await reloadDocuments()
+  if(companyDocumentMutationPending)return;
+  const m=document.getElementById('companyDocumentModal'),id=m?.dataset.editId;if(!id)return;
+  const x=(adminDocumentsData.company||[]).find(v=>String(v.id)===String(id));
+  if(!x){companyDocumentFeedback('Document changed or is no longer available. Refresh before deleting.');return}
+  if(!confirm('Delete '+(x.name||'this company record')+'?'))return;
+  setCompanyDocumentMutationPending(true,'delete');
+  try{
+    const r=await fetch('/api/account?action=admin-document-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt:Number(m.dataset.expectedUpdatedAt||0)})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not delete document.');
+    adminDocumentsData.company=(adminDocumentsData.company||[]).filter(item=>String(item.id)!==String(id));
+    setCompanyDocumentMutationPending(false);closeCompanyDocumentModal();renderDocuments();
+  }catch(err){companyDocumentFeedback(err.message||'Could not delete document.')}
+  finally{setCompanyDocumentMutationPending(false)}
 }
 async function updateWebsiteProspect(id,stage){
   const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not update prospect.');return}
