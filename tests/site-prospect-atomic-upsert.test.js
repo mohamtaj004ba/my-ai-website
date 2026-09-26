@@ -280,3 +280,46 @@ test('public checkout does not demote an active advanced lead but can re-engage 
   const renewed=await f.upsert({email:lost.email,stage:'checkout_started',source:'get_started'});
   assert.equal(renewed.stage,'checkout_started');
 });
+
+test('public returning customer inquiry cannot overwrite curated account details or paid plan',async()=>{
+  const f=fixture();
+  const paid=await f.upsert({email:'member@example.test',stage:'converted',source:'checkout',
+    name:'Account owner',business:'Paid business',phone:'509-555-0100',industry:'Services',plan:'Pro',
+    workspaceId:'paid-ws',stripeCustomerId:'customer-1',convertedAt:1234,monthlyValue:500,updatedBy:'admin@example.test'});
+  const inquiry=await f.upsert({email:paid.email,source:'contact',stage:'inquiry',
+    name:'Public sender',business:'A different company',phone:'000000',industry:'Other',plan:'Starter',
+    message:'Customer needs support'});
+  assert.equal(inquiry.id,paid.id);
+  assert.equal(inquiry.name,'Account owner');
+  assert.equal(inquiry.business,'Paid business');
+  assert.equal(inquiry.phone,'509-555-0100');
+  assert.equal(inquiry.industry,'Services');
+  assert.equal(inquiry.plan,'Pro');
+  assert.equal(inquiry.stage,'converted');
+  assert.equal(inquiry.workspaceId,'paid-ws');
+  assert.equal(inquiry.stripeCustomerId,'customer-1');
+  assert.equal(inquiry.message,'Customer needs support');
+});
+test('public contact does not replace an admin-curated qualified lead, but can fill empty details',async()=>{
+  const f=fixture();
+  const admin=await f.upsert({email:'qualified@example.test',stage:'qualified',source:'manual',
+    name:'Sales lead',business:'Real company',updatedBy:'admin@example.test'});
+  const contact=await f.upsert({email:admin.email,stage:'inquiry',name:'Unknown visitor',
+    business:'Different business',phone:'509-555-0200',message:'Interested again',source:'contact'});
+  assert.equal(contact.name,'Sales lead');
+  assert.equal(contact.business,'Real company');
+  assert.equal(contact.phone,'509-555-0200');
+  assert.equal(contact.stage,'qualified');
+  assert.equal(contact.message,'Interested again');
+});
+test('verified paid lifecycle update may replace a paid plan while preserving the same prospect',async()=>{
+  const f=fixture();
+  const old=await f.upsert({email:'upgrade@example.test',stage:'converted',
+    name:'Paid lead',plan:'Starter',workspaceId:'paid-ws',convertedAt:1234});
+  const upgraded=await f.upsert({id:old.id,email:old.email,stage:'converted',plan:'Pro',
+    workspaceId:'paid-ws',monthlyValue:500,name:'Paid lead'});
+  assert.equal(upgraded.id,old.id);
+  assert.equal(upgraded.plan,'Pro');
+  assert.equal(upgraded.workspaceId,'paid-ws');
+  assert.equal(f.index.length,1);
+});
