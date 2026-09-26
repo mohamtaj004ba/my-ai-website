@@ -8,6 +8,7 @@ const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {addBusinessHours}=require('../lib/business-hours');
 const {lifecycleDecision}=require('../lib/stripe-lifecycle');
 const {claimCheckoutSession,releaseCheckoutSession}=require('../lib/stripe-session-lock');
+const {recordCheckoutReconciliation}=require('../lib/stripe-reconciliation');
 module.exports.config={api:{bodyParser:false}};
 const STRIPE_WEBHOOK_SECRET=process.env.STRIPE_WEBHOOK_SECRET;
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
@@ -227,7 +228,11 @@ module.exports=async function handler(req,res){
   lead.plan=paidPlan;
   const recipient=String(lead.email||customerEmail||'').trim().toLowerCase();
   if(!recipient)return res.status(500).json({error:'Missing customer email'});
-  if(customerEmail&&recipient!==customerEmail)throw new Error('Checkout email and pre-saved lead disagree; manual reconciliation required');
+  if(customerEmail&&recipient!==customerEmail){
+    try{await recordCheckoutReconciliation(kv,{sessionId:session.id,eventId:event.id,email:customerEmail,reason:'email_mismatch'})}
+    catch(recordError){console.error('Checkout reconciliation recording failed',safeError(recordError))}
+    throw new Error('Checkout email and pre-saved lead disagree; manual reconciliation required');
+  }
 
   // Two different checkout sessions can refer to one customer. Serialize by
   // normalized email and Stripe customer ID as well as by checkout session.
@@ -249,7 +254,19 @@ module.exports=async function handler(req,res){
       return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
     }
 
-  const workspace=await upsertWorkspace({lead,session,plan:paidPlan,email:recipient});
+  let workspace;
+  try{workspace=await upsertWorkspace({lead,session,plan:paidPlan,email:recipient})}
+  catch(provisionError){
+    const message=String(provisionError?.message||'');
+    const reason=/reserved or disabled/.test(message)?'reserved_account':
+      /owner does not match|belongs to another account/.test(message)?'workspace_owner_mismatch':
+      /manual reconciliation required|mapping disagree|different workspaces/.test(message)?'account_mapping_conflict':'';
+    if(reason){
+      try{await recordCheckoutReconciliation(kv,{sessionId:session.id,eventId:event.id,email:recipient,reason})}
+      catch(recordError){console.error('Checkout reconciliation recording failed',safeError(recordError))}
+    }
+    throw provisionError;
+  }
   if(lead.prospectId){
     const paidEnt=entitlementsFor(paidPlan),convertedAt=Date.now();
     await upsertWebsiteProspect({
