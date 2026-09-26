@@ -34,7 +34,8 @@ test('prospect edit requires displayed revision and compares full snapshot befor
   assert.equal(good.auditEvent.before.stage,'new');
   assert.equal(good.auditEvent.after.updatedAt,11);
   assert.ok(!JSON.stringify(good.auditEvent).includes('old@example.test'));
-  assert.ok(!JSON.stringify(good.auditEvent).includes('Changed'));
+  assert.equal(good.auditEvent.before.name,undefined);
+  assert.equal(good.auditEvent.after.name,undefined);
 
 });
 test('concurrent prospect change and uncertain write reject without claiming success',async()=>{
