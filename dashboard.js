@@ -2240,6 +2240,7 @@ async function sendInboxReply(e){
       const refs=msgs.map(m=>m.messageId).filter(Boolean).join(' ');
       const r=await fetch('/api/account?action=admin-gmail-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,subject,body:message,from,threadId:currentInboxItem.id,inReplyTo:last.messageId||'',references:refs})}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not send Gmail reply');
+      deliveryWarning=data.warning||'';
       await loadAdminInbox();
       const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===(data.threadId||currentInboxItem.id));if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]}}
     }
