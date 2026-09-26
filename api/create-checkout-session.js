@@ -100,7 +100,6 @@ module.exports=async function handler(req,res){
   let prospect,leadId;
   try{
     prospect=await upsertWebsiteProspect({name,business,email,phone,industry,plan,source:'get_started',stage:'checkout_started',visitorId,sessionId,utmSource,utmMedium,utmCampaign});
-    await recordSiteEvent({type:'checkout_start',visitorId,sessionId,path:'/get-started',label:plan,utmSource,utmMedium,utmCampaign},req);
     leadId=crypto.randomUUID();
     await kv.set('lead:'+leadId,{
       name,business,email,phone,industry,plan,prospectId:prospect.id,visitorId,sessionId,utmSource,utmMedium,utmCampaign,
@@ -111,6 +110,9 @@ module.exports=async function handler(req,res){
     console.error('Embedded checkout lead pre-save failed',err&&err.message||err);
     return res.status(503).json({error:'Checkout is temporarily unavailable. Please try again shortly.'});
   }
+
+  try{await recordSiteEvent({type:'checkout_start',visitorId,sessionId,path:'/get-started',label:plan,utmSource,utmMedium,utmCampaign},req)}
+  catch(analyticsError){console.error('Embedded checkout tracking failed',analyticsError&&analyticsError.message||analyticsError)}
 
   const params=new URLSearchParams();
   params.set('mode','subscription');
