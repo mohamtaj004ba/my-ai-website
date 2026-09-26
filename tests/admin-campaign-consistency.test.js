@@ -8,15 +8,14 @@ const {compareAndSetWithDelete,CONFIG_COMPARE_AND_SET_WITH_DELETE}=require('../l
 const base={id:'campaign-1',name:'Old campaign',budget:5,status:'draft',createdAt:1,updatedAt:10};
 
 function fixture(action,{existing=base,ids=['campaign-1'],expectedUpdatedAt=10,commit=true,budget=12,clock=20}={}){
-  let code=0,result,calls=0,updates,deleted=[],setCalls=0;
+  let code=0,result,calls=0,updates,deleted=[],setCalls=0,auditKey,auditEvent;
   const rawIndex=ids;
   const context=vm.createContext({
-    requireAdmin:async()=>({email:'admin@example.test'}),
+    requireAdmin:async()=>({email:'admin@example.test',workspaceId:'admin-ws'}),
     kv:{get:async key=>key==='marketing:campaign:index'?rawIndex:key==='marketing:campaign:'+String(action==='create'?'':base.id)?existing:null,
       set:()=>{setCalls++;throw Error('Campaign writes must be atomic')},
       del:()=>{setCalls++;throw Error('Campaign deletes must be atomic')}},
-    compareAndSetConfig:async(_kv,records)=>{calls++;updates=records;if(commit==='error')throw Error('network');return commit},
-    compareAndSetWithDelete:async(_kv,records,opts)=>{calls++;updates=records;deleted=opts.deleteKeys;if(commit==='error')throw Error('network');return commit},
+    compareAndAuditBatch:async(_kv,records,key,event,opts={})=>{calls++;updates=records;auditKey=key;auditEvent=event;deleted=opts.deleteKeys||[];if(commit==='error')throw Error('network');return commit},
     crypto:{randomUUID:()=> 'created-campaign'},Date:{now:()=>clock},Math,Number,String,Promise,
     safeError:()=>'',console:{error(){}},
     req:{body:action==='delete'?{id:'campaign-1',expectedUpdatedAt}:action==='create'?{name:'New campaign',budget}:{id:'campaign-1',name:'Updated campaign',budget,expectedUpdatedAt}},
@@ -29,7 +28,7 @@ function fixture(action,{existing=base,ids=['campaign-1'],expectedUpdatedAt=10,c
   assert.ok(start>=0&&end>start);
   vm.runInContext(api.slice(start,end),context);
   const fn=action==='delete'?'adminMarketingCampaignDelete':'adminMarketingCampaignSave';
-  return {run:async()=>{await vm.runInContext(fn+'(req,res)',context);return {code,result,calls,updates,deleted,setCalls}}};
+  return {run:async()=>{await vm.runInContext(fn+'(req,res)',context);return {code,result,calls,updates,deleted,setCalls,auditKey,auditEvent}}};
 }
 
 test('campaign creates index and campaign atomically without silent truncation',async()=>{
@@ -42,6 +41,9 @@ test('campaign creates index and campaign atomically without silent truncation',
   assert.equal(r.updates[1].after[0],'created-campaign');
   assert.equal(r.updates[1].after[1],'campaign-1');
   assert.equal(r.setCalls,0);
+  assert.equal(r.auditKey,'audit:admin-ws');
+  assert.equal(r.auditEvent.action,'marketing_campaign_create');
+  assert.equal(r.auditEvent.meta.campaignId,'created-campaign');
 });
 
 test('campaign edits reject stale and competing saves, including same-millisecond revisions',async()=>{
@@ -54,6 +56,9 @@ test('campaign edits reject stale and competing saves, including same-millisecon
   assert.equal(r.code,200);
   assert.equal(r.updates[0].after.updatedAt,11);
   assert.equal(r.updates[0].after.budget,12);
+  assert.equal(r.auditEvent.action,'marketing_campaign_update');
+  assert.equal(r.auditEvent.before.budget,5);
+  assert.equal(r.auditEvent.after.budget,12);
 });
 
 test('campaign deletes remove record and index together or change neither',async()=>{
@@ -62,6 +67,9 @@ test('campaign deletes remove record and index together or change neither',async
   assert.deepEqual(Array.from(r.deleted),['marketing:campaign:campaign-1']);
   assert.equal(r.updates[1].after.length,0);
   assert.equal(r.setCalls,0);
+  assert.equal(r.auditEvent.action,'marketing_campaign_delete');
+  assert.equal(r.auditEvent.before.id,'campaign-1');
+  assert.equal(r.auditEvent.after,null);
   assert.equal((await fixture('delete',{expectedUpdatedAt:9}).run()).code,409);
   assert.equal((await fixture('delete',{commit:false}).run()).code,409);
 });
