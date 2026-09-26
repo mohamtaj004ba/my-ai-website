@@ -46,3 +46,14 @@ test('uncertain prospect status after sending keeps confirmed reply and reports 
   assert.equal(r.status,200);assert.equal(r.emails,1);assert.equal(r.appends,1);
   assert.match(r.payload.warning,/Reply sent and saved/);
 });
+
+test('admin inbox shows a confirmed-send warning after rendering and retains lead details',()=>{
+  const ui=fs.readFileSync('dashboard.js','utf8');
+  const start=ui.indexOf('async function sendInboxReply('),end=ui.indexOf('async function ',start+10);
+  assert.ok(start>=0&&end>start);
+  const handler=ui.slice(start,end);
+  assert.match(handler,/deliveryWarning=data\.warning\|\|''/);
+  assert.match(handler,/if\(data\.prospect\)currentInboxItem\.prospect=data\.prospect/);
+  assert.match(handler,/if\(p&&data\.prospect\)Object\.assign/);
+  assert.ok(handler.indexOf('renderInboxThread();')<handler.indexOf("status.textContent=deliveryWarning||'Reply sent.'"));
+});
