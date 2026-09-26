@@ -52,3 +52,35 @@ test('paid checkout telemetry is explicitly best effort and uses redacted errors
   assert.match(paidPath,/try\{await recordSiteEvent\(\{type:'checkout_complete'/);
   assert.match(paidPath,/catch\(analyticsError\)\{console\.error\('Paid checkout analytics unavailable',safeError\(analyticsError\)\)\}/);
 });
+
+const guardStart=source.indexOf('  if(sessionState&&(sessionState.status===\'complete\'');
+const guardEnd=source.indexOf('\n\n  const leadId=',guardStart);
+assert.ok(guardStart>=0&&guardEnd>guardStart);
+const sessionGuard=source.slice(guardStart,guardEnd);
+async function dedupe(sessionState){
+  const writes=[];let status,body;
+  const ctx=vm.createContext({sessionState,eventKey:'stripe:event:new-event',
+    kv:{set:async(key,value,options)=>{writes.push({key,value,options})}},
+    res:{status(n){status=n;return this},json(x){body=x;return x}}});
+  await vm.runInContext('(async()=>{'+sessionGuard+'})()',ctx);
+  return {status,body,writes};
+}
+test('later paid event with distinct ID for already-reviewed checkout is acknowledged as duplicate',async()=>{
+  const r=await dedupe({status:'awaiting_review',token:'onboard-token',workspaceId:'workspace-1'});
+  assert.equal(r.status,200);
+  assert.equal(r.body.received,true);
+  assert.equal(r.body.duplicate,true);
+  assert.equal(r.body.workspaceId,'workspace-1');
+  assert.equal(r.writes.length,1);
+  assert.equal(r.writes[0].key,'stripe:event:new-event');
+  assert.equal(r.writes[0].value,true);
+  assert.ok(guardStart<source.indexOf('  const workspace=await upsertWorkspace('));
+});
+test('incomplete session state can still resume provisioning while complete status is idempotent',async()=>{
+  const partial=await dedupe({status:'awaiting_review',workspaceId:'workspace-1'});
+  assert.equal(partial.status,undefined);
+  assert.equal(partial.writes.length,0);
+  const complete=await dedupe({status:'complete',workspaceId:'workspace-1',token:'onboard-token'});
+  assert.equal(complete.status,200);
+  assert.equal(complete.body.duplicate,true);
+});
