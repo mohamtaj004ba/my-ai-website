@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const crypto=require('node:crypto');
 const source=fs.readFileSync('api/stripe-webhook.js','utf8');
-const start=source.indexOf('  const workspace=await upsertWorkspace({lead,session,plan:paidPlan,email:recipient});');
+const start=source.indexOf('  let workspace;\n  try{workspace=await upsertWorkspace({lead,session,plan:paidPlan,email:recipient})}');
 const end=source.indexOf('\n  }finally{',start);
 assert.ok(start>=0&&end>start);
 const paidPath=source.slice(start,end);
@@ -74,7 +74,7 @@ test('later paid event with distinct ID for already-reviewed checkout is acknowl
   assert.equal(r.writes.length,1);
   assert.equal(r.writes[0].key,'stripe:event:new-event');
   assert.equal(r.writes[0].value,true);
-  assert.ok(guardStart<source.indexOf('  const workspace=await upsertWorkspace('));
+  assert.ok(guardStart<source.indexOf('  let workspace;\n  try{workspace=await upsertWorkspace('));
 });
 test('incomplete session state can still resume provisioning while complete status is idempotent',async()=>{
   const partial=await dedupe({status:'awaiting_review',workspaceId:'workspace-1'});
@@ -87,7 +87,7 @@ test('incomplete session state can still resume provisioning while complete stat
 
 test('paid webhook claims checkout before provisioning and releases on success or failure',()=>{
   const claimAt=source.indexOf('const claim=await claimCheckoutSession(kv,session.id)');
-  const provisionAt=source.indexOf('const workspace=await upsertWorkspace(');
+  const provisionAt=source.indexOf('let workspace;\n  try{workspace=await upsertWorkspace(');
   const releaseAt=source.indexOf('await releaseCheckoutSession(kv,claim)');
   assert.ok(claimAt>0&&claimAt<provisionAt&&releaseAt>provisionAt);
   assert.match(source,/if\(!claim\)\{res\.setHeader\('Retry-After','15'\);return res\.status\(503\)/);
