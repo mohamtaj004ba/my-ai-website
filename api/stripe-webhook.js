@@ -2,7 +2,7 @@ const crypto=require('crypto');
 const {kv}=require('../lib/kv');
 const {sendMail}=require('../lib/mail');
 const {safeError}=require('../lib/safe-log');
-const {lifecycleEmail}=require('../lib/email-template');
+const {lifecycleEmail,esc:escapeEmailHtml}=require('../lib/email-template');
 const {normalizePlan,entitlementsFor}=require('../lib/plans');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {addBusinessHours}=require('../lib/business-hours');
@@ -263,16 +263,16 @@ module.exports=async function handler(req,res){
   const firstName=(lead.name||'').split(' ')[0]||'there';
   try{
     const email=lifecycleEmail({
-      preheader:'Payment received. Your CallerCore setup request is now in review.',
+      preheader:isRepeatPurchase?'Payment received. Your existing CallerCore setup is preserved.':'Payment received. Your CallerCore setup request is now in review.',
       eyebrow:'PAYMENT CONFIRMED',
-      title:'Welcome to CallerCore, '+firstName+'.',
-      intro:'Thank you — we received your payment and created the CallerCore account for <strong>'+workspace.name+'</strong>.',
+      title:isRepeatPurchase?'Your CallerCore payment is confirmed.':'Welcome to CallerCore, '+firstName+'.',
+      intro:isRepeatPurchase?'Thank you — your new payment for <strong>'+escapeEmailHtml(workspace.name)+'</strong> was received. Your existing CallerCore account remains in place.':'Thank you — we received your payment and created the CallerCore account for <strong>'+escapeEmailHtml(workspace.name)+'</strong>.',
       statusLabel:'Current status',
-      statusText:'Account review in progress — no action needed from you right now.',
-      bodyHtml:'<p style="margin:0 0 12px">Our team will review your order and business details during business hours. Once that review is complete, we’ll send your welcome email with a secure onboarding link and service agreement.</p><p style="margin:0">You’ll always be able to see setup progress from your CallerCore account as the implementation moves forward.</p>',
+      statusText:isRepeatPurchase?'Your current setup progress remains in place.':'Account review in progress — no action needed from you right now.',
+      bodyHtml:isRepeatPurchase?'<p style="margin:0">Your current onboarding progress and completed steps have not been reset by this purchase. Visit your CallerCore dashboard for the latest account and billing details.</p>':'<p style="margin:0 0 12px">Our team will review your order and business details during business hours. Once that review is complete, we’ll send your welcome email with a secure onboarding link and service agreement.</p><p style="margin:0">You’ll always be able to see setup progress from your CallerCore account as the implementation moves forward.</p>',
       siteUrl:SITE_URL
     });
-    await sendMail({to:recipient,subject:'Payment received — welcome to CallerCore',...email});
+    await sendMail({to:recipient,subject:isRepeatPurchase?'CallerCore payment received — your account remains in place':'Payment received — welcome to CallerCore',...email});
   }catch(err){console.error('Failed to send payment confirmation:',safeError(err))}
 
   if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
