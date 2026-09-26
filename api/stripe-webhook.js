@@ -215,6 +215,26 @@ module.exports=async function handler(req,res){
   const recipient=String(lead.email||customerEmail||'').trim().toLowerCase();
   if(!recipient)return res.status(500).json({error:'Missing customer email'});
 
+  // Two different checkout sessions can refer to one customer. Serialize by
+  // normalized email and Stripe customer ID as well as by checkout session.
+  // Hash email-derived key material so identifiers do not expose an address.
+  const accountIdentities=['account-email:'+crypto.createHash('sha256').update(recipient).digest('hex')];
+  if(session.customer)accountIdentities.push('account-customer:'+crypto.createHash('sha256').update(String(session.customer)).digest('hex'));
+  const accountClaims=[];
+  try{
+    for(const identity of accountIdentities){
+      const accountClaim=await claimCheckoutSession(kv,identity);
+      if(!accountClaim){res.setHeader('Retry-After','15');return res.status(503).json({error:'Customer checkout provisioning is in progress. Stripe should retry.'})}
+      accountClaims.push(accountClaim);
+    }
+    // A different event could have finished this session while we awaited
+    // account identity claims. Never repeat payment setup on stale state.
+    sessionState=await kv.get(sessionKey);
+    if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
+      if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+      return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
+    }
+
   const workspace=await upsertWorkspace({lead,session,plan:paidPlan,email:recipient});
   if(lead.prospectId){
     const paidEnt=entitlementsFor(paidPlan),convertedAt=Date.now();
@@ -278,6 +298,12 @@ module.exports=async function handler(req,res){
   if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
   if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
   return res.status(200).json({received:true,workspaceId:workspace.id});
+  }finally{
+    for(const accountClaim of accountClaims.reverse()){
+      try{await releaseCheckoutSession(kv,accountClaim)}
+      catch(releaseError){console.error('Stripe customer claim cleanup failed',safeError(releaseError))}
+    }
+  }
   }finally{
     try{await releaseCheckoutSession(kv,claim)}
     catch(releaseError){console.error('Stripe checkout claim cleanup failed',safeError(releaseError))}
