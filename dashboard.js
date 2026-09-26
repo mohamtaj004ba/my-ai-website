@@ -1656,7 +1656,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   if(document.body.dataset.dashboard!=='admin')return;
   if(view==='inbox'){await loadAdminInbox({silent:true,force});return}
   if(announce)setAdminSyncState('syncing','Syncing '+String(view||'overview').replaceAll('-',' ')+'…');
-  const jobs=[],add=(key,url,ttl,apply)=>jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(data)apply(data)}).catch(err=>{if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';throw err}));
+  const jobs=[],add=(key,url,ttl,apply)=>jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(data)apply(data)}).catch(err=>{if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';if(key==='website')adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.';throw err}));
   if(view==='overview'||view==='clients'){
     add('summary','/api/account?action=admin-summary',30000,d=>{adminSummaryData=d.summary||{}});
     add('clients','/api/account?action=admin-clients',30000,d=>{adminClientsData=d.clients||[]});
@@ -1693,11 +1693,12 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
     if(!adminPlatformDirty)add('platform','/api/account?action=admin-platform-settings',60000,d=>{adminPlatformData=d.settings||adminPlatformData});
   }
   const results=await Promise.allSettled(jobs),failed=results.filter(x=>x.status==='rejected');
-  if(failed.length){setDataHealth('adminDataHealth',true);if(announce)setAdminSyncState('error','Some data could not sync');throw failed[0].reason}
+  // Render the last verified snapshot and its stale warning even when one request failed.
+  // A failed Finance fetch must never leave an old unqualified clear-state visible.
   if(view==='onboarding')renderProvisioning();
   if(view==='agents'||view==='admin-automations')renderAdminFleet();
   if(view==='phones')renderPhones();
-  if(view==='finance')renderAdminFinance();
+  if(view==='finance'||view==='overview')renderAdminFinance();
   if(view==='growth'){renderWebsiteAnalytics();renderGrowth()}
   if(view==='website')renderWebsiteAnalytics();
   if(view==='documents')renderDocuments();
@@ -1705,6 +1706,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   if(view==='health')renderHealth();
   if(view==='platform-settings'&&!adminPlatformDirty)renderPlatformSettings();
   renderAdmin();
+  if(failed.length){setDataHealth('adminDataHealth',true);if(announce)setAdminSyncState('error','Some data could not sync');throw failed[0].reason}
   if(announce)updateAdminRefreshStamp();
 }
 
