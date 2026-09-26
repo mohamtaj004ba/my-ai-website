@@ -59,7 +59,7 @@ test('agreement reads use bounded concurrency instead of a serial N+1 loop',asyn
 
 
 test('malformed company register returns error rather than silently hiding records',async()=>{
-  for(const company of [{bad:true},Array.from({length:501},(_,i)=>({id:'doc-'+i})),[null],[{name:'missing id'}]]){
+  for(const company of [{bad:true},Array.from({length:501},(_,i)=>({id:'doc-'+i})),[null],[{name:'missing id'}],[{id:'duplicated'},{id:'duplicated'}]]){
     const f=fixture(0,{company});
     await f.run();
     assert.equal(f.res.code,503);
@@ -79,5 +79,6 @@ test('company document mutations reject malformed records before audited writes'
   for(const body of [save,remove]){
     assert.match(body,/list\.length>500\|\|list\.some\(/);
     assert.ok(body.indexOf('list.some(')<body.indexOf('compareAndAudit('));
+    assert.ok(body.indexOf('new Set(list.map(')<body.indexOf('compareAndAudit('));
   }
 });
