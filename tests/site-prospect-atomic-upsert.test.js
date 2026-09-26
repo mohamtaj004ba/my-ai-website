@@ -116,3 +116,15 @@ test('converted or lost manual prospects do not receive an automatic follow-up',
     assert.equal(lead.nextFollowUpAt,null);
   }
 });
+
+test('simultaneous same-email submissions converge on one indexed prospect',async()=>{
+  const f=fixture();
+  const [contact,checkout]=await Promise.all([
+    f.upsert({email:'same@example.test',source:'contact',name:'Lead'}),
+    f.upsert({email:'same@example.test',source:'get_started',name:'Lead',stage:'checkout_started'})
+  ]);
+  assert.equal(contact.id,checkout.id);
+  assert.equal(f.index.length,1);
+  assert.equal(f.values.get('site:prospect:email:'+f.emailKey('same@example.test')),contact.id);
+  assert.equal(f.values.get('site:prospect:'+contact.id).firstSource,'contact');
+});
