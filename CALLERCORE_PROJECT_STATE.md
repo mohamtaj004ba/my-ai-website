@@ -384,3 +384,10 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Save/delete share a pending lock, disable form and close controls during the request, suppress duplicate actions, preserve a failed draft with an inline error, and reconcile confirmed mutations into the existing document list before closing. This eliminates a post-save refresh failure being incorrectly reported as a failed database save.
 - Implementation commit `50cef8952c720662a3bd2cd42711033a75f1acc1`; dedicated frontend regression tests added in `aa371c5fa0e5c2152e1e82ba6327025733123b00`. CI and authenticated Preview QA are **not yet verified** for this checkpoint; check exact-head workflows and fix any failure before describing it as verified.
 - Next: check CI/Preview, inspect document-link validation and read/list corruption safeguards, then continue remaining admin record consistency review. Main and production were not intentionally changed by these feature-branch commits.
+
+## Company-document directory fail-closed guard — 2026-09-25, exact-head QA pending
+
+- Read-side company-document corruption previously became an empty list in the dashboard while the endpoint still returned 200. The GET now rejects malformed, over-capacity or missing-ID directory entries with 503 instead of suggesting records disappeared.
+- Save and delete likewise refuse malformed/over-capacity directory data before building a replacement list or attempting an audited transaction.
+- Backend change `26f0b68a7e7b58cfa5e7ed3a9a7ff3817d88d365`, regression follow-up `b6fe945b7220ccff60bdadee94635e35aac55d0c`. Earlier document UI checkpoint `189455dc6a2f127e5a475e3023586948ef269216` passed CallerCore CI `36209744395`, CodeQL `36209744562`, Jekyll `36209744826`, and Vercel status success. Do not attribute those earlier runs to this new head; authenticated Preview Browser QA for this batch was not yet confirmed.
+- Next: verify CI and authenticated Preview for the latest implementation, investigate remaining admin document error presentation and other operational record consistency, and update evidence here. No main merge or production release authorized.
