@@ -16,7 +16,8 @@ function fixture(view,{fail=[],responses={}}={}){
     setAdminSyncState:(...args)=>sync.push(args),
     setDataHealth:(...args)=>health.push(args),
     adminSyncFetch:async(key,url)=>{calls.push({key,url});if(fail.includes(key))throw Error('Provider '+key+' unavailable');return responses[key]||null},
-    adminDataSyncAt:{finance:123,website:456},
+    adminDataSyncAt:{finance:123,'/api/account?action=admin-website-analytics&days=30':456},
+    adminSyncCacheKey:(key,url)=>key==='website'?url:key,
     adminFinanceData:{reconciliation:[{sessionId:'existing'}]},adminFinanceLoadError:'',
     adminWebsiteData:{prospects:[{id:'existing'}]},adminWebsiteLoadError:'',
     adminPlatformDirty:false,adminWebsiteDays:30,
@@ -85,7 +86,7 @@ test('incomplete successful analytics feed does not conceal stale Growth data',a
   const f=fixture('growth',{responses:{website:{ok:true}}});
   await assert.rejects(f.run(),/Incomplete website response/);
   assert.match(f.context.adminWebsiteLoadError,/outdated/);
-  assert.equal(f.context.adminDataSyncAt.website,undefined);
+  assert.equal(f.context.adminDataSyncAt['/api/account?action=admin-website-analytics&days=30'],undefined);
   assert.equal(f.context.adminWebsiteData.prospects[0].id,'existing');
   assert.deepEqual(f.rendered,['website','growth','admin']);
 });
