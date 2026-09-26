@@ -1570,7 +1570,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{res
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[]},adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -1623,7 +1623,7 @@ async function loadAdminOps(){
     const preferredDays=Number(adminPlatformData?.analyticsWindowDays||requestedAnalyticsDays||30);
     if(preferredDays!==requestedAnalyticsDays){adminWebsiteDays=preferredDays;const rr=await fetch('/api/account?action=admin-website-analytics&days='+preferredDays,{cache:'no-store'});if(rr.ok){const latest=(await rr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}}}else adminWebsiteDays=requestedAnalyticsDays;
     if(fbr.ok)adminFeedbackData=(await fbr.json()).feedback||[];
-    if(fin.ok)adminFinanceData=(await fin.json()).finance||adminFinanceData;
+    if(fin.ok){const latest=(await fin.json()).finance;if(latest){adminFinanceData=latest;adminFinanceLoadError=''}}else adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';
     if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];
     if(dr.ok)adminDocumentsData=(await dr.json()).documents||adminDocumentsData;
     const freshAt=Date.now();
@@ -1656,7 +1656,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   if(document.body.dataset.dashboard!=='admin')return;
   if(view==='inbox'){await loadAdminInbox({silent:true,force});return}
   if(announce)setAdminSyncState('syncing','Syncing '+String(view||'overview').replaceAll('-',' ')+'…');
-  const jobs=[],add=(key,url,ttl,apply)=>jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(data)apply(data)}));
+  const jobs=[],add=(key,url,ttl,apply)=>jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(data)apply(data)}).catch(err=>{if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';throw err}));
   if(view==='overview'||view==='clients'){
     add('summary','/api/account?action=admin-summary',30000,d=>{adminSummaryData=d.summary||{}});
     add('clients','/api/account?action=admin-clients',30000,d=>{adminClientsData=d.clients||[]});
@@ -1666,7 +1666,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
     add('support','/api/account?action=admin-support',60000,d=>{adminSupportData=d.tickets||[]});
     add('feedback','/api/account?action=admin-ai-feedback',60000,d=>{adminFeedbackData=d.feedback||[]});
     add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,90000,d=>{if(d.analytics){adminWebsiteData=d.analytics;adminWebsiteLoadError=''}});
-    add('finance','/api/account?action=admin-finance',180000,d=>{adminFinanceData=d.finance||adminFinanceData});
+    add('finance','/api/account?action=admin-finance',180000,d=>{if(d.finance){adminFinanceData=d.finance;adminFinanceLoadError=''}});
     add('health','/api/account?action=admin-system-health',300000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
   }else if(view==='onboarding'){
     add('provisioning','/api/account?action=admin-provisioning',30000,d=>{adminProvisioningData=d.provisioning||[]});
@@ -1676,7 +1676,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   }else if(view==='phones'){
     add('phones','/api/account?action=admin-phone-numbers',45000,d=>{adminPhoneData=d.numbers||[]});
   }else if(view==='finance'){
-    add('finance','/api/account?action=admin-finance',90000,d=>{adminFinanceData=d.finance||adminFinanceData});
+    add('finance','/api/account?action=admin-finance',90000,d=>{if(d.finance){adminFinanceData=d.finance;adminFinanceLoadError=''}});
   }else if(view==='growth'){
     add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,60000,d=>{if(d.analytics){adminWebsiteData=d.analytics;adminWebsiteLoadError=''}});
     add('campaigns','/api/account?action=admin-marketing-campaigns',60000,d=>{adminCampaignData=d.campaigns||[]});
@@ -2731,6 +2731,7 @@ function renderAdminFinance(){
     chart.querySelectorAll('[data-revenue-plan]').forEach(b=>b.addEventListener('click',()=>{adminClientFilter='all';adminClientSearch=b.dataset.revenuePlan;showView('clients');renderAdminClients()}));
   }
   const exceptions=Array.isArray(d.reconciliation)?d.reconciliation:[],reconciliationList=document.getElementById('financeReconciliationList');
+  const reconciliationStatus=document.getElementById('financeReconciliationStatus');if(reconciliationStatus)reconciliationStatus.textContent=adminFinanceLoadError;
   set('financeReconciliationCount',exceptions.length+' open');
   if(reconciliationList)reconciliationList.innerHTML=exceptions.length?exceptions.map(item=>{
     const reason={email_mismatch:'Checkout and lead emails differ',account_mapping_conflict:'Stripe or member mapping conflict',workspace_owner_mismatch:'Workspace owner mismatch',reserved_account:'Reserved or disabled account'}[item.reason]||'Account identity review';
