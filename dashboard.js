@@ -1793,18 +1793,28 @@ function renderWebsiteTrafficChart(){
   shell.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Website sessions and visitors"><g class="admin-chart-grid">'+grid+'</g><polyline class="website-line sessions" points="'+sessionPts+'"></polyline><polyline class="website-line visitors" points="'+visitorPts+'"></polyline><g>'+dots+'</g><g class="admin-chart-labels">'+labels+'</g><g>'+hits+'</g></svg><div class="admin-chart-tooltip" id="websiteTrafficTooltip" hidden></div>';
   const tip=document.getElementById('websiteTrafficTooltip');shell.querySelectorAll('[data-web-index]').forEach(hit=>{const show=()=>{const i=Number(hit.dataset.webIndex),r=rows[i];if(!r||!tip)return;tip.hidden=false;tip.innerHTML='<b>'+esc(new Date(r.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}))+'</b><span>Sessions <strong>'+Number(r.sessions||0)+'</strong></span><span>Visitors <strong>'+Number(r.visitors||0)+'</strong></span><span>Page views <strong>'+Number(r.pageViews||0)+'</strong></span><span>Conversions <strong>'+Number(r.conversions||0)+'</strong></span>';tip.style.left=Math.min(88,Math.max(8,(x(i)/w)*100))+'%';tip.style.top='18px'};hit.addEventListener('mouseenter',show);hit.addEventListener('mousemove',show);hit.addEventListener('mouseleave',()=>{tip.hidden=true})});
 }
+let adminWebsiteLoadError='';
 async function loadWebsiteAnalytics(days=adminWebsiteDays){
   const request=++adminWebsiteAnalyticsRequest;adminWebsiteDays=Number(days)||30;
-  const r=await fetch('/api/account?action=admin-website-analytics&days='+adminWebsiteDays,{cache:'no-store'}),data=await r.json().catch(()=>({}));
-  if(!r.ok||request!==adminWebsiteAnalyticsRequest)return;
-  adminWebsiteData=data.analytics||adminWebsiteData;renderWebsiteAnalytics();renderGrowth();
+  try{
+    const r=await fetch('/api/account?action=admin-website-analytics&days='+adminWebsiteDays,{cache:'no-store'});
+    const data=await r.json().catch(()=>({}));
+    if(request!==adminWebsiteAnalyticsRequest)return false;
+    if(!r.ok||!data.analytics)throw new Error(data.error||'Website analytics could not refresh.');
+    adminWebsiteData=data.analytics;adminWebsiteLoadError='';
+    renderWebsiteAnalytics();renderGrowth();return true;
+  }catch(err){
+    if(request!==adminWebsiteAnalyticsRequest)return false;
+    adminWebsiteLoadError=String(err.message||'Website analytics could not refresh.').slice(0,180);
+    renderWebsiteAnalytics();renderGrowth();return false;
+  }
 }
 function renderWebsiteAnalytics(){
   const d=adminWebsiteData||{},set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   set('webSessions',Number(d.sessions||0).toLocaleString());set('webVisitors',Number(d.visitors||0).toLocaleString()+' visitors · '+Number(d.newVisitors||0)+' new / '+Number(d.returningVisitors||0)+' returning');
   set('webActiveNow',Number(d.activeNow||0).toLocaleString());set('webEngagedRate',Number(d.engagedRate||0)+'%');set('webEngagement',formatDuration(Number(d.avgActiveSeconds||0))+' average active time');
   const rate=d.sessions?Math.round(Number(d.conversions||0)/Number(d.sessions)*1000)/10:0;set('webConversionRate',rate+'%');set('webConversions',Number(d.conversions||0)+' converted prospect'+(Number(d.conversions||0)===1?'':'s'));
-  const summary=document.getElementById('websiteTrafficSummary');if(summary)summary.textContent=Number(d.pageViews||0).toLocaleString()+' page views · '+Number(d.pagesPerSession||0).toFixed(1)+' pages/session · '+Number(d.bounceRate||0)+'% bounce'+(d.coverage?.isRetentionCapped?' · Older history outside retained tracking may be excluded':'');
+  const summary=document.getElementById('websiteTrafficSummary');if(summary)summary.textContent=Number(d.pageViews||0).toLocaleString()+' page views · '+Number(d.pagesPerSession||0).toFixed(1)+' pages/session · '+Number(d.bounceRate||0)+'% bounce'+(d.coverage?.isRetentionCapped?' · Older history outside retained tracking may be excluded':'')+(adminWebsiteLoadError?' · Refresh issue: '+adminWebsiteLoadError+' (showing previously loaded data)':'');
   document.querySelectorAll('[data-website-days]').forEach(btn=>{btn.classList.toggle('active',Number(btn.dataset.websiteDays)===Number(d.periodDays||adminWebsiteDays));btn.onclick=()=>loadWebsiteAnalytics(Number(btn.dataset.websiteDays))});
   const refresh=document.getElementById('refreshWebsiteAnalytics');if(refresh)refresh.onclick=async()=>{refresh.disabled=true;refresh.textContent='Refreshing…';try{await loadWebsiteAnalytics(adminWebsiteDays)}finally{refresh.disabled=false;refresh.textContent='Refresh'}};
   renderWebsiteTrafficChart();
@@ -1831,7 +1841,7 @@ function prospectDue(p){
   return now-Number(p.lastContactAt||p.lastRepliedAt||p.createdAt||now)>=target;
 }
 function renderGrowth(){
-  const coverageNote=document.getElementById('growthCoverageNote');if(coverageNote)coverageNote.textContent=adminWebsiteData.coverage?.isRetentionCapped?'Growth includes all retained prospects; older records outside retention may be excluded.':'';
+  const coverageNote=document.getElementById('growthCoverageNote');if(coverageNote)coverageNote.textContent=(adminWebsiteData.coverage?.isRetentionCapped?'Growth includes all retained prospects; older records outside retention may be excluded. ':'')+(adminWebsiteLoadError?'Growth refresh failed: '+adminWebsiteLoadError+' — showing previously loaded records.':'');
   const all=[...(adminWebsiteData.prospects||[])].sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0)),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v},now=new Date(),monthStart=new Date(now.getFullYear(),now.getMonth(),1).getTime();
   const open=all.filter(p=>!['converted','lost'].includes(p.stage)),due=open.filter(prospectDue),qualified=open.filter(p=>['qualified','proposal','checkout_started'].includes(p.stage)),won=all.filter(p=>p.stage==='converted'&&Number(p.convertedAt||p.updatedAt||0)>=monthStart);
   set('growthOpen',open.length);set('growthDue',due.length);set('growthQualified',qualified.length);set('growthWon',won.length);set('growthNoNextStep',open.filter(p=>!Number(p.nextFollowUpAt||0)).length);set('growthUnowned',open.filter(p=>!String(p.owner||'').trim()).length);set('growthUnattributed',open.filter(p=>![p.source,p.firstUtmSource,p.utmSource,p.campaign,p.utmCampaign].some(Boolean)).length);set('growthWonMrr',financeMoney(won.reduce((n,p)=>n+prospectValue(p),0))+' MRR converted');set('growthPipelineValue',financeMoney(open.reduce((n,p)=>n+prospectValue(p),0))+' pipeline MRR');
@@ -1906,7 +1916,7 @@ async function saveProspect(){
           if(prospectModalPending)return;
           action.disabled=true;
           try{
-            if(!(adminWebsiteData.prospects||[]).some(p=>String(p.id)===err.prospectId))await loadWebsiteAnalytics(adminWebsiteDays);
+            if(!(adminWebsiteData.prospects||[]).some(p=>String(p.id)===err.prospectId)&&!await loadWebsiteAnalytics(adminWebsiteDays))throw new Error('Growth could not refresh. Try again before opening the existing prospect.');
             if(!(adminWebsiteData.prospects||[]).some(p=>String(p.id)===err.prospectId))throw new Error('Existing prospect is outside the loaded Growth results. Search the CRM to open it.');
             openProspectModal(err.prospectId);
           }catch(e){status.textContent=e.message||'Could not open existing prospect.'}
@@ -2404,7 +2414,7 @@ async function savePlatformSettings(){
     if(!r.ok)throw new Error(data.error||'Could not save platform settings.');
     adminPlatformData=data.settings;adminPlatformDirty=false;adminWebsiteDays=Number(data.settings?.analyticsWindowDays||adminWebsiteDays||30);renderPlatformSettings();initAdminLiveRefresh();renderGrowth();renderAdmin();
     let refreshFailed=false;
-    try{await Promise.all([loadWebsiteAnalytics(adminWebsiteDays),loadNotifications({silent:true})])}catch(refreshError){refreshFailed=true}
+    try{const [websiteUpdated]=await Promise.all([loadWebsiteAnalytics(adminWebsiteDays),loadNotifications({silent:true})]);if(websiteUpdated===false)refreshFailed=true}catch(refreshError){refreshFailed=true}
     if(status){status.textContent=refreshFailed?'Platform settings saved, but some dashboard data could not refresh. Refresh the page to verify the latest information.':'Platform settings saved and applied.';status.className='form-status-line'+(refreshFailed?' error':' success')}
     const tag=document.getElementById('platformSettingsStatus');if(tag){tag.textContent='Saved';tag.classList.add('show');setTimeout(()=>tag.classList.remove('show'),1500)}
   }catch(err){if(status){status.textContent=err.message||'Could not save platform settings.';status.className='form-status-line error'}}
