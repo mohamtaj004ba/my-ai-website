@@ -1883,20 +1883,50 @@ async function saveProspect(){
   catch(err){if(status){status.textContent=err.message||'Could not save prospect.';status.className='form-status-line error'}}
   finally{if(btn){btn.disabled=false;btn.textContent='Save prospect'}}
 }
+let adminCampaignMutationPending=false;
+function setCampaignMutationPending(pending,action='save'){
+  adminCampaignMutationPending=!!pending;
+  const modal=document.getElementById('campaignModal');
+  modal?.querySelectorAll('input,select,textarea,button').forEach(el=>{el.disabled=!!pending});
+  const save=document.getElementById('saveCampaignButton'),del=document.getElementById('deleteCampaignButton');
+  if(save)save.textContent=pending&&action==='save'?'Saving…':'Save campaign';
+  if(del)del.textContent=pending&&action==='delete'?'Deleting…':'Delete campaign';
+}
 function openCampaignModal(id=''){
+  if(adminCampaignMutationPending)return;
   const c=id?(adminCampaignData||[]).find(x=>String(x.id)===String(id)):null,m=document.getElementById('campaignModal');if(!m)return;m.dataset.editId=id||'';document.getElementById('campaignModalTitle').textContent=c?'Edit campaign':'Add campaign';document.getElementById('campaignNameInput').value=c?.name||'';document.getElementById('campaignChannelInput').value=c?.channel||'Email';document.getElementById('campaignStatusInput').value=c?.status||'draft';document.getElementById('campaignUtmSourceInput').value=c?.utmSource||'';document.getElementById('campaignUtmMediumInput').value=c?.utmMedium||'';document.getElementById('campaignUtmCampaignInput').value=c?.utmCampaign||'';document.getElementById('campaignBudgetInput').value=c?.budget||'';document.getElementById('campaignGoalInput').value=c?.goal||'';document.getElementById('campaignStartInput').value=c?.startAt?new Date(c.startAt).toISOString().slice(0,10):'';document.getElementById('campaignEndInput').value=c?.endAt?new Date(c.endAt).toISOString().slice(0,10):'';document.getElementById('campaignNotesInput').value=c?.notes||'';const del=document.getElementById('deleteCampaignButton');if(del)del.hidden=!c;const s=document.getElementById('campaignFormStatus');if(s)s.textContent='';m.classList.add('open');m.setAttribute('aria-hidden','false');
 }
-function closeCampaignModal(){const m=document.getElementById('campaignModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
+function closeCampaignModal(){if(adminCampaignMutationPending)return;const m=document.getElementById('campaignModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 async function deleteCampaign(){
-  const id=document.getElementById('campaignModal')?.dataset.editId;if(!id)return;const c=(adminCampaignData||[]).find(x=>String(x.id)===String(id));if(!confirm('Delete '+(c?.name||'this campaign')+'? Historical website UTM analytics will remain in traffic data.'))return;
-  const r=await fetch('/api/account?action=admin-marketing-campaign-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt:Number(c?.updatedAt||c?.createdAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not delete campaign.');return}
-  closeCampaignModal();adminCampaignData=(adminCampaignData||[]).filter(x=>String(x.id)!==String(id));renderGrowth();
+  if(adminCampaignMutationPending)return;
+  const modal=document.getElementById('campaignModal'),id=modal?.dataset.editId;
+  if(!id)return;
+  const c=(adminCampaignData||[]).find(x=>String(x.id)===String(id));
+  if(!c){const status=document.getElementById('campaignFormStatus');if(status){status.textContent='This campaign is no longer available. Refresh before editing.';status.className='form-status-line error'}return}
+  if(!confirm('Delete '+(c.name||'this campaign')+'? Historical website UTM analytics will remain in traffic data.'))return;
+  setCampaignMutationPending(true,'delete');
+  const status=document.getElementById('campaignFormStatus');
+  try{
+    const r=await fetch('/api/account?action=admin-marketing-campaign-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt:Number(c.updatedAt||c.createdAt||0)})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not delete campaign.');
+    adminCampaignData=(adminCampaignData||[]).filter(x=>String(x.id)!==String(id));
+    setCampaignMutationPending(false);
+    closeCampaignModal();
+    renderGrowth();
+  }catch(err){
+    if(status){status.textContent=err.message||'Could not delete campaign.';status.className='form-status-line error'}
+  }finally{setCampaignMutationPending(false)}
 }
 async function saveCampaign(){
-  const m=document.getElementById('campaignModal'),editing=(adminCampaignData||[]).find(x=>String(x.id)===String(m?.dataset.editId||'')),payload={id:m?.dataset.editId||undefined,expectedUpdatedAt:editing?Number(editing.updatedAt||editing.createdAt||0):undefined,name:document.getElementById('campaignNameInput')?.value||'',channel:document.getElementById('campaignChannelInput')?.value||'Email',status:document.getElementById('campaignStatusInput')?.value||'draft',utmSource:document.getElementById('campaignUtmSourceInput')?.value||'',utmMedium:document.getElementById('campaignUtmMediumInput')?.value||'',utmCampaign:document.getElementById('campaignUtmCampaignInput')?.value||'',budget:Number(document.getElementById('campaignBudgetInput')?.value||0),goal:document.getElementById('campaignGoalInput')?.value||'',startAt:document.getElementById('campaignStartInput')?.value?new Date(document.getElementById('campaignStartInput').value+'T12:00:00').getTime():null,endAt:document.getElementById('campaignEndInput')?.value?new Date(document.getElementById('campaignEndInput').value+'T12:00:00').getTime():null,notes:document.getElementById('campaignNotesInput')?.value||''},btn=document.getElementById('saveCampaignButton'),status=document.getElementById('campaignFormStatus');if(btn){btn.disabled=true;btn.textContent='Saving…'}
-  try{const r=await fetch('/api/account?action=admin-marketing-campaign-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save campaign.');closeCampaignModal();adminCampaignData=[data.campaign,...(adminCampaignData||[]).filter(x=>String(x.id)!==String(data.campaign.id))];renderGrowth();try{const cr=await fetch('/api/account?action=admin-marketing-campaigns',{cache:'no-store'});if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];renderGrowth()}catch(refreshError){/* Saved campaign is already reflected locally; no false save failure. */}}
+  if(adminCampaignMutationPending)return;
+  const m=document.getElementById('campaignModal'),editing=(adminCampaignData||[]).find(x=>String(x.id)===String(m?.dataset.editId||'')),payload={id:m?.dataset.editId||undefined,expectedUpdatedAt:editing?Number(editing.updatedAt||editing.createdAt||0):undefined,name:document.getElementById('campaignNameInput')?.value||'',channel:document.getElementById('campaignChannelInput')?.value||'Email',status:document.getElementById('campaignStatusInput')?.value||'draft',utmSource:document.getElementById('campaignUtmSourceInput')?.value||'',utmMedium:document.getElementById('campaignUtmMediumInput')?.value||'',utmCampaign:document.getElementById('campaignUtmCampaignInput')?.value||'',budget:Number(document.getElementById('campaignBudgetInput')?.value||0),goal:document.getElementById('campaignGoalInput')?.value||'',startAt:document.getElementById('campaignStartInput')?.value?new Date(document.getElementById('campaignStartInput').value+'T12:00:00').getTime():null,endAt:document.getElementById('campaignEndInput')?.value?new Date(document.getElementById('campaignEndInput').value+'T12:00:00').getTime():null,notes:document.getElementById('campaignNotesInput')?.value||''},btn=document.getElementById('saveCampaignButton'),status=document.getElementById('campaignFormStatus');
+  if(payload.id&&!editing){if(status){status.textContent='This campaign is no longer available. Refresh before editing.';status.className='form-status-line error'}return}
+  if(!String(payload.name).trim()){if(status){status.textContent='Campaign name is required.';status.className='form-status-line error'}return}
+  setCampaignMutationPending(true,'save');
+  try{const r=await fetch('/api/account?action=admin-marketing-campaign-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save campaign.');adminCampaignData=[data.campaign,...(adminCampaignData||[]).filter(x=>String(x.id)!==String(data.campaign.id))];setCampaignMutationPending(false);closeCampaignModal();renderGrowth();try{const cr=await fetch('/api/account?action=admin-marketing-campaigns',{cache:'no-store'});if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];renderGrowth()}catch(refreshError){/* Saved campaign is already reflected locally; no false save failure. */}}
   catch(err){if(status){status.textContent=err.message||'Could not save campaign.';status.className='form-status-line error'}}
-  finally{if(btn){btn.disabled=false;btn.textContent='Save campaign'}}
+  finally{setCampaignMutationPending(false)}
 }
 function renderDocuments(){
   const d=adminDocumentsData||{agreements:[],company:[],standard:[]},agreements=d.agreements||[],company=d.company||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
