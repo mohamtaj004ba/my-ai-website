@@ -56,6 +56,6 @@ test('analytics refresh errors remain visible on both Growth and website views',
 test('periodic admin analytics refresh clears stale warnings after a successful sync',()=>{
   const success="d=>{if(d.analytics){adminWebsiteData=d.analytics;adminWebsiteLoadError=''}}";
   assert.equal(source.split(success).length-1,3);
-  assert.match(source,/if\(wr\.ok\)\{const latest=\(await wr\.json\(\)\)\.analytics;if\(latest\)\{adminWebsiteData=latest;adminWebsiteLoadError=''\}\}/);
-  assert.match(source,/if\(rr\.ok\)\{const latest=\(await rr\.json\(\)\)\.analytics;if\(latest\)\{adminWebsiteData=latest;adminWebsiteLoadError=''\}\}/);
+  assert.match(source,/if\(wr\.ok\)\{const latest=\(await wr\.json\(\)\)\.analytics;if\(latest\)\{adminWebsiteData=latest;adminWebsiteLoadError=''\}/);
+  assert.match(source,/if\(rr\.ok\)\{const latest=\(await rr\.json\(\)\)\.analytics;if\(latest\)\{adminWebsiteData=latest;adminWebsiteLoadError=''\}/);
 });
