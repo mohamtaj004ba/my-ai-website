@@ -19,10 +19,18 @@ function fixture({injectConflict=false}={}){
       if(args[4]==='1'&&(values.get(keys[2])||'')!==args[2])return 0;
       const prev=args[4]==='1'?3:2;
       if(args[5]==='1'&&(values.get(keys[prev])||'')!==args[3])return 0;
+      let auditKey,auditEvents;
+      if(args[9]==='1'){
+        auditKey=keys[2+(args[4]==='1'?1:0)+(args[5]==='1'?1:0)];
+        const existing=values.get(auditKey);
+        if(existing!=null&&!Array.isArray(existing))return -1;
+        auditEvents=[JSON.parse(args[10]),...(existing||[])].slice(0,200);
+      }
       values.set(keys[0],JSON.parse(args[1]));
       if(args[4]==='1')values.set(keys[2],args[8]);
       if(args[5]==='1'&&args[6]==='1')values.delete(keys[prev]);
       if(args[7]==='1'){index.unshift(args[8]);index.splice(2000)}
+      if(auditKey)values.set(auditKey,auditEvents);
       return 1;
     },
     set:()=>{throw Error('prospect must not write with plain SET')},
@@ -179,4 +187,40 @@ test('later website inquiries or checkout starts cannot downgrade a converted le
  assert.equal(checkout.monthlyValue,500);
  assert.equal(checkout.firstSource,'checkout');
  assert.equal(f.index.length,1);
+});
+
+test('manual create records admin audit in same atomic transaction as prospect and index',async()=>{
+  const f=fixture();
+  const lead=await f.upsert({email:'audited@example.test',name:'A lead',notes:'Private notes',
+    requireNew:true,source:'manual',adminAudit:{workspaceId:'admin-ws',actorEmail:'admin@example.test'}});
+  const op=f.operations[0];
+  assert.equal(op.args[9],'1');
+  assert.equal(op.keys.at(-1),'audit:admin-ws');
+  assert.equal(f.index.length,1);
+  assert.equal(f.values.get('site:prospect:email:'+f.emailKey('audited@example.test')),lead.id);
+  const audit=f.values.get('audit:admin-ws');
+  assert.equal(audit.length,1);
+  assert.equal(audit[0].action,'sales_prospect_create');
+  assert.equal(audit[0].meta.prospectId,lead.id);
+  assert.equal(audit[0].actorEmail,'admin@example.test');
+  assert.equal(audit[0].before,null);
+  assert.equal(audit[0].after.stage,'new');
+  assert.ok(!JSON.stringify(audit).includes('Private notes'));
+  assert.ok(!JSON.stringify(audit).includes('audited@example.test'));
+  assert.ok(op.script.indexOf('auditEncoded=encoded')<op.script.indexOf("redis.call('SET',KEYS[1]"));
+});
+test('malformed audit history fails before publishing a manual prospect',async()=>{
+  const f=fixture();
+  f.values.set('audit:admin-ws',{corrupt:true});
+  await assert.rejects(()=>f.upsert({email:'broken@example.test',requireNew:true,
+    adminAudit:{workspaceId:'admin-ws',actorEmail:'admin@example.test'}}),/audit history is malformed/);
+  assert.equal(f.index.length,0);
+  assert.equal(f.values.has('site:prospect:email:'+f.emailKey('broken@example.test')),false);
+  assert.equal(f.values.has('site:prospect:test-id-1'),false);
+});
+test('non-manual checkout and contact lead capture do not insert admin audit entries',async()=>{
+  const f=fixture();
+  await f.upsert({email:'contact@example.test',source:'contact',stage:'inquiry'});
+  assert.equal(f.operations[0].args[9],'0');
+  assert.equal(f.operations[0].keys.includes('audit:admin-ws'),false);
 });
