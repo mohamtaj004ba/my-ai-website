@@ -16,6 +16,7 @@ function fixture({malformed=false}={}){
        if(prior.sessionId!==args[0])return -1;
        if(prior.status!=='open')return 0;
        values.set(keys[0],{...prior,status:'resolved',resolvedAt:Number(args[1])});
+       for(let i=index.length-1;i>=0;i--)if(index[i]===args[0])index.splice(i,1);
        return 1;
      }
      if(script!==RECONCILIATION_RECORD)throw Error('Unexpected Redis script');
@@ -95,7 +96,7 @@ test('resolved checkout exception leaves audit context but disappears from open 
  assert.equal(saved.reason,'email_mismatch');
  assert.equal(saved.eventId,'evt_paid');
  assert.ok(saved.resolvedAt>0);
- assert.deepEqual(f.index,['cs_paid']);
+ assert.deepEqual(f.index,[]);
  assert.match(RESOLVE_RECONCILIATION,/item.status='resolved'/);
  assert.ok(RESOLVE_RECONCILIATION.indexOf("item.status='resolved'")<RESOLVE_RECONCILIATION.indexOf("redis.call('SET'"));
 });
@@ -172,4 +173,21 @@ test('Finance warns about missing reconciliation records and bounded retention',
  assert.match(ui,/coverage\.unavailableCaseRecords/);
  assert.match(ui,/coverage\.isRetentionCapped/);
  assert.match(ui,/older cases may be outside the visible history/);
+});
+
+test('resolving a paid checkout leaves the bounded Finance queue available for new exceptions',async()=>{
+ const f=fixture();
+ for(let i=0;i<200;i++)await recordCheckoutReconciliation(f.kv,{sessionId:'cs_'+i,eventId:'evt_'+i,reason:'email_mismatch'});
+ assert.equal(f.index.length,200);
+ const older='cs_0';
+ assert.equal(await resolveCheckoutReconciliation(f.kv,older),true);
+ assert.equal(f.index.length,199);
+ assert.ok(!f.index.includes(older));
+ assert.equal(f.values.get('stripe:reconciliation:'+older).status,'resolved');
+ await recordCheckoutReconciliation(f.kv,{sessionId:'cs_new',eventId:'evt_new',reason:'email_mismatch'});
+ assert.equal(f.index.length,200);
+ assert.ok(f.index.includes('cs_new'));
+ assert.ok(f.index.includes('cs_1'));
+ assert.match(RESOLVE_RECONCILIATION,/redis\.call\('LREM',KEYS\[2\],0,ARGV\[1\]\)/);
+ assert.ok(RESOLVE_RECONCILIATION.indexOf("redis.call('TYPE',KEYS[2])")<RESOLVE_RECONCILIATION.indexOf("redis.call('SET',KEYS[1]"));
 });
