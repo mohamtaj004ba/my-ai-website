@@ -33,10 +33,23 @@ async function upsertWorkspace({lead,session,plan,email}){
   const userKey='user:email:'+email;
   const existingMember=await kv.get(userKey);
   if(existingMember?.role==='admin'||existingMember?.disabled)throw new Error('Checkout email is reserved or disabled and requires manual account reconciliation');
+  const [mappedCustomer,mappedSubscription]=await Promise.all([
+    session.customer?kv.get('stripe:customer:'+session.customer):null,
+    session.subscription?kv.get('stripe:subscription:'+session.subscription):null
+  ]);
+  const mappings=[mappedCustomer,mappedSubscription].filter(Boolean).map(String);
+  if(new Set(mappings).size>1)throw new Error('Stripe customer and subscription map to different workspaces; manual reconciliation required');
   let workspaceId=existingMember&&existingMember.workspaceId;
+  if(workspaceId&&mappings.some(id=>id!==String(workspaceId)))throw new Error('Checkout account and Stripe mapping disagree; manual reconciliation required');
+  if(!workspaceId&&mappings.length){
+    const mapped=await kv.get('workspace:'+mappings[0]);
+    if(!mapped||String(mapped.ownerEmail||'').trim().toLowerCase()!==email)throw new Error('Stripe mapping belongs to another account or is unavailable; manual reconciliation required');
+    workspaceId=mappings[0];
+  }
   if(!workspaceId)workspaceId=crypto.randomUUID();
   const key='workspace:'+workspaceId;
   const existing=await kv.get(key)||{};
+  if(existing.id&&String(existing.ownerEmail||'').trim().toLowerCase()!==email)throw new Error('Existing workspace owner does not match checkout email; manual reconciliation required');
   const ent=entitlementsFor(plan);
   const workspace={
     ...existing,
