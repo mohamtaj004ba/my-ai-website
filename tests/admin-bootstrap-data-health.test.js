@@ -6,7 +6,7 @@ const source=fs.readFileSync('dashboard.js','utf8');
 const start=source.indexOf('async function loadAdminOps(){'),end=source.indexOf('\nfunction currentAdminView(){',start);
 assert.ok(start>=0&&end>start);
 
-function fixture({finance={ok:true,payload:{finance:{reconciliation:[{id:'fresh'}]}}},website={ok:true,payload:{analytics:{prospects:[{id:'fresh'}]}}},preferredDays=30}={}){
+function fixture({finance={ok:true,payload:{finance:{reconciliation:[{id:'fresh'}]}}},website={ok:true,payload:{analytics:{prospects:[{id:'fresh'}]}}},preferredDays=30,failNetwork=[]}={}){
   const health=[],rendered=[],calls=[];
   const response=(config)=>({ok:config.ok,json:async()=>config.payload||{}});
   const context=vm.createContext({
@@ -14,7 +14,7 @@ function fixture({finance={ok:true,payload:{finance:{reconciliation:[{id:'fresh'
     adminFinanceData:{reconciliation:[{id:'older'}]},adminFinanceLoadError:'',
     adminDataSyncAt:{},adminPlatformDirty:false,
     adminPlatformData:{analyticsWindowDays:preferredDays},adminProvisioningData:[],adminDocumentsData:{agreements:[],company:[],standard:[]},
-    fetch:async url=>{calls.push(url);if(url.includes('admin-finance'))return response(finance);if(url.includes('admin-website-analytics'))return response(website);if(url.includes('admin-platform-settings'))return response({ok:true,payload:{settings:{analyticsWindowDays:preferredDays}}});return response({ok:true,payload:{}})},
+    fetch:async url=>{calls.push(url);if(failNetwork.some(action=>url.includes(action)))throw Error('Network connection failed');if(url.includes('admin-finance'))return response(finance);if(url.includes('admin-website-analytics'))return response(website);if(url.includes('admin-platform-settings'))return response({ok:true,payload:{settings:{analyticsWindowDays:preferredDays}}});return response({ok:true,payload:{}})},
     setDataHealth:(...args)=>health.push(args),
     console:{error:()=>{}},
     renderProvisioning:()=>rendered.push('provisioning'),renderPhones:()=>rendered.push('phones'),
@@ -61,4 +61,33 @@ test('preferred website analytics window failure is disclosed, not recorded as a
   assert.equal(f.context.adminWebsiteDays,7);
   assert.match(f.context.adminWebsiteLoadError,/outdated/);
   assert.equal(f.context.adminDataSyncAt.website,undefined);
+});
+
+test('network failure in one admin endpoint does not hide healthy Finance and website records',async()=>{
+  const f=fixture({failNetwork:['admin-phone-numbers']});await f.run();
+  assert.equal(f.context.adminFinanceData.reconciliation[0].id,'fresh');
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'fresh');
+  assert.ok(Number(f.context.adminDataSyncAt.finance)>0);
+  assert.ok(Number(f.context.adminDataSyncAt.website)>0);
+  assert.equal(f.context.adminDataSyncAt.phones,undefined);
+  assert.deepEqual(f.health[0],['adminDataHealth',true]);
+  assert.ok(f.rendered.includes('finance'));
+  assert.ok(f.rendered.includes('website'));
+});
+test('network failure in Finance keeps existing reconciliation and permits healthy website sync',async()=>{
+  const f=fixture({failNetwork:['admin-finance']});await f.run();
+  assert.equal(f.context.adminFinanceData.reconciliation[0].id,'older');
+  assert.match(f.context.adminFinanceLoadError,/outdated/);
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'fresh');
+  assert.equal(f.context.adminDataSyncAt.finance,undefined);
+  assert.ok(Number(f.context.adminDataSyncAt.website)>0);
+  assert.ok(f.rendered.includes('finance'));
+});
+test('failed preferred analytics window request preserves existing result with disclosure',async()=>{
+  const f=fixture({preferredDays:7,failNetwork:['admin-website-analytics']});await f.run();
+  assert.equal(f.context.adminWebsiteDays,7);
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'older');
+  assert.match(f.context.adminWebsiteLoadError,/outdated/);
+  assert.equal(f.context.adminDataSyncAt.website,undefined);
+  assert.equal(f.calls.filter(url=>url.includes('admin-website-analytics')).length,2);
 });
