@@ -1600,7 +1600,7 @@ async function loadAdminOps(){
   try{
     // One disconnected endpoint must not prevent the remaining admin feeds from loading.
     const get=async url=>{try{return await fetch(url,{cache:'no-store'})}catch{return {ok:false,json:async()=>({})}}};
-    const requestedAnalyticsDays=adminWebsiteDays;
+    const requestedAnalyticsDays=adminWebsiteDays,analyticsRequest=adminWebsiteAnalyticsRequest;
     const [pr,ph,hr,fr,sr,ps,wr,fbr,fin,cr,dr]=await Promise.all([
       get('/api/account?action=admin-provisioning'),
       get('/api/account?action=admin-phone-numbers'),
@@ -1621,15 +1621,15 @@ async function loadAdminOps(){
     if(fr.ok)adminFleetData=await fr.json();
     if(sr.ok)adminSupportData=(await sr.json()).tickets||[];
     if(ps.ok&&!adminPlatformDirty)adminPlatformData=(await ps.json()).settings||null;
-    if(wr.ok){const latest=(await wr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'
-    const preferredDays=Number(adminPlatformData?.analyticsWindowDays||requestedAnalyticsDays||30);
-    if(preferredDays!==requestedAnalyticsDays){adminWebsiteDays=preferredDays;const rr=await get('/api/account?action=admin-website-analytics&days='+preferredDays);if(rr.ok){const latest=(await rr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'}else adminWebsiteDays=requestedAnalyticsDays;
+    if(analyticsRequest===adminWebsiteAnalyticsRequest&&requestedAnalyticsDays===adminWebsiteDays){if(wr.ok){const latest=(await wr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'}
+    const preferredDays=Number((analyticsRequest===0?adminPlatformData?.analyticsWindowDays:requestedAnalyticsDays)||requestedAnalyticsDays||30);
+    if(preferredDays!==requestedAnalyticsDays&&analyticsRequest===adminWebsiteAnalyticsRequest){adminWebsiteDays=preferredDays;const rr=await get('/api/account?action=admin-website-analytics&days='+preferredDays);if(analyticsRequest===adminWebsiteAnalyticsRequest&&adminWebsiteDays===preferredDays){if(rr.ok){const latest=(await rr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'}}
     if(fbr.ok)adminFeedbackData=(await fbr.json()).feedback||[];
     if(fin.ok){const latest=(await fin.json()).finance;if(latest){adminFinanceData=latest;adminFinanceLoadError=''}else adminFinanceLoadError='Finance response was incomplete; previously loaded records may be outdated.'}else adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';
     if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];
     if(dr.ok)adminDocumentsData=(await dr.json()).documents||adminDocumentsData;
     const freshAt=Date.now();
-    [[pr,'provisioning'],[ph,'phones'],[hr,'health'],[fr,'fleet'],[sr,'support'],[ps,'platform'],[wr,'website'],[fbr,'feedback'],[fin,'finance'],[cr,'campaigns'],[dr,'documents']].forEach(([response,key])=>{if(response.ok&&!(key==='website'&&adminWebsiteLoadError)&&!(key==='finance'&&adminFinanceLoadError))adminDataSyncAt[key]=freshAt});
+    [[pr,'provisioning'],[ph,'phones'],[hr,'health'],[fr,'fleet'],[sr,'support'],[ps,'platform'],[wr,'website'],[fbr,'feedback'],[fin,'finance'],[cr,'campaigns'],[dr,'documents']].forEach(([response,key])=>{if(response.ok&&!(key==='website'&&(adminWebsiteLoadError||analyticsRequest!==adminWebsiteAnalyticsRequest||requestedAnalyticsDays!==adminWebsiteDays))&&!(key==='finance'&&adminFinanceLoadError))adminDataSyncAt[key]=freshAt});
     if(adminWebsiteLoadError||adminFinanceLoadError)setDataHealth('adminDataHealth',true);
   }catch(e){console.error('Admin ops load failed',e);setDataHealth('adminDataHealth',true)}
   renderProvisioning();renderPhones();renderHealth();renderWebsiteAnalytics();renderGrowth();renderDocuments();renderAdminFleet();renderAdminSupport();renderAdminFeedback();renderAdminFinance();renderPlatformSettings();renderAdmin();
