@@ -8,7 +8,7 @@ const {emailKey,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
-const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete}=require('../lib/config-transaction');
+const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAuditBatch}=require('../lib/config-transaction');
 const {recordFinanceSnapshot}=require('../lib/finance-history');
 const {prependAuditEvent}=require('../lib/audit-log');
 const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
@@ -1325,9 +1325,10 @@ async function adminMarketingCampaignSave(req,res){
   if(!Number.isFinite(budget)||budget<0)return res.status(400).json({error:'Campaign budget must be a nonnegative number.'});
   const old=saved||{},now=Date.now(),campaign={...old,id,name,channel:['Email','Organic','Paid Search','Paid Social','Referral','Partnership','Outbound','Other'].includes(b.channel)?b.channel:(old.channel||'Email'),status:['draft','scheduled','active','paused','completed'].includes(b.status)?b.status:(old.status||'draft'),utmSource:String(b.utmSource??old.utmSource??'').trim().slice(0,120),utmMedium:String(b.utmMedium??old.utmMedium??'').trim().slice(0,120),utmCampaign:String(b.utmCampaign??old.utmCampaign??name.toLowerCase().replace(/[^a-z0-9]+/g,'-')).trim().slice(0,160),budget,startAt:Number(b.startAt)||old.startAt||null,endAt:Number(b.endAt)||old.endAt||null,goal:String(b.goal??old.goal??'').trim().slice(0,300),notes:String(b.notes??old.notes??'').trim().slice(0,2000),createdAt:old.createdAt||now,updatedAt:Math.max(now,Number(old.updatedAt||old.createdAt||0)+1),updatedBy:admin.email};
   const nextIndex=[id,...list.filter(x=>x!==id)];
+  const audit={id:crypto.randomUUID(),workspaceId:admin.workspaceId,actorEmail:admin.email,actorRole:'admin',action:editing?'marketing_campaign_update':'marketing_campaign_create',section:'marketing',before:editing?{id,name:old.name||'',status:old.status||'draft',budget:Number(old.budget||0),updatedAt:old.updatedAt||old.createdAt||0}:null,after:{id,name:campaign.name,status:campaign.status,budget:campaign.budget,updatedAt:campaign.updatedAt},meta:{campaignId:id},at:now};
   try{
-    if(!await compareAndSetConfig(kv,[{key,before:saved,after:campaign},{key:indexKey,before:rawIndex,after:nextIndex}]))return res.status(409).json({error:'Campaign or directory changed during the save. Refresh the list before retrying.'});
-  }catch(err){console.error('admin campaign save failed',safeError(err));return res.status(503).json({error:'Could not confirm the campaign and directory were saved together. Refresh before retrying.'})}
+    if(!await compareAndAuditBatch(kv,[{key,before:saved,after:campaign},{key:indexKey,before:rawIndex,after:nextIndex}],'audit:'+admin.workspaceId,audit))return res.status(409).json({error:'Campaign or directory changed during the save. Refresh the list before retrying.'});
+  }catch(err){console.error('admin campaign save failed',safeError(err));return res.status(503).json({error:'Could not confirm the campaign, directory and audit record were saved together. Refresh before retrying.'})}
   return res.status(editing?200:201).json({ok:true,campaign});
 }
 async function adminMarketingCampaignDelete(req,res){
@@ -1340,9 +1341,10 @@ async function adminMarketingCampaignDelete(req,res){
   const list=rawIndex==null?[]:rawIndex;
   if(!Array.isArray(list)||!list.includes(id))return res.status(409).json({error:'Campaign directory changed. Refresh the list before deleting.'});
   const nextIndex=list.filter(x=>x!==id);
+  const audit={id:crypto.randomUUID(),workspaceId:admin.workspaceId,actorEmail:admin.email,actorRole:'admin',action:'marketing_campaign_delete',section:'marketing',before:{id,name:saved.name||'',status:saved.status||'draft',budget:Number(saved.budget||0),updatedAt:saved.updatedAt||saved.createdAt||0},after:null,meta:{campaignId:id},at:Date.now()};
   try{
-    if(!await compareAndSetWithDelete(kv,[{key,before:saved,after:null},{key:indexKey,before:rawIndex,after:nextIndex}],{deleteKeys:[key]}))return res.status(409).json({error:'Campaign or directory changed during deletion. Refresh the list before retrying.'});
-  }catch(err){console.error('admin campaign delete failed',safeError(err));return res.status(503).json({error:'Could not confirm campaign deletion. Refresh the list before retrying.'})}
+    if(!await compareAndAuditBatch(kv,[{key,before:saved,after:null},{key:indexKey,before:rawIndex,after:nextIndex}],'audit:'+admin.workspaceId,audit,{deleteKeys:[key]}))return res.status(409).json({error:'Campaign or directory changed during deletion. Refresh the list before retrying.'});
+  }catch(err){console.error('admin campaign delete failed',safeError(err));return res.status(503).json({error:'Could not confirm campaign deletion and audit history. Refresh the list before retrying.'})}
   return res.status(200).json({ok:true});
 }
 async function adminDocuments(req,res){
