@@ -49,7 +49,7 @@ test('company document saves legitimate leap day and equal-day dates with audit'
   assert.equal(res.data.document.effectiveDate,'2028-02-29');
   assert.equal(res.data.document.expiresAt,'2028-02-29');
   assert.equal(writes.length,1);
-  assert.equal(writes[0][2].action,'company_document_create');
+  assert.equal(writes[0][3].action,'company_document_create');
 });
 
 test('company document accepts missing optional dates without saving invented ones',async()=>{
