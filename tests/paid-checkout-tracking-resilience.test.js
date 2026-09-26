@@ -20,7 +20,7 @@ async function run({trackError=false,workspaceError=false}={}){
     entitlementsFor:()=>({price:500}),
     kv:{get:async()=>null,set:async(key,value)=>{writes.push({key,value});steps.push('set:'+key)}},
     addBusinessHours:()=>123456,crypto,Date,Number,String,console:{error(){}},safeError:()=> 'redacted',
-    lifecycleEmail:()=>({text:'Welcome',html:'Welcome'}),
+    lifecycleEmail:()=>({text:'Welcome',html:'Welcome'}),escapeEmailHtml:input=>String(input).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
     SITE_URL:'https://callercore.com',sendMail:async()=>{steps.push('mail')},
     res:{status(n){status=n;return this},json(x){body=x;return x}}
   });
