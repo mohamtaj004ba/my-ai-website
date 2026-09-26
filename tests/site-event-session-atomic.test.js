@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const crypto=require('node:crypto');
 const source=fs.readFileSync('lib/site-analytics.js','utf8');
-function fixture({forceConflicts=0}={}){
+function fixture({forceConflicts=0,invalidEventDirectory=false,invalidSessionDirectory=false}={}){
   const values=new Map(),events=[],index=[],attempts=[];
   let ids=0,conflicts=0;
   const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
@@ -12,6 +12,8 @@ function fixture({forceConflicts=0}={}){
     get:async key=>clone(values.get(key)??null),
     eval:async(script,keys,args)=>{
       attempts.push({script,keys:[...keys],args:[...args]});
+      if(invalidEventDirectory)return -1;
+      if(invalidSessionDirectory&&args[0]==='1'&&args[4]==='1')return -2;
       if(conflicts<forceConflicts){conflicts++;return 0}
       if(args[0]==='1'){
         const old=values.has(keys[1])?JSON.stringify(values.get(keys[1])):'';
@@ -115,4 +117,21 @@ test('malformed stored session counters or pages fail closed without logging the
     assert.equal(f.index.length,0);
     assert.equal(f.values.get('site:session:s1'),prior);
   }
+});
+
+test('malformed tracking event or new-session directory cannot leave partially published data',async()=>{
+  for(const [options,message] of [
+    [{invalidEventDirectory:true},/event directory is malformed/],
+    [{invalidSessionDirectory:true},/session directory is malformed/]
+  ]){
+    const f=fixture(options);
+    await assert.rejects(()=>f.record({type:'page_view',sessionId:'new-session',path:'/'}),message);
+    assert.equal(f.events.length,0);
+    assert.equal(f.values.size,0);
+    assert.equal(f.index.length,0);
+  }
+  const script=fixture().attempts;
+  const sourceScript=source.slice(source.indexOf('const SITE_EVENT_ATOMIC_RECORD='),source.indexOf('async function recordSiteEvent('));
+  assert.ok(sourceScript.indexOf("redis.call('TYPE',KEYS[1])")<sourceScript.indexOf("redis.call('LPUSH',KEYS[1]"));
+  assert.ok(sourceScript.indexOf("redis.call('TYPE',KEYS[3])")<sourceScript.indexOf("redis.call('SET',KEYS[2]"));
 });
