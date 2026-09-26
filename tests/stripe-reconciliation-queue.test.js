@@ -2,7 +2,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
-const {recordCheckoutReconciliation,RECONCILIATION_RECORD}=require('../lib/stripe-reconciliation');
+const {recordCheckoutReconciliation,resolveCheckoutReconciliation,RECONCILIATION_RECORD,RESOLVE_RECONCILIATION}=require('../lib/stripe-reconciliation');
 
 function fixture({malformed=false}={}){
  const values=new Map(),index=[],calls=[];
@@ -10,6 +10,15 @@ function fixture({malformed=false}={}){
    eval:async(script,keys,args)=>{
      calls.push({script,keys,args});
      if(malformed)return -1;
+     if(script===RESOLVE_RECONCILIATION){
+       const prior=values.get(keys[0]);
+       if(!prior)return 0;
+       if(prior.sessionId!==args[0])return -1;
+       if(prior.status!=='open')return 0;
+       values.set(keys[0],{...prior,status:'resolved',resolvedAt:Number(args[1])});
+       return 1;
+     }
+     if(script!==RECONCILIATION_RECORD)throw Error('Unexpected Redis script');
      if(values.has(keys[0]))return 0;
      values.set(keys[0],JSON.parse(args[0]));
      index.unshift(args[1]);index.splice(200);
@@ -74,4 +83,24 @@ test('admin finance exposes unresolved cases without customer email or payment r
  assert.match(ui,/d\.reconciliation/);
  assert.match(ui,/Review in Stripe/);
  assert.doesNotMatch(ui,/data-reconcile-payments=|resolveStripeMapping/);
+});
+
+test('resolved checkout exception leaves audit context but disappears from open Finance queue',async()=>{
+ const f=fixture();
+ await recordCheckoutReconciliation(f.kv,{sessionId:'cs_paid',eventId:'evt_paid',email:'buyer@example.test',reason:'email_mismatch'});
+ assert.equal(await resolveCheckoutReconciliation(f.kv,'cs_paid'),true);
+ assert.equal(await resolveCheckoutReconciliation(f.kv,'cs_paid'),false);
+ const saved=f.values.get('stripe:reconciliation:cs_paid');
+ assert.equal(saved.status,'resolved');
+ assert.equal(saved.reason,'email_mismatch');
+ assert.equal(saved.eventId,'evt_paid');
+ assert.ok(saved.resolvedAt>0);
+ assert.deepEqual(f.index,['cs_paid']);
+ assert.match(RESOLVE_RECONCILIATION,/item.status='resolved'/);
+ assert.ok(RESOLVE_RECONCILIATION.indexOf("item.status='resolved'")<RESOLVE_RECONCILIATION.indexOf("redis.call('SET'"));
+});
+test('malformed reconciliation storage never falsely indicates success',async()=>{
+ const f=fixture({malformed:true});
+ await assert.rejects(()=>resolveCheckoutReconciliation(f.kv,'cs_paid'),/record is malformed/);
+ await assert.rejects(()=>resolveCheckoutReconciliation(f.kv,''),/Checkout session ID required/);
 });
