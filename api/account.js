@@ -1329,13 +1329,14 @@ async function adminWebsiteProspectUpdate(req,res){
 async function adminProspectSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},email=String(body.email||'').trim().toLowerCase();
+  if(body.id)return res.status(400).json({error:'Use the existing prospect editor to update an existing record.'});
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email or leave it blank'});
   if(!String(body.name||body.business||email||body.phone||'').trim())return res.status(400).json({error:'Add a name, business, email, or phone'});
   const allowed=['new','inquiry','checkout_started','follow_up','qualified','proposal','lost','converted'],stage=allowed.includes(body.stage)?body.stage:'new';
   try{
     const platform=await kv.get('platform:settings')||{},autoFollowup=platform.autoScheduleFirstFollowup!==false;
     const prospect=await upsertWebsiteProspect({
-      id:String(body.id||'').slice(0,100),name:body.name,business:body.business,email,phone:body.phone,
+      requireNew:true,name:body.name,business:body.business,email,phone:body.phone,
       industry:body.industry,plan:body.plan,source:body.source||'manual',stage,
       utmSource:body.utmSource||'',utmMedium:body.utmMedium||'',utmCampaign:body.campaign||body.utmCampaign||'',
       owner:body.owner??'',defaultSalesOwner:platform.defaultSalesOwner,campaign:body.campaign??'',notes:body.notes??'',
@@ -1346,6 +1347,7 @@ async function adminProspectSave(req,res){
     return res.status(200).json({ok:true,prospect});
   }catch(err){
     console.error('admin prospect save failed',safeError(err));
+    if(err?.code==='PROSPECT_EXISTS')return res.status(409).json({error:'A prospect with this email already exists. Open the existing record in Growth to update it.',prospectId:err.prospectId});
     if(String(err?.message||'').includes('linked to another record'))return res.status(409).json({error:'This email belongs to a different prospect. No changes were made.'});
     return res.status(503).json({error:'Could not confirm that the prospect and follow-up details saved together. Refresh the pipeline before retrying.'});
   }
