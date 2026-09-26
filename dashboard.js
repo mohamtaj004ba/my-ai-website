@@ -2731,7 +2731,7 @@ function renderAdminFinance(){
     chart.querySelectorAll('[data-revenue-plan]').forEach(b=>b.addEventListener('click',()=>{adminClientFilter='all';adminClientSearch=b.dataset.revenuePlan;showView('clients');renderAdminClients()}));
   }
   const exceptions=Array.isArray(d.reconciliation)?d.reconciliation:[],reconciliationList=document.getElementById('financeReconciliationList');
-  const reconciliationStatus=document.getElementById('financeReconciliationStatus');if(reconciliationStatus)reconciliationStatus.textContent=adminFinanceLoadError;
+  const reconciliationStatus=document.getElementById('financeReconciliationStatus');if(reconciliationStatus){const coverage=d.reconciliationCoverage||{};reconciliationStatus.textContent=[adminFinanceLoadError,coverage.unavailableCaseRecords?Number(coverage.unavailableCaseRecords)+' indexed payment exception records unavailable; the queue may be incomplete.':'',coverage.isRetentionCapped?'This queue has reached its 200-case retention limit; older cases may be outside the visible history.':''].filter(Boolean).join(' ')};
   set('financeReconciliationCount',exceptions.length+' open');
   if(reconciliationList)reconciliationList.innerHTML=exceptions.length?exceptions.map(item=>{
     const reason={email_mismatch:'Checkout and lead emails differ',account_mapping_conflict:'Stripe or member mapping conflict',workspace_owner_mismatch:'Workspace owner mismatch',reserved_account:'Reserved or disabled account'}[item.reason]||'Account identity review';
