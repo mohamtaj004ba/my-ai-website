@@ -1894,8 +1894,27 @@ async function saveProspect(){
   if(payload.id)payload.expectedUpdatedAt=Number(m.dataset.expectedUpdatedAt||0);
   const action=payload.id?'admin-website-prospect-update':'admin-prospect-save';
   setProspectModalPending(true);
-  try{const r=await fetch('/api/account?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save prospect.');if(!data.prospect)throw new Error('Prospect response was incomplete. Refresh the pipeline before retrying.');adminWebsiteData.prospects=[data.prospect,...(adminWebsiteData.prospects||[]).filter(x=>String(x.id)!==String(data.prospect.id))];setProspectModalPending(false);closeProspectModal();renderGrowth();renderWebsiteAnalytics()}
-  catch(err){if(status){status.textContent=err.message||'Could not save prospect.';status.className='form-status-line error'}}
+  try{const r=await fetch('/api/account?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok){const error=new Error(data.error||'Could not save prospect.');if(r.status===409&&data.prospectId)error.prospectId=String(data.prospectId);throw error}if(!data.prospect)throw new Error('Prospect response was incomplete. Refresh the pipeline before retrying.');adminWebsiteData.prospects=[data.prospect,...(adminWebsiteData.prospects||[]).filter(x=>String(x.id)!==String(data.prospect.id))];setProspectModalPending(false);closeProspectModal();renderGrowth();renderWebsiteAnalytics()}
+  catch(err){
+    if(status){
+      status.textContent=err.message||'Could not save prospect.';status.className='form-status-line error';
+      if(err.prospectId){
+        const action=document.createElement('button');
+        action.type='button';action.className='admin-link';action.textContent='Open existing prospect';
+        action.onclick=async()=>{
+          if(prospectModalPending)return;
+          action.disabled=true;
+          try{
+            if(!(adminWebsiteData.prospects||[]).some(p=>String(p.id)===err.prospectId))await loadWebsiteAnalytics(adminWebsiteDays);
+            if(!(adminWebsiteData.prospects||[]).some(p=>String(p.id)===err.prospectId))throw new Error('Existing prospect is outside the loaded Growth results. Search the CRM to open it.');
+            openProspectModal(err.prospectId);
+          }catch(e){status.textContent=e.message||'Could not open existing prospect.'}
+          finally{action.disabled=false}
+        };
+        status.appendChild(document.createTextNode(' '));status.appendChild(action);
+      }
+    }
+  }
   finally{setProspectModalPending(false)}
 }
 let adminCampaignMutationPending=false;
