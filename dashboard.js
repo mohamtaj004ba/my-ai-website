@@ -1863,7 +1863,7 @@ async function moveGrowthProspectStage(id,bucket){
   prospectStagePending.add(String(id));
   const before=item.stage,expectedUpdatedAt=Number(item.updatedAt||item.createdAt||0);item.stage=stage;renderGrowth();
   try{
-    const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not move prospect.');
     Object.assign(item,data.prospect||{});renderGrowth();loadNotifications({silent:true});
   }catch(err){item.stage=before;renderGrowth();alert(err.message||'Could not move prospect.')}
