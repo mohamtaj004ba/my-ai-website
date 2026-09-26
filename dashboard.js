@@ -786,7 +786,7 @@ async function moveLead(id,stage){
   const previous=lead.stage;lead.stage=stage;renderLeads();
   if(demoMode)return;
   try{
-    const r=await fetch('/api/account?action=lead-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=lead-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok||data.updated!==true)throw new Error(data.error||'Could not update this lead.');
   }catch(err){lead.stage=previous;renderLeads();console.error(err)}
 }
@@ -1856,32 +1856,47 @@ function renderGrowth(){
   if(campaignEl)campaignEl.innerHTML=(adminCampaignData||[]).map(c=>{const a=analytics.find(x=>String(x.campaign||'').toLowerCase()===String(c.utmCampaign||'').toLowerCase())||{};return '<article class="growth-campaign-card" data-edit-campaign="'+esc(c.id)+'"><div><b>'+esc(c.name)+'</b><small>'+esc(c.channel)+' · '+esc(c.status)+'</small></div><div><strong>'+Number(a.sessions||0)+'</strong><span>sessions</span></div><div><strong>'+Number(a.conversions||0)+'</strong><span>conversions</span></div><div><strong>'+financeMoney(c.budget||0)+'</strong><span>budget</span></div></article>'}).join('');
   if(empty)empty.hidden=(adminCampaignData||[]).length!==0;campaignEl?.querySelectorAll('[data-edit-campaign]').forEach(c=>c.addEventListener('click',()=>openCampaignModal(c.dataset.editCampaign)));
 }
+const prospectStagePending=new Set();
 async function moveGrowthProspectStage(id,bucket){
   const map={new:'new',nurture:'follow_up',qualified:'qualified',converted:'converted',lost:'lost'},stage=map[bucket];
-  const item=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id));if(!item||!stage||item.stage===stage)return;
-  const before=item.stage;item.stage=stage;item.updatedAt=Date.now();renderGrowth();
+  const item=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id));if(!item||!stage||item.stage===stage||prospectStagePending.has(String(id)))return;
+  prospectStagePending.add(String(id));
+  const before=item.stage,expectedUpdatedAt=Number(item.updatedAt||item.createdAt||0);item.stage=stage;renderGrowth();
   try{
     const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not move prospect.');
     Object.assign(item,data.prospect||{});renderGrowth();loadNotifications({silent:true});
   }catch(err){item.stage=before;renderGrowth();alert(err.message||'Could not move prospect.')}
+  finally{prospectStagePending.delete(String(id))}
 }
 function toLocalDateTimeInput(ms){if(!ms)return'';const d=new Date(Number(ms));return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
+let prospectModalPending=false;
+function setProspectModalPending(pending){
+  prospectModalPending=!!pending;
+  const modal=document.getElementById('prospectModal');
+  modal?.setAttribute('aria-busy',String(!!pending));
+  modal?.querySelectorAll('input,select,textarea,button').forEach(el=>{el.disabled=!!pending});
+  const save=document.getElementById('saveProspectButton');if(save)save.textContent=pending?'Saving…':'Save prospect';
+}
 function openProspectModal(id='',prefill={}){
-  const p=id?(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id)):null,data=p||prefill||{},m=document.getElementById('prospectModal');if(!m)return;m.dataset.editId=p?.id||'';document.getElementById('prospectModalTitle').textContent=p?'Edit prospect':'Add prospect';
+  if(prospectModalPending)return;
+  const p=id?(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id)):null,data=p||prefill||{},m=document.getElementById('prospectModal');if(!m)return;if(id&&!p)return;m.dataset.editId=p?.id||'';m.dataset.expectedUpdatedAt=p?String(p.updatedAt||p.createdAt||0):'';document.getElementById('prospectModalTitle').textContent=p?'Edit prospect':'Add prospect';
   const defaultFollowup=!p&&adminPlatformData?.autoScheduleFirstFollowup!==false&&!data.nextFollowUpAt?Date.now()+Number(adminPlatformData?.leadFollowupHours||24)*3600000:data.nextFollowUpAt;
   document.getElementById('prospectNameInput').value=data.name||'';document.getElementById('prospectBusinessInput').value=data.business||'';document.getElementById('prospectEmailInput').value=data.email||'';document.getElementById('prospectPhoneInput').value=data.phone||'';document.getElementById('prospectStageInput').value=data.stage||'new';document.getElementById('prospectSourceInput').value=(data.source||'Website').replace(/^website$/i,'Website');document.getElementById('prospectCampaignInput').value=data.campaign||data.utmCampaign||'';document.getElementById('prospectPlanInput').value=data.plan||'';document.getElementById('prospectMrrInput').value=data.monthlyValue||'';document.getElementById('prospectFollowupInput').value=toLocalDateTimeInput(defaultFollowup);document.getElementById('prospectOwnerInput').value=data.owner||adminPlatformData?.defaultSalesOwner||'';document.getElementById('prospectLastContactInput').value=toLocalDateTimeInput(data.lastContactAt||data.lastRepliedAt);document.getElementById('prospectTagsInput').value=Array.isArray(data.tags)?data.tags.join(', '):'';document.getElementById('prospectNotesInput').value=data.notes||'';const s=document.getElementById('prospectFormStatus');if(s)s.textContent='';m.classList.add('open');m.setAttribute('aria-hidden','false');
 }
-function closeProspectModal(){const m=document.getElementById('prospectModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
+function closeProspectModal(){if(prospectModalPending)return;const m=document.getElementById('prospectModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 document.getElementById('prospectContactNow')?.addEventListener('click',()=>{const el=document.getElementById('prospectLastContactInput');if(el)el.value=toLocalDateTimeInput(Date.now())});
 document.getElementById('prospectFollowupTomorrow')?.addEventListener('click',()=>{const el=document.getElementById('prospectFollowupInput');if(el)el.value=toLocalDateTimeInput(Date.now()+24*60*60*1000)});
 document.getElementById('prospectClearFollowup')?.addEventListener('click',()=>{const el=document.getElementById('prospectFollowupInput');if(el)el.value=''});
 async function saveProspect(){
+  if(prospectModalPending)return;
   const m=document.getElementById('prospectModal'),status=document.getElementById('prospectFormStatus'),follow=document.getElementById('prospectFollowupInput')?.value,payload={id:m?.dataset.editId||undefined,name:document.getElementById('prospectNameInput')?.value||'',business:document.getElementById('prospectBusinessInput')?.value||'',email:document.getElementById('prospectEmailInput')?.value||'',phone:document.getElementById('prospectPhoneInput')?.value||'',stage:document.getElementById('prospectStageInput')?.value||'new',source:document.getElementById('prospectSourceInput')?.value||'manual',campaign:document.getElementById('prospectCampaignInput')?.value||'',plan:document.getElementById('prospectPlanInput')?.value||'',monthlyValue:Number(document.getElementById('prospectMrrInput')?.value||0),nextFollowUpAt:follow?new Date(follow).getTime():null,owner:document.getElementById('prospectOwnerInput')?.value||'',lastContactAt:document.getElementById('prospectLastContactInput')?.value?new Date(document.getElementById('prospectLastContactInput').value).getTime():null,tags:String(document.getElementById('prospectTagsInput')?.value||'').split(',').map(x=>x.trim()).filter(Boolean),notes:document.getElementById('prospectNotesInput')?.value||''};
-  const action=payload.id?'admin-website-prospect-update':'admin-prospect-save',btn=document.getElementById('saveProspectButton');if(btn){btn.disabled=true;btn.textContent='Saving…'}
-  try{const r=await fetch('/api/account?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save prospect.');closeProspectModal();await loadWebsiteAnalytics(adminWebsiteDays)}
+  if(payload.id)payload.expectedUpdatedAt=Number(m.dataset.expectedUpdatedAt||0);
+  const action=payload.id?'admin-website-prospect-update':'admin-prospect-save';
+  setProspectModalPending(true);
+  try{const r=await fetch('/api/account?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save prospect.');if(!data.prospect)throw new Error('Prospect response was incomplete. Refresh the pipeline before retrying.');adminWebsiteData.prospects=[data.prospect,...(adminWebsiteData.prospects||[]).filter(x=>String(x.id)!==String(data.prospect.id))];setProspectModalPending(false);closeProspectModal();renderGrowth();renderWebsiteAnalytics()}
   catch(err){if(status){status.textContent=err.message||'Could not save prospect.';status.className='form-status-line error'}}
-  finally{if(btn){btn.disabled=false;btn.textContent='Save prospect'}}
+  finally{setProspectModalPending(false)}
 }
 let adminCampaignMutationPending=false;
 function setCampaignMutationPending(pending,action='save'){
@@ -2018,7 +2033,8 @@ async function deleteCompanyDocument(){
   finally{setCompanyDocumentMutationPending(false)}
 }
 async function updateWebsiteProspect(id,stage){
-  const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not update prospect.');return}
+  const before=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id));if(!before)return;
+  const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt:Number(before.updatedAt||before.createdAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not update prospect.');return}
   const p=(adminWebsiteData.prospects||[]).find(x=>x.id===id);if(p)Object.assign(p,data.prospect);renderGrowth();renderWebsiteAnalytics();
 }
 
