@@ -10,7 +10,7 @@ function fixture(body,{error=null,auto=true}={}){
  let calls=0,payload,status,result,sets=0;
  const ctx=vm.createContext({
    req:{body},res:{status(n){status=n;return this},json(x){result=x;return x}},
-   requireAdmin:async()=>({email:'admin@example.test'}),
+   requireAdmin:async()=>({email:'admin@example.test',workspaceId:'admin-ws'}),
    kv:{get:async()=>({autoScheduleFirstFollowup:auto,leadFollowupHours:24,defaultSalesOwner:'Admin sales'}),
       set:async()=>{sets++;throw Error('Admin follow-ups must not be a second write')}},
    upsertWebsiteProspect:async data=>{calls++;payload=data;if(error)throw error;return {id:'lead-1',...data}},
@@ -27,6 +27,8 @@ test('manual lead submits all follow-up fields in a single atomic helper call',a
  assert.equal(r.payload.nextFollowUpAt,null);assert.equal(r.payload.autoFollowupHours,24);
  assert.equal(r.payload.owner,'Tj');assert.equal(r.payload.notes,'Call after lunch');
  assert.equal(r.payload.updatedBy,'admin@example.test');
+ assert.equal(r.payload.adminAudit.workspaceId,'admin-ws');
+ assert.equal(r.payload.adminAudit.actorEmail,'admin@example.test');
  assert.equal(r.payload.monthlyValue,500);
 });
 test('failed prospect publication never reports success or performs a separate patch',async()=>{
