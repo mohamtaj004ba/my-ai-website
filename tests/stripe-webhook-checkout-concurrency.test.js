@@ -13,7 +13,7 @@ function deferred(){
 }
 function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
   const store=new Map(),locks=new Map(),entered=deferred(),resume=deferred();
-  let welcomes=0,workspaces=0,telemetry=0,failed=false;
+  let welcomes=0,workspaces=0,telemetry=0,failed=false;const emailOptions=[];
   store.set('lead:lead-reference',{prospectId:'p-1',name:'Customer',business:'Business',
     email:'customer@example.test',phone:'5551231234',industry:'Services',plan:'Pro'});
   const kv={
@@ -43,7 +43,7 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
     crypto,'../lib/kv':{kv},
     '../lib/mail':{sendMail:async()=>{welcomes++}},
     '../lib/safe-log':{safeError:()=> 'redacted'},
-    '../lib/email-template':{lifecycleEmail:()=>({text:'Thanks',html:'Thanks'})},
+    '../lib/email-template':{lifecycleEmail:opts=>{emailOptions.push(opts);return {text:'Thanks',html:'Thanks'}},esc:input=>String(input).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')},
     '../lib/plans':{normalizePlan:p=>p,entitlementsFor:p=>({plan:p,price:999})},
     '../lib/site-analytics':{
       recordSiteEvent:async()=>{telemetry++},
@@ -80,7 +80,7 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
     await pending;
     return result;
   }
-  return {submit,entered,resume,store,locks,get welcomes(){return welcomes},get workspaces(){return workspaces},get telemetry(){return telemetry}};
+  return {submit,entered,resume,store,locks,emailOptions,get welcomes(){return welcomes},get workspaces(){return workspaces},get telemetry(){return telemetry}};
 }
 test('simultaneous Stripe event IDs cannot duplicate paid onboarding or welcome mail',async()=>{
   const f=fixture({blockFirstWorkspace:true});
@@ -184,4 +184,23 @@ test('foreign workspace token cannot be adopted during repeat checkout',async()=
   assert.equal(next.status,200);
   assert.notEqual(f.store.get('onboarding:workspace-token:'+workspaceId),'foreign-token');
   assert.equal(f.store.get('onboarding:foreign-token').workspaceId,'someone-else');
+});
+
+test('repeat checkout receipt describes existing account rather than newly created onboarding',async()=>{
+  const f=fixture();
+  await f.submit('evt_first','cs_first');
+  const existing=await f.submit('evt_second','cs_second');
+  assert.equal(existing.status,200);
+  assert.equal(f.emailOptions.length,2);
+  assert.match(f.emailOptions[0].title,/Welcome to CallerCore/);
+  assert.match(f.emailOptions[1].title,/payment is confirmed/);
+  assert.match(f.emailOptions[1].statusText,/setup progress remains in place/);
+  assert.doesNotMatch(f.emailOptions[1].bodyHtml,/secure onboarding link and service agreement/);
+});
+test('HTML payment confirmation escapes business name rather than injecting markup',async()=>{
+  const f=fixture();
+  f.store.get('lead:lead-reference').business='<img src=x onerror=alert(1)> & Co';
+  await f.submit('evt_first','cs_first');
+  assert.match(f.emailOptions[0].intro,/&lt;img src=x onerror=alert\(1\)&gt; &amp; Co/);
+  assert.doesNotMatch(f.emailOptions[0].intro,/<img/);
 });
