@@ -1282,7 +1282,18 @@ async function adminWebsiteProspectUpdate(req,res){
     convertedAt:stage==='converted'?(old.convertedAt||Date.now()):(stage!==old.stage&&old.stage==='converted'?null:old.convertedAt||null),
     updatedAt:Math.max(Date.now(),Number(old.updatedAt||old.createdAt||0)+1),updatedBy:admin.email};
   try{
-    if(!await compareAndSetConfig(kv,[{key,before:old,after:next}]))return res.status(409).json({error:'This prospect changed during the save. Refresh the pipeline before retrying.'});
+    const previousEmail=cleanEmail(old.email||''),nextEmail=cleanEmail(next.email||'');
+    const updates=[{key,before:old,after:next}],deleteKeys=[];
+    if(previousEmail!==nextEmail){
+      const previousKey=previousEmail?'site:prospect:email:'+emailKey(previousEmail):'';
+      const nextKey=nextEmail?'site:prospect:email:'+emailKey(nextEmail):'';
+      const [previousOwner,nextOwner]=await Promise.all([previousKey?kv.get(previousKey):null,nextKey?kv.get(nextKey):null]);
+      if(nextOwner&&String(nextOwner)!==id)return res.status(409).json({error:'This email is linked to another prospect. No changes were made.'});
+      if(nextKey)updates.push({key:nextKey,before:nextOwner,after:id});
+      if(previousKey&&String(previousOwner||'')===id){updates.push({key:previousKey,before:previousOwner,after:null});deleteKeys.push(previousKey)}
+    }
+    const saved=deleteKeys.length?await compareAndSetWithDelete(kv,updates,{deleteKeys}):await compareAndSetConfig(kv,updates);
+    if(!saved)return res.status(409).json({error:'This prospect changed during the save. Refresh the pipeline before retrying.'});
   }catch(err){console.error('admin prospect update failed',safeError(err));return res.status(503).json({error:'Could not confirm this prospect update. Refresh the pipeline before retrying.'})}
   return res.status(200).json({ok:true,prospect:next});
 }
