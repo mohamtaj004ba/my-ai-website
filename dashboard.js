@@ -2730,6 +2730,13 @@ function renderAdminFinance(){
     const max=Math.max(1,...rows.map(x=>x.mrr));chart.innerHTML=rows.map(x=>'<button type="button" data-revenue-plan="'+x.plan+'"><span><b>'+x.plan+'</b><small>'+x.count+' client'+(x.count===1?'':'s')+'</small></span><strong>'+financeMoney(x.mrr)+'</strong><i><em style="width:'+Math.round(x.mrr/max*100)+'%"></em></i></button>').join('');
     chart.querySelectorAll('[data-revenue-plan]').forEach(b=>b.addEventListener('click',()=>{adminClientFilter='all';adminClientSearch=b.dataset.revenuePlan;showView('clients');renderAdminClients()}));
   }
+  const exceptions=Array.isArray(d.reconciliation)?d.reconciliation:[],reconciliationList=document.getElementById('financeReconciliationList');
+  set('financeReconciliationCount',exceptions.length+' open');
+  if(reconciliationList)reconciliationList.innerHTML=exceptions.length?exceptions.map(item=>{
+    const reason={email_mismatch:'Checkout and lead emails differ',account_mapping_conflict:'Stripe or member mapping conflict',workspace_owner_mismatch:'Workspace owner mismatch',reserved_account:'Reserved or disabled account'}[item.reason]||'Account identity review';
+    const date=Number(item.createdAt||0)?new Date(item.createdAt).toLocaleString():'Time unavailable';
+    return '<div class="admin-billing-alert"><span><b>'+esc(reason)+'</b><small>Checkout '+esc(item.sessionId)+' · '+esc(date)+'</small></span><span class="tag amber">Review in Stripe</span></div>';
+  }).join(''):'<div class="admin-clear-state"><b>No payment identity exceptions</b><span>Conflicting checkout identity records will appear here for manual reconciliation.</span></div>';
   const pastDue=adminClientsData.filter(x=>x.subscriptionStatus==='past_due');
   if(past)past.innerHTML=pastDue.map(x=>'<button type="button" class="admin-billing-alert" data-open-billing-client="'+esc(x.id)+'"><span><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+' · '+financeMoney(PLAN_DATA[x.plan]?.price||0)+'/mo</small></span><span class="tag red">Past due</span></button>').join('')||'<div class="admin-clear-state"><b>Billing is current</b><span>No past-due client accounts.</span></div>';
   past?.querySelectorAll('[data-open-billing-client]').forEach(b=>b.addEventListener('click',()=>openAdminClient(b.dataset.openBillingClient)));
