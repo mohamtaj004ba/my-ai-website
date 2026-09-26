@@ -1306,12 +1306,23 @@ async function adminProspectSave(req,res){
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email or leave it blank'});
   if(!String(body.name||body.business||email||body.phone||'').trim())return res.status(400).json({error:'Add a name, business, email, or phone'});
   const allowed=['new','inquiry','checkout_started','follow_up','qualified','proposal','lost','converted'],stage=allowed.includes(body.stage)?body.stage:'new';
-  const base=await upsertWebsiteProspect({id:String(body.id||'').slice(0,100),name:body.name,business:body.business,email,phone:body.phone,industry:body.industry,plan:body.plan,source:body.source||'manual',stage,utmSource:body.utmSource||'',utmMedium:body.utmMedium||'',utmCampaign:body.campaign||body.utmCampaign||''});
-  const platform=await kv.get('platform:settings')||{},followupTarget=clampInt(platform.leadFollowupHours,4,168,24)*3600000,autoFollowup=platform.autoScheduleFirstFollowup!==false;
-  const explicitFollowup=Number(body.nextFollowUpAt)||null,defaultFollowup=!explicitFollowup&&!base.nextFollowUpAt&&autoFollowup&&!['converted','lost'].includes(stage)?Date.now()+followupTarget:null;
-  const next={...base,owner:String(body.owner||base.owner||platform.defaultSalesOwner||'').trim().slice(0,120),campaign:String(body.campaign||base.campaign||base.utmCampaign||'').trim().slice(0,160),notes:String(body.notes||base.notes||'').trim().slice(0,3000),nextFollowUpAt:explicitFollowup||base.nextFollowUpAt||defaultFollowup,lastContactAt:Number(body.lastContactAt)||base.lastContactAt||null,monthlyValue:Math.max(0,Number(body.monthlyValue??base.monthlyValue)||0),setupValue:Math.max(0,Number(body.setupValue??base.setupValue)||0),tags:Array.isArray(body.tags)?body.tags.map(x=>String(x||'').trim().slice(0,60)).filter(Boolean).slice(0,12):(base.tags||[]),updatedAt:Date.now(),updatedBy:admin.email};
-  await kv.set('site:prospect:'+next.id,next);
-  return res.status(200).json({ok:true,prospect:next});
+  try{
+    const platform=await kv.get('platform:settings')||{},autoFollowup=platform.autoScheduleFirstFollowup!==false;
+    const prospect=await upsertWebsiteProspect({
+      id:String(body.id||'').slice(0,100),name:body.name,business:body.business,email,phone:body.phone,
+      industry:body.industry,plan:body.plan,source:body.source||'manual',stage,
+      utmSource:body.utmSource||'',utmMedium:body.utmMedium||'',utmCampaign:body.campaign||body.utmCampaign||'',
+      owner:body.owner,defaultSalesOwner:platform.defaultSalesOwner,campaign:body.campaign,notes:body.notes,
+      nextFollowUpAt:body.nextFollowUpAt,autoFollowupHours:autoFollowup?clampInt(platform.leadFollowupHours,4,168,24):0,
+      lastContactAt:body.lastContactAt,monthlyValue:body.monthlyValue,setupValue:body.setupValue,
+      tags:body.tags,updatedBy:admin.email
+    });
+    return res.status(200).json({ok:true,prospect});
+  }catch(err){
+    console.error('admin prospect save failed',safeError(err));
+    if(String(err?.message||'').includes('linked to another record'))return res.status(409).json({error:'This email belongs to a different prospect. No changes were made.'});
+    return res.status(503).json({error:'Could not confirm that the prospect and follow-up details saved together. Refresh the pipeline before retrying.'});
+  }
 }
 async function adminMarketingCampaigns(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
