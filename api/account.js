@@ -1170,8 +1170,9 @@ async function adminWebsiteConversation(req,res){
   const id=String((req.query||{}).id||'').slice(0,100);
   if(!id)return res.status(400).json({error:'Prospect id required'});
   const prospect=await kv.get('site:prospect:'+id);if(!prospect)return res.status(404).json({error:'Prospect not found'});
-  const messages=await kv.get('site:conversation:'+id)||[];
-  return res.status(200).json({prospect,messages:Array.isArray(messages)?messages:[]});
+  const rawMessages=await kv.get('site:conversation:'+id);
+  if(rawMessages!=null&&!Array.isArray(rawMessages))return res.status(503).json({error:'Website conversation history is unavailable. No messages were hidden or changed.'});
+  return res.status(200).json({prospect,messages:rawMessages||[]});
 }
 async function adminWebsiteReply(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
