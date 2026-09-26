@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const api=fs.readFileSync('api/account.js','utf8');
 const dashboard=fs.readFileSync('dashboard.js','utf8');
-const {compareAndSetWithDelete,CONFIG_COMPARE_AND_SET_WITH_DELETE}=require('../lib/config-transaction');
+const {compareAndSetWithDelete,CONFIG_COMPARE_AND_SET_WITH_DELETE,compareAndAuditBatch,CONFIG_COMPARE_AND_AUDIT_BATCH}=require('../lib/config-transaction');
 const base={id:'campaign-1',name:'Old campaign',budget:5,status:'draft',createdAt:1,updatedAt:10};
 
 function fixture(action,{existing=base,ids=['campaign-1'],expectedUpdatedAt=10,commit=true,budget=12,clock=20}={}){
@@ -122,4 +122,30 @@ test('campaign list includes items beyond 250 and rejects malformed indexes',asy
   await vm.runInContext('adminMarketingCampaigns(req,res)',context);
   assert.equal(code,503);
   assert.match(output.error,/No partial campaign list/);
+});
+
+test('audited campaign transaction compares both records before writing audit or deleting',async()=>{
+  const event={id:'audit-1',action:'marketing_campaign_delete'};
+  let invokes=0;
+  const kv={eval:async(script,keys,args)=>{
+    invokes++;
+    assert.equal(script,CONFIG_COMPARE_AND_AUDIT_BATCH);
+    assert.deepEqual(keys,['marketing:campaign:campaign-1','marketing:campaign:index','audit:admin-ws']);
+    assert.equal(args[0],'2');
+    assert.equal(args[1],JSON.stringify(base));
+    assert.equal(args[2],'__CALLERCORE_DELETE__');
+    assert.equal(args[3],JSON.stringify(['campaign-1']));
+    assert.equal(args[4],JSON.stringify([]));
+    assert.deepEqual(JSON.parse(args[5]),event);
+    return 1;
+  }};
+  const updates=[{key:'marketing:campaign:campaign-1',before:base,after:null},{key:'marketing:campaign:index',before:['campaign-1'],after:[]}];
+  assert.equal(await compareAndAuditBatch(kv,updates,'audit:admin-ws',event,{deleteKeys:['marketing:campaign:campaign-1']}),true);
+  assert.equal(invokes,1);
+  assert.ok(CONFIG_COMPARE_AND_AUDIT_BATCH.indexOf('current~=ARGV')<CONFIG_COMPARE_AND_AUDIT_BATCH.indexOf("redis.call('DEL'"));
+  assert.ok(CONFIG_COMPARE_AND_AUDIT_BATCH.indexOf('cjson.encode(history)')<CONFIG_COMPARE_AND_AUDIT_BATCH.indexOf("redis.call('DEL'"));
+  assert.equal(await compareAndAuditBatch({eval:async()=>0},updates,'audit:admin-ws',event),false);
+  await assert.rejects(compareAndAuditBatch({eval:async()=>-1},updates,'audit:admin-ws',event),/Audit history is malformed/);
+  await assert.rejects(compareAndAuditBatch({eval:async()=>-2},updates,'audit:admin-ws',event),/Audit event could not be serialized/);
+  await assert.rejects(compareAndAuditBatch(kv,updates,'marketing:campaign:index',event),/Invalid audited transaction keys/);
 });
