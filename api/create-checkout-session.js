@@ -2,6 +2,7 @@ const crypto=require('crypto');
 const {kv}=require('../lib/kv');
 const {rateLimit,requestIp}=require('../lib/rate-limit');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
+const {safeError}=require('../lib/safe-log');
 
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
 const STRIPE_SECRET_KEY=process.env.STRIPE_SECRET_KEY||'';
@@ -78,7 +79,7 @@ module.exports=async function handler(req,res){
         customerEmail:session.customer_details?.email||session.customer_email||''
       });
     }catch(err){
-      console.error('Checkout status lookup failed',err&&err.message||err);
+      console.error('Checkout status lookup failed',safeError(err));
       return res.status(502).json({error:'Unable to verify checkout'});
     }
   }
@@ -107,12 +108,12 @@ module.exports=async function handler(req,res){
       createdAt:Date.now()
     },{ex:60*60*24*7});
   }catch(err){
-    console.error('Embedded checkout lead pre-save failed',err&&err.message||err);
+    console.error('Embedded checkout lead pre-save failed',safeError(err));
     return res.status(503).json({error:'Checkout is temporarily unavailable. Please try again shortly.'});
   }
 
   try{await recordSiteEvent({type:'checkout_start',visitorId,sessionId,path:'/get-started',label:plan,utmSource,utmMedium,utmCampaign},req)}
-  catch(analyticsError){console.error('Embedded checkout tracking failed',analyticsError&&analyticsError.message||analyticsError)}
+  catch(analyticsError){console.error('Embedded checkout tracking failed',safeError(analyticsError))}
 
   const params=new URLSearchParams();
   params.set('mode','subscription');
@@ -139,7 +140,7 @@ module.exports=async function handler(req,res){
     if(!session.client_secret)throw new Error('Stripe did not return a client secret');
     return res.status(200).json({clientSecret:session.client_secret,publishableKey:STRIPE_PUBLISHABLE_KEY});
   }catch(err){
-    console.error('Embedded checkout session creation failed',err&&err.message||err);
+    console.error('Embedded checkout session creation failed',safeError(err));
     return res.status(502).json({error:'Unable to start secure checkout'});
   }
 };
