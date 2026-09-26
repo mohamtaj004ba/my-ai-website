@@ -91,7 +91,7 @@ test('campaign form submits snapshot revisions and keeps confirmed saves after r
   const start=dashboard.indexOf('async function deleteCampaign('),end=dashboard.indexOf('\nfunction renderDocuments(',start);
   assert.ok(start>=0&&end>start);
   const text=dashboard.slice(start,end);
-  assert.match(text,/expectedUpdatedAt:Number\(c\?\.updatedAt\|\|c\?\.createdAt\|\|0\)/);
+  assert.match(text,/expectedUpdatedAt:Number\(c\.updatedAt\|\|c\.createdAt\|\|0\)/);
   assert.match(text,/expectedUpdatedAt:editing\?Number\(editing.updatedAt\|\|editing.createdAt\|\|0\):undefined/);
   assert.match(text,/adminCampaignData=\[data.campaign/);
 });
