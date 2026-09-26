@@ -63,3 +63,50 @@ test('view refresh ignores an old website window arriving after a new selection'
   assert.equal(ctx.adminWebsiteData.sessions,undefined);
   assert.deepEqual(rendered,['website','admin']);
 });
+
+test('background same-window response cannot overwrite newer manually requested analytics',async()=>{
+  const begin=source.indexOf('async function refreshAdminView(');
+  const finish=source.indexOf('\nfunction adminAgentGroup(',begin);
+  let settle;
+  const background=new Promise(resolve=>settle=resolve),rendered=[];
+  const ctx=vm.createContext({
+    document:{body:{dataset:{dashboard:'admin'}}},
+    currentAdminView:()=> 'website',adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,
+    adminWebsiteData:{periodDays:30,sessions:4},adminWebsiteLoadError:'',
+    adminDataSyncAt:{},adminSyncCacheKey:(k,u)=>k==='website'?u:k,
+    adminSyncFetch:async()=>background,setDataHealth:()=>{},setAdminSyncState:()=>{},
+    renderWebsiteAnalytics:()=>rendered.push('website'),renderAdmin:()=>rendered.push('admin'),
+    updateAdminRefreshStamp:()=>{},Promise,Date,Number,String,Error
+  });
+  vm.runInContext(source.slice(begin,finish),ctx);
+  const refreshing=vm.runInContext("refreshAdminView('website',{force:true,announce:false})",ctx);
+  ctx.adminWebsiteAnalyticsRequest=1;
+  ctx.adminWebsiteData={periodDays:30,sessions:18};
+  settle({analytics:{periodDays:30,sessions:5}});
+  await refreshing;
+  assert.equal(ctx.adminWebsiteData.sessions,18);
+  assert.equal(ctx.adminWebsiteLoadError,'');
+  assert.deepEqual(rendered,['website','admin']);
+});
+test('obsolete failed background request does not set stale warning after user selects a new range',async()=>{
+  const begin=source.indexOf('async function refreshAdminView(');
+  const finish=source.indexOf('\nfunction adminAgentGroup(',begin);
+  let rejectOld;
+  const background=new Promise((_resolve,reject)=>rejectOld=reject);
+  const ctx=vm.createContext({
+    document:{body:{dataset:{dashboard:'admin'}}},
+    currentAdminView:()=> 'website',adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,
+    adminWebsiteData:{periodDays:30},adminWebsiteLoadError:'',
+    adminDataSyncAt:{},adminSyncCacheKey:(k,u)=>k==='website'?u:k,
+    adminSyncFetch:async()=>background,setDataHealth:()=>{},setAdminSyncState:()=>{},
+    renderWebsiteAnalytics:()=>{},renderAdmin:()=>{},
+    updateAdminRefreshStamp:()=>{},Promise,Date,Number,String,Error
+  });
+  vm.runInContext(source.slice(begin,finish),ctx);
+  const refreshing=vm.runInContext("refreshAdminView('website',{force:true,announce:false})",ctx);
+  ctx.adminWebsiteAnalyticsRequest=1;ctx.adminWebsiteDays=7;ctx.adminWebsiteData={periodDays:7};
+  rejectOld(new Error('obsolete request failed'));
+  await refreshing;
+  assert.equal(ctx.adminWebsiteLoadError,'');
+  assert.equal(ctx.adminWebsiteData.periodDays,7);
+});
