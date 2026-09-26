@@ -1283,7 +1283,7 @@ async function adminWebsiteAnalytics(req,res){
     });
     const topPages=Object.entries(pageMap).sort((a,b)=>b[1].count-a[1].count).slice(0,12).map(([path,v])=>({path,count:v.count,avgSeconds:v.exits?Math.round(v.totalMs/v.exits/1000):0,share:pageViews?Math.round(v.count/pageViews*100):0}));
     const sourceNames=[...new Set([...Object.keys(sourceMap),...Object.keys(conversionMap)])],sources=sourceNames.map(source=>({source,count:sourceMap[source]||0,...(conversionMap[source]||{conversions:0,mrr:0,setupRevenue:0})})).sort((a,b)=>(b.mrr-a.mrr)||(b.count-a.count)).slice(0,12);
-    const campaigns=Object.values(campaignMap).map(x=>({campaign:x.campaign,medium:x.medium,sessions:x.sessions,visitors:x.visitors.size,conversions:x.conversions,conversionRate:x.sessions?Math.round(x.conversions/x.sessions*1000)/10:0})).sort((a,b)=>b.sessions-a.sessions).slice(0,15);
+    const campaigns=Object.values(campaignMap).map(x=>({campaign:x.campaign,medium:x.medium,sessions:x.sessions,visitors:x.visitors.size,conversions:x.conversions,cohortLinked:false})).sort((a,b)=>b.sessions-a.sessions).slice(0,15);
     const devices=Object.entries(deviceMap).map(([device,count])=>({device,count,pct:periodSessions.length?Math.round(count/periodSessions.length*100):0})).sort((a,b)=>b.count-a.count);
     const locations=Object.entries(locationMap).map(([location,count])=>({location,count,pct:periodSessions.length?Math.round(count/periodSessions.length*100):0})).sort((a,b)=>b.count-a.count).slice(0,10);
     const daily=Object.values(dailyMap).map(x=>({date:x.date,sessions:x.sessions,visitors:x.visitors.size,pageViews:x.pageViews,conversions:x.conversions}));
