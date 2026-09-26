@@ -307,12 +307,18 @@ function financeExpenseForMonth(expenses,monthKey){
 }
 async function adminFinance(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const [workspaces,storedExpenses,storedHistory,reconciliationIds]=await Promise.all([loadAdminWorkspaces(),kv.get('finance:expenses'),kv.get('finance:history'),kv.lrange('stripe:reconciliation:index',0,99)]);
+  const [workspaces,storedExpenses,storedHistory,reconciliationIds]=await Promise.all([loadAdminWorkspaces(),kv.get('finance:expenses'),kv.get('finance:history'),kv.lrange('stripe:reconciliation:index',0,199)]);
   if(!Array.isArray(reconciliationIds))return res.status(503).json({error:'Checkout reconciliation queue could not be loaded. Finance figures were not refreshed.'});
-  const reconciliation=(await Promise.all([...new Set(reconciliationIds)].map(async id=>{
-    const item=await kv.get('stripe:reconciliation:'+id);
-    return item&&item.status==='open'&&item.sessionId===id?{id:item.id,sessionId:item.sessionId,eventId:item.eventId,reason:item.reason,createdAt:item.createdAt,status:item.status}:null;
-  }))).filter(Boolean).sort((a,b)=>b.createdAt-a.createdAt);
+  const reconciliation=[],uniqueIds=[...new Set(reconciliationIds.map(x=>String(x||'').trim()).filter(Boolean))],coverage={retainedCaseIds:reconciliationIds.length,unavailableCaseRecords:0,isRetentionCapped:reconciliationIds.length>=200};
+  for(let offset=0;offset<uniqueIds.length;offset+=50){
+    const ids=uniqueIds.slice(offset,offset+50),records=await Promise.all(ids.map(id=>kv.get('stripe:reconciliation:'+id)));
+    for(let i=0;i<ids.length;i++){
+      const item=records[i];
+      if(!item||typeof item!=='object'||Array.isArray(item)||item.sessionId!==ids[i]||!['open','resolved'].includes(item.status)){coverage.unavailableCaseRecords++;continue}
+      if(item.status==='open')reconciliation.push({id:item.id,sessionId:item.sessionId,eventId:item.eventId,reason:item.reason,createdAt:item.createdAt,status:item.status});
+    }
+  }
+  reconciliation.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
   const expenses=Array.isArray(storedExpenses)?storedExpenses:[],history=Array.isArray(storedHistory)?storedHistory.slice():[],now=Date.now(),currentMonth=financeMonthKey(now),prices={Starter:349,Growth:599,Pro:999};
   const billable=currentBillableWorkspaces(workspaces),mrr=billable.reduce((sum,w)=>sum+(prices[w.plan]||0),0);
   const recurringExpenses=expenses.filter(e=>e.status!=='paused').reduce((sum,e)=>sum+expenseMonthlyEquivalent(e),0);
@@ -330,7 +336,7 @@ async function adminFinance(req,res){
   let nextHistory;
   try{nextHistory=await recordFinanceSnapshot(kv,storedHistory,snapshot,{seedHistory:history})}
   catch(err){console.error('admin finance history save failed',safeError(err));return res.status(503).json({error:'Finance history could not be reconciled. Refresh to retry.'})}
-  return res.status(200).json({finance:{mrr,recurringExpenses:Math.round(recurringExpenses*100)/100,currentMonthExpenses:Math.round(operatingExpenses*100)/100,netRecurring:Math.round(netRecurring*100)/100,margin,reconciliation,expenses:expenses.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))),history:nextHistory}});
+  return res.status(200).json({finance:{mrr,recurringExpenses:Math.round(recurringExpenses*100)/100,currentMonthExpenses:Math.round(operatingExpenses*100)/100,netRecurring:Math.round(netRecurring*100)/100,margin,reconciliation,reconciliationCoverage:coverage,expenses:expenses.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))),history:nextHistory}});
 }
 async function adminFinanceExpenseSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
