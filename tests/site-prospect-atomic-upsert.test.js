@@ -165,3 +165,18 @@ test('manual new-lead racing a same-email submission rejects after fresh lookup'
  assert.equal(f.values.get('site:prospect:already').stage,'converted');
  assert.equal(f.index.length,1);
 });
+
+test('later website inquiries or checkout starts cannot downgrade a converted lead',async()=>{
+ const f=fixture();
+ const customer=await f.upsert({email:'paid@example.test',stage:'converted',source:'checkout',workspaceId:'workspace-paid',convertedAt:1234,monthlyValue:500,firstSource:'referral'});
+ const contact=await f.upsert({email:'paid@example.test',stage:'inquiry',source:'contact',message:'I have a question'});
+ const checkout=await f.upsert({email:'paid@example.test',stage:'checkout_started',source:'get_started'});
+ assert.equal(contact.id,customer.id);
+ assert.equal(checkout.id,customer.id);
+ assert.equal(checkout.stage,'converted');
+ assert.equal(checkout.workspaceId,'workspace-paid');
+ assert.equal(checkout.convertedAt,1234);
+ assert.equal(checkout.monthlyValue,500);
+ assert.equal(checkout.firstSource,'checkout');
+ assert.equal(f.index.length,1);
+});
