@@ -1463,7 +1463,7 @@ async function adminDocumentSave(req,res){
   if(!name)return res.status(400).json({error:'Document name is required'});
   if(url&&(!(/^https?:\/\//i.test(url)||url.startsWith('/'))||url.startsWith('//')||url.startsWith('/\\')))return res.status(400).json({error:'Document link must be an http(s) URL or CallerCore path'});
   // Native date inputs are only a convenience: reject malformed API submissions before audited writes.
-  const validDate=value=>!value||(/^\d{4}-\d{2}-\d{2}$/.test(value)&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value);
+  const validDate=value=>!value||(/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T00:00:00Z'))&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value);
   const effectiveDate=String(b.effectiveDate||''),expiresAt=String(b.expiresAt||'');
   if(!validDate(effectiveDate)||!validDate(expiresAt))return res.status(400).json({error:'Document dates must be valid calendar dates (YYYY-MM-DD).'});
   if(effectiveDate&&expiresAt&&expiresAt<effectiveDate)return res.status(400).json({error:'Expiration date cannot precede the effective date.'});
