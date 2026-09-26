@@ -60,9 +60,9 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
   },process:{env:{STRIPE_WEBHOOK_SECRET:'test-webhook-secret',SITE_URL:'https://callercore.com'}},
   Buffer,Date,Math,Number,String,Object,Array,Promise,Set,console:{error(){}},URL});
   const handler=module.exports;
-  async function submit(eventId){
+  async function submit(eventId,checkoutId='cs_same'){
     const event={id:eventId,type:'checkout.session.completed',data:{object:{
-      id:'cs_same',payment_status:'paid',client_reference_id:'lead-reference',
+      id:checkoutId,payment_status:'paid',client_reference_id:'lead-reference',
       customer:'cus_same',subscription:'sub_same',metadata:{plan:'Pro'},
       customer_details:{email:'customer@example.test',name:'Customer'}
     }}};
@@ -116,4 +116,36 @@ test('failed critical provisioning releases the claim without acknowledging even
   assert.equal(f.welcomes,1);
   assert.equal(f.locks.size,0);
   assert.equal(f.store.get('stripe:event:evt_first'),true);
+});
+
+test('separate repeat checkout keeps existing review and live setup milestones intact',async()=>{
+  const f=fixture();
+  const initial=await f.submit('evt_first','cs_first');
+  assert.equal(initial.status,200);
+  const workspaceId=initial.body.workspaceId;
+  const key='onboarding:workspace:'+workspaceId;
+  const previous=f.store.get(key);
+  previous.status='live';
+  previous.paidAt=1111;
+  previous.reviewEligibleAt=2222;
+  previous.onboardingLinkSent=true;
+  previous.completionPercent=100;
+  previous.checklist={...previous.checklist,payment:true,agreement:true,intake:true,adminReview:true,testCall:true,live:true};
+  previous.intake={businessName:'Established customer'};
+  const repeat=await f.submit('evt_second','cs_second');
+  assert.equal(repeat.status,200);
+  assert.equal(repeat.body.workspaceId,workspaceId);
+  const later=f.store.get(key);
+  assert.equal(later.status,'live');
+  assert.equal(later.paidAt,1111);
+  assert.equal(later.reviewEligibleAt,2222);
+  assert.equal(later.onboardingLinkSent,true);
+  assert.equal(later.completionPercent,100);
+  assert.equal(later.checklist.agreement,true);
+  assert.equal(later.checklist.adminReview,true);
+  assert.equal(later.checklist.testCall,true);
+  assert.equal(later.checklist.live,true);
+  assert.equal(later.intake.businessName,'Established customer');
+  assert.ok(later.lastCheckoutAt>=later.paidAt);
+  assert.equal(f.locks.size,0);
 });
