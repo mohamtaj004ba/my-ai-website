@@ -5,6 +5,7 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const {PassThrough}=require('node:stream');
 const sessionLock=require('../lib/stripe-session-lock');
+const reconciliation=require('../lib/stripe-reconciliation');
 const source=fs.readFileSync('api/stripe-webhook.js','utf8');
 function deferred(){
   let resolve;
@@ -12,7 +13,7 @@ function deferred(){
   return {promise,resolve};
 }
 function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
-  const store=new Map(),locks=new Map(),entered=deferred(),resume=deferred();
+  const store=new Map(),locks=new Map(),reconciliationIndex=[],entered=deferred(),resume=deferred();
   let welcomes=0,workspaces=0,telemetry=0,failed=false;const emailOptions=[];
   store.set('lead:lead-reference',{prospectId:'p-1',name:'Customer',business:'Business',
     email:'customer@example.test',phone:'5551231234',industry:'Services',plan:'Pro'});
@@ -36,6 +37,12 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
         if(locks.get(key)!==args[0])return 0;
         locks.delete(key);return 1;
       }
+      if(script===reconciliation.RECONCILIATION_RECORD){
+        if(store.has(key))return 0;
+        store.set(key,JSON.parse(args[0]));
+        reconciliationIndex.unshift(args[1]);reconciliationIndex.splice(200);
+        return 1;
+      }
       throw Error('Unexpected script');
     }
   };
@@ -51,7 +58,8 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
     },
     '../lib/business-hours':{addBusinessHours:n=>n+7200000},
     '../lib/stripe-lifecycle':{lifecycleDecision:()=>({apply:false})},
-    '../lib/stripe-session-lock':sessionLock
+    '../lib/stripe-session-lock':sessionLock,
+    '../lib/stripe-reconciliation':reconciliation
   };
   const module={exports:{}};
   vm.runInNewContext(source,{module,exports:module.exports,require:name=>{
@@ -80,7 +88,7 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
     await pending;
     return result;
   }
-  return {submit,entered,resume,store,locks,emailOptions,get welcomes(){return welcomes},get workspaces(){return workspaces},get telemetry(){return telemetry}};
+  return {submit,entered,resume,store,locks,emailOptions,reconciliationIndex,get welcomes(){return welcomes},get workspaces(){return workspaces},get telemetry(){return telemetry}};
 }
 test('simultaneous Stripe event IDs cannot duplicate paid onboarding or welcome mail',async()=>{
   const f=fixture({blockFirstWorkspace:true});
@@ -339,4 +347,35 @@ test('disagreement between Stripe checkout email and saved lead requires reconci
   assert.equal(f.store.has('stripe:event:evt_first'),false);
   assert.equal(f.locks.size,0);
   assert.equal(f.welcomes,0);
+});
+
+test('paid identity conflicts persist a bounded admin reconciliation record without customer email',async()=>{
+  const f=fixture();
+  f.store.set('workspace:other',{id:'other',ownerEmail:'other@example.test'});
+  f.store.set('stripe:customer:cus_same','other');
+  await assert.rejects(()=>f.submit('evt_conflict','cs_conflict'),/manual reconciliation required/);
+  const record=f.store.get('stripe:reconciliation:cs_conflict');
+  assert.equal(record.status,'open');
+  assert.equal(record.reason,'workspace_owner_mismatch');
+  assert.equal(record.eventId,'evt_conflict');
+  assert.equal(record.sessionId,'cs_conflict');
+  assert.equal(record.emailFingerprint.length,64);
+  assert.ok(!JSON.stringify(record).includes('customer@example.test'));
+  assert.deepEqual(f.reconciliationIndex,['cs_conflict']);
+  assert.equal(f.store.has('stripe:event:evt_conflict'),false);
+});
+test('checkout email mismatch is visible to admin without reassigning customer',async()=>{
+  const f=fixture();
+  await assert.rejects(()=>f.submit('evt_mismatch','cs_mismatch',{email:'other@example.test'}),/manual reconciliation required/);
+  assert.equal(f.store.get('stripe:reconciliation:cs_mismatch').reason,'email_mismatch');
+  assert.equal(f.store.has('user:email:customer@example.test'),false);
+  assert.equal(f.store.has('stripe:event:evt_mismatch'),false);
+});
+test('replayed conflict cannot fill reconciliation directory with duplicate records',async()=>{
+  const f=fixture();
+  f.store.set('workspace:other',{id:'other',ownerEmail:'other@example.test'});
+  f.store.set('stripe:customer:cus_same','other');
+  for(const id of ['evt_one','evt_two'])await assert.rejects(()=>f.submit(id,'cs_conflict'),/manual reconciliation required/);
+  assert.equal(f.reconciliationIndex.length,1);
+  assert.equal(f.store.get('stripe:reconciliation:cs_conflict').eventId,'evt_one');
 });
