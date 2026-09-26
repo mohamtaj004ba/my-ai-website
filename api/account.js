@@ -1292,8 +1292,11 @@ async function adminWebsiteProspectUpdate(req,res){
       if(nextKey)updates.push({key:nextKey,before:nextOwner,after:id});
       if(previousKey&&String(previousOwner||'')===id){updates.push({key:previousKey,before:previousOwner,after:null});deleteKeys.push(previousKey)}
     }
-    const saved=deleteKeys.length?await compareAndSetWithDelete(kv,updates,{deleteKeys}):await compareAndSetConfig(kv,updates);
-    if(!saved)return res.status(409).json({error:'This prospect changed during the save. Refresh the pipeline before retrying.'});
+    const audit={id:crypto.randomUUID(),workspaceId:admin.workspaceId,actorEmail:admin.email,actorRole:'admin',action:'sales_prospect_update',section:'growth',
+      before:{id,stage:old.stage||'new',updatedAt:old.updatedAt||old.createdAt||0},
+      after:{id,stage:next.stage,updatedAt:next.updatedAt},
+      meta:{prospectId:id,emailLookupChanged:previousEmail!==nextEmail},at:Date.now()};
+    if(!await compareAndAuditBatch(kv,updates,'audit:'+admin.workspaceId,audit,{deleteKeys}))return res.status(409).json({error:'This prospect changed during the save. Refresh the pipeline before retrying.'});
   }catch(err){console.error('admin prospect update failed',safeError(err));return res.status(503).json({error:'Could not confirm this prospect update. Refresh the pipeline before retrying.'})}
   return res.status(200).json({ok:true,prospect:next});
 }
