@@ -1361,14 +1361,14 @@ async function adminDocuments(req,res){
   }
   agreements.sort((a,b)=>Number(b.signedAt||0)-Number(a.signedAt||0)||String(a.workspaceName).localeCompare(String(b.workspaceName)));
   const rawCompany=await kv.get('admin:documents'),company=rawCompany==null?[]:rawCompany;
-  if(!Array.isArray(company)||company.length>500||company.some(item=>!item||typeof item!=='object'||!item.id))return res.status(503).json({error:'Company document directory is unavailable. No records were hidden or changed.'});
+  if(!Array.isArray(company)||company.length>500||company.some(item=>!item||typeof item!=='object'||!item.id)||new Set(company.map(item=>String(item.id))).size!==company.length)return res.status(503).json({error:'Company document directory is unavailable. No records were hidden or changed.'});
   return res.status(200).json({documents:{agreements,company,standard:[{id:'terms',name:'Terms of Service',type:'Legal',url:'/terms.html'},{id:'privacy',name:'Privacy Policy',type:'Legal',url:'/privacy.html'}]}});
 }
 async function adminDocumentSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const b=req.body||{},editing=!!b.id,id=String(b.id||crypto.randomUUID()).slice(0,100),key='admin:documents';
   const raw=await kv.get(key),list=raw==null?[]:raw;
-  if(!Array.isArray(list)||list.length>500||list.some(item=>!item||typeof item!=='object'||!item.id))return res.status(503).json({error:'Company document records are unavailable. No changes were made.'});
+  if(!Array.isArray(list)||list.length>500||list.some(item=>!item||typeof item!=='object'||!item.id)||new Set(list.map(item=>String(item.id))).size!==list.length)return res.status(503).json({error:'Company document records are unavailable. No changes were made.'});
   const items=list.slice(),index=items.findIndex(x=>x&&x.id===id);
   if(editing&&index<0)return res.status(404).json({error:'Company record not found. Refresh the directory before editing.'});
   if(!editing&&index>=0)return res.status(409).json({error:'Company record identifier already exists.'});
@@ -1390,7 +1390,7 @@ async function adminDocumentDelete(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const b=req.body||{},id=String(b.id||'').slice(0,100);if(!id)return res.status(400).json({error:'Document id required'});
   const key='admin:documents',raw=await kv.get(key),list=raw==null?[]:raw;
-  if(!Array.isArray(list)||list.length>500||list.some(item=>!item||typeof item!=='object'||!item.id))return res.status(503).json({error:'Company document directory is unavailable. No changes were made.'});
+  if(!Array.isArray(list)||list.length>500||list.some(item=>!item||typeof item!=='object'||!item.id)||new Set(list.map(item=>String(item.id))).size!==list.length)return res.status(503).json({error:'Company document directory is unavailable. No changes were made.'});
   const item=list.find(x=>x&&x.id===id);
   if(!item)return res.status(404).json({error:'Document not found'});
   if(b.expectedUpdatedAt===undefined||Number(b.expectedUpdatedAt||0)!==Number(item.updatedAt||item.createdAt||0))return res.status(409).json({error:'This company record changed before deletion. Reopen the record and confirm again.'});
