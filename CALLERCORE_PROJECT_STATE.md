@@ -22,11 +22,11 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Latest verified implementation checkpoint
 
-- Implementation SHA: `cacfa94c84ea85843b945913ea318595b78585e4` (marketing campaign transactional save/delete and listing consistency; earlier recovery, support, finance and admin safeguards remain present).
-- Preview READY: `dpl_D19cm8m11fJd7wvyNWAkj2ZBhbtG` — https://my-ai-website-p6mqvlegs-mohamtaj004bas-projects.vercel.app
-- CallerCore CI `36198889956` and `36198886542`, CodeQL `36198889970` and `36198886541`, Jekyll `36198889923`: success on that exact SHA.
-- Authenticated Preview Browser QA `36198886587`: success on that exact SHA. Earlier recovery acceptance succeeded on `452ae304` (QA `36179292162`).
-- GitHub full CI regression suite at this implementation: 299 passed, 0 failed (`36198889956`); build, JavaScript syntax and diff checks passed. The recovered implementation earlier had 255 locally reported passing tests.
+- Implementation SHA: `576701eeffc7e229482623d79f0f895e34475b49` (campaign modal pending-action locks and draft preservation; earlier marketing transactional and support safeguards remain present).
+- Preview READY: `dpl_2kZMXsD5ERKG2j26bvV7x9ar9oMd` — https://my-ai-website-2js1drt99-mohamtaj004bas-projects.vercel.app
+- CallerCore CI `36208725723` and `36208722352`, CodeQL `36208725654` and `36208722379`, Jekyll `36208725584`: success on that exact SHA.
+- Authenticated Preview Browser QA `36208722320`: success on that exact SHA. Earlier recovery acceptance succeeded on `452ae304` (QA `36179292162`).
+- GitHub full CI regression suite at this implementation: 302 passed, 0 failed (`36208725723`); build, JavaScript syntax and diff checks passed. The recovered implementation earlier had 255 locally reported passing tests.
 - Earlier authenticated browser report: 1,200 calls, 153 conversations (including a 122-message history), 11 admin clients; zero page/console/API errors; 25 layout checks. This report belongs to the earlier verified dashboard run, not an independently extracted report for `2213219`; the latest QA run is recorded above.
 - Covered interactions include receptionist identity/transfer saves and restoration, routing synchronization, Settings save/readback/restoration, pending-save locks, background-refresh draft protection, logo preparation/cancellation, admin phone search/save/restoration, legacy restore/delete safeguards, and 50 → 100 → 122 message batches in Conversations and Contacts.
 - Responsive client/admin checks at 1280, 768 and 390 pixels include opening/closing phone editors and reaching Save without submitting responsive-test changes.
@@ -51,7 +51,7 @@ Read-only inspection on 2026-09-25 confirmed:
 
 At the starting checkpoint, recent Calls, Contacts, and Follow-ups passes exist in code and the exact-head CI/Preview QA above passed. This verifies covered workflows, not every product claim or external integration.
 
-Current implementation: 299/299 tests passed in GitHub CI on `cacfa94c`; the recovered batch also passed CI on `452ae304`. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, serialized Client Care status writes, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
+Current implementation: 302/302 tests passed in GitHub CI on `576701ee`; the recovered batch also passed CI on `452ae304`. Executable regressions cover tenant-scoped normalized conversation pages and on-demand hydration, 125-thread/1,000-message rendering, contact history batching, admin mutation/drawer/inbox/analytics races, serialized Client Care status writes, client call-detail races, shared dialog accessibility, Stripe environment isolation, save/refresh/upload races, stale snapshots, transaction failures, metadata preservation and Settings read/write revision consistency; the latest full Preview acceptance is above.
 
 ## IMPLEMENTED BUT NOT FULLY VERIFIED
 
@@ -62,7 +62,7 @@ Current implementation: 299/299 tests passed in GitHub CI on `cacfa94c`; the rec
 
 ## Next authorized development backlog
 
-1. Continue client/admin shared-state consistency and accessibility review. Marketing campaign saves/deletes now protect the record and directory together and reject stale edits; campaign listing no longer silently cuts off after 250. Review campaign UX pending-action locks and other operational records next without repeating verified scope. Current regression coverage is not a claim that every dashboard action has been tested.
+1. Continue client/admin shared-state consistency and accessibility review. Marketing campaign mutations and modal pending-state behavior are now verified, including preserving failed drafts. Examine other operational records and a durable, transactional marketing audit trail next, avoiding repeated scope. Current regression coverage is not a claim that every dashboard action has been tested.
 2. Keep the normalized-conversation migration and rollback contract ready for a separately authorized production migration; the existing authenticated Preview workflow now verifies version 2 reads without changing production.
 3. Run dedicated voice lifecycle, disposable onboarding and Stripe test-mode/recovery scenarios only when the required provider test configuration is available. Live activation, production changes and new charges still need owner authorization.
 
@@ -361,3 +361,11 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Added regressions for create/edit/delete atomicity, stale edits, storage errors, index and capacity integrity, list coverage beyond 250, and frontend revision submission. Two test-only issues were corrected after inspecting CI failures: a cross-VM array assertion and an incorrect escaped function delimiter. The earlier erroring Preview belonged to a test-failing SHA; verification applies to the final SHA below.
 - Implementation `cacfa94c84ea85843b945913ea318595b78585e4`: GitHub CI 299 tests passed, 0 failed (`36198889956`), CodeQL `36198889970` / `36198886541`, Jekyll `36198889923`, authenticated Preview Browser QA `36198886587`: success. Vercel Preview `dpl_D19cm8m11fJd7wvyNWAkj2ZBhbtG`: READY. Production/main remained `37ef5cfcdccae35952822859f64fe83f0b9f09f0`.
 - Campaign mutations still lack a dedicated audit-history event; atomic marketing audit is future scope. This documentation-only follow-up is not claimed to have received the implementation SHA's QA. No main merge, production deployment, billing or provider activation occurred.
+
+## Campaign modal pending-state and draft-preservation follow-up — verified 2026-09-25
+
+- The marketing campaign modal now guards concurrent save/delete actions with a shared pending-action lock. While either mutation is awaiting confirmation, form controls, including modal dismissal, are disabled. Failed saves and deletions preserve the editable draft and display a recoverable inline error rather than closing the editor or silently losing input.
+- A confirmed campaign save now applies the server-returned record directly to the current admin view without a redundant post-save campaign-list fetch that could overwrite a newer local action. The modal closes only after the successful mutation, and the lock is released regardless of result.
+- Added VM-based frontend regression tests covering duplicate suppression, pending cancellation protection, stale/conflict errors, retryability and success state; updated the previous revision-submission test to expect the guarded delete handler's required campaign object. The first new tests exposed assertion/microtask issues; these were corrected after examining CI without disabling coverage. A previous Preview run failed waiting for a Vercel deployment at a CI-failing intermediate SHA; it is not a verified checkpoint.
+- Implementation `576701eeffc7e229482623d79f0f895e34475b49`: GitHub CI 302 passed, 0 failed (`36208725723`), CodeQL `36208725654` / `36208722379`, Jekyll `36208725584`, authenticated Preview Browser QA `36208722320`: success. Vercel Preview `dpl_2kZMXsD5ERKG2j26bvV7x9ar9oMd`: READY. Main was still `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; no production deployment, live record change, billing action or provider activation occurred.
+- The present documentation-only follow-up does not inherit implementation-specific browser verification.
