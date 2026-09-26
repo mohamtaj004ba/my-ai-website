@@ -125,3 +125,13 @@ test('unresolved paid checkouts reach the admin priority queue and Finance navig
  assert.match(ui,/item.type==='checkout-reconciliation'/);
  assert.match(ui,/setAdminNavBadge\('navBadgeFinance',\(adminClientsData\|\|\[\]\)\.filter\(x=>x.subscriptionStatus==='past_due'\)\.length\+\(adminFinanceData\.reconciliation\|\|\[\]\)\.length\)/);
 });
+
+test('Finance payment exceptions disclose unverified and failed refreshes rather than showing an unqualified empty queue',()=>{
+ const ui=fs.readFileSync('dashboard.js','utf8'),html=fs.readFileSync('admin-dashboard.html','utf8');
+ assert.match(html,/id="financeReconciliationStatus" role="status"/);
+ assert.match(ui,/adminFinanceLoadError='Finance has not yet been verified\.'/);
+ assert.match(ui,/else adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated\.'/);
+ assert.match(ui,/if\(key==='finance'\)adminFinanceLoadError='Finance could not refresh/);
+ assert.equal(ui.split("adminFinanceLoadError=''").length-1,3);
+ assert.match(ui,/reconciliationStatus\.textContent=adminFinanceLoadError/);
+});
