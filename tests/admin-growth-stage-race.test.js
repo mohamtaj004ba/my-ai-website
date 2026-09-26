@@ -83,3 +83,13 @@ test('incomplete success payload is not mistaken for confirmed stage change',asy
   assert.equal(f.old.stage,'new');
   assert.match(f.warnings[0],/not confirmed/);
 });
+
+test('pending Growth card visibly blocks dragging and opening a stale prospect editor',()=>{
+  const render=ui.slice(ui.indexOf('function renderGrowth(){'),ui.indexOf('const prospectStagePending=new Set();'));
+  const editor=ui.slice(ui.indexOf("function openProspectModal(id='',prefill={}){"),ui.indexOf('function closeProspectModal(',ui.indexOf("function openProspectModal(id='',prefill={}){")));
+  assert.match(render,/prospectStagePending\.has\(String\(p\.id\)\)\?' pending'/);
+  assert.match(render,/draggable="\'\+\(prospectStagePending\.has/);
+  assert.match(render,/aria-busy="\'\+String\(prospectStagePending\.has/);
+  assert.match(render,/dragstart',e=>\{if\(prospectStagePending\.has/);
+  assert.match(editor,/id&&prospectStagePending\.has\(String\(id\)\)/);
+});
