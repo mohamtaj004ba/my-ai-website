@@ -187,7 +187,10 @@ module.exports=async function handler(req,res){
   const paidPlan=normalizePlan(mappedPlan);
   const sessionKey=session.id?'stripe:session:'+session.id:null;
   let sessionState=sessionKey?await kv.get(sessionKey):null;
-  if(sessionState&&sessionState.status==='complete'){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,duplicate:true})}
+  if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
+    if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+    return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
+  }
 
   const leadId=session.client_reference_id;
   const customerEmail=String(session.customer_details?.email||'').trim().toLowerCase();
