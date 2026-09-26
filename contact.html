@@ -18,12 +18,16 @@ document.getElementById('contactForm').addEventListener('submit',async e=>{
   const d=new FormData(f);
   btn.disabled=true;btn.textContent='Sending…';
   try{
-    const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(d.entries()))});
-    if(!r.ok){const body=await r.json().catch(()=>({}));throw new Error(body.error||'send failed')}
-    f.hidden=true;document.getElementById('contactSuccess').hidden=false;
+    const payload=Object.fromEntries(d.entries()),a=window.CallerCoreAnalytics?.context||{};
+    Object.assign(payload,{visitorId:a.visitorId||'',sessionId:a.sessionId||'',utmSource:a.utmSource||'',utmMedium:a.utmMedium||'',utmCampaign:a.utmCampaign||''});
+    const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const body=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(body.error||'We could not confirm your inquiry was saved.');
+    f.hidden=true;const success=document.getElementById('contactSuccess');success.hidden=false;
+    const note=success.querySelector('p');if(note)note.textContent=body.warning||'Thanks for reaching out. We’ll be in touch.';
   }catch(err){
     status.className='form-status error';
-    status.textContent=err.message==='Too many requests. Please try again later.'?err.message:'We could not send your message. Please try again, or email support@callercore.com.';
+    status.textContent=err.message||'We could not confirm your inquiry was saved. Please email support@callercore.com if urgent.';
     btn.disabled=false;btn.textContent='Send message →';
   }
 });

@@ -1,103 +1,254 @@
-# CallerCore async onboarding — deployment
+# CallerCore deployment and release guide
 
-Everything in this folder is ready to commit as-is. Files mirror the repo
-structure, so you can drop the folder contents over the root of
-`mohamtaj004ba/my-ai-website`.
+Updated: 2026-09-21
 
----
+This repository now contains the public CallerCore site, client dashboard, admin operations dashboard, Smart Onboarding, Stripe/Mailgun/Gmail integrations, website analytics, support tooling, notifications, agreement generation, and related Vercel Functions.
 
-## Step 1 — Revoke the token you pasted
+Do **not** treat this as a simple static-site deploy. The current feature branch represents a substantial product release.
 
-Before anything else: **GitHub → Settings → Developer settings → Personal
-access tokens → delete the token you shared.** It was sent in plaintext and
-should be treated as compromised. Generate a fresh one only if you need it
-locally.
+## Hosting plan
 
----
+CallerCore is hosted on Vercel Pro. Commercial hosting is therefore confirmed for launch.
 
-## Step 2 — Commit these files
+## Release branch
 
-| File | New or modified |
-|---|---|
-| `onboarding.html` | **new** |
-| `index.html` | modified — onboarding FAQ answer rewritten for the async flow |
-| `get-started.html` | modified — submit handler now creates a lead record and tags the Stripe URL |
-| `package.json` | modified — adds `@vercel/kv` and `pdf-lib` |
-| `api/lead-create.js` | **new** |
-| `api/stripe-webhook.js` | **new** |
-| `api/onboarding-data.js` | **new** |
-| `api/onboarding-save.js` | **new** |
-| `api/onboarding-chat.js` | **new** |
-| `api/prefill-crawl.js` | **new** |
-| `api/agreement-pdf.js` | **new** |
-| `api/_lib/agreement-pdf.js` | **new** |
-| `api/_lib/agreement-clauses.js` | **new** |
-| `api/_lib/mailgun.js` | **new** |
-| `api/_lib/logo-base64.js` | **new** |
+Current development branch:
+`feature/callercore-dashboards`
 
-Easiest route without a token: on github.com, open the repo, use **Add file →
-Upload files**, drag this folder's contents in, and commit to `main`. Vercel
-picks it up automatically.
+Production branch:
+`main`
 
----
+Do not merge the feature branch to `main` until the production-readiness gates in `docs/PRODUCTION_READINESS.md` are satisfied and TJ explicitly approves the production release.
 
-## Step 3 — Dashboard setup
+Even after merge, customer payment creation remains closed unless `CALLERCORE_CHECKOUT_ENABLED=true`. Treat enabling that variable as a separate sales-open authorization after production validation.
 
-These four need your logins and involve secrets, so they're yours to do.
+## Automated checks
 
-**1. Vercel KV** (stores tokens, lead records, intake progress)
-Vercel → your project → Storage → Create Database → KV → connect to the project.
-It auto-injects `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Nothing to copy.
+Run:
 
-**2. Stripe webhook**
-Stripe → Developers → Webhooks → Add endpoint
-- URL: `https://www.callercore.com/api/stripe-webhook`
-- Event: `checkout.session.completed`
-- Copy the signing secret (`whsec_...`) → add to Vercel env vars as
-  `STRIPE_WEBHOOK_SECRET`
+```bash
+npm ci
+npm test
+```
 
-**3. Mailgun**
-Confirm you have a sending key for `mail.callercore.com` → add to Vercel env
-vars as `MAILGUN_API_KEY`.
+Vercel deployments also run the critical-path test suite through the package build command.
 
-**4. GHL webhook URL**
-Add to Vercel env vars as `GHL_WEBHOOK_URL`, set to the same webhook-trigger
-URL your other site forms already POST to. If you leave this unset, the GHL
-push is skipped silently and you'll still get the internal email alert.
+GitHub Actions runs the same tests on pushes to `main` and `feature/callercore-dashboards`, and on pull requests targeting `main`.
 
-Already set, nothing to do: `ANTHROPIC_API_KEY` (reused by the setup-help chat
-and the website lookup).
+## Required / expected environment variables
 
----
+The exact set depends on enabled features. Never commit secrets to the repository.
 
-## Step 4 — Test the loop with a Stripe test payment
+### Core persistence
+Vercel / Upstash KV variables such as:
+- `KV_REST_API_URL`
+- `KV_REST_API_TOKEN`
+- related Redis/KV connection variables injected by the connected store
 
-1. Go to `/get-started`, pick a plan, submit the form.
-2. Complete checkout with a Stripe test card.
-3. Welcome email should arrive with a magic link.
-4. Open it — agreement screen loads with your business name, plan, and date.
-5. Sign it. A branded PDF should land in your inbox, and the download link
-   should work.
-6. Start the intake form. Fill a few fields, **close the tab**, reopen the same
-   link — it should land you on the first incomplete step with answers intact.
-7. Finish and submit. You should get:
-   - an email to tj@callercore.com titled "Intake complete — [business]"
-   - a POST into GHL with `source: onboarding_intake_complete`
+### Site
+- `SITE_URL` — production should be `https://www.callercore.com`
+- `CALLERCORE_CHECKOUT_ENABLED` — keep unset/false until final launch approval; set exactly `true` only when sales are authorized
 
-If step 7 fires but GHL shows nothing, check that `GHL_WEBHOOK_URL` is set and
-that the workflow trigger is published.
+### Mailgun
+- `MAILGUN_API_KEY`
+- `MAILGUN_DOMAIN` — production/preview should be `notify.callercore.com`
+- optional `MAILGUN_FROM`
+- optional `SUPPORT_EMAIL`
 
----
+The active Mailgun sending domain is `notify.callercore.com`. Legacy `mail.callercore.com` DNS is from the prior GHL setup and is not an application fallback.
 
-## Notes
+### Stripe
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- optional `STRIPE_STARTER_PRICE_ID`
+- optional `STRIPE_GROWTH_PRICE_ID`
+- optional `STRIPE_PRO_PRICE_ID`
+- optional `STRIPE_SETUP_PRICE_ID`
 
-- The GHL push and the internal email both fire only once, the first time the
-  intake becomes complete. Re-saves after that won't duplicate.
-- If Mailgun or GHL fail, the intake is still saved and the client still sees
-  their confirmation — failures are logged, not surfaced to the client.
-- Agreement wording lives in one place, `api/_lib/agreement-clauses.js`, which
-  the PDF imports. If you change terms, change them there and mirror the same
-  wording in the document markup in `onboarding.html`.
-- Still outstanding, not blocking launch: a lawyer's pass over the agreement
-  before the first real signature, especially Section 13 (regulated data) if
-  you sign a medical or dental client.
+CallerCore uses Stripe Embedded Checkout on `/get-started`. The server creates the Checkout Session and sends only the publishable key plus the Session client secret to the browser. Card data is collected directly by Stripe.
+
+The current live CallerCore prices are used as safe source defaults; the optional Price-ID environment variables allow a future catalog migration without changing application code.
+
+Webhook endpoint:
+`https://www.callercore.com/api/stripe-webhook`
+
+Subscribe the endpoint to the events CallerCore handles:
+- `checkout.session.completed`
+- `checkout.session.async_payment_succeeded`
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+- `invoice.payment_failed`
+- `invoice.paid`
+
+The webhook verifies Stripe signatures and deduplicates event IDs.
+
+Before production launch, verify in Stripe that the `https://www.callercore.com/api/stripe-webhook` endpoint is enabled for every event above. CallerCore System Health checks this live and reports any missing events.
+
+CallerCore's live Stripe Customer Portal configuration is active. The dashboard's **Manage billing** action creates Stripe Billing Portal sessions.
+
+### Google / Gmail
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `CALLERCORE_ENCRYPTION_KEY`
+
+Gmail is intentionally admin-only for the initial launch and requests only `gmail.modify`. Do not expose customer Gmail connections until the external OAuth verification/security-assessment path is addressed.
+
+Production OAuth callback:
+`https://www.callercore.com/api/google-oauth-callback`
+
+Gmail refresh/access tokens are encrypted before being stored.
+
+### Smart Onboarding
+- `ANTHROPIC_API_KEY`
+
+Used for website extraction and conservative first-draft agent configuration. Onboarding falls back to deterministic configuration when the model call is unavailable.
+
+### Live demo protection
+- `DEMO_TOKEN_SECRET`
+- optional `DEMO_PHONE_NUMBER`
+- optional `DEMO_PHONE_NUMBER_DISPLAY`
+
+`DEMO_TOKEN_SECRET` is required for the reveal-token flow. There is intentionally no source-code fallback secret. Use a long random value and scope it through Vercel environment variables.
+
+### Preview bootstrap
+- `CALLERCORE_BOOTSTRAP_SECRET`
+
+Keep this preview-scoped wherever possible. The bootstrap endpoint refuses non-Vercel preview hosts.
+
+### Voice
+- Vapi credentials are not yet part of the completed production core. Configure them only during the dedicated voice-engine implementation session.
+
+## Stripe checkout → managed onboarding
+
+The expected customer lifecycle is now:
+
+1. Customer chooses a plan and enters business details on CallerCore.
+2. CallerCore creates a tracked Stripe Embedded Checkout Session.
+3. Payment completes inside CallerCore and Stripe redirects to `/checkout-complete`.
+4. Stripe webhook creates/updates the CallerCore workspace.
+5. Client receives a branded payment-confirmation email.
+6. Account enters a two-business-hour managed review hold.
+7. Admin reviews and clicks **Approve & send onboarding**.
+8. Client receives the secure onboarding link.
+9. Client signs the versioned Service Agreement.
+10. Client completes Smart Onboarding / website scan / intake.
+11. CallerCore creates the initial business profile, location, routing request, and agent draft.
+12. Client receives an intake-received confirmation.
+13. Build enters a one-business-hour QA hold.
+14. Admin approves the build.
+15. Test stage, client approval, and final launch follow.
+14. Live confirmation is sent only when the account is actually marked Live.
+
+Business-hour holds currently use Monday-Friday, 9 AM-5 PM Pacific.
+
+## Agreement behavior
+
+Agreement terms live in:
+`api/_lib/agreement-clauses.js`
+
+New signatures freeze:
+- agreement version
+- effective date
+- exact clauses
+- signer name
+- signing timestamp
+- selected-plan snapshot
+
+Signed PDFs are regenerated from the stored snapshot so later agreement edits do not change historical contracts.
+
+## Email behavior
+
+Customer-facing auth and lifecycle messages use the shared branded system in:
+`lib/email-template.js`
+
+Lifecycle emails include support/contact paths by default.
+
+Mailgun helpers set a Reply-To address so customers can reply normally.
+
+## Security notes
+
+Current controls include:
+- Stripe webhook signature verification
+- webhook event idempotency
+- HttpOnly / SameSite sessions
+- session-version revocation
+- admin role checks
+- workspace/tenant authorization
+- same-origin rejection for account POST mutations
+- encrypted Gmail OAuth tokens
+- SSRF protections in Smart Onboarding website scanning
+- CSP / HSTS / frame / MIME / referrer headers
+- preview bootstrap secret + preview-host restriction
+
+A focused security review is still required before broad production launch.
+
+## Deferred feature flags
+
+- `CALLERCORE_CALENDAR_ENABLED` — leave unset/false for the initial launch. Appointment/calendar UI and server-side triggers remain disabled until a production calendar integration is ready.
+- `CALLERCORE_SMS_ENABLED` — leave unset/false for the initial launch. SMS controls/actions remain disabled until provider, consent, STOP/HELP, delivery-state and carrier/A2P requirements are complete.
+
+Do not enable either flag merely to expose unfinished UI.
+
+## Preview KV isolation
+
+Preview uses a dedicated Upstash Redis resource through `PREVIEW_KV_*` environment variables. `lib/kv.js` maps those credentials only when `VERCEL_ENV=preview` and fails closed if they are missing, so Preview cannot silently fall back to Production KV. The deployed Preview health endpoint must report `storage: preview-isolated` before any destructive test data is created.
+
+## Preview QA prerequisite
+
+Keep Vercel Preview Protection enabled. Automated preview QA should use Vercel Protection Bypass for Automation rather than disabling protection. Preview KV connectivity and protected-browser QA remain pending until that bypass is configured.
+
+
+## Verified rollback baseline
+
+Before PR #5 is merged, the current production baseline is:
+
+- Deployment ID: `dpl_DkoEXfYyfenw7Hee18cmwygc92fV`
+- Main commit: `7cc9562e71bcc63ccc3bcec390a1a601fba2b874`
+- State: READY
+- Production aliases: `callercore.com` and `www.callercore.com`
+
+Treat this deployment as the pre-release rollback target after PR #5 ships. Do not perform a rollback merely as a test because that changes live production traffic.
+
+If a post-merge production regression is material:
+1. confirm the failure in production health/logs;
+2. roll production back to `dpl_DkoEXfYyfenw7Hee18cmwygc92fV` using Vercel's rollback control;
+3. confirm the aliases point to the restored deployment;
+4. check production 5xx/error logs over the next several minutes;
+5. keep checkout disabled until the release is revalidated;
+6. fix the regression on the feature/fix branch and repeat preview + CI validation before a new production deployment.
+
+Vercel Pro supports rollback to a previous deployment by deployment ID or URL. The rollback changes production routing; it does not rebuild the old deployment.
+
+## Production smoke test
+
+Before merging to production, run one disposable client through the entire path:
+
+1. Get Started form
+2. Stripe test checkout
+3. payment confirmation
+4. Admin review hold
+5. onboarding invite
+6. agreement signing
+7. signed PDF delivery
+8. website scan
+9. intake autosave / resume
+10. final intake submission
+11. generated workspace/agent/routing data
+12. Admin QA approval
+13. test-call stage
+14. client approval
+15. Live activation
+16. client dashboard access
+17. support request
+18. billing lifecycle event
+
+When Vapi is implemented, extend this smoke test through a real test call, transcript, recording, lead creation, usage aggregation, and analytics.
+
+## Related documents
+
+- `docs/PRODUCTION_READINESS.md`
+- `docs/TJ_DECISION_BACKLOG.md`
+
+These are the current sources of truth for remaining release work and owner-authorized decisions.

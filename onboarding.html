@@ -91,7 +91,13 @@
   .ob-submit:hover, .ob-agree-btn:hover{background:var(--signal-dim);}
   .ob-submit:disabled{opacity:0.5; cursor:not-allowed;}
 
-  .ob-autosave-note{text-align:center; font-size:12.5px; color:var(--steel); margin-top:10px;}
+  .ob-autosave-note{text-align:center; font-size:12.5px; color:var(--steel); margin-top:10px; min-height:18px; transition:color .18s ease,opacity .18s ease;}
+  .ob-autosave-note.saving{color:var(--signal);}
+  .ob-autosave-note.saved{color:#2f7b59;}
+  .ob-autosave-note.error{color:#b5483f;}
+  .ob-autosave-note.saving::before{content:"";display:inline-block;width:8px;height:8px;margin-right:7px;border:1.5px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-1px;animation:obSaveSpin .65s linear infinite}
+  @keyframes obSaveSpin{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){.ob-autosave-note{transition:none}.ob-autosave-note.saving::before{animation:none}}
 
   .ob-agreement-letterhead{text-align:center; margin-bottom:18px;}
   .ob-agreement-logo{height:34px; width:auto;}
@@ -179,7 +185,7 @@
   .ob-next-step div{font-family:'Inter',sans-serif; font-size:14px; line-height:1.55; color:#C9CDD3; text-align:left;}
   .ob-next-step b{color:var(--paper);}
   .ob-done-card .ob-check{width:56px; height:56px; border-radius:50%; background:var(--good); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;}
-  .ob-support-line{text-align:center; font-size:13.5px; color:var(--steel); margin-top:24px;}
+  .ob-dashboard-link{display:inline-flex;align-items:center;justify-content:center;margin:28px auto 0;background:var(--signal);color:#fff;text-decoration:none;border-radius:10px;padding:13px 18px;font:700 14px 'Inter',sans-serif;}.ob-dashboard-link:hover{background:var(--signal-dim);}\n  .ob-support-line{text-align:center; font-size:13.5px; color:var(--steel); margin-top:24px;}
   .ob-support-line a{color:var(--signal);}
 
   .ob-loading, .ob-error{text-align:center; color:var(--steel); padding:80px 20px; font-family:'Inter',sans-serif;}
@@ -207,7 +213,7 @@ footer{background:#20201d!important}
     <section class="subhero">
       <span class="eyebrow" id="obEyebrow">● YOUR SETUP</span>
       <h1 id="obGreeting">Welcome</h1>
-      <p class="sub" id="obHeroSub">Sign your service agreement and tell us about your business. We start building the moment your intake form is complete — most accounts go live within 1 business day after that.</p>
+      <p class="sub" id="obHeroSub">Sign your service agreement, scan your website if you have one, and confirm the details CallerCore needs. Your answers become your live business profile and first AI-agent draft — no re-entering the same information later.</p>
     </section>
 
     <div class="ob-steps" aria-label="Onboarding progress">
@@ -237,90 +243,17 @@ footer{background:#20201d!important}
               <div class="ob-doc-meta-row"><div class="ob-doc-meta-k">Between</div><div class="ob-doc-meta-v">CallerCore</div></div>
               <div class="ob-doc-meta-row"><div class="ob-doc-meta-k">And</div><div class="ob-doc-meta-v" id="docMetaBusiness">—</div></div>
               <div class="ob-doc-meta-row"><div class="ob-doc-meta-k">Plan</div><div class="ob-doc-meta-v" id="docMetaPlan">—</div></div>
+              <div class="ob-doc-meta-row"><div class="ob-doc-meta-k">Agreement</div><div class="ob-doc-meta-v" id="docMetaVersion">—</div></div>
               <div class="ob-doc-meta-row"><div class="ob-doc-meta-k">Date</div><div class="ob-doc-meta-v" id="docMetaDate">—</div></div>
             </div>
-          <h3>1. Services</h3>
-          <p>CallerCore will configure, deploy, and maintain an AI-powered call handling and lead management system ("the Service") for Client's business, as configured during onboarding. Depending on Client's selected plan, the Service may include: automated answering of inbound calls; caller intake and urgency triage; automated follow-up messaging; escalation notifications; call recording and transcription; a lead dashboard; appointment booking; and outbound SMS campaigns. Features vary by plan, and the plan selected at signup governs what is included.</p>
-
-          <h3>2. Client responsibilities</h3>
-          <p>Client agrees to: (a) provide accurate and current business information during onboarding, including services offered, hours, service area, urgency definitions, and escalation contacts; (b) complete any carrier-side call forwarding required to route calls to the Service; (c) keep escalation contact details current; and (d) notify CallerCore of material changes to the business that would affect how calls should be handled. The Service's accuracy depends on the information Client provides.</p>
-
-          <h3>3. Acceptable use</h3>
-          <p>Client will not use the Service to: transmit unlawful, harassing, fraudulent, or deceptive content; impersonate another business or individual; violate any applicable telecommunications, consumer protection, or privacy law; or resell or provide the Service to third parties without CallerCore's written consent. CallerCore may suspend the Service, with notice where practicable, if it reasonably believes it is being used in violation of this Section.</p>
-
-          <h3>4. Fees &amp; payment</h3>
-          <p><b>4.1 Setup fee.</b> A one-time setup fee of $500 is due at signup. This fee is non-refundable, as it covers configuration and build labor already performed.</p>
-          <p><b>4.2 Monthly subscription.</b> Client is billed monthly in advance according to the selected plan.</p>
-          <p><b>4.3 Recurring billing authorization.</b> Client authorizes CallerCore to charge the payment method on file, on a recurring basis, for the monthly subscription fee and any applicable overage or fees, until this Agreement is cancelled under Section 6. Client is responsible for keeping payment details current.</p>
-          <p><b>4.4 Overage.</b> Minutes beyond the plan's included minutes are billed at $0.30 per minute in arrears.</p>
-          <p><b>4.5 Failed or late payment.</b> If a payment fails, CallerCore may retry the payment method and will notify Client. If payment remains outstanding after fourteen (14) days, CallerCore may suspend the Service until the balance is cleared. Suspension does not delete Client data.</p>
-          <p><b>4.6 Price changes.</b> CallerCore may change subscription pricing with at least thirty (30) days' written notice. Changes take effect at the start of the next billing period, and Client may cancel under Section 6 before the new pricing applies.</p>
-          <p><b>4.7 Taxes.</b> Fees are exclusive of any applicable sales, use, or telecommunications taxes, which are Client's responsibility.</p>
-          <p><b>4.8 No long-term contract.</b> This Agreement has no minimum term. Either party may cancel per Section 6.</p>
-
-          <h3>5. Guarantee</h3>
-          <p>If Client is not satisfied within thirty (30) days of go-live, CallerCore will refund the monthly subscription fee for that period in full upon request. The setup fee is non-refundable.</p>
-
-          <h3>6. Term &amp; cancellation</h3>
-          <p>This Agreement continues month-to-month. Either party may cancel at any time with written notice (email is sufficient); cancellation is effective at the end of the then-current billing period. Fees already paid for the current period are not prorated except as provided in Section 5. CallerCore may suspend or terminate the Service for non-payment or for breach of Sections 3, 12, or 13, with notice where practicable.</p>
-
-          <h3>7. Service availability &amp; third-party dependencies</h3>
-          <p>The Service depends on third-party providers including telephony carriers, voice and language model providers, and CRM platforms. CallerCore does not guarantee uninterrupted or error-free operation and does not offer a contractual uptime commitment. CallerCore is not liable for interruptions, degradation, or failures caused by third-party providers, carrier outages, or events outside its reasonable control, but will use commercially reasonable efforts to restore the Service promptly and to notify Client of material disruptions.</p>
-
-          <h3>8. Warranty disclaimer</h3>
-          <p>EXCEPT AS EXPRESSLY STATED IN THIS AGREEMENT, THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE." CALLERCORE DISCLAIMS ALL OTHER WARRANTIES, EXPRESS OR IMPLIED, INCLUDING ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. CallerCore does not warrant that the Service will capture every lead, correctly classify every call, or produce any particular business result.</p>
-
-          <h3>9. Service limitations &amp; liability</h3>
-          <p>The Service is automated and, like any phone or software system, may occasionally misroute, misinterpret, or fail to fully resolve an individual call. CallerCore's total aggregate liability for any claim arising out of or relating to this Agreement or the Service is limited to the fees Client paid to CallerCore in the three (3) months preceding the event giving rise to the claim. CallerCore is not liable for indirect, incidental, consequential, special, punitive, or lost-profit damages, or for lost business opportunities, even if advised of the possibility. All calls are recorded and reviewed; identified issues are corrected and, where appropriate, escalated to Client the same business day. The Service is not a substitute for emergency services, and callers reporting life-safety emergencies are directed to contact 911 or the appropriate utility.</p>
-
-          <h3>10. Indemnification</h3>
-          <p>Client will defend, indemnify, and hold harmless CallerCore and its officers, employees, and contractors from any third-party claim, demand, penalty, or proceeding — including reasonable attorneys' fees — arising out of: (a) Client's breach of Sections 3, 12, or 13; (b) content, contact lists, or instructions Client provides; (c) Client's violation of any applicable law, including the Telephone Consumer Protection Act or state recording-consent laws; or (d) Client's business operations or the services Client delivers to its own customers. CallerCore will promptly notify Client of any such claim and may participate in its defense with counsel of its own choosing at its own expense.</p>
-
-          <h3>11. Call recording &amp; consent</h3>
-          <p>All calls handled by the Service are recorded and transcribed for quality assurance and lead-capture purposes. Client's AI agent greeting includes a recording disclosure to callers consistent with applicable law, including Washington's all-party consent requirement where applicable. Client authorizes CallerCore to record calls placed to Client's business line on Client's behalf, and is responsible for ensuring that recording practices comply with the laws of the jurisdictions in which Client and its callers are located.</p>
-
-          <h3>12. Messaging, consent &amp; compliance</h3>
-          <p>Where Client's plan includes SMS features, Client is responsible for ensuring it has a lawful basis to message the recipients it provides, and agrees not to use the Service to send unsolicited messages to purchased, scraped, or otherwise non-consented lists. Automated follow-up messages to individuals who have just contacted Client's business are sent on Client's behalf. Client agrees to comply with the Telephone Consumer Protection Act and applicable messaging regulations, and CallerCore may suspend messaging features if it reasonably believes they are being used in violation of those rules. Opt-out handling is enabled by default and may not be disabled.</p>
-
-          <h3>13. Regulated &amp; sensitive data</h3>
-          <p><b>The Service is not designed for, and is not certified as compliant with, HIPAA, PCI-DSS, GLBA, or similar regulatory frameworks.</b> Client must not use the Service to collect, transmit, or store protected health information, payment card data, financial account numbers, government identification numbers, or other regulated sensitive data, and must configure its AI agent so that callers are not prompted to provide such information. Client is solely responsible for any regulated data it causes to enter the Service. If Client operates in a regulated industry and requires a compliant configuration, it must contact CallerCore in writing before go-live so that a separate arrangement, including any required business associate agreement, can be evaluated.</p>
-
-          <h3>14. Client data &amp; ownership</h3>
-          <p>All call transcripts, lead data, and business configuration information collected through the Service belong to Client. CallerCore processes this data solely to provide and improve the Service for Client, and will not sell it. CallerCore may use aggregated, de-identified usage data that does not identify Client or any caller to operate and improve the Service. Upon cancellation, CallerCore will export and provide Client's contact and lead data upon request, and will retain data thereafter only as long as reasonably necessary or as required by law.</p>
-
-          <h3>15. Intellectual property</h3>
-          <p>CallerCore retains all right, title, and interest in the Service, including its software, prompt engineering, agent templates, configurations, workflows, and documentation, together with any improvements to them. Nothing in this Agreement transfers ownership of the Service to Client. Client is granted a non-exclusive, non-transferable right to use the Service during the term. Client retains all rights to its own business name, marks, content, and data, and grants CallerCore a limited licence to use them solely to provide the Service.</p>
-
-          <h3>16. Confidentiality</h3>
-          <p>Each party agrees to keep confidential any non-public business information disclosed by the other party in connection with this Agreement, to use it only for purposes of this Agreement, and to protect it with at least reasonable care. This obligation does not apply to information that is publicly available, independently developed, or lawfully obtained from a third party, or where disclosure is required by law.</p>
-
-          <h3>17. Independent contractor</h3>
-          <p>CallerCore provides the Service as an independent contractor, not as an employee, partner, agent, or joint venturer of Client, except to the limited extent it acts on Client's behalf in answering calls and sending messages as configured by Client.</p>
-
-          <h3>18. Force majeure</h3>
-          <p>Neither party is liable for any failure or delay in performance caused by events beyond its reasonable control, including natural disasters, war, terrorism, labor disputes, government action, widespread internet or telecommunications failure, or third-party provider outages. This does not excuse Client's obligation to pay fees for Services already provided.</p>
-
-          <h3>19. Assignment</h3>
-          <p>Neither party may assign this Agreement without the other party's written consent, except that either party may assign it in connection with a merger, acquisition, or sale of substantially all of its assets, with notice to the other party.</p>
-
-          <h3>20. Notices</h3>
-          <p>Notices under this Agreement may be given by email to the addresses the parties have on file — for CallerCore, support@callercore.com, and for Client, the contact email provided during onboarding. Notice is deemed received on the next business day after sending, provided no delivery failure is received. Each party is responsible for keeping its contact email current.</p>
-
-          <h3>21. Governing law &amp; venue</h3>
-          <p>This Agreement is governed by the laws of the State of Washington, without regard to conflict-of-laws principles. The parties submit to the exclusive jurisdiction of the state and federal courts located in Spokane County, Washington, and each party waives any objection to venue in those courts.</p>
-
-          <h3>22. Severability &amp; survival</h3>
-          <p>If any provision of this Agreement is held unenforceable, that provision will be limited or severed to the minimum extent necessary and the remainder will remain in full force. Sections 8, 9, 10, 13, 14, 15, 16, 21, and 22 survive termination of this Agreement.</p>
-
-          <h3>23. Entire agreement &amp; modifications</h3>
-          <p>This Agreement, together with the plan details confirmed at signup, constitutes the entire agreement between the parties regarding the Service and supersedes any prior discussions or representations. Any modification must be in writing and agreed by both parties. A failure to enforce any provision is not a waiver of the right to enforce it later.</p>
+          <div id="agreementClauses"></div>
           </div>
           <div class="ob-doc-foot">
             <span>CallerCore · support@callercore.com</span>
-            <span>23 sections</span>
+            <span id="agreementSectionCount">Agreement terms</span>
           </div>
         </div>
-        <p class="ob-agreement-scrollnote" id="agreeScrollNote">Scroll to read the full agreement — 23 sections</p>
+        <p class="ob-agreement-scrollnote" id="agreeScrollNote">Scroll to read the full agreement</p>
 
         <div class="ob-sign-block">
           <div class="ob-sign-head">Agreement details</div>
@@ -360,7 +293,7 @@ footer{background:#20201d!important}
       <!-- STEP 2: INTAKE -->
       <section class="ob-card" id="intakeCard" style="display:none;">
         <h2 id="intakeCardTitle">Your business</h2>
-        <p class="ob-sub" id="intakeCardSub">Your answers save automatically — close this anytime and pick up where you left off.</p>
+        <p class="ob-sub" id="intakeCardSub">Your answers save automatically. Confirm them once here and CallerCore will use them to build your dashboard and AI-agent draft.</p>
 
         <div class="ob-wizard-label">
           <span id="wizardStepLabel">Step 1 of 5 — Your business</span>
@@ -382,8 +315,8 @@ footer{background:#20201d!important}
             <div class="ob-prefill-block">
               <label>Have a website? Paste it and we'll pull what we can find.</label>
               <div class="ob-prefill">
-                <input type="text" id="prefillUrl" placeholder="yourbusiness.com (optional)">
-                <button type="button" class="ob-agree-btn" id="prefillBtn" style="width:auto; padding:11px 18px;">Look it up</button>
+                <input type="text" id="prefillUrl" data-field="website" placeholder="yourbusiness.com (optional)" autocomplete="url">
+                <button type="button" class="ob-agree-btn" id="prefillBtn" style="width:auto; padding:11px 18px;">Scan website</button>
               </div>
               <div class="ob-prefill-status" id="prefillStatus"></div>
               <button type="button" class="ob-skip" id="skipPrefillBtn">No website — I'll fill it in manually</button>
@@ -410,7 +343,6 @@ footer{background:#20201d!important}
             <select data-field="industry" id="industrySelect" required>
               <option value="" disabled selected>Choose one</option>
               <option>Trades &amp; Construction (plumbing, HVAC, electrical, construction, roofing, etc.)</option>
-              <option>Medical &amp; Dental</option>
               <option>Veterinary</option>
               <option>Legal</option>
               <option>Real Estate</option>
@@ -490,11 +422,6 @@ footer{background:#20201d!important}
               <label class="req cond-req" data-cond-field="gasUtility">Local gas utility company</label>
               <p class="ob-field-note" style="margin-top:-8px;">If a caller reports a gas smell, the AI will tell them to leave the building and call this utility or 911 before anything else.</p>
               <input type="text" data-field="gasUtility" placeholder="e.g. Avista">
-            </div>
-
-            <div class="ob-conditional" data-show-for="Medical &amp; Dental">
-              <label>Insurance/intake info needed before booking? (optional)</label>
-              <input type="text" data-field="insuranceInfo" placeholder="e.g. insurance carrier and member ID">
             </div>
 
             <div class="ob-conditional" data-show-for="Veterinary">
@@ -653,7 +580,7 @@ footer{background:#20201d!important}
           <!-- STEP 4 — How the AI should sound -->
           <div class="ob-step-panel" data-step-panel="4">
             <label>Do you have a specific greeting preference? (optional)</label>
-            <p class="ob-field-note" style="margin-top:-8px;">If you leave this blank we'll use something natural like "Thanks for calling [your business], how can I help?" — plus a recording disclosure, which we add automatically.</p>
+            <p class="ob-field-note" style="margin-top:-8px;">If you leave this blank we'll use something natural like "Thanks for calling [your business], how can I help?" If recording is enabled for your approved setup, the required recording disclosure will be configured as part of voice QA before go-live.</p>
             <input type="text" data-field="greeting" placeholder="e.g. Thanks for calling Summit Plumbing, this is Sam">
             <label>What tone should the AI use? (optional)</label>
             <select data-field="tone">
@@ -715,26 +642,27 @@ footer{background:#20201d!important}
       <section class="ob-card ob-done-card" id="doneCard" style="display:none;">
         <div class="ob-check"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><path d="M20 6 9 17l-5-5"/></svg></div>
         <h2>You're all set — here's exactly what happens next</h2>
-        <p class="ob-sub">Nothing else to schedule. The rest of this runs over text and email.</p>
+        <p class="ob-sub">Your answers are saved and CallerCore has created your first business profile and AI-agent draft. You can now watch setup progress from your client dashboard.</p>
 
         <div class="ob-next-steps">
           <div class="ob-next-step">
             <span class="ob-next-num">1</span>
-            <div><b>We start building today.</b> Your intake form is what kicks off the build — we begin the same day it comes in.</div>
+            <div><b>Your setup enters build review.</b> CallerCore prepares the initial business profile, AI-agent configuration, and routing plan from what you submitted, then our team reviews it before the next step.</div>
           </div>
           <div class="ob-next-step">
             <span class="ob-next-num">2</span>
-            <div><b>You'll get a text with a test link.</b> Before anything touches your real number, you can call your AI yourself, try a few scenarios, and confirm it sounds right.</div>
+            <div><b>We’ll notify you when testing is ready.</b> Before anything touches your live call flow, you’ll be able to review the setup and test the AI experience from your CallerCore dashboard.</div>
           </div>
           <div class="ob-next-step">
             <span class="ob-next-num">3</span>
-            <div><b>We send you what you need to go live.</b> If you chose to forward your existing number, you'll get your carrier's forwarding code with short instructions. If you chose a new number, we send that instead.</div>
+            <div><b>We finish routing and launch preparation.</b> If your setup requires forwarding an existing number or activating a CallerCore number, we’ll provide the appropriate instructions when that stage is ready.</div>
           </div>
           <div class="ob-next-step">
             <span class="ob-next-num">4</span>
-            <div><b>Most accounts are live within 1 business day</b> of the intake form being submitted.</div>
+            <div><b>Launch timing depends on the setup.</b> Complete information usually moves quickly, while phone provisioning, integrations, or changes found during review can add time. Your dashboard will always show the current stage.</div>
           </div>
         </div>
+        <a class="ob-dashboard-link" href="/dashboard">Open my CallerCore dashboard →</a>
       </section>
 
       <p class="ob-support-line">Questions any time? Use the chat in the corner, or text/email <a href="mailto:support@callercore.com">support@callercore.com</a>.</p>
@@ -748,6 +676,19 @@ footer{background:#20201d!important}
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   const $ = (id) => document.getElementById(id);
+  const escapeHtml = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  function renderAgreementTerms(agreement) {
+    const wrap=$('agreementClauses'); if(!wrap) return;
+    const clauses=Array.isArray(agreement?.clauses)?agreement.clauses:[];
+    wrap.innerHTML=clauses.map(([title,body])=>{
+      const blocks=String(body||'').split('\n').filter(Boolean).map(p=>'<p>'+escapeHtml(p)+'</p>').join('');
+      return '<h3>'+escapeHtml(title)+'</h3>'+blocks;
+    }).join('');
+    const count=clauses.length;
+    const countEl=$('agreementSectionCount'); if(countEl)countEl.textContent=count+' sections';
+    const note=$('agreeScrollNote'); if(note)note.textContent='Scroll to read the full agreement — '+count+' sections';
+    const version=$('docMetaVersion'); if(version)version.textContent='v'+String(agreement?.version||'')+(agreement?.effectiveDate?' · effective '+agreement.effectiveDate:'');
+  }
 
   if (!token) {
     $('obLoading').style.display = 'none';
@@ -796,6 +737,8 @@ footer{background:#20201d!important}
     $('docMetaBusiness').textContent = record.business || '—';
     $('docMetaPlan').textContent = record.plan || '—';
     $('docMetaDate').textContent = todayStr;
+    renderAgreementTerms(record.agreement||{});
+
 
     if (record.agreementSigned) {
       $('agreementCard').style.display = 'none';
@@ -1043,7 +986,6 @@ footer{background:#20201d!important}
   // --- Conditional fields: industry (step 2 trade-specific fields) ---
   const EXAMPLE_MAP = {
     'Trades & Construction (plumbing, HVAC, electrical, construction, roofing, etc.)': { routine: 'e.g. requesting a quote for a small repair', urgent: "e.g. something that needs attention today, but isn't a safety issue", emergency: 'e.g. a safety issue needing an immediate response' },
-    'Medical & Dental': { routine: 'e.g. scheduling a routine cleaning or checkup', urgent: 'e.g. severe tooth pain or worsening symptoms', emergency: 'e.g. difficulty breathing or a severe allergic reaction' },
     'Veterinary': { routine: 'e.g. scheduling a wellness exam or vaccination', urgent: 'e.g. pet not eating or acting lethargic', emergency: 'e.g. pet hit by a car or actively bleeding' },
     'Legal': { routine: 'e.g. scheduling an initial consultation', urgent: 'e.g. a filing deadline later this week', emergency: 'e.g. a client was just arrested' },
     'Real Estate': { routine: 'e.g. asking about a listing', urgent: 'e.g. an offer deadline today', emergency: 'e.g. a deal about to fall through over a time-sensitive issue' },
@@ -1229,10 +1171,12 @@ footer{background:#20201d!important}
   const PREFILLABLE = [
     { key: 'businessName', field: 'businessName', label: 'Business name', step: 1 },
     { key: 'phone',        field: 'phone',        label: 'Best contact phone', step: 1 },
+    { key: 'email',        field: 'email',        label: 'Business email', step: 1 },
     { key: 'address',      field: 'address',      label: 'Business address', step: 1 },
     { key: 'serviceArea',  field: 'serviceArea',  label: 'Service area', step: 1 },
     { key: 'servicesOffered', field: 'servicesOffered', label: 'Services you offer', step: 2 },
-    { key: 'hours',        field: 'hours',        label: 'Business hours', step: 2 }
+    { key: 'hours',        field: 'hours',        label: 'Business hours', step: 2 },
+    { key: 'faqs',         field: 'faqs',         label: 'Common questions & answers', step: 4 }
   ];
 
   function showPrefillReview(fields) {
@@ -1273,14 +1217,14 @@ footer{background:#20201d!important}
     try {
       const res = await fetch('/api/prefill-crawl', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url, token })
       });
       const data = await res.json();
       if (!data.ok || !showPrefillReview(data.fields)) {
         $('prefillStatus').textContent = "Couldn't pull anything usable from that site — no problem, just fill the form in below.";
         $('prefillStatus').className = 'ob-prefill-status fail';
       } else {
-        $('prefillStatus').textContent = 'Found a few things. Check them over before we drop them into the form.';
+        $('prefillStatus').textContent = 'Scanned ' + (data.pagesScanned || 1) + ' page' + ((data.pagesScanned || 1) === 1 ? '' : 's') + ' and found ' + (data.foundCount || 'several') + ' useful details. Check them before applying.';
         $('prefillStatus').className = 'ob-prefill-status ok';
       }
     } catch (e) {
@@ -1288,7 +1232,7 @@ footer{background:#20201d!important}
       $('prefillStatus').className = 'ob-prefill-status fail';
     }
     $('prefillBtn').disabled = false;
-    $('prefillBtn').textContent = 'Look it up';
+    $('prefillBtn').textContent = 'Scan website';
   });
 
   $('prefillApply').addEventListener('click', () => {
@@ -1337,21 +1281,46 @@ footer{background:#20201d!important}
     return fields;
   }
 
+  function setAutosaveState(state, message) {
+    const note = $('autosaveNote');
+    note.classList.remove('saving','saved','error');
+    if (state) note.classList.add(state);
+    note.textContent = message;
+  }
+
+  async function saveIntakeNow({ keepalive = false } = {}) {
+    const res = await fetch('/api/onboarding-save', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ token, type: 'intake', fields: collectIntakeFields() }),
+      keepalive
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(()=>({}));
+      throw new Error(data.error || 'Autosave failed');
+    }
+    return true;
+  }
+
   function scheduleSave() {
     clearTimeout(saveTimer);
-    $('autosaveNote').textContent = 'Saving…';
+    setAutosaveState('saving', 'Saving your progress…');
     saveTimer = setTimeout(async () => {
       try {
-        await fetch('/api/onboarding-save', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ token, type: 'intake', fields: collectIntakeFields() })
-        });
-        $('autosaveNote').textContent = 'Saved ✓ — close anytime, your progress is kept';
+        await saveIntakeNow();
+        setAutosaveState('saved', 'Saved ✓ — close anytime, your progress is kept');
       } catch (e) {
-        $('autosaveNote').textContent = 'Could not save just now — check your connection';
+        setAutosaveState('error', 'Not saved yet — check your connection and keep this page open');
       }
-    }, 700);
+    }, 650);
   }
+
+  window.addEventListener('pagehide', () => {
+    if (!saveTimer) return;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    saveIntakeNow({ keepalive: true }).catch(()=>{});
+  });
 
   document.querySelectorAll('#intakeForm [data-field]').forEach((el) => {
     el.addEventListener('change', scheduleSave);
@@ -1372,10 +1341,13 @@ footer{background:#20201d!important}
     $('intakeSubmitBtn').disabled = true;
     $('intakeSubmitBtn').textContent = 'Submitting…';
     try {
-      await fetch('/api/onboarding-save', {
+      const submitRes = await fetch('/api/onboarding-save', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ token, type: 'intake', fields: collectIntakeFields() })
+        body: JSON.stringify({ token, type: 'intake', fields: collectIntakeFields(), finalize: true })
       });
+      const submitData = await submitRes.json().catch(()=>({}));
+      if (!submitRes.ok) throw new Error(submitData.error || 'Could not submit onboarding.');
+      setAutosaveState('saved', 'Submitted ✓');
       $('intakeCard').style.display = 'none';
       $('doneCard').style.display = 'block';
       setStep('done');

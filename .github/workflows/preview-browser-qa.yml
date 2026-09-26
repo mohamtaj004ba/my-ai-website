@@ -1,0 +1,125 @@
+name: CallerCore Preview Browser QA
+
+on:
+  push:
+    branches:
+      - feature/callercore-dashboards
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: read
+  checks: read
+  actions: read
+
+concurrency:
+  group: callercore-preview-browser-qa
+  cancel-in-progress: true
+
+jobs:
+  authenticated-preview-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PREVIEW_URL: https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      CALLERCORE_QA_EMAIL: preview-qa@callercore.test
+      GH_TOKEN: ${{ github.token }}
+      PREVIOUS_QA_DIR: /tmp/previous-qa
+
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+
+      - name: Require Preview automation secret
+        shell: bash
+        run: |
+          if [ -z "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            echo "::error::Add the Vercel Protection Bypass secret to GitHub Actions as VERCEL_AUTOMATION_BYPASS_SECRET."
+            exit 1
+          fi
+
+      - name: Wait for this commit's Vercel Preview
+        shell: bash
+        run: |
+          state=""
+          for attempt in $(seq 1 72); do
+            state="$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/status" --jq '.statuses | map(select(.context=="Vercel")) | first | .state // ""')"
+            echo "Vercel status: ${state:-pending} (attempt $attempt)"
+            if [ "$state" = "success" ]; then
+              exit 0
+            fi
+            if [ "$state" = "failure" ] || [ "$state" = "error" ]; then
+              echo "::error::Vercel deployment failed for $GITHUB_SHA."
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "::error::Timed out waiting for the Vercel Preview deployment."
+          exit 1
+
+      - name: Set up Node for browser QA
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache npm downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-callercore-qa-npm-${{ hashFiles('package.json', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-callercore-qa-npm-
+
+      - name: Install pinned QA dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Cache Playwright browser
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-1.55.0-chromium
+
+      - name: Install Chromium system dependencies
+        run: npx playwright install-deps chromium
+
+      - name: Install Chromium browser
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium
+
+      - name: Restore previous successful visual baseline
+        shell: bash
+        continue-on-error: true
+        run: |
+          mkdir -p "$PREVIOUS_QA_DIR"
+          previous_run="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/preview-browser-qa.yml/runs?branch=feature%2Fcallercore-dashboards&status=success&per_page=10" --jq '.workflow_runs[0].id // empty' 2>/dev/null || true)"
+          if [ -z "$previous_run" ]; then
+            echo "No previous successful Preview QA run available."
+            exit 0
+          fi
+          artifact_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$previous_run/artifacts" --jq '.artifacts[] | select(.name | startswith("caller-core-preview-browser-qa-")) | .id' | head -n 1)"
+          if [ -z "$artifact_id" ]; then
+            echo "Previous QA run has no compatible artifact."
+            exit 0
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > /tmp/previous-qa.zip
+          unzip -q /tmp/previous-qa.zip -d "$PREVIOUS_QA_DIR"
+          echo "Restored visual baseline from run $previous_run."
+
+      - name: Run authenticated client and admin QA
+        run: npm run qa:preview
+
+      - name: Compare visual drift
+        if: always()
+        continue-on-error: true
+        run: node scripts/visual-diff.mjs qa-artifacts "$PREVIOUS_QA_DIR"
+
+      - name: Upload QA screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caller-core-preview-browser-qa-${{ github.run_id }}
+          path: qa-artifacts/
+          if-no-files-found: warn
+          retention-days: 14

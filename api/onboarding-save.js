@@ -1,10 +1,15 @@
-const { kv } = require('@vercel/kv');
+const {kv}=require('../lib/kv');
+const {safeError}=require('../lib/safe-log');
 const { buildAgreementPdfBytes } = require('./_lib/agreement-pdf');
 const { sendMail } = require('./_lib/mailgun');
+const { syncCompletedOnboarding } = require('../lib/onboarding-sync');
+const { lifecycleEmail } = require('../lib/email-template');
+const { addBusinessHours } = require('../lib/business-hours');
+const { AGREEMENT_VERSION, AGREEMENT_EFFECTIVE_DATE, agreementSnapshot, planSnapshot } = require('./_lib/agreement-clauses');
 
 const ALLOWED_INTAKE_FIELDS = new Set([
-  'businessName','contactName','phone','email','industry','industryOther','address','addressSharing','serviceArea','outOfArea','outOfAreaReferral',
-  'tradeType','tradeTypeOther','servicesOffered','servicesNotOffered','gasUtility','insuranceInfo','vetAskSpecies','vetEmergencyNotes','conflictCheck',
+  'website','businessName','contactName','phone','email','industry','industryOther','address','addressSharing','serviceArea','outOfArea','outOfAreaReferral',
+  'tradeType','tradeTypeOther','servicesOffered','servicesNotOffered','gasUtility','vetAskSpecies','vetEmergencyNotes','conflictCheck',
   'realEstateNotes','vendorDispatch','salonNotes','collectVehicleInfo','hours','exampleRoutine','promiseRoutine','exampleUrgent','promiseUrgent',
   'exampleEmergency','promiseEmergency','routingChoice','forwardNumber','phoneCarrier','callHandling','notificationPreference','notifyRecipient',
   'notifyOtherName','notifyOtherTitle','notifyOtherPhone','notifyOtherEmail','escalationName','escalationPhone','escalationBackupName',
@@ -31,7 +36,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { token, type, fields, fullName } = req.body || {};
+  const { token, type, fields, fullName, finalize } = req.body || {};
   if (!validToken(token)) return res.status(400).json({ error: 'Invalid token' });
 
   const key = `onboarding:${token}`;
@@ -45,8 +50,18 @@ module.exports = async function handler(req, res) {
     record.agreementSigned = true;
     record.agreementSignedAt = Date.now();
     record.agreementFullName = signedName;
+    record.agreementVersion = AGREEMENT_VERSION;
+    record.agreementEffectiveDate = AGREEMENT_EFFECTIVE_DATE;
+    record.agreementSnapshot = agreementSnapshot();
+    record.agreementPlanSnapshot = planSnapshot(record.plan);
+    if(record.status==='awaiting_agreement')record.status='intake_in_progress';
 
-    await kv.set(key, record, { ex: 60 * 60 * 24 * 30 });
+    await kv.set(key, record, { ex: 60 * 60 * 24 * 90 });
+    if(record.workspaceId){
+      await kv.set('onboarding:workspace-token:'+record.workspaceId,token,{ex:60*60*24*90});
+      const prior=await kv.get('onboarding:workspace:'+record.workspaceId)||{};
+      await kv.set('onboarding:workspace:'+record.workspaceId,{...prior,workspaceId:record.workspaceId,status:'intake_in_progress',completionPercent:Number(record.completionPercent||0),agreementVersion:record.agreementVersion,agreementSignedAt:record.agreementSignedAt,agreementSignedName:record.agreementFullName,checklist:{...(prior.checklist||{}),payment:true,agreement:true,intake:false},updatedAt:Date.now()});
+    }
 
     // Email a signed copy. Don't fail the request if this errors — the
     // client can still download the PDF on demand from /api/agreement-pdf.
@@ -54,21 +69,31 @@ module.exports = async function handler(req, res) {
       const signedDate = new Date(record.agreementSignedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       const pdfBytes = await buildAgreementPdfBytes({
         business: record.business, fullName: signedName, plan: record.plan, signedAt: signedDate,
+        clauses: record.agreementSnapshot.clauses, agreementVersion: record.agreementVersion, effectiveDate: record.agreementEffectiveDate, planSnapshot: record.agreementPlanSnapshot,
       });
-      await sendMail({
-        to: record.email,
-        subject: 'Your signed CallerCore service agreement',
-        text: `Hi ${signedName.split(' ')[0] || 'there'},\n\nAttached is your signed CallerCore service agreement for your records.\n\nQuestions any time: support@callercore.com\n\n\u2014 CallerCore`,
-        html: `<p>Attached is your signed CallerCore service agreement for your records.</p><p>Questions any time: support@callercore.com</p>`,
-        attachments: [{ filename: 'CallerCore-Service-Agreement.pdf', data: Buffer.from(pdfBytes), contentType: 'application/pdf' }],
-      });
+      {const firstName=signedName.split(' ')[0]||'there',emailBody=lifecycleEmail({
+        preheader:'Your signed CallerCore service agreement is attached.',
+        eyebrow:'AGREEMENT SIGNED',
+        title:'Your agreement is complete, '+firstName+'.',
+        intro:'Thanks for completing your CallerCore service agreement.',
+        statusLabel:'Agreement',
+        statusText:'Signed and saved to your onboarding record.',
+        bodyHtml:'<p style="margin:0">A PDF copy of the exact agreement you accepted is attached for your records. Your onboarding can continue from where you left off.</p>',
+        showDashboardSupport:false
+      });await sendMail({
+        to:record.email,
+        subject:'Your signed CallerCore service agreement',
+        ...emailBody,
+        attachments:[{filename:'CallerCore-Service-Agreement.pdf',data:Buffer.from(pdfBytes),contentType:'application/pdf'}]
+      });}
     } catch (err) {
-      console.error('Failed to email signed agreement PDF:', err);
+      console.error('Failed to email signed agreement PDF:', safeError(err));
     }
 
     return res.status(200).json({ ok: true, status: record.status });
   } else if (type === 'intake') {
     const incoming=sanitizeFields(fields);
+    if(incoming.industry==='Medical & Dental')return res.status(400).json({error:'Medical and dental businesses require a separately approved compliant configuration before onboarding.'});
     if(!Object.keys(incoming).length) return res.status(400).json({error:'No valid fields'});
     record.intake = { ...(record.intake || {}), ...incoming };
     // If every required intake field is present, mark it submitted and
@@ -109,13 +134,25 @@ module.exports = async function handler(req, res) {
       required.push('pricingRanges');
     }
     const complete = required.every((k) => record.intake[k] && String(record.intake[k]).trim() !== '');
-    const justCompleted = complete && record.status !== 'intake_complete';
+    const completionPercent=Math.round((required.filter(k=>record.intake[k]&&String(record.intake[k]).trim()!=='').length/Math.max(1,required.length))*100);
+    record.completionPercent=completionPercent;
+    if(record.status==='awaiting_agreement'&&record.agreementSigned)record.status='intake_in_progress';
+    const wantsFinalize=finalize===true;
+    if(wantsFinalize&&!complete)return res.status(400).json({error:'Please complete all required onboarding fields before submitting.',completionPercent});
+    const justCompleted = wantsFinalize && complete && record.status !== 'intake_complete';
     if (justCompleted) {
       record.status = 'intake_complete';
       record.intakeCompletedAt = Date.now();
     }
 
-    await kv.set(key, record, { ex: 60 * 60 * 24 * 30 });
+    await kv.set(key, record, { ex: 60 * 60 * 24 * 90 });
+    if(record.workspaceId){
+      await kv.set('onboarding:workspace-token:'+record.workspaceId,token,{ex:60*60*24*90});
+      if(!justCompleted){
+        const prior=await kv.get('onboarding:workspace:'+record.workspaceId)||{};
+        await kv.set('onboarding:workspace:'+record.workspaceId,{...prior,workspaceId:record.workspaceId,status:record.status||'intake_in_progress',completionPercent,checklist:{...(prior.checklist||{}),payment:true,agreement:!!record.agreementSigned,intake:false},updatedAt:Date.now()});
+      }
+    }
 
     if (justCompleted) {
       const i = record.intake || {};
@@ -154,9 +191,9 @@ module.exports = async function handler(req, res) {
 
         await sendMail({
           to: 'tj@callercore.com',
-          subject: `Intake complete — ${i.businessName || record.business || 'new client'} (build clock started)`,
-          text: `Intake form submitted. The 1-business-day build clock starts now.\nFull intake attached as a PDF for your records.\n${textLines.join('\n')}\n\n— CallerCore onboarding`,
-          html: `<p><b>Intake form submitted.</b> The 1-business-day build clock starts now. Full intake attached as a PDF for your records.</p>${htmlLines.join('\n')}`,
+          subject: `Onboarding submitted — ${i.businessName || record.business || 'new client'} (review required)`,
+          text: `Onboarding submitted. Smart configuration has been prepared internally and is awaiting CallerCore review.\nFull intake attached as a PDF for your records.\n${textLines.join('\n')}\n\n— CallerCore onboarding`,
+          html: `<p><b>Onboarding submitted.</b> Smart configuration has been prepared internally and is awaiting CallerCore review. Full intake attached as a PDF for your records.</p>${htmlLines.join('\n')}`,
           attachments: [{
             filename: `Intake-Summary-${(i.businessName || record.business || 'client').replace(/[^a-z0-9]+/gi, '-')}.pdf`,
             data: Buffer.from(pdfBytes),
@@ -164,11 +201,32 @@ module.exports = async function handler(req, res) {
           }],
         });
       } catch (err) {
-        console.error('Internal intake_complete email failed:', err);
+        console.error('Internal intake_complete email failed:', safeError(err));
+      }
+      try{
+        await syncCompletedOnboarding(record);
+        if(record.workspaceId){
+          const stateKey='onboarding:workspace:'+record.workspaceId,state=await kv.get(stateKey)||{};
+          await kv.set(stateKey,{...state,status:'building_review',buildEligibleAt:addBusinessHours(Date.now(),1),buildSubmittedAt:Date.now(),checklist:{...(state.checklist||{}),intake:true,businessProfile:true,agentDraft:true,adminReview:false},updatedAt:Date.now()});
+        }
+        const firstName=String(record.intake?.contactName||record.name||'').split(' ')[0]||'there';
+        if(record.email){const emailBody=lifecycleEmail({
+          preheader:'We received your CallerCore onboarding and your setup is now in review.',
+          eyebrow:'ONBOARDING RECEIVED',
+          title:'We’ve got everything, '+firstName+'.',
+          intro:'We received your onboarding information and service agreement. Thank you.',
+          statusLabel:'Current status',
+          statusText:'Your business details, AI-agent configuration, and routing preferences are being reviewed.',
+          bodyHtml:'<p style="margin:0">No action is needed from you right now. We’ll contact you when the initial build has completed review and the next step is ready.</p>'
+        });await sendMail({to:record.email,subject:'We received your CallerCore onboarding',...emailBody});}
+      }catch(err){
+        console.error('Smart onboarding workspace sync failed:',safeError(err));
+        record.syncError=String(err&&err.message||'sync_failed').slice(0,300);
+        await kv.set(key,record,{ex:60*60*24*90});
       }
     }
 
-    return res.status(200).json({ ok: true, status: record.status });
+    return res.status(200).json({ ok: true, status: record.status, completionPercent:record.completionPercent||0 });
   } else {
     return res.status(400).json({ error: 'Invalid type' });
   }

@@ -1,6 +1,7 @@
 const crypto = require('crypto');
+const {rateLimit,requestIp}=require('../lib/rate-limit');
 
-const SECRET = process.env.DEMO_TOKEN_SECRET || 'callercore-demo-reveal-secret-v1';
+const SECRET = process.env.DEMO_TOKEN_SECRET || '';
 
 // The actual demo line. Kept server-side only — never shipped in the HTML/JS bundle.
 // Optionally override via Vercel env var DEMO_PHONE_NUMBER (E.164, e.g. +15098907757).
@@ -21,12 +22,6 @@ const ALLOWED_HOSTS = new Set([
 const MIN_TOKEN_AGE_MS = 1000;
 const MAX_TOKEN_AGE_MS = 5 * 60 * 1000; // 5 minutes
 
-// Very small in-memory rate limiter. Resets on cold start, but adds real
-// friction against a warm function instance being hammered.
-const hits = new Map();
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
-const RATE_LIMIT_MAX = 6;
-
 function sign(ts) {
   return crypto.createHmac('sha256', SECRET).update(String(ts)).digest('hex');
 }
@@ -37,28 +32,12 @@ function isAllowedOrigin(req) {
   const candidate = origin || referer;
   if (!candidate) return false;
   try {
-    const host = new URL(candidate).host;
-    return ALLOWED_HOSTS.has(host) || host.endsWith('.vercel.app');
+    const host=new URL(candidate).host.toLowerCase();
+    const requestHost=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+    return ALLOWED_HOSTS.has(host)||(host.endsWith('.vercel.app')&&host===requestHost);
   } catch (e) {
     return false;
   }
-}
-
-function getIp(req) {
-  const fwd = req.headers['x-forwarded-for'];
-  if (fwd) return fwd.split(',')[0].trim();
-  return req.socket && req.socket.remoteAddress || 'unknown';
-}
-
-function rateLimited(ip) {
-  const now = Date.now();
-  const entry = hits.get(ip);
-  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-    hits.set(ip, { windowStart: now, count: 1 });
-    return false;
-  }
-  entry.count += 1;
-  return entry.count > RATE_LIMIT_MAX;
 }
 
 module.exports = async function handler(req, res) {
@@ -80,11 +59,11 @@ module.exports = async function handler(req, res) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
-  // Layer 2: per-IP rate limit.
-  const ip = getIp(req);
-  if (rateLimited(ip)) {
-    return res.status(429).json({ error: 'Too many requests, try again later' });
-  }
+  if(!SECRET)return res.status(503).json({error:'Demo unavailable'});
+
+  // Layer 2: per-IP distributed rate limit.
+  const rl=await rateLimit({scope:'demo-number',identifier:requestIp(req),limit:6,windowSeconds:600,failClosed:true});
+  if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ error: 'Too many requests, try again later' })}
 
   // Layer 3: token must be valid, correctly signed, and aged appropriately.
   const { token } = req.body || {};

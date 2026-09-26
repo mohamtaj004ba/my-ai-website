@@ -1,30 +1,16 @@
 const https = require('https');
+const {rateLimit,requestIp}=require('../lib/rate-limit');
+const {safeError,upstreamCode}=require('../lib/safe-log');
 
 const ALLOWED_HOSTS = new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
-const hits = new Map();
-const RATE_WINDOW_MS = 10 * 60 * 1000;
-const RATE_MAX = 40;
-
 function isAllowedOrigin(req) {
   const candidate = req.headers.origin || req.headers.referer || '';
   if (!candidate) return false;
   try {
-    const host = new URL(candidate).host;
-    return ALLOWED_HOSTS.has(host) || host.endsWith('.vercel.app');
+    const host=new URL(candidate).host.toLowerCase();
+    const requestHost=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+    return ALLOWED_HOSTS.has(host)||(host.endsWith('.vercel.app')&&host===requestHost);
   } catch (_) { return false; }
-}
-function getIp(req) {
-  const fwd = req.headers['x-forwarded-for'];
-  return fwd ? fwd.split(',')[0].trim() : (req.socket?.remoteAddress || 'unknown');
-}
-function rateLimited(ip) {
-  const now = Date.now(), entry = hits.get(ip);
-  if (!entry || now - entry.start > RATE_WINDOW_MS) {
-    hits.set(ip, { start: now, count: 1 });
-    return false;
-  }
-  entry.count += 1;
-  return entry.count > RATE_MAX;
 }
 function sanitizeMessages(messages) {
   if (!Array.isArray(messages) || messages.length < 1 || messages.length > 24) return null;
@@ -63,20 +49,22 @@ THE PAGE HAS TWO PARTS. First the service agreement, then the intake form.
 
 THE SERVICE AGREEMENT (the first screen):
 Before the intake form, they read and sign the service agreement. Explain any of it in plain language, but always be clear you are not a lawyer and this is not legal advice - for anything they want changed, negotiated, or formally reviewed, point them to support@callercore.com.
-It has 23 sections. In plain terms:
-- Services and Client responsibilities: what we build and run for them, and what we need from them (accurate business info, completing carrier forwarding, keeping escalation contacts current).
+It has 26 sections. In plain terms:
+- Services and onboarding responsibilities: what we build and run for them, what we need from them, and how optional website scanning can suggest business details that they must review before submission.
 - Acceptable use: no unlawful, harassing, or deceptive use, no impersonation, no reselling the Service.
-- Fees: 500 dollar one-time setup fee (non-refundable, covers build work), monthly plan billed in advance, they authorize recurring charges to their card, 30 cents a minute past included minutes, failed payments can suspend service after 14 days without deleting data, and we can change pricing with 30 days notice.
+- Fees: 500 dollar one-time setup fee (non-refundable, covers build work), monthly plan billed in advance, they authorize recurring charges to their card, usage beyond included minutes may be billed according to the rate disclosed at signup, failed payments can suspend service after 14 days without deleting data, and we can change pricing with 30 days notice.
 - Guarantee: 30 days, money back on the monthly fee. Setup fee stays non-refundable.
 - Term: month to month, cancel anytime with written notice, effective end of billing period.
-- Service availability: it depends on carriers, voice and AI providers, and CRM platforms, so there is no contractual uptime guarantee, though we work to restore quickly.
-- Warranty disclaimer and liability: provided as is, and liability is capped at the fees paid in the previous three months, with no indirect or lost-profit damages. It is explicitly not a substitute for emergency services.
+- Service availability: it depends on carriers, AI/model providers, hosting, email/messaging, payment, calendar, CRM, and other integrations, so there is no contractual uptime guarantee unless separately agreed.
+- AI/automation limitations, warranty disclaimer, and liability: generated or automated outputs can be imperfect; the client must review high-impact rules before go-live; liability is capped at the fees paid in the previous three months; and the Service is not a substitute for emergency services.
 - Indemnification: if their own conduct, contact lists, or legal violations create a third-party claim, they cover it. This is standard, and mostly matters for SMS compliance.
-- Call recording: all calls recorded and transcribed, the greeting includes a recording disclosure, which matters because Washington requires all-party consent.
+- Call recording/transcription: only describe recording or transcription as enabled when that customer's approved voice configuration actually enables it. Do not promise that every call is recorded. Recording deployments must follow CallerCore's approved disclosure and consent policy.
 - Messaging compliance: if their plan includes SMS, they need a lawful basis to message people, no purchased or scraped lists, standard TCPA compliance, opt-out handling always on.
-- Regulated data: the Service is NOT HIPAA, PCI, or GLBA compliant. They must not use it to collect health information, card numbers, or government ID numbers. If they are in a regulated industry like medical or dental and need a compliant setup, they must contact us in writing before go-live. If someone asks about this, take it seriously and route them to support@callercore.com rather than reassuring them.
-- Their data and our IP: transcripts and lead data belong to them and are never sold; the underlying software, prompts, and templates remain ours.
-- Plus confidentiality, independent contractor status, force majeure, assignment, email notices, Washington law with venue in Spokane County, severability and survival, and an entire-agreement clause requiring written changes.
+- Regulated data: the standard Service is NOT HIPAA, PCI, or GLBA compliant. Standard onboarding does not support medical or dental businesses and must not collect protected health information, card numbers, financial-account credentials, government IDs, or authentication secrets. If a regulated business asks to use CallerCore, route them to support@callercore.com for a separate compliance review before signup or go-live.
+- Connected accounts: if they authorize Gmail, calendar, CRM, telephony, payment, or other integrations, CallerCore uses only the permissions granted to provide the requested feature.
+- Their data and our IP: client business/lead/contact data remains theirs and is not sold; the underlying software, prompts, workflows, and templates remain ours.
+- Security/account access: clients are responsible for authorized users and connected-account permissions and should report suspected unauthorized access promptly.
+- Plus confidentiality, independent contractor status, force majeure, assignment, email notices, Washington law with venue in Spokane County, severability/survival, electronic acceptance, and an entire-agreement clause.
 To sign, they type their full legal name as an electronic signature and tick the authorization box. Business name, plan, and date fill in automatically. Once signed, a PDF copy is emailed to them and they can download it right there, then continue to the intake form.
 
 WHAT THE FORM ASKS, STEP BY STEP:
@@ -108,13 +96,13 @@ This is a common question — answer it confidently.
 - They already signed the service agreement, and a PDF copy was emailed to them for their records.
 
 ABOUT CALLERCORE (for general questions):
-CallerCore is an AI phone receptionist for service businesses. It answers inbound calls 24/7, captures the caller's name, number, what they need and how urgent it is, and sends an automatic follow-up text the moment the call ends. Every call is recorded and transcribed, and everything lands in a lead dashboard. Integrations are configured around the client's workflow and supported tools.
+CallerCore is an AI phone receptionist for service businesses. It is designed to answer inbound calls 24/7, capture the caller's name, number, what they need and how urgent it is, and make that information available to the business for follow-up. Call records, transcripts, summaries, messaging, and other integrations depend on the customer's approved configuration and enabled providers. Do not promise SMS, calendar booking, recording, transcription, or any other integration unless it is explicitly enabled for that customer.
 
 PLANS (only bring these up if asked — they've already bought):
 - Starter, 349 dollars a month: 300 minutes, 1 location.
-- Growth, 599 a month: 600 minutes, 2 locations, plus appointment booking, SMS campaigns, and priority support.
-- Pro, 999 a month: unlimited minutes, up to 5 locations, plus custom integrations and white-glove onboarding.
-- Every plan has a one-time 500 dollar setup fee, overage is 30 cents a minute beyond included minutes, and there's no long-term contract.
+- Growth, 599 a month: 600 minutes, up to 2 locations, plus advanced qualification, routing controls, and priority support.
+- Pro, 999 a month: up to 5 locations, plus custom integrations and white-glove onboarding. If asked about Pro usage limits or fair-use terms, direct them to support@callercore.com until the policy is finalized.
+- Every plan has a one-time 500 dollar setup fee, usage beyond included minutes is handled according to the billing terms disclosed at signup, and there's no long-term contract.
 - There's a 30-day money-back guarantee on the monthly fee. The setup fee is non-refundable since it covers the build work.
 If someone asks whether a specific feature is on their plan and you're not certain, say you'd rather they confirm with support@callercore.com than guess.
 
@@ -139,7 +127,7 @@ module.exports = async function handler(req, res) {
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Cache-Control', 'no-store');
-  if (rateLimited(getIp(req))) return res.status(429).json({ error: 'Too many requests' });
+  const rl=await rateLimit({scope:'onboarding-chat',identifier:requestIp(req),limit:40,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ error: 'Too many requests' })}
   if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Assistant unavailable' });
 
   const { context } = req.body || {};
@@ -191,7 +179,7 @@ module.exports = async function handler(req, res) {
       apiRes.on('end', () => {
         try {
           if (apiRes.statusCode !== 200) {
-            console.error('Anthropic API error:', data);
+            console.error('Anthropic API error:', upstreamCode(data));
             res.status(502).json({ error: 'Upstream API error' });
             return resolve();
           }
@@ -199,14 +187,14 @@ module.exports = async function handler(req, res) {
           res.status(200).json({ reply: parsed.content[0].text });
           resolve();
         } catch (err) {
-          console.error('Parse error:', err);
+          console.error('Parse error:', safeError(err));
           res.status(500).json({ error: 'Parse error' });
           resolve();
         }
       });
     });
     apiReq.on('error', (err) => {
-      console.error('Request error:', err);
+      console.error('Request error:', safeError(err));
       res.status(500).json({ error: 'Request failed' });
       resolve();
     });

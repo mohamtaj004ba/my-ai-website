@@ -1,4 +1,4 @@
-// CallerCore shared site behavior: navigation, sticky header state, and small accessibility helpers.
+// CallerCore shared site behavior + first-party analytics.
 (function(){
   const header=document.querySelector('.site-header');
   const menu=document.querySelector('.menu');
@@ -14,32 +14,76 @@
     menu.setAttribute('aria-controls',nav.id || 'primary-nav');
     if(!nav.id) nav.id='primary-nav';
     menu.setAttribute('aria-expanded','false');
-
     const setOpen=(open)=>{
       nav.classList.toggle('open',open);
       menu.setAttribute('aria-expanded',String(open));
       menu.textContent=open?'Close':'Menu';
       document.body.classList.toggle('nav-open',open);
     };
-
     menu.addEventListener('click',()=>setOpen(!nav.classList.contains('open')));
     nav.addEventListener('click',e=>{if(e.target.closest('a'))setOpen(false)});
-    document.addEventListener('keydown',e=>{
-      if(e.key==='Escape' && nav.classList.contains('open')){
-        setOpen(false);menu.focus();
-      }
-    });
-    document.addEventListener('click',e=>{
-      if(nav.classList.contains('open') && !header.contains(e.target)) setOpen(false);
-    });
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&nav.classList.contains('open')){setOpen(false);menu.focus()}});
+    document.addEventListener('click',e=>{if(nav.classList.contains('open')&&!header.contains(e.target))setOpen(false)});
   }
 
   document.querySelectorAll('a[href^="#"],a[href^="/#"]').forEach(a=>{
-    a.addEventListener('click',()=>{
-      const hash=a.hash;
-      if(!hash) return;
-      const target=document.querySelector(hash);
-      if(target) target.setAttribute('tabindex','-1');
-    });
+    a.addEventListener('click',()=>{const hash=a.hash;if(!hash)return;const target=document.querySelector(hash);if(target)target.setAttribute('tabindex','-1')});
+  });
+
+  // First-party analytics. No form field values or sensitive input are captured here.
+  const uuid=()=>{try{if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();if(globalThis.crypto?.getRandomValues){const bytes=new Uint8Array(16);globalThis.crypto.getRandomValues(bytes);bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;const hex=[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20)}}catch(_){}const perf=typeof performance!=='undefined'&&Number.isFinite(performance.now())?Math.round(performance.now()*1000):0;return 'legacy-'+Date.now().toString(36)+'-'+perf.toString(36)};
+  let visitorId;
+  try{visitorId=localStorage.getItem('cc_vid')||uuid();localStorage.setItem('cc_vid',visitorId)}catch(_){visitorId=uuid()}
+  let sessionId;
+  try{sessionId=sessionStorage.getItem('cc_sid')||uuid();sessionStorage.setItem('cc_sid',sessionId)}catch(_){sessionId=uuid()}
+  const q=new URLSearchParams(location.search);
+  const ctx={
+    visitorId,sessionId,path:location.pathname+location.search,title:document.title,
+    referrer:document.referrer||'',
+    utmSource:q.get('utm_source')||'',utmMedium:q.get('utm_medium')||'',utmCampaign:q.get('utm_campaign')||'',
+    source:q.get('utm_source')||((document.referrer&&new URL(document.referrer,location.href).hostname!==location.hostname)?'referral':'direct'),
+    device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':(/Tablet|iPad/i.test(navigator.userAgent)?'tablet':'desktop')
+  };
+  const payload=(type,extra={})=>({...ctx,type,...extra});
+  const send=(type,extra={},beacon=false)=>{
+    const body=JSON.stringify(payload(type,extra));
+    try{
+      if(beacon&&navigator.sendBeacon){navigator.sendBeacon('/api/site-track',new Blob([body],{type:'application/json'}));return}
+      fetch('/api/site-track',{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:beacon}).catch(()=>{})
+    }catch(_){}
+  };
+  window.CallerCoreAnalytics={track:send,context:ctx};
+
+  send('session_start');send('page_view');
+  let activeSince=Date.now(),activeAccum=0,lastFlush=Date.now();
+  const markInactive=()=>{if(activeSince){activeAccum+=Date.now()-activeSince;activeSince=0}};
+  const markActive=()=>{if(!activeSince)activeSince=Date.now()};
+  document.addEventListener('visibilitychange',()=>{document.hidden?markInactive():markActive()});
+  window.addEventListener('blur',markInactive);window.addEventListener('focus',markActive);
+  const flushEngagement=(final=false)=>{
+    if(activeSince){activeAccum+=Date.now()-activeSince;activeSince=Date.now()}
+    if(activeAccum>0){send(final?'page_exit':'engagement',{activeMs:activeAccum},final);activeAccum=0;lastFlush=Date.now()}
+    else if(final)send('page_exit',{activeMs:0},true);
+  };
+  setInterval(()=>{if(Date.now()-lastFlush>=15000)flushEngagement(false)},15000);
+  window.addEventListener('pagehide',()=>flushEngagement(true));
+
+  document.addEventListener('click',e=>{
+    const a=e.target.closest('a,button');if(!a)return;
+    let label=(a.getAttribute('data-analytics-label')||a.textContent||a.getAttribute('aria-label')||'').trim().replace(/\s+/g,' ').slice(0,160);
+    let value='';
+    if(a.matches('[data-plan]')){send('plan_select',{label:'plan',value:a.dataset.plan||''});return}
+    if(a.tagName==='A')value=a.getAttribute('href')||'';
+    if(value||label)send('cta_click',{label,value});
+  });
+
+  document.querySelectorAll('form').forEach(form=>{
+    let started=false,submitted=false;
+    const id=form.id||form.getAttribute('name')||'form';
+    const start=()=>{if(started)return;started=true;send('form_start',{label:id})};
+    form.addEventListener('focusin',start,{once:true});
+    form.addEventListener('input',start,{once:true});
+    form.addEventListener('submit',()=>{started=true;submitted=true;send('form_submit',{label:id})});
+    window.addEventListener('pagehide',()=>{if(started&&!submitted)send('form_abandon',{label:id},true)});
   });
 })();

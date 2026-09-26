@@ -1,30 +1,16 @@
 const https = require('https');
+const {rateLimit,requestIp}=require('../lib/rate-limit');
+const {safeError,upstreamCode}=require('../lib/safe-log');
 
 const ALLOWED_HOSTS = new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
-const hits = new Map();
-const RATE_WINDOW_MS = 10 * 60 * 1000;
-const RATE_MAX = 25;
-
 function isAllowedOrigin(req) {
   const candidate = req.headers.origin || req.headers.referer || '';
   if (!candidate) return false;
   try {
-    const host = new URL(candidate).host;
-    return ALLOWED_HOSTS.has(host) || host.endsWith('.vercel.app');
+    const host=new URL(candidate).host.toLowerCase();
+    const requestHost=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
+    return ALLOWED_HOSTS.has(host)||(host.endsWith('.vercel.app')&&host===requestHost);
   } catch (_) { return false; }
-}
-function getIp(req) {
-  const fwd = req.headers['x-forwarded-for'];
-  return fwd ? fwd.split(',')[0].trim() : (req.socket?.remoteAddress || 'unknown');
-}
-function rateLimited(ip) {
-  const now = Date.now(), entry = hits.get(ip);
-  if (!entry || now - entry.start > RATE_WINDOW_MS) {
-    hits.set(ip, { start: now, count: 1 });
-    return false;
-  }
-  entry.count += 1;
-  return entry.count > RATE_MAX;
 }
 function sanitizeMessages(messages) {
   if (!Array.isArray(messages) || messages.length < 1 || messages.length > 20) return null;
@@ -53,7 +39,7 @@ module.exports = async function handler(req, res) {
   if (!isAllowedOrigin(req)) return res.status(403).json({ error: 'Forbidden' });
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Cache-Control', 'no-store');
-  if (rateLimited(getIp(req))) return res.status(429).json({ error: 'Too many requests' });
+  const rl=await rateLimit({scope:'public-chat',identifier:requestIp(req),limit:25,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ error: 'Too many requests' })}
   if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Assistant unavailable' });
 
   const safeMessages = sanitizeMessages(req.body && req.body.messages);
@@ -67,7 +53,7 @@ HOW TO WRITE (very important):
 - Reply in plain, conversational text, like a friendly, knowledgeable person texting. Never use Markdown formatting: no asterisks for bold, no pound signs for headers, no numbered or bulleted lists. Write in natural sentences.
 - Keep replies short. Two or three sentences is usually plenty. Answer the question, then stop. Don't dump everything you know at once.
 - Use contractions and a warm, easy tone (you're, it'll, that's). Match the visitor's energy — a short question gets a short answer.
-- If you'd naturally list a few things, fold them into a sentence instead. Say "it answers your calls, grabs the caller's details, and texts them back right away" rather than a numbered list.
+- If you'd naturally list a few things, fold them into a sentence instead. Say "it answers your calls, grabs the caller's details, and gives the team a clear summary" rather than a numbered list.
 - End with one clear next step at most, not a menu of options.
 
 HOW TO BEHAVE:
@@ -79,13 +65,13 @@ HOW TO BEHAVE:
 - Never invent prices or technical details, never use fake urgency, and never give medical, legal, or financial advice.
 
 ABOUT CALLERCORE:
-CallerCore is an AI voice agent that answers every inbound business call 24/7, captures the lead (name, phone, what they need, and how urgent it is), and sends an automatic follow-up text the moment the call ends — so no lead ever slips through. Every call is recorded and transcribed, and everything shows up in a lead dashboard. Because the AI answers every call, there are no missed calls.
+CallerCore is an AI voice agent designed to answer inbound business calls 24/7, capture the lead (name, phone, what they need, and how urgent it is), and give the business a clear record for follow-up. Call records, transcripts or summaries can appear in the dashboard when the configured voice setup supports them. Do not promise SMS, calendar booking, or any integration unless it is explicitly enabled for that customer.
 
 PRICING (share naturally in conversation, not as a list unless they ask for the full breakdown):
 - Starter is 349 dollars a month: 300 minutes, 1 location, the AI phone agent, lead capture, follow-up, and the lead dashboard.
-- Growth is 599 a month and the most popular: 600 minutes, 2 locations, everything in Starter plus appointment booking, SMS marketing, and priority support.
-- Pro is 999 a month: unlimited minutes, up to 5 locations, everything in Growth plus custom integrations, dedicated onboarding, and white-glove support.
-- Every plan has a one-time 500 dollar setup fee, overage is 30 cents a minute beyond the included minutes, and there's no long-term contract — cancel anytime.
+- Growth is 599 a month and the most popular: 600 minutes, 2 locations, everything in Starter plus advanced qualification, automations and analytics, and priority support. Do not describe SMS or calendar booking as included until those integrations are launched.
+- Pro is 999 a month: up to 5 locations, everything in Growth plus custom integrations, dedicated onboarding, and white-glove support. If asked about Pro usage limits or fair-use terms, direct them to support@callercore.com until the policy is finalized.
+- Every plan has a one-time 500 dollar setup fee, usage beyond included minutes is handled according to the billing terms disclosed at signup, and there's no long-term contract — cancel anytime.
 
 KEY FACTS:
 - There's no free trial, but there's a free live demo line anyone can call to hear the AI answer a real service call.
@@ -126,7 +112,7 @@ WHERE TO POINT PEOPLE:
       apiRes.on('end', () => {
         try {
           if (apiRes.statusCode !== 200) {
-            console.error('Anthropic API error:', data);
+            console.error('Anthropic API error:', upstreamCode(data));
             res.status(502).json({ error: 'Upstream API error', detail: data });
             return resolve();
           }
@@ -135,14 +121,14 @@ WHERE TO POINT PEOPLE:
           res.status(200).json({ reply });
           resolve();
         } catch (err) {
-          console.error('Parse error:', err, data);
+          console.error('Parse error:', safeError(err));
           res.status(500).json({ error: 'Parse error' });
           resolve();
         }
       });
     });
     apiReq.on('error', (err) => {
-      console.error('Request error:', err);
+      console.error('Request error:', safeError(err));
       res.status(500).json({ error: 'Request failed' });
       resolve();
     });
