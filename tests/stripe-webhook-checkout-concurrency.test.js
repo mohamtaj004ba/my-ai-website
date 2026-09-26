@@ -308,3 +308,35 @@ test('refuses to rewrite a member workspace when its Stripe customer mapping poi
   assert.equal(f.store.get('stripe:customer:cus_same'),'workspace-b');
   assert.equal(f.store.has('stripe:event:evt_first'),false);
 });
+
+test('later checkout cannot overwrite curated existing workspace business profile',async()=>{
+  const f=fixture();
+  const first=await f.submit('evt_first','cs_first');
+  assert.equal(first.status,200);
+  const id=first.body.workspaceId,existing=f.store.get('workspace:'+id);
+  existing.name='Verified business name';
+  existing.ownerName='Verified owner';
+  existing.contactPhone='509-555-0199';
+  existing.industry='Healthcare';
+  f.store.get('lead:lead-reference').business='Unverified checkout business';
+  f.store.get('lead:lead-reference').name='Unknown payer';
+  f.store.get('lead:lead-reference').phone='000-000-0000';
+  f.store.get('lead:lead-reference').industry='Other';
+  const repeat=await f.submit('evt_second','cs_second');
+  assert.equal(repeat.status,200);
+  const preserved=f.store.get('workspace:'+id);
+  assert.equal(preserved.name,'Verified business name');
+  assert.equal(preserved.ownerName,'Verified owner');
+  assert.equal(preserved.contactPhone,'509-555-0199');
+  assert.equal(preserved.industry,'Healthcare');
+  assert.equal(preserved.stripeCheckoutSessionId,'cs_second');
+});
+test('disagreement between Stripe checkout email and saved lead requires reconciliation before mutation',async()=>{
+  const f=fixture();
+  await assert.rejects(()=>f.submit('evt_first','cs_first',{email:'other@example.test'}),/Checkout email and pre-saved lead disagree/);
+  assert.equal(f.store.has('user:email:customer@example.test'),false);
+  assert.equal(f.store.has('user:email:other@example.test'),false);
+  assert.equal(f.store.has('stripe:event:evt_first'),false);
+  assert.equal(f.locks.size,0);
+  assert.equal(f.welcomes,0);
+});
