@@ -493,6 +493,39 @@ async function runAdminInteractions(page){
   await page.locator('#adminClientSearchInput').fill('');
   report.admin.interactions.push('client account search');
 
+  // Exercise the read-only reconciliation UI with a disposable in-page case.
+  // This never writes a Stripe record, changes a customer, or sends email.
+  await ensureView(page,'finance');
+  const financeResponse=await page.request.get(baseURL+'/api/account?action=admin-finance');
+  if(!financeResponse.ok())throw new Error('Admin Finance reconciliation feed failed ('+financeResponse.status()+')');
+  const financePayload=(await financeResponse.json()).finance;
+  if(!Array.isArray(financePayload?.reconciliation))throw new Error('Admin Finance response has no reconciliation collection');
+  if(await page.locator('#financeReconciliationCount').innerText()!==(financePayload.reconciliation.length+' open'))throw new Error('Finance reconciliation count differs from authoritative feed');
+  await page.evaluate(()=>{
+    window.__qaOriginalFinanceData=adminFinanceData;
+    adminFinanceData={...adminFinanceData,reconciliation:[{id:'cs_preview-qa',sessionId:'cs_preview-qa',reason:'account_mapping_conflict',createdAt:Date.now(),status:'open'}]};
+    renderAdmin();
+  });
+  if(!await page.locator('#financeReconciliationList').getByText('Checkout cs_preview-qa').isVisible())throw new Error('Checkout reconciliation case is not visible in Finance');
+  const qaCase=await page.locator('#financeReconciliationList').innerText();
+  if(!/Review in Stripe/.test(qaCase)||/Resolve automatically|Reassign customer/i.test(qaCase))throw new Error('Checkout conflict panel offers an unsafe or misleading action');
+  await ensureView(page,'overview');
+  const flagged=await page.evaluate(()=>window.__adminAttentionItems.some(item=>item.type==='checkout-reconciliation'&&item.sessionId==='cs_preview-qa'));
+  if(!flagged)throw new Error('Checkout conflict is missing from the admin priority queue');
+  await page.evaluate(()=>{
+    adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';
+    renderAdminFinance();
+  });
+  await ensureView(page,'finance');
+  if(!/outdated/.test(await page.locator('#financeReconciliationStatus').innerText()))throw new Error('Finance reconciliation failure did not disclose stale records');
+  await page.evaluate(()=>{
+    adminFinanceData=window.__qaOriginalFinanceData;
+    delete window.__qaOriginalFinanceData;
+    adminFinanceLoadError='';
+    renderAdmin();
+  });
+  report.admin.interactions.push('read-only checkout reconciliation + priority alert + stale Finance disclosure');
+
   await ensureView(page,'growth');
   await page.locator('#growthSearch').fill('North');
   await page.waitForTimeout(180);
