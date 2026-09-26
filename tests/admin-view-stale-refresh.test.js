@@ -20,7 +20,7 @@ function fixture(view,{fail=[],responses={}}={}){
     adminSyncCacheKey:(key,url)=>key==='website'?url:key,
     adminFinanceData:{reconciliation:[{sessionId:'existing'}]},adminFinanceLoadError:'',
     adminWebsiteData:{prospects:[{id:'existing'}]},adminWebsiteLoadError:'',
-    adminPlatformDirty:false,adminWebsiteDays:30,
+    adminPlatformDirty:false,adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,
     renderAdminFinance:()=>rendered.push('finance'),
     renderAdmin:()=>rendered.push('admin'),
     renderGrowth:()=>rendered.push('growth'),
