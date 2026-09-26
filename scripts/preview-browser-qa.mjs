@@ -503,7 +503,8 @@ async function runAdminInteractions(page){
   // Admin operational feeds load asynchronously after navigation. Compare only once the
   // in-page Finance request has completed; an initial `0 open` is not verified data.
   await page.waitForFunction(()=>!adminFinanceLoadError,{timeout:15000});
-  const displayedCount=await page.locator('#financeReconciliationCount').innerText();
+  // innerText applies CSS text-transform (the badge displays OPEN); textContent reads its actual data label.
+  const displayedCount=(await page.locator('#financeReconciliationCount').textContent()).trim();
   if(displayedCount!==(financePayload.reconciliation.length+' open'))throw new Error('Finance reconciliation count differs from authoritative feed: displayed '+displayedCount+', API '+financePayload.reconciliation.length);
   await page.evaluate(()=>{
     window.__qaOriginalFinanceData=adminFinanceData;
