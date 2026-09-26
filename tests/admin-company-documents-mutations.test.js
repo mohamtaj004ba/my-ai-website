@@ -61,3 +61,14 @@ test('company document delete submits revision and keeps confirmed deletion loca
   assert.equal(f.ctx.adminDocumentsData.company.length,0);
   assert.equal(f.modal.open,false);assert.equal(f.renders(),1);
 });
+
+test('company document warns about reversed dates before sending a request',async()=>{
+  const f=fixture();f.run('openCompanyDocumentModal','doc-1');
+  f.fields.companyDocumentEffective.value='2026-09-25';
+  f.fields.companyDocumentExpires.value='2026-09-24';
+  await f.run('saveCompanyDocument');
+  assert.equal(f.requests.length,0);
+  assert.match(f.fields.companyDocumentStatusLine.textContent,/cannot precede/);
+  assert.equal(f.fields.saveCompanyDocument.disabled,false);
+  assert.equal(f.modal.open,true);
+});
