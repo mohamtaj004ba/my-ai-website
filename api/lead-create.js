@@ -59,15 +59,16 @@ module.exports = async function handler(req, res) {
   }
 
   const leadId = crypto.randomUUID();
-  const prospect=await upsertWebsiteProspect({name,business,email,phone,industry,plan,source:'get_started',stage:'checkout_started',visitorId,sessionId,utmSource,utmMedium,utmCampaign});
-  await recordSiteEvent({type:'checkout_start',visitorId,sessionId,path:'/get-started',label:plan,utmSource,utmMedium,utmCampaign},req);
-
+  let prospect;
   try {
+    prospect=await upsertWebsiteProspect({name,business,email,phone,industry,plan,source:'get_started',stage:'checkout_started',visitorId,sessionId,utmSource,utmMedium,utmCampaign});
     await kv.set(
       `lead:${leadId}`,
       { name, business, email, phone, industry, plan, prospectId:prospect.id, visitorId, sessionId, utmSource, utmMedium, utmCampaign, acquisition:{source:prospect.firstSource||prospect.source||'website',utmSource:prospect.firstUtmSource||prospect.utmSource||utmSource,utmMedium:prospect.firstUtmMedium||prospect.utmMedium||utmMedium,utmCampaign:prospect.firstUtmCampaign||prospect.utmCampaign||utmCampaign}, createdAt: Date.now() },
       { ex: 60 * 60 * 24 * 7 }
     );
+    try{await recordSiteEvent({type:'checkout_start',visitorId,sessionId,path:'/get-started',label:plan,utmSource,utmMedium,utmCampaign},req)}
+    catch(analyticsError){console.error('Lead pre-save analytics failed',safeError(analyticsError))}
     return res.status(200).json({ leadId, prospectId:prospect.id });
   } catch (err) {
     console.error('lead-create KV write failed:', safeError(err));
