@@ -76,3 +76,34 @@ test('dashboard labels retained-history coverage in analytics and prospect searc
   assert.match(ui,/d\.coverage\?\.isRetentionCapped/);
   assert.match(ui,/Older history may be outside retained tracking|Older history outside retained tracking/);
 });
+
+test('missing or malformed indexed prospects are disclosed instead of counted as a complete pipeline',async()=>{
+  const now=Date.now(),prospectIds=['good','missing','malformed','mismatched'];
+  const records={
+    'site:prospect:good':{id:'good',stage:'converted',convertedAt:now,updatedAt:now,monthlyValue:100},
+    'site:prospect:malformed':{stage:'converted',convertedAt:now,updatedAt:now},
+    'site:prospect:mismatched':{id:'other-record',stage:'converted',convertedAt:now,updatedAt:now}
+  };
+  const r=await fixture({prospectIds,records}).run();
+  assert.equal(r.code,200);
+  assert.equal(r.body.analytics.prospects.length,1);
+  assert.equal(r.body.analytics.conversions,1);
+  assert.equal(r.body.analytics.coverage.unavailableProspectRecords,3);
+  assert.equal(r.body.analytics.coverage.isIncomplete,true);
+  assert.equal(r.body.analytics.coverage.isRetentionCapped,false);
+});
+test('expired session index entries are measured separately from prospect completeness',async()=>{
+  const now=Date.now();
+  const r=await fixture({sessionIds:['expired','recent'],records:{
+    'site:session:recent':{id:'recent',firstAt:now,lastAt:now,visitorId:'visitor',pages:[],activeMs:0}
+  }}).run();
+  assert.equal(r.code,200);
+  assert.equal(r.body.analytics.sessions,1);
+  assert.equal(r.body.analytics.coverage.unavailableSessionRecords,1);
+  assert.equal(r.body.analytics.coverage.isIncomplete,false);
+});
+test('admin receives incomplete-prospect alerts on both website and Growth screens',()=>{
+  assert.match(ui,/d\.coverage\?\.isIncomplete/);
+  assert.match(ui,/adminWebsiteData\.coverage\?\.isIncomplete/);
+  assert.match(ui,/indexed prospects are unavailable; counts and search results may be partial/);
+});
