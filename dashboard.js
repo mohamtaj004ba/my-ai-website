@@ -2224,12 +2224,15 @@ async function sendInboxReply(e){
   e?.preventDefault();if(!currentInboxItem)return;
   const field=document.getElementById('inboxReplyText'),status=document.getElementById('inboxReplyStatus'),btn=document.querySelector('#inboxReplyForm button[type="submit"]'),message=String(field?.value||'').trim(),from=String(document.getElementById('inboxFromSelect')?.value||'').trim().toLowerCase();
   if(!message)return;if(btn){btn.disabled=true;btn.textContent='Sending…'}if(status)status.textContent='';
+  let deliveryWarning='';
   try{
     if(currentInboxItem.kind==='website'){
       const r=await fetch('/api/account?action=admin-website-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentInboxItem.id,message,from})}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not send reply');
-      currentInboxItem.messages.push(data.message);currentInboxItem.prospect=data.prospect;
-      const p=(adminWebsiteData.prospects||[]).find(x=>x.id===currentInboxItem.id);if(p)Object.assign(p,data.prospect);
+      if(data.message)currentInboxItem.messages.push(data.message);
+      if(data.prospect)currentInboxItem.prospect=data.prospect;
+      deliveryWarning=data.warning||'';
+      const p=(adminWebsiteData.prospects||[]).find(x=>x.id===currentInboxItem.id);if(p&&data.prospect)Object.assign(p,data.prospect);
     }else{
       const msgs=currentInboxItem.messages||[],inbound=[...msgs].reverse().find(m=>m.direction==='inbound'),last=msgs[msgs.length-1]||{},to=inbound?.from||last.from;
       if(!to)throw new Error('No Gmail recipient found');
@@ -2240,7 +2243,8 @@ async function sendInboxReply(e){
       await loadAdminInbox();
       const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===(data.threadId||currentInboxItem.id));if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]}}
     }
-    if(status)status.textContent='Reply sent.';renderInboxThread();renderAdminInbox();renderWebsiteAnalytics();renderAdminFleet();
+    renderInboxThread();renderAdminInbox();renderWebsiteAnalytics();renderAdminFleet();
+    if(status)status.textContent=deliveryWarning||'Reply sent.';
   }catch(err){if(status)status.textContent=err.message||'Could not send reply'}
   finally{if(btn){btn.disabled=false;btn.textContent='Send reply'}}
 }
