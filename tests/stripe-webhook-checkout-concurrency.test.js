@@ -204,3 +204,47 @@ test('HTML payment confirmation escapes business name rather than injecting mark
   assert.match(f.emailOptions[0].intro,/&lt;img src=x onerror=alert\(1\)&gt; &amp; Co/);
   assert.doesNotMatch(f.emailOptions[0].intro,/<img/);
 });
+
+test('different checkout sessions for the same account cannot provision simultaneously',async()=>{
+  const f=fixture({blockFirstWorkspace:true});
+  const first=f.submit('evt_first','cs_first');
+  await f.entered.promise;
+  const second=await f.submit('evt_second','cs_second');
+  assert.equal(second.status,503);
+  assert.equal(second.headers['Retry-After'],'15');
+  assert.equal(second.body.received,undefined);
+  assert.equal(f.store.has('stripe:event:evt_second'),false);
+  assert.equal(f.welcomes,0);
+  // Session lock for the waiting checkout is released; account claims stay
+  // with the worker currently performing customer provisioning.
+  assert.equal(f.locks.size,3);
+  f.resume.resolve();
+  const finished=await first;
+  assert.equal(finished.status,200);
+  assert.equal(f.locks.size,0);
+  const retried=await f.submit('evt_second','cs_second');
+  assert.equal(retried.status,200);
+  assert.equal(retried.body.workspaceId,finished.body.workspaceId);
+  assert.equal(f.welcomes,2);
+  assert.equal(f.locks.size,0);
+});
+test('account claim keys do not expose raw checkout email or Stripe customer',async()=>{
+  const f=fixture({blockFirstWorkspace:true});
+  const first=f.submit('evt_first','cs_first');
+  await f.entered.promise;
+  const keys=[...f.locks.keys()];
+  assert.equal(keys.length,3);
+  assert.ok(keys.some(key=>key.includes('account-email:')));
+  assert.ok(keys.some(key=>key.includes('account-customer:')));
+  assert.ok(keys.every(key=>!key.includes('customer@example.test')&&!key.includes('cus_same')));
+  f.resume.resolve();
+  await first;
+});
+test('failed account provisioning releases session and account identity claims',async()=>{
+  const f=fixture({failFirstWorkspace:true});
+  await assert.rejects(()=>f.submit('evt_failure','cs_first'),/workspace persistence failed/);
+  assert.equal(f.locks.size,0);
+  const retry=await f.submit('evt_retry','cs_second');
+  assert.equal(retry.status,200);
+  assert.equal(f.locks.size,0);
+});
