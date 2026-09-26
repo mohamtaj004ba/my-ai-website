@@ -13,7 +13,7 @@ function fixture({finance={ok:true,payload:{finance:{reconciliation:[{id:'fresh'
     adminWebsiteDays:30,adminWebsiteData:{prospects:[{id:'older'}]},adminWebsiteLoadError:'',
     adminFinanceData:{reconciliation:[{id:'older'}]},adminFinanceLoadError:'',
     adminDataSyncAt:{},adminPlatformDirty:false,
-    adminPlatformData:{analyticsWindowDays:preferredDays},adminProvisioningData:[],
+    adminPlatformData:{analyticsWindowDays:preferredDays},adminProvisioningData:[],adminDocumentsData:{agreements:[],company:[],standard:[]},
     fetch:async url=>{calls.push(url);if(url.includes('admin-finance'))return response(finance);if(url.includes('admin-website-analytics'))return response(website);if(url.includes('admin-platform-settings'))return response({ok:true,payload:{settings:{analyticsWindowDays:preferredDays}}});return response({ok:true,payload:{}})},
     setDataHealth:(...args)=>health.push(args),
     console:{error:()=>{}},
