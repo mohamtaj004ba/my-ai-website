@@ -30,10 +30,9 @@ test('documents table, review counts, and navigation badge use consistent expiry
 });
 
 test('archived documents stay out of renewal counts after their expiration',()=>{
-  const now=new Date('2028-03-01T12:00:00').getTime();
-  const script='companyDocumentNeedsReview('+JSON.stringify({status:'archived',expiresAt:'2028-02-29'})+')';
+  const script='companyDocumentNeedsReview('+JSON.stringify({status:'archived',expiresAt:'2020-02-29'})+')';
   assert.equal(vm.runInContext(script,ctx),false);
-  assert.equal(vm.runInContext('companyDocumentNeedsReview('+JSON.stringify({status:'active',expiresAt:'2028-02-29'})+')',ctx),true);
+  assert.equal(vm.runInContext('companyDocumentNeedsReview('+JSON.stringify({status:'active',expiresAt:'2020-02-29'})+')',ctx),true);
   assert.equal(vm.runInContext('companyDocumentNeedsReview('+JSON.stringify({status:'review',expiresAt:''})+')',ctx),true);
   assert.equal(vm.runInContext('companyDocumentNeedsReview('+JSON.stringify({status:'active',expiresAt:'2099-12-31'})+')',ctx),false);
 });
