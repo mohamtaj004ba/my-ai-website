@@ -1656,7 +1656,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   if(document.body.dataset.dashboard!=='admin')return;
   if(view==='inbox'){await loadAdminInbox({silent:true,force});return}
   if(announce)setAdminSyncState('syncing','Syncing '+String(view||'overview').replaceAll('-',' ')+'…');
-  const jobs=[],add=(key,url,ttl,apply)=>jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(data)apply(data)}).catch(err=>{if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';if(key==='website')adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.';throw err}));
+  const jobs=[],add=(key,url,ttl,apply)=>jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(data){if(key==='finance'&&!data.finance||key==='website'&&!data.analytics)throw new Error('Incomplete '+key+' response');apply(data)}}).catch(err=>{if(key==='finance'||key==='website')delete adminDataSyncAt[key];if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';if(key==='website')adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.';throw err}));
   if(view==='overview'||view==='clients'){
     add('summary','/api/account?action=admin-summary',30000,d=>{adminSummaryData=d.summary||{}});
     add('clients','/api/account?action=admin-clients',30000,d=>{adminClientsData=d.clients||[]});
