@@ -1981,9 +1981,12 @@ function companyDocumentIsExpired(record,now=Date.now()){
   const endOfDay=new Date(date+'T23:59:59.999').getTime();
   return Number.isFinite(endOfDay)&&endOfDay<now;
 }
+function companyDocumentNeedsReview(record){
+  return record?.status!=='archived'&&(['review','expired'].includes(record?.status)||companyDocumentIsExpired(record));
+}
 function renderDocuments(){
   const d=adminDocumentsData||{agreements:[],company:[],standard:[]},agreements=d.agreements||[],company=d.company||[],set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
-  const reviewCount=company.filter(x=>['review','expired'].includes(x.status)||(companyDocumentIsExpired(x))).length;
+  const reviewCount=company.filter(x=>companyDocumentNeedsReview(x)).length;
   set('documentsSigned',agreements.filter(x=>x.status==='signed').length);set('documentsAwaiting',agreements.filter(x=>x.status==='awaiting_signature').length);set('documentsCompany',company.length);set('documentsReview',reviewCount);
   const search=document.getElementById('documentSearch'),filter=document.getElementById('documentFilter');if(search){search.value=documentSearch;search.oninput=()=>{documentSearch=search.value;renderDocuments()}}if(filter){filter.value=documentFilter;filter.onchange=()=>{documentFilter=filter.value;renderDocuments()}}
   const q=documentSearch.trim().toLowerCase(),visible=agreements.filter(x=>(documentFilter==='all'||x.status===documentFilter)&&(!q||[x.workspaceName,x.ownerEmail,x.signedName,x.agreementVersion,x.plan].filter(Boolean).join(' ').toLowerCase().includes(q))),list=document.getElementById('adminAgreementList'),empty=document.getElementById('adminAgreementEmpty');
@@ -1993,7 +1996,7 @@ function renderDocuments(){
 
   const cs=document.getElementById('companyDocumentSearch'),cf=document.getElementById('companyDocumentFilter');if(cs){cs.value=companyDocumentSearch;cs.oninput=()=>{companyDocumentSearch=cs.value;renderDocuments()}}if(cf){cf.value=companyDocumentFilter;cf.onchange=()=>{companyDocumentFilter=cf.value;renderDocuments()}}
   const cq=companyDocumentSearch.trim().toLowerCase(),companyVisible=company.filter(x=>(companyDocumentFilter==='all'||x.type===companyDocumentFilter)&&(!cq||[x.name,x.type,x.status,x.notes].filter(Boolean).join(' ').toLowerCase().includes(cq))).sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0)),companyList=document.getElementById('companyDocumentList'),companyEmpty=document.getElementById('companyDocumentEmpty');
-  if(companyList)companyList.innerHTML=companyVisible.map(x=>{const expired=companyDocumentIsExpired(x),status=expired?'expired':x.status||'active',tone=status==='active'?'green':status==='expired'?'red':'amber';return '<article class="company-document-row"><span><strong>'+esc(x.name)+'</strong><small>'+esc(x.notes||'No notes')+'</small></span><span>'+esc(x.type||'Other')+'</span><span><span class="tag '+tone+'">'+esc(status.replaceAll('_',' '))+'</span></span><span>'+esc(x.effectiveDate||'—')+'</span><span>'+esc(x.expiresAt||'—')+'</span><span class="phone-actions">'+(x.url?'<a class="admin-link" href="'+esc(x.url)+'" target="_blank" rel="noopener">Open</a>':'')+'<button class="admin-link" data-edit-company-document="'+esc(x.id)+'">Edit</button></span></article>'}).join('');
+  if(companyList)companyList.innerHTML=companyVisible.map(x=>{const expired=x.status!=='archived'&&companyDocumentIsExpired(x),status=expired?'expired':x.status||'active',tone=status==='active'?'green':status==='expired'?'red':'amber';return '<article class="company-document-row"><span><strong>'+esc(x.name)+'</strong><small>'+esc(x.notes||'No notes')+'</small></span><span>'+esc(x.type||'Other')+'</span><span><span class="tag '+tone+'">'+esc(status.replaceAll('_',' '))+'</span></span><span>'+esc(x.effectiveDate||'—')+'</span><span>'+esc(x.expiresAt||'—')+'</span><span class="phone-actions">'+(x.url?'<a class="admin-link" href="'+esc(x.url)+'" target="_blank" rel="noopener">Open</a>':'')+'<button class="admin-link" data-edit-company-document="'+esc(x.id)+'">Edit</button></span></article>'}).join('');
   if(companyEmpty)companyEmpty.hidden=companyVisible.length!==0;companyList?.querySelectorAll('[data-edit-company-document]').forEach(b=>b.addEventListener('click',()=>openCompanyDocumentModal(b.dataset.editCompanyDocument)));
 }
 let companyDocumentMutationPending=false;
@@ -2859,7 +2862,7 @@ function renderAdminNavBadges(){
   setAdminNavBadge('navBadgeGrowth',(adminWebsiteData.prospects||[]).filter(prospectDue).length);
   setAdminNavBadge('navBadgeFinance',(adminClientsData||[]).filter(x=>x.subscriptionStatus==='past_due').length+(adminFinanceData.reconciliation||[]).length);
   setAdminNavBadge('navBadgeClientCare',(adminSupportData||[]).filter(x=>x.status!=='resolved').length+(adminFeedbackData||[]).filter(x=>x.status==='submitted').length);
-  setAdminNavBadge('navBadgeHealth',(adminReadinessData?.blockers||[]).length);const companyDocs=adminDocumentsData?.company||[];setAdminNavBadge('navBadgeDocuments',companyDocs.filter(x=>['review','expired'].includes(x.status)||(companyDocumentIsExpired(x))).length);
+  setAdminNavBadge('navBadgeHealth',(adminReadinessData?.blockers||[]).length);const companyDocs=adminDocumentsData?.company||[];setAdminNavBadge('navBadgeDocuments',companyDocs.filter(x=>companyDocumentNeedsReview(x)).length);
 }
 function renderAdmin(){
   if(!adminSummaryData)return;
