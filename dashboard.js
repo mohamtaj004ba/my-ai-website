@@ -1872,15 +1872,28 @@ function renderGrowth(){
 const prospectStagePending=new Set();
 async function moveGrowthProspectStage(id,bucket){
   const map={new:'new',nurture:'follow_up',qualified:'qualified',converted:'converted',lost:'lost'},stage=map[bucket];
-  const item=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id));if(!item||!stage||item.stage===stage||prospectStagePending.has(String(id)))return;
-  prospectStagePending.add(String(id));
+  const key=String(id),item=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===key);
+  if(!item||!stage||item.stage===stage||prospectStagePending.has(key))return;
+  prospectStagePending.add(key);
   const before=item.stage,expectedUpdatedAt=Number(item.updatedAt||item.createdAt||0);item.stage=stage;renderGrowth();
+  let conflict=false;
   try{
     const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
+    conflict=r.status===409;
     if(!r.ok)throw new Error(data.error||'Could not move prospect.');
-    Object.assign(item,data.prospect||{});renderGrowth();loadNotifications({silent:true});
-  }catch(err){item.stage=before;renderGrowth();alert(err.message||'Could not move prospect.')}
-  finally{prospectStagePending.delete(String(id))}
+    if(!data.prospect||String(data.prospect.id)!==key)throw new Error('Prospect update was not confirmed. Refresh Growth before retrying.');
+    // Background analytics refresh can replace the prospect array while the drag request is pending.
+    // Apply the acknowledged record to the current array, never a detached or newer snapshot.
+    const current=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===key);
+    if(current&&Number(current.updatedAt||current.createdAt||0)<=Number(data.prospect.updatedAt||0))Object.assign(current,data.prospect);
+    renderGrowth();loadNotifications({silent:true});
+  }catch(err){
+    // Only undo our own optimistic edit; a newer refresh or editor save must not be rolled back.
+    const current=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===key);
+    if(current===item&&item.stage===stage&&Number(item.updatedAt||item.createdAt||0)===expectedUpdatedAt)item.stage=before;
+    renderGrowth();alert(err.message||'Could not move prospect.');
+    if(conflict)await refreshAdminView('growth',{force:true,announce:false}).catch(()=>{});
+  }finally{prospectStagePending.delete(key);renderGrowth()}
 }
 function toLocalDateTimeInput(ms){if(!ms)return'';const d=new Date(Number(ms));return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
 let prospectModalPending=false;
