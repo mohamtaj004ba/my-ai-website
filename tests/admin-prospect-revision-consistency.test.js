@@ -49,7 +49,8 @@ test('all admin prospect edit paths submit displayed revisions and guard pending
   const editor=ui.slice(ui.indexOf('let prospectModalPending=false;'),ui.indexOf('let adminCampaignMutationPending=false;'));
   const quick=ui.slice(ui.indexOf('async function updateWebsiteProspect('),ui.indexOf('async function loadAdminInbox(',ui.indexOf('async function updateWebsiteProspect(')));
   assert.match(pipeline,/JSON\.stringify\(\{id,stage,expectedUpdatedAt\}\)/);
-  assert.match(pipeline,/prospectStagePending\.has\(String\(id\)\)/);
+  assert.match(pipeline,/prospectStagePending\.has\(key\)/);
+  assert.match(pipeline,/const key=String\(id\)/);
   assert.match(editor,/m\.dataset\.expectedUpdatedAt/);
   assert.match(editor,/payload\.expectedUpdatedAt=Number\(/);
   assert.match(editor,/if\(prospectModalPending\)return/);
