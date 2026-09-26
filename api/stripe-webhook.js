@@ -8,7 +8,7 @@ const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {addBusinessHours}=require('../lib/business-hours');
 const {lifecycleDecision}=require('../lib/stripe-lifecycle');
 const {claimCheckoutSession,releaseCheckoutSession}=require('../lib/stripe-session-lock');
-const {recordCheckoutReconciliation}=require('../lib/stripe-reconciliation');
+const {recordCheckoutReconciliation,resolveCheckoutReconciliation}=require('../lib/stripe-reconciliation');
 module.exports.config={api:{bodyParser:false}};
 const STRIPE_WEBHOOK_SECRET=process.env.STRIPE_WEBHOOK_SECRET;
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
@@ -328,6 +328,8 @@ module.exports=async function handler(req,res){
 
   if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
   if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+  try{await resolveCheckoutReconciliation(kv,session.id)}
+  catch(recordError){console.error('Checkout reconciliation completion update failed',safeError(recordError))}
   return res.status(200).json({received:true,workspaceId:workspace.id});
   }finally{
     for(const accountClaim of accountClaims.reverse()){
