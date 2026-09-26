@@ -5,6 +5,8 @@ const source=fs.readFileSync('scripts/preview-browser-qa.mjs','utf8');
 test('authenticated Preview QA exercises the read-only Finance payment exception contract',()=>{
   assert.match(source,/admin-finance'\)/);
   assert.match(source,/Array\.isArray\(financePayload\?\.reconciliation\)/);
+  assert.match(source,/financeReconciliationCount'\)\.textContent\(\)/);
+  assert.doesNotMatch(source,/financeReconciliationCount'\)\.innerText\(\)/);
   assert.match(source,/window\.__qaOriginalFinanceData=adminFinanceData/);
   assert.match(source,/type==='checkout-reconciliation'/);
   assert.match(source,/#financeReconciliationStatus/);
