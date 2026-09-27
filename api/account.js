@@ -9,6 +9,7 @@ const {appendSiteConversation}=require('../lib/site-conversation');
 const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
 const {replacePreviewSupportSeed}=require('../lib/preview-support-seed');
+const {replacePreviewFeedbackSeed}=require('../lib/preview-feedback-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAuditBatch}=require('../lib/config-transaction');
 const {recordFinanceSnapshot}=require('../lib/finance-history');
@@ -198,15 +199,7 @@ async function seedPreviewData(req,res){
 
   await replacePreviewSupportSeed(kv,seedSupport);
 
-  const feedbackIndex=await kv.get('ai-feedback:index')||[],feedbackIds=Array.isArray(feedbackIndex)?feedbackIndex:[];
-  const staleFeedbackIds=feedbackIds.filter(id=>String(id).startsWith('seed_feedback_seed_'));
-  await Promise.allSettled(staleFeedbackIds.map(id=>kv.del('ai-feedback:'+id)));
-  const retainedFeedbackIds=feedbackIds.filter(id=>!String(id).startsWith('seed_feedback_seed_'));
-  for(const item of seedFeedback){
-    await kv.set('ai-feedback:'+item.id,item);
-    await kv.set(aiFeedbackWorkspaceIndexKey(item.workspaceId),[item.id]);
-  }
-  await kv.set('ai-feedback:index',[...seedFeedback.map(x=>x.id),...retainedFeedbackIds].slice(0,1500));
+  await replacePreviewFeedbackSeed(kv,seedFeedback);
   await appendAudit(workspaceId,{actorEmail:email,actorRole:'owner',action:'preview_seed_realistic_dataset',section:'workspace',before:null,after:{calls:dataset.calls.length,leads:dataset.leads.length,conversations:dataset.conversations.length,days:60,adminClients:adminIds.length}});
   return res.status(200).json({ok:true,workspaceId,businessName:workspace.name,days:60,calls:dataset.calls.length,leads:dataset.leads.length,conversations:dataset.conversations.length,appointments:dataset.appointments.length,adminClients:adminIds.length,plan:workspace.plan,minutes:dataset.minutes});
 }
