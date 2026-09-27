@@ -101,3 +101,10 @@ test('website analytics summary announces selected and stale date-range informat
   const html=fs.readFileSync('admin-dashboard.html','utf8');
   assert.match(html,/<small id="websiteTrafficSummary" role="status" aria-live="polite" aria-atomic="true">/);
 });
+
+test('Refresh action follows the latest analytics request rather than an older completion',()=>{
+  assert.match(source,/refresh\.disabled=adminWebsiteAnalyticsLoading/);
+  assert.match(source,/refresh\.textContent=adminWebsiteAnalyticsLoading\?'Refreshing…':'Refresh'/);
+  assert.match(source,/refresh\.onclick=\(\)=>loadWebsiteAnalytics\(adminWebsiteDays\)/);
+  assert.doesNotMatch(source,/finally\{refresh\.disabled=false;refresh\.textContent='Refresh'\}/);
+});
