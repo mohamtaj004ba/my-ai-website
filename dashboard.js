@@ -1587,13 +1587,44 @@ async function refreshClientSupportHistory(){
     if(request===clientSupportHistoryRequest&&button){button.disabled=false;button.textContent='Retry history'}
   }
 }
-function renderSupport(){
+function snapshotClientSupportThreadUi(wrap){
+  const snapshots=new Map();
+  wrap.querySelectorAll('[data-support-ticket-id]').forEach(thread=>{
+    const id=String(thread.dataset.supportTicketId||''),input=thread.querySelector('[data-support-client-input]'),status=thread.querySelector('[data-support-client-status]');
+    if(!id)return;
+    const focused=!!input&&document.activeElement===input;
+    snapshots.set(id,{open:thread.open,draft:input?.value||'',status:status?.textContent||'',focused,
+      selectionStart:focused?input.selectionStart:0,selectionEnd:focused?input.selectionEnd:0});
+  });
+  return snapshots;
+}
+function restoreClientSupportThreadUi(wrap,snapshots,{clearDraftId=''}={}){
+  wrap.querySelectorAll('[data-support-ticket-id]').forEach(thread=>{
+    const id=String(thread.dataset.supportTicketId||''),previous=snapshots.get(id),input=thread.querySelector('[data-support-client-input]'),
+      status=thread.querySelector('[data-support-client-status]'),button=thread.querySelector('[data-support-client-reply]');
+    if(previous){
+      thread.open=previous.open;
+      if(input)input.value=id===clearDraftId?'':previous.draft;
+      if(status)status.textContent=id===clearDraftId?'Reply sent.':previous.status;
+    }
+    if(clientSupportReplyPending.has(id)&&button){button.disabled=true;button.textContent='Sending…'}
+    if(previous?.focused&&input){
+      input.focus();
+      const position=id===clearDraftId?0:Math.min(previous.selectionStart,input.value.length);
+      const endPosition=id===clearDraftId?0:Math.min(previous.selectionEnd,input.value.length);
+      input.setSelectionRange(position,endPosition);
+    }
+  });
+}
+function renderSupport({clearDraftId=''}={}){
   const wrap=document.getElementById('supportTicketList'),empty=document.getElementById('supportTicketsEmpty');if(!wrap)return;
+  const snapshots=snapshotClientSupportThreadUi(wrap);
   wrap.innerHTML=supportTicketsData.map(t=>{
     const messages=(Array.isArray(t.messages)&&t.messages.length?t.messages:[{direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||Date.now()}]);
-    const thread=messages.map(m=>'<div class="support-message '+(m.direction==='support'?'support':'client')+'"><div><b>'+(m.direction==='support'?'CallerCore Support':'You')+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+'</small></div><p>'+esc(m.body||'').replace(/\n/g,'<br>')+'</p></div>').join('');
+    const thread=messages.map(m=>'<div class="support-message '+(m.direction==='support'?'support':'client')+'"><div><b>'+(m.direction==='support'?'CallerCore Support':'You')+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+'</small></div><p>'+esc(m.body||'').replace(/\\n/g,'<br>')+'</p></div>').join('');
     return '<details class="support-ticket-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+new Date(t.createdAt).toLocaleString()+' · '+esc(t.priority||'normal')+'</small></div><span class="tag '+(t.status==='resolved'?'green':t.status==='in_progress'?'amber':'')+'">'+esc(String(t.status||'open').replace('_',' '))+'</span></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-client-input="'+esc(t.id)+'" placeholder="Reply to CallerCore support…"></textarea><button class="secondary-btn" type="button" data-support-client-reply="'+esc(t.id)+'">Send reply</button><small class="muted" role="status" aria-live="polite" data-support-client-status="'+esc(t.id)+'"></small></div></details>';
   }).join('');
+  restoreClientSupportThreadUi(wrap,snapshots,{clearDraftId});
   if(empty){const notice=document.getElementById('clientSupportHistoryHealth');empty.hidden=supportTicketsData.length!==0||!!(notice&&!notice.hidden)}
   wrap.querySelectorAll('[data-support-client-reply]').forEach(b=>b.addEventListener('click',()=>replyClientSupportTicket(b.dataset.supportClientReply,b)));
 }
