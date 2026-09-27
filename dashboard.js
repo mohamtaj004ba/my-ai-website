@@ -3616,7 +3616,14 @@ async function navigateNotification(n){
       }
       if(!target)return false;
     }
-    else if(meta.prospectId){showView('growth');openProspectModal(String(meta.prospectId));return true}
+    else if(meta.prospectId){
+      const prospectId=String(meta.prospectId);showView('growth');
+      if(!(adminWebsiteData.prospects||[]).some(x=>String(x.id)===prospectId)){
+        if(!await loadWebsiteAnalytics(adminWebsiteDays))return false;
+      }
+      if(!(adminWebsiteData.prospects||[]).some(x=>String(x.id)===prospectId)||prospectModalPending||prospectStagePending.has(prospectId))return false;
+      openProspectModal(prospectId);return true;
+    }
     else if(meta.workspaceId&&view==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(meta.workspaceId))+'"]');
     else if(meta.workspaceId&&view==='clients')target=document.querySelector('[data-admin-client-row="'+CSS.escape(String(meta.workspaceId))+'"]');
     if(target){flashAdminSearchTarget(target);return true}
