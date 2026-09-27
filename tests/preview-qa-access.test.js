@@ -34,7 +34,9 @@ test('Preview launcher supports direct client and admin QA sessions',()=>{
 test('Preview reseeding removes stale generated admin fixtures',()=>{
   assert.match(account,/staleSeedWorkspaceIds=index\.filter\(id=>String\(id\)\.startsWith\('seed_'\)\)/);
   assert.match(account,/keep=index\.filter\(id=>!String\(id\)\.startsWith\('seed_'\)\)/);
-  assert.match(account,/!String\(x\.workspaceId\|\|''\)\.startsWith\('seed_'\)/);
+  assert.ok(account.includes('replacePreviewPhoneSeed(kv,workspaceId,previewSeed.primaryPhone(workspaceId),seedPhones)'));
+  const previewPhone=fs.readFileSync(path.join(root,'lib','preview-phone-seed.js'),'utf8');
+  assert.ok(previewPhone.includes("!x.workspaceId.startsWith('seed_')"));
   assert.match(account,/replacePreviewSupportSeed\(kv,seedSupport\)/);
   const previewSupport=fs.readFileSync(path.join(root,'lib','preview-support-seed.js'),'utf8');
   assert.match(previewSupport,/oldSeedIds=index\.filter\(id=>String\(id\)\.startsWith\(SEED_PREFIX\)\)/);
