@@ -29,7 +29,7 @@ test('feature card rejects inherited keys and HTML-escapes content',()=>{
   const invalid={innerHTML:'unchanged',replaceChildren(){this.innerHTML='';}};
   c.featureStage(invalid,'constructor');
   assert.equal(invalid.innerHTML,'');
-  c.FEATURE_INFO.automations.copy='<img src=x onerror=alert(1)>';
+  vm.runInContext("FEATURE_INFO.automations.copy='<img src=x onerror=alert(1)>'",c);
   const card={innerHTML:''};
   c.featureStage(card,'automations');
   assert.match(card.innerHTML,/&lt;img src=x onerror=alert\(1\)&gt;/);
