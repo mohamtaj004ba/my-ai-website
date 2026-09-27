@@ -1590,8 +1590,9 @@ async function bootstrapAdmin(){
     if(sr.status===401||cr.status===401){location.replace('/login?next=%2Fadmin-dashboard');return false}
     if(sr.status===403||cr.status===403){document.body.innerHTML='<main style="padding:40px;font-family:system-ui"><h1>Admin access required</h1><p>This account does not have CallerCore admin permissions.</p><a href="/dashboard">Return to client dashboard</a></main>';return false}
     if(!sr.ok||!cr.ok)throw new Error('admin bootstrap');
-    adminSummaryData=(await sr.json()).summary||{};
-    adminClientsData=(await cr.json()).clients||[];
+    const summary=(await sr.json()).summary,clients=(await cr.json()).clients;
+    if(!summary||typeof summary!=='object'||Array.isArray(summary)||!Array.isArray(clients))throw new Error('Incomplete admin bootstrap response');
+    adminSummaryData=summary;adminClientsData=clients;
     adminDataSyncAt.summary=Date.now();adminDataSyncAt.clients=Date.now();
     const sess=await fetch('/api/account?action=session',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>null);
     if(sess?.ok){
