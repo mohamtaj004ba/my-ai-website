@@ -96,3 +96,8 @@ test('analytics selector uses requested range and exposes pressed state and pend
   assert.match(source,/btn\.setAttribute\('aria-pressed',String\(Number\(btn\.dataset\.websiteDays\)===Number\(adminWebsiteDays\)\)\)/);
   assert.match(source,/adminWebsiteAnalyticsLoading\?' · Loading '\+Number\(adminWebsiteDays\)/);
 });
+
+test('website analytics summary announces selected and stale date-range information accessibly',()=>{
+  const html=fs.readFileSync('admin-dashboard.html','utf8');
+  assert.match(html,/<small id="websiteTrafficSummary" role="status" aria-live="polite" aria-atomic="true">/);
+});
