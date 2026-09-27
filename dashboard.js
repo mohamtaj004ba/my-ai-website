@@ -2519,7 +2519,32 @@ function adminElapsedAge(ms){
   const hours=Math.floor(mins/60);if(hours<48)return hours+'h old';
   return Math.floor(hours/24)+'d old';
 }
-function renderAdminSupport(){
+const adminSupportThreadUi=new Map(),adminSupportReplyPending=new Set();
+function rememberAdminSupportThreadUi(wrap){
+  wrap.querySelectorAll('[data-support-ticket-id]').forEach(thread=>{
+    const id=String(thread.dataset.supportTicketId||''),input=thread.querySelector('[data-support-admin-input]'),status=thread.querySelector('[data-support-admin-status]');
+    if(!id)return;
+    adminSupportThreadUi.set(id,{open:thread.open,draft:input?.value||'',status:status?.textContent||'',
+      selectionStart:input?.selectionStart||0,selectionEnd:input?.selectionEnd||0});
+  });
+}
+function restoreAdminSupportThreadUi(wrap,focusedReplyId){
+  wrap.querySelectorAll('[data-support-ticket-id]').forEach(thread=>{
+    const id=String(thread.dataset.supportTicketId||''),previous=adminSupportThreadUi.get(id),
+      input=thread.querySelector('[data-support-admin-input]'),status=thread.querySelector('[data-support-admin-status]'),
+      button=thread.querySelector('[data-support-admin-reply]');
+    if(previous){
+      thread.open=previous.open;
+      if(input)input.value=previous.draft;
+      if(status)status.textContent=previous.status;
+    }
+    if(adminSupportReplyPending.has(id)&&button){button.disabled=true;button.textContent='Sending…'}
+    if(id===focusedReplyId&&input&&previous){
+      input.focus();input.setSelectionRange(Math.min(previous.selectionStart,input.value.length),Math.min(previous.selectionEnd,input.value.length));
+    }
+  });
+}
+function renderAdminSupport({clearDraftId=''}={}){
   const tickets=[...(adminSupportData||[])].sort((a,b)=>{
     const ar=a.status==='resolved',br=b.status==='resolved';if(ar!==br)return ar?1:-1;
     const au=a.priority==='urgent',bu=b.priority==='urgent';if(au!==bu)return au?-1:1;
@@ -2536,12 +2561,18 @@ function renderAdminSupport(){
     return stateOk&&searchOk;
   });
   const wrap=document.getElementById('adminSupportList');if(!wrap)return;
+  const focusedReplyId=wrap.contains?.(document.activeElement)?String(document.activeElement?.dataset?.supportAdminInput||''):'';
+  rememberAdminSupportThreadUi(wrap);
+  if(clearDraftId)adminSupportThreadUi.delete(String(clearDraftId));
+  const knownTickets=new Set((adminSupportData||[]).map(t=>String(t?.id||'')));
+  for(const id of adminSupportThreadUi.keys())if(!knownTickets.has(id))adminSupportThreadUi.delete(id);
   wrap.innerHTML=visible.map(t=>{
     const messages=(Array.isArray(t.messages)&&t.messages.length?t.messages:[{direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||Date.now()}]);
     const thread=messages.map(m=>'<div class="support-message '+(m.direction==='support'?'support':'client')+'"><div><b>'+(m.direction==='support'?'CallerCore Support':esc(t.workspaceName||'Client'))+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+'</small></div><p>'+esc(m.body||'').replace(/\n/g,'<br>')+'</p></div>').join('');
     const ageHours=Math.max(0,(Date.now()-Number(t.createdAt||Date.now()))/3600000),sla=t.status==='resolved'?{label:'Resolved',tone:'green'}:t.priority==='urgent'?(ageHours>=4?{label:'Urgent · SLA risk',tone:'red'}:{label:'Urgent · within 4h',tone:'amber'}):(ageHours>=24?{label:'Aging · 24h+',tone:'amber'}:{label:'Within 24h',tone:'green'});
-    return '<details class="support-admin-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+esc(t.workspaceName||'Workspace')+' · '+esc(t.email||'')+' · '+esc(adminElapsedAge(t.createdAt))+'</small></div><div class="support-summary-actions"><span class="tag '+sla.tone+'">'+esc(sla.label)+'</span><span class="tag '+(t.priority==='urgent'?'red':'')+'">'+esc(t.priority||'normal')+'</span><select class="support-status-select" data-ticket-status="'+esc(t.id)+'" '+(adminSupportStatusPending.has(String(t.id))?'disabled aria-busy="true"':'')+'><option value="open" '+(t.status==='open'?'selected':'')+'>Open</option><option value="in_progress" '+(t.status==='in_progress'?'selected':'')+'>In progress</option><option value="resolved" '+(t.status==='resolved'?'selected':'')+'>Resolved</option></select></div></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-admin-input="'+esc(t.id)+'" placeholder="Reply to the client…"></textarea><button class="primary" type="button" data-support-admin-reply="'+esc(t.id)+'">Send reply</button></div></details>';
+    return '<details class="support-admin-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+esc(t.workspaceName||'Workspace')+' · '+esc(t.email||'')+' · '+esc(adminElapsedAge(t.createdAt))+'</small></div><div class="support-summary-actions"><span class="tag '+sla.tone+'">'+esc(sla.label)+'</span><span class="tag '+(t.priority==='urgent'?'red':'')+'">'+esc(t.priority||'normal')+'</span><select class="support-status-select" data-ticket-status="'+esc(t.id)+'" '+(adminSupportStatusPending.has(String(t.id))?'disabled aria-busy="true"':'')+'><option value="open" '+(t.status==='open'?'selected':'')+'>Open</option><option value="in_progress" '+(t.status==='in_progress'?'selected':'')+'>In progress</option><option value="resolved" '+(t.status==='resolved'?'selected':'')+'>Resolved</option></select></div></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-admin-input="'+esc(t.id)+'" placeholder="Reply to the client…"></textarea><button class="primary" type="button" data-support-admin-reply="'+esc(t.id)+'">Send reply</button><small class="muted" role="status" aria-live="polite" data-support-admin-status="'+esc(t.id)+'"></small></div></details>';
   }).join('');
+  restoreAdminSupportThreadUi(wrap,focusedReplyId);
   const empty=document.getElementById('adminSupportEmpty');if(empty)empty.hidden=visible.length!==0;
   wrap.querySelectorAll('[data-ticket-status]').forEach(s=>s.addEventListener('change',e=>{e.stopPropagation();updateSupportStatus(s.dataset.ticketStatus,s.value)}));
   wrap.querySelectorAll('[data-support-admin-reply]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();replyAdminSupportTicket(b.dataset.supportAdminReply,b)}));
