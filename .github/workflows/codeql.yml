@@ -23,4 +23,11 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
-      - uses: github/codeql-action/analyze@v3
+      - name: Analyze JavaScript and retain diagnostic SARIF
+        id: codeql
+        uses: github/codeql-action/analyze@v3
+        with:
+          output: codeql-results
+      - name: Summarize CodeQL findings
+        if: ${{ always() && steps.codeql.outputs.sarif-output != '' }}
+        run: node scripts/report-codeql.mjs "${{ steps.codeql.outputs.sarif-output }}"
