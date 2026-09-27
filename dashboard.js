@@ -3216,6 +3216,10 @@ async function loadAdminSearchInboxCache(){
       const d=await gr.json();
       if(!d||!Array.isArray(d.threads))throw new Error('Incomplete Gmail cache');
       adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||0);
+    }else{
+      adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;
+      if(currentInboxItem?.kind==='gmail'){currentInboxItem=null;renderInboxThread()}
+      renderAdminInbox();
     }
     adminSearchInboxCacheLoaded=true;adminSearchInboxCacheError=false;
   }catch(err){adminSearchInboxCacheError=true;console.warn('Global search inbox cache unavailable',err)}
