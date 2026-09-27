@@ -9,7 +9,6 @@ assert.ok(begin>=0&&end>begin,'global inbox search cache loader exists');
 function fixture(){
   const calls=[],warnings=[],renders=[],state={status:'fail',inbox:'healthy'};
   const ctx=vm.createContext({
-    adminSearchInboxCacheLoaded:false,adminSearchInboxLoading:false,adminSearchInboxCacheError:false,
     adminSearchInboxRequest:0,adminSearchInboxCacheLoaded:false,adminSearchInboxLoading:false,adminSearchInboxCacheError:false,
     adminInboxData:{gmailStatus:{connected:true},gmail:{threads:[{id:'last-good'}]},aliases:[{email:'old@example.test'}],lastSync:1700000000000},currentInboxItem:null,
     fetch:async url=>{
