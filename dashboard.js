@@ -1563,6 +1563,11 @@ function renderClientChecklist(){
   wrap.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 }
 let clientSupportHistoryRequest=0;
+function invalidateClientSupportHistoryRequest(){
+  ++clientSupportHistoryRequest;
+  const button=document.getElementById('clientSupportHistoryRetry');
+  if(button){button.disabled=false;button.textContent='Retry history'}
+}
 async function refreshClientSupportHistory(){
   const request=++clientSupportHistoryRequest,button=document.getElementById('clientSupportHistoryRetry');
   if(button){button.disabled=true;button.textContent='Retrying…'}
@@ -1597,7 +1602,7 @@ async function replyClientSupportTicket(id,button){
   if(button){button.disabled=true;button.textContent='Sending…'}
   const r=await fetch('/api/account?action=support-ticket-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,message})}),data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not send support reply.');if(button){button.disabled=false;button.textContent='Send reply'};return}
-  const i=supportTicketsData.findIndex(x=>x.id===id);if(i>=0)supportTicketsData[i]=data.ticket;
+  invalidateClientSupportHistoryRequest();const i=supportTicketsData.findIndex(x=>x.id===id);if(i>=0)supportTicketsData[i]=data.ticket;
   renderSupport();loadNotifications({silent:true});
 }
 async function submitSupportTicket(){
@@ -1606,7 +1611,7 @@ async function submitSupportTicket(){
   if(btn){btn.disabled=true;btn.textContent='Sending…'};if(status)status.textContent='';
   const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject,message,priority})});
   const data=await r.json().catch(()=>({}));
-  if(r.ok){supportTicketsData.unshift(data.ticket);document.getElementById('supportSubject').value='';document.getElementById('supportMessage').value='';if(status)status.textContent='Support request sent.';renderSupport()}
+  if(r.ok){invalidateClientSupportHistoryRequest();supportTicketsData.unshift(data.ticket);document.getElementById('supportSubject').value='';document.getElementById('supportMessage').value='';if(status)status.textContent='Support request sent.';renderSupport()}
   else if(status)status.textContent=data.error||'Could not send support request.';
   if(btn){btn.disabled=false;btn.textContent='Send support request'}
 }
