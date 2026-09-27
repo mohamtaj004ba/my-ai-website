@@ -2098,15 +2098,28 @@ async function adminAiFeedback(req,res){
 }
 async function adminAiFeedbackUpdate(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const id=String(req.body?.id||'').slice(0,160),status=String(req.body?.status||'').slice(0,40);
+  const b=req.body||{},id=String(b.id||'').slice(0,160),status=String(b.status||'').slice(0,40);
   if(!id||!['submitted','reviewed','applied','dismissed'].includes(status))return res.status(400).json({error:'Invalid feedback update'});
-  const key='ai-feedback:'+id,previous=await kv.get(key);if(!previous)return res.status(404).json({error:'Feedback not found'});
-  const next={...previous,status,updatedAt:Date.now(),reviewedBy:admin.email||'',reviewedAt:status==='submitted'?null:Date.now()};
-  await kv.set(key,next);
-  await appendAudit(previous.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'ai_feedback_'+status,section:'agent',before:previous,after:next,meta:{feedbackId:id,callId:previous.callId||''}});
+  const key='ai-feedback:'+id,previous=await kv.get(key);
+  if(!previous)return res.status(404).json({error:'Feedback not found'});
+  if(!previous||typeof previous!=='object'||Array.isArray(previous)||String(previous.id)!==id||!previous.workspaceId)
+    return res.status(503).json({error:'Feedback record cannot be verified. No change was made.'});
+  const revision=Number(previous.updatedAt||previous.createdAt||0);
+  if(b.expectedUpdatedAt===undefined||!Number.isFinite(Number(b.expectedUpdatedAt))||
+    Number(b.expectedUpdatedAt)!==revision)
+    return res.status(409).json({error:'Feedback changed since you opened it. Refresh Client Care before retrying.'});
+  const now=Date.now(),next={...previous,status,updatedAt:Math.max(now,revision+1),reviewedBy:admin.email||'',reviewedAt:status==='submitted'?null:now};
+  const audit={id:crypto.randomUUID(),workspaceId:previous.workspaceId,actorEmail:admin.email,actorRole:'admin',
+    action:'ai_feedback_'+status,section:'agent',before:previous,after:next,meta:{feedbackId:id,callId:previous.callId||''},at:now};
+  try{
+    if(!await compareAndAudit(kv,{key,before:previous,after:next},'audit:'+previous.workspaceId,audit))
+      return res.status(409).json({error:'Feedback changed during review. Refresh Client Care before retrying.'});
+  }catch(err){
+    console.error('admin feedback update failed',safeError(err));
+    return res.status(503).json({error:'Could not confirm that the feedback and audit entry saved together. Refresh Client Care before retrying.'});
+  }
   return res.status(200).json({ok:true,feedback:next});
 }
-
 async function notifications(req,res){
   const scope=String((req.query||{}).scope||'client')==='admin'?'admin':'client';
   let sessionData;
