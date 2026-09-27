@@ -3617,7 +3617,7 @@ async function navigateNotification(n){
       if(!target)return false;
     }
     else if(meta.prospectId){
-      const prospectId=String(meta.prospectId);showView('growth');
+      const prospectId=String(meta.prospectId);
       if(!(adminWebsiteData.prospects||[]).some(x=>String(x.id)===prospectId)){
         if(!await loadWebsiteAnalytics(adminWebsiteDays))return false;
       }
