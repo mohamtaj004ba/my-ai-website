@@ -1580,7 +1580,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{res
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -2187,10 +2187,10 @@ async function refreshAdminInboxLive({silent=true,force=false}={}){
   if(auto)auto.textContent='Syncing with Gmail…';
   try{
     const gr=await fetch('/api/account?action=admin-gmail-inbox&limit=25'+(force?'&force=1':''),{headers:{Accept:'application/json'},cache:'no-store'});
-    if(gr.ok){
-      const d=await gr.json();
-      if(Array.isArray(d.threads)){adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||Date.now())}
-    }
+    if(!gr.ok)throw new Error('Gmail inbox unavailable');
+    const d=await gr.json();
+    if(!d||!Array.isArray(d.threads))throw new Error('Incomplete Gmail inbox');
+    adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||Date.now());adminInboxData.liveError='';
     if(!(adminInboxData.aliases||[]).length){
       const ar=await fetch('/api/account?action=admin-gmail-aliases',{headers:{Accept:'application/json'},cache:'no-store'});
       if(ar.ok){const d=await ar.json();if(Array.isArray(d.aliases))adminInboxData.aliases=d.aliases}
@@ -2200,11 +2200,11 @@ async function refreshAdminInboxLive({silent=true,force=false}={}){
       const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===currentInboxItem.id);
       if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]};renderInboxThread()}
     }
-  }catch(e){console.error('Live Gmail sync failed',e)}
+  }catch(e){adminInboxData.liveError='Gmail refresh failed';console.error('Live Gmail sync failed',e);renderAdminInbox()}
   finally{
     adminInboxData.liveLoading=false;
     if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}
-    if(auto)auto.textContent='Auto-sync · 3 min'+(adminInboxData.lastSync?' · '+new Date(adminInboxData.lastSync).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'');
+    if(auto)auto.textContent=adminInboxData.liveError?(adminInboxData.liveError+(adminInboxData.lastSync?' · showing last synced data':' · retry to load')):('Auto-sync · 3 min'+(adminInboxData.lastSync?' · '+new Date(adminInboxData.lastSync).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):''));
   }
 }
 function websiteInboxItems(){
