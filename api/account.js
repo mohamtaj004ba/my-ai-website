@@ -1877,7 +1877,9 @@ async function getNotificationReadSet(scope,email,workspaceId=''){
   return new Set(Array.isArray(raw)?raw:[]);
 }
 async function saveNotificationReadSet(scope,email,workspaceId,ids){
-  const list=[...new Set(ids)].slice(-500);
+  const list=[...new Set(ids)].slice(-2000);
+  // Admin notifications can exceed 500 active items (across up to 300 indexed workspaces).
+  // Retain enough read receipts for the bounded currently generated set so Read all persists.
   await kv.set(notificationReadKey(scope,email,workspaceId),list,{ex:60*60*24*365});
 }
 function notificationItem(id,{title='',body='',kind='info',view='overview',createdAt=Date.now(),meta={}}={}){
