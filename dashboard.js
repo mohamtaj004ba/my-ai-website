@@ -1625,6 +1625,7 @@ async function loadAdminOps(){
       if(lists[action]&&!lists[action].every(key=>Array.isArray(payload[key])))return unavailable();
       const field=objects[action],value=payload[field];
       if(field&&(!value||typeof value!=='object'||Array.isArray(value)))return unavailable();
+      if(action==='admin-documents'&&!['agreements','company','standard'].every(key=>Array.isArray(value[key])))return unavailable();
       return {ok:true,json:async()=>payload}}catch{return {ok:false,json:async()=>({})}}};
     const requestedAnalyticsDays=adminWebsiteDays,analyticsRequest=adminWebsiteAnalyticsRequest;
     const [pr,ph,hr,fr,sr,ps,wr,fbr,fin,cr,dr]=await Promise.all([
