@@ -206,3 +206,14 @@ test('missing document collection preserves the prior admin document archive',as
   assert.deepEqual(f.health[0],['adminDataHealth',true]);
   assert.ok(f.rendered.includes('documents'));
 });
+
+test('partial document collection cannot replace existing signed agreement archive',async()=>{
+  const f=fixture(),original=f.context.fetch;
+  f.context.adminDocumentsData={agreements:[{id:'signed-agreement'}],company:[{id:'company-policy'}],standard:[]};
+  f.context.fetch=async url=>url.includes('admin-documents')?{ok:true,json:async()=>({documents:{agreements:[]}})}:original(url);
+  await f.run();
+  assert.equal(f.context.adminDocumentsData.agreements[0].id,'signed-agreement');
+  assert.equal(f.context.adminDocumentsData.company[0].id,'company-policy');
+  assert.equal(f.context.adminDataSyncAt.documents,undefined);
+  assert.deepEqual(f.health[0],['adminDataHealth',true]);
+});
