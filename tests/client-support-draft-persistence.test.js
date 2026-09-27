@@ -46,6 +46,7 @@ test('pending send stays visibly locked even when refresh replaces its button',(
   h.wrap.children=[newTicket];h.restore(snap);
   assert.equal(newTicket.button.disabled,true);
   assert.equal(newTicket.button.textContent,'Sending…');
+  assert.equal(newTicket.input.readOnly,true);
   assert.equal(newTicket.input.value,'Do not lose me');
 });
 test('confirmed reply clears only sent draft while retaining other ticket draft',()=>{
