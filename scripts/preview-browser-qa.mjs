@@ -418,6 +418,7 @@ async function runClientInteractions(page){
 
 
   const supportHistoryRoute='**/api/account?action=support-tickets';
+  const supportHistoryErrorsStart=report.apiErrors.length;
   let simulateSupportHistoryFailure=true;
   await page.route(supportHistoryRoute,async route=>{
     if(simulateSupportHistoryFailure)await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'QA simulated support history outage'})});
@@ -426,6 +427,9 @@ async function runClientInteractions(page){
   await ensureView(page,'support');
   await page.locator('#clientSupportHistoryHealth').waitFor({state:'visible',timeout:10000});
   if(await page.locator('#supportTicketsEmpty').isVisible())throw new Error('Support outage displayed misleading empty history');
+  const expectedSupportFailures=report.apiErrors.slice(supportHistoryErrorsStart).filter(x=>x.status===503&&x.url==='/api/account?action=support-tickets');
+  if(!expectedSupportFailures.length)throw new Error('Simulated support outage was not captured by API diagnostics');
+  for(const expected of expectedSupportFailures)report.apiErrors.splice(report.apiErrors.indexOf(expected),1);
   simulateSupportHistoryFailure=false;
   await page.locator('#clientSupportHistoryRetry').click();
   await page.locator('#clientSupportHistoryHealth').waitFor({state:'hidden',timeout:10000});
