@@ -10,6 +10,7 @@ const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
 const {replacePreviewSupportSeed}=require('../lib/preview-support-seed');
 const {replacePreviewFeedbackSeed}=require('../lib/preview-feedback-seed');
+const {replacePreviewPhoneSeed}=require('../lib/preview-phone-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAuditBatch}=require('../lib/config-transaction');
 const {recordFinanceSnapshot}=require('../lib/finance-history');
@@ -162,11 +163,6 @@ async function seedPreviewData(req,res){
     kv.set('onboarding:workspace:'+workspaceId,{status:'live',completionPercent:100,checklist:{payment:true,accountReview:true,onboardingSent:true,agreement:true,intake:true,businessProfile:true,agentDraft:true,routingCaptured:true,phoneAssigned:true,adminReview:true,testCall:true,clientApproval:true,live:true},updatedAt:now})
   ]);
   await publishNormalizedConversations(kv,workspaceId,dataset.conversations,{now});
-  const phoneIndex=await kv.get('phone:index')||[],primaryPhone=previewSeed.primaryPhone(workspaceId);
-  const phoneList=(Array.isArray(phoneIndex)?phoneIndex:[]).filter(x=>x&&x.workspaceId!==workspaceId&&x.id!==primaryPhone.id);
-  phoneList.unshift(primaryPhone);
-  await kv.set('phone:index',phoneList.slice(0,500));
-
   const currentIndex=await kv.get('workspace:index')||[],index=Array.isArray(currentIndex)?currentIndex:[];
   const seedPrefix=workspaceId.slice(0,8);
   const staleSeedWorkspaceIds=index.filter(id=>String(id).startsWith('seed_'));
@@ -193,9 +189,7 @@ async function seedPreviewData(req,res){
   }
   await kv.set('workspace:index',[workspaceId,...adminIds,...keep.filter(id=>id!==workspaceId)].slice(0,250));
 
-  const refreshedPhoneIndex=await kv.get('phone:index')||[];
-  const retainedPhones=(Array.isArray(refreshedPhoneIndex)?refreshedPhoneIndex:[]).filter(x=>x&&x.workspaceId!==workspaceId&&!String(x.workspaceId||'').startsWith('seed_'));
-  await kv.set('phone:index',[previewSeed.primaryPhone(workspaceId),...seedPhones,...retainedPhones].slice(0,500));
+  await replacePreviewPhoneSeed(kv,workspaceId,previewSeed.primaryPhone(workspaceId),seedPhones);
 
   await replacePreviewSupportSeed(kv,seedSupport);
 
