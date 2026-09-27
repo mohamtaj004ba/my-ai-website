@@ -79,3 +79,41 @@ test('confirmed remote Gmail disconnect closes already-selected cached Gmail det
   assert.ok(f.renders.includes('thread'));
   assert.ok(f.renders.includes('inbox'));
 });
+
+test('late global search status response cannot reopen Gmail after explicit disconnect',async()=>{
+  const f=fixture(),original=f.ctx.fetch;
+  let resolveStatus;
+  f.ctx.fetch=async url=>url.includes('admin-gmail-status')?new Promise(resolve=>resolveStatus=resolve):original(url);
+  const loading=f.run();
+  f.ctx.adminSearchInboxRequest++;
+  f.ctx.adminSearchInboxCacheLoaded=true;
+  f.ctx.adminSearchInboxLoading=false;
+  f.ctx.adminInboxData.gmailStatus={connected:false};
+  f.ctx.adminInboxData.gmail={threads:[],analytics:{}};
+  resolveStatus({ok:true,json:async()=>({connected:true})});
+  await loading;
+  assert.equal(f.ctx.adminInboxData.gmailStatus.connected,false);
+  assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
+  assert.equal(f.ctx.adminSearchInboxCacheLoaded,true);
+  assert.equal(f.ctx.adminSearchInboxCacheError,false);
+  assert.equal(f.calls.filter(url=>url.includes('admin-gmail-inbox')).length,0);
+});
+test('late global Gmail cache response cannot repopulate after provider disconnect',async()=>{
+  const f=fixture(),original=f.ctx.fetch;
+  let resolveInbox;
+  f.state.status='healthy';
+  f.ctx.fetch=async url=>url.includes('admin-gmail-inbox')?new Promise(resolve=>resolveInbox=resolve):original(url);
+  const loading=f.run();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(typeof resolveInbox,'function');
+  f.ctx.adminSearchInboxRequest++;
+  f.ctx.adminSearchInboxCacheLoaded=true;
+  f.ctx.adminSearchInboxLoading=false;
+  f.ctx.adminInboxData.gmailStatus={connected:false};
+  f.ctx.adminInboxData.gmail={threads:[],analytics:{}};
+  resolveInbox({ok:true,json:async()=>({threads:[{id:'old-session'}],syncedAt:1800000000000})});
+  await loading;
+  assert.equal(f.ctx.adminInboxData.gmailStatus.connected,false);
+  assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
+  assert.equal(f.ctx.adminSearchInboxCacheLoaded,true);
+});
