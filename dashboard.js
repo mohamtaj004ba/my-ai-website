@@ -1607,7 +1607,7 @@ function restoreClientSupportThreadUi(wrap,snapshots,{clearDraftId=''}={}){
       if(input)input.value=id===clearDraftId?'':previous.draft;
       if(status)status.textContent=id===clearDraftId?'Reply sent.':previous.status;
     }
-    if(clientSupportReplyPending.has(id)&&button){button.disabled=true;button.textContent='Sending…'}
+    if(clientSupportReplyPending.has(id)){if(button){button.disabled=true;button.textContent='Sending…'}if(input)input.readOnly=true}
     if(previous?.focused&&input){
       input.focus();
       const position=id===clearDraftId?0:Math.min(previous.selectionStart,input.value.length);
@@ -1634,6 +1634,7 @@ function setClientSupportReplyStatus(id,message){
   if(status)status.textContent=message;
 }
 function finishClientSupportReply(id,button){
+  const currentInput=document.querySelector('[data-support-client-input="'+CSS.escape(id)+'"]');if(currentInput)currentInput.readOnly=false;
   const current=document.querySelector('[data-support-client-reply="'+CSS.escape(id)+'"]');
   if(current){current.disabled=false;current.textContent='Send reply'}
   if(button&&button!==current){button.disabled=false;button.textContent='Send reply'}
@@ -1643,6 +1644,7 @@ async function replyClientSupportTicket(id,button){
   const input=document.querySelector('[data-support-client-input="'+CSS.escape(id)+'"]'),message=String(input?.value||'').trim();
   if(message.length<2){setClientSupportReplyStatus(id,'Add a reply before sending.');return}
   clientSupportReplyPending.add(id);
+  if(input)input.readOnly=true;
   invalidateClientSupportHistoryRequest();
   if(button){button.disabled=true;button.textContent='Sending…'}
   setClientSupportReplyStatus(id,'');
@@ -2538,7 +2540,7 @@ function restoreAdminSupportThreadUi(wrap,focusedReplyId){
       if(input)input.value=previous.draft;
       if(status)status.textContent=previous.status;
     }
-    if(adminSupportReplyPending.has(id)&&button){button.disabled=true;button.textContent='Sending…'}
+    if(adminSupportReplyPending.has(id)){if(button){button.disabled=true;button.textContent='Sending…'}if(input)input.readOnly=true}
     if(id===focusedReplyId&&input&&previous){
       input.focus();input.setSelectionRange(Math.min(previous.selectionStart,input.value.length),Math.min(previous.selectionEnd,input.value.length));
     }
@@ -2587,6 +2589,7 @@ function setAdminSupportReplyStatus(id,message){
   if(status)status.textContent=message;
 }
 function finishAdminSupportReply(id,button){
+  const currentInput=document.querySelector('[data-support-admin-input="'+CSS.escape(id)+'"]');if(currentInput)currentInput.readOnly=false;
   const current=document.querySelector('[data-support-admin-reply="'+CSS.escape(id)+'"]');
   if(current){current.disabled=false;current.textContent='Send reply'}
   if(button&&button!==current){button.disabled=false;button.textContent='Send reply'}
@@ -2596,6 +2599,7 @@ async function replyAdminSupportTicket(id,button){
   const input=document.querySelector('[data-support-admin-input="'+CSS.escape(key)+'"]'),message=String(input?.value||'').trim();
   if(message.length<2){setAdminSupportReplyStatus(key,'Add a reply before sending.');return}
   adminSupportReplyPending.add(key);
+  if(input)input.readOnly=true;
   if(button){button.disabled=true;button.textContent='Sending…'}
   setAdminSupportReplyStatus(key,'');
   try{
