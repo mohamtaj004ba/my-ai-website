@@ -59,3 +59,21 @@ test('summary authorization rejection still blocks admin bootstrap before render
   assert.equal(f.calls.includes('render'),false);
   assert.equal(f.calls.includes('ops'),false);
 });
+
+for(const broken of ['summary','clients']){
+  test('incomplete '+broken+' authorization feed cannot render an apparently empty admin workspace',async()=>{
+    const f=fixture({session:'healthy'}),original=f.context.fetch;
+    f.context.fetch=async url=>{
+      if(broken==='summary'&&url.includes('admin-summary'))return {ok:true,status:200,json:async()=>({})};
+      if(broken==='clients'&&url.includes('admin-clients'))return {ok:true,status:200,json:async()=>({})};
+      return original(url);
+    };
+    assert.equal(await f.run(),false);
+    assert.equal(f.calls.includes('render'),false);
+    assert.equal(f.calls.includes('ops'),false);
+    assert.equal(f.calls.includes('live'),false);
+    assert.ok(f.calls.includes('error'));
+    assert.equal(f.context.adminDataSyncAt.summary,undefined);
+    assert.equal(f.context.adminDataSyncAt.clients,undefined);
+  });
+}
