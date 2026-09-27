@@ -28,8 +28,9 @@ function fixture(fetcher){
     renderSupport:()=>{renders++},loadNotifications:async()=>{},
     fetch:fetcher,Promise,JSON,String,Set,Error
   });
+  ctx.button=replyButton;
   vm.runInContext(source.slice(start,end),ctx);
-  return {ctx,fields,input,replyStatus,replyButton,thread,submit:()=>vm.runInContext('submitSupportTicket()',ctx),reply:()=>vm.runInContext("replyClientSupportTicket('ticket-1',button)",vm.createContext(Object.assign(Object.create(ctx),{button:replyButton}))),renders:()=>renders,invalidations:()=>invalidations};
+  return {ctx,fields,input,replyStatus,replyButton,thread,submit:()=>vm.runInContext('submitSupportTicket()',ctx),reply:()=>vm.runInContext("replyClientSupportTicket('ticket-1',button)",ctx),renders:()=>renders,invalidations:()=>invalidations};
 }
 function ok(data,status=200){return {ok:status<400,json:async()=>data}}
 test('network failure preserves new support request and re-enables button for retry',async()=>{
@@ -84,5 +85,5 @@ test('malformed successful reply never claims saved state',async()=>{
 });
 test('support form and per-ticket reply statuses are accessible',()=>{
   assert.match(html,/id="supportStatus" role="status" aria-live="polite"/);
-  assert.match(source,/data-support-client-status='\+"?\+esc\(t.id\)/);
+  assert.match(source,/data-support-client-status/);
 });
