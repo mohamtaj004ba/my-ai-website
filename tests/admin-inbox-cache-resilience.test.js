@@ -7,14 +7,14 @@ const begin=source.indexOf('async function loadAdminInbox(');
 const end=source.indexOf('async function refreshAdminInboxLive(',begin);
 assert.ok(begin>=0&&end>begin,'cached Gmail inbox loader exists');
 
-function fixture({cachedInbox='healthy',cachedAliases='healthy'}={}){
+function fixture({cachedInbox='healthy',cachedAliases='healthy',status='healthy'}={}){
   const refresh={disabled:false,textContent:''},auto={textContent:''},renders=[],liveCalls=[];
   const initial={threads:[{id:'original'}],analytics:{unread:1}};
   const payload=(name,data)=>name==='network'?Promise.reject(Error('Unavailable')):Promise.resolve({ok:true,json:async()=>{if(name==='malformed')throw Error('Invalid JSON');return data}});
   const ctx=vm.createContext({
     adminInboxData:{loading:false,gmailStatus:{connected:true},gmail:initial,aliases:[{email:'original@example.test'}],lastSync:1700000000000},
     fetch:async url=>{
-      if(url.includes('admin-gmail-status'))return {ok:true,json:async()=>({connected:true})};
+      if(url.includes('admin-gmail-status'))return payload(status,{connected:true});
       if(url.includes('admin-gmail-inbox'))return payload(cachedInbox,{threads:[{id:'cached'}],syncedAt:1800000000000});
       if(url.includes('admin-gmail-aliases'))return payload(cachedAliases,{aliases:[{email:'cached@example.test'}]});
       throw Error('Unexpected URL');
@@ -45,3 +45,21 @@ for(const failure of ['network','malformed']){
     assert.equal(f.renders.includes('error'),false);
   });
 }
+
+for(const failure of ['network','malformed']){
+  test('Gmail status '+failure+' does not hide previously connected inbox or prevent live retry',async()=>{
+    const f=fixture({status:failure});await f.run();
+    assert.equal(f.ctx.adminInboxData.gmailStatus.connected,true);
+    assert.equal(f.ctx.adminInboxData.gmail.threads[0].id,'cached');
+    assert.equal(f.ctx.adminInboxData.aliases[0].email,'cached@example.test');
+    assert.equal(f.liveCalls.length,1);
+    assert.equal(f.renders.includes('error'),false);
+  });
+}
+test('invalid Gmail status object preserves last known connection until the provider confirms a change',async()=>{
+  const f=fixture({status:'healthy'}),original=f.ctx.fetch;
+  f.ctx.fetch=async url=>url.includes('admin-gmail-status')?{ok:true,json:async()=>({})}:original(url);
+  await f.run();
+  assert.equal(f.ctx.adminInboxData.gmailStatus.connected,true);
+  assert.equal(f.liveCalls.length,1);
+});
