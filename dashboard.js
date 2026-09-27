@@ -334,7 +334,9 @@ async function fetchJsonRetry(url,{attempts=2,timeout=9000}={}){
   }
   throw lastErr||new Error('Request failed');
 }
+let secondaryClientLoadGeneration=0;
 async function loadSecondaryClientData(){
+  const generation=++secondaryClientLoadGeneration;
   const tasks=[
     ['leads',d=>{leadsData=d.leads||[]}],
     ['conversations',d=>{conversationThreadsData=d.conversations||[];conversationPageTotal=Number(d.total||conversationThreadsData.length);conversationNextCursor=d.nextCursor||null;conversationBackendPaging=true;if(!conversationsData.length)conversationsData=conversationThreadsData}],
@@ -342,7 +344,24 @@ async function loadSecondaryClientData(){
     ['automations',d=>{automationsData=d.automations||[]}],
     ['locations',d=>{locationsData=d.locations||locationsData;locationsLimit=Number(d.limit||locationsLimit||1)}]
   ];
-  await Promise.allSettled(tasks.map(async([action,apply])=>{try{const data=await fetchJsonRetry('/api/account?action='+action,{attempts:1,timeout:8000});apply(data)}catch(_){}}));
+  const failures=await Promise.all(tasks.map(async([action,apply])=>{
+    try{
+      const data=await fetchJsonRetry('/api/account?action='+action,{attempts:1,timeout:8000});
+      if(!Array.isArray(data?.[action]))throw new Error('Invalid '+action+' response');
+      if(generation===secondaryClientLoadGeneration)apply(data);
+      return null;
+    }catch(err){
+      console.warn('Optional client feed unavailable:',action,err);
+      return action;
+    }
+  }));
+  if(generation!==secondaryClientLoadGeneration)return;
+  const unavailable=failures.filter(Boolean),notice=document.getElementById('clientSecondaryDataHealth');
+  if(notice){
+    notice.hidden=!unavailable.length;
+    const copy=notice.querySelector('[data-secondary-coverage]');
+    if(copy)copy.textContent=unavailable.length?'Unable to refresh '+unavailable.join(', ')+'. Showing previously loaded records where available; empty results may be incomplete.':'';
+  }
   renderContacts();renderConversations();renderAppointments();renderAutomations();renderLocations();
 }
 function renderWorkspaceAccessState(){
