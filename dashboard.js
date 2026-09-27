@@ -1593,11 +1593,13 @@ async function bootstrapAdmin(){
     adminSummaryData=(await sr.json()).summary||{};
     adminClientsData=(await cr.json()).clients||[];
     adminDataSyncAt.summary=Date.now();adminDataSyncAt.clients=Date.now();
-    const sess=await fetch('/api/account?action=session',{headers:{Accept:'application/json'},cache:'no-store'});
-    if(sess.ok){
-      const data=await sess.json(),email=data.user?.email||'admin';
-      const identity=document.getElementById('adminIdentity');if(identity)identity.textContent=email;
-      applyUserProfile(data.user||{},data.workspace||{});
+    const sess=await fetch('/api/account?action=session',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>null);
+    if(sess?.ok){
+      const data=await sess.json().catch(()=>null);
+      if(data&&typeof data==='object'&&!Array.isArray(data)){
+        const identity=document.getElementById('adminIdentity');if(identity)identity.textContent=data.user?.email||'admin';
+        applyUserProfile(data.user||{},data.workspace||{});
+      }
     }
     renderAdmin();await loadAdminOps();initAdminLiveRefresh();
     const qp=new URLSearchParams(location.search);
