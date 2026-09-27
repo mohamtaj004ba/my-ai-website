@@ -3030,6 +3030,12 @@ async function openAdminClient(id,{allowLocked=false}={}){
     ['Locations',x.counts?.locations||0],['AI receptionist',x.agent?'Configured':'Not configured'],['Phone routing',x.phoneRouting?'Assigned':'Not assigned'],['Onboarding',x.onboarding?.completionPercent?x.onboarding.completionPercent+'%':(x.status==='active'?'Complete':'—')]
   ].map(([k,v])=>'<div><b>'+esc(String(v))+'</b><span>'+esc(k)+'</span></div>').join('');
   document.getElementById('adminClientAgent').textContent=x.agent?(x.agent.name||'Maya')+' · '+(x.agent.role||'AI Receptionist')+(x.agent.health?' · '+adminStatusLabel(x.agent.health):''):'No AI receptionist configured yet.';
+  // Never present another workspace's diagnostics, audit or override JSON under this client's identity.
+  currentAdminTech=null;
+  for(const elementId of ['adminDiagnostics','adminAuditList']){const el=document.getElementById(elementId);if(el)el.innerHTML=''}
+  const editor=document.getElementById('adminConfigEditor');if(editor)editor.value='';
+  const repairEmail=document.getElementById('adminRepairEmail');if(repairEmail)repairEmail.value='';
+  const auditEmpty=document.getElementById('adminAuditEmpty');if(auditEmpty)auditEmpty.hidden=true;
   currentAdminClient=x;
   const planSel=document.getElementById('adminClientPlan'),statusSel=document.getElementById('adminClientStatus');
   if(planSel){planSel.value=x.plan||'Starter';planSel.disabled=adminClientSaving||adminTechSaving||!!x.stripe?.subscriptionLinked}
