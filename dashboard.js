@@ -2191,24 +2191,28 @@ async function refreshAdminInboxLive({silent=true,force=false}={}){
   if(auto)auto.textContent='Syncing with Gmail…';
   try{
     const gr=await fetch('/api/account?action=admin-gmail-inbox&limit=25'+(force?'&force=1':''),{headers:{Accept:'application/json'},cache:'no-store'});
+    if(adminInboxData.gmailStatus?.connected===false)return;
     if(!gr.ok)throw new Error('Gmail inbox unavailable');
     const d=await gr.json();
+    if(adminInboxData.gmailStatus?.connected===false)return;
     if(!d||!Array.isArray(d.threads))throw new Error('Incomplete Gmail inbox');
     adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||Date.now());adminInboxData.liveError='';
     if(!(adminInboxData.aliases||[]).length){
       const ar=await fetch('/api/account?action=admin-gmail-aliases',{headers:{Accept:'application/json'},cache:'no-store'});
-      if(ar.ok){const d=await ar.json();if(Array.isArray(d.aliases))adminInboxData.aliases=d.aliases}
+      if(adminInboxData.gmailStatus?.connected===false)return;
+      if(ar.ok){const d=await ar.json();if(adminInboxData.gmailStatus?.connected===false)return;if(Array.isArray(d.aliases))adminInboxData.aliases=d.aliases}
     }
+    if(adminInboxData.gmailStatus?.connected===false)return;
     renderAdminInbox();
     if(currentInboxItem?.kind==='gmail'){
       const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===currentInboxItem.id);
       if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]};renderInboxThread()}
     }
-  }catch(e){adminInboxData.liveError='Gmail refresh failed';console.error('Live Gmail sync failed',e);renderAdminInbox()}
+  }catch(e){if(adminInboxData.gmailStatus?.connected!==false){adminInboxData.liveError='Gmail refresh failed';console.error('Live Gmail sync failed',e);renderAdminInbox()}}
   finally{
     adminInboxData.liveLoading=false;
     if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}
-    if(auto)auto.textContent=adminInboxData.liveError?(adminInboxData.liveError+(adminInboxData.lastSync?' · showing last synced data':' · retry to load')):('Auto-sync · 3 min'+(adminInboxData.lastSync?' · '+new Date(adminInboxData.lastSync).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):''));
+    if(auto)auto.textContent=adminInboxData.gmailStatus?.connected===false?'Gmail disconnected':adminInboxData.liveError?(adminInboxData.liveError+(adminInboxData.lastSync?' · showing last synced data':' · retry to load')):('Auto-sync · 3 min'+(adminInboxData.lastSync?' · '+new Date(adminInboxData.lastSync).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):''));
   }
 }
 function websiteInboxItems(){
