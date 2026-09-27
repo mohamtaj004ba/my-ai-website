@@ -3567,7 +3567,17 @@ async function navigateNotification(n){
   if(!n)return false;const view=n.view||'overview',meta=n.meta||{};
   if(document.body.dataset.dashboard==='client'){
     if(meta.callId){
-      const call=callsData.find(x=>String(x.id)===String(meta.callId));if(!call)return false;
+      let call=callsData.find(x=>String(x.id)===String(meta.callId));
+      if(!call){
+        try{
+          const data=await fetchJsonRetry('/api/account?action=calls',{attempts:1,timeout:6000});
+          if(Array.isArray(data.calls)){
+            const found=data.calls.find(x=>String(x.id)===String(meta.callId));
+            if(found){callsData=data.calls;call=found;renderCalls()}
+          }
+        }catch(err){console.warn('Notification call refresh failed',err)}
+      }
+      if(!call)return false;
       showView('calls');await openCall(String(meta.callId));return true;
     }
     if(meta.ticketId){
