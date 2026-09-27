@@ -3127,7 +3127,7 @@ document.getElementById('adminRepairAccessButton')?.addEventListener('click',rep
 
 function closeAdminClient(){if(adminTechSaving||adminClientSaving)return;adminClientOpenRequest++;const drawer=document.getElementById('adminClientDrawer');drawer?.classList.remove('open');drawer?.setAttribute('aria-hidden','true');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
 
-let adminSearchActiveIndex=0,adminSearchInboxCacheLoaded=false,adminSearchInboxLoading=false;
+let adminSearchActiveIndex=0,adminSearchInboxCacheLoaded=false,adminSearchInboxLoading=false,adminSearchInboxCacheError=false;
 
 function adminSearchScore(query,parts,title=''){
   const raw=String(query||'').trim().toLowerCase(),tokens=raw.split(/\s+/).filter(Boolean),text=parts.filter(Boolean).join(' ').toLowerCase(),heading=String(title||'').toLowerCase();
@@ -3217,8 +3217,8 @@ async function loadAdminSearchInboxCache(){
       if(!d||!Array.isArray(d.threads))throw new Error('Incomplete Gmail cache');
       adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||0);
     }
-    adminSearchInboxCacheLoaded=true;
-  }catch(err){console.warn('Global search inbox cache unavailable',err)}
+    adminSearchInboxCacheLoaded=true;adminSearchInboxCacheError=false;
+  }catch(err){adminSearchInboxCacheError=true;console.warn('Global search inbox cache unavailable',err)}
   finally{adminSearchInboxLoading=false;if(String(document.getElementById('adminSearch')?.value||'').trim().length>=2)renderAdminGlobalSearch()}
 }
 function setAdminSearchActive(index){
@@ -3240,7 +3240,7 @@ function renderAdminGlobalSearch(){
     const rows=items.filter(x=>x.group===group);
     return '<section class="admin-search-group"><div class="admin-search-group-title"><span>'+esc(group)+'</span><small>'+rows.length+'</small></div>'+rows.map(x=>'<button type="button" class="admin-search-result" role="option" data-global-search-type="'+esc(x.type)+'" data-global-search-id="'+esc(x.id||'')+'" data-global-search-view="'+esc(x.view)+'"><span class="admin-search-result-copy"><b>'+esc(x.title)+'</b><small>'+esc(x.meta||'')+'</small></span><em>'+esc(x.type==='page'?'Open page':x.group||'Result')+'</em></button>').join('')+'</section>';
   }).join('');
-  wrap.innerHTML='<div class="admin-search-results-head"><div><b>Search all CallerCore</b><span>'+items.length+' result'+(items.length===1?'':'s')+(adminSearchInboxLoading?' · loading inbox cache…':'')+'</span></div><kbd>↑ ↓ Enter</kbd></div>'+(items.length?body:'<div class="admin-search-empty"><b>No matches for “'+esc(q)+'”</b><span>Try a client name, email, phone number, prospect, document, support subject, workflow, setting, or admin page.</span></div>')+'<div class="admin-search-footer"><span>Search includes navigation, client operations, Growth, Finance, Documents, Client Care, Platform and cached Gmail.</span><kbd>Esc to close</kbd></div>';
+  wrap.innerHTML='<div class="admin-search-results-head"><div><b>Search all CallerCore</b><span>'+items.length+' result'+(items.length===1?'':'s')+(adminSearchInboxLoading?' · loading inbox cache…':adminSearchInboxCacheError?' · Gmail search temporarily unavailable; retry search':'')+'</span></div><kbd>↑ ↓ Enter</kbd></div>'+(items.length?body:'<div class="admin-search-empty"><b>No matches for “'+esc(q)+'”</b><span>Try a client name, email, phone number, prospect, document, support subject, workflow, setting, or admin page.</span></div>')+'<div class="admin-search-footer"><span>Search includes navigation, client operations, Growth, Finance, Documents, Client Care, Platform and cached Gmail.</span><kbd>Esc to close</kbd></div>';
   const rows=[...wrap.querySelectorAll('[data-global-search-type]')];
   rows.forEach((b,i)=>{b.addEventListener('mouseenter',()=>setAdminSearchActive(i));b.addEventListener('click',()=>openAdminGlobalSearchResult(b.dataset.globalSearchType,b.dataset.globalSearchId,b.dataset.globalSearchView))});
   if(rows.length)setAdminSearchActive(0);
