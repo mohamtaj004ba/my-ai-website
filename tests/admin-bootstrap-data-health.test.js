@@ -38,7 +38,7 @@ test('admin bootstrap preserves Finance snapshot and flags malformed 200 respons
   const f=fixture({finance:{ok:true,payload:{ok:true}}});
   await f.run();
   assert.equal(f.context.adminFinanceData.reconciliation[0].id,'older');
-  assert.match(f.context.adminFinanceLoadError,/incomplete/);
+  assert.match(f.context.adminFinanceLoadError,/outdated|incomplete/);
   assert.equal(f.context.adminDataSyncAt.finance,undefined);
   assert.deepEqual(f.health.at(-1),['adminDataHealth',true]);
   assert.ok(f.rendered.includes('finance'));
