@@ -3725,6 +3725,7 @@ function initNotifications(){
 document.getElementById('logoutButton')?.addEventListener('click',logout);
 
 document.getElementById('clientDataRetry')?.addEventListener('click',async()=>{setDataHealth('clientDataHealth',false);setClientSyncState('syncing','Retrying workspace sync…');await loadOperations()});
+document.getElementById('clientSecondaryRetry')?.addEventListener('click',async()=>{const button=document.getElementById('clientSecondaryRetry');if(button){button.disabled=true;button.textContent='Retrying…'}try{await loadSecondaryClientData()}finally{if(button){button.disabled=false;button.textContent='Retry records'}}});
 document.getElementById('adminDataRetry')?.addEventListener('click',async()=>{setDataHealth('adminDataHealth',false);await loadAdminOps()});
 
 document.querySelectorAll('[data-overview-jump]').forEach(card=>{const go=()=>showView(card.dataset.overviewJump);card.addEventListener('click',e=>{if(e.target.closest('button,a'))return;go()});card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})});
