@@ -418,9 +418,12 @@ async function runClientInteractions(page){
 
 
   const supportHistoryRoute='**/api/account?action=support-tickets';
-  let simulateSupportHistoryFailure=true;
+  let simulateSupportHistoryFailure=true,injectSupportDraftFixture=false;
+  const supportDraftFixture={tickets:[{id:'qa-support-draft',subject:'Fictional Preview draft',createdAt:Date.now(),
+    priority:'normal',status:'open',messages:[{direction:'client',body:'Fictional Preview support inquiry',at:Date.now()}]}]};
   await page.route(supportHistoryRoute,async route=>{
     if(simulateSupportHistoryFailure)await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({error:'QA simulated malformed history response'})});
+    else if(injectSupportDraftFixture)await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(supportDraftFixture)});
     else await route.continue();
   });
   await ensureView(page,'support');
@@ -429,6 +432,23 @@ async function runClientInteractions(page){
   simulateSupportHistoryFailure=false;
   await page.locator('#clientSupportHistoryRetry').click();
   await page.locator('#clientSupportHistoryHealth').waitFor({state:'hidden',timeout:10000});
+  injectSupportDraftFixture=true;
+  await page.evaluate(()=>refreshClientSupportHistory());
+  const supportThread=page.locator('[data-support-ticket-id="qa-support-draft"]');
+  await supportThread.waitFor({state:'visible',timeout:10000});
+  await supportThread.locator('summary').click();
+  const replyDraft=supportThread.locator('[data-support-client-input]');
+  await replyDraft.fill('A draft reply should survive background refreshes.');
+  await replyDraft.evaluate(el=>{el.focus();el.setSelectionRange(8,19)});
+  await page.evaluate(()=>refreshClientSupportHistory());
+  if(!(await supportThread.evaluate(el=>el.open)))throw new Error('Support history refresh collapsed the open ticket');
+  if(await replyDraft.inputValue()!=='A draft reply should survive background refreshes.')throw new Error('Support history refresh erased the draft');
+  const selection=await replyDraft.evaluate(el=>[el.selectionStart,el.selectionEnd,document.activeElement===el]);
+  if(JSON.stringify(selection)!==JSON.stringify([8,19,true]))throw new Error('Support refresh lost draft focus/selection');
+  report.client.interactions.push('unsent support reply, open ticket + focus survive refreshed history');
+  injectSupportDraftFixture=false;
+  await page.evaluate(()=>refreshClientSupportHistory());
+  if(await page.locator('[data-support-ticket-id="qa-support-draft"]').count())throw new Error('Disposable support fixture survived history restoration');
   await page.unroute(supportHistoryRoute);
   report.client.interactions.push('support history malformed-response warning + authenticated retry');
   await page.locator('#supportSubject').fill('QA unsent support draft');
