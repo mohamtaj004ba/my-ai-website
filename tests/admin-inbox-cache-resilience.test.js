@@ -14,6 +14,7 @@ function fixture({cachedInbox='healthy',cachedAliases='healthy',status='healthy'
   const ctx=vm.createContext({
     adminInboxData:{loading:false,gmailStatus:{connected:true},gmail:initial,aliases:[{email:'original@example.test'}],lastSync:1700000000000},
     currentInboxItem:null,
+    adminSearchInboxRequest:0,adminSearchInboxCacheLoaded:false,adminSearchInboxLoading:false,adminSearchInboxCacheError:false,
     fetch:async url=>{
       if(url.includes('admin-gmail-status'))return payload(status,{connected:true});
       if(url.includes('admin-gmail-inbox'))return payload(cachedInbox,{threads:[{id:'cached'}],syncedAt:1800000000000});
