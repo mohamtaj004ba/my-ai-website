@@ -115,3 +115,36 @@ test('in-flight bootstrap cannot replace newer manual analytics selection',async
   assert.equal(f.context.adminWebsiteData.prospects[0].id,'manually-selected');
   assert.equal(f.context.adminWebsiteLoadError,'');
 });
+
+test('malformed Finance JSON does not block healthy website or other admin feeds',async()=>{
+  const f=fixture(),original=f.context.fetch;
+  f.context.fetch=async url=>url.includes('admin-finance')?{ok:true,json:async()=>{throw Error('Invalid JSON')}}:original(url);
+  await f.run();
+  assert.equal(f.context.adminFinanceData.reconciliation[0].id,'older');
+  assert.match(f.context.adminFinanceLoadError,/outdated/);
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'fresh');
+  assert.ok(Number(f.context.adminDataSyncAt.website)>0);
+  assert.equal(f.context.adminDataSyncAt.finance,undefined);
+  assert.ok(f.rendered.includes('finance'));
+  assert.ok(f.rendered.includes('website'));
+});
+test('malformed independent admin feed preserves healthy Finance and website results',async()=>{
+  const f=fixture(),original=f.context.fetch;
+  f.context.fetch=async url=>url.includes('admin-phone-numbers')?{ok:true,json:async()=>{throw Error('Malformed phone payload')}}:original(url);
+  await f.run();
+  assert.equal(f.context.adminFinanceData.reconciliation[0].id,'fresh');
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'fresh');
+  assert.equal(f.context.adminDataSyncAt.phones,undefined);
+  assert.deepEqual(f.health[0],['adminDataHealth',true]);
+  assert.ok(f.rendered.includes('phones'));
+});
+test('malformed preferred analytics JSON retains prior Growth records with coverage warning',async()=>{
+  const f=fixture({preferredDays:7}),original=f.context.fetch;
+  f.context.fetch=async url=>url.includes('admin-website-analytics&days=7')?{ok:true,json:async()=>{throw Error('Malformed analytics')}}:original(url);
+  await f.run();
+  assert.equal(f.context.adminWebsiteDays,7);
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'fresh');
+  assert.match(f.context.adminWebsiteLoadError,/outdated/);
+  assert.equal(f.context.adminDataSyncAt.website,undefined);
+  assert.ok(f.rendered.includes('growth'));
+});
