@@ -2157,14 +2157,14 @@ async function loadAdminInbox({silent=false,force=false}={}){
     // Render the last good Gmail snapshot immediately. Never blank the inbox while Google refreshes.
     if(!force){
       const [cachedInbox,cachedAliases]=await Promise.all([
-        fetch('/api/account?action=admin-gmail-inbox&cached=1',{headers:{Accept:'application/json'},cache:'no-store'}),
-        fetch('/api/account?action=admin-gmail-aliases&cached=1',{headers:{Accept:'application/json'},cache:'no-store'})
+        fetch('/api/account?action=admin-gmail-inbox&cached=1',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false})),
+        fetch('/api/account?action=admin-gmail-aliases&cached=1',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false}))
       ]);
       if(cachedInbox.ok){
-        const d=await cachedInbox.json();
+        const d=await cachedInbox.json().catch(()=>({}));
         if(!d.emptyCache&&Array.isArray(d.threads)){adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||0)}
       }
-      if(cachedAliases.ok){const d=await cachedAliases.json();if(Array.isArray(d.aliases)&&d.aliases.length)adminInboxData.aliases=d.aliases}
+      if(cachedAliases.ok){const d=await cachedAliases.json().catch(()=>({}));if(Array.isArray(d.aliases)&&d.aliases.length)adminInboxData.aliases=d.aliases}
       renderAdminInbox();
       if(auto)auto.textContent='Updating in background…'+(adminInboxData.lastSync?' · last '+new Date(adminInboxData.lastSync).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'');
     }else if(auto)auto.textContent='Syncing with Gmail…';
