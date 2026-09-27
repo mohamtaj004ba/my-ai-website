@@ -612,30 +612,56 @@ async function adminProvisioning(req,res){
   return res.status(200).json({provisioning:items});
 }
 
+function validProvisioningHistory(raw){
+  return raw==null||(Array.isArray(raw)&&raw.length<=50&&raw.every(x=>x&&typeof x==='object'&&!Array.isArray(x)&&typeof x.stage==='string'));
+}
 async function adminSaveProvisioningStage(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80),stage=String(body.stage||'');
   if(!id||!ONBOARDING_STAGES.includes(stage))return res.status(400).json({error:'Invalid provisioning stage'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const key='provisioning:override:'+id,historyKey='provisioning:history:'+id;
+  const [previous,history]=await Promise.all([kv.get(key),kv.get(historyKey)]);
+  if(previous!=null&&(!previous||typeof previous!=='object'||Array.isArray(previous)||!ONBOARDING_STAGES.includes(previous.stage)||!Number.isFinite(Number(previous.updatedAt))||Number(previous.updatedAt)<=0))
+    return res.status(503).json({error:'Provisioning stage record is unavailable. No changes were made.'});
+  if(!validProvisioningHistory(history))return res.status(503).json({error:'Provisioning history is unavailable. No changes were made.'});
+  const revision=Number(previous?.updatedAt||0);
+  if(body.expectedUpdatedAt===undefined||body.expectedUpdatedAt===null||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==revision)
+    return res.status(409).json({error:'Provisioning stage changed while you were reviewing it. Refresh onboarding before retrying.'});
+  if(previous?.stage===stage)return res.status(200).json({ok:true,stage,updatedAt:revision,unchanged:true});
   if(stage==='Live'){
     const onboarding=await kv.get('onboarding:workspace:'+id);
     if(!canManuallyMarkLive({workspace:ws,onboarding}))return res.status(409).json({error:'A manual label cannot mark a client Live. Complete the verified launch checklist first.'});
   }
-  const record={stage,updatedAt:Date.now(),updatedBy:admin.email};
-  await kv.set('provisioning:override:'+id,record);
-  const history=await kv.get('provisioning:history:'+id)||[];
-  const next=Array.isArray(history)?history:[];
-  next.unshift({stage,at:record.updatedAt,by:admin.email});
-  await kv.set('provisioning:history:'+id,next.slice(0,50));
+  const now=Date.now(),record={stage,updatedAt:Math.max(now,revision+1),updatedBy:admin.email};
+  const nextHistory=[{stage,at:record.updatedAt,by:admin.email},...(history||[])].slice(0,50);
+  try{
+    if(!await compareAndSetConfig(kv,[{key,before:previous,after:record},{key:historyKey,before:history,after:nextHistory}]))
+      return res.status(409).json({error:'Provisioning stage changed during the save. Refresh onboarding before retrying.'});
+  }catch(err){console.error('admin provisioning stage save failed',safeError(err));return res.status(503).json({error:'Could not confirm the stage and history saved together. Refresh onboarding before retrying.'})}
   return res.status(200).json({ok:true,stage,updatedAt:record.updatedAt});
 }
-
 async function adminClearProvisioningStage(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const id=String((req.body||{}).id||'').slice(0,80);
+  const body=req.body||{},id=String(body.id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Workspace id required'});
-  await kv.del('provisioning:override:'+id);
-  return res.status(200).json({ok:true});
+  const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  const key='provisioning:override:'+id,historyKey='provisioning:history:'+id;
+  const [previous,history]=await Promise.all([kv.get(key),kv.get(historyKey)]);
+  if(previous!=null&&(!previous||typeof previous!=='object'||Array.isArray(previous)||!ONBOARDING_STAGES.includes(previous.stage)||!Number.isFinite(Number(previous.updatedAt))||Number(previous.updatedAt)<=0))
+    return res.status(503).json({error:'Provisioning stage record is unavailable. No changes were made.'});
+  if(!validProvisioningHistory(history))return res.status(503).json({error:'Provisioning history is unavailable. No changes were made.'});
+  const revision=Number(previous?.updatedAt||0);
+  if(body.expectedUpdatedAt===undefined||body.expectedUpdatedAt===null||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==revision)
+    return res.status(409).json({error:'Provisioning stage changed while you were reviewing it. Refresh onboarding before retrying.'});
+  if(!previous)return res.status(200).json({ok:true,unchanged:true});
+  const now=Math.max(Date.now(),revision+1);
+  const nextHistory=[{stage:'Automatic',at:now,by:admin.email},...(history||[])].slice(0,50);
+  try{
+    if(!await compareAndSetWithDelete(kv,[{key,before:previous,after:null},{key:historyKey,before:history,after:nextHistory}],{deleteKeys:[key]}))
+      return res.status(409).json({error:'Provisioning stage changed during restoration. Refresh onboarding before retrying.'});
+  }catch(err){console.error('admin provisioning stage restore failed',safeError(err));return res.status(503).json({error:'Could not confirm stage restoration and history together. Refresh onboarding before retrying.'})}
+  return res.status(200).json({ok:true,clearedAt:now});
 }
 
 async function adminPhoneNumbers(req,res){
