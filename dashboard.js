@@ -1592,28 +1592,59 @@ function renderSupport(){
   wrap.innerHTML=supportTicketsData.map(t=>{
     const messages=(Array.isArray(t.messages)&&t.messages.length?t.messages:[{direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||Date.now()}]);
     const thread=messages.map(m=>'<div class="support-message '+(m.direction==='support'?'support':'client')+'"><div><b>'+(m.direction==='support'?'CallerCore Support':'You')+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+'</small></div><p>'+esc(m.body||'').replace(/\n/g,'<br>')+'</p></div>').join('');
-    return '<details class="support-ticket-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+new Date(t.createdAt).toLocaleString()+' · '+esc(t.priority||'normal')+'</small></div><span class="tag '+(t.status==='resolved'?'green':t.status==='in_progress'?'amber':'')+'">'+esc(String(t.status||'open').replace('_',' '))+'</span></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-client-input="'+esc(t.id)+'" placeholder="Reply to CallerCore support…"></textarea><button class="secondary-btn" type="button" data-support-client-reply="'+esc(t.id)+'">Send reply</button></div></details>';
+    return '<details class="support-ticket-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+new Date(t.createdAt).toLocaleString()+' · '+esc(t.priority||'normal')+'</small></div><span class="tag '+(t.status==='resolved'?'green':t.status==='in_progress'?'amber':'')+'">'+esc(String(t.status||'open').replace('_',' '))+'</span></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-client-input="'+esc(t.id)+'" placeholder="Reply to CallerCore support…"></textarea><button class="secondary-btn" type="button" data-support-client-reply="'+esc(t.id)+'">Send reply</button><small class="muted" role="status" aria-live="polite" data-support-client-status="'+esc(t.id)+'"></small></div></details>';
   }).join('');
   if(empty){const notice=document.getElementById('clientSupportHistoryHealth');empty.hidden=supportTicketsData.length!==0||!!(notice&&!notice.hidden)}
   wrap.querySelectorAll('[data-support-client-reply]').forEach(b=>b.addEventListener('click',()=>replyClientSupportTicket(b.dataset.supportClientReply,b)));
 }
+let clientSupportSubmitPending=false,clientSupportReplyPending=new Set();
 async function replyClientSupportTicket(id,button){
-  const input=document.querySelector('[data-support-client-input="'+CSS.escape(id)+'"]'),message=String(input?.value||'').trim();if(!message)return;
+  if(clientSupportReplyPending.has(id))return;
+  const input=document.querySelector('[data-support-client-input="'+CSS.escape(id)+'"]'),message=String(input?.value||'').trim();
+  const status=document.querySelector('[data-support-client-status="'+CSS.escape(id)+'"]');
+  if(message.length<2){if(status)status.textContent='Add a reply before sending.';return}
+  clientSupportReplyPending.add(id);
+  invalidateClientSupportHistoryRequest();
   if(button){button.disabled=true;button.textContent='Sending…'}
-  const r=await fetch('/api/account?action=support-ticket-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,message})}),data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not send support reply.');if(button){button.disabled=false;button.textContent='Send reply'};return}
-  invalidateClientSupportHistoryRequest();const i=supportTicketsData.findIndex(x=>x.id===id);if(i>=0)supportTicketsData[i]=data.ticket;
-  renderSupport();loadNotifications({silent:true});
+  if(status)status.textContent='';
+  try{
+    const r=await fetch('/api/account?action=support-ticket-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,message})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok){if(status)status.textContent=data.error||'Could not send reply. Your draft is preserved.';return}
+    if(!data.ticket||String(data.ticket.id)!==String(id))throw new Error('Unconfirmed reply response');
+    invalidateClientSupportHistoryRequest();const i=supportTicketsData.findIndex(x=>String(x.id)===String(id));
+    if(i>=0)supportTicketsData[i]=data.ticket;
+    renderSupport();
+    const thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]');if(thread)thread.open=true;
+    Promise.resolve(loadNotifications({silent:true})).catch(()=>{});
+  }catch(_){
+    if(status)status.textContent='Could not confirm the reply was saved. Check request history before retrying; your draft is preserved.';
+  }finally{
+    clientSupportReplyPending.delete(id);
+    if(button){button.disabled=false;button.textContent='Send reply'}
+  }
 }
 async function submitSupportTicket(){
+  if(clientSupportSubmitPending)return;
   const subject=document.getElementById('supportSubject')?.value.trim(),message=document.getElementById('supportMessage')?.value.trim(),priority=document.getElementById('supportPriority')?.value||'normal',status=document.getElementById('supportStatus'),btn=document.getElementById('submitSupportButton');
   if(!subject||!message){if(status)status.textContent='Add a subject and details before sending.';return}
-  if(btn){btn.disabled=true;btn.textContent='Sending…'};if(status)status.textContent='';
-  const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject,message,priority})});
-  const data=await r.json().catch(()=>({}));
-  if(r.ok){invalidateClientSupportHistoryRequest();supportTicketsData.unshift(data.ticket);document.getElementById('supportSubject').value='';document.getElementById('supportMessage').value='';if(status)status.textContent='Support request sent.';renderSupport()}
-  else if(status)status.textContent=data.error||'Could not send support request.';
-  if(btn){btn.disabled=false;btn.textContent='Send support request'}
+  clientSupportSubmitPending=true;
+  invalidateClientSupportHistoryRequest();
+  if(btn){btn.disabled=true;btn.textContent='Sending…'}if(status)status.textContent='';
+  try{
+    const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject,message,priority})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok){if(status)status.textContent=data.error||'Could not send support request. Your draft is preserved.';return}
+    if(!data.ticket?.id)throw new Error('Unconfirmed support request response');
+    invalidateClientSupportHistoryRequest();supportTicketsData.unshift(data.ticket);
+    document.getElementById('supportSubject').value='';document.getElementById('supportMessage').value='';
+    if(status)status.textContent='Support request sent.';renderSupport();
+  }catch(_){
+    if(status)status.textContent='Could not confirm the request was saved. Check request history before retrying; your draft is preserved.';
+  }finally{
+    clientSupportSubmitPending=false;
+    if(btn){btn.disabled=false;btn.textContent='Send support request'}
+  }
 }
 document.getElementById('submitSupportButton')?.addEventListener('click',submitSupportTicket);
 
