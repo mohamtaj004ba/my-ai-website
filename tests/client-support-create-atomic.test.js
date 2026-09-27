@@ -27,7 +27,7 @@ function fixture({initial=null,onCompare=null,failEval=false}={}){
     kv:{get:async key=>values.get(key)??null},
     compareAndSetConfig,
     crypto:{randomUUID:()=>String(++seq)},
-    Date:{now:()=>123456},Promise,Array,
+    Date:{now:()=>123456},Promise,Array,process:{env:{}},
     req:{body:{subject:'Need help',message:'A detailed support request',priority:'normal'}},
     res:{status(code){status=code;return this},json(payload){response=payload;return payload}},
     console:{error:()=>{}},safeError:()=>({}),
