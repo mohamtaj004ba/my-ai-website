@@ -1703,6 +1703,7 @@ document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{
 
 
 let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminProvisioningStagePending=new Set();
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -2730,8 +2731,8 @@ function closeOnboardingDrawer(){
 }
 function bindOnboardingDrawerActions(){
   const drawer=document.getElementById('onboardingDetailDrawer');if(!drawer)return;
-  drawer.querySelectorAll('[data-auto-stage]').forEach(b=>b.onclick=async e=>{e.preventDefault();await clearProvisioningOverride(b.dataset.autoStage);closeOnboardingDrawer()});
-  drawer.querySelectorAll('[data-provision-stage-select]').forEach(sel=>sel.onchange=async e=>{e.stopPropagation();await moveProvisioningStage(sel.dataset.provisionStageSelect,sel.value);closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-auto-stage]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await clearProvisioningOverride(b.dataset.autoStage))closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-provision-stage-select]').forEach(sel=>sel.onchange=async e=>{e.stopPropagation();if(await moveProvisioningStage(sel.dataset.provisionStageSelect,sel.value))closeOnboardingDrawer();else{const item=adminProvisioningData.find(x=>String(x.id)===String(sel.dataset.provisionStageSelect));if(item)sel.value=item.stage}});
   drawer.querySelectorAll('[data-provision-check]').forEach(b=>b.onclick=async e=>{e.preventDefault();await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done'));closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-send-onboarding]').forEach(b=>b.onclick=async e=>{e.preventDefault();await sendOnboardingInvite(b.dataset.sendOnboarding,b);closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-approve-build]').forEach(b=>b.onclick=async e=>{e.preventDefault();await approveProvisioningBuild(b.dataset.approveBuild,b);closeOnboardingDrawer()});
@@ -2773,9 +2774,9 @@ function renderProvisioning(){
     const agreementStatus=doc?.status==='signed'||x.agreementSignedAt?'Signed':x.onboardingLinkSent?'Awaiting':'Not sent',agreementClass=agreementStatus==='Signed'?'green':agreementStatus==='Awaiting'?'amber':'';
     const action=next.type==='send'?'<button class="primary" data-send-onboarding="'+esc(x.id)+'">'+esc(next.label)+'</button>':next.type==='approve'?'<button class="primary" data-approve-build="'+esc(x.id)+'">'+esc(next.label)+'</button>':next.type==='check'?'<button class="primary" data-provision-check="'+esc(next.field)+'" data-provision-id="'+esc(x.id)+'">'+esc(next.label)+'</button>':'<span class="onboarding-next-copy '+next.type+'">'+esc(next.label)+'</span>';
     const checklist=Object.entries(labels).map(([k,label])=>'<button type="button" class="provision-check '+(ck[k]?'done':'')+'" '+(['testCall','clientApproval','live'].includes(k)?'data-provision-check="'+k+'" data-provision-id="'+esc(x.id)+'"':'disabled')+'><span>'+(ck[k]?'✓':'○')+'</span>'+label+'</button>').join('');
-    const stageSelect='<label class="provision-stage-select">Manual stage<select data-provision-stage-select="'+esc(x.id)+'">'+stages.map(s=>'<option value="'+s+'" '+(x.stage===s?'selected':'')+'>'+s+'</option>').join('')+'</select></label>';
+    const stageSelect='<label class="provision-stage-select">Manual stage<select data-provision-stage-select="'+esc(x.id)+'" '+(adminProvisioningStagePending.has(String(x.id))?'disabled aria-busy="true"':'')+'>'+stages.map(s=>'<option value="'+s+'" '+(x.stage===s?'selected':'')+'>'+s+'</option>').join('')+'</select></label>';
     const agreementDetails='<div class="onboarding-detail-block"><span class="eyebrow">Agreement</span><b>'+esc(agreementStatus)+(x.agreementVersion?' · v'+esc(x.agreementVersion):'')+'</b><small>'+(x.agreementSignedAt?'Signed '+new Date(x.agreementSignedAt).toLocaleDateString()+(x.agreementSignedName?' by '+esc(x.agreementSignedName):''):'Client service agreement status')+'</small>'+(doc?.downloadUrl?'<a class="admin-link" href="'+esc(doc.downloadUrl)+'" target="_blank" rel="noopener">Open signed PDF →</a>':'<button class="admin-link" data-open-documents>Open Documents →</button>')+'</div>';
-    return '<details class="onboarding-row" data-provision-id="'+esc(x.id)+'"><summary><span class="onboarding-client"><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+(x.manualOverride?' · manual stage':'')+'</small></span><span><span class="tag '+(x.stage==='Live'?'green':onboardingNeedsAction(x)?'amber':'')+'">'+esc(x.stage)+'</span></span><span class="onboarding-progress-cell"><i><em style="width:'+pct+'%"></em></i><small>'+pct+'% · '+done+'/'+total+'</small></span><span><span class="tag '+agreementClass+'">'+agreementStatus+'</span></span><span class="onboarding-next-summary">'+esc(next.label)+'</span><span class="onboarding-chevron">→</span></summary><div class="onboarding-row-body"><div class="onboarding-checklist"><span class="eyebrow">Launch checklist</span><div class="provision-checks">'+checklist+'</div></div><div class="onboarding-actions">'+agreementDetails+'<div class="onboarding-detail-block"><span class="eyebrow">Next action</span>'+action+(x.websiteScan?'<small>Website scan · '+Number(x.websiteScan.pagesScanned||0)+' page'+(Number(x.websiteScan.pagesScanned||0)===1?'':'s')+'</small>':'')+'</div><div class="onboarding-detail-block"><span class="eyebrow">Stage control</span>'+stageSelect+'<small>Auto stage: '+esc(x.autoStage||x.stage)+'</small>'+(x.manualOverride?'<button class="admin-link" data-auto-stage="'+esc(x.id)+'">Restore automatic stage</button>':'')+'</div></div></div></details>';
+    return '<details class="onboarding-row" data-provision-id="'+esc(x.id)+'"><summary><span class="onboarding-client"><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+(x.manualOverride?' · manual stage':'')+'</small></span><span><span class="tag '+(x.stage==='Live'?'green':onboardingNeedsAction(x)?'amber':'')+'">'+esc(x.stage)+'</span></span><span class="onboarding-progress-cell"><i><em style="width:'+pct+'%"></em></i><small>'+pct+'% · '+done+'/'+total+'</small></span><span><span class="tag '+agreementClass+'">'+agreementStatus+'</span></span><span class="onboarding-next-summary">'+esc(next.label)+'</span><span class="onboarding-chevron">→</span></summary><div class="onboarding-row-body"><div class="onboarding-checklist"><span class="eyebrow">Launch checklist</span><div class="provision-checks">'+checklist+'</div></div><div class="onboarding-actions">'+agreementDetails+'<div class="onboarding-detail-block"><span class="eyebrow">Next action</span>'+action+(x.websiteScan?'<small>Website scan · '+Number(x.websiteScan.pagesScanned||0)+' page'+(Number(x.websiteScan.pagesScanned||0)===1?'':'s')+'</small>':'')+'</div><div class="onboarding-detail-block"><span class="eyebrow">Stage control</span>'+stageSelect+'<small>Auto stage: '+esc(x.autoStage||x.stage)+'</small>'+(x.manualOverride?'<button class="admin-link" data-auto-stage="'+esc(x.id)+'" '+(adminProvisioningStagePending.has(String(x.id))?'disabled aria-busy="true"':'')+'>Restore automatic stage</button>':'')+'</div></div></div></details>';
   }).join('')||'<div class="empty-state"><h3>No onboarding accounts in this view</h3><p>Change the filter or search another client.</p></div>';
   board.querySelectorAll('.onboarding-row>summary').forEach(summary=>summary.addEventListener('click',e=>{e.preventDefault();const row=summary.closest('.onboarding-row');openOnboardingDrawer(row?.dataset.provisionId,row)}));
   board.querySelectorAll('[data-auto-stage]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();clearProvisioningOverride(b.dataset.autoStage)}));
@@ -2803,17 +2804,51 @@ async function updateProvisioningChecklist(id,field,value){
   await refreshAdminView('onboarding',{force:true,announce:false});
   if(data.warning)alert(data.warning);
 }
+function setProvisioningStageControls(id,pending){
+  document.querySelectorAll('[data-provision-stage-select],[data-auto-stage]').forEach(control=>{
+    if(String(control.dataset.provisionStageSelect||control.dataset.autoStage||'')!==String(id))return;
+    control.disabled=pending;
+    if(pending)control.setAttribute('aria-busy','true');
+    else control.removeAttribute('aria-busy');
+  });
+}
 async function moveProvisioningStage(id,stage){
-  const item=adminProvisioningData.find(x=>String(x.id)===String(id));if(!item||item.stage===stage)return;
-  const previous=item.stage;item.stage=stage;item.manualOverride=true;renderProvisioning();
-  const r=await fetch('/api/account?action=admin-provisioning-stage-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})});
-  if(!r.ok){item.stage=previous;renderProvisioning();const d=await r.json().catch(()=>({}));alert(d.error||'Could not move provisioning stage.')}
+  const key=String(id),item=adminProvisioningData.find(x=>String(x.id)===key);
+  if(!item||adminProvisioningStagePending.has(key))return false;
+  if(item.stage===stage)return true;
+  const expectedUpdatedAt=Number(item.stageUpdatedAt||0);
+  adminProvisioningStagePending.add(key);setProvisioningStageControls(key,true);
+  let committed=false;
+  try{
+    const r=await fetch('/api/account?action=admin-provisioning-stage-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not move provisioning stage.');
+    if(data.ok!==true||data.stage!==stage||!Number.isFinite(Number(data.updatedAt))||Number(data.updatedAt)<=0)
+      throw new Error('Could not verify the saved provisioning stage. Refresh onboarding before retrying.');
+    item.stage=stage;item.manualOverride=true;item.stageUpdatedAt=Number(data.updatedAt);committed=true;
+    try{await refreshAdminView('onboarding',{force:true,announce:false})}
+    catch(err){alert('Stage saved, but onboarding could not refresh. Reload the view to confirm the latest client state.')}
+    return true;
+  }catch(err){alert(err.message||'Could not move provisioning stage.');return false}
+  finally{adminProvisioningStagePending.delete(key);renderProvisioning();setProvisioningStageControls(key,false)}
 }
 async function clearProvisioningOverride(id){
-  const r=await fetch('/api/account?action=admin-provisioning-stage-clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
-  if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'Could not restore automatic stage.');return}
-  await refreshAdminView('onboarding',{force:true,announce:false});
+  const key=String(id),item=adminProvisioningData.find(x=>String(x.id)===key);
+  if(!item||adminProvisioningStagePending.has(key))return false;
+  if(!item.manualOverride)return true;
+  const expectedUpdatedAt=Number(item.stageUpdatedAt||0);
+  adminProvisioningStagePending.add(key);setProvisioningStageControls(key,true);
+  try{
+    const r=await fetch('/api/account?action=admin-provisioning-stage-clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not restore automatic stage.');
+    if(data.ok!==true)throw new Error('Could not verify stage restoration. Refresh onboarding before retrying.');
+    item.stage=item.autoStage||item.stage;item.manualOverride=false;item.stageUpdatedAt=null;
+    try{await refreshAdminView('onboarding',{force:true,announce:false})}
+    catch(err){alert('Automatic stage restored, but onboarding could not refresh. Reload the view to confirm the latest client state.')}
+    return true;
+  }catch(err){alert(err.message||'Could not restore automatic stage.');return false}
+  finally{adminProvisioningStagePending.delete(key);renderProvisioning();setProvisioningStageControls(key,false)}
 }
+
 let phoneVisibleLimit=50,phoneFilterSignature='';
 function renderPhones(){
   const wrap=document.getElementById('phoneTable'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
