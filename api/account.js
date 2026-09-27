@@ -2061,8 +2061,9 @@ async function notifications(req,res){
   const items=scope==='admin'?await buildAdminNotifications(sessionData):await buildClientNotifications(sessionData);
   const workspaceId=scope==='client'?sessionData.workspaceId:'';
   const read=await getNotificationReadSet(scope,sessionData.email,workspaceId);
+  const unreadCount=items.reduce((count,item)=>count+(read.has(item.id)?0:1),0);
   const sorted=items.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)).slice(0,80).map(x=>({...x,read:read.has(x.id)}));
-  return res.status(200).json({notifications:sorted,unreadCount:sorted.filter(x=>!x.read).length});
+  return res.status(200).json({notifications:sorted,unreadCount});
 }
 async function notificationsRead(req,res){
   const scope=String((req.body||{}).scope||'client')==='admin'?'admin':'client';
