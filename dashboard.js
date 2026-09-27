@@ -2153,7 +2153,9 @@ async function loadAdminInbox({silent=false,force=false}={}){
       adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;adminInboxData.liveError='';adminInboxData.loading=false;
       if(currentInboxItem?.kind==='gmail'){currentInboxItem=null;renderInboxThread()}
       if(auto)auto.textContent='Gmail disconnected';
-      if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}renderAdminInbox();return;
+      if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}renderAdminInbox();
+      const search=document.getElementById('adminSearch');if(search&&String(search.value||'').trim().length>=2)renderAdminGlobalSearch();
+      return;
     }
 
     // Render the last good Gmail snapshot immediately. Never blank the inbox while Google refreshes.
