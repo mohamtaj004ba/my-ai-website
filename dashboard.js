@@ -25,7 +25,7 @@ const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='
 let currentPlan=params.get('plan')||'Growth';if(!knownPlan(currentPlan))currentPlan='Growth';
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
-let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationRequest=0,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
+let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationRequest=0,notificationMode='unread',clientFeedbackData=[],clientFeedbackVisibleLimit=8,clientFeedbackLoadRequest=0,adminFeedbackData=[];
 let callsData=[],leadsData=[],conversationsData=[],conversationThreadsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',conversationPageTotal=0,conversationNextCursor=null,conversationPageLoading=false,conversationPageError='',conversationPageRequest=0,conversationBackendPaging=false,conversationSearchTimer=null,activeConversationId=null,activeCallContactKey='',activeCallId='',callDrawerOpenRequest=0,followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',contactHistoryVisibleLimit=50,contactHistoryLastSignature='',contactMessageSessionLimits={},contactHistoryHydratedKeys=new Set(),contactHistoryLoadingKeys=new Set(),pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
@@ -1187,14 +1187,15 @@ async function saveAgent(section=activeAgentSection()){
 function feedbackStatusLabel(status){return ({submitted:'Submitted',reviewed:'Reviewed',applied:'Applied',dismissed:'Closed'})[status]||'Submitted'}
 function renderClientFeedback(){
   const wrap=document.getElementById('clientFeedbackList');if(!wrap)return;
-  const items=(clientFeedbackData||[]).slice(0,8),count=document.getElementById('agentFeedbackCount');if(count)count.textContent=String(clientFeedbackData.length||0);
+  const items=(clientFeedbackData||[]).slice(0,clientFeedbackVisibleLimit),count=document.getElementById('agentFeedbackCount');if(count)count.textContent=String(clientFeedbackData.length||0);
   wrap.classList.add('feedback-list');
-  wrap.innerHTML=items.map(x=>'<article class="feedback-item"><div><b>'+esc((x.category||'Feedback').replaceAll('_',' '))+'</b><small>'+esc(x.source==='call'?'Call feedback'+(x.context?' · '+x.context:''):'AI receptionist feedback')+' · '+(x.createdAt?new Date(x.createdAt).toLocaleString():'')+'</small></div><span class="feedback-status '+esc(x.status||'submitted')+'">'+esc(feedbackStatusLabel(x.status))+'</span><p>'+esc(x.message||'')+'</p></article>').join('')||'<p class="muted">No feedback submitted yet.</p>';
+  wrap.innerHTML=items.map(x=>'<article class="feedback-item" id="client-feedback-'+esc(x.id)+'"><div><b>'+esc((x.category||'Feedback').replaceAll('_',' '))+'</b><small>'+esc(x.source==='call'?'Call feedback'+(x.context?' · '+x.context:''):'AI receptionist feedback')+' · '+(x.createdAt?new Date(x.createdAt).toLocaleString():'')+'</small></div><span class="feedback-status '+esc(x.status||'submitted')+'">'+esc(feedbackStatusLabel(x.status))+'</span><p>'+esc(x.message||'')+'</p></article>').join('')||'<p class="muted">No feedback submitted yet.</p>';
 }
 async function loadClientFeedback({silent=false}={}){
+  const request=++clientFeedbackLoadRequest;
   const wrap=document.getElementById('clientFeedbackList');if(!wrap)return;
   if(demoMode){renderClientFeedback();return}
-  try{const r=await fetch('/api/account?action=ai-feedback',{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok)throw new Error('feedback load');const data=await r.json();clientFeedbackData=data.feedback||[];renderClientFeedback()}catch(e){if(!silent)console.error(e);if(wrap&&!clientFeedbackData.length)wrap.innerHTML='<p class="muted">Feedback history is temporarily unavailable.</p>'}
+  try{const r=await fetch('/api/account?action=ai-feedback',{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok)throw new Error('feedback load');const data=await r.json();if(request!==clientFeedbackLoadRequest)return;clientFeedbackData=Array.isArray(data.feedback)?data.feedback:clientFeedbackData;renderClientFeedback()}catch(e){if(request!==clientFeedbackLoadRequest)return;if(!silent)console.error(e);if(wrap&&!clientFeedbackData.length)wrap.innerHTML='<p class="muted">Feedback history is temporarily unavailable.</p>'}
 }
 async function submitAiFeedback({source='receptionist',callId='',category='',message='',context='',button,statusEl}={}){
   const textValue=String(message||'').trim();if(!textValue){if(statusEl)statusEl.textContent='Add a short description first.';return false}
@@ -3567,6 +3568,18 @@ async function markNotifications(ids){
 async function navigateNotification(n){
   if(!n)return false;const view=n.view||'overview',meta=n.meta||{};
   if(document.body.dataset.dashboard==='client'){
+    if(meta.feedbackId&&view==='agent'){
+      showView('agent');
+      if(!document.getElementById('view-agent')?.classList.contains('active'))return false;
+      await loadClientFeedback({silent:true});
+      const id=String(meta.feedbackId),index=(clientFeedbackData||[]).findIndex(f=>String(f.id)===id);
+      if(index<0)return false;
+      clientFeedbackVisibleLimit=Math.max(clientFeedbackVisibleLimit,index+1);renderClientFeedback();
+      const target=document.getElementById('client-feedback-'+id);
+      if(!target)return false;
+      const history=document.getElementById('agentFeedbackHistoryDetails');if(history)history.open=true;
+      target.scrollIntoView({behavior:'smooth',block:'center'});return true;
+    }
     if(meta.callId){
       let call=callsData.find(x=>String(x.id)===String(meta.callId));
       if(!call){
