@@ -216,16 +216,31 @@ async function seedPreviewData(req,res){
 
 async function promotePreviewAdmin(req,res){
   if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
-  const email=cleanEmail((req.body||{}).email);
-  const member=await kv.get('user:email:'+email);
-  if(!member||!member.workspaceId)return res.status(404).json({error:'User not found'});
-  const sessionVersion=Number(member.sessionVersion||0)+1;
-  await kv.set('user:email:'+email,{...member,email,role:'admin',sessionVersion});
-  const index=await kv.get('workspace:index')||[];
-  if(Array.isArray(index)&&!index.includes(member.workspaceId))await kv.set('workspace:index',[...index,member.workspaceId]);
-  return res.status(200).json({ok:true,email,role:'admin'});
+  const email=cleanEmail((req.body||{}).email),memberKey='user:email:'+email;
+  for(let attempt=0;attempt<4;attempt++){
+    const [member,rawIndex]=await Promise.all([kv.get(memberKey),kv.get('workspace:index')]);
+    if(!member||!member.workspaceId)return res.status(404).json({error:'User not found'});
+    const workspace=await kv.get('workspace:'+member.workspaceId);
+    if(!workspace||workspace.previewQa!==true)
+      return res.status(409).json({error:'Only isolated Preview QA workspaces can be promoted by the QA launcher'});
+    if(rawIndex!=null&&(!Array.isArray(rawIndex)||rawIndex.some(id=>typeof id!=='string'||!id.trim())||
+      new Set(rawIndex).size!==rawIndex.length))
+      return res.status(503).json({error:'Preview workspace directory is unavailable; account access was not changed'});
+    const index=rawIndex||[],indexed=index.includes(member.workspaceId);
+    if(!indexed&&index.length>=2000)
+      return res.status(409).json({error:'Preview workspace directory is at capacity; account access was not changed'});
+    const sessionVersion=Number(member.sessionVersion||0)+1;
+    const updates=[{key:memberKey,before:member,after:{...member,email,role:'admin',sessionVersion}}];
+    if(!indexed)updates.push({key:'workspace:index',before:rawIndex,after:[...index,member.workspaceId]});
+    try{
+      if(await compareAndSetConfig(kv,updates))return res.status(200).json({ok:true,email,role:'admin'});
+    }catch(err){
+      console.error('Preview admin promotion transaction failed',safeError(err));
+      return res.status(503).json({error:'Could not confirm Preview account access. Reopen the QA launcher before retrying.'});
+    }
+  }
+  return res.status(409).json({error:'Preview account changed during promotion. Retry the QA launcher.'});
 }
-
 async function previewQaSession(req,res){
   if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
   const email=cleanEmail((req.body||{}).email),mode=String((req.body||{}).mode||'client').toLowerCase();
