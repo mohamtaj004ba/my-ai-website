@@ -88,3 +88,17 @@ test('support form and per-ticket reply statuses are accessible',()=>{
   assert.match(html,/id="supportStatus" role="status" aria-live="polite"/);
   assert.match(source,/data-support-client-status/);
 });
+
+test('pending client reply locks text and unlocks it after successful confirmation',async()=>{
+  let release;
+  const pending=new Promise(resolve=>{release=resolve});
+  const f=fixture(async()=>pending);
+  const sending=f.reply();
+  assert.equal(f.input.readOnly,true);
+  assert.equal(f.replyButton.disabled,true);
+  release(ok({ticket:{id:'ticket-1',messages:[{body:'Saved'}]}}));
+  await sending;
+  assert.equal(f.input.readOnly,false);
+  assert.equal(f.replyButton.disabled,false);
+  assert.equal(f.ctx.supportTicketsData[0].messages[0].body,'Saved');
+});
