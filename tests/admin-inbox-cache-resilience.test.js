@@ -99,3 +99,23 @@ test('confirmed disconnect immediately updates open global search results',async
   assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
   assert.deepEqual(f.renders,['render','search']);
 });
+
+test('cached Gmail fetch completing after disconnect cannot restore old messages',async()=>{
+  const f=fixture(),original=f.ctx.fetch;
+  let resolveInbox;
+  f.ctx.fetch=async url=>url.includes('admin-gmail-inbox')?new Promise(resolve=>resolveInbox=resolve):original(url);
+  const pending=f.run();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(typeof resolveInbox,'function');
+  f.ctx.adminInboxData.gmailStatus={connected:false};
+  f.ctx.adminInboxData.gmail={threads:[],analytics:{}};
+  f.ctx.adminInboxData.aliases=[];
+  f.ctx.adminInboxData.lastSync=0;
+  resolveInbox({ok:true,json:async()=>({threads:[{id:'obsolete'}],syncedAt:1800000000000})});
+  await pending;
+  assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
+  assert.equal(f.ctx.adminInboxData.aliases.length,0);
+  assert.equal(f.ctx.adminInboxData.lastSync,0);
+  assert.equal(f.ctx.adminInboxData.loading,false);
+  assert.equal(f.liveCalls.length,0);
+});
