@@ -335,6 +335,11 @@ async function fetchJsonRetry(url,{attempts=2,timeout=9000}={}){
   throw lastErr||new Error('Request failed');
 }
 let secondaryClientLoadGeneration=0;
+function clearSecondaryClientCoverage(){
+  ++secondaryClientLoadGeneration;
+  const notice=document.getElementById('clientSecondaryDataHealth');
+  if(notice){notice.hidden=true;const copy=notice.querySelector('[data-secondary-coverage]');if(copy)copy.textContent=''}
+}
 async function loadSecondaryClientData(){
   const generation=++secondaryClientLoadGeneration;
   const tasks=[
@@ -426,7 +431,7 @@ async function refreshClientDashboard({button=null,silent=false}={}){
   try{
     const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:1,timeout:12000});
     if(agentEditing||settingsEditing||editGeneration!==clientEditGeneration){setClientSyncState('live','Refresh deferred to preserve your latest edits.');return}
-    applyClientDashboardData(data);renderClientData();const conversationQueryState=conversationQuery();if(conversationBackendPaging&&(conversationQueryState.q||conversationQueryState.filter!=='all'||conversationQueryState.sort!=='newest'))loadConversationPage();setDataHealth('clientDataHealth',false);updateClientRefreshStamp();
+    applyClientDashboardData(data);clearSecondaryClientCoverage();renderClientData();const conversationQueryState=conversationQuery();if(conversationBackendPaging&&(conversationQueryState.q||conversationQueryState.filter!=='all'||conversationQueryState.sort!=='newest'))loadConversationPage();setDataHealth('clientDataHealth',false);updateClientRefreshStamp();
   }catch(err){
     console.error('Client live refresh failed',err);setClientSyncState('error','Could not refresh · showing last good data');
   }finally{
@@ -456,7 +461,7 @@ async function loadOperations(){
   try{
     const data=await fetchJsonRetry('/api/account?action=client-dashboard-data',{attempts:2,timeout:15000});
     applyClientDashboardData(data);
-    renderClientData();setClientLoading(false);updateClientRefreshStamp();
+    clearSecondaryClientCoverage();renderClientData();setClientLoading(false);updateClientRefreshStamp();
     // Non-critical support history loads separately so it can never block Today.
     fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:5000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(()=>{});
     return;
