@@ -35,3 +35,18 @@ test('feature card rejects inherited keys and HTML-escapes content',()=>{
   assert.match(card.innerHTML,/&lt;img src=x onerror=alert\(1\)&gt;/);
   assert.doesNotMatch(card.innerHTML,/<img src=x/);
 });
+
+test('usage updates target only fixed own-plan objects and never inherited properties',()=>{
+  const c=context();
+  const initial=vm.runInContext('PLAN_DATA.Growth.used',c);
+  c.currentPlan='__proto__';
+  vm.runInContext('updatePlanUsage(999)',c);
+  assert.equal(vm.runInContext('PLAN_DATA.Growth.used',c),initial);
+  assert.equal(Object.prototype.used,undefined);
+  c.currentPlan='Growth';
+  vm.runInContext('updatePlanUsage(321)',c);
+  assert.equal(vm.runInContext('PLAN_DATA.Growth.used',c),321);
+  vm.runInContext('updatePlanUsage(Infinity)',c);
+  assert.equal(vm.runInContext('PLAN_DATA.Growth.used',c),321);
+  assert.doesNotMatch(src,/PLAN_DATA\[currentPlan\]\.used\s*=/);
+});
