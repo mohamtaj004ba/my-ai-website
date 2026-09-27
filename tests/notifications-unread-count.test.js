@@ -21,10 +21,10 @@ test('admin unread badge counts all notifications, even when list displays lates
   });
   vm.runInContext(endpoint,ctx);
   await vm.runInContext('notifications(req,res)',ctx);
-  assert.equal(result.notifications.length,80);
+  assert.equal(result.notifications.length,103,'older unread items remain visible beside recent history');
   assert.equal(result.unreadCount,103);
   assert.equal(result.notifications[0].id,'notification-104');
-  assert.equal(result.notifications.at(-1).id,'notification-25');
+  assert.equal(result.notifications.at(-1).id,'notification-2');
 });
 test('client notification count and list stay within their respective authorization scope',async()=>{
   let clientCalls=0,adminCalls=0,output;
@@ -107,4 +107,24 @@ test('invalid notification JSON cannot overwrite last verified list or count',as
   assert.equal(f.ctx.notificationUnreadCount,95);
   assert.equal(f.ctx.notificationData.length,80);
   assert.equal(f.ctx.notificationsLoading,false);
+});
+
+test('older unread alerts appear even if newest 80 alerts have already been read',async()=>{
+  const items=Array.from({length:200},(_,i)=>({id:'notification-'+i,createdAt:i,title:'Alert '+i}));
+  let result=null;
+  const ctx=vm.createContext({
+    requireAdmin:async()=>({email:'admin@example.test'}),
+    buildAdminNotifications:async()=>items,
+    getNotificationReadSet:async()=>new Set(Array.from({length:80},(_,i)=>'notification-'+(120+i))),
+    req:{query:{scope:'admin'}},
+    res:{status(code){assert.equal(code,200);return this},json(data){result=data;return data}},
+    Date,Number,Set,Array
+  });
+  vm.runInContext(endpoint,ctx);
+  await vm.runInContext('notifications(req,res)',ctx);
+  assert.equal(result.unreadCount,120);
+  assert.equal(result.notifications.length,160,'bounded newest history plus older unread work');
+  assert.equal(result.notifications.filter(x=>!x.read).length,80);
+  assert.equal(result.notifications[0].id,'notification-199');
+  assert.equal(result.notifications.at(-1).id,'notification-40');
 });
