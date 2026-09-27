@@ -21,7 +21,7 @@ function harness(fetcher){
   };
   vm.createContext(context);
   vm.runInContext(source.slice(begin,end),context);
-  return {context,notice,coverage,load:()=>vm.runInContext('loadSecondaryClientData()',context)};
+  return {context,notice,coverage,load:()=>vm.runInContext('loadSecondaryClientData()',context),clear:()=>vm.runInContext('clearSecondaryClientCoverage()',context)};
 }
 const actions=['leads','conversations','appointments','automations','locations'];
 test('secondary client feeds display explicit coverage warning and preserve last records on failure',async()=>{
@@ -74,4 +74,22 @@ test('secondary coverage message and focused retry are connected in client UI',(
   assert.match(html,/data-secondary-coverage/);
   assert.match(html,/id="clientSecondaryRetry"/);
   assert.match(source,/getElementById\('clientSecondaryRetry'\)\?\.addEventListener\('click'/);
+});
+
+test('successful bundled refresh clears obsolete secondary failure and invalidates older response',async()=>{
+  let release;
+  const pending=new Promise(resolve=>{release=resolve});
+  const h=harness(async url=>{
+    const action=new URL(url,'https://example.test').searchParams.get('action');
+    return action==='leads'?pending:{[action]:[]};
+  });
+  const old=h.load();
+  await Promise.resolve();
+  h.clear();
+  release({leads:[{id:'obsolete'}]});
+  await old;
+  assert.equal(h.context.leadsData.length,0);
+  assert.equal(h.notice.hidden,true);
+  assert.match(source,/applyClientDashboardData\(data\);\s*clearSecondaryClientCoverage\(\);renderClientData\(\)/);
+  assert.match(source,/applyClientDashboardData\(data\);\s*clearSecondaryClientCoverage\(\);renderClientData\(\);setClientLoading/);
 });
