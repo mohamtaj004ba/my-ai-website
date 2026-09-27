@@ -3625,7 +3625,24 @@ async function navigateNotification(n){
       if(!(adminWebsiteData.prospects||[]).some(x=>String(x.id)===prospectId)||prospectModalPending||prospectStagePending.has(prospectId))return false;
       openProspectModal(prospectId);return true;
     }
-    else if(meta.workspaceId&&view==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(meta.workspaceId))+'"]');
+    else if(meta.workspaceId&&view==='onboarding'){
+      const id=String(meta.workspaceId),selector='.onboarding-row[data-provision-id="'+CSS.escape(id)+'"]';
+      target=document.querySelector(selector);
+      if(!target){
+        if(!(adminProvisioningData||[]).some(item=>String(item.id)===id)){
+          try{
+            const data=await fetchJsonRetry('/api/account?action=admin-provisioning',{attempts:1,timeout:6000});
+            if(Array.isArray(data.provisioning))adminProvisioningData=data.provisioning;
+          }catch(err){console.warn('Notification onboarding refresh failed',err)}
+        }
+        if(!(adminProvisioningData||[]).some(item=>String(item.id)===id))return false;
+        onboardingFilter='all';onboardingSearch='';renderProvisioning();target=document.querySelector(selector);
+      }
+      if(!target)return false;
+      const drawer=document.getElementById('onboardingDetailDrawer');if(!drawer)return false;
+      openOnboardingDrawer(id,target);
+      return drawer.classList.contains('open');
+    }
     else if(meta.workspaceId&&view==='clients')target=document.querySelector('[data-admin-client-row="'+CSS.escape(String(meta.workspaceId))+'"]');
     if(target){flashAdminSearchTarget(target);return true}
     const viewTarget=document.getElementById('view-'+view);return !!viewTarget;
