@@ -417,7 +417,20 @@ async function runClientInteractions(page){
   report.client.interactions.push('pending-save locks + settings persisted save/restore');
 
 
+  const supportHistoryRoute='**/api/account?action=support-tickets';
+  let simulateSupportHistoryFailure=true;
+  await page.route(supportHistoryRoute,async route=>{
+    if(simulateSupportHistoryFailure)await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'QA simulated support history outage'})});
+    else await route.continue();
+  });
   await ensureView(page,'support');
+  await page.locator('#clientSupportHistoryHealth').waitFor({state:'visible',timeout:10000});
+  if(await page.locator('#supportTicketsEmpty').isVisible())throw new Error('Support outage displayed misleading empty history');
+  simulateSupportHistoryFailure=false;
+  await page.locator('#clientSupportHistoryRetry').click();
+  await page.locator('#clientSupportHistoryHealth').waitFor({state:'hidden',timeout:10000});
+  await page.unroute(supportHistoryRoute);
+  report.client.interactions.push('support history outage warning + authenticated retry');
   await page.locator('#supportSubject').fill('QA unsent support draft');
   await page.locator('#supportMessage').fill('Browser QA verifies support form editing without creating a ticket.');
   if(!(await page.locator('#submitSupportButton').isEnabled()))throw new Error('Support submit unexpectedly disabled');
