@@ -48,7 +48,7 @@ test('view refresh ignores an old website window arriving after a new selection'
   const oldFetch=new Promise(resolve=>resolveOld=resolve),rendered=[];
   const ctx=vm.createContext({
     document:{body:{dataset:{dashboard:'admin'}}},
-    currentAdminView:()=> 'website',adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,adminWebsiteData:{periodDays:30},
+    currentAdminView:()=> 'website',adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,adminWebsiteAnalyticsLoading:false,adminWebsiteData:{periodDays:30},
     adminWebsiteLoadError:'',adminDataSyncAt:{},adminSyncCacheKey:(k,u)=>k==='website'?u:k,
     adminSyncFetch:async()=>oldFetch,setDataHealth:()=>{},setAdminSyncState:()=>{},
     renderWebsiteAnalytics:()=>rendered.push('website'),renderAdmin:()=>rendered.push('admin'),
@@ -73,7 +73,7 @@ test('background same-window response cannot overwrite newer manually requested 
   const background=new Promise(resolve=>settle=resolve),rendered=[];
   const ctx=vm.createContext({
     document:{body:{dataset:{dashboard:'admin'}}},
-    currentAdminView:()=> 'website',adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,
+    currentAdminView:()=> 'website',adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,adminWebsiteAnalyticsLoading:false,
     adminWebsiteData:{periodDays:30,sessions:4},adminWebsiteLoadError:'',
     adminDataSyncAt:{},adminSyncCacheKey:(k,u)=>k==='website'?u:k,
     adminSyncFetch:async()=>background,setDataHealth:()=>{},setAdminSyncState:()=>{},
@@ -99,7 +99,7 @@ test('obsolete failed background request does not set stale warning after user s
   const background=new Promise((_resolve,reject)=>rejectOld=reject);
   const ctx=vm.createContext({
     document:{body:{dataset:{dashboard:'admin'}}},
-    currentAdminView:()=> 'website',adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,
+    currentAdminView:()=> 'website',adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,adminWebsiteAnalyticsLoading:false,
     adminWebsiteData:{periodDays:30},adminWebsiteLoadError:'',
     adminDataSyncAt:{},adminSyncCacheKey:(k,u)=>k==='website'?u:k,
     adminSyncFetch:async()=>background,setDataHealth:()=>{},setAdminSyncState:()=>{},
