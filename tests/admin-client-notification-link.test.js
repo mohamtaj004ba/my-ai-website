@@ -87,3 +87,29 @@ test('client management alert uses the same exact-workspace completion check',as
   assert.equal(await f.run(),false);
   assert.deepEqual(f.calls,['view:clients','open:client-1']);
 });
+
+test('switching client drawers removes previous workspace diagnostics, audit and override text immediately',async()=>{
+  const f=fixture(),get=id=>f.ctx.document.getElementById(id);
+  f.ctx.currentAdminClient=workspace('prior-client');
+  f.ctx.currentAdminTech={diagnostics:{workspaceId:'prior-client'},audit:[{id:'private-audit'}]};
+  get('adminDiagnostics').innerHTML='Previous client diagnostics';
+  get('adminAuditList').innerHTML='Previous client audit';
+  get('adminConfigEditor').value='Previous client configuration';
+  get('adminRepairEmail').value='previous@example.test';
+  assert.equal(await f.run('client-1'),true);
+  assert.equal(f.ctx.currentAdminTech,null);
+  assert.equal(get('adminDiagnostics').innerHTML,'');
+  assert.equal(get('adminAuditList').innerHTML,'');
+  assert.equal(get('adminConfigEditor').value,'');
+  assert.equal(get('adminRepairEmail').value,'');
+  assert.equal(get('adminAuditEmpty').hidden,true);
+  assert.equal(f.ctx.currentAdminClient.id,'client-1');
+});
+test('failed next client request does not falsely replace the previous selected client',async()=>{
+  const f=fixture({status:404});
+  f.ctx.currentAdminClient=workspace('prior-client');
+  f.ctx.currentAdminTech={diagnostics:{workspaceId:'prior-client'}};
+  assert.equal(await f.run('client-1'),false);
+  assert.equal(f.ctx.currentAdminClient.id,'prior-client');
+  assert.equal(f.ctx.currentAdminTech.diagnostics.workspaceId,'prior-client');
+});
