@@ -108,3 +108,37 @@ test('Refresh action follows the latest analytics request rather than an older c
   assert.match(source,/refresh\.onclick=\(\)=>loadWebsiteAnalytics\(adminWebsiteDays\)/);
   assert.doesNotMatch(source,/finally\{refresh\.disabled=false;refresh\.textContent='Refresh'\}/);
 });
+
+test('background website refresh started during a manual range load cannot overwrite its result',async()=>{
+  const pending=deferred(),sourceFn=source.slice(source.indexOf('async function refreshAdminView('),source.indexOf('\nfunction adminAgentGroup(',source.indexOf('async function refreshAdminView(')));
+  const context=vm.createContext({
+    document:{body:{dataset:{dashboard:'admin'}}},adminWebsiteAnalyticsRequest:4,adminWebsiteAnalyticsLoading:true,
+    adminWebsiteDays:7,adminWebsiteData:{periodDays:30},adminWebsiteLoadError:'',
+    adminDataSyncAt:{},adminSyncCacheKey:(key,url)=>key==='website'?url:key,
+    adminSyncFetch:()=>pending.promise,renderWebsiteAnalytics(){},renderGrowth(){},renderAdmin(){},
+    setDataHealth(){throw Error('An ignored background failure must not mark the workspace stale')},
+  });
+  vm.runInContext(sourceFn,context);
+  const task=vm.runInContext("refreshAdminView('website',{announce:false})",context);
+  context.adminWebsiteData={periodDays:7,sessions:77};context.adminWebsiteAnalyticsLoading=false;
+  pending.resolve({analytics:{periodDays:7,sessions:12}});
+  await task;
+  assert.equal(context.adminWebsiteData.sessions,77);
+  assert.equal(context.adminWebsiteLoadError,'');
+});
+test('background website refresh still applies while no manual load is active',async()=>{
+  const pending=deferred(),sourceFn=source.slice(source.indexOf('async function refreshAdminView('),source.indexOf('\nfunction adminAgentGroup(',source.indexOf('async function refreshAdminView(')));
+  const context=vm.createContext({
+    document:{body:{dataset:{dashboard:'admin'}}},adminWebsiteAnalyticsRequest:4,adminWebsiteAnalyticsLoading:false,
+    adminWebsiteDays:7,adminWebsiteData:{periodDays:30},adminWebsiteLoadError:'Earlier refresh failed',
+    adminDataSyncAt:{},adminSyncCacheKey:(key,url)=>key==='website'?url:key,
+    adminSyncFetch:()=>pending.promise,renderWebsiteAnalytics(){},renderGrowth(){},renderAdmin(){},
+    setDataHealth(){throw Error('Unexpected failure')},
+  });
+  vm.runInContext(sourceFn,context);
+  const task=vm.runInContext("refreshAdminView('website',{announce:false})",context);
+  pending.resolve({analytics:{periodDays:7,sessions:31}});
+  await task;
+  assert.equal(context.adminWebsiteData.sessions,31);
+  assert.equal(context.adminWebsiteLoadError,'');
+});
