@@ -67,6 +67,7 @@ test('reply network failure retains typed draft and retry succeeds',async()=>{
   const f=fixture(async()=>{count++;if(fail)throw Error('network down');return ok({ticket:{id:'ticket-1',messages:[{body:'This reply should remain available'}]}})});
   await f.reply();
   assert.equal(f.replyButton.disabled,false);
+  assert.equal(f.input.readOnly,false);
   assert.equal(f.input.value,'This reply should remain available');
   assert.match(f.replyStatus.textContent,/Check request history before retrying/);
   assert.equal(f.renders(),0);
