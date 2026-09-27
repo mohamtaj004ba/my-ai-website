@@ -502,6 +502,19 @@ async function runAdminInteractions(page){
   await page.locator('#phoneModal.open').waitFor({state:'hidden',timeout:10000});
   report.admin.interactions.push('phone search/reset + truthful readiness + saved edit/restore');
 
+  // In-page fictional record only: test global search without touching support KV or sending mail.
+  await page.evaluate(()=>{
+    adminSupportData.unshift({id:'qa-support-search-only',subject:'Fictional search verification',
+      workspaceName:'Preview QA company',status:'open',priority:'normal',
+      messages:[{direction:'client',body:'QA support response index marker: bridge-orange-north.'}]});
+  });
+  await page.locator('#adminSearch').fill('bridge-orange-north');
+  const supportSearchResult=page.locator('[data-global-search-type="support"][data-global-search-id="qa-support-search-only"]');
+  await supportSearchResult.waitFor({state:'visible',timeout:8000});
+  await page.locator('#adminSearch').fill('');
+  await page.evaluate(()=>{adminSupportData=adminSupportData.filter(x=>x.id!=='qa-support-search-only')});
+  report.admin.interactions.push('full global search indexes support conversation body');
+
   await page.locator('#adminSearch').fill('North Ridge Plumbing');
   const clientResult=page.locator('[data-global-search-type="client"]').first();
   await clientResult.waitFor({state:'visible',timeout:8000});
