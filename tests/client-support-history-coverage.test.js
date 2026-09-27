@@ -70,5 +70,5 @@ test('successful support mutation invalidates earlier read and unlocks history r
   assert.equal(h.ctx.supportTicketsData[0].id,'just-submitted');
   assert.equal(h.button.disabled,false);
   assert.match(source,/invalidateClientSupportHistoryRequest\(\);const i=supportTicketsData.findIndex/);
-  assert.match(source,/if\(r.ok\)\{invalidateClientSupportHistoryRequest\(\);supportTicketsData.unshift/);
+  assert.match(source,/invalidateClientSupportHistoryRequest\(\);supportTicketsData.unshift\(data.ticket\)/);
 });
