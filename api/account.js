@@ -780,8 +780,10 @@ async function createSupportTicket(req,res){
 async function supportTickets(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const index=await kv.get('support:index')||[],tickets=[];
-  for(const id of Array.isArray(index)?index.slice(0,100):[]){
-    const t=await kv.get('support:'+id);if(t&&t.workspaceId===s.workspaceId)tickets.push(t);
+  if(!Array.isArray(index)||index.length>2000)return res.status(503).json({error:'Support history exceeds supported capacity. No partial ticket list was returned.'});
+  for(let offset=0;offset<index.length;offset+=40){
+    const batch=await Promise.all(index.slice(offset,offset+40).map(id=>kv.get('support:'+id)));
+    for(const ticket of batch){if(ticket&&ticket.workspaceId===s.workspaceId)tickets.push(ticket)}
   }
   return res.status(200).json({tickets});
 }
