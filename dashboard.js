@@ -25,7 +25,7 @@ const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='
 let currentPlan=params.get('plan')||'Growth';if(!knownPlan(currentPlan))currentPlan='Growth';
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
-let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
+let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationRequest=0,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
 let callsData=[],leadsData=[],conversationsData=[],conversationThreadsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',conversationPageTotal=0,conversationNextCursor=null,conversationPageLoading=false,conversationPageError='',conversationPageRequest=0,conversationBackendPaging=false,conversationSearchTimer=null,activeConversationId=null,activeCallContactKey='',activeCallId='',callDrawerOpenRequest=0,followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',contactHistoryVisibleLimit=50,contactHistoryLastSignature='',contactMessageSessionLimits={},contactHistoryHydratedKeys=new Set(),contactHistoryLoadingKeys=new Set(),pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
@@ -3508,11 +3508,14 @@ function notificationKindIcon(kind){
 }
 async function loadNotifications({silent=true}={}){
   if(demoMode||notificationsLoading||!document.getElementById('notificationBell'))return;
-  notificationsLoading=true;
+  notificationsLoading=true;const request=++notificationRequest;
   try{
     const scope=notificationScope(),r=await fetch('/api/account?action=notifications&scope='+scope,{headers:{Accept:'application/json'},cache:'no-store'});
     if(r.ok){
-      const data=await r.json();notificationData=data.notifications||[];notificationUnreadCount=Number(data.unreadCount||0);renderNotifications();
+      const data=await r.json();
+      if(request===notificationRequest&&Array.isArray(data?.notifications)&&Number.isFinite(Number(data.unreadCount))){
+        notificationData=data.notifications;notificationUnreadCount=Math.max(0,Number(data.unreadCount));renderNotifications();
+      }
     }
   }catch(e){if(!silent)console.error('Notifications failed',e)}
   finally{notificationsLoading=false}
@@ -3555,7 +3558,10 @@ async function markNotifications(ids){
     const r=await fetch('/api/account?action=notifications-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope,ids})});
     if(!r.ok)throw new Error('Could not sync notification read state ('+r.status+')');
   }catch(err){console.warn('Notification read sync failed',err);return false}
-  const set=new Set(ids);notificationData.forEach(n=>{if(set.has(n.id))n.read=true});notificationUnreadCount=notificationData.filter(n=>!n.read).length;renderNotifications();return true;
+  notificationRequest++;
+  const set=new Set(ids),newlyRead=notificationData.filter(n=>!n.read&&set.has(n.id)).length;
+  notificationData.forEach(n=>{if(set.has(n.id))n.read=true});
+  notificationUnreadCount=Math.max(0,notificationUnreadCount-newlyRead);renderNotifications();return true;
 }
 async function navigateNotification(n){
   if(!n)return false;const view=n.view||'overview',meta=n.meta||{};
@@ -3600,7 +3606,7 @@ async function markAllNotifications(){
     const r=await fetch('/api/account?action=notifications-read-all',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope})});
     if(!r.ok)throw new Error('Could not sync all notifications ('+r.status+')');
   }catch(err){console.warn('Mark-all notification sync failed',err);return false}
-  notificationData.forEach(n=>n.read=true);notificationUnreadCount=0;renderNotifications();return true;
+  notificationRequest++;notificationData.forEach(n=>n.read=true);notificationUnreadCount=0;renderNotifications();return true;
 }
 function initNotifications(){
   const bell=document.getElementById('notificationBell'),panel=document.getElementById('notificationPanel');if(!bell||!panel)return;
