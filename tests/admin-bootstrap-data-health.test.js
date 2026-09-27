@@ -148,3 +148,23 @@ test('malformed preferred analytics JSON retains prior Growth records with cover
   assert.equal(f.context.adminDataSyncAt.website,undefined);
   assert.ok(f.rendered.includes('growth'));
 });
+
+test('null JSON from Finance fails closed without aborting healthy website records',async()=>{
+  const f=fixture(),original=f.context.fetch;
+  f.context.fetch=async url=>url.includes('admin-finance')?{ok:true,json:async()=>null}:original(url);
+  await f.run();
+  assert.equal(f.context.adminFinanceData.reconciliation[0].id,'older');
+  assert.match(f.context.adminFinanceLoadError,/outdated/);
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'fresh');
+  assert.equal(f.context.adminDataSyncAt.finance,undefined);
+  assert.ok(f.rendered.includes('finance'));
+});
+test('JSON array from phone inventory does not corrupt otherwise healthy bootstrap',async()=>{
+  const f=fixture(),original=f.context.fetch;
+  f.context.fetch=async url=>url.includes('admin-phone-numbers')?{ok:true,json:async()=>[]}:original(url);
+  await f.run();
+  assert.equal(f.context.adminDataSyncAt.phones,undefined);
+  assert.equal(f.context.adminFinanceData.reconciliation[0].id,'fresh');
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'fresh');
+  assert.deepEqual(f.health[0],['adminDataHealth',true]);
+});
