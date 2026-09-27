@@ -2582,13 +2582,37 @@ function renderClientCareTabs(){
   const support=document.getElementById('clientCareSupportPane'),feedback=document.getElementById('clientCareFeedbackPane');if(support)support.hidden=adminCareTab!=='support';if(feedback)feedback.hidden=adminCareTab!=='feedback';
 }
 function openClientCare(tab='support'){adminCareTab=tab;showView('client-care');renderClientCareTabs()}
+function setAdminSupportReplyStatus(id,message){
+  const status=document.querySelector('[data-support-admin-status="'+CSS.escape(id)+'"]');
+  if(status)status.textContent=message;
+}
+function finishAdminSupportReply(id,button){
+  const current=document.querySelector('[data-support-admin-reply="'+CSS.escape(id)+'"]');
+  if(current){current.disabled=false;current.textContent='Send reply'}
+  if(button&&button!==current){button.disabled=false;button.textContent='Send reply'}
+}
 async function replyAdminSupportTicket(id,button){
-  const input=document.querySelector('[data-support-admin-input="'+CSS.escape(id)+'"]'),message=String(input?.value||'').trim();if(!message)return;
+  const key=String(id);if(adminSupportReplyPending.has(key))return;
+  const input=document.querySelector('[data-support-admin-input="'+CSS.escape(key)+'"]'),message=String(input?.value||'').trim();
+  if(message.length<2){setAdminSupportReplyStatus(key,'Add a reply before sending.');return}
+  adminSupportReplyPending.add(key);
   if(button){button.disabled=true;button.textContent='Sending…'}
-  const r=await fetch('/api/account?action=admin-support-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,message})}),data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not send support reply.');if(button){button.disabled=false;button.textContent='Send reply'};return}
-  const i=adminSupportData.findIndex(x=>x.id===id);if(i>=0)adminSupportData[i]=data.ticket;
-  renderAdminSupport();loadNotifications({silent:true});
+  setAdminSupportReplyStatus(key,'');
+  try{
+    const r=await fetch('/api/account?action=admin-support-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,message})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok){setAdminSupportReplyStatus(key,data.error||'Could not send reply. Your draft is preserved.');return}
+    if(!data.ticket||String(data.ticket.id)!==key)throw new Error('Unconfirmed support reply response');
+    const i=adminSupportData.findIndex(x=>String(x.id)===key);if(i>=0)adminSupportData[i]=data.ticket;
+    renderAdminSupport({clearDraftId:key});
+    const thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(key)+'"]');if(thread)thread.open=true;
+    Promise.resolve(loadNotifications({silent:true})).catch(()=>{});
+  }catch(_){
+    setAdminSupportReplyStatus(key,'Could not confirm the reply was saved. Check ticket history before retrying; your draft is preserved.');
+  }finally{
+    adminSupportReplyPending.delete(key);
+    finishAdminSupportReply(key,button);
+  }
 }
 async function updateSupportStatus(id,status){
   const key=String(id),t=adminSupportData.find(x=>String(x.id)===key);if(!t||adminSupportStatusPending.has(key))return;const previous=t.status;adminSupportStatusPending.add(key);t.status=status;renderAdminSupport();
