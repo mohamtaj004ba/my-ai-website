@@ -576,6 +576,27 @@ async function runAdminInteractions(page){
   await page.locator('#onboardingSearch').fill('');
   report.admin.interactions.push('onboarding search');
 
+  await ensureView(page,'client-care');
+  const supportCareTab=page.locator('[data-care-tab="support"]').first();
+  if(await supportCareTab.count())await supportCareTab.click();
+  const adminSupportThread=page.locator('#adminSupportList [data-support-ticket-id]').first();
+  if(!(await adminSupportThread.count()))throw new Error('Preview Client Care support fixture missing');
+  await adminSupportThread.locator('summary').click();
+  const adminReplyDraft=adminSupportThread.locator('[data-support-admin-input]');
+  await adminReplyDraft.fill('Unsent admin reply preserved during case refresh and search.');
+  await adminReplyDraft.evaluate(el=>{el.focus();el.setSelectionRange(7,19)});
+  await page.evaluate(()=>renderAdminSupport());
+  if(!(await adminSupportThread.evaluate(el=>el.open)))throw new Error('Admin ticket collapsed on UI refresh');
+  if(await adminReplyDraft.inputValue()!=='Unsent admin reply preserved during case refresh and search.')throw new Error('Admin support draft disappeared on redraw');
+  const adminSelection=await adminReplyDraft.evaluate(el=>[el.selectionStart,el.selectionEnd,document.activeElement===el]);
+  if(JSON.stringify(adminSelection)!==JSON.stringify([7,19,true]))throw new Error('Admin support draft cursor was lost on redraw');
+  await page.locator('#adminSupportSearch').fill('__qa_unmatched_support_ticket__');
+  if(await page.locator('#adminSupportList [data-support-ticket-id]').count())throw new Error('Admin support search fixture unexpectedly matched');
+  await page.locator('#adminSupportSearch').fill('');
+  if(await adminReplyDraft.inputValue()!=='Unsent admin reply preserved during case refresh and search.')throw new Error('Admin support draft disappeared after filter reset');
+  await adminReplyDraft.fill('');
+  report.admin.interactions.push('unsent admin support reply survives redraw and filtering');
+
   await page.route('**/api/account?action=admin-ai-guide',async route=>{
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({answer:'QA stub response from Core Intelligence.'})});
   });
