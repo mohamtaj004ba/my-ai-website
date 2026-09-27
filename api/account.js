@@ -2044,8 +2044,13 @@ async function aiFeedbackSubmit(req,res){
 }
 async function adminAiFeedback(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const ids=await kv.get('ai-feedback:index')||[],items=[];
-  for(const id of Array.isArray(ids)?ids.slice(0,500):[]){const item=await kv.get('ai-feedback:'+id);if(item)items.push(item)}
+  const raw=await kv.get('ai-feedback:index'),ids=raw==null?[]:raw,items=[];
+  if(!Array.isArray(ids)||ids.length>1500||ids.some(id=>typeof id!=='string'||!id||!id.trim())||new Set(ids).size!==ids.length)
+    return res.status(503).json({error:'Feedback index is incomplete or exceeds supported capacity. No partial feedback list was returned.'});
+  for(let offset=0;offset<ids.length;offset+=40){
+    const batch=await Promise.all(ids.slice(offset,offset+40).map(id=>kv.get('ai-feedback:'+id)));
+    for(const item of batch)if(item)items.push(item);
+  }
   items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
   return res.status(200).json({feedback:items});
 }
