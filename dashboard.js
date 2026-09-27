@@ -1609,7 +1609,7 @@ async function bootstrapAdmin(){
 async function loadAdminOps(){
   try{
     // One disconnected endpoint must not prevent the remaining admin feeds from loading.
-    const get=async url=>{try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return {ok:false,json:async()=>({})};const payload=await response.json();return {ok:true,json:async()=>payload}}catch{return {ok:false,json:async()=>({})}}};
+    const get=async url=>{try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return {ok:false,json:async()=>({})};const payload=await response.json();if(!payload||typeof payload!=='object'||Array.isArray(payload))return {ok:false,json:async()=>({})};return {ok:true,json:async()=>payload}}catch{return {ok:false,json:async()=>({})}}};
     const requestedAnalyticsDays=adminWebsiteDays,analyticsRequest=adminWebsiteAnalyticsRequest;
     const [pr,ph,hr,fr,sr,ps,wr,fbr,fin,cr,dr]=await Promise.all([
       get('/api/account?action=admin-provisioning'),
