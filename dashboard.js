@@ -2147,8 +2147,8 @@ async function loadAdminInbox({silent=false,force=false}={}){
   const refresh=document.getElementById('inboxRefreshButton'),auto=document.getElementById('inboxAutoStatus');
   if(refresh&&!silent){refresh.disabled=true;refresh.textContent='Syncing…'}
   try{
-    const sr=await fetch('/api/account?action=admin-gmail-status',{headers:{Accept:'application/json'},cache:'no-store'});
-    if(sr.ok)adminInboxData.gmailStatus=await sr.json();
+    const sr=await fetch('/api/account?action=admin-gmail-status',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false}));
+    if(sr.ok){const status=await sr.json().catch(()=>null);if(status&&typeof status==='object'&&!Array.isArray(status)&&typeof status.connected==='boolean')adminInboxData.gmailStatus=status}
     if(!adminInboxData.gmailStatus.connected){
       adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.loading=false;
       if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}renderAdminInbox();return;
