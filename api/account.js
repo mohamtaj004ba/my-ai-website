@@ -11,6 +11,7 @@ const previewSeed=require('../lib/preview-seed');
 const {replacePreviewSupportSeed}=require('../lib/preview-support-seed');
 const {replacePreviewFeedbackSeed}=require('../lib/preview-feedback-seed');
 const {replacePreviewPhoneSeed}=require('../lib/preview-phone-seed');
+const {replacePreviewWorkspaceIndex}=require('../lib/preview-workspace-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAuditBatch}=require('../lib/config-transaction');
 const {recordFinanceSnapshot}=require('../lib/finance-history');
@@ -169,7 +170,6 @@ async function seedPreviewData(req,res){
   const staleSeedPrefixes=['workspace:','settings:','agent:','automations:','calls:','calls:index:','leads:','conversations:','appointments:','locations:','onboarding:workspace:','routing-request:','integrations:','followup:state:'];
   await Promise.allSettled(staleSeedWorkspaceIds.flatMap(id=>staleSeedPrefixes.map(prefix=>kv.del(prefix+id))));
   await Promise.allSettled(staleSeedWorkspaceIds.map(id=>deleteNormalizedConversations(kv,id)));
-  const keep=index.filter(id=>!String(id).startsWith('seed_'));
   const adminIds=[],seedPhones=[],seedSupport=[],seedFeedback=[];
   for(let i=0;i<previewSeed.ADMIN_CLIENTS.length;i++){
     const ws=previewSeed.adminWorkspace(seedPrefix,i,now);adminIds.push(ws.id);
@@ -187,7 +187,7 @@ async function seedPreviewData(req,res){
     ]);
     await publishNormalizedConversations(kv,ws.id,[],{now});
   }
-  await kv.set('workspace:index',[workspaceId,...adminIds,...keep.filter(id=>id!==workspaceId)].slice(0,250));
+  await replacePreviewWorkspaceIndex(kv,workspaceId,adminIds);
 
   await replacePreviewPhoneSeed(kv,workspaceId,previewSeed.primaryPhone(workspaceId),seedPhones);
 
