@@ -41,7 +41,7 @@ test('admin ticket draft survives temporary filtering out and subsequent return'
 });
 test('admin pending reply stays visibly locked after rerender and sent draft alone clears',()=>{
   const h=uiFixture(),a=thread('ticket-1',{draft:'Reply being sent',open:true}),b=thread('ticket-2',{draft:'Other unsent reply',open:true});
-  h.wrap.children=[a,b];h.capture();h.ctx.adminSupportReplyPending.add('ticket-1');
+  h.wrap.children=[a,b];h.capture();vm.runInContext("adminSupportReplyPending.add('ticket-1')",h.ctx);
   h.clear('ticket-1');
   const updatedA=thread('ticket-1'),updatedB=thread('ticket-2');h.wrap.children=[updatedA,updatedB];h.restore();
   assert.equal(updatedA.input.value,'');
