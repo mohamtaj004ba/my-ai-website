@@ -5,7 +5,7 @@ const vm=require('node:vm');
 
 const source=fs.readFileSync('dashboard.js','utf8'),html=fs.readFileSync('dashboard.html','utf8');
 const start=source.indexOf('let clientSupportHistoryRequest=0;');
-const end=source.indexOf('function renderSupport(){',start);
+const end=source.indexOf('function snapshotClientSupportThreadUi(wrap){',start);
 assert.ok(start>=0&&end>start);
 
 function harness(fetcher){
