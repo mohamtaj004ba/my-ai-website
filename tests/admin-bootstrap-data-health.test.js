@@ -14,7 +14,13 @@ function fixture({finance={ok:true,payload:{finance:{reconciliation:[{id:'fresh'
     adminFinanceData:{reconciliation:[{id:'older'}]},adminFinanceLoadError:'',
     adminDataSyncAt:{},adminPlatformDirty:false,
     adminPlatformData:{analyticsWindowDays:preferredDays},adminProvisioningData:[],adminDocumentsData:{agreements:[],company:[],standard:[]},
-    fetch:async url=>{calls.push(url);if(failNetwork.some(action=>url.includes(action)))throw Error('Network connection failed');if(url.includes('admin-finance'))return response(finance);if(url.includes('admin-website-analytics'))return response(website);if(url.includes('admin-platform-settings'))return response({ok:true,payload:{settings:{analyticsWindowDays:preferredDays}}});return response({ok:true,payload:{}})},
+    fetch:async url=>{calls.push(url);if(failNetwork.some(action=>url.includes(action)))throw Error('Network connection failed');if(url.includes('admin-finance'))return response(finance);if(url.includes('admin-website-analytics'))return response(website);if(url.includes('admin-platform-settings'))return response({ok:true,payload:{settings:{analyticsWindowDays:preferredDays}}});
+      const listFields={'admin-provisioning':{provisioning:[]},'admin-phone-numbers':{numbers:[]},
+        'admin-system-health':{services:[]},'admin-fleet':{agents:[],automations:[]},
+        'admin-support':{tickets:[]},'admin-ai-feedback':{feedback:[]},
+        'admin-marketing-campaigns':{campaigns:[]},'admin-documents':{documents:{agreements:[],company:[],standard:[]}}};
+      const action=/[?&]action=([^&]+)/.exec(url)?.[1];
+      return response({ok:true,payload:listFields[action]||{}})},
     setDataHealth:(...args)=>health.push(args),
     console:{error:()=>{}},
     renderProvisioning:()=>rendered.push('provisioning'),renderPhones:()=>rendered.push('phones'),
