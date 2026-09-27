@@ -103,7 +103,7 @@ async function getWorkspaceConfigSnapshot(workspaceId){
 async function bootstrapPreview(req,res){
   if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
   const email=cleanEmail((req.body||{}).email);
-  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return res.status(400).json({error:'Valid email required'});
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Valid email required'});
   const workspaceId=crypto.randomUUID(),memberKey='user:email:'+email;
   const name=String((req.body||{}).businessName||'CallerCore Test Workspace').trim().slice(0,160);
   const plan=['Starter','Growth','Pro'].includes((req.body||{}).plan)?(req.body||{}).plan:'Pro';
