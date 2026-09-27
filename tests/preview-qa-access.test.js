@@ -39,10 +39,10 @@ test('Preview reseeding removes stale generated admin fixtures',()=>{
   const previewSupport=fs.readFileSync(path.join(root,'lib','preview-support-seed.js'),'utf8');
   assert.match(previewSupport,/oldSeedIds=index\.filter\(id=>String\(id\)\.startsWith\(SEED_PREFIX\)\)/);
   assert.match(previewSupport,/Promise\.allSettled\(oldSeedIds\.filter/);
-  assert.match(account,/replacePreviewFeedbackSeed\\(kv,seedFeedback\\)/);
+  assert.ok(account.includes('replacePreviewFeedbackSeed(kv,seedFeedback)'));
   const previewFeedback=fs.readFileSync(path.join(root,'lib','preview-feedback-seed.js'),'utf8');
-  assert.match(previewFeedback,/stale=globalIds\\.filter\\(id=>id\\.startsWith\\(SEED_PREFIX\\)\\)/);
-  assert.match(previewFeedback,/Promise\\.allSettled\\(stale\\.filter/);
+  assert.ok(previewFeedback.includes('stale=globalIds.filter(id=>id.startsWith(SEED_PREFIX))'));
+  assert.ok(previewFeedback.includes('Promise.allSettled(stale.filter'));
 });
 
 
