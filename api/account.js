@@ -103,14 +103,8 @@ async function getWorkspaceConfigSnapshot(workspaceId){
 async function bootstrapPreview(req,res){
   if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
   const email=cleanEmail((req.body||{}).email);
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Valid email required'});
-  const existing=await kv.get('user:email:'+email);
-  if(existing&&existing.workspaceId){
-    const existingWorkspace=await kv.get('workspace:'+existing.workspaceId);
-    if(existingWorkspace&&existingWorkspace.previewQa===true)return res.status(200).json({ok:true,reused:true,workspaceId:existing.workspaceId,email,plan:entitlementsFor(existingWorkspace.plan).plan});
-    return res.status(409).json({error:'User already provisioned',workspaceId:existing.workspaceId});
-  }
-  const workspaceId=crypto.randomUUID();
+  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return res.status(400).json({error:'Valid email required'});
+  const workspaceId=crypto.randomUUID(),memberKey='user:email:'+email;
   const name=String((req.body||{}).businessName||'CallerCore Test Workspace').trim().slice(0,160);
   const plan=['Starter','Growth','Pro'].includes((req.body||{}).plan)?(req.body||{}).plan:'Pro';
   const now=Date.now();
@@ -120,13 +114,35 @@ async function bootstrapPreview(req,res){
     stripeCustomerId:null,stripeSubscriptionId:null,stripeCheckoutSessionId:null,
     usage:{minutes:0},createdAt:now,updatedAt:now
   };
-  await kv.set('workspace:'+workspaceId,workspace);
-  await kv.set('user:email:'+email,{workspaceId,role:'owner',email});
-  const index=await kv.get('workspace:index')||[];
-  if(Array.isArray(index)&&!index.includes(workspaceId))await kv.set('workspace:index',[...index,workspaceId]);
-  return res.status(201).json({ok:true,workspaceId,email,plan});
+  for(let attempt=0;attempt<4;attempt++){
+    const [member,rawIndex]=await Promise.all([kv.get(memberKey),kv.get('workspace:index')]);
+    if(member){
+      if(member.workspaceId){
+        const existingWorkspace=await kv.get('workspace:'+member.workspaceId);
+        if(existingWorkspace&&existingWorkspace.previewQa===true)
+          return res.status(200).json({ok:true,reused:true,workspaceId:member.workspaceId,email,plan:entitlementsFor(existingWorkspace.plan).plan});
+        return res.status(409).json({error:'User already provisioned',workspaceId:member.workspaceId});
+      }
+      return res.status(409).json({error:'Email already registered; Preview QA did not replace its existing record'});
+    }
+    if(rawIndex!=null&&(!Array.isArray(rawIndex)||rawIndex.some(id=>typeof id!=='string'||!id.trim())||
+      new Set(rawIndex).size!==rawIndex.length))
+      return res.status(503).json({error:'Preview workspace directory is unavailable; no account was created'});
+    const index=rawIndex||[];
+    if(index.length>=2000)return res.status(409).json({error:'Preview workspace directory is at capacity; no account was created'});
+    try{
+      if(await compareAndSetConfig(kv,[
+        {key:'workspace:'+workspaceId,before:null,after:workspace},
+        {key:memberKey,before:member,after:{workspaceId,role:'owner',email}},
+        {key:'workspace:index',before:rawIndex,after:[...index,workspaceId]}
+      ]))return res.status(201).json({ok:true,workspaceId,email,plan});
+    }catch(err){
+      console.error('Preview bootstrap transaction failed',safeError(err));
+      return res.status(503).json({error:'Could not confirm Preview account creation. Check the QA workspace directory before retrying.'});
+    }
+  }
+  return res.status(409).json({error:'Preview workspace directory changed during account creation. Retry Preview bootstrap.'});
 }
-
 async function seedPreviewData(req,res){
   if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
   const email=cleanEmail((req.body||{}).email);
