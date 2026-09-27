@@ -589,6 +589,48 @@ async function runAdminInteractions(page){
   await page.locator('#onboardingSearch').fill('');
   report.admin.interactions.push('onboarding search');
 
+  // Exercise a fictional in-memory stage record. Intercept only its requests: this
+  // validates the real admin controls without changing any Preview/production KV.
+  await page.evaluate(async()=>{
+    const id='qa-stage-ui-only',realFetch=window.fetch,realRefresh=refreshAdminView;
+    const fixture={id,name:'QA stage controls (in-memory)',plan:'Starter',stage:'Paid',
+      autoStage:'Paid',manualOverride:false,stageUpdatedAt:null,checklist:{},
+      checklistDone:0,checklistTotal:13,onboardingStatus:'paid'};
+    let releaseStage;const requests=[];
+    adminProvisioningData.unshift(fixture);
+    window.fetch=async(url,options)=>{
+      if(String(url).includes('action=admin-provisioning-stage-save')){
+        requests.push(JSON.parse(options.body));
+        return new Promise(resolve=>{releaseStage=()=>resolve({ok:true,json:async()=>({ok:true,stage:'Review',updatedAt:1001})})});
+      }
+      if(String(url).includes('action=admin-provisioning-stage-clear')){
+        requests.push(JSON.parse(options.body));
+        return {ok:true,json:async()=>({ok:true,clearedAt:1002})};
+      }
+      return realFetch(url,options);
+    };
+    refreshAdminView=async()=>{};
+    try{
+      renderProvisioning();
+      const select=document.querySelector('[data-provision-stage-select="'+id+'"]');
+      if(!select)throw new Error('Fictional onboarding stage row was not rendered');
+      const pending=moveProvisioningStage(id,'Review');
+      if(!select.disabled||select.getAttribute('aria-busy')!=='true')throw new Error('Pending onboarding stage was editable');
+      if(await moveProvisioningStage(id,'Live')!==false)throw new Error('Concurrent onboarding stage edit was not blocked');
+      if(requests.length!==1||requests[0].expectedUpdatedAt!==0)throw new Error('Onboarding save did not send the displayed revision');
+      releaseStage();if(await pending!==true)throw new Error('Verified onboarding stage save did not complete');
+      if(fixture.stage!=='Review'||fixture.stageUpdatedAt!==1001||!fixture.manualOverride)throw new Error('Saved stage was not reconciled');
+      if(await clearProvisioningOverride(id)!==true)throw new Error('Automatic-stage restore did not complete');
+      if(requests.length!==2||requests[1].expectedUpdatedAt!==1001)throw new Error('Restoration missed the latest stage revision');
+      if(fixture.stage!=='Paid'||fixture.manualOverride||fixture.stageUpdatedAt!==null)throw new Error('Automatic-stage restoration was not reflected');
+    }finally{
+      window.fetch=realFetch;refreshAdminView=realRefresh;
+      adminProvisioningData=adminProvisioningData.filter(item=>item.id!==id);
+      adminProvisioningStagePending.delete(id);renderProvisioning();
+    }
+  });
+  report.admin.interactions.push('in-memory onboarding save lock + revision + automatic-stage restoration');
+
   await ensureView(page,'client-care');
   const supportCareTab=page.locator('[data-care-tab="support"]').first();
   if(await supportCareTab.count())await supportCareTab.click();
