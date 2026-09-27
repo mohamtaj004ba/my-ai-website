@@ -8,6 +8,7 @@ const {emailKey,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {appendSiteConversation}=require('../lib/site-conversation');
 const {safeError}=require('../lib/safe-log');
 const previewSeed=require('../lib/preview-seed');
+const {replacePreviewSupportSeed}=require('../lib/preview-support-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAuditBatch}=require('../lib/config-transaction');
 const {recordFinanceSnapshot}=require('../lib/finance-history');
@@ -195,12 +196,7 @@ async function seedPreviewData(req,res){
   const retainedPhones=(Array.isArray(refreshedPhoneIndex)?refreshedPhoneIndex:[]).filter(x=>x&&x.workspaceId!==workspaceId&&!String(x.workspaceId||'').startsWith('seed_'));
   await kv.set('phone:index',[previewSeed.primaryPhone(workspaceId),...seedPhones,...retainedPhones].slice(0,500));
 
-  const supportIndex=await kv.get('support:index')||[],supportIds=Array.isArray(supportIndex)?supportIndex:[];
-  const staleSupportIds=supportIds.filter(id=>String(id).startsWith('seed_support_seed_'));
-  await Promise.allSettled(staleSupportIds.map(id=>kv.del('support:'+id)));
-  const retainedSupportIds=supportIds.filter(id=>!String(id).startsWith('seed_support_seed_'));
-  for(const ticket of seedSupport)await kv.set('support:'+ticket.id,ticket);
-  await kv.set('support:index',[...seedSupport.map(x=>x.id),...retainedSupportIds].slice(0,500));
+  await replacePreviewSupportSeed(kv,seedSupport);
 
   const feedbackIndex=await kv.get('ai-feedback:index')||[],feedbackIds=Array.isArray(feedbackIndex)?feedbackIndex:[];
   const staleFeedbackIds=feedbackIds.filter(id=>String(id).startsWith('seed_feedback_seed_'));
