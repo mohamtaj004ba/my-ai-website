@@ -1599,9 +1599,15 @@ async function adminForceLogout(req,res){
   if(!ws)return res.status(404).json({error:'Client not found'});
   const email=cleanEmail(ws.ownerEmail||''),key='user:email:'+email,member=email?await kv.get(key):null;
   if(!member||member.workspaceId!==id)return res.status(409).json({error:'Client access mapping is missing or broken'});
-  const sessionVersion=Number(member.sessionVersion||0)+1;
-  await kv.set(key,{...member,sessionVersion});
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'force_logout',section:'access',meta:{sessionVersion}});
+  const previousVersion=Number(member.sessionVersion||0);
+  if(!Number.isSafeInteger(previousVersion)||previousVersion<0||previousVersion>=Number.MAX_SAFE_INTEGER)
+    return res.status(503).json({error:'Client session revision is unavailable. No access changes were made.'});
+  const sessionVersion=previousVersion+1,updated={...member,sessionVersion},now=Date.now();
+  const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'force_logout',section:'access',before:{sessionVersion:previousVersion},after:{sessionVersion},meta:{sessionVersion},at:now};
+  try{
+    if(!await compareAndAudit(kv,{key,before:member,after:updated},'audit:'+id,audit))
+      return res.status(409).json({error:'Client access changed during sign-out. Refresh the account and retry.'});
+  }catch(err){console.error('admin force logout failed',safeError(err));return res.status(503).json({error:'Could not confirm session revocation and audit together. Refresh the account before retrying.'})}
   return res.status(200).json({ok:true,sessionVersion});
 }
 async function adminRepairAccess(req,res){
@@ -1609,17 +1615,32 @@ async function adminRepairAccess(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80),email=cleanEmail(body.email);
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Valid owner email required'});
   const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
-  const existing=await kv.get('user:email:'+email);
-  if(existing&&existing.workspaceId&&existing.workspaceId!==id)return res.status(409).json({error:'That email already belongs to another workspace'});
-  const oldEmail=cleanEmail(ws.ownerEmail||''),oldMember=oldEmail?await kv.get('user:email:'+oldEmail):null;
-  if(oldEmail&&oldEmail!==email&&oldMember&&oldMember.workspaceId===id)await kv.del('user:email:'+oldEmail);
-  const sessionVersion=Number(existing?.sessionVersion||oldMember?.sessionVersion||0)+1;
-  const member={workspaceId:id,role:'owner',email,sessionVersion};
-  await kv.set('user:email:'+email,member);
-  const next={...ws,ownerEmail:email,updatedAt:Date.now()};await kv.set(key,next);
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'access_repair',section:'access',before:{ownerEmail:oldEmail,mapping:oldMember||null},after:{ownerEmail:email,mapping:member}});
+  const newMemberKey='user:email:'+email,oldEmail=cleanEmail(ws.ownerEmail||''),oldMemberKey=oldEmail?'user:email:'+oldEmail:'';
+  const [existing,oldMember]=await Promise.all([
+    kv.get(newMemberKey),oldMemberKey&&oldMemberKey!==newMemberKey?kv.get(oldMemberKey):Promise.resolve(null)
+  ]);
+  if(existing&&(!existing.workspaceId||existing.workspaceId!==id))return res.status(409).json({error:'That email mapping belongs to another account or is unavailable for repair'});
+  if(oldMember&&oldMemberKey!==newMemberKey&&oldMember.workspaceId&&oldMember.workspaceId!==id)
+    return res.status(409).json({error:'Current owner email maps to another workspace. Investigate the conflicting mapping before repair.'});
+  const existingVersion=Number(existing?.sessionVersion||0),oldVersion=Number(oldMember?.sessionVersion||0);
+  if(![existingVersion,oldVersion].every(v=>Number.isSafeInteger(v)&&v>=0&&v<Number.MAX_SAFE_INTEGER))
+    return res.status(503).json({error:'Client access revisions are unavailable. No mapping changes were made.'});
+  const sessionVersion=Math.max(existingVersion,oldVersion)+1,member={workspaceId:id,role:'owner',email,sessionVersion};
+  const next={...ws,ownerEmail:email,updatedAt:Math.max(Date.now(),Number(ws.updatedAt||0)+1)};
+  const updates=[{key,before:ws,after:next},{key:newMemberKey,before:existing,after:member}],deleteKeys=[];
+  if(oldMemberKey&&oldMemberKey!==newMemberKey&&oldMember&&oldMember.workspaceId===id){
+    updates.push({key:oldMemberKey,before:oldMember,after:null});deleteKeys.push(oldMemberKey);
+  }
+  const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',
+    action:'access_repair',section:'access',before:{ownerEmail:oldEmail,mapping:oldMember||existing||null},
+    after:{ownerEmail:email,mapping:member},meta:{oldEmail,newEmail:email,sessionVersion},at:Date.now()};
+  try{
+    if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit,{deleteKeys}))
+      return res.status(409).json({error:'Client access changed during repair. Refresh account diagnostics before retrying.'});
+  }catch(err){console.error('admin access repair failed',safeError(err));return res.status(503).json({error:'Could not confirm account mapping and audit together. Refresh diagnostics before retrying.'})}
   return res.status(200).json({ok:true,email,sessionVersion});
 }
+
 function sanitizeAdminOverride(section,value,current){
   if(section==='settings'||section==='agent'||section==='integrations'){
     if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Section must be a JSON object');
