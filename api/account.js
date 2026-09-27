@@ -2033,14 +2033,29 @@ async function aiFeedbackSubmit(req,res){
   if(!message)return res.status(400).json({error:'Feedback details are required'});
   const source=['call','receptionist'].includes(body.source)?body.source:'receptionist',now=Date.now(),id='fb_'+crypto.randomBytes(8).toString('hex');
   const item={id,workspaceId:s.workspaceId,workspaceName:ws.name||'',actorEmail:s.email||'',source,callId:source==='call'?clean(body.callId,160):'',category:clean(body.category,80)||'other',message,context:clean(body.context,240),status:'submitted',createdAt:now,updatedAt:now};
-  const wk=aiFeedbackWorkspaceIndexKey(s.workspaceId),workspaceIds=await kv.get(wk)||[],globalIds=await kv.get('ai-feedback:index')||[];
-  await Promise.all([
-    kv.set('ai-feedback:'+id,item),
-    kv.set(wk,[id,...(Array.isArray(workspaceIds)?workspaceIds:[]).filter(x=>x!==id)].slice(0,250)),
-    kv.set('ai-feedback:index',[id,...(Array.isArray(globalIds)?globalIds:[]).filter(x=>x!==id)].slice(0,1500))
-  ]);
-  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'ai_feedback_submitted',section:'agent',before:null,after:item,meta:{feedbackId:id,callId:item.callId}});
-  return res.status(201).json({ok:true,feedback:item});
+  const wk=aiFeedbackWorkspaceIndexKey(s.workspaceId),globalKey='ai-feedback:index';
+  const audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',
+    action:'ai_feedback_submitted',section:'agent',before:null,after:item,meta:{feedbackId:id,callId:item.callId},at:now};
+  for(let attempt=0;attempt<4;attempt++){
+    const [workspaceRaw,globalRaw]=await Promise.all([kv.get(wk),kv.get(globalKey)]);
+    const valid=raw=>raw==null||Array.isArray(raw)&&raw.every(entry=>typeof entry==='string'&&!!entry.trim())&&new Set(raw).size===raw.length;
+    if(!valid(workspaceRaw)||!valid(globalRaw))return res.status(503).json({error:'Feedback history is temporarily unavailable. Your feedback has not been submitted.'});
+    const workspaceIds=workspaceRaw||[],globalIds=globalRaw||[];
+    if(workspaceIds.length>=250||globalIds.length>=1500)
+      return res.status(409).json({error:'Feedback history reached indexed capacity. Your feedback has not been submitted; contact CallerCore support.'});
+    try{
+      const recorded=await compareAndAuditBatch(kv,[
+        {key:'ai-feedback:'+id,before:null,after:item},
+        {key:wk,before:workspaceRaw,after:[id,...workspaceIds]},
+        {key:globalKey,before:globalRaw,after:[id,...globalIds]}
+      ],'audit:'+s.workspaceId,audit);
+      if(recorded)return res.status(201).json({ok:true,feedback:item});
+    }catch(err){
+      console.error('ai feedback submit failed',safeError(err));
+      return res.status(503).json({error:'Could not confirm that your feedback was saved. Check feedback history before retrying.'});
+    }
+  }
+  return res.status(409).json({error:'Feedback changed while submitting. Check feedback history before retrying.'});
 }
 async function adminAiFeedback(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
