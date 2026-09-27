@@ -7,7 +7,7 @@ const start=api.indexOf('async function aiFeedbackSubmit(req,res){');
 const end=api.indexOf('\nasync function adminAiFeedback(req,res){',start);
 assert.ok(start>=0&&end>start,'AI feedback mutation handler found');
 const clone=x=>x==null?x:JSON.parse(JSON.stringify(x));
-function fixture({global=null,workspace=null,fail=false,conflict=false,deny=false}={}){
+function fixture({global=null,workspace=null,fail=false,conflict=false,alwaysConflict=false,deny=false}={}){
   const values=new Map([['workspace:customer',{name:'Sample Customer'}]]);
   if(global!==null)values.set('ai-feedback:index',clone(global));
   if(workspace!==null)values.set('ai-feedback:workspace:customer',clone(workspace));
@@ -19,6 +19,7 @@ function fixture({global=null,workspace=null,fail=false,conflict=false,deny=fals
   const compareAndAuditBatch=async(_kv,updates,auditKey,event)=>{
     attempts++;
     if(fail)throw Error('Redis error');
+    if(alwaysConflict)return false;
     if(conflict&&attempts===1){
       values.set('ai-feedback:index',['concurrent',...(values.get('ai-feedback:index')||[])]);
       values.set('ai-feedback:concurrent',{id:'concurrent'});return false;
@@ -85,20 +86,13 @@ test('malformed or full feedback indexes decline submission without creating orp
   }
 });
 test('ambiguous storage failure or repeated collision cannot claim confirmed feedback',async()=>{
-  for(const options of [{fail:true},{global:[],workspace:[],conflict:true}]){
-    const f=fixture(options);
-    if(options.conflict){
-      // Simulate a continued concurrent update on every compare call.
-      const compare=vm.runInContext('compareAndAuditBatch',vm.createContext({compareAndAuditBatch:()=>false}));
-      // Replace the fixture transaction through a fresh context below instead.
-      void compare;
-    }
-    if(options.conflict)continue;
-    const r=await f.run();
-    assert.equal(r.status,503);
+  for(const options of [{fail:true},{global:[],workspace:[],alwaysConflict:true}]){
+    const f=fixture(options),r=await f.run();
+    assert.ok([409,503].includes(r.status));
     assert.match(r.response.error,/Check feedback history/);
     assert.equal(f.values.has('ai-feedback:fb_0123456789abcdef'),false);
     assert.equal(f.values.has('audit:customer'),false);
+    assert.equal(r.attempts,options.alwaysConflict?4:1);
   }
 });
 test('read-only sessions do not append AI feedback or audit history',async()=>{
