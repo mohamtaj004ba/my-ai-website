@@ -13,6 +13,7 @@ function fixture({confirmDisconnect=true,response={ok:true}}={}){
     fetch:async()=>{calls.push('disconnect');if(response instanceof Error)throw response;return response},
     adminInboxData:{gmailStatus:{connected:true,gmailEmail:'admin@example.test'},gmail:{threads:[{id:'gmail-1'}]},aliases:[{email:'alias@example.test'}],lastSync:1700000000000,liveError:'Earlier issue'},
     currentInboxItem:{kind:'gmail',id:'gmail-1'},
+    adminSearchInboxRequest:0,adminSearchInboxCacheLoaded:false,adminSearchInboxLoading:false,adminSearchInboxCacheError:false,
     renderInboxThread:()=>calls.push('thread'),renderAdminInbox:()=>calls.push('inbox'),
     renderAdminGlobalSearch:()=>calls.push('search'),
     loadAdminInbox:async()=>calls.push('refresh'),
