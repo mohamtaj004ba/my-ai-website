@@ -1611,7 +1611,21 @@ async function bootstrapAdmin(){
 async function loadAdminOps(){
   try{
     // One disconnected endpoint must not prevent the remaining admin feeds from loading.
-    const get=async url=>{try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return {ok:false,json:async()=>({})};const payload=await response.json();if(!payload||typeof payload!=='object'||Array.isArray(payload))return {ok:false,json:async()=>({})};return {ok:true,json:async()=>payload}}catch{return {ok:false,json:async()=>({})}}};
+    const get=async url=>{try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return {ok:false,json:async()=>({})};const payload=await response.json();
+      const unavailable=()=>({ok:false,json:async()=>({})});
+      if(!payload||typeof payload!=='object'||Array.isArray(payload))return unavailable();
+      const action=/[?&]action=([^&]+)/.exec(url)?.[1];
+      const lists={
+        'admin-provisioning':['provisioning'],'admin-phone-numbers':['numbers'],
+        'admin-system-health':['services'],'admin-fleet':['agents','automations'],
+        'admin-support':['tickets'],'admin-ai-feedback':['feedback'],
+        'admin-marketing-campaigns':['campaigns']
+      };
+      const objects={'admin-platform-settings':'settings','admin-website-analytics':'analytics','admin-finance':'finance','admin-documents':'documents'};
+      if(lists[action]&&!lists[action].every(key=>Array.isArray(payload[key])))return unavailable();
+      const field=objects[action],value=payload[field];
+      if(field&&(!value||typeof value!=='object'||Array.isArray(value)))return unavailable();
+      return {ok:true,json:async()=>payload}}catch{return {ok:false,json:async()=>({})}}};
     const requestedAnalyticsDays=adminWebsiteDays,analyticsRequest=adminWebsiteAnalyticsRequest;
     const [pr,ph,hr,fr,sr,ps,wr,fbr,fin,cr,dr]=await Promise.all([
       get('/api/account?action=admin-provisioning'),
