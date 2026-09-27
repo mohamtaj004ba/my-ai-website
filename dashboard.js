@@ -3593,8 +3593,29 @@ async function navigateNotification(n){
     if(view==='client-care')openClientCare(meta.careTab|| (meta.feedbackId?'feedback':'support'));else showView(view);
     await new Promise(resolve=>setTimeout(resolve,60));
     let target=null;
-    if(meta.ticketId){target=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]');if(target?.tagName==='DETAILS')target.open=true}
-    else if(meta.feedbackId)target=document.getElementById('feedback-'+String(meta.feedbackId));
+    if(meta.ticketId){
+      const selector='[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]';
+      target=document.querySelector(selector);
+      if(!target){
+        try{
+          const data=await fetchJsonRetry('/api/account?action=admin-support',{attempts:1,timeout:6000});
+          if(Array.isArray(data.tickets)){adminSupportData=data.tickets;adminSupportSearch='';adminSupportFilter='all';renderAdminSupport();target=document.querySelector(selector)}
+        }catch(err){console.warn('Notification support refresh failed',err)}
+      }
+      if(!target)return false;
+      if(target.tagName==='DETAILS')target.open=true;
+    }
+    else if(meta.feedbackId){
+      const id='feedback-'+String(meta.feedbackId);
+      target=document.getElementById(id);
+      if(!target){
+        try{
+          const data=await fetchJsonRetry('/api/account?action=admin-ai-feedback',{attempts:1,timeout:6000});
+          if(Array.isArray(data.feedback)){adminFeedbackData=data.feedback;adminFeedbackSearch='';adminFeedbackFilter='all';renderAdminFeedback();target=document.getElementById(id)}
+        }catch(err){console.warn('Notification feedback refresh failed',err)}
+      }
+      if(!target)return false;
+    }
     else if(meta.prospectId){showView('growth');openProspectModal(String(meta.prospectId));return true}
     else if(meta.workspaceId&&view==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(meta.workspaceId))+'"]');
     else if(meta.workspaceId&&view==='clients')target=document.querySelector('[data-admin-client-row="'+CSS.escape(String(meta.workspaceId))+'"]');
