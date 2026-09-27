@@ -1680,7 +1680,18 @@ async function adminSyncFetch(key,url,{ttl=45000,force=false}={}){
     const r=await fetch(url,{headers:{Accept:'application/json'},cache:'no-store'});
     if(r.status===401){location.replace('/login?next=%2Fadmin-dashboard');throw new Error('Authentication required')}
     if(!r.ok)throw new Error('Could not sync '+key);
-    const data=await r.json();adminDataSyncAt[cacheKey]=Date.now();return data;
+    const data=await r.json();
+    const requiredLists={clients:['clients'],provisioning:['provisioning'],phones:['numbers'],
+      health:['services'],fleet:['agents','automations'],support:['tickets'],feedback:['feedback'],
+      campaigns:['campaigns']};
+    const requiredObjects={summary:'summary',platform:'settings',website:'analytics',
+      finance:'finance',documents:'documents'};
+    if(!data||typeof data!=='object'||Array.isArray(data)||
+       requiredLists[key]&&!requiredLists[key].every(field=>Array.isArray(data[field]))||
+       requiredObjects[key]&&(!data[requiredObjects[key]]||typeof data[requiredObjects[key]]!=='object'||Array.isArray(data[requiredObjects[key]]))||
+       key==='documents'&&!['agreements','company','standard'].every(field=>Array.isArray(data.documents[field])))
+      throw new Error('Incomplete '+key+' response');
+    adminDataSyncAt[cacheKey]=Date.now();return data;
   })();
   adminDataSyncInFlight[cacheKey]=task;
   try{return await task}finally{delete adminDataSyncInFlight[cacheKey]}
