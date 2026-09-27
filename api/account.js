@@ -750,9 +750,23 @@ async function createSupportTicket(req,res){
   if(subject.length<3||message.length<10)return res.status(400).json({error:'Subject and message are required'});
   const id=crypto.randomUUID(),now=Date.now();
   const ticket={id,workspaceId:s.workspaceId,workspaceName:ws.name||'Workspace',email:s.email,subject,message,priority,status:'open',messages:[{id:crypto.randomUUID(),direction:'client',from:s.email,body:message,at:now}],createdAt:now,updatedAt:now};
-  await kv.set('support:'+id,ticket);
-  const index=await kv.get('support:index')||[];const list=Array.isArray(index)?index:[];
-  await kv.set('support:index',[id,...list.filter(x=>x!==id)].slice(0,500));
+  let recorded=false;
+  for(let attempt=0;attempt<4;attempt++){
+    const index=await kv.get('support:index');
+    if(index!=null&&!Array.isArray(index))return res.status(503).json({error:'Support history is temporarily unavailable. Your request has not been submitted.'});
+    const list=Array.isArray(index)?index:[];
+    if(list.length>=2000)return res.status(409).json({error:'Support request capacity reached. Contact CallerCore support directly; your request has not been submitted.'});
+    try{
+      if(await compareAndSetConfig(kv,[
+        {key:'support:'+id,before:null,after:ticket},
+        {key:'support:index',before:index,after:[id,...list]}
+      ])){recorded=true;break}
+    }catch(err){
+      console.error('support ticket create failed',safeError(err));
+      return res.status(503).json({error:'Could not confirm that your support request was saved. Check request history before retrying.'});
+    }
+  }
+  if(!recorded)return res.status(409).json({error:'Support requests changed while submitting. Check request history and retry.'});
   const [platform,clientSettings]=await Promise.all([kv.get('platform:settings'),kv.get('settings:'+s.workspaceId)]);
   const supportTo=platform?.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
   if(supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',safeError(err))}}
