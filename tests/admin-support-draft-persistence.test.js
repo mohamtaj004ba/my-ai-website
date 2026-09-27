@@ -47,6 +47,7 @@ test('admin pending reply stays visibly locked after rerender and sent draft alo
   assert.equal(updatedA.input.value,'');
   assert.equal(updatedA.button.disabled,true);
   assert.equal(updatedA.button.textContent,'Sending…');
+  assert.equal(updatedA.input.readOnly,true);
   assert.equal(updatedB.input.value,'Other unsent reply');
 });
 test('admin render harvests drafts and reply handler clears only confirmed ticket',()=>{
