@@ -3064,11 +3064,18 @@ function setAdminClientMutationState(saving){
 async function loadAdminTechSupport(id=currentAdminClient?.id,request=adminClientOpenRequest){
   if(!id)return;
   adminTechMessage('Running diagnostics…');
-  const r=await fetch('/api/account?action=admin-tech-support&id='+encodeURIComponent(id),{headers:{Accept:'application/json'},cache:'no-store'});
-  const data=await r.json().catch(()=>({}));
-  if(request!==adminClientOpenRequest||String(currentAdminClient?.id)!==String(id))return;
-  if(!r.ok){adminTechMessage(data.error||'Could not load support diagnostics.',true);return}
-  currentAdminTech=data;renderAdminTechSupport();adminTechMessage('Diagnostics refreshed.');
+  try{
+    const r=await fetch('/api/account?action=admin-tech-support&id='+encodeURIComponent(id),{headers:{Accept:'application/json'},cache:'no-store'});
+    const data=await r.json().catch(()=>({}));
+    if(request!==adminClientOpenRequest||String(currentAdminClient?.id)!==String(id))return;
+    if(!r.ok){adminTechMessage(data.error||'Could not load support diagnostics.',true);return}
+    if(!data?.diagnostics||typeof data.diagnostics!=='object'||Array.isArray(data.diagnostics)||String(data.diagnostics.workspaceId)!==String(id)||!Array.isArray(data.audit)){
+      adminTechMessage('Support diagnostics returned incomplete data; retry diagnostics.',true);return;
+    }
+    currentAdminTech=data;renderAdminTechSupport();adminTechMessage('Diagnostics refreshed.');
+  }catch(err){
+    if(request===adminClientOpenRequest&&String(currentAdminClient?.id)===String(id))adminTechMessage('Support diagnostics temporarily unavailable; retry diagnostics.',true);
+  }
 }
 function renderAdminTechSupport(){
   if(!currentAdminTech)return;
