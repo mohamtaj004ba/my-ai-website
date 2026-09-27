@@ -10,9 +10,10 @@ advancedAnalytics:{title:'Advanced analytics',copy:'Go beyond totals with conver
 apiAccess:{title:'API & webhooks',copy:'Connect CallerCore to custom tools and internal systems.',tier:'Pro',items:['Webhooks','API credentials','Custom events','Advanced integrations']},
 unifiedInbox:{title:'Unified inbox',copy:'Keep customer call and digital conversation history in one timeline.',tier:'Growth',items:['Call timeline','Shared notes','Website inquiries','Cross-channel history']}
 };
+function knownPlan(plan){return Object.prototype.hasOwnProperty.call(PLAN_DATA,String(plan||''))}
 const params=new URLSearchParams(location.search);
 const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
-let currentPlan=params.get('plan')||'Growth';if(!PLAN_DATA[currentPlan])currentPlan='Growth';
+let currentPlan=params.get('plan')||'Growth';if(!knownPlan(currentPlan))currentPlan='Growth';
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
 let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationMode='unread',clientFeedbackData=[],adminFeedbackData=[];
@@ -74,7 +75,7 @@ async function bootstrapClient(){
         location.href=out.redirect||'/admin-dashboard';
       });
     }
-    currentPlan=data.workspace.plan;
+    currentPlan=knownPlan(data.workspace.plan)?data.workspace.plan:'Growth';
     const name=data.workspace.name||'CallerCore Client';
     const wName=document.getElementById('workspaceName');if(wName)wName.textContent=name;
     const wMeta=document.getElementById('workspaceMeta');if(wMeta)wMeta.textContent=currentPlan+' plan';
@@ -241,7 +242,7 @@ function capability(name){
   return false;
 }
 function featureDeferred(feature){return feature==='appointments'?!capability('calendar'):!!FEATURE_INFO[feature]?.deferred}
-function featureStage(el,feature){const info=FEATURE_INFO[feature],ok=has(feature);if(featureDeferred(feature)){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Coming later.</h2><p class="muted">'+info.copy+'</p></article><article class="panel gate-card"><small>NOT ENABLED AT LAUNCH</small><h2>'+info.title+' is not active yet</h2><p>CallerCore will only expose this feature after the calendar integration is production-ready.</p></article></div>';return}if(ok){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>Included with '+currentPlan+'</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel"><span class="eyebrow">Active feature</span><h2>Included in your plan</h2><p class="muted">Use the live controls on this page to configure the feature for your workspace.</p></article></div>'}else{el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+info.title+'</span><h2>See what this could do for your business.</h2><p class="muted">'+info.copy+'</p><div class="fake-chart"></div></article><article class="panel gate-card"><small>AVAILABLE ON '+info.tier.toUpperCase()+'</small><h2>Unlock '+info.title+'</h2><p>'+info.copy+'</p><ul>'+info.items.map(x=>'<li>'+x+'</li>').join('')+'</ul><button class="primary" data-upgrade="'+info.tier+'">Upgrade to '+info.tier+'</button></article></div>'}}
+function featureStage(el,feature){if(!Object.prototype.hasOwnProperty.call(FEATURE_INFO,feature)){el.replaceChildren();return}const info=FEATURE_INFO[feature],ok=has(feature);if(featureDeferred(feature)){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+esc(info.title)+'</span><h2>Coming later.</h2><p class="muted">'+esc(info.copy)+'</p></article><article class="panel gate-card"><small>NOT ENABLED AT LAUNCH</small><h2>'+esc(info.title)+' is not active yet</h2><p>CallerCore will only expose this feature after the calendar integration is production-ready.</p></article></div>';return}if(ok){el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+esc(info.title)+'</span><h2>Included with '+esc(currentPlan)+'</h2><p class="muted">'+esc(info.copy)+'</p><div class="fake-chart"></div></article><article class="panel"><span class="eyebrow">Active feature</span><h2>Included in your plan</h2><p class="muted">Use the live controls on this page to configure the feature for your workspace.</p></article></div>'}else{el.innerHTML='<div class="feature-demo"><article class="panel feature-preview"><span class="eyebrow">'+esc(info.title)+'</span><h2>See what this could do for your business.</h2><p class="muted">'+esc(info.copy)+'</p><div class="fake-chart"></div></article><article class="panel gate-card"><small>AVAILABLE ON '+esc(info.tier.toUpperCase())+'</small><h2>Unlock '+esc(info.title)+'</h2><p>'+esc(info.copy)+'</p><ul>'+info.items.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul><button class="primary" data-upgrade="'+esc(info.tier)+'">Upgrade to '+esc(info.tier)+'</button></article></div>'}}
 function renderStages(){
   document.querySelectorAll('[data-feature-card]').forEach(el=>featureStage(el,el.dataset.featureCard));
   document.querySelectorAll('[data-feature]').forEach(el=>{
@@ -301,7 +302,7 @@ function renderBilling(){
   const wrap=document.getElementById('planComparison');if(wrap)wrap.innerHTML=Object.entries(PLAN_DATA).filter(([name])=>name!==currentPlan).map(([name,p])=>{const losses=planLosses(currentPlan,name),isUpgrade=p.price>d.price,diff=Math.abs(p.price-d.price);return '<article class="plan-option contextual '+(losses.length?'downgrade-option':'upgrade-option')+'"><span class="eyebrow">'+(isUpgrade?'Upgrade option':'Lower-cost option')+'</span><h3>'+name+'</h3><p class="plan-price-delta">'+(isUpgrade?'+':'−')+'$'+diff+'/mo from your current plan</p><ul>'+planFeatures(name).slice(0,4).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+(losses.length?'<div class="loss-preview"><b>You would give up</b><span>'+losses.slice(0,2).map(esc).join(' · ')+(losses.length>2?' · +'+(losses.length-2)+' more':'')+'</span></div>':'<div class="gain-preview"><b>Adds more capacity and features</b></div>')+'<button class="'+(losses.length?'secondary-btn':'primary')+'" data-upgrade="'+esc(name)+'">'+(losses.length?'Review downgrade':'Review upgrade')+'</button></article>'}).join('');
   bindUpgradeButtons();
 }
-function setPlan(plan){currentPlan=plan;renderBilling();renderStages();renderOverviewUnlocks();renderEntitledApps()}
+function setPlan(plan){if(!knownPlan(plan))return;currentPlan=plan;renderBilling();renderStages();renderOverviewUnlocks();renderEntitledApps()}
 function setDataHealth(id,degraded){
   const el=document.getElementById(id);if(!el)return;
   el.hidden=!degraded;
@@ -344,7 +345,7 @@ function applyClientDashboardData(data={}){
   if(data.workspace&&typeof data.workspace==='object'){
     const previousPlan=currentPlan,previousName=String(sessionWorkspace?.name||''),previousSubscription=String(sessionWorkspace?.subscriptionStatus||''),previousStatus=String(sessionWorkspace?.status||''),previousUsage=Number(sessionWorkspace?.usage?.minutes||0),previousStripeCustomer=!!sessionWorkspace?.stripe?.customerLinked,previousStripeSubscription=!!sessionWorkspace?.stripe?.subscriptionLinked;
     sessionWorkspace={...(sessionWorkspace||{}),...data.workspace};
-    currentPlan=sessionWorkspace.plan&&PLAN_DATA[sessionWorkspace.plan]?sessionWorkspace.plan:currentPlan;
+    currentPlan=knownPlan(sessionWorkspace.plan)?sessionWorkspace.plan:currentPlan;
     const nextUsage=Number(sessionWorkspace?.usage?.minutes||0);if(Number.isFinite(nextUsage))PLAN_DATA[currentPlan].used=nextUsage;
     const name=String(sessionWorkspace.name||'CallerCore Client');
     const wName=document.getElementById('workspaceName');if(wName)wName.textContent=name;
