@@ -48,7 +48,7 @@ const loaderEnd=source.indexOf('\nasync function submitAiFeedback(',loaderStart)
 assert.ok(loaderStart>=0&&loaderEnd>loaderStart);
 test('newer client feedback response wins against an older in-flight response',async()=>{
   let resolveOld;const updates=[],ctx=vm.createContext({
-    clientFeedbackLoadRequest:0,clientFeedbackData:[{id:'prior'}],
+    demoMode:false,clientFeedbackLoadRequest:0,clientFeedbackData:[{id:'prior'}],
     document:{getElementById:id=>id==='clientFeedbackList'?{innerHTML:''}:null},
     fetch:async()=>new Promise(ok=>{if(!resolveOld)resolveOld=ok;else ok({ok:true,json:async()=>({feedback:[{id:'new'}]})})}),
     renderClientFeedback:()=>updates.push(ctx.clientFeedbackData[0]?.id),
