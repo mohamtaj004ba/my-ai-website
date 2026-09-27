@@ -27,17 +27,17 @@ function fixture({loaded=false,remote=true,error=false,pending=false}={}){
 test('loaded lead notification opens exact prospect without extra analytics fetch',async()=>{
   const f=fixture({loaded:true});
   assert.equal(await f.run(),true);
-  assert.deepEqual(f.events,['view:growth','view:growth','open:lead-1']);
+  assert.deepEqual(f.events,['view:growth','open:lead-1']);
 });
 test('missing lead reloads authorized analytics and opens matching prospect',async()=>{
   const f=fixture();
   assert.equal(await f.run(),true);
-  assert.deepEqual(f.events,['view:growth','view:growth','refresh:30','open:lead-1']);
+  assert.deepEqual(f.events,['view:growth','refresh:30','open:lead-1']);
 });
 test('deleted or unretained lead remains unread even after successful analytics refresh',async()=>{
   const f=fixture({remote:false});
   assert.equal(await f.run(),false);
-  assert.deepEqual(f.events,['view:growth','view:growth','refresh:30']);
+  assert.deepEqual(f.events,['view:growth','refresh:30']);
   assert.equal(f.ctx.adminWebsiteData.prospects[0].id,'last-good');
 });
 test('failed lead refresh cannot mark a missing notification as opened',async()=>{
