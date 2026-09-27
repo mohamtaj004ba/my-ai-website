@@ -23,6 +23,7 @@ function fixture({cachedInbox='healthy',cachedAliases='healthy',status='healthy'
     document:{getElementById:id=>id==='inboxRefreshButton'?refresh:id==='inboxAutoStatus'?auto:null},
     renderAdminInbox:()=>renders.push('render'),
     renderInboxThread:()=>renders.push('thread'),
+    renderAdminGlobalSearch:()=>renders.push('search'),
     refreshAdminInboxLive:opts=>liveCalls.push(opts),
     console:{error:()=>renders.push('error')},Date,Number,Array,Promise
   });
@@ -88,4 +89,13 @@ test('confirmed disconnect does not close unrelated website conversation',async(
   await f.run();
   assert.equal(f.ctx.currentInboxItem.kind,'website');
   assert.deepEqual(f.renders,['render']);
+});
+
+test('confirmed disconnect immediately updates open global search results',async()=>{
+  const f=fixture(),original=f.ctx.fetch,get=f.ctx.document.getElementById;
+  f.ctx.fetch=async url=>url.includes('admin-gmail-status')?{ok:true,json:async()=>({connected:false})}:original(url);
+  f.ctx.document.getElementById=id=>id==='adminSearch'?{value:'customer'}:get(id);
+  await f.run();
+  assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
+  assert.deepEqual(f.renders,['render','search']);
 });
