@@ -2367,7 +2367,16 @@ async function connectGmail(){
 }
 async function disconnectGmailAdmin(){
   if(!confirm('Disconnect Gmail from CallerCore Admin? No messages will be deleted from Gmail.'))return;
-  const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST'});if(!r.ok)return alert('Could not disconnect Gmail.');currentInboxItem=null;await loadAdminInbox();renderInboxThread();
+  try{
+    const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST'});
+    if(!r.ok)throw new Error('Could not disconnect Gmail');
+    adminInboxData.gmailStatus={...adminInboxData.gmailStatus,connected:false,gmailEmail:''};
+    adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;adminInboxData.liveError='';
+    currentInboxItem=null;renderInboxThread();renderAdminInbox();
+    const search=document.getElementById('adminSearch');
+    if(search&&String(search.value||'').trim().length>=2)renderAdminGlobalSearch();
+    await loadAdminInbox();
+  }catch(err){alert('Could not disconnect Gmail.')}
 }
 document.getElementById('inboxRefreshButton')?.addEventListener('click',()=>refreshAdminInboxLive({silent:false,force:true}));
 document.getElementById('gmailConnectButton')?.addEventListener('click',connectGmail);
