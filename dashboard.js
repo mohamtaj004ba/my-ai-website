@@ -11,6 +11,15 @@ apiAccess:{title:'API & webhooks',copy:'Connect CallerCore to custom tools and i
 unifiedInbox:{title:'Unified inbox',copy:'Keep customer call and digital conversation history in one timeline.',tier:'Growth',items:['Call timeline','Shared notes','Website inquiries','Cross-channel history']}
 };
 function knownPlan(plan){return Object.prototype.hasOwnProperty.call(PLAN_DATA,String(plan||''))}
+function updatePlanUsage(minutes){
+  if(!Number.isFinite(minutes))return;
+  // Explicit fixed targets let invalid server/query-string plan names modify no object.
+  switch(currentPlan){
+    case 'Starter':PLAN_DATA.Starter.used=minutes;break;
+    case 'Growth':PLAN_DATA.Growth.used=minutes;break;
+    case 'Pro':PLAN_DATA.Pro.used=minutes;break;
+  }
+}
 const params=new URLSearchParams(location.search);
 const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='1';
 let currentPlan=params.get('plan')||'Growth';if(!knownPlan(currentPlan))currentPlan='Growth';
@@ -85,7 +94,7 @@ async function bootstrapClient(){
     const now=new Date(),dateEl=document.getElementById('overviewDate'),greet=document.getElementById('overviewGreeting');
     if(dateEl)dateEl.textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
     if(greet){const hour=now.getHours();greet.textContent=(hour<12?'Good morning':hour<18?'Good afternoon':'Good evening')+'.'}
-    if(data.workspace.usage&&Number.isFinite(data.workspace.usage.minutes)){PLAN_DATA[currentPlan].used=data.workspace.usage.minutes}
+    if(data.workspace.usage)updatePlanUsage(data.workspace.usage.minutes)
     renderWorkspaceAccessState();renderBillingConnection();return true;
   }catch(err){console.error('Dashboard bootstrap failed',err);location.replace('/login?error=session');return false}
 }
@@ -346,7 +355,7 @@ function applyClientDashboardData(data={}){
     const previousPlan=currentPlan,previousName=String(sessionWorkspace?.name||''),previousSubscription=String(sessionWorkspace?.subscriptionStatus||''),previousStatus=String(sessionWorkspace?.status||''),previousUsage=Number(sessionWorkspace?.usage?.minutes||0),previousStripeCustomer=!!sessionWorkspace?.stripe?.customerLinked,previousStripeSubscription=!!sessionWorkspace?.stripe?.subscriptionLinked;
     sessionWorkspace={...(sessionWorkspace||{}),...data.workspace};
     currentPlan=knownPlan(sessionWorkspace.plan)?sessionWorkspace.plan:currentPlan;
-    const nextUsage=Number(sessionWorkspace?.usage?.minutes||0);if(Number.isFinite(nextUsage))PLAN_DATA[currentPlan].used=nextUsage;
+    const nextUsage=Number(sessionWorkspace?.usage?.minutes||0);updatePlanUsage(nextUsage);
     const name=String(sessionWorkspace.name||'CallerCore Client');
     const wName=document.getElementById('workspaceName');if(wName)wName.textContent=name;
     const wMeta=document.getElementById('workspaceMeta');if(wMeta)wMeta.textContent=currentPlan+' plan';
