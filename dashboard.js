@@ -3016,10 +3016,10 @@ function renderAdminClients(){
   wrap.querySelectorAll('[data-admin-client-row]').forEach(row=>row.addEventListener('click',e=>{if(e.target.closest('button,a,select,input'))return;openAdminClient(row.dataset.adminClientRow)}));
 }
 async function openAdminClient(id,{allowLocked=false}={}){
-  if((adminTechSaving||adminClientSaving)&&!allowLocked)return;const request=++adminClientOpenRequest;
+  if((adminTechSaving||adminClientSaving)&&!allowLocked)return false;const request=++adminClientOpenRequest;
   const r=await fetch('/api/account?action=admin-client&id='+encodeURIComponent(id),{headers:{Accept:'application/json'},cache:'no-store'});
-  if(!r.ok||request!==adminClientOpenRequest)return;
-  const x=(await r.json()).client;if(!x||request!==adminClientOpenRequest)return;
+  if(!r.ok||request!==adminClientOpenRequest)return false;
+  const x=(await r.json()).client;if(!x||String(x.id)!==String(id)||request!==adminClientOpenRequest)return false;
   document.getElementById('adminClientName').textContent=x.name||'Client';
   document.getElementById('adminClientMeta').innerHTML=[x.plan,adminWorkspaceLabel(x.status),adminBillingLabel(x.subscriptionStatus),x.ownerEmail].filter(Boolean).map(v=>'<span>'+esc(v)+'</span>').join('');
   document.getElementById('adminClientAccount').innerHTML=[
@@ -3035,7 +3035,8 @@ async function openAdminClient(id,{allowLocked=false}={}){
   if(statusSel){statusSel.value=x.status||'active';statusSel.disabled=adminClientSaving||adminTechSaving}
   const note=document.getElementById('adminClientManageNote');if(note)note.textContent=(x.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
   const drawer=document.getElementById('adminClientDrawer');drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');document.getElementById('adminClientBackdrop').classList.add('open');
-  await loadAdminTechSupport(id);if(request!==adminClientOpenRequest)return;
+  await loadAdminTechSupport(id);if(request!==adminClientOpenRequest)return false;
+  return true;
 }
 
 function adminTechMessage(message,error=false){
@@ -3589,7 +3590,7 @@ async function navigateNotification(n){
     }
   }
   if(document.body.dataset.dashboard==='admin'){
-    if(meta.workspaceId&&(view==='clients'||view==='finance')){showView('clients');await openAdminClient(String(meta.workspaceId));return true}
+    if(meta.workspaceId&&(view==='clients'||view==='finance')){showView('clients');try{return await openAdminClient(String(meta.workspaceId))===true}catch(err){console.warn('Notification client lookup failed',err);return false}}
     if(view==='client-care')openClientCare(meta.careTab|| (meta.feedbackId?'feedback':'support'));else showView(view);
     await new Promise(resolve=>setTimeout(resolve,60));
     let target=null;
