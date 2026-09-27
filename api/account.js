@@ -526,13 +526,14 @@ async function requireOperationalWorkspace(s,res){
 
 async function adminProvisioning(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const ids=await kv.get('workspace:index')||[];
-  const items=[];
-  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
-    const ws=await kv.get('workspace:'+id);if(!ws)continue;
-    const [settings,agent,onboarding,routing]=await Promise.all([
-      kv.get('settings:'+id),kv.get('agent:'+id),kv.get('onboarding:workspace:'+id),kv.get('routing-request:'+id)
-    ]);
+  const workspaces=await loadAdminWorkspaces(),items=[];
+  for(let offset=0;offset<workspaces.length;offset+=40){
+    const batch=await Promise.all(workspaces.slice(offset,offset+40).map(async ws=>{
+      const id=ws.id;
+      const [settings,agent,onboarding,routing,override]=await Promise.all([
+        kv.get('settings:'+id),kv.get('agent:'+id),kv.get('onboarding:workspace:'+id),
+        kv.get('routing-request:'+id),kv.get('provisioning:override:'+id)
+      ]);
     const hasIntake=!!(onboarding?.checklist?.intake||(settings&&((settings.businessName||'').trim()||(settings.primaryEmail||'').trim())));
     const hasAgent=!!(onboarding?.checklist?.agentDraft||(agent&&((agent.name||'').trim()||(agent.openingMessage||'').trim())));
     const hasPhone=!!String(ws.phone||'').trim();
@@ -552,10 +553,9 @@ async function adminProvisioning(req,res){
       live:!!onboarding?.checklist?.live
     };
     const autoStage=deriveOnboardingStage(onboarding,checklist);
-    const override=await kv.get('provisioning:override:'+id);
     const stage=override&&ONBOARDING_STAGES.includes(override.stage)?override.stage:autoStage;
     const doneCount=Object.values(checklist).filter(Boolean).length,totalCount=Object.keys(checklist).length;
-    items.push({
+    return {
       id:ws.id,name:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',
       stage,autoStage,manualOverride:!!override,stageUpdatedAt:override&&override.updatedAt||null,
       hasIntake,hasAgent,hasPhone,phone:ws.phone||'',checklist,
@@ -574,7 +574,9 @@ async function adminProvisioning(req,res){
       websiteScan:onboarding?.websiteScan||null,
       routing:routing||null,
       intakeCompletedAt:onboarding?.intakeCompletedAt||null
-    });
+    };
+    }));
+    items.push(...batch);
   }
   return res.status(200).json({provisioning:items});
 }
@@ -714,14 +716,14 @@ async function adminDeletePhoneNumber(req,res){
 
 async function adminFleet(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const ids=await kv.get('workspace:index')||[];
-  const agents=[],automations=[];
-  for(const id of Array.isArray(ids)?ids.slice(0,250):[]){
-    const ws=await kv.get('workspace:'+id);if(!ws)continue;
-    const [agent,wsAutos]=await Promise.all([kv.get('agent:'+id),kv.get('automations:'+id)]);
-    agents.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',agent:agent||null});
-    const autos=Array.isArray(wsAutos)?wsAutos:[];
-    automations.push({workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length,workflows:autos.slice(0,20).filter(Boolean).map(x=>({id:x.id||'',name:String(x.name||'Automation').slice(0,120),trigger:String(x.trigger||'').slice(0,80),action:String(x.action||'').slice(0,80),enabled:x.enabled!==false}))});
+  const workspaces=await loadAdminWorkspaces(),agents=[],automations=[];
+  for(let offset=0;offset<workspaces.length;offset+=40){
+    const batch=await Promise.all(workspaces.slice(offset,offset+40).map(async ws=>{
+      const id=ws.id,[agent,wsAutos]=await Promise.all([kv.get('agent:'+id),kv.get('automations:'+id)]);
+      const autos=Array.isArray(wsAutos)?wsAutos:[];
+      return {agent:{workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',agent:agent||null},automation:{workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length,workflows:autos.slice(0,20).filter(Boolean).map(x=>({id:x.id||'',name:String(x.name||'Automation').slice(0,120),trigger:String(x.trigger||'').slice(0,80),action:String(x.action||'').slice(0,80),enabled:x.enabled!==false}))}};
+    }));
+    for(const record of batch){agents.push(record.agent);automations.push(record.automation)}
   }
   return res.status(200).json({agents,automations});
 }
