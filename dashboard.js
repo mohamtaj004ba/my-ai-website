@@ -228,7 +228,7 @@ function showView(name){
     if(agentEditing){if(agentEditSnapshot)agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent()}
     if(settingsEditing){settingsEditing=false;pendingBusinessLogo=String(settingsData?.logoDataUrl||'');renderSettings()}
   }
-  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,left:0,behavior:'auto'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent'){document.getElementById('agentFeedbackComposerDetails')?.removeAttribute('open');document.getElementById('agentFeedbackHistoryDetails')?.removeAttribute('open');renderAgent();loadClientFeedback({silent:true})};if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations'){webhookEditing=false;renderIntegrations()};if(name==='settings')renderSettings();if(name==='support'&&document.body.dataset.dashboard==='client'){renderSupport();fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:6000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(()=>{})}if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();if(document.body.dataset.dashboard==='admin'&&name!=='inbox')refreshAdminView(name,{force:false}).catch(()=>{});
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));document.querySelector('.sidebar')?.classList.remove('open');window.scrollTo({top:0,left:0,behavior:'auto'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent'){document.getElementById('agentFeedbackComposerDetails')?.removeAttribute('open');document.getElementById('agentFeedbackHistoryDetails')?.removeAttribute('open');renderAgent();loadClientFeedback({silent:true})};if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations'){webhookEditing=false;renderIntegrations()};if(name==='settings')renderSettings();if(name==='support'&&document.body.dataset.dashboard==='client'){renderSupport();refreshClientSupportHistory()}if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();if(document.body.dataset.dashboard==='admin'&&name!=='inbox')refreshAdminView(name,{force:false}).catch(()=>{});
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',()=>document.querySelector('.sidebar')?.classList.toggle('open'));
@@ -463,7 +463,7 @@ async function loadOperations(){
     applyClientDashboardData(data);
     clearSecondaryClientCoverage();renderClientData();setClientLoading(false);updateClientRefreshStamp();
     // Non-critical support history loads separately so it can never block Today.
-    fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:5000}).then(data=>{supportTicketsData=data.tickets||[];renderSupport()}).catch(()=>{});
+    refreshClientSupportHistory();
     return;
   }catch(err){console.warn('Bundled dashboard load failed; using fallback',err);setClientLoading(true,'Still loading — retrying your workspace data…')}
   try{
@@ -1562,6 +1562,26 @@ function renderClientChecklist(){
   wrap.innerHTML=items.map(([label,done,view])=>'<button class="onboarding-item '+(done?'done':'')+'" data-view="'+view+'"><span>'+(done?'✓':'○')+'</span><b>'+esc(label)+'</b><small>'+(done?'Complete':'Pending')+'</small></button>').join('');
   wrap.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 }
+let clientSupportHistoryRequest=0;
+async function refreshClientSupportHistory(){
+  const request=++clientSupportHistoryRequest,button=document.getElementById('clientSupportHistoryRetry');
+  if(button){button.disabled=true;button.textContent='Retrying…'}
+  try{
+    const data=await fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:6000});
+    if(!Array.isArray(data?.tickets))throw new Error('Invalid support history response');
+    if(request!==clientSupportHistoryRequest)return false;
+    supportTicketsData=data.tickets;
+    const notice=document.getElementById('clientSupportHistoryHealth');if(notice)notice.hidden=true;
+    renderSupport();return true;
+  }catch(err){
+    if(request!==clientSupportHistoryRequest)return false;
+    console.warn('Support request history unavailable',err);
+    const notice=document.getElementById('clientSupportHistoryHealth');if(notice)notice.hidden=false;
+    renderSupport();return false;
+  }finally{
+    if(request===clientSupportHistoryRequest&&button){button.disabled=false;button.textContent='Retry history'}
+  }
+}
 function renderSupport(){
   const wrap=document.getElementById('supportTicketList'),empty=document.getElementById('supportTicketsEmpty');if(!wrap)return;
   wrap.innerHTML=supportTicketsData.map(t=>{
@@ -1569,7 +1589,7 @@ function renderSupport(){
     const thread=messages.map(m=>'<div class="support-message '+(m.direction==='support'?'support':'client')+'"><div><b>'+(m.direction==='support'?'CallerCore Support':'You')+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+'</small></div><p>'+esc(m.body||'').replace(/\n/g,'<br>')+'</p></div>').join('');
     return '<details class="support-ticket-thread" data-support-ticket-id="'+esc(t.id)+'"><summary><div><b>'+esc(t.subject)+'</b><small>'+new Date(t.createdAt).toLocaleString()+' · '+esc(t.priority||'normal')+'</small></div><span class="tag '+(t.status==='resolved'?'green':t.status==='in_progress'?'amber':'')+'">'+esc(String(t.status||'open').replace('_',' '))+'</span></summary><div class="support-thread-messages">'+thread+'</div><div class="support-reply-box"><textarea data-support-client-input="'+esc(t.id)+'" placeholder="Reply to CallerCore support…"></textarea><button class="secondary-btn" type="button" data-support-client-reply="'+esc(t.id)+'">Send reply</button></div></details>';
   }).join('');
-  if(empty)empty.hidden=supportTicketsData.length!==0;
+  if(empty){const notice=document.getElementById('clientSupportHistoryHealth');empty.hidden=supportTicketsData.length!==0||!!(notice&&!notice.hidden)}
   wrap.querySelectorAll('[data-support-client-reply]').forEach(b=>b.addEventListener('click',()=>replyClientSupportTicket(b.dataset.supportClientReply,b)));
 }
 async function replyClientSupportTicket(id,button){
@@ -3634,7 +3654,7 @@ async function navigateNotification(n){
     if(meta.ticketId){
       showView('support');renderSupport();let thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]');
       if(!thread){
-        try{const data=await fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:6000});supportTicketsData=data.tickets||[];renderSupport();thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]')}catch(_){}
+        if(await refreshClientSupportHistory())thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(meta.ticketId))+'"]')
       }
       if(thread){thread.open=true;thread.scrollIntoView({behavior:'smooth',block:'center'});return true}return false;
     }
@@ -3731,6 +3751,7 @@ document.getElementById('logoutButton')?.addEventListener('click',logout);
 
 document.getElementById('clientDataRetry')?.addEventListener('click',async()=>{setDataHealth('clientDataHealth',false);setClientSyncState('syncing','Retrying workspace sync…');await loadOperations()});
 document.getElementById('clientSecondaryRetry')?.addEventListener('click',async()=>{const button=document.getElementById('clientSecondaryRetry');if(button){button.disabled=true;button.textContent='Retrying…'}try{await loadSecondaryClientData()}finally{if(button){button.disabled=false;button.textContent='Retry records'}}});
+document.getElementById('clientSupportHistoryRetry')?.addEventListener('click',()=>refreshClientSupportHistory());
 document.getElementById('adminDataRetry')?.addEventListener('click',async()=>{setDataHealth('adminDataHealth',false);await loadAdminOps()});
 
 document.querySelectorAll('[data-overview-jump]').forEach(card=>{const go=()=>showView(card.dataset.overviewJump);card.addEventListener('click',e=>{if(e.target.closest('button,a'))return;go()});card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})});
