@@ -46,3 +46,39 @@ test('successful retry clears stale warning and updates thread snapshot',async()
   assert.doesNotMatch(f.auto.textContent,/failed/);
   assert.equal(f.refresh.disabled,false);
 });
+
+test('pending live Gmail response cannot repopulate inbox after confirmed disconnect',async()=>{
+  let resolve;
+  const pending=new Promise(ok=>resolve=ok);
+  const f=fixture({ok:true,json:async()=>({threads:[{id:'old-connection'}],syncedAt:1800000000000})});
+  f.ctx.fetch=async()=>pending;
+  f.ctx.adminInboxData.gmailStatus={connected:true};
+  const task=f.run();
+  f.ctx.adminInboxData.gmailStatus={connected:false};
+  f.ctx.adminInboxData.gmail={threads:[],analytics:{}};
+  f.ctx.adminInboxData.aliases=[];
+  f.ctx.adminInboxData.lastSync=0;
+  resolve({ok:true,json:async()=>({threads:[{id:'old-connection'}],syncedAt:1800000000000})});
+  await task;
+  assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
+  assert.equal(f.ctx.adminInboxData.lastSync,0);
+  assert.equal(f.ctx.adminInboxData.liveError,'');
+  assert.equal(f.auto.textContent,'Gmail disconnected');
+  assert.equal(f.ctx.adminInboxData.liveLoading,false);
+});
+test('obsolete failed Gmail response after disconnect cannot create a false provider warning',async()=>{
+  let reject;
+  const pending=new Promise((_ok,fail)=>reject=fail);
+  const f=fixture({ok:true,json:async()=>({threads:[]})});
+  f.ctx.fetch=async()=>pending;
+  f.ctx.adminInboxData.gmailStatus={connected:true};
+  const task=f.run();
+  f.ctx.adminInboxData.gmailStatus={connected:false};
+  f.ctx.adminInboxData.gmail={threads:[],analytics:{}};
+  f.ctx.adminInboxData.lastSync=0;
+  reject(new Error('Old disconnected fetch failed'));
+  await task;
+  assert.equal(f.ctx.adminInboxData.liveError,'');
+  assert.equal(f.auto.textContent,'Gmail disconnected');
+  assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
+});
