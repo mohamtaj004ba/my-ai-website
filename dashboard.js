@@ -2164,6 +2164,7 @@ async function loadAdminInbox({silent=false,force=false}={}){
         fetch('/api/account?action=admin-gmail-inbox&cached=1',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false})),
         fetch('/api/account?action=admin-gmail-aliases&cached=1',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false}))
       ]);
+      if(adminInboxData.gmailStatus?.connected===false){adminInboxData.loading=false;return}
       if(cachedInbox.ok){
         const d=await cachedInbox.json().catch(()=>({}));
         if(!d.emptyCache&&Array.isArray(d.threads)){adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||0)}
