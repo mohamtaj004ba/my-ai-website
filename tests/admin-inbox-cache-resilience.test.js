@@ -13,6 +13,7 @@ function fixture({cachedInbox='healthy',cachedAliases='healthy',status='healthy'
   const payload=(name,data)=>name==='network'?Promise.reject(Error('Unavailable')):Promise.resolve({ok:true,json:async()=>{if(name==='malformed')throw Error('Invalid JSON');return data}});
   const ctx=vm.createContext({
     adminInboxData:{loading:false,gmailStatus:{connected:true},gmail:initial,aliases:[{email:'original@example.test'}],lastSync:1700000000000},
+    currentInboxItem:null,
     fetch:async url=>{
       if(url.includes('admin-gmail-status'))return payload(status,{connected:true});
       if(url.includes('admin-gmail-inbox'))return payload(cachedInbox,{threads:[{id:'cached'}],syncedAt:1800000000000});
@@ -21,6 +22,7 @@ function fixture({cachedInbox='healthy',cachedAliases='healthy',status='healthy'
     },
     document:{getElementById:id=>id==='inboxRefreshButton'?refresh:id==='inboxAutoStatus'?auto:null},
     renderAdminInbox:()=>renders.push('render'),
+    renderInboxThread:()=>renders.push('thread'),
     refreshAdminInboxLive:opts=>liveCalls.push(opts),
     console:{error:()=>renders.push('error')},Date,Number,Array,Promise
   });
@@ -62,4 +64,28 @@ test('invalid Gmail status object preserves last known connection until the prov
   await f.run();
   assert.equal(f.ctx.adminInboxData.gmailStatus.connected,true);
   assert.equal(f.liveCalls.length,1);
+});
+
+test('confirmed disconnect clears inbox cache, Gmail detail and old sync timestamp',async()=>{
+  const f=fixture();
+  f.ctx.currentInboxItem={kind:'gmail',id:'original'};
+  const original=f.ctx.fetch;
+  f.ctx.fetch=async url=>url.includes('admin-gmail-status')?{ok:true,json:async()=>({connected:false})}:original(url);
+  await f.run();
+  assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
+  assert.equal(f.ctx.adminInboxData.aliases.length,0);
+  assert.equal(f.ctx.adminInboxData.lastSync,0);
+  assert.equal(f.ctx.currentInboxItem,null);
+  assert.equal(f.ctx.adminInboxData.loading,false);
+  assert.equal(f.auto.textContent,'Gmail disconnected');
+  assert.deepEqual(f.renders,['thread','render']);
+  assert.equal(f.liveCalls.length,0);
+});
+test('confirmed disconnect does not close unrelated website conversation',async()=>{
+  const f=fixture();f.ctx.currentInboxItem={kind:'website',id:'prospect-1'};
+  const original=f.ctx.fetch;
+  f.ctx.fetch=async url=>url.includes('admin-gmail-status')?{ok:true,json:async()=>({connected:false})}:original(url);
+  await f.run();
+  assert.equal(f.ctx.currentInboxItem.kind,'website');
+  assert.deepEqual(f.renders,['render']);
 });
