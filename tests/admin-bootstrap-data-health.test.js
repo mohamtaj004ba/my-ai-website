@@ -174,3 +174,35 @@ test('JSON array from phone inventory does not corrupt otherwise healthy bootstr
   assert.equal(f.context.adminWebsiteData.prospects[0].id,'fresh');
   assert.deepEqual(f.health[0],['adminDataHealth',true]);
 });
+
+test('incomplete phone feed does not erase previously loaded phone inventory',async()=>{
+  const f=fixture(),original=f.context.fetch;
+  f.context.adminPhoneData=[{id:'assigned-number'}];
+  f.context.fetch=async url=>url.includes('admin-phone-numbers')?{ok:true,json:async()=>({})}:original(url);
+  await f.run();
+  assert.equal(f.context.adminPhoneData[0].id,'assigned-number');
+  assert.equal(f.context.adminDataSyncAt.phones,undefined);
+  assert.deepEqual(f.health[0],['adminDataHealth',true]);
+  assert.ok(f.rendered.includes('phones'));
+  assert.equal(f.context.adminFinanceData.reconciliation[0].id,'fresh');
+});
+test('missing campaign list does not erase existing marketing campaigns',async()=>{
+  const f=fixture(),original=f.context.fetch;
+  f.context.adminCampaignData=[{id:'planned-campaign'}];
+  f.context.fetch=async url=>url.includes('admin-marketing-campaigns')?{ok:true,json:async()=>({})}:original(url);
+  await f.run();
+  assert.equal(f.context.adminCampaignData[0].id,'planned-campaign');
+  assert.equal(f.context.adminDataSyncAt.campaigns,undefined);
+  assert.deepEqual(f.health[0],['adminDataHealth',true]);
+  assert.equal(f.context.adminWebsiteData.prospects[0].id,'fresh');
+});
+test('missing document collection preserves the prior admin document archive',async()=>{
+  const f=fixture(),original=f.context.fetch;
+  f.context.adminDocumentsData={agreements:[],company:[{id:'signed-document'}],standard:[]};
+  f.context.fetch=async url=>url.includes('admin-documents')?{ok:true,json:async()=>({})}:original(url);
+  await f.run();
+  assert.equal(f.context.adminDocumentsData.company[0].id,'signed-document');
+  assert.equal(f.context.adminDataSyncAt.documents,undefined);
+  assert.deepEqual(f.health[0],['adminDataHealth',true]);
+  assert.ok(f.rendered.includes('documents'));
+});
