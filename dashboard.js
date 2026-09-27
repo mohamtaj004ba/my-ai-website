@@ -3206,13 +3206,20 @@ async function loadAdminSearchInboxCache(){
   adminSearchInboxLoading=true;
   try{
     const sr=await fetch('/api/account?action=admin-gmail-status',{headers:{Accept:'application/json'},cache:'no-store'});
-    if(sr.ok)adminInboxData.gmailStatus=await sr.json();
-    if(adminInboxData.gmailStatus?.connected){
+    if(!sr.ok)throw new Error('Gmail connection status unavailable');
+    const status=await sr.json();
+    if(!status||typeof status!=='object'||typeof status.connected!=='boolean')throw new Error('Incomplete Gmail connection status');
+    adminInboxData.gmailStatus=status;
+    if(status.connected){
       const gr=await fetch('/api/account?action=admin-gmail-inbox&cached=1',{headers:{Accept:'application/json'},cache:'no-store'});
-      if(gr.ok){const d=await gr.json();if(Array.isArray(d.threads)){adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||0)}}
+      if(!gr.ok)throw new Error('Gmail cache unavailable');
+      const d=await gr.json();
+      if(!d||!Array.isArray(d.threads))throw new Error('Incomplete Gmail cache');
+      adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||0);
     }
+    adminSearchInboxCacheLoaded=true;
   }catch(err){console.warn('Global search inbox cache unavailable',err)}
-  finally{adminSearchInboxCacheLoaded=true;adminSearchInboxLoading=false;if(String(document.getElementById('adminSearch')?.value||'').trim().length>=2)renderAdminGlobalSearch()}
+  finally{adminSearchInboxLoading=false;if(String(document.getElementById('adminSearch')?.value||'').trim().length>=2)renderAdminGlobalSearch()}
 }
 function setAdminSearchActive(index){
   const wrap=document.getElementById('adminSearchResults'),rows=[...(wrap?.querySelectorAll('.admin-search-result')||[])];if(!rows.length)return;
