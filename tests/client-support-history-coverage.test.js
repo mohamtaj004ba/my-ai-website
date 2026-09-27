@@ -17,7 +17,7 @@ function harness(fetcher){
     console:{warn:()=>{}}
   });
   vm.runInContext(source.slice(start,end),ctx);
-  return {ctx,notice,button,rendered:()=>rendered,load:()=>vm.runInContext('refreshClientSupportHistory()',ctx)};
+  return {ctx,notice,button,rendered:()=>rendered,load:()=>vm.runInContext('refreshClientSupportHistory()',ctx),invalidate:()=>vm.runInContext('invalidateClientSupportHistoryRequest()',ctx)};
 }
 test('support history error retains saved requests, displays warning and can recover on retry',async()=>{
   let failed=true;
@@ -54,4 +54,21 @@ test('support history warning, empty-state coverage and precise notification ret
   assert.match(source,/empty.hidden=supportTicketsData.length!==0\|\|!!\(notice&&!notice.hidden\)/);
   assert.match(source,/if\(await refreshClientSupportHistory\(\)\)thread=document.querySelector/);
   assert.match(source,/getElementById\('clientSupportHistoryRetry'\)\?\.addEventListener/);
+});
+
+test('successful support mutation invalidates earlier read and unlocks history retry',async()=>{
+  let release;
+  const pending=new Promise(resolve=>{release=resolve});
+  const h=harness(async()=>pending);
+  const read=h.load();
+  await Promise.resolve();
+  assert.equal(h.button.disabled,true);
+  h.invalidate();
+  h.ctx.supportTicketsData.unshift({id:'just-submitted'});
+  release({tickets:[]});
+  assert.equal(await read,false);
+  assert.equal(h.ctx.supportTicketsData[0].id,'just-submitted');
+  assert.equal(h.button.disabled,false);
+  assert.match(source,/invalidateClientSupportHistoryRequest\(\);const i=supportTicketsData.findIndex/);
+  assert.match(source,/if\(r.ok\)\{invalidateClientSupportHistoryRequest\(\);supportTicketsData.unshift/);
 });
