@@ -35,7 +35,10 @@ test('Preview reseeding removes stale generated admin fixtures',()=>{
   assert.match(account,/staleSeedWorkspaceIds=index\.filter\(id=>String\(id\)\.startsWith\('seed_'\)\)/);
   assert.match(account,/keep=index\.filter\(id=>!String\(id\)\.startsWith\('seed_'\)\)/);
   assert.match(account,/!String\(x\.workspaceId\|\|''\)\.startsWith\('seed_'\)/);
-  assert.match(account,/staleSupportIds=supportIds\.filter\(id=>String\(id\)\.startsWith\('seed_support_seed_'\)\)/);
+  assert.match(account,/replacePreviewSupportSeed\(kv,seedSupport\)/);
+  const previewSupport=fs.readFileSync(path.join(root,'lib','preview-support-seed.js'),'utf8');
+  assert.match(previewSupport,/oldSeedIds=index\.filter\(id=>String\(id\)\.startsWith\(SEED_PREFIX\)\)/);
+  assert.match(previewSupport,/Promise\.allSettled\(oldSeedIds\.filter/);
   assert.match(account,/staleFeedbackIds=feedbackIds\.filter\(id=>String\(id\)\.startsWith\('seed_feedback_seed_'\)\)/);
 });
 
