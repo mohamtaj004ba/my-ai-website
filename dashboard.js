@@ -1629,30 +1629,38 @@ function renderSupport({clearDraftId=''}={}){
   wrap.querySelectorAll('[data-support-client-reply]').forEach(b=>b.addEventListener('click',()=>replyClientSupportTicket(b.dataset.supportClientReply,b)));
 }
 let clientSupportSubmitPending=false,clientSupportReplyPending=new Set();
+function setClientSupportReplyStatus(id,message){
+  const status=document.querySelector('[data-support-client-status="'+CSS.escape(id)+'"]');
+  if(status)status.textContent=message;
+}
+function finishClientSupportReply(id,button){
+  const current=document.querySelector('[data-support-client-reply="'+CSS.escape(id)+'"]');
+  if(current){current.disabled=false;current.textContent='Send reply'}
+  if(button&&button!==current){button.disabled=false;button.textContent='Send reply'}
+}
 async function replyClientSupportTicket(id,button){
   if(clientSupportReplyPending.has(id))return;
   const input=document.querySelector('[data-support-client-input="'+CSS.escape(id)+'"]'),message=String(input?.value||'').trim();
-  const status=document.querySelector('[data-support-client-status="'+CSS.escape(id)+'"]');
-  if(message.length<2){if(status)status.textContent='Add a reply before sending.';return}
+  if(message.length<2){setClientSupportReplyStatus(id,'Add a reply before sending.');return}
   clientSupportReplyPending.add(id);
   invalidateClientSupportHistoryRequest();
   if(button){button.disabled=true;button.textContent='Sending…'}
-  if(status)status.textContent='';
+  setClientSupportReplyStatus(id,'');
   try{
     const r=await fetch('/api/account?action=support-ticket-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,message})});
     const data=await r.json().catch(()=>({}));
-    if(!r.ok){if(status)status.textContent=data.error||'Could not send reply. Your draft is preserved.';return}
+    if(!r.ok){setClientSupportReplyStatus(id,data.error||'Could not send reply. Your draft is preserved.');return}
     if(!data.ticket||String(data.ticket.id)!==String(id))throw new Error('Unconfirmed reply response');
     invalidateClientSupportHistoryRequest();const i=supportTicketsData.findIndex(x=>String(x.id)===String(id));
     if(i>=0)supportTicketsData[i]=data.ticket;
-    renderSupport();
+    renderSupport({clearDraftId:id});
     const thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]');if(thread)thread.open=true;
     Promise.resolve(loadNotifications({silent:true})).catch(()=>{});
   }catch(_){
-    if(status)status.textContent='Could not confirm the reply was saved. Check request history before retrying; your draft is preserved.';
+    setClientSupportReplyStatus(id,'Could not confirm the reply was saved. Check request history before retrying; your draft is preserved.');
   }finally{
     clientSupportReplyPending.delete(id);
-    if(button){button.disabled=false;button.textContent='Send reply'}
+    finishClientSupportReply(id,button);
   }
 }
 async function submitSupportTicket(){
