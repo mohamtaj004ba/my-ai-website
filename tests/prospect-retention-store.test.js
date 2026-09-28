@@ -1,6 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {applyStaleProspectDeidentification,prospectEmailLookupKey}=require('../lib/prospect-retention-store');
+const {applyStaleProspectDeidentification,prospectEmailLookupKey,scanStaleProspectRetention}=require('../lib/prospect-retention-store');
 
 const day=24*60*60*1000;
 function fixture(prospect,{lookupOwner,mutateBeforeCommit=false}={}){
@@ -81,3 +81,38 @@ test('malformed stored record fails closed rather than replacing it',async()=>{
   await assert.rejects(()=>applyStaleProspectDeidentification(f.kv,prospect,now),/malformed/);
   assert.equal(f.evalCalls,0);
 });
+
+test('read-only retention scan loads the full bounded index and returns a deterministic plan',async()=>{
+  const now=700*day,old=now-400*day,records={
+    'site:prospect:a':{id:'a',stage:'new',updatedAt:old},
+    'site:prospect:b':{id:'b',stage:'lost',updatedAt:old},
+    'site:prospect:recent':{id:'recent',stage:'new',updatedAt:now-5*day}
+  },reads=[];
+  const kv={
+    lrange:async(key,start,end)=>{assert.equal(key,'site:prospect:index');assert.equal(start,0);assert.equal(end,1999);return ['a','b','recent']},
+    get:async key=>{reads.push(key);return records[key]||null}
+  };
+  const plan=await scanStaleProspectRetention(kv,now,{limit:1,consentIds:['b']});
+  assert.equal(plan.indexed,3);assert.equal(plan.scanned,3);assert.equal(plan.eligible,1);assert.equal(plan.planned.length,1);assert.equal(plan.planned[0].id,'a');assert.equal(plan.hasMore,false);
+  assert.deepEqual(reads,['site:prospect:a','site:prospect:b','site:prospect:recent']);
+});
+
+test('read-only retention scan fails closed on duplicate, missing or malformed indexed records',async()=>{
+  const now=700*day,good={id:'a',stage:'new',updatedAt:1};
+  await assert.rejects(()=>scanStaleProspectRetention({lrange:async()=>['a','a'],get:async()=>good},now),/index is malformed/);
+  await assert.rejects(()=>scanStaleProspectRetention({lrange:async()=>['a'],get:async()=>null},now),/missing record/);
+  await assert.rejects(()=>scanStaleProspectRetention({lrange:async()=>['a'],get:async()=>({id:'other'})},now),/malformed record/);
+  await assert.rejects(()=>scanStaleProspectRetention({lrange:async()=>null,get:async()=>good},now),/index is unavailable/);
+});
+
+test('read-only retention scan never mutates storage',async()=>{
+  let writes=0;
+  const now=700*day,kv={
+    lrange:async()=>['a'],
+    get:async()=>({id:'a',stage:'new',updatedAt:now-400*day}),
+    set:async()=>{writes++},del:async()=>{writes++},eval:async()=>{writes++}
+  };
+  const plan=await scanStaleProspectRetention(kv,now);
+  assert.equal(plan.eligible,1);assert.equal(writes,0);
+});
+
