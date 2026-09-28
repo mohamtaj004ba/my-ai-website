@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const purgeState=require('../lib/purge-state');
+const {deidentifyProspectForAnalytics}=require('../lib/prospect-retention');
 
 const source=fs.readFileSync('api/account.js','utf8');
 const restoreBegin=source.indexOf('async function adminRestoreDeletedClient(');
@@ -50,7 +51,7 @@ function fixture({failConversationsOnce=false,foreignStripe=false}={}){
   const ctx=vm.createContext({
     requireAdmin:async()=>({email:'admin@callercore.com',workspaceId:'admin'}),
     kv,crypto:{randomUUID:()=> 'uuid-'+(++n)},Date,Promise,String,Number,Math,Set,Map,Array,Object,JSON,
-    cleanEmail:x=>String(x||'').trim().toLowerCase(),emailKey:email=>email==='owner@example.com'?'ownerhash':'hash-'+email,safeError:e=>String(e&&e.message||e),console:{error:()=>{}},
+    cleanEmail:x=>String(x||'').trim().toLowerCase(),emailKey:email=>email==='owner@example.com'?'ownerhash':'hash-'+email,deidentifyProspectForAnalytics,safeError:e=>String(e&&e.message||e),console:{error:()=>{}},
     compareAndSetConfig:async(_,updates)=>apply(updates),
     compareAndSetWithDelete:async(_,updates,{deleteKeys=[]}={})=>apply(updates,deleteKeys),
     compareAndAudit:async(_,update,auditKey,event)=>{
