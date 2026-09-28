@@ -631,6 +631,51 @@ async function runAdminInteractions(page){
   });
   report.admin.interactions.push('in-memory onboarding save lock + revision + automatic-stage restoration');
 
+  // Exercise pending-deletion recovery entirely in memory. The fake client/detail,
+  // diagnostics and restore POST are intercepted so QA never schedules/restores a KV record.
+  await page.evaluate(async()=>{
+    const id='qa-recovery-ui-only',realFetch=window.fetch,realConfirm=window.confirm,
+      realRefresh=refreshAdminCore,realOps=loadAdminOps,originalClient=currentAdminClient,originalTech=currentAdminTech;
+    let releaseRestore,restored=false;const requests=[];
+    const fakeClient=()=>({id,name:'QA recovery controls (in-memory)',plan:'Starter',
+      status:restored?'active':'pending_deletion',subscriptionStatus:'canceled',
+      ownerEmail:'qa-recovery@example.test',createdAt:1,updatedAt:restored?30:20,
+      deletion:restored?null:{requestedAt:10,purgeEligibleAt:Date.now()+86400000,preDeletionStatus:'active'},
+      usage:{minutes:0},stripe:{customerLinked:false,subscriptionLinked:false},agent:null,phoneRouting:null,
+      onboarding:null,counts:{locations:0}});
+    window.confirm=()=>true;
+    window.fetch=async(url,options={})=>{
+      const target=String(url);
+      if(target.includes('action=admin-client&id='+id))return {ok:true,json:async()=>({client:fakeClient()})};
+      if(target.includes('action=admin-tech-support&id='+id))return {ok:true,json:async()=>({diagnostics:{workspaceId:id,workspaceStatus:restored?'active':'pending_deletion',subscriptionStatus:'canceled',ownerEmail:'qa-recovery@example.test',userMappingMatches:true},config:{},audit:[]})};
+      if(target.includes('action=admin-client-restore')){
+        requests.push(JSON.parse(options.body||'{}'));
+        return new Promise(resolve=>{releaseRestore=()=>{restored=true;resolve({ok:true,json:async()=>({ok:true,status:'active',client:{id,status:'active',updatedAt:30}})})}});
+      }
+      return realFetch(url,options);
+    };
+    refreshAdminCore=async()=>{};loadAdminOps=async()=>{};
+    try{
+      if(await openAdminClient(id)!==true)throw new Error('Fictional pending-deletion client did not open');
+      const restoreButton=document.getElementById('adminRestoreClientButton'),deleteButton=document.getElementById('adminDeleteClientButton'),saveButton=document.getElementById('adminSaveClientButton'),status=document.getElementById('adminClientStatus');
+      if(!restoreButton||restoreButton.hidden||!deleteButton.hidden||!saveButton.hidden||!status.disabled)throw new Error('Pending-deletion recovery controls were not isolated from ordinary edits');
+      if(!/Recovery is available/.test(document.getElementById('adminClientManageNote')?.textContent||''))throw new Error('Pending-deletion recovery window was not explained');
+      const pending=restoreAdminClient();
+      if(!restoreButton.disabled||restoreButton.textContent!=='Restoring…'||document.getElementById('adminClientDrawer')?.getAttribute('aria-busy')!=='true')throw new Error('Workspace recovery did not lock the admin drawer');
+      if(await restoreAdminClient()!==false)throw new Error('Concurrent workspace recovery was not blocked');
+      if(requests.length!==1||requests[0].id!==id||requests[0].expectedUpdatedAt!==20)throw new Error('Workspace recovery missed the displayed revision');
+      releaseRestore();if(await pending!==true)throw new Error('Confirmed workspace recovery did not complete');
+      if(currentAdminClient?.status!=='active'||currentAdminClient?.deletion!==null)throw new Error('Confirmed recovery did not reconcile the active client state');
+      if(!restoreButton.hidden||deleteButton.hidden||saveButton.hidden||status.disabled)throw new Error('Recovered client controls did not return to normal');
+    }finally{
+      window.fetch=realFetch;window.confirm=realConfirm;refreshAdminCore=realRefresh;loadAdminOps=realOps;
+      currentAdminClient=originalClient;currentAdminTech=originalTech;
+      if(originalClient?.id)await openAdminClient(originalClient.id).catch(()=>{});
+      else closeAdminClient();
+    }
+  });
+  report.admin.interactions.push('in-memory pending-deletion recovery + revision + duplicate-action lock');
+
   await ensureView(page,'client-care');
   const supportCareTab=page.locator('[data-care-tab="support"]').first();
   if(await supportCareTab.count())await supportCareTab.click();
