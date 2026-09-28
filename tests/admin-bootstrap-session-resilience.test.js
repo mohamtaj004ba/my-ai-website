@@ -26,6 +26,7 @@ function fixture({session='network',summaryStatus=200}={}){
     location,URLSearchParams,adminDataSyncAt:{},console:{error:()=>calls.push('error')},
     applyUserProfile:(...args)=>profile.push(args),
     renderAdmin:()=>calls.push('render'),loadAdminOps:async()=>calls.push('ops'),
+    refreshAdminMonthlyKpi:async()=>{calls.push('monthly-kpi');return true},
     initAdminLiveRefresh:()=>calls.push('live'),
     showView:()=>{},loadAdminInbox:async()=>{},history:{replaceState:()=>{}},
     Promise,Date,Array
