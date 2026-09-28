@@ -571,6 +571,9 @@ async function adminPurgeClient(req,res){
     if(!ws)return res.status(404).json({error:'Client not found'});
     if(ws.status!=='pending_deletion')return res.status(409).json({error:'Workspace must be pending deletion first'});
     if(Date.now()<Number(ws.purgeEligibleAt||0))return res.status(409).json({error:'30-day recovery window has not ended',purgeEligibleAt:ws.purgeEligibleAt||null});
+    const revision=Number(ws.updatedAt||ws.createdAt||0);
+    if(body.expectedUpdatedAt===undefined||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==revision)
+      return res.status(409).json({error:'This pending-deletion workspace changed since you opened it. Refresh before starting permanent purge.'});
     if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled')return res.status(409).json({error:'Active Stripe subscription blocks permanent deletion'});
     const [onboarding,onboardingToken]=await Promise.all([kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
     if(onboarding!=null&&(!onboarding||typeof onboarding!=='object'||Array.isArray(onboarding)))return res.status(503).json({error:'Onboarding retention data is unavailable. Permanent purge did not start.'});
