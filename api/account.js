@@ -639,6 +639,11 @@ async function adminProvisioning(req,res){
       reviewEligibleAt:onboarding?.reviewEligibleAt||null,
       onboardingLinkSent:!!onboarding?.onboardingLinkSent,
       onboardingSentAt:onboarding?.onboardingSentAt||null,
+      inviteDeliveryStatus:onboarding?.onboardingLinkSent?'sent':String(onboarding?.onboardingInviteDelivery?.status||'not_started'),
+      inviteDeliveryAttemptId:String(onboarding?.onboardingInviteDelivery?.attemptId||''),
+      inviteDeliveryStartedAt:Number(onboarding?.onboardingInviteDelivery?.startedAt||0)||null,
+      inviteDeliveryFinishedAt:Number(onboarding?.onboardingInviteDelivery?.finishedAt||0)||null,
+      inviteDeliveryNeedsReview:!onboarding?.onboardingLinkSent&&(onboarding?.onboardingInviteDelivery?.status==='uncertain'||(onboarding?.onboardingInviteDelivery?.status==='sending'&&Number(onboarding?.onboardingInviteDelivery?.startedAt||0)>0&&Number(onboarding?.onboardingInviteDelivery?.startedAt||0)<=Date.now()-15*60*1000)),
       buildEligibleAt:onboarding?.buildEligibleAt||null,
       adminReviewedAt:onboarding?.adminReviewedAt||null,
       agreementVersion:onboarding?.agreementVersion||'',
@@ -1774,33 +1779,102 @@ async function adminRestoreAudit(req,res){
 async function adminSendOnboardingInvite(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String(req.body?.id||'').slice(0,80);if(!id)return res.status(400).json({error:'Client is required'});
-  const [ws,state,token]=await Promise.all([
-    kv.get('workspace:'+id),kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)
-  ]);
-  if(!ws||!state||!token)return res.status(404).json({error:'Onboarding record not found'});
-  if(state.onboardingLinkSent)return res.status(200).json({ok:true,alreadySent:true});
-  if(Number(state.reviewEligibleAt||0)>Date.now())return res.status(409).json({error:'This account is still in the post-payment review hold.',eligibleAt:state.reviewEligibleAt});
+  const key='onboarding:workspace:'+id;
+  const [ws,rawState,token]=await Promise.all([kv.get('workspace:'+id),kv.get(key),kv.get('onboarding:workspace-token:'+id)]);
+  if(!ws||!rawState||!token)return res.status(404).json({error:'Onboarding record not found'});
+  if(!rawState||typeof rawState!=='object'||Array.isArray(rawState))return res.status(503).json({error:'Onboarding state is unavailable. No email was sent.'});
+  const state=rawState,now=Date.now(),delivery=state.onboardingInviteDelivery&&typeof state.onboardingInviteDelivery==='object'&&!Array.isArray(state.onboardingInviteDelivery)?state.onboardingInviteDelivery:{};
+  if(state.onboardingLinkSent||delivery.status==='sent')return res.status(200).json({ok:true,alreadySent:true,deliveryStatus:'sent',onboarding:state});
+  if(Number(state.reviewEligibleAt||0)>now)return res.status(409).json({error:'This account is still in the post-payment review hold.',eligibleAt:state.reviewEligibleAt});
+  const startedAt=Number(delivery.startedAt||0),staleSending=delivery.status==='sending'&&startedAt>0&&startedAt<=now-15*60*1000;
+  if(delivery.status==='uncertain')return res.status(409).json({error:'Onboarding email delivery could not be confirmed. Review Mailgun delivery before retrying.',code:'ONBOARDING_INVITE_DELIVERY_UNCERTAIN',deliveryStatus:'uncertain',attemptId:delivery.attemptId||'',retrySafe:false});
+  if(delivery.status==='sending'&&!staleSending)return res.status(409).json({error:'Onboarding email delivery is already in progress. Wait for the current attempt to finish.',code:'ONBOARDING_INVITE_DELIVERY_IN_PROGRESS',deliveryStatus:'sending',attemptId:delivery.attemptId||'',retrySafe:false});
+  if(staleSending){
+    const uncertain={...state,onboardingInviteDelivery:{...delivery,status:'uncertain',finishedAt:now,lastErrorCode:'SEND_STATE_STALE'},updatedAt:Math.max(now,Number(state.updatedAt||0)+1)};
+    const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'onboarding_invite_delivery_uncertain',section:'onboarding',before:null,after:null,meta:{attemptId:delivery.attemptId||'',reason:'stale_sending_state'},at:now};
+    try{await compareAndAudit(kv,{key,before:rawState,after:uncertain},'audit:'+id,audit)}catch(err){console.error('stale onboarding invite claim reconciliation failed',safeError(err))}
+    return res.status(409).json({error:'A previous onboarding email attempt did not finish recording its result. Review Mailgun delivery before retrying.',code:'ONBOARDING_INVITE_DELIVERY_UNCERTAIN',deliveryStatus:'uncertain',attemptId:delivery.attemptId||'',retrySafe:false});
+  }
   const onboarding=await kv.get('onboarding:'+token),to=String(onboarding?.email||ws.ownerEmail||'').trim().toLowerCase();
   if(!to)return res.status(400).json({error:'Client email is missing'});
+  const attemptId=crypto.randomUUID(),claimAt=Date.now(),claim={...state,onboardingInviteDelivery:{status:'sending',attemptId,startedAt:claimAt,finishedAt:0,lastErrorCode:'',resolvedAt:0,resolvedBy:''},updatedAt:Math.max(claimAt,Number(state.updatedAt||0)+1)};
+  const claimAudit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'onboarding_invite_send_started',section:'onboarding',before:null,after:null,meta:{attemptId,to},at:claimAt};
+  try{
+    if(!await compareAndAudit(kv,{key,before:rawState,after:claim},'audit:'+id,claimAudit))return res.status(409).json({error:'Onboarding state changed before the email could be sent. Refresh onboarding before retrying.'});
+  }catch(err){console.error('onboarding invite claim failed',safeError(err));return res.status(503).json({error:'Could not reserve a safe onboarding email attempt. No email was sent.'})}
   const link=requestOrigin(req)+'/onboarding?token='+token,firstName=String(onboarding?.name||ws.ownerName||'').split(' ')[0]||'there';
-  {const emailBody=lifecycleEmail({
-    preheader:'Your CallerCore onboarding workspace is ready.',
-    eyebrow:'ONBOARDING READY',
-    title:'Your setup workspace is ready, '+firstName+'.',
-    intro:'We’ve reviewed your CallerCore account and prepared your secure onboarding workspace.',
-    statusLabel:'Next step',
-    statusText:'Complete your service agreement and business intake.',
-    bodyHtml:'<p style="margin:0 0 12px">Your progress saves automatically, so you can stop and come back if needed.</p><p style="margin:0">Once submitted, CallerCore will prepare your initial business profile, AI-agent configuration, routing preferences, and launch checklist for review.</p>',
-    ctaLabel:'Open onboarding',
-    ctaUrl:link,
-    siteUrl:requestOrigin(req),
-    showDashboardSupport:false
-  });await sendMail({to,subject:'Your CallerCore onboarding is ready',...emailBody});}
-  const next={...state,status:'awaiting_agreement',onboardingLinkSent:true,onboardingSentAt:Date.now(),reviewedAt:Date.now(),reviewedBy:admin.email,checklist:{...(state.checklist||{}),accountReview:true,onboardingSent:true},updatedAt:Date.now()};
-  await kv.set('onboarding:workspace:'+id,next);
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'onboarding_invite_sent',section:'workspace',meta:{to}});
-  return res.status(200).json({ok:true,onboarding:next});
+  let sendError=null;
+  try{
+    const emailBody=lifecycleEmail({
+      preheader:'Your CallerCore onboarding workspace is ready.',
+      eyebrow:'ONBOARDING READY',
+      title:'Your setup workspace is ready, '+firstName+'.',
+      intro:'We’ve reviewed your CallerCore account and prepared your secure onboarding workspace.',
+      statusLabel:'Next step',
+      statusText:'Complete your service agreement and business intake.',
+      bodyHtml:'<p style="margin:0 0 12px">Your progress saves automatically, so you can stop and come back if needed.</p><p style="margin:0">Once submitted, CallerCore will prepare your initial business profile, AI-agent configuration, routing preferences, and launch checklist for review.</p>',
+      ctaLabel:'Open onboarding',
+      ctaUrl:link,
+      siteUrl:requestOrigin(req),
+      showDashboardSupport:false
+    });
+    await sendMail({to,subject:'Your CallerCore onboarding is ready',...emailBody});
+  }catch(err){sendError=err}
+  if(!sendError){
+    for(let attempt=0;attempt<4;attempt++){
+      const current=await kv.get(key);
+      if(!current||typeof current!=='object'||Array.isArray(current))break;
+      const currentDelivery=current.onboardingInviteDelivery&&typeof current.onboardingInviteDelivery==='object'&&!Array.isArray(current.onboardingInviteDelivery)?current.onboardingInviteDelivery:{};
+      if(current.onboardingLinkSent||currentDelivery.status==='sent')return res.status(200).json({ok:true,alreadySent:true,deliveryStatus:'sent',onboarding:current});
+      if(currentDelivery.attemptId!==attemptId)break;
+      const finishedAt=Date.now(),next={...current,status:'awaiting_agreement',onboardingLinkSent:true,onboardingSentAt:finishedAt,reviewedAt:finishedAt,reviewedBy:admin.email,checklist:{...(current.checklist||{}),accountReview:true,onboardingSent:true},onboardingInviteDelivery:{...currentDelivery,status:'sent',finishedAt,lastErrorCode:'',providerAcceptedAt:finishedAt},updatedAt:Math.max(finishedAt,Number(current.updatedAt||0)+1)};
+      const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'onboarding_invite_sent',section:'workspace',before:null,after:null,meta:{to,attemptId},at:finishedAt};
+      try{if(await compareAndAudit(kv,{key,before:current,after:next},'audit:'+id,audit))return res.status(200).json({ok:true,onboarding:next,deliveryStatus:'sent'})}
+      catch(err){console.error('onboarding invite finalization failed',safeError(err));break}
+    }
+    return res.status(503).json({error:'The email provider accepted the onboarding message, but CallerCore could not confirm the saved delivery record. Do not resend until delivery is reviewed.',code:'ONBOARDING_INVITE_DELIVERY_UNCERTAIN',deliveryStatus:'sending',attemptId,retrySafe:false,providerAccepted:true});
+  }
+  const deliveryStatus=sendError&&sendError.deliveryState==='failed'?'failed':'uncertain',errorCode=String(sendError&&sendError.code||'MAIL_TRANSPORT_UNCERTAIN').slice(0,80);
+  for(let attempt=0;attempt<4;attempt++){
+    const current=await kv.get(key);
+    if(!current||typeof current!=='object'||Array.isArray(current))break;
+    const currentDelivery=current.onboardingInviteDelivery&&typeof current.onboardingInviteDelivery==='object'&&!Array.isArray(current.onboardingInviteDelivery)?current.onboardingInviteDelivery:{};
+    if(currentDelivery.attemptId!==attemptId)break;
+    const finishedAt=Date.now(),next={...current,onboardingInviteDelivery:{...currentDelivery,status:deliveryStatus,finishedAt,lastErrorCode:errorCode},updatedAt:Math.max(finishedAt,Number(current.updatedAt||0)+1)};
+    const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:deliveryStatus==='failed'?'onboarding_invite_delivery_failed':'onboarding_invite_delivery_uncertain',section:'onboarding',before:null,after:null,meta:{attemptId,errorCode},at:finishedAt};
+    try{
+      if(await compareAndAudit(kv,{key,before:current,after:next},'audit:'+id,audit)){
+        const retrySafe=deliveryStatus==='failed';
+        return res.status(retrySafe?502:503).json({error:retrySafe?'The onboarding email was not accepted by the mail provider. It is safe to retry after the mail issue is corrected.':'Onboarding email delivery could not be confirmed. Review Mailgun delivery before retrying.',code:retrySafe?'ONBOARDING_INVITE_SEND_FAILED':'ONBOARDING_INVITE_DELIVERY_UNCERTAIN',deliveryStatus,attemptId,retrySafe});
+      }
+    }catch(err){console.error('onboarding invite failure state save failed',safeError(err));break}
+  }
+  return res.status(503).json({error:'CallerCore could not confirm the onboarding email result. Do not resend until delivery is reviewed.',code:'ONBOARDING_INVITE_DELIVERY_UNCERTAIN',deliveryStatus:'sending',attemptId,retrySafe:false});
 }
+
+async function adminResolveOnboardingInviteDelivery(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  const body=req.body||{},id=String(body.id||'').slice(0,80),resolution=String(body.resolution||''),expectedAttemptId=String(body.attemptId||'').slice(0,80);
+  if(!id||!['sent','not_sent'].includes(resolution))return res.status(400).json({error:'A client and verified delivery resolution are required'});
+  const key='onboarding:workspace:'+id,state=await kv.get(key);
+  if(!state||typeof state!=='object'||Array.isArray(state))return res.status(404).json({error:'Onboarding record not found'});
+  const delivery=state.onboardingInviteDelivery&&typeof state.onboardingInviteDelivery==='object'&&!Array.isArray(state.onboardingInviteDelivery)?state.onboardingInviteDelivery:{};
+  const startedAt=Number(delivery.startedAt||0),staleSending=delivery.status==='sending'&&startedAt>0&&startedAt<=Date.now()-15*60*1000;
+  if(!['uncertain'].includes(delivery.status)&&!staleSending)return res.status(409).json({error:'This onboarding invite does not currently require delivery review.'});
+  if(expectedAttemptId&&delivery.attemptId!==expectedAttemptId)return res.status(409).json({error:'The onboarding email attempt changed. Refresh onboarding before resolving delivery.'});
+  const now=Date.now(),sent=resolution==='sent';
+  const next={...state,
+    ...(sent?{status:'awaiting_agreement',onboardingLinkSent:true,onboardingSentAt:Number(state.onboardingSentAt||now),reviewedAt:Number(state.reviewedAt||now),reviewedBy:state.reviewedBy||admin.email,checklist:{...(state.checklist||{}),accountReview:true,onboardingSent:true}}:{}),
+    onboardingInviteDelivery:{...delivery,status:sent?'sent':'failed',finishedAt:Number(delivery.finishedAt||now),lastErrorCode:sent?'':'ADMIN_CONFIRMED_NOT_SENT',resolvedAt:now,resolvedBy:admin.email,resolution:sent?'provider_confirmed_sent':'provider_confirmed_not_sent'},
+    updatedAt:Math.max(now,Number(state.updatedAt||0)+1)
+  };
+  const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:sent?'onboarding_invite_delivery_resolved_sent':'onboarding_invite_delivery_resolved_not_sent',section:'onboarding',before:null,after:null,meta:{attemptId:delivery.attemptId||'',resolution},at:now};
+  try{
+    if(!await compareAndAudit(kv,{key,before:state,after:next},'audit:'+id,audit))return res.status(409).json({error:'Onboarding delivery state changed while resolving it. Refresh onboarding before retrying.'});
+  }catch(err){console.error('onboarding invite delivery resolution failed',safeError(err));return res.status(503).json({error:'Could not confirm the onboarding delivery resolution. Refresh onboarding before retrying.'})}
+  return res.status(200).json({ok:true,onboarding:next,deliveryStatus:next.onboardingInviteDelivery.status,retrySafe:!sent});
+}
+
 
 async function adminProvisioningChecklistSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
@@ -2998,6 +3072,7 @@ module.exports=async function handler(req,res){
   if(action==='admin-provisioning-stage-clear'&&req.method==='POST')return adminClearProvisioningStage(req,res);
   if(action==='admin-provisioning-checklist-save'&&req.method==='POST')return adminProvisioningChecklistSave(req,res);
   if(action==='admin-onboarding-send'&&req.method==='POST')return adminSendOnboardingInvite(req,res);
+  if(action==='admin-onboarding-delivery-resolve'&&req.method==='POST')return adminResolveOnboardingInviteDelivery(req,res);
   if(action==='admin-phone-numbers'&&req.method==='GET')return adminPhoneNumbers(req,res);
   if(action==='admin-phone-number-save'&&req.method==='POST')return adminSavePhoneNumber(req,res);
   if(action==='admin-phone-number-delete'&&req.method==='POST')return adminDeletePhoneNumber(req,res);
