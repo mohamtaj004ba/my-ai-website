@@ -85,11 +85,10 @@ function repairFixture({
   existing=null,newEmail='new@example.test',transaction=true,denied=false
 }={}){
   const r=response(),calls=[],reads=[];
-  const values={
-    'workspace:client-1':workspace,
-    'user:email:old@example.test':oldMember,
-    'user:email:new@example.test':existing
-  };
+  const oldEmail=cleanEmail(workspace?.ownerEmail||''),values={'workspace:client-1':workspace};
+  if(oldEmail)values['user:email:'+oldEmail]=oldMember;
+  if(newEmail!==oldEmail)values['user:email:'+newEmail]=existing;
+  else if(existing!==null)values['user:email:'+newEmail]=existing;
   const ctx=vm.createContext({
     requireAdmin:async()=>denied?null:{email:'admin@example.test'},
     kv:{get:async key=>{reads.push(key);return clone(values[key]??null)},set:()=>assert.fail('access repair must not use independent writes'),del:()=>assert.fail('access repair must not delete outside transaction')},
