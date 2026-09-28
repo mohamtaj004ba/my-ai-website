@@ -24,7 +24,7 @@ function storeFixture(initial={}){
 function sample(overrides={}){
   return {month:'2026-09',recordedAt:1000,sessions:120,visitors:90,pageViews:400,leads:20,conversions:5,conversionRate:25,
     mrr:1995,arr:23940,setupRevenue:2500,churnedClients:1,calls:300,minutes:2500,appointments:44,transfers:22,paymentFailures:2,supportTickets:9,
-    planMix:{Starter:2,Growth:3,Pro:1},callOutcomes:{resolvedByAi:100,requestCaptured:40,messageTaken:30,transferred:22,escalated:5,incomplete:2,nonCustomer:10},coverage:{websiteEvents:true,websiteSessions:true,websiteVisitors:true,leadPipeline:true,workspaces:true,churn:true,calls:true,callMinutes:true,callOutcomes:true,appointments:true,support:true,paymentFailures:false},...overrides};
+    planMix:{Starter:2,Growth:3,Pro:1},callOutcomes:{resolvedByAi:100,requestCaptured:40,messageTaken:30,transferred:22,escalated:5,incomplete:2,nonCustomer:10},coverage:{websiteEvents:true,websiteSessions:true,websiteVisitors:true,leadPipeline:true,workspaces:true,conversions:true,churn:true,calls:true,callMinutes:true,callOutcomes:true,appointments:true,support:true,paymentFailures:false},...overrides};
 }
 
 test('monthly KPI snapshots accept only aggregate-safe schema and normalized values',()=>{
@@ -85,9 +85,9 @@ test('monthly history fails closed on malformed snapshots, malformed index and c
 });
 
 test('newer partial snapshot cannot downgrade a previously complete monthly source',async()=>{
-  const complete=sample({recordedAt:1000,sessions:10,coverage:{websiteEvents:true,websiteSessions:true,websiteVisitors:true,leadPipeline:true,workspaces:true,churn:true,calls:true,callMinutes:true,callOutcomes:true,appointments:true,support:true,paymentFailures:false}});
+  const complete=sample({recordedAt:1000,sessions:10,coverage:{websiteEvents:true,websiteSessions:true,websiteVisitors:true,leadPipeline:true,workspaces:true,conversions:true,churn:true,calls:true,callMinutes:true,callOutcomes:true,appointments:true,support:true,paymentFailures:false}});
   const f=storeFixture({'analytics:monthly:2026-09':sanitizeMonthlyKpiSnapshot(complete),[MONTHLY_KPI_INDEX_KEY]:['2026-09']});
-  const partial=sample({recordedAt:2000,sessions:null,coverage:{websiteEvents:false,websiteSessions:false,websiteVisitors:false,leadPipeline:true,workspaces:true,churn:true,calls:true,callMinutes:true,callOutcomes:true,appointments:true,support:true,paymentFailures:false}});
+  const partial=sample({recordedAt:2000,sessions:null,coverage:{websiteEvents:false,websiteSessions:false,websiteVisitors:false,leadPipeline:true,workspaces:true,conversions:true,churn:true,calls:true,callMinutes:true,callOutcomes:true,appointments:true,support:true,paymentFailures:false}});
   const r=await recordMonthlyKpiSnapshot(f.kv,partial);
   assert.equal(r.saved,false);assert.equal(r.degraded,true);assert.equal(f.calls.length,0);
   assert.equal(f.records.get('analytics:monthly:2026-09').sessions,10);
