@@ -8,18 +8,19 @@ const handler=source.slice(source.indexOf('async function adminDeletePhoneNumber
 async function run({expected=10,transaction=true,malformed=false}={}){
   const phone={id:'p',number:'5095550100',workspaceId:'tenant',updatedAt:10};
   const records={'phone:index':malformed?{broken:true}:[phone],'workspace:tenant':{phone:phone.number,name:'Client'},'onboarding:workspace:tenant':{checklist:{phoneAssigned:true,knowledgeApproved:true}}};
-  let status=200,result,updates,audits=0;
-  const context=vm.createContext({requireAdmin:async()=>({email:'admin@example.com'}),kv:{get:async key=>records[key],set:()=>assert.fail('Deletion must use one atomic transaction')},compareAndSetConfig:async(_,next)=>{updates=next;return transaction},appendAudit:async()=>audits++,safeError:()=>'',console:{error:()=>{}},req:{body:{id:'p',expectedUpdatedAt:expected}},res:{status(n){status=n;return this},json(x){result=x}}});
-  vm.runInContext(handler,context);await vm.runInContext('adminDeletePhoneNumber(req,res)',context);return {status,result,updates,audits};
+  let status=200,result,updates,auditCommitted=null;
+  const context=vm.createContext({requireAdmin:async()=>({email:'admin@example.com',workspaceId:'admin-home'}),crypto:{randomUUID:()=> 'audit-delete'},Date,kv:{get:async key=>records[key],set:()=>assert.fail('Deletion must use one atomic transaction')},compareAndAuditBatch:async(_,next,auditKey,event)=>{updates=next;if(transaction)auditCommitted={auditKey,event};return transaction},appendAudit:async()=>assert.fail('Phone deletion audit must be part of the atomic transaction'),safeError:()=>'',console:{error:()=>{}},req:{body:{id:'p',expectedUpdatedAt:expected}},res:{status(n){status=n;return this},json(x){result=x}}});
+  vm.runInContext(handler,context);await vm.runInContext('adminDeletePhoneNumber(req,res)',context);return {status,result,updates,auditCommitted};
 }
 
 test('phone deletion stages inventory, workspace and onboarding changes atomically',async()=>{
   const r=await run();assert.equal(r.status,200);assert.deepEqual(Array.from(r.updates,x=>x.key),['phone:index','workspace:tenant','onboarding:workspace:tenant']);
-  assert.equal(r.updates[0].after.length,0);assert.equal(r.updates[1].after.phone,'');assert.equal(r.updates[2].after.checklist.phoneAssigned,false);assert.equal(r.updates[2].after.checklist.knowledgeApproved,true);assert.equal(r.audits,1);
+  assert.equal(r.updates[0].after.length,0);assert.equal(r.updates[1].after.phone,'');assert.equal(r.updates[2].after.checklist.phoneAssigned,false);assert.equal(r.updates[2].after.checklist.knowledgeApproved,true);
+  assert.equal(r.auditCommitted.auditKey,'audit:tenant');assert.equal(r.auditCommitted.event.action,'phone_routing_delete');
 });
 
 test('stale, concurrent and malformed phone deletions fail without writing an audit event',async()=>{
-  for(const [options,want] of [[{expected:9},409],[{transaction:false},409],[{malformed:true},503]]){const r=await run(options);assert.equal(r.status,want);assert.equal(r.audits,0)}
+  for(const [options,want] of [[{expected:9},409],[{transaction:false},409],[{malformed:true},503]]){const r=await run(options);assert.equal(r.status,want);assert.equal(r.auditCommitted,null)}
 });
 
 test('client sends the phone revision and updates local inventory after confirmed deletion',()=>{

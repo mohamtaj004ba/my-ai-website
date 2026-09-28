@@ -8,9 +8,9 @@ const handler=source.slice(source.indexOf('async function adminSavePhoneNumber('
 async function run({transaction=true,move=false,transfer='5095550123',label='Updated'}={}){
   const phone={id:'p',number:'5095550100',workspaceId:'old',transferNumber:'5095550123',label:'Original',updatedAt:10,providerId:'preserved'};
   const records={'phone:index':[phone],'workspace:old':{name:'Original',phone:phone.number},'workspace:new':{name:'New'},'onboarding:workspace:old':{checklist:{phoneAssigned:true,knowledgeApproved:true}},'onboarding:workspace:new':{checklist:{phoneAssigned:false}},'agent:old':{transferNumber:phone.transferNumber,updatedAt:10},'agent:new':{transferNumber:'',providerId:'keep',updatedAt:10},'routing-request:new':{transferNumber:''}};
-  let status=200,result,updates,audits=0;
-  const ctx=vm.createContext({voiceStatus,requireAdmin:async()=>({email:'qa@test.invalid'}),crypto:{randomUUID:()=> 'new'},process:{env:{}},kv:{get:async key=>records[key],set:()=>assert.fail('No independent writes or rollback allowed')},compareAndSetConfig:async(_,u)=>{updates=u;if(transaction==='error')throw Error('network');return transaction},appendAudit:async()=>audits++,safeError:()=>'',console:{error:()=>{}},req:{body:{id:'p',number:phone.number,workspaceId:move?'new':'old',transferNumber:transfer,label,expectedUpdatedAt:10}},res:{status(n){status=n;return this},json(x){result=x}}});
-  vm.runInContext(handler,ctx);await vm.runInContext('adminSavePhoneNumber(req,res)',ctx);return {status,result,updates,audits};
+  let status=200,result,updates,auditCommitted=null;
+  const ctx=vm.createContext({voiceStatus,requireAdmin:async()=>({email:'qa@test.invalid',workspaceId:'admin-home'}),crypto:{randomUUID:()=> 'new'},process:{env:{}},Date,kv:{get:async key=>records[key],set:()=>assert.fail('No independent writes or rollback allowed')},compareAndAuditBatch:async(_,u,auditKey,event)=>{updates=u;if(transaction==='error')throw Error('network');if(transaction)auditCommitted={auditKey,event};return transaction},appendAudit:async()=>assert.fail('Phone audit must be part of the atomic transaction'),safeError:()=>'',console:{error:()=>{}},req:{body:{id:'p',number:phone.number,workspaceId:move?'new':'old',transferNumber:transfer,label,expectedUpdatedAt:10}},res:{status(n){status=n;return this},json(x){result=x}}});
+  vm.runInContext(handler,ctx);await vm.runInContext('adminSavePhoneNumber(req,res)',ctx);return {status,result,updates,auditCommitted};
 }
 test('admin reassignment stages both workspaces, onboarding, inventory and target routing atomically',async()=>{
   const r=await run({move:true});assert.equal(r.status,200);const byKey=Object.fromEntries(r.updates.map(x=>[x.key,x]));
@@ -19,8 +19,9 @@ test('admin reassignment stages both workspaces, onboarding, inventory and targe
   assert.equal(byKey['agent:new'].after.transferNumber,'5095550123');assert.equal(byKey['agent:new'].after.providerId,'keep');assert.equal(byKey['routing-request:new'].after.transferNumber,'5095550123');assert.equal(r.result.number.providerId,'preserved');
 });
 test('admin label-only save does not invalidate an unchanged receptionist draft',async()=>{
-  const r=await run();assert.equal(r.status,200);assert.ok(!r.updates.some(x=>x.key==='agent:old'));assert.equal(r.result.number.label,'Updated');assert.equal(r.audits,1);
+  const r=await run();assert.equal(r.status,200);assert.ok(!r.updates.some(x=>x.key==='agent:old'));assert.equal(r.result.number.label,'Updated');
+  assert.equal(r.auditCommitted.auditKey,'audit:old');assert.equal(r.auditCommitted.event.action,'phone_routing_update');
 });
 test('admin transaction conflicts and ambiguous failures do not attempt unsafe rollback',async()=>{
-  for(const transaction of [false,'error']){const r=await run({transaction});assert.equal(r.status,transaction===false?409:503);assert.equal(r.audits,0);assert.ok(!r.result.ok)}
+  for(const transaction of [false,'error']){const r=await run({transaction});assert.equal(r.status,transaction===false?409:503);assert.equal(r.auditCommitted,null);assert.ok(!r.result.ok)}
 });

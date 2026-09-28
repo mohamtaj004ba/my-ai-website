@@ -774,14 +774,15 @@ async function adminSavePhoneNumber(req,res){
     if(savedAgent&&savedAgent.transferNumber!==transferNumber)updates.push({key:'agent:'+workspaceId,before:savedAgent,after:{...savedAgent,transferNumber,updatedAt:Math.max(Date.now(),Number(savedAgent.updatedAt||0)+1)}});
     if(routingRequest&&routingRequest.transferNumber!==transferNumber)updates.push({key:'routing-request:'+workspaceId,before:routingRequest,after:{...routingRequest,transferNumber,updatedAt:Date.now()}});
   }
+  const auditWorkspace=workspaceId||previous?.workspaceId||admin.workspaceId;
+  if(!auditWorkspace)return res.status(503).json({error:'Audit workspace is unavailable. Phone routing was not changed.'});
+  const audit={id:crypto.randomUUID(),workspaceId:auditWorkspace,actorEmail:admin.email,actorRole:'admin',action:previous?'phone_routing_update':'phone_routing_create',section:'routing',before:previous||null,after:item,meta:{agentTransferSynced:!!workspaceId},at:Date.now()};
   try{
-    if(!await compareAndSetConfig(kv,updates))return res.status(409).json({error:'Phone or workspace settings changed during this save. Refresh the inventory and reopen the record.'});
+    if(!await compareAndAuditBatch(kv,updates,'audit:'+auditWorkspace,audit))return res.status(409).json({error:'Phone or workspace settings changed during this save. Refresh the inventory and reopen the record.'});
   }catch(err){
     console.error('admin phone routing save failed',safeError(err));
-    return res.status(503).json({error:'Could not confirm that phone routing was saved. Refresh to check the saved values before retrying.'});
+    return res.status(503).json({error:'Could not confirm phone routing and audit history together. Refresh to check the saved values before retrying.'});
   }
-  const auditWorkspace=workspaceId||previous?.workspaceId||admin.workspaceId;
-  if(auditWorkspace)await appendAudit(auditWorkspace,{actorEmail:admin.email,actorRole:'admin',action:previous?'phone_routing_update':'phone_routing_create',section:'routing',before:previous||null,after:item,meta:{agentTransferSynced:!!workspaceId}});
   return res.status(200).json({ok:true,number:{...item,voice:voiceStatus(item)}});
 }
 
@@ -804,13 +805,15 @@ async function adminDeletePhoneNumber(req,res){
     const checklist=onboardingBefore.checklist&&typeof onboardingBefore.checklist==='object'&&!Array.isArray(onboardingBefore.checklist)?onboardingBefore.checklist:{};
     if(checklist.phoneAssigned!==false)updates.push({key:'onboarding:workspace:'+item.workspaceId,before:onboardingBefore,after:{...onboardingBefore,checklist:{...checklist,phoneAssigned:false},updatedAt:Date.now()}});
   }
+  const auditWorkspace=item.workspaceId||admin.workspaceId;
+  if(!auditWorkspace)return res.status(503).json({error:'Audit workspace is unavailable. Phone routing was not deleted.'});
+  const audit={id:crypto.randomUUID(),workspaceId:auditWorkspace,actorEmail:admin.email,actorRole:'admin',action:'phone_routing_delete',section:'routing',before:item,after:null,at:Date.now()};
   try{
-    if(!await compareAndSetConfig(kv,updates))return res.status(409).json({error:'Phone or workspace settings changed during deletion. Refresh the inventory and review the record again.'});
+    if(!await compareAndAuditBatch(kv,updates,'audit:'+auditWorkspace,audit))return res.status(409).json({error:'Phone or workspace settings changed during deletion. Refresh the inventory and review the record again.'});
   }catch(err){
     console.error('admin phone routing delete failed',safeError(err));
-    return res.status(503).json({error:'Could not confirm that phone routing was deleted. Refresh to check the inventory before retrying.'});
+    return res.status(503).json({error:'Could not confirm phone routing deletion and audit history together. Refresh to check the inventory before retrying.'});
   }
-  if(item.workspaceId)await appendAudit(item.workspaceId,{actorEmail:admin.email,actorRole:'admin',action:'phone_routing_delete',section:'routing',before:item,after:null});
   return res.status(200).json({ok:true,deleted:{id:item.id,number:item.number}});
 }
 
