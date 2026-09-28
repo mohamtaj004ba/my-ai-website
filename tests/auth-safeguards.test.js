@@ -43,5 +43,6 @@ test('admin-generated login links never store raw bearer tokens',()=>{
   assert.ok(start>=0,'adminSendClientLogin missing');
   const end=account.indexOf('\nasync function ',start+1);
   const body=account.slice(start,end>=0?end:account.length);
-  assert.match(body,/kv\.set\(loginTokenKey\(token\)/);
+  assert.match(body,/const token=crypto\.randomBytes\(32\)\.toString\('hex'\),tokenKey=loginTokenKey\(token\)/);
+  assert.match(body,/kv\.set\(tokenKey,/);
 });
