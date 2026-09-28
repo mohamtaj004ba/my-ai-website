@@ -52,6 +52,22 @@ test('website analytics retrieves the full 2000-entry retained prospect index',a
   assert.ok(r.reads.includes('site:prospect:p1600'));
   assert.ok(r.reads.includes('site:session:s1000'));
 });
+test('de-identified prospects stay out of active Growth records but remain in aggregate conversion metrics',async()=>{
+  const now=Date.now(),prospectIds=['anon-conversion','active-lead'];
+  const records={
+    'site:prospect:anon-conversion':{id:'anon-conversion',privacyState:'deidentified',stage:'converted',convertedAt:now,updatedAt:now,monthlyValue:125,setupValue:300,source:'google'},
+    'site:prospect:active-lead':{id:'active-lead',stage:'new',updatedAt:now,name:'Active Lead',source:'website'}
+  };
+  const r=await fixture({prospectIds,records}).run();
+  assert.equal(r.code,200);
+  assert.deepEqual(r.body.analytics.prospects.map(p=>p.id),['active-lead']);
+  assert.equal(r.body.analytics.coverage.deidentifiedProspectRecords,1);
+  assert.equal(r.body.analytics.conversions,1);
+  assert.equal(r.body.analytics.funnel.converted,1);
+  assert.equal(r.body.analytics.attributedMrr,125);
+  assert.equal(r.body.analytics.attributedSetupRevenue,300);
+});
+
 test('retention-cap notice is reported at the supported 2000 prospect limit',async()=>{
   const now=Date.now();
   const prospectIds=Array.from({length:2000},(_,i)=>'p'+i);
