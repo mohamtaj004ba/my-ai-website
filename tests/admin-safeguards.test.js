@@ -170,11 +170,15 @@ test('manual stage label cannot bypass verified client launch',()=>{
   assert.match(body,/if\(stage==='Live'\)/);
   assert.match(body,/canManuallyMarkLive\(\{workspace:ws,onboarding\}\)/);
 });
-test('onboarding status persists before email notification and warns on delivery failure',()=>{
+test('onboarding status and workspace activation commit with audit before email notification',()=>{
   const start=src.indexOf('async function adminProvisioningChecklistSave');
   const end=src.indexOf('\nasync function ',start+1);
   const body=src.slice(start,end>=0?end:src.length);
-  assert.ok(body.indexOf('await kv.set(key,next);')<body.indexOf('try{await sendMail(mailNotification)}'));
+  assert.match(body,/updates=\[\{key,before:rawState,after:next\}\]/);
+  assert.match(body,/if\(workspaceAfter\)updates\.push\(\{key:wsKey,before:ws,after:workspaceAfter\}\)/);
+  assert.match(body,/compareAndAuditBatch\(kv,updates,'audit:'\+id,audit\)/);
+  assert.ok(body.indexOf("compareAndAuditBatch(kv,updates,'audit:'+id,audit)")<body.indexOf('try{await sendMail(mailNotification)}'));
+  assert.doesNotMatch(body,/await kv\.set\(key,next\)|await kv\.set\(wsKey/);
   assert.match(body,/warning='The setup status was saved/);
   assert.match(body,/onboarding_email_failed/);
 });

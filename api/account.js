@@ -1808,7 +1808,9 @@ async function adminProvisioningChecklistSave(req,res){
   const allowed=new Set(['adminReview','testCall','clientApproval','live']);
   if(!id||!allowed.has(field))return res.status(400).json({error:'Invalid provisioning checklist update'});
   const wsKey='workspace:'+id,ws=await kv.get(wsKey);if(!ws)return res.status(404).json({error:'Client not found'});
-  const key='onboarding:workspace:'+id,state=await kv.get(key)||{workspaceId:id,status:'building_review',completionPercent:100,checklist:{}};
+  const key='onboarding:workspace:'+id,rawState=await kv.get(key);
+  if(rawState!=null&&(!rawState||typeof rawState!=='object'||Array.isArray(rawState)))return res.status(503).json({error:'Onboarding state is unavailable. No changes were made.'});
+  const state=rawState||{workspaceId:id,status:'building_review',completionPercent:100,checklist:{}};
   if(state.checklist?.[field]===value)return res.status(200).json({ok:true,onboarding:state,unchanged:true});
   if(field==='adminReview'&&value&&Number(state.buildEligibleAt||0)>Date.now())return res.status(409).json({error:'The build is still in its review hold.',eligibleAt:state.buildEligibleAt});
   if(field==='adminReview'&&value&&(!state.checklist?.agreement||!state.checklist?.intake))return res.status(409).json({error:'The signed agreement and completed intake are required before build approval.'});
@@ -1827,7 +1829,7 @@ async function adminProvisioningChecklistSave(req,res){
   }
   const next={...state,checklist:{...(state.checklist||{}),phoneAssigned:!!String(ws.phone||'').trim(),[field]:value},updatedAt:Date.now(),updatedBy:admin.email};
   const to=String(ws.ownerEmail||'').trim().toLowerCase(),firstName=String(ws.ownerName||'').split(' ')[0]||'there';
-  let mailNotification=null;
+  let mailNotification=null,workspaceAfter=null;
   if(field==='adminReview'&&value){
     next.status='qa_complete';next.adminReviewedAt=Date.now();
     if(to){const emailBody=lifecycleEmail({
@@ -1874,7 +1876,7 @@ async function adminProvisioningChecklistSave(req,res){
     });mailNotification={to,subject:'CallerCore is preparing your launch',...emailBody};}
   }
   if(field==='live'&&value){
-    next.status='live';next.liveAt=Date.now();await kv.set(wsKey,{...ws,status:'active',updatedAt:Date.now()});
+    next.status='live';next.liveAt=Date.now();workspaceAfter={...ws,status:'active',updatedAt:Date.now()};
     if(to){const emailBody=lifecycleEmail({
       preheader:'Your CallerCore AI receptionist is now live.',
       eyebrow:'YOU’RE LIVE',
@@ -1888,17 +1890,23 @@ async function adminProvisioningChecklistSave(req,res){
       siteUrl:requestOrigin(req)
     });mailNotification={to,subject:'CallerCore is live',...emailBody};}
   }else if(field==='live'&&!value&&state.status==='live'){
-    next.status='ready';await kv.set(wsKey,{...ws,status:'onboarding',updatedAt:Date.now()});
+    next.status='ready';workspaceAfter={...ws,status:'onboarding',updatedAt:Date.now()};
   }
-  await kv.set(key,next);
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'provisioning_checklist',section:'workspace',meta:{field,value}});
+  const updates=[{key,before:rawState,after:next}];
+  if(workspaceAfter)updates.push({key:wsKey,before:ws,after:workspaceAfter});
+  const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'provisioning_checklist',section:'workspace',
+    before:{status:state.status||'',field:state.checklist?.[field]===true},after:{status:next.status||'',field:value},meta:{field,value},at:Date.now()};
+  try{
+    if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit))return res.status(409).json({error:'Onboarding or workspace status changed during this update. Refresh onboarding before retrying.'});
+  }catch(err){console.error('provisioning checklist save failed',safeError(err));return res.status(503).json({error:'Could not confirm onboarding status and audit history together. Refresh onboarding before retrying.'})}
   let warning='';
   if(mailNotification){
     try{await sendMail(mailNotification)}
     catch(err){
       warning='The setup status was saved, but the client notification email could not be delivered. Please retry the notification manually.';
       console.error('Onboarding stage email delivery failed',safeError(err));
-      await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'onboarding_email_failed',section:'onboarding',meta:{field}});
+      try{await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'onboarding_email_failed',section:'onboarding',meta:{field}})}
+      catch(auditErr){console.error('Onboarding email failure audit failed',safeError(auditErr))}
     }
   }
   return res.status(200).json({ok:true,onboarding:next,warning});
