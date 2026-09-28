@@ -5,10 +5,12 @@ const vm=require('node:vm');
 const purgeState=require('../lib/purge-state');
 
 const source=fs.readFileSync('api/account.js','utf8');
+const restoreBegin=source.indexOf('async function adminRestoreDeletedClient(');
+const restoreEnd=source.indexOf('\nasync function setRetentionRecord(',restoreBegin);
 const begin=source.indexOf('async function setRetentionRecord(');
 const finish=source.indexOf('\nasync function adminTechSupport(',begin);
-assert.ok(begin>=0&&finish>begin);
-const code=source.slice(begin,finish);
+assert.ok(restoreBegin>=0&&restoreEnd>restoreBegin&&begin>=0&&finish>begin);
+const code=source.slice(restoreBegin,restoreEnd)+'\n'+source.slice(begin,finish);
 
 function same(a,b){return JSON.stringify(a??null)===JSON.stringify(b??null)}
 function fixture({failConversationsOnce=false,foreignStripe=false}={}){
