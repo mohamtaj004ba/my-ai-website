@@ -38,6 +38,15 @@ test('prospect edit requires displayed revision and compares full snapshot befor
   assert.equal(good.auditEvent.after.name,undefined);
 
 });
+test('de-identified prospects cannot be reopened for editing',async()=>{
+  const stored={id:'lead-1',stage:'converted',privacyState:'deidentified',updatedAt:10};
+  const r=await backend({id:'lead-1',expectedUpdatedAt:10,name:'Should not save'},{stored}).run();
+  assert.equal(r.code,410);
+  assert.match(r.result.error,/de-identified/);
+  assert.equal(r.calls,0);
+  assert.equal(r.plainWrites,0);
+});
+
 test('concurrent prospect change and uncertain write reject without claiming success',async()=>{
   const conflict=await backend({id:'lead-1',expectedUpdatedAt:10,stage:'qualified'},{commit:false}).run();
   assert.equal(conflict.code,409);assert.equal(conflict.plainWrites,0);
