@@ -477,6 +477,19 @@ async function runClientInteractions(page){
 }
 
 async function runAdminInteractions(page){
+  await page.waitForFunction(()=>typeof adminMonthlyKpiStatus!=='undefined'&&adminMonthlyKpiStatus?.ok===true,{timeout:20000});
+  const monthlyStatus=await page.evaluate(()=>JSON.parse(JSON.stringify(adminMonthlyKpiStatus)));
+  const allowedStatusKeys=new Set(['ok','month','recordedAt','saved','cached','degraded','coverage','issues']);
+  if(!monthlyStatus.month||!Number(monthlyStatus.recordedAt)||Object.keys(monthlyStatus).some(key=>!allowedStatusKeys.has(key)))throw new Error('Monthly KPI background refresh exposed an invalid status shape');
+  if(!monthlyStatus.coverage||typeof monthlyStatus.coverage!=='object'||Array.isArray(monthlyStatus.coverage)||!Array.isArray(monthlyStatus.issues))throw new Error('Monthly KPI background refresh omitted coverage metadata');
+  if(['mrr','arr','planMix','callOutcomes','setupRevenue','sessions','visitors','leads'].some(key=>Object.prototype.hasOwnProperty.call(monthlyStatus,key)))throw new Error('Monthly KPI background refresh exposed aggregate KPI values to the maintenance response');
+  const rollupHealthResponse=await page.request.get(baseURL+'/api/account?action=admin-system-health');
+  if(!rollupHealthResponse.ok())throw new Error('System Health could not verify monthly KPI rollup status');
+  const rollupHealth=(await rollupHealthResponse.json()).services?.find(service=>service.key==='analytics-rollup');
+  if(!rollupHealth||!['operational','warning'].includes(rollupHealth.status)||rollupHealth.meta?.month!==monthlyStatus.month||!Array.isArray(rollupHealth.meta?.incompleteSources))throw new Error('System Health did not expose the current monthly KPI rollup');
+  if(rollupHealth.meta.incompleteSources.includes('paymentFailures')!==true)throw new Error('System Health falsely claims durable payment-failure rollup coverage');
+  report.admin.interactions.push('background monthly KPI rollup + privacy-safe coverage health');
+
   await ensureView(page,'phones');
   const initialPhones=await page.locator('#phoneTable [data-edit-phone]').count();
   if(initialPhones<1)throw new Error('Phone inventory has no seeded numbers');
