@@ -1704,6 +1704,21 @@ document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{
 
 let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
 let adminProvisioningStagePending=new Set(),adminOnboardingInvitePending=new Set();
+let adminMonthlyKpiStatus=null;
+async function refreshAdminMonthlyKpi(){
+  try{
+    const response=await fetch('/api/account?action=admin-monthly-kpi-refresh',{method:'POST',headers:{Accept:'application/json'},cache:'no-store'}),
+      data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.monthlyKpi||typeof data.monthlyKpi!=='object'||Array.isArray(data.monthlyKpi)){
+      adminMonthlyKpiStatus={ok:false,error:String(data.error||'Monthly analytics rollup refresh failed').slice(0,200)};return false;
+    }
+    adminMonthlyKpiStatus={ok:true,...data.monthlyKpi};adminDataSyncAt.monthlyKpi=Date.now();return true;
+  }catch(err){
+    console.warn('Monthly KPI refresh failed');
+    adminMonthlyKpiStatus={ok:false,error:'Monthly analytics rollup refresh failed'};return false;
+  }
+}
+
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -1725,7 +1740,7 @@ async function bootstrapAdmin(){
         applyUserProfile(data.user||{},data.workspace||{});
       }
     }
-    renderAdmin();await loadAdminOps();initAdminLiveRefresh();
+    renderAdmin();await loadAdminOps();void refreshAdminMonthlyKpi();initAdminLiveRefresh();
     const qp=new URLSearchParams(location.search);
     if(qp.get('gmail')){showView('inbox');await loadAdminInbox();history.replaceState({},'',location.pathname)}
     return true;
