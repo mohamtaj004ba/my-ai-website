@@ -1619,10 +1619,17 @@ async function adminSendClientLogin(req,res){
   const email=cleanEmail(ws.ownerEmail||'');if(!email)return res.status(409).json({error:'Client has no owner email'});
   const member=await kv.get('user:email:'+email);
   if(!member||member.workspaceId!==id)return res.status(409).json({error:'Client access mapping is broken. Repair access first.'});
-  const token=crypto.randomBytes(32).toString('hex');
-  await kv.set(loginTokenKey(token),{email,workspaceId:id,role:member.role||'owner',next:'/dashboard',authVersion:Number(member.sessionVersion||0)},{ex:15*60});
+  const authVersion=Number(member.sessionVersion||0);
+  if(!Number.isSafeInteger(authVersion)||authVersion<0)return res.status(503).json({error:'Client session revision is unavailable. No sign-in link was created.'});
+  const token=crypto.randomBytes(32).toString('hex'),tokenKey=loginTokenKey(token);
+  try{
+    await kv.set(tokenKey,{email,workspaceId:id,role:member.role||'owner',next:'/dashboard',authVersion},{ex:15*60});
+  }catch(err){
+    console.error('admin login link storage failed',safeError(err));
+    return res.status(503).json({error:'Could not create a secure sign-in link. No email was sent.'});
+  }
   const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
-  {const emailBody=authEmail({
+  const emailBody=authEmail({
     preheader:'CallerCore support sent you a secure sign-in link.',
     title:'Your secure sign-in link',
     intro:'CallerCore support created a secure sign-in link for your account.',
@@ -1632,10 +1639,20 @@ async function adminSendClientLogin(req,res){
     ctaLabel:'Sign in to CallerCore',
     ctaUrl:link,
     siteUrl:requestOrigin(req)
-  });await sendMail({to:email,subject:'Your CallerCore sign-in link',...emailBody});}
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'login_link_sent',section:'access',meta:{recipient:email}});
-  return res.status(200).json({ok:true,email});
+  });
+  try{
+    await sendMail({to:email,subject:'Your CallerCore sign-in link',...emailBody});
+  }catch(err){
+    console.error('admin login link delivery uncertain',safeError(err));
+    try{await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'login_link_delivery_uncertain',section:'access',meta:{recipient:email,expiresMinutes:15}})}catch(auditErr){console.error('admin login link uncertainty audit failed',safeError(auditErr))}
+    return res.status(503).json({error:'Could not confirm sign-in email delivery. The temporary link expires in 15 minutes; check provider delivery status before generating another link.'});
+  }
+  let warning='';
+  try{await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'login_link_sent',section:'access',meta:{recipient:email}})}
+  catch(err){console.error('admin login link audit failed',safeError(err));warning='The sign-in email was sent, but its audit entry could not be recorded automatically. Review audit storage before sending another link.'}
+  return res.status(200).json({ok:true,email,warning});
 }
+
 async function adminForceLogout(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).id||'').slice(0,80),ws=await kv.get('workspace:'+id);
