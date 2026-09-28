@@ -1,5 +1,6 @@
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('fs');const path=require('path');
 const src=fs.readFileSync(path.join(__dirname,'..','api','account.js'),'utf8');
+const {WORKSPACE_RETENTION_MS,OPERATIONAL_RETENTION_MS}=require('../lib/purge-state');
 
 test('raw workspace override protects owner email and CallerCore phone',()=>{
   assert.match(src,/Owner email is protected\. Use Repair access mapping instead\./);
@@ -86,9 +87,9 @@ test('production readiness requires checkout plus owner-confirmed launch gates',
 test('privacy purge preserves policy-required support and audit archives separately',()=>{
   assert.match(src,/retention:support:/);
   assert.match(src,/retention:audit:/);
-  assert.match(src,/365\*2/);
+  assert.equal(OPERATIONAL_RETENTION_MS,2*365*24*60*60*1000);
   assert.match(src,/retention:workspace:/);
-  assert.match(src,/365\*7/);
+  assert.equal(WORKSPACE_RETENTION_MS,7*365*24*60*60*1000);
 });
 
 test('platform settings persist launch confirmations without dropping existing gates',()=>{
