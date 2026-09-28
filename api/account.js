@@ -16,6 +16,7 @@ const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAuditBatch,compareAndAuditEventsBatch}=require('../lib/config-transaction');
 const {recordFinanceSnapshot}=require('../lib/finance-history');
 const {prependAuditEvent}=require('../lib/audit-log');
+const {addBoundedIds}=require('../lib/bounded-id-set');
 const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
 const {readConversationDirectory,readConversationPage,readConversation,readContactConversations,readAllConversations,publishNormalizedConversations,deleteNormalizedConversations}=require('../lib/conversation-store');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
@@ -2102,10 +2103,9 @@ async function getNotificationReadSet(scope,email,workspaceId=''){
   return new Set(Array.isArray(raw)?raw:[]);
 }
 async function saveNotificationReadSet(scope,email,workspaceId,ids){
-  const list=[...new Set(ids)].slice(-2000);
+  // Merge server-side so concurrent tabs cannot overwrite each other's read receipts.
   // Admin notifications can exceed 500 active items (across up to 300 indexed workspaces).
-  // Retain enough read receipts for the bounded currently generated set so Read all persists.
-  await kv.set(notificationReadKey(scope,email,workspaceId),list,{ex:60*60*24*365});
+  await addBoundedIds(kv,notificationReadKey(scope,email,workspaceId),ids,{limit:2000,ttlSeconds:60*60*24*365});
 }
 function notificationItem(id,{title='',body='',kind='info',view='overview',createdAt=Date.now(),meta={}}={}){
   return {id,title,body,kind,view,createdAt,meta};
@@ -2341,8 +2341,8 @@ async function notificationsRead(req,res){
   else{sessionData=await requireSession(req,res);if(!sessionData)return}
   const ids=Array.isArray(req.body?.ids)?req.body.ids.map(x=>String(x).slice(0,220)).filter(Boolean):[];
   const workspaceId=scope==='client'?sessionData.workspaceId:'';
-  const read=await getNotificationReadSet(scope,sessionData.email,workspaceId);ids.forEach(id=>read.add(id));
-  await saveNotificationReadSet(scope,sessionData.email,workspaceId,[...read]);
+  try{await saveNotificationReadSet(scope,sessionData.email,workspaceId,ids)}
+  catch(err){console.error('notification read state save failed',safeError(err));return res.status(503).json({error:'Could not save notification read state. Refresh notifications before retrying.'})}
   return res.status(200).json({ok:true});
 }
 async function notificationsReadAll(req,res){
@@ -2352,8 +2352,8 @@ async function notificationsReadAll(req,res){
   else{sessionData=await requireSession(req,res);if(!sessionData)return}
   const items=scope==='admin'?await buildAdminNotifications(sessionData):await buildClientNotifications(sessionData);
   const workspaceId=scope==='client'?sessionData.workspaceId:'';
-  const read=await getNotificationReadSet(scope,sessionData.email,workspaceId);
-  items.forEach(x=>read.add(x.id));await saveNotificationReadSet(scope,sessionData.email,workspaceId,[...read]);
+  try{await saveNotificationReadSet(scope,sessionData.email,workspaceId,items.map(x=>x.id))}
+  catch(err){console.error('notification read-all state save failed',safeError(err));return res.status(503).json({error:'Could not save notification read state. Refresh notifications before retrying.'})}
   return res.status(200).json({ok:true});
 }
 
@@ -2949,8 +2949,10 @@ async function callViewedMark(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
   const callId=String((req.body||{}).callId||'').slice(0,120);if(!callId)return res.status(400).json({error:'Call ID is required'});
   const calls=await kv.get('calls:'+s.workspaceId)||[];if(!Array.isArray(calls)||!calls.some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
-  const key=callViewedKey(s.workspaceId,s.email),current=await kv.get(key)||[],set=new Set(Array.isArray(current)?current.map(String):[]);set.add(callId);
-  const next=[...set].slice(-2000);await kv.set(key,next);return res.status(200).json({ok:true});
+  const key=callViewedKey(s.workspaceId,s.email);
+  try{await addBoundedIds(kv,key,[callId],{limit:2000})}
+  catch(err){console.error('call viewed state save failed',safeError(err));return res.status(503).json({error:'Could not save call read state. Refresh calls before retrying.'})}
+  return res.status(200).json({ok:true});
 }
 
 async function clientDashboardData(req,res){
