@@ -422,6 +422,7 @@ async function adminUpdateClient(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Client id required'});
   const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(ws.status==='pending_deletion')return res.status(409).json({error:'This workspace is pending deletion. Use the recovery action instead of editing account status.'});
   if(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(ws.updatedAt||ws.createdAt||0))return res.status(409).json({error:'This workspace changed while you were editing. Reopen it to load the latest account settings.'});
   const next={...ws};
   if(body.status!==undefined){
@@ -1981,6 +1982,7 @@ async function adminClient(req,res){
     id:ws.id,name:ws.name,plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',
     subscriptionStatus:ws.subscriptionStatus||'active',ownerEmail:ws.ownerEmail||'',
     createdAt:ws.createdAt||null,updatedAt:ws.updatedAt||ws.createdAt||null,
+    deletion:ws.status==='pending_deletion'?{requestedAt:ws.deletionRequestedAt||null,purgeEligibleAt:ws.purgeEligibleAt||null,preDeletionStatus:ws.preDeletionStatus||''}:null,
     phone:ws.phone||'',industry:ws.industry||'',usage:ws.usage||{minutes:0},
     stripe:{customerLinked:!!ws.stripeCustomerId,subscriptionLinked:!!ws.stripeSubscriptionId},
     agent:agent||null,phoneRouting:phone?{number:phone.number||'',provider:phone.provider||'',transferConfigured:!!phone.transferNumber,status:phone.status||'configured',voice:voiceStatus(phone)}:null,
