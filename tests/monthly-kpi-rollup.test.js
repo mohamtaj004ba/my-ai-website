@@ -1,7 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {
-  MONTHLY_KPI_INDEX_KEY,MAX_MONTHLY_KPI_MONTHS,monthKey,sanitizeMonthlyKpiSnapshot,
+  MONTHLY_KPI_INDEX_KEY,MAX_MONTHLY_KPI_MONTHS,COVERAGE_FIELDS,monthKey,sanitizeMonthlyKpiSnapshot,
   monthlyKpiStorageKey,recordMonthlyKpiSnapshot
 }=require('../lib/monthly-kpi-rollup');
 
@@ -24,7 +24,7 @@ function storeFixture(initial={}){
 function sample(overrides={}){
   return {month:'2026-09',recordedAt:1000,sessions:120,visitors:90,pageViews:400,leads:20,conversions:5,conversionRate:25,
     mrr:1995,arr:23940,setupRevenue:2500,churnedClients:1,calls:300,minutes:2500,appointments:44,transfers:22,paymentFailures:2,supportTickets:9,
-    planMix:{Starter:2,Growth:3,Pro:1},callOutcomes:{resolvedByAi:100,requestCaptured:40,messageTaken:30,transferred:22,escalated:5,incomplete:2,nonCustomer:10},...overrides};
+    planMix:{Starter:2,Growth:3,Pro:1},callOutcomes:{resolvedByAi:100,requestCaptured:40,messageTaken:30,transferred:22,escalated:5,incomplete:2,nonCustomer:10},coverage:{websiteEvents:true,websiteSessions:true,websiteVisitors:true,leadPipeline:true,workspaces:true,churn:true,calls:true,callMinutes:true,callOutcomes:true,appointments:true,support:true,paymentFailures:false},...overrides};
 }
 
 test('monthly KPI snapshots accept only aggregate-safe schema and normalized values',()=>{
@@ -34,6 +34,15 @@ test('monthly KPI snapshots accept only aggregate-safe schema and normalized val
   for(const forbidden of ['email','phone','workspaceId','visitorId','sessionId','name','notes','transcript','message']){
     assert.throws(()=>sanitizeMonthlyKpiSnapshot({...sample(),[forbidden]:'private'}),/Unexpected monthly KPI field/);
   }
+});
+
+test('monthly KPI snapshots preserve unknown metrics as null and normalize fixed coverage flags',()=>{
+  const s=sanitizeMonthlyKpiSnapshot(sample({paymentFailures:null,churnedClients:null,conversionRate:null,planMix:null,callOutcomes:null,coverage:{workspaces:true,paymentFailures:false}}));
+  assert.equal(s.paymentFailures,null);assert.equal(s.churnedClients,null);assert.equal(s.conversionRate,null);
+  assert.equal(s.planMix,null);assert.equal(s.callOutcomes,null);
+  assert.equal(s.coverage.workspaces,true);assert.equal(s.coverage.paymentFailures,false);
+  for(const key of COVERAGE_FIELDS)assert.equal(typeof s.coverage[key],'boolean',key);
+  assert.throws(()=>sanitizeMonthlyKpiSnapshot(sample({coverage:{workspaceEmails:true}})),/Unexpected monthly KPI coverage key/);
 });
 
 test('monthly KPI snapshot rejects free-form dimensions and invalid counts',()=>{
