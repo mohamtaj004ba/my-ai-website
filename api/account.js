@@ -448,33 +448,75 @@ async function adminDeleteClient(req,res){
   if(!id)return res.status(400).json({error:'Client id required'});
   if(id===admin.workspaceId)return res.status(409).json({error:'You cannot delete the workspace currently used by your admin account'});
   const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
-  if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled'){
+  if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled')
     return res.status(409).json({error:'This workspace has an active Stripe subscription. Cancel the subscription before scheduling deletion.'});
-  }
-  if(ws.status==='pending_deletion')return res.status(200).json({ok:true,pendingDeletion:true,purgeEligibleAt:ws.purgeEligibleAt||null});
+  if(ws.status==='pending_deletion')return res.status(200).json({ok:true,pendingDeletion:true,purgeEligibleAt:ws.purgeEligibleAt||null,client:{id,status:ws.status,updatedAt:ws.updatedAt||ws.createdAt||0,purgeEligibleAt:ws.purgeEligibleAt||null}});
+  const revision=Number(ws.updatedAt||ws.createdAt||0);
+  if(body.expectedUpdatedAt===undefined||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==revision)
+    return res.status(409).json({error:'This workspace changed since you opened it. Reopen the client before scheduling deletion.'});
   const now=Date.now(),purgeEligibleAt=now+30*24*60*60*1000;
-  const next={...ws,status:'pending_deletion',deletionRequestedAt:now,purgeEligibleAt,deletionRequestedBy:admin.email,deletionReason:String(body.reason||'').trim().slice(0,500),preDeletionStatus:ws.status||'active',updatedAt:now};
-  await kv.set(key,next);
+  const next={...ws,status:'pending_deletion',deletionRequestedAt:now,purgeEligibleAt,deletionRequestedBy:admin.email,deletionReason:String(body.reason||'').trim().slice(0,500),preDeletionStatus:ws.status||'active',updatedAt:Math.max(now,revision+1)};
   const email=cleanEmail(ws.ownerEmail||''),memberKey=email?'user:email:'+email:'',member=memberKey?await kv.get(memberKey):null;
-  if(member&&member.workspaceId===id)await kv.set(memberKey,{...member,disabled:true,sessionVersion:Number(member.sessionVersion||0)+1});
-  try{if(email)await disconnectGmail(email)}catch(_){}
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'deletion_scheduled',section:'privacy',before:{status:ws.status||'active'},after:{status:'pending_deletion',purgeEligibleAt},meta:{reason:next.deletionReason}});
-  return res.status(200).json({ok:true,pendingDeletion:true,purgeEligibleAt});
+  const mappingMatches=!!member&&member.workspaceId===id,updates=[{key,before:ws,after:next}];
+  let disabledMember=null;
+  if(mappingMatches){
+    const sessionVersion=Number(member.sessionVersion||0);
+    if(!Number.isSafeInteger(sessionVersion)||sessionVersion<0||sessionVersion>=Number.MAX_SAFE_INTEGER)
+      return res.status(503).json({error:'Client session revision is unavailable. Deletion was not scheduled.'});
+    disabledMember={...member,disabled:true,sessionVersion:sessionVersion+1};
+    updates.push({key:memberKey,before:member,after:disabledMember});
+  }
+  const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'deletion_scheduled',section:'privacy',
+    before:{status:ws.status||'active',ownerAccess:mappingMatches?{disabled:!!member.disabled,sessionVersion:Number(member.sessionVersion||0)}:null},
+    after:{status:'pending_deletion',purgeEligibleAt,ownerAccess:disabledMember?{disabled:true,sessionVersion:disabledMember.sessionVersion}:null},
+    meta:{reason:next.deletionReason,ownerMapping:mappingMatches?'matched':member?'conflict':'missing'},at:now};
+  try{
+    if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit))
+      return res.status(409).json({error:'Workspace or owner access changed while scheduling deletion. Reopen the client before retrying.'});
+  }catch(err){console.error('admin client deletion schedule failed',safeError(err));return res.status(503).json({error:'Could not confirm deletion scheduling, access revocation and audit together. Reopen the client before retrying.'})}
+  let warning='';
+  if(email&&(!member||mappingMatches)){
+    try{await disconnectGmail(email)}
+    catch(err){console.error('admin client deletion Gmail disconnect failed',safeError(err));warning='Deletion is scheduled, but the connected Gmail session could not be disconnected automatically. Review provider access before permanent purge.'}
+  }else if(email&&member&&!mappingMatches){
+    warning='Deletion is scheduled. The owner email maps to another workspace, so CallerCore did not disconnect that email’s Gmail connection. Review access diagnostics.';
+  }
+  return res.status(200).json({ok:true,pendingDeletion:true,purgeEligibleAt,warning,client:{id,status:'pending_deletion',updatedAt:next.updatedAt,purgeEligibleAt}});
 }
 
 async function adminRestoreDeletedClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const id=String((req.body||{}).id||'').slice(0,80),key='workspace:'+id,ws=await kv.get(key);
+  const body=req.body||{},id=String(body.id||'').slice(0,80),key='workspace:'+id,ws=await kv.get(key);
   if(!ws)return res.status(404).json({error:'Client not found'});
   if(ws.status!=='pending_deletion')return res.status(409).json({error:'Workspace is not pending deletion'});
-  const restoredStatus=['active','onboarding','suspended'].includes(ws.preDeletionStatus)?ws.preDeletionStatus:'suspended';
-  const next={...ws,status:restoredStatus,updatedAt:Date.now()};
+  const revision=Number(ws.updatedAt||ws.createdAt||0);
+  if(body.expectedUpdatedAt===undefined||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==revision)
+    return res.status(409).json({error:'This pending-deletion workspace changed since you opened it. Refresh before restoring.'});
+  const restoredStatus=['active','onboarding','suspended'].includes(ws.preDeletionStatus)?ws.preDeletionStatus:'suspended',now=Date.now();
+  const next={...ws,status:restoredStatus,updatedAt:Math.max(now,revision+1)};
   delete next.deletionRequestedAt;delete next.purgeEligibleAt;delete next.deletionRequestedBy;delete next.deletionReason;delete next.preDeletionStatus;
-  await kv.set(key,next);
   const email=cleanEmail(ws.ownerEmail||''),memberKey=email?'user:email:'+email:'',member=memberKey?await kv.get(memberKey):null;
-  if(member&&member.workspaceId===id)await kv.set(memberKey,{...member,disabled:false,sessionVersion:Number(member.sessionVersion||0)+1});
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'deletion_restored',section:'privacy',before:{status:'pending_deletion'},after:{status:restoredStatus}});
-  return res.status(200).json({ok:true,status:restoredStatus});
+  const mappingMatches=!!member&&member.workspaceId===id,updates=[{key,before:ws,after:next}];
+  let enabledMember=null;
+  if(mappingMatches){
+    const sessionVersion=Number(member.sessionVersion||0);
+    if(!Number.isSafeInteger(sessionVersion)||sessionVersion<0||sessionVersion>=Number.MAX_SAFE_INTEGER)
+      return res.status(503).json({error:'Client session revision is unavailable. Workspace restoration was not committed.'});
+    enabledMember={...member,disabled:false,sessionVersion:sessionVersion+1};
+    updates.push({key:memberKey,before:member,after:enabledMember});
+  }
+  const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'deletion_restored',section:'privacy',
+    before:{status:'pending_deletion',ownerAccess:mappingMatches?{disabled:!!member.disabled,sessionVersion:Number(member.sessionVersion||0)}:null},
+    after:{status:restoredStatus,ownerAccess:enabledMember?{disabled:false,sessionVersion:enabledMember.sessionVersion}:null},
+    meta:{ownerMapping:mappingMatches?'matched':member?'conflict':'missing'},at:now};
+  try{
+    if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit))
+      return res.status(409).json({error:'Workspace or owner access changed during restoration. Refresh before retrying.'});
+  }catch(err){console.error('admin client restore failed',safeError(err));return res.status(503).json({error:'Could not confirm workspace restoration, access state and audit together. Refresh before retrying.'})}
+  const warning=mappingMatches?'':member
+    ?'Workspace restored, but the owner email maps to another workspace. Repair access mapping before sending a login link.'
+    :'Workspace restored, but no owner access mapping exists. Repair access mapping before sending a login link.';
+  return res.status(200).json({ok:true,status:restoredStatus,warning,accessNeedsRepair:!mappingMatches,client:{id,status:restoredStatus,updatedAt:next.updatedAt}});
 }
 
 async function adminPurgeClient(req,res){
