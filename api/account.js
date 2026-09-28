@@ -2717,12 +2717,16 @@ async function updateAppointment(req,res){
   const id=String((req.body||{}).id||'').slice(0,120);
   const status=String((req.body||{}).status||'').slice(0,40);
   if(!id||!['Scheduled','Confirmed','Completed','Canceled'].includes(status))return res.status(400).json({error:'Invalid appointment update'});
-  const key='appointments:'+access.session.workspaceId;
-  const items=await kv.get(key)||[];if(!Array.isArray(items))return res.status(500).json({error:'Appointment data is unavailable'});
-  let updated=false;const next=items.map(item=>item&&String(item.id)===id?(updated=true,{...item,status,updatedAt:Date.now()}):item);
-  if(!updated)return res.status(404).json({error:'Appointment not found'});
-  await kv.set(key,next);
-  return res.status(200).json({ok:true,updated:true});
+  const key='appointments:'+access.session.workspaceId,rawItems=await kv.get(key);
+  if(rawItems!=null&&!Array.isArray(rawItems))return res.status(503).json({error:'Appointment data is unavailable. No changes were made.'});
+  const items=rawItems||[],index=items.findIndex(item=>item&&String(item.id)===id);
+  if(index<0)return res.status(404).json({error:'Appointment not found'});
+  const previous=items[index],updated={...previous,status,updatedAt:Math.max(Date.now(),Number(previous.updatedAt||0)+1)},next=items.slice();next[index]=updated;
+  const audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'appointment_status_update',section:'appointments',before:previous,after:updated,meta:{appointmentId:id},at:Date.now()};
+  try{
+    if(!await compareAndAudit(kv,{key,before:rawItems,after:next},'audit:'+s.workspaceId,audit))return res.status(409).json({error:'Appointments changed during this update. Reload the schedule before retrying.'});
+  }catch(err){console.error('appointment update failed',safeError(err));return res.status(503).json({error:'Could not confirm the appointment update and audit history together. Reload before retrying.'})}
+  return res.status(200).json({ok:true,updated:true,appointment:updated});
 }
 
 async function analytics(req,res){
@@ -2942,14 +2946,16 @@ async function updateLead(req,res){
   const stage=String((req.body||{}).stage||'').slice(0,40);
   const allowed=['New','Contacted','Qualified','Appointment','Won','Lost'];
   if(!id||!allowed.includes(stage))return res.status(400).json({error:'Invalid lead update'});
-  const key='leads:'+s.workspaceId;
-  const items=await kv.get(key)||[];
-  if(!Array.isArray(items))return res.status(500).json({error:'Lead data is unavailable'});
-  let updated=false;
-  const next=items.map(item=>item&&String(item.id)===id?(updated=true,{...item,stage,updatedAt:Date.now()}):item);
-  if(!updated)return res.status(404).json({error:'Lead not found'});
-  await kv.set(key,next);
-  return res.status(200).json({ok:true,updated:true});
+  const key='leads:'+s.workspaceId,rawItems=await kv.get(key);
+  if(rawItems!=null&&!Array.isArray(rawItems))return res.status(503).json({error:'Lead data is unavailable. No changes were made.'});
+  const items=rawItems||[],index=items.findIndex(item=>item&&String(item.id)===id);
+  if(index<0)return res.status(404).json({error:'Lead not found'});
+  const previous=items[index],updated={...previous,stage,updatedAt:Math.max(Date.now(),Number(previous.updatedAt||0)+1)},next=items.slice();next[index]=updated;
+  const audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'lead_stage_update',section:'leads',before:previous,after:updated,meta:{leadId:id},at:Date.now()};
+  try{
+    if(!await compareAndAudit(kv,{key,before:rawItems,after:next},'audit:'+s.workspaceId,audit))return res.status(409).json({error:'Leads changed during this update. Reload the pipeline before retrying.'});
+  }catch(err){console.error('lead stage update failed',safeError(err));return res.status(503).json({error:'Could not confirm the lead update and audit history together. Reload before retrying.'})}
+  return res.status(200).json({ok:true,updated:true,lead:updated});
 }
 
 async function billingPortal(req,res){
