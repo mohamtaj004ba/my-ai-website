@@ -635,7 +635,8 @@ async function runAdminInteractions(page){
   // diagnostics and restore POST are intercepted so QA never schedules/restores a KV record.
   await page.evaluate(async()=>{
     const id='qa-recovery-ui-only',realFetch=window.fetch,realConfirm=window.confirm,
-      realRefresh=refreshAdminCore,realOps=loadAdminOps,originalClient=currentAdminClient,originalTech=currentAdminTech;
+      realRefresh=refreshAdminCore,realOps=loadAdminOps,originalClient=currentAdminClient,originalTech=currentAdminTech,
+      drawerWasOpen=document.getElementById('adminClientDrawer')?.classList.contains('open')===true;
     let releaseRestore,restored=false;const requests=[];
     const fakeClient=()=>({id,name:'QA recovery controls (in-memory)',plan:'Starter',
       status:restored?'active':'pending_deletion',subscriptionStatus:'canceled',
@@ -670,7 +671,7 @@ async function runAdminInteractions(page){
     }finally{
       window.fetch=realFetch;window.confirm=realConfirm;refreshAdminCore=realRefresh;loadAdminOps=realOps;
       currentAdminClient=originalClient;currentAdminTech=originalTech;
-      if(originalClient?.id)await openAdminClient(originalClient.id).catch(()=>{});
+      if(drawerWasOpen&&originalClient?.id)await openAdminClient(originalClient.id).catch(()=>{});
       else closeAdminClient();
     }
   });
