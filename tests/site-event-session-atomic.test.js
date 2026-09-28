@@ -4,14 +4,22 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const crypto=require('node:crypto');
 const source=fs.readFileSync('lib/site-analytics.js','utf8');
-function fixture({forceConflicts=0,invalidEventDirectory=false,invalidSessionDirectory=false}={}){
-  const values=new Map(),events=[],index=[],attempts=[];
+function fixture({forceConflicts=0,invalidEventDirectory=false,invalidSessionDirectory=false,invalidEventHistory=false,initialEvents=[]}={}){
+  const values=new Map(),events=initialEvents.map(v=>JSON.parse(JSON.stringify(v))),index=[],attempts=[];
   let ids=0,conflicts=0;
   const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
   const kv={
     get:async key=>clone(values.get(key)??null),
     eval:async(script,keys,args)=>{
       attempts.push({script,keys:[...keys],args:[...args]});
+      if(script.includes("RPOP")){
+        if(invalidEventDirectory)return -1;
+        if(invalidEventHistory)return -2;
+        const cutoff=Number(args[0]);if(!Number.isFinite(cutoff))return -3;
+        let removed=0;
+        while(events.length&&Number(events.at(-1)?.at)<cutoff){events.pop();removed++}
+        return removed;
+      }
       if(invalidEventDirectory)return -1;
       if(invalidSessionDirectory&&args[0]==='1'&&args[4]==='1')return -2;
       if(conflicts<forceConflicts){conflicts++;return 0}
@@ -46,11 +54,38 @@ test('event append and session update share a compare-before-write Redis script'
   assert.equal(session.events,1);
   assert.deepEqual(Array.from(session.pages),['/contact']);
   assert.equal(session.visitorId,'visitor-1');
-  const script=f.attempts[0].script;
+  const pruneAttempt=f.attempts.find(x=>x.script.includes("RPOP")),appendAttempt=f.attempts.find(x=>x.script.includes("LPUSH"));
+  assert.ok(pruneAttempt);assert.ok(appendAttempt);
+  assert.ok(f.attempts.indexOf(pruneAttempt)<f.attempts.indexOf(appendAttempt));
+  const script=appendAttempt.script;
   assert.ok(script.indexOf("redis.call('GET',KEYS[2])")<script.indexOf("redis.call('LPUSH',KEYS[1]"));
   assert.ok(script.indexOf("redis.call('LPUSH',KEYS[1]")<script.indexOf("redis.call('SET',KEYS[2]"));
-  assert.match(script,/7776000/);
+  assert.match(script,/15552000/);
 });
+test('raw website events older than 180 days are pruned before a new event is published',async()=>{
+  const now=Date.now(),day=24*60*60*1000;
+  const f=fixture({initialEvents:[
+    {id:'fresh',type:'page_view',at:now-179*day},
+    {id:'stale',type:'page_view',at:now-181*day}
+  ]});
+  await f.record({type:'cta_click',label:'demo'});
+  assert.equal(f.events.length,2);
+  assert.equal(f.events[1].id,'fresh');
+  assert.ok(!f.events.some(x=>x.id==='stale'));
+  const pruneAttempt=f.attempts.find(x=>x.script.includes("RPOP"));
+  assert.ok(pruneAttempt);
+  const cutoff=Number(pruneAttempt.args[0]);
+  assert.ok(Math.abs(cutoff-(now-180*day))<2000);
+});
+
+test('malformed retained event history fails closed before a new event is appended',async()=>{
+  const f=fixture({invalidEventHistory:true,initialEvents:[{id:'existing',type:'page_view',at:Date.now()}]});
+  await assert.rejects(()=>f.record({type:'cta_click',label:'demo'}),/event history is malformed/);
+  assert.equal(f.events.length,1);
+  assert.equal(f.events[0].id,'existing');
+  assert.equal(f.attempts.filter(x=>x.script.includes("LPUSH")).length,0);
+});
+
 test('simultaneous page views retain both events, both pages and a single session index',async()=>{
   const f=fixture();
   const [a,b]=await Promise.all([
@@ -82,7 +117,8 @@ test('tracking without session ID still appends its event without a session inde
   await f.record({type:'cta_click',label:'demo'});
   assert.equal(f.events.length,1);
   assert.equal(f.index.length,0);
-  assert.equal(f.attempts[0].keys.length,1);
+  const appendAttempt=f.attempts.find(x=>x.script.includes("LPUSH"));
+  assert.equal(appendAttempt.keys.length,1);
 });
 test('conflicts exhaust before event append and malformed session records fail closed',async()=>{
   const f=fixture({forceConflicts:4});
@@ -122,7 +158,8 @@ test('malformed stored session counters or pages fail closed without logging the
 test('malformed tracking event or new-session directory cannot leave partially published data',async()=>{
   for(const [options,message] of [
     [{invalidEventDirectory:true},/event directory is malformed/],
-    [{invalidSessionDirectory:true},/session directory is malformed/]
+    [{invalidSessionDirectory:true},/session directory is malformed/],
+    [{invalidEventHistory:true},/event history is malformed/]
   ]){
     const f=fixture(options);
     await assert.rejects(()=>f.record({type:'page_view',sessionId:'new-session',path:'/'}),message);
