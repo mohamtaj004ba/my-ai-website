@@ -9,6 +9,7 @@ const {addBusinessHours}=require('../lib/business-hours');
 const {lifecycleDecision}=require('../lib/stripe-lifecycle');
 const {claimCheckoutSession,releaseCheckoutSession}=require('../lib/stripe-session-lock');
 const {recordCheckoutReconciliation,resolveCheckoutReconciliation}=require('../lib/stripe-reconciliation');
+const {ensureStripeMonthlyMetricsCoverage,recordStripePaymentFailure}=require('../lib/stripe-monthly-metrics');
 module.exports.config={api:{bodyParser:false}};
 const STRIPE_WEBHOOK_SECRET=process.env.STRIPE_WEBHOOK_SECRET;
 const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
@@ -108,6 +109,13 @@ module.exports=async function handler(req,res){
   const lifecycleEvent=['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.payment_failed','invoice.paid'].includes(event.type);
 
   if(lifecycleEvent){
+    try{
+      await ensureStripeMonthlyMetricsCoverage(kv,Date.now());
+      if(event.type==='invoice.payment_failed')await recordStripePaymentFailure(kv,event,{now:Date.now()});
+    }catch(err){
+      console.error('Stripe monthly metrics failed:',safeError(err));
+      return res.status(503).json({error:'Stripe billing metrics could not be confirmed. Retry the webhook event.'});
+    }
     const obj=event.data&&event.data.object||{};
     const subscriptionId=event.type.startsWith('customer.subscription.')?obj.id:obj.subscription;
     const customerId=obj.customer;
