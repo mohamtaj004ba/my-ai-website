@@ -17,6 +17,7 @@ const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAud
 const {recordFinanceSnapshot}=require('../lib/finance-history');
 const {prependAuditEvent}=require('../lib/audit-log');
 const {addBoundedIds}=require('../lib/bounded-id-set');
+const {WORKSPACE_RETENTION_MS,OPERATIONAL_RETENTION_MS,purgeJournalKey,purgeCompleteKey,validIdDirectory,validPurgeJournal,nextPurgeJournal,retentionTtlSeconds}=require('../lib/purge-state');
 const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
 const {readConversationDirectory,readConversationPage,readConversation,readContactConversations,readAllConversations,publishNormalizedConversations,deleteNormalizedConversations}=require('../lib/conversation-store');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
@@ -488,8 +489,10 @@ async function adminDeleteClient(req,res){
 
 async function adminRestoreDeletedClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const body=req.body||{},id=String(body.id||'').slice(0,80),key='workspace:'+id,ws=await kv.get(key);
+  const body=req.body||{},id=String(body.id||'').slice(0,80),key='workspace:'+id;
+  const [ws,purgeJournal]=await Promise.all([kv.get(key),kv.get(purgeJournalKey(id))]);
   if(!ws)return res.status(404).json({error:'Client not found'});
+  if(purgeJournal)return res.status(409).json({error:'Permanent purge has already started. This workspace can no longer be restored from the recovery window.',purgePhase:validPurgeJournal(purgeJournal,id)?purgeJournal.phase:'unknown'});
   if(ws.status!=='pending_deletion')return res.status(409).json({error:'Workspace is not pending deletion'});
   const revision=Number(ws.updatedAt||ws.createdAt||0);
   if(body.expectedUpdatedAt===undefined||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==revision)
@@ -521,52 +524,240 @@ async function adminRestoreDeletedClient(req,res){
   return res.status(200).json({ok:true,status:restoredStatus,warning,accessNeedsRepair:!mappingMatches,client:{id,status:restoredStatus,updatedAt:next.updatedAt}});
 }
 
+async function setRetentionRecord(key,value,until){
+  const ttl=retentionTtlSeconds(until);
+  await kv.set(key,value,{ex:ttl});
+  const saved=await kv.get(key);
+  if(!saved||typeof saved!=='object'||Array.isArray(saved)||String(saved.workspaceId||'')!==String(value.workspaceId||''))throw new Error('Retention record could not be confirmed');
+  return saved;
+}
+
+async function advancePurgeJournal(before,phase,extra={}){
+  const key=purgeJournalKey(before.workspaceId),after=nextPurgeJournal(before,phase,extra);
+  if(!await compareAndSetConfig(kv,[{key,before,after}]))return null;
+  return after;
+}
+
+async function loadWorkspaceSupportForPurge(id,rawIndex){
+  if(!validIdDirectory(rawIndex,2000))throw new Error('Support index is malformed or exceeds supported capacity');
+  const ids=rawIndex||[],targets=[];
+  for(let offset=0;offset<ids.length;offset+=40){
+    const batchIds=ids.slice(offset,offset+40),batch=await Promise.all(batchIds.map(ticketId=>kv.get('support:'+ticketId)));
+    for(let i=0;i<batch.length;i++){
+      const ticket=batch[i];
+      if(ticket&&typeof ticket==='object'&&!Array.isArray(ticket)&&String(ticket.workspaceId||'')===String(id))targets.push({id:batchIds[i],ticket});
+    }
+  }
+  return targets;
+}
+
 async function adminPurgeClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const body=req.body||{},id=String(body.id||'').slice(0,80),key='workspace:'+id,ws=await kv.get(key);
-  if(!ws)return res.status(404).json({error:'Client not found'});
-  if(ws.status!=='pending_deletion')return res.status(409).json({error:'Workspace must be pending deletion first'});
-  if(Date.now()<Number(ws.purgeEligibleAt||0))return res.status(409).json({error:'30-day recovery window has not ended',purgeEligibleAt:ws.purgeEligibleAt||null});
+  const body=req.body||{},id=String(body.id||'').slice(0,80);
+  if(!id)return res.status(400).json({error:'Client id required'});
   if(String(body.confirm||'')!=='DELETE '+id)return res.status(400).json({error:'Confirmation must equal DELETE '+id});
-  if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled')return res.status(409).json({error:'Active Stripe subscription blocks permanent deletion'});
-  const onboarding=await kv.get('onboarding:workspace:'+id)||{};
-  const retained={
-    workspaceId:id,businessName:ws.name||'',ownerEmail:cleanEmail(ws.ownerEmail||''),
-    stripeCustomerId:ws.stripeCustomerId||null,stripeSubscriptionId:ws.stripeSubscriptionId||null,
-    agreementVersion:onboarding.agreementVersion||'',agreementSignedAt:onboarding.agreementSignedAt||null,
-    agreementSignedName:onboarding.agreementSignedName||onboarding.agreementFullName||'',
-    deletionRequestedAt:ws.deletionRequestedAt||null,purgedAt:Date.now(),purgedBy:admin.email
-  };
-  await kv.set('retention:workspace:'+id,retained,{ex:60*60*24*365*7});
-  const index=await kv.get('workspace:index')||[];
-  await kv.set('workspace:index',(Array.isArray(index)?index:[]).filter(x=>x!==id));
-  if(ws.ownerEmail){
-    const memberKey='user:email:'+cleanEmail(ws.ownerEmail),member=await kv.get(memberKey);
-    if(member&&member.workspaceId===id)await kv.del(memberKey);
+  const journalKey=purgeJournalKey(id),completeKey=purgeCompleteKey(id);
+  const completed=await kv.get(completeKey);
+  if(completed&&typeof completed==='object'&&!Array.isArray(completed)&&String(completed.workspaceId||'')===id){
+    try{await kv.del(journalKey)}catch(_){}
+    return res.status(200).json({ok:true,alreadyPurged:true,purged:{id,name:completed.businessName||'Workspace'},retainedUntil:completed.retainedUntil||null});
   }
-  if(ws.stripeCustomerId)await kv.del('stripe:customer:'+ws.stripeCustomerId);
-  if(ws.stripeSubscriptionId)await kv.del('stripe:subscription:'+ws.stripeSubscriptionId);
-  const phoneIndex=await kv.get('phone:index')||[];
-  if(Array.isArray(phoneIndex))await kv.set('phone:index',phoneIndex.map(x=>x&&x.workspaceId===id?{...x,workspaceId:'',workspaceName:'',updatedAt:Date.now()}:x));
-  const supportIndex=await kv.get('support:index')||[],keepSupport=[],retainedSupport=[];
-  for(const ticketId of Array.isArray(supportIndex)?supportIndex:[]){
-    const ticket=await kv.get('support:'+ticketId);
-    if(ticket&&ticket.workspaceId===id){retainedSupport.push(ticket);await kv.del('support:'+ticketId)}else keepSupport.push(ticketId);
+
+  let journal=await kv.get(journalKey);
+  if(journal&&!validPurgeJournal(journal,id))return res.status(503).json({error:'Permanent purge journal is malformed. No additional data was deleted.',purgePhase:'unknown',resumable:false});
+
+  if(!journal){
+    const key='workspace:'+id,ws=await kv.get(key);
+    if(!ws)return res.status(404).json({error:'Client not found'});
+    if(ws.status!=='pending_deletion')return res.status(409).json({error:'Workspace must be pending deletion first'});
+    if(Date.now()<Number(ws.purgeEligibleAt||0))return res.status(409).json({error:'30-day recovery window has not ended',purgeEligibleAt:ws.purgeEligibleAt||null});
+    if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled')return res.status(409).json({error:'Active Stripe subscription blocks permanent deletion'});
+    const [onboarding,onboardingToken]=await Promise.all([kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
+    if(onboarding!=null&&(!onboarding||typeof onboarding!=='object'||Array.isArray(onboarding)))return res.status(503).json({error:'Onboarding retention data is unavailable. Permanent purge did not start.'});
+    const now=Date.now(),attemptId=crypto.randomUUID(),revision=Number(ws.updatedAt||ws.createdAt||0);
+    const lockedWorkspace={...ws,purgeStartedAt:now,purgeStartedBy:admin.email,purgeAttemptId:attemptId,updatedAt:Math.max(now,revision+1)};
+    journal={version:1,workspaceId:id,attemptId,phase:'prepared',startedAt:now,updatedAt:now,startedBy:admin.email,
+      retainedUntil:now+WORKSPACE_RETENTION_MS,operationalRetainedUntil:now+OPERATIONAL_RETENTION_MS,
+      supportDeleted:0,feedbackDeleted:0,
+      source:{businessName:ws.name||'',ownerEmail:cleanEmail(ws.ownerEmail||''),stripeCustomerId:ws.stripeCustomerId||null,stripeSubscriptionId:ws.stripeSubscriptionId||null,
+        deletionRequestedAt:ws.deletionRequestedAt||null,purgeEligibleAt:ws.purgeEligibleAt||null,
+        onboardingToken:String(onboardingToken||''),agreementVersion:onboarding?.agreementVersion||'',agreementSignedAt:onboarding?.agreementSignedAt||null,
+        agreementSignedName:onboarding?.agreementSignedName||onboarding?.agreementFullName||''}};
+    const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_started',section:'privacy',
+      before:{status:ws.status,updatedAt:revision},after:{phase:'prepared',attemptId},meta:{purgeEligibleAt:ws.purgeEligibleAt||null},at:now};
+    try{
+      if(!await compareAndAuditBatch(kv,[{key,before:ws,after:lockedWorkspace},{key:journalKey,before:null,after:journal}],'audit:'+id,audit))
+        return res.status(409).json({error:'Workspace changed while permanent purge was starting. Reopen the client before retrying.'});
+    }catch(err){console.error('permanent purge start failed',safeError(err));return res.status(503).json({error:'Could not start permanent purge safely. No destructive purge phase was confirmed.'})}
   }
-  await kv.set('support:index',keepSupport);
-  const audit=await kv.get('audit:'+id)||[];
-  if(retainedSupport.length)await kv.set('retention:support:'+id,{workspaceId:id,tickets:retainedSupport,retainedAt:Date.now()},{ex:60*60*24*365*2});
-  if(Array.isArray(audit)&&audit.length)await kv.set('retention:audit:'+id,{workspaceId:id,events:audit,retainedAt:Date.now()},{ex:60*60*24*365*2});
-  const onboardingToken=await kv.get('onboarding:workspace-token:'+id);
-  await Promise.all([
-    'workspace:','agent:','calls:','leads:','conversations:','appointments:','automations:',
-    'settings:','integrations:','locations:','routing-request:','onboarding:workspace:',
-    'onboarding:workspace-token:','provisioning:override:','provisioning:history:','audit:'
-  ].map(prefix=>kv.del(prefix+id)));
-  await deleteNormalizedConversations(kv,id);
-  if(onboardingToken)await kv.del('onboarding:'+onboardingToken);
-  return res.status(200).json({ok:true,purged:{id,name:ws.name||'Workspace'},retainedUntil:Date.now()+60*60*24*365*7*1000});
+
+  for(let step=0;step<80;step++){
+    journal=await kv.get(journalKey);
+    if(!journal){
+      const done=await kv.get(completeKey);
+      if(done&&String(done.workspaceId||'')===id)return res.status(200).json({ok:true,alreadyPurged:true,purged:{id,name:done.businessName||'Workspace'},retainedUntil:done.retainedUntil||null});
+      return res.status(503).json({error:'Permanent purge journal disappeared before completion. Stop and investigate before retrying.',resumable:false});
+    }
+    if(!validPurgeJournal(journal,id))return res.status(503).json({error:'Permanent purge journal is malformed. No additional data was deleted.',purgePhase:'unknown',resumable:false});
+    try{
+      if(journal.phase==='prepared'){
+        const retained={workspaceId:id,businessName:journal.source.businessName||'',ownerEmail:journal.source.ownerEmail||'',
+          stripeCustomerId:journal.source.stripeCustomerId||null,stripeSubscriptionId:journal.source.stripeSubscriptionId||null,
+          agreementVersion:journal.source.agreementVersion||'',agreementSignedAt:journal.source.agreementSignedAt||null,agreementSignedName:journal.source.agreementSignedName||'',
+          deletionRequestedAt:journal.source.deletionRequestedAt||null,purgeStartedAt:journal.startedAt,purgeAttemptId:journal.attemptId,purgedAt:null,purgedBy:journal.startedBy};
+        await setRetentionRecord('retention:workspace:'+id,retained,journal.retainedUntil);
+        if(!await advancePurgeJournal(journal,'retained',{retentionPreparedAt:Date.now()}))continue;
+        continue;
+      }
+
+      if(journal.phase==='retained'){
+        const workspace=await kv.get('workspace:'+id);
+        if(workspace&&workspace.stripeSubscriptionId&&String(workspace.subscriptionStatus||'active')!=='canceled')
+          return res.status(409).json({error:'Stripe subscription is no longer canceled. Permanent purge is paused before shared mappings are detached.',purgePhase:'retained',resumable:true});
+        const [workspaceIndexRaw,phoneIndexRaw,member,customerMapping,subscriptionMapping,auditRaw]=await Promise.all([
+          kv.get('workspace:index'),kv.get('phone:index'),
+          journal.source.ownerEmail?kv.get('user:email:'+journal.source.ownerEmail):null,
+          journal.source.stripeCustomerId?kv.get('stripe:customer:'+journal.source.stripeCustomerId):null,
+          journal.source.stripeSubscriptionId?kv.get('stripe:subscription:'+journal.source.stripeSubscriptionId):null,
+          kv.get('audit:'+id)
+        ]);
+        if(!validIdDirectory(workspaceIndexRaw,2000))return res.status(503).json({error:'Workspace directory is malformed. Permanent purge is paused before shared indexes are changed.',purgePhase:'retained',resumable:true});
+        if(phoneIndexRaw!=null&&!Array.isArray(phoneIndexRaw))return res.status(503).json({error:'Phone inventory is malformed. Permanent purge is paused before shared indexes are changed.',purgePhase:'retained',resumable:true});
+        if(customerMapping!=null&&String(customerMapping)!==id)return res.status(409).json({error:'Stripe customer mapping points to another workspace. Reconcile billing identity before resuming permanent purge.',purgePhase:'retained',resumable:true});
+        if(subscriptionMapping!=null&&String(subscriptionMapping)!==id)return res.status(409).json({error:'Stripe subscription mapping points to another workspace. Reconcile billing identity before resuming permanent purge.',purgePhase:'retained',resumable:true});
+        if(auditRaw!=null&&!Array.isArray(auditRaw))return res.status(503).json({error:'Workspace audit history is malformed. Permanent purge is paused.',purgePhase:'retained',resumable:true});
+        const workspaceIndex=workspaceIndexRaw||[],phoneIndex=phoneIndexRaw||[],now=Date.now(),
+          nextWorkspaceIndex=workspaceIndex.filter(x=>x!==id),
+          nextPhoneIndex=phoneIndex.map(x=>x&&x.workspaceId===id?{...x,workspaceId:'',workspaceName:'',updatedAt:now}:x),
+          ownerMatches=!!member&&String(member.workspaceId||'')===id,
+          nextJournal=nextPurgeJournal(journal,'detached',{sharedDetachedAt:now,ownerMapping:ownerMatches?'matched':member?'foreign':'missing'});
+        const updates=[{key:journalKey,before:journal,after:nextJournal}];
+        if(JSON.stringify(nextWorkspaceIndex)!==JSON.stringify(workspaceIndexRaw))updates.push({key:'workspace:index',before:workspaceIndexRaw,after:nextWorkspaceIndex});
+        if(JSON.stringify(nextPhoneIndex)!==JSON.stringify(phoneIndexRaw))updates.push({key:'phone:index',before:phoneIndexRaw,after:nextPhoneIndex});
+        const deleteKeys=[];
+        if(ownerMatches){const memberKey='user:email:'+journal.source.ownerEmail;updates.push({key:memberKey,before:member,after:null});deleteKeys.push(memberKey)}
+        if(customerMapping!=null){const stripeKey='stripe:customer:'+journal.source.stripeCustomerId;updates.push({key:stripeKey,before:customerMapping,after:null});deleteKeys.push(stripeKey)}
+        if(subscriptionMapping!=null){const stripeKey='stripe:subscription:'+journal.source.stripeSubscriptionId;updates.push({key:stripeKey,before:subscriptionMapping,after:null});deleteKeys.push(stripeKey)}
+        const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_shared_detached',section:'privacy',
+          before:null,after:null,meta:{ownerMapping:nextJournal.ownerMapping,phoneAssignmentsRemoved:phoneIndex.filter(x=>x&&x.workspaceId===id).length},at:now};
+        if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit,{deleteKeys}))continue;
+        continue;
+      }
+
+      if(journal.phase==='detached'){
+        const rawIndex=await kv.get('support:index');
+        if(!validIdDirectory(rawIndex,2000))return res.status(503).json({error:'Support directory is malformed. Permanent purge is paused before support records are deleted.',purgePhase:'detached',resumable:true});
+        const targets=await loadWorkspaceSupportForPurge(id,rawIndex);
+        if(!targets.length){
+          const nextJournal=nextPurgeJournal(journal,'support',{supportCompletedAt:Date.now()});
+          const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_support_complete',section:'privacy',before:null,after:null,meta:{deleted:Number(journal.supportDeleted||0)},at:Date.now()};
+          if(!await compareAndAudit(kv,{key:journalKey,before:journal,after:nextJournal},'audit:'+id,audit))continue;
+          continue;
+        }
+        const batch=targets.slice(0,50),retentionKey='retention:support:'+id,currentRetention=await kv.get(retentionKey);
+        if(currentRetention!=null&&(!currentRetention||typeof currentRetention!=='object'||Array.isArray(currentRetention)||String(currentRetention.workspaceId||'')!==id||!Array.isArray(currentRetention.tickets)))
+          return res.status(503).json({error:'Retained support archive is malformed. Permanent purge is paused before deleting support records.',purgePhase:'detached',resumable:true});
+        const retainedById=new Map((currentRetention?.tickets||[]).filter(Boolean).map(ticket=>[String(ticket.id||''),ticket]));
+        batch.forEach(({id:ticketId,ticket})=>retainedById.set(String(ticketId),ticket));
+        await setRetentionRecord(retentionKey,{workspaceId:id,tickets:[...retainedById.values()],retainedAt:Number(currentRetention?.retainedAt||Date.now()),updatedAt:Date.now()},journal.operationalRetainedUntil);
+        const batchIds=new Set(batch.map(x=>x.id)),nextIndex=(rawIndex||[]).filter(ticketId=>!batchIds.has(ticketId)),now=Date.now(),
+          nextJournal=nextPurgeJournal(journal,'detached',{supportDeleted:Number(journal.supportDeleted||0)+batch.length,lastSupportBatchAt:now});
+        const updates=[{key:journalKey,before:journal,after:nextJournal},{key:'support:index',before:rawIndex,after:nextIndex}],deleteKeys=[];
+        batch.forEach(({id:ticketId,ticket})=>{const key='support:'+ticketId;updates.push({key,before:ticket,after:null});deleteKeys.push(key)});
+        const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_support_batch',section:'privacy',before:null,after:null,meta:{count:batch.length,totalDeleted:nextJournal.supportDeleted},at:now};
+        if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit,{deleteKeys}))continue;
+        continue;
+      }
+
+      if(journal.phase==='support'){
+        const [workspaceFeedbackRaw,globalFeedbackRaw]=await Promise.all([kv.get(aiFeedbackWorkspaceIndexKey(id)),kv.get('ai-feedback:index')]);
+        if(!validIdDirectory(workspaceFeedbackRaw,250)||!validIdDirectory(globalFeedbackRaw,1500))
+          return res.status(503).json({error:'AI feedback directory is malformed. Permanent purge is paused before feedback records are deleted.',purgePhase:'support',resumable:true});
+        const ids=workspaceFeedbackRaw||[];
+        if(!ids.length){
+          const now=Date.now(),nextJournal=nextPurgeJournal(journal,'feedback',{feedbackCompletedAt:now});
+          const updates=[{key:journalKey,before:journal,after:nextJournal}],deleteKeys=[];
+          if(workspaceFeedbackRaw!=null){const key=aiFeedbackWorkspaceIndexKey(id);updates.push({key,before:workspaceFeedbackRaw,after:null});deleteKeys.push(key)}
+          const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_feedback_complete',section:'privacy',before:null,after:null,meta:{deleted:Number(journal.feedbackDeleted||0)},at:now};
+          if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit,{deleteKeys}))continue;
+          continue;
+        }
+        const batchIds=ids.slice(0,50),records=await Promise.all(batchIds.map(feedbackId=>kv.get('ai-feedback:'+feedbackId)));
+        for(let i=0;i<records.length;i++)if(records[i]&&String(records[i].workspaceId||'')!==id)
+          return res.status(409).json({error:'AI feedback index contains a record owned by another workspace. Reconcile feedback data before resuming purge.',purgePhase:'support',resumable:true});
+        const batchSet=new Set(batchIds),now=Date.now(),nextWorkspaceIds=ids.filter(feedbackId=>!batchSet.has(feedbackId)),
+          nextGlobalIds=(globalFeedbackRaw||[]).filter(feedbackId=>!batchSet.has(feedbackId)),
+          nextJournal=nextPurgeJournal(journal,'support',{feedbackDeleted:Number(journal.feedbackDeleted||0)+batchIds.length,lastFeedbackBatchAt:now});
+        const updates=[{key:journalKey,before:journal,after:nextJournal},{key:aiFeedbackWorkspaceIndexKey(id),before:workspaceFeedbackRaw,after:nextWorkspaceIds}],deleteKeys=[];
+        if(JSON.stringify(nextGlobalIds)!==JSON.stringify(globalFeedbackRaw))updates.push({key:'ai-feedback:index',before:globalFeedbackRaw,after:nextGlobalIds});
+        for(let i=0;i<batchIds.length;i++)if(records[i]!=null){const key='ai-feedback:'+batchIds[i];updates.push({key,before:records[i],after:null});deleteKeys.push(key)}
+        const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_feedback_batch',section:'privacy',before:null,after:null,meta:{count:batchIds.length,totalDeleted:nextJournal.feedbackDeleted},at:now};
+        if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit,{deleteKeys}))continue;
+        continue;
+      }
+
+      if(journal.phase==='feedback'){
+        await deleteNormalizedConversations(kv,id);
+        const nextJournal=nextPurgeJournal(journal,'conversations',{normalizedConversationsDeletedAt:Date.now()});
+        const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_conversations_deleted',section:'privacy',before:null,after:null,meta:{normalized:true},at:Date.now()};
+        if(!await compareAndAudit(kv,{key:journalKey,before:journal,after:nextJournal},'audit:'+id,audit))continue;
+        continue;
+      }
+
+      if(journal.phase==='conversations'){
+        const auditRaw=await kv.get('audit:'+id);
+        if(auditRaw!=null&&!Array.isArray(auditRaw))return res.status(503).json({error:'Workspace audit history is malformed. Permanent purge is paused before audit retention.',purgePhase:'conversations',resumable:true});
+        const archiveEvent={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_audit_archived',section:'privacy',before:null,after:null,meta:{attemptId:journal.attemptId},at:Date.now()},
+          events=[archiveEvent,...(auditRaw||[])].slice(0,200);
+        await setRetentionRecord('retention:audit:'+id,{workspaceId:id,events,retainedAt:Date.now()},journal.operationalRetainedUntil);
+        if(!await advancePurgeJournal(journal,'audit_retained',{auditRetainedAt:Date.now()}))continue;
+        continue;
+      }
+
+      if(journal.phase==='audit_retained'){
+        const fixedKeys=[
+          'workspace:'+id,'agent:'+id,'calls:'+id,'calls:index:'+id,'leads:'+id,'conversations:'+id,'appointments:'+id,'automations:'+id,
+          'settings:'+id,'integrations:'+id,'locations:'+id,'routing-request:'+id,'followup:state:'+id,'onboarding:workspace:'+id,
+          'onboarding:workspace-token:'+id,'provisioning:override:'+id,'provisioning:history:'+id,'audit:'+id,
+          callViewedKey(id,journal.source.ownerEmail||''),notificationReadKey('client',journal.source.ownerEmail||'',id)
+        ];
+        if(journal.source.onboardingToken)fixedKeys.push('onboarding:'+journal.source.onboardingToken);
+        if(journal.ownerMapping==='matched'&&journal.source.ownerEmail)fixedKeys.push(userProfileKey(journal.source.ownerEmail));
+        const uniqueKeys=[...new Set(fixedKeys.filter(Boolean))],values=await Promise.all(uniqueKeys.map(key=>kv.get(key))),
+          now=Date.now(),nextJournal=nextPurgeJournal(journal,'content',{contentDeletedAt:now}),updates=[{key:journalKey,before:journal,after:nextJournal}],deleteKeys=[];
+        for(let i=0;i<uniqueKeys.length;i++){updates.push({key:uniqueKeys[i],before:values[i],after:null});deleteKeys.push(uniqueKeys[i])}
+        if(!await compareAndSetWithDelete(kv,updates,{deleteKeys}))continue;
+        continue;
+      }
+
+      if(journal.phase==='content'){
+        const now=Date.now(),retentionKey='retention:workspace:'+id,currentRetention=await kv.get(retentionKey);
+        if(!currentRetention||typeof currentRetention!=='object'||Array.isArray(currentRetention)||String(currentRetention.workspaceId||'')!==id)
+          return res.status(503).json({error:'Required workspace retention record is unavailable. Permanent purge completion is paused.',purgePhase:'content',resumable:true});
+        const completedRetention={...currentRetention,purgedAt:now,purgedBy:admin.email,purgeCompletedAt:now};
+        await setRetentionRecord(retentionKey,completedRetention,journal.retainedUntil);
+        const retainedAuditKey='retention:audit:'+id,retainedAudit=await kv.get(retainedAuditKey);
+        if(retainedAudit&&typeof retainedAudit==='object'&&!Array.isArray(retainedAudit)&&Array.isArray(retainedAudit.events)){
+          const completionEvent={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_completed',section:'privacy',before:null,after:null,meta:{attemptId:journal.attemptId,supportDeleted:Number(journal.supportDeleted||0),feedbackDeleted:Number(journal.feedbackDeleted||0)},at:now};
+          await setRetentionRecord(retainedAuditKey,{...retainedAudit,events:[completionEvent,...retainedAudit.events].slice(0,200),updatedAt:now},journal.operationalRetainedUntil);
+        }
+        const marker={workspaceId:id,businessName:journal.source.businessName||'',attemptId:journal.attemptId,completedAt:now,completedBy:admin.email,retainedUntil:journal.retainedUntil,
+          supportDeleted:Number(journal.supportDeleted||0),feedbackDeleted:Number(journal.feedbackDeleted||0)};
+        await kv.set(completeKey,marker,{ex:retentionTtlSeconds(journal.retainedUntil)});
+        const confirmed=await kv.get(completeKey);
+        if(!confirmed||String(confirmed.workspaceId||'')!==id||String(confirmed.attemptId||'')!==String(journal.attemptId))
+          return res.status(503).json({error:'Permanent purge completion marker could not be confirmed. Retry to resume finalization.',purgePhase:'content',resumable:true});
+        try{await kv.del(journalKey)}catch(err){console.error('purge journal cleanup failed',safeError(err))}
+        return res.status(200).json({ok:true,purged:{id,name:journal.source.businessName||'Workspace'},retainedUntil:journal.retainedUntil,supportDeleted:marker.supportDeleted,feedbackDeleted:marker.feedbackDeleted});
+      }
+    }catch(err){
+      console.error('permanent purge phase failed',safeError(err));
+      return res.status(503).json({error:'Permanent purge paused after a storage error. Retry the same confirmed purge to resume safely.',purgePhase:journal.phase,resumable:true});
+    }
+  }
+  return res.status(503).json({error:'Permanent purge paused after reaching its safe per-request work limit. Retry the same confirmed purge to continue.',purgePhase:journal.phase,resumable:true});
 }
+
 async function adminViewClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).id||'').slice(0,80);
