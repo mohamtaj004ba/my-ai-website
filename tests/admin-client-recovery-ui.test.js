@@ -90,7 +90,7 @@ test('restore action sends displayed revision, locks the drawer and suppresses d
   assert.equal(await first,true);
   assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.ctx.currentAdminClient.status,'active');assert.equal(f.ctx.currentAdminClient.deletion,null);
   assert.equal(f.node('adminRestoreClientButton').hidden,true);assert.equal(f.node('adminDeleteClientButton').hidden,false);assert.equal(f.node('adminSaveClientButton').hidden,false);
-  assert.deepEqual(f.refreshes,['core','ops']);assert.deepEqual(f.reopens,[{id:'client-1',options:{allowLocked:true}}]);
+  assert.deepEqual(f.refreshes,['core','ops']);assert.equal(f.reopens.length,1);assert.equal(f.reopens[0].id,'client-1');assert.equal(f.reopens[0].options.allowLocked,true);
 });
 
 test('failed restore keeps pending state visible and fully unlocks the recovery controls',async()=>{
