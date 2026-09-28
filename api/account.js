@@ -13,7 +13,7 @@ const {replacePreviewFeedbackSeed}=require('../lib/preview-feedback-seed');
 const {replacePreviewPhoneSeed}=require('../lib/preview-phone-seed');
 const {replacePreviewWorkspaceIndex}=require('../lib/preview-workspace-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
-const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAuditBatch}=require('../lib/config-transaction');
+const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAuditBatch,compareAndAuditEventsBatch}=require('../lib/config-transaction');
 const {recordFinanceSnapshot}=require('../lib/finance-history');
 const {prependAuditEvent}=require('../lib/audit-log');
 const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
@@ -2611,14 +2611,14 @@ async function saveAgent(req,res){
     routing=clientRouting(phoneAfter,{smsLive:process.env.CALLERCORE_SMS_ENABLED==='true'});
   }
   if(routingRequest&&String(routingRequest.transferNumber||'')!==agent.transferNumber)updates.push({key:'routing-request:'+s.workspaceId,before:routingRequest,after:{...routingRequest,transferNumber:agent.transferNumber,updatedAt:Date.now()}});
+  const auditEvents=[{id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'agent_save',section:'agent',before:previous,after:agent,meta:{routingTransferSynced:phonePos>=0},at:Date.now()}];
+  if(phonePos>=0&&String(phoneBefore?.transferNumber||'')!==agent.transferNumber)auditEvents.push({id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'transfer_routing_sync',section:'routing',before:{transferNumber:phoneBefore?.transferNumber||''},after:{transferNumber:agent.transferNumber},at:Date.now()});
   try{
-    if(!await compareAndSetConfig(kv,updates))return res.status(409).json({error:'Receptionist or routing settings changed during this save. Reload the latest settings before retrying.',code:'CONFIG_CONFLICT'});
+    if(!await compareAndAuditEventsBatch(kv,updates,'audit:'+s.workspaceId,auditEvents))return res.status(409).json({error:'Receptionist or routing settings changed during this save. Reload the latest settings before retrying.',code:'CONFIG_CONFLICT'});
   }catch(err){
     console.error('agent configuration save failed',safeError(err));
-    return res.status(503).json({error:'Could not confirm the save. Your draft is preserved; reload to check the latest saved settings before retrying.'});
+    return res.status(503).json({error:'Could not confirm the receptionist, routing and audit history together. Your draft is preserved; reload to check the latest saved settings before retrying.'});
   }
-  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'agent_save',section:'agent',before:previous,after:agent,meta:{routingTransferSynced:phonePos>=0}});
-  if(phonePos>=0&&String(phoneBefore?.transferNumber||'')!==agent.transferNumber)await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'transfer_routing_sync',section:'routing',before:{transferNumber:phoneBefore?.transferNumber||''},after:{transferNumber:agent.transferNumber}});
   return res.status(200).json({ok:true,agent,routing});
 }
 
