@@ -1635,9 +1635,11 @@ async function adminWebsiteAnalytics(req,res){
       return {records,missing};
     };
     const [sessionLoad,prospectLoad]=await Promise.all([loadIndexed(sessionIds,'site:session:'),loadIndexed(prospectIds,'site:prospect:')]);
-    const sessions=sessionLoad.records,prospects=prospectLoad.records.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    const sessions=sessionLoad.records,retainedProspects=prospectLoad.records.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)),
+      prospects=retainedProspects.filter(p=>p.privacyState!=='deidentified'),
+      deidentifiedProspectRecords=retainedProspects.length-prospects.length;
     const coverage={retainedEvents:eventsRaw.length,retainedSessionIds:sessionIds.length,retainedProspectIds:prospectIds.length,
-      unavailableSessionRecords:sessionLoad.missing,unavailableProspectRecords:prospectLoad.missing,
+      unavailableSessionRecords:sessionLoad.missing,unavailableProspectRecords:prospectLoad.missing,deidentifiedProspectRecords,
       isIncomplete:prospectLoad.missing>0,
       isRetentionCapped:eventsRaw.length>=5000||sessionIds.length>=2000||prospectIds.length>=2000};
     const now=Date.now(),days=clampInt(req.query?.days,7,90,30),cut=now-days*86400000,activeCut=now-15*60000;
@@ -1651,7 +1653,7 @@ async function adminWebsiteAnalytics(req,res){
     const visitorFirst={};sessions.forEach(s=>{if(!s.visitorId)return;const at=Number(s.firstAt||0);visitorFirst[s.visitorId]=visitorFirst[s.visitorId]?Math.min(visitorFirst[s.visitorId],at):at});
     const newVisitors=[...new Set(periodSessions.map(s=>s.visitorId).filter(Boolean))].filter(id=>Number(visitorFirst[id]||0)>=cut).length,returningVisitors=Math.max(0,uniqueVisitors-newVisitors);
     const uniqueEventSessions=(type,label='')=>new Set(periodEvents.filter(e=>e.type===type&&(!label||e.label===label)).map(e=>e.sessionId).filter(Boolean)).size;
-    const funnel={sessions:periodSessions.length,getStarted:new Set(periodEvents.filter(e=>e.type==='page_view'&&String(e.path||'').startsWith('/get-started')).map(e=>e.sessionId).filter(Boolean)).size,formStarted:uniqueEventSessions('form_start','startForm'),checkoutStarted:uniqueEventSessions('checkout_start'),converted:prospects.filter(p=>p.stage==='converted'&&Number(p.convertedAt||p.updatedAt||0)>=cut).length};
+    const funnel={sessions:periodSessions.length,getStarted:new Set(periodEvents.filter(e=>e.type==='page_view'&&String(e.path||'').startsWith('/get-started')).map(e=>e.sessionId).filter(Boolean)).size,formStarted:uniqueEventSessions('form_start','startForm'),checkoutStarted:uniqueEventSessions('checkout_start'),converted:retainedProspects.filter(p=>p.stage==='converted'&&Number(p.convertedAt||p.updatedAt||0)>=cut).length};
     const pageMap={},sourceMap={},campaignMap={},deviceMap={},locationMap={},dailyMap={},conversionMap={};
     const dayKey=at=>{const d=new Date(Number(at||0));return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
     for(let i=days-1;i>=0;i--){const d=new Date(now-i*86400000);dailyMap[dayKey(d)]={date:dayKey(d),sessions:0,visitors:new Set(),pageViews:0,conversions:0}}
@@ -1664,7 +1666,7 @@ async function adminWebsiteAnalytics(req,res){
     });
     periodEvents.filter(e=>e.type==='page_view').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=pageMap[p]||{count:0,totalMs:0,exits:0};pageMap[p].count++;const row=dailyMap[dayKey(e.at)];if(row)row.pageViews++});
     periodEvents.filter(e=>e.type==='page_exit').forEach(e=>{const p=String(e.path||'/').split('?')[0];pageMap[p]=pageMap[p]||{count:0,totalMs:0,exits:0};pageMap[p].totalMs+=Number(e.activeMs||0);pageMap[p].exits++});
-    prospects.filter(p=>p.stage==='converted'&&Number(p.convertedAt||p.updatedAt||0)>=cut).forEach(p=>{
+    retainedProspects.filter(p=>p.stage==='converted'&&Number(p.convertedAt||p.updatedAt||0)>=cut).forEach(p=>{
       const source=p.firstUtmSource||p.utmSource||p.firstSource||p.source||'direct',row=conversionMap[source]||(conversionMap[source]={conversions:0,mrr:0,setupRevenue:0});row.conversions++;row.mrr+=Number(p.monthlyValue||0);row.setupRevenue+=Number(p.setupValue||0);
       const key=dayKey(p.convertedAt||p.updatedAt),day=dailyMap[key];if(day)day.conversions++;
       const campaign=p.firstUtmCampaign||p.utmCampaign||'(none)',medium=p.firstUtmMedium||p.utmMedium||'none',cKey=campaign+'|'+medium;if(!campaignMap[cKey])campaignMap[cKey]={campaign,medium,sessions:0,visitors:new Set(),conversions:0};campaignMap[cKey].conversions++;
@@ -1681,7 +1683,7 @@ async function adminWebsiteAnalytics(req,res){
     return res.status(200).json({analytics:{
       periodDays:days,sessions:periodSessions.length,visitors:uniqueVisitors,newVisitors,returningVisitors,activeNow,pageViews,pagesPerSession,avgActiveSeconds:avgActive,bounceRate,engagedRate,
       contactInquiries:periodEvents.filter(e=>e.type==='contact_submit').length,chatSessions:uniqueEventSessions('chat_open'),ctaClicks:periodEvents.filter(e=>e.type==='cta_click').length,
-      formAbandons:uniqueEventSessions('form_abandon'),checkoutStarts:uniqueEventSessions('checkout_start'),checkoutAbandoned:prospects.filter(p=>p.stage==='checkout_started'&&Number(p.updatedAt||p.createdAt||0)>=cut).length,conversions:funnel.converted,
+      formAbandons:uniqueEventSessions('form_abandon'),checkoutStarts:uniqueEventSessions('checkout_start'),checkoutAbandoned:retainedProspects.filter(p=>p.privacyState!=='deidentified'&&p.stage==='checkout_started'&&Number(p.updatedAt||p.createdAt||0)>=cut).length,conversions:funnel.converted,
       attributedMrr,attributedSetupRevenue,coverage,funnel,topPages,sources,campaigns,devices,locations,daily,recentSessions,prospects
     }});
   }catch(err){console.error('admin website analytics failed',safeError(err));return res.status(500).json({error:'Website analytics unavailable'})}
@@ -1690,6 +1692,7 @@ async function adminWebsiteProspectUpdate(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,100),key='site:prospect:'+id,old=await kv.get(key);
   if(!old)return res.status(404).json({error:'Prospect not found'});
+  if(old.privacyState==='deidentified')return res.status(410).json({error:'This prospect has been de-identified under the retention policy and is no longer editable.'});
   if(body.expectedUpdatedAt===undefined||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==Number(old.updatedAt||old.createdAt||0))return res.status(409).json({error:'This prospect changed while you were editing. Refresh the pipeline before retrying.'});
   const email=body.email!==undefined?cleanEmail(body.email):String(old.email||'');
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email or leave it blank'});
@@ -2453,7 +2456,7 @@ async function buildAdminNotifications(admin){
       items.push(notificationItem('admin-onboarding:'+id+':build-review',{title:eligible?'Build ready for QA review':'Build in QA hold',body:(ws.name||'Client')+' submitted intake and has an AI-agent draft '+(eligible?'ready for review.':'waiting for the review window.'),kind:eligible?'warning':'info',view:'onboarding',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
     }
   }
-  const prospectList=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,100).map(id=>kv.get('site:prospect:'+id)))).filter(Boolean);
+  const prospectList=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,100).map(id=>kv.get('site:prospect:'+id)))).filter(p=>p&&p.privacyState!=='deidentified');
   if(alerts.prospects)prospectList.filter(p=>['new','inquiry','checkout_started'].includes(p.stage)).slice(0,25).forEach(p=>{
     const title=p.stage==='checkout_started'?'Signup checkout started':'New website inquiry';
     items.push(notificationItem('prospect:'+p.id+':'+p.stage,{title,body:(p.name||p.business||p.email||'Website prospect')+(p.plan?' · '+p.plan:''),kind:'info',view:'growth',createdAt:p.updatedAt||p.createdAt||now,meta:{prospectId:p.id}}));
