@@ -60,3 +60,21 @@ test('embedded checkout is closed unless the explicit sales launch flag is enabl
   assert.match(checkout,/process\.env\.CALLERCORE_CHECKOUT_ENABLED!=='true'/);
   assert.match(checkout,/CallerCore checkout is not open yet/);
 });
+
+test('Stripe lifecycle metrics are recorded before workspace mapping can discard a real billing failure',()=>{
+  const lifecycle=src.indexOf("if(lifecycleEvent)");
+  const coverage=src.indexOf("await ensureStripeMonthlyMetricsCoverage",lifecycle);
+  const failureMetric=src.indexOf("await recordStripePaymentFailure",lifecycle);
+  const workspaceLookup=src.indexOf("let workspaceId=null",lifecycle);
+  assert.ok(coverage>lifecycle&&coverage<workspaceLookup,'coverage start must be established before workspace mapping');
+  assert.ok(failureMetric>coverage&&failureMetric<workspaceLookup,'payment failure must be counted before mapping can return unmapped');
+  assert.match(src,/Stripe billing metrics could not be confirmed\. Retry the webhook event\./);
+});
+
+test('Stripe monthly metric receipts hash provider event ids instead of storing raw ids in receipt keys',()=>{
+  const metrics=fs.readFileSync(path.join(__dirname,'..','lib','stripe-monthly-metrics.js'),'utf8');
+  assert.match(metrics,/createHash\('sha256'\)\.update\(id\)\.digest\('hex'\)/);
+  assert.doesNotMatch(metrics,/stripe:metric-event:'\+id/);
+  assert.match(metrics,/STRIPE_METRIC_RECEIPT_SECONDS=2\*365\*24\*60\*60/);
+});
+
