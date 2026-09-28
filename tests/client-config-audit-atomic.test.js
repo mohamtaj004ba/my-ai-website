@@ -24,7 +24,7 @@ test('automation saves bind data and audit history to one compare-and-audit tran
 });
 
 test('integration saves bind data and audit history to one compare-and-audit transaction',()=>{
-  const body=handler('saveIntegrations','\nasync function clientDashboardData(');
+  const body=handler('saveIntegrations','\nfunction callViewedKey(');
   assert.match(body,/compareAndAudit\(kv,\{key,before:rawSaved,after:next\},'audit:'\+access\.session\.workspaceId,audit\)/);
   assert.match(body,/rawSaved!=null&&\(!rawSaved\|\|typeof rawSaved!=='object'\|\|Array\.isArray\(rawSaved\)\)/);
   assert.doesNotMatch(body,/await kv\.set\(|await appendAudit\(/);
