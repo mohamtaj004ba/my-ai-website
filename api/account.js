@@ -2547,9 +2547,12 @@ async function saveLocations(req,res){
     updatedAt:Date.now()
   }));
   for(const item of items){if(item.phone&&!/^\+?[0-9() .-]{7,30}$/.test(item.phone))return res.status(400).json({error:'One or more location phone numbers are invalid'})}
-  const previous=await kv.get('locations:'+s.workspaceId)||[];
-  await kv.set('locations:'+s.workspaceId,items);
-  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'locations_save',section:'locations',before:previous,after:items});
+  const key='locations:'+s.workspaceId,rawPrevious=await kv.get(key);
+  if(rawPrevious!=null&&!Array.isArray(rawPrevious))return res.status(503).json({error:'Location records are unavailable. No changes were made.'});
+  const previous=rawPrevious||[],audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'locations_save',section:'locations',before:previous,after:items,at:Date.now()};
+  try{
+    if(!await compareAndAudit(kv,{key,before:rawPrevious,after:items},'audit:'+s.workspaceId,audit))return res.status(409).json({error:'Locations changed during this save. Reload the latest locations before retrying.'});
+  }catch(err){console.error('location save failed',safeError(err));return res.status(503).json({error:'Could not confirm locations and audit history together. Reload before retrying.'})}
   return res.status(200).json({ok:true,locations:items,limit:ent.locations});
 }
 
@@ -2648,9 +2651,12 @@ async function saveAutomations(req,res){
     enabled:item.enabled!==false,
     updatedAt:Date.now()
   }));
-  const previous=await kv.get('automations:'+access.session.workspaceId)||[];
-  await kv.set('automations:'+access.session.workspaceId,items);
-  await appendAudit(access.session.workspaceId,{actorEmail:access.session.email,actorRole:access.session.role||'client',action:'automations_save',section:'automations',before:previous,after:items});
+  const key='automations:'+access.session.workspaceId,rawPrevious=await kv.get(key);
+  if(rawPrevious!=null&&!Array.isArray(rawPrevious))return res.status(503).json({error:'Automation records are unavailable. No changes were made.'});
+  const previous=rawPrevious||[],audit={id:crypto.randomUUID(),workspaceId:access.session.workspaceId,actorEmail:access.session.email,actorRole:access.session.role||'client',action:'automations_save',section:'automations',before:previous,after:items,at:Date.now()};
+  try{
+    if(!await compareAndAudit(kv,{key,before:rawPrevious,after:items},'audit:'+access.session.workspaceId,audit))return res.status(409).json({error:'Automations changed during this save. Reload the latest automations before retrying.'});
+  }catch(err){console.error('automation save failed',safeError(err));return res.status(503).json({error:'Could not confirm automations and audit history together. Reload before retrying.'})}
   return res.status(200).json({ok:true,automations:items});
 }
 
@@ -2831,10 +2837,13 @@ async function saveIntegrations(req,res){
   const access={session:s,workspace:ws};
   const url=String((req.body||{}).webhookUrl||'').trim().slice(0,500);
   if(url&&!/^https:\/\//i.test(url))return res.status(400).json({error:'Webhook URL must use HTTPS'});
-  const saved=await kv.get('integrations:'+access.session.workspaceId)||{};
-  const next={...saved,webhookUrl:url,updatedAt:Date.now()};
-  await kv.set('integrations:'+access.session.workspaceId,next);
-  await appendAudit(access.session.workspaceId,{actorEmail:access.session.email,actorRole:access.session.role||'client',action:'integrations_save',section:'integrations',before:saved,after:next});
+  const key='integrations:'+access.session.workspaceId,rawSaved=await kv.get(key);
+  if(rawSaved!=null&&(!rawSaved||typeof rawSaved!=='object'||Array.isArray(rawSaved)))return res.status(503).json({error:'Integration settings are unavailable. No changes were made.'});
+  const saved=rawSaved||{},next={...saved,webhookUrl:url,updatedAt:Date.now()};
+  const audit={id:crypto.randomUUID(),workspaceId:access.session.workspaceId,actorEmail:access.session.email,actorRole:access.session.role||'client',action:'integrations_save',section:'integrations',before:saved,after:next,at:Date.now()};
+  try{
+    if(!await compareAndAudit(kv,{key,before:rawSaved,after:next},'audit:'+access.session.workspaceId,audit))return res.status(409).json({error:'Integration settings changed during this save. Reload the latest settings before retrying.'});
+  }catch(err){console.error('integration save failed',safeError(err));return res.status(503).json({error:'Could not confirm integrations and audit history together. Reload before retrying.'})}
   return res.status(200).json({ok:true,integrations:next});
 }
 
