@@ -3258,9 +3258,9 @@ async function openAdminClient(id,{allowLocked=false}={}){
   const auditEmpty=document.getElementById('adminAuditEmpty');if(auditEmpty)auditEmpty.hidden=true;
   currentAdminClient=x;
   const planSel=document.getElementById('adminClientPlan'),statusSel=document.getElementById('adminClientStatus');
-  if(planSel){planSel.value=x.plan||'Starter';planSel.disabled=adminClientSaving||adminTechSaving||!!x.stripe?.subscriptionLinked}
-  if(statusSel){statusSel.value=x.status||'active';statusSel.disabled=adminClientSaving||adminTechSaving}
-  const note=document.getElementById('adminClientManageNote');if(note)note.textContent=(x.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
+  if(planSel)planSel.value=x.plan||'Starter';
+  if(statusSel)statusSel.value=x.status||'active';
+  applyAdminClientRecoveryState(x);
   const drawer=document.getElementById('adminClientDrawer');drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');document.getElementById('adminClientBackdrop').classList.add('open');
   await loadAdminTechSupport(id);if(request!==adminClientOpenRequest)return false;
   return true;
@@ -3269,9 +3269,23 @@ async function openAdminClient(id,{allowLocked=false}={}){
 function adminTechMessage(message,error=false){
   const el=document.getElementById('adminTechStatus');if(!el)return;el.textContent=message||'';el.classList.toggle('error-text',!!error)
 }
+function applyAdminClientRecoveryState(client=currentAdminClient){
+  const pending=client?.status==='pending_deletion',plan=document.getElementById('adminClientPlan'),status=document.getElementById('adminClientStatus');
+  if(plan)plan.disabled=adminClientSaving||adminTechSaving||pending||!!client?.stripe?.subscriptionLinked;
+  if(status)status.disabled=adminClientSaving||adminTechSaving||pending;
+  const save=document.getElementById('adminSaveClientButton'),del=document.getElementById('adminDeleteClientButton'),restore=document.getElementById('adminRestoreClientButton');
+  if(save)save.hidden=pending;if(del)del.hidden=pending;if(restore)restore.hidden=!pending;
+  const note=document.getElementById('adminClientManageNote');
+  if(note){
+    if(pending){
+      const eligible=Number(client?.deletion?.purgeEligibleAt||0);
+      note.textContent='Pending deletion. '+(eligible?'Recovery is available until '+new Date(eligible).toLocaleString()+'. ':'')+'Use Restore workspace to recover access; do not use ordinary status controls.';
+    }else note.textContent=(client?.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
+  }
+}
 function setAdminTechMutationState(saving,target=''){
   adminTechSaving=!!saving;adminTechMutationTarget=adminTechSaving?String(target||'override'):'';
-  const ids=['adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','adminSendLoginButton','adminForceLogoutButton','adminRepairAccessButton','closeAdminClient'];
+  const ids=['adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','adminSendLoginButton','adminForceLogoutButton','adminRepairAccessButton','adminRestoreClientButton','closeAdminClient'];
   ids.forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminTechSaving||adminClientSaving});
   document.querySelectorAll('[data-restore-audit]').forEach(button=>button.disabled=adminTechSaving||adminClientSaving);
   const apply=document.getElementById('adminApplyOverrideButton');if(apply)apply.textContent=adminTechSaving&&adminTechMutationTarget==='override'?'Applying…':'Apply admin override';
@@ -3281,13 +3295,12 @@ function setAdminTechMutationState(saving,target=''){
 }
 function setAdminClientMutationState(saving,target='save'){
   adminClientSaving=!!saving;target=String(target||'save');
-  const plan=document.getElementById('adminClientPlan'),status=document.getElementById('adminClientStatus');
-  if(plan)plan.disabled=adminClientSaving||!!currentAdminClient?.stripe?.subscriptionLinked;
-  if(status)status.disabled=adminClientSaving;
-  ['adminSaveClientButton','adminDeleteClientButton','adminViewClientButton','adminExportClientButton','adminRecoveryDrillButton','adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','adminSendLoginButton','adminForceLogoutButton','adminRepairAccessButton','closeAdminClient'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminClientSaving||adminTechSaving});
+  ['adminSaveClientButton','adminDeleteClientButton','adminRestoreClientButton','adminViewClientButton','adminExportClientButton','adminRecoveryDrillButton','adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','adminSendLoginButton','adminForceLogoutButton','adminRepairAccessButton','closeAdminClient'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminClientSaving||adminTechSaving});
   document.querySelectorAll('[data-restore-audit]').forEach(button=>button.disabled=adminClientSaving||adminTechSaving);
   const save=document.getElementById('adminSaveClientButton');if(save)save.textContent=adminClientSaving&&target==='save'?'Saving…':'Save changes';
   const del=document.getElementById('adminDeleteClientButton');if(del)del.textContent=adminClientSaving&&target==='delete'?'Scheduling…':'Delete workspace';
+  const restore=document.getElementById('adminRestoreClientButton');if(restore)restore.textContent=adminClientSaving&&target==='restore'?'Restoring…':'Restore workspace';
+  applyAdminClientRecoveryState();
   const drawer=document.getElementById('adminClientDrawer');if(drawer)drawer.setAttribute('aria-busy',String(adminClientSaving||adminTechSaving));
 }
 async function loadAdminTechSupport(id=currentAdminClient?.id,request=adminClientOpenRequest){
@@ -3651,6 +3664,30 @@ async function deleteAdminClient(){
   try{await refreshAdminCore();await loadAdminOps()}
   catch(_){alert('Deletion was scheduled, but the admin directory could not refresh. Reload the dashboard to verify the pending-deletion account.')}
 }
+async function restoreAdminClient(){
+  if(!currentAdminClient||currentAdminClient.status!=='pending_deletion'||adminClientSaving||adminTechSaving)return false;
+  const id=String(currentAdminClient.id),name=currentAdminClient.name||'this workspace',expectedUpdatedAt=Number(currentAdminClient.updatedAt||currentAdminClient.createdAt||0);
+  if(!confirm('Restore '+name+' from the deletion recovery window? Access will be re-enabled only if its owner mapping is still healthy.'))return false;
+  let confirmed=false;
+  setAdminClientMutationState(true,'restore');
+  try{
+    const r=await fetch('/api/account?action=admin-client-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not restore workspace.');
+    if(String(currentAdminClient?.id)!==id)return false;
+    currentAdminClient={...currentAdminClient,...(data.client||{}),status:data.status||data.client?.status||currentAdminClient.status,deletion:null};
+    applyAdminClientRecoveryState();
+    confirmed=true;
+    if(data.warning)alert(data.warning);
+    try{
+      await Promise.all([refreshAdminCore(),loadAdminOps()]);
+      if(String(currentAdminClient?.id)===id)await openAdminClient(id,{allowLocked:true});
+    }catch(_){
+      alert('Workspace restoration was confirmed, but the admin view could not refresh. Reopen this client to verify access and account status.');
+    }
+    return true;
+  }catch(err){alert(err.message||'Could not restore workspace.');return false}
+  finally{setAdminClientMutationState(false);if(confirmed)applyAdminClientRecoveryState()}
+}
 async function viewAdminClient(){
   if(!currentAdminClient)return;
   const r=await fetch('/api/account?action=admin-view-client',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})});
@@ -3660,6 +3697,7 @@ async function viewAdminClient(){
 }
 document.getElementById('adminSaveClientButton')?.addEventListener('click',saveAdminClient);
 document.getElementById('adminDeleteClientButton')?.addEventListener('click',deleteAdminClient);
+document.getElementById('adminRestoreClientButton')?.addEventListener('click',restoreAdminClient);
 document.getElementById('adminViewClientButton')?.addEventListener('click',viewAdminClient);
 document.getElementById('adminExportClientButton')?.addEventListener('click',()=>{if(currentAdminClient)window.location.href='/api/account?action=admin-workspace-export&id='+encodeURIComponent(currentAdminClient.id)});
 document.getElementById('adminRecoveryDrillButton')?.addEventListener('click',async()=>{
