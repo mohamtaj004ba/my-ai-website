@@ -3271,10 +3271,12 @@ function adminTechMessage(message,error=false){
 }
 function setAdminTechMutationState(saving,target=''){
   adminTechSaving=!!saving;adminTechMutationTarget=adminTechSaving?String(target||'override'):'';
-  const ids=['adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','closeAdminClient'];
+  const ids=['adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','adminSendLoginButton','adminForceLogoutButton','adminRepairAccessButton','closeAdminClient'];
   ids.forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminTechSaving||adminClientSaving});
   document.querySelectorAll('[data-restore-audit]').forEach(button=>button.disabled=adminTechSaving||adminClientSaving);
   const apply=document.getElementById('adminApplyOverrideButton');if(apply)apply.textContent=adminTechSaving&&adminTechMutationTarget==='override'?'Applying…':'Apply admin override';
+  const force=document.getElementById('adminForceLogoutButton');if(force)force.textContent=adminTechSaving&&adminTechMutationTarget==='force-logout'?'Revoking…':'Force sign out';
+  const repair=document.getElementById('adminRepairAccessButton');if(repair)repair.textContent=adminTechSaving&&adminTechMutationTarget==='repair-access'?'Repairing…':'Repair access mapping';
   const drawer=document.getElementById('adminClientDrawer');if(drawer)drawer.setAttribute('aria-busy',String(adminTechSaving||adminClientSaving));
 }
 function setAdminClientMutationState(saving){
@@ -3337,17 +3339,31 @@ async function sendClientLogin(){
   if(r.ok)await loadAdminTechSupport();
 }
 async function forceClientLogout(){
-  if(!currentAdminClient||!confirm('Force this client to sign out of all existing CallerCore sessions?'))return;
-  const r=await fetch('/api/account?action=admin-force-logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})}),data=await r.json().catch(()=>({}));
-  adminTechMessage(r.ok?'All existing client sessions have been revoked.':(data.error||'Could not revoke sessions.'),!r.ok);
-  if(r.ok)await loadAdminTechSupport();
+  if(!currentAdminClient||adminTechSaving||adminClientSaving||!confirm('Force this client to sign out of all existing CallerCore sessions?'))return;
+  const id=String(currentAdminClient.id),request=adminClientOpenRequest;
+  setAdminTechMutationState(true,'force-logout');adminTechMessage('Revoking existing client sessions…');
+  try{
+    const r=await fetch('/api/account?action=admin-force-logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));
+    if(!r.ok){adminTechMessage(data.error||'Could not revoke sessions.',true);return}
+    adminTechMessage('All existing client sessions have been revoked.');
+    await loadAdminTechSupport(id,request);
+  }catch(err){adminTechMessage(err.message||'Could not revoke sessions.',true)}
+  finally{setAdminTechMutationState(false)}
 }
 async function repairClientAccess(){
-  if(!currentAdminClient)return;const email=(document.getElementById('adminRepairEmail')?.value||'').trim();
+  if(!currentAdminClient||adminTechSaving||adminClientSaving)return;
+  const id=String(currentAdminClient.id),request=adminClientOpenRequest,email=(document.getElementById('adminRepairEmail')?.value||'').trim();
   if(!confirm('Repair the login mapping for '+email+' and revoke older sessions?'))return;
-  const r=await fetch('/api/account?action=admin-repair-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,email})}),data=await r.json().catch(()=>({}));
-  adminTechMessage(r.ok?'Access mapping repaired for '+data.email:(data.error||'Could not repair access.'),!r.ok);
-  if(r.ok){await refreshAdminCore();await loadAdminTechSupport()}
+  setAdminTechMutationState(true,'repair-access');adminTechMessage('Repairing client access mapping…');
+  try{
+    const r=await fetch('/api/account?action=admin-repair-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,email})}),data=await r.json().catch(()=>({}));
+    if(!r.ok){adminTechMessage(data.error||'Could not repair access.',true);return}
+    if(String(currentAdminClient?.id)===id)currentAdminClient.ownerEmail=data.email||email;
+    adminTechMessage('Access mapping repaired for '+(data.email||email)+'.');
+    try{await refreshAdminCore()}catch(_){adminTechMessage('Access mapping was repaired, but the client directory could not refresh. Diagnostics will retry independently.',true)}
+    await loadAdminTechSupport(id,request);
+  }catch(err){adminTechMessage(err.message||'Could not repair access.',true)}
+  finally{setAdminTechMutationState(false)}
 }
 async function applyAdminConfigOverride(){
   if(!currentAdminClient||adminTechSaving)return;const section=document.getElementById('adminConfigSection')?.value||'settings',raw=document.getElementById('adminConfigEditor')?.value||'';
