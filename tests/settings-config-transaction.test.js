@@ -6,18 +6,18 @@ const source=fs.readFileSync('api/account.js','utf8');
 const handler=source.slice(source.indexOf('async function saveSettings('),source.indexOf('async function aiAnsweringControl('));
 async function run({revision=10,transaction=true,missing=false}={}){
   const previous={businessName:'Original',updatedAt:10,aiAnsweringPaused:true},workspace={name:'Original',plan:'Growth',ownerName:'Owner'};
-  let status=200,result,updates,audits=0;
-  const ctx=vm.createContext({requireWritableSession:async()=>({workspaceId:'tenant',email:'qa@test.invalid'}),requireOperationalWorkspace:async()=>true,process:{env:{}},kv:{get:async key=>key.startsWith('settings:')?previous:missing?null:workspace,set:()=>assert.fail('Use atomic writes')},compareAndSetConfig:async(_,u)=>{updates=u;if(transaction==='error')throw Error('network');return transaction},appendAudit:async()=>audits++,req:{body:{businessName:'Updated',expectedUpdatedAt:revision}},res:{status(n){status=n;return this},json(x){result=x}}});
-  vm.runInContext(handler,ctx);await vm.runInContext('saveSettings(req,res)',ctx);return {status,result,updates,audits};
+  let status=200,result,updates,auditCommitted=null;
+  const ctx=vm.createContext({requireWritableSession:async()=>({workspaceId:'tenant',email:'qa@test.invalid'}),requireOperationalWorkspace:async()=>true,process:{env:{}},crypto:{randomUUID:()=> 'settings-audit'},Date,kv:{get:async key=>key.startsWith('settings:')?previous:missing?null:workspace,set:()=>assert.fail('Use atomic writes')},compareAndAuditBatch:async(_,u,auditKey,event)=>{updates=u;if(transaction==='error')throw Error('network');if(transaction)auditCommitted={auditKey,event};return transaction},appendAudit:async()=>assert.fail('Settings audit must be part of the atomic transaction'),req:{body:{businessName:'Updated',expectedUpdatedAt:revision}},res:{status(n){status=n;return this},json(x){result=x}}});
+  vm.runInContext(handler,ctx);await vm.runInContext('saveSettings(req,res)',ctx);return {status,result,updates,auditCommitted};
 }
 test('settings and shared workspace name are staged together without losing plan or owner',async()=>{
-  const r=await run();assert.equal(r.status,200);assert.equal(r.updates.length,2);assert.equal(r.updates[0].after.businessName,'Updated');assert.equal(r.updates[1].after.name,'Updated');assert.equal(r.updates[1].after.plan,'Growth');assert.equal(r.updates[1].after.ownerName,'Owner');assert.equal(r.result.settings.aiAnsweringPaused,true);assert.equal(r.audits,1);
+  const r=await run();assert.equal(r.status,200);assert.equal(r.updates.length,2);assert.equal(r.updates[0].after.businessName,'Updated');assert.equal(r.updates[1].after.name,'Updated');assert.equal(r.updates[1].after.plan,'Growth');assert.equal(r.updates[1].after.ownerName,'Owner');assert.equal(r.result.settings.aiAnsweringPaused,true);assert.equal(r.auditCommitted.auditKey,'audit:tenant');assert.equal(r.auditCommitted.event.action,'settings_save');
 });
 test('settings revision conflicts and missing workspaces do not start a write',async()=>{
-  for(const options of [{revision:9},{missing:true}]){const r=await run(options);assert.equal(r.status,options.missing?404:409);assert.equal(r.updates,undefined);assert.equal(r.audits,0)}
+  for(const options of [{revision:9},{missing:true}]){const r=await run(options);assert.equal(r.status,options.missing?404:409);assert.equal(r.updates,undefined);assert.equal(r.auditCommitted,null)}
 });
 test('concurrent settings changes and ambiguous storage failures never report success',async()=>{
-  for(const transaction of [false,'error']){const r=await run({transaction});assert.equal(r.status,transaction===false?409:503);assert.equal(r.audits,0)}
+  for(const transaction of [false,'error']){const r=await run({transaction});assert.equal(r.status,transaction===false?409:503);assert.equal(r.auditCommitted,null)}
 });
 test('both settings read paths expose the revision used by the save contract',async()=>{
   const saved={businessName:'Saved',updatedAt:123};let result;

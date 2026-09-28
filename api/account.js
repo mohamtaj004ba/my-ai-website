@@ -2796,11 +2796,12 @@ async function saveSettings(req,res){
   const key='workspace:'+s.workspaceId,ws=await kv.get(key);
   if(!ws)return res.status(404).json({error:'Workspace not found'});
   const nextWorkspace={...ws,name:settings.businessName,ownerName:settings.contactName||ws.ownerName,industry:settings.industry||ws.industry,updatedAt:Date.now()};
+  const updates=[{key:'settings:'+s.workspaceId,before:previous,after:settings},{key,before:ws,after:nextWorkspace}];
+  const audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'settings_save',section:'settings',before:previous,after:settings,at:Date.now()};
   try{
-    const saved=await compareAndSetConfig(kv,[{key:'settings:'+s.workspaceId,before:previous,after:settings},{key,before:ws,after:nextWorkspace}]);
+    const saved=await compareAndAuditBatch(kv,updates,'audit:'+s.workspaceId,audit);
     if(!saved)return res.status(409).json({error:'Workspace settings changed during this save. Cancel and refresh before editing again.'});
-  }catch{return res.status(503).json({error:'Could not confirm that settings were saved. Refresh to check the saved values before retrying.'})}
-  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:'settings_save',section:'settings',before:previous,after:settings});
+  }catch{return res.status(503).json({error:'Could not confirm settings and audit history together. Refresh to check the saved values before retrying.'})}
   return res.status(200).json({ok:true,settings});
 }
 
