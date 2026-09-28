@@ -2134,7 +2134,9 @@ async function followupUpdate(req,res){
   if(!completionReasons.includes(completionReason))return res.status(400).json({error:'Invalid completion outcome'});
   const calls=await kv.get('calls:'+s.workspaceId)||[];
   if(!Array.isArray(calls)||!calls.some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
-  const key='followup:state:'+s.workspaceId,state=await kv.get(key)||{},base=state&&typeof state==='object'&&!Array.isArray(state)?state:{},next={...base},previous=base[callId]&&typeof base[callId]==='object'?base[callId]:{};
+  const key='followup:state:'+s.workspaceId,rawState=await kv.get(key);
+  if(rawState!=null&&(!rawState||typeof rawState!=='object'||Array.isArray(rawState)))return res.status(503).json({error:'Team follow-up history is unavailable. No changes were made.'});
+  const base=rawState||{},next={...base},previous=base[callId]&&typeof base[callId]==='object'&&!Array.isArray(base[callId])?base[callId]:{};
   let notes=Array.isArray(previous.notes)?previous.notes.slice(-100):[];
   if(previous.note&&String(previous.note).trim()&&!notes.some(n=>n&&n.text===previous.note))notes.unshift({id:'legacy',text:String(previous.note).slice(0,2000),at:Number(previous.updatedAt||0),by:previous.updatedBy||''});
   if(legacyNote&&!appendNote&&!notes.length)notes.push({id:'legacy_'+Date.now(),text:legacyNote,at:Date.now(),by:s.email||''});
@@ -2150,8 +2152,10 @@ async function followupUpdate(req,res){
   notes=notes.slice(-100);
   const finalCompletionReason=status==='completed'?(body.completionReason!==undefined?completionReason:String(previous.completionReason||'')):'',finalCompletionNote=status==='completed'?(body.completionNote!==undefined?completionNote:String(previous.completionNote||'')):'';
   next[callId]={status,notes,completionReason:finalCompletionReason,completionNote:finalCompletionNote,updatedAt:Date.now(),updatedBy:s.email||''};
-  await kv.set(key,next);
-  await appendAudit(s.workspaceId,{actorEmail:s.email,actorRole:s.role||'client',action:noteAction||('team_status_'+status),section:'calls',before:previous||null,after:next[callId],meta:{callId,noteId:updateNoteId||deleteNoteId||''}});
+  const audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:noteAction||('team_status_'+status),section:'calls',before:previous||null,after:next[callId],meta:{callId,noteId:updateNoteId||deleteNoteId||''},at:Date.now()};
+  try{
+    if(!await compareAndAudit(kv,{key,before:rawState,after:next},'audit:'+s.workspaceId,audit))return res.status(409).json({error:'Team follow-up history changed during this update. Reload the call before retrying.'});
+  }catch(err){console.error('follow-up update failed',safeError(err));return res.status(503).json({error:'Could not confirm the follow-up update and audit history together. Reload before retrying.'})}
   return res.status(200).json({ok:true,state:next});
 }
 function aiFeedbackWorkspaceIndexKey(workspaceId){return 'ai-feedback:workspace:'+String(workspaceId||'')}

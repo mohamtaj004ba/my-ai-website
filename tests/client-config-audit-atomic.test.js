@@ -29,3 +29,11 @@ test('integration saves bind data and audit history to one compare-and-audit tra
   assert.match(body,/rawSaved!=null&&\(!rawSaved\|\|typeof rawSaved!=='object'\|\|Array\.isArray\(rawSaved\)\)/);
   assert.doesNotMatch(body,/await kv\.set\(|await appendAudit\(/);
 });
+
+
+test('follow-up status and notes commit with their audit event and reject malformed history',()=>{
+  const body=handler('followupUpdate','\nfunction aiFeedbackWorkspaceIndexKey');
+  assert.match(body,/rawState!=null&&\(!rawState\|\|typeof rawState!=='object'\|\|Array\.isArray\(rawState\)\)/);
+  assert.match(body,/compareAndAudit\(kv,\{key,before:rawState,after:next\},'audit:'\+s\.workspaceId,audit\)/);
+  assert.doesNotMatch(body,/await kv\.set\(|await appendAudit\(/);
+});
