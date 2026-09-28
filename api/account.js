@@ -577,7 +577,7 @@ async function adminPurgeClient(req,res){
     if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled')return res.status(409).json({error:'Active Stripe subscription blocks permanent deletion'});
     const [onboarding,onboardingToken]=await Promise.all([kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
     if(onboarding!=null&&(!onboarding||typeof onboarding!=='object'||Array.isArray(onboarding)))return res.status(503).json({error:'Onboarding retention data is unavailable. Permanent purge did not start.'});
-    const now=Date.now(),attemptId=crypto.randomUUID(),revision=Number(ws.updatedAt||ws.createdAt||0);
+    const now=Date.now(),attemptId=crypto.randomUUID();
     const lockedWorkspace={...ws,purgeStartedAt:now,purgeStartedBy:admin.email,purgeAttemptId:attemptId,updatedAt:Math.max(now,revision+1)};
     journal={version:1,workspaceId:id,attemptId,phase:'prepared',startedAt:now,updatedAt:now,startedBy:admin.email,
       retainedUntil:now+WORKSPACE_RETENTION_MS,operationalRetainedUntil:now+OPERATIONAL_RETENTION_MS,
