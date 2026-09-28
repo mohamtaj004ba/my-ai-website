@@ -84,6 +84,15 @@ test('monthly history fails closed on malformed snapshots, malformed index and c
   await assert.rejects(()=>recordMonthlyKpiSnapshot(storeFixture({[MONTHLY_KPI_INDEX_KEY]:months}).kv,sample({month:'2099-12'})),/capacity reached/);
 });
 
+test('newer partial snapshot cannot downgrade a previously complete monthly source',async()=>{
+  const complete=sample({recordedAt:1000,sessions:10,coverage:{websiteEvents:true,websiteSessions:true,websiteVisitors:true,leadPipeline:true,workspaces:true,churn:true,calls:true,callMinutes:true,callOutcomes:true,appointments:true,support:true,paymentFailures:false}});
+  const f=storeFixture({'analytics:monthly:2026-09':sanitizeMonthlyKpiSnapshot(complete),[MONTHLY_KPI_INDEX_KEY]:['2026-09']});
+  const partial=sample({recordedAt:2000,sessions:null,coverage:{websiteEvents:false,websiteSessions:false,websiteVisitors:false,leadPipeline:true,workspaces:true,churn:true,calls:true,callMinutes:true,callOutcomes:true,appointments:true,support:true,paymentFailures:false}});
+  const r=await recordMonthlyKpiSnapshot(f.kv,partial);
+  assert.equal(r.saved,false);assert.equal(r.degraded,true);assert.equal(f.calls.length,0);
+  assert.equal(f.records.get('analytics:monthly:2026-09').sessions,10);
+});
+
 test('monthly snapshot retries compare conflicts without overwriting a concurrent newer snapshot',async()=>{
   const f=storeFixture(),realEval=f.kv.eval.bind(f.kv);let first=true;
   f.kv.eval=async(script,keys,args)=>{
