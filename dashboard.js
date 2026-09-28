@@ -3279,14 +3279,15 @@ function setAdminTechMutationState(saving,target=''){
   const repair=document.getElementById('adminRepairAccessButton');if(repair)repair.textContent=adminTechSaving&&adminTechMutationTarget==='repair-access'?'Repairing…':'Repair access mapping';
   const drawer=document.getElementById('adminClientDrawer');if(drawer)drawer.setAttribute('aria-busy',String(adminTechSaving||adminClientSaving));
 }
-function setAdminClientMutationState(saving){
-  adminClientSaving=!!saving;
+function setAdminClientMutationState(saving,target='save'){
+  adminClientSaving=!!saving;target=String(target||'save');
   const plan=document.getElementById('adminClientPlan'),status=document.getElementById('adminClientStatus');
   if(plan)plan.disabled=adminClientSaving||!!currentAdminClient?.stripe?.subscriptionLinked;
   if(status)status.disabled=adminClientSaving;
   ['adminSaveClientButton','adminDeleteClientButton','adminViewClientButton','adminExportClientButton','adminRecoveryDrillButton','adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','adminSendLoginButton','adminForceLogoutButton','adminRepairAccessButton','closeAdminClient'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminClientSaving||adminTechSaving});
   document.querySelectorAll('[data-restore-audit]').forEach(button=>button.disabled=adminClientSaving||adminTechSaving);
-  const save=document.getElementById('adminSaveClientButton');if(save)save.textContent=adminClientSaving?'Saving…':'Save changes';
+  const save=document.getElementById('adminSaveClientButton');if(save)save.textContent=adminClientSaving&&target==='save'?'Saving…':'Save changes';
+  const del=document.getElementById('adminDeleteClientButton');if(del)del.textContent=adminClientSaving&&target==='delete'?'Scheduling…':'Delete workspace';
   const drawer=document.getElementById('adminClientDrawer');if(drawer)drawer.setAttribute('aria-busy',String(adminClientSaving||adminTechSaving));
 }
 async function loadAdminTechSupport(id=currentAdminClient?.id,request=adminClientOpenRequest){
@@ -3626,16 +3627,29 @@ async function saveAdminClient(){
   finally{setAdminClientMutationState(false)}
 }
 async function deleteAdminClient(){
-  if(!currentAdminClient)return;
-  const name=currentAdminClient.name||'this workspace';
+  if(!currentAdminClient||adminClientSaving||adminTechSaving)return;
+  const id=String(currentAdminClient.id),name=currentAdminClient.name||'this workspace',expectedUpdatedAt=Number(currentAdminClient.updatedAt||currentAdminClient.createdAt||0);
   if(!confirm('Schedule '+name+' for deletion? Customer access will be disabled now and the workspace will enter a 30-day recovery period before permanent deletion can be completed.'))return;
   const typed=prompt('Type DELETE to schedule deletion of '+name+'.');
   if(typed!=='DELETE')return;
-  const r=await fetch('/api/account?action=admin-client-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})});
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not delete workspace.');return}
-  if(data.pendingDeletion&&data.purgeEligibleAt)alert(name+' is now pending deletion. Recovery is available until '+new Date(data.purgeEligibleAt).toLocaleString()+'.');
-  closeAdminClient();currentAdminClient=null;await refreshAdminCore();await loadAdminOps();
+  let confirmed=false;
+  setAdminClientMutationState(true,'delete');
+  try{
+    const r=await fetch('/api/account?action=admin-client-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not schedule workspace deletion.');
+    if(String(currentAdminClient?.id)!==id)return;
+    if(data.client)currentAdminClient={...currentAdminClient,...data.client};
+    confirmed=true;
+    const notes=[];
+    if(data.pendingDeletion&&data.purgeEligibleAt)notes.push(name+' is now pending deletion. Recovery is available until '+new Date(data.purgeEligibleAt).toLocaleString()+'.');
+    if(data.warning)notes.push(data.warning);
+    if(notes.length)alert(notes.join('\n\n'));
+  }catch(err){alert(err.message||'Could not schedule workspace deletion.')}
+  finally{setAdminClientMutationState(false)}
+  if(!confirmed)return;
+  closeAdminClient();currentAdminClient=null;
+  try{await refreshAdminCore();await loadAdminOps()}
+  catch(_){alert('Deletion was scheduled, but the admin directory could not refresh. Reload the dashboard to verify the pending-deletion account.')}
 }
 async function viewAdminClient(){
   if(!currentAdminClient)return;
