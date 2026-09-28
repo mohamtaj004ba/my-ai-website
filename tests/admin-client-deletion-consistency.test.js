@@ -41,7 +41,8 @@ function backendFixture({
       return transaction!==false;
     },
     disconnectGmail:async email=>{sequence.push('gmail');gmailCalls.push(email);if(gmail==='error')throw Error('provider unavailable')},
-    cleanEmail,crypto:{randomUUID:()=> 'audit-1'},safeError:()=>'',console:{error(){}},
+    cleanEmail,purgeJournalKey:id=>'purge:workspace:'+id,validPurgeJournal:value=>!!value&&value.version===1,
+    crypto:{randomUUID:()=> 'audit-1'},safeError:()=>'',console:{error(){}},
     Date:{now:()=>1000},Number,Array,String,Promise,Set,
     req:{body:{id:'client-1',expectedUpdatedAt}},res:box.res
   });
