@@ -60,7 +60,7 @@ test('de-identified prospects stay out of active Growth records but remain in ag
   };
   const r=await fixture({prospectIds,records}).run();
   assert.equal(r.code,200);
-  assert.deepEqual(r.body.analytics.prospects.map(p=>p.id),['active-lead']);
+  assert.deepEqual(Array.from(r.body.analytics.prospects,p=>p.id),['active-lead']);
   assert.equal(r.body.analytics.coverage.deidentifiedProspectRecords,1);
   assert.equal(r.body.analytics.conversions,1);
   assert.equal(r.body.analytics.funnel.converted,1);
