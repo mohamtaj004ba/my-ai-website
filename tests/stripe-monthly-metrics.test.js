@@ -13,12 +13,12 @@ function fixture(initial={}){
     async eval(script,keys,args){
       evals.push({script,keys:[...keys],args:[...args]});
       if(script.includes("local metricType=redis.call('TYPE',KEYS[1]).ok")){
-        if(records.has(keys[1])&&typeof records.get(keys[1])!=='object')return -1;
-        if(records.has(keys[2]))return 0;
-        let metric=records.get(keys[1])||{month:args[0],paymentFailures:0,updatedAt:0};
+        if(records.has(keys[0])&&typeof records.get(keys[0])!=='object')return -1;
+        if(records.has(keys[1]))return 0;
+        let metric=records.get(keys[0])||{month:args[0],paymentFailures:0,updatedAt:0};
         if(!metric||typeof metric!=='object'||Array.isArray(metric)||metric.month!==args[0]||!Number.isInteger(Number(metric.paymentFailures))||Number(metric.paymentFailures)<0)return -3;
         metric={...metric,paymentFailures:Number(metric.paymentFailures)+1,updatedAt:Number(args[1])};
-        records.set(keys[1],metric);records.set(keys[2],1);return 1;
+        records.set(keys[0],metric);records.set(keys[1],1);return 1;
       }
       for(let i=0;i<keys.length;i++){
         const current=records.has(keys[i])?JSON.stringify(records.get(keys[i])):'';
