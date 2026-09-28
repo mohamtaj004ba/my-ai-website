@@ -2,6 +2,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {buildMonthlyKpiSnapshot,refreshMonthlyKpiSnapshot,parseDurationSeconds,dispositionKey}=require('../lib/monthly-kpi-producer');
 const {sanitizeMonthlyKpiSnapshot,MONTHLY_KPI_INDEX_KEY}=require('../lib/monthly-kpi-rollup');
+const {STRIPE_MONTHLY_METRICS_COVERAGE_KEY,monthlyStripeMetricKey}=require('../lib/stripe-monthly-metrics');
 
 function clone(value){return value==null?value:JSON.parse(JSON.stringify(value))}
 function fixture({records={},lists={}}={}){
@@ -108,6 +109,26 @@ test('producer preserves known domains while marking incomplete domains unknown'
   assert.ok(issues.some(x=>x.domain==='calls'));
 });
 
+test('fully observed Stripe month contributes durable payment-failure count',async()=>{
+  const f=completeFixture();
+  f.store.set(STRIPE_MONTHLY_METRICS_COVERAGE_KEY,{startedAt:Date.UTC(2026,7,15)});
+  f.store.set(monthlyStripeMetricKey('2026-09'),{month:'2026-09',paymentFailures:3,updatedAt:monthStart+9000});
+  const {snapshot,issues}=await buildMonthlyKpiSnapshot(f.kv,{now:monthNow});
+  assert.equal(snapshot.coverage.paymentFailures,true);
+  assert.equal(snapshot.paymentFailures,3);
+  assert.equal(issues.some(x=>x.domain==='paymentFailures'),false);
+});
+
+test('Stripe coverage beginning after month start keeps failure count unknown',async()=>{
+  const f=completeFixture();
+  f.store.set(STRIPE_MONTHLY_METRICS_COVERAGE_KEY,{startedAt:monthStart+5000});
+  f.store.set(monthlyStripeMetricKey('2026-09'),{month:'2026-09',paymentFailures:2,updatedAt:monthStart+9000});
+  const {snapshot,issues}=await buildMonthlyKpiSnapshot(f.kv,{now:monthNow});
+  assert.equal(snapshot.coverage.paymentFailures,false);
+  assert.equal(snapshot.paymentFailures,null);
+  assert.ok(issues.some(x=>x.domain==='paymentFailures'&&x.reason==='partial_month'));
+});
+
 test('retention-cap inside the current month makes website event totals unknown',async()=>{
   const f=completeFixture();
   f.listStore.set('site:events',Array.from({length:5000},(_,i)=>({id:'e'+i,type:'page_view',at:monthStart+5000-i})));
@@ -137,6 +158,9 @@ test('refresh records a complete snapshot and monthly index when cache is stale'
   const r=await refreshMonthlyKpiSnapshot(f.kv,{now:monthNow,minIntervalMs:0});
   assert.equal(r.cached,false);assert.equal(r.saved,true);assert.equal(r.degraded,false);
   assert.equal(f.store.get('analytics:monthly:2026-09').mrr,1598);
+  assert.equal(f.store.get('analytics:monthly:2026-09').paymentFailures,null);
+  assert.equal(f.store.get('analytics:monthly:2026-09').coverage.paymentFailures,false);
+  assert.equal(f.store.get(STRIPE_MONTHLY_METRICS_COVERAGE_KEY).startedAt,monthNow);
   assert.deepEqual(f.store.get(MONTHLY_KPI_INDEX_KEY),['2026-09']);
-  assert.ok(f.calls.eval>=1);
+  assert.ok(f.calls.eval>=2);
 });
