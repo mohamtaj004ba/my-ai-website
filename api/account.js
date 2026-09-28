@@ -15,7 +15,7 @@ const {replacePreviewWorkspaceIndex}=require('../lib/preview-workspace-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAuditBatch,compareAndAuditEventsBatch}=require('../lib/config-transaction');
 const {recordFinanceSnapshot}=require('../lib/finance-history');
-const {refreshMonthlyKpiSnapshot}=require('../lib/monthly-kpi-producer');
+const {refreshMonthlyKpiSnapshot,monthWindow}=require('../lib/monthly-kpi-producer');
 const {prependAuditEvent}=require('../lib/audit-log');
 const {addBoundedIds}=require('../lib/bounded-id-set');
 const {WORKSPACE_RETENTION_MS,OPERATIONAL_RETENTION_MS,purgeJournalKey,purgeCompleteKey,validIdDirectory,validPurgeJournal,nextPurgeJournal,retentionTtlSeconds}=require('../lib/purge-state');
@@ -2297,7 +2297,8 @@ function environmentScopeHealth(){
 
 async function adminSystemHealth(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const [kvHealth,stripeHealth,platformSettings,workspaces,rawPhones]=await Promise.all([kvHealthCheck(),stripeConfigurationHealth(),kv.get('platform:settings'),loadAdminWorkspaces(),kv.get('phone:index')]),kvOk=kvHealth.ok,launchGates=launchGateState(platformSettings?.launchGates),envScope=environmentScopeHealth();
+  const checkedAt=Date.now(),rollupMonth=monthWindow(checkedAt).month;
+  const [kvHealth,stripeHealth,platformSettings,workspaces,rawPhones,monthlyKpi]=await Promise.all([kvHealthCheck(),stripeConfigurationHealth(),kv.get('platform:settings'),loadAdminWorkspaces(),kv.get('phone:index'),kv.get('analytics:monthly:'+rollupMonth)]),kvOk=kvHealth.ok,launchGates=launchGateState(platformSettings?.launchGates),envScope=environmentScopeHealth();
   const phones=Array.isArray(rawPhones)?rawPhones:[],workspaceById=new Map(workspaces.map(ws=>[String(ws.id||''),ws])),dataIssues=[],digits=v=>String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
   if(!Array.isArray(rawPhones)&&rawPhones!=null)dataIssues.push('Phone routing inventory is malformed.');
   for(const ws of workspaces){
@@ -2314,8 +2315,21 @@ async function adminSystemHealth(req,res){
   }
   const stripeEnv=!!(process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_PUBLISHABLE_KEY&&process.env.STRIPE_WEBHOOK_SECRET);
   const stripeReady=stripeEnv&&stripeHealth.ok;
+  let rollupStatus='pending',rollupDetail='Monthly analytics rollup has not been recorded for '+rollupMonth+'.',rollupMeta={month:rollupMonth,recordedAt:null,incompleteSources:[]};
+  if(monthlyKpi!=null){
+    const valid=monthlyKpi&&typeof monthlyKpi==='object'&&!Array.isArray(monthlyKpi)&&String(monthlyKpi.month||'')===rollupMonth&&Number.isFinite(Number(monthlyKpi.recordedAt))&&Number(monthlyKpi.recordedAt)>0&&monthlyKpi.coverage&&typeof monthlyKpi.coverage==='object'&&!Array.isArray(monthlyKpi.coverage);
+    if(!valid){rollupStatus='error';rollupDetail='Stored monthly analytics rollup is malformed.'}
+    else{
+      const incomplete=Object.entries(monthlyKpi.coverage).filter(([,value])=>value!==true).map(([key])=>key).slice(0,25),age=checkedAt-Number(monthlyKpi.recordedAt);
+      rollupMeta={month:rollupMonth,recordedAt:Number(monthlyKpi.recordedAt),incompleteSources:incomplete};
+      if(age>24*60*60*1000){rollupStatus='warning';rollupDetail='Monthly analytics rollup is stale and should be refreshed.'}
+      else if(incomplete.length){rollupStatus='warning';rollupDetail='Monthly analytics rollup is current but '+incomplete.length+' source'+(incomplete.length===1?' is':'s are')+' not yet fully covered.'}
+      else{rollupStatus='operational';rollupDetail='Monthly analytics rollup is current and all tracked sources are covered.'}
+    }
+  }
   const services=[
     {key:'database',name:'Upstash / KV',status:kvOk?'operational':'error',detail:kvOk?'Read/write check passed':('Database check failed ('+kvHealth.error+')')},
+    {key:'analytics-rollup',name:'Monthly analytics rollup',status:rollupStatus,detail:rollupDetail,meta:rollupMeta},
     {key:'environment-scope',name:'Environment scope',status:envScope.ok?'operational':'error',detail:envScope.detail,meta:{environment:envScope.env,issueCount:envScope.issues.length}},
     {key:'data-integrity',name:'Workspace data integrity',status:dataIssues.length?'error':'operational',detail:dataIssues.length?(dataIssues.length+' data consistency issue'+(dataIssues.length===1?'':'s')+' detected'):'Workspace plans and phone assignments are internally consistent',meta:{issueCount:dataIssues.length,issues:dataIssues.slice(0,25)}},
     {key:'checkout',name:'Sales / checkout',status:process.env.CALLERCORE_CHECKOUT_ENABLED==='true'?'operational':'not_configured',detail:process.env.CALLERCORE_CHECKOUT_ENABLED==='true'?'Customer checkout is enabled':'Checkout launch gate is closed'},
@@ -2330,7 +2344,7 @@ async function adminSystemHealth(req,res){
   const requiredForLaunch=['database','environment-scope','data-integrity','checkout','stripe','mailgun','onboarding-ai','voice',...LAUNCH_GATE_DEFS.map(g=>'gate-'+g.key)];
   const blockers=services.filter(x=>requiredForLaunch.includes(x.key)&&!['operational','configured','confirmed'].includes(x.status));
   const readiness={ready:blockers.length===0,requiredForLaunch,blockers:blockers.map(x=>({key:x.key,name:x.name,detail:x.detail})),configured:services.filter(x=>['operational','configured','confirmed'].includes(x.status)).length,total:services.length};
-  return res.status(200).json({services,readiness,checkedAt:Date.now()});
+  return res.status(200).json({services,readiness,checkedAt});
 }
 
 async function adminClient(req,res){
