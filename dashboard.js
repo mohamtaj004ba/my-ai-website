@@ -1703,7 +1703,7 @@ document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{
 
 
 let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
-let adminProvisioningStagePending=new Set();
+let adminProvisioningStagePending=new Set(),adminOnboardingInvitePending=new Set();
 async function bootstrapAdmin(){
   try{
     const [sr,cr]=await Promise.all([
@@ -2705,7 +2705,8 @@ document.getElementById('savePlatformSettings')?.addEventListener('click',savePl
 function onboardingNeedsAction(x){
   const ck=x.checklist||{},now=Date.now();
   if(x.stage==='Live')return false;
-  if(x.onboardingStatus==='awaiting_review'&&!x.onboardingLinkSent&&Number(x.reviewEligibleAt||0)<=now)return true;
+  if(x.inviteDeliveryNeedsReview)return true;
+  if(x.onboardingStatus==='awaiting_review'&&!x.onboardingLinkSent&&String(x.inviteDeliveryStatus||'')!=='sending'&&Number(x.reviewEligibleAt||0)<=now)return true;
   if(x.onboardingStatus==='building_review'&&!ck.adminReview&&Number(x.buildEligibleAt||0)<=now)return true;
   if(ck.adminReview&&!ck.testCall)return true;
   if(ck.testCall&&!ck.clientApproval)return true;
@@ -2713,9 +2714,11 @@ function onboardingNeedsAction(x){
   return false;
 }
 function onboardingNextAction(x){
-  const ck=x.checklist||{},now=Date.now(),reviewAt=Number(x.reviewEligibleAt||0),buildAt=Number(x.buildEligibleAt||0);
+  const ck=x.checklist||{},now=Date.now(),reviewAt=Number(x.reviewEligibleAt||0),buildAt=Number(x.buildEligibleAt||0),delivery=String(x.inviteDeliveryStatus||'not_started');
   if(x.stage==='Live'||ck.live)return {label:'Launch complete',type:'done'};
-  if(x.onboardingStatus==='awaiting_review'&&!x.onboardingLinkSent)return reviewAt>now?{label:'Review available '+new Date(reviewAt).toLocaleString(),type:'wait'}:{label:'Approve & send onboarding',type:'send'};
+  if(x.inviteDeliveryNeedsReview)return {label:'Review invite delivery',type:'delivery-review'};
+  if(!x.onboardingLinkSent&&delivery==='sending')return {label:'Sending onboarding…',type:'wait'};
+  if(x.onboardingStatus==='awaiting_review'&&!x.onboardingLinkSent)return reviewAt>now?{label:'Review available '+new Date(reviewAt).toLocaleString(),type:'wait'}:{label:delivery==='failed'?'Retry onboarding invite':'Approve & send onboarding',type:'send'};
   if(!ck.agreement&&x.onboardingLinkSent)return {label:'Waiting for agreement',type:'wait'};
   if(!ck.intake&&x.onboardingLinkSent)return {label:'Waiting for client intake',type:'wait'};
   if(x.onboardingStatus==='building_review'&&!ck.adminReview)return buildAt>now?{label:'Build review '+new Date(buildAt).toLocaleString(),type:'wait'}:{label:'Approve build',type:'approve'};
@@ -2734,7 +2737,8 @@ function bindOnboardingDrawerActions(){
   drawer.querySelectorAll('[data-auto-stage]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await clearProvisioningOverride(b.dataset.autoStage))closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-provision-stage-select]').forEach(sel=>sel.onchange=async e=>{e.stopPropagation();if(await moveProvisioningStage(sel.dataset.provisionStageSelect,sel.value))closeOnboardingDrawer();else{const item=adminProvisioningData.find(x=>String(x.id)===String(sel.dataset.provisionStageSelect));if(item)sel.value=item.stage}});
   drawer.querySelectorAll('[data-provision-check]').forEach(b=>b.onclick=async e=>{e.preventDefault();await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done'));closeOnboardingDrawer()});
-  drawer.querySelectorAll('[data-send-onboarding]').forEach(b=>b.onclick=async e=>{e.preventDefault();await sendOnboardingInvite(b.dataset.sendOnboarding,b);closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-send-onboarding]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await sendOnboardingInvite(b.dataset.sendOnboarding,b))closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-resolve-onboarding-delivery]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await resolveOnboardingInviteDelivery(b.dataset.resolveOnboardingId,b.dataset.resolveOnboardingDelivery,b.dataset.attemptId,b))closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-approve-build]').forEach(b=>b.onclick=async e=>{e.preventDefault();await approveProvisioningBuild(b.dataset.approveBuild,b);closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-open-documents],[data-onboarding-documents]').forEach(b=>b.onclick=e=>{e.preventDefault();closeOnboardingDrawer();showView('documents')});
   drawer.querySelectorAll('[data-onboarding-open-client]').forEach(b=>b.onclick=e=>{e.preventDefault();closeOnboardingDrawer();openAdminClient(b.dataset.onboardingOpenClient)});
@@ -2770,9 +2774,10 @@ function renderProvisioning(){
   });
   const labels={payment:'Paid',accountReview:'Account review',onboardingSent:'Onboarding sent',agreement:'Agreement',intake:'Intake',businessProfile:'Business profile',agentDraft:'AI draft',routingCaptured:'Routing',phoneAssigned:'Phone',adminReview:'Admin review',testCall:'Test call',clientApproval:'Client approval',live:'Live'};
   board.innerHTML=rows.map(x=>{
-    const ck=x.checklist||{},done=Number(x.checklistDone||0),total=Math.max(1,Number(x.checklistTotal||Object.keys(labels).length)),pct=Math.round(done/total*100),next=onboardingNextAction(x),doc=(adminDocumentsData.agreements||[]).find(d=>String(d.workspaceId)===String(x.id));
-    const agreementStatus=doc?.status==='signed'||x.agreementSignedAt?'Signed':x.onboardingLinkSent?'Awaiting':'Not sent',agreementClass=agreementStatus==='Signed'?'green':agreementStatus==='Awaiting'?'amber':'';
-    const action=next.type==='send'?'<button class="primary" data-send-onboarding="'+esc(x.id)+'">'+esc(next.label)+'</button>':next.type==='approve'?'<button class="primary" data-approve-build="'+esc(x.id)+'">'+esc(next.label)+'</button>':next.type==='check'?'<button class="primary" data-provision-check="'+esc(next.field)+'" data-provision-id="'+esc(x.id)+'">'+esc(next.label)+'</button>':'<span class="onboarding-next-copy '+next.type+'">'+esc(next.label)+'</span>';
+    const ck=x.checklist||{},done=Number(x.checklistDone||0),total=Math.max(1,Number(x.checklistTotal||Object.keys(labels).length)),pct=Math.round(done/total*100),next=onboardingNextAction(x),doc=(adminDocumentsData.agreements||[]).find(d=>String(d.workspaceId)===String(x.id)),invitePending=adminOnboardingInvitePending.has(String(x.id));
+    const agreementStatus=doc?.status==='signed'||x.agreementSignedAt?'Signed':x.onboardingLinkSent?'Awaiting':x.inviteDeliveryNeedsReview?'Delivery review':x.inviteDeliveryStatus==='failed'?'Send failed':x.inviteDeliveryStatus==='sending'?'Sending':'Not sent',agreementClass=agreementStatus==='Signed'?'green':['Awaiting','Delivery review','Send failed','Sending'].includes(agreementStatus)?'amber':'';
+    const deliveryReview='<div class="onboarding-delivery-review"><small>Mail delivery could not be confirmed. Check Mailgun before choosing a result; confirming “not sent” will make a retry available.</small><div class="support-action-grid"><button type="button" class="secondary-btn" data-resolve-onboarding-delivery="sent" data-resolve-onboarding-id="'+esc(x.id)+'" data-attempt-id="'+esc(x.inviteDeliveryAttemptId||'')+'" '+(invitePending?'disabled aria-busy="true"':'')+'>Confirmed sent</button><button type="button" class="secondary-btn" data-resolve-onboarding-delivery="not_sent" data-resolve-onboarding-id="'+esc(x.id)+'" data-attempt-id="'+esc(x.inviteDeliveryAttemptId||'')+'" '+(invitePending?'disabled aria-busy="true"':'')+'>Confirmed not sent</button></div></div>';
+    const action=next.type==='delivery-review'?deliveryReview:next.type==='send'?'<button class="primary" data-send-onboarding="'+esc(x.id)+'" '+(invitePending?'disabled aria-busy="true"':'')+'>'+esc(next.label)+'</button>':next.type==='approve'?'<button class="primary" data-approve-build="'+esc(x.id)+'">'+esc(next.label)+'</button>':next.type==='check'?'<button class="primary" data-provision-check="'+esc(next.field)+'" data-provision-id="'+esc(x.id)+'">'+esc(next.label)+'</button>':'<span class="onboarding-next-copy '+next.type+'">'+esc(next.label)+'</span>';
     const checklist=Object.entries(labels).map(([k,label])=>'<button type="button" class="provision-check '+(ck[k]?'done':'')+'" '+(['testCall','clientApproval','live'].includes(k)?'data-provision-check="'+k+'" data-provision-id="'+esc(x.id)+'"':'disabled')+'><span>'+(ck[k]?'✓':'○')+'</span>'+label+'</button>').join('');
     const stageSelect='<label class="provision-stage-select">Manual stage<select data-provision-stage-select="'+esc(x.id)+'" '+(adminProvisioningStagePending.has(String(x.id))?'disabled aria-busy="true"':'')+'>'+stages.map(s=>'<option value="'+s+'" '+(x.stage===s?'selected':'')+'>'+s+'</option>').join('')+'</select></label>';
     const agreementDetails='<div class="onboarding-detail-block"><span class="eyebrow">Agreement</span><b>'+esc(agreementStatus)+(x.agreementVersion?' · v'+esc(x.agreementVersion):'')+'</b><small>'+(x.agreementSignedAt?'Signed '+new Date(x.agreementSignedAt).toLocaleDateString()+(x.agreementSignedName?' by '+esc(x.agreementSignedName):''):'Client service agreement status')+'</small>'+(doc?.downloadUrl?'<a class="admin-link" href="'+esc(doc.downloadUrl)+'" target="_blank" rel="noopener">Open signed PDF →</a>':'<button class="admin-link" data-open-documents>Open Documents →</button>')+'</div>';
@@ -2783,14 +2788,50 @@ function renderProvisioning(){
   board.querySelectorAll('[data-provision-stage-select]').forEach(sel=>sel.addEventListener('change',e=>{e.stopPropagation();moveProvisioningStage(sel.dataset.provisionStageSelect,sel.value)}));
   board.querySelectorAll('[data-provision-check]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done'))}));
   board.querySelectorAll('[data-send-onboarding]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await sendOnboardingInvite(b.dataset.sendOnboarding,b)}));
+  board.querySelectorAll('[data-resolve-onboarding-delivery]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await resolveOnboardingInviteDelivery(b.dataset.resolveOnboardingId,b.dataset.resolveOnboardingDelivery,b.dataset.attemptId,b)}));
   board.querySelectorAll('[data-approve-build]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await approveProvisioningBuild(b.dataset.approveBuild,b)}));
   board.querySelectorAll('[data-open-documents]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showView('documents')}));
 }
+function setOnboardingInviteControls(id,pending){
+  document.querySelectorAll('[data-send-onboarding],[data-resolve-onboarding-delivery]').forEach(control=>{
+    const target=String(control.dataset.sendOnboarding||control.dataset.resolveOnboardingId||'');if(target!==String(id))return;
+    control.disabled=pending;if(pending)control.setAttribute('aria-busy','true');else control.removeAttribute('aria-busy');
+  });
+}
 async function sendOnboardingInvite(id,button){
-  if(button){button.disabled=true;button.textContent='Sending…'}
-  const r=await fetch('/api/account?action=admin-onboarding-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));if(button){button.disabled=false;button.textContent='Approve & send onboarding'};return}
-  await refreshAdminView('onboarding',{force:true,announce:false});await loadNotifications({silent:true});
+  const key=String(id);if(adminOnboardingInvitePending.has(key))return false;
+  adminOnboardingInvitePending.add(key);setOnboardingInviteControls(key,true);
+  const idleLabel=button?.textContent||'Approve & send onboarding';if(button)button.textContent='Sending…';
+  try{
+    const r=await fetch('/api/account?action=admin-onboarding-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key})}),data=await r.json().catch(()=>({}));
+    if(!r.ok){
+      alert((data.error||'Could not send onboarding.')+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));
+      try{await refreshAdminView('onboarding',{force:true,announce:false})}catch(_){}
+      return false;
+    }
+    if(data.deliveryStatus!=='sent'&&data.alreadySent!==true)throw new Error('Could not verify onboarding email delivery. Refresh onboarding before retrying.');
+    try{await refreshAdminView('onboarding',{force:true,announce:false})}catch(_){alert('Onboarding email was confirmed sent, but the onboarding view could not refresh. Reload the view before taking another action.')}
+    await loadNotifications({silent:true}).catch(()=>{});
+    return true;
+  }catch(err){alert(err.message||'Could not send onboarding.');return false}
+  finally{adminOnboardingInvitePending.delete(key);setOnboardingInviteControls(key,false);if(button?.isConnected)button.textContent=idleLabel;renderProvisioning()}
+}
+async function resolveOnboardingInviteDelivery(id,resolution,attemptId,button){
+  const key=String(id);if(adminOnboardingInvitePending.has(key))return false;
+  const sent=resolution==='sent';if(!sent&&resolution!=='not_sent')return false;
+  const message=sent?'Only mark this invite as sent after confirming Mailgun accepted or delivered it. Continue?':'Only mark this invite as not sent after confirming Mailgun did not accept or deliver it. This will allow a retry. Continue?';
+  if(!confirm(message))return false;
+  adminOnboardingInvitePending.add(key);setOnboardingInviteControls(key,true);
+  const idleLabel=button?.textContent||'';if(button)button.textContent='Saving…';
+  try{
+    const r=await fetch('/api/account?action=admin-onboarding-delivery-resolve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,resolution,attemptId:String(attemptId||'')})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not resolve onboarding delivery.');
+    const expected=sent?'sent':'failed';if(data.ok!==true||data.deliveryStatus!==expected)throw new Error('Could not verify the saved delivery resolution. Refresh onboarding before retrying.');
+    try{await refreshAdminView('onboarding',{force:true,announce:false})}catch(_){alert('Delivery resolution was saved, but onboarding could not refresh. Reload the view before taking another action.')}
+    await loadNotifications({silent:true}).catch(()=>{});
+    return true;
+  }catch(err){alert(err.message||'Could not resolve onboarding delivery.');return false}
+  finally{adminOnboardingInvitePending.delete(key);setOnboardingInviteControls(key,false);if(button?.isConnected)button.textContent=idleLabel;renderProvisioning()}
 }
 async function approveProvisioningBuild(id,button){
   if(button){button.disabled=true;button.textContent='Approving…'}
