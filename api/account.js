@@ -1748,8 +1748,8 @@ async function adminOverrideConfig(req,res){
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
   const before=await kv.get(key);
   let after;try{after=sanitizeAdminOverride(section,body.value,before||ws)}catch(err){return res.status(400).json({error:err.message})}
-  let updates;try{updates=await configTransactionUpdates(id,section,key,before,after);if(!await compareAndSetConfig(kv,updates))return res.status(409).json({error:'Client configuration changed during this save. Reload the client before retrying.'})}catch(err){console.error('admin override save failed',safeError(err));return res.status(503).json({error:'Could not confirm that the configuration was saved. Reload the client before retrying.'})}
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'admin_override',section,before:before||null,after});
+  const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'admin_override',section,before:before||null,after,at:Date.now()};
+  let updates;try{updates=await configTransactionUpdates(id,section,key,before,after);if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit))return res.status(409).json({error:'Client configuration changed during this save. Reload the client before retrying.'})}catch(err){console.error('admin override save failed',safeError(err));return res.status(503).json({error:'Could not confirm the configuration and audit history together. Reload the client before retrying.'})}
   return res.status(200).json({ok:true,section,value:after});
 }
 async function adminRestoreAudit(req,res){
@@ -1761,8 +1761,8 @@ async function adminRestoreAudit(req,res){
   if(entry.before===undefined)return res.status(400).json({error:'No prior snapshot is available'});
   const current=await kv.get(key),rawRestored=entry.before===null?(entry.section==='automations'||entry.section==='locations'?[]:{}):entry.before;
   let restored;try{restored=sanitizeAdminOverride(entry.section,rawRestored,current||await kv.get('workspace:'+id)||{})}catch(err){return res.status(409).json({error:'This snapshot can no longer be restored safely: '+err.message})}
-  let updates;try{updates=await configTransactionUpdates(id,entry.section,key,current,restored);if(!await compareAndSetConfig(kv,updates))return res.status(409).json({error:'Client configuration changed during restoration. Reload the client before retrying.'})}catch(err){console.error('admin snapshot restore failed',safeError(err));return res.status(503).json({error:'Could not confirm that the snapshot was restored. Reload the client before retrying.'})}
-  await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'restore_snapshot',section:entry.section,before:current||null,after:restored,meta:{restoredFrom:auditId,sanitized:true}});
+  const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'restore_snapshot',section:entry.section,before:current||null,after:restored,meta:{restoredFrom:auditId,sanitized:true},at:Date.now()};
+  let updates;try{updates=await configTransactionUpdates(id,entry.section,key,current,restored);if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit))return res.status(409).json({error:'Client configuration changed during restoration. Reload the client before retrying.'})}catch(err){console.error('admin snapshot restore failed',safeError(err));return res.status(503).json({error:'Could not confirm snapshot restoration and audit history together. Reload the client before retrying.'})}
   return res.status(200).json({ok:true,section:entry.section,value:restored});
 }
 
