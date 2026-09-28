@@ -15,6 +15,7 @@ const {replacePreviewWorkspaceIndex}=require('../lib/preview-workspace-seed');
 const {voiceStatus,clientRouting}=require('../lib/voice-status');
 const {compareAndSetConfig,compareAndAudit,compareAndSetWithDelete,compareAndAuditBatch,compareAndAuditEventsBatch}=require('../lib/config-transaction');
 const {recordFinanceSnapshot}=require('../lib/finance-history');
+const {refreshMonthlyKpiSnapshot}=require('../lib/monthly-kpi-producer');
 const {prependAuditEvent}=require('../lib/audit-log');
 const {addBoundedIds}=require('../lib/bounded-id-set');
 const {WORKSPACE_RETENTION_MS,OPERATIONAL_RETENTION_MS,purgeJournalKey,purgeCompleteKey,validIdDirectory,validPurgeJournal,nextPurgeJournal,retentionTtlSeconds}=require('../lib/purge-state');
@@ -384,6 +385,18 @@ async function adminFinanceExpenseDelete(req,res){
     if(!await compareAndSetConfig(kv,[{key,before:raw,after:next}]))return res.status(409).json({error:'Company expenses changed during deletion. Refresh the ledger and review it again.'});
   }catch(err){console.error('admin expense delete failed',safeError(err));return res.status(503).json({error:'Could not confirm that the expense was deleted. Refresh the ledger before retrying.'})}
   return res.status(200).json({ok:true,deleted:{id:item.id,updatedAt:item.updatedAt||0}});
+}
+
+async function adminMonthlyKpiRefresh(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  try{
+    const result=await refreshMonthlyKpiSnapshot(kv),snapshot=result.snapshot||{},coverage=snapshot.coverage&&typeof snapshot.coverage==='object'&&!Array.isArray(snapshot.coverage)?snapshot.coverage:{},
+      issues=Array.isArray(result.issues)?result.issues.map(item=>({domain:String(item?.domain||'unknown').slice(0,80),reason:String(item?.reason||'unavailable').slice(0,80)})).slice(0,25):[];
+    return res.status(200).json({monthlyKpi:{month:String(snapshot.month||''),recordedAt:Number(snapshot.recordedAt||0)||null,saved:result.saved===true,cached:result.cached===true,degraded:result.degraded===true,coverage,issues}});
+  }catch(err){
+    console.error('monthly KPI refresh failed',safeError(err));
+    return res.status(503).json({error:'Monthly analytics rollup could not be refreshed. Existing retained history was left unchanged.'});
+  }
 }
 
 async function adminSummary(req,res){
@@ -3312,6 +3325,7 @@ module.exports=async function handler(req,res){
   if(action==='promote-preview-admin'&&req.method==='POST')return promotePreviewAdmin(req,res);
   if(action==='preview-session'&&req.method==='POST')return previewQaSession(req,res);
   if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
+  if(action==='admin-monthly-kpi-refresh'&&req.method==='POST')return adminMonthlyKpiRefresh(req,res);
   if(action==='admin-finance'&&req.method==='GET')return adminFinance(req,res);
   if(action==='admin-finance-expense-save'&&req.method==='POST')return adminFinanceExpenseSave(req,res);
   if(action==='admin-finance-expense-delete'&&req.method==='POST')return adminFinanceExpenseDelete(req,res);
