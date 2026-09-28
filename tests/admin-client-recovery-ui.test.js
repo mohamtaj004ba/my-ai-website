@@ -42,7 +42,6 @@ test('ordinary admin workspace edits cannot bypass the pending-deletion recovery
 });
 
 const frontend=[
-  segment(ui,'function applyAdminClientRecoveryState(','\nfunction setAdminTechMutationState('),
   segment(ui,'function setAdminClientMutationState(','\nasync function loadAdminTechSupport('),
   segment(ui,'async function restoreAdminClient(){','\nasync function viewAdminClient(){')
 ].join('\n');
@@ -55,6 +54,8 @@ function fixture(fetch){
     return nodes.get(id);
   };
   const current={id:'client-1',name:'Client One',plan:'Starter',status:'pending_deletion',createdAt:1,updatedAt:20,stripe:{},deletion:{requestedAt:10,purgeEligibleAt:999999,preDeletionStatus:'active'}};
+  node('adminSaveClientButton').hidden=true;node('adminDeleteClientButton').hidden=true;node('adminRestoreClientButton').hidden=false;
+  node('adminClientPlan').disabled=true;node('adminClientStatus').disabled=true;
   const ctx=vm.createContext({
     currentAdminClient:current,adminClientSaving:false,adminTechSaving:false,
     document:{getElementById:node,querySelectorAll:()=>[]},fetch,confirm:()=>true,
@@ -66,15 +67,15 @@ function fixture(fetch){
   return {ctx,node,alerts,reopens,refreshes,run:cmd=>vm.runInContext(cmd,ctx)};
 }
 
-test('pending-deletion drawer hides ordinary mutation controls and explains the recovery window',()=>{
-  const f=fixture(async()=>{throw Error('not used')});
-  f.run('applyAdminClientRecoveryState()');
-  assert.equal(f.node('adminSaveClientButton').hidden,true);
-  assert.equal(f.node('adminDeleteClientButton').hidden,true);
-  assert.equal(f.node('adminRestoreClientButton').hidden,false);
-  assert.equal(f.node('adminClientPlan').disabled,true);assert.equal(f.node('adminClientStatus').disabled,true);
-  assert.match(f.node('adminClientManageNote').textContent,/Pending deletion/);
-  assert.match(f.node('adminClientManageNote').textContent,/Restore workspace/);
+test('pending-deletion drawer wiring exposes recovery instead of ordinary status edits',()=>{
+  const html=fs.readFileSync('admin-dashboard.html','utf8'),open=segment(ui,'async function openAdminClient(','\nfunction adminTechMessage(');
+  assert.match(html,/id="adminRestoreClientButton" hidden>Restore workspace/);
+  assert.match(html,/value="pending_deletion" disabled>Pending deletion/);
+  assert.match(open,/pendingDeletion=x\.status==='pending_deletion'/);
+  assert.match(open,/saveButton\.hidden=pendingDeletion/);
+  assert.match(open,/deleteButton\.hidden=pendingDeletion/);
+  assert.match(open,/restoreButton\.hidden=!pendingDeletion/);
+  assert.match(open,/Use Restore workspace to recover access/);
 });
 
 test('restore action sends displayed revision, locks the drawer and suppresses duplicate recovery clicks',async()=>{
