@@ -18,6 +18,7 @@ const {recordFinanceSnapshot}=require('../lib/finance-history');
 const {prependAuditEvent}=require('../lib/audit-log');
 const {addBoundedIds}=require('../lib/bounded-id-set');
 const {WORKSPACE_RETENTION_MS,OPERATIONAL_RETENTION_MS,purgeJournalKey,purgeCompleteKey,validIdDirectory,validPurgeJournal,nextPurgeJournal,retentionTtlSeconds}=require('../lib/purge-state');
+const {deidentifyProspectForAnalytics}=require('../lib/prospect-retention');
 const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
 const {readConversationDirectory,readConversationPage,readConversation,readContactConversations,readAllConversations,publishNormalizedConversations,deleteNormalizedConversations}=require('../lib/conversation-store');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
@@ -552,30 +553,7 @@ async function loadWorkspaceSupportForPurge(id,rawIndex){
 }
 
 function deidentifiedProspectForPurge(prospect,now=Date.now()){
-  if(!prospect||typeof prospect!=='object'||Array.isArray(prospect)||!String(prospect.id||'').trim())throw new Error('Prospect record is malformed');
-  return {
-    id:String(prospect.id),
-    industry:String(prospect.industry||'').slice(0,160),
-    category:String(prospect.category||'').slice(0,100),
-    plan:String(prospect.plan||'').slice(0,30),
-    source:String(prospect.source||'').slice(0,80),
-    stage:String(prospect.stage||'').slice(0,60),
-    utmSource:String(prospect.utmSource||'').slice(0,120),
-    utmMedium:String(prospect.utmMedium||'').slice(0,120),
-    utmCampaign:String(prospect.utmCampaign||'').slice(0,160),
-    firstSource:String(prospect.firstSource||'').slice(0,80),
-    firstUtmSource:String(prospect.firstUtmSource||'').slice(0,120),
-    firstUtmMedium:String(prospect.firstUtmMedium||'').slice(0,120),
-    firstUtmCampaign:String(prospect.firstUtmCampaign||'').slice(0,160),
-    campaign:String(prospect.campaign||'').slice(0,160),
-    convertedAt:Number(prospect.convertedAt||0)||null,
-    monthlyValue:Number(prospect.monthlyValue||0)||0,
-    setupValue:Number(prospect.setupValue||0)||0,
-    createdAt:Number(prospect.createdAt||0)||null,
-    updatedAt:Math.max(Number(now)||Date.now(),Number(prospect.updatedAt||prospect.createdAt||0)+1),
-    deidentifiedAt:Number(now)||Date.now(),
-    privacyState:'deidentified'
-  };
+  return deidentifyProspectForAnalytics(prospect,now);
 }
 
 async function loadWorkspaceProspectsForPurge(id,rawIndex){
