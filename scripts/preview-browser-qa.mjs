@@ -631,6 +631,58 @@ async function runAdminInteractions(page){
   });
   report.admin.interactions.push('in-memory onboarding save lock + revision + automatic-stage restoration');
 
+  // Exercise onboarding invite delivery review entirely in memory. Every send/resolve
+  // request is intercepted so this cannot send Mailgun email or write Preview/production KV.
+  await page.evaluate(async()=>{
+    const id='qa-invite-delivery-ui-only',realFetch=window.fetch,realConfirm=window.confirm,
+      realRefresh=refreshAdminView,realNotifications=loadNotifications;
+    const fixture={id,name:'QA invite delivery controls (in-memory)',plan:'Starter',stage:'Review',
+      autoStage:'Review',manualOverride:false,stageUpdatedAt:null,checklist:{payment:true},
+      checklistDone:1,checklistTotal:13,onboardingStatus:'awaiting_review',reviewEligibleAt:0,
+      onboardingLinkSent:false,inviteDeliveryStatus:'uncertain',inviteDeliveryNeedsReview:true,
+      inviteDeliveryAttemptId:'attempt-qa',inviteDeliveryStartedAt:Date.now()-20*60*1000};
+    const requests=[];let releaseResolve,lastAction='';
+    adminProvisioningData.unshift(fixture);
+    window.confirm=()=>true;
+    window.fetch=async(url,options={})=>{
+      const target=String(url);
+      if(target.includes('action=admin-onboarding-delivery-resolve')){
+        const body=JSON.parse(options.body||'{}');requests.push({action:'resolve',body});lastAction=body.resolution;
+        return new Promise(resolve=>{releaseResolve=()=>resolve({ok:true,json:async()=>({ok:true,deliveryStatus:body.resolution==='sent'?'sent':'failed',retrySafe:body.resolution!=='sent'})})});
+      }
+      if(target.includes('action=admin-onboarding-send')){
+        const body=JSON.parse(options.body||'{}');requests.push({action:'send',body});lastAction='send';
+        return {ok:true,json:async()=>({ok:true,deliveryStatus:'sent'})};
+      }
+      return realFetch(url,options);
+    };
+    refreshAdminView=async()=>{
+      if(lastAction==='not_sent'){fixture.inviteDeliveryStatus='failed';fixture.inviteDeliveryNeedsReview=false}
+      if(lastAction==='send'){fixture.inviteDeliveryStatus='sent';fixture.onboardingLinkSent=true;fixture.onboardingStatus='awaiting_agreement';fixture.checklist={...fixture.checklist,accountReview:true,onboardingSent:true}}
+    };
+    loadNotifications=async()=>{};
+    try{
+      renderProvisioning();
+      const sentButton=document.querySelector('[data-resolve-onboarding-delivery="sent"][data-resolve-onboarding-id="'+id+'"]');
+      const notSentButton=document.querySelector('[data-resolve-onboarding-delivery="not_sent"][data-resolve-onboarding-id="'+id+'"]');
+      if(!sentButton||!notSentButton)throw new Error('Invite delivery review controls were not rendered');
+      const pending=resolveOnboardingInviteDelivery(id,'not_sent','attempt-qa',notSentButton);
+      if(!notSentButton.disabled||notSentButton.getAttribute('aria-busy')!=='true'||!sentButton.disabled)throw new Error('Invite delivery review controls were not locked while saving');
+      if(await resolveOnboardingInviteDelivery(id,'sent','attempt-qa',sentButton)!==false)throw new Error('Concurrent invite delivery resolution was not blocked');
+      if(requests.length!==1||requests[0].body.id!==id||requests[0].body.attemptId!=='attempt-qa'||requests[0].body.resolution!=='not_sent')throw new Error('Invite delivery resolution request did not preserve the reviewed attempt');
+      releaseResolve();if(await pending!==true)throw new Error('Verified not-sent delivery resolution did not complete');
+      const retryButton=document.querySelector('[data-send-onboarding="'+id+'"]');
+      if(!retryButton||!/Retry onboarding invite/.test(retryButton.textContent||''))throw new Error('Confirmed not-sent invite did not expose a safe retry');
+      if(await sendOnboardingInvite(id,retryButton)!==true)throw new Error('Safe onboarding invite retry did not complete');
+      if(requests.length!==2||requests[1].action!=='send'||requests[1].body.id!==id)throw new Error('Onboarding retry request was not isolated to the fictional client');
+    }finally{
+      window.fetch=realFetch;window.confirm=realConfirm;refreshAdminView=realRefresh;loadNotifications=realNotifications;
+      adminProvisioningData=adminProvisioningData.filter(item=>item.id!==id);
+      adminOnboardingInvitePending.delete(id);renderProvisioning();
+    }
+  });
+  report.admin.interactions.push('in-memory onboarding invite delivery review + safe retry');
+
   // Exercise pending-deletion recovery entirely in memory. The fake client/detail,
   // diagnostics and restore POST are intercepted so QA never schedules/restores a KV record.
   await page.evaluate(async()=>{
