@@ -12,3 +12,13 @@ test('system health blocks launch on workspace data-integrity drift',()=>{
   assert.match(api,/phone does not match its assigned routing record/);
   assert.match(api,/assigned to a missing workspace/);
 });
+
+test('monthly analytics rollup is visible as an optional health service with coverage metadata',()=>{
+  assert.match(api,/key:'analytics-rollup'/);
+  assert.match(api,/name:'Monthly analytics rollup'/);
+  assert.match(api,/incompleteSources/);
+  assert.match(api,/Monthly analytics rollup is current but/);
+  assert.match(api,/Monthly analytics rollup is stale/);
+  assert.doesNotMatch(api,/requiredForLaunch=\[[^\]]*analytics-rollup/);
+});
+
