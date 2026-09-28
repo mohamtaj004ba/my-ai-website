@@ -551,6 +551,48 @@ async function loadWorkspaceSupportForPurge(id,rawIndex){
   return targets;
 }
 
+function deidentifiedProspectForPurge(prospect,now=Date.now()){
+  if(!prospect||typeof prospect!=='object'||Array.isArray(prospect)||!String(prospect.id||'').trim())throw new Error('Prospect record is malformed');
+  return {
+    id:String(prospect.id),
+    industry:String(prospect.industry||'').slice(0,160),
+    category:String(prospect.category||'').slice(0,100),
+    plan:String(prospect.plan||'').slice(0,30),
+    source:String(prospect.source||'').slice(0,80),
+    stage:String(prospect.stage||'').slice(0,60),
+    utmSource:String(prospect.utmSource||'').slice(0,120),
+    utmMedium:String(prospect.utmMedium||'').slice(0,120),
+    utmCampaign:String(prospect.utmCampaign||'').slice(0,160),
+    firstSource:String(prospect.firstSource||'').slice(0,80),
+    firstUtmSource:String(prospect.firstUtmSource||'').slice(0,120),
+    firstUtmMedium:String(prospect.firstUtmMedium||'').slice(0,120),
+    firstUtmCampaign:String(prospect.firstUtmCampaign||'').slice(0,160),
+    campaign:String(prospect.campaign||'').slice(0,160),
+    convertedAt:Number(prospect.convertedAt||0)||null,
+    monthlyValue:Number(prospect.monthlyValue||0)||0,
+    setupValue:Number(prospect.setupValue||0)||0,
+    createdAt:Number(prospect.createdAt||0)||null,
+    updatedAt:Math.max(Number(now)||Date.now(),Number(prospect.updatedAt||prospect.createdAt||0)+1),
+    deidentifiedAt:Number(now)||Date.now(),
+    privacyState:'deidentified'
+  };
+}
+
+async function loadWorkspaceProspectsForPurge(id,rawIndex){
+  if(!validIdDirectory(rawIndex,2000))throw new Error('Prospect index is malformed or exceeds supported capacity');
+  const ids=rawIndex||[],targets=[];
+  for(let offset=0;offset<ids.length;offset+=40){
+    const batchIds=ids.slice(offset,offset+40),batch=await Promise.all(batchIds.map(prospectId=>kv.get('site:prospect:'+prospectId)));
+    for(let i=0;i<batch.length;i++){
+      const prospect=batch[i];
+      if(prospect==null)continue;
+      if(!prospect||typeof prospect!=='object'||Array.isArray(prospect)||String(prospect.id||'')!==String(batchIds[i]))throw new Error('Prospect index contains a malformed record');
+      if(String(prospect.workspaceId||'')===String(id))targets.push(prospect);
+    }
+  }
+  return targets;
+}
+
 async function adminPurgeClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80);
@@ -581,7 +623,7 @@ async function adminPurgeClient(req,res){
     const lockedWorkspace={...ws,purgeStartedAt:now,purgeStartedBy:admin.email,purgeAttemptId:attemptId,updatedAt:Math.max(now,revision+1)};
     journal={version:1,workspaceId:id,attemptId,phase:'prepared',startedAt:now,updatedAt:now,startedBy:admin.email,
       retainedUntil:now+WORKSPACE_RETENTION_MS,operationalRetainedUntil:now+OPERATIONAL_RETENTION_MS,
-      supportDeleted:0,feedbackDeleted:0,
+      supportDeleted:0,feedbackDeleted:0,prospectsDeidentified:0,
       source:{businessName:ws.name||'',ownerEmail:cleanEmail(ws.ownerEmail||''),stripeCustomerId:ws.stripeCustomerId||null,stripeSubscriptionId:ws.stripeSubscriptionId||null,
         deletionRequestedAt:ws.deletionRequestedAt||null,purgeEligibleAt:ws.purgeEligibleAt||null,
         onboardingToken:String(onboardingToken||''),agreementVersion:onboarding?.agreementVersion||'',agreementSignedAt:onboarding?.agreementSignedAt||null,
@@ -700,6 +742,37 @@ async function adminPurgeClient(req,res){
       }
 
       if(journal.phase==='feedback'){
+        const rawIndex=await kv.get('site:prospect:index');
+        if(!validIdDirectory(rawIndex,2000))return res.status(503).json({error:'Growth prospect directory is malformed. Permanent purge is paused before linked prospect data is de-identified.',purgePhase:'feedback',resumable:true});
+        const targets=await loadWorkspaceProspectsForPurge(id,rawIndex);
+        if(!targets.length){
+          const now=Date.now(),nextJournal=nextPurgeJournal(journal,'growth',{growthCompletedAt:now});
+          const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_growth_complete',section:'privacy',before:null,after:null,meta:{deidentified:Number(journal.prospectsDeidentified||0)},at:now};
+          if(!await compareAndAudit(kv,{key:journalKey,before:journal,after:nextJournal},'audit:'+id,audit))continue;
+          continue;
+        }
+        const batch=targets.slice(0,25),now=Date.now(),updates=[],deleteKeys=[],seenEmailKeys=new Set();
+        for(const prospect of batch){
+          const key='site:prospect:'+prospect.id,next=deidentifiedProspectForPurge(prospect,now);
+          updates.push({key,before:prospect,after:next});
+          const email=cleanEmail(prospect.email||'');
+          if(email){
+            const lookupKey='site:prospect:email:'+emailKey(email);
+            if(seenEmailKeys.has(lookupKey))return res.status(409).json({error:'Multiple linked prospects share the same email lookup. Reconcile Growth data before resuming permanent purge.',purgePhase:'feedback',resumable:true});
+            seenEmailKeys.add(lookupKey);
+            const owner=await kv.get(lookupKey);
+            if(owner!=null&&String(owner)!==String(prospect.id))return res.status(409).json({error:'A Growth email lookup points to another prospect. Reconcile Growth data before resuming permanent purge.',purgePhase:'feedback',resumable:true});
+            if(owner!=null){updates.push({key:lookupKey,before:owner,after:null});deleteKeys.push(lookupKey)}
+          }
+        }
+        const nextJournal=nextPurgeJournal(journal,'feedback',{prospectsDeidentified:Number(journal.prospectsDeidentified||0)+batch.length,lastGrowthBatchAt:now});
+        updates.push({key:journalKey,before:journal,after:nextJournal});
+        const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_growth_batch',section:'privacy',before:null,after:null,meta:{count:batch.length,totalDeidentified:nextJournal.prospectsDeidentified},at:now};
+        if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit,{deleteKeys}))continue;
+        continue;
+      }
+
+      if(journal.phase==='growth'){
         await deleteNormalizedConversations(kv,id);
         const nextJournal=nextPurgeJournal(journal,'conversations',{normalizedConversationsDeletedAt:Date.now()});
         const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_conversations_deleted',section:'privacy',before:null,after:null,meta:{normalized:true},at:Date.now()};
@@ -741,17 +814,17 @@ async function adminPurgeClient(req,res){
         await setRetentionRecord(retentionKey,completedRetention,journal.retainedUntil);
         const retainedAuditKey='retention:audit:'+id,retainedAudit=await kv.get(retainedAuditKey);
         if(retainedAudit&&typeof retainedAudit==='object'&&!Array.isArray(retainedAudit)&&Array.isArray(retainedAudit.events)){
-          const completionEvent={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_completed',section:'privacy',before:null,after:null,meta:{attemptId:journal.attemptId,supportDeleted:Number(journal.supportDeleted||0),feedbackDeleted:Number(journal.feedbackDeleted||0)},at:now};
+          const completionEvent={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_completed',section:'privacy',before:null,after:null,meta:{attemptId:journal.attemptId,supportDeleted:Number(journal.supportDeleted||0),feedbackDeleted:Number(journal.feedbackDeleted||0),prospectsDeidentified:Number(journal.prospectsDeidentified||0)},at:now};
           await setRetentionRecord(retainedAuditKey,{...retainedAudit,events:[completionEvent,...retainedAudit.events].slice(0,200),updatedAt:now},journal.operationalRetainedUntil);
         }
         const marker={workspaceId:id,businessName:journal.source.businessName||'',attemptId:journal.attemptId,completedAt:now,completedBy:admin.email,retainedUntil:journal.retainedUntil,
-          supportDeleted:Number(journal.supportDeleted||0),feedbackDeleted:Number(journal.feedbackDeleted||0)};
+          supportDeleted:Number(journal.supportDeleted||0),feedbackDeleted:Number(journal.feedbackDeleted||0),prospectsDeidentified:Number(journal.prospectsDeidentified||0)};
         await kv.set(completeKey,marker,{ex:retentionTtlSeconds(journal.retainedUntil)});
         const confirmed=await kv.get(completeKey);
         if(!confirmed||String(confirmed.workspaceId||'')!==id||String(confirmed.attemptId||'')!==String(journal.attemptId))
           return res.status(503).json({error:'Permanent purge completion marker could not be confirmed. Retry to resume finalization.',purgePhase:'content',resumable:true});
         try{await kv.del(journalKey)}catch(err){console.error('purge journal cleanup failed',safeError(err))}
-        return res.status(200).json({ok:true,purged:{id,name:journal.source.businessName||'Workspace'},retainedUntil:journal.retainedUntil,supportDeleted:marker.supportDeleted,feedbackDeleted:marker.feedbackDeleted});
+        return res.status(200).json({ok:true,purged:{id,name:journal.source.businessName||'Workspace'},retainedUntil:journal.retainedUntil,supportDeleted:marker.supportDeleted,feedbackDeleted:marker.feedbackDeleted,prospectsDeidentified:marker.prospectsDeidentified});
       }
     }catch(err){
       console.error('permanent purge phase failed',safeError(err));

@@ -26,6 +26,10 @@ function fixture({failConversationsOnce=false,foreignStripe=false}={}){
     'stripe:customer:cus_1':foreignStripe?'other':'tenant','stripe:subscription:sub_1':'tenant',
     'support:index':['s1','s2'],'support:s1':{id:'s1',workspaceId:'tenant',subject:'Help'},'support:s2':{id:'s2',workspaceId:'other',subject:'Other'},
     'ai-feedback:workspace:tenant':['f1'],'ai-feedback:index':['f1','f2'],'ai-feedback:f1':{id:'f1',workspaceId:'tenant',message:'private'},'ai-feedback:f2':{id:'f2',workspaceId:'other'},
+    'site:prospect:index':['prospect-1','prospect-2'],
+    'site:prospect:prospect-1':{id:'prospect-1',workspaceId:'tenant',stripeCustomerId:'cus_1',stage:'converted',name:'Owner Person',business:'Client Co',email:'owner@example.com',phone:'5095550101',message:'Need help',visitorId:'visitor-private',sessionId:'session-private',industry:'Plumbing',category:'Home services',plan:'Growth',source:'google',utmSource:'google',utmMedium:'cpc',utmCampaign:'fall',firstSource:'google',firstUtmSource:'google',firstUtmMedium:'cpc',firstUtmCampaign:'fall',campaign:'Fall PPC',convertedAt:100,monthlyValue:399,setupValue:500,owner:'Sales Rep',notes:'private sales notes',nextFollowUpAt:200,lastContactAt:150,tags:['vip'],updatedBy:'admin@example.com',createdAt:10,updatedAt:20},
+    'site:prospect:email:ownerhash':'prospect-1',
+    'site:prospect:prospect-2':{id:'prospect-2',workspaceId:'other',email:'other@example.com',name:'Other Lead',stage:'qualified',createdAt:10,updatedAt:20},
     'audit:tenant':[],
     'agent:tenant':{name:'Maya'},'calls:tenant':[{id:'c1'}],'calls:index:tenant':[{id:'c1'}],'leads:tenant':[{id:'l1'}],
     'conversations:tenant':[{id:'conv1'}],'appointments:tenant':[],'automations:tenant':[],'settings:tenant':{},'integrations:tenant':{},
@@ -46,7 +50,7 @@ function fixture({failConversationsOnce=false,foreignStripe=false}={}){
   const ctx=vm.createContext({
     requireAdmin:async()=>({email:'admin@callercore.com',workspaceId:'admin'}),
     kv,crypto:{randomUUID:()=> 'uuid-'+(++n)},Date,Promise,String,Number,Math,Set,Map,Array,Object,JSON,
-    cleanEmail:x=>String(x||'').trim().toLowerCase(),safeError:e=>String(e&&e.message||e),console:{error:()=>{}},
+    cleanEmail:x=>String(x||'').trim().toLowerCase(),emailKey:email=>email==='owner@example.com'?'ownerhash':'hash-'+email,safeError:e=>String(e&&e.message||e),console:{error:()=>{}},
     compareAndSetConfig:async(_,updates)=>apply(updates),
     compareAndSetWithDelete:async(_,updates,{deleteKeys=[]}={})=>apply(updates,deleteKeys),
     compareAndAudit:async(_,update,auditKey,event)=>{
@@ -78,14 +82,17 @@ function fixture({failConversationsOnce=false,foreignStripe=false}={}){
   };
 }
 
-test('permanent purge completes through retained, shared, support, feedback, conversation and content phases',async()=>{
+test('permanent purge completes through retained, shared, support, feedback, growth, conversation and content phases',async()=>{
   const f=fixture(),r=await f.purge();
-  assert.equal(r.status,200);assert.equal(r.result.ok,true);assert.equal(r.result.supportDeleted,1);assert.equal(r.result.feedbackDeleted,1);
+  assert.equal(r.status,200);assert.equal(r.result.ok,true);assert.equal(r.result.supportDeleted,1);assert.equal(r.result.feedbackDeleted,1);assert.equal(r.result.prospectsDeidentified,1);
   assert.equal(f.records['workspace:tenant'],undefined);assert.deepEqual(f.records['workspace:index'],['other']);
   assert.equal(f.records['phone:index'][0].workspaceId,'');assert.equal(f.records['user:email:owner@example.com'],undefined);
   assert.equal(f.records['stripe:customer:cus_1'],undefined);assert.equal(f.records['stripe:subscription:sub_1'],undefined);
   assert.deepEqual(f.records['support:index'],['s2']);assert.equal(f.records['support:s1'],undefined);assert.ok(f.records['support:s2']);
   assert.deepEqual(f.records['ai-feedback:index'],['f2']);assert.equal(f.records['ai-feedback:f1'],undefined);assert.ok(f.records['ai-feedback:f2']);
+  const prospect=f.records['site:prospect:prospect-1'];assert.equal(prospect.privacyState,'deidentified');assert.equal(prospect.stage,'converted');assert.equal(prospect.plan,'Growth');assert.equal(prospect.source,'google');assert.equal(prospect.monthlyValue,399);assert.equal(prospect.setupValue,500);
+  for(const field of ['workspaceId','stripeCustomerId','name','business','email','phone','message','visitorId','sessionId','owner','notes','nextFollowUpAt','lastContactAt','tags','updatedBy'])assert.equal(Object.prototype.hasOwnProperty.call(prospect,field),false,field);
+  assert.equal(f.records['site:prospect:email:ownerhash'],undefined);assert.equal(f.records['site:prospect:prospect-2'].name,'Other Lead');assert.equal(f.records['site:prospect:prospect-2'].workspaceId,'other');
   assert.equal(f.records['viewed:tenant:owner@example.com'],undefined);assert.equal(f.records['notify:tenant:owner@example.com'],undefined);assert.equal(f.records['profile:owner@example.com'],undefined);
   assert.ok(f.records['retention:workspace:tenant']);assert.equal(f.records['retention:support:tenant'].tickets[0].id,'s1');
   assert.equal(f.records['retention:audit:tenant'].events[0].action,'permanent_purge_completed');
@@ -95,7 +102,7 @@ test('permanent purge completes through retained, shared, support, feedback, con
 
 test('a storage failure pauses purge and a repeated confirmed request resumes from the journal',async()=>{
   const f=fixture({failConversationsOnce:true}),first=await f.purge();
-  assert.equal(first.status,503);assert.equal(first.result.resumable,true);assert.equal(first.result.purgePhase,'feedback');
+  assert.equal(first.status,503);assert.equal(first.result.resumable,true);assert.equal(first.result.purgePhase,'growth');
   assert.equal(f.records['workspace:tenant']?.status,'pending_deletion');assert.ok(f.records['purge:workspace:tenant']);
   const attempt=f.records['purge:workspace:tenant'].attemptId;
   const second=await f.purge();assert.equal(second.status,200);assert.equal(f.records['purge:complete:tenant'].attemptId,attempt);
@@ -121,3 +128,11 @@ test('initial purge requires the displayed pending-deletion workspace revision',
   const r=await f.purge();assert.equal(r.status,409);assert.match(r.result.error,/changed since you opened it/);
   assert.equal(f.records['purge:workspace:tenant'],undefined);assert.equal(f.records['retention:workspace:tenant'],undefined);
 });
+
+test('Growth prospect email lookup conflicts pause before any linked prospect is de-identified',async()=>{
+  const f=fixture();f.records['site:prospect:email:ownerhash']='prospect-2';
+  const r=await f.purge();assert.equal(r.status,409);assert.equal(r.result.purgePhase,'feedback');assert.equal(r.result.resumable,true);
+  const prospect=f.records['site:prospect:prospect-1'];assert.equal(prospect.name,'Owner Person');assert.equal(prospect.workspaceId,'tenant');assert.equal(prospect.privacyState,undefined);
+  assert.equal(f.records['site:prospect:email:ownerhash'],'prospect-2');
+});
+

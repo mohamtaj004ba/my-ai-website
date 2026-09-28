@@ -8,7 +8,7 @@ const {
 test('purge state exposes fixed retention windows and ordered phases',()=>{
   assert.equal(WORKSPACE_RETENTION_MS,7*365*24*60*60*1000);
   assert.equal(OPERATIONAL_RETENTION_MS,2*365*24*60*60*1000);
-  assert.deepEqual(PURGE_PHASES,['prepared','retained','detached','support','feedback','conversations','audit_retained','content']);
+  assert.deepEqual(PURGE_PHASES,['prepared','retained','detached','support','feedback','growth','conversations','audit_retained','content']);
   assert.equal(purgeJournalKey('x'),'purge:workspace:x');assert.equal(purgeCompleteKey('x'),'purge:complete:x');
 });
 
