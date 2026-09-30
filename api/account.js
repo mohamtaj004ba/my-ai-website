@@ -2102,7 +2102,9 @@ function sanitizeAdminOverride(section,value,current){
   }
   if(section==='automations'||section==='locations'){
     if(!Array.isArray(value))throw new Error('Section must be a JSON array');
-    return value.slice(0,section==='automations'?20:5);
+    const limit=section==='automations'?20:5;
+    if(value.length>limit)throw new Error((section==='automations'?'Automation':'Location')+' override exceeds the '+limit+'-record safety limit. No records were dropped.');
+    return value.slice();
   }
   if(section==='workspace'){
     if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Workspace override must be a JSON object');
@@ -2122,14 +2124,18 @@ async function configTransactionUpdates(workspaceId,section,key,before,value){
   if(section==='settings'&&value?.businessName){
     const current=await kv.get('workspace:'+workspaceId);
     if(!current)throw new Error('Workspace not found');
+    if(typeof current!=='object'||Array.isArray(current)||String(current.id||'')!==String(workspaceId))throw new Error('Workspace record is malformed');
     const name=String(value.businessName).trim().slice(0,160);
     if(current.name!==name)updates.push({key:'workspace:'+workspaceId,before:current,after:{...current,name,updatedAt:Date.now()}});
   }
   if(section==='agent'){
     const transferNumber=String(value?.transferNumber||'').trim().slice(0,40),[rawPhones,routingRequest]=await Promise.all([kv.get('phone:index'),kv.get('routing-request:'+workspaceId)]);
     if(rawPhones!=null&&!Array.isArray(rawPhones))throw new Error('Phone inventory is malformed');
-    const phones=Array.isArray(rawPhones)?rawPhones.slice():[],index=phones.findIndex(x=>x&&String(x.workspaceId||'')===String(workspaceId));
-    if(index>=0&&phones[index].transferNumber!==transferNumber){phones[index]={...phones[index],transferNumber,updatedAt:Date.now()};updates.push({key:'phone:index',before:rawPhones,after:phones})}
+    if(routingRequest!=null&&(!routingRequest||typeof routingRequest!=='object'||Array.isArray(routingRequest)))throw new Error('Routing request is malformed');
+    const phones=rawPhones||[],ids=phones.map(item=>item&&typeof item==='object'&&!Array.isArray(item)?String(item.id||''):'');
+    if(ids.some(id=>!id)||new Set(ids).size!==ids.length)throw new Error('Phone inventory records are malformed');
+    const nextPhones=phones.slice(),index=nextPhones.findIndex(x=>String(x.workspaceId||'')===String(workspaceId));
+    if(index>=0&&nextPhones[index].transferNumber!==transferNumber){nextPhones[index]={...nextPhones[index],transferNumber,updatedAt:Date.now()};updates.push({key:'phone:index',before:rawPhones,after:nextPhones})}
     if(routingRequest&&routingRequest.transferNumber!==transferNumber)updates.push({key:'routing-request:'+workspaceId,before:routingRequest,after:{...routingRequest,transferNumber,updatedAt:Date.now()}});
   }
   return updates;
@@ -2139,7 +2145,11 @@ async function adminOverrideConfig(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80),section=String(body.section||'');
   const key=configKey(section,id);if(!key)return res.status(400).json({error:'Unsupported configuration section'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No override was applied.'});
   const before=await kv.get(key);
+  const beforeValid=section==='workspace'?before==null||!!before&&typeof before==='object'&&!Array.isArray(before):
+    section==='automations'||section==='locations'?before==null||Array.isArray(before):before==null||!!before&&typeof before==='object'&&!Array.isArray(before);
+  if(!beforeValid)return res.status(503).json({error:'Existing '+section+' configuration is unavailable. No override was applied.'});
   let after;try{after=sanitizeAdminOverride(section,body.value,before||ws)}catch(err){return res.status(400).json({error:err.message})}
   const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'admin_override',section,before:before||null,after,at:Date.now()};
   let updates;try{updates=await configTransactionUpdates(id,section,key,before,after);if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit))return res.status(409).json({error:'Client configuration changed during this save. Reload the client before retrying.'})}catch(err){console.error('admin override save failed',safeError(err));return res.status(503).json({error:'Could not confirm the configuration and audit history together. Reload the client before retrying.'})}
@@ -2148,12 +2158,20 @@ async function adminOverrideConfig(req,res){
 async function adminRestoreAudit(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80),auditId=String(body.auditId||'').slice(0,80);
-  const list=await kv.get('audit:'+id)||[],entry=(Array.isArray(list)?list:[]).find(x=>x&&x.id===auditId);
+  const rawList=await kv.get('audit:'+id);
+  if(rawList!=null&&!Array.isArray(rawList))return res.status(503).json({error:'Audit history is unavailable. No restore was attempted.'});
+  const list=rawList||[];
+  if(list.some(x=>!x||typeof x!=='object'||Array.isArray(x)||!String(x.id||'')))return res.status(503).json({error:'Audit history contains unverifiable entries. No restore was attempted.'});
+  const entry=list.find(x=>String(x.id)===auditId);
   if(!entry)return res.status(404).json({error:'Audit entry not found'});
   const key=configKey(entry.section,id);if(!key)return res.status(400).json({error:'This change cannot be restored automatically'});
   if(entry.before===undefined)return res.status(400).json({error:'No prior snapshot is available'});
-  const current=await kv.get(key),rawRestored=entry.before===null?(entry.section==='automations'||entry.section==='locations'?[]:{}):entry.before;
-  let restored;try{restored=sanitizeAdminOverride(entry.section,rawRestored,current||await kv.get('workspace:'+id)||{})}catch(err){return res.status(409).json({error:'This snapshot can no longer be restored safely: '+err.message})}
+  const current=await kv.get(key),currentValid=entry.section==='automations'||entry.section==='locations'?current==null||Array.isArray(current):current==null||!!current&&typeof current==='object'&&!Array.isArray(current);
+  if(!currentValid)return res.status(503).json({error:'Current '+entry.section+' configuration is unavailable. No restore was attempted.'});
+  const rawRestored=entry.before===null?(entry.section==='automations'||entry.section==='locations'?[]:{}):entry.before;
+  const workspaceCurrent=entry.section==='workspace'?(current||null):await kv.get('workspace:'+id);
+  if(!workspaceCurrent||typeof workspaceCurrent!=='object'||Array.isArray(workspaceCurrent)||String(workspaceCurrent.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No restore was attempted.'});
+  let restored;try{restored=sanitizeAdminOverride(entry.section,rawRestored,current||workspaceCurrent)}catch(err){return res.status(409).json({error:'This snapshot can no longer be restored safely: '+err.message})}
   const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'restore_snapshot',section:entry.section,before:current||null,after:restored,meta:{restoredFrom:auditId,sanitized:true},at:Date.now()};
   let updates;try{updates=await configTransactionUpdates(id,entry.section,key,current,restored);if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit))return res.status(409).json({error:'Client configuration changed during restoration. Reload the client before retrying.'})}catch(err){console.error('admin snapshot restore failed',safeError(err));return res.status(503).json({error:'Could not confirm snapshot restoration and audit history together. Reload the client before retrying.'})}
   return res.status(200).json({ok:true,section:entry.section,value:restored});
