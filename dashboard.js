@@ -833,8 +833,10 @@ async function moveLead(id,stage){
   const previous=lead.stage;lead.stage=stage;renderLeads();
   if(demoMode)return;
   try{
-    const r=await fetch('/api/account?action=lead-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
-    if(!r.ok||data.updated!==true)throw new Error(data.error||'Could not update this lead.');
+    const r=await fetch('/api/account?action=lead-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not update this lead.');
+    if(data.updated!==true||!data.lead||typeof data.lead!=='object'||Array.isArray(data.lead)||String(data.lead.id||'')!==String(id)||String(data.lead.stage||'')!==String(stage))throw new Error('Lead update response was incomplete. Refresh the pipeline before retrying.');
+    Object.assign(lead,data.lead);renderLeads();
   }catch(err){lead.stage=previous;renderLeads();console.error(err)}
 }
 document.getElementById('callSearch')?.addEventListener('input',renderCalls);
@@ -1150,7 +1152,9 @@ async function updateAppointment(id,status){
   const previous=item.status;item.status=status;renderAppointments();if(demoMode)return;
   try{
     const r=await fetch('/api/account?action=appointment-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})}),data=await r.json().catch(()=>({}));
-    if(!r.ok||data.updated!==true)throw new Error(data.error||'Could not update appointment.');
+    if(!r.ok)throw new Error(data.error||'Could not update appointment.');
+    if(data.updated!==true||!data.appointment||typeof data.appointment!=='object'||Array.isArray(data.appointment)||String(data.appointment.id||'')!==String(id)||String(data.appointment.status||'')!==String(status))throw new Error('Appointment update response was incomplete. Refresh appointments before retrying.');
+    Object.assign(item,data.appointment);renderAppointments();
   }catch(err){item.status=previous;renderAppointments();alert(err.message||'Could not update appointment. Check your connection and try again.')}
 }
 document.getElementById('conversationSearch')?.addEventListener('input',()=>{if(!conversationBackendPaging)return renderConversations();clearTimeout(conversationSearchTimer);conversationSearchTimer=setTimeout(()=>loadConversationPage(),250)});

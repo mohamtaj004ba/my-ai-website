@@ -69,6 +69,28 @@ test('successful mutation payload guards reject missing objects instead of deref
   assert.match(clients,/!data\\.client\\|\\|typeof data\\.client!==['"]object['"]\\|\\|Array\\.isArray\\(data\\.client\\)/);
 });
 
+test('lead and appointment mutations require the canonical changed record from a successful response',()=>{
+  const lead=segment('async function moveLead(','\\ndocument.getElementById(\'callSearch\')');
+  const appointment=segment('async function updateAppointment(','\\ndocument.getElementById(\'conversationSearch\')');
+  assert.doesNotMatch(lead,/expectedUpdatedAt/);
+  assert.match(lead,/data\\.lead/);assert.match(lead,/String\\(data\\.lead\\.id\\|\\|''\\)!==String\\(id\\)/);assert.match(lead,/String\\(data\\.lead\\.stage\\|\\|''\\)!==String\\(stage\\)/);
+  assert.match(appointment,/data\\.appointment/);assert.match(appointment,/String\\(data\\.appointment\\.id\\|\\|''\\)!==String\\(id\\)/);assert.match(appointment,/String\\(data\\.appointment\\.status\\|\\|''\\)!==String\\(status\\)/);
+});
+
+test('malformed 200 lead and appointment responses roll optimistic UI changes back',async()=>{
+  const renders=[];
+  const leadCtx=vm.createContext({leadsData:[{id:'lead-1',stage:'New'}],demoMode:false,renderLeads:()=>renders.push('lead'),fetch:async()=>({ok:true,json:async()=>({updated:true})}),console:{error(){}},String,Object,Array,JSON,Error});
+  vm.runInContext(segment('async function moveLead(','\\ndocument.getElementById(\'callSearch\')'),leadCtx);
+  await vm.runInContext("moveLead('lead-1','Qualified')",leadCtx);
+  assert.equal(leadCtx.leadsData[0].stage,'New');
+  const alerts=[];
+  const apptCtx=vm.createContext({appointmentsData:[{id:'appt-1',status:'Scheduled'}],demoMode:false,renderAppointments:()=>renders.push('appt'),fetch:async()=>({ok:true,json:async()=>({updated:true})}),alert:m=>alerts.push(m),String,Object,Array,JSON,Error});
+  vm.runInContext(segment('async function updateAppointment(','\\ndocument.getElementById(\'conversationSearch\')'),apptCtx);
+  await vm.runInContext("updateAppointment('appt-1','Completed')",apptCtx);
+  assert.equal(apptCtx.appointmentsData[0].status,'Scheduled');
+  assert.ok(alerts.some(message=>/incomplete/i.test(message)));
+});
+
 test('automation and location saves preserve local records on malformed successful responses',async()=>{
   const alerts=[];
   const autoCtx=vm.createContext({demoMode:false,automationsData:[{id:'existing'}],fetch:async()=>({ok:true,json:async()=>({})}),alert:m=>alerts.push(m),Array});
