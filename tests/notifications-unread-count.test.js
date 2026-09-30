@@ -50,6 +50,7 @@ function fixture({unreadCount=95,visible=80}={}){
   const ctx=vm.createContext({
     demoMode:false,notificationsLoading:false,notificationRequest:0,
     notificationUnreadCount:unreadCount,notificationData:payload().notifications,
+    notificationLoadError:'',notificationLastSyncAt:0,
     notificationScope:()=> 'admin',
     document:{getElementById:()=>({})},
     fetch:async(url,options)=>{
@@ -102,11 +103,34 @@ test('late list response cannot restore unread count after mark-all',async()=>{
 });
 test('invalid notification JSON cannot overwrite last verified list or count',async()=>{
   const f=fixture();
-  f.ctx.fetch=async()=>({ok:true,json:async()=>({notifications:{not:'an array'},unreadCount:'bad'})});
+  f.ctx.fetch=async()=>({ok:true,status:200,json:async()=>({notifications:{not:'an array'},unreadCount:'bad'})});
   await f.run('loadNotifications()');
   assert.equal(f.ctx.notificationUnreadCount,95);
   assert.equal(f.ctx.notificationData.length,80);
+  assert.equal(f.ctx.notificationLoadError,'Refresh failed — showing the last verified alerts.');
+  assert.equal(f.ctx.notificationLastSyncAt,0);
   assert.equal(f.ctx.notificationsLoading,false);
+});
+
+test('failed notification refresh preserves last verified alerts and explicitly marks them stale',async()=>{
+  const f=fixture();
+  f.ctx.fetch=async()=>({ok:false,status:503,json:async()=>({error:'unavailable'})});
+  await f.run('loadNotifications()');
+  assert.equal(f.ctx.notificationUnreadCount,95);
+  assert.equal(f.ctx.notificationData.length,80);
+  assert.equal(f.ctx.notificationData[0].id,'alert-0');
+  assert.equal(f.ctx.notificationLoadError,'Refresh failed — showing the last verified alerts.');
+  assert.equal(f.ctx.notificationLastSyncAt,0);
+});
+
+test('successful notification refresh clears stale warning and records a fresh sync time',async()=>{
+  const f=fixture({unreadCount:2,visible:2});
+  f.ctx.notificationLoadError='Refresh failed — showing the last verified alerts.';
+  await f.run('loadNotifications()');
+  assert.equal(f.ctx.notificationLoadError,'');
+  assert.ok(Number(f.ctx.notificationLastSyncAt)>0);
+  assert.equal(f.ctx.notificationUnreadCount,2);
+  assert.equal(f.ctx.notificationData.length,2);
 });
 
 test('older unread alerts appear even if newest 80 alerts have already been read',async()=>{
