@@ -3002,15 +3002,21 @@ async function session(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);
   if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(s.workspaceId))return res.status(503).json({error:'Workspace session data is unavailable. No fallback workspace was substituted.'});
   if(ws.status==='pending_deletion'&&!s.adminView)return res.status(403).json({error:'Workspace is pending deletion'});
+  if(ws.usage!=null&&(!ws.usage||typeof ws.usage!=='object'||Array.isArray(ws.usage)||!Number.isFinite(Number(ws.usage.minutes))||Number(ws.usage.minutes)<0))return res.status(503).json({error:'Workspace usage data is unavailable. No zero usage was substituted.'});
   const ent=entitlementsFor(ws.plan);
   const member=await kv.get('user:email:'+cleanEmail(s.email));
+  if(!member||typeof member!=='object'||Array.isArray(member)||!String(member.role||''))return res.status(503).json({error:'Workspace membership is unavailable. Session identity was not approximated.'});
   const profileData=await getUserProfile(s.email,ws);
-  const onboardingState=await kv.get('onboarding:workspace:'+s.workspaceId)||null;
-  const onboardingToken=await kv.get('onboarding:workspace-token:'+s.workspaceId)||'';
+  const rawOnboarding=await kv.get('onboarding:workspace:'+s.workspaceId);
+  if(rawOnboarding!=null&&(!rawOnboarding||typeof rawOnboarding!=='object'||Array.isArray(rawOnboarding)))return res.status(503).json({error:'Onboarding session data is unavailable. No empty onboarding state was substituted.'});
+  const rawOnboardingToken=await kv.get('onboarding:workspace-token:'+s.workspaceId);
+  if(rawOnboardingToken!=null&&typeof rawOnboardingToken!=='string')return res.status(503).json({error:'Onboarding session token is unavailable. No onboarding link was synthesized.'});
+  const onboardingState=rawOnboarding||null,onboardingToken=rawOnboardingToken||'';
   const needsOnboarding=!!onboardingToken&&!!onboardingState?.onboardingLinkSent&&!['intake_complete','building_review','qa_complete','client_test','ready','live'].includes(onboardingState.status);
   return res.status(200).json({
-    user:{email:s.email,role:member&&member.role||s.role,adminView:!!s.adminView,profile:profileData},
+    user:{email:s.email,role:member.role,adminView:!!s.adminView,profile:profileData},
     onboarding:clientOnboardingView(onboardingState,{needsCompletion:needsOnboarding,url:needsOnboarding?('/onboarding?token='+onboardingToken):''}),
     workspace:{
       id:ws.id,name:ws.name,plan:ent.plan,status:ws.status||'active',

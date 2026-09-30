@@ -67,7 +67,9 @@ async function bootstrapClient(){
     const r=await fetch('/api/account?action=session',{headers:{Accept:'application/json'},cache:'no-store'});
     if(r.status===401){location.replace('/login?next=%2Fdashboard');return false}
     if(!r.ok)throw new Error('session');
-    const data=await r.json();sessionWorkspace=data.workspace;sessionOnboarding=data.onboarding||null;applyUserProfile(data.user||{},data.workspace||{});
+    const data=await r.json();
+    if(!data||typeof data!=='object'||Array.isArray(data)||!data.workspace||typeof data.workspace!=='object'||Array.isArray(data.workspace)||!String(data.workspace.id||'')||!data.user||typeof data.user!=='object'||Array.isArray(data.user)||!String(data.user.email||'')||!data.onboarding||typeof data.onboarding!=='object'||Array.isArray(data.onboarding))throw new Error('session payload');
+    sessionWorkspace=data.workspace;sessionOnboarding=data.onboarding;applyUserProfile(data.user,data.workspace);
     if(capability('calendar')){
       PLAN_DATA.Growth.features.appointments=true;PLAN_DATA.Pro.features.appointments=true;
       FEATURE_INFO.appointments.copy='Calendar booking is enabled for eligible CallerCore plans.';
