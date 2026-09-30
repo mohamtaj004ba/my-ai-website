@@ -8,14 +8,15 @@ const SECRET=process.env.MARKETING_UNSUBSCRIBE_SECRET||'';
 module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   res.setHeader('Content-Type','application/json; charset=utf-8');
-  if(!['GET','POST'].includes(req.method))return res.status(405).json({error:'Method not allowed'});
+  if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
   if(!SECRET||SECRET.length<32)return res.status(503).json({error:'Email preference management is temporarily unavailable. Please contact support@callercore.com.'});
   const rl=await rateLimit({scope:'marketing-unsubscribe',identifier:requestIp(req),limit:30,windowSeconds:600,failClosed:true});
   if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests. Please try again later.'})}
-  const token=String(req.method==='GET'?(req.query||{}).token:(req.body||{}).token||'').slice(0,512);
+  const body=req.body||{},token=String(body.token||'').slice(0,512),action=String(body.action||'').slice(0,32);
   if(!token)return res.status(400).json({error:'This unsubscribe link is invalid or incomplete.'});
+  if(!['inspect','unsubscribe'].includes(action))return res.status(400).json({error:'Invalid email preference action.'});
   try{
-    if(req.method==='GET'){
+    if(action==='inspect'){
       const status=await inspectMarketingUnsubscribe(kv,token,SECRET);
       return res.status(200).json({ok:true,state:status.state,active:status.active,alreadyUnsubscribed:status.alreadyUnsubscribed});
     }
