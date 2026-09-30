@@ -489,6 +489,14 @@ async function runAdminInteractions(page){
   if(!rollupHealth||!['operational','warning'].includes(rollupHealth.status)||rollupHealth.meta?.month!==monthlyStatus.month||!Array.isArray(rollupHealth.meta?.incompleteSources))throw new Error('System Health did not expose the current monthly KPI rollup');
   if(rollupHealth.meta.incompleteSources.includes('paymentFailures')!==true)throw new Error('System Health falsely claims durable payment-failure rollup coverage');
   report.admin.interactions.push('background monthly KPI rollup + privacy-safe coverage health');
+  const retentionResponse=await page.request.get(baseURL+'/api/account?action=admin-retention-report');
+  if(!retentionResponse.ok())throw new Error('Retention dry-run endpoint was unavailable');
+  const retentionReport=(await retentionResponse.json()).report;
+  if(!retentionReport||retentionReport.mode!=='dry_run'||retentionReport.writeActionsEnabled!==false||retentionReport.retentionExecutorReachable!==false)throw new Error('Retention report did not remain read-only');
+  if(retentionReport.prospects?.consentReviewRequired!==true||retentionReport.prospects?.executorReachable!==false)throw new Error('Retention report bypassed the consent-review gate');
+  const retentionJson=JSON.stringify(retentionReport);
+  if(retentionJson.includes('planned')||retentionJson.includes('before')||retentionJson.includes('after')||retentionJson.includes('@callercore.test'))throw new Error('Retention report exposed record-level prospect details');
+  report.admin.interactions.push('read-only retention dry-run + consent gate');
 
   await ensureView(page,'phones');
   const initialPhones=await page.locator('#phoneTable [data-edit-phone]').count();
@@ -543,7 +551,13 @@ async function runAdminInteractions(page){
   await page.locator('#adminSearch').fill('System Health');
   await page.locator('#adminSearch').press('Enter');
   await page.locator('#view-health.active').waitFor({state:'visible',timeout:5000});
-  report.admin.interactions.push('global search keyboard navigation');
+  await page.waitForFunction(()=>typeof adminRetentionData!=='undefined'&&adminRetentionData?.mode==='dry_run',{timeout:15000});
+  const retentionPanel=page.locator('#retentionReportPanel');
+  await retentionPanel.waitFor({state:'visible',timeout:5000});
+  const retentionStatus=(await page.locator('#retentionReportStatus').textContent()||'').trim();
+  if(!retentionStatus||retentionStatus==='Not checked'||retentionStatus==='Unavailable')throw new Error('System Health did not render retention dry-run status');
+  if((await page.locator('#retentionReportNote').textContent()||'').includes('No records were changed')!==true)throw new Error('Retention panel omitted its read-only guarantee');
+  report.admin.interactions.push('global search keyboard navigation + retention health panel');
 
   await ensureView(page,'clients');
   await page.locator('#adminClientSearchInput').fill('North Ridge');
