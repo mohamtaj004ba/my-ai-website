@@ -2227,6 +2227,7 @@ async function deleteCampaign(){
     const r=await fetch('/api/account?action=admin-marketing-campaign-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt:Number(c.updatedAt||c.createdAt||0)})});
     const data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not delete campaign.');
+    if(data.ok!==true)throw new Error('Campaign deletion response was incomplete. Refresh campaigns before retrying.');
     adminCampaignData=(adminCampaignData||[]).filter(x=>String(x.id)!==String(id));
     setCampaignMutationPending(false);
     closeCampaignModal();
@@ -2241,7 +2242,7 @@ async function saveCampaign(){
   if(payload.id&&!editing){if(status){status.textContent='This campaign is no longer available. Refresh before editing.';status.className='form-status-line error'}return}
   if(!String(payload.name).trim()){if(status){status.textContent='Campaign name is required.';status.className='form-status-line error'}return}
   setCampaignMutationPending(true,'save');
-  try{const r=await fetch('/api/account?action=admin-marketing-campaign-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save campaign.');adminCampaignData=[data.campaign,...(adminCampaignData||[]).filter(x=>String(x.id)!==String(data.campaign.id))];setCampaignMutationPending(false);closeCampaignModal();renderGrowth()}
+  try{const r=await fetch('/api/account?action=admin-marketing-campaign-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save campaign.');if(data.ok!==true||!data.campaign||typeof data.campaign!=='object'||Array.isArray(data.campaign)||!String(data.campaign.id||'').trim()||(payload.id&&String(data.campaign.id)!==String(payload.id)))throw new Error('Campaign save response was incomplete. Refresh campaigns before retrying.');adminCampaignData=[data.campaign,...(adminCampaignData||[]).filter(x=>String(x.id)!==String(data.campaign.id))];setCampaignMutationPending(false);closeCampaignModal();renderGrowth()}
   catch(err){if(status){status.textContent=err.message||'Could not save campaign.';status.className='form-status-line error'}}
   finally{setCampaignMutationPending(false)}
 }
@@ -2323,7 +2324,7 @@ async function saveCompanyDocument(){
   try{
     const r=await fetch('/api/account?action=admin-document-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save document.');
-    if(!data.document)throw new Error('Document response was incomplete. Refresh the directory before retrying.');
+    if(data.ok!==true||!data.document||typeof data.document!=='object'||Array.isArray(data.document)||!String(data.document.id||'').trim()||(payload.id&&String(data.document.id)!==String(payload.id)))throw new Error('Document response was incomplete. Refresh the directory before retrying.');
     adminDocumentsData.company=[data.document,...(adminDocumentsData.company||[]).filter(x=>String(x.id)!==String(data.document.id))];
     setCompanyDocumentMutationPending(false);closeCompanyDocumentModal();renderDocuments();
   }catch(err){companyDocumentFeedback(err.message||'Could not save document.')}
@@ -2339,6 +2340,7 @@ async function deleteCompanyDocument(){
   try{
     const r=await fetch('/api/account?action=admin-document-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt:Number(m.dataset.expectedUpdatedAt||0)})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not delete document.');
+    if(data.ok!==true||!data.deleted||typeof data.deleted!=='object'||Array.isArray(data.deleted)||String(data.deleted.id||'')!==String(id))throw new Error('Document deletion response was incomplete. Refresh the directory before retrying.');
     adminDocumentsData.company=(adminDocumentsData.company||[]).filter(item=>String(item.id)!==String(id));
     setCompanyDocumentMutationPending(false);closeCompanyDocumentModal();renderDocuments();
   }catch(err){companyDocumentFeedback(err.message||'Could not delete document.')}
@@ -2751,7 +2753,7 @@ async function replyAdminSupportTicket(id,button){
 }
 async function updateSupportStatus(id,status){
   const key=String(id),t=adminSupportData.find(x=>String(x.id)===key);if(!t||adminSupportStatusPending.has(key))return;const previous=t.status;adminSupportStatusPending.add(key);t.status=status;renderAdminSupport();
-  try{const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,expectedUpdatedAt:Number(t.updatedAt||t.createdAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update support status.');Object.assign(t,data.ticket||{status})}
+  try{const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,expectedUpdatedAt:Number(t.updatedAt||t.createdAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update support status.');if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||String(data.ticket.id||'')!==key||String(data.ticket.status||'')!==String(status))throw new Error('Support status response was incomplete. Refresh Client Care before retrying.');Object.assign(t,data.ticket)}
   catch(err){t.status=previous;alert(err.message||'Could not update support status.')}
   finally{adminSupportStatusPending.delete(key);renderAdminSupport()}
 }
@@ -2815,6 +2817,7 @@ async function savePlatformSettings(){
   try{
     const r=await fetch('/api/account?action=admin-platform-settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save platform settings.');
+    if(data.ok!==true||!data.settings||typeof data.settings!=='object'||Array.isArray(data.settings)||!Number.isFinite(Number(data.settings.updatedAt))||Number(data.settings.updatedAt)<=Number(payload.expectedUpdatedAt||0))throw new Error('Platform settings response was incomplete. Your unsaved form has been preserved; reload before retrying.');
     adminPlatformData=data.settings;adminPlatformDirty=false;adminWebsiteDays=Number(data.settings?.analyticsWindowDays||adminWebsiteDays||30);renderPlatformSettings();initAdminLiveRefresh();renderGrowth();renderAdmin();
     let refreshFailed=false;
     try{const [websiteUpdated]=await Promise.all([loadWebsiteAnalytics(adminWebsiteDays),loadNotifications({silent:true})]);if(websiteUpdated===false)refreshFailed=true}catch(refreshError){refreshFailed=true}
@@ -3135,6 +3138,7 @@ async function deletePhone(id){
   const r=await fetch('/api/account?action=admin-phone-number-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt:Number(item.updatedAt||0)})});
   const data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not delete phone number.');return}
+  if(data.ok!==true||!data.deleted||typeof data.deleted!=='object'||Array.isArray(data.deleted)||String(data.deleted.id||'')!==String(id)){alert('Phone deletion response was incomplete. Refresh the inventory before retrying.');return}
   adminPhoneData=adminPhoneData.filter(x=>String(x.id)!==String(id));renderPhones();
   await refreshAdminView('phones',{force:true,announce:false});
 }
@@ -3175,7 +3179,8 @@ async function savePhone(){
   try{
     const r=await fetch('/api/account?action=admin-phone-number-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save phone number.');
-    if(data.number){const index=adminPhoneData.findIndex(x=>String(x.id)===String(data.number.id));if(index>=0)adminPhoneData[index]=data.number;else adminPhoneData.push(data.number);renderPhones()}
+    if(data.ok!==true||!data.number||typeof data.number!=='object'||Array.isArray(data.number)||!String(data.number.id||'').trim()||(payload.id&&String(data.number.id)!==String(payload.id))||String(data.number.number||'')!==String(payload.number||''))throw new Error('Phone save response was incomplete. Keep this editor open and refresh the inventory before retrying.');
+    {const index=adminPhoneData.findIndex(x=>String(x.id)===String(data.number.id));if(index>=0)adminPhoneData[index]=data.number;else adminPhoneData.push(data.number);renderPhones()}
     unlock();phoneSaving=false;closePhoneModal();await refreshAdminView('phones',{force:true,announce:false});
   }catch(err){if(status){status.textContent=err.message||'Could not save phone number.';status.className='form-status-line error'}}
   finally{unlock();phoneSaving=false;if(btn){btn.disabled=false;btn.textContent='Save number'}}
@@ -3593,9 +3598,13 @@ function renderAdminConfigEditor(){
 }
 async function sendClientLogin(){
   if(!currentAdminClient)return;adminTechMessage('Sending secure sign-in link…');
-  const r=await fetch('/api/account?action=admin-send-client-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})}),data=await r.json().catch(()=>({}));
-  adminTechMessage(r.ok?'Sign-in link sent to '+data.email:(data.error||'Could not send sign-in link.'),!r.ok);
-  if(r.ok)await loadAdminTechSupport();
+  try{
+    const r=await fetch('/api/account?action=admin-send-client-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not send sign-in link.');
+    if(data.ok!==true||!String(data.email||'').trim())throw new Error('Sign-in link response was incomplete. Check delivery status before sending another link.');
+    adminTechMessage('Sign-in link sent to '+data.email+(data.warning?' · '+data.warning:''),!!data.warning);
+    await loadAdminTechSupport();
+  }catch(err){adminTechMessage(err.message||'Could not send sign-in link.',true)}
 }
 async function forceClientLogout(){
   if(!currentAdminClient||adminTechSaving||adminClientSaving||!confirm('Force this client to sign out of all existing CallerCore sessions?'))return;
@@ -3604,6 +3613,7 @@ async function forceClientLogout(){
   try{
     const r=await fetch('/api/account?action=admin-force-logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));
     if(!r.ok){adminTechMessage(data.error||'Could not revoke sessions.',true);return}
+    if(data.ok!==true||!Number.isSafeInteger(Number(data.sessionVersion))||Number(data.sessionVersion)<1){adminTechMessage('Session-revocation response was incomplete. Reload diagnostics before retrying.',true);return}
     adminTechMessage('All existing client sessions have been revoked.');
     await loadAdminTechSupport(id,request);
   }catch(err){adminTechMessage(err.message||'Could not revoke sessions.',true)}
@@ -3617,8 +3627,9 @@ async function repairClientAccess(){
   try{
     const r=await fetch('/api/account?action=admin-repair-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,email})}),data=await r.json().catch(()=>({}));
     if(!r.ok){adminTechMessage(data.error||'Could not repair access.',true);return}
-    if(String(currentAdminClient?.id)===id)currentAdminClient.ownerEmail=data.email||email;
-    adminTechMessage('Access mapping repaired for '+(data.email||email)+'.');
+    if(data.ok!==true||String(data.email||'').toLowerCase()!==String(email).toLowerCase()||!Number.isSafeInteger(Number(data.sessionVersion))||Number(data.sessionVersion)<1){adminTechMessage('Access-repair response was incomplete. Reload diagnostics before retrying.',true);return}
+    if(String(currentAdminClient?.id)===id)currentAdminClient.ownerEmail=data.email;
+    adminTechMessage('Access mapping repaired for '+data.email+'.');
     try{await refreshAdminCore()}catch(_){adminTechMessage('Access mapping was repaired, but the client directory could not refresh. Diagnostics will retry independently.',true)}
     await loadAdminTechSupport(id,request);
   }catch(err){adminTechMessage(err.message||'Could not repair access.',true)}
@@ -3632,6 +3643,7 @@ async function applyAdminConfigOverride(){
   try{
     const r=await fetch('/api/account?action=admin-config-override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,section,value})}),data=await r.json().catch(()=>({}));
     if(!r.ok){adminTechMessage(data.error||'Could not apply override.',true);return}
+    if(data.ok!==true||String(data.section||'')!==String(section)||!Object.hasOwn(data,'value')){adminTechMessage('Override response was incomplete. Reload diagnostics before retrying.',true);return}
     if(currentAdminTech?.config)currentAdminTech.config[section]=data.value;renderAdminConfigEditor();adminTechMessage('Admin override applied to '+section+'.');
     await Promise.all([refreshAdminCore(),loadAdminOps()]);await loadAdminTechSupport();
   }catch(err){adminTechMessage(err.message||'Could not apply override.',true)}
@@ -3643,6 +3655,7 @@ async function restoreAdminAudit(auditId){
   try{
     const r=await fetch('/api/account?action=admin-audit-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,auditId})}),data=await r.json().catch(()=>({}));
     if(!r.ok){adminTechMessage(data.error||'Could not restore snapshot.',true);return}
+    if(data.ok!==true||!['workspace','settings','agent','integrations','automations','locations'].includes(String(data.section||''))||!Object.hasOwn(data,'value')){adminTechMessage('Restore response was incomplete. Reload diagnostics before retrying.',true);return}
     if(currentAdminTech?.config)currentAdminTech.config[data.section]=data.value;renderAdminConfigEditor();adminTechMessage('Previous '+data.section+' configuration restored.');
     await Promise.all([refreshAdminCore(),loadAdminOps()]);await loadAdminTechSupport();
   }catch(err){adminTechMessage(err.message||'Could not restore snapshot.',true)}
@@ -3972,7 +3985,8 @@ async function viewAdminClient(){
   const r=await fetch('/api/account?action=admin-view-client',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})});
   const data=await r.json().catch(()=>({}));
   if(!r.ok){alert(data.error||'Could not open client view.');return}
-  location.href=data.redirect||'/dashboard';
+  if(data.ok!==true||data.redirect!=='/dashboard'||!data.workspace||typeof data.workspace!=='object'||Array.isArray(data.workspace)||String(data.workspace.id||'')!==String(currentAdminClient.id)){alert('Client-view response was incomplete. Stay in admin and retry after refreshing the client.');return}
+  location.href=data.redirect;
 }
 document.getElementById('adminSaveClientButton')?.addEventListener('click',saveAdminClient);
 document.getElementById('adminDeleteClientButton')?.addEventListener('click',deleteAdminClient);
@@ -4017,7 +4031,7 @@ function openRetention(){if(!retentionModal)return;document.getElementById('rete
 document.getElementById('retentionButton')?.addEventListener('click',openRetention);retentionModal?.querySelector('.retention-close')?.addEventListener('click',closeRetention);retentionModal?.addEventListener('click',e=>{if(e.target===retentionModal)closeRetention()});
 async function requestRetention(kind){
   const status=document.getElementById('retentionStatus'),copy=kind==='pause'?'I would like to discuss temporarily pausing my CallerCore subscription. Please contact me before making any changes.':'I am considering cancelling and would like to review any available retention options, incentives, or a better-fit plan before I decide.';
-  if(status)status.textContent='Sending request…';try{const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:kind==='pause'?'Subscription pause request':'Subscription save-options request',message:copy,priority:'normal'})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not send request');if(status)status.textContent='Request sent. CallerCore support will follow up before any subscription change.'}catch(err){if(status)status.textContent=err.message||'Could not send request'}}
+  if(status)status.textContent='Sending request…';try{const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:kind==='pause'?'Subscription pause request':'Subscription save-options request',message:copy,priority:'normal'})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not send request');if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||!String(data.ticket.id||'').trim())throw new Error('Request response was incomplete. Check Support before retrying.');if(status)status.textContent='Request sent. CallerCore support will follow up before any subscription change.'}catch(err){if(status)status.textContent=err.message||'Could not send request'}}
 retentionModal?.querySelectorAll('[data-retention]').forEach(b=>b.addEventListener('click',()=>{const kind=b.dataset.retention;if(kind==='plan'){closeRetention();const p=document.getElementById('planOptionsPanel');if(p){p.hidden=false;p.scrollIntoView({behavior:'smooth'})}}else requestRetention(kind)}));
 document.getElementById('continueCancelButton')?.addEventListener('click',async e=>{const b=e.currentTarget;b.dataset.original='Continue to cancellation options';await openBillingPortal(b,'Opening cancellation options…')});
 
@@ -4061,6 +4075,7 @@ async function saveProfile(){
   try{
     const r=await fetch('/api/account?action=profile-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({displayName,avatarDataUrl:currentUserProfile.avatarDataUrl||''})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save profile');
+    if(data.ok!==true||!data.profile||typeof data.profile!=='object'||Array.isArray(data.profile)||!String(data.profile.displayName||'').trim())throw new Error('Profile response was incomplete. Your current profile was preserved.');
     currentUserProfile={...currentUserProfile,...data.profile};renderUserProfile();if(status)status.textContent='Saved.';
   }catch(err){if(status)status.textContent=err.message||'Could not save profile'}
   finally{if(btn){btn.disabled=false;btn.textContent='Save profile'}}
