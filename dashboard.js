@@ -1875,7 +1875,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   }else if(view==='health'){
     add('health','/api/account?action=admin-system-health',120000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
     add('retention','/api/account?action=admin-retention-report',120000,d=>{adminRetentionData=d.report||null;adminRetentionCheckedAt=Number(d.report?.generatedAt||Date.now());adminRetentionLoadError=''});
-    add('conversationMigration','/api/account?action=admin-conversation-migration-report&limit=100',120000,d=>{adminConversationMigrationData=d.report||null;adminConversationMigrationLoadError=''});
+    add('conversationMigration','/api/account?action=admin-conversation-migration-report&limit=25&verifyDetails=1',120000,d=>{adminConversationMigrationData=d.report||null;adminConversationMigrationLoadError=''});
   }else if(view==='platform-settings'){
     if(!adminPlatformDirty)add('platform','/api/account?action=admin-platform-settings',60000,d=>{adminPlatformData=d.settings||adminPlatformData});
   }
@@ -2960,11 +2960,13 @@ function renderRetentionReport(){
     set('conversationMigrationStatus',adminConversationMigrationLoadError?'Unavailable':'Not checked');
     set('conversationMigrationMeta',adminConversationMigrationLoadError||'Migration dry run not checked');
   }else{
-    const migrationLabel=migration.status==='error'?Number(migration.blockingWorkspaces||0)+' blocker'+(Number(migration.blockingWorkspaces||0)===1?'':'s'):
-      Number(migration.migrationCandidates||0)>0?Number(migration.migrationCandidates||0)+' legacy-only':'Aligned';
+    const dc=migration.detailCounts||{},migrationLabel=migration.migrationReady===true?'Migration-ready':
+      migration.status==='error'?Number(migration.blockingWorkspaces||0)+' blocker'+(Number(migration.blockingWorkspaces||0)===1?'':'s'):
+      Number(migration.migrationCandidates||0)>0?Number(migration.migrationCandidates||0)+' legacy-only':
+      migration.complete===false?'Partial check':'Summary aligned';
     set('conversationMigrationStatus',migrationLabel);
     set('conversationMigrationMeta',Number(migration.scanned||0)+' of '+Number(migration.totalWorkspaces||0)+' workspaces scanned'+(migration.complete?'':' · partial')+
-      ' · '+Number(mc.aligned||0)+' aligned · '+Number(mc.legacyOnly||0)+' candidates');
+      ' · '+Number(mc.aligned||0)+' summary-aligned · '+Number(dc.alignedWorkspaces||0)+' detail-verified · '+Number(dc.recordsMatched||0)+' records matched');
   }
   const state=report.status==='error'?'error':report.status==='warning'?'warning':'ok';
   if(state!=='ok')panel.classList.add('is-'+state);
@@ -2987,6 +2989,8 @@ function renderRetentionReport(){
   else if(migration){
     if(Number(migration.blockingWorkspaces||0)>0)issues.push(Number(migration.blockingWorkspaces||0)+' conversation workspace'+(Number(migration.blockingWorkspaces||0)===1?' has':'s have')+' migration drift, malformed data, or no legacy rollback source');
     if(Number(migration.migrationCandidates||0)>0)issues.push(Number(migration.migrationCandidates||0)+' conversation workspace'+(Number(migration.migrationCandidates||0)===1?' remains':'s remain')+' legacy-only migration candidates');
+    if(Number(migration.detailCounts?.driftedWorkspaces||0)>0)issues.push(Number(migration.detailCounts.driftedWorkspaces)+' conversation workspace'+(Number(migration.detailCounts.driftedWorkspaces)===1?' has':'s have')+' normalized detail drift');
+    if(Number(migration.detailCounts?.capacityExceededWorkspaces||0)>0)issues.push(Number(migration.detailCounts.capacityExceededWorkspaces)+' conversation workspace'+(Number(migration.detailCounts.capacityExceededWorkspaces)===1?' exceeds':'s exceed')+' the '+1000+'-detail verification boundary');
     if(migration.complete===false)issues.push('Conversation migration dry run is partial: '+Number(migration.scanned||0)+' of '+Number(migration.totalWorkspaces||0)+' workspaces scanned');
   }
   if(adminRetentionLoadError)issues.push(adminRetentionLoadError);
