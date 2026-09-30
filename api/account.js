@@ -1484,7 +1484,9 @@ function launchGateState(saved={}){
 function clampInt(v,min,max,fallback){const n=Math.round(Number(v));return Number.isFinite(n)?Math.min(max,Math.max(min,n)):fallback}
 async function adminPlatformSettings(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const saved=await kv.get('platform:settings')||{};
+  const rawSaved=await kv.get('platform:settings');
+  if(rawSaved!=null&&(!rawSaved||typeof rawSaved!=='object'||Array.isArray(rawSaved)))return res.status(503).json({error:'Platform settings are unavailable. Last verified admin settings should be preserved.'});
+  const saved=rawSaved||{};
   return res.status(200).json({settings:{
     brandName:String(saved.brandName||'CallerCore').slice(0,80),
     supportEmail:saved.supportEmail||process.env.SUPPORT_EMAIL||'',
@@ -1514,7 +1516,9 @@ async function adminPlatformSettingsSave(req,res){
   const body=req.body||{},supportEmail=cleanEmail(body.supportEmail),defaultAgentName=String(body.defaultAgentName||'Maya').trim().slice(0,80),defaultTimezone=String(body.defaultTimezone||'America/Los_Angeles').trim().slice(0,100),brandName=String(body.brandName||'CallerCore').trim().slice(0,80);
   if(supportEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail))return res.status(400).json({error:'Valid support email required'});
   if(!brandName)return res.status(400).json({error:'Platform name is required'});
-  const saved=await kv.get('platform:settings'),previous=saved||{},launchGates=body.launchGates&&typeof body.launchGates==='object'?launchGateState(body.launchGates):launchGateState(previous.launchGates);
+  const saved=await kv.get('platform:settings');
+  if(saved!=null&&(!saved||typeof saved!=='object'||Array.isArray(saved)))return res.status(503).json({error:'Platform settings are unavailable. No changes were made.'});
+  const previous=saved||{},launchGates=body.launchGates&&typeof body.launchGates==='object'?launchGateState(body.launchGates):launchGateState(previous.launchGates);
   if(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(previous.updatedAt||0))return res.status(409).json({error:'Platform settings changed while you were editing. Reload this section before saving again.'});
   const settings={
     brandName,supportEmail,defaultAgentName:defaultAgentName||'Maya',defaultTimezone,

@@ -53,6 +53,26 @@ test('platform revision advances for two writes in the same millisecond',async()
   assert.equal(result.result.settings.updatedAt,11);
 });
 
+
+test('malformed platform settings fail closed on read instead of rendering defaults',async()=>{
+  let status=200,result;
+  const context=vm.createContext({
+    requireAdmin:async()=>({email:'admin@example.test'}),kv:{get:async()=> 'corrupt'},
+    process:{env:{}},Array,String,Number,Math,
+    res:{status(n){status=n;return this},json(x){result=x;return x}},req:{}
+  });
+  const start=source.indexOf('async function adminPlatformSettings('),end=source.indexOf('\nasync function adminPlatformSettingsSave(',start);
+  assert.ok(start>=0&&end>start);vm.runInContext(source.slice(start,end),context);
+  await vm.runInContext('adminPlatformSettings(req,res)',context);
+  assert.equal(status,503);assert.match(result.error,/Last verified admin settings should be preserved/);
+});
+
+test('malformed platform settings cannot be overwritten by a save',async()=>{
+  const result=await fixture({stored:'corrupt',expectedUpdatedAt:0}).run();
+  assert.equal(result.status,503);assert.equal(result.writes,0);
+  assert.match(result.result.error,/No changes were made/);
+});
+
 test('client sends the revision that admin platform settings initially rendered',()=>{
   const start=dashboard.indexOf('async function savePlatformSettings('),end=dashboard.indexOf("\ndocument.getElementById('savePlatformSettings')",start);
   assert.ok(start>=0&&end>start);
