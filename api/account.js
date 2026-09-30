@@ -102,9 +102,15 @@ async function getWorkspaceConfigSnapshot(workspaceId){
   const [workspace,settings,agent,automations,integrations,locations,phones]=await Promise.all([
     kv.get('workspace:'+workspaceId),kv.get('settings:'+workspaceId),kv.get('agent:'+workspaceId),
     kv.get('automations:'+workspaceId),kv.get('integrations:'+workspaceId),kv.get('locations:'+workspaceId),kv.get('phone:index')
-  ]);
-  const phone=(Array.isArray(phones)?phones:[]).find(x=>x&&x.workspaceId===workspaceId)||null;
-  return {workspace:workspace||null,settings:settings||null,agent:agent||null,automations:Array.isArray(automations)?automations:[],integrations:integrations||null,locations:Array.isArray(locations)?locations:[],phone};
+  ]),objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value),
+    invalid=[
+      ['workspace',workspace,value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value)],['settings',settings,objectOrNull],['agent',agent,objectOrNull],
+      ['automations',automations,value=>value==null||Array.isArray(value)],['integrations',integrations,objectOrNull],
+      ['locations',locations,value=>value==null||Array.isArray(value)],['phone inventory',phones,value=>value==null||Array.isArray(value)]
+    ].find(([,value,valid])=>!valid(value));
+  if(invalid)throw new Error('Workspace configuration source unavailable: '+invalid[0]);
+  const phone=(phones||[]).find(x=>x&&x.workspaceId===workspaceId)||null;
+  return {workspace:workspace||null,settings:settings||null,agent:agent||null,automations:automations||[],integrations:integrations||null,locations:locations||[],phone};
 }
 
 async function bootstrapPreview(req,res){
@@ -1942,8 +1948,12 @@ async function adminTechSupport(req,res){
   const id=String((req.query||{}).id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Client id required'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws))return res.status(503).json({error:'Client workspace record is unavailable. No repair diagnostics were substituted.'});
   const email=cleanEmail(ws.ownerEmail||''),member=email?await kv.get('user:email:'+email):null;
-  const [config,auditRaw]=await Promise.all([getWorkspaceConfigSnapshot(id),kv.get('audit:'+id)]),
+  let config,auditRaw;
+  try{[config,auditRaw]=await Promise.all([getWorkspaceConfigSnapshot(id),kv.get('audit:'+id)])}
+  catch(err){console.error('admin tech diagnostics verification failed',safeError(err));return res.status(503).json({error:'Workspace diagnostics could not be verified. No partial repair snapshot was returned.'})}
+  const 
     auditVerified=auditRaw==null||Array.isArray(auditRaw),audit=auditVerified?(auditRaw||[]):[],auditReturned=audit.slice(0,100);
   return res.status(200).json({
     diagnostics:{
