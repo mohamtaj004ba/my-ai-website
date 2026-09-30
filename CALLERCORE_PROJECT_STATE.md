@@ -22,30 +22,36 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Current verified checkpoint — 2026-09-29
 
-Latest verified **implementation/test** SHA: `0adc0dd4380f2581a6a68b24eab460e74ad66dca`. This head preserves the verified retention and normalized-Conversations fidelity work and adds a **Preview-only reversible migration/rollback rehearsal** without exposing a production migration executor.
+Latest verified **implementation/test** SHA: `91a17e6992f649165de2a810f451e47867e011ab`. This head preserves the reversible normalized-Conversations work and adds an explicit, auditable **email-marketing consent evidence model** for public prospects without enabling destructive retention.
 
-- Full GitHub CI: **856/856 tests passed, 0 failed**. CallerCore CI runs `36656520217` (PR) and `36656516362` (push) succeeded.
-- CodeQL runs `36656520214` (PR) and `36656516442` (push) succeeded. Jekyll `36656520219` succeeded.
-- Authenticated Preview Browser QA `36656516315` succeeded on the exact implementation SHA, including the shadow-only migration rehearsal and visual-drift comparison.
-- Vercel Preview `dpl_3JULiuTtCvA6YEFza6tDqAS6Wsrc` is READY at `https://my-ai-website-qb4dokfwr-mohamtaj004bas-projects.vercel.app`.
-- Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, production conversation migration, customer communication, live billing, live voice activation, or destructive retention cleanup occurred.
+- Full GitHub CI: **872/872 tests passed, 0 failed**. CallerCore CI runs `36657997644` (PR) and `36657995732` (push) succeeded.
+- CodeQL runs `36657997963` (PR) and `36657995735` (push) succeeded. Jekyll `36657997743` succeeded.
+- Authenticated Preview Browser QA `36657995655` succeeded on the exact implementation SHA, including aggregate consent-evidence validation, the existing reversible migration rehearsal, and visual-drift comparison.
+- Vercel Preview `dpl_AnbRQT1yhkD12ym79bq6shg3HxoU` is READY at `https://my-ai-website-71491c39p-mohamtaj004bas-projects.vercel.app`.
+- Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, production conversation migration, marketing send, live billing, live voice activation, or destructive retention cleanup occurred.
 
 Verified implementation included in this head:
 
-- The existing normalized-Conversations dry run still requires summary alignment plus exact normalized-detail fidelity against the preserved legacy source. Missing, malformed, mismatched, rollback-source-missing, or capacity-exceeded states fail closed.
-- Added a dedicated rehearsal core that operates only on a unique **shadow workspace namespace**. It copies the isolated Preview QA legacy conversation dataset into the shadow source, publishes normalized details/index there, and never rewrites the real QA workspace legacy source.
-- The rehearsal proves the actual normalized publisher writes detail records before publishing the index; regression coverage asserts the detail writes precede the first index write.
-- After publication, the rehearsal verifies read equivalence and full detail fidelity against the shadow legacy source.
-- Rollback uses exact before-snapshots with compare-before-delete semantics. The rehearsal then proves legacy-only reads are restored and normalized shadow keys are gone.
-- A deliberate concurrent normalized-detail mutation is introduced in the shadow namespace; stale rollback is rejected and the concurrent state remains intact, proving rollback fails closed instead of deleting newer data.
-- Shadow cleanup now explicitly removes every known detail key, index key, and shadow legacy key even after a partial publication failure, preventing orphaned rehearsal data when the index was never published.
-- The original isolated Preview QA legacy source is digested before/after and must remain unchanged. The rehearsal response exposes only aggregate booleans/counts and never returns workspace IDs, conversation IDs, names, phone numbers, or message contents.
-- The rehearsal endpoint is POST-only and gated through `previewQaRequestAllowed`, which requires Vercel Preview scope plus an authorized QA/bootstrap secret. It additionally verifies the source workspace is marked `previewQa=true`. No equivalent production/admin migration action was added.
-- Authenticated Preview QA runs the rehearsal immediately after disposable seeding and requires: shadow-only scope, no reachable production/migration executor, legacy preservation, publish/read equivalence, complete detail fidelity, successful rollback, concurrent-change rejection, preserved concurrent state, cleanup success, and conversation-count agreement with the seeded source.
-- The separately governed permanent workspace-purge flow still contains normalized-conversation deletion as part of permanent account deletion. That is not a migration executor and remains distinct from this Preview rehearsal.
-- The legacy tenant conversation array remains the production compatibility/rollback source. No production migration or legacy deletion was performed.
+- Contact and Get Started now expose an **optional, unchecked email-marketing opt-in**. The copy explicitly states that consent is not required to send a contact request or purchase CallerCore and points to the Privacy Policy. It does not bundle SMS/text marketing consent.
+- Browser payloads convert checkbox state to an explicit boolean; the server trusts only literal `true`. The server, not the browser, assigns the trusted first-party consent source.
+- Contact-form consent is stamped as `contact_form`; Get Started / checkout consent is stamped as `get_started`. Chatbot inquiries do not fabricate consent evidence because that flow has no equivalent opt-in control.
+- Consent evidence is stored atomically on the prospect record with status, trusted source, notice version `2026-09-29`, and server-side recorded timestamp.
+- A checked form records `granted`. A new prospect submitting an unchecked form records verified `not_granted`.
+- An unchecked later form **does not revoke an earlier grant**. It also does not convert a pre-existing historical/unknown prospect into verified `not_granted`; historical unknown consent remains unknown unless there is a new explicit grant. This prevents an ordinary resubmission from erasing or inventing consent history.
+- Unknown/malformed/older consent evidence is treated as unverified rather than trusted. No generic form submission is treated as permission.
+- Automatic stale-prospect retention now fails closed on consent state. Active verified marketing consent excludes the prospect; unknown historical consent also excludes the prospect from executor eligibility. Only stale, non-customer prospects with verified inactive consent evidence can become retention candidates.
+- Retention planning/reporting now separates active-consent, verified-inactive and unknown-consent counts. System Health stays aggregate-only and explains unknown historical evidence, active consent exclusions and eligible stale candidates without returning prospect identities or consent record contents.
+- The de-identification output strips the consent evidence field along with direct identifiers and operational follow-up data.
+- The retention executor remains unreachable. `CALLERCORE_MAINTENANCE_ENABLED` remains off and no scheduled prospect cleanup was activated.
+- Existing normalized-Conversations detail-fidelity checks and Preview shadow migration/rollback rehearsal remain verified and unchanged.
 
-This is an implementation/Preview checkpoint, not a production migration, provider activation, or production release.
+Important remaining consent boundary:
+
+- No dedicated unsubscribe/revocation transaction is implemented yet. The current model deliberately refuses to interpret an unchecked later form as an unsubscribe.
+- Historical/imported/manual prospects without verified first-party consent evidence remain `unknown` and cannot enter automatic stale-prospect cleanup.
+- This checkpoint establishes technical consent evidence and retention gating; it is not a legal-compliance certification.
+
+This is an implementation/Preview checkpoint, not a production release, marketing activation, retention activation, or provider activation.
 
 ## Latest verified implementation checkpoint
 
@@ -89,11 +95,11 @@ Current implementation: 303/303 tests passed in GitHub CI on `db68806a`; the rec
 
 ## Next authorized development backlog
 
-1. Keep normalized-Conversations production migration **gated**. The Preview rehearsal now proves publication, exact detail fidelity, rollback, cleanup and concurrent-change protection; a production executor still requires an explicit owner decision plus production backup/restore and release-runbook acceptance.
-2. Define a verified **prospect-consent source** before destructive stale-prospect retention can be considered. Current prospect persistence has no consent field/source/timestamp; the Privacy Policy says marketing/follow-up messages are sent where users have opted in, but the inspected public contact/get-started persistence paths do not currently record such opt-in evidence. Do not infer consent from merely submitting a form.
-3. Keep `CALLERCORE_MAINTENANCE_ENABLED` off until production activation is explicitly authorized, and pair any future retention executor with auditable consent state plus recovery expectations.
-4. Continue premium admin/client QA and consistency sweeps while preserving provider truthfulness, especially notifications/deep links, background data, large-history behavior and System Health.
-5. Keep provider lifecycle, live Vapi/voice, Stripe test-mode payment/recovery scenarios, production changes, destructive cleanup and new charges separately gated behind explicit owner authorization.
+1. Add an **auditable unsubscribe/revocation path** for email-marketing consent before any marketing-send workflow can rely on the new evidence. It should be explicit, conflict-safe, preserve history/audit expectations, and never let ordinary prospect edits mutate consent accidentally.
+2. Surface consent state safely in the Growth/admin prospect workflow so operators can distinguish Granted / Not granted / Unknown before outreach. Do not expose an unsafe one-click grant control; grants must originate from explicit prospect action or another separately verified source.
+3. Keep stale-prospect retention dry-run-only. Historical unknown consent must remain blocked, and any future executor requires explicit owner authorization, recovery/audit acceptance, and a reviewed production runbook.
+4. Keep normalized-Conversations production migration gated. Preview publication, exact detail fidelity, rollback, cleanup and concurrency protection are verified; production backup/restore and release acceptance remain separate.
+5. Continue premium admin/client QA and provider truthfulness work, then separately complete live Vapi/voice and Stripe test-mode payment/recovery acceptance before production release.
 
 ## Known limitations and remaining work
 
