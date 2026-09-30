@@ -653,17 +653,33 @@ async function runAdminInteractions(page){
   await page.locator('#growthSearch').fill('North');
   await page.waitForTimeout(180);
   await page.locator('#growthSearch').fill('');
-  const consentCard=page.locator('[data-edit-prospect]').first();
+  await page.evaluate(()=>{
+    window.__qaOriginalWebsiteData=adminWebsiteData;
+    window.__qaOriginalGrowthFilter=growthFilter;
+    adminWebsiteData={...adminWebsiteData,prospects:[{
+      id:'qa-consent-ui-only',name:'Consent UI Fixture',business:'Preview Consent Fixture',email:'consent-fixture@example.test',
+      source:'contact',stage:'inquiry',plan:'Growth',createdAt:Date.now()-3600000,updatedAt:Date.now(),
+      marketingEmailConsent:{status:'granted',source:'contact_form',noticeVersion:'2026-09-29',recordedAt:Date.now()-1800000}
+    },...(adminWebsiteData.prospects||[])]};
+    growthFilter='all';renderGrowth();
+  });
+  const consentCard=page.locator('[data-edit-prospect="qa-consent-ui-only"]');
   await consentCard.waitFor({state:'visible',timeout:5000});
   const consentChip=(await consentCard.locator('.consent-mini').textContent()||'').trim();
-  if(!/^Email: (Granted|Not granted|Unsubscribed|Unknown)$/.test(consentChip))throw new Error('Growth prospect card omitted marketing-consent visibility');
+  if(consentChip!=='Email: Granted')throw new Error('Growth prospect card omitted verified marketing-consent visibility');
   await consentCard.click();
   await page.locator('#prospectModal.open').waitFor({state:'visible',timeout:5000});
   const consentLabel=(await page.locator('#prospectConsentLabel').textContent()||'').trim(),
     consentMeta=(await page.locator('#prospectConsentMeta').textContent()||'').trim();
-  if(!/^(Granted|Not granted|Unsubscribed|Unknown)$/.test(consentLabel)||!consentMeta)throw new Error('Growth prospect editor omitted read-only consent state');
+  if(consentLabel!=='Granted'||!/Contact form/.test(consentMeta))throw new Error('Growth prospect editor omitted read-only verified consent state');
   if(await page.locator('#prospectModal input[name*="consent" i],#prospectModal button[id*="consent" i]').count())throw new Error('Growth prospect editor exposed a consent mutation control');
   await page.locator('#closeProspectModal').click();
+  await page.evaluate(()=>{
+    adminWebsiteData=window.__qaOriginalWebsiteData;
+    growthFilter=window.__qaOriginalGrowthFilter;
+    delete window.__qaOriginalWebsiteData;delete window.__qaOriginalGrowthFilter;
+    renderGrowth();
+  });
   report.admin.interactions.push('growth pipeline search + read-only marketing consent visibility');
 
   await ensureView(page,'onboarding');
