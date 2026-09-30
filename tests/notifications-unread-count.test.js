@@ -26,6 +26,22 @@ test('admin unread badge counts all notifications, even when list displays lates
   assert.equal(result.notifications[0].id,'notification-104');
   assert.equal(result.notifications.at(-1).id,'notification-2');
 });
+test('notification endpoint returns bounded-scan coverage metadata without changing unread semantics',async()=>{
+  let result=null;
+  const ctx=vm.createContext({
+    requireAdmin:async()=>({email:'admin@example.test'}),
+    buildAdminNotifications:async()=>({items:[{id:'alert-1',createdAt:5}],coverage:{limited:true,sources:['support','growth']}}),
+    getNotificationReadSet:async()=>new Set(),
+    req:{query:{scope:'admin'}},
+    res:{status(code){assert.equal(code,200);return this},json(data){result=data;return data}},
+    Date,Number,Set,Array,String
+  });
+  vm.runInContext(endpoint,ctx);
+  await vm.runInContext('notifications(req,res)',ctx);
+  assert.equal(result.unreadCount,1);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.coverage)),{limited:true,sources:['support','growth']});
+});
+
 test('client notification count and list stay within their respective authorization scope',async()=>{
   let clientCalls=0,adminCalls=0,output;
   const ctx=vm.createContext({
@@ -50,7 +66,7 @@ function fixture({unreadCount=95,visible=80}={}){
   const ctx=vm.createContext({
     demoMode:false,notificationsLoading:false,notificationRequest:0,
     notificationUnreadCount:unreadCount,notificationData:payload().notifications,
-    notificationLoadError:'',notificationLastSyncAt:0,
+    notificationLoadError:'',notificationLastSyncAt:0,notificationCoverage:{limited:false,sources:[]},
     notificationScope:()=> 'admin',
     document:{getElementById:()=>({})},
     fetch:async(url,options)=>{
@@ -131,6 +147,18 @@ test('successful notification refresh clears stale warning and records a fresh s
   assert.ok(Number(f.ctx.notificationLastSyncAt)>0);
   assert.equal(f.ctx.notificationUnreadCount,2);
   assert.equal(f.ctx.notificationData.length,2);
+});
+
+test('successful refresh records bounded coverage so the UI can disclose non-exhaustive alert scans',async()=>{
+  const f=fixture({unreadCount:1,visible:1});
+  f.ctx.fetch=async()=>({ok:true,status:200,json:async()=>({
+    notifications:[{id:'alert-limited',read:false}],unreadCount:1,
+    coverage:{limited:true,sources:['support','ai_feedback']}
+  })});
+  await f.run('loadNotifications()');
+  assert.equal(f.ctx.notificationCoverage.limited,true);
+  assert.deepEqual(Array.from(f.ctx.notificationCoverage.sources),['support','ai_feedback']);
+  assert.equal(f.ctx.notificationLoadError,'');
 });
 
 test('older unread alerts appear even if newest 80 alerts have already been read',async()=>{
