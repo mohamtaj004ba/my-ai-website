@@ -60,7 +60,7 @@ test('Gmail cache validators reject malformed successful cache payloads instead 
 
 test('Gmail handlers never use malformed caches as stale provider fallbacks',()=>{
   const aliasStart=account.indexOf('async function adminGmailAliases('),aliasEnd=account.indexOf('\nasync function adminGmailInbox(',aliasStart);
-  const inboxStart=aliasEnd,inboxEnd=account.indexOf('\nasync function adminGmailDisconnect(',inboxStart);
+  const inboxStart=account.indexOf('async function adminGmailInbox('),inboxEnd=account.indexOf('\nasync function adminGmailAliases(',inboxStart);
   const aliasBody=account.slice(aliasStart,aliasEnd),inboxBody=account.slice(inboxStart,inboxEnd);
   assert.match(aliasBody,/parsedCache\.valid&&cachedAliases\.length/);
   assert.match(aliasBody,/Cached Gmail sender aliases are unavailable/);
