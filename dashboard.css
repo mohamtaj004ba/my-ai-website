@@ -2438,3 +2438,20 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
   #view-phones .admin-phone-row .admin-link{padding:8px 12px;min-height:36px;border-radius:8px;background:#f5f6f8}
 }
 @media(max-width:650px){#view-phones .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#view-phones .metric-grid article{min-width:0;padding:18px}#view-phones .admin-phone-row:not(.head){grid-template-areas:"number number" "workspace workspace" "status status" "routing routing" "actions actions"}}
+
+
+/* Read-only retention readiness */
+.retention-report-panel{margin:0 0 22px;border-color:#e1e6e8;background:linear-gradient(180deg,#fff,#fbfcfc)}
+.retention-report-panel .panel-head{align-items:flex-start}
+.retention-report-panel .panel-head small{display:block;max-width:780px;margin-top:4px;color:#7b858d;line-height:1.5}
+.retention-report-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px}
+.retention-report-metric{min-width:0;padding:14px;border:1px solid #e5e9eb;border-radius:11px;background:#fff}
+.retention-report-metric span,.retention-report-metric small{display:block;color:#7d878e}
+.retention-report-metric span{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.retention-report-metric strong{display:block;margin:6px 0 4px;font-size:23px;line-height:1.05;overflow-wrap:anywhere}
+.retention-report-metric small{font-size:7px;line-height:1.4}
+.retention-report-note{margin-top:12px;padding:11px 12px;border:1px solid #e5e9eb;border-radius:10px;background:#f7f9f9;color:#68747b;font-size:8px;line-height:1.55}
+.retention-report-panel.is-warning .retention-report-note{background:#fff9ef;border-color:#ecdfc4;color:#7c6234}
+.retention-report-panel.is-error .retention-report-note{background:#fff5f3;border-color:#ecd4cf;color:#8b4a3f}
+@media(max-width:980px){.retention-report-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.retention-report-grid{grid-template-columns:1fr}}
