@@ -399,3 +399,13 @@ test('non-consent prospect sources remain unknown instead of inventing permissio
   const lead=await f.upsert({email:'manual-unknown@example.test',source:'manual',updatedBy:'admin@example.test'});
   assert.equal(lead.marketingEmailConsent,null);
 });
+
+
+test('unchecked form leaves a pre-existing unknown-consent prospect unknown',async()=>{
+  const f=fixture();
+  const legacy=await f.upsert({email:'legacy-unknown@example.test',source:'manual',updatedBy:'admin@example.test'});
+  assert.equal(legacy.marketingEmailConsent,null);
+  const later=await f.upsert({email:'legacy-unknown@example.test',source:'contact',marketingEmailConsent:{granted:false,source:'contact_form'}});
+  assert.equal(later.marketingEmailConsent,null);
+  assert.equal(f.index.length,1);
+});
