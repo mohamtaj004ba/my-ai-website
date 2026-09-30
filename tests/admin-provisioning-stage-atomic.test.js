@@ -163,8 +163,8 @@ test('failed restoration preserves manual label and permits retry',async()=>{
 });
 
 test('provisioning stage history limit is explicit instead of silently dropping the oldest entry',()=>{
-  const save=source.slice(source.indexOf('async function adminSaveProvisioningStage('),source.indexOf('\nasync function adminClearProvisioningStage(',source.indexOf('async function adminSaveProvisioningStage(')));
-  const clear=source.slice(source.indexOf('async function adminClearProvisioningStage('),source.indexOf('\nasync function adminPhoneNumbers(',source.indexOf('async function adminClearProvisioningStage(')));
+  const save=account.slice(account.indexOf('async function adminSaveProvisioningStage('),account.indexOf('\nasync function adminClearProvisioningStage(',account.indexOf('async function adminSaveProvisioningStage(')));
+  const clear=account.slice(account.indexOf('async function adminClearProvisioningStage('),account.indexOf('\nasync function adminPhoneNumbers(',account.indexOf('async function adminClearProvisioningStage(')));
   assert.match(save,/history\.length>=50/);assert.match(save,/50-entry safety limit/);assert.doesNotMatch(save,/nextHistory=\[[^\n]+\]\.slice\(0,50\)/);
   assert.match(clear,/history\.length>=50/);assert.match(clear,/50-entry safety limit/);
 });
