@@ -2978,9 +2978,9 @@ async function phoneRouting(req,res){
 async function locations(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
-  const items=await kv.get('locations:'+s.workspaceId)||[];
-  const ent=entitlementsFor(ws.plan);
-  return res.status(200).json({locations:Array.isArray(items)?items:[],limit:ent.locations});
+  const raw=await kv.get('locations:'+s.workspaceId),ent=entitlementsFor(ws.plan);
+  if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Location records are unavailable. No empty location list was substituted.'});
+  return res.status(200).json({locations:raw||[],limit:ent.locations});
 }
 
 async function saveLocations(req,res){
@@ -3080,8 +3080,9 @@ async function saveAgent(req,res){
 
 async function automations(req,res){
   const access=await requireFeature(req,res,'automations');if(!access)return;
-  const items=await kv.get('automations:'+access.session.workspaceId)||[];
-  return res.status(200).json({automations:Array.isArray(items)?items:[]});
+  const raw=await kv.get('automations:'+access.session.workspaceId);
+  if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Automation records are unavailable. No empty automation list was substituted.'});
+  return res.status(200).json({automations:raw||[]});
 }
 
 async function saveAutomations(req,res){
@@ -3094,9 +3095,10 @@ async function saveAutomations(req,res){
   const calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true',smsLive=process.env.CALLERCORE_SMS_ENABLED==='true';
   const allowedTriggers=['missed_call','new_lead','qualified_lead','after_hours_call',...(calendarLive?['appointment_booked']:[])];
   const allowedActions=['notify_team','create_followup','mark_priority',...(smsLive?['send_sms','send_confirmation']:[])];
+  if(incoming.length>20)return res.status(409).json({error:'CallerCore supports up to 20 automations per workspace. No automations were changed.'});
   if(incoming.some(item=>item&&item.trigger==='appointment_booked'&&!calendarLive))return res.status(409).json({error:'Calendar automation triggers are not enabled'});
   if(incoming.some(item=>item&&['send_sms','send_confirmation'].includes(item.action)&&!smsLive))return res.status(409).json({error:'SMS automation actions are not enabled'});
-  const items=incoming.slice(0,20).map((item,i)=>({
+  const items=incoming.map((item,i)=>({
     id:String(item.id||('auto_'+i)).slice(0,120),
     name:String(item.name||'Automation').trim().slice(0,120),
     trigger:allowedTriggers.includes(item.trigger)?item.trigger:'new_lead',
@@ -3145,8 +3147,9 @@ async function contactConversations(req,res){
 
 async function appointments(req,res){
   const access=await requireFeature(req,res,'appointments');if(!access)return;
-  const items=await kv.get('appointments:'+access.session.workspaceId)||[];
-  return res.status(200).json({appointments:Array.isArray(items)?items:[]});
+  const raw=await kv.get('appointments:'+access.session.workspaceId);
+  if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Appointment history is unavailable. No empty schedule was substituted.'});
+  return res.status(200).json({appointments:raw||[]});
 }
 
 async function updateAppointment(req,res){
@@ -3172,10 +3175,12 @@ async function updateAppointment(req,res){
 
 async function analytics(req,res){
   const access=await requireFeature(req,res,'advancedAnalytics');if(!access)return;
-  const calls=await kv.get('calls:'+access.session.workspaceId)||[];
-  const leads=await kv.get('leads:'+access.session.workspaceId)||[];
-  const appointments=await kv.get('appointments:'+access.session.workspaceId)||[];
-  const safeCalls=Array.isArray(calls)?calls:[],safeLeads=Array.isArray(leads)?leads:[],safeAppointments=Array.isArray(appointments)?appointments:[];
+  const [callsRaw,leadsRaw,appointmentsRaw]=await Promise.all([
+    kv.get('calls:'+access.session.workspaceId),kv.get('leads:'+access.session.workspaceId),kv.get('appointments:'+access.session.workspaceId)
+  ]);
+  if(callsRaw!=null&&!Array.isArray(callsRaw)||leadsRaw!=null&&!Array.isArray(leadsRaw)||appointmentsRaw!=null&&!Array.isArray(appointmentsRaw))
+    return res.status(503).json({error:'Analytics source records are unavailable. No zero-value analytics were substituted.'});
+  const safeCalls=callsRaw||[],safeLeads=leadsRaw||[],safeAppointments=appointmentsRaw||[];
   const qualified=safeCalls.filter(x=>/qualified|booked/i.test(String(x.outcome||''))).length;
   const won=safeLeads.filter(x=>x&&x.stage==='Won').length;
   const pipeline=safeLeads.reduce((sum,x)=>sum+Number(x&&x.value||0),0);
@@ -3372,14 +3377,16 @@ async function callDetail(req,res){
 
 async function calls(req,res){
   const s=await requireSession(req,res);if(!s)return;
-  const items=await kv.get('calls:'+s.workspaceId)||[];
-  return res.status(200).json({calls:Array.isArray(items)?items:[]});
+  const raw=await kv.get('calls:'+s.workspaceId);
+  if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Call history is unavailable. No empty history was substituted.'});
+  return res.status(200).json({calls:raw||[]});
 }
 
 async function leads(req,res){
   const s=await requireSession(req,res);if(!s)return;
-  const items=await kv.get('leads:'+s.workspaceId)||[];
-  return res.status(200).json({leads:Array.isArray(items)?items:[]});
+  const raw=await kv.get('leads:'+s.workspaceId);
+  if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Lead history is unavailable. No empty pipeline was substituted.'});
+  return res.status(200).json({leads:raw||[]});
 }
 
 async function updateLead(req,res){

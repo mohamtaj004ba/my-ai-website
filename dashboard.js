@@ -1282,6 +1282,7 @@ async function toggleAutomation(id){
 let editingAutomationId=null;
 function openAutomation(id=null,preset=null){
   if(!has('automations'))return;
+  if(!id&&automationsData.length>=20){alert('This workspace already has the 20-automation limit. Remove an automation before creating another.');return}
   const modal=document.getElementById('automationModal');if(!modal)return;
   editingAutomationId=id;
   let item=id?automationsData.find(x=>String(x.id)===String(id)):null;
