@@ -22,24 +22,25 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Current verified checkpoint — 2026-09-29
 
-Latest verified **implementation/test** SHA: `aa43ea4bae600b1b36d3541223d2df1948f8c6e5`. This head closes the previously queued analytics-retention foundation without activating production cleanup or provider work.
+Latest verified **implementation/test** SHA: `03833e57db731d77ccdb128a52104f2050008918`. This head completes the analytics-retention foundation plus truthful System Health observability for current rollups, prior-month finalization and maintenance scheduler state without activating production cleanup or provider work.
 
-- Full GitHub CI: **841/841 tests passed, 0 failed**. CallerCore CI runs `36652759350` (PR) and `36652755031` (push) succeeded.
-- CodeQL runs `36652759334` (PR) and `36652754974` (push) succeeded. Jekyll `36652759327` succeeded.
-- Authenticated Preview Browser QA `36652754945` succeeded on the exact implementation SHA. The run exercises the new admin retention dry-run endpoint and System Health panel in addition to the existing disposable client/admin workflow.
-- Vercel Preview `dpl_9riXmFCNBErw6yVUmKH4bxJ66FZt` is READY at `https://my-ai-website-7nevw7bs8-mohamtaj004bas-projects.vercel.app`.
+- Full GitHub CI: **842/842 tests passed, 0 failed**. CallerCore CI runs `36653267050` (PR) and `36653262564` (push) succeeded.
+- CodeQL runs `36653267020` (PR) and `36653262546` (push) succeeded. Jekyll `36653266946` succeeded.
+- Authenticated Preview Browser QA `36653262545` succeeded on the exact implementation SHA. The run verifies the admin-only retention dry-run endpoint, System Health panel, privacy-safe scheduler/finalization status, and the existing disposable client/admin workflows.
+- Vercel Preview `dpl_Ew4bzNw7KSgzWTLxvmQunL5WzFdY` is READY at `https://my-ai-website-1lu4w8kmh-mohamtaj004bas-projects.vercel.app`.
 - Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, customer communication, live billing, live voice activation, or destructive cleanup occurred.
 
 Verified implementation included in this head:
 
 - Durable Stripe monthly payment-failure metrics use provider-event dedupe receipts plus an explicit coverage-start marker. Fully observed future months can report complete failure counts; an unobserved partial first month remains unknown rather than being backfilled as zero. The older checkout-concurrency VM fixture was updated to account for the new metric dependency.
-- Admin System Health now has an admin-only, **read-only** retention dry run. It reports stale prospect **candidates pending consent review**, raw-event/session-index coverage, and current monthly-rollup gaps without returning prospect IDs, emails, before/after records, or exposing a retention executor.
+- Admin System Health has an admin-only, **read-only** retention dry run. It reports stale prospect **candidates pending consent review**, raw-event/session-index coverage, and monthly-rollup gaps without returning prospect IDs, emails, before/after records, or exposing a retention executor.
+- The same retention view now distinguishes the **current monthly rollup**, **previous-month finalization marker**, and scheduler state as `disabled`, `misconfigured`, or `active`. It exposes only status booleans/timestamps and never the cron secret.
 - Prospect de-identification remains isolated and unreachable. No verified consent source exists yet, so the report deliberately does not call stale records automatically eligible for cleanup.
-- Session-index compaction now has a conflict-safe planner/executor with tests for duplicates, missing/expired sessions, malformed records, exact-list compare-before-write, concurrent changes, and no-op plans. The executor is not routed or scheduled.
+- Session-index compaction has a conflict-safe planner/executor with tests for duplicates, missing/expired sessions, malformed records, exact-list compare-before-write, concurrent changes, and no-op plans. The executor is not routed or scheduled.
 - Analytics retention constants are centralized at 180 days for raw website events/session records.
-- Previous-month KPI finalization now fails closed unless the prior snapshot has complete source coverage and was recorded within 24 hours of UTC month end. Its durable marker contains only month/finalization timestamps and coverage-complete state, not KPI values or customer data.
+- Previous-month KPI finalization fails closed unless the prior snapshot has complete source coverage and was recorded within 24 hours of UTC month end. Its durable marker contains only month/finalization timestamps and coverage-complete state, not KPI values or customer data.
 - A Vercel daily analytics-maintenance cadence is defined for 05:17 UTC, but the endpoint is **disabled by default** and cannot write unless `CALLERCORE_MAINTENANCE_ENABLED=true` and a valid `CRON_SECRET` bearer token are both present. The scheduled path refreshes the current aggregate monthly rollup and attempts truthful previous-month finalization; it does not call session compaction or prospect de-identification.
-- Raw-event/session expiration must still not be treated as safe for production cleanup until the maintenance gate is deliberately enabled and observed over a complete boundary. The feature-branch implementation proves the mechanism, not production activation.
+- Raw-event/session expiration must still not be treated as safe for production cleanup until the maintenance gate is deliberately enabled and observed over a complete boundary. The feature-branch implementation proves the mechanism and visibility, not production activation.
 
 This is an implementation/Preview checkpoint, not provider activation or production release.
 
