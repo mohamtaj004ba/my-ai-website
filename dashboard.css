@@ -2444,7 +2444,7 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
 .retention-report-panel{margin:0 0 22px;border-color:#e1e6e8;background:linear-gradient(180deg,#fff,#fbfcfc)}
 .retention-report-panel .panel-head{align-items:flex-start}
 .retention-report-panel .panel-head small{display:block;max-width:780px;margin-top:4px;color:#7b858d;line-height:1.5}
-.retention-report-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px}
+.retention-report-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
 .retention-report-metric{min-width:0;padding:14px;border:1px solid #e5e9eb;border-radius:11px;background:#fff}
 .retention-report-metric span,.retention-report-metric small{display:block;color:#7d878e}
 .retention-report-metric span{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
