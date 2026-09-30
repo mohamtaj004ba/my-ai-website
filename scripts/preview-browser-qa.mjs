@@ -431,7 +431,8 @@ async function runClientInteractions(page){
   const supportHistoryRoute='**/api/account?action=support-tickets';
   let simulateSupportHistoryFailure=true,injectSupportDraftFixture=false;
   const supportDraftFixture={tickets:[{id:'qa-support-draft',subject:'Fictional Preview draft',createdAt:Date.now(),
-    priority:'normal',status:'open',messages:[{direction:'client',body:'Fictional Preview support inquiry',at:Date.now()}]}]};
+    priority:'normal',status:'open',messages:[{direction:'client',body:'Fictional Preview support inquiry',at:Date.now()}],
+    messageCount:1,messageHistoryVerified:true,messagesTruncated:false}],coverage:{verified:true,incomplete:false}};
   await page.route(supportHistoryRoute,async route=>{
     if(simulateSupportHistoryFailure)await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({error:'QA simulated malformed history response'})});
     else if(injectSupportDraftFixture)await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(supportDraftFixture)});
