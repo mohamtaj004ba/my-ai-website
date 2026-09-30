@@ -1,6 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {indexKey,indexConversation}=require('../lib/conversation-store');
+const {indexKey,detailKey,indexConversation}=require('../lib/conversation-store');
 const {workspaceStatus,scanConversationMigrationWorkspace,scanConversationMigrationBatch,MAX_BATCH}=require('../lib/conversation-migration');
 
 function fixture({workspaceIds=[],records={}}={}){
@@ -94,6 +94,7 @@ test('focused workspace dry run proves one seeded workspace is aligned without e
     workspaceIds:['target','other'],
     records:{
       'conversations:target':items,[indexKey('target')]:normalized(items),
+      [detailKey('target','a')]:items[0],[detailKey('target','b')]:items[1],
       'conversations:other':items
     }
   });
@@ -103,11 +104,81 @@ test('focused workspace dry run proves one seeded workspace is aligned without e
   assert.equal(report.migrationExecutorReachable,false);
   assert.equal(report.legacyPreserved,true);
   assert.equal(report.workspaceState,'aligned');
+  assert.equal(report.summaryAligned,true);
   assert.equal(report.aligned,true);
+  assert.equal(report.detailFidelityChecked,true);
+  assert.equal(report.detailFidelityComplete,true);
+  assert.equal(report.detailState,'aligned');
+  assert.equal(report.detailRecordsExpected,2);
+  assert.equal(report.detailRecordsChecked,2);
+  assert.equal(report.detailRecordsMatched,2);
+  assert.equal(report.detailMissing,0);
+  assert.equal(report.detailMismatched,0);
   assert.equal(report.blocking,false);
   assert.equal(report.migrationCandidate,false);
   assert.equal(report.legacyConversations,2);
   assert.equal(report.normalizedConversations,2);
   assert.equal(JSON.stringify(report).includes('target'),false);
   await assert.rejects(()=>scanConversationMigrationWorkspace(f.kv,'missing'),err=>err&&err.code==='WORKSPACE_NOT_FOUND');
+});
+
+
+test('focused workspace detail mismatch blocks readiness even when summaries still align',async()=>{
+  const items=conversations(),changed={...items[1],status:'Active'},f=fixture({
+    workspaceIds:['target'],
+    records:{
+      'conversations:target':items,[indexKey('target')]:normalized(items),
+      [detailKey('target','a')]:items[0],[detailKey('target','b')]:changed
+    }
+  });
+  const report=await scanConversationMigrationWorkspace(f.kv,'target');
+  assert.equal(report.workspaceState,'aligned');
+  assert.equal(report.summaryAligned,true);
+  assert.equal(report.aligned,false);
+  assert.equal(report.detailFidelityChecked,true);
+  assert.equal(report.detailFidelityComplete,false);
+  assert.equal(report.detailState,'drifted');
+  assert.equal(report.detailMismatched,1);
+  assert.equal(report.blocking,true);
+});
+
+test('missing normalized detail is counted without exposing the missing conversation id',async()=>{
+  const items=conversations(),f=fixture({
+    workspaceIds:['target'],
+    records:{
+      'conversations:target':items,[indexKey('target')]:normalized(items),
+      [detailKey('target','a')]:items[0]
+    }
+  });
+  const report=await scanConversationMigrationWorkspace(f.kv,'target');
+  assert.equal(report.detailMissing,1);
+  assert.equal(report.detailFidelityComplete,false);
+  assert.equal(report.blocking,true);
+  assert.equal(JSON.stringify(report).includes('b'),false);
+});
+
+test('fleet detail dry run stays aggregate-only and can prove a complete batch migration-ready',async()=>{
+  const items=conversations(),records={};
+  for(const id of ['one','two']){
+    records['conversations:'+id]=items;
+    records[indexKey(id)]=normalized(items);
+    records[detailKey(id,'a')]=items[0];
+    records[detailKey(id,'b')]=items[1];
+  }
+  const f=fixture({workspaceIds:['one','two'],records});
+  const report=await scanConversationMigrationBatch(f.kv,{limit:25,verifyDetails:true});
+  assert.equal(report.detailFidelityChecked,true);
+  assert.equal(report.detailVerificationComplete,true);
+  assert.equal(report.complete,true);
+  assert.equal(report.migrationReady,true);
+  assert.equal(report.blockingWorkspaces,0);
+  assert.equal(report.migrationCandidates,0);
+  assert.equal(report.detailCounts.checkedWorkspaces,2);
+  assert.equal(report.detailCounts.alignedWorkspaces,2);
+  assert.equal(report.detailCounts.recordsChecked,4);
+  assert.equal(report.detailCounts.recordsMatched,4);
+  assert.equal(report.status,'ok');
+  const serialized=JSON.stringify(report);
+  assert.equal(serialized.includes('one'),false);
+  assert.equal(serialized.includes('Ada'),false);
 });
