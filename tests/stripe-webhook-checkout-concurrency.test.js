@@ -68,7 +68,8 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
     '../lib/business-hours':{addBusinessHours:n=>n+7200000},
     '../lib/stripe-lifecycle':{lifecycleDecision:()=>({apply:false})},
     '../lib/stripe-session-lock':sessionLock,
-    '../lib/stripe-reconciliation':reconciliation
+    '../lib/stripe-reconciliation':reconciliation,
+    '../lib/stripe-monthly-metrics':{ensureStripeMonthlyMetricsCoverage:async()=>({startedAt:1}),recordStripePaymentFailure:async()=>({month:'2026-09',counted:true,duplicate:false})}
   };
   const module={exports:{}};
   vm.runInNewContext(source,{module,exports:module.exports,require:name=>{
