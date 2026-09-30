@@ -29,3 +29,20 @@ test('contact history does not request message bodies twice after hydration',asy
   const start=source.indexOf('async function hydrateContactHistory('),end=source.indexOf('\nfunction openContact(',start);vm.runInContext(source.slice(start,end),context);
   await vm.runInContext("hydrateContactHistory('p:1')",context);assert.equal(requests,0);
 });
+
+
+test('incomplete contact hydration preserves summary data and remains retryable',async()=>{
+  const summary={id:'thread-1',name:'Mary Rivera',phone:'(509) 555-0101',messageCount:2},timeline={innerHTML:''};
+  const context=vm.createContext({
+    conversationsData:[summary],contactHistoryHydratedKeys:new Set(),contactHistoryLoadingKeys:new Set(),activeContactKey:'p:5095550101',
+    buildContacts:()=>[{key:'p:5095550101',conversations:context.conversationsData}],renderContactHistoryTimeline:()=>{},
+    fetchJsonRetry:async()=>({conversations:[]}),document:{getElementById:id=>id==='contactDrawerTimeline'?timeline:null},
+    encodeURIComponent,esc:value=>String(value??''),demoMode:false,Set,Map,Array,Number,String,Error
+  });
+  const start=source.indexOf('async function hydrateContactHistory('),end=source.indexOf('\nfunction openContact(',start);
+  vm.runInContext(source.slice(start,end),context);
+  await vm.runInContext("hydrateContactHistory('p:5095550101')",context);
+  assert.equal(Array.isArray(context.conversationsData[0].messages),false);
+  assert.equal(context.contactHistoryHydratedKeys.has('p:5095550101'),false);
+  assert.match(timeline.innerHTML,/Message history is delayed/);
+});

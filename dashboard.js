@@ -917,7 +917,9 @@ async function loadConversationPage({append=false}={}){
   try{
     const params=new URLSearchParams({action:'conversations',limit:'50',q:query.q,filter:query.filter,sort:query.sort});if(cursor)params.set('cursor',cursor);
     const data=await fetchJsonRetry('/api/account?'+params.toString(),{attempts:2,timeout:10000});if(request!==conversationPageRequest)return;
-    const incoming=Array.isArray(data.conversations)?data.conversations:[];conversationThreadsData=append?[...conversationThreadsData,...incoming]:incoming;conversationPageTotal=Number(data.total||0);conversationNextCursor=data.nextCursor||null;
+    const total=Number(data?.total),incoming=data?.conversations,nextCursor=data?.nextCursor;
+    if(!Array.isArray(incoming)||incoming.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||''))||!Number.isSafeInteger(total)||total<0||total<incoming.length||(nextCursor!==null&&typeof nextCursor!=='string'))throw new Error('Conversation page response was incomplete');
+    conversationThreadsData=append?[...conversationThreadsData,...incoming]:incoming;conversationPageTotal=total;conversationNextCursor=nextCursor;
     if(!append&&activeConversationId&&!conversationThreadsData.some(item=>String(item.id)===String(activeConversationId)))activeConversationId=null;
   }catch(err){if(request===conversationPageRequest){console.warn('Conversation page delayed',err);conversationPageError='Could not update conversations · showing last loaded page'}}
   finally{if(request===conversationPageRequest){conversationPageLoading=false;renderConversations()}}
@@ -1124,8 +1126,11 @@ async function hydrateContactHistory(key){
   const missing=current.conversations.some(item=>!Array.isArray(item.messages)&&Number(item.messageCount||0)>0);if(!missing||(typeof demoMode!=='undefined'&&demoMode)){contactHistoryHydratedKeys.add(key);return}
   contactHistoryLoadingKeys.add(key);const timeline=document.getElementById('contactDrawerTimeline'),drawer=document.getElementById('contactDrawer');if(activeContactKey===key){drawer?.setAttribute('aria-busy','true');if(timeline)timeline.innerHTML='<div class="contact-inline-loading"><i></i><span>Loading message history…</span></div>'}
   try{
-    const data=await fetchJsonRetry('/api/account?action=contact-conversations&key='+encodeURIComponent(key),{attempts:2,timeout:10000}),items=Array.isArray(data.conversations)?data.conversations:[];
-    const byId=new Map(items.map(item=>[String(item&&item.id),item]));conversationsData=conversationsData.map(item=>byId.has(String(item&&item.id))?{...item,...byId.get(String(item.id))}:item);
+    const data=await fetchJsonRetry('/api/account?action=contact-conversations&key='+encodeURIComponent(key),{attempts:2,timeout:10000}),items=data?.conversations,missingIds=current.conversations.filter(item=>!Array.isArray(item.messages)&&Number(item.messageCount||0)>0).map(item=>String(item.id||'')).filter(Boolean);
+    if(!Array.isArray(items)||items.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||''))||new Set(items.map(item=>String(item.id))).size!==items.length)throw new Error('Message history response was incomplete');
+    const byId=new Map(items.map(item=>[String(item.id),item]));
+    if(missingIds.some(id=>!byId.has(id)||!Array.isArray(byId.get(id).messages)))throw new Error('Message history response did not include every requested conversation');
+    conversationsData=conversationsData.map(item=>byId.has(String(item&&item.id))?{...item,...byId.get(String(item.id))}:item);
     contactHistoryHydratedKeys.add(key);
     if(activeContactKey===key){const refreshed=buildContacts().find(contact=>contact.key===key);if(refreshed)renderContactHistoryTimeline(refreshed)}
   }catch(err){

@@ -80,3 +80,21 @@ test('malformed or duplicate conversation records fail closed',async()=>{
   await assert.rejects(()=>readConversationDirectory(kv,'ws_1'),/unavailable/);
   await assert.rejects(()=>publishNormalizedConversations(kv,'ws_1',[{id:'same'},{id:'same'}]),/duplicated/);
 });
+
+
+test('normalized hydration fails closed when an indexed detail cannot be verified anywhere',async()=>{
+  const all=records(),kv=memoryKv({'conversations:ws_1':[]});
+  await publishNormalizedConversations(kv,'ws_1',all);
+  kv.data.delete(detailKey('ws_1','thread-a'));
+  await assert.rejects(()=>readAllConversations(kv,'ws_1'),/detail history is unavailable/);
+  await assert.rejects(()=>readContactConversations(kv,'ws_1','p:5095550101'),/detail history is unavailable/);
+});
+
+test('normalized hydration ignores mismatched detail identities and falls back to matching legacy history',async()=>{
+  const legacy=records(),kv=memoryKv({'conversations:ws_1':legacy});
+  await publishNormalizedConversations(kv,'ws_1',legacy);
+  kv.data.set(detailKey('ws_1','thread-a'),{id:'wrong-thread',messages:[{text:'wrong'}]});
+  const contact=await readContactConversations(kv,'ws_1','p:5095550101');
+  assert.deepEqual(contact.map(item=>item.id),['thread-a']);
+  assert.equal(contact[0].messages[0].text,'Furnace tuneup');
+});

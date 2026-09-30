@@ -76,3 +76,19 @@ test('a summary-only fallback hydrates the selected thread before rendering mess
   render();assert.match(node('messageStream').innerHTML,/Loading message history/);await new Promise(setImmediate);await new Promise(setImmediate);
   assert.match(node('messageStream').innerHTML,/First/);assert.match(node('messageStream').innerHTML,/Second/);assert.equal(ctx.conversationsData[0].__detailLoading,false);
 });
+
+
+test('malformed successful conversation pages preserve the last loaded page',async()=>{
+  const all=records(),responses=[
+    {conversations:null,total:0,nextCursor:null},
+    {conversations:[{name:'missing id'}],total:1,nextCursor:null},
+    {conversations:[all[50]],total:'not-a-number',nextCursor:null}
+  ];
+  for(const response of responses){
+    const {ctx}=fixture(all,{backend:true,fetchJsonRetry:async()=>response});
+    const before=Array.from(ctx.conversationThreadsData,item=>item.id);
+    await vm.runInContext('loadConversationPage()',ctx);
+    assert.deepEqual(Array.from(ctx.conversationThreadsData,item=>item.id),before);
+    assert.match(ctx.conversationPageError,/showing last loaded page/);
+  }
+});
