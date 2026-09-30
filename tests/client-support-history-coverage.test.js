@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 const source=fs.readFileSync('dashboard.js','utf8'),html=fs.readFileSync('dashboard.html','utf8');
-const start=source.indexOf('let clientSupportHistoryRequest=0;');
+const start=source.indexOf('let clientSupportHistoryRequest=0,clientSupportHistoryCoverage=');
 const end=source.indexOf('function snapshotClientSupportThreadUi(wrap){',start);
 assert.ok(start>=0&&end>start);
 
