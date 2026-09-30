@@ -91,6 +91,7 @@ module.exports=async function handler(req,res){
   const name=clean(raw.name,120),business=clean(raw.business,160),email=clean(raw.email,200).toLowerCase();
   const phone=clean(raw.phone,80),industry=clean(raw.industry,160),plan=clean(raw.plan,20);
   const visitorId=clean(raw.visitorId,120),sessionId=clean(raw.sessionId,120),utmSource=clean(raw.utmSource,120),utmMedium=clean(raw.utmMedium,120),utmCampaign=clean(raw.utmCampaign,160);
+  const marketingEmailConsent=raw.marketingEmailConsent===true;
 
   if(!name||!business||!email||!phone||!industry||!PLAN_PRICE[plan])return res.status(400).json({error:'Please complete all required fields'});
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email address'});
@@ -100,7 +101,7 @@ module.exports=async function handler(req,res){
 
   let prospect,leadId;
   try{
-    prospect=await upsertWebsiteProspect({name,business,email,phone,industry,plan,source:'get_started',stage:'checkout_started',visitorId,sessionId,utmSource,utmMedium,utmCampaign});
+    prospect=await upsertWebsiteProspect({name,business,email,phone,industry,plan,source:'get_started',stage:'checkout_started',visitorId,sessionId,utmSource,utmMedium,utmCampaign,marketingEmailConsent:{granted:marketingEmailConsent,source:'get_started'}});
     leadId=crypto.randomUUID();
     await kv.set('lead:'+leadId,{
       name,business,email,phone,industry,plan,prospectId:prospect.id,visitorId,sessionId,utmSource,utmMedium,utmCampaign,
