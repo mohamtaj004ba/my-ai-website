@@ -24,6 +24,7 @@ const {buildRetentionReport}=require('../lib/retention-report');
 const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
 const {readConversationDirectory,readConversationPage,readConversation,readContactConversations,readAllConversations,publishNormalizedConversations,deleteNormalizedConversations}=require('../lib/conversation-store');
 const {scanConversationMigrationWorkspace,scanConversationMigrationBatch}=require('../lib/conversation-migration');
+const {runConversationMigrationRehearsal}=require('../lib/conversation-migration-rehearsal');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
@@ -218,6 +219,21 @@ async function seedPreviewData(req,res){
   await replacePreviewFeedbackSeed(kv,seedFeedback);
   await appendAudit(workspaceId,{actorEmail:email,actorRole:'owner',action:'preview_seed_realistic_dataset',section:'workspace',before:null,after:{calls:dataset.calls.length,leads:dataset.leads.length,conversations:dataset.conversations.length,days:60,adminClients:adminIds.length}});
   return res.status(200).json({ok:true,workspaceId,businessName:workspace.name,days:60,calls:dataset.calls.length,leads:dataset.leads.length,conversations:dataset.conversations.length,appointments:dataset.appointments.length,adminClients:adminIds.length,plan:workspace.plan,minutes:dataset.minutes});
+}
+
+async function previewConversationMigrationRehearsal(req,res){
+  if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
+  const email=cleanEmail((req.body||{}).email),member=await kv.get('user:email:'+email);
+  if(!member||!member.workspaceId)return res.status(404).json({error:'Preview QA workspace not found'});
+  const workspace=await kv.get('workspace:'+member.workspaceId);
+  if(!workspace||workspace.previewQa!==true)return res.status(409).json({error:'Migration rehearsal is limited to isolated Preview QA workspaces'});
+  try{
+    const rehearsal=await runConversationMigrationRehearsal(kv,member.workspaceId,{now:Date.now()});
+    return res.status(200).json({rehearsal});
+  }catch(err){
+    console.error('preview conversation migration rehearsal failed',safeError(err));
+    return res.status(503).json({error:'Preview conversation migration rehearsal could not be confirmed. Production and source legacy records were not migrated.'});
+  }
 }
 
 async function promotePreviewAdmin(req,res){
@@ -3364,6 +3380,7 @@ module.exports=async function handler(req,res){
   if(action==='health'&&req.method==='GET')return publicHealth(req,res);
   if(action==='bootstrap-preview'&&req.method==='POST')return bootstrapPreview(req,res);
   if(action==='seed-preview-data'&&req.method==='POST')return seedPreviewData(req,res);
+  if(action==='preview-conversation-migration-rehearsal'&&req.method==='POST')return previewConversationMigrationRehearsal(req,res);
   if(action==='promote-preview-admin'&&req.method==='POST')return promotePreviewAdmin(req,res);
   if(action==='preview-session'&&req.method==='POST')return previewQaSession(req,res);
   if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
