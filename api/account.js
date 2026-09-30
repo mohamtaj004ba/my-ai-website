@@ -2833,9 +2833,12 @@ async function notifications(req,res){
   const recentIds=new Set(newest.map(x=>x.id));
   const olderUnread=recent.filter(x=>!read.has(x.id)&&!recentIds.has(x.id)).slice(0,80);
   const sorted=[...newest,...olderUnread].sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)).map(x=>({...x,read:read.has(x.id)}));
+  const unreadReturned=sorted.reduce((count,item)=>count+(item.read?0:1),0),responseLimited=sorted.length<recent.length,
+    responseCoverage=responseLimited?{responseLimited:true,totalItems:recent.length,returned:sorted.length,unreadReturned}:{};
   return res.status(200).json({notifications:sorted,unreadCount,coverage:{
     limited:coverage?.limited===true,
-    sources:Array.isArray(coverage?.sources)?coverage.sources.map(String).slice(0,8):[]
+    sources:Array.isArray(coverage?.sources)?coverage.sources.map(String).slice(0,8):[],
+    ...responseCoverage
   }});
 }
 async function notificationsRead(req,res){

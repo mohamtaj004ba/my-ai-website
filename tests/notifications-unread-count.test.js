@@ -198,4 +198,20 @@ test('older unread alerts appear even if newest 80 alerts have already been read
   assert.equal(result.notifications.filter(x=>!x.read).length,80);
   assert.equal(result.notifications[0].id,'notification-199');
   assert.equal(result.notifications.at(-1).id,'notification-40');
+  assert.deepEqual(JSON.parse(JSON.stringify(result.coverage)),{limited:false,sources:[],responseLimited:true,totalItems:200,returned:160,unreadReturned:80});
+});
+
+test('notification UI preserves response-window metadata and discloses hidden unread alerts',async()=>{
+  const f=fixture({unreadCount:120,visible:160});
+  f.ctx.fetch=async()=>({ok:true,status:200,json:async()=>({
+    notifications:Array.from({length:160},(_,i)=>({id:'window-'+i,read:i<80})),unreadCount:120,
+    coverage:{limited:false,sources:[],responseLimited:true,totalItems:200,returned:160,unreadReturned:80}
+  })});
+  await f.run('loadNotifications()');
+  assert.equal(f.ctx.notificationCoverage.responseLimited,true);
+  assert.equal(f.ctx.notificationCoverage.totalItems,200);
+  assert.equal(f.ctx.notificationCoverage.returned,160);
+  assert.equal(f.ctx.notificationCoverage.unreadReturned,80);
+  assert.match(ui,/generated alerts/);
+  assert.match(ui,/unread outside this list/);
 });
