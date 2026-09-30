@@ -59,6 +59,16 @@ test('high-impact admin mutations verify returned record identity before changin
   assert.match(clientRestore,/\['active','onboarding','suspended'\]\.includes\(restoredStatus\)/);
 });
 
+test('successful mutation payload guards reject missing objects instead of dereferencing them',()=>{
+  assert.doesNotMatch(source,/!data\\.[A-Za-z0-9_]+&&typeof data\\.[A-Za-z0-9_]+==='object'/);
+  const followup=segment('async function persistTeamStatus(','\\nfunction requestTeamStatusChange(');
+  assert.match(followup,/!data\\.state\\|\\|typeof data\\.state!==['"]object['"]\\|\\|Array\\.isArray\\(data\\.state\\)/);
+  const settings=segment('async function saveSettings(','\\n\\nfunction renderPhoneRouting(');
+  assert.match(settings,/!data\\.settings\\|\\|typeof data\\.settings!==['"]object['"]\\|\\|Array\\.isArray\\(data\\.settings\\)/);
+  const clients=segment('async function saveAdminClient(','\\nasync function deleteAdminClient(');
+  assert.match(clients,/!data\\.client\\|\\|typeof data\\.client!==['"]object['"]\\|\\|Array\\.isArray\\(data\\.client\\)/);
+});
+
 test('automation and location saves preserve local records on malformed successful responses',async()=>{
   const alerts=[];
   const autoCtx=vm.createContext({demoMode:false,automationsData:[{id:'existing'}],fetch:async()=>({ok:true,json:async()=>({})}),alert:m=>alerts.push(m),Array});
