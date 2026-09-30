@@ -3328,8 +3328,10 @@ function callViewedKey(workspaceId,email){
 }
 async function callsViewed(req,res){
   const s=await requireSession(req,res);if(!s)return;
-  const ids=await kv.get(callViewedKey(s.workspaceId,s.email))||[];
-  return res.status(200).json({ids:Array.isArray(ids)?ids.map(String).slice(-2000):[]});
+  const raw=await kv.get(callViewedKey(s.workspaceId,s.email));
+  if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Call opened-state history is unavailable. Previously loaded read state should be preserved.'});
+  const ids=(raw||[]).map(String).slice(-2000);
+  return res.status(200).json({ids,coverage:{verified:true,limited:ids.length>=2000,retained:ids.length,limit:2000}});
 }
 async function callViewedMark(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
@@ -3375,6 +3377,11 @@ async function clientDashboardData(req,res){
     onboarding:onboardingRaw&&typeof onboardingRaw==='object'&&!Array.isArray(onboardingRaw)?clientOnboardingView(onboardingRaw):null,
     followupState:followupRaw&&typeof followupRaw==='object'&&!Array.isArray(followupRaw)?followupRaw:{},
     viewedCallIds:Array.isArray(viewedRaw)?viewedRaw.map(String).slice(-2000):[],
+    viewedCallCoverage:{
+      verified:viewedRaw==null||Array.isArray(viewedRaw),
+      limited:Array.isArray(viewedRaw)&&viewedRaw.length>=2000,
+      retained:Array.isArray(viewedRaw)?Math.min(2000,viewedRaw.length):0,limit:2000
+    },
     loadedAt:Date.now()
   });
 }

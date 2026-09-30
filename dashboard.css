@@ -2460,3 +2460,5 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
 @media(max-width:560px){.retention-report-grid{grid-template-columns:1fr}}
 
 .admin-audit-coverage{display:block;margin:0 0 10px;font-size:8px;line-height:1.45}.admin-audit-coverage.warning{padding:8px 10px;border:1px solid #e3d5bc;border-radius:9px;background:#fffaf1;color:#8a5b20}
+
+.calls-read-coverage{display:block;margin:8px 0 10px;padding:8px 10px;border:1px solid #e3d5bc;border-radius:9px;background:#fffaf1;color:#8a5b20;font-size:8px;line-height:1.45}.calls-read-coverage[hidden]{display:none}
