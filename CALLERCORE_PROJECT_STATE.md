@@ -22,12 +22,12 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Current verified checkpoint — 2026-09-29
 
-Latest verified **implementation/test** SHA: `61b4293d0a2fd4bcb633441975b6629b611c4566`. This head preserves the verified consent/unsubscribe, retention, and reversible normalized-Conversations work and adds a focused **notification/deep-link and background-truthfulness pass** across client/admin dashboards.
+Latest verified **implementation/test** SHA: `581287b05877d2e4aa043ec8fa17469e695f9e00`. This head preserves the verified consent/unsubscribe, retention, reversible normalized-Conversations, notification/deep-link, and background-truthfulness work and extends the sweep across **admin Gmail Inbox/cache truthfulness, global-search coverage, Client Care coverage/deep links, and Gmail read/alias stale-response handling**.
 
-- Full GitHub CI: **904/904 tests passed, 0 failed**. CallerCore CI runs `36662062877` (PR) and `36662058450` (push) succeeded.
-- CodeQL runs `36662062864` (PR) and `36662058449` (push) succeeded. Jekyll `36662062883` succeeded.
-- Authenticated Preview Browser QA `36662058504` succeeded on the exact implementation SHA, including client/admin notification-panel checks and visual-drift comparison.
-- Vercel Preview `dpl_9CRADvGWPNZ8PbkSVBNsg6B6X2wH` is READY at `https://my-ai-website-arnmrc50n-mohamtaj004bas-projects.vercel.app`.
+- Full GitHub CI: **912/912 tests passed, 0 failed**. CallerCore CI runs `36663763063` (PR) and `36663759142` (push) succeeded.
+- CodeQL runs `36663763112` (PR) and `36663759199` (push) succeeded. Jekyll `36663763116` succeeded.
+- Authenticated Preview Browser QA `36663759071` succeeded on the exact implementation SHA, including client/admin interaction coverage and visual-drift comparison.
+- Vercel Preview `dpl_2RqCsmJdijhoVuaEKC5Svzb8iPmH` is READY at `https://my-ai-website-7ebhqt2uq-mohamtaj004bas-projects.vercel.app`.
 - Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, marketing send, destructive retention, production migration, live billing, or live voice activation occurred.
 
 Verified implementation included in this head:
@@ -45,6 +45,12 @@ Verified implementation included in this head:
 - Admin notification coverage looks one record beyond the 100-record Growth boundary so it can truthfully detect truncation without expanding every background poll into a full-history scan.
 - Authenticated Preview QA now confirms both client and admin notification panels expose refresh truthfulness/retry controls. Existing exact-item notification regressions for calls, support, feedback, prospects, clients and onboarding remain intact.
 - A transient intermediate build failed only because a newly added malformed-index regression fixture used `null` to mean malformed; `null` is intentionally valid as an absent index. The fixture was corrected to a non-array malformed value. The exact verified head above passed all CI and Preview checks.
+- Admin Gmail Inbox now carries explicit **coverage metadata** for the bounded 30-day Gmail query; empty cache state is labeled unverified, and a provider fallback returned as HTTP 200 remains visibly stale instead of impersonating a fresh sync.
+- Gmail sender aliases are revalidated on live refresh; stale or unavailable alias reads preserve the last-good From-address list and surface that the sender list may be outdated.
+- Gmail unread state now changes only after provider confirmation and applies to the current thread snapshot, preventing a late read response from double-counting unread messages or mutating a disconnected/newer inbox.
+- Global search now discloses its 48-result presentation cap as “showing X of Y,” reports missing/stale source coverage, and explains bounded Gmail coverage instead of implying exhaustive search.
+- Client Care Support and AI-feedback reads now report indexed-vs-loaded coverage and missing indexed records; the admin UI discloses partial coverage rather than showing silently incomplete counts/search.
+- Global-search deep links into Client Care now clear incompatible search/status filters before opening the exact Support or AI-feedback record, so a found item cannot remain hidden by the previous queue filter.
 
 Important remaining boundary:
 
@@ -96,7 +102,7 @@ Current implementation: 303/303 tests passed in GitHub CI on `db68806a`; the rec
 
 ## Next authorized development backlog
 
-1. Continue the premium **background-data / large-history consistency sweep** outside notifications: admin Inbox/cache truthfulness, global search coverage, Client Care filtering/deep links, and any remaining stale-response or silent-truncation paths. Preserve last-good data with explicit coverage/error states rather than fake empty/green results.
+1. Continue the premium **background-data / large-history consistency sweep** after the verified Inbox/search/Client Care pass: inspect remaining client/admin secondary histories and provider-backed reads for stale-response races, bounded scans, capped indexes, and silent truncation. Preserve last-good data with explicit coverage/error states rather than fake empty/green results.
 2. Keep bulk marketing sending inactive. Any future sender must require verified `granted` consent, a configured/verified `MARKETING_UNSUBSCRIBE_SECRET`, per-recipient signed unsubscribe URLs, and the unsubscribe-required marketing template.
 3. Keep stale-prospect retention dry-run-only and normalized-Conversations production migration gated. Both require separate production runbook/recovery acceptance and explicit owner authorization before destructive execution.
 4. After the dashboard/data-integrity sweep, complete Stripe **test-mode** subscription/payment/recovery acceptance as a separately gated provider workstream.
