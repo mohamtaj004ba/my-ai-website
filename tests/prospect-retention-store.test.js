@@ -77,8 +77,8 @@ test('transaction race after preflight is reported as conflict and leaves email 
 });
 
 test('malformed stored record fails closed rather than replacing it',async()=>{
-  const now=600*day,prospect={id:'p1',stage:'new',updatedAt:now-400*day};
-  const f=fixture(prospect);f.records.set('site:prospect:p1',{id:'wrong',stage:'new',updatedAt:prospect.updatedAt});
+  const now=600*day,prospect={id:'p1',stage:'new',updatedAt:now-400*day,marketingEmailConsent:consent()};
+  const f=fixture(prospect);f.records.set('site:prospect:p1',{id:'wrong',stage:'new',updatedAt:prospect.updatedAt,marketingEmailConsent:consent()});
   await assert.rejects(()=>applyStaleProspectDeidentification(f.kv,prospect,now),/malformed/);
   assert.equal(f.evalCalls,0);
 });
