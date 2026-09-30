@@ -22,25 +22,26 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Current verified checkpoint — 2026-09-29
 
-Latest verified **implementation/test** SHA: `0d9f9f3296128e92c0b1394ea0fda3400ccb5646`. This head preserves the verified analytics-retention foundation and adds reversible normalized-Conversations migration readiness without migrating production data or enabling any migration executor.
+Latest verified **implementation/test** SHA: `b9b2215f386790e272db89c6a2fe153cfe589cec`. This head preserves the analytics-retention foundation and upgrades normalized-Conversations migration readiness from summary/count alignment to full detail-record fidelity, without migrating production data or enabling any migration executor.
 
-- Full GitHub CI: **849/849 tests passed, 0 failed**. CallerCore CI runs `36655052124` (PR) and `36655046747` (push) succeeded.
-- CodeQL runs `36655052005` (PR) and `36655046661` (push) succeeded. Jekyll `36655052015` succeeded.
-- Authenticated Preview Browser QA `36655046707` succeeded on the exact implementation SHA after the migration-readiness acceptance was corrected to distinguish fleet-wide Preview state from the disposable QA workspace.
-- Vercel Preview `dpl_4XbfW36wQkBzJfwNc2nKUEyGVHGJ` is READY at `https://my-ai-website-5oumobll6-mohamtaj004bas-projects.vercel.app`.
-- Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, normalized-conversation migration, customer communication, live billing, live voice activation, or destructive cleanup occurred.
+- Full GitHub CI: **852/852 tests passed, 0 failed**. CallerCore CI runs `36655822594` (PR) and `36655820135` (push) succeeded.
+- CodeQL runs `36655822623` (PR) and `36655820155` (push) succeeded. Jekyll `36655822609` succeeded.
+- Authenticated Preview Browser QA `36655820092` succeeded on the exact implementation SHA. It verifies the aggregate fleet dry run, System Health rendering, and a focused disposable-workspace check where every normalized detail record matches its preserved legacy record.
+- Vercel Preview `dpl_EK9m7e71CLfrN3Kmw7tu6v8iQpJj` is READY at `https://my-ai-website-8o0aby81f-mohamtaj004bas-projects.vercel.app`.
+- Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, normalized-conversation migration, customer communication, live billing, live voice activation, or destructive retention cleanup occurred.
 
 Verified implementation included in this head:
 
-- Durable Stripe monthly payment-failure metrics retain provider-event dedupe receipts plus an explicit coverage-start marker. Fully observed future months can become complete; an unobserved partial first month remains unknown rather than being fabricated as zero.
-- Admin System Health retains the admin-only **read-only** retention dry run for stale prospect candidates, raw-event/session-index coverage, monthly-rollup status, prior-month finalization, and maintenance scheduler state.
-- Prospect de-identification remains isolated and unreachable. No verified consent source exists yet.
-- Session-index compaction remains unscheduled and unrouted; its conflict-safe planner/executor is regression-covered but not activated.
-- The Vercel analytics-maintenance cadence remains **disabled by default** and requires both `CALLERCORE_MAINTENANCE_ENABLED=true` and a valid `CRON_SECRET` before its aggregate rollup/finalization writes can run.
-- Added a count-only normalized-Conversations migration dry run. Fleet scans report only aggregate counts/status for aligned, legacy-only, drifted, malformed, rollback-source-missing, and uninitialized workspaces; they do not return workspace IDs, customer names, phone numbers, messages, or other record-level data.
-- Added a focused admin-only migration readiness check for a specific workspace. Its response still omits the workspace identity and reports only state/counts. Preview QA verifies the disposable QA workspace is `aligned`, its legacy source is preserved, normalized/legacy conversation counts match, and no migration executor is reachable.
-- Fleet-wide Preview migration health is intentionally allowed to surface legitimate historical legacy-only or blocking records instead of forcing a false green state. System Health displays that aggregate fleet truth separately from the focused disposable-workspace acceptance.
-- The legacy tenant conversation array remains the compatibility/rollback source. No code in this checkpoint deletes it or migrates production records.
+- Durable Stripe monthly payment-failure coverage, read-only retention reporting, truthful prior-month finalization state, disabled-by-default analytics maintenance, and unscheduled session-index compaction remain intact.
+- Conversation migration readiness now canonicalizes and compares the **full normalized detail record** against the preserved legacy conversation record, avoiding false mismatches from object-key ordering while still requiring exact JSON-equivalent content.
+- Focused workspace checks expose only safe counts/status: summary alignment, detail records expected/checked/matched, missing/malformed/mismatched counts, and capacity state. They do not return workspace IDs, conversation IDs, names, phone numbers, message text, or record contents.
+- A workspace is no longer reported fully aligned when only its index summaries match. Missing, malformed, or mismatched normalized details block migration readiness.
+- Fleet dry runs can explicitly request bounded detail verification. They remain paged/count-only and distinguish summary alignment from detail-verified workspaces/records. A fleet can report `migrationReady=true` only after the workspace page is complete, there are no blockers or legacy-only candidates, and requested detail verification completed.
+- Detail verification fails closed on malformed sources, missing rollback sources, and per-workspace detail-capacity boundaries rather than silently treating unverified data as aligned.
+- System Health now requests the bounded detail-fidelity dry run and shows summary-aligned workspaces, detail-verified workspaces, and matched-record counts. Partial fleet scans remain visibly partial.
+- Authenticated Preview QA proves the disposable QA workspace has equal legacy/normalized counts, full detail coverage, zero missing/malformed/mismatched records, and no exposed workspace identity.
+- Read-only audit confirmed the admin migration route remains GET-only and calls only dry-run scanners. Normalized writes remain limited to existing Preview seeding; normalized deletion also exists in the separately governed permanent workspace-purge flow, not as a migration executor.
+- The legacy tenant conversation array remains the compatibility/rollback source. No migration executor was added or made reachable.
 
 This is an implementation/Preview checkpoint, not a production migration, provider activation, or production release.
 
@@ -86,10 +87,10 @@ Current implementation: 303/303 tests passed in GitHub CI on `db68806a`; the rec
 
 ## Next authorized development backlog
 
-1. Keep normalized-Conversations migration **read-only/reversible** until a dedicated migration + rollback acceptance is designed. Add detail-fidelity verification before any executor can be considered; counts/summary alignment alone are not sufficient to authorize migration.
+1. Design a **reversible migration/rollback rehearsal** for normalized Conversations in Preview only. It must prove publication ordering, legacy preservation, rollback behavior, concurrent-change protection and post-rehearsal read equivalence before any production executor can be considered.
 2. Keep `CALLERCORE_MAINTENANCE_ENABLED` off until production activation is explicitly authorized. Before destructive retention automation, define a verified prospect-consent source plus audit/recovery expectations.
-3. Continue premium admin/client QA and consistency sweeps while preserving provider truthfulness, especially areas where background data, system-health status, notifications/deep links, or large-history behavior could diverge.
-4. Keep provider lifecycle, live Vapi/voice, Stripe test-mode payment/recovery scenarios, production changes, destructive cleanup, and new charges separately gated behind explicit owner authorization.
+3. Continue premium admin/client QA and consistency sweeps while preserving provider truthfulness, especially background data, notifications/deep links, System Health status and large-history behavior.
+4. Keep provider lifecycle, live Vapi/voice, Stripe test-mode payment/recovery scenarios, production changes, destructive cleanup and new charges separately gated behind explicit owner authorization.
 
 ## Known limitations and remaining work
 
