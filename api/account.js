@@ -1005,7 +1005,7 @@ async function adminSaveProvisioningStage(req,res){
     if(!canManuallyMarkLive({workspace:ws,onboarding}))return res.status(409).json({error:'A manual label cannot mark a client Live. Complete the verified launch checklist first.'});
   }
   const now=Date.now(),record={stage,updatedAt:Math.max(now,revision+1),updatedBy:admin.email};
-  const nextHistory=[{stage,at:record.updatedAt,by:admin.email},...(history||[])].slice(0,50);
+  const nextHistory=[{stage,at:record.updatedAt,by:admin.email},...(history||[])];
   try{
     if(!await compareAndSetConfig(kv,[{key,before:previous,after:record},{key:historyKey,before:history,after:nextHistory}]))
       return res.status(409).json({error:'Provisioning stage changed during the save. Refresh onboarding before retrying.'});
@@ -1028,7 +1028,7 @@ async function adminClearProvisioningStage(req,res){
   if(!previous)return res.status(200).json({ok:true,unchanged:true});
   if(Array.isArray(history)&&history.length>=50)return res.status(409).json({error:'Provisioning history has reached its 50-entry safety limit. No stage restoration was made.'});
   const now=Math.max(Date.now(),revision+1);
-  const nextHistory=[{stage:'Automatic',at:now,by:admin.email},...(history||[])].slice(0,50);
+  const nextHistory=[{stage:'Automatic',at:now,by:admin.email},...(history||[])];
   try{
     if(!await compareAndSetWithDelete(kv,[{key,before:previous,after:null},{key:historyKey,before:history,after:nextHistory}],{deleteKeys:[key]}))
       return res.status(409).json({error:'Provisioning stage changed during restoration. Refresh onboarding before retrying.'});
