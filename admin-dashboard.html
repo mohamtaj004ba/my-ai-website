@@ -201,6 +201,16 @@
   <article class="panel health-map-panel"><div class="panel-head"><div><span class="eyebrow">Dependency map</span><h2>CallerCore service network</h2><small>Animated activity indicates a successful current check — not historical uptime.</small></div></div><div id="healthServiceMap" class="health-service-map"></div></article>
   <article class="panel readiness-card" id="productionReadinessCard"><div class="panel-head"><div><span class="eyebrow">Launch blockers</span><h2>What still prevents production readiness</h2></div></div><div id="productionReadinessBlockers"></div></article>
   </div>
+  <article class="panel retention-report-panel" id="retentionReportPanel">
+    <div class="panel-head"><div><span class="eyebrow">Retention dry run</span><h2>Data retention readiness</h2><small>Read-only inspection of stale prospect candidates, retained analytics indexes, and durable monthly rollups. No records are changed.</small></div><span class="tag amber" id="retentionReportStatus">Not checked</span></div>
+    <div class="retention-report-grid">
+      <div class="retention-report-metric"><span>Prospect candidates</span><strong id="retentionProspectCandidates">—</strong><small>Pending consent review</small></div>
+      <div class="retention-report-metric"><span>Raw events retained</span><strong id="retentionRawEvents">—</strong><small>180-day raw-history window</small></div>
+      <div class="retention-report-metric"><span>Session index</span><strong id="retentionSessionIndex">—</strong><small>Compaction not scheduled</small></div>
+      <div class="retention-report-metric"><span>Monthly rollup</span><strong id="retentionRollupStatus">—</strong><small id="retentionRollupMeta">Awaiting report</small></div>
+    </div>
+    <div class="retention-report-note" id="retentionReportNote" role="status" aria-live="polite">Open System Health or run checks to generate the current dry-run report.</div>
+  </article>
   <div id="systemHealthGrid" class="admin-health-groups"></div>
 </section>
 
