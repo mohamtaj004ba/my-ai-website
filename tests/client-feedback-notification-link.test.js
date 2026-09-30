@@ -50,14 +50,14 @@ test('newer client feedback response wins against an older in-flight response',a
   let resolveOld;const updates=[],ctx=vm.createContext({
     demoMode:false,clientFeedbackLoadRequest:0,clientFeedbackData:[{id:'prior'}],
     document:{getElementById:id=>id==='clientFeedbackList'?{innerHTML:''}:null},
-    fetch:async()=>new Promise(ok=>{if(!resolveOld)resolveOld=ok;else ok({ok:true,json:async()=>({feedback:[{id:'new'}]})})}),
+    fetch:async()=>new Promise(ok=>{if(!resolveOld)resolveOld=ok;else ok({ok:true,json:async()=>({feedback:[{id:'new'}],coverage:{verified:true,incomplete:false,indexedRecords:1,loadedRecords:1,missingRecords:0}})})}),
     renderClientFeedback:()=>updates.push(ctx.clientFeedbackData[0]?.id),
     console:{error:()=>{}},Array
   });
   vm.runInContext(source.slice(loaderStart,loaderEnd),ctx);
   const older=vm.runInContext('loadClientFeedback()',ctx);
   await vm.runInContext('loadClientFeedback()',ctx);
-  resolveOld({ok:true,json:async()=>({feedback:[{id:'obsolete'}]})});
+  resolveOld({ok:true,json:async()=>({feedback:[{id:'obsolete'}],coverage:{verified:true,incomplete:false,indexedRecords:1,loadedRecords:1,missingRecords:0}})});
   await older;
   assert.equal(ctx.clientFeedbackData[0].id,'new');
   assert.deepEqual(updates,['new']);
