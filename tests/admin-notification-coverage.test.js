@@ -62,3 +62,30 @@ test('admin notification builder reports complete coverage below scan boundaries
   assert.equal(result.coverage.limited,false);
   assert.deepEqual(Array.from(result.coverage.sources),[]);
 });
+
+
+test('admin notification builder marks malformed source indexes as incomplete instead of silently hiding alerts',async()=>{
+  const ctx=vm.createContext({
+    kv:{
+      async get(key){
+        if(key==='platform:settings')return {};
+        if(key==='support:index')return {broken:true};
+        if(key==='workspace:index')return {broken:true};
+        if(key==='ai-feedback:index')return {broken:true};
+        return null;
+      },
+      async lrange(){return null}
+    },
+    getGmailConnection:async()=>null,
+    entitlementsFor:()=>({minutes:0}),
+    notificationItem:(id,body)=>({id,...body}),
+    safeError:()=>'',console:{error(){}},
+    crypto:require('crypto'),Date,Number,String,Array,Math,Promise
+  });
+  vm.runInContext(builder,ctx);
+  const result=await vm.runInContext('buildAdminNotifications({email:"admin@example.test"})',ctx);
+  assert.equal(result.coverage.limited,true);
+  assert.deepEqual(Array.from(result.coverage.sources),[
+    'support_unavailable','ai_feedback_unavailable','growth_unavailable','clients_unavailable'
+  ]);
+});
