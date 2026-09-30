@@ -38,3 +38,12 @@ test('forged sources, malformed values, missing timestamps and old notice shapes
     state:'unknown',active:false,verified:false
   });
 });
+
+
+test('unchecked form cannot convert unknown historical consent into verified not-granted evidence',()=>{
+  assert.equal(mergeMarketingEmailConsent(null,{granted:false,source:'contact_form'},{now:4000,existingProspect:true}),null);
+  const malformed={status:'granted',source:'legacy_import',noticeVersion:'old',recordedAt:1000};
+  assert.deepEqual(mergeMarketingEmailConsent(malformed,{granted:false,source:'get_started'},{now:5000,existingProspect:true}),malformed);
+  const explicit=mergeMarketingEmailConsent(null,{granted:true,source:'get_started'},{now:6000,existingProspect:true});
+  assert.equal(explicit.status,'granted');
+});
