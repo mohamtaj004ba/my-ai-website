@@ -66,7 +66,7 @@ function fixture({unreadCount=95,visible=80}={}){
   const ctx=vm.createContext({
     demoMode:false,notificationsLoading:false,notificationRequest:0,
     notificationUnreadCount:unreadCount,notificationData:payload().notifications,
-    notificationLoadError:'',notificationLastSyncAt:0,notificationCoverage:{limited:false,sources:[]},
+    notificationLoadError:'',notificationReadError:'',notificationLastSyncAt:0,notificationCoverage:{limited:false,sources:[]},
     notificationScope:()=> 'admin',
     document:{getElementById:()=>({})},
     fetch:async(url,options)=>{
@@ -89,6 +89,24 @@ test('reading a visible alert decrements full unread total without discarding of
   assert.equal(await f.run("markNotifications(['alert-0'])"),true);
   assert.equal(f.ctx.notificationUnreadCount,94,'repeated read must not decrement twice');
 });
+test('failed read receipt keeps alert unread and exposes a visible sync warning',async()=>{
+  const f=fixture();
+  f.ctx.fetch=async()=>({ok:false,status:503});
+  assert.equal(await f.run("markNotifications(['alert-0'])"),false);
+  assert.equal(f.ctx.notificationData[0].read,false);
+  assert.equal(f.ctx.notificationUnreadCount,95);
+  assert.match(f.ctx.notificationReadError,/read state could not sync/);
+});
+
+test('failed mark-all keeps local alerts visible and explains that nothing was hidden',async()=>{
+  const f=fixture();
+  f.ctx.fetch=async()=>({ok:false,status:503});
+  assert.equal(await f.run('markAllNotifications()'),false);
+  assert.equal(f.ctx.notificationUnreadCount,95);
+  assert.ok(f.ctx.notificationData.every(x=>!x.read));
+  assert.match(f.ctx.notificationReadError,/Nothing was hidden locally/);
+});
+
 test('reading all clears count even when API displayed only 80 of 95 alerts',async()=>{
   const f=fixture();
   assert.equal(await f.run('markAllNotifications()'),true);
@@ -144,6 +162,7 @@ test('successful notification refresh clears stale warning and records a fresh s
   f.ctx.notificationLoadError='Refresh failed — showing the last verified alerts.';
   await f.run('loadNotifications()');
   assert.equal(f.ctx.notificationLoadError,'');
+  assert.equal(f.ctx.notificationReadError,'');
   assert.ok(Number(f.ctx.notificationLastSyncAt)>0);
   assert.equal(f.ctx.notificationUnreadCount,2);
   assert.equal(f.ctx.notificationData.length,2);
