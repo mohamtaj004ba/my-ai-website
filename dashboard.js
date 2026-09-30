@@ -1703,6 +1703,7 @@ document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{
 
 
 let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminSupportCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},adminFeedbackCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},adminSupportLoadError='',adminFeedbackLoadError='';
 let adminRetentionData=null,adminRetentionCheckedAt=0,adminRetentionLoadError='';
 let adminConversationMigrationData=null,adminConversationMigrationLoadError='';
 let adminProvisioningStagePending=new Set(),adminOnboardingInvitePending=new Set();
@@ -1787,12 +1788,12 @@ async function loadAdminOps(){
     if(ph.ok)adminPhoneData=(await ph.json()).numbers||[];
     if(hr.ok){const health=await hr.json();adminHealthData=health.services||[];adminReadinessData=health.readiness||null;adminHealthCheckedAt=Number(health.checkedAt||Date.now());}
     if(fr.ok)adminFleetData=await fr.json();
-    if(sr.ok)adminSupportData=(await sr.json()).tickets||[];
+    if(sr.ok){const support=await sr.json();adminSupportData=support.tickets||[];adminSupportCoverage=normalizeAdminCareCoverage(support.coverage,adminSupportData.length);adminSupportLoadError=''}else adminSupportLoadError='Support requests could not be verified; showing the last loaded records when available.';
     if(ps.ok&&!adminPlatformDirty)adminPlatformData=(await ps.json()).settings||null;
     if(analyticsRequest===adminWebsiteAnalyticsRequest&&requestedAnalyticsDays===adminWebsiteDays){if(wr.ok){const latest=(await wr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'}
     const preferredDays=Number((analyticsRequest===0?adminPlatformData?.analyticsWindowDays:requestedAnalyticsDays)||requestedAnalyticsDays||30);
     if(preferredDays!==requestedAnalyticsDays&&analyticsRequest===adminWebsiteAnalyticsRequest){adminWebsiteDays=preferredDays;const rr=await get('/api/account?action=admin-website-analytics&days='+preferredDays);if(analyticsRequest===adminWebsiteAnalyticsRequest&&adminWebsiteDays===preferredDays){if(rr.ok){const latest=(await rr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'}}
-    if(fbr.ok)adminFeedbackData=(await fbr.json()).feedback||[];
+    if(fbr.ok){const feedback=await fbr.json();adminFeedbackData=feedback.feedback||[];adminFeedbackCoverage=normalizeAdminCareCoverage(feedback.coverage,adminFeedbackData.length);adminFeedbackLoadError=''}else adminFeedbackLoadError='AI feedback could not be verified; showing the last loaded records when available.';
     if(fin.ok){const latest=(await fin.json()).finance;if(latest){adminFinanceData=latest;adminFinanceLoadError=''}else adminFinanceLoadError='Finance response was incomplete; previously loaded records may be outdated.'}else adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';
     if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];
     if(dr.ok)adminDocumentsData=(await dr.json()).documents||adminDocumentsData;
@@ -1841,15 +1842,15 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   if(document.body.dataset.dashboard!=='admin')return;
   if(view==='inbox'){await loadAdminInbox({silent:true,force});return}
   if(announce)setAdminSyncState('syncing','Syncing '+String(view||'overview').replaceAll('-',' ')+'…');
-  const jobs=[],add=(key,url,ttl,apply)=>{const websiteRequest=adminWebsiteAnalyticsRequest,websitePending=key==='website'&&adminWebsiteAnalyticsLoading;jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;}if(data){if(key==='finance'&&!data.finance||key==='website'&&!data.analytics)throw new Error('Incomplete '+key+' response');apply(data)}}).catch(err=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;} if(key==='finance'||key==='website'||key==='retention'||key==='conversationMigration')delete adminDataSyncAt[adminSyncCacheKey(key,url)];if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';if(key==='website')adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.';if(key==='retention')adminRetentionLoadError='Retention dry-run could not refresh; previously loaded report may be outdated.';if(key==='conversationMigration')adminConversationMigrationLoadError='Conversation migration dry-run could not refresh; previously loaded report may be outdated.';throw err}));};
+  const jobs=[],add=(key,url,ttl,apply)=>{const websiteRequest=adminWebsiteAnalyticsRequest,websitePending=key==='website'&&adminWebsiteAnalyticsLoading;jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;}if(data){if(key==='finance'&&!data.finance||key==='website'&&!data.analytics)throw new Error('Incomplete '+key+' response');apply(data)}}).catch(err=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;} if(key==='finance'||key==='website'||key==='retention'||key==='conversationMigration'||key==='support'||key==='feedback')delete adminDataSyncAt[adminSyncCacheKey(key,url)];if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';if(key==='website')adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.';if(key==='support')adminSupportLoadError='Support requests could not refresh; showing the last verified records.';if(key==='feedback')adminFeedbackLoadError='AI feedback could not refresh; showing the last verified records.';if(key==='retention')adminRetentionLoadError='Retention dry-run could not refresh; previously loaded report may be outdated.';if(key==='conversationMigration')adminConversationMigrationLoadError='Conversation migration dry-run could not refresh; previously loaded report may be outdated.';throw err}));};
   if(view==='overview'||view==='clients'){
     add('summary','/api/account?action=admin-summary',30000,d=>{adminSummaryData=d.summary||{}});
     add('clients','/api/account?action=admin-clients',30000,d=>{adminClientsData=d.clients||[]});
   }
   if(view==='overview'){
     add('provisioning','/api/account?action=admin-provisioning',60000,d=>{adminProvisioningData=d.provisioning||[]});
-    add('support','/api/account?action=admin-support',60000,d=>{adminSupportData=d.tickets||[]});
-    add('feedback','/api/account?action=admin-ai-feedback',60000,d=>{adminFeedbackData=d.feedback||[]});
+    add('support','/api/account?action=admin-support',60000,d=>{adminSupportData=d.tickets||[];adminSupportCoverage=normalizeAdminCareCoverage(d.coverage,adminSupportData.length);adminSupportLoadError=''});
+    add('feedback','/api/account?action=admin-ai-feedback',60000,d=>{adminFeedbackData=d.feedback||[];adminFeedbackCoverage=normalizeAdminCareCoverage(d.coverage,adminFeedbackData.length);adminFeedbackLoadError=''});
     add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,90000,d=>{if(d.analytics){adminWebsiteData=d.analytics;adminWebsiteLoadError=''}});
     add('finance','/api/account?action=admin-finance',180000,d=>{if(d.finance){adminFinanceData=d.finance;adminFinanceLoadError=''}});
     add('health','/api/account?action=admin-system-health',300000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
@@ -1870,8 +1871,8 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   }else if(view==='documents'){
     add('documents','/api/account?action=admin-documents',60000,d=>{adminDocumentsData=d.documents||adminDocumentsData});
   }else if(view==='client-care'){
-    add('support','/api/account?action=admin-support',45000,d=>{adminSupportData=d.tickets||[]});
-    add('feedback','/api/account?action=admin-ai-feedback',45000,d=>{adminFeedbackData=d.feedback||[]});
+    add('support','/api/account?action=admin-support',45000,d=>{adminSupportData=d.tickets||[];adminSupportCoverage=normalizeAdminCareCoverage(d.coverage,adminSupportData.length);adminSupportLoadError=''});
+    add('feedback','/api/account?action=admin-ai-feedback',45000,d=>{adminFeedbackData=d.feedback||[];adminFeedbackCoverage=normalizeAdminCareCoverage(d.coverage,adminFeedbackData.length);adminFeedbackLoadError=''});
   }else if(view==='health'){
     add('health','/api/account?action=admin-system-health',120000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
     add('retention','/api/account?action=admin-retention-report',120000,d=>{adminRetentionData=d.report||null;adminRetentionCheckedAt=Number(d.report?.generatedAt||Date.now());adminRetentionLoadError=''});
@@ -1956,6 +1957,7 @@ function renderAdminFeedback(){
   if(search){search.value=adminFeedbackSearch;search.oninput=()=>{adminFeedbackSearch=search.value;renderAdminFeedback()}}
   if(filter){filter.value=adminFeedbackFilter;filter.onchange=()=>{adminFeedbackFilter=filter.value;renderAdminFeedback()}}
   const q=adminFeedbackSearch.trim().toLowerCase(),visible=items.filter(x=>(adminFeedbackFilter==='all'||x.status===adminFeedbackFilter)&&(!q||[x.workspaceName,x.workspaceId,x.category,x.message,x.context,x.source].filter(Boolean).join(' ').toLowerCase().includes(q)));
+  renderAdminCareHealth('adminFeedbackHealth','AI feedback',adminFeedbackCoverage,adminFeedbackLoadError);
   if(list){list.classList.add('admin-feedback-list');list.innerHTML=visible.map(x=>'<article class="admin-feedback-card" id="feedback-'+esc(x.id)+'"><div class="admin-feedback-card-head"><div><b>'+esc(x.workspaceName||x.workspaceId||'Client workspace')+'</b><small>'+esc(x.source==='call'?'Call-specific client feedback':'AI receptionist feedback')+(x.context?' · '+esc(x.context):'')+' · '+(x.createdAt?new Date(x.createdAt).toLocaleString():'')+'</small></div><span class="feedback-status '+esc(x.status||'submitted')+'">'+esc(feedbackStatusLabel(x.status))+'</span></div><p><b>'+esc((x.category||'feedback').replaceAll('_',' '))+'</b> · '+esc(x.message||'')+'</p><div class="feedback-admin-actions"><select data-admin-feedback-status="'+esc(x.id)+'" '+(adminFeedbackStatusPending.has(String(x.id))?'disabled aria-busy="true"':'')+'>'+['submitted','reviewed','applied','dismissed'].map(s=>'<option value="'+s+'" '+(x.status===s?'selected':'')+'>'+feedbackStatusLabel(s)+'</option>').join('')+'</select>'+(x.workspaceId?'<button class="admin-link" data-feedback-client="'+esc(x.workspaceId)+'">Open client →</button>':'')+'</div></article>').join('')}
   if(empty)empty.hidden=visible.length!==0;
   list?.querySelectorAll('[data-admin-feedback-status]').forEach(sel=>sel.addEventListener('change',()=>updateAdminFeedback(sel.dataset.adminFeedbackStatus,sel.value)));
@@ -2359,7 +2361,8 @@ async function refreshAdminInboxLive({silent=true,force=false}={}){
     const d=await gr.json();
     if(adminInboxData.gmailStatus?.connected===false)return;
     if(!d||!Array.isArray(d.threads))throw new Error('Incomplete Gmail inbox');
-    adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||Date.now());adminInboxData.liveError='';
+    adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||Date.now());
+    adminInboxData.liveError=d.stale===true?String(d.warning||'Gmail refresh failed').slice(0,160):'';
     if(!(adminInboxData.aliases||[]).length){
       const ar=await fetch('/api/account?action=admin-gmail-aliases',{headers:{Accept:'application/json'},cache:'no-store'});
       if(adminInboxData.gmailStatus?.connected===false)return;
@@ -2398,7 +2401,11 @@ function renderAdminInbox(){
   if(connect){connect.hidden=!!st.connected;connect.textContent=st.configured?'Connect Gmail':'Set up Gmail OAuth'}
   if(disconnect)disconnect.hidden=!st.connected;
   if(title)title.textContent=st.connected?'Gmail connected':st.configured?'Gmail ready to connect':'Gmail OAuth setup required';
-  if(copy)copy.textContent=st.connected?('Connected as '+(st.gmailEmail||'Gmail')+'. '+Number(ga.inbound||0)+' received · '+Number(ga.outbound||0)+' sent in the loaded 30-day view. Threads remain in Google and sync into this inbox.'):st.configured?'Authorize the Gmail account you want CallerCore Admin to use.':'Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY in Vercel before connecting.';
+  if(copy){
+    const coverage=adminInboxData.gmail?.coverage||{},loaded=Number(coverage.loadedThreads??gmail.length),estimated=Number(coverage.estimatedThreads),
+      coverageText=coverage.verified!==true?' Gmail search coverage is not verified yet; refresh to confirm the current 30-day view.':coverage.limited===true?(' Only '+loaded+(Number.isFinite(estimated)&&estimated>loaded?' of about '+estimated:'')+' matching Gmail threads are loaded; use Gmail for older or additional matching mail.'):' Gmail coverage for the loaded 30-day query is verified.';
+    copy.textContent=st.connected?('Connected as '+(st.gmailEmail||'Gmail')+'. '+Number(ga.inbound||0)+' received · '+Number(ga.outbound||0)+' sent in the loaded 30-day view. Threads remain in Google and sync into this inbox.'+coverageText):st.configured?'Authorize the Gmail account you want CallerCore Admin to use.':'Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY in Vercel before connecting.';
+  }
   if(aliasList)aliasList.innerHTML=(adminInboxData.aliases||[]).map(a=>'<span class="gmail-alias-chip '+(a.inboundSeen?'ok':'warn')+'"><b>'+esc(a.email)+'</b><small>'+(a.isPrimary?'Primary':(a.verificationStatus==='accepted'?'Send as verified':'Pending'))+' · '+(a.inboundSeen?'Inbound seen':'No inbound seen yet')+'</small></span>').join('');
   let items=[...website,...gmail].sort((a,b)=>b.at-a.at);
   if(adminInboxData.filter!=='all')items=items.filter(x=>x.kind===adminInboxData.filter);
@@ -2554,6 +2561,21 @@ setInterval(()=>{
 },180000);
 
 
+function normalizeAdminCareCoverage(raw,loaded=0){
+  const value=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{},missing=Math.max(0,Number(value.missingRecords||0)||0),
+    indexed=Math.max(0,Number(value.indexedRecords||0)||0),loadedRecords=Math.max(0,Number(value.loadedRecords??loaded)||0);
+  return {verified:value.verified===true,incomplete:value.incomplete===true||missing>0,missingRecords:missing,indexedRecords:indexed,loadedRecords};
+}
+function renderAdminCareHealth(id,label,coverage,error=''){
+  const el=document.getElementById(id);if(!el)return;
+  const c=normalizeAdminCareCoverage(coverage,0),parts=[];
+  if(error)parts.push(error);
+  if(c.verified!==true)parts.push(label+' coverage has not been verified.');
+  else if(c.incomplete)parts.push(c.missingRecords.toLocaleString()+' indexed '+label.toLowerCase()+' record'+(c.missingRecords===1?' is':'s are')+' unavailable; counts and search results may be partial.');
+  else parts.push(c.loadedRecords.toLocaleString()+' '+label.toLowerCase()+' record'+(c.loadedRecords===1?'':'s')+' verified.');
+  el.textContent=parts.join(' ');
+  el.classList.toggle('warning',!!error||c.verified!==true||c.incomplete);
+}
 function adminElapsedAge(ms){
   const diff=Math.max(0,Date.now()-Number(ms||Date.now())),mins=Math.floor(diff/60000);
   if(mins<60)return Math.max(1,mins)+'m old';
@@ -2601,6 +2623,7 @@ function renderAdminSupport({clearDraftId=''}={}){
     const searchOk=!q||[t.subject,t.workspaceName,t.email,t.message,...(Array.isArray(t.messages)?t.messages.map(m=>m.body):[])].filter(Boolean).join(' ').toLowerCase().includes(q);
     return stateOk&&searchOk;
   });
+  renderAdminCareHealth('adminSupportHealth','Support',adminSupportCoverage,adminSupportLoadError);
   const wrap=document.getElementById('adminSupportList');if(!wrap)return;
   const focusedReplyId=wrap.contains?.(document.activeElement)?String(document.activeElement?.dataset?.supportAdminInput||''):'';
   rememberAdminSupportThreadUi(wrap);
@@ -3631,7 +3654,26 @@ function adminGlobalSearchItems(q){
     const messages=t.messages||[],searchBody=messages.slice(-8).map(m=>[m.from,m.to,m.subject,m.snippet,m.body].filter(Boolean).join(' ')).join(' ');
     add({type:'gmail',id:String(t.id||''),title:t.subject||'Gmail thread',meta:[t.last?.from||messages.at(-1)?.from,'Gmail'].filter(Boolean).join(' · '),view:'inbox',group:'Inbox'},[t.last?.to,t.last?.snippet,searchBody]);
   }
-  return items.sort((a,b)=>b.score-a.score||a.title.localeCompare(b.title)).slice(0,48);
+  const sorted=items.sort((a,b)=>b.score-a.score||a.title.localeCompare(b.title)),visible=sorted.slice(0,48);
+  visible.totalMatches=sorted.length;visible.limited=sorted.length>visible.length;
+  return visible;
+}
+function adminGlobalSearchCoverage(){
+  const sync=typeof adminDataSyncAt==='object'&&adminDataSyncAt?adminDataSyncAt:{},now=Date.now(),
+    sources=[['clients','Clients'],['provisioning','Onboarding'],['fleet','AI Receptionists / Automations'],['phones','Phone Numbers'],['website','Growth / Website'],['campaigns','Campaigns'],['support','Support'],['feedback','AI feedback'],['finance','Finance'],['documents','Documents'],['health','System Health'],['platform','Platform Settings']],
+    missing=sources.filter(([key])=>!Number(sync[key]||0)).map(([,label])=>label),
+    stale=sources.filter(([key])=>Number(sync[key]||0)&&now-Number(sync[key])>15*60*1000).map(([,label])=>label),notes=[];
+  if(missing.length)notes.push('Unverified sources: '+missing.slice(0,5).join(', ')+(missing.length>5?' +'+(missing.length-5)+' more':''));
+  if(stale.length)notes.push('Older snapshots: '+stale.slice(0,4).join(', ')+(stale.length>4?' +'+(stale.length-4)+' more':''));
+  const support=normalizeAdminCareCoverage(adminSupportCoverage,adminSupportData?.length||0),feedback=normalizeAdminCareCoverage(adminFeedbackCoverage,adminFeedbackData?.length||0);
+  if(support.incomplete)notes.push('Support has '+support.missingRecords+' unavailable indexed record'+(support.missingRecords===1?'':'s'));
+  if(feedback.incomplete)notes.push('AI feedback has '+feedback.missingRecords+' unavailable indexed record'+(feedback.missingRecords===1?'':'s'));
+  if(adminInboxData.gmailStatus?.connected){
+    const gmailCoverage=adminInboxData.gmail?.coverage||{},loaded=Number(gmailCoverage.loadedThreads??adminInboxData.gmail?.threads?.length??0),estimate=Number(gmailCoverage.estimatedThreads);
+    if(gmailCoverage.verified!==true)notes.push('Gmail cache coverage is unverified');
+    else if(gmailCoverage.limited===true)notes.push('Gmail search is limited to '+loaded+(Number.isFinite(estimate)&&estimate>loaded?' of about '+estimate:'')+' loaded threads');
+  }
+  return {limited:notes.length>0,text:notes.join(' · ')};
 }
 async function loadAdminSearchInboxCache(){
   if(adminSearchInboxCacheLoaded||adminSearchInboxLoading)return;
@@ -3672,15 +3714,17 @@ function closeAdminGlobalSearch(){
 }
 function renderAdminGlobalSearch(){
   const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(!input||!wrap)return;
-  const q=input.value.trim(),items=adminGlobalSearchItems(q);
+  const q=input.value.trim(),items=adminGlobalSearchItems(q),coverage=adminGlobalSearchCoverage();
   if(q.length<2){closeAdminGlobalSearch();wrap.innerHTML='';return}
-  const groups=[...new Set(items.map(x=>x.group||'Other'))];
+  const groups=[...new Set(items.map(x=>x.group||'Other'))],total=Number(items.totalMatches||items.length),
+    resultLabel=items.limited?('Showing '+items.length+' of '+total+' matches'):(total+' result'+(total===1?'':'s')),
+    inboxState=adminSearchInboxLoading?' · loading inbox cache…':adminSearchInboxCacheError?' · Gmail search temporarily unavailable; retry search':'';
   wrap.hidden=false;input.setAttribute('aria-expanded','true');adminSearchActiveIndex=0;
   const body=groups.map(group=>{
     const rows=items.filter(x=>x.group===group);
     return '<section class="admin-search-group"><div class="admin-search-group-title"><span>'+esc(group)+'</span><small>'+rows.length+'</small></div>'+rows.map(x=>'<button type="button" class="admin-search-result" role="option" data-global-search-type="'+esc(x.type)+'" data-global-search-id="'+esc(x.id||'')+'" data-global-search-view="'+esc(x.view)+'"><span class="admin-search-result-copy"><b>'+esc(x.title)+'</b><small>'+esc(x.meta||'')+'</small></span><em>'+esc(x.type==='page'?'Open page':x.group||'Result')+'</em></button>').join('')+'</section>';
   }).join('');
-  wrap.innerHTML='<div class="admin-search-results-head"><div><b>Search all CallerCore</b><span>'+items.length+' result'+(items.length===1?'':'s')+(adminSearchInboxLoading?' · loading inbox cache…':adminSearchInboxCacheError?' · Gmail search temporarily unavailable; retry search':'')+'</span></div><kbd>↑ ↓ Enter</kbd></div>'+(items.length?body:'<div class="admin-search-empty"><b>No matches for “'+esc(q)+'”</b><span>Try a client name, email, phone number, prospect, document, support subject, workflow, setting, or admin page.</span></div>')+'<div class="admin-search-footer"><span>Search includes navigation, client operations, Growth, Finance, Documents, Client Care, Platform and cached Gmail.</span><kbd>Esc to close</kbd></div>';
+  wrap.innerHTML='<div class="admin-search-results-head"><div><b>Search all CallerCore</b><span>'+esc(resultLabel+inboxState)+'</span></div><kbd>↑ ↓ Enter</kbd></div>'+(items.length?body:'<div class="admin-search-empty"><b>No matches for “'+esc(q)+'”</b><span>Try a client name, email, phone number, prospect, document, support subject, workflow, setting, or admin page.</span></div>')+'<div class="admin-search-footer"><span>Search includes navigation, client operations, Growth, Finance, Documents, Client Care, Platform and cached Gmail.'+(coverage.text?' '+esc(coverage.text)+'.':'')+'</span><kbd>Esc to close</kbd></div>';
   const rows=[...wrap.querySelectorAll('[data-global-search-type]')];
   rows.forEach((b,i)=>{b.addEventListener('mouseenter',()=>setAdminSearchActive(i));b.addEventListener('click',()=>openAdminGlobalSearchResult(b.dataset.globalSearchType,b.dataset.globalSearchId,b.dataset.globalSearchView))});
   if(rows.length)setAdminSearchActive(0);
@@ -3722,7 +3766,9 @@ async function openAdminGlobalSearchResult(type,id,view){
   if(type==='health'){showView('health');setTimeout(()=>flashAdminSearchTarget(document.getElementById('systemHealthGrid')),100);return}
   if(type==='analytics'){showView('website');return}
   if(type==='standard-document'){showView('documents');setTimeout(()=>flashAdminSearchTarget(document.querySelector('.standard-documents-card')),100);return}
-  if(type==='support')openClientCare('support');else if(type==='feedback')openClientCare('feedback');else showView(view);
+  if(type==='support'){adminSupportSearch='';adminSupportFilter='all';openClientCare('support');renderAdminSupport()}
+  else if(type==='feedback'){adminFeedbackSearch='';adminFeedbackFilter='all';openClientCare('feedback');renderAdminFeedback()}
+  else showView(view);
   setTimeout(()=>{
     if(type==='support'){const el=document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]');if(el)el.open=true;flashAdminSearchTarget(el)}
     else if(type==='phone')flashAdminSearchTarget(document.querySelector('[data-edit-phone="'+CSS.escape(id)+'"]')?.closest('.call-row'));

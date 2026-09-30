@@ -1218,12 +1218,14 @@ async function replySupportTicket(req,res){
 async function adminSupport(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const index=await kv.get('support:index')||[],tickets=[];
-  if(!Array.isArray(index)||index.length>2000)return res.status(503).json({error:'Support index exceeds supported capacity. No partial ticket list was returned.'});
+  if(!Array.isArray(index)||index.length>2000||index.some(id=>typeof id!=='string'||!id.trim())||new Set(index).size!==index.length)
+    return res.status(503).json({error:'Support index is incomplete or exceeds supported capacity. No partial ticket list was returned.'});
+  let missingRecords=0;
   for(let offset=0;offset<index.length;offset+=40){
     const batch=await Promise.all(index.slice(offset,offset+40).map(id=>kv.get('support:'+id)));
-    for(const ticket of batch){if(ticket)tickets.push(ticket)}
+    for(const ticket of batch){if(ticket)tickets.push(ticket);else missingRecords++}
   }
-  return res.status(200).json({tickets});
+  return res.status(200).json({tickets,coverage:{verified:true,indexedRecords:index.length,loadedRecords:tickets.length,missingRecords,incomplete:missingRecords>0}});
 }
 
 
@@ -1520,7 +1522,7 @@ async function adminGmailInbox(req,res){
   const hash=crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex'),cacheKey='gmail:inbox:'+hash,summaryKey='gmail:summary:'+hash;
   const cached=await kv.get(cacheKey),force=String(req.query?.force||'')==='1';
   if(String(req.query?.cached||'')==='1'){
-    return res.status(200).json(cached?{configured:true,...cached,cached:true}:{configured:true,connected:true,threads:[],analytics:{},cached:true,emptyCache:true});
+    return res.status(200).json(cached?{configured:true,...cached,cached:true}:{configured:true,connected:true,threads:[],analytics:{},coverage:{verified:false,limited:false,loadedThreads:0,estimatedThreads:null,queryWindow:'30d'},cached:true,emptyCache:true});
   }
   if(!force&&cached&&Date.now()-Number(cached.syncedAt||0)<2*60*1000){
     return res.status(200).json({configured:true,...cached,cached:true,fresh:true});
@@ -2613,12 +2615,13 @@ async function adminAiFeedback(req,res){
   const raw=await kv.get('ai-feedback:index'),ids=raw==null?[]:raw,items=[];
   if(!Array.isArray(ids)||ids.length>1500||ids.some(id=>typeof id!=='string'||!id||!id.trim())||new Set(ids).size!==ids.length)
     return res.status(503).json({error:'Feedback index is incomplete or exceeds supported capacity. No partial feedback list was returned.'});
+  let missingRecords=0;
   for(let offset=0;offset<ids.length;offset+=40){
     const batch=await Promise.all(ids.slice(offset,offset+40).map(id=>kv.get('ai-feedback:'+id)));
-    for(const item of batch)if(item)items.push(item);
+    for(const item of batch){if(item)items.push(item);else missingRecords++}
   }
   items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
-  return res.status(200).json({feedback:items});
+  return res.status(200).json({feedback:items,coverage:{verified:true,indexedRecords:ids.length,loadedRecords:items.length,missingRecords,incomplete:missingRecords>0}});
 }
 async function adminAiFeedbackUpdate(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
