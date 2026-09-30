@@ -74,7 +74,7 @@ test('admin notification builder marks malformed source indexes as incomplete in
         if(key==='ai-feedback:index')return {broken:true};
         return null;
       },
-      async lrange(){return null}
+      async lrange(){return {broken:true}}
     },
     getGmailConnection:async()=>null,
     entitlementsFor:()=>({minutes:0}),
