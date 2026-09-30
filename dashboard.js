@@ -2972,7 +2972,9 @@ function renderRetentionReport(){
   if(state!=='ok')panel.classList.add('is-'+state);
   if(status){status.textContent=state==='error'?'Needs review':state==='warning'?'Review needed':'Read-only checks clear';status.className='tag '+(state==='error'?'red':state==='warning'?'amber':'green')}
   const issues=[];
-  if(prospects.consentReviewRequired)issues.push((candidate==null?'Prospect candidates could not be counted':Number(candidate).toLocaleString()+' stale prospect candidate'+(Number(candidate)===1?'':'s'))+' pending a verified consent source; no de-identification executor is exposed');
+  if(prospects.consentReviewRequired)issues.push(Number(prospects.unknownConsentCount||0).toLocaleString()+' prospect record'+(Number(prospects.unknownConsentCount||0)===1?' has':'s have')+' unknown historical marketing-consent evidence and cannot enter automatic retention');
+  if(Number(prospects.activeConsentCount||0)>0)issues.push(Number(prospects.activeConsentCount).toLocaleString()+' prospect'+(Number(prospects.activeConsentCount)===1?' has':'s have')+' active verified email-marketing consent and remain excluded from de-identification');
+  if(candidate!=null&&Number(candidate)>0)issues.push(Number(candidate).toLocaleString()+' stale prospect candidate'+(Number(candidate)===1?' is':'s are')+' retention-eligible with verified inactive consent evidence; no de-identification executor is exposed');
   if(analytics.expiredRetainedEvents>0)issues.push(Number(analytics.expiredRetainedEvents).toLocaleString()+' raw event'+(analytics.expiredRetainedEvents===1?'':'s')+' exceed the 180-day retained-history target');
   const sessionGaps=Number(analytics.missingSessionRecords||0)+Number(analytics.malformedSessionRecords||0)+Number(analytics.expiredSessionRecords||0);
   if(sessionGaps)issues.push(sessionGaps.toLocaleString()+' session-index entr'+(sessionGaps===1?'y needs':'ies need')+' compaction or review');
