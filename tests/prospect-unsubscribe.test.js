@@ -43,7 +43,7 @@ test('unsubscribe URL generation requires HTTPS',()=>{
 test('unsubscribe token is signed, prospect-specific and contains no contact PII',()=>{
   const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),url=marketingUnsubscribeUrl(p,SECRET,{siteUrl:'https://preview.callercore.test'});
   assert.equal(tokenMatchesProspect(token,p,SECRET),true);
-  assert.match(url,/^https:\/\/preview\.callercore\.test\/unsubscribe\?token=/);
+  assert.match(url,/^https:\/\/preview\.callercore\.test\/unsubscribe#token=/);
   assert.equal(token.includes('private@example.test'),false);
   assert.equal(token.includes('Private Person'),false);
   assert.equal(url.includes('private@example.test'),false);
