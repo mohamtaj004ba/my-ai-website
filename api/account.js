@@ -404,9 +404,9 @@ async function adminMonthlyKpiRefresh(req,res){
 async function adminConversationMigrationReport(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const limit=Math.max(1,Math.min(100,Number.parseInt((req.query||{}).limit,10)||50)),cursor=String((req.query||{}).cursor||'').slice(0,512),
-    workspaceId=String((req.query||{}).workspaceId||'').trim().slice(0,80);
+    workspaceId=String((req.query||{}).workspaceId||'').trim().slice(0,80),verifyDetails=String((req.query||{}).verifyDetails||'')==='1';
   try{
-    const report=workspaceId?await scanConversationMigrationWorkspace(kv,workspaceId):await scanConversationMigrationBatch(kv,{limit,cursor});
+    const report=workspaceId?await scanConversationMigrationWorkspace(kv,workspaceId):await scanConversationMigrationBatch(kv,{limit,cursor,verifyDetails});
     return res.status(200).json({report});
   }catch(err){
     if(err&&err.code==='WORKSPACE_NOT_FOUND')return res.status(404).json({error:'Conversation migration workspace was not found.'});
