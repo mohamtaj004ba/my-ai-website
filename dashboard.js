@@ -1788,12 +1788,12 @@ async function loadAdminOps(){
     if(ph.ok)adminPhoneData=(await ph.json()).numbers||[];
     if(hr.ok){const health=await hr.json();adminHealthData=health.services||[];adminReadinessData=health.readiness||null;adminHealthCheckedAt=Number(health.checkedAt||Date.now());}
     if(fr.ok)adminFleetData=await fr.json();
-    if(sr.ok){const support=await sr.json();adminSupportData=support.tickets||[];adminSupportCoverage=normalizeAdminCareCoverage(support.coverage,adminSupportData.length);adminSupportLoadError=''}else adminSupportLoadError='Support requests could not be verified; showing the last loaded records when available.';
+    if(sr.ok){const support=await sr.json();adminSupportData=support.tickets||[];adminSupportCoverage=support.coverage&&typeof support.coverage==='object'&&!Array.isArray(support.coverage)?support.coverage:{verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:adminSupportData.length};adminSupportLoadError=''}else adminSupportLoadError='Support requests could not be verified; showing the last loaded records when available.';
     if(ps.ok&&!adminPlatformDirty)adminPlatformData=(await ps.json()).settings||null;
     if(analyticsRequest===adminWebsiteAnalyticsRequest&&requestedAnalyticsDays===adminWebsiteDays){if(wr.ok){const latest=(await wr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'}
     const preferredDays=Number((analyticsRequest===0?adminPlatformData?.analyticsWindowDays:requestedAnalyticsDays)||requestedAnalyticsDays||30);
     if(preferredDays!==requestedAnalyticsDays&&analyticsRequest===adminWebsiteAnalyticsRequest){adminWebsiteDays=preferredDays;const rr=await get('/api/account?action=admin-website-analytics&days='+preferredDays);if(analyticsRequest===adminWebsiteAnalyticsRequest&&adminWebsiteDays===preferredDays){if(rr.ok){const latest=(await rr.json()).analytics;if(latest){adminWebsiteData=latest;adminWebsiteLoadError=''}else adminWebsiteLoadError='Website analytics response was incomplete; previously loaded records may be outdated.'}else adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.'}}
-    if(fbr.ok){const feedback=await fbr.json();adminFeedbackData=feedback.feedback||[];adminFeedbackCoverage=normalizeAdminCareCoverage(feedback.coverage,adminFeedbackData.length);adminFeedbackLoadError=''}else adminFeedbackLoadError='AI feedback could not be verified; showing the last loaded records when available.';
+    if(fbr.ok){const feedback=await fbr.json();adminFeedbackData=feedback.feedback||[];adminFeedbackCoverage=feedback.coverage&&typeof feedback.coverage==='object'&&!Array.isArray(feedback.coverage)?feedback.coverage:{verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:adminFeedbackData.length};adminFeedbackLoadError=''}else adminFeedbackLoadError='AI feedback could not be verified; showing the last loaded records when available.';
     if(fin.ok){const latest=(await fin.json()).finance;if(latest){adminFinanceData=latest;adminFinanceLoadError=''}else adminFinanceLoadError='Finance response was incomplete; previously loaded records may be outdated.'}else adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';
     if(cr.ok)adminCampaignData=(await cr.json()).campaigns||[];
     if(dr.ok)adminDocumentsData=(await dr.json()).documents||adminDocumentsData;
@@ -1849,8 +1849,8 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   }
   if(view==='overview'){
     add('provisioning','/api/account?action=admin-provisioning',60000,d=>{adminProvisioningData=d.provisioning||[]});
-    add('support','/api/account?action=admin-support',60000,d=>{adminSupportData=d.tickets||[];adminSupportCoverage=normalizeAdminCareCoverage(d.coverage,adminSupportData.length);adminSupportLoadError=''});
-    add('feedback','/api/account?action=admin-ai-feedback',60000,d=>{adminFeedbackData=d.feedback||[];adminFeedbackCoverage=normalizeAdminCareCoverage(d.coverage,adminFeedbackData.length);adminFeedbackLoadError=''});
+    add('support','/api/account?action=admin-support',60000,d=>{adminSupportData=d.tickets||[];adminSupportCoverage=d.coverage&&typeof d.coverage==='object'&&!Array.isArray(d.coverage)?d.coverage:{verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:adminSupportData.length};adminSupportLoadError=''});
+    add('feedback','/api/account?action=admin-ai-feedback',60000,d=>{adminFeedbackData=d.feedback||[];adminFeedbackCoverage=d.coverage&&typeof d.coverage==='object'&&!Array.isArray(d.coverage)?d.coverage:{verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:adminFeedbackData.length};adminFeedbackLoadError=''});
     add('website','/api/account?action=admin-website-analytics&days='+adminWebsiteDays,90000,d=>{if(d.analytics){adminWebsiteData=d.analytics;adminWebsiteLoadError=''}});
     add('finance','/api/account?action=admin-finance',180000,d=>{if(d.finance){adminFinanceData=d.finance;adminFinanceLoadError=''}});
     add('health','/api/account?action=admin-system-health',300000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
@@ -1871,8 +1871,8 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   }else if(view==='documents'){
     add('documents','/api/account?action=admin-documents',60000,d=>{adminDocumentsData=d.documents||adminDocumentsData});
   }else if(view==='client-care'){
-    add('support','/api/account?action=admin-support',45000,d=>{adminSupportData=d.tickets||[];adminSupportCoverage=normalizeAdminCareCoverage(d.coverage,adminSupportData.length);adminSupportLoadError=''});
-    add('feedback','/api/account?action=admin-ai-feedback',45000,d=>{adminFeedbackData=d.feedback||[];adminFeedbackCoverage=normalizeAdminCareCoverage(d.coverage,adminFeedbackData.length);adminFeedbackLoadError=''});
+    add('support','/api/account?action=admin-support',45000,d=>{adminSupportData=d.tickets||[];adminSupportCoverage=d.coverage&&typeof d.coverage==='object'&&!Array.isArray(d.coverage)?d.coverage:{verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:adminSupportData.length};adminSupportLoadError=''});
+    add('feedback','/api/account?action=admin-ai-feedback',45000,d=>{adminFeedbackData=d.feedback||[];adminFeedbackCoverage=d.coverage&&typeof d.coverage==='object'&&!Array.isArray(d.coverage)?d.coverage:{verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:adminFeedbackData.length};adminFeedbackLoadError=''});
   }else if(view==='health'){
     add('health','/api/account?action=admin-system-health',120000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
     add('retention','/api/account?action=admin-retention-report',120000,d=>{adminRetentionData=d.report||null;adminRetentionCheckedAt=Number(d.report?.generatedAt||Date.now());adminRetentionLoadError=''});
