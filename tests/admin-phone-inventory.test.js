@@ -42,3 +42,15 @@ test('admin phone inventory read refuses malformed storage instead of returning 
   assert.match(block,/Phone inventory is unavailable\. No empty inventory was substituted/);
   assert.match(block,/raw!=null&&!Array\.isArray\(raw\)/);
 });
+
+test('phone inventory read and mutations reject malformed or duplicate inventory records',()=>{
+  const source=fs.readFileSync('api/account.js','utf8');
+  const read=source.slice(source.indexOf('async function adminPhoneNumbers('),source.indexOf('\nasync function syncOnboardingPhoneAssignment(',source.indexOf('async function adminPhoneNumbers(')));
+  const save=source.slice(source.indexOf('async function adminSavePhoneNumber('),source.indexOf('\nasync function adminDeletePhoneNumber(',source.indexOf('async function adminSavePhoneNumber(')));
+  const del=source.slice(source.indexOf('async function adminDeletePhoneNumber('),source.indexOf('\nasync function adminFleet(',source.indexOf('async function adminDeletePhoneNumber(')));
+  for(const block of [read,save,del]){assert.match(block,/unverifiable records/);assert.match(block,/new Set\(ids\)\.size!==ids\.length/)}
+  assert.match(save,/Target routing sources are unavailable/);
+  assert.match(save,/Previous workspace routing sources are unavailable/);
+  assert.match(del,/Assigned workspace record is unavailable/);
+  assert.match(del,/Assigned onboarding record is unavailable/);
+});
