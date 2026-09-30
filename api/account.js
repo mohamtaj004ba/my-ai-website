@@ -2452,8 +2452,9 @@ function notificationReadKey(scope,email,workspaceId=''){
   return 'notification:read:'+crypto.createHash('sha256').update(scope+'|'+String(email||'').toLowerCase()+'|'+workspaceId).digest('hex');
 }
 async function getNotificationReadSet(scope,email,workspaceId=''){
-  const raw=await kv.get(notificationReadKey(scope,email,workspaceId))||[];
-  return new Set(Array.isArray(raw)?raw:[]);
+  const raw=await kv.get(notificationReadKey(scope,email,workspaceId));
+  if(raw!=null&&!Array.isArray(raw))throw new Error('Notification read-state history is malformed');
+  return new Set(raw||[]);
 }
 async function saveNotificationReadSet(scope,email,workspaceId,ids){
   // Merge server-side so concurrent tabs cannot overwrite each other's read receipts.
@@ -2465,9 +2466,11 @@ function notificationItem(id,{title='',body='',kind='info',view='overview',creat
 }
 async function buildClientNotifications(s){
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return {items:[],coverage:{limited:false,sources:[]}};
-  const savedSettings=await kv.get('settings:'+ws.id)||{},prefs={
-    billing:savedSettings.notifyBilling!==false,setup:savedSettings.notifySetup!==false,calls:savedSettings.notifyCalls!==false,support:savedSettings.notifySupport!==false,usage:savedSettings.notifyUsage!==false
-  };
+  const rawSettings=await kv.get('settings:'+ws.id),settingsValid=rawSettings==null||!!rawSettings&&typeof rawSettings==='object'&&!Array.isArray(rawSettings),
+    savedSettings=settingsValid?(rawSettings||{}):{},prefs={
+      billing:settingsValid&&savedSettings.notifyBilling!==false,setup:settingsValid&&savedSettings.notifySetup!==false,calls:settingsValid&&savedSettings.notifyCalls!==false,
+      support:settingsValid&&savedSettings.notifySupport!==false,usage:settingsValid&&savedSettings.notifyUsage!==false
+    };
   const items=[],now=Date.now(),plan=entitlementsFor(ws.plan),usage=Number(ws.usage?.minutes||0);
   const feedbackItems=await aiFeedbackListForWorkspace(ws.id,20);
   for(const f of feedbackItems){if(['reviewed','applied'].includes(f.status))items.push(notificationItem('feedback:'+f.id+':'+f.status+':'+f.updatedAt,{title:f.status==='applied'?'AI feedback applied':'AI feedback reviewed',body:(f.context?f.context+' · ':'')+(f.status==='applied'?'CallerCore marked your feedback as applied.':'CallerCore has reviewed your feedback.'),kind:f.status==='applied'?'success':'info',view:'agent',createdAt:f.updatedAt||f.createdAt||now,meta:{feedbackId:f.id,callId:f.callId||''}}));}
@@ -2475,11 +2478,11 @@ async function buildClientNotifications(s){
   if(prefs.billing&&ws.subscriptionStatus==='canceled')items.push(notificationItem('billing:'+ws.id+':canceled',{title:'Subscription canceled',body:'Your CallerCore subscription is canceled.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
   if(prefs.support&&ws.status==='suspended')items.push(notificationItem('workspace:'+ws.id+':suspended',{title:'Workspace suspended',body:'Your CallerCore workspace is currently suspended. Contact support for help.',kind:'danger',view:'support',createdAt:ws.updatedAt||now}));
   if(prefs.setup&&ws.status==='onboarding')items.push(notificationItem('workspace:'+ws.id+':onboarding',{title:'Onboarding in progress',body:'CallerCore is still being configured for your business.',kind:'info',view:'overview',createdAt:ws.updatedAt||ws.createdAt||now}));
-  const onboarding=await kv.get('onboarding:workspace:'+ws.id);
-  if(prefs.setup&&onboarding?.status==='awaiting_review')items.push(notificationItem('onboarding:'+ws.id+':account-review',{title:'Account review in progress',body:'Payment is confirmed. CallerCore is reviewing your account before sending onboarding.',kind:'info',view:'overview',createdAt:onboarding.paidAt||onboarding.updatedAt||now}));
-  if(prefs.setup&&onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview)items.push(notificationItem('onboarding:'+ws.id+':review',{title:'Your setup is being reviewed',body:'We received your onboarding and are reviewing the initial AI-agent configuration.',kind:'info',view:'overview',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now}));
-  if(prefs.setup&&onboarding?.checklist?.adminReview&&!onboarding?.checklist?.testCall)items.push(notificationItem('onboarding:'+ws.id+':test',{title:'Next step: test call',body:'CallerCore has reviewed your setup. A test call is the next launch step.',kind:'info',view:'calls',createdAt:onboarding.updatedAt||now}));
-  if(prefs.setup&&onboarding?.checklist?.live)items.push(notificationItem('onboarding:'+ws.id+':live',{title:'CallerCore is live',body:'Your AI receptionist setup is marked live.',kind:'success',view:'overview',createdAt:onboarding.updatedAt||now}));
+  const onboarding=await kv.get('onboarding:workspace:'+ws.id),onboardingValid=onboarding==null||!!onboarding&&typeof onboarding==='object'&&!Array.isArray(onboarding);
+  if(prefs.setup&&onboardingValid&&onboarding?.status==='awaiting_review')items.push(notificationItem('onboarding:'+ws.id+':account-review',{title:'Account review in progress',body:'Payment is confirmed. CallerCore is reviewing your account before sending onboarding.',kind:'info',view:'overview',createdAt:onboarding.paidAt||onboarding.updatedAt||now}));
+  if(prefs.setup&&onboardingValid&&onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview)items.push(notificationItem('onboarding:'+ws.id+':review',{title:'Your setup is being reviewed',body:'We received your onboarding and are reviewing the initial AI-agent configuration.',kind:'info',view:'overview',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now}));
+  if(prefs.setup&&onboardingValid&&onboarding?.checklist?.adminReview&&!onboarding?.checklist?.testCall)items.push(notificationItem('onboarding:'+ws.id+':test',{title:'Next step: test call',body:'CallerCore has reviewed your setup. A test call is the next launch step.',kind:'info',view:'calls',createdAt:onboarding.updatedAt||now}));
+  if(prefs.setup&&onboardingValid&&onboarding?.checklist?.live)items.push(notificationItem('onboarding:'+ws.id+':live',{title:'CallerCore is live',body:'Your AI receptionist setup is marked live.',kind:'success',view:'overview',createdAt:onboarding.updatedAt||now}));
   if(prefs.usage&&plan.minutes){
     const pct=Math.round((usage/plan.minutes)*100);
     const threshold=pct>=100?100:pct>=85?85:pct>=70?70:0;
@@ -2491,11 +2494,11 @@ async function buildClientNotifications(s){
   }
   const [agent,numbers,calls,index,feedbackIndex]=await Promise.all([
     kv.get('agent:'+ws.id),kv.get('phone:index'),kv.get('calls:'+ws.id),kv.get('support:index'),kv.get(aiFeedbackWorkspaceIndexKey(ws.id))
-  ]);
-  const phone=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===ws.id);
-  if(prefs.setup&&!agent)items.push(notificationItem('setup:'+ws.id+':agent',{title:'AI agent setup incomplete',body:'Your AI agent has not been configured yet.',kind:'warning',view:'agent',createdAt:ws.createdAt||now}));
-  if(prefs.setup&&!phone)items.push(notificationItem('setup:'+ws.id+':phone',{title:'Phone routing not configured',body:'No CallerCore phone number is currently assigned.',kind:'warning',view:'phone-routing',createdAt:ws.createdAt||now}));
-  const missed=(Array.isArray(calls)?calls:[]).filter(x=>String(x.disposition||'')==='incomplete'||/missed|failed/i.test(String(x.outcome||''))).slice(-8).reverse();
+  ]),agentValid=agent==null||!!agent&&typeof agent==='object'&&!Array.isArray(agent),numbersValid=numbers==null||Array.isArray(numbers),callsValid=calls==null||Array.isArray(calls);
+  const phone=numbersValid?(numbers||[]).find(x=>x&&x.workspaceId===ws.id):null;
+  if(prefs.setup&&agentValid&&!agent)items.push(notificationItem('setup:'+ws.id+':agent',{title:'AI agent setup incomplete',body:'Your AI agent has not been configured yet.',kind:'warning',view:'agent',createdAt:ws.createdAt||now}));
+  if(prefs.setup&&numbersValid&&!phone)items.push(notificationItem('setup:'+ws.id+':phone',{title:'Phone routing not configured',body:'No CallerCore phone number is currently assigned.',kind:'warning',view:'phone-routing',createdAt:ws.createdAt||now}));
+  const missed=callsValid?(calls||[]).filter(x=>String(x.disposition||'')==='incomplete'||/missed|failed/i.test(String(x.outcome||''))).slice(-8).reverse():[];
   if(prefs.calls)missed.forEach((x,i)=>{
     const id=String(x.id||x.callId||x.phone||i),at=Number(x.createdAt||x.at||x.timestamp||Date.now());
     items.push(notificationItem('call:'+id+':missed',{title:'Missed call',body:(x.caller||x.phone||'A caller')+' disconnected or ended before CallerCore could complete the intake.',kind:'warning',view:'calls',createdAt:at,meta:{callId:id}}));
@@ -2507,14 +2510,22 @@ async function buildClientNotifications(s){
     }
   }
   const sources=[];
+  if(!settingsValid)sources.push('settings_unavailable');
+  if(!onboardingValid)sources.push('onboarding_unavailable');
+  if(!agentValid)sources.push('agent_unavailable');
+  if(!numbersValid)sources.push('phone_unavailable');
+  if(!callsValid)sources.push('calls_unavailable');
   if(index!=null&&!Array.isArray(index))sources.push('support_unavailable');else if(Array.isArray(index)&&index.length>100)sources.push('support');
   if(feedbackIndex!=null&&!Array.isArray(feedbackIndex))sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>20)sources.push('ai_feedback');
   return {items,coverage:{limited:sources.length>0,sources}};
 }
 async function buildAdminNotifications(admin){
-  const items=[],now=Date.now(),platform=await kv.get('platform:settings')||{},alerts={
-    prospects:platform.alertPrefs?.prospects!==false,billing:platform.alertPrefs?.billing!==false,onboarding:platform.alertPrefs?.onboarding!==false,clientCare:platform.alertPrefs?.clientCare!==false,system:platform.alertPrefs?.system!==false
-  };
+  const items=[],now=Date.now(),rawPlatform=await kv.get('platform:settings'),
+    platformValid=rawPlatform==null||!!rawPlatform&&typeof rawPlatform==='object'&&!Array.isArray(rawPlatform),platform=platformValid?(rawPlatform||{}):{},alerts={
+      prospects:platformValid&&platform.alertPrefs?.prospects!==false,billing:platformValid&&platform.alertPrefs?.billing!==false,
+      onboarding:platformValid&&platform.alertPrefs?.onboarding!==false,clientCare:platformValid&&platform.alertPrefs?.clientCare!==false,
+      system:platformValid&&platform.alertPrefs?.system!==false
+    };
   const [supportIndex,workspaceIndex,prospectIdsRaw,gmailConn,feedbackIndex]=await Promise.all([
     kv.get('support:index'),kv.get('workspace:index'),kv.lrange('site:prospect:index',0,100),getGmailConnection(admin.email),kv.get('ai-feedback:index')
   ]),prospectIds=Array.isArray(prospectIdsRaw)?prospectIdsRaw.slice(0,100):[];
@@ -2555,6 +2566,7 @@ async function buildAdminNotifications(admin){
     }catch(err){console.error('notification gmail summary failed',safeError(err))}
   }
   const sources=[];
+  if(!platformValid)sources.push('platform_unavailable');
   if(supportIndex!=null&&!Array.isArray(supportIndex))sources.push('support_unavailable');else if(Array.isArray(supportIndex)&&supportIndex.length>100)sources.push('support');
   if(feedbackIndex!=null&&!Array.isArray(feedbackIndex))sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>100)sources.push('ai_feedback');
   if(prospectIdsRaw!=null&&!Array.isArray(prospectIdsRaw))sources.push('growth_unavailable');else if(Array.isArray(prospectIdsRaw)&&prospectIdsRaw.length>100)sources.push('growth');
@@ -2706,7 +2718,9 @@ async function notifications(req,res){
     items=Array.isArray(built)?built:(Array.isArray(built?.items)?built.items:[]),
     coverage=Array.isArray(built)?{limited:false,sources:[]}:(built?.coverage||{limited:false,sources:[]});
   const workspaceId=scope==='client'?sessionData.workspaceId:'';
-  const read=await getNotificationReadSet(scope,sessionData.email,workspaceId);
+  let read;
+  try{read=await getNotificationReadSet(scope,sessionData.email,workspaceId)}
+  catch(err){console.error('notification read state unavailable',safeError(err));return res.status(503).json({error:'Notification read state could not be verified. Previously loaded alerts should be preserved.'})}
   const unreadCount=items.reduce((count,item)=>count+(read.has(item.id)?0:1),0);
   const recent=items.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)),newest=recent.slice(0,80);
   // Keep recent history while also surfacing older unread work instead of showing an empty
