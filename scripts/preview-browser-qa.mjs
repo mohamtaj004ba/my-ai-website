@@ -504,7 +504,14 @@ async function runAdminInteractions(page){
   if(!retentionResponse.ok())throw new Error('Retention dry-run endpoint was unavailable');
   const retentionReport=(await retentionResponse.json()).report;
   if(!retentionReport||retentionReport.mode!=='dry_run'||retentionReport.writeActionsEnabled!==false||retentionReport.retentionExecutorReachable!==false)throw new Error('Retention report did not remain read-only');
-  if(retentionReport.prospects?.consentReviewRequired!==true||retentionReport.prospects?.executorReachable!==false)throw new Error('Retention report bypassed the consent-review gate');
+  const prospectRetention=retentionReport.prospects||{};
+  if(prospectRetention.consentEvidenceAvailable!==true||prospectRetention.executorReachable!==false||
+     !Number.isFinite(Number(prospectRetention.activeConsentCount))||!Number.isFinite(Number(prospectRetention.verifiedInactiveConsentCount))||
+     !Number.isFinite(Number(prospectRetention.unknownConsentCount))||
+     Number(prospectRetention.activeConsentCount)+Number(prospectRetention.verifiedInactiveConsentCount)+Number(prospectRetention.unknownConsentCount)!==Number(prospectRetention.scanned||0))
+    throw new Error('Retention report did not expose trustworthy aggregate consent evidence');
+  if(prospectRetention.consentReviewRequired!==(Number(prospectRetention.unknownConsentCount)>0))
+    throw new Error('Retention report consent-review state disagrees with unknown historical evidence');
   if(!['disabled','misconfigured','active'].includes(retentionReport.monthlyRollups?.schedulerState)||typeof retentionReport.monthlyRollups?.finalizationScheduled!=='boolean'||!retentionReport.monthlyRollups?.previousMonth)throw new Error('Retention report omitted scheduler/finalization state');
   const retentionJson=JSON.stringify(retentionReport);
   if(retentionJson.includes('planned')||retentionJson.includes('before')||retentionJson.includes('after')||retentionJson.includes('@callercore.test'))throw new Error('Retention report exposed record-level prospect details');
