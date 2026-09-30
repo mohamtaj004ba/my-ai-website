@@ -29,24 +29,28 @@ async function apiRequest(method,{secret='x'.repeat(64),query={},body={}}={}){
   return {status,payload,inspectCalls,revokeCalls};
 }
 
-test('unsubscribe GET validates only and never invokes the revocation write path',async()=>{
-  const r=await apiRequest('GET',{query:{token:'token-1'}});
+test('inspection POST validates only and never invokes the revocation write path',async()=>{
+  const r=await apiRequest('POST',{body:{action:'inspect',token:'token-1'}});
   assert.equal(r.status,200);
   assert.equal(r.payload.state,'granted');
   assert.equal(r.inspectCalls,1);
   assert.equal(r.revokeCalls,0);
 });
 
-test('unsubscribe POST is the only endpoint method that invokes explicit revocation',async()=>{
-  const r=await apiRequest('POST',{body:{token:'token-1'}});
+test('only explicit unsubscribe action invokes the revocation write path',async()=>{
+  const r=await apiRequest('POST',{body:{action:'unsubscribe',token:'token-1'}});
   assert.equal(r.status,200);
   assert.equal(r.payload.unsubscribed,true);
   assert.equal(r.inspectCalls,0);
   assert.equal(r.revokeCalls,1);
+  const get=await apiRequest('GET');
+  assert.equal(get.status,405);
+  assert.equal(get.inspectCalls,0);
+  assert.equal(get.revokeCalls,0);
 });
 
 test('unsubscribe API fails closed until its dedicated signing secret is configured',async()=>{
-  const r=await apiRequest('GET',{secret:'',query:{token:'token-1'}});
+  const r=await apiRequest('POST',{secret:'',body:{action:'inspect',token:'token-1'}});
   assert.equal(r.status,503);
   assert.equal(r.inspectCalls,0);
   assert.equal(r.revokeCalls,0);
@@ -56,10 +60,12 @@ test('unsubscribe page strips bearer token from browser history and requires a b
   assert.match(page,/meta name="robots" content="noindex,nofollow"/);
   assert.match(page,/history\.replaceState\(null,''\,'\/unsubscribe'\)/);
   assert.match(page,/id="unsubscribeButton" type="button" disabled/);
-  assert.match(page,/fetch\('\/api\/marketing-unsubscribe\?token='/);
+  assert.match(page,/location\.hash/);
+  assert.doesNotMatch(page,/marketing-unsubscribe\?token=/);
+  assert.match(page,/JSON\.stringify\(\{action:'inspect',token\}\)/);
   const click=page.indexOf("button.addEventListener('click'");
-  const post=page.indexOf("method:'POST'");
-  assert.ok(click>0&&post>click);
+  const revoke=page.indexOf("JSON.stringify({action:'unsubscribe',token})");
+  assert.ok(click>0&&revoke>click);
   assert.doesNotMatch(page,/src="\/site\.js"/);
   assert.match(page,/does not stop transactional, account, billing, security, support, or service messages/i);
 });
