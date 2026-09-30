@@ -143,7 +143,8 @@ test('focused workspace detail mismatch blocks readiness even when summaries sti
 });
 
 test('missing normalized detail is counted without exposing the missing conversation id',async()=>{
-  const items=conversations(),f=fixture({
+  const items=conversations();items[1]={...items[1],id:'secret-thread-omega'};
+  const f=fixture({
     workspaceIds:['target'],
     records:{
       'conversations:target':items,[indexKey('target')]:normalized(items),
@@ -154,7 +155,7 @@ test('missing normalized detail is counted without exposing the missing conversa
   assert.equal(report.detailMissing,1);
   assert.equal(report.detailFidelityComplete,false);
   assert.equal(report.blocking,true);
-  assert.equal(JSON.stringify(report).includes('b'),false);
+  assert.equal(JSON.stringify(report).includes('secret-thread-omega'),false);
 });
 
 test('fleet detail dry run stays aggregate-only and can prove a complete batch migration-ready',async()=>{
