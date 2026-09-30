@@ -3032,8 +3032,9 @@ async function agent(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);
   if(!ws)return res.status(404).json({error:'Workspace not found'});
-  const saved=await kv.get('agent:'+s.workspaceId)||{};
-  const platform=await kv.get('platform:settings')||{};
+  const rawSaved=await kv.get('agent:'+s.workspaceId);
+  if(rawSaved!=null&&(!rawSaved||typeof rawSaved!=='object'||Array.isArray(rawSaved)))return res.status(503).json({error:'Receptionist configuration is unavailable. No default configuration was substituted.'});
+  const saved=rawSaved||{},platform=await kv.get('platform:settings')||{};
   return res.status(200).json({agent:{
     name:saved.name||platform.defaultAgentName||'Maya',
     role:saved.role||'AI Receptionist',
@@ -3054,10 +3055,12 @@ async function saveAgent(req,res){
   if(!await requireOperationalWorkspace(s,res))return;
   const body=req.body||{};
   const previous=await kv.get('agent:'+s.workspaceId)||null;
+  if(previous!=null&&(!previous||typeof previous!=='object'||Array.isArray(previous)))return res.status(503).json({error:'Receptionist configuration is unavailable. No changes were made.'});
   if(body.expectedUpdatedAt!==undefined&&Number(body.expectedUpdatedAt||0)!==Number(previous?.updatedAt||0))return res.status(409).json({error:'Receptionist settings changed since you opened them. Reload to load the latest version before retrying.',code:'CONFIG_CONFLICT'});
   const sectionFields={identity:['name','role','tone','openingMessage'],knowledge:['serviceArea','businessHours','transferNumber','emergencyInstructions'],qualification:['qualificationQuestions'],handling:['handlingInstructions']};
   if(body.section&&!sectionFields[body.section])return res.status(400).json({error:'Unknown receptionist section'});
   const incoming=body.section?{...(previous||{}),...Object.fromEntries(sectionFields[body.section].filter(key=>Object.hasOwn(body,key)).map(key=>[key,body[key]]))}:body;
+  if(Array.isArray(incoming.qualificationQuestions)&&incoming.qualificationQuestions.length>12)return res.status(409).json({error:'CallerCore supports up to 12 receptionist qualification questions. Remove a question before saving; no questions were changed.'});
   const clean=(v,n)=>String(v||'').trim().slice(0,n);
   const agent={
     ...(previous||{}),
@@ -3069,7 +3072,7 @@ async function saveAgent(req,res){
     businessHours:clean(incoming.businessHours,500),
     emergencyInstructions:clean(incoming.emergencyInstructions,1200),
     handlingInstructions:clean(incoming.handlingInstructions,1800),
-    qualificationQuestions:Array.isArray(incoming.qualificationQuestions)?incoming.qualificationQuestions.map(v=>clean(v,240)).filter(Boolean).slice(0,12):[],
+    qualificationQuestions:Array.isArray(incoming.qualificationQuestions)?incoming.qualificationQuestions.map(v=>clean(v,240)).filter(Boolean):[],
     transferNumber:clean(incoming.transferNumber,40),
     updatedAt:Math.max(Date.now(),Number(previous?.updatedAt||0)+1)
   };

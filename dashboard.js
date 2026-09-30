@@ -1181,7 +1181,7 @@ function setAgentEditing(section,{restore=false}={}){
   document.querySelectorAll('[data-agent-edit]').forEach(btn=>{btn.hidden=!!active;btn.disabled=!!active});
   document.querySelectorAll('[data-agent-save]').forEach(btn=>btn.hidden=btn.dataset.agentSave!==active);
   document.querySelectorAll('[data-agent-cancel]').forEach(btn=>btn.hidden=btn.dataset.agentCancel!==active);
-  const add=document.getElementById('addQuestionButton');if(add)add.hidden=active!=='qualification';
+  const add=document.getElementById('addQuestionButton');if(add){add.hidden=active!=='qualification';const count=Array.isArray(agentData?.qualificationQuestions)?agentData.qualificationQuestions.length:0;add.disabled=active==='qualification'&&count>=12;add.textContent=count>=12?'+ 12-question limit':'+ Add question';add.title=count>=12?'Remove a question before adding another.':''}
   renderQuestions();
 }
 function renderAgent(){
@@ -1325,7 +1325,7 @@ async function saveAutomation(){
 document.querySelectorAll('[data-agent-edit]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(btn.dataset.agentEdit)));
 document.querySelectorAll('[data-agent-cancel]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(false,{restore:true})));
 document.querySelectorAll('[data-agent-save]').forEach(btn=>btn.addEventListener('click',()=>saveAgent(btn.dataset.agentSave)));
-document.getElementById('addQuestionButton')?.addEventListener('click',()=>{if(activeAgentSection()!=='qualification')return;if(!agentData)agentData={...DEMO_AGENT,qualificationQuestions:[]};agentData.qualificationQuestions=agentData.qualificationQuestions||[];if(agentData.qualificationQuestions.length<12){agentData.qualificationQuestions.push('');renderQuestions()}});
+document.getElementById('addQuestionButton')?.addEventListener('click',()=>{if(activeAgentSection()!=='qualification')return;if(!agentData)agentData={...DEMO_AGENT,qualificationQuestions:[]};agentData.qualificationQuestions=agentData.qualificationQuestions||[];const status=document.getElementById('agentFormStatus');if(agentData.qualificationQuestions.length>=12){if(status){status.textContent='12-question limit reached. Remove a qualification question before adding another.';status.className='form-status-line'}return}agentData.qualificationQuestions.push('');renderQuestions();setAgentEditing('qualification')});
 document.getElementById('clientFeedbackHistoryRetry')?.addEventListener('click',()=>loadClientFeedback({silent:false}));
 document.getElementById('submitAgentFeedback')?.addEventListener('click',async()=>{const button=document.getElementById('submitAgentFeedback'),statusEl=document.getElementById('agentFeedbackStatus'),message=document.getElementById('agentFeedbackMessage'),category=document.getElementById('agentFeedbackCategory');const ok=await submitAiFeedback({source:'receptionist',category:category?.value||'other',message:message?.value||'',context:agentData?.name||'AI receptionist',button,statusEl});if(ok&&message)message.value=''});
 document.getElementById('drawerAiFeedbackButton')?.addEventListener('click',e=>openCallFeedbackModal(e.currentTarget.dataset.callId||activeCallId,e.currentTarget.dataset.callContext||''));
