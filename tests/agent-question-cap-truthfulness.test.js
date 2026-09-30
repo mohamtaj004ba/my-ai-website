@@ -24,3 +24,9 @@ test('client editor visibly disables and explains adding past the 12-question li
   assert.match(dashboard,/add\.disabled=active==='qualification'&&count>=12/);
   assert.match(dashboard,/Remove a qualification question before adding another/);
 });
+
+test('receptionist read refuses malformed platform defaults rather than falling back to Maya',()=>{
+  const start=api.indexOf('async function agent('),end=api.indexOf('\nasync function saveAgent(',start),block=api.slice(start,end);
+  assert.match(block,/Receptionist platform defaults are unavailable/);
+  assert.match(block,/No default receptionist configuration was substituted/);
+});

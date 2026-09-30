@@ -32,3 +32,9 @@ test('follow-up refresh preserves last-good state on malformed or failed respons
   assert.match(block,/preserving last good state/);
   assert.doesNotMatch(block,/catch[^}]*followupState=\{\}/);
 });
+
+test('follow-up mutations distinguish malformed call storage from a genuinely missing call',()=>{
+  const start=api.indexOf('async function followupUpdate('),end=api.indexOf('\nasync function ',start+1),block=api.slice(start,end);
+  assert.match(block,/Call history is unavailable\. Team follow-up state was not changed/);
+  assert.match(block,/calls!=null&&!Array\.isArray\(calls\)/);
+});

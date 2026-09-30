@@ -33,3 +33,9 @@ test('fallback loading preserves prior opened-call state when read-state refresh
   assert.doesNotMatch(dashboard,/catch\(_\)\{callViewedIds=new Set\(\)\}/);
   assert.match(dashboard,/catch\(_\)\{callViewedCoverage=\{\.\.\.callViewedCoverage,verified:false\}\}/);
 });
+
+test('marking a call opened fails closed when call history storage is malformed',()=>{
+  const start=api.indexOf('async function callViewedMark('),end=api.indexOf('\nasync function clientDashboardData(',start),block=api.slice(start,end);
+  assert.match(block,/Call history is unavailable\. Read state was not changed/);
+  assert.match(block,/calls!=null&&!Array\.isArray\(calls\)/);
+});

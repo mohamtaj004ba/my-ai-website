@@ -2608,8 +2608,9 @@ async function followupUpdate(req,res){
   if(!callId||!allowed.includes(status))return res.status(400).json({error:'Invalid team-status update'});
   const completionReason=String(body.completionReason||'').slice(0,80),completionNote=String(body.completionNote||'').trim().slice(0,160),completionReasons=['','customer_contacted','appointment_scheduled','estimate_sent','issue_resolved','no_longer_needed','other'];
   if(!completionReasons.includes(completionReason))return res.status(400).json({error:'Invalid completion outcome'});
-  const calls=await kv.get('calls:'+s.workspaceId)||[];
-  if(!Array.isArray(calls)||!calls.some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
+  const calls=await kv.get('calls:'+s.workspaceId);
+  if(calls!=null&&!Array.isArray(calls))return res.status(503).json({error:'Call history is unavailable. Team follow-up state was not changed.'});
+  if(!(calls||[]).some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
   const key='followup:state:'+s.workspaceId,rawState=await kv.get(key);
   if(rawState!=null&&(!rawState||typeof rawState!=='object'||Array.isArray(rawState)))return res.status(503).json({error:'Team follow-up history is unavailable. No changes were made.'});
   const base=rawState||{},next={...base},previous=base[callId]&&typeof base[callId]==='object'&&!Array.isArray(base[callId])?base[callId]:{};
@@ -3022,6 +3023,7 @@ async function workspace(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);
   if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||s.workspaceId)!==String(s.workspaceId))return res.status(503).json({error:'Workspace record could not be verified. No partial workspace summary was returned.'});
   return res.status(200).json({workspace:{
     id:ws.id,name:ws.name,plan:entitlementsFor(ws.plan).plan,status:ws.status,ownerEmail:ws.ownerEmail,
     usage:ws.usage||{minutes:0},createdAt:ws.createdAt
@@ -3032,6 +3034,7 @@ async function requireFeature(req,res,feature){
   const s=await requireSession(req,res);if(!s)return null;
   const ws=await kv.get('workspace:'+s.workspaceId);
   if(!ws)return res.status(404).json({error:'Workspace not found'}),null;
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||s.workspaceId)!==String(s.workspaceId))return res.status(503).json({error:'Workspace record could not be verified. Feature access was not evaluated.'}),null;
   const ent=entitlementsFor(ws.plan);
   if(!ent.features[feature])return res.status(403).json({error:'Upgrade required',feature}),null;
   return {session:s,workspace:ws,entitlements:ent};
@@ -3086,7 +3089,9 @@ async function agent(req,res){
   if(!ws)return res.status(404).json({error:'Workspace not found'});
   const rawSaved=await kv.get('agent:'+s.workspaceId);
   if(rawSaved!=null&&(!rawSaved||typeof rawSaved!=='object'||Array.isArray(rawSaved)))return res.status(503).json({error:'Receptionist configuration is unavailable. No default configuration was substituted.'});
-  const saved=rawSaved||{},platform=await kv.get('platform:settings')||{};
+  const rawPlatform=await kv.get('platform:settings');
+  if(rawPlatform!=null&&(!rawPlatform||typeof rawPlatform!=='object'||Array.isArray(rawPlatform)))return res.status(503).json({error:'Receptionist platform defaults are unavailable. No default receptionist configuration was substituted.'});
+  const saved=rawSaved||{},platform=rawPlatform||{};
   return res.status(200).json({agent:{
     name:saved.name||platform.defaultAgentName||'Maya',
     role:saved.role||'AI Receptionist',
@@ -3335,11 +3340,13 @@ async function saveSettings(req,res){
   if(settings.website&&!/^https?:\/\//i.test(settings.website))return res.status(400).json({error:'Website must begin with http:// or https://'});
   if(settings.logoDataUrl&&!/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(settings.logoDataUrl))return res.status(400).json({error:'Business logo must be a JPG, PNG, or WebP image'});
   const previous=await kv.get('settings:'+s.workspaceId)||null;
+  if(previous!=null&&(!previous||typeof previous!=='object'||Array.isArray(previous)))return res.status(503).json({error:'Business settings are unavailable. No changes were made.'});
   if(body.expectedUpdatedAt!=null&&Number(body.expectedUpdatedAt)!==Number(previous?.updatedAt||0))return res.status(409).json({error:'Settings changed since you opened this draft. Cancel and refresh before editing again.'});
   settings.updatedAt=Math.max(Date.now(),Number(previous?.updatedAt||0)+1);
   settings.aiAnsweringPaused=previous?.aiAnsweringPaused===true;settings.aiPauseFallbackNumber=previous?.aiPauseFallbackNumber||'';settings.aiPausedAt=Number(previous?.aiPausedAt||0);settings.aiPausedBy=previous?.aiPausedBy||'';
   const key='workspace:'+s.workspaceId,ws=await kv.get(key);
   if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||s.workspaceId)!==String(s.workspaceId))return res.status(503).json({error:'Workspace record is unavailable. Settings were not changed.'});
   const nextWorkspace={...ws,name:settings.businessName,ownerName:settings.contactName||ws.ownerName,industry:settings.industry||ws.industry,updatedAt:Date.now()};
   const updates=[{key:'settings:'+s.workspaceId,before:previous,after:settings},{key,before:ws,after:nextWorkspace}];
   const audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'settings_save',section:'settings',before:previous,after:settings,at:Date.now()};
@@ -3401,7 +3408,9 @@ async function callsViewed(req,res){
 async function callViewedMark(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
   const callId=String((req.body||{}).callId||'').slice(0,120);if(!callId)return res.status(400).json({error:'Call ID is required'});
-  const calls=await kv.get('calls:'+s.workspaceId)||[];if(!Array.isArray(calls)||!calls.some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
+  const calls=await kv.get('calls:'+s.workspaceId);
+  if(calls!=null&&!Array.isArray(calls))return res.status(503).json({error:'Call history is unavailable. Read state was not changed.'});
+  if(!(calls||[]).some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
   const key=callViewedKey(s.workspaceId,s.email);
   try{await addBoundedIds(kv,key,[callId],{limit:2000})}
   catch(err){console.error('call viewed state save failed',safeError(err));return res.status(503).json({error:'Could not save call read state. Refresh calls before retrying.'})}

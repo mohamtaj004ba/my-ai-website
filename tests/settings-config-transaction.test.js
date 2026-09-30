@@ -29,3 +29,9 @@ test('both settings read paths expose the revision used by the save contract',as
   const bundleContext=vm.createContext({savedSettings:saved,ws:{},s:{},platform:{},smsLive:false});
   vm.runInContext(bundle,bundleContext);assert.equal(vm.runInContext('settings.updatedAt',bundleContext),123);
 });
+
+test('settings save rejects malformed saved settings and workspace records before atomic writes',async()=>{
+  const block=source.slice(source.indexOf('async function saveSettings('),source.indexOf('async function aiAnsweringControl('));
+  assert.match(block,/Business settings are unavailable\. No changes were made/);
+  assert.match(block,/Workspace record is unavailable\. Settings were not changed/);
+});
