@@ -2563,8 +2563,9 @@ async function buildAdminNotifications(admin){
 }
 async function followups(req,res){
   const s=await requireSession(req,res);if(!s)return;
-  const state=await kv.get('followup:state:'+s.workspaceId)||{};
-  return res.status(200).json({state:state&&typeof state==='object'&&!Array.isArray(state)?state:{}});
+  const raw=await kv.get('followup:state:'+s.workspaceId);
+  if(raw!=null&&(!raw||typeof raw!=='object'||Array.isArray(raw)))return res.status(503).json({error:'Team follow-up history is unavailable. Previously loaded follow-ups should be preserved.'});
+  return res.status(200).json({state:raw||{},coverage:{verified:true}});
 }
 async function followupUpdate(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
@@ -2580,8 +2581,10 @@ async function followupUpdate(req,res){
   const key='followup:state:'+s.workspaceId,rawState=await kv.get(key);
   if(rawState!=null&&(!rawState||typeof rawState!=='object'||Array.isArray(rawState)))return res.status(503).json({error:'Team follow-up history is unavailable. No changes were made.'});
   const base=rawState||{},next={...base},previous=base[callId]&&typeof base[callId]==='object'&&!Array.isArray(base[callId])?base[callId]:{};
-  let notes=Array.isArray(previous.notes)?previous.notes.slice(-100):[];
-  if(previous.note&&String(previous.note).trim()&&!notes.some(n=>n&&n.text===previous.note))notes.unshift({id:'legacy',text:String(previous.note).slice(0,2000),at:Number(previous.updatedAt||0),by:previous.updatedBy||''});
+  if(previous.notes!=null&&!Array.isArray(previous.notes))return res.status(503).json({error:'Team note history is unavailable. No changes were made.'});
+  if(Array.isArray(previous.notes)&&previous.notes.length>100)return res.status(503).json({error:'Team note history exceeds the supported 100-note boundary. No changes were made.'});
+  let notes=Array.isArray(previous.notes)?previous.notes.slice():[];
+  if(previous.note&&String(previous.note).trim()&&!notes.some(n=>n&&n.text===previous.note)&&notes.length<100)notes.unshift({id:'legacy',text:String(previous.note).slice(0,2000),at:Number(previous.updatedAt||0),by:previous.updatedBy||''});
   if(legacyNote&&!appendNote&&!notes.length)notes.push({id:'legacy_'+Date.now(),text:legacyNote,at:Date.now(),by:s.email||''});
   let noteAction='';
   if(updateNoteId){
@@ -2591,8 +2594,10 @@ async function followupUpdate(req,res){
   }else if(deleteNoteId){
     const beforeCount=notes.length;notes=notes.filter(n=>String(n?.id||'')!==deleteNoteId);
     if(notes.length===beforeCount)return res.status(404).json({error:'Note not found'});noteAction='team_note_deleted';
-  }else if(appendNote){notes.push({id:'note_'+Date.now().toString(36),text:appendNote,at:Date.now(),by:s.email||''});noteAction='team_note_added'}
-  notes=notes.slice(-100);
+  }else if(appendNote){
+    if(notes.length>=100)return res.status(409).json({error:'This call already has the 100-note history limit. Delete an older note before adding another; no notes were changed.'});
+    notes.push({id:'note_'+Date.now().toString(36),text:appendNote,at:Date.now(),by:s.email||''});noteAction='team_note_added'
+  }
   const finalCompletionReason=status==='completed'?(body.completionReason!==undefined?completionReason:String(previous.completionReason||'')):'',finalCompletionNote=status==='completed'?(body.completionNote!==undefined?completionNote:String(previous.completionNote||'')):'';
   next[callId]={status,notes,completionReason:finalCompletionReason,completionNote:finalCompletionNote,updatedAt:Date.now(),updatedBy:s.email||''};
   const audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:noteAction||('team_status_'+status),section:'calls',before:previous||null,after:next[callId],meta:{callId,noteId:updateNoteId||deleteNoteId||''},at:Date.now()};
@@ -3376,6 +3381,7 @@ async function clientDashboardData(req,res){
     automations:ent.features.automations&&Array.isArray(automationsRaw)?automationsRaw:[],
     onboarding:onboardingRaw&&typeof onboardingRaw==='object'&&!Array.isArray(onboardingRaw)?clientOnboardingView(onboardingRaw):null,
     followupState:followupRaw&&typeof followupRaw==='object'&&!Array.isArray(followupRaw)?followupRaw:{},
+    followupCoverage:{verified:followupRaw==null||!!followupRaw&&typeof followupRaw==='object'&&!Array.isArray(followupRaw)},
     viewedCallIds:Array.isArray(viewedRaw)?viewedRaw.map(String).slice(-2000):[],
     viewedCallCoverage:{
       verified:viewedRaw==null||Array.isArray(viewedRaw),

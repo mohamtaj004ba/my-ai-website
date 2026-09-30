@@ -406,7 +406,8 @@ function applyClientDashboardData(data={}){
   appointmentsData=Array.isArray(data.appointments)?data.appointments:[];
   automationsData=Array.isArray(data.automations)?data.automations:[];
   sessionOnboarding=data.onboarding?{...(sessionOnboarding||{}),...data.onboarding}:sessionOnboarding;
-  followupState=data.followupState&&typeof data.followupState==='object'?data.followupState:{};
+  const followupCoverage=data.followupCoverage&&typeof data.followupCoverage==='object'?data.followupCoverage:{verified:false};
+  if(followupCoverage.verified===true&&data.followupState&&typeof data.followupState==='object'&&!Array.isArray(data.followupState))followupState=data.followupState;
   const viewedCoverage=data.viewedCallCoverage&&typeof data.viewedCallCoverage==='object'?data.viewedCallCoverage:{verified:false,limited:false,retained:0,limit:2000};
   callViewedCoverage={verified:viewedCoverage.verified===true,limited:viewedCoverage.limited===true,retained:Math.max(0,Number(viewedCoverage.retained||0)||0),limit:Math.max(1,Number(viewedCoverage.limit||2000)||2000)};
   if(callViewedCoverage.verified)callViewedIds=new Set((Array.isArray(data.viewedCallIds)?data.viewedCallIds:[]).map(String));
@@ -744,7 +745,11 @@ function followupLabel(type){return ({urgent:'Urgent',callback:'Callback / messa
 function followupCandidates(){return callsData.filter(callNeedsTeam).sort((a,b)=>recordTime(b)-recordTime(a))}
 async function loadFollowupState(){
   if(demoMode)return;
-  try{const r=await fetch('/api/account?action=followups',{headers:{Accept:'application/json'},cache:'no-store'});if(r.ok)followupState=(await r.json()).state||{}}catch(err){console.error('Follow-up state failed',err)}
+  try{
+    const r=await fetch('/api/account?action=followups',{headers:{Accept:'application/json'},cache:'no-store'}),data=await r.json().catch(()=>({}));
+    if(!r.ok||data.coverage?.verified!==true||!data.state||typeof data.state!=='object'||Array.isArray(data.state))throw new Error(data.error||'Invalid follow-up history response');
+    followupState=data.state;
+  }catch(err){console.error('Follow-up state failed; preserving last good state',err)}
 }
 function followupIsHandled(call){return teamStatusClosed(call)}
 function updateFollowupCounts(){
@@ -801,8 +806,8 @@ function resetNoteComposer(){
   if(input)input.value='';if(status)status.textContent='';if(save)save.textContent='Save note';if(cancel)cancel.hidden=true;if(composer)composer.hidden=true;
 }
 function renderCallNotes(id=activeCallId){
-  const list=document.getElementById('drawerNotesList'),count=document.getElementById('drawerNoteCount'),toggle=document.getElementById('drawerAddNoteToggle');if(!list)return;const notes=normalizedCallNotes(id);
-  if(count)count.textContent=notes.length+' note'+(notes.length===1?'':'s');const composer=document.getElementById('drawerInternalNote');if(composer)composer.placeholder=activeNoteEditId?'Update this internal note…':(notes.length?'Add another note for your team…':'Add a note for your team…');if(toggle)toggle.textContent=notes.length?'Add another':'Add note';
+  const list=document.getElementById('drawerNotesList'),count=document.getElementById('drawerNoteCount'),toggle=document.getElementById('drawerAddNoteToggle');if(!list)return;const notes=normalizedCallNotes(id),atLimit=notes.length>=100;
+  if(count)count.textContent=notes.length+' note'+(notes.length===1?'':'s');const composer=document.getElementById('drawerInternalNote'),noteStatus=document.getElementById('drawerNoteStatus');if(composer)composer.placeholder=activeNoteEditId?'Update this internal note…':(notes.length?'Add another note for your team…':'Add a note for your team…');if(toggle){toggle.textContent=atLimit?'100-note limit':notes.length?'Add another':'Add note';toggle.disabled=atLimit;toggle.title=atLimit?'Delete an older note before adding another. Older notes may have been removed by prior history limits.':''}if(atLimit&&noteStatus&&!activeNoteEditId)noteStatus.textContent='100-note history limit reached. Delete an older note before adding another; older notes may have been removed by prior history limits.';
   list.innerHTML=notes.length?notes.map(n=>'<article class="internal-note-card"><div class="internal-note-copy"><p>'+esc(n.text)+'</p><small>'+esc(n.by||'Team')+(n.at?' · '+new Date(Number(n.at)).toLocaleString():'')+'</small></div><div class="internal-note-actions"><button type="button" data-edit-call-note="'+esc(n.id)+'">Edit</button><button type="button" class="danger-link" data-delete-call-note="'+esc(n.id)+'">Delete</button></div></article>').join(''):'<div class="notes-empty compact">No internal notes yet.</div>';
   list.querySelectorAll('[data-edit-call-note]').forEach(btn=>btn.addEventListener('click',()=>startEditCallNote(btn.dataset.editCallNote)));
   list.querySelectorAll('[data-delete-call-note]').forEach(btn=>btn.addEventListener('click',()=>deleteCallNote(btn.dataset.deleteCallNote)));
@@ -814,7 +819,7 @@ function startEditCallNote(noteId){
 }
 async function saveCallNote(){
   const id=activeCallId;if(!id)return;const input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),text=String(input?.value||'').trim().slice(0,2000),current=followupState[String(id)]||{},call=callsData.find(x=>String(x.id)===String(id)),nextStatus=normalizedTeamStatusValue(current.status)||(call&&callNeedsTeam(call)?'needs_action':'no_action'),editId=activeNoteEditId;if(!text){if(status)status.textContent='Write a note first.';return}if(status)status.textContent='Saving…';
-  if(demoMode){let notes=normalizedCallNotes(id);if(editId)notes=notes.map(n=>String(n.id)===editId?{...n,text,editedAt:Date.now()}:n);else notes=[...notes,{id:'note_'+Date.now(),text,at:Date.now(),by:currentUserProfile.email||'Team'}];followupState[String(id)]={...current,status:nextStatus,notes,updatedAt:Date.now()};resetNoteComposer();renderCallNotes(id);return}
+  if(demoMode){let notes=normalizedCallNotes(id);if(!editId&&notes.length>=100){if(status)status.textContent='100-note history limit reached. Delete an older note before adding another.';return}if(editId)notes=notes.map(n=>String(n.id)===editId?{...n,text,editedAt:Date.now()}:n);else notes=[...notes,{id:'note_'+Date.now(),text,at:Date.now(),by:currentUserProfile.email||'Team'}];followupState[String(id)]={...current,status:nextStatus,notes,updatedAt:Date.now()};resetNoteComposer();renderCallNotes(id);return}
   try{const payload=editId?{callId:id,status:nextStatus,updateNoteId:editId,updateNoteText:text}:{callId:id,status:nextStatus,appendNote:text},r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save note');followupState=data.state||followupState;resetNoteComposer();renderCallNotes(id)}catch(err){if(status)status.textContent=err.message||'Could not save note'}
 }
 async function deleteCallNote(noteId){
