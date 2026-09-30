@@ -25,7 +25,7 @@ const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='
 let currentPlan=params.get('plan')||'Growth';if(!knownPlan(currentPlan))currentPlan='Growth';
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
-let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationRequest=0,notificationMode='unread',notificationLoadError='',notificationLastSyncAt=0,clientFeedbackData=[],clientFeedbackVisibleLimit=8,clientFeedbackLoadRequest=0,adminFeedbackData=[];
+let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationRequest=0,notificationMode='unread',notificationLoadError='',notificationLastSyncAt=0,notificationCoverage={limited:false,sources:[]},clientFeedbackData=[],clientFeedbackVisibleLimit=8,clientFeedbackLoadRequest=0,adminFeedbackData=[];
 let callsData=[],leadsData=[],conversationsData=[],conversationThreadsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',conversationPageTotal=0,conversationNextCursor=null,conversationPageLoading=false,conversationPageError='',conversationPageRequest=0,conversationBackendPaging=false,conversationSearchTimer=null,activeConversationId=null,activeCallContactKey='',activeCallId='',callDrawerOpenRequest=0,followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',contactHistoryVisibleLimit=50,contactHistoryLastSignature='',contactMessageSessionLimits={},contactHistoryHydratedKeys=new Set(),contactHistoryLoadingKeys=new Set(),pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
@@ -3973,6 +3973,7 @@ async function loadNotifications({silent=true}={}){
     if(!Array.isArray(data?.notifications)||!Number.isFinite(Number(data.unreadCount)))throw new Error('Notification response was incomplete');
     if(request===notificationRequest){
       notificationData=data.notifications;notificationUnreadCount=Math.max(0,Number(data.unreadCount));
+      notificationCoverage={limited:data.coverage?.limited===true,sources:Array.isArray(data.coverage?.sources)?data.coverage.sources.map(String).slice(0,8):[]};
       notificationLoadError='';notificationLastSyncAt=Date.now();
     }
   }catch(e){
@@ -3989,8 +3990,12 @@ function renderNotifications(){
   list.innerHTML=items.map(n=>'<button class="notification-item '+(n.read?'read':'unread')+'" data-notification-id="'+esc(n.id)+'"><span class="notification-dot '+esc(n.kind||'info')+'">'+notificationKindIcon(n.kind)+'</span><span class="notification-copy"><b>'+esc(n.title||'Notification')+'</b><span>'+esc(n.body||'')+'</span><small>'+formatNotificationTime(n.createdAt)+(n.read?' · Read':'')+'</small></span><span class="notification-open-cue">→</span></button>').join('');
   const sync=document.getElementById('notificationSyncStatus'),retry=document.getElementById('notificationRetry');
   if(sync){
+    const coverageWarning=!notificationLoadError&&notificationCoverage?.limited===true,
+      names={support:'Support',ai_feedback:'AI feedback',growth:'Growth',clients:'Clients'},
+      sourceText=(notificationCoverage?.sources||[]).map(x=>names[x]||String(x).replaceAll('_',' ')).join(', ');
     sync.classList.toggle('error',!!notificationLoadError);
-    sync.textContent=notificationLoadError||(notificationsLoading?'Refreshing…':notificationLastSyncAt?'Updated '+formatNotificationTime(notificationLastSyncAt):'Not refreshed yet');
+    sync.classList.toggle('warning',coverageWarning);
+    sync.textContent=notificationLoadError||(coverageWarning?'Updated '+formatNotificationTime(notificationLastSyncAt)+' · Alert scan bounded for '+sourceText+'. Open those pages for full history.':notificationsLoading?'Refreshing…':notificationLastSyncAt?'Updated '+formatNotificationTime(notificationLastSyncAt):'Not refreshed yet');
   }
   if(retry){retry.disabled=notificationsLoading;retry.textContent=notificationsLoading?'Refreshing…':'Refresh'}
   if(empty){
