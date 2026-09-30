@@ -11,12 +11,12 @@ function segment(start,end){
 }
 
 test('client configuration mutations require canonical response payloads before reporting success',()=>{
-  const agent=segment('async function saveAgent(','\nfunction feedbackStatusLabel(');
-  const feedback=segment('async function submitAiFeedback(','\nfunction openCallFeedbackModal(');
-  const automations=segment('async function persistAutomations(','\nasync function toggleAutomation(');
-  const webhook=segment('async function saveWebhook(','\nfunction settingsControlIds(');
-  const settings=segment('async function saveSettings(','\n\nfunction renderPhoneRouting(');
-  const locations=segment('async function persistLocations(','\nasync function saveLocation(');
+  const agent=segment('async function saveAgent(',"\nfunction feedbackStatusLabel(");
+  const feedback=segment('async function submitAiFeedback(',"\nfunction openCallFeedbackModal(");
+  const automations=segment('async function persistAutomations(',"\nasync function toggleAutomation(");
+  const webhook=segment('async function saveWebhook(',"\nfunction settingsControlIds(");
+  const settings=segment('async function saveSettings(',"\n\nfunction renderPhoneRouting(");
+  const locations=segment('async function persistLocations(',"\nasync function saveLocation(");
   assert.match(agent,/!data\.agent\|\|typeof data\.agent!=='object'\|\|Array\.isArray\(data\.agent\)/);
   assert.match(agent,/Object\.hasOwn\(data,'routing'\)/);
   assert.doesNotMatch(agent,/data\.agent\|\|next/);
@@ -33,9 +33,9 @@ test('client configuration mutations require canonical response payloads before 
 });
 
 test('follow-up and note mutations cannot accept a bare 200 response as confirmation',()=>{
-  const team=segment('async function persistTeamStatus(','\nfunction requestTeamStatusChange(');
-  const note=segment('async function saveCallNote(','\nasync function deleteCallNote(');
-  const del=segment('async function deleteCallNote(','\nasync function moveLead(');
+  const team=segment('async function persistTeamStatus(',"\nfunction requestTeamStatusChange(");
+  const note=segment('async function saveCallNote(',"\nasync function deleteCallNote(");
+  const del=segment('async function deleteCallNote(',"\nasync function moveLead(");
   for(const body of [team,note,del]){
     assert.match(body,/!data\.state\|\|typeof data\.state!=='object'\|\|Array\.isArray\(data\.state\)/);
     assert.match(body,/!data\.state\[String\(id\)\]\|\|typeof data\.state\[String\(id\)\]!=='object'/);
@@ -44,12 +44,12 @@ test('follow-up and note mutations cannot accept a bare 200 response as confirma
 });
 
 test('high-impact admin mutations verify returned record identity before changing local state',()=>{
-  const feedback=segment('async function updateAdminFeedback(','\n\nfunction renderWebsiteTrafficChart(');
-  const expenseSave=segment('async function saveExpense(','\nasync function deleteExpense(');
-  const expenseDelete=segment('async function deleteExpense(','\nfunction updateAdminRefreshStamp(');
-  const clientSave=segment('async function saveAdminClient(','\nasync function deleteAdminClient(');
-  const clientDelete=segment('async function deleteAdminClient(','\nasync function restoreAdminClient(');
-  const clientRestore=segment('async function restoreAdminClient(','\nasync function viewAdminClient(');
+  const feedback=segment('async function updateAdminFeedback(',"\n\nfunction renderWebsiteTrafficChart(");
+  const expenseSave=segment('async function saveExpense(',"\nasync function deleteExpense(");
+  const expenseDelete=segment('async function deleteExpense(',"\nfunction updateAdminRefreshStamp(");
+  const clientSave=segment('async function saveAdminClient(',"\nasync function deleteAdminClient(");
+  const clientDelete=segment('async function deleteAdminClient(',"\nasync function restoreAdminClient(");
+  const clientRestore=segment('async function restoreAdminClient(',"\nasync function viewAdminClient(");
   assert.match(feedback,/String\(data\.feedback\.id\|\|'\'\)!==key/);
   assert.match(expenseSave,/String\(data\.expense\.id\|\|'\'\)\.trim\(\)/);
   assert.match(expenseDelete,/String\(data\.deleted\.id\|\|'\'\)!==key/);
@@ -61,31 +61,44 @@ test('high-impact admin mutations verify returned record identity before changin
 
 test('successful mutation payload guards reject missing objects instead of dereferencing them',()=>{
   assert.doesNotMatch(source,/!data\.[A-Za-z0-9_]+&&typeof data\.[A-Za-z0-9_]+==='object'/);
-  const followup=segment('async function persistTeamStatus(','\nfunction requestTeamStatusChange(');
-  assert.match(followup,/!data\.state\|\|typeof data\.state!==['"]object['"]\|\|Array\.isArray\\(data\.state\)/);
-  const settings=segment('async function saveSettings(','\n\\nfunction renderPhoneRouting(');
-  assert.match(settings,/!data\.settings\|\|typeof data\.settings!==['"]object['"]\|\|Array\.isArray\\(data\.settings\)/);
-  const clients=segment('async function saveAdminClient(','\nasync function deleteAdminClient(');
-  assert.match(clients,/!data\.client\|\|typeof data\.client!==['"]object['"]\|\|Array\.isArray\\(data\.client\)/);
+  const followup=segment('async function persistTeamStatus(',"\nfunction requestTeamStatusChange(");
+  assert.match(followup,/!data\.state\|\|typeof data\.state!=='object'\|\|Array\.isArray\(data\.state\)/);
+  const settings=segment('async function saveSettings(',"\n\nfunction renderPhoneRouting(");
+  assert.match(settings,/!data\.settings\|\|typeof data\.settings!=='object'\|\|Array\.isArray\(data\.settings\)/);
+  const clients=segment('async function saveAdminClient(',"\nasync function deleteAdminClient(");
+  assert.match(clients,/!data\.client\|\|typeof data\.client!=='object'\|\|Array\.isArray\(data\.client\)/);
 });
 
-test('lead and appointment mutations require the canonical changed record from a successful response',()=>{
-  const lead=segment('async function moveLead(','\ndocument.getElementById(\'callSearch\')');
-  const appointment=segment('async function updateAppointment(','\ndocument.getElementById(\'conversationSearch\')');
+test('lead and appointment mutations require canonical changed records',()=>{
+  const lead=segment('async function moveLead(',"\ndocument.getElementById('callSearch')");
+  const appointment=segment('async function updateAppointment(',"\ndocument.getElementById('conversationSearch')");
   assert.doesNotMatch(lead,/expectedUpdatedAt/);
-  assert.match(lead,/data\.lead/);assert.match(lead,/String\(data\.lead\.id\|\|''\)!==String\(id\)/);assert.match(lead,/String\(data\.lead\.stage\|\|''\)!==String\(stage\)/);
-  assert.match(appointment,/data\.appointment/);assert.match(appointment,/String\(data\.appointment\.id\|\|''\)!==String\(id\)/);assert.match(appointment,/String\(data\.appointment\.status\|\|''\)!==String\(status\)/);
+  assert.match(lead,/data\.updated!==true\|\|!data\.lead/);
+  assert.match(lead,/String\(data\.lead\.id\|\|'\'\)!==String\(id\)/);
+  assert.match(lead,/String\(data\.lead\.stage\|\|'\'\)!==String\(stage\)/);
+  assert.match(appointment,/data\.updated!==true\|\|!data\.appointment/);
+  assert.match(appointment,/String\(data\.appointment\.id\|\|'\'\)!==String\(id\)/);
+  assert.match(appointment,/String\(data\.appointment\.status\|\|'\'\)!==String\(status\)/);
 });
 
 test('malformed 200 lead and appointment responses roll optimistic UI changes back',async()=>{
   const renders=[];
-  const leadCtx=vm.createContext({leadsData:[{id:'lead-1',stage:'New'}],demoMode:false,renderLeads:()=>renders.push('lead'),fetch:async()=>({ok:true,json:async()=>({updated:true})}),console:{error(){}},String,Object,Array,JSON,Error});
-  vm.runInContext(segment('async function moveLead(','\ndocument.getElementById(\'callSearch\')'),leadCtx);
+  const leadCtx=vm.createContext({
+    leadsData:[{id:'lead-1',stage:'New'}],demoMode:false,renderLeads:()=>renders.push('lead'),
+    fetch:async()=>({ok:true,json:async()=>({updated:true})}),console:{error(){}},
+    String,Object,Array,JSON,Error
+  });
+  vm.runInContext(segment('async function moveLead(',"\ndocument.getElementById('callSearch')"),leadCtx);
   await vm.runInContext("moveLead('lead-1','Qualified')",leadCtx);
   assert.equal(leadCtx.leadsData[0].stage,'New');
+
   const alerts=[];
-  const apptCtx=vm.createContext({appointmentsData:[{id:'appt-1',status:'Scheduled'}],demoMode:false,renderAppointments:()=>renders.push('appt'),fetch:async()=>({ok:true,json:async()=>({updated:true})}),alert:m=>alerts.push(m),String,Object,Array,JSON,Error});
-  vm.runInContext(segment('async function updateAppointment(','\ndocument.getElementById(\'conversationSearch\')'),apptCtx);
+  const apptCtx=vm.createContext({
+    appointmentsData:[{id:'appt-1',status:'Scheduled'}],demoMode:false,renderAppointments:()=>renders.push('appt'),
+    fetch:async()=>({ok:true,json:async()=>({updated:true})}),alert:m=>alerts.push(m),
+    String,Object,Array,JSON,Error
+  });
+  vm.runInContext(segment('async function updateAppointment(',"\ndocument.getElementById('conversationSearch')"),apptCtx);
   await vm.runInContext("updateAppointment('appt-1','Completed')",apptCtx);
   assert.equal(apptCtx.appointmentsData[0].status,'Scheduled');
   assert.ok(alerts.some(message=>/incomplete/i.test(message)));
@@ -93,16 +106,20 @@ test('malformed 200 lead and appointment responses roll optimistic UI changes ba
 
 test('automation and location saves preserve local records on malformed successful responses',async()=>{
   const alerts=[];
-  const autoCtx=vm.createContext({demoMode:false,automationsData:[{id:'existing'}],fetch:async()=>({ok:true,json:async()=>({})}),alert:m=>alerts.push(m),Array});
-  vm.runInContext(segment('async function persistAutomations(','\nasync function toggleAutomation('),autoCtx);
+  const autoCtx=vm.createContext({
+    demoMode:false,automationsData:[{id:'existing'}],
+    fetch:async()=>({ok:true,json:async()=>({})}),alert:m=>alerts.push(m),Array
+  });
+  vm.runInContext(segment('async function persistAutomations(',"\nasync function toggleAutomation("),autoCtx);
   assert.equal(await vm.runInContext('persistAutomations()',autoCtx),false);
   assert.equal(autoCtx.automationsData[0].id,'existing');
 
   const locationCtx=vm.createContext({
-    locationsData:[{id:'existing'}],locationsLimit:3,fetch:async()=>({ok:true,json:async()=>({locations:null,limit:3})}),
+    locationsData:[{id:'existing'}],locationsLimit:3,
+    fetch:async()=>({ok:true,json:async()=>({locations:null,limit:3})}),
     alert:m=>alerts.push(m),renderLocations:()=>{},Number,Array
   });
-  vm.runInContext(segment('async function persistLocations(','\nasync function saveLocation('),locationCtx);
+  vm.runInContext(segment('async function persistLocations(',"\nasync function saveLocation("),locationCtx);
   assert.equal(await vm.runInContext("persistLocations([{id:'new'}])",locationCtx),false);
   assert.equal(locationCtx.locationsData[0].id,'existing');
   assert.equal(locationCtx.locationsLimit,3);
