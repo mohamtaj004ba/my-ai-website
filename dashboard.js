@@ -1704,6 +1704,7 @@ document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{
 
 let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
 let adminRetentionData=null,adminRetentionCheckedAt=0,adminRetentionLoadError='';
+let adminConversationMigrationData=null,adminConversationMigrationLoadError='';
 let adminProvisioningStagePending=new Set(),adminOnboardingInvitePending=new Set();
 let adminMonthlyKpiStatus=null;
 async function refreshAdminMonthlyKpi(){
@@ -1825,7 +1826,7 @@ async function adminSyncFetch(key,url,{ttl=45000,force=false}={}){
       health:['services'],fleet:['agents','automations'],support:['tickets'],feedback:['feedback'],
       campaigns:['campaigns']};
     const requiredObjects={summary:'summary',platform:'settings',website:'analytics',
-      finance:'finance',documents:'documents',retention:'report'};
+      finance:'finance',documents:'documents',retention:'report',conversationMigration:'report'};
     if(!data||typeof data!=='object'||Array.isArray(data)||
        requiredLists[key]&&!requiredLists[key].every(field=>Array.isArray(data[field]))||
        requiredObjects[key]&&(!data[requiredObjects[key]]||typeof data[requiredObjects[key]]!=='object'||Array.isArray(data[requiredObjects[key]]))||
@@ -1840,7 +1841,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   if(document.body.dataset.dashboard!=='admin')return;
   if(view==='inbox'){await loadAdminInbox({silent:true,force});return}
   if(announce)setAdminSyncState('syncing','Syncing '+String(view||'overview').replaceAll('-',' ')+'…');
-  const jobs=[],add=(key,url,ttl,apply)=>{const websiteRequest=adminWebsiteAnalyticsRequest,websitePending=key==='website'&&adminWebsiteAnalyticsLoading;jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;}if(data){if(key==='finance'&&!data.finance||key==='website'&&!data.analytics)throw new Error('Incomplete '+key+' response');apply(data)}}).catch(err=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;} if(key==='finance'||key==='website'||key==='retention')delete adminDataSyncAt[adminSyncCacheKey(key,url)];if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';if(key==='website')adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.';if(key==='retention')adminRetentionLoadError='Retention dry-run could not refresh; previously loaded report may be outdated.';throw err}));};
+  const jobs=[],add=(key,url,ttl,apply)=>{const websiteRequest=adminWebsiteAnalyticsRequest,websitePending=key==='website'&&adminWebsiteAnalyticsLoading;jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;}if(data){if(key==='finance'&&!data.finance||key==='website'&&!data.analytics)throw new Error('Incomplete '+key+' response');apply(data)}}).catch(err=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;} if(key==='finance'||key==='website'||key==='retention'||key==='conversationMigration')delete adminDataSyncAt[adminSyncCacheKey(key,url)];if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';if(key==='website')adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.';if(key==='retention')adminRetentionLoadError='Retention dry-run could not refresh; previously loaded report may be outdated.';if(key==='conversationMigration')adminConversationMigrationLoadError='Conversation migration dry-run could not refresh; previously loaded report may be outdated.';throw err}));};
   if(view==='overview'||view==='clients'){
     add('summary','/api/account?action=admin-summary',30000,d=>{adminSummaryData=d.summary||{}});
     add('clients','/api/account?action=admin-clients',30000,d=>{adminClientsData=d.clients||[]});
@@ -1874,6 +1875,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   }else if(view==='health'){
     add('health','/api/account?action=admin-system-health',120000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
     add('retention','/api/account?action=admin-retention-report',120000,d=>{adminRetentionData=d.report||null;adminRetentionCheckedAt=Number(d.report?.generatedAt||Date.now());adminRetentionLoadError=''});
+    add('conversationMigration','/api/account?action=admin-conversation-migration-report&limit=100',120000,d=>{adminConversationMigrationData=d.report||null;adminConversationMigrationLoadError=''});
   }else if(view==='platform-settings'){
     if(!adminPlatformDirty)add('platform','/api/account?action=admin-platform-settings',60000,d=>{adminPlatformData=d.settings||adminPlatformData});
   }
@@ -2938,6 +2940,7 @@ function renderRetentionReport(){
   panel.classList.remove('is-warning','is-error');
   if(!report){
     set('retentionProspectCandidates','—');set('retentionRawEvents','—');set('retentionSessionIndex','—');set('retentionRollupStatus','—');set('retentionRollupMeta','Awaiting report');
+    set('conversationMigrationStatus',adminConversationMigrationLoadError?'Unavailable':'—');set('conversationMigrationMeta',adminConversationMigrationLoadError||'Migration dry run not checked');
     if(status){status.textContent=adminRetentionLoadError?'Unavailable':'Not checked';status.className='tag '+(adminRetentionLoadError?'red':'amber')}
     if(note)note.textContent=adminRetentionLoadError||'Open System Health or run checks to generate the current dry-run report.';
     if(adminRetentionLoadError)panel.classList.add('is-error');
@@ -2952,6 +2955,17 @@ function renderRetentionReport(){
   const schedulerLabel=rollups.schedulerState==='active'?'scheduled':rollups.schedulerState==='misconfigured'?'scheduler misconfigured':'scheduler disabled',
     previousLabel=rollups.previousMonth?(rollups.previousMonth+' '+(rollups.previousFinalized?'finalized':'not finalized')):'prior month unknown';
   set('retentionRollupMeta',rollups.currentMonth?(rollups.currentMonth+(rollups.stale?' · stale':'')+' · '+previousLabel+' · '+schedulerLabel):'Current month');
+  const migration=adminConversationMigrationData,mc=migration?.counts||{};
+  if(!migration){
+    set('conversationMigrationStatus',adminConversationMigrationLoadError?'Unavailable':'Not checked');
+    set('conversationMigrationMeta',adminConversationMigrationLoadError||'Migration dry run not checked');
+  }else{
+    const migrationLabel=migration.status==='error'?Number(migration.blockingWorkspaces||0)+' blocker'+(Number(migration.blockingWorkspaces||0)===1?'':'s'):
+      Number(migration.migrationCandidates||0)>0?Number(migration.migrationCandidates||0)+' legacy-only':'Aligned';
+    set('conversationMigrationStatus',migrationLabel);
+    set('conversationMigrationMeta',Number(migration.scanned||0)+' of '+Number(migration.totalWorkspaces||0)+' workspaces scanned'+(migration.complete?'':' · partial')+
+      ' · '+Number(mc.aligned||0)+' aligned · '+Number(mc.legacyOnly||0)+' candidates');
+  }
   const state=report.status==='error'?'error':report.status==='warning'?'warning':'ok';
   if(state!=='ok')panel.classList.add('is-'+state);
   if(status){status.textContent=state==='error'?'Needs review':state==='warning'?'Review needed':'Read-only checks clear';status.className='tag '+(state==='error'?'red':state==='warning'?'amber':'green')}
@@ -2969,6 +2983,12 @@ function renderRetentionReport(){
   if(rollups.schedulerState==='misconfigured')issues.push('Analytics maintenance is enabled but the cron secret is not configured');
   else if(rollups.schedulerState==='disabled')issues.push('Analytics maintenance cadence is configured in code but remains intentionally disabled');
   if(rollups.previousMonth&&rollups.previousFinalized===false)issues.push(rollups.previousMonth+' has no verified month-end finalization marker yet');
+  if(adminConversationMigrationLoadError)issues.push(adminConversationMigrationLoadError);
+  else if(migration){
+    if(Number(migration.blockingWorkspaces||0)>0)issues.push(Number(migration.blockingWorkspaces||0)+' conversation workspace'+(Number(migration.blockingWorkspaces||0)===1?' has':'s have')+' migration drift, malformed data, or no legacy rollback source');
+    if(Number(migration.migrationCandidates||0)>0)issues.push(Number(migration.migrationCandidates||0)+' conversation workspace'+(Number(migration.migrationCandidates||0)===1?' remains':'s remain')+' legacy-only migration candidates');
+    if(migration.complete===false)issues.push('Conversation migration dry run is partial: '+Number(migration.scanned||0)+' of '+Number(migration.totalWorkspaces||0)+' workspaces scanned');
+  }
   if(adminRetentionLoadError)issues.push(adminRetentionLoadError);
   const checked=adminRetentionCheckedAt?' Checked '+new Date(adminRetentionCheckedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+'.':'';
   if(note)note.textContent=(issues.length?issues.join(' · '):'No retention-policy data gaps were detected by this read-only report.')+checked+' No records were changed; prospect cleanup and session compaction remain disabled.';
