@@ -1702,7 +1702,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{res
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:'',aliasError:'',readError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
 let adminSupportCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},adminFeedbackCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},adminSupportLoadError='',adminFeedbackLoadError='';
 let adminRetentionData=null,adminRetentionCheckedAt=0,adminRetentionLoadError='';
 let adminConversationMigrationData=null,adminConversationMigrationLoadError='';
@@ -2314,7 +2314,7 @@ async function loadAdminInbox({silent=false,force=false}={}){
     if(sr.ok){const status=await sr.json().catch(()=>null);if(status&&typeof status==='object'&&!Array.isArray(status)&&typeof status.connected==='boolean')adminInboxData.gmailStatus=status}
     if(!adminInboxData.gmailStatus.connected){
       adminSearchInboxRequest++;adminSearchInboxCacheLoaded=true;adminSearchInboxLoading=false;adminSearchInboxCacheError=false;
-      adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;adminInboxData.liveError='';adminInboxData.loading=false;
+      adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;adminInboxData.liveError='';adminInboxData.aliasError='';adminInboxData.readError='';adminInboxData.loading=false;
       if(currentInboxItem?.kind==='gmail'){currentInboxItem=null;renderInboxThread()}
       if(auto)auto.textContent='Gmail disconnected';
       if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}renderAdminInbox();
@@ -2363,11 +2363,17 @@ async function refreshAdminInboxLive({silent=true,force=false}={}){
     if(!d||!Array.isArray(d.threads))throw new Error('Incomplete Gmail inbox');
     adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||Date.now());
     adminInboxData.liveError=d.stale===true?String(d.warning||'Gmail refresh failed').slice(0,160):'';
-    if(!(adminInboxData.aliases||[]).length){
-      const ar=await fetch('/api/account?action=admin-gmail-aliases',{headers:{Accept:'application/json'},cache:'no-store'});
+    if(d.stale!==true)adminInboxData.readError='';
+    const ar=await fetch('/api/account?action=admin-gmail-aliases',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false}));
+    if(adminInboxData.gmailStatus?.connected===false)return;
+    if(ar.ok){
+      const aliasPayload=await ar.json().catch(()=>null);
       if(adminInboxData.gmailStatus?.connected===false)return;
-      if(ar.ok){const d=await ar.json();if(adminInboxData.gmailStatus?.connected===false)return;if(Array.isArray(d.aliases))adminInboxData.aliases=d.aliases}
-    }
+      if(aliasPayload&&Array.isArray(aliasPayload.aliases)){
+        adminInboxData.aliases=aliasPayload.aliases;
+        adminInboxData.aliasError=aliasPayload.stale===true?'Gmail sender aliases could not refresh; cached From addresses are shown.':'';
+      }else adminInboxData.aliasError='Gmail sender aliases could not be verified; previously loaded From addresses are shown.';
+    }else adminInboxData.aliasError='Gmail sender aliases could not refresh; previously loaded From addresses are shown.';
     if(adminInboxData.gmailStatus?.connected===false)return;
     renderAdminInbox();
     if(currentInboxItem?.kind==='gmail'){
@@ -2404,7 +2410,8 @@ function renderAdminInbox(){
   if(copy){
     const coverage=adminInboxData.gmail?.coverage||{},loaded=Number(coverage.loadedThreads??gmail.length),estimated=Number(coverage.estimatedThreads),
       coverageText=coverage.verified!==true?' Gmail search coverage is not verified yet; refresh to confirm the current 30-day view.':coverage.limited===true?(' Only '+loaded+(Number.isFinite(estimated)&&estimated>loaded?' of about '+estimated:'')+' matching Gmail threads are loaded; use Gmail for older or additional matching mail.'):' Gmail coverage for the loaded 30-day query is verified.';
-    copy.textContent=st.connected?('Connected as '+(st.gmailEmail||'Gmail')+'. '+Number(ga.inbound||0)+' received · '+Number(ga.outbound||0)+' sent in the loaded 30-day view. Threads remain in Google and sync into this inbox.'+coverageText):st.configured?'Authorize the Gmail account you want CallerCore Admin to use.':'Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY in Vercel before connecting.';
+    const syncWarnings=[adminInboxData.aliasError,adminInboxData.readError].filter(Boolean).join(' ');
+    copy.textContent=st.connected?('Connected as '+(st.gmailEmail||'Gmail')+'. '+Number(ga.inbound||0)+' received · '+Number(ga.outbound||0)+' sent in the loaded 30-day view. Threads remain in Google and sync into this inbox.'+coverageText+(syncWarnings?' '+syncWarnings:'')):st.configured?'Authorize the Gmail account you want CallerCore Admin to use.':'Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY in Vercel before connecting.';
   }
   if(aliasList)aliasList.innerHTML=(adminInboxData.aliases||[]).map(a=>'<span class="gmail-alias-chip '+(a.inboundSeen?'ok':'warn')+'"><b>'+esc(a.email)+'</b><small>'+(a.isPrimary?'Primary':(a.verificationStatus==='accepted'?'Send as verified':'Pending'))+' · '+(a.inboundSeen?'Inbound seen':'No inbound seen yet')+'</small></span>').join('');
   let items=[...website,...gmail].sort((a,b)=>b.at-a.at);
@@ -2427,12 +2434,17 @@ async function openInboxItem(kind,id){
     const thread=(adminInboxData.gmail?.threads||[]).find(x=>x.id===id);if(!thread)return;
     currentInboxItem={kind,id,thread,prospect:thread.prospect||null,messages:thread.messages||[]};
     if(thread.unread){
-      thread.unread=false;if(adminInboxData.gmail?.analytics?.unread>0)adminInboxData.gmail.analytics.unread--;
       fetch('/api/account?action=admin-gmail-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({threadId:id})}).then(r=>{
-        if(r.ok)return;
-        thread.unread=true;if(adminInboxData.gmail?.analytics)adminInboxData.gmail.analytics.unread=Number(adminInboxData.gmail.analytics.unread||0)+1;renderAdminInbox();
+        if(!r.ok)throw new Error('Gmail read sync failed');
+        if(adminInboxData.gmailStatus?.connected===false)return;
+        const current=(adminInboxData.gmail?.threads||[]).find(item=>String(item.id)===String(id));
+        if(current?.unread)current.unread=false;
+        if(adminInboxData.gmail?.analytics)adminInboxData.gmail.analytics.unread=(adminInboxData.gmail?.threads||[]).filter(item=>item?.unread).length;
+        adminInboxData.readError='';renderAdminInbox();
       }).catch(()=>{
-        thread.unread=true;if(adminInboxData.gmail?.analytics)adminInboxData.gmail.analytics.unread=Number(adminInboxData.gmail.analytics.unread||0)+1;renderAdminInbox();
+        if(adminInboxData.gmailStatus?.connected===false)return;
+        adminInboxData.readError='Could not mark this Gmail thread as read in Gmail; it remains unread.';
+        renderAdminInbox();
       });
     }
   }
@@ -2541,7 +2553,7 @@ async function disconnectGmailAdmin(){
     if(!r.ok)throw new Error('Could not disconnect Gmail');
     adminInboxData.gmailStatus={...adminInboxData.gmailStatus,connected:false,gmailEmail:''};
     adminSearchInboxRequest++;adminSearchInboxCacheLoaded=true;adminSearchInboxLoading=false;adminSearchInboxCacheError=false;
-    adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;adminInboxData.liveError='';
+    adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;adminInboxData.liveError='';adminInboxData.aliasError='';adminInboxData.readError='';
     currentInboxItem=null;renderInboxThread();renderAdminInbox();
     const search=document.getElementById('adminSearch');
     if(search&&String(search.value||'').trim().length>=2)renderAdminGlobalSearch();
