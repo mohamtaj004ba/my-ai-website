@@ -105,3 +105,13 @@ test('absent notification indexes are treated as empty rather than unavailable',
   assert.equal(result.coverage.limited,false);
   assert.deepEqual(Array.from(result.coverage.sources),[]);
 });
+
+test('missing or malformed indexed notification records mark their source unavailable',()=>{
+  assert.match(builder,/feedbackRecordUnavailable=true/);
+  assert.match(builder,/supportRecordUnavailable=true/);
+  assert.match(builder,/workspaceRecordUnavailable=true/);
+  assert.match(builder,/growthRecordUnavailable=true/);
+  assert.match(builder,/onboardingRecordUnavailable=true/);
+  assert.match(builder,/gmailSummaryUnavailable=true/);
+  assert.match(builder,/gmail_unavailable/);
+});

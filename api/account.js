@@ -2523,20 +2523,24 @@ async function buildClientNotifications(s){
     const id=String(x.id||x.callId||x.phone||i),at=Number(x.createdAt||x.at||x.timestamp||Date.now());
     items.push(notificationItem('call:'+id+':missed',{title:'Missed call',body:(x.caller||x.phone||'A caller')+' disconnected or ended before CallerCore could complete the intake.',kind:'warning',view:'calls',createdAt:at,meta:{callId:id}}));
   });
+  let supportRecordUnavailable=false;
   for(const id of Array.isArray(index)?index.slice(0,100):[]){
-    const t=await kv.get('support:'+id);if(!t||t.workspaceId!==ws.id)continue;
+    const t=await kv.get('support:'+id);
+    if(!t||typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==String(id)){supportRecordUnavailable=true;continue}
+    if(t.workspaceId!==ws.id)continue;
     if(prefs.support&&t.updatedAt&&t.updatedAt>t.createdAt){
       items.push(notificationItem('support:'+t.id+':'+t.status+':'+t.updatedAt,{title:'Support request updated',body:'“'+t.subject+'” is now '+String(t.status||'').replace('_',' ')+'.',kind:t.status==='resolved'?'success':'info',view:'support',createdAt:t.updatedAt,meta:{ticketId:t.id}}));
     }
   }
+  const feedbackRecordUnavailable=Array.isArray(feedbackIndex)&&feedbackIndex.slice(0,20).some(id=>!feedbackItems.some(f=>f&&String(f.id||'')===String(id)));
   const sources=[];
   if(!settingsValid)sources.push('settings_unavailable');
   if(!onboardingValid)sources.push('onboarding_unavailable');
   if(!agentValid)sources.push('agent_unavailable');
   if(!numbersValid)sources.push('phone_unavailable');
   if(!callsValid)sources.push('calls_unavailable');
-  if(index!=null&&!Array.isArray(index))sources.push('support_unavailable');else if(Array.isArray(index)&&index.length>100)sources.push('support');
-  if(feedbackIndex!=null&&!Array.isArray(feedbackIndex))sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>20)sources.push('ai_feedback');
+  if(index!=null&&!Array.isArray(index)||supportRecordUnavailable)sources.push('support_unavailable');else if(Array.isArray(index)&&index.length>100)sources.push('support');
+  if(feedbackIndex!=null&&!Array.isArray(feedbackIndex)||feedbackRecordUnavailable)sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>20)sources.push('ai_feedback');
   return {items,coverage:{limited:sources.length>0,sources}};
 }
 async function buildAdminNotifications(admin){
@@ -2549,13 +2553,14 @@ async function buildAdminNotifications(admin){
   const [supportIndex,workspaceIndex,prospectIdsRaw,gmailConn,feedbackIndex]=await Promise.all([
     kv.get('support:index'),kv.get('workspace:index'),kv.lrange('site:prospect:index',0,100),getGmailConnection(admin.email),kv.get('ai-feedback:index')
   ]),prospectIds=Array.isArray(prospectIdsRaw)?prospectIdsRaw.slice(0,100):[];
-  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!alerts.clientCare||!f||f.status!=='submitted')continue;const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'client-care',createdAt:f.createdAt||now,meta:{feedbackId:f.id,workspaceId:f.workspaceId||'',careTab:'feedback'}}));}
+  let feedbackRecordUnavailable=false,supportRecordUnavailable=false,workspaceRecordUnavailable=false,onboardingRecordUnavailable=false,growthRecordUnavailable=false,gmailSummaryUnavailable=false;
+  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!f||typeof f!=='object'||Array.isArray(f)||String(f.id||'')!==String(id)){feedbackRecordUnavailable=true;continue}if(!alerts.clientCare||f.status!=='submitted')continue;const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'client-care',createdAt:f.createdAt||now,meta:{feedbackId:f.id,workspaceId:f.workspaceId||'',careTab:'feedback'}}));}
   for(const id of Array.isArray(supportIndex)?supportIndex.slice(0,100):[]){
-    const t=await kv.get('support:'+id);if(!alerts.clientCare||!t||t.status==='resolved')continue;
+    const t=await kv.get('support:'+id);if(!t||typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==String(id)){supportRecordUnavailable=true;continue}if(!alerts.clientCare||t.status==='resolved')continue;
     items.push(notificationItem('admin-support:'+t.id+':'+t.status,{title:(t.priority==='urgent'?'Urgent support request':'Client support request'),body:(t.workspaceName||'Client')+' · '+t.subject,kind:t.priority==='urgent'?'danger':'warning',view:'client-care',createdAt:t.updatedAt||t.createdAt||now,meta:{ticketId:t.id,careTab:'support'}}));
   }
   for(const id of Array.isArray(workspaceIndex)?workspaceIndex.slice(0,300):[]){
-    const ws=await kv.get('workspace:'+id);if(!ws)continue;
+    const ws=await kv.get('workspace:'+id);if(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(id)){workspaceRecordUnavailable=true;continue}
     if(alerts.billing&&ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'finance',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
     if(ws.status==='suspended')items.push(notificationItem('admin-workspace:'+id+':suspended',{title:'Client workspace suspended',body:(ws.name||'Client')+' is currently suspended.',kind:'warning',view:'clients',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
     const plan=entitlementsFor(ws.plan),usage=Number(ws.usage?.minutes||0);
@@ -2563,17 +2568,24 @@ async function buildAdminNotifications(admin){
       const pct=Math.round((usage/plan.minutes)*100),threshold=pct>=100?100:pct>=85?85:0;
       if(threshold)items.push(notificationItem('admin-usage:'+id+':'+threshold,{title:(ws.name||'Client')+' usage at '+Math.min(pct,100)+'%',body:usage+' of '+plan.minutes+' included minutes used. Review usage; no overage policy is implied by this notice.',kind:threshold>=100?'danger':'warning',view:'clients',createdAt:ws.updatedAt||now,meta:{workspaceId:id,usage,limit:plan.minutes,threshold}}));
     }
-    const onboarding=await kv.get('onboarding:workspace:'+id);
-    if(alerts.onboarding&&onboarding?.status==='awaiting_review'){
+    const onboarding=await kv.get('onboarding:workspace:'+id),onboardingValid=onboarding==null||!!onboarding&&typeof onboarding==='object'&&!Array.isArray(onboarding);
+    if(!onboardingValid)onboardingRecordUnavailable=true;
+    if(alerts.onboarding&&onboardingValid&&onboarding?.status==='awaiting_review'){
       const eligible=Number(onboarding.reviewEligibleAt||0)<=now;
       items.push(notificationItem('admin-onboarding:'+id+':account-review',{title:eligible?'Paid client ready for onboarding review':'New paid client in review hold',body:(ws.name||'Client')+(eligible?' is ready for account review and onboarding approval.':' has paid. The onboarding invite will become eligible during business hours.'),kind:eligible?'warning':'info',view:'onboarding',createdAt:onboarding.paidAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
     }
-    if(alerts.onboarding&&onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview){
+    if(alerts.onboarding&&onboardingValid&&onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview){
       const eligible=Number(onboarding.buildEligibleAt||0)<=now;
       items.push(notificationItem('admin-onboarding:'+id+':build-review',{title:eligible?'Build ready for QA review':'Build in QA hold',body:(ws.name||'Client')+' submitted intake and has an AI-agent draft '+(eligible?'ready for review.':'waiting for the review window.'),kind:eligible?'warning':'info',view:'onboarding',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now,meta:{workspaceId:id}}));
     }
   }
-  const prospectList=(await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,100).map(id=>kv.get('site:prospect:'+id)))).filter(p=>p&&p.privacyState!=='deidentified');
+  const prospectRecords=await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,100).map(id=>kv.get('site:prospect:'+id)));
+  const prospectList=[];
+  for(let i=0;i<prospectRecords.length;i++){
+    const p=prospectRecords[i],id=prospectIds[i];
+    if(!p||typeof p!=='object'||Array.isArray(p)||String(p.id||'')!==String(id)){growthRecordUnavailable=true;continue}
+    if(p.privacyState!=='deidentified')prospectList.push(p);
+  }
   if(alerts.prospects)prospectList.filter(p=>['new','inquiry','checkout_started'].includes(p.stage)).slice(0,25).forEach(p=>{
     const title=p.stage==='checkout_started'?'Signup checkout started':'New website inquiry';
     items.push(notificationItem('prospect:'+p.id+':'+p.stage,{title,body:(p.name||p.business||p.email||'Website prospect')+(p.plan?' · '+p.plan:''),kind:'info',view:'growth',createdAt:p.updatedAt||p.createdAt||now,meta:{prospectId:p.id}}));
@@ -2581,16 +2593,20 @@ async function buildAdminNotifications(admin){
   if(gmailConn){
     try{
       const summaryKey='gmail:summary:'+crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex');
-      const cached=await kv.get(summaryKey),count=Number(cached?.analytics?.unread||0);
+      const cached=await kv.get(summaryKey),cachedValid=cached==null||!!cached&&typeof cached==='object'&&!Array.isArray(cached);
+      if(!cachedValid)gmailSummaryUnavailable=true;
+      const count=cachedValid?Number(cached?.analytics?.unread||0):0;
       if(count>0)items.push(notificationItem('gmail:unread',{title:count+' unread Gmail thread'+(count===1?'':'s'),body:'Your connected CallerCore inbox has unread email.',kind:'info',view:'inbox',createdAt:Number(cached?.syncedAt||now),meta:{count}}));
     }catch(err){console.error('notification gmail summary failed',safeError(err))}
   }
   const sources=[];
   if(!platformValid)sources.push('platform_unavailable');
-  if(supportIndex!=null&&!Array.isArray(supportIndex))sources.push('support_unavailable');else if(Array.isArray(supportIndex)&&supportIndex.length>100)sources.push('support');
-  if(feedbackIndex!=null&&!Array.isArray(feedbackIndex))sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>100)sources.push('ai_feedback');
-  if(prospectIdsRaw!=null&&!Array.isArray(prospectIdsRaw))sources.push('growth_unavailable');else if(Array.isArray(prospectIdsRaw)&&prospectIdsRaw.length>100)sources.push('growth');
-  if(workspaceIndex!=null&&!Array.isArray(workspaceIndex))sources.push('clients_unavailable');else if(Array.isArray(workspaceIndex)&&workspaceIndex.length>300)sources.push('clients');
+  if(supportIndex!=null&&!Array.isArray(supportIndex)||supportRecordUnavailable)sources.push('support_unavailable');else if(Array.isArray(supportIndex)&&supportIndex.length>100)sources.push('support');
+  if(feedbackIndex!=null&&!Array.isArray(feedbackIndex)||feedbackRecordUnavailable)sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>100)sources.push('ai_feedback');
+  if(prospectIdsRaw!=null&&!Array.isArray(prospectIdsRaw)||growthRecordUnavailable)sources.push('growth_unavailable');else if(Array.isArray(prospectIdsRaw)&&prospectIdsRaw.length>100)sources.push('growth');
+  if(workspaceIndex!=null&&!Array.isArray(workspaceIndex)||workspaceRecordUnavailable)sources.push('clients_unavailable');else if(Array.isArray(workspaceIndex)&&workspaceIndex.length>300)sources.push('clients');
+  if(onboardingRecordUnavailable)sources.push('onboarding_unavailable');
+  if(gmailSummaryUnavailable)sources.push('gmail_unavailable');
   return {items,coverage:{limited:sources.length>0,sources}};
 }
 async function followups(req,res){
