@@ -3991,11 +3991,11 @@ function renderNotifications(){
   const sync=document.getElementById('notificationSyncStatus'),retry=document.getElementById('notificationRetry');
   if(sync){
     const statusError=notificationLoadError||notificationReadError,coverageWarning=!statusError&&notificationCoverage?.limited===true,
-      names={support:'Support',ai_feedback:'AI feedback',growth:'Growth',clients:'Clients'},
+      names={support:'Support history',support_unavailable:'Support source unavailable',ai_feedback:'AI feedback history',ai_feedback_unavailable:'AI feedback source unavailable',growth:'Growth history',growth_unavailable:'Growth source unavailable',clients:'Client directory',clients_unavailable:'Client directory unavailable'},
       sourceText=(notificationCoverage?.sources||[]).map(x=>names[x]||String(x).replaceAll('_',' ')).join(', ');
     sync.classList.toggle('error',!!statusError);
     sync.classList.toggle('warning',coverageWarning);
-    sync.textContent=statusError||(coverageWarning?'Updated '+formatNotificationTime(notificationLastSyncAt)+' · Alert scan bounded for '+sourceText+'. Open those pages for full history.':notificationsLoading?'Refreshing…':notificationLastSyncAt?'Updated '+formatNotificationTime(notificationLastSyncAt):'Not refreshed yet');
+    sync.textContent=statusError||(coverageWarning?'Updated '+formatNotificationTime(notificationLastSyncAt)+' · Alert coverage limited: '+sourceText+'. Open those pages to verify full history.':notificationsLoading?'Refreshing…':notificationLastSyncAt?'Updated '+formatNotificationTime(notificationLastSyncAt):'Not refreshed yet');
   }
   if(retry){retry.disabled=notificationsLoading;retry.textContent=notificationsLoading?'Refreshing…':'Refresh'}
   if(empty){
