@@ -20,14 +20,14 @@ COMPLETED AND VERIFIED within the coverage below: truthful voice readiness; atom
 
 This is a dashboard and shared-backend checkpoint, not provider activation or production release. The detailed entries below preserve findings, failures, corrections and verification history.
 
-## Current verified checkpoint — 2026-09-29
+## Current verified checkpoint — 2026-09-30
 
-Latest verified **implementation/test** SHA: `581287b05877d2e4aa043ec8fa17469e695f9e00`. This head preserves the verified consent/unsubscribe, retention, reversible normalized-Conversations, notification/deep-link, and background-truthfulness work and extends the sweep across **admin Gmail Inbox/cache truthfulness, global-search coverage, Client Care coverage/deep links, and Gmail read/alias stale-response handling**.
+Latest verified **implementation/test** SHA: `12bceaaa9980b45b355426905465c39e674f1dcf`. This head preserves the earlier consent/unsubscribe, retention, normalized-Conversations, notification/deep-link, Gmail/global-search/Client Care truthfulness work and extends the sweep across **client secondary reads, Support/website history coverage, admin audit history, call opened-state, follow-up notes, receptionist limits, client bundled reads, notifications, exports/recovery, admin repair/client-directory truthfulness, and finance source validation**.
 
-- Full GitHub CI: **912/912 tests passed, 0 failed**. CallerCore CI runs `36663763063` (PR) and `36663759142` (push) succeeded.
-- CodeQL runs `36663763112` (PR) and `36663759199` (push) succeeded. Jekyll `36663763116` succeeded.
-- Authenticated Preview Browser QA `36663759071` succeeded on the exact implementation SHA, including client/admin interaction coverage and visual-drift comparison.
-- Vercel Preview `dpl_2RqCsmJdijhoVuaEKC5Svzb8iPmH` is READY at `https://my-ai-website-7ebhqt2uq-mohamtaj004bas-projects.vercel.app`.
+- Full GitHub CI: **971/971 tests passed, 0 failed**. CallerCore CI runs `36669087352` (PR) and `36669084011` (push) succeeded.
+- CodeQL runs `36669087411` (PR) and `36669084188` (push) succeeded. Jekyll `36669087474` succeeded.
+- Authenticated Preview Browser QA `36669084069` succeeded on the exact implementation SHA, including client/admin interaction coverage and visual-drift comparison.
+- Vercel Preview `dpl_9nZgx9bMJ4D2S4qq74GaT2zjS2iN` is READY at `https://my-ai-website-bn8s2w7lm-mohamtaj004bas-projects.vercel.app`.
 - Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, marketing send, destructive retention, production migration, live billing, or live voice activation occurred.
 
 Verified implementation included in this head:
@@ -51,6 +51,19 @@ Verified implementation included in this head:
 - Global search now discloses its 48-result presentation cap as “showing X of Y,” reports missing/stale source coverage, and explains bounded Gmail coverage instead of implying exhaustive search.
 - Client Care Support and AI-feedback reads now report indexed-vs-loaded coverage and missing indexed records; the admin UI discloses partial coverage rather than showing silently incomplete counts/search.
 - Global-search deep links into Client Care now clear incompatible search/status filters before opening the exact Support or AI-feedback record, so a found item cannot remain hidden by the previous queue filter.
+- Client Support and AI-feedback histories now return explicit coverage metadata; missing indexed records are disclosed rather than silently disappearing, and client UI history banners preserve last-good records when refresh verification fails.
+- Website Inbox threads now persist explicit retained-history metadata around the 200-message boundary and disclose when only recent retained messages are available.
+- Client Calls/Leads/Appointments/Locations/Automations reads now fail closed on malformed storage instead of impersonating legitimate empty data; the former silent 20-automation save truncation is replaced with a visible hard limit.
+- Support ticket conversations track total message count and retained-message coverage around the 100-message boundary. Both client and admin thread UIs disclose bounded history, and global search explains when Support search covers only retained recent messages.
+- Admin audit history now exposes its 100-entry response window and 200-event retention boundary instead of presenting bounded change history as exhaustive.
+- Call opened/not-opened state now reports its 2,000-record retention boundary and preserves prior opened state when refresh verification fails.
+- Follow-up/team-note history no longer silently slices past 100 notes; add-note actions are disabled at the limit and malformed state preserves last-good data.
+- Receptionist configuration reads fail closed when stored config is malformed, and qualification-question saves now reject more than 12 questions instead of silently slicing extras.
+- Client bundled dashboard reads validate secondary/provider-backed records before replacing last-good UI state; malformed Settings, Integrations, routing, call details, and legacy Calls storage no longer render fake defaults or empty states.
+- Notification read-state and source coverage now fail closed when preference/provider sources are malformed; both client and admin notification panels surface incomplete source coverage rather than synthesizing setup/alert states from invalid data.
+- Client/admin workspace exports and admin recovery drills refuse partial/unverifiable source data rather than downloading or reporting incomplete recovery payloads.
+- Admin tech/repair snapshots, client-directory totals and client drawers now fail closed when indexed workspace or secondary client records cannot be verified; missing indexed workspaces no longer silently under-report operational directories.
+- Admin Finance rejects malformed expense/history storage before computing totals, preventing fake zero-cost or apparently healthy reconstructed finance snapshots.
 
 Important remaining boundary:
 
@@ -102,7 +115,7 @@ Current implementation: 303/303 tests passed in GitHub CI on `db68806a`; the rec
 
 ## Next authorized development backlog
 
-1. Continue the premium **background-data / large-history consistency sweep** after the verified Inbox/search/Client Care pass: inspect remaining client/admin secondary histories and provider-backed reads for stale-response races, bounded scans, capped indexes, and silent truncation. Preserve last-good data with explicit coverage/error states rather than fake empty/green results.
+1. Continue the premium **background-data / large-history consistency sweep** after the verified secondary-read/export/admin-finance pass: inspect remaining admin/client provider-backed reads, reconciliation/onboarding histories, notification/read-state boundaries, and any residual `|| []` / bounded-index fallbacks that could still imply completeness. Preserve last-good data with explicit coverage/error states rather than fake empty/green results.
 2. Keep bulk marketing sending inactive. Any future sender must require verified `granted` consent, a configured/verified `MARKETING_UNSUBSCRIBE_SECRET`, per-recipient signed unsubscribe URLs, and the unsubscribe-required marketing template.
 3. Keep stale-prospect retention dry-run-only and normalized-Conversations production migration gated. Both require separate production runbook/recovery acceptance and explicit owner authorization before destructive execution.
 4. After the dashboard/data-integrity sweep, complete Stripe **test-mode** subscription/payment/recovery acceptance as a separately gated provider workstream.
