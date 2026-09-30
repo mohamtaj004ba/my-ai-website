@@ -2905,32 +2905,42 @@ function defaultDisplayName(email,ws){
   return local?local.replace(/\b\w/g,m=>m.toUpperCase()).slice(0,80):'CallerCore User';
 }
 async function getUserProfile(email,ws=null){
-  const saved=await kv.get(userProfileKey(email))||{};
+  const raw=await kv.get(userProfileKey(email));
+  if(raw!=null&&(!raw||typeof raw!=='object'||Array.isArray(raw))){
+    const error=new Error('User profile data is unavailable');error.code='PROFILE_UNAVAILABLE';throw error;
+  }
+  const saved=raw||{};
   return {
     displayName:String(saved.displayName||defaultDisplayName(email,ws)).slice(0,80),
     avatarDataUrl:String(saved.avatarDataUrl||''),
-    updatedAt:Number(saved.updatedAt||0)
+    updatedAt:Number(saved.updatedAt||0),
+    _raw:raw
   };
 }
 async function profile(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);
-  const p=await getUserProfile(s.email,ws);
-  return res.status(200).json({profile:{...p,email:s.email}});
+  if(ws!=null&&(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(s.workspaceId)))return res.status(503).json({error:'Workspace profile context is unavailable. No fallback profile was substituted.'});
+  let p;try{p=await getUserProfile(s.email,ws)}catch(err){if(err?.code==='PROFILE_UNAVAILABLE')return res.status(503).json({error:'User profile is unavailable. Previously loaded profile data should be preserved.'});throw err}
+  const {_raw,...profileData}=p;
+  return res.status(200).json({profile:{...profileData,email:s.email}});
 }
 async function profileSave(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);
-  const body=req.body||{},existing=await getUserProfile(s.email,ws);
-  const displayName=String(body.displayName===undefined?existing.displayName:body.displayName).trim().slice(0,80);
+  if(ws!=null&&(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(s.workspaceId)))return res.status(503).json({error:'Workspace profile context is unavailable. No profile changes were made.'});
+  let existing;try{existing=await getUserProfile(s.email,ws)}catch(err){if(err?.code==='PROFILE_UNAVAILABLE')return res.status(503).json({error:'User profile is unavailable. No profile changes were made.'});throw err}
+  const body=req.body||{},displayName=String(body.displayName===undefined?existing.displayName:body.displayName).trim().slice(0,80);
   if(displayName.length<1)return res.status(400).json({error:'Display name is required'});
   let avatarDataUrl=body.avatarDataUrl===undefined?existing.avatarDataUrl:String(body.avatarDataUrl||'');
   if(avatarDataUrl){
     if(avatarDataUrl.length>450000)return res.status(413).json({error:'Profile photo is too large'});
     if(!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(avatarDataUrl))return res.status(400).json({error:'Invalid profile photo'});
   }
-  const next={displayName,avatarDataUrl,updatedAt:Date.now()};
-  await kv.set(userProfileKey(s.email),next);
+  const next={displayName,avatarDataUrl,updatedAt:Date.now()},key=userProfileKey(s.email);
+  try{
+    if(!await compareAndSetConfig(kv,[{key,before:existing._raw,after:next}]))return res.status(409).json({error:'Your profile changed during this save. Reload the latest profile before retrying.'});
+  }catch(err){console.error('profile save failed',safeError(err));return res.status(503).json({error:'Could not confirm your profile was saved. Reload before retrying.'})}
   return res.status(200).json({ok:true,profile:{...next,email:s.email}});
 }
 
@@ -3008,7 +3018,8 @@ async function session(req,res){
   const ent=entitlementsFor(ws.plan);
   const member=await kv.get('user:email:'+cleanEmail(s.email));
   if(!member||typeof member!=='object'||Array.isArray(member)||!String(member.role||''))return res.status(503).json({error:'Workspace membership is unavailable. Session identity was not approximated.'});
-  const profileData=await getUserProfile(s.email,ws);
+  let profileRecord;try{profileRecord=await getUserProfile(s.email,ws)}catch(err){if(err?.code==='PROFILE_UNAVAILABLE')return res.status(503).json({error:'User profile is unavailable. No fallback profile was substituted.'});throw err}
+  const {_raw,...profileData}=profileRecord;
   const rawOnboarding=await kv.get('onboarding:workspace:'+s.workspaceId);
   if(rawOnboarding!=null&&(!rawOnboarding||typeof rawOnboarding!=='object'||Array.isArray(rawOnboarding)))return res.status(503).json({error:'Onboarding session data is unavailable. No empty onboarding state was substituted.'});
   const rawOnboardingToken=await kv.get('onboarding:workspace-token:'+s.workspaceId);
