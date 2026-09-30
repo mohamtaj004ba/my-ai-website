@@ -67,14 +67,11 @@ test('Fleet aligns agents and automation records through the same full directory
   assert.equal(automations[250].workflows[0].id,'workflow-250');
   assert.ok(f.peak()<=80,'two metadata keys per batch of at most 40 workspaces');
 });
-test('missing workspace records do not conceal later provisioning or fleet records',async()=>{
+test('missing indexed workspace records fail closed instead of underreporting operational directories',async()=>{
   for(const handler of ['adminProvisioning','adminFleet']){
     const f=fixture(251,{missing:['tenant-10']});
-    await f.run(handler);
-    const rows=handler==='adminFleet'?f.reply().agents:f.reply().provisioning;
-    assert.equal(rows.length,250);
-    assert.ok(rows.some(x=>(x.workspaceId||x.id)==='tenant-250'));
-    assert.ok(!rows.some(x=>(x.workspaceId||x.id)==='tenant-10'));
+    await assert.rejects(f.run(handler),/directory is incomplete/);
+    assert.equal(f.reply(),null);
   }
 });
 test('invalid and over-capacity indexes fail without false partial results',async()=>{
