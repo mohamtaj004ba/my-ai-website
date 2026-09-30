@@ -7,7 +7,7 @@ const handler=source.slice(source.indexOf('async function adminDeletePhoneNumber
 
 async function run({expected=10,transaction=true,malformed=false}={}){
   const phone={id:'p',number:'5095550100',workspaceId:'tenant',updatedAt:10};
-  const records={'phone:index':malformed?{broken:true}:[phone],'workspace:tenant':{phone:phone.number,name:'Client'},'onboarding:workspace:tenant':{checklist:{phoneAssigned:true,knowledgeApproved:true}}};
+  const records={'phone:index':malformed?{broken:true}:[phone],'workspace:tenant':{id:'tenant',phone:phone.number,name:'Client'},'onboarding:workspace:tenant':{checklist:{phoneAssigned:true,knowledgeApproved:true}}};
   let status=200,result,updates,auditCommitted=null;
   const context=vm.createContext({requireAdmin:async()=>({email:'admin@example.com',workspaceId:'admin-home'}),crypto:{randomUUID:()=> 'audit-delete'},Date,kv:{get:async key=>records[key],set:()=>assert.fail('Deletion must use one atomic transaction')},compareAndAuditBatch:async(_,next,auditKey,event)=>{updates=next;if(transaction)auditCommitted={auditKey,event};return transaction},appendAudit:async()=>assert.fail('Phone deletion audit must be part of the atomic transaction'),safeError:()=>'',console:{error:()=>{}},req:{body:{id:'p',expectedUpdatedAt:expected}},res:{status(n){status=n;return this},json(x){result=x}}});
   vm.runInContext(handler,context);await vm.runInContext('adminDeletePhoneNumber(req,res)',context);return {status,result,updates,auditCommitted};
