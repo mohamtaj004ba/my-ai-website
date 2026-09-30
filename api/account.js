@@ -2988,8 +2988,9 @@ async function requireFeature(req,res,feature){
 
 async function phoneRouting(req,res){
   const s=await requireSession(req,res);if(!s)return;
-  const numbers=await kv.get('phone:index')||[];
-  const item=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===s.workspaceId)||null;
+  const rawNumbers=await kv.get('phone:index');
+  if(rawNumbers!=null&&!Array.isArray(rawNumbers))return res.status(503).json({error:'Phone routing inventory is unavailable. No unassigned routing state was substituted.'});
+  const numbers=rawNumbers||[],item=numbers.find(x=>x&&x.workspaceId===s.workspaceId)||null;
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true';
   return res.status(200).json({routing:clientRouting(item,{smsLive})});
 }
@@ -3217,8 +3218,11 @@ async function analytics(req,res){
 async function settings(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
-  const saved=await kv.get('settings:'+s.workspaceId)||{};
-  const platform=await kv.get('platform:settings')||{};
+  const rawSaved=await kv.get('settings:'+s.workspaceId);
+  if(rawSaved!=null&&(!rawSaved||typeof rawSaved!=='object'||Array.isArray(rawSaved)))return res.status(503).json({error:'Business settings are unavailable. No default settings were substituted.'});
+  const rawPlatform=await kv.get('platform:settings');
+  if(rawPlatform!=null&&(!rawPlatform||typeof rawPlatform!=='object'||Array.isArray(rawPlatform)))return res.status(503).json({error:'Platform defaults are unavailable. No default settings were substituted.'});
+  const saved=rawSaved||{},platform=rawPlatform||{};
   return res.status(200).json({settings:{
     businessName:saved.businessName||ws.name||'',
     primaryEmail:saved.primaryEmail||ws.ownerEmail||s.email||'',
@@ -3304,7 +3308,9 @@ async function aiAnsweringControl(req,res){
 async function integrations(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
-  const saved=await kv.get('integrations:'+s.workspaceId)||{};
+  const rawSaved=await kv.get('integrations:'+s.workspaceId);
+  if(rawSaved!=null&&(!rawSaved||typeof rawSaved!=='object'||Array.isArray(rawSaved)))return res.status(503).json({error:'Integration settings are unavailable. No default integration state was substituted.'});
+  const saved=rawSaved||{};
   return res.status(200).json({integrations:{
     googleCalendar:process.env.CALLERCORE_CALENDAR_ENABLED==='true'&&!!saved.googleCalendar,
     stripe:!!ws.stripeCustomerId,
@@ -3357,8 +3363,22 @@ async function clientDashboardData(req,res){
   const ent=entitlementsFor(ws.plan);
   const keys=['calls:index:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index',callViewedKey(s.workspaceId,s.email),'leads:'+s.workspaceId,'appointments:'+s.workspaceId,'automations:'+s.workspaceId,'onboarding:workspace:'+s.workspaceId];
   const [callIndexRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,followupRaw,platformRaw,phoneIndex,viewedRaw,leadsRaw,appointmentsRaw,automationsRaw,onboardingRaw]=await Promise.all(keys.map(k=>kv.get(k)));
-  const callsRaw=Array.isArray(callIndexRaw)&&callIndexRaw.length?callIndexRaw:(await kv.get('calls:'+s.workspaceId)||[]);
-  const savedAgent=agentRaw||{},savedSettings=settingsRaw||{},platform=platformRaw||{},savedIntegrations=integrationsRaw||{},numbers=Array.isArray(phoneIndex)?phoneIndex:[],phone=numbers.find(x=>x&&x.workspaceId===s.workspaceId)||null;
+  const invalid=[
+    ['call index',callIndexRaw,v=>Array.isArray(v)],['receptionist',agentRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],
+    ['business settings',settingsRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],['integrations',integrationsRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],
+    ['locations',locationsRaw,v=>Array.isArray(v)],['follow-up state',followupRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],
+    ['platform defaults',platformRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],['phone routing',phoneIndex,v=>Array.isArray(v)],
+    ['call opened state',viewedRaw,v=>Array.isArray(v)],['leads',leadsRaw,v=>Array.isArray(v)],['appointments',appointmentsRaw,v=>Array.isArray(v)],
+    ['automations',automationsRaw,v=>Array.isArray(v)],['onboarding',onboardingRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)]
+  ].find(([,value,valid])=>value!=null&&!valid(value));
+  if(invalid)return res.status(503).json({error:'Workspace '+invalid[0]+' data is unavailable. Last verified dashboard data should be preserved.'});
+  let callsRaw=Array.isArray(callIndexRaw)&&callIndexRaw.length?callIndexRaw:null;
+  if(!callsRaw){
+    const legacyCalls=await kv.get('calls:'+s.workspaceId);
+    if(legacyCalls!=null&&!Array.isArray(legacyCalls))return res.status(503).json({error:'Workspace call history is unavailable. Last verified dashboard data should be preserved.'});
+    callsRaw=legacyCalls||[];
+  }
+  const savedAgent=agentRaw||{},savedSettings=settingsRaw||{},platform=platformRaw||{},savedIntegrations=integrationsRaw||{},numbers=phoneIndex||[],phone=numbers.find(x=>x&&x.workspaceId===s.workspaceId)||null;
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true',calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true';
   const settings={
     businessName:savedSettings.businessName||ws.name||'',primaryEmail:savedSettings.primaryEmail||ws.ownerEmail||s.email||'',contactName:savedSettings.contactName||ws.ownerName||'',businessPhone:savedSettings.businessPhone||'',website:savedSettings.website||'',streetAddress:savedSettings.streetAddress||'',city:savedSettings.city||'',state:savedSettings.state||'',postalCode:savedSettings.postalCode||'',industry:savedSettings.industry||ws.industry||'',serviceArea:savedSettings.serviceArea||'',logoDataUrl:savedSettings.logoDataUrl||'',timezone:savedSettings.timezone||platform.defaultTimezone||'America/Los_Angeles',notificationEmail:savedSettings.notificationEmail||ws.ownerEmail||s.email||'',smsAlerts:smsLive&&savedSettings.smsAlerts!==false,emailAlerts:savedSettings.emailAlerts!==false,notifyBilling:savedSettings.notifyBilling!==false,notifySetup:savedSettings.notifySetup!==false,notifyCalls:savedSettings.notifyCalls!==false,notifySupport:savedSettings.notifySupport!==false,notifyUsage:savedSettings.notifyUsage!==false,
@@ -3399,8 +3419,9 @@ async function callDetail(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const id=String((req.query&&req.query.id)||'').slice(0,120);
   if(!id)return res.status(400).json({error:'Call ID is required'});
-  const items=await kv.get('calls:'+s.workspaceId)||[];
-  const call=Array.isArray(items)?items.find(x=>x&&String(x.id)===id):null;
+  const rawItems=await kv.get('calls:'+s.workspaceId);
+  if(rawItems!=null&&!Array.isArray(rawItems))return res.status(503).json({error:'Call detail history is unavailable. No missing-call result was substituted.'});
+  const call=(rawItems||[]).find(x=>x&&String(x.id)===id)||null;
   if(!call)return res.status(404).json({error:'Call not found'});
   return res.status(200).json({call});
 }
