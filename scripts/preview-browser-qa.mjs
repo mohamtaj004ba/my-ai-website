@@ -498,11 +498,11 @@ async function runAdminInteractions(page){
   const retentionJson=JSON.stringify(retentionReport);
   if(retentionJson.includes('planned')||retentionJson.includes('before')||retentionJson.includes('after')||retentionJson.includes('@callercore.test'))throw new Error('Retention report exposed record-level prospect details');
   report.admin.interactions.push('read-only retention dry-run + consent gate');
-  const migrationResponse=await page.request.get(baseURL+'/api/account?action=admin-conversation-migration-report&limit=100');
+  const migrationResponse=await page.request.get(baseURL+'/api/account?action=admin-conversation-migration-report&limit=25&verifyDetails=1');
   if(!migrationResponse.ok())throw new Error('Conversation migration dry-run endpoint was unavailable');
   const migrationReport=(await migrationResponse.json()).report;
-  if(!migrationReport||migrationReport.mode!=='dry_run'||migrationReport.writeActionsEnabled!==false||migrationReport.migrationExecutorReachable!==false||migrationReport.legacyPreserved!==true||migrationReport.detailFidelityChecked!==false)throw new Error('Conversation migration report did not remain reversible/read-only');
-  if(Number(migrationReport.scanned||0)<1||Number(migrationReport.totalWorkspaces||0)<Number(migrationReport.scanned||0)||!migrationReport.counts||typeof migrationReport.complete!=='boolean')throw new Error('Conversation migration fleet dry run returned an invalid summary');
+  if(!migrationReport||migrationReport.mode!=='dry_run'||migrationReport.writeActionsEnabled!==false||migrationReport.migrationExecutorReachable!==false||migrationReport.legacyPreserved!==true||migrationReport.detailFidelityChecked!==true)throw new Error('Conversation migration report did not remain reversible/read-only with detail verification');
+  if(Number(migrationReport.scanned||0)<1||Number(migrationReport.totalWorkspaces||0)<Number(migrationReport.scanned||0)||!migrationReport.counts||!migrationReport.detailCounts||typeof migrationReport.complete!=='boolean'||typeof migrationReport.detailVerificationComplete!=='boolean'||typeof migrationReport.migrationReady!=='boolean')throw new Error('Conversation migration fleet dry run returned an invalid detail-fidelity summary');
   const migrationJson=JSON.stringify(migrationReport);
   if(migrationJson.includes(report.workspaceId)||migrationJson.includes('Summit Heating'))throw new Error('Conversation migration report exposed workspace-level records');
 
@@ -510,10 +510,14 @@ async function runAdminInteractions(page){
   if(!focusedMigrationResponse.ok())throw new Error('Focused conversation migration readiness check was unavailable');
   const focusedMigration=(await focusedMigrationResponse.json()).report;
   if(!focusedMigration||focusedMigration.mode!=='dry_run'||focusedMigration.writeActionsEnabled!==false||focusedMigration.migrationExecutorReachable!==false||
-     focusedMigration.legacyPreserved!==true||focusedMigration.detailFidelityChecked!==false||focusedMigration.workspaceState!=='aligned'||
+     focusedMigration.legacyPreserved!==true||focusedMigration.workspaceState!=='aligned'||focusedMigration.summaryAligned!==true||
+     focusedMigration.detailFidelityChecked!==true||focusedMigration.detailFidelityComplete!==true||focusedMigration.detailState!=='aligned'||
      focusedMigration.aligned!==true||focusedMigration.blocking!==false||focusedMigration.migrationCandidate!==false||
-     Number(focusedMigration.legacyConversations||0)!==Number(focusedMigration.normalizedConversations||0))
-    throw new Error('Disposable Preview workspace is not aligned for normalized conversation migration');
+     Number(focusedMigration.legacyConversations||0)!==Number(focusedMigration.normalizedConversations||0)||
+     Number(focusedMigration.detailRecordsChecked||0)!==Number(focusedMigration.detailRecordsExpected||0)||
+     Number(focusedMigration.detailRecordsMatched||0)!==Number(focusedMigration.detailRecordsExpected||0)||
+     Number(focusedMigration.detailMissing||0)!==0||Number(focusedMigration.detailMalformed||0)!==0||Number(focusedMigration.detailMismatched||0)!==0)
+    throw new Error('Disposable Preview workspace is not detail-faithful for normalized conversation migration');
   if(JSON.stringify(focusedMigration).includes(report.workspaceId)||JSON.stringify(focusedMigration).includes('Summit Heating'))throw new Error('Focused migration readiness exposed workspace identity');
   report.admin.interactions.push('read-only normalized conversation migration readiness');
 
@@ -578,8 +582,8 @@ async function runAdminInteractions(page){
   if((await page.locator('#retentionReportNote').textContent()||'').includes('No records were changed')!==true)throw new Error('Retention panel omitted its read-only guarantee');
   const migrationStatus=(await page.locator('#conversationMigrationStatus').textContent()||'').trim();
   const migrationMeta=(await page.locator('#conversationMigrationMeta').textContent()||'').trim();
-  if(!migrationStatus||['—','Not checked','Unavailable'].includes(migrationStatus)||!/workspaces scanned/.test(migrationMeta))
-    throw new Error('System Health did not render conversation migration fleet readiness');
+  if(!migrationStatus||['—','Not checked','Unavailable'].includes(migrationStatus)||!/workspaces scanned/.test(migrationMeta)||!/detail-verified/.test(migrationMeta)||!/records matched/.test(migrationMeta))
+    throw new Error('System Health did not render conversation migration detail-fidelity readiness');
   report.admin.interactions.push('global search keyboard navigation + retention/migration health panel');
 
   await ensureView(page,'clients');
