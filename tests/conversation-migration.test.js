@@ -1,7 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {indexKey,indexConversation}=require('../lib/conversation-store');
-const {workspaceStatus,scanConversationMigrationBatch,MAX_BATCH}=require('../lib/conversation-migration');
+const {workspaceStatus,scanConversationMigrationWorkspace,scanConversationMigrationBatch,MAX_BATCH}=require('../lib/conversation-migration');
 
 function fixture({workspaceIds=[],records={}}={}){
   const data=new Map([['workspace:index',workspaceIds],...Object.entries(records)]);
@@ -86,4 +86,28 @@ test('batch size is capped and duplicate workspace ids fail closed',async()=>{
   assert.equal(report.scanned,MAX_BATCH);
   const duplicate=fixture({workspaceIds:['same','same']});
   await assert.rejects(()=>scanConversationMigrationBatch(duplicate.kv),/malformed/);
+});
+
+
+test('focused workspace dry run proves one seeded workspace is aligned without exposing its id',async()=>{
+  const items=conversations(),f=fixture({
+    workspaceIds:['target','other'],
+    records:{
+      'conversations:target':items,[indexKey('target')]:normalized(items),
+      'conversations:other':items
+    }
+  });
+  const report=await scanConversationMigrationWorkspace(f.kv,'target');
+  assert.equal(report.mode,'dry_run');
+  assert.equal(report.writeActionsEnabled,false);
+  assert.equal(report.migrationExecutorReachable,false);
+  assert.equal(report.legacyPreserved,true);
+  assert.equal(report.workspaceState,'aligned');
+  assert.equal(report.aligned,true);
+  assert.equal(report.blocking,false);
+  assert.equal(report.migrationCandidate,false);
+  assert.equal(report.legacyConversations,2);
+  assert.equal(report.normalizedConversations,2);
+  assert.equal(JSON.stringify(report).includes('target'),false);
+  await assert.rejects(()=>scanConversationMigrationWorkspace(f.kv,'missing'),err=>err&&err.code==='WORKSPACE_NOT_FOUND');
 });
