@@ -476,6 +476,8 @@ async function runClientInteractions(page){
 
   await page.locator('#notificationBell').click();
   if(await page.locator('#notificationPanel').getAttribute('hidden')!==null)throw new Error('Notification panel did not open');
+  if(!(await page.locator('#notificationSyncStatus').textContent()||'').trim())throw new Error('Client notification panel omitted refresh truthfulness');
+  if(await page.locator('#notificationRetry').count()!==1)throw new Error('Client notification panel omitted retry control');
   const history=page.locator('#notificationHistoryTab');
   if(await history.count()){await history.click();await page.locator('#notificationUnreadTab').click()}
   await page.locator('#notificationBell').click();
@@ -863,6 +865,8 @@ async function runAdminInteractions(page){
 
   await page.locator('#notificationBell').click();
   if(await page.locator('#notificationPanel').getAttribute('hidden')!==null)throw new Error('Admin notification panel did not open');
+  if(!(await page.locator('#notificationSyncStatus').textContent()||'').trim())throw new Error('Admin notification panel omitted refresh truthfulness');
+  if(await page.locator('#notificationRetry').count()!==1)throw new Error('Admin notification panel omitted retry control');
   await page.locator('#notificationBell').click();
   report.admin.interactions.push('admin notification panel');
 
