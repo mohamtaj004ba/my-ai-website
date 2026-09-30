@@ -2185,8 +2185,14 @@ async function adminSendOnboardingInvite(req,res){
   const key='onboarding:workspace:'+id;
   const [ws,rawState,token]=await Promise.all([kv.get('workspace:'+id),kv.get(key),kv.get('onboarding:workspace-token:'+id)]);
   if(!ws||!rawState||!token)return res.status(404).json({error:'Onboarding record not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No onboarding email was sent.'});
   if(!rawState||typeof rawState!=='object'||Array.isArray(rawState))return res.status(503).json({error:'Onboarding state is unavailable. No email was sent.'});
-  const state=rawState,now=Date.now(),delivery=state.onboardingInviteDelivery&&typeof state.onboardingInviteDelivery==='object'&&!Array.isArray(state.onboardingInviteDelivery)?state.onboardingInviteDelivery:{};
+  if(typeof token!=='string'||!token.trim())return res.status(503).json({error:'Onboarding token mapping is unavailable. No email was sent.'});
+  if(rawState.onboardingInviteDelivery!=null&&(!rawState.onboardingInviteDelivery||typeof rawState.onboardingInviteDelivery!=='object'||Array.isArray(rawState.onboardingInviteDelivery)))
+    return res.status(503).json({error:'Onboarding delivery state is unavailable. No email was sent.'});
+  if(rawState.checklist!=null&&(!rawState.checklist||typeof rawState.checklist!=='object'||Array.isArray(rawState.checklist)))
+    return res.status(503).json({error:'Onboarding checklist is unavailable. No email was sent.'});
+  const state=rawState,now=Date.now(),delivery=state.onboardingInviteDelivery||{};
   if(state.onboardingLinkSent||delivery.status==='sent')return res.status(200).json({ok:true,alreadySent:true,deliveryStatus:'sent',onboarding:state});
   if(Number(state.reviewEligibleAt||0)>now)return res.status(409).json({error:'This account is still in the post-payment review hold.',eligibleAt:state.reviewEligibleAt});
   const startedAt=Number(delivery.startedAt||0),staleSending=delivery.status==='sending'&&startedAt>0&&startedAt<=now-15*60*1000;
@@ -2198,7 +2204,9 @@ async function adminSendOnboardingInvite(req,res){
     try{await compareAndAudit(kv,{key,before:rawState,after:uncertain},'audit:'+id,audit)}catch(err){console.error('stale onboarding invite claim reconciliation failed',safeError(err))}
     return res.status(409).json({error:'A previous onboarding email attempt did not finish recording its result. Review Mailgun delivery before retrying.',code:'ONBOARDING_INVITE_DELIVERY_UNCERTAIN',deliveryStatus:'uncertain',attemptId:delivery.attemptId||'',retrySafe:false});
   }
-  const onboarding=await kv.get('onboarding:'+token),to=String(onboarding?.email||ws.ownerEmail||'').trim().toLowerCase();
+  const onboarding=await kv.get('onboarding:'+token);
+  if(onboarding!=null&&(!onboarding||typeof onboarding!=='object'||Array.isArray(onboarding)))return res.status(503).json({error:'Onboarding intake record is unavailable. No email was sent.'});
+  const to=String(onboarding?.email||ws.ownerEmail||'').trim().toLowerCase();
   if(!to)return res.status(400).json({error:'Client email is missing'});
   const attemptId=crypto.randomUUID(),claimAt=Date.now(),claim={...state,onboardingInviteDelivery:{status:'sending',attemptId,startedAt:claimAt,finishedAt:0,lastErrorCode:'',resolvedAt:0,resolvedBy:''},updatedAt:Math.max(claimAt,Number(state.updatedAt||0)+1)};
   const claimAudit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'onboarding_invite_send_started',section:'onboarding',before:null,after:null,meta:{attemptId,to},at:claimAt};
@@ -2227,7 +2235,9 @@ async function adminSendOnboardingInvite(req,res){
     for(let attempt=0;attempt<4;attempt++){
       const current=await kv.get(key);
       if(!current||typeof current!=='object'||Array.isArray(current))break;
-      const currentDelivery=current.onboardingInviteDelivery&&typeof current.onboardingInviteDelivery==='object'&&!Array.isArray(current.onboardingInviteDelivery)?current.onboardingInviteDelivery:{};
+      if(current.onboardingInviteDelivery!=null&&(!current.onboardingInviteDelivery||typeof current.onboardingInviteDelivery!=='object'||Array.isArray(current.onboardingInviteDelivery)))break;
+      if(current.checklist!=null&&(!current.checklist||typeof current.checklist!=='object'||Array.isArray(current.checklist)))break;
+      const currentDelivery=current.onboardingInviteDelivery||{};
       if(current.onboardingLinkSent||currentDelivery.status==='sent')return res.status(200).json({ok:true,alreadySent:true,deliveryStatus:'sent',onboarding:current});
       if(currentDelivery.attemptId!==attemptId)break;
       const finishedAt=Date.now(),next={...current,status:'awaiting_agreement',onboardingLinkSent:true,onboardingSentAt:finishedAt,reviewedAt:finishedAt,reviewedBy:admin.email,checklist:{...(current.checklist||{}),accountReview:true,onboardingSent:true},onboardingInviteDelivery:{...currentDelivery,status:'sent',finishedAt,lastErrorCode:'',providerAcceptedAt:finishedAt},updatedAt:Math.max(finishedAt,Number(current.updatedAt||0)+1)};
@@ -2241,7 +2251,8 @@ async function adminSendOnboardingInvite(req,res){
   for(let attempt=0;attempt<4;attempt++){
     const current=await kv.get(key);
     if(!current||typeof current!=='object'||Array.isArray(current))break;
-    const currentDelivery=current.onboardingInviteDelivery&&typeof current.onboardingInviteDelivery==='object'&&!Array.isArray(current.onboardingInviteDelivery)?current.onboardingInviteDelivery:{};
+    if(current.onboardingInviteDelivery!=null&&(!current.onboardingInviteDelivery||typeof current.onboardingInviteDelivery!=='object'||Array.isArray(current.onboardingInviteDelivery)))break;
+    const currentDelivery=current.onboardingInviteDelivery||{};
     if(currentDelivery.attemptId!==attemptId)break;
     const finishedAt=Date.now(),next={...current,onboardingInviteDelivery:{...currentDelivery,status:deliveryStatus,finishedAt,lastErrorCode:errorCode},updatedAt:Math.max(finishedAt,Number(current.updatedAt||0)+1)};
     const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:deliveryStatus==='failed'?'onboarding_invite_delivery_failed':'onboarding_invite_delivery_uncertain',section:'onboarding',before:null,after:null,meta:{attemptId,errorCode},at:finishedAt};
@@ -2260,8 +2271,13 @@ async function adminResolveOnboardingInviteDelivery(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80),resolution=String(body.resolution||''),expectedAttemptId=String(body.attemptId||'').slice(0,80);
   if(!id||!['sent','not_sent'].includes(resolution))return res.status(400).json({error:'A client and verified delivery resolution are required'});
   const key='onboarding:workspace:'+id,state=await kv.get(key);
-  if(!state||typeof state!=='object'||Array.isArray(state))return res.status(404).json({error:'Onboarding record not found'});
-  const delivery=state.onboardingInviteDelivery&&typeof state.onboardingInviteDelivery==='object'&&!Array.isArray(state.onboardingInviteDelivery)?state.onboardingInviteDelivery:{};
+  if(state==null)return res.status(404).json({error:'Onboarding record not found'});
+  if(!state||typeof state!=='object'||Array.isArray(state))return res.status(503).json({error:'Onboarding state is unavailable. Delivery was not resolved.'});
+  if(state.onboardingInviteDelivery!=null&&(!state.onboardingInviteDelivery||typeof state.onboardingInviteDelivery!=='object'||Array.isArray(state.onboardingInviteDelivery)))
+    return res.status(503).json({error:'Onboarding delivery state is unavailable. Delivery was not resolved.'});
+  if(state.checklist!=null&&(!state.checklist||typeof state.checklist!=='object'||Array.isArray(state.checklist)))
+    return res.status(503).json({error:'Onboarding checklist is unavailable. Delivery was not resolved.'});
+  const delivery=state.onboardingInviteDelivery||{};
   const startedAt=Number(delivery.startedAt||0),staleSending=delivery.status==='sending'&&startedAt>0&&startedAt<=Date.now()-15*60*1000;
   if(!['uncertain'].includes(delivery.status)&&!staleSending)return res.status(409).json({error:'This onboarding invite does not currently require delivery review.'});
   if(expectedAttemptId&&delivery.attemptId!==expectedAttemptId)return res.status(409).json({error:'The onboarding email attempt changed. Refresh onboarding before resolving delivery.'});
@@ -2285,8 +2301,10 @@ async function adminProvisioningChecklistSave(req,res){
   const allowed=new Set(['adminReview','testCall','clientApproval','live']);
   if(!id||!allowed.has(field))return res.status(400).json({error:'Invalid provisioning checklist update'});
   const wsKey='workspace:'+id,ws=await kv.get(wsKey);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No onboarding changes were made.'});
   const key='onboarding:workspace:'+id,rawState=await kv.get(key);
   if(rawState!=null&&(!rawState||typeof rawState!=='object'||Array.isArray(rawState)))return res.status(503).json({error:'Onboarding state is unavailable. No changes were made.'});
+  if(rawState?.checklist!=null&&(!rawState.checklist||typeof rawState.checklist!=='object'||Array.isArray(rawState.checklist)))return res.status(503).json({error:'Onboarding checklist is unavailable. No changes were made.'});
   const state=rawState||{workspaceId:id,status:'building_review',completionPercent:100,checklist:{}};
   if(state.checklist?.[field]===value)return res.status(200).json({ok:true,onboarding:state,unchanged:true});
   if(field==='adminReview'&&value&&Number(state.buildEligibleAt||0)>Date.now())return res.status(409).json({error:'The build is still in its review hold.',eligibleAt:state.buildEligibleAt});
@@ -2298,9 +2316,13 @@ async function adminProvisioningChecklistSave(req,res){
     const missing=required.filter(step=>state.checklist?.[step]!==true);
     if(missing.length)return res.status(409).json({error:'Complete all launch checkpoints before activating this client.',missing});
     const [agent,phoneIndex]=await Promise.all([kv.get('agent:'+id),kv.get('phone:index')]);
+    if(agent!=null&&(!agent||typeof agent!=='object'||Array.isArray(agent)))return res.status(503).json({error:'AI receptionist configuration is unavailable. Launch state was not changed.'});
     if(!agent||!String(agent.openingMessage||agent.name||'').trim())return res.status(409).json({error:'An AI agent must be configured before launch'});
+    if(phoneIndex!=null&&!Array.isArray(phoneIndex))return res.status(503).json({error:'Phone inventory is unavailable. Launch state was not changed.'});
+    const phones=phoneIndex||[],phoneIds=phones.map(phone=>phone&&typeof phone==='object'&&!Array.isArray(phone)?String(phone.id||''):'');
+    if(phoneIds.some(phoneId=>!phoneId)||new Set(phoneIds).size!==phoneIds.length)return res.status(503).json({error:'Phone inventory contains unverifiable records. Launch state was not changed.'});
     const normalized=value=>String(value||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
-    const assigned=(Array.isArray(phoneIndex)?phoneIndex:[]).find(phone=>phone&&phone.workspaceId===id&&phone.status==='active'&&normalized(phone.number)===normalized(ws.phone));
+    const assigned=phones.find(phone=>phone.workspaceId===id&&phone.status==='active'&&normalized(phone.number)===normalized(ws.phone));
     if(!assigned||!normalized(ws.phone))return res.status(409).json({error:'Assign an active CallerCore phone number to this workspace before launch'});
     if(!voiceStatus(assigned).operational)return res.status(409).json({error:'Live voice activation and provider verification are required before launch.'});
   }

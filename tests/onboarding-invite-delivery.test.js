@@ -90,3 +90,16 @@ test('provisioning response exposes only bounded delivery state needed by the ad
 test('account router exposes the guarded delivery-resolution action',()=>{
   assert.match(source,/action==='admin-onboarding-delivery-resolve'&&req\.method==='POST'/);
 });
+
+test('onboarding invite refuses malformed workspace, delivery, checklist, token, or intake sources before mail send',()=>{
+  assert.match(code,/Client workspace record is unavailable\. No onboarding email was sent/);
+  assert.match(code,/Onboarding token mapping is unavailable\. No email was sent/);
+  assert.match(code,/Onboarding delivery state is unavailable\. No email was sent/);
+  assert.match(code,/Onboarding checklist is unavailable\. No email was sent/);
+  assert.match(code,/Onboarding intake record is unavailable\. No email was sent/);
+});
+test('delivery resolution distinguishes malformed state from a missing onboarding record',()=>{
+  assert.match(code,/Onboarding state is unavailable\. Delivery was not resolved/);
+  assert.match(code,/Onboarding delivery state is unavailable\. Delivery was not resolved/);
+  assert.match(code,/Onboarding checklist is unavailable\. Delivery was not resolved/);
+});
