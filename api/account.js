@@ -2473,8 +2473,8 @@ async function buildClientNotifications(s){
     }
   }
   const sources=[];
-  if(!Array.isArray(index))sources.push('support_unavailable');else if(index.length>100)sources.push('support');
-  if(!Array.isArray(feedbackIndex))sources.push('ai_feedback_unavailable');else if(feedbackIndex.length>20)sources.push('ai_feedback');
+  if(index!=null&&!Array.isArray(index))sources.push('support_unavailable');else if(Array.isArray(index)&&index.length>100)sources.push('support');
+  if(feedbackIndex!=null&&!Array.isArray(feedbackIndex))sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>20)sources.push('ai_feedback');
   return {items,coverage:{limited:sources.length>0,sources}};
 }
 async function buildAdminNotifications(admin){
@@ -2521,10 +2521,10 @@ async function buildAdminNotifications(admin){
     }catch(err){console.error('notification gmail summary failed',safeError(err))}
   }
   const sources=[];
-  if(!Array.isArray(supportIndex))sources.push('support_unavailable');else if(supportIndex.length>100)sources.push('support');
-  if(!Array.isArray(feedbackIndex))sources.push('ai_feedback_unavailable');else if(feedbackIndex.length>100)sources.push('ai_feedback');
-  if(!Array.isArray(prospectIdsRaw))sources.push('growth_unavailable');else if(prospectIdsRaw.length>100)sources.push('growth');
-  if(!Array.isArray(workspaceIndex))sources.push('clients_unavailable');else if(workspaceIndex.length>300)sources.push('clients');
+  if(supportIndex!=null&&!Array.isArray(supportIndex))sources.push('support_unavailable');else if(Array.isArray(supportIndex)&&supportIndex.length>100)sources.push('support');
+  if(feedbackIndex!=null&&!Array.isArray(feedbackIndex))sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>100)sources.push('ai_feedback');
+  if(prospectIdsRaw!=null&&!Array.isArray(prospectIdsRaw))sources.push('growth_unavailable');else if(Array.isArray(prospectIdsRaw)&&prospectIdsRaw.length>100)sources.push('growth');
+  if(workspaceIndex!=null&&!Array.isArray(workspaceIndex))sources.push('clients_unavailable');else if(Array.isArray(workspaceIndex)&&workspaceIndex.length>300)sources.push('clients');
   return {items,coverage:{limited:sources.length>0,sources}};
 }
 async function followups(req,res){
