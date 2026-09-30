@@ -2902,12 +2902,26 @@ async function buildWorkspaceExportData(id){
     kv.get('workspace:'+id),kv.get('settings:'+id),kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('appointments:'+id),kv.get('automations:'+id),kv.get('integrations:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('support:index'),kv.get('onboarding:workspace:'+id),kv.get('audit:'+id)
   ]);
   if(!workspace)return null;
+  const objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value);
+  const invalid=[
+    ['workspace',workspace,value=>!!value&&typeof value==='object'&&!Array.isArray(value)],['settings',settings,objectOrNull],['agent',agent,objectOrNull],
+    ['calls',calls,value=>value==null||Array.isArray(value)],['leads',leads,value=>value==null||Array.isArray(value)],['appointments',appointments,value=>value==null||Array.isArray(value)],
+    ['automations',automations,value=>value==null||Array.isArray(value)],['integrations',integrations,objectOrNull],['locations',locations,value=>value==null||Array.isArray(value)],
+    ['phone inventory',phones,value=>value==null||Array.isArray(value)],['support index',supportIndex,value=>value==null||Array.isArray(value)],
+    ['onboarding',onboarding,objectOrNull],['audit',audit,value=>value==null||Array.isArray(value)]
+  ].find(([,value,valid])=>!valid(value));
+  if(invalid)throw new Error('Workspace export source unavailable: '+invalid[0]);
   const conversations=await readAllConversations(kv,id);
-  const support=[];
-  for(const ticketId of Array.isArray(supportIndex)?supportIndex:[]){
-    const t=await kv.get('support:'+ticketId);if(t&&t.workspaceId===id)support.push(t);
+  if(!Array.isArray(conversations))throw new Error('Workspace export source unavailable: conversations');
+  const support=[],supportIds=supportIndex||[];
+  if(supportIds.some(ticketId=>typeof ticketId!=='string'||!ticketId.trim())||new Set(supportIds).size!==supportIds.length)
+    throw new Error('Workspace export source unavailable: support index');
+  for(const ticketId of supportIds){
+    const t=await kv.get('support:'+ticketId);
+    if(!t||typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==String(ticketId))throw new Error('Workspace export source unavailable: support record');
+    if(t.workspaceId===id)support.push(t);
   }
-  const phone=(Array.isArray(phones)?phones:[]).find(x=>x&&x.workspaceId===id)||null;
+  const phone=(phones||[]).find(x=>x&&x.workspaceId===id)||null;
   return {
     exportVersion:'1.0',exportedAt:new Date().toISOString(),
     workspace:redactExportSecrets(workspace),settings:redactExportSecrets(settings||null),agent:redactExportSecrets(agent||null),phone:redactExportSecrets(phone),
@@ -2962,20 +2976,23 @@ function sendWorkspaceExport(res,id,data,prefix='CallerCore-workspace-export'){
 }
 async function workspaceExport(req,res){
   const s=await requireSession(req,res);if(!s)return;
-  const data=await buildWorkspaceExportData(s.workspaceId);if(!data)return res.status(404).json({error:'Workspace not found'});
+  let data;try{data=await buildWorkspaceExportData(s.workspaceId)}catch(err){console.error('workspace export verification failed',safeError(err));return res.status(503).json({error:'Workspace export could not be verified. No partial export was downloaded.'})}
+  if(!data)return res.status(404).json({error:'Workspace not found'});
   return sendWorkspaceExport(res,s.workspaceId,data);
 }
 async function adminWorkspaceExport(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.query||{}).id||'').slice(0,80);if(!id)return res.status(400).json({error:'Client id required'});
-  const data=await buildWorkspaceExportData(id);if(!data)return res.status(404).json({error:'Workspace not found'});
+  let data;try{data=await buildWorkspaceExportData(id)}catch(err){console.error('admin workspace export verification failed',safeError(err));return res.status(503).json({error:'Workspace export could not be verified. No partial export was downloaded.'})}
+  if(!data)return res.status(404).json({error:'Workspace not found'});
   await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'workspace_export',section:'access',meta:{reason:'admin_download'}});
   return sendWorkspaceExport(res,id,data,'CallerCore-admin-workspace-export');
 }
 async function adminRecoveryDrill(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.query||{}).id||'').slice(0,80);if(!id)return res.status(400).json({error:'Client id required'});
-  const data=await buildWorkspaceExportData(id);if(!data)return res.status(404).json({error:'Workspace not found'});
+  let data;try{data=await buildWorkspaceExportData(id)}catch(err){console.error('recovery drill source verification failed',safeError(err));return res.status(503).json({error:'Recovery source data could not be verified. No partial recovery result was reported.'})}
+  if(!data)return res.status(404).json({error:'Workspace not found'});
   const validation=validateWorkspaceExportData(data);
   await appendAudit(id,{actorEmail:admin.email,actorRole:'admin',action:'recovery_drill',section:'access',meta:{ok:validation.ok,recoverable:validation.recoverable,issueCount:validation.issues.length,warningCount:validation.warnings.length}});
   return res.status(validation.ok?200:409).json({ok:validation.ok,recoverable:validation.recoverable,issues:validation.issues,warnings:validation.warnings,sections:validation.sections,requiresProviderReconnect:validation.requiresProviderReconnect,checkedAt:Date.now()});
