@@ -20,8 +20,8 @@ function fixture(){
 
 test('a slower website conversation cannot replace a newer inbox selection',async()=>{
   const {context,requests}=fixture(),first=vm.runInContext("openInboxItem('website','first')",context),second=vm.runInContext("openInboxItem('website','second')",context);
-  requests.get('second').resolve(response({prospect:{id:'second'},messages:[{body:'Second'}]}));await second;
-  requests.get('first').resolve(response({prospect:{id:'first'},messages:[{body:'First'}]}));await first;
+  requests.get('second').resolve(response({prospect:{id:'second'},messages:[{body:'Second'}],coverage:{verified:true,truncated:false,retainedMessages:1,totalMessages:1}}));await second;
+  requests.get('first').resolve(response({prospect:{id:'first'},messages:[{body:'First'}],coverage:{verified:true,truncated:false,retainedMessages:1,totalMessages:1}}));await first;
   assert.equal(context.currentInboxItem.id,'second');assert.equal(context.currentInboxItem.messages[0].body,'Second');
 });
 
@@ -30,4 +30,16 @@ test('selecting Gmail invalidates an in-flight website request and its stale err
   await vm.runInContext("openInboxItem('gmail','gmail-one')",context);
   requests.get('first').resolve(response({error:'Old request failed'},false));await pending;
   assert.equal(context.currentInboxItem.kind,'gmail');assert.equal(context.currentInboxItem.id,'gmail-one');assert.deepEqual(alerts,[]);
+});
+
+
+test('incomplete successful website conversation does not replace the previous inbox item',async()=>{
+  const {context,requests,alerts}=fixture();
+  context.currentInboxItem={kind:'gmail',id:'gmail-one',messages:[{body:'Existing'}]};
+  const pending=vm.runInContext("openInboxItem('website','first')",context);
+  requests.get('first').resolve(response({prospect:{id:'first'},messages:[]}));
+  await pending;
+  assert.equal(context.currentInboxItem.kind,'gmail');
+  assert.equal(context.currentInboxItem.id,'gmail-one');
+  assert.ok(alerts.some(message=>/incomplete/i.test(message)));
 });

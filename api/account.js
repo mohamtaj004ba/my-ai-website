@@ -1672,11 +1672,13 @@ async function adminWebsiteConversation(req,res){
   const id=String((req.query||{}).id||'').slice(0,100);
   if(!id)return res.status(400).json({error:'Prospect id required'});
   const prospect=await kv.get('site:prospect:'+id);if(!prospect)return res.status(404).json({error:'Prospect not found'});
+  if(typeof prospect!=='object'||Array.isArray(prospect)||String(prospect.id||'')!==id)return res.status(503).json({error:'Website prospect record is unavailable. No conversation was substituted.'});
   const [rawMessages,rawCoverage]=await Promise.all([kv.get('site:conversation:'+id),kv.get('site:conversation:meta:'+id)]);
-  if(rawMessages!=null&&!Array.isArray(rawMessages))return res.status(503).json({error:'Website conversation history is unavailable. No messages were hidden or changed.'});
+  if(rawMessages!=null&&(!Array.isArray(rawMessages)||rawMessages.some(message=>!message||typeof message!=='object'||Array.isArray(message))))return res.status(503).json({error:'Website conversation history is unavailable. No messages were hidden or changed.'});
   const messages=rawMessages||[],retainedMessages=messages.length,
-    validCoverage=rawCoverage&&typeof rawCoverage==='object'&&!Array.isArray(rawCoverage)&&Number.isFinite(Number(rawCoverage.totalMessages))&&Number(rawCoverage.totalMessages)>=retainedMessages,
-    coverage=validCoverage?{
+    validCoverage=rawCoverage&&typeof rawCoverage==='object'&&!Array.isArray(rawCoverage)&&Number.isFinite(Number(rawCoverage.totalMessages))&&Number(rawCoverage.totalMessages)>=retainedMessages;
+  if(rawCoverage!=null&&!validCoverage)return res.status(503).json({error:'Website conversation coverage is unavailable. No incomplete history was substituted.'});
+  const coverage=validCoverage?{
       verified:rawCoverage.baselineVerified!==false,
       truncated:rawCoverage.truncated===true||Number(rawCoverage.totalMessages)>retainedMessages,
       retainedMessages,totalMessages:Number(rawCoverage.totalMessages),updatedAt:Number(rawCoverage.updatedAt||0)

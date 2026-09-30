@@ -32,3 +32,13 @@ test('closing the call drawer invalidates an in-flight detail response',async()=
   requests.get('one').resolve({call:{id:'one',caller:'First',transcript:[]}});await pending;
   assert.equal(context.activeCallId,'');assert.equal(node('callDrawer')['aria-hidden'],'true');assert.equal(node('callDrawer').classList.contains('open'),false);
 });
+
+
+test('malformed successful call detail cannot overwrite the selected call record',async()=>{
+  const {context,requests}=fixture(),pending=vm.runInContext("openCall('one')",context);
+  requests.get('one').resolve({call:{id:'different',caller:'Wrong',transcript:[]}});
+  await pending;
+  assert.equal(context.activeCallId,'one');
+  assert.equal(context.callsData.find(call=>call.id==='one').caller,'First');
+  assert.equal(context.callsData.find(call=>call.id==='one').transcript,undefined);
+});

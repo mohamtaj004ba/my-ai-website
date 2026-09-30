@@ -98,3 +98,11 @@ test('normalized hydration ignores mismatched detail identities and falls back t
   assert.deepEqual(contact.map(item=>item.id),['thread-a']);
   assert.equal(contact[0].messages[0].text,'Furnace tuneup');
 });
+
+
+test('single normalized conversation detail fails closed when index evidence cannot be hydrated',async()=>{
+  const all=records(),kv=memoryKv({'conversations:ws_1':[]});
+  await publishNormalizedConversations(kv,'ws_1',all);
+  kv.data.set(detailKey('ws_1','thread-a'),{id:'wrong-thread',messages:[]});
+  await assert.rejects(()=>readConversation(kv,'ws_1','thread-a'),/detail history is unavailable/);
+});

@@ -690,7 +690,7 @@ function renderCalls(){
 }
 async function openCall(id){
   const request=++callDrawerOpenRequest;let x=callsData.find(c=>String(c.id)===String(id));if(!x)return;
-  if(!x.transcript&&!demoMode){try{const data=await fetchJsonRetry('/api/account?action=call-detail&id='+encodeURIComponent(id),{attempts:2,timeout:7000});if(data.call)x=data.call}catch(err){console.warn('Call details delayed',err)}}
+  if(!x.transcript&&!demoMode){try{const data=await fetchJsonRetry('/api/account?action=call-detail&id='+encodeURIComponent(id),{attempts:2,timeout:7000});if(!data?.call||typeof data.call!=='object'||Array.isArray(data.call)||String(data.call.id||'')!==String(id))throw new Error('Call detail response was incomplete');x=data.call}catch(err){console.warn('Call details delayed',err)}}
   if(request!==callDrawerOpenRequest)return;
   const callIndex=callsData.findIndex(c=>String(c.id)===String(id));if(callIndex>=0)callsData[callIndex]={...callsData[callIndex],...x};
   activeCallContactKey=contactKey(x);activeCallId=String(x.id||'');markCallViewed(activeCallId);
@@ -959,7 +959,7 @@ function openConversation(id,{loadEarlier=false}={}){
   const stream=document.getElementById('messageStream');
   if(!Array.isArray(x.messages)&&Number(x.messageCount||0)>0){
     stream.innerHTML='<div class="contact-inline-loading"><i></i><span>Loading message history…</span></div>';
-    if(!x.__detailLoading){x.__detailLoading=true;fetchJsonRetry('/api/account?action=conversation-detail&id='+encodeURIComponent(id),{attempts:2,timeout:8000}).then(data=>{if(data.conversation){const index=conversationsData.findIndex(item=>String(item.id)===String(id));if(index>=0)conversationsData[index]={...conversationsData[index],...data.conversation,__detailLoading:false};if(String(activeConversationId)===String(id))openConversation(id)}}).catch(err=>{x.__detailLoading=false;if(String(activeConversationId)===String(id))stream.innerHTML='<div class="empty-state"><h3>Message history is delayed</h3><p>'+esc(err.message||'Try again shortly.')+'</p></div>'})}
+    if(!x.__detailLoading){x.__detailLoading=true;fetchJsonRetry('/api/account?action=conversation-detail&id='+encodeURIComponent(id),{attempts:2,timeout:8000}).then(data=>{if(!data?.conversation||typeof data.conversation!=='object'||Array.isArray(data.conversation)||String(data.conversation.id||'')!==String(id)||!Array.isArray(data.conversation.messages))throw new Error('Conversation detail response was incomplete');const index=conversationsData.findIndex(item=>String(item.id)===String(id));if(index>=0)conversationsData[index]={...conversationsData[index],...data.conversation,__detailLoading:false};if(String(activeConversationId)===String(id))openConversation(id)}).catch(err=>{x.__detailLoading=false;if(String(activeConversationId)===String(id))stream.innerHTML='<div class="empty-state"><h3>Message history is delayed</h3><p>'+esc(err.message||'Try again shortly.')+'</p></div>'})}
     return;
   }
   const oldHeight=stream.scrollHeight,oldTop=stream.scrollTop,messages=Array.isArray(x.messages)?x.messages:[],visible=messages.slice(-conversationMessageLimit);
@@ -1086,7 +1086,8 @@ async function hydrateContactCallDetails(callId,details){
     if(body)body.innerHTML='<div class="contact-inline-loading"><i></i><span>Loading call details…</span></div>';
     try{
       const data=await fetchJsonRetry('/api/account?action=call-detail&id='+encodeURIComponent(callId),{attempts:2,timeout:7000});
-      if(data.call){const idx=callsData.findIndex(x=>String(x.id)===String(callId));if(idx>=0)callsData[idx]={...callsData[idx],...data.call};call=callsData[idx>=0?idx:callsData.findIndex(x=>String(x.id)===String(callId))]||data.call}
+      if(!data?.call||typeof data.call!=='object'||Array.isArray(data.call)||String(data.call.id||'')!==String(callId))throw new Error('Call detail response was incomplete');
+      const idx=callsData.findIndex(x=>String(x.id)===String(callId));if(idx>=0)callsData[idx]={...callsData[idx],...data.call};call=callsData[idx>=0?idx:callsData.findIndex(x=>String(x.id)===String(callId))]||data.call
     }catch(err){console.warn('Inline contact call detail delayed',err)}
   }
   if(body)body.innerHTML=contactInlineCallHtml(call);
@@ -2513,7 +2514,8 @@ async function openInboxItem(kind,id){
     const r=await fetch('/api/account?action=admin-website-conversation&id='+encodeURIComponent(id),{cache:'no-store'}),data=await r.json().catch(()=>({}));
     if(request!==adminInboxOpenRequest)return;
     if(!r.ok){alert(data.error||'Could not load website conversation.');return}
-    currentInboxItem={kind,id,prospect:data.prospect,messages:data.messages||[],coverage:data.coverage||null};
+    if(!data?.prospect||typeof data.prospect!=='object'||Array.isArray(data.prospect)||String(data.prospect.id||'')!==String(id)||!Array.isArray(data.messages)||!data.coverage||typeof data.coverage!=='object'||Array.isArray(data.coverage)) {alert('Website conversation response was incomplete. The previous inbox selection was preserved.');return}
+    currentInboxItem={kind,id,prospect:data.prospect,messages:data.messages,coverage:data.coverage};
   }else{
     const thread=(adminInboxData.gmail?.threads||[]).find(x=>x.id===id);if(!thread)return;
     currentInboxItem={kind,id,thread,prospect:thread.prospect||null,messages:thread.messages||[]};

@@ -92,3 +92,13 @@ test('malformed successful conversation pages preserve the last loaded page',asy
     assert.match(ctx.conversationPageError,/showing last loaded page/);
   }
 });
+
+
+test('malformed conversation detail keeps the summary and exposes delayed history',async()=>{
+  const record={id:'summary',name:'Customer',messageCount:2,createdAt:1},
+    fetchJsonRetry=async()=>({conversation:{id:'other',messages:[]}}),
+    {ctx,node,render}=fixture([record],{fetchJsonRetry});
+  render();await new Promise(setImmediate);await new Promise(setImmediate);
+  assert.equal(Array.isArray(ctx.conversationsData[0].messages),false);
+  assert.match(node('messageStream').innerHTML,/Message history is delayed/);
+});
