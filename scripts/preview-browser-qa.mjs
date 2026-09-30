@@ -498,6 +498,14 @@ async function runAdminInteractions(page){
   const retentionJson=JSON.stringify(retentionReport);
   if(retentionJson.includes('planned')||retentionJson.includes('before')||retentionJson.includes('after')||retentionJson.includes('@callercore.test'))throw new Error('Retention report exposed record-level prospect details');
   report.admin.interactions.push('read-only retention dry-run + consent gate');
+  const migrationResponse=await page.request.get(baseURL+'/api/account?action=admin-conversation-migration-report&limit=100');
+  if(!migrationResponse.ok())throw new Error('Conversation migration dry-run endpoint was unavailable');
+  const migrationReport=(await migrationResponse.json()).report;
+  if(!migrationReport||migrationReport.mode!=='dry_run'||migrationReport.writeActionsEnabled!==false||migrationReport.migrationExecutorReachable!==false||migrationReport.legacyPreserved!==true||migrationReport.detailFidelityChecked!==false)throw new Error('Conversation migration report did not remain reversible/read-only');
+  if(!migrationReport.complete||Number(migrationReport.scanned||0)<1||Number(migrationReport.scanned)!==Number(migrationReport.totalWorkspaces)||Number(migrationReport.blockingWorkspaces||0)!==0||Number(migrationReport.migrationCandidates||0)!==0)throw new Error('Preview conversation stores are not aligned for migration readiness');
+  const migrationJson=JSON.stringify(migrationReport);
+  if(migrationJson.includes(report.workspaceId)||migrationJson.includes('Summit Heating'))throw new Error('Conversation migration report exposed workspace-level records');
+  report.admin.interactions.push('read-only normalized conversation migration readiness');
 
   await ensureView(page,'phones');
   const initialPhones=await page.locator('#phoneTable [data-edit-phone]').count();
@@ -558,6 +566,8 @@ async function runAdminInteractions(page){
   const retentionStatus=(await page.locator('#retentionReportStatus').textContent()||'').trim();
   if(!retentionStatus||retentionStatus==='Not checked'||retentionStatus==='Unavailable')throw new Error('System Health did not render retention dry-run status');
   if((await page.locator('#retentionReportNote').textContent()||'').includes('No records were changed')!==true)throw new Error('Retention panel omitted its read-only guarantee');
+  const migrationStatus=(await page.locator('#conversationMigrationStatus').textContent()||'').trim();
+  if(migrationStatus!=='Aligned')throw new Error('System Health did not render aligned conversation migration readiness');
   report.admin.interactions.push('global search keyboard navigation + retention health panel');
 
   await ensureView(page,'clients');
