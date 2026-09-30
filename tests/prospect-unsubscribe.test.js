@@ -35,6 +35,11 @@ function memoryKv(initial,{conflictOnce=false}={}){
   };
 }
 
+test('unsubscribe URL generation requires HTTPS',()=>{
+  const p=prospect();
+  assert.throws(()=>marketingUnsubscribeUrl(p,SECRET,{siteUrl:'http://callercore.test'}),/site URL is invalid/);
+});
+
 test('unsubscribe token is signed, prospect-specific and contains no contact PII',()=>{
   const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),url=marketingUnsubscribeUrl(p,SECRET,{siteUrl:'https://preview.callercore.test'});
   assert.equal(tokenMatchesProspect(token,p,SECRET),true);
