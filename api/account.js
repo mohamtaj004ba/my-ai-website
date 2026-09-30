@@ -355,6 +355,8 @@ function financeExpenseForMonth(expenses,monthKey){
 async function adminFinance(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const [workspaces,storedExpenses,storedHistory,reconciliationIds]=await Promise.all([loadAdminWorkspaces(),kv.get('finance:expenses'),kv.get('finance:history'),kv.lrange('stripe:reconciliation:index',0,199)]);
+  if(storedExpenses!=null&&!Array.isArray(storedExpenses))return res.status(503).json({error:'Company expense records are unavailable. Finance figures were not refreshed.'});
+  if(storedHistory!=null&&!Array.isArray(storedHistory))return res.status(503).json({error:'Finance history is unavailable. Finance figures were not refreshed.'});
   if(!Array.isArray(reconciliationIds))return res.status(503).json({error:'Checkout reconciliation queue could not be loaded. Finance figures were not refreshed.'});
   const reconciliation=[],uniqueIds=[...new Set(reconciliationIds.map(x=>String(x||'').trim()).filter(Boolean))],coverage={retainedCaseIds:reconciliationIds.length,unavailableCaseRecords:0,isRetentionCapped:reconciliationIds.length>=200};
   for(let offset=0;offset<uniqueIds.length;offset+=50){
@@ -366,7 +368,7 @@ async function adminFinance(req,res){
     }
   }
   reconciliation.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
-  const expenses=Array.isArray(storedExpenses)?storedExpenses:[],history=Array.isArray(storedHistory)?storedHistory.slice():[],now=Date.now(),currentMonth=financeMonthKey(now),prices={Starter:349,Growth:599,Pro:999};
+  const expenses=storedExpenses||[],history=(storedHistory||[]).slice(),now=Date.now(),currentMonth=financeMonthKey(now),prices={Starter:349,Growth:599,Pro:999};
   const billable=currentBillableWorkspaces(workspaces),mrr=billable.reduce((sum,w)=>sum+(prices[w.plan]||0),0);
   const recurringExpenses=expenses.filter(e=>e.status!=='paused').reduce((sum,e)=>sum+expenseMonthlyEquivalent(e),0);
   const currentMonthOneTime=expenses.filter(e=>e.status!=='paused'&&e.frequency==='one_time'&&financeMonthKey(e.date?Date.parse(e.date+'T12:00:00Z'):e.createdAt)===currentMonth).reduce((sum,e)=>sum+Number(e.amount||0),0);

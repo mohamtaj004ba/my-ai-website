@@ -1,0 +1,31 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const source=fs.readFileSync('api/account.js','utf8');
+const start=source.indexOf('async function adminFinance(req,res)'),end=source.indexOf('\nasync function adminFinanceExpenseSave(',start),handler=source.slice(start,end);
+assert.ok(start>=0&&end>start);
+
+async function run({expenses=[],history=[],reconciliation=[]}={}){
+  let status=0,payload,snapshots=0;
+  const ctx=vm.createContext({
+    requireAdmin:async()=>({email:'admin@example.test'}),loadAdminWorkspaces:async()=>[],
+    kv:{get:async key=>key==='finance:expenses'?expenses:key==='finance:history'?history:null,lrange:async()=>reconciliation},
+    financeMonthKey:()=> '2026-09',financeMonthEnd:()=>Date.now(),financeRevenueForMonth:()=>0,financeExpenseForMonth:()=>0,
+    expenseMonthlyEquivalent:()=>0,currentBillableWorkspaces:()=>[],recordFinanceSnapshot:async()=>{snapshots++;return []},
+    process:{env:{VERCEL_ENV:'production'}},Date,Number,Math,Set,String,Array,Promise,
+    req:{},res:{status(n){status=n;return this},json(x){payload=x;return x}},safeError:()=>'',console:{error(){}}
+  });
+  vm.runInContext(handler,ctx);await vm.runInContext('adminFinance(req,res)',ctx);return {status,payload,snapshots};
+}
+test('malformed expense storage cannot impersonate zero company costs',async()=>{
+  const r=await run({expenses:{corrupt:true}});assert.equal(r.status,503);assert.match(r.payload.error,/expense records are unavailable/);assert.equal(r.snapshots,0);
+});
+test('malformed finance history cannot be replaced by a new apparently healthy snapshot',async()=>{
+  const r=await run({history:{corrupt:true}});assert.equal(r.status,503);assert.match(r.payload.error,/Finance history is unavailable/);assert.equal(r.snapshots,0);
+});
+test('finance handler uses validated arrays after source checks',()=>{
+  assert.match(handler,/storedExpenses!=null&&!Array\.isArray\(storedExpenses\)/);
+  assert.match(handler,/storedHistory!=null&&!Array\.isArray\(storedHistory\)/);
+  assert.match(handler,/const expenses=storedExpenses\|\|\[\],history=\(storedHistory\|\|\[\]\)\.slice\(\)/);
+});
