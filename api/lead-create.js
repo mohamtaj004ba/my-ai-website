@@ -49,6 +49,7 @@ module.exports = async function handler(req, res) {
   const industry = clean(raw.industry, 160);
   const plan = clean(raw.plan, 20);
   const visitorId=clean(raw.visitorId,120),sessionId=clean(raw.sessionId,120),utmSource=clean(raw.utmSource,120),utmMedium=clean(raw.utmMedium,120),utmCampaign=clean(raw.utmCampaign,160);
+  const marketingEmailConsent=raw.marketingEmailConsent===true;
   const allowedPlans = new Set(['Starter','Growth','Pro']);
 
   if (!name || !business || !email || !phone || !industry || !allowedPlans.has(plan)) {
@@ -61,7 +62,7 @@ module.exports = async function handler(req, res) {
   const leadId = crypto.randomUUID();
   let prospect;
   try {
-    prospect=await upsertWebsiteProspect({name,business,email,phone,industry,plan,source:'get_started',stage:'checkout_started',visitorId,sessionId,utmSource,utmMedium,utmCampaign});
+    prospect=await upsertWebsiteProspect({name,business,email,phone,industry,plan,source:'get_started',stage:'checkout_started',visitorId,sessionId,utmSource,utmMedium,utmCampaign,marketingEmailConsent:{granted:marketingEmailConsent,source:'get_started'}});
     await kv.set(
       `lead:${leadId}`,
       { name, business, email, phone, industry, plan, prospectId:prospect.id, visitorId, sessionId, utmSource, utmMedium, utmCampaign, acquisition:{source:prospect.firstSource||prospect.source||'website',utmSource:prospect.firstUtmSource||prospect.utmSource||utmSource,utmMedium:prospect.firstUtmMedium||prospect.utmMedium||utmMedium,utmCampaign:prospect.firstUtmCampaign||prospect.utmCampaign||utmCampaign}, createdAt: Date.now() },
