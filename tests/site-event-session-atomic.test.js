@@ -40,7 +40,7 @@ function fixture({forceConflicts=0,invalidEventDirectory=false,invalidSessionDir
   };
   const module={exports:{}};
   vm.runInNewContext(source,{module,exports:module.exports,
-    require:name=>name==='crypto'?{...crypto,randomUUID:()=> 'event-'+(++ids)}:name==='./kv'?{kv}:name==='./analytics-retention-policy'?{SITE_EVENT_RETENTION_MS:180*24*60*60*1000,SITE_SESSION_RETENTION_SECONDS:180*24*60*60}:require(name),
+    require:name=>name==='crypto'?{...crypto,randomUUID:()=> 'event-'+(++ids)}:name==='./kv'?{kv}:name==='./analytics-retention-policy'?{SITE_EVENT_RETENTION_MS:180*24*60*60*1000,SITE_SESSION_RETENTION_SECONDS:180*24*60*60}:name==='./prospect-consent'?require('../lib/prospect-consent'):require(name),
     Date,Math,Number,String,Promise,Set,Error,Object});
   return {record:module.exports.recordSiteEvent,values,events,index,attempts,kv};
 }
