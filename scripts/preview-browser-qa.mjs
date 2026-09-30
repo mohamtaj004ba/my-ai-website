@@ -196,6 +196,17 @@ async function seedWorkspace(request){
   report.workspaceReused=!!boot.reused;
   const seed=await post(request,'seed-preview-data',{email:qaEmail});
   report.seed={calls:seed.calls,leads:seed.leads,conversations:seed.conversations,adminClients:seed.adminClients,days:seed.days};
+  const rehearsal=(await post(request,'preview-conversation-migration-rehearsal',{email:qaEmail})).rehearsal;
+  if(!rehearsal||rehearsal.mode!=='preview_rehearsal'||rehearsal.writeScope!=='shadow_only'||rehearsal.productionExecutorReachable!==false||
+     rehearsal.migrationExecutorReachable!==false||rehearsal.legacySourcePreserved!==true||rehearsal.publishReadEquivalent!==true||
+     rehearsal.detailFidelityComplete!==true||rehearsal.rollbackApplied!==true||rehearsal.rollbackReadEquivalent!==true||
+     rehearsal.concurrentChangeBlocked!==true||rehearsal.concurrentStatePreserved!==true||rehearsal.shadowCleaned!==true||rehearsal.complete!==true)
+    throw new Error('Preview conversation migration rehearsal did not prove reversible publication/rollback');
+  if(Number(rehearsal.conversationCount||0)!==Number(seed.conversations||0))throw new Error('Preview migration rehearsal conversation count did not match the seeded source');
+  const rehearsalJson=JSON.stringify(rehearsal);
+  if(rehearsalJson.includes(report.workspaceId)||rehearsalJson.includes('Summit Heating')||rehearsalJson.includes('@callercore.test'))
+    throw new Error('Preview migration rehearsal exposed workspace-level data');
+  report.admin.interactions.push('shadow-only conversation migration publish/rollback rehearsal');
 }
 
 async function startSession(context,mode){
