@@ -2949,7 +2949,9 @@ function renderRetentionReport(){
   set('retentionSessionIndex',analytics.indexedSessions==null?'—':Number(analytics.indexedSessions).toLocaleString());
   const rollupGaps=Array.isArray(rollups.incompleteSources)?rollups.incompleteSources.length:0;
   set('retentionRollupStatus',rollups.status==='error'?'Unavailable':rollups.currentPresent===false?'Missing':rollupGaps?rollupGaps+' gap'+(rollupGaps===1?'':'s'):'Current');
-  set('retentionRollupMeta',rollups.currentMonth?(rollups.currentMonth+(rollups.stale?' · stale':'')):'Current month');
+  const schedulerLabel=rollups.schedulerState==='active'?'scheduled':rollups.schedulerState==='misconfigured'?'scheduler misconfigured':'scheduler disabled',
+    previousLabel=rollups.previousMonth?(rollups.previousMonth+' '+(rollups.previousFinalized?'finalized':'not finalized')):'prior month unknown';
+  set('retentionRollupMeta',rollups.currentMonth?(rollups.currentMonth+(rollups.stale?' · stale':'')+' · '+previousLabel+' · '+schedulerLabel):'Current month');
   const state=report.status==='error'?'error':report.status==='warning'?'warning':'ok';
   if(state!=='ok')panel.classList.add('is-'+state);
   if(status){status.textContent=state==='error'?'Needs review':state==='warning'?'Review needed':'Read-only checks clear';status.className='tag '+(state==='error'?'red':state==='warning'?'amber':'green')}
@@ -2964,9 +2966,12 @@ function renderRetentionReport(){
   else if(rollups.currentPresent===false)issues.push('The current monthly rollup has not been recorded');
   else if(rollups.stale)issues.push('The current monthly rollup is stale');
   else if(rollupGaps)issues.push('Monthly rollup coverage is incomplete for '+rollups.incompleteSources.join(', '));
+  if(rollups.schedulerState==='misconfigured')issues.push('Analytics maintenance is enabled but the cron secret is not configured');
+  else if(rollups.schedulerState==='disabled')issues.push('Analytics maintenance cadence is configured in code but remains intentionally disabled');
+  if(rollups.previousMonth&&rollups.previousFinalized===false)issues.push(rollups.previousMonth+' has no verified month-end finalization marker yet');
   if(adminRetentionLoadError)issues.push(adminRetentionLoadError);
   const checked=adminRetentionCheckedAt?' Checked '+new Date(adminRetentionCheckedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+'.':'';
-  if(note)note.textContent=(issues.length?issues.join(' · '):'No retention-policy data gaps were detected by this read-only report.')+checked+' No records were changed; cleanup and compaction schedulers remain disabled.';
+  if(note)note.textContent=(issues.length?issues.join(' · '):'No retention-policy data gaps were detected by this read-only report.')+checked+' No records were changed; prospect cleanup and session compaction remain disabled.';
 }
 function renderHealth(){
   renderRetentionReport();
