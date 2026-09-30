@@ -35,3 +35,10 @@ test('successful phone save updates local revision before allowing the modal to 
   assert.equal(closedWith.label,'New label');assert.equal(closedWith.updatedAt,11);assert.equal(ctx.phoneSaving,false);
   finishRefresh();await pending;
 });
+
+test('admin phone inventory read refuses malformed storage instead of returning an empty inventory',()=>{
+  const source=fs.readFileSync('api/account.js','utf8');
+  const start=source.indexOf('async function adminPhoneNumbers('),end=source.indexOf('\nasync function adminPhoneNumberSave(',start),block=source.slice(start,end);
+  assert.match(block,/Phone inventory is unavailable\. No empty inventory was substituted/);
+  assert.match(block,/raw!=null&&!Array\.isArray\(raw\)/);
+});

@@ -93,3 +93,11 @@ test('unauthorized operational views never read workspace inventory',async()=>{
     assert.equal(f.reads.length,0);
   }
 });
+
+test('operational directory views fail closed on malformed provisioning or fleet secondary records',()=>{
+  const provisioning=source.slice(source.indexOf('async function adminProvisioning('),source.indexOf('\nfunction validProvisioningHistory(',source.indexOf('async function adminProvisioning(')));
+  const fleet=source.slice(source.indexOf('async function adminFleet('),source.indexOf('\nasync function createSupportTicket(',source.indexOf('async function adminFleet(')));
+  assert.match(provisioning,/Provisioning source data could not be verified/);
+  assert.match(fleet,/Fleet source data could not be verified/);
+  assert.match(fleet,/workflowCoverage/);
+});

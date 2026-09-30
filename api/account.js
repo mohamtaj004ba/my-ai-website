@@ -886,6 +886,7 @@ async function adminViewClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).id||'').slice(0,80);
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record could not be verified. Admin client view was not opened.'});
   const old=parseCookies(req).cc_session;if(old)await destroySessionToken(old);
   await createSession(res,{email:admin.email,workspaceId:id,role:'admin',adminView:true,adminHomeWorkspaceId:admin.workspaceId,authVersion:Number((await kv.get('user:email:'+cleanEmail(admin.email)))?.sessionVersion||0)});
   return res.status(200).json({ok:true,redirect:'/dashboard',workspace:{id:ws.id,name:ws.name}});
@@ -909,6 +910,7 @@ async function requireWritableSession(req,res){
 }
 async function requireOperationalWorkspace(s,res){
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'}),null;
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||s.workspaceId)!==String(s.workspaceId))return res.status(503).json({error:'Workspace record could not be verified. No operational change was allowed.'}),null;
   if(ws.status==='suspended')return res.status(423).json({error:'Workspace service is suspended. Billing and support remain available.'}),null;
   if(ws.status==='pending_deletion')return res.status(423).json({error:'Workspace is pending deletion'}),null;
   return ws;
@@ -923,7 +925,10 @@ async function adminProvisioning(req,res){
       const [settings,agent,onboarding,routing,override]=await Promise.all([
         kv.get('settings:'+id),kv.get('agent:'+id),kv.get('onboarding:workspace:'+id),
         kv.get('routing-request:'+id),kv.get('provisioning:override:'+id)
-      ]);
+      ]),objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value);
+      if(!objectOrNull(settings)||!objectOrNull(agent)||!objectOrNull(onboarding)||!objectOrNull(routing)||
+        !objectOrNull(override)||(override&&!ONBOARDING_STAGES.includes(override.stage)))
+        return {error:'Provisioning source data could not be verified for '+(ws.name||id)+'. No partial onboarding view was returned.'};
     const hasIntake=!!(onboarding?.checklist?.intake||(settings&&((settings.businessName||'').trim()||(settings.primaryEmail||'').trim())));
     const hasAgent=!!(onboarding?.checklist?.agentDraft||(agent&&((agent.name||'').trim()||(agent.openingMessage||'').trim())));
     const hasPhone=!!String(ws.phone||'').trim();
@@ -971,6 +976,7 @@ async function adminProvisioning(req,res){
       intakeCompletedAt:onboarding?.intakeCompletedAt||null
     };
     }));
+    const invalid=batch.find(x=>x&&x.error);if(invalid)return res.status(503).json({error:invalid.error});
     items.push(...batch);
   }
   return res.status(200).json({provisioning:items});
@@ -993,6 +999,7 @@ async function adminSaveProvisioningStage(req,res){
   if(body.expectedUpdatedAt===undefined||body.expectedUpdatedAt===null||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==revision)
     return res.status(409).json({error:'Provisioning stage changed while you were reviewing it. Refresh onboarding before retrying.'});
   if(previous?.stage===stage)return res.status(200).json({ok:true,stage,updatedAt:revision,unchanged:true});
+  if(Array.isArray(history)&&history.length>=50)return res.status(409).json({error:'Provisioning history has reached its 50-entry safety limit. No stage change was made.'});
   if(stage==='Live'){
     const onboarding=await kv.get('onboarding:workspace:'+id);
     if(!canManuallyMarkLive({workspace:ws,onboarding}))return res.status(409).json({error:'A manual label cannot mark a client Live. Complete the verified launch checklist first.'});
@@ -1019,6 +1026,7 @@ async function adminClearProvisioningStage(req,res){
   if(body.expectedUpdatedAt===undefined||body.expectedUpdatedAt===null||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==revision)
     return res.status(409).json({error:'Provisioning stage changed while you were reviewing it. Refresh onboarding before retrying.'});
   if(!previous)return res.status(200).json({ok:true,unchanged:true});
+  if(Array.isArray(history)&&history.length>=50)return res.status(409).json({error:'Provisioning history has reached its 50-entry safety limit. No stage restoration was made.'});
   const now=Math.max(Date.now(),revision+1);
   const nextHistory=[{stage:'Automatic',at:now,by:admin.email},...(history||[])].slice(0,50);
   try{
@@ -1030,8 +1038,10 @@ async function adminClearProvisioningStage(req,res){
 
 async function adminPhoneNumbers(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const numbers=await kv.get('phone:index')||[];
-  return res.status(200).json({numbers:Array.isArray(numbers)?numbers.map(item=>({...item,voice:voiceStatus(item)})):[]});
+  const raw=await kv.get('phone:index');
+  if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Phone inventory is unavailable. No empty inventory was substituted.'});
+  const numbers=raw||[];
+  return res.status(200).json({numbers:numbers.map(item=>({...item,voice:voiceStatus(item)}))});
 }
 
 async function syncOnboardingPhoneAssignment(workspaceId,assigned){
@@ -1143,10 +1153,13 @@ async function adminFleet(req,res){
   const workspaces=await loadAdminWorkspaces(),agents=[],automations=[];
   for(let offset=0;offset<workspaces.length;offset+=40){
     const batch=await Promise.all(workspaces.slice(offset,offset+40).map(async ws=>{
-      const id=ws.id,[agent,wsAutos]=await Promise.all([kv.get('agent:'+id),kv.get('automations:'+id)]);
-      const autos=Array.isArray(wsAutos)?wsAutos:[];
-      return {agent:{workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',agent:agent||null},automation:{workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length,workflows:autos.slice(0,20).filter(Boolean).map(x=>({id:x.id||'',name:String(x.name||'Automation').slice(0,120),trigger:String(x.trigger||'').slice(0,80),action:String(x.action||'').slice(0,80),enabled:x.enabled!==false}))}};
+      const id=ws.id,[agent,wsAutos]=await Promise.all([kv.get('agent:'+id),kv.get('automations:'+id)]),
+        agentValid=agent==null||!!agent&&typeof agent==='object'&&!Array.isArray(agent);
+      if(!agentValid||wsAutos!=null&&!Array.isArray(wsAutos))return {error:'Fleet source data could not be verified for '+(ws.name||id)+'. No partial fleet view was returned.'};
+      const autos=wsAutos||[];
+      return {agent:{workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',agent:agent||null},automation:{workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length,workflows:autos.slice(0,20).filter(Boolean).map(x=>({id:x.id||'',name:String(x.name||'Automation').slice(0,120),trigger:String(x.trigger||'').slice(0,80),action:String(x.action||'').slice(0,80),enabled:x.enabled!==false})),workflowCoverage:{returned:Math.min(20,autos.length),total:autos.length,limited:autos.length>20}}};
     }));
+    const invalid=batch.find(x=>x&&x.error);if(invalid)return res.status(503).json({error:invalid.error});
     for(const record of batch){agents.push(record.agent);automations.push(record.automation)}
   }
   return res.status(200).json({agents,automations});
