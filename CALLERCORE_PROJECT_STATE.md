@@ -22,34 +22,38 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Current verified checkpoint — 2026-09-29
 
-Latest verified **implementation/test** SHA: `91a17e6992f649165de2a810f451e47867e011ab`. This head preserves the reversible normalized-Conversations work and adds an explicit, auditable **email-marketing consent evidence model** for public prospects without enabling destructive retention.
+Latest verified **implementation/test** SHA: `2480d3de3cdb96a612e2ded68d9c61ca7cbcb0db`. This head preserves the verified consent/retention and reversible normalized-Conversations work and adds an explicit, auditable **prospect-driven email-marketing unsubscribe path** plus read-only consent visibility in Growth, without activating marketing sends or destructive retention.
 
-- Full GitHub CI: **872/872 tests passed, 0 failed**. CallerCore CI runs `36657997644` (PR) and `36657995732` (push) succeeded.
-- CodeQL runs `36657997963` (PR) and `36657995735` (push) succeeded. Jekyll `36657997743` succeeded.
-- Authenticated Preview Browser QA `36657995655` succeeded on the exact implementation SHA, including aggregate consent-evidence validation, the existing reversible migration rehearsal, and visual-drift comparison.
-- Vercel Preview `dpl_AnbRQT1yhkD12ym79bq6shg3HxoU` is READY at `https://my-ai-website-71491c39p-mohamtaj004bas-projects.vercel.app`.
+- Full GitHub CI: **890/890 tests passed, 0 failed**. CallerCore CI runs `36660256252` (PR) and `36660251561` (push) succeeded.
+- CodeQL runs `36660256065` (PR) and `36660251658` (push) succeeded. Jekyll `36660256059` succeeded.
+- Authenticated Preview Browser QA `36660251600` succeeded on the exact implementation SHA, including read-only Growth consent visibility and visual-drift comparison.
+- Vercel Preview `dpl_BsQ68mCSkdnhSa6yrMW32DKsmUmh` is READY at `https://my-ai-website-rhkisuyw0-mohamtaj004bas-projects.vercel.app`.
 - Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, production conversation migration, marketing send, live billing, live voice activation, or destructive retention cleanup occurred.
 
 Verified implementation included in this head:
 
-- Contact and Get Started now expose an **optional, unchecked email-marketing opt-in**. The copy explicitly states that consent is not required to send a contact request or purchase CallerCore and points to the Privacy Policy. It does not bundle SMS/text marketing consent.
-- Browser payloads convert checkbox state to an explicit boolean; the server trusts only literal `true`. The server, not the browser, assigns the trusted first-party consent source.
-- Contact-form consent is stamped as `contact_form`; Get Started / checkout consent is stamped as `get_started`. Chatbot inquiries do not fabricate consent evidence because that flow has no equivalent opt-in control.
-- Consent evidence is stored atomically on the prospect record with status, trusted source, notice version `2026-09-29`, and server-side recorded timestamp.
-- A checked form records `granted`. A new prospect submitting an unchecked form records verified `not_granted`.
-- An unchecked later form **does not revoke an earlier grant**. It also does not convert a pre-existing historical/unknown prospect into verified `not_granted`; historical unknown consent remains unknown unless there is a new explicit grant. This prevents an ordinary resubmission from erasing or inventing consent history.
-- Unknown/malformed/older consent evidence is treated as unverified rather than trusted. No generic form submission is treated as permission.
-- Automatic stale-prospect retention now fails closed on consent state. Active verified marketing consent excludes the prospect; unknown historical consent also excludes the prospect from executor eligibility. Only stale, non-customer prospects with verified inactive consent evidence can become retention candidates.
-- Retention planning/reporting now separates active-consent, verified-inactive and unknown-consent counts. System Health stays aggregate-only and explains unknown historical evidence, active consent exclusions and eligible stale candidates without returning prospect identities or consent record contents.
-- The de-identification output strips the consent evidence field along with direct identifiers and operational follow-up data.
-- The retention executor remains unreachable. `CALLERCORE_MAINTENANCE_ENABLED` remains off and no scheduled prospect cleanup was activated.
-- Existing normalized-Conversations detail-fidelity checks and Preview shadow migration/rollback rehearsal remain verified and unchanged.
+- Prospect consent evidence now supports an explicit `revoked` state while preserving the original trusted opt-in source, notice version and grant timestamp. Revocation adds a server timestamp plus `unsubscribe_link` as the only trusted revocation source.
+- Later unchecked contact/checkout forms continue to preserve both prior grants and prior revocations. A new explicit prospect opt-in can re-grant consent with a new consent timestamp; an old unsubscribe token then becomes invalid.
+- Added signed prospect-specific unsubscribe tokens using a dedicated `MARKETING_UNSUBSCRIBE_SECRET`. Token signing fails closed unless the secret is at least 32 characters.
+- Unsubscribe URLs are HTTPS-only and place the bearer token in the **URL fragment**, not the request query. The public page immediately removes the fragment from browser history and sends the token only in a same-origin JSON request body.
+- The public unsubscribe page is `noindex,nofollow` and intentionally does **not** load CallerCore site analytics, preventing the bearer token from being captured in first-party page/session telemetry.
+- Page initialization performs only an `inspect` action. Actual revocation requires the prospect to click **Unsubscribe from marketing emails**, which sends a separate explicit `unsubscribe` action. Link visitation or inspection alone never changes consent.
+- Revocation is conflict-safe and audited atomically with the prospect record. A bounded per-prospect privacy audit records status/timestamps and consent-source metadata only; it does not record prospect name, email, phone or message content.
+- Concurrent unrelated prospect edits are preserved: a compare-and-audit conflict is re-read/retried, while re-granted or otherwise stale consent makes the old token fail closed.
+- Repeat unsubscribe requests are idempotent and do not append duplicate audit events.
+- Future marketing email templates now require a secure unsubscribe URL and render it in both HTML and plaintext. Existing lifecycle/auth/direct-response email behavior remains separate.
+- Growth cards show a compact email-marketing state: **Granted / Not granted / Unsubscribed / Unknown**. The prospect editor shows the same state plus trusted source/timestamp context.
+- Consent in Growth is strictly read-only. There is no admin grant or revoke control, and normal prospect create/update APIs do not accept a consent mutation field.
+- Authenticated Preview QA uses a temporary in-memory Growth prospect fixture to verify the consent card/editor because the disposable Preview dataset does not seed website prospects. The fixture is restored immediately and does not write Preview KV.
+- An earlier Browser QA attempt on this pass failed because it expected a seeded Growth prospect that legitimately did not exist. That acceptance assumption was corrected with the in-memory fixture; exact-head QA then passed.
+- The stale-prospect retention executor remains unreachable and maintenance remains disabled by default. Unknown historical consent continues to block automatic retention eligibility.
+- Normalized-Conversations production migration remains gated; the prior detail-fidelity and reversible shadow publish/rollback rehearsal remain intact.
 
-Important remaining consent boundary:
+Important remaining boundary:
 
-- No dedicated unsubscribe/revocation transaction is implemented yet. The current model deliberately refuses to interpret an unchecked later form as an unsubscribe.
-- Historical/imported/manual prospects without verified first-party consent evidence remain `unknown` and cannot enter automatic stale-prospect cleanup.
-- This checkpoint establishes technical consent evidence and retention gating; it is not a legal-compliance certification.
+- `MARKETING_UNSUBSCRIBE_SECRET` is an implementation requirement for future marketing sends but was **not** configured or activated in production by this pass.
+- CallerCore still has campaign planning/tracking, not an activated bulk marketing-send engine. Any future sender must use verified `granted` consent, the signed unsubscribe URL helper, and the unsubscribe-required marketing template.
+- This checkpoint establishes technical consent/revocation safeguards; it is not a legal-compliance certification.
 
 This is an implementation/Preview checkpoint, not a production release, marketing activation, retention activation, or provider activation.
 
@@ -95,11 +99,11 @@ Current implementation: 303/303 tests passed in GitHub CI on `db68806a`; the rec
 
 ## Next authorized development backlog
 
-1. Add an **auditable unsubscribe/revocation path** for email-marketing consent before any marketing-send workflow can rely on the new evidence. It should be explicit, conflict-safe, preserve history/audit expectations, and never let ordinary prospect edits mutate consent accidentally.
-2. Surface consent state safely in the Growth/admin prospect workflow so operators can distinguish Granted / Not granted / Unknown before outreach. Do not expose an unsafe one-click grant control; grants must originate from explicit prospect action or another separately verified source.
-3. Keep stale-prospect retention dry-run-only. Historical unknown consent must remain blocked, and any future executor requires explicit owner authorization, recovery/audit acceptance, and a reviewed production runbook.
-4. Keep normalized-Conversations production migration gated. Preview publication, exact detail fidelity, rollback, cleanup and concurrency protection are verified; production backup/restore and release acceptance remain separate.
-5. Continue premium admin/client QA and provider truthfulness work, then separately complete live Vapi/voice and Stripe test-mode payment/recovery acceptance before production release.
+1. Keep bulk marketing sending **inactive**. Before any campaign-send workflow is implemented or enabled, require verified `granted` prospect consent, configure/verify `MARKETING_UNSUBSCRIBE_SECRET` in the intended environment, generate a signed unsubscribe URL for every recipient, and force use of the unsubscribe-required marketing template.
+2. Keep stale-prospect retention dry-run-only. Historical unknown consent remains blocked; any future de-identification executor requires explicit owner authorization plus recovery/audit acceptance and a reviewed production runbook.
+3. Keep normalized-Conversations production migration gated. Preview publication, exact detail fidelity, rollback, cleanup and concurrency protection are verified; production backup/restore and release acceptance remain separate.
+4. Resume premium admin/client QA and consistency sweeps, prioritizing notification/deep-link behavior, background data truthfulness, large-history behavior and release-facing UI polish.
+5. Separately complete Stripe **test-mode** subscription/payment/recovery acceptance and live Vapi/voice provider lifecycle validation before production release. Do not activate live billing, live voice, production routing or customer communications without explicit owner authorization.
 
 ## Known limitations and remaining work
 
