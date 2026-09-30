@@ -23,7 +23,7 @@ const {deidentifyProspectForAnalytics}=require('../lib/prospect-retention');
 const {buildRetentionReport}=require('../lib/retention-report');
 const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
 const {readConversationDirectory,readConversationPage,readConversation,readContactConversations,readAllConversations,publishNormalizedConversations,deleteNormalizedConversations}=require('../lib/conversation-store');
-const {scanConversationMigrationBatch}=require('../lib/conversation-migration');
+const {scanConversationMigrationWorkspace,scanConversationMigrationBatch}=require('../lib/conversation-migration');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
 const {configReady:gmailConfigReady,oauthUrl:getGmailOauthUrl,getConnection:getGmailConnection,disconnect:disconnectGmail,listInbox:listGmailInbox,listAliases:listGmailAliases,gmailFetch,markThreadRead:markGmailThreadRead,sendMessage:sendGmailMessage}=require('../lib/gmail');
 
@@ -403,11 +403,13 @@ async function adminMonthlyKpiRefresh(req,res){
 
 async function adminConversationMigrationReport(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const limit=Math.max(1,Math.min(100,Number.parseInt((req.query||{}).limit,10)||50)),cursor=String((req.query||{}).cursor||'').slice(0,512);
+  const limit=Math.max(1,Math.min(100,Number.parseInt((req.query||{}).limit,10)||50)),cursor=String((req.query||{}).cursor||'').slice(0,512),
+    workspaceId=String((req.query||{}).workspaceId||'').trim().slice(0,80);
   try{
-    const report=await scanConversationMigrationBatch(kv,{limit,cursor});
+    const report=workspaceId?await scanConversationMigrationWorkspace(kv,workspaceId):await scanConversationMigrationBatch(kv,{limit,cursor});
     return res.status(200).json({report});
   }catch(err){
+    if(err&&err.code==='WORKSPACE_NOT_FOUND')return res.status(404).json({error:'Conversation migration workspace was not found.'});
     if(err&&err.code==='INVALID_CURSOR')return res.status(409).json({error:'Conversation migration snapshot changed. Restart the dry run.'});
     console.error('admin conversation migration report failed',safeError(err));
     return res.status(503).json({error:'Conversation migration dry run could not be generated. No records were changed.'});
