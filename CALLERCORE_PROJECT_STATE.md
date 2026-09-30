@@ -1,6 +1,6 @@
 # CallerCore project state
 
-Updated: 2026-09-27. Resume here, then inspect current Git refs and deployments. This record distinguishes inspected code, automated verification, and provider-complete acceptance. Never treat a historical checklist as current deployment evidence.
+Updated: 2026-09-29. Resume here, then inspect current Git refs and deployments. This record distinguishes inspected code, automated verification, and provider-complete acceptance. Never treat a historical checklist as current deployment evidence.
 
 ## Project and architecture
 
@@ -20,9 +20,28 @@ COMPLETED AND VERIFIED within the coverage below: truthful voice readiness; atom
 
 This is a dashboard and shared-backend checkpoint, not provider activation or production release. The detailed entries below preserve findings, failures, corrections and verification history.
 
-## Current verified checkpoint — 2026-09-27
+## Current verified checkpoint — 2026-09-29
 
-Latest verified **implementation/test** SHA: `6dc8de9cd32b228c8f9214d9dfeb32c395e05bb2` (813/813 CI tests, matching authenticated Preview browser QA, visual-diff, CodeQL and Jekyll success; Preview READY). This head turns the aggregate-only monthly KPI storage foundation into a guarded admin-background producer with explicit source coverage, null-for-unknown semantics, non-degrading monthly snapshots and optional System Health visibility. Authenticated Preview acceptance confirms the normal admin bootstrap writes/refreshes the monthly rollup, the maintenance response exposes only status/coverage metadata, and payment-failure history remains explicitly incomplete rather than being fabricated. Production `main` is unchanged; no production rollup, raw-event migration or destructive retention automation was activated.
+Latest verified **implementation/test** SHA: `aa43ea4bae600b1b36d3541223d2df1948f8c6e5`. This head closes the previously queued analytics-retention foundation without activating production cleanup or provider work.
+
+- Full GitHub CI: **841/841 tests passed, 0 failed**. CallerCore CI runs `36652759350` (PR) and `36652755031` (push) succeeded.
+- CodeQL runs `36652759334` (PR) and `36652754974` (push) succeeded. Jekyll `36652759327` succeeded.
+- Authenticated Preview Browser QA `36652754945` succeeded on the exact implementation SHA. The run exercises the new admin retention dry-run endpoint and System Health panel in addition to the existing disposable client/admin workflow.
+- Vercel Preview `dpl_9riXmFCNBErw6yVUmKH4bxJ66FZt` is READY at `https://my-ai-website-7nevw7bs8-mohamtaj004bas-projects.vercel.app`.
+- Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, customer communication, live billing, live voice activation, or destructive cleanup occurred.
+
+Verified implementation included in this head:
+
+- Durable Stripe monthly payment-failure metrics use provider-event dedupe receipts plus an explicit coverage-start marker. Fully observed future months can report complete failure counts; an unobserved partial first month remains unknown rather than being backfilled as zero. The older checkout-concurrency VM fixture was updated to account for the new metric dependency.
+- Admin System Health now has an admin-only, **read-only** retention dry run. It reports stale prospect **candidates pending consent review**, raw-event/session-index coverage, and current monthly-rollup gaps without returning prospect IDs, emails, before/after records, or exposing a retention executor.
+- Prospect de-identification remains isolated and unreachable. No verified consent source exists yet, so the report deliberately does not call stale records automatically eligible for cleanup.
+- Session-index compaction now has a conflict-safe planner/executor with tests for duplicates, missing/expired sessions, malformed records, exact-list compare-before-write, concurrent changes, and no-op plans. The executor is not routed or scheduled.
+- Analytics retention constants are centralized at 180 days for raw website events/session records.
+- Previous-month KPI finalization now fails closed unless the prior snapshot has complete source coverage and was recorded within 24 hours of UTC month end. Its durable marker contains only month/finalization timestamps and coverage-complete state, not KPI values or customer data.
+- A Vercel daily analytics-maintenance cadence is defined for 05:17 UTC, but the endpoint is **disabled by default** and cannot write unless `CALLERCORE_MAINTENANCE_ENABLED=true` and a valid `CRON_SECRET` bearer token are both present. The scheduled path refreshes the current aggregate monthly rollup and attempts truthful previous-month finalization; it does not call session compaction or prospect de-identification.
+- Raw-event/session expiration must still not be treated as safe for production cleanup until the maintenance gate is deliberately enabled and observed over a complete boundary. The feature-branch implementation proves the mechanism, not production activation.
+
+This is an implementation/Preview checkpoint, not provider activation or production release.
 
 ## Latest verified implementation checkpoint
 
@@ -66,10 +85,10 @@ Current implementation: 303/303 tests passed in GitHub CI on `db68806a`; the rec
 
 ## Next authorized development backlog
 
-1. Add durable Stripe monthly event metrics with a truthful coverage-start boundary so payment-failure counts can become complete for fully observed future months. Do not backfill an unobserved partial month as zero.
-2. Add a read-only admin retention report/dry-run for stale unconverted prospects, raw-event/session-index coverage and monthly-rollup status. Keep the 12-month de-identification executor unreachable until eligibility counts, consent inputs, audit/reporting and recovery expectations are separately accepted.
-3. Design session-index compaction and long-term rollup cadence/finalization so a month is not dependent on an admin opening the dashboard near month-end. Do not rely on production raw-event expiration until durable rollup scheduling/finalization is separately verified.
-4. Keep the normalized-conversation migration and provider lifecycle/Stripe test-mode work separately gated. Live activation, production changes, destructive scheduled cleanup and new charges still require explicit owner authorization.
+1. Keep `CALLERCORE_MAINTENANCE_ENABLED` off until production activation is explicitly authorized. Before any destructive retention automation, define a verified prospect-consent source plus audit/recovery expectations and surface them in the dry-run.
+2. Extend analytics-retention observability around prior-month finalization and scheduler state so an admin can distinguish configured, disabled, finalized, incomplete and stale boundaries without reading infrastructure logs.
+3. Keep the normalized-conversation migration separate and reversible. Production data has not been migrated; preserve the legacy compatibility source until a dedicated migration/rollback acceptance pass.
+4. Keep provider lifecycle, live Vapi/voice, and Stripe test-mode payment/recovery scenarios separately gated. Live activation, production changes, destructive scheduled cleanup and new charges still require explicit owner authorization.
 
 ## Known limitations and remaining work
 
