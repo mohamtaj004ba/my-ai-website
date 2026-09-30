@@ -22,12 +22,13 @@ module.exports=async function handler(req,res){
   const rl=await rateLimit({scope:'contact',identifier:requestIp(req),limit:5,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests. Please try again later.'})}
 
   const name=clean(req.body?.name,120),business=clean(req.body?.business,160),email=clean(req.body?.email,200),phone=clean(req.body?.phone,80),category=clean(req.body?.category,80),message=clean(req.body?.message,4000),visitorId=clean(req.body?.visitorId,120),sessionId=clean(req.body?.sessionId,120),utmSource=clean(req.body?.utmSource,120),utmMedium=clean(req.body?.utmMedium,120),utmCampaign=clean(req.body?.utmCampaign,160);
+  const marketingEmailConsent=req.body?.marketingEmailConsent===true;
   if(!name||!email||!message||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Please complete the required fields'});
 
   const text=['New CallerCore website inquiry','','Category: '+category,'Name: '+name,'Business: '+business,'Email: '+email,'Phone: '+phone,'','Message:',message].join('\n');
   let prospect;
   try{
-    prospect=await upsertWebsiteProspect({name,business,email,phone,category,message,source:category==='Chatbot inquiry'?'chatbot':'contact',stage:'inquiry',visitorId,sessionId,utmSource,utmMedium,utmCampaign});
+    prospect=await upsertWebsiteProspect({name,business,email,phone,category,message,source:category==='Chatbot inquiry'?'chatbot':'contact',stage:'inquiry',visitorId,sessionId,utmSource,utmMedium,utmCampaign,...(category==='Chatbot inquiry'?{}:{marketingEmailConsent:{granted:marketingEmailConsent,source:'contact_form'}})});
   }catch(err){
     console.error('contact prospect save failed',safeError(err));
     return res.status(503).json({error:'We could not confirm your inquiry was saved. Please contact support@callercore.com if your request is urgent.'});
