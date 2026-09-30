@@ -9,7 +9,7 @@ test('client receptionist transfer destination syncs into assigned phone routing
   assert.match(api,/phonePos=phoneIndex\.findIndex\(x=>x&&String\(x\.workspaceId\|\|''\)===String\(s\.workspaceId\)\)/);
   assert.match(api,/phoneAfter=\{\.\.\.phoneBefore,transferNumber:agent\.transferNumber/);
   assert.match(api,/routingTransferSynced:phonePos>=0/);
-  assert.match(dashboard,/if\(data\.routing\)phoneRoutingData=data\.routing/);
+  assert.match(dashboard,/Object\.hasOwn\(data,'routing'\).*phoneRoutingData=data\.routing/);
 });
 
 test('admin phone routing transfer changes sync back into receptionist config',()=>{

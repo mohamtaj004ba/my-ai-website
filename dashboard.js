@@ -780,7 +780,7 @@ async function persistTeamStatus(id,status,{completionReason='',completionNote='
   followupState[id]=next;renderLeads();renderOverview();renderCalls();const x=callsData.find(c=>String(c.id)===String(id));if(x&&activeCallId===String(id))syncDrawerTeamStatus(x);
   if(demoMode)return true;
   try{
-    const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status,completionReason,completionNote})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update team status');if(!confirmedResponseObject(data.state)||!confirmedResponseObject(data.state[String(id)]))throw new Error('Could not confirm the team-status update. Refresh the call before retrying.');followupState=data.state;return true
+    const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status,completionReason,completionNote})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update team status');if(!data.state&&typeof data.state==='object'&&!Array.isArray(data.state)||!data.state[String(id)]&&typeof data.state[String(id)]==='object'&&!Array.isArray(data.state[String(id)]))throw new Error('Could not confirm the team-status update. Refresh the call before retrying.');followupState=data.state;return true
   }catch(err){if(previous)followupState[id]=previous;else delete followupState[id];renderLeads();renderOverview();renderCalls();if(x&&activeCallId===String(id))syncDrawerTeamStatus(x);console.error(err);return false}
 }
 function requestTeamStatusChange(id,status){
@@ -820,13 +820,13 @@ function startEditCallNote(noteId){
 async function saveCallNote(){
   const id=activeCallId;if(!id)return;const input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),text=String(input?.value||'').trim().slice(0,2000),current=followupState[String(id)]||{},call=callsData.find(x=>String(x.id)===String(id)),nextStatus=normalizedTeamStatusValue(current.status)||(call&&callNeedsTeam(call)?'needs_action':'no_action'),editId=activeNoteEditId;if(!text){if(status)status.textContent='Write a note first.';return}if(status)status.textContent='Saving…';
   if(demoMode){let notes=normalizedCallNotes(id);if(!editId&&notes.length>=100){if(status)status.textContent='100-note history limit reached. Delete an older note before adding another.';return}if(editId)notes=notes.map(n=>String(n.id)===editId?{...n,text,editedAt:Date.now()}:n);else notes=[...notes,{id:'note_'+Date.now(),text,at:Date.now(),by:currentUserProfile.email||'Team'}];followupState[String(id)]={...current,status:nextStatus,notes,updatedAt:Date.now()};resetNoteComposer();renderCallNotes(id);return}
-  try{const payload=editId?{callId:id,status:nextStatus,updateNoteId:editId,updateNoteText:text}:{callId:id,status:nextStatus,appendNote:text},r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save note');if(!confirmedResponseObject(data.state)||!confirmedResponseObject(data.state[String(id)]))throw new Error('Could not confirm the note was saved. Your draft is still open; refresh the call before retrying.');followupState=data.state;resetNoteComposer();renderCallNotes(id)}catch(err){if(status)status.textContent=err.message||'Could not save note'}
+  try{const payload=editId?{callId:id,status:nextStatus,updateNoteId:editId,updateNoteText:text}:{callId:id,status:nextStatus,appendNote:text},r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save note');if(!data.state&&typeof data.state==='object'&&!Array.isArray(data.state)||!data.state[String(id)]&&typeof data.state[String(id)]==='object'&&!Array.isArray(data.state[String(id)]))throw new Error('Could not confirm the note was saved. Your draft is still open; refresh the call before retrying.');followupState=data.state;resetNoteComposer();renderCallNotes(id)}catch(err){if(status)status.textContent=err.message||'Could not save note'}
 }
 async function deleteCallNote(noteId){
   const id=activeCallId;if(!id||!noteId)return;if(!confirm('Delete this internal note?'))return;
   const current=followupState[String(id)]||{},call=callsData.find(x=>String(x.id)===String(id)),nextStatus=normalizedTeamStatusValue(current.status)||(call&&callNeedsTeam(call)?'needs_action':'no_action');
   if(demoMode){const notes=normalizedCallNotes(id).filter(n=>String(n.id)!==String(noteId));followupState[String(id)]={...current,status:nextStatus,notes,updatedAt:Date.now(),note:''};if(activeNoteEditId===String(noteId))resetNoteComposer();renderCallNotes(id);return}
-  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:nextStatus,deleteNoteId:String(noteId)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not delete note');if(!confirmedResponseObject(data.state)||!confirmedResponseObject(data.state[String(id)]))throw new Error('Could not confirm the note was deleted. Refresh the call before retrying.');followupState=data.state;if(activeNoteEditId===String(noteId))resetNoteComposer();renderCallNotes(id)}catch(err){alert(err.message||'Could not delete note')}
+  try{const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:id,status:nextStatus,deleteNoteId:String(noteId)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not delete note');if(!data.state&&typeof data.state==='object'&&!Array.isArray(data.state)||!data.state[String(id)]&&typeof data.state[String(id)]==='object'&&!Array.isArray(data.state[String(id)]))throw new Error('Could not confirm the note was deleted. Refresh the call before retrying.');followupState=data.state;if(activeNoteEditId===String(noteId))resetNoteComposer();renderCallNotes(id)}catch(err){alert(err.message||'Could not delete note')}
 }
 async function moveLead(id,stage){
   const lead=leadsData.find(x=>String(x.id)===String(id));if(!lead||lead.stage===stage)return;
@@ -1206,7 +1206,6 @@ function collectAgent(){
   const val=id=>document.getElementById(id)?.value||'';
   return {name:val('agentName'),role:val('agentRole'),tone:val('agentTone'),openingMessage:val('agentOpening'),serviceArea:val('agentServiceArea'),businessHours:val('agentHours'),transferNumber:val('agentTransfer'),emergencyInstructions:val('agentEmergency'),handlingInstructions:val('agentHandlingInstructions'),qualificationQuestions:[...(agentData?.qualificationQuestions||[])]};
 }
-function confirmedResponseObject(value){return !!value&&typeof value==='object'&&!Array.isArray(value)}
 function lockFormControls(rootId){
   const controls=Array.from(document.getElementById(rootId)?.querySelectorAll('input,select,textarea,button')||[]).map(el=>({el,disabled:el.disabled}));
   controls.forEach(({el})=>el.disabled=true);let released=false;
@@ -1216,7 +1215,7 @@ async function saveAgent(section=activeAgentSection()){
   if(!section||agentSaving)return;
   agentSaving=true;const unlock=lockFormControls('view-agent');const formStatus=document.getElementById('agentFormStatus');if(formStatus){formStatus.textContent='Saving receptionist settings…';formStatus.className='form-status-line'}const next={...collectAgent(),section,expectedUpdatedAt:agentEditSnapshot?.updatedAt||agentData?.updatedAt||null},btn=document.querySelector('[data-agent-save="'+CSS.escape(section)+'"]');if(btn){btn.disabled=true;btn.textContent='Saving…'}
   try{
-    if(!demoMode){const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save the AI receptionist.');if(!confirmedResponseObject(data.agent)||!Object.hasOwn(data,'routing')||data.routing!==null&&!confirmedResponseObject(data.routing))throw new Error('Receptionist save response was incomplete. Your draft is still open; refresh before retrying.');agentData=data.agent;phoneRoutingData=data.routing}else agentData=next;
+    if(!demoMode){const r=await fetch('/api/account?action=agent-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save the AI receptionist.');if(!data.agent&&typeof data.agent==='object'&&!Array.isArray(data.agent)||!Object.hasOwn(data,'routing')||data.routing!==null&&!data.routing&&typeof data.routing==='object'&&!Array.isArray(data.routing))throw new Error('Receptionist save response was incomplete. Your draft is still open; refresh before retrying.');agentData=data.agent;phoneRoutingData=data.routing}else agentData=next;
     unlock();agentSaving=false;agentEditSnapshot=null;agentEditing=false;renderAgent();if(formStatus){formStatus.textContent='Receptionist settings saved.';formStatus.className='form-status-line success'}const status=document.getElementById('agentSaveStatus');if(status){status.textContent='Saved';status.classList.add('show');setTimeout(()=>status.classList.remove('show'),1600)}
   }catch(err){if(formStatus){formStatus.textContent=(err.message||'Could not save the AI receptionist.')+' Your draft is still open. Try saving again.';formStatus.className='form-status-line error'}}
   finally{unlock();agentSaving=false;if(btn){btn.disabled=false;btn.textContent='Save'}}
@@ -1255,7 +1254,7 @@ async function submitAiFeedback({source='receptionist',callId='',category='',mes
   if(button){button.disabled=true;button.textContent='Sending…'}if(statusEl)statusEl.textContent='Sending feedback…';
   try{
     let item={id:'demo_feedback_'+Date.now(),source,callId,category,message:textValue,context,status:'submitted',createdAt:Date.now(),updatedAt:Date.now()};
-    if(!demoMode){const r=await fetch('/api/account?action=ai-feedback-submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source,callId,category,message:textValue,context})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not send feedback.');if(!confirmedResponseObject(data.feedback)||!String(data.feedback.id||'').trim())throw new Error('Feedback response was incomplete. Check feedback history before retrying.');item=data.feedback}
+    if(!demoMode){const r=await fetch('/api/account?action=ai-feedback-submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source,callId,category,message:textValue,context})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not send feedback.');if(!data.feedback&&typeof data.feedback==='object'&&!Array.isArray(data.feedback)||!String(data.feedback.id||'').trim())throw new Error('Feedback response was incomplete. Check feedback history before retrying.');item=data.feedback}
     clientFeedbackData=[item,...clientFeedbackData.filter(x=>x.id!==item.id)];renderClientFeedback();if(statusEl)statusEl.textContent='Submitted for review.';return true;
   }catch(err){if(statusEl)statusEl.textContent=err.message||'Could not send feedback.';return false}
   finally{if(button){button.disabled=false;button.textContent=source==='call'?'Send feedback':'Send feedback'}}
@@ -1380,7 +1379,7 @@ async function saveWebhook(){
   try{
     const r=await fetch('/api/account?action=integrations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save webhook.');
-    if(!confirmedResponseObject(data.integrations))throw new Error('Webhook save response was incomplete. Your draft remains open; refresh before retrying.');
+    if(!data.integrations&&typeof data.integrations==='object'&&!Array.isArray(data.integrations))throw new Error('Webhook save response was incomplete. Your draft remains open; refresh before retrying.');
     integrationsData={...(integrationsData||{}),...data.integrations};webhookEditing=false;renderIntegrations();
   }catch(err){if(status)status.textContent=err.message||'Could not save webhook. Check your connection and try again.'}
 }
@@ -1505,7 +1504,7 @@ async function saveSettings(){
     else{
       const r=await fetch('/api/account?action=settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not save workspace settings.');
-      if(!confirmedResponseObject(data.settings))throw new Error('Settings save response was incomplete. Your draft is still open; refresh before retrying.');
+      if(!data.settings&&typeof data.settings==='object'&&!Array.isArray(data.settings))throw new Error('Settings save response was incomplete. Your draft is still open; refresh before retrying.');
       settingsData=data.settings;
       if(settingsData.businessName){sessionWorkspace={...(sessionWorkspace||{}),name:settingsData.businessName};document.getElementById('workspaceName').textContent=settingsData.businessName;document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=settingsData.businessName);const avatar=document.querySelector('.avatar');if(avatar)avatar.textContent=settingsData.businessName.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase()}
     }
@@ -2013,7 +2012,7 @@ async function updateAdminFeedback(id,status){
   try{
     const r=await fetch('/api/account?action=admin-ai-feedback-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update feedback.');
-    if(!confirmedResponseObject(data.feedback)||String(data.feedback.id||'')!==key)throw new Error('Feedback update response was incomplete. Refresh Client Care before retrying.');
+    if(!data.feedback&&typeof data.feedback==='object'&&!Array.isArray(data.feedback)||String(data.feedback.id||'')!==key)throw new Error('Feedback update response was incomplete. Refresh Client Care before retrying.');
     Object.assign(item,data.feedback);loadNotifications({silent:true});
   }catch(err){
     item.status=before.status;item.updatedAt=before.updatedAt;
@@ -3313,14 +3312,14 @@ async function saveExpense(){
   if(!name||!amountInput||!Number.isFinite(amount)||amount<0){if(status){status.textContent='Enter an expense name and valid amount.';status.className='form-status-line error'}return}
   const payload={id:modal?.dataset.editId||undefined,expectedUpdatedAt:modal?.dataset.editId?Number(modal.dataset.expectedUpdatedAt||0):undefined,name,vendor:document.getElementById('expenseVendorInput')?.value||'',category:document.getElementById('expenseCategoryInput')?.value||'Other',amount,frequency:document.getElementById('expenseFrequencyInput')?.value||'monthly',date:document.getElementById('expenseDateInput')?.value||'',status:document.getElementById('expenseStatusInput')?.value||'active',notes:document.getElementById('expenseNotesInput')?.value||''};
   setAdminExpenseMutationState(true);
-  try{const r=await fetch('/api/account?action=admin-finance-expense-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save expense.');if(!confirmedResponseObject(data.expense)||!String(data.expense.id||'').trim()||(payload.id&&String(data.expense.id)!==String(payload.id)))throw new Error('Expense save response was incomplete. Refresh the ledger before retrying.');const expenses=adminFinanceData.expenses||[],index=expenses.findIndex(x=>String(x.id)===String(data.expense.id));if(index>=0)expenses[index]=data.expense;else expenses.push(data.expense);setAdminExpenseMutationState(false);closeExpenseModal();try{await refreshAdminView('finance',{force:true,announce:false})}catch(refreshError){renderAdminFinance();setAdminSyncState('error','Expense saved, but the finance view could not refresh. Refresh to verify the latest ledger.')}}
+  try{const r=await fetch('/api/account?action=admin-finance-expense-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save expense.');if(!data.expense&&typeof data.expense==='object'&&!Array.isArray(data.expense)||!String(data.expense.id||'').trim()||(payload.id&&String(data.expense.id)!==String(payload.id)))throw new Error('Expense save response was incomplete. Refresh the ledger before retrying.');const expenses=adminFinanceData.expenses||[],index=expenses.findIndex(x=>String(x.id)===String(data.expense.id));if(index>=0)expenses[index]=data.expense;else expenses.push(data.expense);setAdminExpenseMutationState(false);closeExpenseModal();try{await refreshAdminView('finance',{force:true,announce:false})}catch(refreshError){renderAdminFinance();setAdminSyncState('error','Expense saved, but the finance view could not refresh. Refresh to verify the latest ledger.')}}
   catch(err){if(status){status.textContent=err.message||'Could not save expense.';status.className='form-status-line error'}}
   finally{setAdminExpenseMutationState(false)}
 }
 async function deleteExpense(id){
   const key=String(id),item=(adminFinanceData.expenses||[]).find(x=>String(x.id)===key);if(!item||adminExpenseDeletePending.has(key)||!confirm('Delete '+item.name+' from company expenses?'))return;
   adminExpenseDeletePending.add(key);renderAdminFinance();
-  try{const r=await fetch('/api/account?action=admin-finance-expense-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,expectedUpdatedAt:Number(item.updatedAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not delete expense.');if(!confirmedResponseObject(data.deleted)||String(data.deleted.id||'')!==key)throw new Error('Expense deletion response was incomplete. Refresh the ledger before retrying.');adminFinanceData.expenses=(adminFinanceData.expenses||[]).filter(x=>String(x.id)!==key);try{await refreshAdminView('finance',{force:true,announce:false})}catch(refreshError){renderAdminFinance();setAdminSyncState('error','Expense deleted, but the finance view could not refresh. Refresh to verify the latest ledger.')}}
+  try{const r=await fetch('/api/account?action=admin-finance-expense-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,expectedUpdatedAt:Number(item.updatedAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not delete expense.');if(!data.deleted&&typeof data.deleted==='object'&&!Array.isArray(data.deleted)||String(data.deleted.id||'')!==key)throw new Error('Expense deletion response was incomplete. Refresh the ledger before retrying.');adminFinanceData.expenses=(adminFinanceData.expenses||[]).filter(x=>String(x.id)!==key);try{await refreshAdminView('finance',{force:true,announce:false})}catch(refreshError){renderAdminFinance();setAdminSyncState('error','Expense deleted, but the finance view could not refresh. Refresh to verify the latest ledger.')}}
   catch(err){alert(err.message||'Could not delete expense.')}
   finally{adminExpenseDeletePending.delete(key);renderAdminFinance()}
 }
@@ -3894,7 +3893,7 @@ async function saveAdminClient(){
   try{
     const r=await fetch('/api/account?action=admin-client-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:targetId,plan,status,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update client.');
-    if(!confirmedResponseObject(data.client)||String(data.client.id||'')!==targetId)throw new Error('Workspace update response was incomplete. Reopen this client before retrying.');
+    if(!data.client&&typeof data.client==='object'&&!Array.isArray(data.client)||String(data.client.id||'')!==targetId)throw new Error('Workspace update response was incomplete. Reopen this client before retrying.');
     if(String(currentAdminClient?.id)!==targetId)return;
     currentAdminClient={...currentAdminClient,...data.client};
     try{
@@ -3917,7 +3916,7 @@ async function deleteAdminClient(){
   try{
     const r=await fetch('/api/account?action=admin-client-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not schedule workspace deletion.');
-    if(data.pendingDeletion!==true||!confirmedResponseObject(data.client)||String(data.client.id||'')!==id||data.client.status!=='pending_deletion')throw new Error('Deletion response was incomplete. Reopen this client to verify whether deletion was scheduled.');
+    if(data.pendingDeletion!==true||!data.client&&typeof data.client==='object'&&!Array.isArray(data.client)||String(data.client.id||'')!==id||data.client.status!=='pending_deletion')throw new Error('Deletion response was incomplete. Reopen this client to verify whether deletion was scheduled.');
     if(String(currentAdminClient?.id)!==id)return;
     currentAdminClient={...currentAdminClient,...data.client};
     confirmed=true;
@@ -3948,7 +3947,7 @@ async function restoreAdminClient(){
   try{
     const r=await fetch('/api/account?action=admin-client-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not restore workspace.');
-    const restoredStatus=String(data.client?.status||data.status||'');if(!confirmedResponseObject(data.client)||String(data.client.id||'')!==id||!['active','onboarding','suspended'].includes(restoredStatus))throw new Error('Restoration response was incomplete. Reopen this client to verify its recovery state.');
+    const restoredStatus=String(data.client?.status||data.status||'');if(!data.client&&typeof data.client==='object'&&!Array.isArray(data.client)||String(data.client.id||'')!==id||!['active','onboarding','suspended'].includes(restoredStatus))throw new Error('Restoration response was incomplete. Reopen this client to verify its recovery state.');
     if(String(currentAdminClient?.id)!==id)return false;
     currentAdminClient={...currentAdminClient,...data.client,status:restoredStatus,deletion:null};
     syncRestoredControls();

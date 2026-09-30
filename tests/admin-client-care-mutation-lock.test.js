@@ -10,8 +10,8 @@ function loadFunction(context,name,next){const start=source.indexOf('async funct
 test('feedback status updates serialize each record and allow a later save',async()=>{
   const pending=[],item={id:'feedback-1',status:'submitted'},context=vm.createContext({adminFeedbackData:[item],adminFeedbackStatusPending:new Set(),Date,JSON,String,fetch:()=>{const d=deferred();pending.push(d);return d.promise},renderAdminFeedback(){},loadNotifications(){},alert(){}});loadFunction(context,'updateAdminFeedback','function renderWebsiteTrafficChart');
   const first=vm.runInContext("updateAdminFeedback('feedback-1','reviewed')",context),ignored=vm.runInContext("updateAdminFeedback('feedback-1','applied')",context);assert.equal(pending.length,1);assert.equal(item.status,'reviewed');
-  pending[0].resolve({ok:true,json:async()=>({feedback:{status:'reviewed'}})});await Promise.all([first,ignored]);
-  const second=vm.runInContext("updateAdminFeedback('feedback-1','applied')",context);assert.equal(pending.length,2);pending[1].resolve({ok:true,json:async()=>({feedback:{status:'applied'}})});await second;assert.equal(item.status,'applied');
+  pending[0].resolve({ok:true,json:async()=>({feedback:{id:'feedback-1',status:'reviewed'}})});await Promise.all([first,ignored]);
+  const second=vm.runInContext("updateAdminFeedback('feedback-1','applied')",context);assert.equal(pending.length,2);pending[1].resolve({ok:true,json:async()=>({feedback:{id:'feedback-1',status:'applied'}})});await second;assert.equal(item.status,'applied');
 });
 
 test('support status failures roll back, unlock and allow retry',async()=>{
