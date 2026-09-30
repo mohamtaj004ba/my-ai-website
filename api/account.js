@@ -20,6 +20,7 @@ const {prependAuditEvent}=require('../lib/audit-log');
 const {addBoundedIds}=require('../lib/bounded-id-set');
 const {WORKSPACE_RETENTION_MS,OPERATIONAL_RETENTION_MS,purgeJournalKey,purgeCompleteKey,validIdDirectory,validPurgeJournal,nextPurgeJournal,retentionTtlSeconds}=require('../lib/purge-state');
 const {deidentifyProspectForAnalytics}=require('../lib/prospect-retention');
+const {buildRetentionReport}=require('../lib/retention-report');
 const {paginateConversations,paginateMessages}=require('../lib/conversation-history');
 const {readConversationDirectory,readConversationPage,readConversation,readContactConversations,readAllConversations,publishNormalizedConversations,deleteNormalizedConversations}=require('../lib/conversation-store');
 const {ONBOARDING_STAGES,deriveOnboardingStage,canManuallyMarkLive}=require('../lib/onboarding-stage');
@@ -396,6 +397,17 @@ async function adminMonthlyKpiRefresh(req,res){
   }catch(err){
     console.error('monthly KPI refresh failed',safeError(err));
     return res.status(503).json({error:'Monthly analytics rollup could not be refreshed. Existing retained history was left unchanged.'});
+  }
+}
+
+async function adminRetentionReport(req,res){
+  const admin=await requireAdmin(req,res);if(!admin)return;
+  try{
+    const report=await buildRetentionReport(kv,Date.now());
+    return res.status(200).json({report});
+  }catch(err){
+    console.error('admin retention report failed',safeError(err));
+    return res.status(503).json({error:'Retention dry-run could not be generated. No records were changed.'});
   }
 }
 
@@ -3379,6 +3391,7 @@ module.exports=async function handler(req,res){
   if(action==='admin-config-override'&&req.method==='POST')return adminOverrideConfig(req,res);
   if(action==='admin-audit-restore'&&req.method==='POST')return adminRestoreAudit(req,res);
   if(action==='admin-system-health'&&req.method==='GET')return adminSystemHealth(req,res);
+  if(action==='admin-retention-report'&&req.method==='GET')return adminRetentionReport(req,res);
   if(action==='admin-ai-guide'&&req.method==='POST')return adminAiGuide(req,res);
   if(action==='admin-fleet'&&req.method==='GET')return adminFleet(req,res);
   if(action==='admin-support'&&req.method==='GET')return adminSupport(req,res);
