@@ -494,6 +494,7 @@ async function runAdminInteractions(page){
   const retentionReport=(await retentionResponse.json()).report;
   if(!retentionReport||retentionReport.mode!=='dry_run'||retentionReport.writeActionsEnabled!==false||retentionReport.retentionExecutorReachable!==false)throw new Error('Retention report did not remain read-only');
   if(retentionReport.prospects?.consentReviewRequired!==true||retentionReport.prospects?.executorReachable!==false)throw new Error('Retention report bypassed the consent-review gate');
+  if(!['disabled','misconfigured','active'].includes(retentionReport.monthlyRollups?.schedulerState)||typeof retentionReport.monthlyRollups?.finalizationScheduled!=='boolean'||!retentionReport.monthlyRollups?.previousMonth)throw new Error('Retention report omitted scheduler/finalization state');
   const retentionJson=JSON.stringify(retentionReport);
   if(retentionJson.includes('planned')||retentionJson.includes('before')||retentionJson.includes('after')||retentionJson.includes('@callercore.test'))throw new Error('Retention report exposed record-level prospect details');
   report.admin.interactions.push('read-only retention dry-run + consent gate');
