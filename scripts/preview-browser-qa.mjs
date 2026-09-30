@@ -502,9 +502,19 @@ async function runAdminInteractions(page){
   if(!migrationResponse.ok())throw new Error('Conversation migration dry-run endpoint was unavailable');
   const migrationReport=(await migrationResponse.json()).report;
   if(!migrationReport||migrationReport.mode!=='dry_run'||migrationReport.writeActionsEnabled!==false||migrationReport.migrationExecutorReachable!==false||migrationReport.legacyPreserved!==true||migrationReport.detailFidelityChecked!==false)throw new Error('Conversation migration report did not remain reversible/read-only');
-  if(!migrationReport.complete||Number(migrationReport.scanned||0)<1||Number(migrationReport.scanned)!==Number(migrationReport.totalWorkspaces)||Number(migrationReport.blockingWorkspaces||0)!==0||Number(migrationReport.migrationCandidates||0)!==0)throw new Error('Preview conversation stores are not aligned for migration readiness');
+  if(Number(migrationReport.scanned||0)<1||Number(migrationReport.totalWorkspaces||0)<Number(migrationReport.scanned||0)||!migrationReport.counts||typeof migrationReport.complete!=='boolean')throw new Error('Conversation migration fleet dry run returned an invalid summary');
   const migrationJson=JSON.stringify(migrationReport);
   if(migrationJson.includes(report.workspaceId)||migrationJson.includes('Summit Heating'))throw new Error('Conversation migration report exposed workspace-level records');
+
+  const focusedMigrationResponse=await page.request.get(baseURL+'/api/account?action=admin-conversation-migration-report&workspaceId='+encodeURIComponent(report.workspaceId));
+  if(!focusedMigrationResponse.ok())throw new Error('Focused conversation migration readiness check was unavailable');
+  const focusedMigration=(await focusedMigrationResponse.json()).report;
+  if(!focusedMigration||focusedMigration.mode!=='dry_run'||focusedMigration.writeActionsEnabled!==false||focusedMigration.migrationExecutorReachable!==false||
+     focusedMigration.legacyPreserved!==true||focusedMigration.detailFidelityChecked!==false||focusedMigration.workspaceState!=='aligned'||
+     focusedMigration.aligned!==true||focusedMigration.blocking!==false||focusedMigration.migrationCandidate!==false||
+     Number(focusedMigration.legacyConversations||0)!==Number(focusedMigration.normalizedConversations||0))
+    throw new Error('Disposable Preview workspace is not aligned for normalized conversation migration');
+  if(JSON.stringify(focusedMigration).includes(report.workspaceId)||JSON.stringify(focusedMigration).includes('Summit Heating'))throw new Error('Focused migration readiness exposed workspace identity');
   report.admin.interactions.push('read-only normalized conversation migration readiness');
 
   await ensureView(page,'phones');
