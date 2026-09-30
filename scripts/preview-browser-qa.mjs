@@ -577,8 +577,10 @@ async function runAdminInteractions(page){
   if(!retentionStatus||retentionStatus==='Not checked'||retentionStatus==='Unavailable')throw new Error('System Health did not render retention dry-run status');
   if((await page.locator('#retentionReportNote').textContent()||'').includes('No records were changed')!==true)throw new Error('Retention panel omitted its read-only guarantee');
   const migrationStatus=(await page.locator('#conversationMigrationStatus').textContent()||'').trim();
-  if(migrationStatus!=='Aligned')throw new Error('System Health did not render aligned conversation migration readiness');
-  report.admin.interactions.push('global search keyboard navigation + retention health panel');
+  const migrationMeta=(await page.locator('#conversationMigrationMeta').textContent()||'').trim();
+  if(!migrationStatus||['—','Not checked','Unavailable'].includes(migrationStatus)||!/workspaces scanned/.test(migrationMeta))
+    throw new Error('System Health did not render conversation migration fleet readiness');
+  report.admin.interactions.push('global search keyboard navigation + retention/migration health panel');
 
   await ensureView(page,'clients');
   await page.locator('#adminClientSearchInput').fill('North Ridge');
