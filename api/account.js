@@ -403,7 +403,7 @@ async function adminMonthlyKpiRefresh(req,res){
 async function adminRetentionReport(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   try{
-    const report=await buildRetentionReport(kv,Date.now());
+    const report=await buildRetentionReport(kv,Date.now(),{maintenanceEnabled:process.env.CALLERCORE_MAINTENANCE_ENABLED==='true',cronSecretConfigured:!!process.env.CRON_SECRET});
     return res.status(200).json({report});
   }catch(err){
     console.error('admin retention report failed',safeError(err));
