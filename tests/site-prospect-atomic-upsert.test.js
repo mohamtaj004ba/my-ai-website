@@ -41,7 +41,7 @@ function fixture({injectConflict=false,invalidDirectory=false,invalidAuditType=f
   };
   const module={exports:{}};
   vm.runInNewContext(source,{
-    module,exports:module.exports,require:name=>name==='crypto'?{...crypto,randomUUID:()=> 'test-id-'+(++uuids)}:name==='./kv'?{kv}:require(name),
+    module,exports:module.exports,require:name=>name==='crypto'?{...crypto,randomUUID:()=> 'test-id-'+(++uuids)}:name==='./kv'?{kv}:name==='./analytics-retention-policy'?{SITE_EVENT_RETENTION_MS:180*24*60*60*1000,SITE_SESSION_RETENTION_SECONDS:180*24*60*60}:require(name),
     Date,Math,Number,String,Promise,Set,Error
   });
   return {upsert:module.exports.upsertWebsiteProspect,values,index,operations,kv,emailKey:module.exports.emailKey};
