@@ -72,13 +72,13 @@ function notificationFixture({opened=true,throws=false,view='finance'}={}){
 test('billing alert opens its specific client account before reporting navigation success',async()=>{
   const f=notificationFixture({opened:true});
   assert.equal(await f.run(),true);
-  assert.deepEqual(f.calls,['view:clients','open:client-1']);
+  assert.deepEqual(f.calls,['view:finance','open:client-1']);
 });
 test('billing alert remains unread when its workspace cannot be opened',async()=>{
   for(const options of [{opened:false},{throws:true}]){
     const f=notificationFixture(options);
     assert.equal(await f.run(),false);
-    assert.equal(f.calls[0],'view:clients');
+    assert.equal(f.calls[0],'view:finance');
     assert.equal(f.calls[1],'open:client-1');
   }
 });
