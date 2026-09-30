@@ -365,3 +365,37 @@ test('prospect converting after a documented lost stage accepts its new conversi
   assert.equal(returned.convertedAt,123456);
   assert.equal(returned.stage,'converted');
 });
+
+
+test('public prospect upsert records explicit marketing-email consent evidence atomically',async()=>{
+  const f=fixture();
+  const lead=await f.upsert({email:'optin@example.test',source:'contact',marketingEmailConsent:{granted:true,source:'contact_form'}});
+  assert.equal(lead.marketingEmailConsent.status,'granted');
+  assert.equal(lead.marketingEmailConsent.source,'contact_form');
+  assert.equal(lead.marketingEmailConsent.noticeVersion,'2026-09-29');
+  assert.ok(Number(lead.marketingEmailConsent.recordedAt)>0);
+  assert.deepEqual(f.values.get('site:prospect:'+lead.id).marketingEmailConsent,lead.marketingEmailConsent);
+  assert.equal(f.operations.length,1);
+});
+
+test('unchecked later form does not revoke an earlier explicit marketing grant',async()=>{
+  const f=fixture();
+  const granted=await f.upsert({email:'keep@example.test',source:'contact',marketingEmailConsent:{granted:true,source:'contact_form'}});
+  const later=await f.upsert({email:'keep@example.test',source:'get_started',marketingEmailConsent:{granted:false,source:'get_started'}});
+  assert.deepEqual(later.marketingEmailConsent,granted.marketingEmailConsent);
+  assert.equal(f.index.length,1);
+});
+
+test('unchecked public form records verified not-granted evidence for new prospects',async()=>{
+  const f=fixture();
+  const lead=await f.upsert({email:'nooptin@example.test',source:'get_started',marketingEmailConsent:{granted:false,source:'get_started'}});
+  assert.equal(lead.marketingEmailConsent.status,'not_granted');
+  assert.equal(lead.marketingEmailConsent.source,'get_started');
+  assert.equal(lead.marketingEmailConsent.noticeVersion,'2026-09-29');
+});
+
+test('non-consent prospect sources remain unknown instead of inventing permission',async()=>{
+  const f=fixture();
+  const lead=await f.upsert({email:'manual-unknown@example.test',source:'manual',updatedBy:'admin@example.test'});
+  assert.equal(lead.marketingEmailConsent,null);
+});
