@@ -2,6 +2,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {buildRetentionReport,MAX_SITE_EVENTS,MAX_SITE_SESSIONS}=require('../lib/retention-report');
 const {MONTHLY_KPI_INDEX_KEY,COVERAGE_FIELDS,monthlyKpiStorageKey}=require('../lib/monthly-kpi-rollup');
+const {monthlyFinalizationKey}=require('../lib/monthly-kpi-finalization');
 
 function clone(value){return value==null?value:JSON.parse(JSON.stringify(value))}
 function fixture({lists={},records={}}={}){
@@ -127,4 +128,32 @@ test('missing current monthly rollup remains a warning and never fabricates a co
   assert.equal(report.monthlyRollups.currentPresent,false);
   assert.equal(report.monthlyRollups.reason,'current_rollup_missing');
   assert.deepEqual(report.monthlyRollups.incompleteSources,COVERAGE_FIELDS);
+});
+
+
+test('monthly retention status distinguishes active finalization cadence from disabled and misconfigured states',async()=>{
+  const now=Date.UTC(2026,8,29),month='2026-09',previous='2026-08',recordedAt=now-1000;
+  const f=fixture({
+    lists:{'site:prospect:index':[],'site:events':[],'site:session:index':[]},
+    records:{
+      [MONTHLY_KPI_INDEX_KEY]:[previous,month],
+      [monthlyKpiStorageKey(month)]:{month,recordedAt,coverage:completeCoverage()},
+      [monthlyFinalizationKey(previous)]:{month:previous,finalizedAt:Date.UTC(2026,8,1,5),snapshotRecordedAt:Date.UTC(2026,7,31,5,17),coverageComplete:true}
+    }
+  });
+  const active=await buildRetentionReport(f.kv,now,{maintenanceEnabled:true,cronSecretConfigured:true});
+  assert.equal(active.monthlyRollups.schedulerState,'active');
+  assert.equal(active.monthlyRollups.finalizationScheduled,true);
+  assert.equal(active.monthlyRollups.previousMonth,previous);
+  assert.equal(active.monthlyRollups.previousFinalized,true);
+  assert.equal(active.monthlyRollups.previousSnapshotRecordedAt,Date.UTC(2026,7,31,5,17));
+
+  const misconfigured=await buildRetentionReport(f.kv,now,{maintenanceEnabled:true,cronSecretConfigured:false});
+  assert.equal(misconfigured.monthlyRollups.schedulerState,'misconfigured');
+  assert.equal(misconfigured.monthlyRollups.finalizationScheduled,false);
+  assert.equal(misconfigured.monthlyRollups.status,'warning');
+
+  const disabled=await buildRetentionReport(f.kv,now,{maintenanceEnabled:false,cronSecretConfigured:true});
+  assert.equal(disabled.monthlyRollups.schedulerState,'disabled');
+  assert.equal(disabled.monthlyRollups.finalizationScheduled,false);
 });
