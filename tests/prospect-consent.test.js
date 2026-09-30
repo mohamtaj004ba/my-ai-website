@@ -1,7 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {
-  MARKETING_EMAIL_CONSENT_VERSION,validEvidence,mergeMarketingEmailConsent,marketingEmailConsentActive,marketingEmailConsentState
+  MARKETING_EMAIL_CONSENT_VERSION,validEvidence,mergeMarketingEmailConsent,revokeMarketingEmailConsent,marketingEmailConsentActive,marketingEmailConsentState
 }=require('../lib/prospect-consent');
 
 test('explicit checked opt-in records verifiable email-marketing consent evidence',()=>{
@@ -46,4 +46,38 @@ test('unchecked form cannot convert unknown historical consent into verified not
   assert.deepEqual(mergeMarketingEmailConsent(malformed,{granted:false,source:'get_started'},{now:5000,existingProspect:true}),malformed);
   const explicit=mergeMarketingEmailConsent(null,{granted:true,source:'get_started'},{now:6000,existingProspect:true});
   assert.equal(explicit.status,'granted');
+});
+
+
+test('explicit unsubscribe produces verified revoked evidence without losing the original grant source',()=>{
+  const granted=mergeMarketingEmailConsent(null,{granted:true,source:'contact_form'},{now:1000});
+  const revoked=revokeMarketingEmailConsent(granted,{now:2000});
+  assert.deepEqual(revoked,{
+    status:'revoked',source:'contact_form',noticeVersion:MARKETING_EMAIL_CONSENT_VERSION,recordedAt:1000,
+    revokedAt:2000,revocationSource:'unsubscribe_link'
+  });
+  assert.equal(validEvidence(revoked),true);
+  assert.equal(marketingEmailConsentActive({marketingEmailConsent:revoked}),false);
+  assert.deepEqual(marketingEmailConsentState({marketingEmailConsent:revoked}),{
+    state:'revoked',active:false,verified:true,source:'contact_form',recordedAt:1000,noticeVersion:MARKETING_EMAIL_CONSENT_VERSION,
+    revokedAt:2000,revocationSource:'unsubscribe_link'
+  });
+  assert.deepEqual(revokeMarketingEmailConsent(revoked,{now:3000}),revoked);
+});
+
+test('later unchecked forms preserve unsubscribe while a new explicit opt-in can re-grant consent',()=>{
+  const granted=mergeMarketingEmailConsent(null,{granted:true,source:'contact_form'},{now:1000}),
+    revoked=revokeMarketingEmailConsent(granted,{now:2000}),
+    unchecked=mergeMarketingEmailConsent(revoked,{granted:false,source:'get_started'},{now:3000,existingProspect:true}),
+    regranted=mergeMarketingEmailConsent(revoked,{granted:true,source:'get_started'},{now:4000,existingProspect:true});
+  assert.deepEqual(unchecked,revoked);
+  assert.equal(regranted.status,'granted');
+  assert.equal(regranted.source,'get_started');
+  assert.equal(regranted.recordedAt,4000);
+  assert.equal(Object.prototype.hasOwnProperty.call(regranted,'revokedAt'),false);
+});
+
+test('revoked evidence is only trusted when it carries an explicit unsubscribe timestamp and source',()=>{
+  assert.equal(validEvidence({status:'revoked',source:'contact_form',noticeVersion:MARKETING_EMAIL_CONSENT_VERSION,recordedAt:1000}),false);
+  assert.equal(validEvidence({status:'revoked',source:'contact_form',noticeVersion:MARKETING_EMAIL_CONSENT_VERSION,recordedAt:1000,revokedAt:2000,revocationSource:'admin'}),false);
 });
