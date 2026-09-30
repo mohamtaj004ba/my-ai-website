@@ -36,7 +36,34 @@ test('Gmail sync is quota-conscious and cache-first',()=>{
   assert.match(account,/Date\.now\(\)-Number\(cached\.syncedAt\|\|0\)<2\*60\*1000/);
   assert.match(account,/Math\.min\(25/);
   assert.match(account,/6\*60\*60\*1000/);
-  assert.match(account,/Array\.isArray\(aliasCache\)\?aliasCache/);
+  assert.match(account,/parseGmailAliasCache\(aliasCache\)/);
+  assert.match(account,/validGmailInboxPayload\(rawCached,\{cached:true\}\)/);
   assert.match(account,/warning:'Fresh Gmail sync failed'/);
   assert.match(account,/error:'Gmail sync failed'/);
+});
+
+
+test('Gmail cache validators reject malformed successful cache payloads instead of synthesizing empty state',()=>{
+  const start=account.indexOf('function validGmailAliases('),end=account.indexOf('\nasync function adminGmailStatus(',start);
+  assert.ok(start>=0&&end>start);
+  const vm=require('node:vm'),ctx=vm.createContext({Array,Object,String,Number});
+  vm.runInContext(account.slice(start,end),ctx);
+  assert.equal(vm.runInContext("parseGmailAliasCache({broken:true}).valid",ctx),false);
+  assert.equal(vm.runInContext("parseGmailAliasCache([{email:'ok@example.test'}]).valid",ctx),true);
+  ctx.good={threads:[{id:'t1',messages:[]}],analytics:{unread:0},coverage:{verified:true},syncedAt:1};
+  assert.equal(vm.runInContext("validGmailInboxPayload(good,{cached:true})",ctx),true);
+  ctx.bad={threads:[],analytics:{},coverage:{verified:false},syncedAt:1};
+  assert.equal(vm.runInContext("validGmailInboxPayload(bad,{cached:true})",ctx),false);
+  ctx.bad={threads:null,analytics:{},coverage:{verified:true},syncedAt:1};
+  assert.equal(vm.runInContext("validGmailInboxPayload(bad,{cached:true})",ctx),false);
+});
+
+test('Gmail handlers never use malformed caches as stale provider fallbacks',()=>{
+  const aliasStart=account.indexOf('async function adminGmailAliases('),aliasEnd=account.indexOf('\nasync function adminGmailInbox(',aliasStart);
+  const inboxStart=aliasEnd,inboxEnd=account.indexOf('\nasync function adminGmailDisconnect(',inboxStart);
+  const aliasBody=account.slice(aliasStart,aliasEnd),inboxBody=account.slice(inboxStart,inboxEnd);
+  assert.match(aliasBody,/parsedCache\.valid&&cachedAliases\.length/);
+  assert.match(aliasBody,/Cached Gmail sender aliases are unavailable/);
+  assert.match(inboxBody,/cachedValid&&cached/);
+  assert.match(inboxBody,/Cached Gmail inbox is unavailable/);
 });

@@ -1561,6 +1561,25 @@ async function validatedGmailFrom(adminEmail,requested=''){
   return match.email;
 }
 
+function validGmailAliases(value){
+  return Array.isArray(value)&&value.every(alias=>alias&&typeof alias==='object'&&!Array.isArray(alias)&&String(alias.email||'').includes('@'));
+}
+function parseGmailAliasCache(value){
+  if(value==null)return {valid:true,aliases:[],cachedAt:0,present:false};
+  if(Array.isArray(value))return {valid:validGmailAliases(value),aliases:validGmailAliases(value)?value:[],cachedAt:0,present:true};
+  if(!value||typeof value!=='object'||Array.isArray(value)||!validGmailAliases(value.aliases))return {valid:false,aliases:[],cachedAt:0,present:true};
+  const cachedAt=Number(value.cachedAt||0);
+  if(value.cachedAt!==undefined&&(!Number.isFinite(cachedAt)||cachedAt<0))return {valid:false,aliases:[],cachedAt:0,present:true};
+  return {valid:true,aliases:value.aliases,cachedAt,present:true};
+}
+function validGmailInboxPayload(value,{cached=false}={}){
+  if(!value||typeof value!=='object'||Array.isArray(value)||!Array.isArray(value.threads)||!value.analytics||typeof value.analytics!=='object'||Array.isArray(value.analytics)||
+    !value.coverage||typeof value.coverage!=='object'||Array.isArray(value.coverage)||value.coverage.verified!==true)return false;
+  if(value.threads.some(thread=>!thread||typeof thread!=='object'||Array.isArray(thread)||!String(thread.id||'')||!Array.isArray(thread.messages)))return false;
+  if(cached&&(!Number.isFinite(Number(value.syncedAt))||Number(value.syncedAt)<=0))return false;
+  return true;
+}
+
 async function adminGmailStatus(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const conn=await getGmailConnection(admin.email);
@@ -1581,8 +1600,9 @@ async function adminGmailInbox(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   if(!gmailConfigReady())return res.status(200).json({configured:false,connected:false,threads:[],analytics:{}});
   const hash=crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex'),cacheKey='gmail:inbox:'+hash,summaryKey='gmail:summary:'+hash;
-  const cached=await kv.get(cacheKey),force=String(req.query?.force||'')==='1';
+  const rawCached=await kv.get(cacheKey),cachedValid=validGmailInboxPayload(rawCached,{cached:true}),cached=cachedValid?rawCached:null,force=String(req.query?.force||'')==='1';
   if(String(req.query?.cached||'')==='1'){
+    if(rawCached!=null&&!cachedValid)return res.status(503).json({error:'Cached Gmail inbox is unavailable. Previously verified inbox data should be preserved.'});
     return res.status(200).json(cached?{configured:true,...cached,cached:true}:{configured:true,connected:true,threads:[],analytics:{},coverage:{verified:false,limited:false,loadedThreads:0,estimatedThreads:null,queryWindow:'30d'},cached:true,emptyCache:true});
   }
   if(!force&&cached&&Date.now()-Number(cached.syncedAt||0)<2*60*1000){
@@ -1590,6 +1610,7 @@ async function adminGmailInbox(req,res){
   }
   try{
     const data=await listGmailInbox(admin.email,{maxResults:Math.min(25,Math.max(1,Number(req.query?.limit||25))),query:String(req.query?.q||'newer_than:30d').slice(0,200)});
+    if(!validGmailInboxPayload(data))throw new Error('Gmail inbox provider response was incomplete');
     for(const t of data.threads||[]){
       const inbound=(t.messages||[]).find(m=>m.direction==='inbound'),sender=inbound?.from||'';
       if(sender){const pid=await kv.get('site:prospect:email:'+emailKey(sender));if(pid){const p=await kv.get('site:prospect:'+pid);if(p)t.prospect={id:p.id,name:p.name,business:p.business,email:p.email,stage:p.stage}}}
@@ -1602,7 +1623,7 @@ async function adminGmailInbox(req,res){
     return res.status(200).json({configured:true,...snapshot,cached:false});
   }catch(err){
     console.error('gmail inbox failed',safeError(err));
-    if(cached)return res.status(200).json({configured:true,...cached,cached:true,stale:true,warning:'Fresh Gmail sync failed'});
+    if(cachedValid&&cached)return res.status(200).json({configured:true,...cached,cached:true,stale:true,warning:'Fresh Gmail sync failed'});
     return res.status(502).json({error:'Gmail sync failed'})
   }
 }
@@ -1612,20 +1633,22 @@ async function adminGmailAliases(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const conn=await getGmailConnection(admin.email);if(!conn)return res.status(200).json({connected:false,aliases:[]});
   const hash=crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex'),cacheKey='gmail:aliases:'+hash;
-  const aliasCache=await kv.get(cacheKey),cachedAliases=Array.isArray(aliasCache)?aliasCache:(aliasCache?.aliases||[]),aliasCachedAt=Number(aliasCache?.cachedAt||0),force=String(req.query?.force||'')==='1';
+  const aliasCache=await kv.get(cacheKey),parsedCache=parseGmailAliasCache(aliasCache),cachedAliases=parsedCache.aliases,aliasCachedAt=parsedCache.cachedAt,force=String(req.query?.force||'')==='1';
   if(String(req.query?.cached||'')==='1'){
+    if(!parsedCache.valid)return res.status(503).json({error:'Cached Gmail sender aliases are unavailable. Previously verified aliases should be preserved.'});
     return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:cachedAliases,cached:true});
   }
-  if(!force&&cachedAliases.length&&aliasCachedAt&&Date.now()-aliasCachedAt<6*60*60*1000){
+  if(parsedCache.valid&&!force&&cachedAliases.length&&aliasCachedAt&&Date.now()-aliasCachedAt<6*60*60*1000){
     return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:cachedAliases,cached:true,fresh:true});
   }
   try{
     const aliases=await listGmailAliases(admin.email);
+    if(!validGmailAliases(aliases))throw new Error('Gmail alias provider response was incomplete');
     await kv.set(cacheKey,{aliases,cachedAt:Date.now()},{ex:60*60*24*7});
     return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases,cached:false});
   }catch(err){
     console.error('gmail aliases failed',safeError(err));
-    if(cachedAliases.length)return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:cachedAliases,cached:true,stale:true});
+    if(parsedCache.valid&&cachedAliases.length)return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:cachedAliases,cached:true,stale:true});
     return res.status(502).json({error:'Could not load Gmail aliases'})
   }
 }
