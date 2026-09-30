@@ -28,8 +28,8 @@ test('successful phone save updates local revision before allowing the modal to 
   const js=fs.readFileSync('dashboard.js','utf8'),nodes=new Map();
   for(const [id,value] of Object.entries({phoneNumberInput:'5095550100',phoneLabelInput:'New label',phoneProviderInput:'Vapi',phoneWorkspaceInput:'tenant',phoneTransferInput:'',phoneForwardingInput:'',phoneAfterHoursInput:'ai'}))nodes.set(id,{value});
   nodes.set('phoneModal',{dataset:{editId:'p',expectedUpdatedAt:'10'}});
-  const record={id:'p',label:'New label',updatedAt:11};let closedWith,finishRefresh;
-  const ctx=vm.createContext({phoneSaving:false,adminPhoneData:[{id:'p',label:'Old label',updatedAt:10}],document:{getElementById:id=>nodes.get(id)},validUsPhone:()=>true,settingsFieldError:()=>{},normalizePhone:x=>x,lockFormControls:()=>()=>{},fetch:async()=>({ok:true,json:async()=>({number:record})}),renderPhones:()=>{},closePhoneModal:()=>{closedWith={...ctx.adminPhoneData[0]}},refreshAdminView:()=>new Promise(resolve=>finishRefresh=resolve)});
+  const record={id:'p',number:'5095550100',label:'New label',updatedAt:11};let closedWith,finishRefresh;
+  const ctx=vm.createContext({phoneSaving:false,adminPhoneData:[{id:'p',label:'Old label',updatedAt:10}],document:{getElementById:id=>nodes.get(id)},validUsPhone:()=>true,settingsFieldError:()=>{},normalizePhone:x=>x,lockFormControls:()=>()=>{},fetch:async()=>({ok:true,json:async()=>({ok:true,number:record})}),renderPhones:()=>{},closePhoneModal:()=>{closedWith={...ctx.adminPhoneData[0]}},refreshAdminView:()=>new Promise(resolve=>finishRefresh=resolve)});
   vm.runInContext(js.slice(js.indexOf('async function savePhone(){'),js.indexOf("document.getElementById('addPhoneButton')")),ctx);
   const pending=vm.runInContext('savePhone()',ctx);await new Promise(resolve=>setImmediate(resolve));
   assert.equal(closedWith.label,'New label');assert.equal(closedWith.updatedAt,11);assert.equal(ctx.phoneSaving,false);

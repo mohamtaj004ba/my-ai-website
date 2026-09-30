@@ -41,7 +41,7 @@ test('saving a campaign locks duplicate actions and modal dismissal until succes
   await vm.runInContext('saveCampaign()',f.context);
   await vm.runInContext('deleteCampaign()',f.context);
   assert.equal(f.requests.length,1,'no concurrent mutation');
-  f.requests[0].task.resolve({ok:true,json:async()=>({campaign:{id:'campaign-1',name:'Campaign edited',updatedAt:20}})});
+  f.requests[0].task.resolve({ok:true,json:async()=>({ok:true,campaign:{id:'campaign-1',name:'Campaign edited',updatedAt:20}})});
   await saving;
   assert.equal(f.requests.length,1,'confirmed campaign is applied locally without a stale follow-up list request');
   assert.equal(f.modal['aria-hidden'],'true');

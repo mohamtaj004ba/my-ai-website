@@ -20,7 +20,7 @@ function fixture({response,hold=false}={}){
   const ctx=vm.createContext({
     adminDocumentsData:{company:[record]},companyDocumentMutationPending:false,
     document:{getElementById:id=>fields[id]||null},
-    fetch:async(url,options)=>{requests.push({url,options});if(hold)await new Promise(resolve=>pendingResolve=resolve);return response||{ok:true,json:async()=>({document:{...record,name:'New record',updatedAt:11},deleted:{id:'doc-1'}})}},
+    fetch:async(url,options)=>{requests.push({url,options});if(hold)await new Promise(resolve=>pendingResolve=resolve);return response||{ok:true,json:async()=>({ok:true,document:{...record,name:'New record',updatedAt:11},deleted:{id:'doc-1'}})}},
     renderDocuments:()=>{renderCount++},confirm:()=>{confirmCount++;return true},
     Number,String,Error
   });

@@ -32,7 +32,7 @@ test('admin override locks repair controls, blocks duplicate writes and applies 
   const first=vm.runInContext('applyAdminConfigOverride()',ctx),duplicate=vm.runInContext('applyAdminConfigOverride()',ctx);
   assert.equal(ctx.adminTechSaving,true);assert.equal(node('adminConfigEditor').disabled,true);assert.equal(node('adminApplyOverrideButton').textContent,'Applying…');assert.equal(restoreButton.disabled,true);
   assert.equal(requests.filter(url=>url.includes('admin-config-override')).length,1);
-  pending.resolve({ok:true,json:async()=>({section:'settings',value:{businessName:'Saved name'}})});await Promise.all([first,duplicate]);
+  pending.resolve({ok:true,json:async()=>({ok:true,section:'settings',value:{businessName:'Saved name'}})});await Promise.all([first,duplicate]);
   assert.equal(ctx.adminTechSaving,false);assert.equal(node('adminConfigEditor').disabled,false);assert.equal(node('adminApplyOverrideButton').textContent,'Apply admin override');assert.equal(ctx.currentAdminTech.config.settings.businessName,'Saved name');
 });
 
@@ -50,6 +50,6 @@ test('audit restoration locks dismissal and exposes the returned snapshot immedi
   ctx.currentAdminTech.audit=[{id:'audit-1',at:Date.now(),actorRole:'admin',actorEmail:'admin@example.com',action:'admin_override',section:'settings',before:{businessName:'Restored'},after:{businessName:'New'}}];
   const restore=vm.runInContext("restoreAdminAudit('audit-1')",ctx);vm.runInContext('closeAdminClient()',ctx);
   assert.equal(ctx.adminTechSaving,true);assert.equal(node('closeAdminClient').disabled,true);
-  pending.resolve({ok:true,json:async()=>({section:'settings',value:{businessName:'Restored'}})});await restore;
+  pending.resolve({ok:true,json:async()=>({ok:true,section:'settings',value:{businessName:'Restored'}})});await restore;
   assert.equal(ctx.adminTechSaving,false);assert.equal(ctx.currentAdminTech.config.settings.businessName,'Restored');assert.equal(node('closeAdminClient').disabled,false);
 });
