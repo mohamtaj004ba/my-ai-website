@@ -118,3 +118,53 @@ test('missing or malformed indexed notification records mark their source unavai
   assert.match(builder,/gmailSummaryUnavailable=true/);
   assert.match(builder,/gmail_unavailable/);
 });
+
+
+test('connected Gmail with missing or malformed summary is disclosed as unavailable rather than zero unread',async()=>{
+  for(const summary of [null,{analytics:'broken',syncedAt:1},{analytics:{unread:'NaN'},syncedAt:1},{analytics:{unread:2},syncedAt:0}]){
+    const ctx=vm.createContext({
+      kv:{
+        async get(key){
+          if(key==='platform:settings')return {};
+          if(key==='support:index'||key==='workspace:index'||key==='ai-feedback:index')return [];
+          if(key.startsWith('gmail:summary:'))return summary;
+          return null;
+        },
+        async lrange(){return []}
+      },
+      getGmailConnection:async()=>({gmailEmail:'admin@example.test'}),
+      entitlementsFor:()=>({minutes:0}),
+      notificationItem:(id,body)=>({id,...body}),
+      safeError:()=>'',console:{error(){}},
+      crypto:require('crypto'),Date,Number,String,Array,Math,Promise
+    });
+    vm.runInContext(builder,ctx);
+    const result=await vm.runInContext('buildAdminNotifications({email:"admin@example.test"})',ctx);
+    assert.equal(result.items.some(item=>item.id==='gmail:unread'),false);
+    assert.equal(result.coverage.limited,true);
+    assert.ok(Array.from(result.coverage.sources).includes('gmail_unavailable'));
+  }
+});
+
+test('verified Gmail summary can emit unread notification without incomplete coverage',async()=>{
+  const ctx=vm.createContext({
+    kv:{
+      async get(key){
+        if(key==='platform:settings')return {};
+        if(key==='support:index'||key==='workspace:index'||key==='ai-feedback:index')return [];
+        if(key.startsWith('gmail:summary:'))return {analytics:{unread:2},syncedAt:123};
+        return null;
+      },
+      async lrange(){return []}
+    },
+    getGmailConnection:async()=>({gmailEmail:'admin@example.test'}),
+    entitlementsFor:()=>({minutes:0}),
+    notificationItem:(id,body)=>({id,...body}),
+    safeError:()=>'',console:{error(){}},
+    crypto:require('crypto'),Date,Number,String,Array,Math,Promise
+  });
+  vm.runInContext(builder,ctx);
+  const result=await vm.runInContext('buildAdminNotifications({email:"admin@example.test"})',ctx);
+  assert.equal(result.items.find(item=>item.id==='gmail:unread').meta.count,2);
+  assert.equal(result.coverage.sources.includes('gmail_unavailable'),false);
+});

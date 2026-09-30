@@ -2688,13 +2688,14 @@ async function buildAdminNotifications(admin){
     items.push(notificationItem('prospect:'+p.id+':'+p.stage,{title,body:(p.name||p.business||p.email||'Website prospect')+(p.plan?' · '+p.plan:''),kind:'info',view:'growth',createdAt:p.updatedAt||p.createdAt||now,meta:{prospectId:p.id}}));
   });
   if(gmailConn){
-    try{
+    if(typeof gmailConn!=='object'||Array.isArray(gmailConn))gmailSummaryUnavailable=true;
+    else try{
       const summaryKey='gmail:summary:'+crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex');
-      const cached=await kv.get(summaryKey),cachedValid=cached==null||!!cached&&typeof cached==='object'&&!Array.isArray(cached);
+      const cached=await kv.get(summaryKey),unread=Number(cached?.analytics?.unread),syncedAt=Number(cached?.syncedAt),
+        cachedValid=!!cached&&typeof cached==='object'&&!Array.isArray(cached)&&!!cached.analytics&&typeof cached.analytics==='object'&&!Array.isArray(cached.analytics)&&Number.isSafeInteger(unread)&&unread>=0&&Number.isFinite(syncedAt)&&syncedAt>0;
       if(!cachedValid)gmailSummaryUnavailable=true;
-      const count=cachedValid?Number(cached?.analytics?.unread||0):0;
-      if(count>0)items.push(notificationItem('gmail:unread',{title:count+' unread Gmail thread'+(count===1?'':'s'),body:'Your connected CallerCore inbox has unread email.',kind:'info',view:'inbox',createdAt:Number(cached?.syncedAt||now),meta:{count}}));
-    }catch(err){console.error('notification gmail summary failed',safeError(err))}
+      if(cachedValid&&unread>0)items.push(notificationItem('gmail:unread',{title:unread+' unread Gmail thread'+(unread===1?'':'s'),body:'Your connected CallerCore inbox has unread email.',kind:'info',view:'inbox',createdAt:syncedAt,meta:{count:unread}}));
+    }catch(err){gmailSummaryUnavailable=true;console.error('notification gmail summary failed',safeError(err))}
   }
   const sources=[];
   if(!platformValid)sources.push('platform_unavailable');
