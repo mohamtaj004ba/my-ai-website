@@ -17,8 +17,8 @@ test('plaintext conversion decodes each HTML entity only once',()=>{
 test('marketing emails require and render a secure unsubscribe URL in HTML and plaintext',()=>{
   assert.throws(()=>marketingEmail({title:'News'}),/requires a secure unsubscribe URL/);
   assert.throws(()=>marketingEmail({title:'News',unsubscribeUrl:'http://callercore.com/unsubscribe'}),/requires a secure unsubscribe URL/);
-  const url='https://www.callercore.com/unsubscribe?token=abc123',e=marketingEmail({title:'News',bodyHtml:'<p>Product update</p>',unsubscribeUrl:url});
+  const url='https://www.callercore.com/unsubscribe#token=abc123',e=marketingEmail({title:'News',bodyHtml:'<p>Product update</p>',unsubscribeUrl:url});
   assert.match(e.html,/Unsubscribe from marketing emails/);
-  assert.match(e.html,/unsubscribe\?token=abc123/);
-  assert.match(e.text,/Unsubscribe from marketing emails: https:\/\/www\.callercore\.com\/unsubscribe\?token=abc123/);
+  assert.match(e.html,/unsubscribe#token=abc123/);
+  assert.match(e.text,/Unsubscribe from marketing emails: https:\/\/www\.callercore\.com\/unsubscribe#token=abc123/);
 });
