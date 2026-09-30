@@ -25,7 +25,7 @@ const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='
 let currentPlan=params.get('plan')||'Growth';if(!knownPlan(currentPlan))currentPlan='Growth';
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
-let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationRequest=0,notificationMode='unread',notificationLoadError='',notificationReadError='',notificationLastSyncAt=0,notificationCoverage={limited:false,sources:[]},clientFeedbackData=[],clientFeedbackVisibleLimit=8,clientFeedbackLoadRequest=0,adminFeedbackData=[];
+let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationRequest=0,notificationMode='unread',notificationLoadError='',notificationReadError='',notificationLastSyncAt=0,notificationCoverage={limited:false,sources:[]},clientFeedbackData=[],clientFeedbackVisibleLimit=8,clientFeedbackLoadRequest=0,clientFeedbackCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},clientFeedbackLoadError='',adminFeedbackData=[];
 let callsData=[],leadsData=[],conversationsData=[],conversationThreadsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',conversationPageTotal=0,conversationNextCursor=null,conversationPageLoading=false,conversationPageError='',conversationPageRequest=0,conversationBackendPaging=false,conversationSearchTimer=null,activeConversationId=null,activeCallContactKey='',activeCallId='',callDrawerOpenRequest=0,followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',contactHistoryVisibleLimit=50,contactHistoryLastSignature='',contactMessageSessionLimits={},contactHistoryHydratedKeys=new Set(),contactHistoryLoadingKeys=new Set(),pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
@@ -1209,17 +1209,32 @@ async function saveAgent(section=activeAgentSection()){
 }
 
 function feedbackStatusLabel(status){return ({submitted:'Submitted',reviewed:'Reviewed',applied:'Applied',dismissed:'Closed'})[status]||'Submitted'}
+function renderClientFeedbackHealth(){
+  const notice=document.getElementById('clientFeedbackHistoryHealth'),title=document.getElementById('clientFeedbackHistoryTitle'),copy=document.getElementById('clientFeedbackHistoryCopy');if(!notice)return;
+  if(clientFeedbackLoadError){notice.hidden=false;if(title)title.textContent='Feedback history unavailable';if(copy)copy.textContent=clientFeedbackLoadError;return}
+  if(clientFeedbackCoverage?.verified!==true){notice.hidden=false;if(title)title.textContent='Feedback history not verified';if(copy)copy.textContent='CallerCore has not yet confirmed complete feedback-history coverage. Retry before relying on an empty history.';return}
+  if(clientFeedbackCoverage?.incomplete){notice.hidden=false;if(title)title.textContent='Feedback history may be incomplete';if(copy)copy.textContent='Some indexed feedback records could not be verified. Loaded feedback is shown; retry later to confirm the full history.';return}
+  notice.hidden=true;
+}
 function renderClientFeedback(){
   const wrap=document.getElementById('clientFeedbackList');if(!wrap)return;
   const items=(clientFeedbackData||[]).slice(0,clientFeedbackVisibleLimit),count=document.getElementById('agentFeedbackCount');if(count)count.textContent=String(clientFeedbackData.length||0);
-  wrap.classList.add('feedback-list');
+  renderClientFeedbackHealth();wrap.classList.add('feedback-list');
   wrap.innerHTML=items.map(x=>'<article class="feedback-item" id="client-feedback-'+esc(x.id)+'"><div><b>'+esc((x.category||'Feedback').replaceAll('_',' '))+'</b><small>'+esc(x.source==='call'?'Call feedback'+(x.context?' · '+x.context:''):'AI receptionist feedback')+' · '+(x.createdAt?new Date(x.createdAt).toLocaleString():'')+'</small></div><span class="feedback-status '+esc(x.status||'submitted')+'">'+esc(feedbackStatusLabel(x.status))+'</span><p>'+esc(x.message||'')+'</p></article>').join('')||'<p class="muted">No feedback submitted yet.</p>';
 }
 async function loadClientFeedback({silent=false}={}){
   const request=++clientFeedbackLoadRequest;
   const wrap=document.getElementById('clientFeedbackList');if(!wrap)return;
-  if(demoMode){renderClientFeedback();return}
-  try{const r=await fetch('/api/account?action=ai-feedback',{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok)throw new Error('feedback load');const data=await r.json();if(request!==clientFeedbackLoadRequest)return;clientFeedbackData=Array.isArray(data.feedback)?data.feedback:clientFeedbackData;renderClientFeedback()}catch(e){if(request!==clientFeedbackLoadRequest)return;if(!silent)console.error(e);if(wrap&&!clientFeedbackData.length)wrap.innerHTML='<p class="muted">Feedback history is temporarily unavailable.</p>'}
+  if(demoMode){clientFeedbackCoverage={verified:true,incomplete:false,missingRecords:0,indexedRecords:clientFeedbackData.length,loadedRecords:clientFeedbackData.length};clientFeedbackLoadError='';renderClientFeedback();return}
+  try{
+    const r=await fetch('/api/account?action=ai-feedback',{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok)throw new Error('feedback load');
+    const data=await r.json();if(request!==clientFeedbackLoadRequest)return;
+    if(!Array.isArray(data?.feedback)||!data.coverage||data.coverage.verified!==true)throw new Error('feedback coverage unavailable');
+    clientFeedbackData=data.feedback;clientFeedbackCoverage={verified:true,incomplete:data.coverage.incomplete===true,missingRecords:Math.max(0,Number(data.coverage.missingRecords||0)||0),indexedRecords:Math.max(0,Number(data.coverage.indexedRecords||0)||0),loadedRecords:Math.max(0,Number(data.coverage.loadedRecords??data.feedback.length)||0)};clientFeedbackLoadError='';renderClientFeedback();
+  }catch(e){
+    if(request!==clientFeedbackLoadRequest)return;if(!silent)console.error(e);
+    clientFeedbackLoadError='Could not refresh feedback history. Showing previously loaded items where available.';renderClientFeedback();
+  }
 }
 async function submitAiFeedback({source='receptionist',callId='',category='',message='',context='',button,statusEl}={}){
   const textValue=String(message||'').trim();if(!textValue){if(statusEl)statusEl.textContent='Add a short description first.';return false}
@@ -1297,6 +1312,7 @@ document.querySelectorAll('[data-agent-edit]').forEach(btn=>btn.addEventListener
 document.querySelectorAll('[data-agent-cancel]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(false,{restore:true})));
 document.querySelectorAll('[data-agent-save]').forEach(btn=>btn.addEventListener('click',()=>saveAgent(btn.dataset.agentSave)));
 document.getElementById('addQuestionButton')?.addEventListener('click',()=>{if(activeAgentSection()!=='qualification')return;if(!agentData)agentData={...DEMO_AGENT,qualificationQuestions:[]};agentData.qualificationQuestions=agentData.qualificationQuestions||[];if(agentData.qualificationQuestions.length<12){agentData.qualificationQuestions.push('');renderQuestions()}});
+document.getElementById('clientFeedbackHistoryRetry')?.addEventListener('click',()=>loadClientFeedback({silent:false}));
 document.getElementById('submitAgentFeedback')?.addEventListener('click',async()=>{const button=document.getElementById('submitAgentFeedback'),statusEl=document.getElementById('agentFeedbackStatus'),message=document.getElementById('agentFeedbackMessage'),category=document.getElementById('agentFeedbackCategory');const ok=await submitAiFeedback({source:'receptionist',category:category?.value||'other',message:message?.value||'',context:agentData?.name||'AI receptionist',button,statusEl});if(ok&&message)message.value=''});
 document.getElementById('drawerAiFeedbackButton')?.addEventListener('click',e=>openCallFeedbackModal(e.currentTarget.dataset.callId||activeCallId,e.currentTarget.dataset.callContext||''));
 document.getElementById('closeAiFeedbackModal')?.addEventListener('click',closeCallFeedbackModal);
@@ -1562,7 +1578,13 @@ function renderClientChecklist(){
   wrap.innerHTML=items.map(([label,done,view])=>'<button class="onboarding-item '+(done?'done':'')+'" data-view="'+view+'"><span>'+(done?'✓':'○')+'</span><b>'+esc(label)+'</b><small>'+(done?'Complete':'Pending')+'</small></button>').join('');
   wrap.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 }
-let clientSupportHistoryRequest=0;
+let clientSupportHistoryRequest=0,clientSupportHistoryCoverage={verified:false,incomplete:false},clientSupportHistoryLoadError='';
+function renderClientSupportHistoryHealth(){
+  const notice=document.getElementById('clientSupportHistoryHealth'),title=document.getElementById('clientSupportHistoryTitle'),copy=document.getElementById('clientSupportHistoryCopy');if(!notice)return;
+  if(clientSupportHistoryLoadError){notice.hidden=false;if(title)title.textContent='Request history unavailable';if(copy)copy.textContent=clientSupportHistoryLoadError;return}
+  if(clientSupportHistoryCoverage?.incomplete){notice.hidden=false;if(title)title.textContent='Request history may be incomplete';if(copy)copy.textContent='Some indexed support requests could not be verified. Loaded requests are shown; retry later to confirm the full history.';return}
+  notice.hidden=true;
+}
 function invalidateClientSupportHistoryRequest(){
   ++clientSupportHistoryRequest;
   const button=document.getElementById('clientSupportHistoryRetry');
@@ -1573,16 +1595,15 @@ async function refreshClientSupportHistory(){
   if(button){button.disabled=true;button.textContent='Retrying…'}
   try{
     const data=await fetchJsonRetry('/api/account?action=support-tickets',{attempts:1,timeout:6000});
-    if(!Array.isArray(data?.tickets))throw new Error('Invalid support history response');
+    if(!Array.isArray(data?.tickets)||!data.coverage||data.coverage.verified!==true)throw new Error('Invalid support history response');
     if(request!==clientSupportHistoryRequest)return false;
-    supportTicketsData=data.tickets;
-    const notice=document.getElementById('clientSupportHistoryHealth');if(notice)notice.hidden=true;
-    renderSupport();return true;
+    supportTicketsData=data.tickets;clientSupportHistoryCoverage={verified:true,incomplete:data.coverage.incomplete===true};clientSupportHistoryLoadError='';
+    renderClientSupportHistoryHealth();renderSupport();return true;
   }catch(err){
     if(request!==clientSupportHistoryRequest)return false;
     console.warn('Support request history unavailable',err);
-    const notice=document.getElementById('clientSupportHistoryHealth');if(notice)notice.hidden=false;
-    renderSupport();return false;
+    clientSupportHistoryLoadError='Could not refresh support requests. Showing previously loaded requests where available.';
+    renderClientSupportHistoryHealth();renderSupport();return false;
   }finally{
     if(request===clientSupportHistoryRequest&&button){button.disabled=false;button.textContent='Retry history'}
   }

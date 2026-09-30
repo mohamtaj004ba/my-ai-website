@@ -21,7 +21,7 @@ function harness(fetcher){
 }
 test('support history error retains saved requests, displays warning and can recover on retry',async()=>{
   let failed=true;
-  const h=harness(async()=>{if(failed)throw Error('offline');return {tickets:[{id:'current'}]}});
+  const h=harness(async()=>{if(failed)throw Error('offline');return {tickets:[{id:'current'}],coverage:{verified:true,incomplete:false}}});
   assert.equal(await h.load(),false);
   assert.equal(h.notice.hidden,false);
   assert.equal(h.ctx.supportTicketsData[0].id,'previous');
@@ -41,10 +41,10 @@ test('successful HTTP response without support tickets is not treated as empty h
 test('late support history response cannot replace current records or clear current coverage',async()=>{
   let release,held=true;
   const pending=new Promise(resolve=>{release=resolve});
-  const h=harness(async()=>held?pending:{tickets:[{id:'newer'}]});
+  const h=harness(async()=>held?pending:{tickets:[{id:'newer'}],coverage:{verified:true,incomplete:false}});
   const old=h.load();await Promise.resolve();
   held=false;assert.equal(await h.load(),true);
-  release({tickets:[{id:'stale'}]});assert.equal(await old,false);
+  release({tickets:[{id:'stale'}],coverage:{verified:true,incomplete:false}});assert.equal(await old,false);
   assert.equal(h.ctx.supportTicketsData[0].id,'newer');
   assert.equal(h.notice.hidden,true);
 });
@@ -65,10 +65,17 @@ test('successful support mutation invalidates earlier read and unlocks history r
   assert.equal(h.button.disabled,true);
   h.invalidate();
   h.ctx.supportTicketsData.unshift({id:'just-submitted'});
-  release({tickets:[]});
+  release({tickets:[],coverage:{verified:true,incomplete:false}});
   assert.equal(await read,false);
   assert.equal(h.ctx.supportTicketsData[0].id,'just-submitted');
   assert.equal(h.button.disabled,false);
   assert.match(source,/invalidateClientSupportHistoryRequest\(\);const i=supportTicketsData.findIndex/);
   assert.match(source,/invalidateClientSupportHistoryRequest\(\);supportTicketsData.unshift\(data.ticket\)/);
+});
+
+test('successful support response with incomplete index keeps loaded requests but surfaces coverage warning',async()=>{
+  const h=harness(async()=>({tickets:[{id:'known'}],coverage:{verified:true,incomplete:true}}));
+  assert.equal(await h.load(),true);
+  assert.equal(h.ctx.supportTicketsData[0].id,'known');
+  assert.equal(h.notice.hidden,false);
 });

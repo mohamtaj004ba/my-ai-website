@@ -1190,12 +1190,18 @@ async function createSupportTicket(req,res){
 async function supportTickets(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const index=await kv.get('support:index')||[],tickets=[];
-  if(!Array.isArray(index)||index.length>2000)return res.status(503).json({error:'Support history exceeds supported capacity. No partial ticket list was returned.'});
+  if(!Array.isArray(index)||index.length>2000||index.some(id=>typeof id!=='string'||!id.trim())||new Set(index).size!==index.length)
+    return res.status(503).json({error:'Support history index is incomplete or exceeds supported capacity. No partial ticket list was returned.'});
+  let missingRecords=0;
   for(let offset=0;offset<index.length;offset+=40){
-    const batch=await Promise.all(index.slice(offset,offset+40).map(id=>kv.get('support:'+id)));
-    for(const ticket of batch){if(ticket&&ticket.workspaceId===s.workspaceId)tickets.push(ticket)}
+    const ids=index.slice(offset,offset+40),batch=await Promise.all(ids.map(id=>kv.get('support:'+id)));
+    for(let i=0;i<batch.length;i++){
+      const ticket=batch[i];
+      if(!ticket||typeof ticket!=='object'||Array.isArray(ticket)||String(ticket.id||'')!==String(ids[i])){missingRecords++;continue}
+      if(ticket.workspaceId===s.workspaceId)tickets.push(ticket);
+    }
   }
-  return res.status(200).json({tickets});
+  return res.status(200).json({tickets,coverage:{verified:true,incomplete:missingRecords>0}});
 }
 
 
@@ -2577,7 +2583,20 @@ async function aiFeedbackListForWorkspace(workspaceId,limit=50){
 }
 async function aiFeedback(req,res){
   const s=await requireSession(req,res);if(!s)return;
-  return res.status(200).json({feedback:await aiFeedbackListForWorkspace(s.workspaceId,60)});
+  const raw=await kv.get(aiFeedbackWorkspaceIndexKey(s.workspaceId)),ids=raw==null?[]:raw,items=[];
+  if(!Array.isArray(ids)||ids.length>250||ids.some(id=>typeof id!=='string'||!id.trim())||new Set(ids).size!==ids.length)
+    return res.status(503).json({error:'Feedback history index is incomplete or exceeds supported capacity. No partial feedback history was returned.'});
+  let missingRecords=0;
+  for(let offset=0;offset<ids.length;offset+=40){
+    const batchIds=ids.slice(offset,offset+40),batch=await Promise.all(batchIds.map(id=>kv.get('ai-feedback:'+id)));
+    for(let i=0;i<batch.length;i++){
+      const item=batch[i];
+      if(item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'')===String(batchIds[i])&&item.workspaceId===s.workspaceId)items.push(item);
+      else missingRecords++;
+    }
+  }
+  items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
+  return res.status(200).json({feedback:items,coverage:{verified:true,indexedRecords:ids.length,loadedRecords:items.length,missingRecords,incomplete:missingRecords>0}});
 }
 async function aiFeedbackSubmit(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;

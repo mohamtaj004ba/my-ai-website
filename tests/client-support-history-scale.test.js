@@ -52,3 +52,16 @@ test('client history remains empty only when full indexed set contains no owned 
   assert.equal(status,200);
   assert.equal(payload.tickets.length,0);
 });
+
+test('missing global support records are disclosed because client ownership cannot be verified',async()=>{
+  const {status,payload}=await fixture(4,{missing:['ticket-2'],workspaceAt:['ticket-1']}).run();
+  assert.equal(status,200);assert.equal(payload.coverage.verified,true);assert.equal(payload.coverage.incomplete,true);
+});
+test('duplicate or invalid support index fails closed rather than appearing complete',async()=>{
+  for(const index of [['ticket-1','ticket-1'],['ticket-1',42]]){
+    let status=0,payload;
+    const ctx=vm.createContext({requireSession:async()=>({workspaceId:'workspace-client'}),kv:{get:async key=>key==='support:index'?index:null},req:{},res:{status(n){status=n;return this},json(x){payload=x;return x}},Array,Set,Promise,String});
+    vm.runInContext(source.slice(start,end),ctx);await vm.runInContext('supportTickets(req,res)',ctx);
+    assert.equal(status,503);assert.match(payload.error,/No partial ticket list/);
+  }
+});
