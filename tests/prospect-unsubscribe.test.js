@@ -45,7 +45,7 @@ test('unsubscribe token is signed, prospect-specific and contains no contact PII
 });
 
 test('GET-style inspection is read-only and recognizes current or already-revoked consent',async()=>{
-  const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),kv=memoryKv({'site:prospect:'+p.id:p});
+  const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),kv=memoryKv({['site:prospect:'+p.id]:p});
   const before=JSON.stringify([...kv.data.entries()]),status=await inspectMarketingUnsubscribe(kv,token,SECRET);
   assert.deepEqual(status,{valid:true,state:'granted',active:true,alreadyUnsubscribed:false});
   assert.equal(JSON.stringify([...kv.data.entries()]),before);
@@ -55,7 +55,7 @@ test('GET-style inspection is read-only and recognizes current or already-revoke
 });
 
 test('explicit unsubscribe revokes consent and writes a bounded privacy-safe audit atomically',async()=>{
-  const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),kv=memoryKv({'site:prospect:'+p.id:p});
+  const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),kv=memoryKv({['site:prospect:'+p.id]:p});
   const result=await revokeMarketingUnsubscribe(kv,token,SECRET,{now:2000});
   assert.deepEqual(result,{ok:true,unsubscribed:true,alreadyUnsubscribed:false,changed:true});
   const saved=kv.data.get('site:prospect:'+p.id),audit=kv.data.get('site:consent:audit:'+p.id);
@@ -73,7 +73,7 @@ test('explicit unsubscribe revokes consent and writes a bounded privacy-safe aud
 });
 
 test('unsubscribe is idempotent and does not append duplicate audit events',async()=>{
-  const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),kv=memoryKv({'site:prospect:'+p.id:p});
+  const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),kv=memoryKv({['site:prospect:'+p.id]:p});
   await revokeMarketingUnsubscribe(kv,token,SECRET,{now:2000});
   const again=await revokeMarketingUnsubscribe(kv,token,SECRET,{now:3000});
   assert.equal(again.alreadyUnsubscribed,true);
@@ -82,7 +82,7 @@ test('unsubscribe is idempotent and does not append duplicate audit events',asyn
 });
 
 test('conflict retry preserves a newer unrelated prospect edit before revoking',async()=>{
-  const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),kv=memoryKv({'site:prospect:'+p.id:p},{conflictOnce:true});
+  const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),kv=memoryKv({['site:prospect:'+p.id]:p},{conflictOnce:true});
   const result=await revokeMarketingUnsubscribe(kv,token,SECRET,{now:2000});
   assert.equal(result.changed,true);
   assert.equal(kv.evalCalls,2);
@@ -93,7 +93,7 @@ test('conflict retry preserves a newer unrelated prospect edit before revoking',
 
 test('old unsubscribe token becomes invalid after a new explicit opt-in',async()=>{
   const p=prospect(),token=createMarketingUnsubscribeToken(p,SECRET),
-    regranted=prospect({marketingEmailConsent:grant(5000),updatedAt:5001}),kv=memoryKv({'site:prospect:'+p.id:regranted});
+    regranted=prospect({marketingEmailConsent:grant(5000),updatedAt:5001}),kv=memoryKv({['site:prospect:'+p.id]:regranted});
   await assert.rejects(()=>inspectMarketingUnsubscribe(kv,token,SECRET),err=>err.code==='INVALID_TOKEN');
   await assert.rejects(()=>revokeMarketingUnsubscribe(kv,token,SECRET,{now:6000}),err=>err.code==='INVALID_TOKEN');
   assert.equal(kv.data.get('site:prospect:'+p.id).marketingEmailConsent.status,'granted');
@@ -102,7 +102,7 @@ test('old unsubscribe token becomes invalid after a new explicit opt-in',async()
 test('missing/short signing secrets and malformed tokens fail closed',async()=>{
   const p=prospect();
   assert.throws(()=>createMarketingUnsubscribeToken(p,'short'),err=>err.code==='SECRET_UNAVAILABLE');
-  const kv=memoryKv({'site:prospect:'+p.id:p});
+  const kv=memoryKv({['site:prospect:'+p.id]:p});
   await assert.rejects(()=>inspectMarketingUnsubscribe(kv,'garbage',SECRET),err=>err.code==='INVALID_TOKEN');
   assert.equal(kv.evalCalls,0);
 });
