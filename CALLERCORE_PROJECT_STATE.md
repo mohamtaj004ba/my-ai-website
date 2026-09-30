@@ -22,27 +22,27 @@ This is a dashboard and shared-backend checkpoint, not provider activation or pr
 
 ## Current verified checkpoint — 2026-09-29
 
-Latest verified **implementation/test** SHA: `03833e57db731d77ccdb128a52104f2050008918`. This head completes the analytics-retention foundation plus truthful System Health observability for current rollups, prior-month finalization and maintenance scheduler state without activating production cleanup or provider work.
+Latest verified **implementation/test** SHA: `0d9f9f3296128e92c0b1394ea0fda3400ccb5646`. This head preserves the verified analytics-retention foundation and adds reversible normalized-Conversations migration readiness without migrating production data or enabling any migration executor.
 
-- Full GitHub CI: **842/842 tests passed, 0 failed**. CallerCore CI runs `36653267050` (PR) and `36653262564` (push) succeeded.
-- CodeQL runs `36653267020` (PR) and `36653262546` (push) succeeded. Jekyll `36653266946` succeeded.
-- Authenticated Preview Browser QA `36653262545` succeeded on the exact implementation SHA. The run verifies the admin-only retention dry-run endpoint, System Health panel, privacy-safe scheduler/finalization status, and the existing disposable client/admin workflows.
-- Vercel Preview `dpl_Ew4bzNw7KSgzWTLxvmQunL5WzFdY` is READY at `https://my-ai-website-1lu4w8kmh-mohamtaj004bas-projects.vercel.app`.
-- Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, customer communication, live billing, live voice activation, or destructive cleanup occurred.
+- Full GitHub CI: **849/849 tests passed, 0 failed**. CallerCore CI runs `36655052124` (PR) and `36655046747` (push) succeeded.
+- CodeQL runs `36655052005` (PR) and `36655046661` (push) succeeded. Jekyll `36655052015` succeeded.
+- Authenticated Preview Browser QA `36655046707` succeeded on the exact implementation SHA after the migration-readiness acceptance was corrected to distinguish fleet-wide Preview state from the disposable QA workspace.
+- Vercel Preview `dpl_4XbfW36wQkBzJfwNc2nKUEyGVHGJ` is READY at `https://my-ai-website-5oumobll6-mohamtaj004bas-projects.vercel.app`.
+- Production `main` was rechecked unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. No merge, production deployment, production record mutation, normalized-conversation migration, customer communication, live billing, live voice activation, or destructive cleanup occurred.
 
 Verified implementation included in this head:
 
-- Durable Stripe monthly payment-failure metrics use provider-event dedupe receipts plus an explicit coverage-start marker. Fully observed future months can report complete failure counts; an unobserved partial first month remains unknown rather than being backfilled as zero. The older checkout-concurrency VM fixture was updated to account for the new metric dependency.
-- Admin System Health has an admin-only, **read-only** retention dry run. It reports stale prospect **candidates pending consent review**, raw-event/session-index coverage, and monthly-rollup gaps without returning prospect IDs, emails, before/after records, or exposing a retention executor.
-- The same retention view now distinguishes the **current monthly rollup**, **previous-month finalization marker**, and scheduler state as `disabled`, `misconfigured`, or `active`. It exposes only status booleans/timestamps and never the cron secret.
-- Prospect de-identification remains isolated and unreachable. No verified consent source exists yet, so the report deliberately does not call stale records automatically eligible for cleanup.
-- Session-index compaction has a conflict-safe planner/executor with tests for duplicates, missing/expired sessions, malformed records, exact-list compare-before-write, concurrent changes, and no-op plans. The executor is not routed or scheduled.
-- Analytics retention constants are centralized at 180 days for raw website events/session records.
-- Previous-month KPI finalization fails closed unless the prior snapshot has complete source coverage and was recorded within 24 hours of UTC month end. Its durable marker contains only month/finalization timestamps and coverage-complete state, not KPI values or customer data.
-- A Vercel daily analytics-maintenance cadence is defined for 05:17 UTC, but the endpoint is **disabled by default** and cannot write unless `CALLERCORE_MAINTENANCE_ENABLED=true` and a valid `CRON_SECRET` bearer token are both present. The scheduled path refreshes the current aggregate monthly rollup and attempts truthful previous-month finalization; it does not call session compaction or prospect de-identification.
-- Raw-event/session expiration must still not be treated as safe for production cleanup until the maintenance gate is deliberately enabled and observed over a complete boundary. The feature-branch implementation proves the mechanism and visibility, not production activation.
+- Durable Stripe monthly payment-failure metrics retain provider-event dedupe receipts plus an explicit coverage-start marker. Fully observed future months can become complete; an unobserved partial first month remains unknown rather than being fabricated as zero.
+- Admin System Health retains the admin-only **read-only** retention dry run for stale prospect candidates, raw-event/session-index coverage, monthly-rollup status, prior-month finalization, and maintenance scheduler state.
+- Prospect de-identification remains isolated and unreachable. No verified consent source exists yet.
+- Session-index compaction remains unscheduled and unrouted; its conflict-safe planner/executor is regression-covered but not activated.
+- The Vercel analytics-maintenance cadence remains **disabled by default** and requires both `CALLERCORE_MAINTENANCE_ENABLED=true` and a valid `CRON_SECRET` before its aggregate rollup/finalization writes can run.
+- Added a count-only normalized-Conversations migration dry run. Fleet scans report only aggregate counts/status for aligned, legacy-only, drifted, malformed, rollback-source-missing, and uninitialized workspaces; they do not return workspace IDs, customer names, phone numbers, messages, or other record-level data.
+- Added a focused admin-only migration readiness check for a specific workspace. Its response still omits the workspace identity and reports only state/counts. Preview QA verifies the disposable QA workspace is `aligned`, its legacy source is preserved, normalized/legacy conversation counts match, and no migration executor is reachable.
+- Fleet-wide Preview migration health is intentionally allowed to surface legitimate historical legacy-only or blocking records instead of forcing a false green state. System Health displays that aggregate fleet truth separately from the focused disposable-workspace acceptance.
+- The legacy tenant conversation array remains the compatibility/rollback source. No code in this checkpoint deletes it or migrates production records.
 
-This is an implementation/Preview checkpoint, not provider activation or production release.
+This is an implementation/Preview checkpoint, not a production migration, provider activation, or production release.
 
 ## Latest verified implementation checkpoint
 
@@ -86,10 +86,10 @@ Current implementation: 303/303 tests passed in GitHub CI on `db68806a`; the rec
 
 ## Next authorized development backlog
 
-1. Keep `CALLERCORE_MAINTENANCE_ENABLED` off until production activation is explicitly authorized. Before any destructive retention automation, define a verified prospect-consent source plus audit/recovery expectations and surface them in the dry-run.
-2. Extend analytics-retention observability around prior-month finalization and scheduler state so an admin can distinguish configured, disabled, finalized, incomplete and stale boundaries without reading infrastructure logs.
-3. Keep the normalized-conversation migration separate and reversible. Production data has not been migrated; preserve the legacy compatibility source until a dedicated migration/rollback acceptance pass.
-4. Keep provider lifecycle, live Vapi/voice, and Stripe test-mode payment/recovery scenarios separately gated. Live activation, production changes, destructive scheduled cleanup and new charges still require explicit owner authorization.
+1. Keep normalized-Conversations migration **read-only/reversible** until a dedicated migration + rollback acceptance is designed. Add detail-fidelity verification before any executor can be considered; counts/summary alignment alone are not sufficient to authorize migration.
+2. Keep `CALLERCORE_MAINTENANCE_ENABLED` off until production activation is explicitly authorized. Before destructive retention automation, define a verified prospect-consent source plus audit/recovery expectations.
+3. Continue premium admin/client QA and consistency sweeps while preserving provider truthfulness, especially areas where background data, system-health status, notifications/deep links, or large-history behavior could diverge.
+4. Keep provider lifecycle, live Vapi/voice, Stripe test-mode payment/recovery scenarios, production changes, destructive cleanup, and new charges separately gated behind explicit owner authorization.
 
 ## Known limitations and remaining work
 
