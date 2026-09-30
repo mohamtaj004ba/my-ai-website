@@ -47,7 +47,7 @@ test('website inbox read refuses corrupt history instead of pretending the threa
   const end=account.indexOf('async function adminWebsiteReply(',start);
   assert.ok(start>=0&&end>start);
   const read=account.slice(start,end);
-  assert.match(read,/rawMessages!=null&&!Array\.isArray\(rawMessages\)/);
+  assert.match(read,/rawMessages!=null&&\(!Array\.isArray\(rawMessages\)\|\|rawMessages\.some/);
   assert.match(read,/status\(503\)/);
   assert.doesNotMatch(read,/Array\.isArray\(messages\)\?messages:\[\]/);
 });
