@@ -89,3 +89,19 @@ test('admin notification builder marks malformed source indexes as incomplete in
     'support_unavailable','ai_feedback_unavailable','growth_unavailable','clients_unavailable'
   ]);
 });
+
+
+test('absent notification indexes are treated as empty rather than unavailable',async()=>{
+  const ctx=vm.createContext({
+    kv:{async get(key){return key==='platform:settings'?{}:null},async lrange(){return []}},
+    getGmailConnection:async()=>null,
+    entitlementsFor:()=>({minutes:0}),
+    notificationItem:(id,body)=>({id,...body}),
+    safeError:()=>'',console:{error(){}},
+    crypto:require('crypto'),Date,Number,String,Array,Math,Promise
+  });
+  vm.runInContext(builder,ctx);
+  const result=await vm.runInContext('buildAdminNotifications({email:"admin@example.test"})',ctx);
+  assert.equal(result.coverage.limited,false);
+  assert.deepEqual(Array.from(result.coverage.sources),[]);
+});
