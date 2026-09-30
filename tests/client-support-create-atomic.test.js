@@ -80,3 +80,8 @@ test('uncertain store error and repeated conflicts never claim request was sent'
     assert.match(r.response.error,/request history/);
   }
 });
+
+test('new support tickets establish verified message-history coverage metadata',async()=>{
+  const f=fixture({initial:[]}),r=await f.run(),ticket=r.response.ticket;
+  assert.equal(ticket.messageCount,1);assert.equal(ticket.messageHistoryVerified,true);assert.equal(ticket.messagesTruncated,false);
+});

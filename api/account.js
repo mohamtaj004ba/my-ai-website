@@ -1145,7 +1145,7 @@ async function createSupportTicket(req,res){
   const body=req.body||{},subject=String(body.subject||'').trim().slice(0,160),message=String(body.message||'').trim().slice(0,4000),priority=['normal','urgent'].includes(body.priority)?body.priority:'normal';
   if(subject.length<3||message.length<10)return res.status(400).json({error:'Subject and message are required'});
   const id=crypto.randomUUID(),now=Date.now();
-  const ticket={id,workspaceId:s.workspaceId,workspaceName:ws.name||'Workspace',email:s.email,subject,message,priority,status:'open',messages:[{id:crypto.randomUUID(),direction:'client',from:s.email,body:message,at:now}],createdAt:now,updatedAt:now};
+  const ticket={id,workspaceId:s.workspaceId,workspaceName:ws.name||'Workspace',email:s.email,subject,message,priority,status:'open',messages:[{id:crypto.randomUUID(),direction:'client',from:s.email,body:message,at:now}],messageCount:1,messageHistoryVerified:true,messagesTruncated:false,createdAt:now,updatedAt:now};
   let recorded=false;
   for(let attempt=0;attempt<4;attempt++){
     const index=await kv.get('support:index');
@@ -1210,9 +1210,14 @@ async function replySupportTicket(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80),message=String(body.message||'').trim().slice(0,4000);
   if(!id||message.length<2)return res.status(400).json({error:'Reply is required'});
   const key='support:'+id,t=await kv.get(key);if(!t||t.workspaceId!==s.workspaceId)return res.status(404).json({error:'Support request not found'});
-  const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||s.email,body:t.message||'',at:t.createdAt||now}];
+  if(t.messages!=null&&!Array.isArray(t.messages))return res.status(503).json({error:'Support conversation history is unavailable. Your reply was not sent.'});
+  const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||s.email,body:t.message||'',at:t.createdAt||now}],
+    hasCount=Number.isFinite(Number(t.messageCount))&&Number(t.messageCount)>=messages.length,
+    priorCount=hasCount?Number(t.messageCount):messages.length,
+    historyVerified=t.messageHistoryVerified!==false&&(hasCount||messages.length<100);
   messages.push({id:crypto.randomUUID(),direction:'client',from:s.email,body:message,at:now});
-  const next={...t,messages:messages.slice(-100),status:t.status==='resolved'?'open':t.status,updatedAt:Math.max(now,Number(t.updatedAt||t.createdAt||0)+1),updatedBy:s.email};
+  const retainedMessages=messages.slice(-100),messageCount=priorCount+1;
+  const next={...t,messages:retainedMessages,messageCount,messageHistoryVerified:historyVerified,messagesTruncated:messageCount>retainedMessages.length||!historyVerified,status:t.status==='resolved'?'open':t.status,updatedAt:Math.max(now,Number(t.updatedAt||t.createdAt||0)+1),updatedBy:s.email};
   try{
     if(!await compareAndSetConfig(kv,[{key,before:t,after:next}]))return res.status(409).json({error:'This support conversation changed while you were replying. Refresh it and resend your preserved draft.'});
   }catch(err){console.error('support client reply save failed',safeError(err));return res.status(503).json({error:'Could not confirm that your reply was saved. Refresh the conversation before retrying.'})}
@@ -1240,9 +1245,14 @@ async function adminSupportReply(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80),message=String(body.message||'').trim().slice(0,4000);
   if(!id||message.length<2)return res.status(400).json({error:'Reply is required'});
   const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
-  const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||now}];
+  if(t.messages!=null&&!Array.isArray(t.messages))return res.status(503).json({error:'Support conversation history is unavailable. Your reply was not sent.'});
+  const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||now}],
+    hasCount=Number.isFinite(Number(t.messageCount))&&Number(t.messageCount)>=messages.length,
+    priorCount=hasCount?Number(t.messageCount):messages.length,
+    historyVerified=t.messageHistoryVerified!==false&&(hasCount||messages.length<100);
   messages.push({id:crypto.randomUUID(),direction:'support',from:admin.email,body:message,at:now});
-  const next={...t,messages:messages.slice(-100),status:t.status==='open'?'in_progress':t.status,updatedAt:Math.max(now,Number(t.updatedAt||t.createdAt||0)+1),updatedBy:admin.email};
+  const retainedMessages=messages.slice(-100),messageCount=priorCount+1;
+  const next={...t,messages:retainedMessages,messageCount,messageHistoryVerified:historyVerified,messagesTruncated:messageCount>retainedMessages.length||!historyVerified,status:t.status==='open'?'in_progress':t.status,updatedAt:Math.max(now,Number(t.updatedAt||t.createdAt||0)+1),updatedBy:admin.email};
   const audit={id:crypto.randomUUID(),workspaceId:t.workspaceId,actorEmail:admin.email,actorRole:'admin',action:'support_reply',section:'support',before:{status:t.status||'open',updatedAt:t.updatedAt||0},after:{status:next.status,updatedAt:next.updatedAt},meta:{ticketId:id},at:Date.now()};
   try{
     if(!await compareAndAudit(kv,{key,before:t,after:next},'audit:'+t.workspaceId,audit))return res.status(409).json({error:'This support conversation changed while you were replying. Refresh it and resend your preserved draft.'});

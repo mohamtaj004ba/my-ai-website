@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const source=fs.readFileSync('api/account.js','utf8');
 
 function fixture(which,{commit=true,now=10,status='open'}={}){
-  const ticket={id:'ticket-1',workspaceId:'workspace-1',status,updatedAt:10,createdAt:1,messages:[{id:'old',direction:'client',body:'Initial request'}],email:''};
+  const ticket={id:'ticket-1',workspaceId:'workspace-1',status,updatedAt:10,createdAt:1,messages:[{id:'old',direction:'client',body:'Initial request'}],messageCount:1,messageHistoryVerified:true,messagesTruncated:false,email:''};
   let code=0,result,changed,changedAudit,notifications=0;
   const context=vm.createContext({
     requireWritableSession:async()=>({workspaceId:'workspace-1',email:'owner@example.test'}),
@@ -50,5 +50,16 @@ for(const which of ['client','admin']){
       assert.equal(r.notifications,0);
       assert.match(r.result.error,/Refresh/);
     }
+  });
+}
+
+for(const which of ['client','admin']){
+  test(which+' support reply retains only 100 messages but records truthful total coverage',async()=>{
+    const f=fixture(which),history=Array.from({length:100},(_,i)=>({id:'old-'+i,direction:i%2?'support':'client',body:'Message '+i}));
+    f.ticket.messages=history;f.ticket.messageCount=100;f.ticket.messageHistoryVerified=true;
+    const r=await f.run();
+    assert.equal(r.code,200);assert.equal(r.result.ticket.messages.length,100);assert.equal(r.result.ticket.messageCount,101);
+    assert.equal(r.result.ticket.messagesTruncated,true);assert.equal(r.result.ticket.messageHistoryVerified,true);
+    assert.equal(r.result.ticket.messages[0].id,'old-1');
   });
 }
