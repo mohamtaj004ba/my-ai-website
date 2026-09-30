@@ -3549,13 +3549,19 @@ function renderAdminTechSupport(){
   ].map(([k,v,color])=>'<div><span>'+esc(k)+'</span><b class="status-text '+color+'">'+esc(v)+'</b></div>').join('');
   const email=document.getElementById('adminRepairEmail');if(email)email.value=d.ownerEmail||'';
   renderAdminConfigEditor();
-  const list=document.getElementById('adminAuditList'),empty=document.getElementById('adminAuditEmpty'),audit=currentAdminTech.audit||[];
+  const list=document.getElementById('adminAuditList'),empty=document.getElementById('adminAuditEmpty'),audit=currentAdminTech.audit||[],coverage=currentAdminTech.auditCoverage||{},coverageEl=document.getElementById('adminAuditCoverage');
+  if(coverageEl){
+    if(coverage.verified===false){coverageEl.textContent='Audit history could not be verified. Configuration diagnostics are shown, but an empty change list must not be treated as complete.';coverageEl.classList.add('warning')}
+    else if(coverage.retentionLimited){coverageEl.textContent='Audit storage retains the 200 most recent events. Showing '+audit.length+' newest entries here; older changes may no longer be present.';coverageEl.classList.add('warning')}
+    else if(coverage.returnLimited){coverageEl.textContent='Showing '+audit.length+' of '+Number(coverage.retained||audit.length)+' retained audit events.';coverageEl.classList.add('warning')}
+    else {coverageEl.textContent=audit.length?(audit.length+' retained audit event'+(audit.length===1?'':'s')+' shown.'):'No retained audit events.';coverageEl.classList.remove('warning')}
+  }
   if(list)list.innerHTML=audit.map(entry=>{
     const when=new Date(entry.at).toLocaleString(),who=entry.actorRole==='admin'?'Admin':'Client';
     const restorable=['workspace','settings','agent','automations','integrations','locations'].includes(entry.section)&&entry.before!==undefined;
     return '<article class="audit-entry"><div class="audit-head"><div><b>'+esc(entry.action.replaceAll('_',' '))+'</b><small>'+esc(when)+' · '+esc(who)+' · '+esc(entry.actorEmail||'unknown')+'</small></div><span class="tag">'+esc(entry.section||'system')+'</span></div><details><summary>Inspect change</summary><div class="audit-diff"><div><span>Before</span><pre>'+esc(JSON.stringify(entry.before,null,2))+'</pre></div><div><span>After</span><pre>'+esc(JSON.stringify(entry.after,null,2))+'</pre></div></div></details>'+(restorable?'<button class="secondary-btn audit-restore" data-restore-audit="'+esc(entry.id)+'" '+(adminTechSaving?'disabled':'')+'>'+(adminTechSaving&&adminTechMutationTarget===entry.id?'Restoring…':'Restore previous snapshot')+'</button>':'')+'</article>'
   }).join('');
-  if(empty)empty.hidden=audit.length!==0;
+  if(empty)empty.hidden=audit.length!==0||coverage.verified===false;
   list?.querySelectorAll('[data-restore-audit]').forEach(b=>b.addEventListener('click',()=>restoreAdminAudit(b.dataset.restoreAudit)));
 }
 function renderAdminConfigEditor(){

@@ -1943,7 +1943,8 @@ async function adminTechSupport(req,res){
   if(!id)return res.status(400).json({error:'Client id required'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
   const email=cleanEmail(ws.ownerEmail||''),member=email?await kv.get('user:email:'+email):null;
-  const config=await getWorkspaceConfigSnapshot(id),audit=await kv.get('audit:'+id)||[];
+  const [config,auditRaw]=await Promise.all([getWorkspaceConfigSnapshot(id),kv.get('audit:'+id)]),
+    auditVerified=auditRaw==null||Array.isArray(auditRaw),audit=auditVerified?(auditRaw||[]):[],auditReturned=audit.slice(0,100);
   return res.status(200).json({
     diagnostics:{
       workspaceExists:true,workspaceId:id,workspaceStatus:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',
@@ -1953,7 +1954,10 @@ async function adminTechSupport(req,res){
       phoneConfigured:!!config.phone,agentConfigured:!!config.agent,settingsConfigured:!!config.settings,
       locationsConfigured:Array.isArray(config.locations)?config.locations.length:0
     },
-    config,audit:Array.isArray(audit)?audit.slice(0,100):[]
+    config,audit:auditReturned,auditCoverage:{
+      verified:auditVerified,returned:auditReturned.length,retained:audit.length,
+      returnLimited:audit.length>auditReturned.length,retentionLimited:audit.length>=200,retentionLimit:200
+    }
   });
 }
 async function adminSendClientLogin(req,res){

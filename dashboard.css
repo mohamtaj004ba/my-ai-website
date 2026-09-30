@@ -2458,3 +2458,5 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
 .retention-report-panel.is-error .retention-report-note{background:#fff5f3;border-color:#ecd4cf;color:#8b4a3f}
 @media(max-width:980px){.retention-report-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.retention-report-grid{grid-template-columns:1fr}}
+
+.admin-audit-coverage{display:block;margin:0 0 10px;font-size:8px;line-height:1.45}.admin-audit-coverage.warning{padding:8px 10px;border:1px solid #e3d5bc;border-radius:9px;background:#fffaf1;color:#8a5b20}
