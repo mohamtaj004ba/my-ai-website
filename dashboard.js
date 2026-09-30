@@ -25,7 +25,7 @@ const demoMode=location.hostname.endsWith('.vercel.app')&&params.get('demo')==='
 let currentPlan=params.get('plan')||'Growth';if(!knownPlan(currentPlan))currentPlan='Growth';
 let sessionWorkspace=null,sessionOnboarding=null;
 let currentUserProfile={displayName:'CallerCore User',email:'',avatarDataUrl:''};
-let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationRequest=0,notificationMode='unread',clientFeedbackData=[],clientFeedbackVisibleLimit=8,clientFeedbackLoadRequest=0,adminFeedbackData=[];
+let notificationData=[],notificationUnreadCount=0,notificationsLoading=false,notificationRequest=0,notificationMode='unread',notificationLoadError='',notificationLastSyncAt=0,clientFeedbackData=[],clientFeedbackVisibleLimit=8,clientFeedbackLoadRequest=0,adminFeedbackData=[];
 let callsData=[],leadsData=[],conversationsData=[],conversationThreadsData=[],appointmentsData=[],agentData=null,automationsData=[],analyticsData=null,settingsData=null,integrationsData=null,supportTicketsData=[],phoneRoutingData=null,locationsData=[],locationsLimit=1;let conversationFilter='all',conversationVisibleLimit=50,conversationMessageLimit=50,conversationLastFilterSignature='',conversationPageTotal=0,conversationNextCursor=null,conversationPageLoading=false,conversationPageError='',conversationPageRequest=0,conversationBackendPaging=false,conversationSearchTimer=null,activeConversationId=null,activeCallContactKey='',activeCallId='',callDrawerOpenRequest=0,followupState={},showHandledFollowups=false,agentEditing=false,settingsEditing=false,agentSaving=false,settingsSaving=false,phoneSaving=false,pendingBusinessLogo=null,businessLogoProcessing=false,businessLogoRequest=0,agentEditSnapshot=null,overviewChartDays=14,callLogGroupBy='day',callLogSort='newest',callLogDensity='comfortable',callQuickFilter='all',callVisibleLimit=50,callLastFilterSignature='',contactVisibleLimit=50,contactLastFilterSignature='',contactHistoryVisibleLimit=50,contactHistoryLastSignature='',contactMessageSessionLimits={},contactHistoryHydratedKeys=new Set(),contactHistoryLoadingKeys=new Set(),pendingTeamStatusCallId='',callMoreFiltersOpen=false,activeContactKey='',contactHistoryFilter='all',callViewedIds=new Set(),activeNoteEditId='',webhookEditing=false,clientRefreshTimer=null,clientRefreshInFlight=false,clientLastSyncAt=0,clientEditGeneration=0;
 const DEMO_CALLS=[
 {id:'c1',caller:'Sarah Johnson',phone:'(509) 555-0148',category:'New service',reason:'Roof replacement estimate',duration:'4:32',outcome:'Qualified',agent:'Maya',time:'3:14 PM',summary:'Sarah owns a two-story home and wants a full roof replacement estimate. Maya confirmed the property is in the service area and captured the request for the roofing team to follow up.',qualification:{Intent:'High',Service:'Replacement',Timeline:'This month',Value:'$8,500'},transcript:[['Maya','Thank you for calling Alpine Roofing. This is Maya. How can I help?'],['Sarah','I need an estimate to replace my roof.'],['Maya','Absolutely. I can capture the details for the roofing team. Is the property in Spokane?'],['Sarah','Yes, on the South Hill.']]},
@@ -3953,17 +3953,21 @@ function notificationKindIcon(kind){
 }
 async function loadNotifications({silent=true}={}){
   if(demoMode||notificationsLoading||!document.getElementById('notificationBell'))return;
-  notificationsLoading=true;const request=++notificationRequest;
+  notificationsLoading=true;const request=++notificationRequest;renderNotifications();
   try{
     const scope=notificationScope(),r=await fetch('/api/account?action=notifications&scope='+scope,{headers:{Accept:'application/json'},cache:'no-store'});
-    if(r.ok){
-      const data=await r.json();
-      if(request===notificationRequest&&Array.isArray(data?.notifications)&&Number.isFinite(Number(data.unreadCount))){
-        notificationData=data.notifications;notificationUnreadCount=Math.max(0,Number(data.unreadCount));renderNotifications();
-      }
+    if(!r.ok)throw new Error('Notification refresh failed ('+r.status+')');
+    const data=await r.json();
+    if(!Array.isArray(data?.notifications)||!Number.isFinite(Number(data.unreadCount)))throw new Error('Notification response was incomplete');
+    if(request===notificationRequest){
+      notificationData=data.notifications;notificationUnreadCount=Math.max(0,Number(data.unreadCount));
+      notificationLoadError='';notificationLastSyncAt=Date.now();
     }
-  }catch(e){if(!silent)console.error('Notifications failed',e)}
-  finally{notificationsLoading=false}
+  }catch(e){
+    if(request===notificationRequest)notificationLoadError='Refresh failed — showing the last verified alerts.';
+    if(!silent)console.error('Notifications failed',e)
+  }
+  finally{notificationsLoading=false;if(request===notificationRequest)renderNotifications()}
 }
 function renderNotifications(){
   const badge=document.getElementById('notificationBadge'),list=document.getElementById('notificationList'),empty=document.getElementById('notificationEmpty'),items=notificationMode==='history'?notificationData:notificationData.filter(n=>!n.read);
@@ -3971,7 +3975,16 @@ function renderNotifications(){
   document.querySelectorAll('[data-notification-mode]').forEach(btn=>btn.classList.toggle('active',btn.dataset.notificationMode===notificationMode));
   if(!list)return;
   list.innerHTML=items.map(n=>'<button class="notification-item '+(n.read?'read':'unread')+'" data-notification-id="'+esc(n.id)+'"><span class="notification-dot '+esc(n.kind||'info')+'">'+notificationKindIcon(n.kind)+'</span><span class="notification-copy"><b>'+esc(n.title||'Notification')+'</b><span>'+esc(n.body||'')+'</span><small>'+formatNotificationTime(n.createdAt)+(n.read?' · Read':'')+'</small></span><span class="notification-open-cue">→</span></button>').join('');
-  if(empty){empty.hidden=items.length!==0;empty.textContent=notificationMode==='history'?'No notification history yet.':'No unread notifications.'}
+  const sync=document.getElementById('notificationSyncStatus'),retry=document.getElementById('notificationRetry');
+  if(sync){
+    sync.classList.toggle('error',!!notificationLoadError);
+    sync.textContent=notificationLoadError||(notificationsLoading?'Refreshing…':notificationLastSyncAt?'Updated '+formatNotificationTime(notificationLastSyncAt):'Not refreshed yet');
+  }
+  if(retry){retry.disabled=notificationsLoading;retry.textContent=notificationsLoading?'Refreshing…':'Refresh'}
+  if(empty){
+    empty.hidden=items.length!==0;
+    empty.textContent=notificationLoadError&&!notificationData.length?'Notifications could not be verified. Refresh to try again.':notificationMode==='history'?'No notification history yet.':'No unread notifications.';
+  }
   list.querySelectorAll('[data-notification-id]').forEach(b=>b.addEventListener('click',()=>openNotification(b.dataset.notificationId)));
   renderSidebarNotificationDots();
 }
@@ -4046,7 +4059,7 @@ async function navigateNotification(n){
     }
   }
   if(document.body.dataset.dashboard==='admin'){
-    if(meta.workspaceId&&(view==='clients'||view==='finance')){showView('clients');try{return await openAdminClient(String(meta.workspaceId))===true}catch(err){console.warn('Notification client lookup failed',err);return false}}
+    if(meta.workspaceId&&(view==='clients'||view==='finance')){showView(view);try{return await openAdminClient(String(meta.workspaceId))===true}catch(err){console.warn('Notification client lookup failed',err);return false}}
     if(view==='client-care')openClientCare(meta.careTab|| (meta.feedbackId?'feedback':'support'));else showView(view);
     await new Promise(resolve=>setTimeout(resolve,60));
     let target=null;
@@ -4125,6 +4138,7 @@ function initNotifications(){
   bell.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;bell.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){resetSurfaceScroll(panel);loadNotifications({silent:true})}});
   panel.addEventListener('click',e=>e.stopPropagation());
   document.getElementById('notificationReadAll')?.addEventListener('click',markAllNotifications);
+  document.getElementById('notificationRetry')?.addEventListener('click',e=>{e.stopPropagation();loadNotifications({silent:false})});
   panel.querySelectorAll('[data-notification-mode]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();notificationMode=btn.dataset.notificationMode||'unread';renderNotifications()}));
   document.addEventListener('click',()=>{panel.hidden=true;bell.setAttribute('aria-expanded','false')});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){panel.hidden=true;bell.setAttribute('aria-expanded','false')}});
