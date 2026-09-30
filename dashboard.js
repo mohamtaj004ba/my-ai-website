@@ -374,7 +374,31 @@ function renderWorkspaceAccessState(){
   document.body.classList.toggle('workspace-suspended',suspended);
   if(banner)banner.hidden=!suspended;
 }
+function clientPayloadRecord(value){return !!value&&typeof value==='object'&&!Array.isArray(value)}
+function assertClientDashboardPayload(data){
+  const requiredArrays=['calls','leads','locations','conversations','appointments','automations','viewedCallIds'],
+    requiredObjects=['workspace','agent','settings','integrations','conversationPage','followupState','followupCoverage','viewedCallCoverage'];
+  if(!clientPayloadRecord(data)||requiredArrays.some(key=>!Array.isArray(data[key]))||requiredObjects.some(key=>!clientPayloadRecord(data[key]))||
+    !String(data.workspace.id||'').trim()||!Array.isArray(data.conversationPage.conversations)||
+    !Object.hasOwn(data,'routing')||(data.routing!==null&&!clientPayloadRecord(data.routing))||
+    !Object.hasOwn(data,'onboarding')||(data.onboarding!==null&&!clientPayloadRecord(data.onboarding))||
+    !Number.isFinite(Number(data.locationsLimit))||Number(data.locationsLimit)<1)
+    throw new Error('Workspace dashboard response was incomplete. Last verified data was preserved.');
+  return data;
+}
+function applyClientFallbackPayload(action,data){
+  if(!clientPayloadRecord(data))return false;
+  if(action==='calls'){if(!Array.isArray(data.calls))return false;callsData=data.calls;return true}
+  if(action==='leads'){if(!Array.isArray(data.leads))return false;leadsData=data.leads;return true}
+  if(action==='agent'){if(!clientPayloadRecord(data.agent))return false;agentData=data.agent;return true}
+  if(action==='settings'){if(!clientPayloadRecord(data.settings))return false;settingsData=data.settings;return true}
+  if(action==='integrations'){if(!clientPayloadRecord(data.integrations))return false;integrationsData=data.integrations;return true}
+  if(action==='phone-routing'){if(!Object.hasOwn(data,'routing')||(data.routing!==null&&!clientPayloadRecord(data.routing)))return false;phoneRoutingData=data.routing;return true}
+  if(action==='locations'){const limit=Number(data.limit);if(!Array.isArray(data.locations)||!Number.isFinite(limit)||limit<1)return false;locationsData=data.locations;locationsLimit=limit;return true}
+  return false;
+}
 function applyClientDashboardData(data={}){
+  assertClientDashboardPayload(data);
   if(data.workspace&&typeof data.workspace==='object'){
     const previousPlan=currentPlan,previousName=String(sessionWorkspace?.name||''),previousSubscription=String(sessionWorkspace?.subscriptionStatus||''),previousStatus=String(sessionWorkspace?.status||''),previousUsage=Number(sessionWorkspace?.usage?.minutes||0),previousStripeCustomer=!!sessionWorkspace?.stripe?.customerLinked,previousStripeSubscription=!!sessionWorkspace?.stripe?.subscriptionLinked;
     sessionWorkspace={...(sessionWorkspace||{}),...data.workspace};
@@ -480,7 +504,14 @@ async function loadOperations(){
       const retried=await Promise.allSettled(retryIndexes.map(i=>fetchJsonRetry('/api/account?action='+requests[i][0],{attempts:1,timeout:12000})));
       retryIndexes.forEach((idx,k)=>{if(retried[k].status==='fulfilled')settled[idx]=retried[k]});
     }
-    for(let i=0;i<settled.length;i++){if(settled[i].status!=='fulfilled')continue;const [action,key]=requests[i],data=settled[i].value;if(action==='calls')callsData=data.calls||[];else if(action==='leads')leadsData=data.leads||[];else if(action==='agent')agentData=data.agent||null;else if(action==='settings')settingsData=data.settings||null;else if(action==='integrations')integrationsData=data.integrations||null;else if(action==='phone-routing')phoneRoutingData=data.routing||null;else if(action==='locations'){locationsData=data.locations||[];locationsLimit=Number(data.limit||1)}}
+    for(let i=0;i<settled.length;i++){
+      if(settled[i].status!=='fulfilled')continue;
+      const [action]=requests[i],data=settled[i].value;
+      if(!applyClientFallbackPayload(action,data)){
+        const reason=new Error('Invalid '+action+' response; last verified data was preserved.');
+        settled[i]={status:'rejected',reason};console.warn('Fallback client feed was incomplete:',action);
+      }
+    }
     await loadFollowupState();try{const viewed=await fetchJsonRetry('/api/account?action=calls-viewed',{attempts:1,timeout:5000});if(!Array.isArray(viewed.ids)||viewed.coverage?.verified!==true)throw new Error('Invalid call opened-state response');callViewedIds=new Set(viewed.ids.map(String));callViewedCoverage={verified:true,limited:viewed.coverage?.limited===true,retained:Math.max(0,Number(viewed.coverage?.retained||viewed.ids.length)||0),limit:Math.max(1,Number(viewed.coverage?.limit||2000)||2000)}}catch(_){callViewedCoverage={...callViewedCoverage,verified:false}}analyticsData=buildLocalAnalytics();renderClientData();
     const failedActions=settled.map((x,i)=>x.status==='rejected'?requests[i][0]:'').filter(Boolean),criticalFailed=failedActions.filter(x=>['calls','agent','settings'].includes(x));
     setDataHealth('clientDataHealth',criticalFailed.length>0);setClientLoading(false);updateClientRefreshStamp();
