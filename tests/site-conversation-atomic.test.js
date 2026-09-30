@@ -9,8 +9,9 @@ function fixture({history=[],result}={}){
   const kv={eval:async(script,keys,args)=>{
     calls++;
     assert.equal(script,SITE_CONVERSATION_APPEND);
-    assert.deepEqual(keys,['site:conversation:lead-1']);
+    assert.deepEqual(keys,['site:conversation:lead-1','site:conversation:meta:lead-1']);
     const message=JSON.parse(args[0]);
+    assert.ok(Number(args[1])>0);
     if(result!==undefined)return result;
     stored=[...stored,message].slice(-200);
     return stored.length;
@@ -33,7 +34,7 @@ test('concurrent inquiries retain both messages and cap the stored history',asyn
   assert.equal(f.read()[0].id,'old-1');
 });
 test('malformed history and ambiguous storage failure are never called a success',async()=>{
-  for(const [result,pattern] of [[-1,/malformed/],[-2,/could not be confirmed/],[0,/could not be confirmed/],[201,/could not be confirmed/]]){
+  for(const [result,pattern] of [[-1,/malformed/],[-3,/coverage metadata is malformed/],[-2,/could not be confirmed/],[0,/could not be confirmed/],[201,/could not be confirmed/]]){
     const f=fixture({result});
     await assert.rejects(()=>appendSiteConversation(f.kv,'lead-1',message('one')),pattern);
   }
@@ -49,4 +50,24 @@ test('website inbox read refuses corrupt history instead of pretending the threa
   assert.match(read,/rawMessages!=null&&!Array\.isArray\(rawMessages\)/);
   assert.match(read,/status\(503\)/);
   assert.doesNotMatch(read,/Array\.isArray\(messages\)\?messages:\[\]/);
+});
+
+test('website conversation append stores explicit retained-history coverage atomically',()=>{
+  assert.match(SITE_CONVERSATION_APPEND,/KEYS\[2\]/);
+  assert.match(SITE_CONVERSATION_APPEND,/totalMessages=total/);
+  assert.match(SITE_CONVERSATION_APPEND,/truncated=total>#history/);
+  assert.match(SITE_CONVERSATION_APPEND,/baselineVerified=baselineVerified/);
+});
+test('admin website conversation returns explicit legacy or retained-history coverage',()=>{
+  const account=fs.readFileSync('api/account.js','utf8');
+  const start=account.indexOf('async function adminWebsiteConversation('),end=account.indexOf('async function adminWebsiteReply(',start),read=account.slice(start,end);
+  assert.match(read,/site:conversation:meta:/);
+  assert.match(read,/legacyBoundary:retainedMessages>=200/);
+  assert.match(read,/baselineVerified!==false/);
+});
+test('admin Inbox shows website-thread retention warning instead of implying all 200 retained messages are complete history',()=>{
+  const ui=fs.readFileSync('dashboard.js','utf8'),html=fs.readFileSync('admin-dashboard.html','utf8');
+  assert.match(html,/id="inboxThreadCoverage"[^>]*role="status"/);
+  assert.match(ui,/History limit: showing the most recent/);
+  assert.match(ui,/Full website-thread history cannot be verified/);
 });

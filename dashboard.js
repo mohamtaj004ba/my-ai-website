@@ -2450,7 +2450,7 @@ async function openInboxItem(kind,id){
     const r=await fetch('/api/account?action=admin-website-conversation&id='+encodeURIComponent(id),{cache:'no-store'}),data=await r.json().catch(()=>({}));
     if(request!==adminInboxOpenRequest)return;
     if(!r.ok){alert(data.error||'Could not load website conversation.');return}
-    currentInboxItem={kind,id,prospect:data.prospect,messages:data.messages||[]};
+    currentInboxItem={kind,id,prospect:data.prospect,messages:data.messages||[],coverage:data.coverage||null};
   }else{
     const thread=(adminInboxData.gmail?.threads||[]).find(x=>x.id===id);if(!thread)return;
     currentInboxItem={kind,id,thread,prospect:thread.prospect||null,messages:thread.messages||[]};
@@ -2525,6 +2525,15 @@ function renderInboxThread(){
   document.getElementById('inboxThreadChannel').textContent=website?(p.source==='chatbot'?'Website · Chatbot':'Website · Contact'):'Gmail';
   document.getElementById('inboxThreadSubject').textContent=subject;
   document.getElementById('inboxThreadMeta').textContent=contact+(p.business?' · '+p.business:'');
+  const coverageEl=document.getElementById('inboxThreadCoverage');
+  if(coverageEl){
+    const coverage=currentInboxItem.coverage||{},retained=Number(coverage.retainedMessages??messages.length),total=Number(coverage.totalMessages);
+    if(website&&coverage.truncated===true){
+      coverageEl.hidden=false;coverageEl.textContent='History limit: showing the most recent '+retained+(Number.isFinite(total)&&total>retained?' of '+total:'')+' website messages. Older messages are not retained in this Inbox.';
+    }else if(website&&coverage.verified===false){
+      coverageEl.hidden=false;coverageEl.textContent='Full website-thread history cannot be verified. Showing '+retained+' retained messages; older messages may not be available.';
+    }else coverageEl.hidden=true;
+  }
   const lead=document.getElementById('inboxThreadLead');if(lead)lead.textContent=p.stage?('Growth · '+p.stage.replaceAll('_',' ')):(currentInboxItem.prospect?'Linked prospect':'Not in Growth');
   const promote=document.getElementById('inboxPromoteLead');if(promote){promote.textContent=currentInboxItem.prospect?'Open in Growth':'Add to Growth';promote.onclick=()=>promoteInboxToGrowth()}
   const box=document.getElementById('inboxMessages');
@@ -3757,7 +3766,7 @@ function renderAdminGlobalSearch(){
     const rows=items.filter(x=>x.group===group);
     return '<section class="admin-search-group"><div class="admin-search-group-title"><span>'+esc(group)+'</span><small>'+rows.length+'</small></div>'+rows.map(x=>'<button type="button" class="admin-search-result" role="option" data-global-search-type="'+esc(x.type)+'" data-global-search-id="'+esc(x.id||'')+'" data-global-search-view="'+esc(x.view)+'"><span class="admin-search-result-copy"><b>'+esc(x.title)+'</b><small>'+esc(x.meta||'')+'</small></span><em>'+esc(x.type==='page'?'Open page':x.group||'Result')+'</em></button>').join('')+'</section>';
   }).join('');
-  wrap.innerHTML='<div class="admin-search-results-head"><div><b>Search all CallerCore</b><span>'+esc(resultLabel+inboxState)+'</span></div><kbd>↑ ↓ Enter</kbd></div>'+(items.length?body:'<div class="admin-search-empty"><b>No matches for “'+esc(q)+'”</b><span>Try a client name, email, phone number, prospect, document, support subject, workflow, setting, or admin page.</span></div>')+'<div class="admin-search-footer"><span>Search includes navigation, client operations, Growth, Finance, Documents, Client Care, Platform and cached Gmail.'+(coverage.text?' '+esc(coverage.text)+'.':'')+'</span><kbd>Esc to close</kbd></div>';
+  wrap.innerHTML='<div class="admin-search-results-head"><div><b>Search all CallerCore</b><span>'+esc(resultLabel+inboxState)+'</span></div><kbd>↑ ↓ Enter</kbd></div>'+(items.length?body:'<div class="admin-search-empty"><b>No matches for “'+esc(q)+'”</b><span>Try a client name, email, phone number, prospect, document, support subject, workflow, setting, or admin page.</span></div>')+'<div class="admin-search-footer"><span>Search includes navigation, client operations, Growth, Finance, Documents, Client Care, Platform and cached Gmail. Website search covers loaded inquiry/prospect fields; full website reply bodies remain in Inbox.'+(coverage.text?' '+esc(coverage.text)+'.':'')+'</span><kbd>Esc to close</kbd></div>';
   const rows=[...wrap.querySelectorAll('[data-global-search-type]')];
   rows.forEach((b,i)=>{b.addEventListener('mouseenter',()=>setAdminSearchActive(i));b.addEventListener('click',()=>openAdminGlobalSearchResult(b.dataset.globalSearchType,b.dataset.globalSearchId,b.dataset.globalSearchView))});
   if(rows.length)setAdminSearchActive(0);
