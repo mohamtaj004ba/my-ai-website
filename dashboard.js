@@ -3187,7 +3187,7 @@ function renderAdminFinance(){
   if(reconciliationList)reconciliationList.innerHTML=exceptions.length?exceptions.map(item=>{
     const reason={email_mismatch:'Checkout and lead emails differ',account_mapping_conflict:'Stripe or member mapping conflict',workspace_owner_mismatch:'Workspace owner mismatch',reserved_account:'Reserved or disabled account'}[item.reason]||'Account identity review';
     const date=Number(item.createdAt||0)?new Date(item.createdAt).toLocaleString():'Time unavailable';
-    return '<div class="admin-billing-alert"><span><b>'+esc(reason)+'</b><small>Checkout '+esc(item.sessionId)+' · '+esc(date)+'</small></span><span class="tag amber">Review in Stripe</span></div>';
+    return '<div class="admin-billing-alert" data-reconciliation-session="'+esc(item.sessionId)+'"><span><b>'+esc(reason)+'</b><small>Checkout '+esc(item.sessionId)+' · '+esc(date)+'</small></span><span class="tag amber">Review in Stripe</span></div>';
   }).join(''):'<div class="admin-clear-state"><b>No payment identity exceptions</b><span>Conflicting checkout identity records will appear here for manual reconciliation.</span></div>';
   const pastDue=adminClientsData.filter(x=>x.subscriptionStatus==='past_due');
   if(past)past.innerHTML=pastDue.map(x=>'<button type="button" class="admin-billing-alert" data-open-billing-client="'+esc(x.id)+'"><span><b>'+esc(x.name)+'</b><small>'+esc(x.plan)+' · '+financeMoney(PLAN_DATA[x.plan]?.price||0)+'/mo</small></span><span class="tag red">Past due</span></button>').join('')||'<div class="admin-clear-state"><b>Billing is current</b><span>No past-due client accounts.</span></div>';
@@ -3269,14 +3269,26 @@ function adminPhoneFor(id){return (adminPhoneData||[]).find(x=>String(x.workspac
 function adminStatusLabel(v){return String(v||'active').replaceAll('_',' ').replace(/\b\w/g,m=>m.toUpperCase())}
 async function openAdminAttentionItem(item){
   if(!item)return;
-  if(item.type==='checkout-reconciliation'){showView('finance');document.getElementById('financeReconciliationList')?.scrollIntoView({behavior:'smooth',block:'center'});return}
-  if(item.type==='workspace'||item.type==='billing'){showView('clients');await openAdminClient(item.workspaceId);return}
+  if(item.type==='checkout-reconciliation'){
+    showView('finance');renderAdminFinance();
+    const target=document.querySelector('[data-reconciliation-session="'+CSS.escape(String(item.sessionId))+'"]');
+    if(target){target.scrollIntoView({behavior:'smooth',block:'center'});flashAdminSearchTarget(target)}
+    else document.getElementById('financeReconciliationList')?.scrollIntoView({behavior:'smooth',block:'center'});
+    return
+  }
+  if(item.type==='billing'){showView('finance');await openAdminClient(item.workspaceId);return}
+  if(item.type==='workspace'){showView('clients');await openAdminClient(item.workspaceId);return}
   if(item.type==='prospect'){showView('growth');openProspectModal(item.prospectId);return}
+  if(item.type==='onboarding'){
+    showView('onboarding');renderProvisioning();
+    const target=document.querySelector('.onboarding-row[data-provision-id="'+CSS.escape(String(item.workspaceId))+'"]');
+    if(target){openOnboardingDrawer(String(item.workspaceId),target);flashAdminSearchTarget(target)}
+    return
+  }
   if(item.type==='support')openClientCare('support');else if(item.type==='feedback')openClientCare('feedback');else showView(item.view||'overview');
   setTimeout(()=>{
     let target=null;
-    if(item.type==='onboarding')target=document.querySelector('[data-provision-id="'+CSS.escape(String(item.workspaceId))+'"]');
-    else if(item.type==='support')target=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(item.ticketId))+'"]');
+    if(item.type==='support')target=document.querySelector('[data-support-ticket-id="'+CSS.escape(String(item.ticketId))+'"]');
     else if(item.type==='feedback')target=document.getElementById('feedback-'+String(item.feedbackId));
     else if(item.type==='system')target=document.getElementById('productionReadinessCard')||document.getElementById('systemHealthGrid');
     if(target){if(target.tagName==='DETAILS')target.open=true;flashAdminSearchTarget(target)}
