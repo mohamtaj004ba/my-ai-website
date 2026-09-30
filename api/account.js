@@ -2430,7 +2430,7 @@ function notificationItem(id,{title='',body='',kind='info',view='overview',creat
   return {id,title,body,kind,view,createdAt,meta};
 }
 async function buildClientNotifications(s){
-  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return [];
+  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return {items:[],coverage:{limited:false,sources:[]}};
   const savedSettings=await kv.get('settings:'+ws.id)||{},prefs={
     billing:savedSettings.notifyBilling!==false,setup:savedSettings.notifySetup!==false,calls:savedSettings.notifyCalls!==false,support:savedSettings.notifySupport!==false,usage:savedSettings.notifyUsage!==false
   };
@@ -2455,8 +2455,8 @@ async function buildClientNotifications(s){
       items.push(notificationItem('usage:'+ws.id+':'+threshold,{title,body,kind:threshold>=100?'danger':'warning',view:'billing',createdAt:now,meta:{usage,limit:plan.minutes,threshold}}));
     }
   }
-  const [agent,numbers,calls,index]=await Promise.all([
-    kv.get('agent:'+ws.id),kv.get('phone:index'),kv.get('calls:'+ws.id),kv.get('support:index')
+  const [agent,numbers,calls,index,feedbackIndex]=await Promise.all([
+    kv.get('agent:'+ws.id),kv.get('phone:index'),kv.get('calls:'+ws.id),kv.get('support:index'),kv.get(aiFeedbackWorkspaceIndexKey(ws.id))
   ]);
   const phone=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===ws.id);
   if(prefs.setup&&!agent)items.push(notificationItem('setup:'+ws.id+':agent',{title:'AI agent setup incomplete',body:'Your AI agent has not been configured yet.',kind:'warning',view:'agent',createdAt:ws.createdAt||now}));
@@ -2472,15 +2472,18 @@ async function buildClientNotifications(s){
       items.push(notificationItem('support:'+t.id+':'+t.status+':'+t.updatedAt,{title:'Support request updated',body:'“'+t.subject+'” is now '+String(t.status||'').replace('_',' ')+'.',kind:t.status==='resolved'?'success':'info',view:'support',createdAt:t.updatedAt,meta:{ticketId:t.id}}));
     }
   }
-  return items;
+  const sources=[];
+  if(Array.isArray(index)&&index.length>100)sources.push('support');
+  if(Array.isArray(feedbackIndex)&&feedbackIndex.length>20)sources.push('ai_feedback');
+  return {items,coverage:{limited:sources.length>0,sources}};
 }
 async function buildAdminNotifications(admin){
   const items=[],now=Date.now(),platform=await kv.get('platform:settings')||{},alerts={
     prospects:platform.alertPrefs?.prospects!==false,billing:platform.alertPrefs?.billing!==false,onboarding:platform.alertPrefs?.onboarding!==false,clientCare:platform.alertPrefs?.clientCare!==false,system:platform.alertPrefs?.system!==false
   };
-  const [supportIndex,workspaceIndex,prospectIds,gmailConn,feedbackIndex]=await Promise.all([
-    kv.get('support:index'),kv.get('workspace:index'),kv.lrange('site:prospect:index',0,99),getGmailConnection(admin.email),kv.get('ai-feedback:index')
-  ]);
+  const [supportIndex,workspaceIndex,prospectIdsRaw,gmailConn,feedbackIndex]=await Promise.all([
+    kv.get('support:index'),kv.get('workspace:index'),kv.lrange('site:prospect:index',0,100),getGmailConnection(admin.email),kv.get('ai-feedback:index')
+  ]),prospectIds=Array.isArray(prospectIdsRaw)?prospectIdsRaw.slice(0,100):[];
   for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!alerts.clientCare||!f||f.status!=='submitted')continue;const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'client-care',createdAt:f.createdAt||now,meta:{feedbackId:f.id,workspaceId:f.workspaceId||'',careTab:'feedback'}}));}
   for(const id of Array.isArray(supportIndex)?supportIndex.slice(0,100):[]){
     const t=await kv.get('support:'+id);if(!alerts.clientCare||!t||t.status==='resolved')continue;
@@ -2517,7 +2520,12 @@ async function buildAdminNotifications(admin){
       if(count>0)items.push(notificationItem('gmail:unread',{title:count+' unread Gmail thread'+(count===1?'':'s'),body:'Your connected CallerCore inbox has unread email.',kind:'info',view:'inbox',createdAt:Number(cached?.syncedAt||now),meta:{count}}));
     }catch(err){console.error('notification gmail summary failed',safeError(err))}
   }
-  return items;
+  const sources=[];
+  if(Array.isArray(supportIndex)&&supportIndex.length>100)sources.push('support');
+  if(Array.isArray(feedbackIndex)&&feedbackIndex.length>100)sources.push('ai_feedback');
+  if(Array.isArray(prospectIdsRaw)&&prospectIdsRaw.length>100)sources.push('growth');
+  if(Array.isArray(workspaceIndex)&&workspaceIndex.length>300)sources.push('clients');
+  return {items,coverage:{limited:sources.length>0,sources}};
 }
 async function followups(req,res){
   const s=await requireSession(req,res);if(!s)return;
@@ -2641,7 +2649,9 @@ async function notifications(req,res){
   let sessionData;
   if(scope==='admin'){sessionData=await requireAdmin(req,res);if(!sessionData)return}
   else{sessionData=await requireSession(req,res);if(!sessionData)return}
-  const items=scope==='admin'?await buildAdminNotifications(sessionData):await buildClientNotifications(sessionData);
+  const built=scope==='admin'?await buildAdminNotifications(sessionData):await buildClientNotifications(sessionData),
+    items=Array.isArray(built)?built:(Array.isArray(built?.items)?built.items:[]),
+    coverage=Array.isArray(built)?{limited:false,sources:[]}:(built?.coverage||{limited:false,sources:[]});
   const workspaceId=scope==='client'?sessionData.workspaceId:'';
   const read=await getNotificationReadSet(scope,sessionData.email,workspaceId);
   const unreadCount=items.reduce((count,item)=>count+(read.has(item.id)?0:1),0);
@@ -2651,7 +2661,10 @@ async function notifications(req,res){
   const recentIds=new Set(newest.map(x=>x.id));
   const olderUnread=recent.filter(x=>!read.has(x.id)&&!recentIds.has(x.id)).slice(0,80);
   const sorted=[...newest,...olderUnread].sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)).map(x=>({...x,read:read.has(x.id)}));
-  return res.status(200).json({notifications:sorted,unreadCount});
+  return res.status(200).json({notifications:sorted,unreadCount,coverage:{
+    limited:coverage?.limited===true,
+    sources:Array.isArray(coverage?.sources)?coverage.sources.map(String).slice(0,8):[]
+  }});
 }
 async function notificationsRead(req,res){
   const scope=String((req.body||{}).scope||'client')==='admin'?'admin':'client';
@@ -2669,7 +2682,8 @@ async function notificationsReadAll(req,res){
   let sessionData;
   if(scope==='admin'){sessionData=await requireAdmin(req,res);if(!sessionData)return}
   else{sessionData=await requireSession(req,res);if(!sessionData)return}
-  const items=scope==='admin'?await buildAdminNotifications(sessionData):await buildClientNotifications(sessionData);
+  const built=scope==='admin'?await buildAdminNotifications(sessionData):await buildClientNotifications(sessionData),
+    items=Array.isArray(built)?built:(Array.isArray(built?.items)?built.items:[]);
   const workspaceId=scope==='client'?sessionData.workspaceId:'';
   try{await saveNotificationReadSet(scope,sessionData.email,workspaceId,items.map(x=>x.id))}
   catch(err){console.error('notification read-all state save failed',safeError(err));return res.status(503).json({error:'Could not save notification read state. Refresh notifications before retrying.'})}
