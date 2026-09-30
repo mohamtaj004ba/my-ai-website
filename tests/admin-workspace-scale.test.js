@@ -28,15 +28,21 @@ test('admin workspace loader returns every account after the old 250-record boun
   assert.equal(f.reads.filter(key=>key.startsWith('workspace:tenant-')).length,251);
 });
 
-test('admin client list agrees with the complete workspace directory',async()=>{
+test('admin client list fails closed when an indexed workspace record is missing',async()=>{
   const f=fixture(251,{missing:['tenant-14']});
-  const output=await f.run();
-  assert.equal(output.clients.length,250);
-  assert.equal(output.clients.some(x=>x.id==='tenant-250'),true);
-  assert.equal(output.clients.some(x=>x.id==='tenant-14'),false);
+  await assert.rejects(f.run(),/directory is incomplete/);
 });
 
 test('malformed or oversized workspace indexes cannot silently underreport client totals',async()=>{
   await assert.rejects(fixture(1,{malformed:true}).load(),/workspace index/);
   await assert.rejects(fixture(2001).load(),/capacity/);
+});
+
+test('duplicate or invalid workspace ids fail closed before totals are reported',async()=>{
+  for(const index of [['tenant-1','tenant-1'],['tenant-1',42]]){
+    const context=vm.createContext({kv:{get:async key=>key==='workspace:index'?index:null},Array,Set});
+    const start=source.indexOf('async function loadAdminWorkspaces('),end=source.indexOf('\nfunction currentBillableWorkspaces(',start);
+    vm.runInContext(source.slice(start,end),context);
+    await assert.rejects(()=>vm.runInContext('loadAdminWorkspaces()',context),/malformed/);
+  }
 });

@@ -324,11 +324,16 @@ function cleanFinanceExpense(raw={},existing={}){
   };
 }
 async function loadAdminWorkspaces(){
-  const ids=await kv.get('workspace:index')||[],workspaces=[];
+  const rawIds=await kv.get('workspace:index'),ids=rawIds||[],workspaces=[];
   if(!Array.isArray(ids)||ids.length>2000)throw new Error('Admin workspace index exceeds supported capacity; totals cannot be reported safely');
+  if(ids.some(id=>typeof id!=='string'||!id.trim())||new Set(ids).size!==ids.length)throw new Error('Admin workspace index is malformed; totals cannot be reported safely');
   for(let i=0;i<ids.length;i+=40){
-    const batch=await Promise.all(ids.slice(i,i+40).map(id=>kv.get('workspace:'+id)));
-    for(const ws of batch){if(ws)workspaces.push(ws)}
+    const batchIds=ids.slice(i,i+40),batch=await Promise.all(batchIds.map(id=>kv.get('workspace:'+id)));
+    for(let j=0;j<batch.length;j++){
+      const ws=batch[j];
+      if(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(batchIds[j]))throw new Error('Admin workspace directory is incomplete; totals cannot be reported safely');
+      workspaces.push(ws);
+    }
   }
   return workspaces;
 }
@@ -2440,10 +2445,13 @@ async function adminClient(req,res){
   const id=String((req.query||{}).id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Client id required'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record could not be verified. No partial client drawer was returned.'});
   const [agent,locations,numbers,onboarding]=await Promise.all([
     kv.get('agent:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('onboarding:workspace:'+id)
-  ]);
-  const phone=(Array.isArray(numbers)?numbers:[]).find(x=>x&&x.workspaceId===id)||null;
+  ]),objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value);
+  if(!objectOrNull(agent)||locations!=null&&!Array.isArray(locations)||numbers!=null&&!Array.isArray(numbers)||!objectOrNull(onboarding))
+    return res.status(503).json({error:'Client detail sources could not be verified. No partial client drawer was returned.'});
+  const phone=(numbers||[]).find(x=>x&&x.workspaceId===id)||null;
   return res.status(200).json({client:{
     id:ws.id,name:ws.name,plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',
     subscriptionStatus:ws.subscriptionStatus||'active',ownerEmail:ws.ownerEmail||'',
