@@ -21,17 +21,21 @@ function completeCoverage(overrides={}){
   return Object.fromEntries(COVERAGE_FIELDS.map(key=>[key,overrides[key]===undefined?true:overrides[key]]));
 }
 
-test('retention report is read-only and labels stale prospects as consent-review candidates',async()=>{
-  const now=Date.UTC(2026,8,29,20),stale=now-370*86400000,recent=now-30*86400000,currentMonth='2026-09';
+test('retention report distinguishes verified inactive, active and unknown prospect consent evidence',async()=>{
+  const now=Date.UTC(2026,8,29,20),stale=now-370*86400000,recent=now-30*86400000,currentMonth='2026-09',
+    notGranted={status:'not_granted',source:'contact_form',noticeVersion:'2026-09-29',recordedAt:stale-1000},
+    granted={status:'granted',source:'get_started',noticeVersion:'2026-09-29',recordedAt:stale-1000};
   const f=fixture({
     lists:{
-      'site:prospect:index':['p-stale','p-recent'],
+      'site:prospect:index':['p-ready','p-active','p-legacy','p-recent'],
       'site:events':[{type:'page_view',at:now-1000}],
       'site:session:index':['s-1']
     },
     records:{
-      'site:prospect:p-stale':{id:'p-stale',email:'old@example.test',name:'Old Prospect',stage:'new',createdAt:stale,updatedAt:stale},
-      'site:prospect:p-recent':{id:'p-recent',email:'recent@example.test',stage:'inquiry',createdAt:recent,updatedAt:recent},
+      'site:prospect:p-ready':{id:'p-ready',email:'ready@example.test',stage:'new',createdAt:stale,updatedAt:stale,marketingEmailConsent:notGranted},
+      'site:prospect:p-active':{id:'p-active',email:'active@example.test',stage:'new',createdAt:stale,updatedAt:stale,marketingEmailConsent:granted},
+      'site:prospect:p-legacy':{id:'p-legacy',email:'legacy@example.test',stage:'new',createdAt:stale,updatedAt:stale},
+      'site:prospect:p-recent':{id:'p-recent',email:'recent@example.test',stage:'inquiry',createdAt:recent,updatedAt:recent,marketingEmailConsent:notGranted},
       'site:session:s-1':{id:'s-1',firstAt:now-60000,lastAt:now-1000,pages:['/'],events:1,activeMs:5000},
       [MONTHLY_KPI_INDEX_KEY]:[currentMonth],
       [monthlyKpiStorageKey(currentMonth)]:{month:currentMonth,recordedAt:now-5000,coverage:completeCoverage()}
@@ -42,14 +46,18 @@ test('retention report is read-only and labels stale prospects as consent-review
   assert.equal(report.writeActionsEnabled,false);
   assert.equal(report.retentionExecutorReachable,false);
   assert.equal(report.prospects.candidateCount,1);
+  assert.equal(report.prospects.consentEvidenceAvailable,true);
+  assert.equal(report.prospects.activeConsentCount,1);
+  assert.equal(report.prospects.verifiedInactiveConsentCount,2);
+  assert.equal(report.prospects.unknownConsentCount,1);
   assert.equal(report.prospects.consentReviewRequired,true);
   assert.equal(report.prospects.executorReachable,false);
-  assert.equal(report.prospects.reason,'consent_source_not_verified');
+  assert.equal(report.prospects.reason,'legacy_consent_evidence_unknown');
   assert.equal(report.monthlyRollups.status,'ok');
   assert.ok(f.reads()>0);
   const serialized=JSON.stringify(report);
-  assert.equal(serialized.includes('old@example.test'),false);
-  assert.equal(serialized.includes('p-stale'),false);
+  for(const sensitive of ['ready@example.test','active@example.test','legacy@example.test','p-ready','p-active','p-legacy'])
+    assert.equal(serialized.includes(sensitive),false);
 });
 
 test('analytics retention report surfaces expired raw history and stale session-index entries without mutating them',async()=>{
