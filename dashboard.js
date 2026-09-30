@@ -1703,6 +1703,7 @@ document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{
 
 
 let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminRetentionData=null,adminRetentionCheckedAt=0,adminRetentionLoadError='';
 let adminProvisioningStagePending=new Set(),adminOnboardingInvitePending=new Set();
 let adminMonthlyKpiStatus=null;
 async function refreshAdminMonthlyKpi(){
@@ -1824,7 +1825,7 @@ async function adminSyncFetch(key,url,{ttl=45000,force=false}={}){
       health:['services'],fleet:['agents','automations'],support:['tickets'],feedback:['feedback'],
       campaigns:['campaigns']};
     const requiredObjects={summary:'summary',platform:'settings',website:'analytics',
-      finance:'finance',documents:'documents'};
+      finance:'finance',documents:'documents',retention:'report'};
     if(!data||typeof data!=='object'||Array.isArray(data)||
        requiredLists[key]&&!requiredLists[key].every(field=>Array.isArray(data[field]))||
        requiredObjects[key]&&(!data[requiredObjects[key]]||typeof data[requiredObjects[key]]!=='object'||Array.isArray(data[requiredObjects[key]]))||
@@ -1839,7 +1840,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
   if(document.body.dataset.dashboard!=='admin')return;
   if(view==='inbox'){await loadAdminInbox({silent:true,force});return}
   if(announce)setAdminSyncState('syncing','Syncing '+String(view||'overview').replaceAll('-',' ')+'…');
-  const jobs=[],add=(key,url,ttl,apply)=>{const websiteRequest=adminWebsiteAnalyticsRequest,websitePending=key==='website'&&adminWebsiteAnalyticsLoading;jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;}if(data){if(key==='finance'&&!data.finance||key==='website'&&!data.analytics)throw new Error('Incomplete '+key+' response');apply(data)}}).catch(err=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;} if(key==='finance'||key==='website')delete adminDataSyncAt[adminSyncCacheKey(key,url)];if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';if(key==='website')adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.';throw err}));};
+  const jobs=[],add=(key,url,ttl,apply)=>{const websiteRequest=adminWebsiteAnalyticsRequest,websitePending=key==='website'&&adminWebsiteAnalyticsLoading;jobs.push(adminSyncFetch(key,url,{ttl,force}).then(data=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;}if(data){if(key==='finance'&&!data.finance||key==='website'&&!data.analytics)throw new Error('Incomplete '+key+' response');apply(data)}}).catch(err=>{if(key==='website'&&(websitePending||websiteRequest!==adminWebsiteAnalyticsRequest||url!=='/api/account?action=admin-website-analytics&days='+adminWebsiteDays)){delete adminDataSyncAt[adminSyncCacheKey(key,url)];return;} if(key==='finance'||key==='website'||key==='retention')delete adminDataSyncAt[adminSyncCacheKey(key,url)];if(key==='finance')adminFinanceLoadError='Finance could not refresh; previously loaded records may be outdated.';if(key==='website')adminWebsiteLoadError='Website analytics could not refresh; previously loaded records may be outdated.';if(key==='retention')adminRetentionLoadError='Retention dry-run could not refresh; previously loaded report may be outdated.';throw err}));};
   if(view==='overview'||view==='clients'){
     add('summary','/api/account?action=admin-summary',30000,d=>{adminSummaryData=d.summary||{}});
     add('clients','/api/account?action=admin-clients',30000,d=>{adminClientsData=d.clients||[]});
@@ -1872,6 +1873,7 @@ async function refreshAdminView(view=currentAdminView(),{force=false,announce=tr
     add('feedback','/api/account?action=admin-ai-feedback',45000,d=>{adminFeedbackData=d.feedback||[]});
   }else if(view==='health'){
     add('health','/api/account?action=admin-system-health',120000,d=>{adminHealthData=d.services||[];adminReadinessData=d.readiness||null;adminHealthCheckedAt=Number(d.checkedAt||Date.now())});
+    add('retention','/api/account?action=admin-retention-report',120000,d=>{adminRetentionData=d.report||null;adminRetentionCheckedAt=Number(d.report?.generatedAt||Date.now());adminRetentionLoadError=''});
   }else if(view==='platform-settings'){
     if(!adminPlatformDirty)add('platform','/api/account?action=admin-platform-settings',60000,d=>{adminPlatformData=d.settings||adminPlatformData});
   }
@@ -2929,7 +2931,45 @@ document.getElementById('phoneSearch')?.addEventListener('input',renderPhones);
 document.getElementById('phoneAssignmentFilter')?.addEventListener('change',renderPhones);
 document.getElementById('loadMorePhones')?.addEventListener('click',()=>{phoneVisibleLimit+=50;renderPhones()});
 document.getElementById('resetPhoneFilters')?.addEventListener('click',()=>{document.getElementById('phoneSearch').value='';document.getElementById('phoneAssignmentFilter').value='all';renderPhones();document.getElementById('phoneSearch').focus()});
+function renderRetentionReport(){
+  const panel=document.getElementById('retentionReportPanel');if(!panel)return;
+  const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=String(value)};
+  const status=document.getElementById('retentionReportStatus'),note=document.getElementById('retentionReportNote'),report=adminRetentionData;
+  panel.classList.remove('is-warning','is-error');
+  if(!report){
+    set('retentionProspectCandidates','—');set('retentionRawEvents','—');set('retentionSessionIndex','—');set('retentionRollupStatus','—');set('retentionRollupMeta','Awaiting report');
+    if(status){status.textContent=adminRetentionLoadError?'Unavailable':'Not checked';status.className='tag '+(adminRetentionLoadError?'red':'amber')}
+    if(note)note.textContent=adminRetentionLoadError||'Open System Health or run checks to generate the current dry-run report.';
+    if(adminRetentionLoadError)panel.classList.add('is-error');
+    return;
+  }
+  const prospects=report.prospects||{},analytics=report.analytics||{},rollups=report.monthlyRollups||{},candidate=prospects.candidateCount;
+  set('retentionProspectCandidates',candidate==null?'—':Number(candidate).toLocaleString());
+  set('retentionRawEvents',analytics.retainedEvents==null?'—':Number(analytics.retainedEvents).toLocaleString());
+  set('retentionSessionIndex',analytics.indexedSessions==null?'—':Number(analytics.indexedSessions).toLocaleString());
+  const rollupGaps=Array.isArray(rollups.incompleteSources)?rollups.incompleteSources.length:0;
+  set('retentionRollupStatus',rollups.status==='error'?'Unavailable':rollups.currentPresent===false?'Missing':rollupGaps?rollupGaps+' gap'+(rollupGaps===1?'':'s'):'Current');
+  set('retentionRollupMeta',rollups.currentMonth?(rollups.currentMonth+(rollups.stale?' · stale':'')):'Current month');
+  const state=report.status==='error'?'error':report.status==='warning'?'warning':'ok';
+  if(state!=='ok')panel.classList.add('is-'+state);
+  if(status){status.textContent=state==='error'?'Needs review':state==='warning'?'Review needed':'Read-only checks clear';status.className='tag '+(state==='error'?'red':state==='warning'?'amber':'green')}
+  const issues=[];
+  if(prospects.consentReviewRequired)issues.push((candidate==null?'Prospect candidates could not be counted':Number(candidate).toLocaleString()+' stale prospect candidate'+(Number(candidate)===1?'':'s'))+' pending a verified consent source; no de-identification executor is exposed');
+  if(analytics.expiredRetainedEvents>0)issues.push(Number(analytics.expiredRetainedEvents).toLocaleString()+' raw event'+(analytics.expiredRetainedEvents===1?'':'s')+' exceed the 180-day retained-history target');
+  const sessionGaps=Number(analytics.missingSessionRecords||0)+Number(analytics.malformedSessionRecords||0)+Number(analytics.expiredSessionRecords||0);
+  if(sessionGaps)issues.push(sessionGaps.toLocaleString()+' session-index entr'+(sessionGaps===1?'y needs':'ies need')+' compaction or review');
+  if(analytics.eventCapacityReached)issues.push('Raw event storage is at its '+Number(analytics.eventCapacity||0).toLocaleString()+'-record reporting boundary');
+  if(analytics.sessionIndexCapacityReached)issues.push('Session index is at its '+Number(analytics.sessionIndexCapacity||0).toLocaleString()+'-record reporting boundary');
+  if(rollups.status==='error')issues.push('Monthly rollup coverage could not be verified');
+  else if(rollups.currentPresent===false)issues.push('The current monthly rollup has not been recorded');
+  else if(rollups.stale)issues.push('The current monthly rollup is stale');
+  else if(rollupGaps)issues.push('Monthly rollup coverage is incomplete for '+rollups.incompleteSources.join(', '));
+  if(adminRetentionLoadError)issues.push(adminRetentionLoadError);
+  const checked=adminRetentionCheckedAt?' Checked '+new Date(adminRetentionCheckedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+'.':'';
+  if(note)note.textContent=(issues.length?issues.join(' · '):'No retention-policy data gaps were detected by this read-only report.')+checked+' No records were changed; cleanup and compaction schedulers remain disabled.';
+}
 function renderHealth(){
+  renderRetentionReport();
   const wrap=document.getElementById('systemHealthGrid');if(!wrap)return;
   const requiredKeys=new Set(adminReadinessData?.requiredForLaunch||[]),blockerKeys=new Set((adminReadinessData?.blockers||[]).map(x=>x.key)),healthy=x=>['operational','configured','confirmed'].includes(x.status);
   const required=adminHealthData.filter(x=>requiredKeys.has(x.key)),optional=adminHealthData.filter(x=>!requiredKeys.has(x.key)),critical=required.filter(x=>!healthy(x)).length,requiredReady=required.filter(healthy).length,optionalIssues=optional.filter(x=>!healthy(x)).length,totalRequired=Math.max(1,required.length),pct=Math.round(requiredReady/totalRequired*100);
@@ -2951,7 +2991,7 @@ function renderHealth(){
     blockers.innerHTML=(adminReadinessData.blockers||[]).map(x=>'<div class="readiness-blocker"><b>'+esc(x.name)+'</b><span>'+esc(x.detail||'Needs attention')+'</span></div>').join('')||'<div class="readiness-ok">No dependency blockers detected.</div>';
     readinessCard?.classList.toggle('ready',!!adminReadinessData.ready);
   }
-  const refresh=document.getElementById('refreshSystemHealth');if(refresh)refresh.onclick=async()=>{refresh.disabled=true;refresh.textContent='Checking…';try{const r=await fetch('/api/account?action=admin-system-health',{cache:'no-store'}),data=await r.json().catch(()=>({}));if(r.ok){adminHealthData=data.services||[];adminReadinessData=data.readiness||null;adminHealthCheckedAt=Number(data.checkedAt||Date.now());renderHealth();renderAdmin()}}finally{refresh.disabled=false;refresh.textContent='Run checks'}};
+  const refresh=document.getElementById('refreshSystemHealth');if(refresh)refresh.onclick=async()=>{refresh.disabled=true;refresh.textContent='Checking…';try{await refreshAdminView('health',{force:true,announce:false})}catch(_){}finally{refresh.disabled=false;refresh.textContent='Run checks'}};
 }
 async function deletePhone(id){
   const item=adminPhoneData.find(x=>String(x.id)===String(id));if(!item)return;
