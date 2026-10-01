@@ -80,10 +80,11 @@
       try{
         const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({messages:history})});
         if(!r.ok) throw new Error('chat');
-        const data=await r.json();
+        const data=await r.json().catch(()=>null),reply=String(data&&typeof data==='object'&&!Array.isArray(data)?data.reply||'':'').trim();
+        if(!reply)throw new Error('chat');
         typing.remove();
-        add(data.reply||'I could not generate a response just now.','bot');
-        if(data.reply) history.push({role:'assistant',content:data.reply});
+        add(reply,'bot');
+        history.push({role:'assistant',content:reply});
       }catch(e){
         typing.remove();
         add("I’m having trouble connecting right now. Use Talk to us and the CallerCore team will help.",'bot');
@@ -109,8 +110,9 @@
       btn.disabled=true;btn.textContent='Sending…';handoffStatus.textContent='';
       const payload={name:d.get('name'),business:'',email:d.get('email'),phone:d.get('phone'),category:'Chatbot inquiry',message:d.get('message'),visitorId:a.visitorId||'',sessionId:a.sessionId||'',utmSource:a.utmSource||'',utmMedium:a.utmMedium||'',utmCampaign:a.utmCampaign||''};
       try{
-        const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
-        if(!r.ok)throw new Error(data.error||'Could not send');
+        const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>null);
+        if(!r.ok)throw new Error(data&&typeof data==='object'&&!Array.isArray(data)&&data.error?data.error:'Could not send');
+        if(!data||typeof data!=='object'||Array.isArray(data)||data.ok!==true||!String(data.prospectId||''))throw new Error('Could not verify that your message was saved');
         window.CallerCoreAnalytics?.track('chat_handoff',{label:'handoff_submitted'});
         handoff.innerHTML='<div class="cc-chat-handoff-success"><b>✓</b><strong>Sent to the CallerCore team.</strong><small>We’ll follow up using the email you provided.</small></div>';
       }catch(err){handoffStatus.textContent=err.message||'Could not send. Please try again.';btn.disabled=false;btn.textContent='Send to team'}
