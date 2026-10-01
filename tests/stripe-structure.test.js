@@ -177,3 +177,14 @@ test('Stripe checkout provisioning rejects malformed durable receipt and onboard
   assert.match(webhook,/Onboarding record is malformed/);
   assert.match(webhook,/Onboarding workspace identity disagrees/);
 });
+
+
+test('Stripe checkout account provisioning validates mapping shape and confirms all identity writes',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/typeof mapping!=='string'\|\|!mapping\.trim\(\)/);
+  assert.match(webhook,/Checkout account persistence could not be confirmed/);
+  assert.match(webhook,/const \[confirmedWorkspace,confirmedMember,confirmedCustomer,confirmedSubscription\]=await Promise\.all/);
+  assert.match(webhook,/String\(confirmedWorkspace\.ownerEmail\|\|''\)\.trim\(\)\.toLowerCase\(\)!==email/);
+  assert.match(webhook,/String\(confirmedMember\.workspaceId\|\|''\)!==String\(workspaceId\)/);
+  assert.match(webhook,/session\.customer&&String\(confirmedCustomer\|\|''\)!==String\(workspaceId\)/);
+});
