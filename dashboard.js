@@ -2418,7 +2418,7 @@ async function loadAdminInbox({silent=false,force=false}={}){
       if(adminInboxData.gmailStatus?.connected===false){adminInboxData.loading=false;return}
       if(cachedInbox.ok){
         const d=await cachedInbox.json().catch(()=>({}));
-        if(!d.emptyCache&&Array.isArray(d.threads)){adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||0)}
+        if(!d.emptyCache&&Array.isArray(d.threads)){adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||0);adminInboxData.liveError=String(d.warning||'').slice(0,160)}
       }
       if(cachedAliases.ok){const d=await cachedAliases.json().catch(()=>({}));if(Array.isArray(d.aliases)&&d.aliases.length)adminInboxData.aliases=d.aliases}
       renderAdminInbox();
@@ -2449,7 +2449,7 @@ async function refreshAdminInboxLive({silent=true,force=false}={}){
     if(adminInboxData.gmailStatus?.connected===false)return;
     if(!d||!Array.isArray(d.threads))throw new Error('Incomplete Gmail inbox');
     adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||Date.now());
-    adminInboxData.liveError=d.stale===true?String(d.warning||'Gmail refresh failed').slice(0,160):'';
+    adminInboxData.liveError=String(d.warning||(d.stale===true?'Gmail refresh failed':'')).slice(0,160);
     if(d.stale!==true)adminInboxData.readError='';
     const ar=await fetch('/api/account?action=admin-gmail-aliases',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false}));
     if(adminInboxData.gmailStatus?.connected===false)return;
