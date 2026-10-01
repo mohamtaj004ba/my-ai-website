@@ -30,7 +30,7 @@ test('permanent purge cleans customer-content stores only after recovery gate',(
 });
 
 test('admin client view remains read-only and client mutations require writable sessions',()=>{
-  assert.match(src,/createSession\(res,\{email:admin\.email,workspaceId:id,role:'admin',adminView:true/);
+  assert.match(src,/createSession\(res,\{email:cleanEmail\(admin\.email\),workspaceId:id,role:'admin',adminView:true/);
   assert.match(src,/if\(s\.adminView\)return res\.status\(403\)\.json\(\{error:'Admin client view is read-only'\}\),null/);
   const writes=['saveLocations','saveAgent','saveAutomations','updateAppointment','saveSettings','saveIntegrations','updateLead','createSupportTicket','replySupportTicket','billingPortal'];
   for(const name of writes){
