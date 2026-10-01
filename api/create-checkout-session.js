@@ -152,8 +152,11 @@ module.exports=async function handler(req,res){
 
   try{
     const session=await stripeRequest('/v1/checkout/sessions',{method:'POST',body:params});
-    const clientSecret=String(session.client_secret||'');
-    if(session.object!=='checkout.session'||!/^cs_(?:live|test)_[A-Za-z0-9_]+_secret_[A-Za-z0-9_]+$/.test(clientSecret))
+    const sessionId=String(session.id||''),clientSecret=String(session.client_secret||'');
+    if(session.object!=='checkout.session'||!/^cs_(?:live|test)_[A-Za-z0-9_]+$/.test(sessionId)||
+      !clientSecret.startsWith(sessionId+'_secret_')||String(session.client_reference_id||'')!==leadId||
+      String(session.customer_email||session.customer_details?.email||'').toLowerCase()!==email||
+      String(session.metadata?.plan||'')!==plan||String(session.metadata?.prospect_id||'')!==String(prospect.id))
       throw new Error('Stripe checkout creation response could not be verified');
     return res.status(200).json({clientSecret,publishableKey:STRIPE_PUBLISHABLE_KEY});
   }catch(err){
