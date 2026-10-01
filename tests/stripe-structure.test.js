@@ -78,3 +78,15 @@ test('Stripe monthly metric receipts hash provider event ids instead of storing 
   assert.match(metrics,/STRIPE_METRIC_RECEIPT_SECONDS=2\*365\*24\*60\*60/);
 });
 
+
+
+test('billing portal refuses mismatched workspace identity and unverified redirect URLs',()=>{
+  const start=account.indexOf('async function billingPortal('),end=account.indexOf('\nasync function logout(',start);
+  assert.ok(start>=0&&end>start);
+  const body=account.slice(start,end);
+  assert.match(body,/String\(ws\.id\|\|''\)!==String\(s\.workspaceId\)/);
+  assert.match(body,/Workspace billing identity is unavailable/);
+  assert.match(body,/portalUrl\.protocol!=='https:'/);
+  assert.match(body,/portalUrl\.hostname!=='billing\.stripe\.com'/);
+  assert.match(body,/Could not create a verified Stripe billing portal session/);
+});
