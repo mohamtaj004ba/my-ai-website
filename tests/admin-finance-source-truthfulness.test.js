@@ -29,3 +29,16 @@ test('finance handler uses validated arrays after source checks',()=>{
   assert.match(handler,/storedHistory!=null&&!Array\.isArray\(storedHistory\)/);
   assert.match(handler,/const expenses=storedExpenses\|\|\[\],history=\(storedHistory\|\|\[\]\)\.slice\(\)/);
 });
+
+test('malformed individual expense rows fail closed before totals or history are recorded',async()=>{
+  const r=await run({expenses:[{id:'exp_1',name:'Hosting',amount:'not-a-number',frequency:'monthly',status:'active'}]});
+  assert.equal(r.status,503);assert.match(r.payload.error,/expense records are malformed/);assert.equal(r.snapshots,0);
+});
+test('malformed individual finance history rows fail closed before refresh',async()=>{
+  const r=await run({history:[{month:'2026-09',revenue:100,expenses:20,net:'bad',activeClients:1}]});
+  assert.equal(r.status,503);assert.match(r.payload.error,/history contains malformed records/);assert.equal(r.snapshots,0);
+});
+test('row-level source validation remains part of the finance handler',()=>{
+  assert.match(handler,/storedExpenses\.some\(item=>/);
+  assert.match(handler,/storedHistory\.some\(row=>/);
+});
