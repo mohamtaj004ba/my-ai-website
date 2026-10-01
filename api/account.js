@@ -3752,7 +3752,9 @@ async function billingPortal(req,res){
 }
 
 async function logout(req,res){
-  const token=parseCookies(req).cc_session;if(token)await destroySessionToken(token);
+  const token=parseCookies(req).cc_session;
+  try{if(token)await destroySessionToken(token)}
+  catch(err){console.error('logout session revocation failed',safeError(err));return res.status(503).json({error:'Logout could not be confirmed. Please try again.'})}
   clearSessionCookie(res);return res.status(200).json({ok:true});
 }
 
