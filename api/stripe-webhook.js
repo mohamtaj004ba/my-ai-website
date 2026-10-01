@@ -34,6 +34,10 @@ function verifyStripeSignature(rawBody,sigHeader,secret){
 async function upsertWorkspace({lead,session,plan,email}){
   const userKey='user:email:'+email;
   const existingMember=await kv.get(userKey);
+  if(existingMember!=null&&(!existingMember||typeof existingMember!=='object'||Array.isArray(existingMember)))
+    throw new Error('Checkout account mapping is malformed and requires manual account reconciliation');
+  if(existingMember?.email&&String(existingMember.email).trim().toLowerCase()!==email)
+    throw new Error('Checkout account email mapping disagrees and requires manual account reconciliation');
   if(existingMember?.role==='admin'||existingMember?.disabled)throw new Error('Checkout email is reserved or disabled and requires manual account reconciliation');
   const [mappedCustomer,mappedSubscription]=await Promise.all([
     session.customer?kv.get('stripe:customer:'+session.customer):null,
@@ -49,8 +53,11 @@ async function upsertWorkspace({lead,session,plan,email}){
     workspaceId=mappings[0];
   }
   if(!workspaceId)workspaceId=crypto.randomUUID();
-  const key='workspace:'+workspaceId;
-  const existing=await kv.get(key)||{};
+  const key='workspace:'+workspaceId,rawExisting=await kv.get(key);
+  if(rawExisting!=null&&(!rawExisting||typeof rawExisting!=='object'||Array.isArray(rawExisting)))
+    throw new Error('Existing workspace record is malformed; manual reconciliation required');
+  const existing=rawExisting||{};
+  if(existing.id&&String(existing.id)!==String(workspaceId))throw new Error('Existing workspace identity does not match checkout mapping; manual reconciliation required');
   if(existing.id&&String(existing.ownerEmail||'').trim().toLowerCase()!==email)throw new Error('Existing workspace owner does not match checkout email; manual reconciliation required');
   const ent=entitlementsFor(plan);
   const workspace={
@@ -301,11 +308,16 @@ module.exports=async function handler(req,res){
     if(onboarding&&!onboarding.workspaceId)await kv.set('onboarding:'+token,{...onboarding,workspaceId:workspace.id},{ex:60*60*24*30});
   }
   await kv.set('onboarding:workspace-token:'+workspace.id,token,{ex:60*60*24*90});
-  const existingOnboarding=await kv.get('onboarding:workspace:'+workspace.id)||{};
+  const onboardingStateKey='onboarding:workspace:'+workspace.id,rawExistingOnboarding=await kv.get(onboardingStateKey);
+  if(rawExistingOnboarding!=null&&(!rawExistingOnboarding||typeof rawExistingOnboarding!=='object'||Array.isArray(rawExistingOnboarding)))
+    throw new Error('Existing onboarding workspace state is malformed; Stripe should retry after reconciliation');
+  const existingOnboarding=rawExistingOnboarding||{};
+  if(existingOnboarding.workspaceId&&String(existingOnboarding.workspaceId)!==String(workspace.id))
+    throw new Error('Existing onboarding workspace identity disagrees; Stripe should retry after reconciliation');
   const isRepeatPurchase=!!(existingOnboarding.workspaceId===workspace.id&&existingOnboarding.status);
   const paidAt=Date.now(),reviewEligibleAt=addBusinessHours(paidAt,2);
   const firstCheckoutChecklist={payment:true,accountReview:false,onboardingSent:false,agreement:false,intake:false,businessProfile:false,agentDraft:false,routingCaptured:false,phoneAssigned:!!String(workspace.phone||'').trim(),adminReview:false,testCall:false,clientApproval:false,live:false};
-  await kv.set('onboarding:workspace:'+workspace.id,{
+  await kv.set(onboardingStateKey,{
     ...existingOnboarding,
     workspaceId:workspace.id,
     status:isRepeatPurchase?existingOnboarding.status:'awaiting_review',
