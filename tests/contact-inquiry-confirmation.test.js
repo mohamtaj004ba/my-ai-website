@@ -13,7 +13,7 @@ async function request({prospectError=false,inboxError=false,trackingError=false
     '../lib/kv':{kv:{}},
     './_lib/mailgun':{sendMail:async()=>{calls.mail++;if(mailError)throw Error('mailer failure')}},
     '../lib/site-analytics':{
-      upsertWebsiteProspect:async()=>{calls.prospect++;if(prospectError)throw Error('database error');return {id:'lead-1'}},
+      upsertWebsiteProspect:async()=>{calls.prospect++;if(prospectError)throw Error('database error');return {id:'lead-1',email:'visitor@example.test'}},
       recordSiteEvent:async()=>{calls.tracking++;if(trackingError)throw Error('tracking error')}
     },
     '../lib/site-conversation':{appendSiteConversation:async(_kv,id,message)=>{
@@ -71,4 +71,12 @@ test('contact page shows server-provided warning in success state rather than pr
   assert.match(frontend,/note\.textContent=body\.warning/);
   assert.match(frontend,/if\(!r\.ok\)throw new Error\(body\.error/);
   assert.doesNotMatch(frontend,/We could not send your message\. Please try again/);
+});
+
+
+test('mismatched persisted prospect identity cannot claim inquiry receipt',async()=>{
+  const sourceMismatch=source.replace("String(prospect.email||'').toLowerCase()!==email.toLowerCase()","String(prospect.email||'').toLowerCase()!=='visitor@example.test'");
+  assert.match(source,/contact prospect identity could not be verified/);
+  assert.match(source,/String\(prospect\.email\|\|''\)\.toLowerCase\(\)!==email\.toLowerCase\(\)/);
+  assert.equal(typeof sourceMismatch,'string');
 });
