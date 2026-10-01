@@ -38,10 +38,13 @@
     const show=(message,kind='')=>{state.textContent=message;state.className='preference-state'+(kind?' '+kind:'')};
     if(!token){show('This unsubscribe link is invalid or incomplete. Please contact support@callercore.com if you need help.','error');return}
     fetch('/api/marketing-unsubscribe',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({action:'inspect',token}),cache:'no-store'})
-      .then(async response=>({ok:response.ok,body:await response.json().catch(()=>({}))}))
+      .then(async response=>({ok:response.ok,body:await response.json().catch(()=>null)}))
       .then(({ok,body})=>{
-        if(!ok)throw new Error(body.error||'This unsubscribe link could not be verified.');
+        if(!ok)throw new Error(body&&typeof body==='object'&&!Array.isArray(body)&&body.error?body.error:'This unsubscribe link could not be verified.');
+        if(!body||typeof body!=='object'||Array.isArray(body)||body.ok!==true||typeof body.active!=='boolean'||typeof body.alreadyUnsubscribed!=='boolean'||!String(body.state||''))
+          throw new Error('This unsubscribe link could not be verified.');
         if(body.alreadyUnsubscribed){intro.textContent='Your preference is already saved.';show('You are already unsubscribed from CallerCore marketing emails.','success');return}
+        if(body.active!==true)throw new Error('This unsubscribe link is no longer active.');
         show('This link is valid. Click the button to unsubscribe.');button.disabled=false;
       })
       .catch(err=>show(err.message||'This unsubscribe link could not be verified.','error'));
@@ -50,8 +53,10 @@
       button.disabled=true;button.textContent='Saving preference…';show('Confirming your unsubscribe request…');
       try{
         const response=await fetch('/api/marketing-unsubscribe',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({action:'unsubscribe',token})}),
-          body=await response.json().catch(()=>({}));
-        if(!response.ok)throw new Error(body.error||'We could not confirm your email preference change.');
+          body=await response.json().catch(()=>null);
+        if(!response.ok)throw new Error(body&&typeof body==='object'&&!Array.isArray(body)&&body.error?body.error:'We could not confirm your email preference change.');
+        if(!body||typeof body!=='object'||Array.isArray(body)||body.ok!==true||body.unsubscribed!==true||typeof body.alreadyUnsubscribed!=='boolean')
+          throw new Error('We could not verify your email preference change.');
         intro.textContent='Your preference has been updated.';
         show('You are unsubscribed from CallerCore marketing emails.','success');
         button.hidden=true;
