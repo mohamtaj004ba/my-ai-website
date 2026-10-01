@@ -134,3 +134,14 @@ test('Gmail OAuth callback validates state identity, age, redirect target, and o
   assert.match(callback,/await kv\.del\(key\)/);
   assert.match(callback,/if\(await kv\.get\(key\)!=null\)return res\.status\(503\)/);
 });
+
+
+test('Gmail provider mutations require canonical response identity before confirming success',()=>{
+  assert.match(src,/Gmail read-state response could not be verified/);
+  assert.match(src,/String\(result\.id\|\|''\)!==id/);
+  assert.match(src,/Gmail send response could not be verified/);
+  assert.match(src,/!String\(result\.id\|\|''\)\|\|!String\(result\.threadId\|\|''\)/);
+  assert.match(src,/safeThread&&String\(result\.threadId\)!==safeThread/);
+  const start=account.indexOf('async function adminGmailDisconnect('),end=account.indexOf('\nasync function adminGmailInbox(',start);
+  assert.match(account.slice(start,end),/Gmail disconnect could not be confirmed/);
+});
