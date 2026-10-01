@@ -215,3 +215,12 @@ test('Stripe checkout validates durable token identifiers and stored lead record
   assert.match(webhook,/Persisted checkout lead is malformed/);
   assert.match(webhook,/else lead=\{\.\.\.lead\}/);
 });
+
+
+test('Stripe provisioning rejects malformed nested workspace acquisition, conversion, usage, or billing state',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/\[['"]acquisition['"],existing\.acquisition\].*\[['"]conversion['"],existing\.conversion\].*\[['"]usage['"],existing\.usage\].*\[['"]stripeBilling['"],existing\.stripeBilling\]/s);
+  assert.match(webhook,/Existing workspace ['"]?\+field\+['"]? state is malformed|Existing workspace '\+field\+' state is malformed/);
+  assert.match(webhook,/ws\.stripeBilling!=null&&\(!ws\.stripeBilling\|\|typeof ws\.stripeBilling!=='object'\|\|Array\.isArray\(ws\.stripeBilling\)\)/);
+  assert.match(webhook,/Workspace billing state could not be verified/);
+});
