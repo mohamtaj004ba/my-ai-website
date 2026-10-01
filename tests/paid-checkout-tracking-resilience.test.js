@@ -23,6 +23,11 @@ async function run({trackError=false,workspaceError=false}={}){
       set:async(key,value)=>{store.set(key,value);writes.push({key,value});steps.push('set:'+key)}
     },
     validCheckoutSessionState:(value,sessionId)=>value==null||(value&&typeof value==='object'&&!Array.isArray(value)&&(!value.sessionId||String(value.sessionId)===String(sessionId))),
+    markStripeEventProcessed:async key=>{
+      store.set(key,true);writes.push({key,value:true});steps.push('set:'+key);
+      const confirmed=store.get(key);
+      if(confirmed!==true&&String(confirmed)!=='true')throw Error('receipt not confirmed');
+    },
     addBusinessHours:()=>123456,crypto,Date,Number,String,console:{error(){}},safeError:()=> 'redacted',
     lifecycleEmail:()=>({text:'Welcome',html:'Welcome'}),escapeEmailHtml:input=>String(input).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
     SITE_URL:'https://callercore.com',sendMail:async()=>{steps.push('mail')},
