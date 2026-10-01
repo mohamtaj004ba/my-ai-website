@@ -1190,6 +1190,7 @@ async function adminFleet(req,res){
 async function createSupportTicket(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(s.workspaceId))return res.status(503).json({error:'Workspace support context is unavailable. Your request has not been submitted.'});
   const body=req.body||{},subject=String(body.subject||'').trim().slice(0,160),message=String(body.message||'').trim().slice(0,4000),priority=['normal','urgent'].includes(body.priority)?body.priority:'normal';
   if(subject.length<3||message.length<10)return res.status(400).json({error:'Subject and message are required'});
   const id=crypto.randomUUID(),now=Date.now();
@@ -1257,7 +1258,9 @@ async function replySupportTicket(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80),message=String(body.message||'').trim().slice(0,4000);
   if(!id||message.length<2)return res.status(400).json({error:'Reply is required'});
-  const key='support:'+id,t=await kv.get(key);if(!t||t.workspaceId!==s.workspaceId)return res.status(404).json({error:'Support request not found'});
+  const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Support request not found'});
+  if(typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==id)return res.status(503).json({error:'Support request record is unavailable. Your reply was not sent.'});
+  if(String(t.workspaceId||'')!==String(s.workspaceId))return res.status(404).json({error:'Support request not found'});
   if(t.messages!=null&&!Array.isArray(t.messages))return res.status(503).json({error:'Support conversation history is unavailable. Your reply was not sent.'});
   const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||s.email,body:t.message||'',at:t.createdAt||now}],
     hasCount=Number.isFinite(Number(t.messageCount))&&Number(t.messageCount)>=messages.length,
@@ -1297,6 +1300,7 @@ async function adminSupportReply(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80),message=String(body.message||'').trim().slice(0,4000);
   if(!id||message.length<2)return res.status(400).json({error:'Reply is required'});
   const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
+  if(typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==id||!String(t.workspaceId||''))return res.status(503).json({error:'Support request record is unavailable. Your reply was not sent.'});
   if(t.messages!=null&&!Array.isArray(t.messages))return res.status(503).json({error:'Support conversation history is unavailable. Your reply was not sent.'});
   const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||now}],
     hasCount=Number.isFinite(Number(t.messageCount))&&Number(t.messageCount)>=messages.length,
@@ -1338,6 +1342,7 @@ async function adminSupportUpdate(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80),status=String(body.status||'');
   if(!id||!['open','in_progress','resolved'].includes(status))return res.status(400).json({error:'Invalid support update'});
   const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
+  if(typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==id||!String(t.workspaceId||''))return res.status(503).json({error:'Support request record is unavailable. No status change was made.'});
   if(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(t.updatedAt||t.createdAt||0))return res.status(409).json({error:'This support request changed while you were editing. Refresh it before retrying.'});
   const previousStatus=t.status||'open';
   if(status===previousStatus)return res.status(200).json({ok:true,ticket:t,unchanged:true});

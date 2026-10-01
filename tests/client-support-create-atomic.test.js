@@ -8,7 +8,7 @@ const end=api.indexOf('\nasync function supportTickets(req,res){',begin);
 assert.ok(begin>=0&&end>begin,'support ticket create handler found');
 
 function fixture({initial=null,onCompare=null,failEval=false}={}){
-  const values=new Map([['workspace:client-1',{name:'Customer'}]]);
+  const values=new Map([['workspace:client-1',{id:'client-1',name:'Customer'}]]);
   if(initial!==null)values.set('support:index',initial);
   let status=0,response,attempts=0,mails=0;
   const compareAndSetConfig=async(_kv,updates)=>{
@@ -84,4 +84,15 @@ test('uncertain store error and repeated conflicts never claim request was sent'
 test('new support tickets establish verified message-history coverage metadata',async()=>{
   const f=fixture({initial:[]}),r=await f.run(),ticket=r.response.ticket;
   assert.equal(ticket.messageCount,1);assert.equal(ticket.messageHistoryVerified,true);assert.equal(ticket.messagesTruncated,false);
+});
+
+
+test('malformed workspace support context blocks ticket creation before storage writes',async()=>{
+  for(const workspace of ['broken',[],{id:'other',name:'Wrong'}]){
+    const f=fixture({initial:[]});
+    f.values.set('workspace:client-1',workspace);
+    const r=await f.run();
+    assert.equal(r.status,503);assert.equal(r.attempts,0);assert.equal(r.mails,0);
+    assert.match(r.response.error,/support context is unavailable/);
+  }
 });
