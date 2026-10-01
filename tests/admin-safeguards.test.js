@@ -196,3 +196,13 @@ test('Core Intelligence refuses malformed finance and AI provider payloads',()=>
   assert.match(body,/Array\.isArray\(data\.output\)\?data\.output:\[\]/);
   assert.match(body,/!Array\.isArray\(data\.content\)/);
 });
+
+
+test('admin authorization revalidates member shape, disabled state, role, and email identity',()=>{
+  const start=src.indexOf('async function requireAdmin('),end=src.indexOf('\nfunction financeMonthKey(',start);
+  assert.ok(start>=0&&end>start);
+  const body=src.slice(start,end);
+  assert.match(body,/typeof member!=='object'\|\|Array\.isArray\(member\)/);
+  assert.match(body,/member\.disabled\|\|member\.role!=='admin'/);
+  assert.match(body,/member\.email&&cleanEmail\(member\.email\)!==email/);
+});
