@@ -88,3 +88,18 @@ test('Admin Inbox surfaces Growth-link verification warnings even after a fresh 
   assert.match(body,/adminInboxData\.liveError=String\(d\.warning\|\|\(d\.stale===true\?'Gmail refresh failed':''\)\)/);
   assert.match(ui,/adminInboxData\.liveError=String\(d\.warning\|\|''\)\.slice\(0,160\)/);
 });
+
+
+test('Gmail connection status and alias reads fail closed on malformed persisted connection state',()=>{
+  const helperStart=account.indexOf('function validGmailConnection('),helperEnd=account.indexOf('\nfunction validGmailAliases(',helperStart);
+  assert.ok(helperStart>=0&&helperEnd>helperStart);
+  const helper=account.slice(helperStart,helperEnd);
+  assert.match(helper,/typeof value!=='object'\|\|Array\.isArray\(value\)\|\|!String\(value\.refreshTokenEnc\|\|''\)/);
+  assert.match(helper,/storedAdmin===expectedAdmin/);
+  const statusStart=account.indexOf('async function adminGmailStatus('),statusEnd=account.indexOf('\nasync function adminGmailConnect(',statusStart);
+  const status=account.slice(statusStart,statusEnd);
+  assert.match(status,/conn!=null&&!validGmailConnection\(conn,admin\.email\)/);
+  assert.match(status,/Previously verified inbox data should be preserved/);
+  const aliasStart=account.indexOf('async function adminGmailAliases('),aliasEnd=account.indexOf('\nasync function adminGmailRead(',aliasStart);
+  assert.match(account.slice(aliasStart,aliasEnd),/!validGmailConnection\(conn,admin\.email\)/);
+});
