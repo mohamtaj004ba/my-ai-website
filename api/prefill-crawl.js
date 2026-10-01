@@ -22,7 +22,7 @@ function callClaude(pageText){
   const system='Extract only facts explicitly stated in the supplied business website pages. Never guess or infer missing facts. Return raw JSON only with this exact shape: {"businessName":null,"phone":null,"email":null,"address":null,"servicesOffered":null,"serviceArea":null,"hours":null,"faqs":null}. servicesOffered should be a concise comma-separated list of explicitly advertised services. faqs should contain useful question-and-answer pairs only when the answer is explicitly supported by the website, formatted one pair per line as "Question — Answer". If a field is not clearly supported, return null.';
   const body=JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system,messages:[{role:'user',content:'Business website content:\n\n'+pageText}]});
   const opts={hostname:'api.anthropic.com',path:'/v1/messages',method:'POST',headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body),'x-api-key':process.env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'}};
-  return new Promise((resolve,reject)=>{const r=https.request(opts,res=>{let d='';res.on('data',c=>d+=c);res.on('end',()=>{if(res.statusCode!==200)return reject(new Error('anthropic_'+res.statusCode));try{const p=JSON.parse(d),txt=String(p.content?.[0]?.text||'').trim().replace(/^\x60\x60\x60json/i,'').replace(/^\x60\x60\x60/,'').replace(/\x60\x60\x60$/,'').trim();resolve(JSON.parse(txt))}catch(e){reject(e)}})});r.on('error',reject);r.setTimeout(12000,()=>r.destroy(new Error('assistant_timeout')));r.write(body);r.end()})}
+  return new Promise((resolve,reject)=>{const r=https.request(opts,res=>{let d='';res.on('data',c=>d+=c);res.on('end',()=>{if(res.statusCode!==200)return reject(new Error('anthropic_'+res.statusCode));try{const p=JSON.parse(d);if(!p||typeof p!=='object'||Array.isArray(p)||!Array.isArray(p.content))throw new Error('anthropic_response_unverified');const block=p.content.find(x=>x&&x.type==='text'&&typeof x.text==='string'),txt=String(block?.text||'').trim().replace(/^\x60\x60\x60json/i,'').replace(/^\x60\x60\x60/,'').replace(/\x60\x60\x60$/,'').trim();if(!txt)throw new Error('anthropic_response_empty');const parsed=JSON.parse(txt);if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('anthropic_payload_unverified');resolve(parsed)}catch(e){reject(e)}})});r.on('error',reject);r.setTimeout(12000,()=>r.destroy(new Error('assistant_timeout')));r.write(body);r.end()})}
 function cleanFields(raw){const out={};for(const k of ['businessName','phone','email','address','servicesOffered','serviceArea','hours','faqs']){const v=raw&&raw[k];out[k]=typeof v==='string'&&v.trim()?v.trim().slice(0,k==='faqs'?6000:3000):null}return out}
 module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');const origin=req.headers.origin||'';
@@ -37,7 +37,13 @@ module.exports=async function handler(req,res){
     const fields=cleanFields(await callClaude(combined)),foundCount=Object.values(fields).filter(Boolean).length;
     if(token&&/^[a-f0-9]{48}$/i.test(token)){
       const key='onboarding:'+token,record=await kv.get(key);
-      if(record){record.intake={...(record.intake||{}),website:normalized};record.website=normalized;record.websiteScan={source:normalized,pagesScanned:pages.length,foundCount,scannedAt:Date.now(),pages:pages.map(p=>{try{return new URL(p.url).pathname||'/'}catch(_){return'/'}})};await kv.set(key,record,{ex:60*60*24*90})}
+      if(record!=null){
+        if(!record||typeof record!=='object'||Array.isArray(record))throw new Error('onboarding_record_unverified');
+        const next={...record,intake:{...((record.intake&&typeof record.intake==='object'&&!Array.isArray(record.intake))?record.intake:{}),website:normalized},website:normalized,websiteScan:{source:normalized,pagesScanned:pages.length,foundCount,scannedAt:Date.now(),pages:pages.map(p=>{try{return new URL(p.url).pathname||'/'}catch(_){return'/'}})}};
+        await kv.set(key,next,{ex:60*60*24*90});
+        const confirmed=await kv.get(key);
+        if(!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.website||'')!==normalized||String(confirmed.websiteScan?.source||'')!==normalized)throw new Error('onboarding_scan_persistence_unverified');
+      }
     }
     return res.status(200).json({ok:true,fields,source:normalized,pagesScanned:pages.length,foundCount});
   }catch(err){console.error('Smart crawl failed:',safeError(err));return res.status(200).json({ok:false,reason:'crawl_failed'})}
