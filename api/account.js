@@ -897,11 +897,14 @@ async function adminPurgeClient(req,res){
 
 async function adminViewClient(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
+  if(admin.adminView)return res.status(409).json({error:'Exit the current client view before opening another workspace.'});
   const id=String((req.body||{}).id||'').slice(0,80);
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
   if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record could not be verified. Admin client view was not opened.'});
+  const authVersion=Number(admin.authVersion||0);
+  if(!Number.isSafeInteger(authVersion)||authVersion<0)return res.status(503).json({error:'Admin session revision is unavailable. Client view was not opened.'});
   const old=parseCookies(req).cc_session;if(old)await destroySessionToken(old);
-  await createSession(res,{email:admin.email,workspaceId:id,role:'admin',adminView:true,adminHomeWorkspaceId:admin.workspaceId,authVersion:Number((await kv.get('user:email:'+cleanEmail(admin.email)))?.sessionVersion||0)});
+  await createSession(res,{email:cleanEmail(admin.email),workspaceId:id,role:'admin',adminView:true,adminHomeWorkspaceId:admin.workspaceId,authVersion});
   return res.status(200).json({ok:true,redirect:'/dashboard',workspace:{id:ws.id,name:ws.name}});
 }
 
