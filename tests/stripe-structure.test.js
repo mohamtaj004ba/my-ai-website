@@ -146,3 +146,13 @@ test('Stripe webhook provisioning rejects malformed account, workspace, and onbo
   assert.match(webhook,/rawExistingOnboarding!=null&&\(!rawExistingOnboarding\|\|typeof rawExistingOnboarding!=='object'\|\|Array\.isArray\(rawExistingOnboarding\)\)/);
   assert.match(webhook,/Existing onboarding workspace identity disagrees/);
 });
+
+
+test('Stripe webhook validates lifecycle and checkout payload shape plus mapped workspace identity',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/Invalid Stripe lifecycle payload/);
+  assert.match(webhook,/ws==null/);
+  assert.match(webhook,/typeof ws!=='object'\|\|Array\.isArray\(ws\)\|\|String\(ws\.id\|\|''\)!==String\(workspaceId\)/);
+  assert.match(webhook,/Mapped workspace state could not be verified/);
+  assert.match(webhook,/Invalid checkout session payload/);
+});
