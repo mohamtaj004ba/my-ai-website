@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return allowed(req)?res.status(200).end():res.status(403).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   if(!allowed(req)) return res.status(403).json({error:'Forbidden'});
-  if(!SECRET)return res.status(503).json({error:'Demo unavailable'});
+  if(!SECRET||SECRET.length<32)return res.status(503).json({error:'Demo unavailable'});
   const rl=await rateLimit({scope:'demo-reveal-token',identifier:requestIp(req),limit:12,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests'})}
   const ts = Date.now();
   const sig = sign(ts);
