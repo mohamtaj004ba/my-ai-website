@@ -1392,6 +1392,7 @@ async function adminAiGuide(req,res){
   // The browser snapshot is useful for UI context, but never an authoritative accounting source.
   const untrusted=body.snapshot&&typeof body.snapshot==='object'&&!Array.isArray(body.snapshot)?body.snapshot:{};
   const [liveWorkspaces,liveExpenses]=await Promise.all([loadAdminWorkspaces(),kv.get('finance:expenses')]);
+  if(liveExpenses!=null&&!Array.isArray(liveExpenses))return res.status(503).json({error:'Core Intelligence finance source is unavailable. No financial report was generated.'});
   const planPrices=Object.fromEntries(Object.entries(PLANS).map(([name,plan])=>[name,Number(plan.price||0)]));
   const liveBillable=currentBillableWorkspaces(liveWorkspaces);
   const livePastDue=liveBillable.filter(w=>w.subscriptionStatus==='past_due');
@@ -1448,9 +1449,10 @@ async function adminAiGuide(req,res){
         instructions,input:prompt,reasoning:{effort:'low'},max_output_tokens:1800
       })
     });
-    const data=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(data.error?.message||'OpenAI request failed');
-    const answer=String(data.output_text||((data.output||[]).flatMap(x=>x.content||[]).filter(x=>x.type==='output_text').map(x=>x.text||'').join('\n'))||'').trim();
+    const data=await r.json().catch(()=>null);
+    if(!r.ok)throw new Error(data?.error?.message||'OpenAI request failed');
+    if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('OpenAI response could not be verified');
+    const answer=String(data.output_text||((Array.isArray(data.output)?data.output:[]).flatMap(x=>Array.isArray(x?.content)?x.content:[]).filter(x=>x&&x.type==='output_text').map(x=>x.text||'').join('\n'))||'').trim();
     if(!answer)throw new Error('OpenAI returned an empty response');
     return {answer,model:data.model||process.env.OPENAI_ADMIN_MODEL||'gpt-5.6-luna',provider:'openai'};
   }
@@ -1465,9 +1467,10 @@ async function adminAiGuide(req,res){
         messages:[{role:'user',content:prompt}]
       })
     });
-    const data=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(data.error?.message||'Anthropic request failed');
-    const answer=String((data.content||[]).filter(x=>x.type==='text').map(x=>x.text||'').join('\n')).trim();
+    const data=await r.json().catch(()=>null);
+    if(!r.ok)throw new Error(data?.error?.message||'Anthropic request failed');
+    if(!data||typeof data!=='object'||Array.isArray(data)||!Array.isArray(data.content))throw new Error('Anthropic response could not be verified');
+    const answer=String(data.content.filter(x=>x&&x.type==='text').map(x=>x.text||'').join('\n')).trim();
     if(!answer)throw new Error('Anthropic returned an empty response');
     return {answer,model:data.model||process.env.ANTHROPIC_ADMIN_MODEL||'claude-sonnet-4-6',provider:'anthropic'};
   }
