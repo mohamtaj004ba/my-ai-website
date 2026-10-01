@@ -101,18 +101,27 @@ module.exports=async function handler(req,res){
   if(!name||!business||!email||!phone||!industry||!PLAN_PRICE[plan])return res.status(400).json({error:'Please complete all required fields'});
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email address'});
   const existingMember=await kv.get('user:email:'+email);
+  if(existingMember!=null&&(!existingMember||typeof existingMember!=='object'||Array.isArray(existingMember)))
+    return res.status(503).json({error:'Existing account access could not be verified. Checkout was not started.'});
   if(existingMember?.role==='admin')return res.status(409).json({error:'This email is reserved for CallerCore administration. Please use a separate customer email address.'});
   if(existingMember?.disabled)return res.status(409).json({error:'This account requires support review before a new checkout. Please contact CallerCore.'});
 
   let prospect,leadId;
   try{
     prospect=await upsertWebsiteProspect({name,business,email,phone,industry,plan,source:'get_started',stage:'checkout_started',visitorId,sessionId,utmSource,utmMedium,utmCampaign,marketingEmailConsent:{granted:marketingEmailConsent,source:'get_started'}});
+    if(!prospect||typeof prospect!=='object'||Array.isArray(prospect)||!String(prospect.id||'')||String(prospect.email||'').toLowerCase()!==email)
+      throw new Error('checkout prospect identity could not be verified');
     leadId=crypto.randomUUID();
-    await kv.set('lead:'+leadId,{
-      name,business,email,phone,industry,plan,prospectId:prospect.id,visitorId,sessionId,utmSource,utmMedium,utmCampaign,
+    const leadKey='lead:'+leadId,leadRecord={
+      name,business,email,phone,industry,plan,prospectId:String(prospect.id),visitorId,sessionId,utmSource,utmMedium,utmCampaign,
       acquisition:{source:prospect.firstSource||prospect.source||'website',utmSource:prospect.firstUtmSource||prospect.utmSource||utmSource,utmMedium:prospect.firstUtmMedium||prospect.utmMedium||utmMedium,utmCampaign:prospect.firstUtmCampaign||prospect.utmCampaign||utmCampaign},
       createdAt:Date.now()
-    },{ex:60*60*24*7});
+    };
+    await kv.set(leadKey,leadRecord,{ex:60*60*24*7});
+    const confirmedLead=await kv.get(leadKey);
+    if(!confirmedLead||typeof confirmedLead!=='object'||Array.isArray(confirmedLead)||String(confirmedLead.prospectId||'')!==String(prospect.id)||
+      String(confirmedLead.email||'').toLowerCase()!==email||String(confirmedLead.plan||'')!==plan)
+      throw new Error('checkout lead persistence could not be confirmed');
   }catch(err){
     console.error('Embedded checkout lead pre-save failed',safeError(err));
     return res.status(503).json({error:'Checkout is temporarily unavailable. Please try again shortly.'});
