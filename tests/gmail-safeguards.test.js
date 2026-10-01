@@ -112,3 +112,25 @@ test('Gmail connection writes and disconnects require storage readback confirmat
   assert.match(src,/String\(confirmed\.refreshTokenEnc\|\|''\)!==String\(value\.refreshTokenEnc\)/);
   assert.match(src,/if\(await kv\.get\(key\)!=null\)throw new Error\('Gmail disconnect could not be confirmed'\)/);
 });
+
+
+test('Gmail OAuth initiation requires state readback before returning an authorization URL',()=>{
+  const start=account.indexOf('async function adminGmailConnect('),end=account.indexOf('\nasync function adminGmailDisconnect(',start);
+  assert.ok(start>=0&&end>start);
+  const body=account.slice(start,end);
+  assert.match(body,/stateKey='oauth:gmail:'\+state/);
+  assert.match(body,/const confirmed=await kv\.get\(stateKey\)/);
+  assert.match(body,/oauth state readback mismatch/);
+  assert.match(body,/Could not start a secure Gmail connection/);
+});
+
+test('Gmail OAuth callback validates state identity, age, redirect target, and one-time consumption',()=>{
+  const callback=fs.readFileSync(path.join(root,'api','google-oauth-callback.js'),'utf8');
+  assert.match(callback,/\^\[a-f0-9\]\{48\}\$/);
+  assert.match(callback,/validOauthStateRecord\(record\)/);
+  assert.match(callback,/url\.pathname==='\/api\/google-oauth-callback'/);
+  assert.match(callback,/url\.hostname\.endsWith\('\.vercel\.app'\)/);
+  assert.match(callback,/Date\.now\(\)-createdAt<=15\*60\*1000/);
+  assert.match(callback,/await kv\.del\(key\)/);
+  assert.match(callback,/if\(await kv\.get\(key\)!=null\)return res\.status\(503\)/);
+});
