@@ -91,3 +91,14 @@ test('billing portal refuses mismatched workspace identity and unverified redire
   assert.match(body,/portalUrl\.hostname!=='billing\.stripe\.com'/);
   assert.match(body,/Could not create a verified Stripe billing portal session/);
 });
+
+
+test('embedded checkout verifies canonical Stripe session responses before reporting status or client secret',()=>{
+  const checkout=fs.readFileSync(path.join(__dirname,'..','api','create-checkout-session.js'),'utf8');
+  assert.match(checkout,/if\(!data\|\|typeof data!=='object'\|\|Array\.isArray\(data\)\)throw new Error\('Stripe response could not be verified'\)/);
+  assert.match(checkout,/session\.object!=='checkout\.session'\|\|String\(session\.id\|\|''\)!==sessionId/);
+  assert.match(checkout,/\['open','complete','expired'\]\.includes\(String\(session\.status\|\|''\)\)/);
+  assert.match(checkout,/\['paid','unpaid','no_payment_required'\]\.includes\(String\(session\.payment_status\|\|''\)\)/);
+  assert.match(checkout,/\^cs_\(\?:live\|test\)_\[A-Za-z0-9_\]\+_secret_\[A-Za-z0-9_\]\+\$/);
+  assert.match(checkout,/Stripe checkout creation response could not be verified/);
+});
