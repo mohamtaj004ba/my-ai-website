@@ -217,3 +217,15 @@ test('exiting admin client view revalidates home-workspace identity and auth rev
   assert.match(body,/!Number\.isSafeInteger\(revision\)\|\|revision<0/);
   assert.match(body,/createSession\(res,\{email,workspaceId:home,role:'admin',authVersion:revision\}\)/);
 });
+
+
+test('admin client view cannot nest impersonation or invent an auth revision',()=>{
+  const start=src.indexOf('async function adminViewClient('),end=src.indexOf('\nasync function adminExitClientView(',start);
+  assert.ok(start>=0&&end>start);
+  const body=src.slice(start,end);
+  assert.match(body,/if\(admin\.adminView\)return res\.status\(409\)/);
+  assert.match(body,/const authVersion=Number\(admin\.authVersion\|\|0\)/);
+  assert.match(body,/!Number\.isSafeInteger\(authVersion\)\|\|authVersion<0/);
+  assert.doesNotMatch(body,/kv\.get\('user:email:'/);
+  assert.match(body,/adminHomeWorkspaceId:admin\.workspaceId,authVersion/);
+});
