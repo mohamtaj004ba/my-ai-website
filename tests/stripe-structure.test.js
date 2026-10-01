@@ -224,3 +224,13 @@ test('Stripe provisioning rejects malformed nested workspace acquisition, conver
   assert.match(webhook,/ws\.stripeBilling!=null&&\(!ws\.stripeBilling\|\|typeof ws\.stripeBilling!=='object'\|\|Array\.isArray\(ws\.stripeBilling\)\)/);
   assert.match(webhook,/Workspace billing state could not be verified/);
 });
+
+
+test('Stripe checkout verifies onboarding token, workspace state, and durable session receipt before welcome flow',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/status:'awaiting_review',sessionId:session\.id/);
+  assert.match(webhook,/const \[confirmedOnboarding,confirmedWorkspaceToken,confirmedOnboardingState,confirmedSessionState\]=await Promise\.all/);
+  assert.match(webhook,/String\(confirmedOnboarding\.workspaceId\|\|''\)!==String\(workspace\.id\)/);
+  assert.match(webhook,/String\(confirmedWorkspaceToken\|\|''\)!==String\(token\)/);
+  assert.match(webhook,/Checkout onboarding persistence could not be confirmed/);
+});
