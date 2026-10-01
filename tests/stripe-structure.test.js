@@ -99,7 +99,8 @@ test('embedded checkout verifies canonical Stripe session responses before repor
   assert.match(checkout,/session\.object!=='checkout\.session'\|\|String\(session\.id\|\|''\)!==sessionId/);
   assert.match(checkout,/\['open','complete','expired'\]\.includes\(String\(session\.status\|\|''\)\)/);
   assert.match(checkout,/\['paid','unpaid','no_payment_required'\]\.includes\(String\(session\.payment_status\|\|''\)\)/);
-  assert.match(checkout,/\^cs_\(\?:live\|test\)_\[A-Za-z0-9_\]\+_secret_\[A-Za-z0-9_\]\+\$/);
+  assert.match(checkout,/\^cs_\(\?:live\|test\)_\[A-Za-z0-9_\]\+\$/);
+  assert.match(checkout,/clientSecret\.startsWith\(sessionId\+'_secret_'\)/);
   assert.match(checkout,/Stripe checkout creation response could not be verified/);
 });
 
