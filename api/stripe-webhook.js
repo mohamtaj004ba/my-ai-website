@@ -188,8 +188,16 @@ module.exports=async function handler(req,res){
     if(billing.detectedPlan&&billing.detectedPlan!==ws.plan)next.plan=billing.detectedPlan;
     await kv.set(key,next);
     if(subscriptionId)await kv.set('stripe:subscription:'+subscriptionId,workspaceId);
-
-    const recipient=String(next.ownerEmail||'').trim().toLowerCase(),firstName=String(next.ownerName||'').split(' ')[0]||'there';
+    const [confirmedLifecycleWorkspace,confirmedSubscriptionMapping]=await Promise.all([
+      kv.get(key),
+      subscriptionId?kv.get('stripe:subscription:'+subscriptionId):Promise.resolve(null)
+    ]);
+    if(!confirmedLifecycleWorkspace||typeof confirmedLifecycleWorkspace!=='object'||Array.isArray(confirmedLifecycleWorkspace)||
+      String(confirmedLifecycleWorkspace.id||'')!==String(workspaceId)||
+      String(confirmedLifecycleWorkspace.subscriptionStatus||'')!==String(status)||
+      (subscriptionId&&String(confirmedSubscriptionMapping||'')!==String(workspaceId)))
+      throw new Error('Stripe lifecycle persistence could not be confirmed');
+    const recipient=String(confirmedLifecycleWorkspace.ownerEmail||'').trim().toLowerCase(),firstName=String(confirmedLifecycleWorkspace.ownerName||'').split(' ')[0]||'there';
     try{
       if(recipient&&event.type==='invoice.payment_failed'){
         const email=lifecycleEmail({
