@@ -123,7 +123,8 @@ module.exports=async function handler(req,res){
       console.error('Stripe monthly metrics failed:',safeError(err));
       return res.status(503).json({error:'Stripe billing metrics could not be confirmed. Retry the webhook event.'});
     }
-    const obj=event.data&&event.data.object||{};
+    const obj=event.data&&event.data.object;
+    if(!obj||typeof obj!=='object'||Array.isArray(obj))return res.status(400).json({error:'Invalid Stripe lifecycle payload'});
     const subscriptionId=event.type.startsWith('customer.subscription.')?obj.id:obj.subscription;
     const customerId=obj.customer;
     let workspaceId=null;
@@ -131,7 +132,9 @@ module.exports=async function handler(req,res){
     if(!workspaceId&&customerId)workspaceId=await kv.get('stripe:customer:'+customerId);
     if(!workspaceId){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,unmapped:true})}
     const key='workspace:'+workspaceId,ws=await kv.get(key);
-    if(!ws){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,workspace_missing:true})}
+    if(ws==null){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,workspace_missing:true})}
+    if(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(workspaceId))
+      return res.status(503).json({error:'Mapped workspace state could not be verified. Stripe should retry.'});
     const decision=lifecycleDecision(ws,event,subscriptionId);
     if(!decision.apply){
       if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
@@ -209,7 +212,8 @@ module.exports=async function handler(req,res){
     return res.status(200).json({received:true,workspaceId,status});
   }
   if(!checkoutEvent){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,ignored:true})}
-  const session=event.data.object;
+  const session=event.data&&event.data.object;
+  if(!session||typeof session!=='object'||Array.isArray(session))return res.status(400).json({error:'Invalid checkout session payload'});
   if(event.type==='checkout.session.completed'&&!['paid','no_payment_required'].includes(session.payment_status))return res.status(200).json({received:true,pending_payment:true});
   const metadataPlan=String(session.metadata?.plan||'');
   const mappedPlan=PLAN_BY_PAYMENT_LINK[session.payment_link]||(['Starter','Growth','Pro'].includes(metadataPlan)?metadataPlan:null);
