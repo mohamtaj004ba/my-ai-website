@@ -7,8 +7,10 @@
  if(!sessionId){title.textContent='We could not verify that checkout.';status.className='return-status error';status.textContent='The checkout session ID is missing. Please contact CallerCore if you completed payment.';return}
  try{
    const r=await fetch('/api/create-checkout-session?session_id='+encodeURIComponent(sessionId),{headers:{'Accept':'application/json'}});
-   const data=await r.json().catch(()=>({}));
-   if(!r.ok) throw new Error(data.error||'Unable to verify payment');
+   const data=await r.json().catch(()=>null);
+   if(!r.ok) throw new Error(data&&typeof data==='object'&&!Array.isArray(data)&&data.error?data.error:'Unable to verify payment');
+   if(!data||typeof data!=='object'||Array.isArray(data)||!['open','complete','expired'].includes(String(data.status||''))||
+     !['paid','unpaid','no_payment_required'].includes(String(data.paymentStatus||'')))throw new Error('Payment verification response could not be verified');
    if(data.status==='complete'&&['paid','no_payment_required'].includes(data.paymentStatus)){
      title.textContent='Payment received.';
      status.textContent='Payment confirmed securely through Stripe.';
