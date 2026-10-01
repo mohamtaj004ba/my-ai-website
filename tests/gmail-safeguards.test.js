@@ -103,3 +103,12 @@ test('Gmail connection status and alias reads fail closed on malformed persisted
   const aliasStart=account.indexOf('async function adminGmailAliases('),aliasEnd=account.indexOf('\nasync function adminGmailRead(',aliasStart);
   assert.match(account.slice(aliasStart,aliasEnd),/!validGmailConnection\(conn,admin\.email\)/);
 });
+
+
+test('Gmail connection writes and disconnects require storage readback confirmation',()=>{
+  assert.match(src,/const confirmed=await kv\.get\(key\)/);
+  assert.match(src,/Gmail connection save could not be confirmed/);
+  assert.match(src,/String\(confirmed\.adminEmail\|\|''\)\.toLowerCase\(\)!==normalizedAdmin/);
+  assert.match(src,/String\(confirmed\.refreshTokenEnc\|\|''\)!==String\(value\.refreshTokenEnc\)/);
+  assert.match(src,/if\(await kv\.get\(key\)!=null\)throw new Error\('Gmail disconnect could not be confirmed'\)/);
+});
