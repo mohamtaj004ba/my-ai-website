@@ -62,6 +62,9 @@ test('Preview browser QA covers interactions responsive layouts and strict API f
   assert.match(qa,/horizontally overflows viewport/);
   assert.match(qa,/Unexpected API errors/);
   assert.doesNotMatch(qa,/!\\[401,404\\]\\.includes/);
+  assert.match(qa,/const paymentCoverageComplete=monthlyStatus\.coverage\.paymentFailures===true/);
+  assert.match(qa,/incompleteSources\.includes\('paymentFailures'\)===paymentCoverageComplete/);
+  assert.doesNotMatch(qa,/incompleteSources\.includes\('paymentFailures'\)!==true/);
   assert.equal(pkg.devDependencies.playwright,'1.55.0');
   assert.equal(pkg.devDependencies.pixelmatch,'7.1.0');
   assert.equal(pkg.devDependencies.pngjs,'7.0.0');

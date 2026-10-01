@@ -501,7 +501,8 @@ async function runAdminInteractions(page){
   if(!rollupHealthResponse.ok())throw new Error('System Health could not verify monthly KPI rollup status');
   const rollupHealth=(await rollupHealthResponse.json()).services?.find(service=>service.key==='analytics-rollup');
   if(!rollupHealth||!['operational','warning'].includes(rollupHealth.status)||rollupHealth.meta?.month!==monthlyStatus.month||!Array.isArray(rollupHealth.meta?.incompleteSources))throw new Error('System Health did not expose the current monthly KPI rollup');
-  if(rollupHealth.meta.incompleteSources.includes('paymentFailures')!==true)throw new Error('System Health falsely claims durable payment-failure rollup coverage');
+  const paymentCoverageComplete=monthlyStatus.coverage.paymentFailures===true;
+  if(rollupHealth.meta.incompleteSources.includes('paymentFailures')===paymentCoverageComplete)throw new Error('System Health payment-failure coverage disagrees with the current monthly rollup');
   report.admin.interactions.push('background monthly KPI rollup + privacy-safe coverage health');
   const retentionResponse=await page.request.get(baseURL+'/api/account?action=admin-retention-report');
   if(!retentionResponse.ok())throw new Error('Retention dry-run endpoint was unavailable');
