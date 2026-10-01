@@ -33,7 +33,12 @@ const WINDOW=10*60,MAX=5;
 
 function loginTokenKey(token){return 'login:v2:'+crypto.createHash('sha256').update(String(token||'')).digest('hex')}
 async function readLoginToken(token){return (await kv.get(loginTokenKey(token)))||(await kv.get('login:'+token))}
-async function deleteLoginToken(token){await Promise.allSettled([kv.del(loginTokenKey(token)),kv.del('login:'+token)])}
+async function deleteLoginToken(token){
+  const hashedKey=loginTokenKey(token),legacyKey='login:'+token;
+  await Promise.all([kv.del(hashedKey),kv.del(legacyKey)]);
+  const [hashed,legacy]=await Promise.all([kv.get(hashedKey),kv.get(legacyKey)]);
+  if(hashed!=null||legacy!=null)throw new Error('Login token revocation could not be confirmed');
+}
 
 function requestOrigin(req){
   const host=String(req.headers['x-forwarded-host']||req.headers.host||'').toLowerCase().split(',')[0].trim();
@@ -3057,10 +3062,11 @@ async function verify(req,res){
   if(!/^[a-f0-9]{64}$/.test(token))return res.redirect(302,'/login?error=invalid');
   const record=await readLoginToken(token);
   if(!record||typeof record!=='object'||Array.isArray(record)||!String(record.workspaceId||'')||!cleanEmail(record.email)){
-    if(record)await deleteLoginToken(token);
+    if(record){try{await deleteLoginToken(token)}catch(err){console.error('invalid login token revocation failed',safeError(err))}}
     return res.redirect(302,'/login?error=expired');
   }
-  await deleteLoginToken(token);
+  try{await deleteLoginToken(token)}
+  catch(err){console.error('login token revocation failed',safeError(err));return res.redirect(302,'/login?error=invalid')}
   const email=cleanEmail(record.email),workspaceId=String(record.workspaceId),
     [member,loginWs]=await Promise.all([kv.get('user:email:'+email),kv.get('workspace:'+workspaceId)]);
   if(!member||typeof member!=='object'||Array.isArray(member)||member.disabled||String(member.workspaceId||'')!==workspaceId||
