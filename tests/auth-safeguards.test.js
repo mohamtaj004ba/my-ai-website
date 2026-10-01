@@ -98,3 +98,11 @@ test('magic-link request and verification reject mismatched stored member email 
   const start=account.indexOf('async function verify('),end=account.indexOf('\nasync function ',start+1),body=account.slice(start,end);
   assert.match(body,/member\.email&&cleanEmail\(member\.email\)!==email/);
 });
+
+
+test('login page only reports a sent sign-in link after a canonical acknowledgement',()=>{
+  const login=fs.readFileSync(path.join(__dirname,'..','login.html'),'utf8');
+  assert.match(login,/const data=await r\.json\(\)\.catch\(\(\)=>null\)/);
+  assert.match(login,/data\.ok!==true/);
+  assert.match(login,/If that email is linked to a CallerCore account, a sign-in link is on the way\./);
+});
