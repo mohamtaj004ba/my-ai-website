@@ -427,7 +427,13 @@ module.exports=async function handler(req,res){
     await sendMail({to:recipient,subject:isRepeatPurchase?'CallerCore payment received — your account remains in place':'Payment received — welcome to CallerCore',...email});
   }catch(err){console.error('Failed to send payment confirmation:',safeError(err))}
 
-  if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
+  if(sessionKey){
+    await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review',sessionId:session.id},{ex:60*60*24*90});
+    const finalSessionState=await kv.get(sessionKey);
+    if(!validCheckoutSessionState(finalSessionState,session.id)||!finalSessionState||
+      String(finalSessionState.workspaceId||'')!==String(workspace.id)||String(finalSessionState.token||'')!==String(token))
+      throw new Error('Final checkout session receipt could not be confirmed');
+  }
   if(eventKey)await markStripeEventProcessed(eventKey);
   try{await resolveCheckoutReconciliation(kv,session.id)}
   catch(recordError){console.error('Checkout reconciliation completion update failed',safeError(recordError))}
