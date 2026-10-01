@@ -14,10 +14,9 @@ module.exports = async function handler(req, res) {
   if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many download attempts. Try again shortly.'})}
 
   const record = await kv.get(`onboarding:${token}`);
-  if (record == null || !record?.agreementSigned) {
-    return res.status(404).json({ error: 'not_found' });
-  }
+  if (record == null) return res.status(404).json({ error: 'not_found' });
   if(typeof record!=='object'||Array.isArray(record))return res.status(503).json({error:'agreement_unavailable'});
+  if(!record.agreementSigned)return res.status(404).json({error:'not_found'});
   if(record.agreementSnapshot!=null&&(!record.agreementSnapshot||typeof record.agreementSnapshot!=='object'||Array.isArray(record.agreementSnapshot)))return res.status(503).json({error:'agreement_unavailable'});
   if(record.agreementPlanSnapshot!=null&&(!record.agreementPlanSnapshot||typeof record.agreementPlanSnapshot!=='object'||Array.isArray(record.agreementPlanSnapshot)))return res.status(503).json({error:'agreement_unavailable'});
   const signedAt=Number(record.agreementSignedAt||0);
