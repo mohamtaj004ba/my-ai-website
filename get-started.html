@@ -100,8 +100,10 @@ document.getElementById('toPayment').addEventListener('click',async()=>{
 
   try{
     const sessionResponse=await fetch('/api/create-checkout-session',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(checkoutPayload)});
-    const data=await sessionResponse.json().catch(()=>({}));
-    if(!sessionResponse.ok) throw new Error(data.error||'Unable to start secure checkout');
+    const data=await sessionResponse.json().catch(()=>null);
+    if(!sessionResponse.ok) throw new Error(data&&typeof data==='object'&&!Array.isArray(data)&&data.error?data.error:'Unable to start secure checkout');
+    if(!data||typeof data!=='object'||Array.isArray(data)||!/^pk_(?:live|test)_[A-Za-z0-9_]+$/.test(String(data.publishableKey||''))||
+      !/^cs_(?:live|test)_[A-Za-z0-9_]+_secret_[A-Za-z0-9_]+$/.test(String(data.clientSecret||'')))throw new Error('Secure checkout response could not be verified');
     if(!window.Stripe) throw new Error('Stripe payment library did not load');
     const stripe=Stripe(data.publishableKey);
     embeddedCheckout=await stripe.initEmbeddedCheckout({clientSecret:data.clientSecret});
