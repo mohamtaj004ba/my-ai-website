@@ -29,6 +29,8 @@ module.exports=async function handler(req,res){
   let prospect;
   try{
     prospect=await upsertWebsiteProspect({name,business,email,phone,category,message,source:category==='Chatbot inquiry'?'chatbot':'contact',stage:'inquiry',visitorId,sessionId,utmSource,utmMedium,utmCampaign,...(category==='Chatbot inquiry'?{}:{marketingEmailConsent:{granted:marketingEmailConsent,source:'contact_form'}})});
+    if(!prospect||typeof prospect!=='object'||Array.isArray(prospect)||!String(prospect.id||'')||String(prospect.email||'').toLowerCase()!==email.toLowerCase())
+      throw new Error('contact prospect identity could not be verified');
   }catch(err){
     console.error('contact prospect save failed',safeError(err));
     return res.status(503).json({error:'We could not confirm your inquiry was saved. Please contact support@callercore.com if your request is urgent.'});
