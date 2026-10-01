@@ -1569,6 +1569,7 @@ async function adminPlatformSettingsSave(req,res){
 async function validatedGmailFrom(adminEmail,requested=''){
   const conn=await getGmailConnection(adminEmail);
   if(!conn)return '';
+  if(!validGmailConnection(conn,adminEmail))throw new Error('Gmail connection state is unavailable');
   const aliases=await listGmailAliases(adminEmail);
   const wanted=String(requested||'').trim().toLowerCase();
   if(!wanted)return (aliases.find(a=>a.isDefault&&a.verificationStatus!=='pending')||aliases.find(a=>a.isPrimary)||{}).email||conn.gmailEmail||adminEmail;
@@ -1577,6 +1578,11 @@ async function validatedGmailFrom(adminEmail,requested=''){
   return match.email;
 }
 
+function validGmailConnection(value,adminEmail=''){
+  if(!value||typeof value!=='object'||Array.isArray(value)||!String(value.refreshTokenEnc||''))return false;
+  const storedAdmin=cleanEmail(value.adminEmail||''),expectedAdmin=cleanEmail(adminEmail||'');
+  return !storedAdmin||!expectedAdmin||storedAdmin===expectedAdmin;
+}
 function validGmailAliases(value){
   return Array.isArray(value)&&value.every(alias=>alias&&typeof alias==='object'&&!Array.isArray(alias)&&String(alias.email||'').includes('@'));
 }
@@ -1599,6 +1605,7 @@ function validGmailInboxPayload(value,{cached=false}={}){
 async function adminGmailStatus(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const conn=await getGmailConnection(admin.email);
+  if(conn!=null&&!validGmailConnection(conn,admin.email))return res.status(503).json({configured:gmailConfigReady(),connected:false,error:'Gmail connection state is unavailable. Previously verified inbox data should be preserved.'});
   return res.status(200).json({configured:gmailConfigReady(),connected:!!conn,gmailEmail:conn?.gmailEmail||'',connectedAt:conn?.connectedAt||null});
 }
 async function adminGmailConnect(req,res){
@@ -1656,6 +1663,7 @@ async function adminGmailInbox(req,res){
 async function adminGmailAliases(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const conn=await getGmailConnection(admin.email);if(!conn)return res.status(200).json({connected:false,aliases:[]});
+  if(!validGmailConnection(conn,admin.email))return res.status(503).json({error:'Gmail connection state is unavailable. Previously verified sender aliases should be preserved.'});
   const hash=crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex'),cacheKey='gmail:aliases:'+hash;
   const aliasCache=await kv.get(cacheKey),parsedCache=parseGmailAliasCache(aliasCache),cachedAliases=parsedCache.aliases,aliasCachedAt=parsedCache.cachedAt,force=String(req.query?.force||'')==='1';
   if(String(req.query?.cached||'')==='1'){
