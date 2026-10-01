@@ -102,3 +102,14 @@ test('embedded checkout verifies canonical Stripe session responses before repor
   assert.match(checkout,/\^cs_\(\?:live\|test\)_\[A-Za-z0-9_\]\+_secret_\[A-Za-z0-9_\]\+\$/);
   assert.match(checkout,/Stripe checkout creation response could not be verified/);
 });
+
+
+test('embedded checkout fails closed on malformed account mapping, prospect identity, or unconfirmed lead persistence',()=>{
+  const checkout=fs.readFileSync(path.join(__dirname,'..','api','create-checkout-session.js'),'utf8');
+  assert.match(checkout,/existingMember!=null&&\(!existingMember\|\|typeof existingMember!=='object'\|\|Array\.isArray\(existingMember\)\)/);
+  assert.match(checkout,/checkout prospect identity could not be verified/);
+  assert.match(checkout,/String\(prospect\.email\|\|''\)\.toLowerCase\(\)!==email/);
+  assert.match(checkout,/const confirmedLead=await kv\.get\(leadKey\)/);
+  assert.match(checkout,/checkout lead persistence could not be confirmed/);
+  assert.match(checkout,/String\(confirmedLead\.prospectId\|\|''\)!==String\(prospect\.id\)/);
+});
