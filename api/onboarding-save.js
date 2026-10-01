@@ -41,7 +41,9 @@ module.exports = async function handler(req, res) {
 
   const key = `onboarding:${token}`;
   const record = await kv.get(key);
-  if (!record) return res.status(404).json({ error: 'not_found' });
+  if (record == null) return res.status(404).json({ error: 'not_found' });
+  if(!record||typeof record!=='object'||Array.isArray(record))return res.status(503).json({error:'Onboarding data is unavailable. No changes were made.'});
+  if(record.intake!=null&&(!record.intake||typeof record.intake!=='object'||Array.isArray(record.intake)))return res.status(503).json({error:'Onboarding data is unavailable. No changes were made.'});
 
   if (type === 'agreement') {
     const signedName=cleanText(fullName,120);
@@ -59,7 +61,9 @@ module.exports = async function handler(req, res) {
     await kv.set(key, record, { ex: 60 * 60 * 24 * 90 });
     if(record.workspaceId){
       await kv.set('onboarding:workspace-token:'+record.workspaceId,token,{ex:60*60*24*90});
-      const prior=await kv.get('onboarding:workspace:'+record.workspaceId)||{};
+      const rawPrior=await kv.get('onboarding:workspace:'+record.workspaceId);
+      if(rawPrior!=null&&(!rawPrior||typeof rawPrior!=='object'||Array.isArray(rawPrior)))return res.status(503).json({error:'Onboarding workspace state is unavailable. Agreement was saved; workspace progress was not overwritten.'});
+      const prior=rawPrior||{};
       await kv.set('onboarding:workspace:'+record.workspaceId,{...prior,workspaceId:record.workspaceId,status:'intake_in_progress',completionPercent:Number(record.completionPercent||0),agreementVersion:record.agreementVersion,agreementSignedAt:record.agreementSignedAt,agreementSignedName:record.agreementFullName,checklist:{...(prior.checklist||{}),payment:true,agreement:true,intake:false},updatedAt:Date.now()});
     }
 
@@ -149,7 +153,9 @@ module.exports = async function handler(req, res) {
     if(record.workspaceId){
       await kv.set('onboarding:workspace-token:'+record.workspaceId,token,{ex:60*60*24*90});
       if(!justCompleted){
-        const prior=await kv.get('onboarding:workspace:'+record.workspaceId)||{};
+        const rawPrior=await kv.get('onboarding:workspace:'+record.workspaceId);
+        if(rawPrior!=null&&(!rawPrior||typeof rawPrior!=='object'||Array.isArray(rawPrior)))return res.status(503).json({error:'Onboarding workspace state is unavailable. Intake progress was saved; workspace progress was not overwritten.'});
+        const prior=rawPrior||{};
         await kv.set('onboarding:workspace:'+record.workspaceId,{...prior,workspaceId:record.workspaceId,status:record.status||'intake_in_progress',completionPercent,checklist:{...(prior.checklist||{}),payment:true,agreement:!!record.agreementSigned,intake:false},updatedAt:Date.now()});
       }
     }
@@ -206,7 +212,9 @@ module.exports = async function handler(req, res) {
       try{
         await syncCompletedOnboarding(record);
         if(record.workspaceId){
-          const stateKey='onboarding:workspace:'+record.workspaceId,state=await kv.get(stateKey)||{};
+          const stateKey='onboarding:workspace:'+record.workspaceId,rawState=await kv.get(stateKey);
+          if(rawState!=null&&(!rawState||typeof rawState!=='object'||Array.isArray(rawState)))throw new Error('onboarding workspace state is malformed');
+          const state=rawState||{};
           await kv.set(stateKey,{...state,status:'building_review',buildEligibleAt:addBusinessHours(Date.now(),1),buildSubmittedAt:Date.now(),checklist:{...(state.checklist||{}),intake:true,businessProfile:true,agentDraft:true,adminReview:false},updatedAt:Date.now()});
         }
         const firstName=String(record.intake?.contactName||record.name||'').split(' ')[0]||'there';
