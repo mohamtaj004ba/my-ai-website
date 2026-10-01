@@ -19,6 +19,7 @@ module.exports = async function handler(req, res) {
   if(!record||typeof record!=='object'||Array.isArray(record))return res.status(503).json({error:'onboarding_unavailable'});
   if(record.intake!=null&&(!record.intake||typeof record.intake!=='object'||Array.isArray(record.intake)))return res.status(503).json({error:'onboarding_unavailable'});
   if(record.agreementSnapshot!=null&&(!record.agreementSnapshot||typeof record.agreementSnapshot!=='object'||Array.isArray(record.agreementSnapshot)))return res.status(503).json({error:'onboarding_unavailable'});
+  if(record.agreementSnapshot!=null&&(!Array.isArray(record.agreementSnapshot.clauses)||!record.agreementSnapshot.clauses.length))return res.status(503).json({error:'onboarding_unavailable'});
   if(record.agreementPlanSnapshot!=null&&(!record.agreementPlanSnapshot||typeof record.agreementPlanSnapshot!=='object'||Array.isArray(record.agreementPlanSnapshot)))return res.status(503).json({error:'onboarding_unavailable'});
 
   // Token holders only receive fields required by onboarding.html.
