@@ -59,7 +59,7 @@ module.exports = async function handler(req, res) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
-  if(!SECRET)return res.status(503).json({error:'Demo unavailable'});
+  if(!SECRET||SECRET.length<32)return res.status(503).json({error:'Demo unavailable'});
 
   // Layer 2: per-IP distributed rate limit.
   const rl=await rateLimit({scope:'demo-number',identifier:requestIp(req),limit:6,windowSeconds:600,failClosed:true});
@@ -67,12 +67,12 @@ module.exports = async function handler(req, res) {
 
   // Layer 3: token must be valid, correctly signed, and aged appropriately.
   const { token } = req.body || {};
-  if (!token || typeof token !== 'string' || !token.includes('.')) {
+  if (typeof token !== 'string' || !/^\d{13}\.[a-f0-9]{64}$/i.test(token)) {
     return res.status(400).json({ error: 'Invalid request' });
   }
   const [tsStr, sig] = token.split('.');
   const ts = Number(tsStr);
-  if (!ts || !sig) {
+  if (!Number.isFinite(ts) || ts<=0) {
     return res.status(400).json({ error: 'Invalid request' });
   }
   const expectedSig = sign(ts);
