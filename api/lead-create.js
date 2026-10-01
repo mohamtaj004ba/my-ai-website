@@ -58,6 +58,11 @@ module.exports = async function handler(req, res) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: 'Invalid email address' });
   }
+  const existingMember=await kv.get('user:email:'+email.toLowerCase());
+  if(existingMember!=null&&(!existingMember||typeof existingMember!=='object'||Array.isArray(existingMember)))
+    return res.status(503).json({error:'Existing account access could not be verified. Checkout was not started.'});
+  if(existingMember?.role==='admin')return res.status(409).json({error:'This email is reserved for CallerCore administration. Please use a separate customer email address.'});
+  if(existingMember?.disabled)return res.status(409).json({error:'This account requires support review before a new checkout. Please contact CallerCore.'});
 
   const leadId = crypto.randomUUID();
   let prospect;
