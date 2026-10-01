@@ -28,7 +28,8 @@ test('session cookies are protected and session ids are hashed at rest',()=>{
   assert.match(auth,/NODE_ENV==='production'\?'\; Secure'/);
   assert.match(auth,/SESSION_TTL=60\*60\*24\*7/);
   assert.match(auth,/function sessionKey\(token\)/);
-  assert.match(auth,/kv\.set\(sessionKey\(token\)/);
+  assert.match(auth,/key=sessionKey\(token\)/);
+  assert.match(auth,/kv\.set\(key,record/);
   assert.match(auth,/readSessionToken\(token\)/);
 });
 
