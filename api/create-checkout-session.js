@@ -45,8 +45,9 @@ async function stripeRequest(path,{method='GET',body=null}={}){
       body:body?body.toString():undefined,
       signal:controller.signal
     });
-    const data=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(data.error?.message||'Stripe request failed');
+    const data=await r.json().catch(()=>null);
+    if(!r.ok)throw new Error(data?.error?.message||'Stripe request failed');
+    if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('Stripe response could not be verified');
     return data;
   }finally{clearTimeout(timer)}
 }
@@ -73,9 +74,13 @@ module.exports=async function handler(req,res){
     if(!/^cs_(?:live|test)_[A-Za-z0-9_]+$/.test(sessionId))return res.status(400).json({error:'Invalid session'});
     try{
       const session=await stripeRequest('/v1/checkout/sessions/'+encodeURIComponent(sessionId));
+      if(session.object!=='checkout.session'||String(session.id||'')!==sessionId||
+        !['open','complete','expired'].includes(String(session.status||''))||
+        !['paid','unpaid','no_payment_required'].includes(String(session.payment_status||'')))
+        throw new Error('Stripe checkout status response could not be verified');
       return res.status(200).json({
-        status:session.status||'',
-        paymentStatus:session.payment_status||'',
+        status:session.status,
+        paymentStatus:session.payment_status,
         customerEmail:session.customer_details?.email||session.customer_email||''
       });
     }catch(err){
@@ -138,8 +143,10 @@ module.exports=async function handler(req,res){
 
   try{
     const session=await stripeRequest('/v1/checkout/sessions',{method:'POST',body:params});
-    if(!session.client_secret)throw new Error('Stripe did not return a client secret');
-    return res.status(200).json({clientSecret:session.client_secret,publishableKey:STRIPE_PUBLISHABLE_KEY});
+    const clientSecret=String(session.client_secret||'');
+    if(session.object!=='checkout.session'||!/^cs_(?:live|test)_[A-Za-z0-9_]+_secret_[A-Za-z0-9_]+$/.test(clientSecret))
+      throw new Error('Stripe checkout creation response could not be verified');
+    return res.status(200).json({clientSecret,publishableKey:STRIPE_PUBLISHABLE_KEY});
   }catch(err){
     console.error('Embedded checkout session creation failed',safeError(err));
     return res.status(502).json({error:'Unable to start secure checkout'});
