@@ -10,8 +10,8 @@ test('admin finance operating margin includes this month one-time company costs'
   assert.ok(start>=0&&end>start);
   let response,historyCalls=0;
   const records=[
-    {name:'Hosting',amount:10,frequency:'monthly',status:'active'},
-    {name:'Equipment',amount:50,frequency:'one_time',status:'active',date:'2026-09-25'}
+    {id:'exp-hosting',name:'Hosting',amount:10,frequency:'monthly',status:'active'},
+    {id:'exp-equipment',name:'Equipment',amount:50,frequency:'one_time',status:'active',date:'2026-09-25'}
   ];
   const context=vm.createContext({
     requireAdmin:async()=>({email:'admin@example.test'}),
