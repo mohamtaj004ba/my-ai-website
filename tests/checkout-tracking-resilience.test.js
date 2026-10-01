@@ -6,14 +6,17 @@ const crypto=require('node:crypto');
 const leadSource=fs.readFileSync('api/lead-create.js','utf8');
 const embeddedSource=fs.readFileSync('api/create-checkout-session.js','utf8');
 async function request({prospectError=false,leadError=false,trackError=false}={}){
-  const calls={prospect:0,save:0,track:0};let status=0,body;
-  const kv={set:async()=>{calls.save++;if(leadError)throw Error('KV temporarily offline')}};
+  const calls={prospect:0,save:0,track:0};let status=0,body,lastLead=null;
+  const kv={
+    set:async(_key,value)=>{calls.save++;if(leadError)throw Error('KV temporarily offline');lastLead=value},
+    get:async()=>lastLead
+  };
   const modules={
     '../lib/safe-log':{safeError:()=> 'redacted'},
     crypto,
     '../lib/kv':{kv},
     '../lib/site-analytics':{
-      upsertWebsiteProspect:async()=>{calls.prospect++;if(prospectError)throw Error('prospect unavailable');return {id:'lead-1',firstSource:'contact'}},
+      upsertWebsiteProspect:async()=>{calls.prospect++;if(prospectError)throw Error('prospect unavailable');return {id:'lead-1',email:'client@example.test',firstSource:'contact'}},
       recordSiteEvent:async()=>{calls.track++;if(trackError)throw Error('analytics unavailable')}
     },
     '../lib/rate-limit':{rateLimit:async()=>({limited:false}),requestIp:()=> '127.0.0.1'}
@@ -58,4 +61,12 @@ test('embedded checkout logs provider errors through the redacting logger',()=>{
   assert.match(embeddedSource,/const \{safeError\}=require\('\.\.\/lib\/safe-log'\)/);
   assert.equal((embeddedSource.match(/console\.error\([^\n]+safeError\(/g)||[]).length,4);
   assert.doesNotMatch(embeddedSource,/err&&err\.message\|\|err|analyticsError&&analyticsError\.message\|\|analyticsError/);
+});
+
+
+test('legacy checkout verifies prospect identity and lead readback before claiming success',()=>{
+  assert.match(leadSource,/lead prospect identity could not be verified/);
+  assert.match(leadSource,/const confirmed=await kv\.get\(leadKey\)/);
+  assert.match(leadSource,/lead persistence could not be confirmed/);
+  assert.match(leadSource,/String\(confirmed\.prospectId\|\|''\)!==String\(prospect\.id\)/);
 });
