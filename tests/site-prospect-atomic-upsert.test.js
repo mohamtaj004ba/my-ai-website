@@ -409,3 +409,11 @@ test('unchecked form leaves a pre-existing unknown-consent prospect unknown',asy
   assert.equal(later.marketingEmailConsent,null);
   assert.equal(f.index.length,1);
 });
+
+
+test('prospect upsert reads back record identity and email ownership before returning success',()=>{
+  assert.match(source,/const \[confirmed,confirmedOwner\]=await Promise\.all\(\[kv\.get\(key\),nextKey\?kv\.get\(nextKey\):Promise\.resolve\(null\)\]\)/);
+  assert.match(source,/Prospect persistence could not be confirmed/);
+  assert.match(source,/Number\(confirmed\.updatedAt\|\|0\)!==Number\(next\.updatedAt\|\|0\)/);
+  assert.match(source,/nextKey&&String\(confirmedOwner\|\|''\)!==String\(id\)/);
+});
