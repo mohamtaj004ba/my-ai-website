@@ -9,7 +9,7 @@ const end=source.indexOf('\n  }finally{',start);
 assert.ok(start>=0&&end>start);
 const paidPath=source.slice(start,end);
 async function run({trackError=false,workspaceError=false}={}){
-  const writes=[],steps=[];let status,body;
+  const writes=[],steps=[],store=new Map();let status,body;
   const ctx=vm.createContext({
     lead:{prospectId:'lead-1',email:'paid@example.test',name:'Paid Client',business:'Paid business',visitorId:'visitor',sessionId:'session-1'},
     session:{id:'cs_test',customer:'cus_test'},paidPlan:'Pro',recipient:'paid@example.test',
@@ -18,7 +18,11 @@ async function run({trackError=false,workspaceError=false}={}){
     upsertWebsiteProspect:async()=>{steps.push('prospect')},
     recordSiteEvent:async()=>{steps.push('tracking');if(trackError)throw Error('analytics unavailable')},
     entitlementsFor:()=>({price:500}),
-    kv:{get:async()=>null,set:async(key,value)=>{writes.push({key,value});steps.push('set:'+key)}},
+    kv:{
+      get:async key=>store.has(key)?store.get(key):null,
+      set:async(key,value)=>{store.set(key,value);writes.push({key,value});steps.push('set:'+key)}
+    },
+    validCheckoutSessionState:(value,sessionId)=>value==null||(value&&typeof value==='object'&&!Array.isArray(value)&&(!value.sessionId||String(value.sessionId)===String(sessionId))),
     addBusinessHours:()=>123456,crypto,Date,Number,String,console:{error(){}},safeError:()=> 'redacted',
     lifecycleEmail:()=>({text:'Welcome',html:'Welcome'}),escapeEmailHtml:input=>String(input).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
     SITE_URL:'https://callercore.com',sendMail:async()=>{steps.push('mail')},
@@ -59,8 +63,17 @@ assert.ok(guardStart>=0&&guardEnd>guardStart);
 const sessionGuard=source.slice(guardStart,guardEnd);
 async function dedupe(sessionState){
   const writes=[];let status,body;
+  const store=new Map();
   const ctx=vm.createContext({sessionState,eventKey:'stripe:event:new-event',
-    kv:{set:async(key,value,options)=>{writes.push({key,value,options})}},
+    kv:{
+      set:async(key,value,options)=>{store.set(key,value);writes.push({key,value,options})},
+      get:async key=>store.has(key)?store.get(key):null
+    },
+    markStripeEventProcessed:async key=>{
+      await ctx.kv.set(key,true,{ex:60*60*24*90});
+      const confirmed=await ctx.kv.get(key);
+      if(confirmed!==true&&String(confirmed)!=='true')throw Error('receipt not confirmed');
+    },
     res:{status(n){status=n;return this},json(x){body=x;return x}}});
   await vm.runInContext('(async()=>{'+sessionGuard+'})()',ctx);
   return {status,body,writes};
