@@ -188,3 +188,12 @@ test('Stripe checkout account provisioning validates mapping shape and confirms 
   assert.match(webhook,/String\(confirmedMember\.workspaceId\|\|''\)!==String\(workspaceId\)/);
   assert.match(webhook,/session\.customer&&String\(confirmedCustomer\|\|''\)!==String\(workspaceId\)/);
 });
+
+
+test('Stripe lifecycle events are not acknowledged before workspace and subscription persistence are verified',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/const \[confirmedLifecycleWorkspace,confirmedSubscriptionMapping\]=await Promise\.all/);
+  assert.match(webhook,/String\(confirmedLifecycleWorkspace\.subscriptionStatus\|\|''\)!==String\(status\)/);
+  assert.match(webhook,/Stripe lifecycle persistence could not be confirmed/);
+  assert.match(webhook,/subscriptionId&&String\(confirmedSubscriptionMapping\|\|''\)!==String\(workspaceId\)/);
+});
