@@ -2059,14 +2059,19 @@ async function adminSendClientLogin(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).id||'').slice(0,80),ws=await kv.get('workspace:'+id);
   if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No sign-in link was created.'});
   const email=cleanEmail(ws.ownerEmail||'');if(!email)return res.status(409).json({error:'Client has no owner email'});
   const member=await kv.get('user:email:'+email);
-  if(!member||member.workspaceId!==id)return res.status(409).json({error:'Client access mapping is broken. Repair access first.'});
+  if(member!=null&&(!member||typeof member!=='object'||Array.isArray(member)))return res.status(503).json({error:'Client access mapping is unavailable. No sign-in link was created.'});
+  if(!member||String(member.workspaceId||'')!==id)return res.status(409).json({error:'Client access mapping is broken. Repair access first.'});
   const authVersion=Number(member.sessionVersion||0);
   if(!Number.isSafeInteger(authVersion)||authVersion<0)return res.status(503).json({error:'Client session revision is unavailable. No sign-in link was created.'});
-  const token=crypto.randomBytes(32).toString('hex'),tokenKey=loginTokenKey(token);
+  const token=crypto.randomBytes(32).toString('hex'),tokenKey=loginTokenKey(token),tokenRecord={email,workspaceId:id,role:member.role||'owner',next:'/dashboard',authVersion};
   try{
-    await kv.set(tokenKey,{email,workspaceId:id,role:member.role||'owner',next:'/dashboard',authVersion},{ex:15*60});
+    await kv.set(tokenKey,tokenRecord,{ex:15*60});
+    const confirmed=await kv.get(tokenKey);
+    if(!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||cleanEmail(confirmed.email)!==email||String(confirmed.workspaceId||'')!==id||Number(confirmed.authVersion)!==authVersion)
+      throw new Error('login token readback mismatch');
   }catch(err){
     console.error('admin login link storage failed',safeError(err));
     return res.status(503).json({error:'Could not create a secure sign-in link. No email was sent.'});
@@ -2100,8 +2105,10 @@ async function adminForceLogout(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).id||'').slice(0,80),ws=await kv.get('workspace:'+id);
   if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No access changes were made.'});
   const email=cleanEmail(ws.ownerEmail||''),key='user:email:'+email,member=email?await kv.get(key):null;
-  if(!member||member.workspaceId!==id)return res.status(409).json({error:'Client access mapping is missing or broken'});
+  if(member!=null&&(!member||typeof member!=='object'||Array.isArray(member)))return res.status(503).json({error:'Client access mapping is unavailable. No access changes were made.'});
+  if(!member||String(member.workspaceId||'')!==id)return res.status(409).json({error:'Client access mapping is missing or broken'});
   const previousVersion=Number(member.sessionVersion||0);
   if(!Number.isSafeInteger(previousVersion)||previousVersion<0||previousVersion>=Number.MAX_SAFE_INTEGER)
     return res.status(503).json({error:'Client session revision is unavailable. No access changes were made.'});
@@ -2118,10 +2125,13 @@ async function adminRepairAccess(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80),email=cleanEmail(body.email);
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Valid owner email required'});
   const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No mapping changes were made.'});
   const newMemberKey='user:email:'+email,oldEmail=cleanEmail(ws.ownerEmail||''),oldMemberKey=oldEmail?'user:email:'+oldEmail:'';
   const [existing,oldMember]=await Promise.all([
     kv.get(newMemberKey),oldMemberKey&&oldMemberKey!==newMemberKey?kv.get(oldMemberKey):Promise.resolve(null)
   ]);
+  if(existing!=null&&(!existing||typeof existing!=='object'||Array.isArray(existing))||oldMember!=null&&(!oldMember||typeof oldMember!=='object'||Array.isArray(oldMember)))
+    return res.status(503).json({error:'Client access mapping records are unavailable. No mapping changes were made.'});
   if(existing&&(!existing.workspaceId||existing.workspaceId!==id))return res.status(409).json({error:'That email mapping belongs to another account or is unavailable for repair'});
   if(oldMember&&oldMemberKey!==newMemberKey&&oldMember.workspaceId&&oldMember.workspaceId!==id)
     return res.status(409).json({error:'Current owner email maps to another workspace. Investigate the conflicting mapping before repair.'});
@@ -2980,11 +2990,18 @@ async function requestLogin(req,res){
   if(emailCount===1)await kv.expire(emailBucket,WINDOW);
   if(count>MAX||emailCount>MAX)return res.status(429).json({error:'Too many requests. Try again shortly.'});
   const member=await kv.get('user:email:'+email);
-  if(member&&member.workspaceId&&!member.disabled){
-    const loginWs=await kv.get('workspace:'+member.workspaceId);
-    if(loginWs&&loginWs.status==='pending_deletion')return res.status(200).json({ok:true});
-    const token=crypto.randomBytes(32).toString('hex'),role=member.role||'owner',destination=role==='admin'?'/admin-dashboard':(next||'/dashboard');
-    await kv.set(loginTokenKey(token),{email,workspaceId:member.workspaceId,role,next:destination,authVersion:Number(member.sessionVersion||0)},{ex:15*60});
+  if(member&&typeof member==='object'&&!Array.isArray(member)&&String(member.workspaceId||'')&&!member.disabled){
+    const workspaceId=String(member.workspaceId),loginWs=await kv.get('workspace:'+workspaceId),authVersion=Number(member.sessionVersion||0);
+    if(!loginWs||typeof loginWs!=='object'||Array.isArray(loginWs)||String(loginWs.id||'')!==workspaceId||loginWs.status==='pending_deletion'||!Number.isSafeInteger(authVersion)||authVersion<0)
+      return res.status(200).json({ok:true});
+    const token=crypto.randomBytes(32).toString('hex'),role=member.role==='admin'?'admin':'owner',destination=role==='admin'?'/admin-dashboard':(next||'/dashboard'),
+      tokenRecord={email,workspaceId,role,next:destination,authVersion},tokenKey=loginTokenKey(token);
+    try{
+      await kv.set(tokenKey,tokenRecord,{ex:15*60});
+      const confirmed=await kv.get(tokenKey);
+      if(!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||cleanEmail(confirmed.email)!==email||String(confirmed.workspaceId||'')!==workspaceId||Number(confirmed.authVersion)!==authVersion)
+        throw new Error('login token readback mismatch');
+    }catch(err){console.error('auth token storage failed',safeError(err));return res.status(503).json({error:'Sign-in link temporarily unavailable'})}
     const link=requestOrigin(req)+'/api/account?action=verify&token='+encodeURIComponent(token);
     try{
       {const emailBody=authEmail({
@@ -3007,12 +3024,21 @@ async function verify(req,res){
   const token=String((req.query||{}).token||'');
   if(!/^[a-f0-9]{64}$/.test(token))return res.redirect(302,'/login?error=invalid');
   const record=await readLoginToken(token);
-  if(!record||!record.workspaceId)return res.redirect(302,'/login?error=expired');
+  if(!record||typeof record!=='object'||Array.isArray(record)||!String(record.workspaceId||'')||!cleanEmail(record.email)){
+    if(record)await deleteLoginToken(token);
+    return res.redirect(302,'/login?error=expired');
+  }
   await deleteLoginToken(token);
-  const member=await kv.get('user:email:'+cleanEmail(record.email)),loginWs=await kv.get('workspace:'+record.workspaceId);
-  if(!member||member.disabled||!loginWs||loginWs.status==='pending_deletion')return res.redirect(302,'/login?error=disabled');
-  const role=member.role||record.role||'owner',authVersion=Number(member.sessionVersion||record.authVersion||0),destination=role==='admin'?'/admin-dashboard':(record.next==='/dashboard'?'/dashboard':'/dashboard');
-  await createSession(res,{email:record.email,workspaceId:record.workspaceId,role,authVersion});
+  const email=cleanEmail(record.email),workspaceId=String(record.workspaceId),
+    [member,loginWs]=await Promise.all([kv.get('user:email:'+email),kv.get('workspace:'+workspaceId)]);
+  if(!member||typeof member!=='object'||Array.isArray(member)||member.disabled||String(member.workspaceId||'')!==workspaceId||
+    !loginWs||typeof loginWs!=='object'||Array.isArray(loginWs)||String(loginWs.id||'')!==workspaceId||loginWs.status==='pending_deletion')
+    return res.redirect(302,'/login?error=disabled');
+  const memberVersion=Number(member.sessionVersion||0),tokenVersion=Number(record.authVersion||0);
+  if(!Number.isSafeInteger(memberVersion)||memberVersion<0||!Number.isSafeInteger(tokenVersion)||tokenVersion<0||memberVersion!==tokenVersion)
+    return res.redirect(302,'/login?error=expired');
+  const role=member.role==='admin'?'admin':'owner',destination=role==='admin'?'/admin-dashboard':(record.next==='/dashboard'?'/dashboard':'/dashboard');
+  await createSession(res,{email,workspaceId,role,authVersion:memberVersion});
   return res.redirect(302,destination);
 }
 
