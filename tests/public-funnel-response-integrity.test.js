@@ -7,6 +7,7 @@ const checkout=fs.readFileSync('get-started.html','utf8');
 const complete=fs.readFileSync('checkout-complete.html','utf8');
 const live=fs.readFileSync('live-demo.html','utf8');
 const demoApi=fs.readFileSync('api/demo-number.js','utf8');
+const chat=fs.readFileSync('chat-widget.js','utf8');
 
 test('public contact form only shows success after a canonical saved-inquiry acknowledgement',()=>{
   assert.match(contact,/const body=await r\.json\(\)\.catch\(\(\)=>null\)/);
@@ -38,4 +39,12 @@ test('live demo verifies signed token and phone response shape before revealing 
   assert.match(live,/\^\\\+\[1-9\]\\d\{7,14\}\$\/\.test\(String\(d\.number\|\|''\)\)/);
   assert.match(demoApi,/\^\\\+\[1-9\]\\d\{7,14\}\$\/\.test\(String\(DEMO_NUMBER_E164\|\|''\)\)/);
   assert.match(demoApi,/DEMO_NUMBER_DISPLAY\)\.length>40/);
+});
+
+
+test('public chat requires verified assistant text and a canonical handoff receipt',()=>{
+  assert.match(chat,/data=await r\.json\(\)\.catch\(\(\)=>null\),reply=String/);
+  assert.match(chat,/if\(!reply\)throw new Error\('chat'\)/);
+  assert.match(chat,/data\.ok!==true\|\|!String\(data\.prospectId\|\|''\)/);
+  assert.match(chat,/Could not verify that your message was saved/);
 });
