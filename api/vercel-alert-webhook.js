@@ -57,8 +57,9 @@ module.exports=async function handler(req,res){
 
   const hash=crypto.createHash('sha256').update(body).digest('hex');
   const dedupeKey='vercel:alert:'+hash;
-  if(await kv.get(dedupeKey))return res.status(200).json({received:true,duplicate:true});
-  await kv.set(dedupeKey,true,{ex:60*60*24*7});
+  const existingReceipt=await kv.get(dedupeKey);
+  if(existingReceipt===true||String(existingReceipt||'')==='true')return res.status(200).json({received:true,duplicate:true});
+  if(existingReceipt!=null)return res.status(503).json({error:'Alert delivery receipt could not be verified'});
 
   const info=summarize(payload);
   const details=[
@@ -88,5 +89,8 @@ module.exports=async function handler(req,res){
     console.error('Vercel alert email failed',err&&err.message||err);
     return res.status(502).json({error:'Alert delivery failed'});
   }
+  await kv.set(dedupeKey,true,{ex:60*60*24*7});
+  const confirmedReceipt=await kv.get(dedupeKey);
+  if(confirmedReceipt!==true&&String(confirmedReceipt||'')!=='true')return res.status(503).json({error:'Alert delivery succeeded but its receipt could not be confirmed'});
   return res.status(200).json({received:true});
 };
