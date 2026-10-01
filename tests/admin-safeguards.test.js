@@ -183,3 +183,16 @@ test('onboarding status and workspace activation commit with audit before email 
   assert.match(body,/warning='The setup status was saved/);
   assert.match(body,/onboarding_email_failed/);
 });
+
+
+test('Core Intelligence refuses malformed finance and AI provider payloads',()=>{
+  const start=src.indexOf('async function adminAiGuide('),end=src.indexOf('\nconst LAUNCH_GATE_DEFS',start);
+  assert.ok(start>=0&&end>start);
+  const body=src.slice(start,end);
+  assert.match(body,/liveExpenses!=null&&!Array\.isArray\(liveExpenses\)/);
+  assert.match(body,/Core Intelligence finance source is unavailable/);
+  assert.match(body,/OpenAI response could not be verified/);
+  assert.match(body,/Anthropic response could not be verified/);
+  assert.match(body,/Array\.isArray\(data\.output\)\?data\.output:\[\]/);
+  assert.match(body,/!Array\.isArray\(data\.content\)/);
+});
