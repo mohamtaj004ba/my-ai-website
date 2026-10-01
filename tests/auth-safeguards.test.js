@@ -48,3 +48,17 @@ test('admin-generated login links never store raw bearer tokens',()=>{
   assert.match(body,/const token=crypto\.randomBytes\(32\)\.toString\('hex'\),tokenKey=loginTokenKey\(token\)/);
   assert.match(body,/kv\.set\(tokenKey,/);
 });
+
+
+test('session reads fail closed on malformed session or member identity records',()=>{
+  assert.match(auth,/typeof s!=='object'\|\|Array\.isArray\(s\)/);
+  assert.match(auth,/typeof member!=='object'\|\|Array\.isArray\(member\)/);
+  assert.match(auth,/member\.email&&String\(member\.email\)\.trim\(\)\.toLowerCase\(\)!==email/);
+});
+
+test('session cookies are issued only after hashed session persistence is read back and verified',()=>{
+  assert.match(auth,/const confirmed=await kv\.get\(key\)/);
+  assert.match(auth,/Session persistence could not be confirmed/);
+  const createStart=auth.indexOf('async function createSession('),cookieAt=auth.indexOf("res.setHeader('Set-Cookie'",createStart),confirmAt=auth.indexOf('const confirmed=await kv.get(key)',createStart);
+  assert.ok(createStart>=0&&confirmAt>createStart&&cookieAt>confirmAt,'cookie must be set only after verified session readback');
+});
