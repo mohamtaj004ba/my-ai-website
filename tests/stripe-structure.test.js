@@ -5,7 +5,7 @@ const account=fs.readFileSync(path.join(__dirname,'..','api','account.js'),'utf8
 test('Stripe event idempotency key is declared before lifecycle branches',()=>{
   const declaration=src.indexOf("const eventKey=event.id?'stripe:event:'+event.id:null");
   const lifecycle=src.indexOf("if(lifecycleEvent)");
-  const checkout=src.indexOf("const session=event.data.object");
+  const checkout=src.indexOf("const session=event.data&&event.data.object");
   assert.ok(declaration>=0,'eventKey declaration missing');
   assert.ok(lifecycle>declaration,'lifecycle branch must come after eventKey declaration');
   assert.ok(checkout>declaration,'checkout branch must come after eventKey declaration');
@@ -66,7 +66,7 @@ test('Stripe lifecycle metrics are recorded before workspace mapping can discard
   const lifecycle=src.indexOf("if(lifecycleEvent)");
   const coverage=src.indexOf("await ensureStripeMonthlyMetricsCoverage",lifecycle);
   const failureMetric=src.indexOf("await recordStripePaymentFailure",lifecycle);
-  const workspaceLookup=src.indexOf("let workspaceId=null",lifecycle);
+  const workspaceLookup=src.indexOf("const [subscriptionWorkspace,customerWorkspace]=await Promise.all",lifecycle);
   assert.ok(coverage>lifecycle&&coverage<workspaceLookup,'coverage start must be established before workspace mapping');
   assert.ok(failureMetric>coverage&&failureMetric<workspaceLookup,'payment failure must be counted before mapping can return unmapped');
   assert.match(src,/Stripe billing metrics could not be confirmed\. Retry the webhook event\./);
