@@ -156,3 +156,13 @@ test('Stripe webhook validates lifecycle and checkout payload shape plus mapped 
   assert.match(webhook,/Mapped workspace state could not be verified/);
   assert.match(webhook,/Invalid checkout session payload/);
 });
+
+
+test('Stripe webhook only acknowledges processed events after receipt persistence readback',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/async function markStripeEventProcessed\(eventKey\)/);
+  assert.match(webhook,/const confirmed=await kv\.get\(eventKey\)/);
+  assert.match(webhook,/Stripe event receipt persistence could not be confirmed/);
+  assert.doesNotMatch(webhook,/if\(eventKey\)await kv\.set\(eventKey,true/);
+  assert.match(webhook,/if\(eventKey\)await markStripeEventProcessed\(eventKey\)/);
+});
