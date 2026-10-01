@@ -37,3 +37,11 @@ test('temporary Preview E2E launcher stays Preview-only and never echoes the boo
   assert.doesNotMatch(launcher,/CALLERCORE_BOOTSTRAP_SECRET/);
   assert.doesNotMatch(client,/CALLERCORE_BOOTSTRAP_SECRET/);
 });
+
+
+test('demo reveal tokens require a strong secret and exact signed token shape',()=>{
+  assert.match(reveal,/!SECRET\|\|SECRET\.length<32/);
+  assert.match(demo,/!SECRET\|\|SECRET\.length<32/);
+  assert.match(demo,/\^\\d\{13\}\\\.\[a-f0-9\]\{64\}\$/i);
+  assert.match(demo,/Number\.isFinite\(ts\)/);
+});
