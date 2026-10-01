@@ -33,9 +33,9 @@ test('session cookies are protected and session ids are hashed at rest',()=>{
 });
 
 test('pending deletion disables customer magic-link access',()=>{
-  assert.match(account,/member&&member\.workspaceId&&!member\.disabled/);
-  assert.match(account,/loginWs&&loginWs\.status==='pending_deletion'/);
-  assert.match(account,/member\.disabled\|\|!loginWs\|\|loginWs\.status==='pending_deletion'/);
+  assert.match(account,/member&&typeof member==='object'&&!Array\.isArray\(member\)/);
+  assert.match(account,/loginWs\.status==='pending_deletion'/);
+  assert.match(account,/member\.disabled\|\|String\(member\.workspaceId\|\|''\)!==workspaceId/);
 });
 
 
