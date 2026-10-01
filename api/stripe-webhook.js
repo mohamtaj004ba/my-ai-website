@@ -56,6 +56,8 @@ async function upsertWorkspace({lead,session,plan,email}){
     session.customer?kv.get('stripe:customer:'+session.customer):null,
     session.subscription?kv.get('stripe:subscription:'+session.subscription):null
   ]);
+  for(const mapping of [mappedCustomer,mappedSubscription])if(mapping!=null&&(typeof mapping!=='string'||!mapping.trim()))
+    throw new Error('Stripe account mapping is malformed; manual reconciliation required');
   const mappings=[mappedCustomer,mappedSubscription].filter(Boolean).map(String);
   if(new Set(mappings).size>1)throw new Error('Stripe customer and subscription map to different workspaces; manual reconciliation required');
   let workspaceId=existingMember&&existingMember.workspaceId;
@@ -111,12 +113,25 @@ async function upsertWorkspace({lead,session,plan,email}){
     createdAt:existing.createdAt||Date.now(),
     updatedAt:Date.now()
   };
+  const memberRecord={...(existingMember||{}),workspaceId,role:existingMember?.role||'owner',email};
   await kv.set(key,workspace);
   // Preserve sessionVersion and profile/security metadata across repeat purchases.
-  await kv.set(userKey,{...(existingMember||{}),workspaceId,role:existingMember?.role||'owner',email});
+  await kv.set(userKey,memberRecord);
   if(session.customer)await kv.set('stripe:customer:'+session.customer,workspaceId);
   if(session.subscription)await kv.set('stripe:subscription:'+session.subscription,workspaceId);
-  return workspace;
+  const [confirmedWorkspace,confirmedMember,confirmedCustomer,confirmedSubscription]=await Promise.all([
+    kv.get(key),kv.get(userKey),
+    session.customer?kv.get('stripe:customer:'+session.customer):Promise.resolve(null),
+    session.subscription?kv.get('stripe:subscription:'+session.subscription):Promise.resolve(null)
+  ]);
+  if(!confirmedWorkspace||typeof confirmedWorkspace!=='object'||Array.isArray(confirmedWorkspace)||String(confirmedWorkspace.id||'')!==String(workspaceId)||
+    String(confirmedWorkspace.ownerEmail||'').trim().toLowerCase()!==email||
+    !confirmedMember||typeof confirmedMember!=='object'||Array.isArray(confirmedMember)||String(confirmedMember.workspaceId||'')!==String(workspaceId)||
+    String(confirmedMember.email||'').trim().toLowerCase()!==email||
+    (session.customer&&String(confirmedCustomer||'')!==String(workspaceId))||
+    (session.subscription&&String(confirmedSubscription||'')!==String(workspaceId)))
+    throw new Error('Checkout account persistence could not be confirmed; manual reconciliation required');
+  return confirmedWorkspace;
 }
 module.exports=async function handler(req,res){
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
