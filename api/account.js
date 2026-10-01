@@ -167,6 +167,10 @@ async function seedPreviewData(req,res){
   const member=await kv.get('user:email:'+email);
   if(!member||!member.workspaceId)return res.status(404).json({error:'Create the workspace first'});
   const workspaceId=member.workspaceId,now=Date.now(),dataset=previewSeed.makePrimaryDataset();
+  const rawWorkspaceIndex=await kv.get('workspace:index');
+  if(rawWorkspaceIndex!=null&&(!Array.isArray(rawWorkspaceIndex)||rawWorkspaceIndex.some(id=>typeof id!=='string'||!id.trim())||new Set(rawWorkspaceIndex).size!==rawWorkspaceIndex.length))
+    return res.status(503).json({error:'Preview workspace directory is unavailable; seed data was not changed'});
+  const index=rawWorkspaceIndex||[];
   const workspace=previewSeed.primaryWorkspace(workspaceId,email,now);
   workspace.previewQa=true;
   workspace.usage.minutes=dataset.minutes;
@@ -198,7 +202,6 @@ async function seedPreviewData(req,res){
     kv.set('onboarding:workspace:'+workspaceId,{status:'live',completionPercent:100,checklist:{payment:true,accountReview:true,onboardingSent:true,agreement:true,intake:true,businessProfile:true,agentDraft:true,routingCaptured:true,phoneAssigned:true,adminReview:true,testCall:true,clientApproval:true,live:true},updatedAt:now})
   ]);
   await publishNormalizedConversations(kv,workspaceId,dataset.conversations,{now});
-  const currentIndex=await kv.get('workspace:index')||[],index=Array.isArray(currentIndex)?currentIndex:[];
   const seedPrefix=workspaceId.slice(0,8);
   const staleSeedWorkspaceIds=index.filter(id=>String(id).startsWith('seed_'));
   const staleSeedPrefixes=['workspace:','settings:','agent:','automations:','calls:','calls:index:','leads:','conversations:','appointments:','locations:','onboarding:workspace:','routing-request:','integrations:','followup:state:'];
