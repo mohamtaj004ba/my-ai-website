@@ -166,3 +166,14 @@ test('Stripe webhook only acknowledges processed events after receipt persistenc
   assert.doesNotMatch(webhook,/if\(eventKey\)await kv\.set\(eventKey,true/);
   assert.match(webhook,/if\(eventKey\)await markStripeEventProcessed\(eventKey\)/);
 });
+
+
+test('Stripe checkout provisioning rejects malformed durable receipt and onboarding records',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/function validCheckoutSessionState\(value,sessionId\)/);
+  assert.match(webhook,/Checkout session receipt is malformed/);
+  assert.match(webhook,/Checkout session receipt became malformed during provisioning/);
+  assert.match(webhook,/Linked onboarding record is malformed/);
+  assert.match(webhook,/Onboarding record is malformed/);
+  assert.match(webhook,/Onboarding workspace identity disagrees/);
+});
