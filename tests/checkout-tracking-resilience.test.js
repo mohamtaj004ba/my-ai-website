@@ -45,7 +45,7 @@ test('lead persistence errors prevent checkout success and skip analytics',async
 });
 test('embedded checkout tracks best-effort after successful lead save',()=>{
   const upsert=embeddedSource.indexOf('prospect=await upsertWebsiteProspect(');
-  const leadSave=embeddedSource.indexOf("await kv.set('lead:'+leadId");
+  const leadSave=embeddedSource.indexOf("await kv.set(leadKey,leadRecord");
   const closeTry=embeddedSource.indexOf("  }catch(err){\n    console.error('Embedded checkout lead pre-save failed'");
   const tracking=embeddedSource.indexOf("try{await recordSiteEvent({type:'checkout_start'");
   const stripe=embeddedSource.indexOf("await stripeRequest('/v1/checkout/sessions'");
