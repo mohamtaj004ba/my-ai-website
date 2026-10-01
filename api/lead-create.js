@@ -63,11 +63,14 @@ module.exports = async function handler(req, res) {
   let prospect;
   try {
     prospect=await upsertWebsiteProspect({name,business,email,phone,industry,plan,source:'get_started',stage:'checkout_started',visitorId,sessionId,utmSource,utmMedium,utmCampaign,marketingEmailConsent:{granted:marketingEmailConsent,source:'get_started'}});
-    await kv.set(
-      `lead:${leadId}`,
-      { name, business, email, phone, industry, plan, prospectId:prospect.id, visitorId, sessionId, utmSource, utmMedium, utmCampaign, acquisition:{source:prospect.firstSource||prospect.source||'website',utmSource:prospect.firstUtmSource||prospect.utmSource||utmSource,utmMedium:prospect.firstUtmMedium||prospect.utmMedium||utmMedium,utmCampaign:prospect.firstUtmCampaign||prospect.utmCampaign||utmCampaign}, createdAt: Date.now() },
-      { ex: 60 * 60 * 24 * 7 }
-    );
+    if(!prospect||typeof prospect!=='object'||Array.isArray(prospect)||!String(prospect.id||'')||String(prospect.email||'').toLowerCase()!==email.toLowerCase())
+      throw new Error('lead prospect identity could not be verified');
+    const leadKey=`lead:${leadId}`,leadRecord={ name, business, email, phone, industry, plan, prospectId:String(prospect.id), visitorId, sessionId, utmSource, utmMedium, utmCampaign, acquisition:{source:prospect.firstSource||prospect.source||'website',utmSource:prospect.firstUtmSource||prospect.utmSource||utmSource,utmMedium:prospect.firstUtmMedium||prospect.utmMedium||utmMedium,utmCampaign:prospect.firstUtmCampaign||prospect.utmCampaign||utmCampaign}, createdAt: Date.now() };
+    await kv.set(leadKey,leadRecord,{ ex: 60 * 60 * 24 * 7 });
+    const confirmed=await kv.get(leadKey);
+    if(!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.prospectId||'')!==String(prospect.id)||
+      String(confirmed.email||'').toLowerCase()!==email.toLowerCase()||String(confirmed.plan||'')!==plan)
+      throw new Error('lead persistence could not be confirmed');
     try{await recordSiteEvent({type:'checkout_start',visitorId,sessionId,path:'/get-started',label:plan,utmSource,utmMedium,utmCampaign},req)}
     catch(analyticsError){console.error('Lead pre-save analytics failed',safeError(analyticsError))}
     return res.status(200).json({ leadId, prospectId:prospect.id });
