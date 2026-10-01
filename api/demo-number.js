@@ -60,6 +60,8 @@ module.exports = async function handler(req, res) {
   }
 
   if(!SECRET||SECRET.length<32)return res.status(503).json({error:'Demo unavailable'});
+  if(!/^\+[1-9]\d{7,14}$/.test(String(DEMO_NUMBER_E164||''))||!String(DEMO_NUMBER_DISPLAY||'').trim()||String(DEMO_NUMBER_DISPLAY).length>40)
+    return res.status(503).json({error:'Demo unavailable'});
 
   // Layer 2: per-IP distributed rate limit.
   const rl=await rateLimit({scope:'demo-number',identifier:requestIp(req),limit:6,windowSeconds:600,failClosed:true});
