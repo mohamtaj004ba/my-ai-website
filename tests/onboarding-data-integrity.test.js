@@ -13,5 +13,6 @@ test('onboarding data distinguishes missing from malformed persisted records',()
 test('onboarding data refuses malformed intake and signed snapshot objects',()=>{
   assert.match(src,/record\.intake!=null&&\(!record\.intake\|\|typeof record\.intake!=='object'\|\|Array\.isArray\(record\.intake\)\)/);
   assert.match(src,/record\.agreementSnapshot!=null&&\(!record\.agreementSnapshot\|\|typeof record\.agreementSnapshot!=='object'\|\|Array\.isArray\(record\.agreementSnapshot\)\)/);
+  assert.match(src,/!Array\.isArray\(record\.agreementSnapshot\.clauses\)\|\|!record\.agreementSnapshot\.clauses\.length/);
   assert.match(src,/record\.agreementPlanSnapshot!=null&&\(!record\.agreementPlanSnapshot\|\|typeof record\.agreementPlanSnapshot!=='object'\|\|Array\.isArray\(record\.agreementPlanSnapshot\)\)/);
 });
