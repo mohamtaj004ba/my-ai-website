@@ -1626,7 +1626,8 @@ async function adminGmailConnect(req,res){
 }
 async function adminGmailDisconnect(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  await disconnectGmail(admin.email);return res.status(200).json({ok:true});
+  try{await disconnectGmail(admin.email);return res.status(200).json({ok:true})}
+  catch(err){console.error('gmail disconnect failed',safeError(err));return res.status(503).json({error:'Gmail disconnect could not be confirmed. The existing connection state was preserved in the dashboard.'})}
 }
 async function adminGmailInbox(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
