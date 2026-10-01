@@ -1284,7 +1284,10 @@ async function replySupportTicket(req,res){
   try{
     if(!await compareAndSetConfig(kv,[{key,before:t,after:next}]))return res.status(409).json({error:'This support conversation changed while you were replying. Refresh it and resend your preserved draft.'});
   }catch(err){console.error('support client reply save failed',safeError(err));return res.status(503).json({error:'Could not confirm that your reply was saved. Refresh the conversation before retrying.'})}
-  const platform=await kv.get('platform:settings')||{},to=platform.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
+  const platformRaw=await kv.get('platform:settings');
+  if(platformRaw!=null&&(!platformRaw||typeof platformRaw!=='object'||Array.isArray(platformRaw)))
+    return res.status(200).json({ok:true,ticket:next,warning:'Your reply was saved, but CallerCore support notification settings could not be verified.'});
+  const platform=platformRaw||{},to=platform.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
   if(to){try{await sendMail({to,subject:'CallerCore support reply · '+t.subject,text:'Workspace: '+(t.workspaceName||'Workspace')+'\nFrom: '+s.email+'\n\n'+message})}catch(err){console.error('support reply email failed',safeError(err))}}
   return res.status(200).json({ok:true,ticket:next});
 }
@@ -1326,8 +1329,10 @@ async function adminSupportReply(req,res){
     if(!await compareAndAudit(kv,{key,before:t,after:next},'audit:'+t.workspaceId,audit))return res.status(409).json({error:'This support conversation changed while you were replying. Refresh it and resend your preserved draft.'});
   }catch(err){console.error('admin support reply save failed',safeError(err));return res.status(503).json({error:'Could not confirm the support reply and audit entry were saved together. Refresh before retrying.'})}
   if(t.email){
-    const clientSettings=await kv.get('settings:'+t.workspaceId)||{};
-    if(clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false){
+    const clientSettingsRaw=await kv.get('settings:'+t.workspaceId);
+    const clientSettingsVerified=clientSettingsRaw==null||(clientSettingsRaw&&typeof clientSettingsRaw==='object'&&!Array.isArray(clientSettingsRaw));
+    const clientSettings=clientSettingsVerified?(clientSettingsRaw||{}):null;
+    if(clientSettings&&clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false){
       try{
         const emailBody=lifecycleEmail({
           preheader:'CallerCore support replied to your request.',
@@ -1364,8 +1369,10 @@ async function adminSupportUpdate(req,res){
     if(!await compareAndAudit(kv,{key,before:t,after:next},'audit:'+t.workspaceId,audit))return res.status(409).json({error:'This support request changed during the save. Refresh it before retrying.'});
   }catch(err){console.error('admin support status failed',safeError(err));return res.status(503).json({error:'Could not confirm the support status and audit entry were saved together. Refresh this request before retrying.'})}
   if(t.email&&status!==previousStatus){
-    const clientSettings=await kv.get('settings:'+t.workspaceId)||{};
-    if(clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false&&(status==='in_progress'||status==='resolved')){
+    const clientSettingsRaw=await kv.get('settings:'+t.workspaceId);
+    const clientSettingsVerified=clientSettingsRaw==null||(clientSettingsRaw&&typeof clientSettingsRaw==='object'&&!Array.isArray(clientSettingsRaw));
+    const clientSettings=clientSettingsVerified?(clientSettingsRaw||{}):null;
+    if(clientSettings&&clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false&&(status==='in_progress'||status==='resolved')){
       try{
         const resolved=status==='resolved',label=resolved?'Resolved':'In progress';
         const emailBody=lifecycleEmail({
