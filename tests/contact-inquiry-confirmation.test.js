@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const source=fs.readFileSync('api/contact.js','utf8'),frontend=fs.readFileSync('contact.html','utf8');
 
-async function request({prospectError=false,inboxError=false,trackingError=false,mailError=false}={}){
+async function request({prospectError=false,prospectEmail='visitor@example.test',inboxError=false,trackingError=false,mailError=false}={}){
   const calls={prospect:0,inbox:0,tracking:0,mail:0};let status=0,body=null;
   const modules={
     '../lib/safe-log':{safeError:()=> 'redacted'},
@@ -13,7 +13,7 @@ async function request({prospectError=false,inboxError=false,trackingError=false
     '../lib/kv':{kv:{}},
     './_lib/mailgun':{sendMail:async()=>{calls.mail++;if(mailError)throw Error('mailer failure')}},
     '../lib/site-analytics':{
-      upsertWebsiteProspect:async()=>{calls.prospect++;if(prospectError)throw Error('database error');return {id:'lead-1',email:'visitor@example.test'}},
+      upsertWebsiteProspect:async()=>{calls.prospect++;if(prospectError)throw Error('database error');return {id:'lead-1',email:prospectEmail}},
       recordSiteEvent:async()=>{calls.tracking++;if(trackingError)throw Error('tracking error')}
     },
     '../lib/site-conversation':{appendSiteConversation:async(_kv,id,message)=>{
@@ -75,8 +75,10 @@ test('contact page shows server-provided warning in success state rather than pr
 
 
 test('mismatched persisted prospect identity cannot claim inquiry receipt',async()=>{
-  const sourceMismatch=source.replace("String(prospect.email||'').toLowerCase()!==email.toLowerCase()","String(prospect.email||'').toLowerCase()!=='visitor@example.test'");
+  const r=await request({prospectEmail:'someone-else@example.test'});
+  assert.equal(r.status,503);
+  assert.equal(r.body.ok,undefined);
+  assert.deepEqual(r.calls,{prospect:1,inbox:0,tracking:0,mail:0});
   assert.match(source,/contact prospect identity could not be verified/);
   assert.match(source,/String\(prospect\.email\|\|''\)\.toLowerCase\(\)!==email\.toLowerCase\(\)/);
-  assert.equal(typeof sourceMismatch,'string');
 });
