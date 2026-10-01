@@ -291,8 +291,9 @@ async function previewQaSession(req,res){
 
 async function requireAdmin(req,res){
   const s=await requireSession(req,res);if(!s)return null;
-  const member=await kv.get('user:email:'+cleanEmail(s.email));
-  if(!member||member.role!=='admin')return res.status(403).json({error:'Admin access required'}),null;
+  const email=cleanEmail(s.email),member=await kv.get('user:email:'+email);
+  if(!member||typeof member!=='object'||Array.isArray(member)||member.disabled||member.role!=='admin'||
+    (member.email&&cleanEmail(member.email)!==email))return res.status(403).json({error:'Admin access required'}),null;
   return {...s,role:'admin'};
 }
 
