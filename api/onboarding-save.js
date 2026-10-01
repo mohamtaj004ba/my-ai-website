@@ -59,12 +59,23 @@ module.exports = async function handler(req, res) {
     if(record.status==='awaiting_agreement')record.status='intake_in_progress';
 
     await kv.set(key, record, { ex: 60 * 60 * 24 * 90 });
+    const confirmedAgreement=await kv.get(key);
+    if(!confirmedAgreement||typeof confirmedAgreement!=='object'||Array.isArray(confirmedAgreement)||confirmedAgreement.agreementSigned!==true||
+      Number(confirmedAgreement.agreementSignedAt||0)!==Number(record.agreementSignedAt)||String(confirmedAgreement.agreementFullName||'')!==signedName||
+      String(confirmedAgreement.status||'')!==String(record.status||''))return res.status(503).json({error:'Agreement save could not be confirmed. Please refresh before signing again.'});
     if(record.workspaceId){
-      await kv.set('onboarding:workspace-token:'+record.workspaceId,token,{ex:60*60*24*90});
+      const workspaceTokenKey='onboarding:workspace-token:'+record.workspaceId;
+      await kv.set(workspaceTokenKey,token,{ex:60*60*24*90});
+      if(String(await kv.get(workspaceTokenKey)||'')!==String(token))return res.status(503).json({error:'Agreement was saved, but onboarding workspace linkage could not be confirmed.'});
       const rawPrior=await kv.get('onboarding:workspace:'+record.workspaceId);
       if(rawPrior!=null&&(!rawPrior||typeof rawPrior!=='object'||Array.isArray(rawPrior)))return res.status(503).json({error:'Onboarding workspace state is unavailable. Agreement was saved; workspace progress was not overwritten.'});
-      const prior=rawPrior||{};
-      await kv.set('onboarding:workspace:'+record.workspaceId,{...prior,workspaceId:record.workspaceId,status:'intake_in_progress',completionPercent:Number(record.completionPercent||0),agreementVersion:record.agreementVersion,agreementSignedAt:record.agreementSignedAt,agreementSignedName:record.agreementFullName,checklist:{...(prior.checklist||{}),payment:true,agreement:true,intake:false},updatedAt:Date.now()});
+      const prior=rawPrior||{},workspaceStateKey='onboarding:workspace:'+record.workspaceId;
+      await kv.set(workspaceStateKey,{...prior,workspaceId:record.workspaceId,status:'intake_in_progress',completionPercent:Number(record.completionPercent||0),agreementVersion:record.agreementVersion,agreementSignedAt:record.agreementSignedAt,agreementSignedName:record.agreementFullName,checklist:{...(prior.checklist||{}),payment:true,agreement:true,intake:false},updatedAt:Date.now()});
+      const confirmedWorkspaceState=await kv.get(workspaceStateKey);
+      if(!confirmedWorkspaceState||typeof confirmedWorkspaceState!=='object'||Array.isArray(confirmedWorkspaceState)||
+        String(confirmedWorkspaceState.workspaceId||'')!==String(record.workspaceId)||confirmedWorkspaceState.status!=='intake_in_progress'||
+        Number(confirmedWorkspaceState.agreementSignedAt||0)!==Number(record.agreementSignedAt))
+        return res.status(503).json({error:'Agreement was saved, but onboarding workspace progress could not be confirmed.'});
     }
 
     // Email a signed copy. Don't fail the request if this errors — the
@@ -150,13 +161,24 @@ module.exports = async function handler(req, res) {
     }
 
     await kv.set(key, record, { ex: 60 * 60 * 24 * 90 });
+    const confirmedIntake=await kv.get(key);
+    if(!confirmedIntake||typeof confirmedIntake!=='object'||Array.isArray(confirmedIntake)||
+      String(confirmedIntake.status||'')!==String(record.status||'')||Number(confirmedIntake.completionPercent||0)!==Number(record.completionPercent||0)||
+      !confirmedIntake.intake||typeof confirmedIntake.intake!=='object'||Array.isArray(confirmedIntake.intake))
+      return res.status(503).json({error:'Onboarding progress could not be confirmed. Please refresh before continuing.'});
     if(record.workspaceId){
-      await kv.set('onboarding:workspace-token:'+record.workspaceId,token,{ex:60*60*24*90});
+      const workspaceTokenKey='onboarding:workspace-token:'+record.workspaceId;
+      await kv.set(workspaceTokenKey,token,{ex:60*60*24*90});
+      if(String(await kv.get(workspaceTokenKey)||'')!==String(token))return res.status(503).json({error:'Onboarding progress was saved, but workspace linkage could not be confirmed.'});
       if(!justCompleted){
         const rawPrior=await kv.get('onboarding:workspace:'+record.workspaceId);
         if(rawPrior!=null&&(!rawPrior||typeof rawPrior!=='object'||Array.isArray(rawPrior)))return res.status(503).json({error:'Onboarding workspace state is unavailable. Intake progress was saved; workspace progress was not overwritten.'});
-        const prior=rawPrior||{};
-        await kv.set('onboarding:workspace:'+record.workspaceId,{...prior,workspaceId:record.workspaceId,status:record.status||'intake_in_progress',completionPercent,checklist:{...(prior.checklist||{}),payment:true,agreement:!!record.agreementSigned,intake:false},updatedAt:Date.now()});
+        const prior=rawPrior||{},workspaceStateKey='onboarding:workspace:'+record.workspaceId;
+        await kv.set(workspaceStateKey,{...prior,workspaceId:record.workspaceId,status:record.status||'intake_in_progress',completionPercent,checklist:{...(prior.checklist||{}),payment:true,agreement:!!record.agreementSigned,intake:false},updatedAt:Date.now()});
+        const confirmedWorkspaceState=await kv.get(workspaceStateKey);
+        if(!confirmedWorkspaceState||typeof confirmedWorkspaceState!=='object'||Array.isArray(confirmedWorkspaceState)||
+          String(confirmedWorkspaceState.workspaceId||'')!==String(record.workspaceId)||Number(confirmedWorkspaceState.completionPercent||0)!==completionPercent)
+          return res.status(503).json({error:'Onboarding progress was saved, but workspace progress could not be confirmed.'});
       }
     }
 
