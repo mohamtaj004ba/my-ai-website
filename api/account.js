@@ -3066,7 +3066,11 @@ async function requestLogin(req,res){
         ctaUrl:link,
         siteUrl:requestOrigin(req)
       });await sendMail({to:email,subject:'Your CallerCore sign-in link',...emailBody});}
-    }catch(err){console.error('auth email failed',safeError(err));return res.status(503).json({error:'Sign-in email temporarily unavailable'})}
+    }catch(err){
+      console.error('auth email failed',safeError(err));
+      try{await deleteLoginToken(token)}catch(cleanupErr){console.error('undelivered login token cleanup failed',safeError(cleanupErr))}
+      return res.status(503).json({error:'Sign-in email temporarily unavailable'})
+    }
   }
   return res.status(200).json({ok:true});
 }
