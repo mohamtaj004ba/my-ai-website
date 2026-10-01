@@ -365,7 +365,11 @@ async function adminFinance(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const [workspaces,storedExpenses,storedHistory,reconciliationIds]=await Promise.all([loadAdminWorkspaces(),kv.get('finance:expenses'),kv.get('finance:history'),kv.lrange('stripe:reconciliation:index',0,199)]);
   if(storedExpenses!=null&&!Array.isArray(storedExpenses))return res.status(503).json({error:'Company expense records are unavailable. Finance figures were not refreshed.'});
+  if(Array.isArray(storedExpenses)&&storedExpenses.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()||!String(item.name||'').trim()||!Number.isFinite(Number(item.amount))||Number(item.amount)<0||!['monthly','annual','one_time'].includes(item.frequency)||!['active','paused'].includes(item.status)))
+    return res.status(503).json({error:'Company expense records are malformed. Finance figures were not refreshed.'});
   if(storedHistory!=null&&!Array.isArray(storedHistory))return res.status(503).json({error:'Finance history is unavailable. Finance figures were not refreshed.'});
+  if(Array.isArray(storedHistory)&&storedHistory.some(row=>!row||typeof row!=='object'||Array.isArray(row)||!/^[0-9]{4}-[0-9]{2}$/.test(String(row.month||''))||!['revenue','expenses','net','activeClients'].every(key=>Number.isFinite(Number(row[key])))))
+    return res.status(503).json({error:'Finance history contains malformed records. Finance figures were not refreshed.'});
   if(!Array.isArray(reconciliationIds))return res.status(503).json({error:'Checkout reconciliation queue could not be loaded. Finance figures were not refreshed.'});
   const reconciliation=[],uniqueIds=[...new Set(reconciliationIds.map(x=>String(x||'').trim()).filter(Boolean))],coverage={retainedCaseIds:reconciliationIds.length,unavailableCaseRecords:0,isRetentionCapped:reconciliationIds.length>=200};
   for(let offset=0;offset<uniqueIds.length;offset+=50){
