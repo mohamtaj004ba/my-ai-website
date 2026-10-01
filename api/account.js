@@ -1611,8 +1611,17 @@ async function adminGmailStatus(req,res){
 async function adminGmailConnect(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   if(!gmailConfigReady())return res.status(409).json({error:'Google OAuth is not configured yet'});
-  const state=crypto.randomBytes(24).toString('hex'),redirectUri=requestOrigin(req)+'/api/google-oauth-callback';
-  await kv.set('oauth:gmail:'+state,{adminEmail:admin.email,redirectUri,createdAt:Date.now()},{ex:10*60});
+  const state=crypto.randomBytes(24).toString('hex'),redirectUri=requestOrigin(req)+'/api/google-oauth-callback',
+    stateKey='oauth:gmail:'+state,stateRecord={adminEmail:cleanEmail(admin.email),redirectUri,createdAt:Date.now()};
+  try{
+    await kv.set(stateKey,stateRecord,{ex:10*60});
+    const confirmed=await kv.get(stateKey);
+    if(!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||cleanEmail(confirmed.adminEmail)!==stateRecord.adminEmail||
+      String(confirmed.redirectUri||'')!==redirectUri||Number(confirmed.createdAt)!==stateRecord.createdAt)throw new Error('oauth state readback mismatch');
+  }catch(err){
+    console.error('gmail oauth state storage failed',safeError(err));
+    return res.status(503).json({error:'Could not start a secure Gmail connection. Try again.'});
+  }
   return res.status(200).json({url:getGmailOauthUrl({state,redirectUri})});
 }
 async function adminGmailDisconnect(req,res){
