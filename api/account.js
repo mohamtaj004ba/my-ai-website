@@ -2510,14 +2510,17 @@ async function stripeConfigurationHealth(){
         fetch('https://api.stripe.com/v1/webhook_endpoints?limit=100',{headers,signal:controller.signal}),
         fetch('https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=10',{headers,signal:controller.signal})
       ]);
-      const [wh,portalData]=await Promise.all([whRes.json().catch(()=>({})),portalRes.json().catch(()=>({}))]);
+      const [wh,portalData]=await Promise.all([whRes.json().catch(()=>null),portalRes.json().catch(()=>null)]);
       if(!whRes.ok||!portalRes.ok)return {ok:false,webhook:false,portal:false,detail:'Stripe configuration check failed'};
+      if(!wh||typeof wh!=='object'||Array.isArray(wh)||!Array.isArray(wh.data)||
+        !portalData||typeof portalData!=='object'||Array.isArray(portalData)||!Array.isArray(portalData.data))
+        return {ok:false,webhook:false,portal:false,detail:'Stripe configuration response could not be verified'};
       const desiredUrl=(process.env.SITE_URL||'https://www.callercore.com').replace(/\/$/,'')+'/api/stripe-webhook';
-      const endpoint=(Array.isArray(wh.data)?wh.data:[]).find(x=>x&&x.status==='enabled'&&x.url===desiredUrl);
+      const endpoint=wh.data.find(x=>x&&typeof x==='object'&&!Array.isArray(x)&&x.status==='enabled'&&x.url===desiredUrl);
       const enabled=new Set(Array.isArray(endpoint?.enabled_events)?endpoint.enabled_events:[]);
       const missing=expected.filter(e=>!enabled.has(e)&&!enabled.has('*'));
       const webhook=!!endpoint&&missing.length===0;
-      const portal=Array.isArray(portalData.data)&&portalData.data.some(x=>x&&x.active!==false);
+      const portal=portalData.data.some(x=>x&&typeof x==='object'&&!Array.isArray(x)&&x.active!==false);
       return {ok:webhook&&portal,webhook,portal,missingEvents:missing,detail:!endpoint?'Stripe webhook endpoint not found/enabled':missing.length?('Stripe webhook missing: '+missing.join(', ')):!portal?'Stripe Customer Portal has no active configuration':'Stripe webhook and Customer Portal configured'};
     }finally{clearTimeout(timer)}
   }catch(err){
