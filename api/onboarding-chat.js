@@ -184,11 +184,15 @@ module.exports = async function handler(req, res) {
             return resolve();
           }
           const parsed = JSON.parse(data);
-          res.status(200).json({ reply: parsed.content[0].text });
+          if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)||!Array.isArray(parsed.content))
+            throw new Error('Anthropic onboarding response could not be verified');
+          const reply=String(parsed.content.find(item=>item&&item.type==='text'&&typeof item.text==='string')?.text||'').trim();
+          if(!reply)throw new Error('Anthropic onboarding response did not contain verified text');
+          res.status(200).json({ reply });
           resolve();
         } catch (err) {
-          console.error('Parse error:', safeError(err));
-          res.status(500).json({ error: 'Parse error' });
+          console.error('Anthropic onboarding response validation failed:', safeError(err));
+          res.status(502).json({ error: 'Assistant response unavailable' });
           resolve();
         }
       });
