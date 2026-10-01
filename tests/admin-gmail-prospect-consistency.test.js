@@ -17,7 +17,7 @@ function fixture({conflicts=0,fail=false,lookup='lead-1',stored}={}){
     kv:{get:async key=>key.startsWith('site:prospect:email:')?lookup:key==='site:prospect:lead-1'?(stored===undefined?{...record}:stored):null,
       set:async()=>{sets++;throw Error('Must not overwrite prospect with plain SET')}},
     compareAndSetConfig:async(_kv,changes)=>{updates++;assert.equal(changes[0].before.notes,'Keep this');if(fail)throw Error('provider failure');return updates>conflicts},
-    emailKey:s=>s,crypto:{randomUUID:()=> 'id'},Date:{now:()=>20},
+    emailKey:s=>s,cleanEmail:s=>String(s||'').trim().toLowerCase(),crypto:{randomUUID:()=> 'id'},Date:{now:()=>20},
     String,Number,Array,Math,console:{error(){}},safeError:()=> 'redacted'
   });
   vm.runInContext(api.slice(start,end),ctx);
