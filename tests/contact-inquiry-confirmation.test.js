@@ -66,10 +66,11 @@ test('prospect storage failure cannot claim receipt or trigger notification',asy
   assert.equal(r.body.ok,undefined);
   assert.deepEqual(r.calls,{prospect:1,inbox:0,tracking:0,mail:0});
 });
-test('contact page shows server-provided warning in success state rather than prompting duplicate contact',()=>{
-  assert.match(frontend,/const body=await r\.json\(\)\.catch\(\(\)=>\(\{\}\)\)/);
+test('contact page shows server-provided warning only after a verified saved-inquiry receipt',()=>{
+  assert.match(frontend,/const body=await r\.json\(\)\.catch\(\(\)=>null\)/);
+  assert.match(frontend,/body\.ok!==true\|\|!String\(body\.prospectId\|\|''\)/);
   assert.match(frontend,/note\.textContent=body\.warning/);
-  assert.match(frontend,/if\(!r\.ok\)throw new Error\(body\.error/);
+  assert.match(frontend,/if\(!r\.ok\)throw new Error\(body&&typeof body==='object'/);
   assert.doesNotMatch(frontend,/We could not send your message\. Please try again/);
 });
 
