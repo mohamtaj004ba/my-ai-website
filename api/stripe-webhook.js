@@ -397,8 +397,21 @@ module.exports=async function handler(req,res){
     checklist:isRepeatPurchase?{...existingOnboarding.checklist,payment:true}:firstCheckoutChecklist,
     updatedAt:Date.now()
   });
-  if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
-
+  if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review',sessionId:session.id},{ex:60*60*24*90});
+  const [confirmedOnboarding,confirmedWorkspaceToken,confirmedOnboardingState,confirmedSessionState]=await Promise.all([
+    kv.get('onboarding:'+token),
+    kv.get('onboarding:workspace-token:'+workspace.id),
+    kv.get(onboardingStateKey),
+    sessionKey?kv.get(sessionKey):Promise.resolve(null)
+  ]);
+  if(!confirmedOnboarding||typeof confirmedOnboarding!=='object'||Array.isArray(confirmedOnboarding)||
+    String(confirmedOnboarding.workspaceId||'')!==String(workspace.id)||
+    String(confirmedWorkspaceToken||'')!==String(token)||
+    !confirmedOnboardingState||typeof confirmedOnboardingState!=='object'||Array.isArray(confirmedOnboardingState)||
+    String(confirmedOnboardingState.workspaceId||'')!==String(workspace.id)||
+    !validCheckoutSessionState(confirmedSessionState,session.id)||
+    !confirmedSessionState||String(confirmedSessionState.workspaceId||'')!==String(workspace.id)||String(confirmedSessionState.token||'')!==String(token))
+    throw new Error('Checkout onboarding persistence could not be confirmed');
   const firstName=(lead.name||'').split(' ')[0]||'there';
   try{
     const email=lifecycleEmail({
