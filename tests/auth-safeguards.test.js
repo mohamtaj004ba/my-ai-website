@@ -84,3 +84,16 @@ test('magic-link verification refuses login unless token revocation is confirmed
   const revoke=body.indexOf('try{await deleteLoginToken(token)}'),session=body.indexOf('await createSession');
   assert.ok(revoke>=0&&session>revoke,'login token must be consumed before creating a session');
 });
+
+
+test('session readback includes authorization revision and admin-view context',()=>{
+  assert.match(auth,/Number\(confirmed\.authVersion\|\|0\)!==Number\(record\.authVersion\|\|0\)/);
+  assert.match(auth,/Boolean\(confirmed\.adminView\)!==Boolean\(record\.adminView\)/);
+  assert.match(auth,/String\(confirmed\.adminHomeWorkspaceId\|\|''\)!==String\(record\.adminHomeWorkspaceId\|\|''\)/);
+});
+
+test('magic-link request and verification reject mismatched stored member email identity',()=>{
+  assert.match(account,/!member\.email\|\|cleanEmail\(member\.email\)===email/);
+  const start=account.indexOf('async function verify('),end=account.indexOf('\nasync function ',start+1),body=account.slice(start,end);
+  assert.match(body,/member\.email&&cleanEmail\(member\.email\)!==email/);
+});
