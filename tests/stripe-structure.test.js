@@ -1,5 +1,6 @@
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('fs');const path=require('path');
 const src=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+const account=fs.readFileSync(path.join(__dirname,'..','api','account.js'),'utf8');
 
 test('Stripe event idempotency key is declared before lifecycle branches',()=>{
   const declaration=src.indexOf("const eventKey=event.id?'stripe:event:'+event.id:null");
