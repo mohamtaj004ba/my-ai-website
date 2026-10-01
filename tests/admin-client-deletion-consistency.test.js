@@ -190,3 +190,12 @@ test('confirmed deletion is not misreported as failed when the directory refresh
   assert.match(f.alerts.at(-1),/Deletion was scheduled, but the admin directory could not refresh/);
   assert.doesNotMatch(f.alerts.at(-1),/Could not schedule/);
 });
+
+
+test('malformed or mismatched workspace record cannot be scheduled for deletion',async()=>{
+  for(const workspace of ['broken',[],{id:'other-client',status:'active',subscriptionStatus:'canceled',updatedAt:20}]){
+    const f=backendFixture({workspace}),r=await f.run();
+    assert.equal(r.code,503);assert.equal(f.calls.length,0);assert.equal(f.gmailCalls.length,0);
+    assert.match(r.data.error,/workspace record is unavailable/i);
+  }
+});

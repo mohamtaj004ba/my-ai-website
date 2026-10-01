@@ -91,3 +91,12 @@ test('duplicate manual prospects expose a deliberate accessible open-existing ac
   assert.match(editor,/openProspectModal\(err\.prospectId\)/);
   assert.match(editor,/outside the loaded Growth results/);
 });
+
+
+test('malformed stored prospect fails closed before revision or email-map changes',async()=>{
+  for(const stored of ['broken',[],{id:'different',stage:'new',updatedAt:10}]){
+    const r=await backend({id:'lead-1',expectedUpdatedAt:10,name:'Changed'},{stored}).run();
+    assert.equal(r.code,503);assert.equal(r.calls,0);assert.equal(r.plainWrites,0);
+    assert.match(r.result.error,/Prospect record is unavailable/);
+  }
+});

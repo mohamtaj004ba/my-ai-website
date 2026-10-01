@@ -495,6 +495,7 @@ async function adminUpdateClient(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Client id required'});
   const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No account changes were made.'});
   if(ws.status==='pending_deletion')return res.status(409).json({error:'This workspace is pending deletion. Use the recovery action instead of editing account status.'});
   if(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(ws.updatedAt||ws.createdAt||0))return res.status(409).json({error:'This workspace changed while you were editing. Reopen it to load the latest account settings.'});
   const next={...ws};
@@ -522,6 +523,7 @@ async function adminDeleteClient(req,res){
   if(!id)return res.status(400).json({error:'Client id required'});
   if(id===admin.workspaceId)return res.status(409).json({error:'You cannot delete the workspace currently used by your admin account'});
   const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. Deletion was not scheduled.'});
   if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled')
     return res.status(409).json({error:'This workspace has an active Stripe subscription. Cancel the subscription before scheduling deletion.'});
   if(ws.status==='pending_deletion')return res.status(200).json({ok:true,pendingDeletion:true,purgeEligibleAt:ws.purgeEligibleAt||null,client:{id,status:ws.status,updatedAt:ws.updatedAt||ws.createdAt||0,purgeEligibleAt:ws.purgeEligibleAt||null}});
@@ -659,6 +661,7 @@ async function adminPurgeClient(req,res){
   if(!journal){
     const key='workspace:'+id,ws=await kv.get(key);
     if(!ws)return res.status(404).json({error:'Client not found'});
+    if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. Permanent purge did not start.'});
     if(ws.status!=='pending_deletion')return res.status(409).json({error:'Workspace must be pending deletion first'});
     if(Date.now()<Number(ws.purgeEligibleAt||0))return res.status(409).json({error:'30-day recovery window has not ended',purgeEligibleAt:ws.purgeEligibleAt||null});
     const revision=Number(ws.updatedAt||ws.createdAt||0);
@@ -1722,6 +1725,7 @@ async function adminWebsiteReply(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,100),message=String(body.message||'').trim().slice(0,10000),requestedFrom=String(body.from||'').trim().toLowerCase();
   if(!id||!message)return res.status(400).json({error:'Prospect and reply message required'});
   const key='site:prospect:'+id,prospect=await kv.get(key);if(!prospect)return res.status(404).json({error:'Prospect not found'});
+  if(typeof prospect!=='object'||Array.isArray(prospect)||String(prospect.id||'')!==id)return res.status(503).json({error:'Prospect record is unavailable. No reply was sent.'});
   const to=String(prospect.email||'').trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))return res.status(409).json({error:'This prospect has no valid email address'});
   const subject='Re: '+(prospect.category||'Your CallerCore inquiry');
@@ -1745,6 +1749,7 @@ async function adminWebsiteReply(req,res){
     for(let attempt=0;attempt<4;attempt++){
       const current=await kv.get(key);
       if(!current)break;
+      if(typeof current!=='object'||Array.isArray(current)||String(current.id||'')!==id)break;
       const now=Date.now(),updated={...current,stage:['new','inquiry'].includes(current.stage)?'follow_up':current.stage,lastRepliedAt:now,updatedAt:Math.max(now,Number(current.updatedAt||current.createdAt||0)+1),updatedBy:admin.email};
       if(await compareAndSetConfig(kv,[{key,before:current,after:updated}]))return res.status(200).json({ok:true,message:item,prospect:updated});
     }
@@ -1831,6 +1836,7 @@ async function adminWebsiteProspectUpdate(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,100),key='site:prospect:'+id,old=await kv.get(key);
   if(!old)return res.status(404).json({error:'Prospect not found'});
+  if(typeof old!=='object'||Array.isArray(old)||String(old.id||'')!==id)return res.status(503).json({error:'Prospect record is unavailable. No changes were made.'});
   if(old.privacyState==='deidentified')return res.status(410).json({error:'This prospect has been de-identified under the retention policy and is no longer editable.'});
   if(body.expectedUpdatedAt===undefined||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==Number(old.updatedAt||old.createdAt||0))return res.status(409).json({error:'This prospect changed while you were editing. Refresh the pipeline before retrying.'});
   const email=body.email!==undefined?cleanEmail(body.email):String(old.email||'');

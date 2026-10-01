@@ -9,8 +9,8 @@ const dashboardSource=fs.readFileSync('dashboard.js','utf8');
 
 function deferred(){let resolve;const promise=new Promise(ok=>resolve=ok);return {promise,resolve}}
 
-async function runBackend({expectedUpdatedAt=10,transaction=true,now}={}){
-  const workspace={id:'client-1',name:'Client',plan:'Starter',status:'active',subscriptionStatus:'active',createdAt:1,updatedAt:10};
+async function runBackend({expectedUpdatedAt=10,transaction=true,now,workspace:workspaceOverride}={}){
+  const workspace=workspaceOverride===undefined?{id:'client-1',name:'Client',plan:'Starter',status:'active',subscriptionStatus:'active',createdAt:1,updatedAt:10}:workspaceOverride;
   let updates,audits=0,status=0,result;
   const context=vm.createContext({
     requireAdmin:async()=>({email:'admin@example.com'}),
@@ -113,4 +113,13 @@ test('combined audit transaction checks revisions and validates the event before
   assert.equal(await compareAndAudit({eval:async()=>0},update,'audit:client-1',event),false);
   await assert.rejects(compareAndAudit({eval:async()=>-1},update,'audit:client-1',event),/Audit history is malformed/);
   await assert.rejects(compareAndAudit({eval:async()=>-2},update,'audit:client-1',event),/Audit event could not be serialized/);
+});
+
+
+test('malformed admin workspace record fails closed before revision checks or audit writes',async()=>{
+  for(const workspace of ['broken',[],{id:'other',updatedAt:10}]){
+    const result=await runBackend({workspace});
+    assert.equal(result.status,503);assert.equal(result.updates,undefined);assert.equal(result.audits,0);
+    assert.match(result.result.error,/workspace record is unavailable/i);
+  }
 });

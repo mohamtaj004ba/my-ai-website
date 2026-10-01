@@ -5,8 +5,8 @@ const vm=require('node:vm');
 const source=fs.readFileSync('api/account.js','utf8');
 const start=source.indexOf('async function adminWebsiteReply('),end=source.indexOf('async function adminWebsiteAnalytics(',start);
 assert.ok(start>=0&&end>start);
-function fixture({appendFails=false,conflicts=0,storageFails=false}={}){
-  const original={id:'lead-1',email:'lead@example.test',stage:'new',notes:'Keep this',updatedAt:10};
+function fixture({appendFails=false,conflicts=0,storageFails=false,prospect}={}){
+  const original=prospect===undefined?{id:'lead-1',email:'lead@example.test',stage:'new',notes:'Keep this',updatedAt:10}:prospect;
   let emails=0,appends=0,commits=0,status,payload;
   const ctx=vm.createContext({
     req:{body:{id:'lead-1',message:'Hello from support'}},
@@ -56,4 +56,13 @@ test('admin inbox shows a confirmed-send warning after rendering and retains lea
   assert.match(handler,/if\(data\.prospect\)currentInboxItem\.prospect=data\.prospect/);
   assert.match(handler,/if\(p&&data\.prospect\)Object\.assign/);
   assert.ok(handler.indexOf('renderInboxThread();')<handler.indexOf("status.textContent=deliveryWarning||'Reply sent.'"));
+});
+
+
+test('malformed prospect identity blocks website reply before any provider send',async()=>{
+  for(const prospect of ['broken',[],{id:'different',email:'lead@example.test'}]){
+    const r=await fixture({prospect}).run();
+    assert.equal(r.status,503);assert.equal(r.emails,0);assert.equal(r.appends,0);assert.equal(r.commits,0);
+    assert.match(r.payload.error,/Prospect record is unavailable/);
+  }
 });
