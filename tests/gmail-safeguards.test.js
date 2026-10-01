@@ -67,3 +67,24 @@ test('Gmail handlers never use malformed caches as stale provider fallbacks',()=
   assert.match(inboxBody,/cachedValid&&cached/);
   assert.match(inboxBody,/Cached Gmail inbox is unavailable/);
 });
+
+
+test('Gmail inbox Growth enrichment fails closed on malformed lookup or record identity',()=>{
+  const start=account.indexOf('async function adminGmailInbox('),end=account.indexOf('\nasync function adminGmailAliases(',start);
+  assert.ok(start>=0&&end>start);
+  const body=account.slice(start,end);
+  assert.match(body,/rawPid=await kv\.get\('site:prospect:email:'\+emailKey\(sender\)\),pid=typeof rawPid==='string'\?rawPid\.trim\(\):''/);
+  assert.match(body,/rawPid!=null&&!pid/);
+  assert.match(body,/!p\|\|typeof p!=='object'\|\|Array\.isArray\(p\)\|\|String\(p\.id\|\|''\)!==pid/);
+  assert.match(body,/linked Growth records could not be verified/);
+  assert.match(body,/growthLinkWarning\?\{warning:growthLinkWarning\}/);
+});
+
+test('Admin Inbox surfaces Growth-link verification warnings even after a fresh Gmail sync',()=>{
+  const ui=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  const start=ui.indexOf('async function refreshAdminInboxLive('),end=ui.indexOf('\nfunction websiteInboxItems(',start);
+  assert.ok(start>=0&&end>start);
+  const body=ui.slice(start,end);
+  assert.match(body,/adminInboxData\.liveError=String\(d\.warning\|\|\(d\.stale===true\?'Gmail refresh failed':''\)\)/);
+  assert.match(ui,/adminInboxData\.liveError=String\(d\.warning\|\|''\)\.slice\(0,160\)/);
+});
