@@ -206,3 +206,14 @@ test('admin authorization revalidates member shape, disabled state, role, and em
   assert.match(body,/member\.disabled\|\|member\.role!=='admin'/);
   assert.match(body,/member\.email&&cleanEmail\(member\.email\)!==email/);
 });
+
+
+test('exiting admin client view revalidates home-workspace identity and auth revision',()=>{
+  const start=src.indexOf('async function adminExitClientView('),end=src.indexOf('\nasync function requireWritableSession(',start);
+  assert.ok(start>=0&&end>start);
+  const body=src.slice(start,end);
+  assert.match(body,/typeof member!=='object'\|\|Array\.isArray\(member\)/);
+  assert.match(body,/String\(member\.workspaceId\|\|''\)!==home/);
+  assert.match(body,/!Number\.isSafeInteger\(revision\)\|\|revision<0/);
+  assert.match(body,/createSession\(res,\{email,workspaceId:home,role:'admin',authVersion:revision\}\)/);
+});
