@@ -6,12 +6,12 @@ const api=fs.readFileSync('api/account.js','utf8');
 const start=api.indexOf('async function adminProspectSave('),end=api.indexOf('async function adminMarketingCampaigns(',start);
 assert.ok(start>=0&&end>start);
 
-function fixture(body,{error=null,auto=true}={}){
+function fixture(body,{error=null,auto=true,platform}={}){
  let calls=0,payload,status,result,sets=0;
  const ctx=vm.createContext({
    req:{body},res:{status(n){status=n;return this},json(x){result=x;return x}},
    requireAdmin:async()=>({email:'admin@example.test',workspaceId:'admin-ws'}),
-   kv:{get:async()=>({autoScheduleFirstFollowup:auto,leadFollowupHours:24,defaultSalesOwner:'Admin sales'}),
+   kv:{get:async()=>platform===undefined?({autoScheduleFirstFollowup:auto,leadFollowupHours:24,defaultSalesOwner:'Admin sales'}):platform,
       set:async()=>{sets++;throw Error('Admin follow-ups must not be a second write')}},
    upsertWebsiteProspect:async data=>{calls++;payload=data;if(error)throw error;return {id:'lead-1',...data}},
    clampInt:(v,min,max,d)=>Number(v)||d,console:{error(){}},safeError:()=> 'redacted',
@@ -57,4 +57,13 @@ test('manual new-lead write requires a new record and returns existing-prospect 
  assert.equal(conflict.status,409);assert.equal(conflict.calls,1);
  assert.equal(conflict.result.prospectId,'existing-id');
  assert.equal(conflict.sets,0);
+});
+
+
+test('malformed platform lead settings fail closed before creating a manual prospect',async()=>{
+ for(const platform of ['broken',[],42]){
+   const r=await fixture({name:'Prospect',email:'lead@example.test'},{platform}).run();
+   assert.equal(r.status,503);assert.equal(r.calls,0);assert.equal(r.sets,0);
+   assert.match(r.result.error,/No prospect was created/);
+ }
 });

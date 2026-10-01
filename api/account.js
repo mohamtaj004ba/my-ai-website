@@ -1274,8 +1274,12 @@ async function adminSupport(req,res){
     return res.status(503).json({error:'Support index is incomplete or exceeds supported capacity. No partial ticket list was returned.'});
   let missingRecords=0;
   for(let offset=0;offset<index.length;offset+=40){
-    const batch=await Promise.all(index.slice(offset,offset+40).map(id=>kv.get('support:'+id)));
-    for(const ticket of batch){if(ticket)tickets.push(ticket);else missingRecords++}
+    const ids=index.slice(offset,offset+40),batch=await Promise.all(ids.map(id=>kv.get('support:'+id)));
+    for(let i=0;i<batch.length;i++){
+      const ticket=batch[i];
+      if(!ticket||typeof ticket!=='object'||Array.isArray(ticket)||String(ticket.id||'')!==String(ids[i])){missingRecords++;continue}
+      tickets.push(ticket);
+    }
   }
   return res.status(200).json({tickets,coverage:{verified:true,indexedRecords:index.length,loadedRecords:tickets.length,missingRecords,incomplete:missingRecords>0}});
 }
@@ -1878,7 +1882,9 @@ async function adminProspectSave(req,res){
   if(!String(body.name||body.business||email||body.phone||'').trim())return res.status(400).json({error:'Add a name, business, email, or phone'});
   const allowed=['new','inquiry','checkout_started','follow_up','qualified','proposal','lost','converted'],stage=allowed.includes(body.stage)?body.stage:'new';
   try{
-    const platform=await kv.get('platform:settings')||{},autoFollowup=platform.autoScheduleFirstFollowup!==false;
+    const rawPlatform=await kv.get('platform:settings');
+    if(rawPlatform!=null&&(!rawPlatform||typeof rawPlatform!=='object'||Array.isArray(rawPlatform)))return res.status(503).json({error:'Platform lead settings are unavailable. No prospect was created.'});
+    const platform=rawPlatform||{},autoFollowup=platform.autoScheduleFirstFollowup!==false;
     const prospect=await upsertWebsiteProspect({
       requireNew:true,name:body.name,business:body.business,email,phone:body.phone,
       industry:body.industry,plan:body.plan,source:body.source||'manual',stage,
