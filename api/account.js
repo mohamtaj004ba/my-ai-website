@@ -1684,19 +1684,19 @@ async function adminGmailSend(req,res){
     const from=await validatedGmailFrom(admin.email,requestedFrom);const sent=await sendGmailMessage(admin.email,{to,subject,body,from,threadId:String(b.threadId||''),inReplyTo:String(b.inReplyTo||''),references:String(b.references||'')});
     let warning='';
     try{
-      const pid=await kv.get('site:prospect:email:'+emailKey(to));
-      if(pid){
+      const rawPid=await kv.get('site:prospect:email:'+emailKey(to)),pid=typeof rawPid==='string'?rawPid.trim():'';
+      if(rawPid!=null&&!pid)warning='Gmail message sent, but the linked Growth record could not be verified. Refresh Growth.';
+      else if(pid){
         const key='site:prospect:'+pid;
-        let saved=false,exists=false;
+        let saved=false,needsUpdate=true;
         for(let attempt=0;attempt<4;attempt++){
           const current=await kv.get(key);
-          if(!current){saved=true;break}
-          exists=true;
+          if(!current||typeof current!=='object'||Array.isArray(current)||String(current.id||'')!==pid||cleanEmail(current.email||'')!==to)break;
           const now=Date.now(),next={...current,stage:['new','inquiry'].includes(current.stage)?'follow_up':current.stage,
             lastContactAt:now,lastRepliedAt:now,updatedAt:Math.max(now,Number(current.updatedAt||current.createdAt||0)+1),updatedBy:admin.email};
           if(await compareAndSetConfig(kv,[{key,before:current,after:next}])){saved=true;break}
         }
-        if(exists&&!saved)warning='Gmail message sent, but lead follow-up status could not be confirmed. Refresh Growth.';
+        if(needsUpdate&&!saved)warning='Gmail message sent, but lead follow-up status could not be confirmed. Refresh Growth.';
       }
     }catch(err){
       console.error('gmail sent prospect update failed',safeError(err));
