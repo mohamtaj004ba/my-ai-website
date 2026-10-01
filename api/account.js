@@ -3729,15 +3729,19 @@ async function updateLead(req,res){
 async function billingPortal(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(s.workspaceId))return res.status(503).json({error:'Workspace billing identity is unavailable. No Stripe session was created.'});
   if(!ws.stripeCustomerId)return res.status(409).json({error:'No Stripe customer is linked to this workspace'});
   if(!process.env.STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe billing is not configured'});
   const scopeIssue=environmentScopeHealth().issues.find(issue=>/Stripe/.test(issue));if(scopeIssue)return res.status(503).json({error:'Stripe billing credentials do not match this environment'});
   try{
     const body=new URLSearchParams({customer:String(ws.stripeCustomerId),return_url:requestOrigin(req)+'/dashboard'});
     const r=await fetch('https://api.stripe.com/v1/billing_portal/sessions',{method:'POST',headers:{Authorization:'Bearer '+process.env.STRIPE_SECRET_KEY,'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
-    const data=await r.json();
-    if(!r.ok||!data.url)return res.status(502).json({error:data.error?.message||'Could not create Stripe billing portal session'});
-    return res.status(200).json({url:data.url});
+    const data=await r.json().catch(()=>null);
+    let portalUrl=null;
+    try{portalUrl=data?.url?new URL(String(data.url)):null}catch(_){portalUrl=null}
+    if(!r.ok||!data||typeof data!=='object'||Array.isArray(data)||!portalUrl||portalUrl.protocol!=='https:'||portalUrl.hostname!=='billing.stripe.com')
+      return res.status(502).json({error:data?.error?.message||'Could not create a verified Stripe billing portal session'});
+    return res.status(200).json({url:portalUrl.toString()});
   }catch(err){console.error('billing portal failed',safeError(err));return res.status(502).json({error:'Could not open Stripe billing portal'})}
 }
 
