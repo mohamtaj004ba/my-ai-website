@@ -234,3 +234,13 @@ test('Stripe checkout verifies onboarding token, workspace state, and durable se
   assert.match(webhook,/String\(confirmedWorkspaceToken\|\|''\)!==String\(token\)/);
   assert.match(webhook,/Checkout onboarding persistence could not be confirmed/);
 });
+
+
+test('Stripe checkout final receipt preserves provider session identity and is verified before event acknowledgement',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/const finalSessionState=await kv\.get\(sessionKey\)/);
+  assert.match(webhook,/Final checkout session receipt could not be confirmed/);
+  const finalAt=webhook.indexOf('const finalSessionState=await kv.get(sessionKey)');
+  const ackAt=webhook.indexOf('if(eventKey)await markStripeEventProcessed(eventKey)',finalAt);
+  assert.ok(finalAt>=0&&ackAt>finalAt);
+});
