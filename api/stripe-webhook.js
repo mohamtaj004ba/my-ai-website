@@ -19,6 +19,12 @@ const PLAN_BY_PAYMENT_LINK={
   'plink_1To9qJF0BXlPng7VXXwBIHHf':'Pro'
 };
 function getRawBody(req){return new Promise((resolve,reject)=>{let data='';req.on('data',c=>data+=c);req.on('end',()=>resolve(data));req.on('error',reject)})}
+async function markStripeEventProcessed(eventKey){
+  if(!eventKey)return;
+  await kv.set(eventKey,true,{ex:60*60*24*90});
+  const confirmed=await kv.get(eventKey);
+  if(confirmed!==true&&String(confirmed)!=='true')throw new Error('Stripe event receipt persistence could not be confirmed');
+}
 function verifyStripeSignature(rawBody,sigHeader,secret){
   if(!sigHeader||!secret)return false;
   const parts=sigHeader.split(',').map(p=>p.split('=').map(s=>s.trim()));
@@ -130,14 +136,14 @@ module.exports=async function handler(req,res){
     let workspaceId=null;
     if(subscriptionId)workspaceId=await kv.get('stripe:subscription:'+subscriptionId);
     if(!workspaceId&&customerId)workspaceId=await kv.get('stripe:customer:'+customerId);
-    if(!workspaceId){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,unmapped:true})}
+    if(!workspaceId){if(eventKey)await markStripeEventProcessed(eventKey);return res.status(200).json({received:true,unmapped:true})}
     const key='workspace:'+workspaceId,ws=await kv.get(key);
-    if(ws==null){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,workspace_missing:true})}
+    if(ws==null){if(eventKey)await markStripeEventProcessed(eventKey);return res.status(200).json({received:true,workspace_missing:true})}
     if(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(workspaceId))
       return res.status(503).json({error:'Mapped workspace state could not be verified. Stripe should retry.'});
     const decision=lifecycleDecision(ws,event,subscriptionId);
     if(!decision.apply){
-      if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+      if(eventKey)await markStripeEventProcessed(eventKey);
       return res.status(200).json({received:true,[decision.reason]:true});
     }
     const {eventCreatedAt,previousEventAt,status}=decision;
@@ -208,10 +214,10 @@ module.exports=async function handler(req,res){
       }
     }catch(err){console.error('Stripe lifecycle email failed:',safeError(err))}
 
-    if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+    if(eventKey)await markStripeEventProcessed(eventKey);
     return res.status(200).json({received:true,workspaceId,status});
   }
-  if(!checkoutEvent){if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});return res.status(200).json({received:true,ignored:true})}
+  if(!checkoutEvent){if(eventKey)await markStripeEventProcessed(eventKey);return res.status(200).json({received:true,ignored:true})}
   const session=event.data&&event.data.object;
   if(!session||typeof session!=='object'||Array.isArray(session))return res.status(400).json({error:'Invalid checkout session payload'});
   if(event.type==='checkout.session.completed'&&!['paid','no_payment_required'].includes(session.payment_status))return res.status(200).json({received:true,pending_payment:true});
@@ -223,7 +229,7 @@ module.exports=async function handler(req,res){
   const sessionKey='stripe:session:'+session.id;
   let sessionState=sessionKey?await kv.get(sessionKey):null;
   if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
-    if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+    if(eventKey)await markStripeEventProcessed(eventKey);
     return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
   }
 
@@ -234,7 +240,7 @@ module.exports=async function handler(req,res){
     // could have completed between the first read and claim acquisition.
     sessionState=await kv.get(sessionKey);
     if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
-      if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+      if(eventKey)await markStripeEventProcessed(eventKey);
       return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
     }
 
@@ -269,7 +275,7 @@ module.exports=async function handler(req,res){
     // account identity claims. Never repeat payment setup on stale state.
     sessionState=await kv.get(sessionKey);
     if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
-      if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+      if(eventKey)await markStripeEventProcessed(eventKey);
       return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
     }
 
@@ -351,7 +357,7 @@ module.exports=async function handler(req,res){
   }catch(err){console.error('Failed to send payment confirmation:',safeError(err))}
 
   if(sessionKey)await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review'},{ex:60*60*24*90});
-  if(eventKey)await kv.set(eventKey,true,{ex:60*60*24*90});
+  if(eventKey)await markStripeEventProcessed(eventKey);
   try{await resolveCheckoutReconciliation(kv,session.id)}
   catch(recordError){console.error('Checkout reconciliation completion update failed',safeError(recordError))}
   return res.status(200).json({received:true,workspaceId:workspace.id});
