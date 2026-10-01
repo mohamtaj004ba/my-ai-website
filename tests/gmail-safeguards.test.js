@@ -145,3 +145,13 @@ test('Gmail provider mutations require canonical response identity before confir
   const start=account.indexOf('async function adminGmailDisconnect('),end=account.indexOf('\nasync function adminGmailInbox(',start);
   assert.match(account.slice(start,end),/Gmail disconnect could not be confirmed/);
 });
+
+
+test('Gmail OAuth profile and persisted connection state must be canonical before save',()=>{
+  const callback=fs.readFileSync(path.join(__dirname,'..','api','google-oauth-callback.js'),'utf8');
+  assert.match(src,/Stored Gmail connection is malformed/);
+  assert.match(src,/Gmail profile email could not be verified/);
+  assert.match(callback,/profileRes\.json\(\)\.catch\(\(\)=>null\)/);
+  assert.match(callback,/Gmail profile response could not be verified/);
+  assert.match(callback,/profile\.emailAddress/);
+});
