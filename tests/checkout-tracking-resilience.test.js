@@ -9,7 +9,7 @@ async function request({prospectError=false,leadError=false,trackError=false}={}
   const calls={prospect:0,save:0,track:0};let status=0,body,lastLead=null;
   const kv={
     set:async(_key,value)=>{calls.save++;if(leadError)throw Error('KV temporarily offline');lastLead=value},
-    get:async()=>lastLead
+    get:async key=>String(key||'').startsWith('lead:')?lastLead:null
   };
   const modules={
     '../lib/safe-log':{safeError:()=> 'redacted'},
@@ -69,4 +69,12 @@ test('legacy checkout verifies prospect identity and lead readback before claimi
   assert.match(leadSource,/const confirmed=await kv\.get\(leadKey\)/);
   assert.match(leadSource,/lead persistence could not be confirmed/);
   assert.match(leadSource,/String\(confirmed\.prospectId\|\|''\)!==String\(prospect\.id\)/);
+});
+
+
+test('legacy checkout applies the same fail-closed account mapping guard as embedded checkout',()=>{
+  assert.match(leadSource,/const existingMember=await kv\.get\('user:email:'\+email\.toLowerCase\(\)\)/);
+  assert.match(leadSource,/existingMember!=null&&\(!existingMember\|\|typeof existingMember!=='object'\|\|Array\.isArray\(existingMember\)\)/);
+  assert.match(leadSource,/existingMember\?\.role==='admin'/);
+  assert.match(leadSource,/existingMember\?\.disabled/);
 });
