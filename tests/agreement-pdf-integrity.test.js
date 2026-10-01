@@ -5,7 +5,8 @@ const fs=require('node:fs');
 const src=fs.readFileSync('api/agreement-pdf.js','utf8');
 
 test('agreement PDF distinguishes missing from malformed signed records',()=>{
-  assert.match(src,/record == null \|\| !record\?\.agreementSigned/);
+  assert.match(src,/if \(record == null\) return res\.status\(404\)/);
+  assert.match(src,/if\(!record\.agreementSigned\)return res\.status\(404\)/);
   assert.match(src,/typeof record!=='object'\|\|Array\.isArray\(record\)/);
   assert.match(src,/error:'agreement_unavailable'/);
 });
