@@ -19,6 +19,13 @@ const PLAN_BY_PAYMENT_LINK={
   'plink_1To9qJF0BXlPng7VXXwBIHHf':'Pro'
 };
 function getRawBody(req){return new Promise((resolve,reject)=>{let data='';req.on('data',c=>data+=c);req.on('end',()=>resolve(data));req.on('error',reject)})}
+function validCheckoutSessionState(value,sessionId){
+  if(value==null)return true;
+  if(!value||typeof value!=='object'||Array.isArray(value))return false;
+  if(value.status&&!['awaiting_review','complete'].includes(String(value.status)))return false;
+  if(value.sessionId&&String(value.sessionId)!==String(sessionId))return false;
+  return true;
+}
 async function markStripeEventProcessed(eventKey){
   if(!eventKey)return;
   await kv.set(eventKey,true,{ex:60*60*24*90});
@@ -228,6 +235,7 @@ module.exports=async function handler(req,res){
   if(!session.id||typeof session.id!=='string'||session.id.length>200)return res.status(400).json({error:'Invalid checkout session ID'});
   const sessionKey='stripe:session:'+session.id;
   let sessionState=sessionKey?await kv.get(sessionKey):null;
+  if(!validCheckoutSessionState(sessionState,session.id))return res.status(503).json({error:'Checkout session receipt is malformed. Stripe should retry after reconciliation.'});
   if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
     if(eventKey)await markStripeEventProcessed(eventKey);
     return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
@@ -239,6 +247,7 @@ module.exports=async function handler(req,res){
     // Recheck the durable receipt after taking the claim. A preceding worker
     // could have completed between the first read and claim acquisition.
     sessionState=await kv.get(sessionKey);
+    if(!validCheckoutSessionState(sessionState,session.id))throw new Error('Checkout session receipt became malformed during provisioning');
     if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
       if(eventKey)await markStripeEventProcessed(eventKey);
       return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
@@ -274,6 +283,7 @@ module.exports=async function handler(req,res){
     // A different event could have finished this session while we awaited
     // account identity claims. Never repeat payment setup on stale state.
     sessionState=await kv.get(sessionKey);
+    if(!validCheckoutSessionState(sessionState,session.id))throw new Error('Checkout session receipt became malformed during provisioning');
     if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
       if(eventKey)await markStripeEventProcessed(eventKey);
       return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
@@ -307,7 +317,9 @@ module.exports=async function handler(req,res){
     const linkedToken=await kv.get('onboarding:workspace-token:'+workspace.id);
     if(linkedToken){
       const linkedOnboarding=await kv.get('onboarding:'+linkedToken);
-      if(linkedOnboarding&&linkedOnboarding.workspaceId===workspace.id)token=linkedToken;
+      if(linkedOnboarding!=null&&(!linkedOnboarding||typeof linkedOnboarding!=='object'||Array.isArray(linkedOnboarding)))
+        throw new Error('Linked onboarding record is malformed; Stripe should retry after reconciliation');
+      if(linkedOnboarding&&String(linkedOnboarding.workspaceId||'')===String(workspace.id))token=linkedToken;
     }
   }
   if(!token){
@@ -315,7 +327,11 @@ module.exports=async function handler(req,res){
     await kv.set('onboarding:'+token,{...lead,workspaceId:workspace.id,stripeSessionId:session.id,agreementSigned:false,agreementSignedAt:null,intake:{},status:'awaiting_agreement',createdAt:Date.now()},{ex:60*60*24*30});
   }else{
     const onboarding=await kv.get('onboarding:'+token);
+    if(onboarding!=null&&(!onboarding||typeof onboarding!=='object'||Array.isArray(onboarding)))
+      throw new Error('Onboarding record is malformed; Stripe should retry after reconciliation');
     if(onboarding&&!onboarding.workspaceId)await kv.set('onboarding:'+token,{...onboarding,workspaceId:workspace.id},{ex:60*60*24*30});
+    else if(onboarding&&String(onboarding.workspaceId||'')!==String(workspace.id))
+      throw new Error('Onboarding workspace identity disagrees; Stripe should retry after reconciliation');
   }
   await kv.set('onboarding:workspace-token:'+workspace.id,token,{ex:60*60*24*90});
   const onboardingStateKey='onboarding:workspace:'+workspace.id,rawExistingOnboarding=await kv.get(onboardingStateKey);
