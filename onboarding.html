@@ -718,9 +718,12 @@ footer{background:#20201d!important}
 
   async function load() {
     try {
-      const res = await fetch('/api/onboarding-data?token=' + encodeURIComponent(token));
+      const res = await fetch('/api/onboarding-data?token=' + encodeURIComponent(token),{headers:{'Accept':'application/json'}});
       if (!res.ok) throw new Error('not_found');
-      record = await res.json();
+      const loaded = await res.json().catch(()=>null);
+      if(!loaded||typeof loaded!=='object'||Array.isArray(loaded)||!String(loaded.status||'')||!String(loaded.plan||''))throw new Error('unverified');
+      if(loaded.intake!=null&&(!loaded.intake||typeof loaded.intake!=='object'||Array.isArray(loaded.intake)))throw new Error('unverified');
+      record = loaded;
     } catch (e) {
       $('obLoading').style.display = 'none';
       $('obError').style.display = 'block';
@@ -1128,10 +1131,13 @@ footer{background:#20201d!important}
     $('agreeSubmitBtn').disabled = true;
     $('agreeSubmitBtn').textContent = 'Signing…';
     try {
-      await fetch('/api/onboarding-save', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
+      const signRes=await fetch('/api/onboarding-save', {
+        method: 'POST', headers: {'Content-Type':'application/json','Accept':'application/json'},
         body: JSON.stringify({ token, type: 'agreement', fullName })
       });
+      const signData=await signRes.json().catch(()=>null);
+      if(!signRes.ok)throw new Error(signData&&typeof signData==='object'&&!Array.isArray(signData)&&signData.error?signData.error:'Agreement save failed');
+      if(!signData||typeof signData!=='object'||Array.isArray(signData)||signData.ok!==true||!String(signData.status||''))throw new Error('Agreement save could not be verified');
       $('agreeFullName').disabled = true;
       $('agreeCheckbox').disabled = true;
       $('agreeSubmitBtn').style.display = 'none';
@@ -1219,8 +1225,11 @@ footer{background:#20201d!important}
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ url, token })
       });
-      const data = await res.json();
-      if (!data.ok || !showPrefillReview(data.fields)) {
+      const data = await res.json().catch(()=>null);
+      if(!res.ok||!data||typeof data!=='object'||Array.isArray(data)||data.ok!==true||!data.fields||typeof data.fields!=='object'||Array.isArray(data.fields)){
+        throw new Error('prefill_unverified');
+      }
+      if (!showPrefillReview(data.fields)) {
         $('prefillStatus').textContent = "Couldn't pull anything usable from that site — no problem, just fill the form in below.";
         $('prefillStatus').className = 'ob-prefill-status fail';
       } else {
@@ -1295,10 +1304,10 @@ footer{background:#20201d!important}
       body: JSON.stringify({ token, type: 'intake', fields: collectIntakeFields() }),
       keepalive
     });
-    if (!res.ok) {
-      const data = await res.json().catch(()=>({}));
-      throw new Error(data.error || 'Autosave failed');
-    }
+    const data = await res.json().catch(()=>null);
+    if (!res.ok) throw new Error(data&&typeof data==='object'&&!Array.isArray(data)&&data.error?data.error:'Autosave failed');
+    if(!data||typeof data!=='object'||Array.isArray(data)||data.ok!==true||!String(data.status||'')||!Number.isFinite(Number(data.completionPercent)))
+      throw new Error('Autosave acknowledgement could not be verified');
     return true;
   }
 
@@ -1345,8 +1354,10 @@ footer{background:#20201d!important}
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ token, type: 'intake', fields: collectIntakeFields(), finalize: true })
       });
-      const submitData = await submitRes.json().catch(()=>({}));
-      if (!submitRes.ok) throw new Error(submitData.error || 'Could not submit onboarding.');
+      const submitData = await submitRes.json().catch(()=>null);
+      if (!submitRes.ok) throw new Error(submitData&&typeof submitData==='object'&&!Array.isArray(submitData)&&submitData.error?submitData.error:'Could not submit onboarding.');
+      if(!submitData||typeof submitData!=='object'||Array.isArray(submitData)||submitData.ok!==true||submitData.status!=='intake_complete')
+        throw new Error('Onboarding submission could not be verified');
       setAutosaveState('saved', 'Submitted ✓');
       $('intakeCard').style.display = 'none';
       $('doneCard').style.display = 'block';
@@ -1465,9 +1476,10 @@ footer{background:#20201d!important}
         body: JSON.stringify({ messages: history, context: currentContext() })
       });
       if (!res.ok) throw new Error('bad response');
-      const data = await res.json();
-      thinking.textContent = data.reply;
-      history.push({ role: 'assistant', content: data.reply });
+      const data = await res.json().catch(()=>null),reply=String(data&&typeof data==='object'&&!Array.isArray(data)?data.reply||'':'').trim();
+      if(!reply)throw new Error('bad response');
+      thinking.textContent = reply;
+      history.push({ role: 'assistant', content: reply });
     } catch (e) {
       thinking.textContent = "Sorry — I couldn't reach the assistant just now. You can email support@callercore.com and we'll help you through it.";
     }
