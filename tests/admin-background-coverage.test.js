@@ -11,7 +11,7 @@ test('Gmail inbox records bounded coverage and stale HTTP 200 fallback remains v
   assert.match(gmail,/coverage=\{verified:true,limited:!!list\.nextPageToken/);
   assert.match(gmail,/estimatedThreads/);
   assert.match(account,/coverage:\{verified:false,limited:false,loadedThreads:0,estimatedThreads:null,queryWindow:'30d'\}/);
-  assert.match(dashboard,/adminInboxData\.liveError=d\.stale===true/);
+  assert.match(dashboard,/adminInboxData\.liveError=String\(d\.warning\|\|\(d\.stale===true\?'Gmail refresh failed':''\)\)/);
   assert.match(dashboard,/Gmail search coverage is not verified yet/);
   assert.match(dashboard,/Only '\+loaded/);
 });
