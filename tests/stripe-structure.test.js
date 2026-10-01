@@ -113,3 +113,13 @@ test('embedded checkout fails closed on malformed account mapping, prospect iden
   assert.match(checkout,/checkout lead persistence could not be confirmed/);
   assert.match(checkout,/String\(confirmedLead\.prospectId\|\|''\)!==String\(prospect\.id\)/);
 });
+
+
+test('embedded checkout binds the returned Stripe session to the expected lead, prospect, plan, and customer',()=>{
+  const checkout=fs.readFileSync(path.join(__dirname,'..','api','create-checkout-session.js'),'utf8');
+  assert.match(checkout,/clientSecret\.startsWith\(sessionId\+'_secret_'\)/);
+  assert.match(checkout,/String\(session\.client_reference_id\|\|''\)!==leadId/);
+  assert.match(checkout,/String\(session\.customer_email\|\|session\.customer_details\?\.email\|\|''\)\.toLowerCase\(\)!==email/);
+  assert.match(checkout,/String\(session\.metadata\?\.plan\|\|''\)!==plan/);
+  assert.match(checkout,/String\(session\.metadata\?\.prospect_id\|\|''\)!==String\(prospect\.id\)/);
+});
