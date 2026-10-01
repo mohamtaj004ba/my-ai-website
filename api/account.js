@@ -3027,7 +3027,7 @@ async function requestLogin(req,res){
   if(emailCount===1)await kv.expire(emailBucket,WINDOW);
   if(count>MAX||emailCount>MAX)return res.status(429).json({error:'Too many requests. Try again shortly.'});
   const member=await kv.get('user:email:'+email);
-  if(member&&typeof member==='object'&&!Array.isArray(member)&&String(member.workspaceId||'')&&!member.disabled){
+  if(member&&typeof member==='object'&&!Array.isArray(member)&&String(member.workspaceId||'')&&!member.disabled&&(!member.email||cleanEmail(member.email)===email)){
     const workspaceId=String(member.workspaceId),loginWs=await kv.get('workspace:'+workspaceId),authVersion=Number(member.sessionVersion||0);
     if(!loginWs||typeof loginWs!=='object'||Array.isArray(loginWs)||String(loginWs.id||'')!==workspaceId||loginWs.status==='pending_deletion'||!Number.isSafeInteger(authVersion)||authVersion<0)
       return res.status(200).json({ok:true});
@@ -3070,6 +3070,7 @@ async function verify(req,res){
   const email=cleanEmail(record.email),workspaceId=String(record.workspaceId),
     [member,loginWs]=await Promise.all([kv.get('user:email:'+email),kv.get('workspace:'+workspaceId)]);
   if(!member||typeof member!=='object'||Array.isArray(member)||member.disabled||String(member.workspaceId||'')!==workspaceId||
+    (member.email&&cleanEmail(member.email)!==email)||
     !loginWs||typeof loginWs!=='object'||Array.isArray(loginWs)||String(loginWs.id||'')!==workspaceId||loginWs.status==='pending_deletion')
     return res.redirect(302,'/login?error=disabled');
   const memberVersion=Number(member.sessionVersion||0),tokenVersion=Number(record.authVersion||0);
