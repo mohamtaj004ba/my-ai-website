@@ -229,3 +229,13 @@ test('admin client view cannot nest impersonation or invent an auth revision',()
   assert.doesNotMatch(body,/kv\.get\('user:email:'/);
   assert.match(body,/adminHomeWorkspaceId:admin\.workspaceId,authVersion/);
 });
+
+
+test('support notifications do not use malformed platform or client settings as implicit defaults',()=>{
+  const clientStart=src.indexOf('async function replySupportTicket('),clientEnd=src.indexOf('\nasync function adminSupport(',clientStart);
+  const clientBody=src.slice(clientStart,clientEnd);
+  assert.match(clientBody,/platformRaw!=null&&\(!platformRaw\|\|typeof platformRaw!=='object'\|\|Array\.isArray\(platformRaw\)\)/);
+  assert.match(clientBody,/support notification settings could not be verified/);
+  const adminStart=src.indexOf('async function adminSupportReply('),adminEnd=src.indexOf('\nasync function adminSupportUpdate(',adminStart);
+  assert.match(src.slice(adminStart,adminEnd),/clientSettingsVerified=clientSettingsRaw==null\|\|\(clientSettingsRaw&&typeof clientSettingsRaw==='object'&&!Array\.isArray\(clientSettingsRaw\)\)/);
+});
