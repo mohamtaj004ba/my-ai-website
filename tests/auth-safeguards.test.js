@@ -12,7 +12,9 @@ test('magic-link requests are limited by both IP and recipient',()=>{
 
 test('magic links are hashed at rest, one-time, and expire quickly',()=>{
   assert.match(account,/function loginTokenKey\(token\)/);
-  assert.match(account,/kv\.set\(loginTokenKey\(token\)/);
+  assert.match(account,/tokenKey=loginTokenKey\(token\)/);
+  assert.match(account,/kv\.set\(tokenKey,tokenRecord/);
+  assert.match(account,/const confirmed=await kv\.get\(tokenKey\)/);
   assert.match(account,/\{ex:15\*60\}/);
   const verifyStart=account.indexOf('async function verify(');
   const verifyBody=account.slice(verifyStart,account.indexOf('\nasync function ',verifyStart+1));

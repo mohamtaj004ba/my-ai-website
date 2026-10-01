@@ -10,7 +10,7 @@ function segment(start,end){
   assert.ok(a>=0&&b>a,start+' exists');
   return source.slice(a,b);
 }
-const helpers=segment('function loginTokenKey(','\nasync function logout(');
+const helpers=segment('function loginTokenKey(','\nasync function requestLogin(');
 const loginCode=segment('async function requestLogin(','\nasync function verify(');
 const verifyCode=segment('async function verify(','\nasync function logout(');
 
