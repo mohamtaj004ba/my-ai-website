@@ -123,3 +123,14 @@ test('embedded checkout binds the returned Stripe session to the expected lead, 
   assert.match(checkout,/String\(session\.metadata\?\.plan\|\|''\)!==plan/);
   assert.match(checkout,/String\(session\.metadata\?\.prospect_id\|\|''\)!==String\(prospect\.id\)/);
 });
+
+
+test('Stripe configuration health rejects malformed successful provider payloads',()=>{
+  const start=account.indexOf('async function stripeConfigurationHealth('),end=account.indexOf('\nfunction environmentScopeHealth(',start);
+  assert.ok(start>=0&&end>start);
+  const body=account.slice(start,end);
+  assert.match(body,/whRes\.json\(\)\.catch\(\(\)=>null\)/);
+  assert.match(body,/!wh\|\|typeof wh!=='object'\|\|Array\.isArray\(wh\)\|\|!Array\.isArray\(wh\.data\)/);
+  assert.match(body,/!portalData\|\|typeof portalData!=='object'\|\|Array\.isArray\(portalData\)\|\|!Array\.isArray\(portalData\.data\)/);
+  assert.match(body,/Stripe configuration response could not be verified/);
+});
