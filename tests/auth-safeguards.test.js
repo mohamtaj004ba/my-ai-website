@@ -73,3 +73,14 @@ test('session revocation requires both hashed and legacy token keys to be confir
   assert.match(body,/logout session revocation failed/);
   assert.match(body,/Logout could not be confirmed\. Please try again\./);
 });
+
+
+test('magic-link verification refuses login unless token revocation is confirmed',()=>{
+  assert.match(account,/const \[hashed,legacy\]=await Promise\.all\(\[kv\.get\(hashedKey\),kv\.get\(legacyKey\)\]\)/);
+  assert.match(account,/Login token revocation could not be confirmed/);
+  const start=account.indexOf('async function verify('),end=account.indexOf('\nasync function ',start+1),body=account.slice(start,end);
+  assert.match(body,/login token revocation failed/);
+  assert.match(body,/return res\.redirect\(302,'\/login\?error=invalid'\)/);
+  const revoke=body.indexOf('try{await deleteLoginToken(token)}'),session=body.indexOf('await createSession');
+  assert.ok(revoke>=0&&session>revoke,'login token must be consumed before creating a session');
+});
