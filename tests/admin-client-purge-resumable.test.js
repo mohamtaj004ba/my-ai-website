@@ -137,3 +137,16 @@ test('Growth prospect email lookup conflicts pause before any linked prospect is
   assert.equal(f.records['site:prospect:email:ownerhash'],'prospect-2');
 });
 
+
+
+test('unverifiable indexed support record pauses permanent purge before support deletion',async()=>{
+  for(const bad of [null,'broken',{id:'wrong',workspaceId:'tenant'}]){
+    const f=fixture();
+    if(bad===null)delete f.records['support:s1'];else f.records['support:s1']=bad;
+    const r=await f.purge();
+    assert.equal(r.status,503);assert.equal(r.result.resumable,true);assert.equal(r.result.purgePhase,'detached');
+    assert.match(r.result.error,/Support records could not be verified/);
+    assert.deepEqual(f.records['support:index'],['s1','s2']);
+    assert.equal(f.records['retention:support:tenant'],undefined);
+  }
+});

@@ -565,6 +565,7 @@ async function adminRestoreDeletedClient(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80),key='workspace:'+id;
   const [ws,purgeJournal]=await Promise.all([kv.get(key),kv.get(purgeJournalKey(id))]);
   if(!ws)return res.status(404).json({error:'Client not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. Restoration was not attempted.'});
   if(purgeJournal)return res.status(409).json({error:'Permanent purge has already started. This workspace can no longer be restored from the recovery window.',purgePhase:validPurgeJournal(purgeJournal,id)?purgeJournal.phase:'unknown'});
   if(ws.status!=='pending_deletion')return res.status(409).json({error:'Workspace is not pending deletion'});
   const revision=Number(ws.updatedAt||ws.createdAt||0);
@@ -617,8 +618,9 @@ async function loadWorkspaceSupportForPurge(id,rawIndex){
   for(let offset=0;offset<ids.length;offset+=40){
     const batchIds=ids.slice(offset,offset+40),batch=await Promise.all(batchIds.map(ticketId=>kv.get('support:'+ticketId)));
     for(let i=0;i<batch.length;i++){
-      const ticket=batch[i];
-      if(ticket&&typeof ticket==='object'&&!Array.isArray(ticket)&&String(ticket.workspaceId||'')===String(id))targets.push({id:batchIds[i],ticket});
+      const ticket=batch[i],ticketId=String(batchIds[i]);
+      if(!ticket||typeof ticket!=='object'||Array.isArray(ticket)||String(ticket.id||'')!==ticketId)throw new Error('Support index contains an unverifiable record');
+      if(String(ticket.workspaceId||'')===String(id))targets.push({id:ticketId,ticket});
     }
   }
   return targets;
@@ -743,7 +745,9 @@ async function adminPurgeClient(req,res){
       if(journal.phase==='detached'){
         const rawIndex=await kv.get('support:index');
         if(!validIdDirectory(rawIndex,2000))return res.status(503).json({error:'Support directory is malformed. Permanent purge is paused before support records are deleted.',purgePhase:'detached',resumable:true});
-        const targets=await loadWorkspaceSupportForPurge(id,rawIndex);
+        let targets;
+        try{targets=await loadWorkspaceSupportForPurge(id,rawIndex)}
+        catch(err){console.error('permanent purge support scan failed',safeError(err));return res.status(503).json({error:'Support records could not be verified. Permanent purge is paused before support deletion.',purgePhase:'detached',resumable:true})}
         if(!targets.length){
           const nextJournal=nextPurgeJournal(journal,'support',{supportCompletedAt:Date.now()});
           const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_support_complete',section:'privacy',before:null,after:null,meta:{deleted:Number(journal.supportDeleted||0)},at:Date.now()};

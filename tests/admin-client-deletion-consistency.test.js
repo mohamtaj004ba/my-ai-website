@@ -199,3 +199,12 @@ test('malformed or mismatched workspace record cannot be scheduled for deletion'
     assert.match(r.data.error,/workspace record is unavailable/i);
   }
 });
+
+
+test('restoration fails closed when the pending-deletion workspace identity is malformed',async()=>{
+  for(const workspace of ['broken',[],{id:'other-client',status:'pending_deletion',updatedAt:20}]){
+    const f=backendFixture({action:'restore',workspace}),r=await f.run();
+    assert.equal(r.code,503);assert.equal(f.calls.length,0);
+    assert.match(r.data.error,/workspace record is unavailable/i);
+  }
+});
