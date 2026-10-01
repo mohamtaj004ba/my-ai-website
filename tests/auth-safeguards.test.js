@@ -106,3 +106,14 @@ test('login page only reports a sent sign-in link after a canonical acknowledgem
   assert.match(login,/data\.ok!==true/);
   assert.match(login,/If that email is linked to a CallerCore account, a sign-in link is on the way\./);
 });
+
+
+test('failed sign-in email delivery revokes the stored one-time token before returning',()=>{
+  const start=account.indexOf('async function requestLogin('),end=account.indexOf('\nasync function verify(',start);
+  const body=account.slice(start,end);
+  const mailFail=body.indexOf("console.error('auth email failed'");
+  const revoke=body.indexOf('await deleteLoginToken(token)',mailFail);
+  const response=body.indexOf("Sign-in email temporarily unavailable",mailFail);
+  assert.ok(mailFail>=0&&revoke>mailFail&&response>revoke);
+  assert.match(body,/undelivered login token cleanup failed/);
+});
