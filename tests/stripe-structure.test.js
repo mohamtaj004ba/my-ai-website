@@ -135,3 +135,14 @@ test('Stripe configuration health rejects malformed successful provider payloads
   assert.match(body,/!portalData\|\|typeof portalData!=='object'\|\|Array\.isArray\(portalData\)\|\|!Array\.isArray\(portalData\.data\)/);
   assert.match(body,/Stripe configuration response could not be verified/);
 });
+
+
+test('Stripe webhook provisioning rejects malformed account, workspace, and onboarding state',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/existingMember!=null&&\(!existingMember\|\|typeof existingMember!=='object'\|\|Array\.isArray\(existingMember\)\)/);
+  assert.match(webhook,/existingMember\?\.email&&String\(existingMember\.email\)\.trim\(\)\.toLowerCase\(\)!==email/);
+  assert.match(webhook,/rawExisting!=null&&\(!rawExisting\|\|typeof rawExisting!=='object'\|\|Array\.isArray\(rawExisting\)\)/);
+  assert.match(webhook,/String\(existing\.id\)!==String\(workspaceId\)/);
+  assert.match(webhook,/rawExistingOnboarding!=null&&\(!rawExistingOnboarding\|\|typeof rawExistingOnboarding!=='object'\|\|Array\.isArray\(rawExistingOnboarding\)\)/);
+  assert.match(webhook,/Existing onboarding workspace identity disagrees/);
+});
