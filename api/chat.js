@@ -113,16 +113,19 @@ WHERE TO POINT PEOPLE:
         try {
           if (apiRes.statusCode !== 200) {
             console.error('Anthropic API error:', upstreamCode(data));
-            res.status(502).json({ error: 'Upstream API error', detail: data });
+            res.status(502).json({ error: 'Upstream API error' });
             return resolve();
           }
           const parsed = JSON.parse(data);
-          const reply = parsed.content[0].text;
+          if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)||!Array.isArray(parsed.content))
+            throw new Error('Anthropic chat response could not be verified');
+          const reply = String(parsed.content.find(item=>item&&item.type==='text'&&typeof item.text==='string')?.text||'').trim();
+          if(!reply)throw new Error('Anthropic chat response did not contain verified text');
           res.status(200).json({ reply });
           resolve();
         } catch (err) {
-          console.error('Parse error:', safeError(err));
-          res.status(500).json({ error: 'Parse error' });
+          console.error('Anthropic response validation failed:', safeError(err));
+          res.status(502).json({ error: 'Assistant response unavailable' });
           resolve();
         }
       });
