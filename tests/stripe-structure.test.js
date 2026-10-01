@@ -197,3 +197,12 @@ test('Stripe lifecycle events are not acknowledged before workspace and subscrip
   assert.match(webhook,/Stripe lifecycle persistence could not be confirmed/);
   assert.match(webhook,/subscriptionId&&String\(confirmedSubscriptionMapping\|\|''\)!==String\(workspaceId\)/);
 });
+
+
+test('Stripe lifecycle processing rejects malformed or conflicting customer/subscription mappings',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/const \[subscriptionWorkspace,customerWorkspace\]=await Promise\.all/);
+  assert.match(webhook,/Stripe lifecycle mapping is malformed/);
+  assert.match(webhook,/subscriptionWorkspace&&customerWorkspace&&String\(subscriptionWorkspace\)!==String\(customerWorkspace\)/);
+  assert.match(webhook,/Stripe customer and subscription mappings disagree/);
+});
