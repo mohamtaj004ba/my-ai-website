@@ -155,9 +155,15 @@ module.exports=async function handler(req,res){
     if(!obj||typeof obj!=='object'||Array.isArray(obj))return res.status(400).json({error:'Invalid Stripe lifecycle payload'});
     const subscriptionId=event.type.startsWith('customer.subscription.')?obj.id:obj.subscription;
     const customerId=obj.customer;
-    let workspaceId=null;
-    if(subscriptionId)workspaceId=await kv.get('stripe:subscription:'+subscriptionId);
-    if(!workspaceId&&customerId)workspaceId=await kv.get('stripe:customer:'+customerId);
+    const [subscriptionWorkspace,customerWorkspace]=await Promise.all([
+      subscriptionId?kv.get('stripe:subscription:'+subscriptionId):Promise.resolve(null),
+      customerId?kv.get('stripe:customer:'+customerId):Promise.resolve(null)
+    ]);
+    for(const mapping of [subscriptionWorkspace,customerWorkspace])if(mapping!=null&&(typeof mapping!=='string'||!mapping.trim()))
+      return res.status(503).json({error:'Stripe lifecycle mapping is malformed. Stripe should retry.'});
+    if(subscriptionWorkspace&&customerWorkspace&&String(subscriptionWorkspace)!==String(customerWorkspace))
+      return res.status(503).json({error:'Stripe customer and subscription mappings disagree. Manual reconciliation is required.'});
+    const workspaceId=subscriptionWorkspace||customerWorkspace||null;
     if(!workspaceId){if(eventKey)await markStripeEventProcessed(eventKey);return res.status(200).json({received:true,unmapped:true})}
     const key='workspace:'+workspaceId,ws=await kv.get(key);
     if(ws==null){if(eventKey)await markStripeEventProcessed(eventKey);return res.status(200).json({received:true,workspace_missing:true})}
