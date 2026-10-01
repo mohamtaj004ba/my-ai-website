@@ -25,3 +25,14 @@ test('Vercel alert webhook sends internal alert email through CallerCore mail',(
   assert.match(src,/\[CallerCore ALERT\]/);
   assert.match(src,/sendMail/);
 });
+
+
+test('production alert webhook records dedupe only after verified email delivery',()=>{
+  const src=fs.readFileSync(path.join(__dirname,'..','api','vercel-alert-webhook.js'),'utf8');
+  const sendAt=src.indexOf('await sendMail('),receiptWrite=src.indexOf('await kv.set(dedupeKey,true',sendAt);
+  assert.ok(sendAt>=0&&receiptWrite>sendAt,'dedupe receipt must be written after sendMail succeeds');
+  assert.match(src,/const confirmedReceipt=await kv\.get\(dedupeKey\)/);
+  assert.match(src,/Alert delivery succeeded but its receipt could not be confirmed/);
+  const failureAt=src.indexOf("return res.status(502).json({error:'Alert delivery failed'})");
+  assert.ok(failureAt>=0&&failureAt<receiptWrite,'failed delivery must not be marked delivered');
+});
