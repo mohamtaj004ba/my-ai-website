@@ -27,8 +27,10 @@ module.exports=async function handler(req,res){
   try{
     const tokens=await exchangeCode({code,redirectUri:record.redirectUri});
     const profileRes=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile',{headers:{Authorization:'Bearer '+tokens.access_token}});
-    const profile=await profileRes.json().catch(()=>({}));
-    if(!profileRes.ok)throw new Error(profile.error?.message||'Unable to read Gmail profile');
+    const profile=await profileRes.json().catch(()=>null);
+    if(!profileRes.ok)throw new Error(profile&&typeof profile==='object'&&!Array.isArray(profile)&&profile.error?.message?profile.error.message:'Unable to read Gmail profile');
+    if(!profile||typeof profile!=='object'||Array.isArray(profile)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(profile.emailAddress||'').trim()))
+      throw new Error('Gmail profile response could not be verified');
     await saveConnection(record.adminEmail,tokens,profile);
     return res.redirect('/admin-dashboard?gmail=connected');
   }catch(err){
