@@ -76,6 +76,8 @@ async function upsertWorkspace({lead,session,plan,email}){
   const existing=rawExisting||{};
   if(existing.id&&String(existing.id)!==String(workspaceId))throw new Error('Existing workspace identity does not match checkout mapping; manual reconciliation required');
   if(existing.id&&String(existing.ownerEmail||'').trim().toLowerCase()!==email)throw new Error('Existing workspace owner does not match checkout email; manual reconciliation required');
+  for(const [field,value] of [['acquisition',existing.acquisition],['conversion',existing.conversion],['usage',existing.usage],['stripeBilling',existing.stripeBilling]])
+    if(value!=null&&(!value||typeof value!=='object'||Array.isArray(value)))throw new Error('Existing workspace '+field+' state is malformed; manual reconciliation required');
   const ent=entitlementsFor(plan);
   const workspace={
     ...existing,
@@ -178,6 +180,8 @@ module.exports=async function handler(req,res){
     }
     const {eventCreatedAt,previousEventAt,status}=decision;
 
+    if(ws.stripeBilling!=null&&(!ws.stripeBilling||typeof ws.stripeBilling!=='object'||Array.isArray(ws.stripeBilling)))
+      return res.status(503).json({error:'Workspace billing state could not be verified. Stripe should retry.'});
     const billing={...(ws.stripeBilling||{}),customerId:customerId||ws.stripeCustomerId||null,subscriptionId:subscriptionId||ws.stripeSubscriptionId||null,lastEvent:event.type,lastEventAt:Date.now(),lastEventCreatedAt:eventCreatedAt||previousEventAt||0};
     if(event.type.startsWith('customer.subscription.')){
       billing.currentPeriodEnd=obj.current_period_end?Number(obj.current_period_end)*1000:(billing.currentPeriodEnd||null);
