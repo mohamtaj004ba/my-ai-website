@@ -1627,11 +1627,19 @@ async function adminGmailInbox(req,res){
   try{
     const data=await listGmailInbox(admin.email,{maxResults:Math.min(25,Math.max(1,Number(req.query?.limit||25))),query:String(req.query?.q||'newer_than:30d').slice(0,200)});
     if(!validGmailInboxPayload(data))throw new Error('Gmail inbox provider response was incomplete');
+    let growthLinkWarning='';
     for(const t of data.threads||[]){
       const inbound=(t.messages||[]).find(m=>m.direction==='inbound'),sender=inbound?.from||'';
-      if(sender){const pid=await kv.get('site:prospect:email:'+emailKey(sender));if(pid){const p=await kv.get('site:prospect:'+pid);if(p)t.prospect={id:p.id,name:p.name,business:p.business,email:p.email,stage:p.stage}}}
+      if(!sender)continue;
+      const rawPid=await kv.get('site:prospect:email:'+emailKey(sender)),pid=typeof rawPid==='string'?rawPid.trim():'';
+      if(rawPid!=null&&!pid){growthLinkWarning='Gmail synced, but one or more linked Growth records could not be verified.';continue}
+      if(pid){
+        const p=await kv.get('site:prospect:'+pid);
+        if(!p||typeof p!=='object'||Array.isArray(p)||String(p.id||'')!==pid){growthLinkWarning='Gmail synced, but one or more linked Growth records could not be verified.';continue}
+        t.prospect={id:p.id,name:p.name,business:p.business,email:p.email,stage:p.stage};
+      }
     }
-    const snapshot={...data,syncedAt:Date.now()};
+    const snapshot={...data,syncedAt:Date.now(),...(growthLinkWarning?{warning:growthLinkWarning}:{})};
     await Promise.all([
       kv.set(cacheKey,snapshot,{ex:60*60*24*7}),
       kv.set(summaryKey,{analytics:data.analytics||{},syncedAt:snapshot.syncedAt},{ex:60*60*24*7})
