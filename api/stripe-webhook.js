@@ -24,6 +24,8 @@ function validCheckoutSessionState(value,sessionId){
   if(!value||typeof value!=='object'||Array.isArray(value))return false;
   if(value.status&&!['awaiting_review','complete'].includes(String(value.status)))return false;
   if(value.sessionId&&String(value.sessionId)!==String(sessionId))return false;
+  if(value.token&&!/^[a-f0-9]{48}$/i.test(String(value.token)))return false;
+  if(value.workspaceId&&(!String(value.workspaceId).trim()||String(value.workspaceId).length>120))return false;
   return true;
 }
 async function markStripeEventProcessed(eventKey){
@@ -285,9 +287,16 @@ module.exports=async function handler(req,res){
   const leadId=session.client_reference_id;
   const customerEmail=String(session.customer_details?.email||'').trim().toLowerCase();
   let lead=null,token=sessionState?.token||null;
-  if(token)lead=await kv.get('onboarding:'+token);
-  if(!lead&&leadId)lead=await kv.get('lead:'+leadId);
+  if(token){
+    lead=await kv.get('onboarding:'+token);
+    if(lead!=null&&(!lead||typeof lead!=='object'||Array.isArray(lead)))throw new Error('Persisted onboarding lead is malformed; manual reconciliation required');
+  }
+  if(!lead&&leadId){
+    lead=await kv.get('lead:'+leadId);
+    if(lead!=null&&(!lead||typeof lead!=='object'||Array.isArray(lead)))throw new Error('Persisted checkout lead is malformed; manual reconciliation required');
+  }
   if(!lead)lead={name:session.customer_details?.name||'',business:'',email:customerEmail,phone:session.customer_details?.phone||'',industry:'',plan:paidPlan};
+  else lead={...lead};
   lead.plan=paidPlan;
   const recipient=String(lead.email||customerEmail||'').trim().toLowerCase();
   if(!recipient)return res.status(500).json({error:'Missing customer email'});
