@@ -907,12 +907,15 @@ async function adminViewClient(req,res){
 
 async function adminExitClientView(req,res){
   const s=await requireSession(req,res);if(!s)return;
-  const member=await kv.get('user:email:'+cleanEmail(s.email));
-  if(!member||member.role!=='admin')return res.status(403).json({error:'Admin access required'});
+  const email=cleanEmail(s.email),member=await kv.get('user:email:'+email);
+  if(!member||typeof member!=='object'||Array.isArray(member)||member.disabled||member.role!=='admin'||
+    (member.email&&cleanEmail(member.email)!==email))return res.status(403).json({error:'Admin access required'});
   const home=String(s.adminHomeWorkspaceId||member.workspaceId||'');
-  if(!home)return res.status(409).json({error:'Admin home workspace unavailable'});
+  if(!home||String(member.workspaceId||'')!==home)return res.status(409).json({error:'Admin home workspace unavailable'});
+  const revision=Number(member.sessionVersion||0);
+  if(!Number.isSafeInteger(revision)||revision<0)return res.status(503).json({error:'Admin session revision is unavailable'});
   const old=parseCookies(req).cc_session;if(old)await destroySessionToken(old);
-  await createSession(res,{email:s.email,workspaceId:home,role:'admin',authVersion:Number(member.sessionVersion||0)});
+  await createSession(res,{email,workspaceId:home,role:'admin',authVersion:revision});
   return res.status(200).json({ok:true,redirect:'/admin-dashboard'});
 }
 
