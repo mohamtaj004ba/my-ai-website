@@ -62,3 +62,14 @@ test('session cookies are issued only after hashed session persistence is read b
   const createStart=auth.indexOf('async function createSession('),cookieAt=auth.indexOf("res.setHeader('Set-Cookie'",createStart),confirmAt=auth.indexOf('const confirmed=await kv.get(key)',createStart);
   assert.ok(createStart>=0&&confirmAt>createStart&&cookieAt>confirmAt,'cookie must be set only after verified session readback');
 });
+
+
+test('session revocation requires both hashed and legacy token keys to be confirmed absent',()=>{
+  assert.match(auth,/const \[hashed,legacy\]=await Promise\.all\(\[kv\.get\(hashedKey\),kv\.get\(legacyKey\)\]\)/);
+  assert.match(auth,/Session revocation could not be confirmed/);
+  assert.doesNotMatch(auth,/Promise\.allSettled\(\[kv\.del\(sessionKey\(token\)\)/);
+  const start=account.indexOf('async function logout('),end=account.indexOf('\nmodule.exports=',start);
+  const body=account.slice(start,end);
+  assert.match(body,/logout session revocation failed/);
+  assert.match(body,/Logout could not be confirmed\. Please try again\./);
+});
