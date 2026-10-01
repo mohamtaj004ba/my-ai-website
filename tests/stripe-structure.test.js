@@ -206,3 +206,12 @@ test('Stripe lifecycle processing rejects malformed or conflicting customer/subs
   assert.match(webhook,/subscriptionWorkspace&&customerWorkspace&&String\(subscriptionWorkspace\)!==String\(customerWorkspace\)/);
   assert.match(webhook,/Stripe customer and subscription mappings disagree/);
 });
+
+
+test('Stripe checkout validates durable token identifiers and stored lead record shape',()=>{
+  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
+  assert.match(webhook,/value\.token&&!\/\^\[a-f0-9\]\{48\}\$\/i\.test\(String\(value\.token\)\)/);
+  assert.match(webhook,/Persisted onboarding lead is malformed/);
+  assert.match(webhook,/Persisted checkout lead is malformed/);
+  assert.match(webhook,/else lead=\{\.\.\.lead\}/);
+});
