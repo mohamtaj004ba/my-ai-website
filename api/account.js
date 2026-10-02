@@ -2931,9 +2931,11 @@ async function aiFeedbackListForWorkspace(workspaceId,limit=50){
   if(!sourceValid)return {items:[],sourceValid:false};
   let recordsValid=true;
   for(const id of ids.slice(0,limit)){
-    const item=await kv.get('ai-feedback:'+id);
-    if(item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'')===String(id)&&String(item.workspaceId||'')===String(workspaceId))items.push(item);
-    else recordsValid=false;
+    const item=await kv.get('ai-feedback:'+id),createdAt=Number(item?.createdAt),updatedAt=Number(item?.updatedAt||item?.createdAt),
+      valid=item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'')===String(id)&&String(item.workspaceId||'')===String(workspaceId)&&
+        ['call','receptionist'].includes(String(item.source||''))&&['submitted','reviewed','applied','dismissed'].includes(String(item.status||''))&&
+        typeof item.message==='string'&&!!item.message.trim()&&Number.isFinite(createdAt)&&createdAt>0&&Number.isFinite(updatedAt)&&updatedAt>=createdAt;
+    if(valid)items.push(item);else recordsValid=false;
   }
   items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
   return {items,sourceValid:recordsValid};
@@ -2947,9 +2949,11 @@ async function aiFeedback(req,res){
   for(let offset=0;offset<ids.length;offset+=40){
     const batchIds=ids.slice(offset,offset+40),batch=await Promise.all(batchIds.map(id=>kv.get('ai-feedback:'+id)));
     for(let i=0;i<batch.length;i++){
-      const item=batch[i];
-      if(item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'')===String(batchIds[i])&&item.workspaceId===s.workspaceId)items.push(item);
-      else missingRecords++;
+      const item=batch[i],createdAt=Number(item?.createdAt),updatedAt=Number(item?.updatedAt||item?.createdAt),
+        valid=item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'')===String(batchIds[i])&&String(item.workspaceId||'')===String(s.workspaceId)&&
+          ['call','receptionist'].includes(String(item.source||''))&&['submitted','reviewed','applied','dismissed'].includes(String(item.status||''))&&
+          typeof item.message==='string'&&!!item.message.trim()&&Number.isFinite(createdAt)&&createdAt>0&&Number.isFinite(updatedAt)&&updatedAt>=createdAt;
+      if(valid)items.push(item);else missingRecords++;
     }
   }
   items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
@@ -2958,6 +2962,7 @@ async function aiFeedback(req,res){
 async function aiFeedbackSubmit(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(s.workspaceId))return res.status(503).json({error:'Workspace feedback context is unavailable. Your feedback has not been submitted.'});
   const body=req.body||{},clean=(v,n)=>String(v||'').trim().slice(0,n),message=clean(body.message,2400);
   if(!message)return res.status(400).json({error:'Feedback details are required'});
   const source=['call','receptionist'].includes(body.source)?body.source:'receptionist',now=Date.now(),id='fb_'+crypto.randomBytes(8).toString('hex');
@@ -2995,9 +3000,11 @@ async function adminAiFeedback(req,res){
   for(let offset=0;offset<ids.length;offset+=40){
     const batchIds=ids.slice(offset,offset+40),batch=await Promise.all(batchIds.map(id=>kv.get('ai-feedback:'+id)));
     for(let i=0;i<batch.length;i++){
-      const item=batch[i];
-      if(item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'')===String(batchIds[i])&&String(item.workspaceId||'').trim())items.push(item);
-      else missingRecords++;
+      const item=batch[i],createdAt=Number(item?.createdAt),updatedAt=Number(item?.updatedAt||item?.createdAt),
+        valid=item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'')===String(batchIds[i])&&!!String(item.workspaceId||'').trim()&&
+          ['call','receptionist'].includes(String(item.source||''))&&['submitted','reviewed','applied','dismissed'].includes(String(item.status||''))&&
+          typeof item.message==='string'&&!!item.message.trim()&&Number.isFinite(createdAt)&&createdAt>0&&Number.isFinite(updatedAt)&&updatedAt>=createdAt;
+      if(valid)items.push(item);else missingRecords++;
     }
   }
   items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
@@ -3009,9 +3016,12 @@ async function adminAiFeedbackUpdate(req,res){
   if(!id||!['submitted','reviewed','applied','dismissed'].includes(status))return res.status(400).json({error:'Invalid feedback update'});
   const key='ai-feedback:'+id,previous=await kv.get(key);
   if(!previous)return res.status(404).json({error:'Feedback not found'});
-  if(!previous||typeof previous!=='object'||Array.isArray(previous)||String(previous.id)!==id||!previous.workspaceId)
+  const createdAt=Number(previous?.createdAt),storedUpdatedAt=Number(previous?.updatedAt||previous?.createdAt);
+  if(!previous||typeof previous!=='object'||Array.isArray(previous)||String(previous.id)!==id||!String(previous.workspaceId||'').trim()||
+    !['call','receptionist'].includes(String(previous.source||''))||!['submitted','reviewed','applied','dismissed'].includes(String(previous.status||''))||
+    typeof previous.message!=='string'||!previous.message.trim()||!Number.isFinite(createdAt)||createdAt<=0||!Number.isFinite(storedUpdatedAt)||storedUpdatedAt<createdAt)
     return res.status(503).json({error:'Feedback record cannot be verified. No change was made.'});
-  const revision=Number(previous.updatedAt||previous.createdAt||0);
+  const revision=storedUpdatedAt;
   if(b.expectedUpdatedAt===undefined||!Number.isFinite(Number(b.expectedUpdatedAt))||
     Number(b.expectedUpdatedAt)!==revision)
     return res.status(409).json({error:'Feedback changed since you opened it. Refresh Client Care before retrying.'});
