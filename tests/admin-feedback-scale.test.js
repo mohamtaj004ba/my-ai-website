@@ -19,8 +19,9 @@ function fixture(count,{rawIndex,missing=[],malformed=[],mismatched=[],denied=fa
       const id=key.slice('ai-feedback:'.length);
       if(missing.includes(id))return null;
       if(malformed.includes(id))return 'broken';
-      return {id:mismatched.includes(id)?'wrong-id':id,workspaceId:'workspace-'+id,status:'submitted',
-        createdAt:Number(id.split('-').at(-1))||0};
+      const at=(Number(id.split('-').at(-1))||0)+1;
+      return {id:mismatched.includes(id)?'wrong-id':id,workspaceId:'workspace-'+id,source:'receptionist',status:'submitted',
+        message:'Feedback '+id,createdAt:at,updatedAt:at};
     }},
     req:{},res:{status(n){status=n;return this},json(x){result=x;return x}},
     Array,Set,Number,String,Promise
