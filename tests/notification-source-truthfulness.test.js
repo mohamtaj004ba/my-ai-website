@@ -64,3 +64,16 @@ test('admin notification coverage treats malformed client usage as incomplete cl
   assert.match(block,/if\(!usageValid\)workspaceRecordUnavailable=true/);
   assert.match(block,/if\(usageValid&&plan\.minutes\)/);
 });
+
+test('notification builders reject duplicate or blank provider directories as incomplete coverage',()=>{
+  const clientStart=api.indexOf('async function aiFeedbackListForWorkspace('),clientEnd=api.indexOf('\nasync function aiFeedback(',clientStart),clientBlock=api.slice(clientStart,clientEnd);
+  const adminStart=api.indexOf('async function buildAdminNotifications('),adminEnd=api.indexOf('\nasync function followups(',adminStart),adminBlock=api.slice(adminStart,adminEnd);
+  assert.match(clientBlock,/new Set\(ids\)\.size===ids\.length/);
+  assert.match(clientBlock,/sourceValid:false/);
+  assert.match(adminBlock,/supportIndexValid=validDirectory/);
+  assert.match(adminBlock,/workspaceIndexValid=validDirectory/);
+  assert.match(adminBlock,/feedbackIndexValid=validDirectory/);
+  assert.match(adminBlock,/!supportIndexValid\|\|supportRecordUnavailable/);
+  assert.match(adminBlock,/!feedbackIndexValid\|\|feedbackRecordUnavailable/);
+  assert.match(adminBlock,/!workspaceIndexValid\|\|workspaceRecordUnavailable/);
+});
