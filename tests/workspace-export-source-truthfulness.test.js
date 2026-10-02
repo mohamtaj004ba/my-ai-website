@@ -33,3 +33,8 @@ test('workspace export validates row identity, workspace usage, and receptionist
   assert.match(block,/Number\.isFinite\(Number\(workspace\.usage\.minutes\)\)/);
   assert.match(block,/qualificationQuestions==null\|\|Array\.isArray\(value\.qualificationQuestions\)/);
 });
+
+test('workspace export rejects malformed onboarding checklist state',()=>{
+  const start=api.indexOf('async function buildWorkspaceExportData('),end=api.indexOf('\nfunction validateWorkspaceExportData(',start),block=api.slice(start,end);
+  assert.match(block,/\['onboarding',onboarding,value=>objectOrNull\(value\)&&\(value==null\|\|value\.checklist==null/);
+});
