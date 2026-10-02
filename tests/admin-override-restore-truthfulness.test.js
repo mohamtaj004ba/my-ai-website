@@ -25,3 +25,10 @@ test('audit restore distinguishes unavailable audit/current data from a genuine 
   assert.match(block,/Current .* configuration is unavailable\. No restore was attempted/);
   assert.match(block,/Client workspace record is unavailable\. No restore was attempted/);
 });
+
+test('admin override and restore reject malformed rows inside array configurations',()=>{
+  const override=api.slice(api.indexOf('async function adminOverrideConfig('),api.indexOf('\nasync function adminRestoreAudit('));
+  const restore=api.slice(api.indexOf('async function adminRestoreAudit('),api.indexOf('\n\n\nasync function adminSendOnboardingInvite('));
+  assert.match(override,/Array\.isArray\(before\)&&before\.every/);
+  assert.match(restore,/Array\.isArray\(current\)&&current\.every/);
+});
