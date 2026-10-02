@@ -84,3 +84,20 @@ test('client and admin notifications mark malformed onboarding checklist coverag
   assert.match(client,/onboarding\.checklist==null/);
   assert.match(admin,/onboarding\.checklist==null/);
 });
+
+test('notification builders validate canonical feedback, support, and Growth records before alerting',()=>{
+  const client=api.slice(api.indexOf('async function buildClientNotifications('),api.indexOf('\nasync function buildAdminNotifications('));
+  const admin=api.slice(api.indexOf('async function buildAdminNotifications('),api.indexOf('\nasync function followups('));
+  assert.match(client,/validTicket=/);
+  assert.match(client,/\['open','in_progress','resolved'\]\.includes/);
+  assert.match(client,/typeof t\.subject==='string'/);
+  assert.match(admin,/validFeedback=/);
+  assert.match(admin,/\['call','receptionist'\]\.includes/);
+  assert.match(admin,/typeof f\.message==='string'/);
+  assert.match(admin,/validTicket=/);
+  assert.match(admin,/validProspect=/);
+  assert.match(admin,/typeof p\.stage==='string'/);
+});
+test('legacy direct onboarding phone sync helper is removed after atomic routing migration',()=>{
+  assert.doesNotMatch(api,/async function syncOnboardingPhoneAssignment\(/);
+});
