@@ -3778,13 +3778,16 @@ function callViewedKey(workspaceId,email){
 async function callsViewed(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const raw=await kv.get(callViewedKey(s.workspaceId,s.email));
-  if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Call opened-state history is unavailable. Previously loaded read state should be preserved.'});
-  const ids=(raw||[]).map(String).slice(-2000);
+  if(raw!=null&&(!Array.isArray(raw)||raw.length>2000||raw.some(id=>typeof id!=='string'||!id.trim()||id.length>120)||new Set(raw).size!==raw.length))
+    return res.status(503).json({error:'Call opened-state history is unavailable. Previously loaded read state should be preserved.'});
+  const ids=raw||[];
   return res.status(200).json({ids,coverage:{verified:true,limited:ids.length>=2000,retained:ids.length,limit:2000}});
 }
 async function callViewedMark(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
-  const callId=String((req.body||{}).callId||'').slice(0,120);if(!callId)return res.status(400).json({error:'Call ID is required'});
+  const rawCallId=req.body?.callId;
+  if(typeof rawCallId!=='string'||!rawCallId.trim()||rawCallId.length>120)return res.status(400).json({error:'Call ID is required'});
+  const callId=rawCallId.trim();
   const calls=await kv.get('calls:'+s.workspaceId);
   if(calls!=null&&!Array.isArray(calls))return res.status(503).json({error:'Call history is unavailable. Read state was not changed.'});
   if(Array.isArray(calls)&&calls.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Call history contains unverifiable entries. Read state was not changed.'});
