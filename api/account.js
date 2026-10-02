@@ -1228,6 +1228,7 @@ async function createSupportTicket(req,res){
     const index=await kv.get('support:index');
     if(index!=null&&!Array.isArray(index))return res.status(503).json({error:'Support history is temporarily unavailable. Your request has not been submitted.'});
     const list=Array.isArray(index)?index:[];
+    if(list.some(ticketId=>typeof ticketId!=='string'||!ticketId.trim())||new Set(list).size!==list.length)return res.status(503).json({error:'Support history contains unverifiable directory entries. Your request has not been submitted.'});
     if(list.length>=2000)return res.status(409).json({error:'Support request capacity reached. Contact CallerCore support directly; your request has not been submitted.'});
     try{
       if(await compareAndSetConfig(kv,[
@@ -1240,10 +1241,14 @@ async function createSupportTicket(req,res){
     }
   }
   if(!recorded)return res.status(409).json({error:'Support requests changed while submitting. Check request history and retry.'});
-  const [platform,clientSettings]=await Promise.all([kv.get('platform:settings'),kv.get('settings:'+s.workspaceId)]);
-  const supportTo=platform?.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
-  if(supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',safeError(err))}}
-  if(s.email&&clientSettings?.emailAlerts!==false&&clientSettings?.notifySupport!==false){
+  const [platform,clientSettings]=await Promise.all([kv.get('platform:settings'),kv.get('settings:'+s.workspaceId)]),
+    platformValid=platform==null||!!platform&&typeof platform==='object'&&!Array.isArray(platform),
+    clientSettingsValid=clientSettings==null||!!clientSettings&&typeof clientSettings==='object'&&!Array.isArray(clientSettings);
+  let notificationWarning='';
+  if(!platformValid||!clientSettingsValid)notificationWarning='Your support request was saved, but notification settings could not be verified, so no support emails were sent.';
+  const supportTo=platformValid?(platform?.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||''):'';
+  if(!notificationWarning&&supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',safeError(err))}}
+  if(!notificationWarning&&s.email&&clientSettings?.emailAlerts!==false&&clientSettings?.notifySupport!==false){
     try{
       const firstName=String(ws.ownerName||clientSettings?.contactName||'').split(' ')[0]||'there';
       const emailBody=lifecycleEmail({
@@ -1261,7 +1266,7 @@ async function createSupportTicket(req,res){
       await sendMail({to:s.email,subject:'We received your CallerCore support request',...emailBody});
     }catch(err){console.error('support client acknowledgement failed',safeError(err))}
   }
-  return res.status(201).json({ok:true,ticket});
+  return res.status(201).json({ok:true,ticket,...(notificationWarning?{warning:notificationWarning}:{})});
 }
 
 async function supportTickets(req,res){
