@@ -18,3 +18,10 @@ test('admin tech support returns no partial repair snapshot when configuration v
   assert.match(block,/status\(503\)/);
   assert.match(block,/Client workspace record is unavailable/);
 });
+
+test('admin configuration snapshot validates rows inside arrays and receptionist questions',()=>{
+  const start=api.indexOf('async function getWorkspaceConfigSnapshot('),end=api.indexOf('\nasync function bootstrapPreview(',start),block=api.slice(start,end);
+  assert.match(block,/qualificationQuestions==null\|\|Array\.isArray\(value\.qualificationQuestions\)/);
+  assert.match(block,/\['automations',automations,value=>value==null\|\|Array\.isArray\(value\)&&value\.every/);
+  assert.match(block,/\['phone inventory',phones,value=>value==null\|\|Array\.isArray\(value\)&&value\.every/);
+});
