@@ -5,6 +5,7 @@ const path=require('node:path');
 
 const root=path.join(__dirname,'..');
 const js=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+const api=fs.readFileSync(path.join(root,'api/account.js'),'utf8');
 const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
 
 test('Follow-ups separates contact actions from workflow management',()=>{
@@ -17,8 +18,8 @@ test('Follow-ups separates contact actions from workflow management',()=>{
 });
 
 test('follow-up reads and mutations reject malformed rows and call history',()=>{
-  const readStart=source.indexOf('async function followups('),readEnd=source.indexOf('\nasync function followupUpdate(',readStart),readBlock=source.slice(readStart,readEnd);
-  const writeStart=source.indexOf('async function followupUpdate('),writeEnd=source.indexOf('\nfunction aiFeedbackWorkspaceIndexKey',writeStart),writeBlock=source.slice(writeStart,writeEnd);
+  const readStart=api.indexOf('async function followups('),readEnd=api.indexOf('\nasync function followupUpdate(',readStart),readBlock=api.slice(readStart,readEnd);
+  const writeStart=api.indexOf('async function followupUpdate('),writeEnd=api.indexOf('\nfunction aiFeedbackWorkspaceIndexKey',writeStart),writeBlock=api.slice(writeStart,writeEnd);
   assert.match(readBlock,/Team follow-up records are incomplete or malformed/);
   assert.match(writeBlock,/Call history contains unverifiable entries\. Team follow-up state was not changed/);
 });
