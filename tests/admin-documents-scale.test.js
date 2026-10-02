@@ -82,3 +82,19 @@ test('company document mutations reject malformed records before audited writes'
     assert.ok(body.indexOf('new Set(list.map(')<body.indexOf('compareAndAudit('));
   }
 });
+
+test('agreement register fails closed on malformed onboarding, checklist, or token sources',async()=>{
+  for(const [key,value] of [
+    ['onboarding:workspace:workspace-0',['bad']],
+    ['onboarding:workspace:workspace-0',{checklist:['bad']}],
+    ['onboarding:workspace-token:workspace-0',{bad:true}]
+  ]){
+    const f=fixture(1);
+    const original=f.context.kv.get;
+    f.context.kv.get=async storageKey=>storageKey===key?value:original(storageKey);
+    await f.run();
+    assert.equal(f.res.code,503);
+    assert.match(f.res.data.error,/could not be verified/);
+    assert.equal(f.res.data.documents,undefined);
+  }
+});
