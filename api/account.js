@@ -1282,7 +1282,7 @@ async function createSupportTicket(req,res){
     clientSettingsValid=!notificationWarning&&(clientSettings==null||!!clientSettings&&typeof clientSettings==='object'&&!Array.isArray(clientSettings));
   if(!notificationWarning&&(!platformValid||!clientSettingsValid))notificationWarning='Your support request was saved, but notification settings could not be verified, so no support emails were sent.';
   const supportTo=platformValid?(platform?.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||''):'';
-  if(!notificationWarning&&supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',safeError(err))}}
+  if(!notificationWarning&&supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',safeError(err));notificationWarning='Your support request was saved, but one or more support email notifications could not be confirmed.'}}
   if(!notificationWarning&&s.email&&clientSettings?.emailAlerts!==false&&clientSettings?.notifySupport!==false){
     try{
       const firstName=String(ws.ownerName||clientSettings?.contactName||'').split(' ')[0]||'there';
@@ -1299,7 +1299,7 @@ async function createSupportTicket(req,res){
         siteUrl:requestOrigin(req)
       });
       await sendMail({to:s.email,subject:'We received your CallerCore support request',...emailBody});
-    }catch(err){console.error('support client acknowledgement failed',safeError(err))}
+    }catch(err){console.error('support client acknowledgement failed',safeError(err));notificationWarning='Your support request was saved, but one or more support email notifications could not be confirmed.'}
   }
   return res.status(201).json({ok:true,ticket,...(notificationWarning?{warning:notificationWarning}:{})});
 }
@@ -1352,7 +1352,7 @@ async function replySupportTicket(req,res){
   if(platformRaw!=null&&(!platformRaw||typeof platformRaw!=='object'||Array.isArray(platformRaw)))
     return res.status(200).json({ok:true,ticket:next,warning:'Your reply was saved, but CallerCore support notification settings could not be verified.'});
   const platform=platformRaw||{},to=platform.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||'';
-  if(to){try{await sendMail({to,subject:'CallerCore support reply · '+t.subject,text:'Workspace: '+(t.workspaceName||'Workspace')+'\nFrom: '+s.email+'\n\n'+message})}catch(err){console.error('support reply email failed',safeError(err))}}
+  if(to){try{await sendMail({to,subject:'CallerCore support reply · '+t.subject,text:'Workspace: '+(t.workspaceName||'Workspace')+'\nFrom: '+s.email+'\n\n'+message})}catch(err){console.error('support reply email failed',safeError(err));return res.status(200).json({ok:true,ticket:next,warning:'Your reply was saved, but the support email notification could not be confirmed.'})}}
   return res.status(200).json({ok:true,ticket:next});
 }
 
@@ -1420,7 +1420,7 @@ async function adminSupportReply(req,res){
           siteUrl:requestOrigin(req)
         });
         await sendMail({to:t.email,subject:'CallerCore support replied · '+t.subject,...emailBody});
-      }catch(err){console.error('support client reply email failed',safeError(err))}
+      }catch(err){console.error('support client reply email failed',safeError(err));return res.status(200).json({ok:true,ticket:next,warning:'The support reply was saved, but client email delivery could not be confirmed.'})}
     }
   }
 
@@ -1463,7 +1463,7 @@ async function adminSupportUpdate(req,res){
           ctaLabel:'Open support',ctaUrl:requestOrigin(req)+'/dashboard',siteUrl:requestOrigin(req)
         });
         await sendMail({to:t.email,subject:'CallerCore support update · '+label,...emailBody});
-      }catch(err){console.error('support status email failed',safeError(err))}
+      }catch(err){console.error('support status email failed',safeError(err));return res.status(200).json({ok:true,ticket:next,warning:'The support status was saved, but client email delivery could not be confirmed.'})}
     }
   }
 
