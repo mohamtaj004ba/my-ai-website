@@ -789,9 +789,11 @@ async function adminPurgeClient(req,res){
           continue;
         }
         const batch=targets.slice(0,50),retentionKey='retention:support:'+id,currentRetention=await kv.get(retentionKey);
-        if(currentRetention!=null&&(!currentRetention||typeof currentRetention!=='object'||Array.isArray(currentRetention)||String(currentRetention.workspaceId||'')!==id||!Array.isArray(currentRetention.tickets)))
+        if(currentRetention!=null&&(!currentRetention||typeof currentRetention!=='object'||Array.isArray(currentRetention)||String(currentRetention.workspaceId||'')!==id||!Array.isArray(currentRetention.tickets)||
+          currentRetention.tickets.length>2000||currentRetention.tickets.some(ticket=>!ticket||typeof ticket!=='object'||Array.isArray(ticket)||!String(ticket.id||'').trim()||String(ticket.workspaceId||'')!==id)||
+          new Set(currentRetention.tickets.map(ticket=>String(ticket.id))).size!==currentRetention.tickets.length))
           return res.status(503).json({error:'Retained support archive is malformed. Permanent purge is paused before deleting support records.',purgePhase:'detached',resumable:true});
-        const retainedById=new Map((currentRetention?.tickets||[]).filter(Boolean).map(ticket=>[String(ticket.id||''),ticket]));
+        const retainedById=new Map((currentRetention?.tickets||[]).map(ticket=>[String(ticket.id),ticket]));
         batch.forEach(({id:ticketId,ticket})=>retainedById.set(String(ticketId),ticket));
         await setRetentionRecord(retentionKey,{workspaceId:id,tickets:[...retainedById.values()],retainedAt:Number(currentRetention?.retainedAt||Date.now()),updatedAt:Date.now()},journal.operationalRetainedUntil);
         const batchIds=new Set(batch.map(x=>x.id)),nextIndex=(rawIndex||[]).filter(ticketId=>!batchIds.has(ticketId)),now=Date.now(),
@@ -817,8 +819,13 @@ async function adminPurgeClient(req,res){
           continue;
         }
         const batchIds=ids.slice(0,50),records=await Promise.all(batchIds.map(feedbackId=>kv.get('ai-feedback:'+feedbackId)));
-        for(let i=0;i<records.length;i++)if(records[i]&&String(records[i].workspaceId||'')!==id)
-          return res.status(409).json({error:'AI feedback index contains a record owned by another workspace. Reconcile feedback data before resuming purge.',purgePhase:'support',resumable:true});
+        for(let i=0;i<records.length;i++){
+          const record=records[i],feedbackId=String(batchIds[i]);
+          if(!record||typeof record!=='object'||Array.isArray(record)||String(record.id||'')!==feedbackId)
+            return res.status(503).json({error:'AI feedback records could not be verified. Permanent purge is paused before feedback deletion.',purgePhase:'support',resumable:true});
+          if(String(record.workspaceId||'')!==id)
+            return res.status(409).json({error:'AI feedback index contains a record owned by another workspace. Reconcile feedback data before resuming purge.',purgePhase:'support',resumable:true});
+        }
         const batchSet=new Set(batchIds),now=Date.now(),nextWorkspaceIds=ids.filter(feedbackId=>!batchSet.has(feedbackId)),
           nextGlobalIds=(globalFeedbackRaw||[]).filter(feedbackId=>!batchSet.has(feedbackId)),
           nextJournal=nextPurgeJournal(journal,'support',{feedbackDeleted:Number(journal.feedbackDeleted||0)+batchIds.length,lastFeedbackBatchAt:now});
@@ -871,7 +878,9 @@ async function adminPurgeClient(req,res){
 
       if(journal.phase==='conversations'){
         const auditRaw=await kv.get('audit:'+id);
-        if(auditRaw!=null&&!Array.isArray(auditRaw))return res.status(503).json({error:'Workspace audit history is malformed. Permanent purge is paused before audit retention.',purgePhase:'conversations',resumable:true});
+        if(auditRaw!=null&&(!Array.isArray(auditRaw)||auditRaw.length>200||auditRaw.some(event=>!event||typeof event!=='object'||Array.isArray(event)||!String(event.id||'').trim()||String(event.workspaceId||'')!==id||!Number.isFinite(Number(event.at))||Number(event.at)<=0)||
+          new Set(auditRaw.map(event=>String(event.id))).size!==auditRaw.length))
+          return res.status(503).json({error:'Workspace audit history is malformed. Permanent purge is paused before audit retention.',purgePhase:'conversations',resumable:true});
         const archiveEvent={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_audit_archived',section:'privacy',before:null,after:null,meta:{attemptId:journal.attemptId},at:Date.now()},
           events=[archiveEvent,...(auditRaw||[])].slice(0,200);
         await setRetentionRecord('retention:audit:'+id,{workspaceId:id,events,retainedAt:Date.now()},journal.operationalRetainedUntil);
