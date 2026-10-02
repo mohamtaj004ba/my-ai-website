@@ -1162,3 +1162,16 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Regression coverage now distinguishes thrown settings reads from genuinely malformed settings and verifies provider-delivery failure behavior plus independent dual notification attempts.
 - **Exact verified implementation/test SHA `fb327daaf51c4c3d08f81bb377a56f0c49a0a669`:** CallerCore CI `37055100034` SUCCESS with **1216 tests passed / 0 failed**; CodeQL `37055100117` SUCCESS; Jekyll `37055100280` SUCCESS; Vercel status SUCCESS. Feature branch was 2065 commits ahead / 0 behind `main`.
 - No production merge/deployment, live billing action, voice/provider activation, customer-data migration, destructive production mutation, or release-gate change occurred.
+
+
+## Onboarding checklist acknowledgement and drawer consistency — 2026-10-02
+
+- Continued the feature-only integrity/UI consistency sweep while production `main` remained unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; PR #5 remained draft/unmerged.
+- **Build approval:** the dedicated admin build-approval action now requires a canonical `{ok:true,onboarding}` acknowledgement with `checklist.adminReview === true`, surfaces backend delivery warnings, reports a saved-but-refresh-failed state separately, refreshes notifications best-effort, and always restores its button after success/failure.
+- **Checklist mutations:** test-call, client-approval and live checklist changes are serialized per workspace with a pending guard and temporary control lock. Duplicate overlapping mutations are ignored. Successful responses must return the requested checklist field/value; incomplete HTTP-200 responses no longer count as confirmed changes.
+- **Refresh and warning truthfulness:** confirmed checklist changes remain confirmed even if the onboarding view refresh later fails, and provider/email warnings returned by the backend are shown to the admin instead of being discarded.
+- **Drawer behavior:** onboarding detail drawers now close only after verified successful checklist/build actions. Failed or unconfirmed actions leave the drawer open so the operator retains context and does not infer success from the UI disappearing.
+- Added focused UI regression coverage for canonical acknowledgement, pending guards, control restoration, warning presentation, notification refresh, and drawer preservation on failed actions.
+- **Exact verified implementation/test SHA `98159a22f9057c7e4251802377cfa0ed001c5cc1`:** CallerCore CI `37058268153` SUCCESS with **1219 tests passed / 0 failed**; CodeQL `37058268224` SUCCESS; Jekyll `37058268317` SUCCESS; Vercel status SUCCESS. Feature branch was 2072 commits ahead / 0 behind `main`.
+- No production merge/deployment, live voice/provider activation, billing action, customer communication, production migration, or release-gate change occurred.
+- Next residual candidate from mutation scan: `updateWebsiteProspect` still treats any HTTP 200 as a confirmed stage update and merges `data.prospect` without validating identity/stage/revision or handling network failure. Harden that path without duplicating the already-protected modal prospect editor.
