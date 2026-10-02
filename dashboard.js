@@ -3610,6 +3610,7 @@ function setAdminTechMutationState(saving,target=''){
   ids.forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminTechSaving||adminClientSaving});
   document.querySelectorAll('[data-restore-audit]').forEach(button=>button.disabled=adminTechSaving||adminClientSaving);
   const apply=document.getElementById('adminApplyOverrideButton');if(apply)apply.textContent=adminTechSaving&&adminTechMutationTarget==='override'?'Applying…':'Apply admin override';
+  const login=document.getElementById('adminSendLoginButton');if(login)login.textContent=adminTechSaving&&adminTechMutationTarget==='send-login'?'Sending…':'Send sign-in link';
   const force=document.getElementById('adminForceLogoutButton');if(force)force.textContent=adminTechSaving&&adminTechMutationTarget==='force-logout'?'Revoking…':'Force sign out';
   const repair=document.getElementById('adminRepairAccessButton');if(repair)repair.textContent=adminTechSaving&&adminTechMutationTarget==='repair-access'?'Repairing…':'Repair access mapping';
   const drawer=document.getElementById('adminClientDrawer');if(drawer)drawer.setAttribute('aria-busy',String(adminTechSaving||adminClientSaving));
@@ -3676,14 +3677,18 @@ function renderAdminConfigEditor(){
   editor.value=JSON.stringify(value,null,2);
 }
 async function sendClientLogin(){
-  if(!currentAdminClient)return;adminTechMessage('Sending secure sign-in link…');
+  if(!currentAdminClient||adminTechSaving||adminClientSaving)return false;
+  const id=String(currentAdminClient.id),request=adminClientOpenRequest;
+  setAdminTechMutationState(true,'send-login');adminTechMessage('Sending secure sign-in link…');
   try{
-    const r=await fetch('/api/account?action=admin-send-client-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-send-client-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not send sign-in link.');
     if(data.ok!==true||!String(data.email||'').trim())throw new Error('Sign-in link response was incomplete. Check delivery status before sending another link.');
     adminTechMessage('Sign-in link sent to '+data.email+(data.warning?' · '+data.warning:''),!!data.warning);
-    await loadAdminTechSupport();
-  }catch(err){adminTechMessage(err.message||'Could not send sign-in link.',true)}
+    try{await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('Sign-in link was sent, but access diagnostics could not refresh. Reload diagnostics before sending another link.',true)}
+    return true;
+  }catch(err){adminTechMessage(err.message||'Could not send sign-in link.',true);return false}
+  finally{setAdminTechMutationState(false)}
 }
 async function forceClientLogout(){
   if(!currentAdminClient||adminTechSaving||adminClientSaving||!confirm('Force this client to sign out of all existing CallerCore sessions?'))return;
