@@ -51,3 +51,12 @@ test('finance mutation handlers reject malformed sibling expense rows before edi
   assert.match(saveBlock,/list\.some\(item=>/);
   assert.match(deleteBlock,/list\.some\(item=>/);
 });
+
+test('malformed or duplicate reconciliation queue ids are disclosed as incomplete coverage',async()=>{
+  const r=await run({reconciliation:['case-1','case-1','',42]});
+  assert.equal(r.status,200);
+  assert.equal(r.payload.finance.reconciliationCoverage.retainedCaseIds,4);
+  assert.equal(r.payload.finance.reconciliationCoverage.verifiedCaseIds,1);
+  assert.equal(r.payload.finance.reconciliationCoverage.unavailableCaseRecords,3);
+  assert.equal(r.payload.finance.reconciliationCoverage.isIncomplete,true);
+});
