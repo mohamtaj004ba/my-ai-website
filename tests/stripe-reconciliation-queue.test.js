@@ -145,7 +145,8 @@ test('Finance reads all 200 retained reconciliation IDs and reports missing reco
    const id='cs_'+i;
    f.index.push(id);
    if(i===100)continue;
-   f.values.set('stripe:reconciliation:'+id,{id,sessionId:id,eventId:'evt_'+i,status:i<100?'resolved':'open',reason:'email_mismatch',createdAt:now+i});
+   const createdAt=now+i;
+   f.values.set('stripe:reconciliation:'+id,{id,sessionId:id,eventId:'evt_'+i,status:i<100?'resolved':'open',reason:'email_mismatch',createdAt,...(i<100?{resolvedAt:createdAt+1}:{})});
  }
  let requestedEnd=null;
  const ctx=vm.createContext({
