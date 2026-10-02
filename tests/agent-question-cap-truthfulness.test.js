@@ -30,3 +30,10 @@ test('receptionist read refuses malformed platform defaults rather than falling 
   assert.match(block,/Receptionist platform defaults are unavailable/);
   assert.match(block,/No default receptionist configuration was substituted/);
 });
+
+test('receptionist read and save reject malformed qualification-question storage instead of substituting an empty list',()=>{
+  const readStart=api.indexOf('async function agent('),readEnd=api.indexOf('\nasync function saveAgent(',readStart),readBlock=api.slice(readStart,readEnd);
+  const saveStart=api.indexOf('async function saveAgent('),saveEnd=api.indexOf('\nasync function automations(',saveStart),saveBlock=api.slice(saveStart,saveEnd);
+  assert.match(readBlock,/qualification questions are unavailable\. No empty question list was substituted/);
+  assert.match(saveBlock,/qualification questions are unavailable\. No changes were made/);
+});
