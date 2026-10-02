@@ -2677,7 +2677,7 @@ async function adminClient(req,res){
     kv.get('agent:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('onboarding:workspace:'+id)
   ]),objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value),
     validRows=value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim());
-  if(!objectOrNull(agent)||agent?.qualificationQuestions!=null&&!Array.isArray(agent.qualificationQuestions)||!validRows(locations)||!validRows(numbers)||!objectOrNull(onboarding))
+  if(!objectOrNull(agent)||agent?.qualificationQuestions!=null&&!Array.isArray(agent.qualificationQuestions)||!validRows(locations)||!validRows(numbers)||!objectOrNull(onboarding)||onboarding?.checklist!=null&&(!onboarding.checklist||typeof onboarding.checklist!=='object'||Array.isArray(onboarding.checklist)))
     return res.status(503).json({error:'Client detail sources could not be verified. No partial client drawer was returned.'});
   const phone=(numbers||[]).find(x=>x&&x.workspaceId===id)||null;
   return res.status(200).json({client:{
@@ -2726,7 +2726,7 @@ async function buildClientNotifications(s){
   if(prefs.billing&&ws.subscriptionStatus==='canceled')items.push(notificationItem('billing:'+ws.id+':canceled',{title:'Subscription canceled',body:'Your CallerCore subscription is canceled.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
   if(prefs.support&&ws.status==='suspended')items.push(notificationItem('workspace:'+ws.id+':suspended',{title:'Workspace suspended',body:'Your CallerCore workspace is currently suspended. Contact support for help.',kind:'danger',view:'support',createdAt:ws.updatedAt||now}));
   if(prefs.setup&&ws.status==='onboarding')items.push(notificationItem('workspace:'+ws.id+':onboarding',{title:'Onboarding in progress',body:'CallerCore is still being configured for your business.',kind:'info',view:'overview',createdAt:ws.updatedAt||ws.createdAt||now}));
-  const onboarding=await kv.get('onboarding:workspace:'+ws.id),onboardingValid=onboarding==null||!!onboarding&&typeof onboarding==='object'&&!Array.isArray(onboarding);
+  const onboarding=await kv.get('onboarding:workspace:'+ws.id),onboardingValid=onboarding==null||!!onboarding&&typeof onboarding==='object'&&!Array.isArray(onboarding)&&(onboarding.checklist==null||!!onboarding.checklist&&typeof onboarding.checklist==='object'&&!Array.isArray(onboarding.checklist));
   if(prefs.setup&&onboardingValid&&onboarding?.status==='awaiting_review')items.push(notificationItem('onboarding:'+ws.id+':account-review',{title:'Account review in progress',body:'Payment is confirmed. CallerCore is reviewing your account before sending onboarding.',kind:'info',view:'overview',createdAt:onboarding.paidAt||onboarding.updatedAt||now}));
   if(prefs.setup&&onboardingValid&&onboarding?.checklist?.intake&&!onboarding?.checklist?.adminReview)items.push(notificationItem('onboarding:'+ws.id+':review',{title:'Your setup is being reviewed',body:'We received your onboarding and are reviewing the initial AI-agent configuration.',kind:'info',view:'overview',createdAt:onboarding.intakeCompletedAt||onboarding.updatedAt||now}));
   if(prefs.setup&&onboardingValid&&onboarding?.checklist?.adminReview&&!onboarding?.checklist?.testCall)items.push(notificationItem('onboarding:'+ws.id+':test',{title:'Next step: test call',body:'CallerCore has reviewed your setup. A test call is the next launch step.',kind:'info',view:'calls',createdAt:onboarding.updatedAt||now}));
@@ -2802,7 +2802,7 @@ async function buildAdminNotifications(admin){
       const pct=Math.round((usage/plan.minutes)*100),threshold=pct>=100?100:pct>=85?85:0;
       if(threshold)items.push(notificationItem('admin-usage:'+id+':'+threshold,{title:(ws.name||'Client')+' usage at '+Math.min(pct,100)+'%',body:usage+' of '+plan.minutes+' included minutes used. Review usage; no overage policy is implied by this notice.',kind:threshold>=100?'danger':'warning',view:'clients',createdAt:ws.updatedAt||now,meta:{workspaceId:id,usage,limit:plan.minutes,threshold}}));
     }
-    const onboarding=await kv.get('onboarding:workspace:'+id),onboardingValid=onboarding==null||!!onboarding&&typeof onboarding==='object'&&!Array.isArray(onboarding);
+    const onboarding=await kv.get('onboarding:workspace:'+id),onboardingValid=onboarding==null||!!onboarding&&typeof onboarding==='object'&&!Array.isArray(onboarding)&&(onboarding.checklist==null||!!onboarding.checklist&&typeof onboarding.checklist==='object'&&!Array.isArray(onboarding.checklist));
     if(!onboardingValid)onboardingRecordUnavailable=true;
     if(alerts.onboarding&&onboardingValid&&onboarding?.status==='awaiting_review'){
       const eligible=Number(onboarding.reviewEligibleAt||0)<=now;
@@ -3196,6 +3196,7 @@ async function session(req,res){
   const {_raw,...profileData}=profileRecord;
   const rawOnboarding=await kv.get('onboarding:workspace:'+s.workspaceId);
   if(rawOnboarding!=null&&(!rawOnboarding||typeof rawOnboarding!=='object'||Array.isArray(rawOnboarding)))return res.status(503).json({error:'Onboarding session data is unavailable. No empty onboarding state was substituted.'});
+  if(rawOnboarding?.checklist!=null&&(!rawOnboarding.checklist||typeof rawOnboarding.checklist!=='object'||Array.isArray(rawOnboarding.checklist)))return res.status(503).json({error:'Onboarding checklist data is unavailable. No incomplete checklist was substituted.'});
   const rawOnboardingToken=await kv.get('onboarding:workspace-token:'+s.workspaceId);
   if(rawOnboardingToken!=null&&typeof rawOnboardingToken!=='string')return res.status(503).json({error:'Onboarding session token is unavailable. No onboarding link was synthesized.'});
   const onboardingState=rawOnboarding||null,onboardingToken=rawOnboardingToken||'';
@@ -3239,7 +3240,7 @@ async function buildWorkspaceExportData(id){
     ['calls',calls,recordListOrNull],['leads',leads,recordListOrNull],['appointments',appointments,recordListOrNull],
     ['automations',automations,recordListOrNull],['integrations',integrations,objectOrNull],['locations',locations,recordListOrNull],
     ['phone inventory',phones,recordListOrNull],['support index',supportIndex,value=>value==null||Array.isArray(value)],
-    ['onboarding',onboarding,objectOrNull],['audit',audit,recordListOrNull]
+    ['onboarding',onboarding,value=>objectOrNull(value)&&(value==null||value.checklist==null||!!value.checklist&&typeof value.checklist==='object'&&!Array.isArray(value.checklist))],['audit',audit,recordListOrNull]
   ].find(([,value,valid])=>!valid(value));
   if(invalid)throw new Error('Workspace export source unavailable: '+invalid[0]);
   const conversations=await readAllConversations(kv,id);
@@ -3762,7 +3763,7 @@ async function clientDashboardData(req,res){
     ['locations',locationsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['follow-up state',followupRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],
     ['platform defaults',platformRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],['phone routing',phoneIndex,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],
     ['call opened state',viewedRaw,v=>Array.isArray(v)],['leads',leadsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['appointments',appointmentsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],
-    ['automations',automationsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['onboarding',onboardingRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)]
+    ['automations',automationsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['onboarding',onboardingRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)&&(v.checklist==null||!!v.checklist&&typeof v.checklist==='object'&&!Array.isArray(v.checklist))]
   ].find(([,value,valid])=>value!=null&&!valid(value));
   if(invalid)return res.status(503).json({error:'Workspace '+invalid[0]+' data is unavailable. Last verified dashboard data should be preserved.'});
   let callsRaw=Array.isArray(callIndexRaw)&&callIndexRaw.length?callIndexRaw:null;
