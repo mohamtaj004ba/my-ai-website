@@ -224,3 +224,20 @@ test('purge completion requires retention snapshot bound to the active attempt a
   assert.match(code,/retainedAudit\.events\.some\(event=>/);
   assert.match(code,/new Set\(retainedAudit\.events\.map\(event=>String\(event\.id\)\)\)\.size!==retainedAudit\.events\.length/);
 });
+
+test('malformed permanent-purge completion marker cannot impersonate an already-finished purge',async()=>{
+  for(const marker of [
+    {workspaceId:'tenant'},
+    {workspaceId:'tenant',attemptId:'a',completedAt:0,completedBy:'admin',retainedUntil:10,supportDeleted:0,feedbackDeleted:0,prospectsDeidentified:0},
+    {workspaceId:'tenant',attemptId:'a',completedAt:5,completedBy:'',retainedUntil:10,supportDeleted:0,feedbackDeleted:0,prospectsDeidentified:0},
+    {workspaceId:'tenant',attemptId:'a',completedAt:5,completedBy:'admin',retainedUntil:4,supportDeleted:0,feedbackDeleted:0,prospectsDeidentified:0},
+    {workspaceId:'tenant',attemptId:'a',completedAt:5,completedBy:'admin',retainedUntil:10,supportDeleted:-1,feedbackDeleted:0,prospectsDeidentified:0}
+  ]){
+    const f=fixture();
+    f.records['purge:complete:tenant']=marker;
+    const r=await f.purge();
+    assert.equal(r.status,503);
+    assert.match(r.result.error,/completion marker is malformed/i);
+    assert.ok(f.records['workspace:tenant']);
+  }
+});
