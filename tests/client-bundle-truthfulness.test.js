@@ -63,3 +63,12 @@ test('bundled client dashboard validates onboarding checklist shape before apply
   const block=extract('clientDashboardData','callDetail');
   assert.match(block,/\['onboarding',onboardingRaw,v=>v&&typeof v==='object'&&!Array\.isArray\(v\)&&\(v\.checklist==null/);
 });
+
+test('bundled client dashboard validates canonical opened-call ids and nested follow-up notes',()=>{
+  const block=extract('clientDashboardData','callDetail');
+  assert.match(block,/\['call opened state',viewedRaw,v=>Array\.isArray\(v\)&&v\.length<=2000/);
+  assert.match(block,/new Set\(v\)\.size===v\.length/);
+  assert.doesNotMatch(block,/viewedRaw\.map\(String\)/);
+  assert.match(block,/\['follow-up state',followupRaw,v=>v&&typeof v==='object'&&!Array\.isArray\(v\)&&Object\.values\(v\)\.every/);
+  assert.match(block,/item\.notes\.every\(note=>/);
+});
