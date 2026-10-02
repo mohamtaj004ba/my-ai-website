@@ -45,3 +45,14 @@ test('advanced analytics refuses malformed source arrays instead of reporting ze
   assert.match(block,/Analytics source records are unavailable/);
   assert.doesNotMatch(block,/Array\.isArray\(calls\)\?calls:\[\]/);
 });
+
+for(const [name,next] of [
+  ['calls','leads'],['leads','updateLead'],['appointments','updateAppointment'],
+  ['locations','saveLocations'],['automations','saveAutomations']
+]){
+  test(name+' read refuses malformed records inside an otherwise valid array',async()=>{
+    const r=await handler(name,next,{value:[{corrupt:true}]})();
+    assert.equal(r.status,503);
+    assert.match(r.payload.error,/unverifiable|partial|unavailable/i);
+  });
+}
