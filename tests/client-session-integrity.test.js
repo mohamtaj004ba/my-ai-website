@@ -56,3 +56,9 @@ test('session bootstrap rejects malformed onboarding checklist instead of showin
   const start=source.indexOf('async function session('),end=source.indexOf('\nfunction redactExportSecrets(',start),block=source.slice(start,end);
   assert.match(block,/Onboarding checklist data is unavailable\. No incomplete checklist was substituted/);
 });
+
+test('session bootstrap rejects blank persisted onboarding token mappings',async()=>{
+  const out=await run({onboarding:{status:'awaiting_agreement'},token:'   '});
+  assert.equal(out.status,503);
+  assert.match(out.payload.error,/Onboarding session token is unavailable/);
+});
