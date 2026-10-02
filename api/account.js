@@ -1989,10 +1989,14 @@ async function adminProspectSave(req,res){
 async function adminMarketingCampaigns(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const index=await kv.get('marketing:campaign:index'),ids=index==null?[]:index,campaigns=[];
-  if(!Array.isArray(ids)||ids.length>500)return res.status(503).json({error:'Campaign index is unavailable or exceeds supported capacity. No partial campaign list was returned.'});
+  if(!Array.isArray(ids)||ids.length>500||ids.some(id=>typeof id!=='string'||!id.trim())||new Set(ids).size!==ids.length)return res.status(503).json({error:'Campaign index is unavailable or exceeds supported capacity. No partial campaign list was returned.'});
   for(let offset=0;offset<ids.length;offset+=40){
-    const batch=await Promise.all(ids.slice(offset,offset+40).map(id=>kv.get('marketing:campaign:'+id)));
-    for(const campaign of batch){if(campaign)campaigns.push(campaign)}
+    const batchIds=ids.slice(offset,offset+40),batch=await Promise.all(batchIds.map(id=>kv.get('marketing:campaign:'+id)));
+    for(let i=0;i<batch.length;i++){
+      const campaign=batch[i];
+      if(!campaign||typeof campaign!=='object'||Array.isArray(campaign)||String(campaign.id||'')!==String(batchIds[i]))return res.status(503).json({error:'Campaign records could not be verified. No partial campaign list was returned.'});
+      campaigns.push(campaign);
+    }
   }
   campaigns.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
   return res.status(200).json({campaigns});
@@ -2005,7 +2009,8 @@ async function adminMarketingCampaignSave(req,res){
   const key='marketing:campaign:'+id,indexKey='marketing:campaign:index';
   const [saved,rawIndex]=await Promise.all([kv.get(key),kv.get(indexKey)]);
   const list=rawIndex==null?[]:rawIndex;
-  if(!Array.isArray(list)||list.length>500)return res.status(503).json({error:'Campaign index is unavailable. No changes were made.'});
+  if(!Array.isArray(list)||list.length>500||list.some(entry=>typeof entry!=='string'||!entry.trim())||new Set(list).size!==list.length)return res.status(503).json({error:'Campaign index is unavailable. No changes were made.'});
+  if(saved!=null&&(!saved||typeof saved!=='object'||Array.isArray(saved)||String(saved.id||'')!==id))return res.status(503).json({error:'Campaign record could not be verified. No changes were made.'});
   if(editing&&!saved)return res.status(404).json({error:'Campaign not found. Refresh the campaign list before editing.'});
   if(!editing&&saved)return res.status(409).json({error:'A campaign with this identifier already exists.'});
   if(editing&&(b.expectedUpdatedAt===undefined||Number(b.expectedUpdatedAt||0)!==Number(saved.updatedAt||saved.createdAt||0)))return res.status(409).json({error:'Campaign changed since you opened it. Refresh the list and reopen this campaign.'});
@@ -2027,9 +2032,11 @@ async function adminMarketingCampaignDelete(req,res){
   const key='marketing:campaign:'+id,indexKey='marketing:campaign:index';
   const [saved,rawIndex]=await Promise.all([kv.get(key),kv.get(indexKey)]);
   if(!saved)return res.status(404).json({error:'Campaign not found. Refresh the campaign list before retrying.'});
+  if(typeof saved!=='object'||Array.isArray(saved)||String(saved.id||'')!==id)return res.status(503).json({error:'Campaign record could not be verified. No changes were made.'});
   if(b.expectedUpdatedAt===undefined||Number(b.expectedUpdatedAt||0)!==Number(saved.updatedAt||saved.createdAt||0))return res.status(409).json({error:'Campaign changed since you opened it. Refresh the list before deleting.'});
   const list=rawIndex==null?[]:rawIndex;
-  if(!Array.isArray(list)||!list.includes(id))return res.status(409).json({error:'Campaign directory changed. Refresh the list before deleting.'});
+  if(!Array.isArray(list)||list.some(entry=>typeof entry!=='string'||!entry.trim())||new Set(list).size!==list.length)return res.status(503).json({error:'Campaign directory is unavailable. No changes were made.'});
+  if(!list.includes(id))return res.status(409).json({error:'Campaign directory changed. Refresh the list before deleting.'});
   const nextIndex=list.filter(x=>x!==id);
   const audit={id:crypto.randomUUID(),workspaceId:admin.workspaceId,actorEmail:admin.email,actorRole:'admin',action:'marketing_campaign_delete',section:'marketing',before:{id,name:saved.name||'',status:saved.status||'draft',budget:Number(saved.budget||0),updatedAt:saved.updatedAt||saved.createdAt||0},after:null,meta:{campaignId:id},at:Date.now()};
   try{
