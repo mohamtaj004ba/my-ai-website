@@ -7,9 +7,11 @@ const begin=api.indexOf('async function createSupportTicket(req,res){');
 const end=api.indexOf('\nasync function supportTickets(req,res){',begin);
 assert.ok(begin>=0&&end>begin,'support ticket create handler found');
 
-function fixture({initial=null,onCompare=null,failEval=false}={}){
+function fixture({initial=null,onCompare=null,failEval=false,platform=null,clientSettings=null}={}){
   const values=new Map([['workspace:client-1',{id:'client-1',name:'Customer'}]]);
   if(initial!==null)values.set('support:index',initial);
+  if(platform!==null)values.set('platform:settings',platform);
+  if(clientSettings!==null)values.set('settings:client-1',clientSettings);
   let status=0,response,attempts=0,mails=0;
   const compareAndSetConfig=async(_kv,updates)=>{
     attempts++;
@@ -94,5 +96,21 @@ test('malformed workspace support context blocks ticket creation before storage 
     const r=await f.run();
     assert.equal(r.status,503);assert.equal(r.attempts,0);assert.equal(r.mails,0);
     assert.match(r.response.error,/support context is unavailable/);
+  }
+});
+
+test('blank or duplicate support directory ids block creation before any write',async()=>{
+  for(const initial of [[''],['dup','dup']]){
+    const f=fixture({initial}),r=await f.run();
+    assert.equal(r.status,503);assert.equal(r.attempts,0);assert.equal(f.values.has('support:1'),false);
+    assert.match(r.response.error,/unverifiable directory entries/);
+  }
+});
+test('malformed notification settings preserve the ticket but suppress unverified support emails',async()=>{
+  for(const config of [{platform:['bad']},{clientSettings:['bad']}]){
+    const f=fixture({initial:[],...config}),r=await f.run();
+    assert.equal(r.status,201);assert.equal(r.response.ok,true);assert.ok(r.response.ticket?.id);
+    assert.match(r.response.warning,/notification settings could not be verified/);
+    assert.equal(r.mails,0);
   }
 });
