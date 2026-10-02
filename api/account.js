@@ -1275,11 +1275,12 @@ async function createSupportTicket(req,res){
     }
   }
   if(!recorded)return res.status(409).json({error:'Support requests changed while submitting. Check request history and retry.'});
-  const [platform,clientSettings]=await Promise.all([kv.get('platform:settings'),kv.get('settings:'+s.workspaceId)]),
-    platformValid=platform==null||!!platform&&typeof platform==='object'&&!Array.isArray(platform),
-    clientSettingsValid=clientSettings==null||!!clientSettings&&typeof clientSettings==='object'&&!Array.isArray(clientSettings);
-  let notificationWarning='';
-  if(!platformValid||!clientSettingsValid)notificationWarning='Your support request was saved, but notification settings could not be verified, so no support emails were sent.';
+  let platform=null,clientSettings=null,notificationWarning='';
+  try{[platform,clientSettings]=await Promise.all([kv.get('platform:settings'),kv.get('settings:'+s.workspaceId)])}
+  catch(err){console.error('support notification settings read failed',safeError(err));notificationWarning='Your support request was saved, but notification settings could not be verified, so no support emails were sent.'}
+  const platformValid=!notificationWarning&&(platform==null||!!platform&&typeof platform==='object'&&!Array.isArray(platform)),
+    clientSettingsValid=!notificationWarning&&(clientSettings==null||!!clientSettings&&typeof clientSettings==='object'&&!Array.isArray(clientSettings));
+  if(!notificationWarning&&(!platformValid||!clientSettingsValid))notificationWarning='Your support request was saved, but notification settings could not be verified, so no support emails were sent.';
   const supportTo=platformValid?(platform?.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||''):'';
   if(!notificationWarning&&supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',safeError(err))}}
   if(!notificationWarning&&s.email&&clientSettings?.emailAlerts!==false&&clientSettings?.notifySupport!==false){
