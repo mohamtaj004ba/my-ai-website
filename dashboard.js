@@ -1175,7 +1175,6 @@ document.getElementById('drawerSaveNote')?.addEventListener('click',saveCallNote
 document.getElementById('drawerCancelNoteEdit')?.addEventListener('click',resetNoteComposer);
 document.getElementById('drawerAddNoteToggle')?.addEventListener('click',()=>{const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote');if(!composer)return;if(activeNoteEditId)resetNoteComposer();composer.hidden=false;if(input)input.value='';const save=document.getElementById('drawerSaveNote'),cancel=document.getElementById('drawerCancelNoteEdit'),status=document.getElementById('drawerNoteStatus');if(save)save.textContent='Save note';if(cancel)cancel.hidden=true;if(status)status.textContent='';setTimeout(()=>input?.focus(),20)});
 
-const appointmentStatusPending=new Set();
 function renderAppointments(){
   if(!has('appointments'))return;
   const wrap=document.getElementById('appointmentTable');if(!wrap)return;
@@ -1187,6 +1186,7 @@ function renderAppointments(){
   document.getElementById('appointmentsEmpty').hidden=appointmentsData.length!==0;
   wrap.querySelectorAll('[data-appointment-id]').forEach(sel=>sel.addEventListener('change',()=>updateAppointment(sel.dataset.appointmentId,sel.value)));
 }
+const appointmentStatusPending=new Set();
 async function updateAppointment(id,status){
   const key=String(id);if(appointmentStatusPending.has(key))return false;
   const item=appointmentsData.find(x=>String(x.id)===key);if(!item||String(item.status||'')===String(status))return false;
@@ -1195,7 +1195,7 @@ async function updateAppointment(id,status){
   try{
     const r=await fetch('/api/account?action=appointment-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,status})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update appointment.');
-    if(data.updated!==true||!data.appointment||typeof data.appointment!=='object'||Array.isArray(data.appointment)||String(data.appointment.id||'')!==key||String(data.appointment.status||'')!==String(status))throw new Error('Appointment update response was incomplete. Refresh appointments before retrying.');
+    if(data.updated!==true||!data.appointment||typeof data.appointment!=='object'||Array.isArray(data.appointment)||String(data.appointment.id||'')!==String(id)||String(data.appointment.status||'')!==String(status))throw new Error('Appointment update response was incomplete. Refresh appointments before retrying.');
     Object.assign(item,data.appointment);return true;
   }catch(err){if(item.status===status)item.status=previous;alert(err.message||'Could not update appointment. Check your connection and try again.');return false}
   finally{appointmentStatusPending.delete(key);renderAppointments()}
