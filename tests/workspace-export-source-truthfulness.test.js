@@ -25,3 +25,11 @@ test('recovery drill refuses to report recovery readiness from unverifiable sour
   assert.match(block,/No partial recovery result was reported/);
   assert.match(block,/status\(503\)/);
 });
+
+test('workspace export validates row identity, workspace usage, and receptionist questions',()=>{
+  const start=api.indexOf('async function buildWorkspaceExportData('),end=api.indexOf('\nfunction validateWorkspaceExportData(',start),block=api.slice(start,end);
+  assert.match(block,/recordListOrNull=value=>/);
+  assert.match(block,/String\(workspace\.id\|\|''\)===String\(id\)/);
+  assert.match(block,/Number\.isFinite\(Number\(workspace\.usage\.minutes\)\)/);
+  assert.match(block,/qualificationQuestions==null\|\|Array\.isArray\(value\.qualificationQuestions\)/);
+});
