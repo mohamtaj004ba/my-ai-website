@@ -33,3 +33,14 @@ test('provisioning checklist mutations are serialized and require canonical ackn
   assert.match(block,/loadNotifications\(\{silent:true\}\)\.catch/);
   assert.match(block,/finally\{adminProvisioningChecklistPending\.delete\(key\);setProvisioningChecklistControls\(key,false\);renderProvisioning\(\)\}/);
 });
+
+
+test('onboarding drawer stays open when checklist or build approval fails',()=>{
+  const ui=fs.readFileSync('dashboard.js','utf8');
+  const start=ui.indexOf('function bindOnboardingDrawerActions(){');
+  const end=ui.indexOf('\nfunction openOnboardingDrawer(',start);
+  assert.ok(start>=0&&end>start);
+  const fn=ui.slice(start,end);
+  assert.match(fn,/if\(await updateProvisioningChecklist\([^\n]+\)\)closeOnboardingDrawer\(\)/);
+  assert.match(fn,/if\(await approveProvisioningBuild\([^\n]+\)\)closeOnboardingDrawer\(\)/);
+});
