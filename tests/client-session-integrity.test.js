@@ -51,3 +51,8 @@ test('session handler returns a verified workspace identity for healthy records'
   assert.equal(out.payload.user.role,'owner');
   assert.equal(out.payload.onboarding.needsCompletion,false);
 });
+
+test('session bootstrap rejects malformed onboarding checklist instead of showing an empty checklist',()=>{
+  const start=api.indexOf('async function session('),end=api.indexOf('\nfunction redactExportSecrets(',start),block=api.slice(start,end);
+  assert.match(block,/Onboarding checklist data is unavailable\. No incomplete checklist was substituted/);
+});
