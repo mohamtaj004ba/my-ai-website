@@ -7,8 +7,9 @@ test('admin client drawer refuses malformed secondary sources instead of renderi
   const start=api.indexOf('async function adminClient('),end=api.indexOf('\n\nfunction notificationReadKey(',start),block=api.slice(start,end);
   assert.match(block,/Client detail sources could not be verified/);
   assert.match(block,/No partial client drawer was returned/);
-  assert.match(block,/locations!=null&&!Array\.isArray\(locations\)/);
-  assert.match(block,/numbers!=null&&!Array\.isArray\(numbers\)/);
+  assert.match(block,/validRows=value=>/);
+  assert.match(block,/!validRows\(locations\)/);
+  assert.match(block,/!validRows\(numbers\)/);
   assert.match(block,/objectOrNull\(agent\)/);
   assert.match(block,/objectOrNull\(onboarding\)/);
 });
