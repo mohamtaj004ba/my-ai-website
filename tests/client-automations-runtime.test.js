@@ -29,3 +29,24 @@ test('client automation saves serialize mutations and require canonical acknowle
   assert.match(fn,/Number\.isFinite\(Number\(item\.updatedAt\)\)/);
   assert.match(fn,/finally\{automationMutationPending=false\}/);
 });
+
+
+test('automation controls block overlapping mutations and delete rolls back on save failure',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  const render=ui.slice(ui.indexOf('function renderAutomations(){'),ui.indexOf('let automationMutationPending=false;'));
+  const toggle=ui.slice(ui.indexOf('async function toggleAutomation('),ui.indexOf('let editingAutomationId=null;'));
+  const save=ui.slice(ui.indexOf('async function saveAutomation(){'),ui.indexOf("document.querySelectorAll('[data-agent-edit]"));
+  assert.match(render,/automationMutationPending\?'disabled aria-busy="true"'/);
+  assert.match(toggle,/if\(automationMutationPending\)return false/);
+  assert.match(toggle,/async function deleteAutomation\(id\)/);
+  assert.match(toggle,/automationsData=automationsData\.filter/);
+  assert.match(toggle,/automationsData=before;renderAutomations\(\);return false/);
+  assert.match(save,/if\(automationMutationPending\)return false/);
+});
+
+test('automation delete binding points to an implemented handler',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(ui,/data-delete-auto/);
+  assert.match(ui,/async function deleteAutomation\(id\)/);
+  assert.match(ui,/deleteAutomation\(btn\.dataset\.deleteAuto\)/);
+});
