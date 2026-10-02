@@ -2881,7 +2881,7 @@ async function followups(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const raw=await kv.get('followup:state:'+s.workspaceId);
   if(raw!=null&&(!raw||typeof raw!=='object'||Array.isArray(raw)))return res.status(503).json({error:'Team follow-up history is unavailable. Previously loaded follow-ups should be preserved.'});
-  if(raw&&Object.values(raw).some(item=>!item||typeof item!=='object'||Array.isArray(item)||item.notes!=null&&!Array.isArray(item.notes)||Array.isArray(item.notes)&&item.notes.length>100))return res.status(503).json({error:'Team follow-up records are incomplete or malformed. Previously loaded follow-ups should be preserved.'});
+  if(raw&&Object.values(raw).some(item=>!item||typeof item!=='object'||Array.isArray(item)||item.notes!=null&&!Array.isArray(item.notes)||Array.isArray(item.notes)&&(item.notes.length>100||item.notes.some(note=>!note||typeof note!=='object'||Array.isArray(note)||!String(note.id||'').trim()||typeof note.text!=='string'||!Number.isFinite(Number(note.at))||Number(note.at)<0))))return res.status(503).json({error:'Team follow-up records are incomplete or malformed. Previously loaded follow-ups should be preserved.'});
   return res.status(200).json({state:raw||{},coverage:{verified:true}});
 }
 async function followupUpdate(req,res){
@@ -2899,9 +2899,8 @@ async function followupUpdate(req,res){
   if(!(calls||[]).some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
   const key='followup:state:'+s.workspaceId,rawState=await kv.get(key);
   if(rawState!=null&&(!rawState||typeof rawState!=='object'||Array.isArray(rawState)))return res.status(503).json({error:'Team follow-up history is unavailable. No changes were made.'});
+  if(rawState&&Object.values(rawState).some(item=>!item||typeof item!=='object'||Array.isArray(item)||item.notes!=null&&!Array.isArray(item.notes)||Array.isArray(item.notes)&&(item.notes.length>100||item.notes.some(note=>!note||typeof note!=='object'||Array.isArray(note)||!String(note.id||'').trim()||typeof note.text!=='string'||!Number.isFinite(Number(note.at))||Number(note.at)<0))))return res.status(503).json({error:'Team follow-up records are incomplete or malformed. No changes were made.'});
   const base=rawState||{},next={...base},previous=base[callId]&&typeof base[callId]==='object'&&!Array.isArray(base[callId])?base[callId]:{};
-  if(previous.notes!=null&&!Array.isArray(previous.notes))return res.status(503).json({error:'Team note history is unavailable. No changes were made.'});
-  if(Array.isArray(previous.notes)&&previous.notes.length>100)return res.status(503).json({error:'Team note history exceeds the supported 100-note boundary. No changes were made.'});
   let notes=Array.isArray(previous.notes)?previous.notes.slice():[];
   if(previous.note&&String(previous.note).trim()&&!notes.some(n=>n&&n.text===previous.note)&&notes.length<100)notes.unshift({id:'legacy',text:String(previous.note).slice(0,2000),at:Number(previous.updatedAt||0),by:previous.updatedBy||''});
   if(legacyNote&&!appendNote&&!notes.length)notes.push({id:'legacy_'+Date.now(),text:legacyNote,at:Date.now(),by:s.email||''});
