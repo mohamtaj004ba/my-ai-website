@@ -217,3 +217,11 @@ test('partial document collection cannot replace existing signed agreement archi
   assert.equal(f.context.adminDataSyncAt.documents,undefined);
   assert.deepEqual(f.health[0],['adminDataHealth',true]);
 });
+
+test('admin summary and client directory fail closed on malformed workspace usage',()=>{
+  const api=fs.readFileSync('api/account.js','utf8');
+  const summary=api.slice(api.indexOf('async function adminSummary('),api.indexOf('\nasync function adminClients('));
+  const clients=api.slice(api.indexOf('async function adminClients('),api.indexOf('\nasync function adminUpdateClient('));
+  assert.match(summary,/Client usage records are unavailable\. Admin totals were not recalculated/);
+  assert.match(clients,/Client usage records are unavailable\. No partial client directory was returned/);
+});
