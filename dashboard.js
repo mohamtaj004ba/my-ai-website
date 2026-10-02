@@ -2904,10 +2904,10 @@ function bindOnboardingDrawerActions(){
   const drawer=document.getElementById('onboardingDetailDrawer');if(!drawer)return;
   drawer.querySelectorAll('[data-auto-stage]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await clearProvisioningOverride(b.dataset.autoStage))closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-provision-stage-select]').forEach(sel=>sel.onchange=async e=>{e.stopPropagation();if(await moveProvisioningStage(sel.dataset.provisionStageSelect,sel.value))closeOnboardingDrawer();else{const item=adminProvisioningData.find(x=>String(x.id)===String(sel.dataset.provisionStageSelect));if(item)sel.value=item.stage}});
-  drawer.querySelectorAll('[data-provision-check]').forEach(b=>b.onclick=async e=>{e.preventDefault();await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done'));closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-provision-check]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done')))closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-send-onboarding]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await sendOnboardingInvite(b.dataset.sendOnboarding,b))closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-resolve-onboarding-delivery]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await resolveOnboardingInviteDelivery(b.dataset.resolveOnboardingId,b.dataset.resolveOnboardingDelivery,b.dataset.attemptId,b))closeOnboardingDrawer()});
-  drawer.querySelectorAll('[data-approve-build]').forEach(b=>b.onclick=async e=>{e.preventDefault();await approveProvisioningBuild(b.dataset.approveBuild,b);closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-approve-build]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await approveProvisioningBuild(b.dataset.approveBuild,b))closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-open-documents],[data-onboarding-documents]').forEach(b=>b.onclick=e=>{e.preventDefault();closeOnboardingDrawer();showView('documents')});
   drawer.querySelectorAll('[data-onboarding-open-client]').forEach(b=>b.onclick=e=>{e.preventDefault();closeOnboardingDrawer();openAdminClient(b.dataset.onboardingOpenClient)});
 }
