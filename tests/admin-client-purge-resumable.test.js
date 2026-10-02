@@ -159,3 +159,18 @@ test('malformed phone inventory or owner mapping pauses purge before shared deta
   r=await owner.purge();assert.equal(r.status,503);assert.equal(r.result.purgePhase,'retained');assert.match(r.result.error,/Owner access mapping is malformed/);
   assert.deepEqual(owner.records['workspace:index'],['tenant','other']);
 });
+
+test('malformed onboarding retention state blocks purge before a durable journal starts',async()=>{
+  for(const mutate of [
+    f=>{f.records['onboarding:workspace-token:tenant']='   '},
+    f=>{f.records['onboarding:workspace-token:tenant']={bad:true}},
+    f=>{f.records['onboarding:workspace:tenant']={agreementVersion:'1',checklist:['bad']}}
+  ]){
+    const f=fixture();mutate(f);
+    const r=await f.purge();
+    assert.equal(r.status,503);
+    assert.match(r.result.error,/Onboarding (token )?retention data is unavailable/);
+    assert.equal(f.records['purge:workspace:tenant'],undefined);
+    assert.equal(f.records['retention:workspace:tenant'],undefined);
+  }
+});
