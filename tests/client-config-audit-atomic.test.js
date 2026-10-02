@@ -37,3 +37,10 @@ test('follow-up status and notes commit with their audit event and reject malfor
   assert.match(body,/compareAndAudit\(kv,\{key,before:rawState,after:next\},'audit:'\+s\.workspaceId,audit\)/);
   assert.doesNotMatch(body,/await kv\.set\(|await appendAudit\(/);
 });
+
+test('location and automation saves reject malformed previous rows instead of overwriting them',()=>{
+  const locations=handler('saveLocations','\nasync function agent(');
+  const automations=handler('saveAutomations','\nasync function conversations(');
+  assert.match(locations,/Location records contain unverifiable entries\. No changes were made/);
+  assert.match(automations,/Automation records contain unverifiable entries\. No changes were made/);
+});
