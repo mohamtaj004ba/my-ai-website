@@ -49,3 +49,11 @@ test('client notification coverage treats malformed provider rows and receptioni
   assert.match(block,/numbersValid=.*\.every/);
   assert.match(block,/callsValid=.*\.every/);
 });
+
+test('client notification coverage exposes unavailable or malformed workspace usage',()=>{
+  const start=api.indexOf('async function buildClientNotifications('),end=api.indexOf('\nasync function buildAdminNotifications(',start),block=api.slice(start,end);
+  assert.match(block,/workspace_unavailable/);
+  assert.match(block,/Workspace source unavailable|workspace_unavailable/);
+  assert.match(block,/Number\.isFinite\(Number\(ws\.usage\.minutes\)\)/);
+  assert.match(ui,/Workspace source unavailable/);
+});
