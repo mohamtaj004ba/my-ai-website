@@ -1403,8 +1403,9 @@ async function adminSupportReply(req,res){
     try{clientSettingsRaw=await kv.get('settings:'+t.workspaceId)}
     catch(err){console.error('admin support reply notification settings read failed',safeError(err));return res.status(200).json({ok:true,ticket:next,warning:'The support reply was saved, but client notification settings could not be verified.'})}
     const clientSettingsVerified=clientSettingsRaw==null||(clientSettingsRaw&&typeof clientSettingsRaw==='object'&&!Array.isArray(clientSettingsRaw));
-    const clientSettings=clientSettingsVerified?(clientSettingsRaw||{}):null;
-    if(clientSettings&&clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false){
+    if(!clientSettingsVerified)return res.status(200).json({ok:true,ticket:next,warning:'The support reply was saved, but client notification settings could not be verified.'});
+    const clientSettings=clientSettingsRaw||{};
+    if(clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false){
       try{
         const emailBody=lifecycleEmail({
           preheader:'CallerCore support replied to your request.',
@@ -1447,8 +1448,9 @@ async function adminSupportUpdate(req,res){
     try{clientSettingsRaw=await kv.get('settings:'+t.workspaceId)}
     catch(err){console.error('support status notification settings read failed',safeError(err));return res.status(200).json({ok:true,ticket:next,warning:'The support status was saved, but client notification settings could not be verified.'})}
     const clientSettingsVerified=clientSettingsRaw==null||(clientSettingsRaw&&typeof clientSettingsRaw==='object'&&!Array.isArray(clientSettingsRaw));
-    const clientSettings=clientSettingsVerified?(clientSettingsRaw||{}):null;
-    if(clientSettings&&clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false&&(status==='in_progress'||status==='resolved')){
+    if(!clientSettingsVerified)return res.status(200).json({ok:true,ticket:next,warning:'The support status was saved, but client notification settings could not be verified.'});
+    const clientSettings=clientSettingsRaw||{};
+    if(clientSettings.emailAlerts!==false&&clientSettings.notifySupport!==false&&(status==='in_progress'||status==='resolved')){
       try{
         const resolved=status==='resolved',label=resolved?'Resolved':'In progress';
         const emailBody=lifecycleEmail({
