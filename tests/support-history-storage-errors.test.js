@@ -175,7 +175,7 @@ test('saved support ticket warns when provider notification delivery cannot be c
   assert.equal(ctx.res.body.ok,true);
   assert.match(ctx.res.body.warning,/saved, but one or more support email notifications could not be confirmed/i);
   assert.equal(commits,1);
-  assert.equal(mails,1);
+  assert.equal(mails,2);
 });
 
 test('confirmed client Support reply warns when support email delivery cannot be confirmed',async()=>{
