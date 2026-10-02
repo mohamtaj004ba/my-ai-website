@@ -53,18 +53,19 @@ test('concurrent prospect change and uncertain write reject without claiming suc
   const uncertain=await backend({id:'lead-1',expectedUpdatedAt:10,stage:'qualified'},{commit:'error'}).run();
   assert.equal(uncertain.code,503);assert.equal(uncertain.plainWrites,0);
 });
-test('all admin prospect edit paths submit displayed revisions and guard pending modal',()=>{
+test('all live admin prospect edit paths submit displayed revisions and guard pending state',()=>{
   const pipeline=ui.slice(ui.indexOf('async function moveGrowthProspectStage('),ui.indexOf('function toLocalDateTimeInput('));
   const editor=ui.slice(ui.indexOf('let prospectModalPending=false;'),ui.indexOf('let adminCampaignMutationPending=false;'));
-  const quick=ui.slice(ui.indexOf('async function updateWebsiteProspect('),ui.indexOf('async function loadAdminInbox(',ui.indexOf('async function updateWebsiteProspect(')));
   assert.match(pipeline,/JSON\.stringify\(\{id,stage,expectedUpdatedAt\}\)/);
   assert.match(pipeline,/prospectStagePending\.has\(key\)/);
   assert.match(pipeline,/const key=String\(id\)/);
+  assert.match(pipeline,/String\(data\.prospect\.stage\)!==stage/);
+  assert.match(pipeline,/Number\(data\.prospect\.updatedAt\)<=expectedUpdatedAt/);
   assert.match(editor,/m\.dataset\.expectedUpdatedAt/);
   assert.match(editor,/payload\.expectedUpdatedAt=Number\(/);
   assert.match(editor,/if\(prospectModalPending\)return/);
   assert.match(editor,/adminWebsiteData\.prospects=\[data\.prospect/);
-  assert.match(quick,/expectedUpdatedAt:Number\(before\.updatedAt/);
+  assert.doesNotMatch(ui,/async function updateWebsiteProspect\(/);
 });
 
 test('changing a prospect email rekeys lookup with the record in one compare transaction',async()=>{
