@@ -1791,7 +1791,7 @@ let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdm
 let adminSupportCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},adminFeedbackCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},adminSupportLoadError='',adminFeedbackLoadError='';
 let adminRetentionData=null,adminRetentionCheckedAt=0,adminRetentionLoadError='';
 let adminConversationMigrationData=null,adminConversationMigrationLoadError='';
-let adminProvisioningStagePending=new Set(),adminOnboardingInvitePending=new Set();
+let adminProvisioningStagePending=new Set(),adminProvisioningChecklistPending=new Set(),adminOnboardingInvitePending=new Set();
 let adminMonthlyKpiStatus=null;
 async function refreshAdminMonthlyKpi(){
   try{
@@ -3014,11 +3014,28 @@ async function approveProvisioningBuild(id,button){
   }catch(err){alert(err.message||'Could not approve this build.');return false}
   finally{if(button?.isConnected){button.disabled=false;button.textContent=idleLabel}}
 }
+function setProvisioningChecklistControls(id,pending){
+  document.querySelectorAll('[data-provision-id]').forEach(control=>{
+    if(String(control.dataset.provisionId||'')!==String(id))return;
+    control.disabled=pending;
+    if(pending)control.setAttribute('aria-busy','true');else control.removeAttribute('aria-busy');
+  });
+}
 async function updateProvisioningChecklist(id,field,value){
-  const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field,value})}),data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not update provisioning checklist.');return}
-  await refreshAdminView('onboarding',{force:true,announce:false});
-  if(data.warning)alert(data.warning);
+  const key=String(id);if(adminProvisioningChecklistPending.has(key))return false;
+  adminProvisioningChecklistPending.add(key);setProvisioningChecklistControls(key,true);
+  try{
+    const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,field,value})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not update provisioning checklist.');
+    if(data.ok!==true||!data.onboarding||typeof data.onboarding!=='object'||Array.isArray(data.onboarding)||data.onboarding.checklist?.[field]!==value)
+      throw new Error('Checklist update response was incomplete. Refresh onboarding before retrying.');
+    try{await refreshAdminView('onboarding',{force:true,announce:false})}
+    catch(_){alert('Checklist update was saved, but onboarding could not refresh. Reload the view before taking another action.')}
+    if(data.warning)alert(String(data.warning));
+    await loadNotifications({silent:true}).catch(()=>{});
+    return true;
+  }catch(err){alert(err.message||'Could not update provisioning checklist.');return false}
+  finally{adminProvisioningChecklistPending.delete(key);setProvisioningChecklistControls(key,false);renderProvisioning()}
 }
 function setProvisioningStageControls(id,pending){
   document.querySelectorAll('[data-provision-stage-select],[data-auto-stage]').forEach(control=>{
