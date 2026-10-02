@@ -2216,10 +2216,12 @@ function sanitizeAdminOverride(section,value,current){
   if(section==='settings'||section==='agent'||section==='integrations'){
     if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Section must be a JSON object');
     if(section==='agent'&&value.transferNumber&& !/^\+?[0-9() .-]{7,30}$/.test(String(value.transferNumber||'')))throw new Error('Transfer destination is invalid');
+    if(section==='agent'&&value.qualificationQuestions!=null&&(!Array.isArray(value.qualificationQuestions)||value.qualificationQuestions.some(question=>typeof question!=='string')))throw new Error('Qualification questions must be a list of text values');
     return {...value,updatedAt:Date.now()};
   }
   if(section==='automations'||section==='locations'){
     if(!Array.isArray(value))throw new Error('Section must be a JSON array');
+    if(value.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))throw new Error('Section contains unverifiable records');
     const limit=section==='automations'?20:5;
     if(value.length>limit)throw new Error((section==='automations'?'Automation':'Location')+' override exceeds the '+limit+'-record safety limit. No records were dropped.');
     return value.slice();
@@ -3375,6 +3377,7 @@ async function saveAgent(req,res){
   if(body.expectedUpdatedAt!==undefined&&Number(body.expectedUpdatedAt||0)!==Number(previous?.updatedAt||0))return res.status(409).json({error:'Receptionist settings changed since you opened them. Reload to load the latest version before retrying.',code:'CONFIG_CONFLICT'});
   const sectionFields={identity:['name','role','tone','openingMessage'],knowledge:['serviceArea','businessHours','transferNumber','emergencyInstructions'],qualification:['qualificationQuestions'],handling:['handlingInstructions']};
   if(body.section&&!sectionFields[body.section])return res.status(400).json({error:'Unknown receptionist section'});
+  if(Object.hasOwn(body,'qualificationQuestions')&&(!Array.isArray(body.qualificationQuestions)||body.qualificationQuestions.some(question=>typeof question!=='string')))return res.status(400).json({error:'Qualification questions must be a list of text values. No receptionist settings were changed.'});
   const incoming=body.section?{...(previous||{}),...Object.fromEntries(sectionFields[body.section].filter(key=>Object.hasOwn(body,key)).map(key=>[key,body[key]]))}:body;
   if(Array.isArray(incoming.qualificationQuestions)&&incoming.qualificationQuestions.length>12)return res.status(409).json({error:'CallerCore supports up to 12 receptionist qualification questions. Remove a question before saving; no questions were changed.'});
   const clean=(v,n)=>String(v||'').trim().slice(0,n);
@@ -3395,8 +3398,10 @@ async function saveAgent(req,res){
   if(agent.transferNumber&&!/^\+?[0-9() .-]{7,30}$/.test(agent.transferNumber))return res.status(400).json({error:'Transfer destination is invalid'});
   const phoneIndexRaw=await kv.get('phone:index');
   if(phoneIndexRaw!=null&&!Array.isArray(phoneIndexRaw))return res.status(503).json({error:'Phone routing data is unavailable. No changes were made.'});
+  if(Array.isArray(phoneIndexRaw)&&phoneIndexRaw.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Phone routing data contains unverifiable records. No changes were made.'});
   const phoneIndex=(phoneIndexRaw||[]).slice(),phonePos=phoneIndex.findIndex(x=>x&&String(x.workspaceId||'')===String(s.workspaceId)),phoneBefore=phonePos>=0?phoneIndex[phonePos]:null;
   const routingRequest=await kv.get('routing-request:'+s.workspaceId);
+  if(routingRequest!=null&&(!routingRequest||typeof routingRequest!=='object'||Array.isArray(routingRequest)))return res.status(503).json({error:'Routing request data is unavailable. No receptionist settings were changed.'});
   const updates=[{key:'agent:'+s.workspaceId,before:previous,after:agent}];
   let routing=clientRouting(phoneBefore,{smsLive:process.env.CALLERCORE_SMS_ENABLED==='true'});
   if(phonePos>=0&&String(phoneBefore.transferNumber||'')!==agent.transferNumber){
