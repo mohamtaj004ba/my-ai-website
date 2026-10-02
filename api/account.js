@@ -692,7 +692,8 @@ async function adminPurgeClient(req,res){
       return res.status(409).json({error:'This pending-deletion workspace changed since you opened it. Refresh before starting permanent purge.'});
     if(ws.stripeSubscriptionId&&String(ws.subscriptionStatus||'active')!=='canceled')return res.status(409).json({error:'Active Stripe subscription blocks permanent deletion'});
     const [onboarding,onboardingToken]=await Promise.all([kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
-    if(onboarding!=null&&(!onboarding||typeof onboarding!=='object'||Array.isArray(onboarding)))return res.status(503).json({error:'Onboarding retention data is unavailable. Permanent purge did not start.'});
+    if(onboarding!=null&&(!onboarding||typeof onboarding!=='object'||Array.isArray(onboarding)||onboarding.checklist!=null&&(!onboarding.checklist||typeof onboarding.checklist!=='object'||Array.isArray(onboarding.checklist))))return res.status(503).json({error:'Onboarding retention data is unavailable. Permanent purge did not start.'});
+    if(onboardingToken!=null&&(typeof onboardingToken!=='string'||!onboardingToken.trim()))return res.status(503).json({error:'Onboarding token retention data is unavailable. Permanent purge did not start.'});
     const now=Date.now(),attemptId=crypto.randomUUID();
     const lockedWorkspace={...ws,purgeStartedAt:now,purgeStartedBy:admin.email,purgeAttemptId:attemptId,updatedAt:Math.max(now,revision+1)};
     journal={version:1,workspaceId:id,attemptId,phase:'prepared',startedAt:now,updatedAt:now,startedBy:admin.email,
@@ -3244,7 +3245,7 @@ async function session(req,res){
   if(rawOnboarding!=null&&(!rawOnboarding||typeof rawOnboarding!=='object'||Array.isArray(rawOnboarding)))return res.status(503).json({error:'Onboarding session data is unavailable. No empty onboarding state was substituted.'});
   if(rawOnboarding?.checklist!=null&&(!rawOnboarding.checklist||typeof rawOnboarding.checklist!=='object'||Array.isArray(rawOnboarding.checklist)))return res.status(503).json({error:'Onboarding checklist data is unavailable. No incomplete checklist was substituted.'});
   const rawOnboardingToken=await kv.get('onboarding:workspace-token:'+s.workspaceId);
-  if(rawOnboardingToken!=null&&typeof rawOnboardingToken!=='string')return res.status(503).json({error:'Onboarding session token is unavailable. No onboarding link was synthesized.'});
+  if(rawOnboardingToken!=null&&(typeof rawOnboardingToken!=='string'||!rawOnboardingToken.trim()))return res.status(503).json({error:'Onboarding session token is unavailable. No onboarding link was synthesized.'});
   const onboardingState=rawOnboarding||null,onboardingToken=rawOnboardingToken||'';
   const needsOnboarding=!!onboardingToken&&!!onboardingState?.onboardingLinkSent&&!['intake_complete','building_review','qa_complete','client_test','ready','live'].includes(onboardingState.status);
   return res.status(200).json({
