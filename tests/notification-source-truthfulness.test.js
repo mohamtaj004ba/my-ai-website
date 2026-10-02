@@ -77,3 +77,10 @@ test('notification builders reject duplicate or blank provider directories as in
   assert.match(adminBlock,/!feedbackIndexValid\|\|feedbackRecordUnavailable/);
   assert.match(adminBlock,/!workspaceIndexValid\|\|workspaceRecordUnavailable/);
 });
+
+test('client and admin notifications mark malformed onboarding checklist coverage unavailable',()=>{
+  const client=api.slice(api.indexOf('async function buildClientNotifications('),api.indexOf('\nasync function buildAdminNotifications('));
+  const admin=api.slice(api.indexOf('async function buildAdminNotifications('),api.indexOf('\nasync function followups('));
+  assert.match(client,/onboarding\.checklist==null/);
+  assert.match(admin,/onboarding\.checklist==null/);
+});
