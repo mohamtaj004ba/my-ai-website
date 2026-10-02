@@ -3809,9 +3809,9 @@ async function clientDashboardData(req,res){
   const invalid=[
     ['call index',callIndexRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['receptionist',agentRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)&&(v.qualificationQuestions==null||Array.isArray(v.qualificationQuestions))],
     ['business settings',settingsRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],['integrations',integrationsRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],
-    ['locations',locationsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['follow-up state',followupRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],
+    ['locations',locationsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['follow-up state',followupRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)&&Object.values(v).every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&(item.notes==null||Array.isArray(item.notes)&&item.notes.length<=100&&item.notes.every(note=>note&&typeof note==='object'&&!Array.isArray(note)&&String(note.id||'').trim()&&typeof note.text==='string'&&Number.isFinite(Number(note.at))&&Number(note.at)>=0)))],
     ['platform defaults',platformRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],['phone routing',phoneIndex,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],
-    ['call opened state',viewedRaw,v=>Array.isArray(v)],['leads',leadsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['appointments',appointmentsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],
+    ['call opened state',viewedRaw,v=>Array.isArray(v)&&v.length<=2000&&v.every(id=>typeof id==='string'&&!!id.trim()&&id.length<=120)&&new Set(v).size===v.length],['leads',leadsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['appointments',appointmentsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],
     ['automations',automationsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['onboarding',onboardingRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)&&(v.checklist==null||!!v.checklist&&typeof v.checklist==='object'&&!Array.isArray(v.checklist))]
   ].find(([,value,valid])=>value!=null&&!valid(value));
   if(invalid)return res.status(503).json({error:'Workspace '+invalid[0]+' data is unavailable. Last verified dashboard data should be preserved.'});
@@ -3848,11 +3848,11 @@ async function clientDashboardData(req,res){
     onboarding:onboardingRaw&&typeof onboardingRaw==='object'&&!Array.isArray(onboardingRaw)?clientOnboardingView(onboardingRaw):null,
     followupState:followupRaw&&typeof followupRaw==='object'&&!Array.isArray(followupRaw)?followupRaw:{},
     followupCoverage:{verified:followupRaw==null||!!followupRaw&&typeof followupRaw==='object'&&!Array.isArray(followupRaw)},
-    viewedCallIds:Array.isArray(viewedRaw)?viewedRaw.map(String).slice(-2000):[],
+    viewedCallIds:Array.isArray(viewedRaw)?viewedRaw:[],
     viewedCallCoverage:{
-      verified:viewedRaw==null||Array.isArray(viewedRaw),
+      verified:true,
       limited:Array.isArray(viewedRaw)&&viewedRaw.length>=2000,
-      retained:Array.isArray(viewedRaw)?Math.min(2000,viewedRaw.length):0,limit:2000
+      retained:Array.isArray(viewedRaw)?viewedRaw.length:0,limit:2000
     },
     loadedAt:Date.now()
   });
