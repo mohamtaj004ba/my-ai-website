@@ -44,3 +44,12 @@ test('location and automation saves reject malformed previous rows instead of ov
   assert.match(locations,/Location records contain unverifiable entries\. No changes were made/);
   assert.match(automations,/Automation records contain unverifiable entries\. No changes were made/);
 });
+
+test('location and automation saves reject malformed request bodies instead of treating them as delete-all',()=>{
+  const locations=handler('saveLocations','\nasync function agent(');
+  const automations=handler('saveAutomations','\nasync function conversations(');
+  assert.match(locations,/Location list is required\. No locations were changed/);
+  assert.match(locations,/location records are invalid\. No locations were changed/);
+  assert.match(automations,/Automation list is required\. No automations were changed/);
+  assert.match(automations,/automation records are invalid\. No automations were changed/);
+});
