@@ -7,9 +7,9 @@ const start=source.indexOf('async function supportTickets(req,res){');
 const end=source.indexOf('\nasync function replySupportTicket(req,res){',start);
 assert.ok(start>=0&&end>start,'client support history handler found');
 
-function fixture(count,{malformed=false,missing=[],workspaceAt=[]}={}){
+function fixture(count,{malformed=false,missing=[],workspaceAt=[],malformedMessages=[]}={}){
   const index=malformed?{unexpected:true}:Array.from({length:count},(_,i)=>'ticket-'+i);
-  const gone=new Set(missing),owned=new Set(workspaceAt),reads=[];
+  const gone=new Set(missing),owned=new Set(workspaceAt),badMessages=new Set(malformedMessages),reads=[];
   let status=0,payload;
   const ctx=vm.createContext({
     requireSession:async()=>({workspaceId:'workspace-client'}),
@@ -19,7 +19,7 @@ function fixture(count,{malformed=false,missing=[],workspaceAt=[]}={}){
       if(!key.startsWith('support:'))throw Error('Unexpected key '+key);
       const id=key.slice('support:'.length);
       if(gone.has(id))return null;
-      return {id,workspaceId:owned.has(id)?'workspace-client':'workspace-other'};
+      return badMessages.has(id)?{id,workspaceId:owned.has(id)?'workspace-client':'workspace-other',messages:[{id:'m1',direction:'client',body:'broken',at:0}],messageCount:1}:{id,workspaceId:owned.has(id)?'workspace-client':'workspace-other'};
     }},
     req:{},res:{status(code){status=code;return this},json(data){payload=data;return data}},Promise,Array
   });
@@ -64,4 +64,11 @@ test('duplicate or invalid support index fails closed rather than appearing comp
     vm.runInContext(source.slice(start,end),ctx);await vm.runInContext('supportTickets(req,res)',ctx);
     assert.equal(status,503);assert.match(payload.error,/No partial ticket list/);
   }
+});
+
+test('malformed owned support message history is omitted and marks coverage incomplete',async()=>{
+  const {status,payload}=await fixture(4,{workspaceAt:['ticket-1','ticket-2'],malformedMessages:['ticket-2']}).run();
+  assert.equal(status,200);
+  assert.deepEqual(Array.from(payload.tickets,t=>t.id),['ticket-1']);
+  assert.equal(payload.coverage.incomplete,true);
 });
