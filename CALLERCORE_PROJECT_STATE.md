@@ -1,6 +1,6 @@
 # CallerCore project state
 
-Updated: 2026-09-29. Resume here, then inspect current Git refs and deployments. This record distinguishes inspected code, automated verification, and provider-complete acceptance. Never treat a historical checklist as current deployment evidence.
+Updated: 2026-10-01. Resume here, then inspect current Git refs and deployments. This record distinguishes inspected code, automated verification, and provider-complete acceptance. Never treat a historical checklist as current deployment evidence.
 
 ## Project and architecture
 
@@ -1091,3 +1091,19 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - **Production alert reliability:** the Vercel alert webhook no longer writes its dedupe receipt before email delivery. Failed Mailgun delivery remains retryable; after verified delivery, the webhook writes and reads back the dedupe receipt before returning success. A malformed existing receipt fails closed instead of suppressing an alert.
 - During the pass an older contact-page regression still expected the previous `{}` JSON fallback; it was aligned to the stronger canonical receipt requirement rather than weakening runtime behavior.
 - Latest implementation/test SHA before this documentation commit: `f50325082348b386cc4a865428230edc5c30e27f`. Push and PR CallerCore CI are SUCCESS with **1121 tests / 1121 passed / 0 failed**, Jekyll is SUCCESS, and its Vercel Preview is READY. Push/PR CodeQL and authenticated Preview Browser QA were still completing when this entry was written; finish exact-head acceptance before treating the documentation follow-up as the next verified checkpoint.
+
+
+## Row-level source integrity and fail-closed acceptance — 2026-10-01
+
+- Continued the feature-only residual truthfulness/integrity sweep while production `main` remained unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`. PR #5 remains draft and unmerged. No production deployment, live billing/provider activation, customer communication, destructive production mutation, or production data migration occurred.
+- **Client operational feeds:** Calls, Leads, Appointments, Locations, Automations, phone routing, call detail, analytics, follow-up state, and the bundled dashboard now validate individual records inside otherwise-valid arrays. Malformed rows cannot masquerade as partial/empty data or ride along with mutations.
+- **Client mutation safety:** lead/appointment updates, call-read state, location/automation saves, and follow-up mutations fail closed when sibling/source records cannot be verified. Missing or malformed location/automation request arrays are rejected instead of being interpreted as an intentional delete-all.
+- **AI Receptionist:** malformed stored or incoming qualification-question data no longer collapses to an empty list. Receptionist saves also verify phone-routing rows and routing-request state before synchronized writes. Admin receptionist overrides apply the same question/array validation.
+- **Admin operations:** tech-support configuration snapshots, Fleet, System Health, admin overrides/restores, client directory/summary, client drawer, notification generation, Finance rows, and permanent-purge shared-detachment checks now validate record identity/shape at row level. Malformed workspace usage is surfaced as unavailable/data-integrity drift rather than silently becoming zero.
+- **Finance:** individual expense and historical finance rows are validated before totals or snapshots are computed. Invalid records cannot impersonate zero costs or healthy history.
+- **Preview safety:** Preview seed operations validate the workspace directory before the first seed write, preventing a malformed index from being treated as an empty directory after mutation has started.
+- **Client Care and notifications:** admin AI-feedback reads verify each indexed record identity/workspace, malformed notification provider rows and workspace usage become explicit limited coverage, and the UI names unavailable workspace coverage.
+- **Export/recovery:** workspace exports and recovery drills now validate workspace identity/usage, receptionist questions, and record rows for calls, leads, appointments, automations, locations, phone inventory, and audit history before emitting a supposedly complete recovery payload.
+- Two temporary build failures in this pass were regression-fixture drift exposed by stronger runtime semantics (Finance fixture identity, then client-drawer/follow-up assertions). The fixtures were aligned to the fail-closed behavior rather than weakening product validation.
+- **Exact verified implementation/test SHA `cd701039f0d95138410dc9eed0ae060c66fc1eef`:** CallerCore CI push `36947748408` and PR `36947751080` SUCCESS; the exact-head full suite passed **1154 tests / 1154 passed / 0 failed**. CodeQL push `36947748410` and PR `36947751083` SUCCESS. Jekyll PR `36947751117` SUCCESS. Authenticated Preview Browser QA `36947748482` SUCCESS, including authenticated client/admin interactions and visual-drift comparison. Vercel Preview `dpl_6hcqKxkvLTd1kmJmaEbyKUeKmhW4` is READY at https://my-ai-website-mi41saqut-mohamtaj004bas-projects.vercel.app.
+- At acceptance, the feature branch was **1967 commits ahead / 0 behind** `main`; production remained unchanged. This is an implementation/Preview checkpoint, not a production release or provider activation.
