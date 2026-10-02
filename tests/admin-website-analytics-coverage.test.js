@@ -108,7 +108,7 @@ test('missing or malformed indexed prospects are disclosed instead of counted as
   assert.equal(r.body.analytics.coverage.isIncomplete,true);
   assert.equal(r.body.analytics.coverage.isRetentionCapped,false);
 });
-test('expired session index entries are measured separately from prospect completeness',async()=>{
+test('expired session index entries make analytics coverage explicitly incomplete',async()=>{
   const now=Date.now();
   const r=await fixture({sessionIds:['expired','recent'],records:{
     'site:session:recent':{id:'recent',firstAt:now,lastAt:now,visitorId:'visitor',pages:[],activeMs:0}
@@ -116,12 +116,12 @@ test('expired session index entries are measured separately from prospect comple
   assert.equal(r.code,200);
   assert.equal(r.body.analytics.sessions,1);
   assert.equal(r.body.analytics.coverage.unavailableSessionRecords,1);
-  assert.equal(r.body.analytics.coverage.isIncomplete,false);
+  assert.equal(r.body.analytics.coverage.isIncomplete,true);
 });
 test('admin receives incomplete-prospect alerts on both website and Growth screens',()=>{
   assert.match(ui,/d\.coverage\?\.isIncomplete/);
   assert.match(ui,/adminWebsiteData\.coverage\?\.isIncomplete/);
-  assert.match(ui,/indexed prospects are unavailable; counts and search results may be partial/);
+  assert.match(ui,/retained analytics records are unavailable; verified traffic, conversion, and search totals may be partial/);
 });
 
 test('period conversions are disclosed as sales outcomes, not falsely reported as a cohort rate',async()=>{
@@ -151,7 +151,7 @@ test('website dashboard labels period conversions separately from website visito
   assert.doesNotMatch(ui,/x\.conversionRate\|\|0/);
 });
 
-test('duplicate or blank analytics index ids fail closed instead of being silently deduplicated',async()=>{
+test('duplicate, blank, or non-string analytics index ids are excluded with explicit incomplete coverage',async()=>{
   for(const args of [
     {sessionIds:['s1','s1']},
     {sessionIds:['']},
@@ -159,15 +159,18 @@ test('duplicate or blank analytics index ids fail closed instead of being silent
     {prospectIds:['p1',42]}
   ]){
     const r=await fixture(args).run();
-    assert.equal(r.code,503);
-    assert.match(r.body.error,/indexes contain unverifiable entries/);
+    assert.equal(r.code,200);
+    assert.equal(r.body.analytics.coverage.isIncomplete,true);
+    assert.ok(Number(r.body.analytics.coverage.unavailableSessionRecords||0)+Number(r.body.analytics.coverage.unavailableProspectRecords||0)>0);
   }
 });
-test('malformed analytics event rows fail closed instead of being dropped from totals',async()=>{
+test('malformed historical analytics events are excluded with explicit incomplete coverage',async()=>{
   for(const events of [[null],[{type:'page_view',at:0}],[{type:'',at:Date.now()}]]){
     const r=await fixture({events}).run();
-    assert.equal(r.code,503);
-    assert.match(r.body.error,/events contain unverifiable entries/);
+    assert.equal(r.code,200);
+    assert.equal(r.body.analytics.coverage.unavailableEventRecords,1);
+    assert.equal(r.body.analytics.coverage.isIncomplete,true);
+    assert.equal(r.body.analytics.coverage.verifiedEvents,0);
   }
 });
 test('malformed indexed session and prospect fields are counted as unavailable coverage',async()=>{
@@ -186,4 +189,11 @@ test('malformed indexed session and prospect fields are counted as unavailable c
   assert.equal(r.body.analytics.coverage.unavailableSessionRecords,1);
   assert.equal(r.body.analytics.coverage.unavailableProspectRecords,1);
   assert.equal(r.body.analytics.coverage.isIncomplete,true);
+});
+
+test('analytics UI disclosure includes event, session, and prospect unavailable-record counts',()=>{
+  assert.match(ui,/unavailableEventRecords/);
+  assert.match(ui,/unavailableSessionRecords/);
+  assert.match(ui,/unavailableProspectRecords/);
+  assert.match(ui,/retained analytics records unavailable; verified totals may be partial/);
 });
