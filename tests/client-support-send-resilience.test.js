@@ -102,3 +102,10 @@ test('pending client reply locks text and unlocks it after successful confirmati
   assert.equal(f.replyButton.disabled,false);
   assert.equal(f.ctx.supportTicketsData[0].messages[0].body,'Saved');
 });
+
+test('saved support request surfaces server warning instead of claiming full send success',async()=>{
+  const f=fixture(async()=>ok({ticket:{id:'new-ticket'},warning:'Request saved, but notification delivery could not be verified.'},201));
+  await f.submit();
+  assert.equal(f.ctx.supportTicketsData[0].id,'new-ticket');
+  assert.equal(f.fields.supportStatus.textContent,'Request saved, but notification delivery could not be verified.');
+});
