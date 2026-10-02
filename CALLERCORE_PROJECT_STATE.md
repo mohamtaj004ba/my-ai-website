@@ -1151,3 +1151,14 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - **Exact verified implementation/test SHA `6c7a78ea4874c3bcfb1ab238ca5bbf5701b7aa75`:** CallerCore CI `37054440013` SUCCESS with **1211 tests passed / 0 failed**; CodeQL `37054440006` SUCCESS; Jekyll `37054440012` SUCCESS; Vercel status SUCCESS. The feature branch was 2058 commits ahead / 0 behind `main` at verification.
 - This remains a Preview/feature-branch checkpoint. Stripe provider lifecycle acceptance, live voice/provider control, customer communications, production migrations, production deployment, and release decisions remain separately gated.
 - Next residual candidate: notification-provider acknowledgement truthfulness after confirmed Support mutations. Provider send failures are currently logged and the stored Support mutation remains durable; review whether UI/API should explicitly surface “saved, notification delivery unconfirmed” without encouraging duplicate message sends.
+
+
+## Support notification acknowledgement truthfulness — 2026-10-02 follow-up
+
+- Continued directly from the verified `6c7a78ea...` Finance/Support checkpoint on the feature branch only. Production `main` remained `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; PR #5 remained draft/unmerged.
+- Confirmed Support mutations no longer hide notification-provider uncertainty. If Mailgun delivery cannot be confirmed after a ticket/reply/status mutation is already durably saved, the API returns the confirmed record with a warning instead of presenting an unqualified success or a false mutation failure.
+- New-ticket notification attempts are independent: failure of the internal Support notification does not suppress the client acknowledgement attempt, and vice versa. Settings-verification failure still blocks both sends safely because the destination/preferences cannot be trusted.
+- Client reply, admin reply, admin status, and subscription-support request UI now surface returned `warning` text rather than discarding it. This preserves the “saved; do not resend the mutation” message while making email-delivery uncertainty visible.
+- Regression coverage now distinguishes thrown settings reads from genuinely malformed settings and verifies provider-delivery failure behavior plus independent dual notification attempts.
+- **Exact verified implementation/test SHA `fb327daaf51c4c3d08f81bb377a56f0c49a0a669`:** CallerCore CI `37055100034` SUCCESS with **1216 tests passed / 0 failed**; CodeQL `37055100117` SUCCESS; Jekyll `37055100280` SUCCESS; Vercel status SUCCESS. Feature branch was 2065 commits ahead / 0 behind `main`.
+- No production merge/deployment, live billing action, voice/provider activation, customer-data migration, destructive production mutation, or release-gate change occurred.
