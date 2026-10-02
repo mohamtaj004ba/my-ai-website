@@ -12,3 +12,11 @@ test('website conversation detail refuses malformed prospect, message and covera
   assert.match(body,/rawCoverage!=null&&!validCoverage/);
   assert.match(body,/Website conversation coverage is unavailable/);
 });
+
+test('website conversation detail validates retained message identity, direction, body and optional timestamp',()=>{
+  const start=source.indexOf('async function adminWebsiteConversation('),end=source.indexOf('\nasync function admin',start+20),body=source.slice(start,end);
+  assert.match(body,/String\(message\.id\|\|''\)\.trim\(\)/);
+  assert.match(body,/String\(message\.direction\|\|''\)\.trim\(\)/);
+  assert.match(body,/typeof message\.body!=='string'/);
+  assert.match(body,/message\.at!=null/);
+});
