@@ -1854,21 +1854,32 @@ async function adminWebsiteAnalytics(req,res){
       kv.lrange('site:events',0,4999),kv.lrange('site:session:index',0,1999),kv.lrange('site:prospect:index',0,1999)
     ]);
     if(!Array.isArray(eventsRaw)||!Array.isArray(sessionIds)||!Array.isArray(prospectIds))return res.status(503).json({error:'Website analytics indexes are unavailable. No partial reporting was returned.'});
-    const events=eventsRaw.filter(Boolean);
-    const loadIndexed=async(ids,prefix)=>{
-      const records=[],uniqueIds=[...new Set(ids.map(id=>String(id||'').trim()).filter(Boolean))].slice(0,2000);
+    const validIds=ids=>ids.length<=2000&&ids.every(id=>typeof id==='string'&&!!id.trim())&&new Set(ids).size===ids.length;
+    if(!validIds(sessionIds)||!validIds(prospectIds))return res.status(503).json({error:'Website analytics indexes contain unverifiable entries. No partial reporting was returned.'});
+    if(eventsRaw.some(event=>!event||typeof event!=='object'||Array.isArray(event)||!String(event.type||'').trim()||!Number.isFinite(Number(event.at))||Number(event.at)<=0))
+      return res.status(503).json({error:'Website analytics events contain unverifiable entries. No partial reporting was returned.'});
+    const events=eventsRaw;
+    const loadIndexed=async(ids,prefix,validRecord)=>{
+      const records=[],batchSource=ids.slice(0,2000);
       let missing=0;
-      for(let offset=0;offset<uniqueIds.length;offset+=100){
-        const batchIds=uniqueIds.slice(offset,offset+100),batch=await Promise.all(batchIds.map(id=>kv.get(prefix+id)));
+      for(let offset=0;offset<batchSource.length;offset+=100){
+        const batchIds=batchSource.slice(offset,offset+100),batch=await Promise.all(batchIds.map(id=>kv.get(prefix+id)));
         for(let i=0;i<batch.length;i++){
           const record=batch[i];
-          if(record&&typeof record==='object'&&!Array.isArray(record)&&String(record.id||'')===batchIds[i])records.push(record);
+          if(record&&typeof record==='object'&&!Array.isArray(record)&&String(record.id||'')===batchIds[i]&&validRecord(record))records.push(record);
           else missing++;
         }
       }
       return {records,missing};
     };
-    const [sessionLoad,prospectLoad]=await Promise.all([loadIndexed(sessionIds,'site:session:'),loadIndexed(prospectIds,'site:prospect:')]);
+    const validSession=record=>(record.firstAt==null||Number.isFinite(Number(record.firstAt))&&Number(record.firstAt)>=0)&&
+      (record.lastAt==null||Number.isFinite(Number(record.lastAt))&&Number(record.lastAt)>=0)&&
+      (record.activeMs==null||Number.isFinite(Number(record.activeMs))&&Number(record.activeMs)>=0)&&(record.pages==null||Array.isArray(record.pages));
+    const validProspect=record=>(record.updatedAt==null||Number.isFinite(Number(record.updatedAt))&&Number(record.updatedAt)>=0)&&
+      (record.convertedAt==null||Number.isFinite(Number(record.convertedAt))&&Number(record.convertedAt)>=0)&&
+      (record.monthlyValue==null||Number.isFinite(Number(record.monthlyValue))&&Number(record.monthlyValue)>=0)&&
+      (record.setupValue==null||Number.isFinite(Number(record.setupValue))&&Number(record.setupValue)>=0);
+    const [sessionLoad,prospectLoad]=await Promise.all([loadIndexed(sessionIds,'site:session:',validSession),loadIndexed(prospectIds,'site:prospect:',validProspect)]);
     const sessions=sessionLoad.records,retainedProspects=prospectLoad.records.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)),
       prospects=retainedProspects.filter(p=>p.privacyState!=='deidentified'),
       deidentifiedProspectRecords=retainedProspects.length-prospects.length;
