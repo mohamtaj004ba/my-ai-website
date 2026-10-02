@@ -11,7 +11,7 @@ const handler=segment(account,'async function adminAiFeedbackUpdate(req,res){','
 const front=segment(ui,'async function updateAdminFeedback(id,status){','\nfunction renderWebsiteTrafficChart(');
 const clone=value=>value==null?value:JSON.parse(JSON.stringify(value));
 function fixture({denied=false,record,body,conflict=false,fail=false}={}){
-  const original=record===undefined?{id:'feedback-1',workspaceId:'tenant-1',status:'submitted',createdAt:100,updatedAt:110,callId:'call-1'}:record;
+  const original=record===undefined?{id:'feedback-1',workspaceId:'tenant-1',source:'call',status:'submitted',message:'Please adjust this call flow',createdAt:100,updatedAt:110,callId:'call-1'}:record;
   let saved=clone(original),audit=null,code=null,result=null,compares=0;
   const ctx=vm.createContext({
     requireAdmin:async()=>denied?null:{email:'admin@example.test',workspaceId:'admin-home'},
