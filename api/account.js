@@ -2915,8 +2915,12 @@ async function adminAiFeedback(req,res){
     return res.status(503).json({error:'Feedback index is incomplete or exceeds supported capacity. No partial feedback list was returned.'});
   let missingRecords=0;
   for(let offset=0;offset<ids.length;offset+=40){
-    const batch=await Promise.all(ids.slice(offset,offset+40).map(id=>kv.get('ai-feedback:'+id)));
-    for(const item of batch){if(item)items.push(item);else missingRecords++}
+    const batchIds=ids.slice(offset,offset+40),batch=await Promise.all(batchIds.map(id=>kv.get('ai-feedback:'+id)));
+    for(let i=0;i<batch.length;i++){
+      const item=batch[i];
+      if(item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'')===String(batchIds[i])&&String(item.workspaceId||'').trim())items.push(item);
+      else missingRecords++;
+    }
   }
   items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
   return res.status(200).json({feedback:items,coverage:{verified:true,indexedRecords:ids.length,loadedRecords:items.length,missingRecords,incomplete:missingRecords>0}});
