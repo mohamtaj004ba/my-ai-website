@@ -27,3 +27,8 @@ test('client sends the phone revision and updates local inventory after confirme
   const dashboard=fs.readFileSync('dashboard.js','utf8'),code=dashboard.slice(dashboard.indexOf('async function deletePhone('),dashboard.indexOf('function openPhoneModal('));
   assert.match(code,/expectedUpdatedAt:Number\(item\.updatedAt\|\|0\)/);assert.match(code,/adminPhoneData=adminPhoneData\.filter/);
 });
+
+test('phone deletion rejects malformed onboarding checklist before changing routing',()=>{
+  assert.match(handler,/onboardingBefore\.checklist!=null/);
+  assert.match(handler,/Array\.isArray\(onboardingBefore\.checklist\)/);
+});
