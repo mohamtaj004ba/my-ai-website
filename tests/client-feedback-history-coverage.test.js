@@ -10,7 +10,7 @@ function feedbackApiFixture(raw,{missing=[]}={}){
   let status=0,payload,reads=0;
   const values=new Map();
   if(raw!==null)values.set('ai-feedback:workspace:client',raw);
-  if(Array.isArray(raw))for(const id of raw)if(typeof id==='string'&&!missing.includes(id))values.set('ai-feedback:'+id,{id,workspaceId:'client',createdAt:Number(id.split('-').pop())||0});
+  if(Array.isArray(raw))for(const id of raw)if(typeof id==='string'&&!missing.includes(id)){const at=(Number(id.split('-').pop())||0)+1;values.set('ai-feedback:'+id,{id,workspaceId:'client',source:'receptionist',status:'submitted',message:'Feedback '+id,createdAt:at,updatedAt:at})}
   const ctx=vm.createContext({
     requireSession:async()=>({workspaceId:'client'}),aiFeedbackWorkspaceIndexKey:id=>'ai-feedback:workspace:'+id,
     kv:{get:async key=>{reads++;return values.get(key)??null}},req:{},res:{status(n){status=n;return this},json(x){payload=x;return x}},
