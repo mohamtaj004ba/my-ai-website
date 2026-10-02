@@ -383,9 +383,13 @@ async function adminFinance(req,res){
   for(let offset=0;offset<uniqueIds.length;offset+=50){
     const ids=uniqueIds.slice(offset,offset+50),records=await Promise.all(ids.map(id=>kv.get('stripe:reconciliation:'+id)));
     for(let i=0;i<ids.length;i++){
-      const item=records[i];
-      if(!item||typeof item!=='object'||Array.isArray(item)||item.sessionId!==ids[i]||!['open','resolved'].includes(item.status)){coverage.unavailableCaseRecords++;coverage.isIncomplete=true;continue}
-      if(item.status==='open')reconciliation.push({id:item.id,sessionId:item.sessionId,eventId:item.eventId,reason:item.reason,createdAt:item.createdAt,status:item.status});
+      const item=records[i],createdAt=Number(item?.createdAt),resolvedAt=item?.resolvedAt==null?null:Number(item.resolvedAt),
+        valid=item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'')===ids[i]&&String(item.sessionId||'')===ids[i]&&
+          ['open','resolved'].includes(String(item.status||''))&&['email_mismatch','account_mapping_conflict','workspace_owner_mismatch','reserved_account'].includes(String(item.reason||''))&&
+          Number.isFinite(createdAt)&&createdAt>0&&(item.eventId==null||typeof item.eventId==='string')&&
+          (item.status!=='resolved'||Number.isFinite(resolvedAt)&&resolvedAt>=createdAt);
+      if(!valid){coverage.unavailableCaseRecords++;coverage.isIncomplete=true;continue}
+      if(item.status==='open')reconciliation.push({id:item.id,sessionId:item.sessionId,eventId:item.eventId||'',reason:item.reason,createdAt,status:item.status});
     }
   }
   reconciliation.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
