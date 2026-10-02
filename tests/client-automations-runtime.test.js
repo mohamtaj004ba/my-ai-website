@@ -36,7 +36,7 @@ test('automation controls block overlapping mutations and delete rolls back on s
   const render=ui.slice(ui.indexOf('function renderAutomations(){'),ui.indexOf('let automationMutationPending=false;'));
   const toggle=ui.slice(ui.indexOf('async function toggleAutomation('),ui.indexOf('let editingAutomationId=null;'));
   const saveStart=ui.indexOf('async function saveAutomation(){');
-  const save=ui.slice(saveStart,ui.indexOf("document.querySelectorAll('[data-agent-edit]"),saveStart));
+  const save=ui.slice(saveStart,ui.indexOf("\ndocument.querySelectorAll(",saveStart));
   assert.match(render,/automationMutationPending\?'disabled aria-busy="true"'/);
   assert.match(toggle,/if\(automationMutationPending\)return false/);
   assert.match(toggle,/async function deleteAutomation\(id\)/);
