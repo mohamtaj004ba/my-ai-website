@@ -66,7 +66,7 @@ test('saved support ticket remains a confirmed success when notification setting
     kv:{get:async key=>{
       if(key==='workspace:ws_1')return {id:'ws_1',name:'Test Workspace',ownerName:'Test Owner'};
       if(key==='support:index')return [];
-      if(key==='platform:settings'||key==='settings:ws_1')throw Error('storage unavailable');
+      if(key==='platform:settings'||key==='settings:ws_1'){if(malformedSettings)return 'malformed';throw Error('storage unavailable')}
       return null;
     }},
     compareAndSetConfig:async()=>{commits++;return true},
@@ -87,7 +87,7 @@ test('saved support ticket remains a confirmed success when notification setting
 });
 
 
-function supportMutationContext(name,endName,{admin=false,statusUpdate=false}={}){
+function supportMutationContext(name,endName,{admin=false,statusUpdate=false,malformedSettings=false}={}){
   const source=fs.readFileSync('api/account.js','utf8');
   const start=source.indexOf('async function '+name+'('),end=source.indexOf('\nasync function '+endName+'(',start);
   assert.ok(start>=0&&end>start);
@@ -130,4 +130,19 @@ test('confirmed admin Support status stays successful when client notification s
   assert.equal(res.code,200);
   assert.equal(res.body.ok,true);
   assert.match(res.body.warning,/support status was saved/i);
+});
+
+
+test('confirmed admin Support reply warns when client notification settings are malformed',async()=>{
+  const res=await supportMutationContext('adminSupportReply','adminSupportUpdate',{admin:true,malformedSettings:true});
+  assert.equal(res.code,200);
+  assert.equal(res.body.ok,true);
+  assert.match(res.body.warning,/notification settings could not be verified/i);
+});
+
+test('confirmed admin Support status warns when client notification settings are malformed',async()=>{
+  const res=await supportMutationContext('adminSupportUpdate','adminAiGuide',{admin:true,statusUpdate:true,malformedSettings:true});
+  assert.equal(res.code,200);
+  assert.equal(res.body.ok,true);
+  assert.match(res.body.warning,/notification settings could not be verified/i);
 });
