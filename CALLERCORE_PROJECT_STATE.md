@@ -1199,3 +1199,16 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - **Exact verified implementation/test SHA `4b041c93dd95d4ad5c9e328459ec8e1510a6ea7c`:** CallerCore CI `37059329771` SUCCESS with **1224 tests passed / 0 failed**; CodeQL `37059329970` SUCCESS; Jekyll `37059329839` SUCCESS; Vercel status SUCCESS. Feature branch was 2081 commits ahead / 0 behind `main`.
 - No production merge/deployment, live billing action, customer communication, provider activation, production migration, or release-gate change occurred.
 - Next queued reliability item: Gmail connect/disconnect client handlers should validate canonical acknowledgements/authorization URLs and preserve local inbox state on malformed HTTP-200 or network responses, complementing the already-hardened backend OAuth/disconnect storage confirmation.
+
+
+## Gmail connect/disconnect client acknowledgement — 2026-10-02
+
+- Continued the feature-only provider/client-state integrity sweep while production `main` remained unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; PR #5 remained draft/unmerged.
+- Gmail connect/disconnect UI now shares a mutation-pending guard so overlapping provider connection actions cannot be started from the dashboard.
+- **Connect:** the client requires a verified HTTPS `accounts.google.com/o/oauth2/v2/auth` URL containing both OAuth `state` and `client_id` before redirecting. Malformed HTTP-200 responses, unexpected hosts/paths, incomplete receipts, and network failures leave the existing inbox state untouched and restore connection controls.
+- **Disconnect:** the client now requires an explicit `{ok:true}` acknowledgement before clearing cached Gmail threads, aliases, sync timestamps, selected inbox state or global-search cache. A bare/malformed HTTP 200 or network failure preserves the last verified inbox.
+- Existing server-side OAuth-state readback, persisted connection validation, disconnect readback confirmation and Gmail provider-response validation remain unchanged; this batch closes the client acknowledgement gap.
+- Expanded `admin-gmail-disconnect-state.test.js` with canonical OAuth redirect, malformed/incomplete success, network failure, overlapping connect prevention, and explicit disconnect acknowledgement coverage.
+- **Exact verified implementation/test SHA `93b7c6c24d10831ff512e075fcd11e2ee2e52c2f`:** CallerCore CI `37059705708` SUCCESS with **1229 tests passed / 0 failed**; CodeQL `37059705870` SUCCESS; Jekyll `37059705742` SUCCESS; Vercel status SUCCESS. Feature branch was 2085 commits ahead / 0 behind `main`.
+- No production merge/deployment, live customer Gmail mutation, outbound email, billing action, provider activation, production migration, or release-gate change occurred.
+- Next queued reliability item: the admin “Send sign-in link” action already verifies the backend receipt but lacks an in-flight guard, allowing repeated clicks to issue multiple login emails/tokens while the first request is pending. Add duplicate-submit prevention and control restoration without changing auth backend semantics.
