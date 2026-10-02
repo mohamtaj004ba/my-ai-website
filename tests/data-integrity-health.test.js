@@ -22,3 +22,7 @@ test('monthly analytics rollup is visible as an optional health service with cov
   assert.doesNotMatch(api,/requiredForLaunch=\[[^\]]*analytics-rollup/);
 });
 
+
+test('system health surfaces malformed phone inventory rows as data-integrity drift',()=>{
+  assert.match(api,/Phone routing inventory contains unverifiable records/);
+});
