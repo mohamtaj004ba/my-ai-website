@@ -12,7 +12,7 @@ function fixture(raw){
   let status=0,payload;
   const ctx=vm.createContext({
     requireSession:async()=>({workspaceId:'client',email:'owner@example.test'}),callViewedKey:()=> 'viewed',kv:{get:async()=>raw},
-    req:{},res:{status(n){status=n;return this},json(x){payload=x;return x}},Array,String,Math
+    req:{},res:{status(n){status=n;return this},json(x){payload=x;return x}},Array,String,Math,Set
   });
   vm.runInContext(api.slice(start,end),ctx);
   return async()=>{await vm.runInContext('callsViewed(req,res)',ctx);return {status,payload}};
@@ -38,4 +38,18 @@ test('marking a call opened fails closed when call history storage is malformed'
   const start=api.indexOf('async function callViewedMark('),end=api.indexOf('\nasync function clientDashboardData(',start),block=api.slice(start,end);
   assert.match(block,/Call history is unavailable\. Read state was not changed/);
   assert.match(block,/calls!=null&&!Array\.isArray\(calls\)/);
+});
+
+test('call opened-state read rejects duplicate, blank or non-string ids instead of coercing them',async()=>{
+  for(const raw of [['call-1','call-1'],[''],['call-1',{id:'call-2'}]]){
+    const r=await fixture(raw)();
+    assert.equal(r.status,503);
+    assert.match(r.payload.error,/preserved/);
+  }
+});
+test('marking a call opened requires a canonical string call id',()=>{
+  const start=api.indexOf('async function callViewedMark('),end=api.indexOf('\nasync function clientDashboardData(',start),block=api.slice(start,end);
+  assert.match(block,/typeof rawCallId!=='string'/);
+  assert.match(block,/rawCallId\.length>120/);
+  assert.doesNotMatch(block,/String\(\(req\.body\|\|\{\}\)\.callId/);
 });
