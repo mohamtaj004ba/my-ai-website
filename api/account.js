@@ -2051,9 +2051,13 @@ async function adminDocuments(req,res){
     const batch=await Promise.all(workspaces.slice(offset,offset+20).map(async ws=>{
       const id=ws.id;
       const [onboarding,token]=await Promise.all([kv.get('onboarding:workspace:'+id),kv.get('onboarding:workspace-token:'+id)]);
+      if(onboarding!=null&&(!onboarding||typeof onboarding!=='object'||Array.isArray(onboarding)))return {error:'Onboarding agreement source could not be verified for '+(ws.name||id)+'. No partial document register was returned.'};
+      if(onboarding?.checklist!=null&&(!onboarding.checklist||typeof onboarding.checklist!=='object'||Array.isArray(onboarding.checklist)))return {error:'Onboarding agreement checklist could not be verified for '+(ws.name||id)+'. No partial document register was returned.'};
+      if(token!=null&&(typeof token!=='string'||!token.trim()))return {error:'Onboarding agreement token could not be verified for '+(ws.name||id)+'. No partial document register was returned.'};
       const signed=!!(onboarding?.agreementSignedAt||onboarding?.checklist?.agreement);
       return {workspaceId:id,workspaceName:ws.name||'Unnamed client',ownerEmail:ws.ownerEmail||'',plan:entitlementsFor(ws.plan).plan,signed,agreementVersion:onboarding?.agreementVersion||'',signedAt:onboarding?.agreementSignedAt||null,signedName:onboarding?.agreementSignedName||'',downloadUrl:signed&&token?('/api/agreement-pdf?token='+encodeURIComponent(token)):'',status:signed?'signed':onboarding?.onboardingLinkSent?'awaiting_signature':'not_sent'};
     }));
+    const invalid=batch.find(item=>item&&item.error);if(invalid)return res.status(503).json({error:invalid.error});
     agreements.push(...batch);
   }
   agreements.sort((a,b)=>Number(b.signedAt||0)-Number(a.signedAt||0)||String(a.workspaceName).localeCompare(String(b.workspaceName)));
