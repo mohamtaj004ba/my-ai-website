@@ -3191,13 +3191,16 @@ async function buildWorkspaceExportData(id){
     kv.get('workspace:'+id),kv.get('settings:'+id),kv.get('agent:'+id),kv.get('calls:'+id),kv.get('leads:'+id),kv.get('appointments:'+id),kv.get('automations:'+id),kv.get('integrations:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('support:index'),kv.get('onboarding:workspace:'+id),kv.get('audit:'+id)
   ]);
   if(!workspace)return null;
-  const objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value);
+  const objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value),
+    recordListOrNull=value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim());
+  const workspaceValid=!!workspace&&typeof workspace==='object'&&!Array.isArray(workspace)&&String(workspace.id||'')===String(id)&&
+    (workspace.usage==null||!!workspace.usage&&typeof workspace.usage==='object'&&!Array.isArray(workspace.usage)&&Number.isFinite(Number(workspace.usage.minutes))&&Number(workspace.usage.minutes)>=0);
   const invalid=[
-    ['workspace',workspace,value=>!!value&&typeof value==='object'&&!Array.isArray(value)],['settings',settings,objectOrNull],['agent',agent,objectOrNull],
-    ['calls',calls,value=>value==null||Array.isArray(value)],['leads',leads,value=>value==null||Array.isArray(value)],['appointments',appointments,value=>value==null||Array.isArray(value)],
-    ['automations',automations,value=>value==null||Array.isArray(value)],['integrations',integrations,objectOrNull],['locations',locations,value=>value==null||Array.isArray(value)],
-    ['phone inventory',phones,value=>value==null||Array.isArray(value)],['support index',supportIndex,value=>value==null||Array.isArray(value)],
-    ['onboarding',onboarding,objectOrNull],['audit',audit,value=>value==null||Array.isArray(value)]
+    ['workspace',workspace,()=>workspaceValid],['settings',settings,objectOrNull],['agent',agent,value=>objectOrNull(value)&&(value==null||value.qualificationQuestions==null||Array.isArray(value.qualificationQuestions))],
+    ['calls',calls,recordListOrNull],['leads',leads,recordListOrNull],['appointments',appointments,recordListOrNull],
+    ['automations',automations,recordListOrNull],['integrations',integrations,objectOrNull],['locations',locations,recordListOrNull],
+    ['phone inventory',phones,recordListOrNull],['support index',supportIndex,value=>value==null||Array.isArray(value)],
+    ['onboarding',onboarding,objectOrNull],['audit',audit,recordListOrNull]
   ].find(([,value,valid])=>!valid(value));
   if(invalid)throw new Error('Workspace export source unavailable: '+invalid[0]);
   const conversations=await readAllConversations(kv,id);
