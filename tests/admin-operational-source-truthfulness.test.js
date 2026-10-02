@@ -18,3 +18,10 @@ test('automation Fleet discloses its 20-workflow payload boundary in the UI',()=
   assert.match(api,/workflowCoverage:\{returned:Math\.min\(20,autos\.length\),total:autos\.length,limited:autos\.length>20\}/);
   assert.match(ui,/Showing .* of .* workflows/);
 });
+
+test('Fleet fails closed on malformed workflow rows or receptionist question storage',()=>{
+  const start=api.indexOf('async function adminFleet('),end=api.indexOf('\nasync function createSupportTicket(',start),block=api.slice(start,end);
+  assert.match(block,/automationsValid=.*\.every/);
+  assert.match(block,/agent\.qualificationQuestions==null\|\|Array\.isArray\(agent\.qualificationQuestions\)/);
+  assert.match(block,/No partial fleet view was returned/);
+});
