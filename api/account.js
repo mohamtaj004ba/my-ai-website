@@ -2591,6 +2591,7 @@ async function adminSystemHealth(req,res){
   for(const ws of workspaces){
     const id=String(ws.id||''),label=ws.name||id||'Workspace',effectivePlan=entitlementsFor(ws.plan).plan;
     if(String(ws.plan||'')!==effectivePlan)dataIssues.push(label+' has invalid stored plan “'+String(ws.plan||'')+'”; effective access is '+effectivePlan+'.');
+    if(ws.usage!=null&&(!ws.usage||typeof ws.usage!=='object'||Array.isArray(ws.usage)||!Number.isFinite(Number(ws.usage.minutes))||Number(ws.usage.minutes)<0))dataIssues.push(label+' has malformed usage data.');
     const assigned=phones.filter(p=>p&&String(p.workspaceId||'')===id);
     if(assigned.length>1)dataIssues.push(label+' has multiple phone routing records assigned.');
     const primary=assigned[0]||null,workspacePhone=digits(ws.phone),routingPhone=digits(primary?.number);
@@ -2759,8 +2760,10 @@ async function buildAdminNotifications(admin){
     const ws=await kv.get('workspace:'+id);if(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(id)){workspaceRecordUnavailable=true;continue}
     if(alerts.billing&&ws.subscriptionStatus==='past_due')items.push(notificationItem('admin-billing:'+id+':past_due',{title:'Client billing past due',body:(ws.name||'Client')+' has a past-due subscription.',kind:'danger',view:'finance',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
     if(ws.status==='suspended')items.push(notificationItem('admin-workspace:'+id+':suspended',{title:'Client workspace suspended',body:(ws.name||'Client')+' is currently suspended.',kind:'warning',view:'clients',createdAt:ws.updatedAt||now,meta:{workspaceId:id}}));
-    const plan=entitlementsFor(ws.plan),usage=Number(ws.usage?.minutes||0);
-    if(plan.minutes){
+    const plan=entitlementsFor(ws.plan),usageValid=ws.usage==null||!!ws.usage&&typeof ws.usage==='object'&&!Array.isArray(ws.usage)&&Number.isFinite(Number(ws.usage.minutes))&&Number(ws.usage.minutes)>=0,
+      usage=usageValid?Number(ws.usage?.minutes||0):0;
+    if(!usageValid)workspaceRecordUnavailable=true;
+    if(usageValid&&plan.minutes){
       const pct=Math.round((usage/plan.minutes)*100),threshold=pct>=100?100:pct>=85?85:0;
       if(threshold)items.push(notificationItem('admin-usage:'+id+':'+threshold,{title:(ws.name||'Client')+' usage at '+Math.min(pct,100)+'%',body:usage+' of '+plan.minutes+' included minutes used. Review usage; no overage policy is implied by this notice.',kind:threshold>=100?'danger':'warning',view:'clients',createdAt:ws.updatedAt||now,meta:{workspaceId:id,usage,limit:plan.minutes,threshold}}));
     }
