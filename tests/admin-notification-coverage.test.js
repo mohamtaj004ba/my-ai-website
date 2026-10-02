@@ -20,9 +20,9 @@ test('admin notification builder discloses bounded support feedback and Growth s
         if(key==='support:index')return support;
         if(key==='workspace:index')return [];
         if(key==='ai-feedback:index')return feedback;
-        if(key.startsWith('support:'))return {id:key.slice('support:'.length),status:'resolved'};
-        if(key.startsWith('ai-feedback:'))return {id:key.slice('ai-feedback:'.length),status:'reviewed'};
-        if(key.startsWith('site:prospect:'))return {id:key.slice('site:prospect:'.length),privacyState:'deidentified'};
+        if(key.startsWith('support:'))return {id:key.slice('support:'.length),workspaceId:'workspace-1',status:'resolved',subject:'Resolved ticket',createdAt:1,updatedAt:2};
+        if(key.startsWith('ai-feedback:'))return {id:key.slice('ai-feedback:'.length),workspaceId:'workspace-1',source:'receptionist',status:'reviewed',message:'Reviewed feedback',createdAt:1,updatedAt:2};
+        if(key.startsWith('site:prospect:'))return {id:key.slice('site:prospect:'.length),privacyState:'deidentified',stage:'converted',createdAt:1,updatedAt:2};
         return null;
       },
       async lrange(key,start,end){
