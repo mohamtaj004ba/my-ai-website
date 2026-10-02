@@ -682,10 +682,14 @@ async function adminPurgeClient(req,res){
   if(!id)return res.status(400).json({error:'Client id required'});
   if(String(body.confirm||'')!=='DELETE '+id)return res.status(400).json({error:'Confirmation must equal DELETE '+id});
   const journalKey=purgeJournalKey(id),completeKey=purgeCompleteKey(id);
-  const completed=await kv.get(completeKey);
-  if(completed&&typeof completed==='object'&&!Array.isArray(completed)&&String(completed.workspaceId||'')===id){
+  const completed=await kv.get(completeKey),validCompletionMarker=marker=>marker&&typeof marker==='object'&&!Array.isArray(marker)&&String(marker.workspaceId||'')===id&&
+    !!String(marker.attemptId||'').trim()&&Number.isFinite(Number(marker.completedAt))&&Number(marker.completedAt)>0&&typeof marker.completedBy==='string'&&!!marker.completedBy.trim()&&
+    Number.isFinite(Number(marker.retainedUntil))&&Number(marker.retainedUntil)>=Number(marker.completedAt)&&
+    ['supportDeleted','feedbackDeleted','prospectsDeidentified'].every(key=>Number.isSafeInteger(Number(marker[key]))&&Number(marker[key])>=0);
+  if(completed!=null&&!validCompletionMarker(completed))return res.status(503).json({error:'Permanent purge completion marker is malformed. Stop and investigate before retrying.',resumable:false});
+  if(validCompletionMarker(completed)){
     try{await kv.del(journalKey)}catch(_){}
-    return res.status(200).json({ok:true,alreadyPurged:true,purged:{id,name:completed.businessName||'Workspace'},retainedUntil:completed.retainedUntil||null});
+    return res.status(200).json({ok:true,alreadyPurged:true,purged:{id,name:completed.businessName||'Workspace'},retainedUntil:completed.retainedUntil});
   }
 
   let journal=await kv.get(journalKey);
@@ -725,7 +729,8 @@ async function adminPurgeClient(req,res){
     journal=await kv.get(journalKey);
     if(!journal){
       const done=await kv.get(completeKey);
-      if(done&&String(done.workspaceId||'')===id)return res.status(200).json({ok:true,alreadyPurged:true,purged:{id,name:done.businessName||'Workspace'},retainedUntil:done.retainedUntil||null});
+      if(done!=null&&!validCompletionMarker(done))return res.status(503).json({error:'Permanent purge completion marker is malformed after the journal disappeared. Stop and investigate before retrying.',resumable:false});
+      if(validCompletionMarker(done))return res.status(200).json({ok:true,alreadyPurged:true,purged:{id,name:done.businessName||'Workspace'},retainedUntil:done.retainedUntil});
       return res.status(503).json({error:'Permanent purge journal disappeared before completion. Stop and investigate before retrying.',resumable:false});
     }
     if(!validPurgeJournal(journal,id))return res.status(503).json({error:'Permanent purge journal is malformed. No additional data was deleted.',purgePhase:'unknown',resumable:false});
