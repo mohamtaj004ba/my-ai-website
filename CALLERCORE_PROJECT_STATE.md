@@ -1187,3 +1187,15 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - **Exact verified implementation/test SHA `cab1c160346a6fd3d4cc717aefbc3a1aba3d9452`:** CallerCore CI `37059050844` SUCCESS with **1221 tests passed / 0 failed**; CodeQL `37059050847` SUCCESS; Jekyll `37059050976` SUCCESS; Vercel Preview status SUCCESS. Feature branch was 2078 commits ahead / 0 behind `main`.
 - No production merge/deployment, live billing/provider activation, customer communication, production migration, or release-gate change occurred.
 - Next queued reliability item: client Billing Portal UI currently lacks network-error/finally handling and can leave the initiating button disabled on a thrown request. Harden the client receipt/URL validation and button restoration without changing the already-verified server-side Stripe portal policy.
+
+
+## Billing Portal client acknowledgement and recovery — 2026-10-02
+
+- Continued the feature-only reliability sweep while production `main` remained unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; PR #5 remained draft/unmerged.
+- The client Billing Portal launcher now validates the successful response URL as canonical HTTPS `billing.stripe.com` before navigating, matching the already-enforced backend Stripe portal contract.
+- Network errors, malformed JSON/URL responses, unexpected hosts, and non-2xx responses now produce a visible error and restore the initiating button/label instead of leaving “Opening…” disabled indefinitely.
+- Successful canonical portal responses keep navigation behavior unchanged. No Stripe provider configuration, billing state, customer record, or charge was modified by this UI hardening.
+- Added behavioral regression coverage for canonical Stripe navigation, unexpected successful URLs, and thrown network failures with button restoration.
+- **Exact verified implementation/test SHA `4b041c93dd95d4ad5c9e328459ec8e1510a6ea7c`:** CallerCore CI `37059329771` SUCCESS with **1224 tests passed / 0 failed**; CodeQL `37059329970` SUCCESS; Jekyll `37059329839` SUCCESS; Vercel status SUCCESS. Feature branch was 2081 commits ahead / 0 behind `main`.
+- No production merge/deployment, live billing action, customer communication, provider activation, production migration, or release-gate change occurred.
+- Next queued reliability item: Gmail connect/disconnect client handlers should validate canonical acknowledgements/authorization URLs and preserve local inbox state on malformed HTTP-200 or network responses, complementing the already-hardened backend OAuth/disconnect storage confirmation.
