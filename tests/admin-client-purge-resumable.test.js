@@ -217,3 +217,10 @@ test('malformed audit rows pause before retention archive is written',async()=>{
   assert.match(r.result.error,/audit history is malformed/);
   assert.equal(f.records['retention:audit:tenant'],undefined);
 });
+
+test('purge completion requires retention snapshot bound to the active attempt and a valid retained audit archive',()=>{
+  assert.match(code,/String\(currentRetention\.purgeAttemptId\|\|''\)!==String\(journal\.attemptId\)/);
+  assert.match(code,/Required retained audit archive is unavailable\. Permanent purge completion is paused/);
+  assert.match(code,/retainedAudit\.events\.some\(event=>/);
+  assert.match(code,/new Set\(retainedAudit\.events\.map\(event=>String\(event\.id\)\)\)\.size!==retainedAudit\.events\.length/);
+});
