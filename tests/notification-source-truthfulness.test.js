@@ -57,3 +57,10 @@ test('client notification coverage exposes unavailable or malformed workspace us
   assert.match(block,/Number\.isFinite\(Number\(ws\.usage\.minutes\)\)/);
   assert.match(ui,/Workspace source unavailable/);
 });
+
+test('admin notification coverage treats malformed client usage as incomplete client-directory coverage',()=>{
+  const start=api.indexOf('async function buildAdminNotifications('),end=api.indexOf('\nasync function followups(',start),block=api.slice(start,end);
+  assert.match(block,/usageValid=/);
+  assert.match(block,/if\(!usageValid\)workspaceRecordUnavailable=true/);
+  assert.match(block,/if\(usageValid&&plan\.minutes\)/);
+});
