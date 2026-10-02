@@ -150,3 +150,40 @@ test('website dashboard labels period conversions separately from website visito
   assert.match(ui,/MRR from period conversions/);
   assert.doesNotMatch(ui,/x\.conversionRate\|\|0/);
 });
+
+test('duplicate or blank analytics index ids fail closed instead of being silently deduplicated',async()=>{
+  for(const args of [
+    {sessionIds:['s1','s1']},
+    {sessionIds:['']},
+    {prospectIds:['p1','p1']},
+    {prospectIds:['p1',42]}
+  ]){
+    const r=await fixture(args).run();
+    assert.equal(r.code,503);
+    assert.match(r.body.error,/indexes contain unverifiable entries/);
+  }
+});
+test('malformed analytics event rows fail closed instead of being dropped from totals',async()=>{
+  for(const events of [[null],[{type:'page_view',at:0}],[{type:'',at:Date.now()}]]){
+    const r=await fixture({events}).run();
+    assert.equal(r.code,503);
+    assert.match(r.body.error,/events contain unverifiable entries/);
+  }
+});
+test('malformed indexed session and prospect fields are counted as unavailable coverage',async()=>{
+  const now=Date.now();
+  const r=await fixture({
+    sessionIds:['good-session','bad-session'],
+    prospectIds:['good-prospect','bad-prospect'],
+    records:{
+      'site:session:good-session':{id:'good-session',firstAt:now,lastAt:now,activeMs:1,pages:[]},
+      'site:session:bad-session':{id:'bad-session',firstAt:'bad',lastAt:now},
+      'site:prospect:good-prospect':{id:'good-prospect',stage:'new',updatedAt:now},
+      'site:prospect:bad-prospect':{id:'bad-prospect',stage:'converted',updatedAt:now,monthlyValue:-5}
+    }
+  }).run();
+  assert.equal(r.code,200);
+  assert.equal(r.body.analytics.coverage.unavailableSessionRecords,1);
+  assert.equal(r.body.analytics.coverage.unavailableProspectRecords,1);
+  assert.equal(r.body.analytics.coverage.isIncomplete,true);
+});
