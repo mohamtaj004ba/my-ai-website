@@ -109,7 +109,7 @@ test('campaign list includes items beyond 250 and rejects malformed indexes',asy
   let output,code=0;
   const context=vm.createContext({
     requireAdmin:async()=>({email:'admin@example.test'}),
-    kv:{get:async key=>key==='marketing:campaign:index'?index:{id:key.slice('marketing:campaign:'.length),updatedAt:10}},
+    kv:{get:async key=>key==='marketing:campaign:index'?index:{id:key.slice('marketing:campaign:'.length),name:'Campaign',channel:'Email',status:'draft',budget:0,updatedAt:10}},
     req:{},res:{status(n){code=n;return this},json(x){output=x;return x}},Promise,Array,Number,String
   });
   const start=api.indexOf('async function adminMarketingCampaigns('),end=api.indexOf('\nasync function adminMarketingCampaignSave(',start);
