@@ -1175,3 +1175,15 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - **Exact verified implementation/test SHA `98159a22f9057c7e4251802377cfa0ed001c5cc1`:** CallerCore CI `37058268153` SUCCESS with **1219 tests passed / 0 failed**; CodeQL `37058268224` SUCCESS; Jekyll `37058268317` SUCCESS; Vercel status SUCCESS. Feature branch was 2072 commits ahead / 0 behind `main`.
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, production migration, or release-gate change occurred.
 - Next residual candidate from mutation scan: `updateWebsiteProspect` still treats any HTTP 200 as a confirmed stage update and merges `data.prospect` without validating identity/stage/revision or handling network failure. Harden that path without duplicating the already-protected modal prospect editor.
+
+
+## Growth stage mutation consolidation — 2026-10-02
+
+- Continued the feature-only integrity sweep while production `main` remained unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; PR #5 remained draft/unmerged.
+- Removed the unused legacy `updateWebsiteProspect()` dashboard mutation helper. The live Growth drag/drop stage path is now the only lightweight stage-mutation route outside the full prospect editor, reducing duplicate mutation logic and eliminating a weaker HTTP-200-only acceptance path.
+- `moveGrowthProspectStage()` now requires the returned prospect to be an object with the exact requested prospect ID, requested stage, and a finite `updatedAt` strictly newer than the displayed revision before accepting the mutation. Existing stale-response protection still prevents an acknowledged older result from overwriting a newer refreshed/editor snapshot.
+- The first candidate run exposed regression-fixture drift: `admin-prospect-revision-consistency.test.js` explicitly expected the removed legacy helper, and two document/admin mutation tests used that helper only as a source-extraction delimiter. Those fixtures were updated to reference the surviving hardened path / next real function rather than restoring dead code.
+- Added focused regression coverage asserting canonical stage/revision acknowledgement and absence of the legacy helper.
+- **Exact verified implementation/test SHA `cab1c160346a6fd3d4cc717aefbc3a1aba3d9452`:** CallerCore CI `37059050844` SUCCESS with **1221 tests passed / 0 failed**; CodeQL `37059050847` SUCCESS; Jekyll `37059050976` SUCCESS; Vercel Preview status SUCCESS. Feature branch was 2078 commits ahead / 0 behind `main`.
+- No production merge/deployment, live billing/provider activation, customer communication, production migration, or release-gate change occurred.
+- Next queued reliability item: client Billing Portal UI currently lacks network-error/finally handling and can leave the initiating button disabled on a thrown request. Harden the client receipt/URL validation and button restoration without changing the already-verified server-side Stripe portal policy.
