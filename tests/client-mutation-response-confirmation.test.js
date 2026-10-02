@@ -98,7 +98,7 @@ test('malformed 200 lead and appointment responses roll optimistic UI changes ba
     fetch:async()=>({ok:true,json:async()=>({updated:true})}),alert:m=>alerts.push(m),
     String,Object,Array,JSON,Error
   });
-  vm.runInContext(segment('async function updateAppointment(',"\ndocument.getElementById('conversationSearch')"),apptCtx);
+  vm.runInContext(segment('const appointmentStatusPending=new Set();',"\ndocument.getElementById('conversationSearch')"),apptCtx);
   await vm.runInContext("updateAppointment('appt-1','Completed')",apptCtx);
   assert.equal(apptCtx.appointmentsData[0].status,'Scheduled');
   assert.ok(alerts.some(message=>/incomplete/i.test(message)));
@@ -124,4 +124,25 @@ test('automation and location saves preserve local records on malformed successf
   assert.equal(locationCtx.locationsData[0].id,'existing');
   assert.equal(locationCtx.locationsLimit,3);
   assert.ok(alerts.some(m=>/confirm|incomplete/i.test(m)));
+});
+
+
+test('appointment status mutation blocks duplicate in-flight changes and unlocks after failure',async()=>{
+  let release,requests=0,renders=0;
+  const ctx=vm.createContext({
+    appointmentsData:[{id:'appt-1',status:'Scheduled'}],demoMode:false,
+    renderAppointments:()=>{renders++},alert:()=>{},
+    fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:false,json:async()=>({error:'Unavailable'})}},
+    String,Object,Array,JSON,Error,Set,Promise
+  });
+  vm.runInContext(segment('const appointmentStatusPending=new Set();',"\ndocument.getElementById('conversationSearch')"),ctx);
+  const first=vm.runInContext("updateAppointment('appt-1','Completed')",ctx);
+  await new Promise(resolve=>setImmediate(resolve));
+  const second=await vm.runInContext("updateAppointment('appt-1','Confirmed')",ctx);
+  assert.equal(second,false);
+  assert.equal(requests,1);
+  release();assert.equal(await first,false);
+  assert.equal(ctx.appointmentsData[0].status,'Scheduled');
+  assert.equal(vm.runInContext("appointmentStatusPending.has('appt-1')",ctx),false);
+  assert.ok(renders>=2);
 });
