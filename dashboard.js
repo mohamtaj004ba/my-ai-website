@@ -1324,12 +1324,22 @@ function renderAutomations(){
   wrap.querySelectorAll('[data-edit-auto]').forEach(btn=>btn.addEventListener('click',()=>openAutomation(btn.dataset.editAuto)));
   wrap.querySelectorAll('[data-delete-auto]').forEach(btn=>btn.addEventListener('click',()=>deleteAutomation(btn.dataset.deleteAuto)));
 }
+let automationMutationPending=false;
 async function persistAutomations(){
   if(demoMode)return true;
-  const r=await fetch('/api/account?action=automations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({automations:automationsData})});
-  if(!r.ok){alert('Could not save automations right now.');return false}
-  const data=await r.json().catch(()=>({}));if(!Array.isArray(data.automations)){alert('Could not confirm the automation save. Refresh automations before retrying.');return false}
-  automationsData=data.automations;return true;
+  if(automationMutationPending)return false;
+  automationMutationPending=true;
+  try{
+    const submitted=automationsData.map(item=>({...item}));
+    const r=await fetch('/api/account?action=automations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({automations:submitted})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not save automations right now.');
+    if(data.ok!==true||!Array.isArray(data.automations)||data.automations.length!==submitted.length)throw new Error('Could not confirm the automation save. Refresh automations before retrying.');
+    const submittedIds=submitted.map(item=>String(item.id||'')),returnedIds=data.automations.map(item=>String(item?.id||''));
+    if(returnedIds.some((id,i)=>!id||id!==submittedIds[i])||data.automations.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!Number.isFinite(Number(item.updatedAt))||Number(item.updatedAt)<=0))
+      throw new Error('Could not confirm the automation save. Refresh automations before retrying.');
+    automationsData=data.automations;return true;
+  }catch(err){alert(err.message||'Could not save automations right now.');return false}
+  finally{automationMutationPending=false}
 }
 async function toggleAutomation(id){
   const item=automationsData.find(x=>String(x.id)===String(id));if(!item)return;
