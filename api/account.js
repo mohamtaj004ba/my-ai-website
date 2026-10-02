@@ -2677,7 +2677,9 @@ function notificationItem(id,{title='',body='',kind='info',view='overview',creat
   return {id,title,body,kind,view,createdAt,meta};
 }
 async function buildClientNotifications(s){
-  const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return {items:[],coverage:{limited:false,sources:[]}};
+  const ws=await kv.get('workspace:'+s.workspaceId);
+  if(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(s.workspaceId))return {items:[],coverage:{limited:true,sources:['workspace_unavailable']}};
+  if(ws.usage!=null&&(!ws.usage||typeof ws.usage!=='object'||Array.isArray(ws.usage)||!Number.isFinite(Number(ws.usage.minutes))||Number(ws.usage.minutes)<0))return {items:[],coverage:{limited:true,sources:['workspace_unavailable']}};
   const rawSettings=await kv.get('settings:'+ws.id),settingsValid=rawSettings==null||!!rawSettings&&typeof rawSettings==='object'&&!Array.isArray(rawSettings),
     savedSettings=settingsValid?(rawSettings||{}):{},prefs={
       billing:settingsValid&&savedSettings.notifyBilling!==false,setup:settingsValid&&savedSettings.notifySetup!==false,calls:settingsValid&&savedSettings.notifyCalls!==false,
@@ -2808,6 +2810,7 @@ async function followups(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const raw=await kv.get('followup:state:'+s.workspaceId);
   if(raw!=null&&(!raw||typeof raw!=='object'||Array.isArray(raw)))return res.status(503).json({error:'Team follow-up history is unavailable. Previously loaded follow-ups should be preserved.'});
+  if(raw&&Object.values(raw).some(item=>!item||typeof item!=='object'||Array.isArray(item)||item.notes!=null&&!Array.isArray(item.notes)||Array.isArray(item.notes)&&item.notes.length>100))return res.status(503).json({error:'Team follow-up records are incomplete or malformed. Previously loaded follow-ups should be preserved.'});
   return res.status(200).json({state:raw||{},coverage:{verified:true}});
 }
 async function followupUpdate(req,res){
@@ -2821,6 +2824,7 @@ async function followupUpdate(req,res){
   if(!completionReasons.includes(completionReason))return res.status(400).json({error:'Invalid completion outcome'});
   const calls=await kv.get('calls:'+s.workspaceId);
   if(calls!=null&&!Array.isArray(calls))return res.status(503).json({error:'Call history is unavailable. Team follow-up state was not changed.'});
+  if(Array.isArray(calls)&&calls.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Call history contains unverifiable entries. Team follow-up state was not changed.'});
   if(!(calls||[]).some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
   const key='followup:state:'+s.workspaceId,rawState=await kv.get(key);
   if(rawState!=null&&(!rawState||typeof rawState!=='object'||Array.isArray(rawState)))return res.status(503).json({error:'Team follow-up history is unavailable. No changes were made.'});
@@ -3693,6 +3697,8 @@ async function callViewedMark(req,res){
 async function clientDashboardData(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(s.workspaceId))return res.status(503).json({error:'Workspace dashboard data is unavailable. Last verified dashboard data should be preserved.'});
+  if(ws.usage!=null&&(!ws.usage||typeof ws.usage!=='object'||Array.isArray(ws.usage)||!Number.isFinite(Number(ws.usage.minutes))||Number(ws.usage.minutes)<0))return res.status(503).json({error:'Workspace usage data is unavailable. Last verified dashboard data should be preserved.'});
   const ent=entitlementsFor(ws.plan);
   const keys=['calls:index:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index',callViewedKey(s.workspaceId,s.email),'leads:'+s.workspaceId,'appointments:'+s.workspaceId,'automations:'+s.workspaceId,'onboarding:workspace:'+s.workspaceId];
   const [callIndexRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,followupRaw,platformRaw,phoneIndex,viewedRaw,leadsRaw,appointmentsRaw,automationsRaw,onboardingRaw]=await Promise.all(keys.map(k=>kv.get(k)));
