@@ -109,12 +109,14 @@ async function getWorkspaceConfigSnapshot(workspaceId){
     kv.get('automations:'+workspaceId),kv.get('integrations:'+workspaceId),kv.get('locations:'+workspaceId),kv.get('phone:index')
   ]),objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value),
     invalid=[
-      ['workspace',workspace,value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value)],['settings',settings,objectOrNull],['agent',agent,value=>objectOrNull(value)&&(value==null||value.qualificationQuestions==null||Array.isArray(value.qualificationQuestions))],
+      ['workspace',workspace,value=>!!value&&typeof value==='object'&&!Array.isArray(value)&&String(value.id||'')===String(workspaceId)],['settings',settings,objectOrNull],['agent',agent,value=>objectOrNull(value)&&(value==null||value.qualificationQuestions==null||Array.isArray(value.qualificationQuestions))],
       ['automations',automations,value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['integrations',integrations,objectOrNull],
-      ['locations',locations,value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['phone inventory',phones,value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())]
+      ['locations',locations,value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['phone inventory',phones,value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())&&new Set(value.map(item=>String(item.id))).size===value.length]
     ].find(([,value,valid])=>!valid(value));
   if(invalid)throw new Error('Workspace configuration source unavailable: '+invalid[0]);
-  const phone=(phones||[]).find(x=>x&&x.workspaceId===workspaceId)||null;
+  const phoneMatches=(phones||[]).filter(x=>x&&String(x.workspaceId||'')===String(workspaceId));
+  if(phoneMatches.length>1)throw new Error('Workspace configuration source unavailable: ambiguous phone routing');
+  const phone=phoneMatches[0]||null;
   return {workspace:workspace||null,settings:settings||null,agent:agent||null,automations:automations||[],integrations:integrations||null,locations:locations||[],phone};
 }
 
@@ -2124,11 +2126,17 @@ async function adminTechSupport(req,res){
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
   if(typeof ws!=='object'||Array.isArray(ws))return res.status(503).json({error:'Client workspace record is unavailable. No repair diagnostics were substituted.'});
   const email=cleanEmail(ws.ownerEmail||''),member=email?await kv.get('user:email:'+email):null;
+  if(member!=null&&(!member||typeof member!=='object'||Array.isArray(member)||!String(member.workspaceId||'').trim()||!String(member.role||'').trim()))return res.status(503).json({error:'Client access mapping is unavailable. No partial repair diagnostics were returned.'});
+  if(member!=null){
+    const memberRevision=Number(member.sessionVersion||0);
+    if(!Number.isSafeInteger(memberRevision)||memberRevision<0)return res.status(503).json({error:'Client access mapping revision is unavailable. No partial repair diagnostics were returned.'});
+  }
   let config,auditRaw;
   try{[config,auditRaw]=await Promise.all([getWorkspaceConfigSnapshot(id),kv.get('audit:'+id)])}
   catch(err){console.error('admin tech diagnostics verification failed',safeError(err));return res.status(503).json({error:'Workspace diagnostics could not be verified. No partial repair snapshot was returned.'})}
   const 
-    auditVerified=auditRaw==null||Array.isArray(auditRaw),audit=auditVerified?(auditRaw||[]):[],auditReturned=audit.slice(0,100);
+    auditVerified=auditRaw==null||Array.isArray(auditRaw)&&auditRaw.length<=200&&auditRaw.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim()),
+    audit=auditVerified?(auditRaw||[]):[],auditReturned=audit.slice(0,100);
   return res.status(200).json({
     diagnostics:{
       workspaceExists:true,workspaceId:id,workspaceStatus:ws.status||'active',subscriptionStatus:ws.subscriptionStatus||'active',
