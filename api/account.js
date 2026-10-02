@@ -1279,11 +1279,12 @@ async function createSupportTicket(req,res){
   try{[platform,clientSettings]=await Promise.all([kv.get('platform:settings'),kv.get('settings:'+s.workspaceId)])}
   catch(err){console.error('support notification settings read failed',safeError(err));notificationWarning='Your support request was saved, but notification settings could not be verified, so no support emails were sent.'}
   const platformValid=!notificationWarning&&(platform==null||!!platform&&typeof platform==='object'&&!Array.isArray(platform)),
-    clientSettingsValid=!notificationWarning&&(clientSettings==null||!!clientSettings&&typeof clientSettings==='object'&&!Array.isArray(clientSettings));
-  if(!notificationWarning&&(!platformValid||!clientSettingsValid))notificationWarning='Your support request was saved, but notification settings could not be verified, so no support emails were sent.';
+    clientSettingsValid=!notificationWarning&&(clientSettings==null||!!clientSettings&&typeof clientSettings==='object'&&!Array.isArray(clientSettings)),
+    notificationSettingsVerified=platformValid&&clientSettingsValid;
+  if(!notificationWarning&&!notificationSettingsVerified)notificationWarning='Your support request was saved, but notification settings could not be verified, so no support emails were sent.';
   const supportTo=platformValid?(platform?.supportEmail||process.env.SUPPORT_EMAIL||process.env.MAILGUN_TO_EMAIL||''):'';
-  if(!notificationWarning&&supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',safeError(err));notificationWarning='Your support request was saved, but one or more support email notifications could not be confirmed.'}}
-  if(!notificationWarning&&s.email&&clientSettings?.emailAlerts!==false&&clientSettings?.notifySupport!==false){
+  if(notificationSettingsVerified&&supportTo){try{await sendMail({to:supportTo,subject:'CallerCore support · '+subject,text:'Workspace: '+ticket.workspaceName+'\nFrom: '+s.email+'\nPriority: '+priority+'\nTicket: '+id+'\n\n'+message})}catch(err){console.error('support email failed',safeError(err));notificationWarning='Your support request was saved, but one or more support email notifications could not be confirmed.'}}
+  if(notificationSettingsVerified&&s.email&&clientSettings?.emailAlerts!==false&&clientSettings?.notifySupport!==false){
     try{
       const firstName=String(ws.ownerName||clientSettings?.contactName||'').split(' ')[0]||'there';
       const emailBody=lifecycleEmail({
