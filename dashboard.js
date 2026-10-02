@@ -1741,6 +1741,7 @@ async function replyClientSupportTicket(id,button){
     if(i>=0)supportTicketsData[i]=data.ticket;
     renderSupport({clearDraftId:id});
     const thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(id)+'"]');if(thread)thread.open=true;
+    if(data.warning)setClientSupportReplyStatus(id,String(data.warning));
     Promise.resolve(loadNotifications({silent:true})).catch(()=>{});
   }catch(_){
     setClientSupportReplyStatus(id,'Could not confirm the reply was saved. Check request history before retrying; your draft is preserved.');
@@ -2783,6 +2784,7 @@ async function replyAdminSupportTicket(id,button){
     const i=adminSupportData.findIndex(x=>String(x.id)===key);if(i>=0)adminSupportData[i]=data.ticket;
     renderAdminSupport({clearDraftId:key});
     const thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(key)+'"]');if(thread)thread.open=true;
+    if(data.warning)setAdminSupportReplyStatus(key,String(data.warning));
     Promise.resolve(loadNotifications({silent:true})).catch(()=>{});
   }catch(_){
     setAdminSupportReplyStatus(key,'Could not confirm the reply was saved. Check ticket history before retrying; your draft is preserved.');
@@ -2793,7 +2795,7 @@ async function replyAdminSupportTicket(id,button){
 }
 async function updateSupportStatus(id,status){
   const key=String(id),t=adminSupportData.find(x=>String(x.id)===key);if(!t||adminSupportStatusPending.has(key))return;const previous=t.status;adminSupportStatusPending.add(key);t.status=status;renderAdminSupport();
-  try{const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,expectedUpdatedAt:Number(t.updatedAt||t.createdAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update support status.');if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||String(data.ticket.id||'')!==key||String(data.ticket.status||'')!==String(status))throw new Error('Support status response was incomplete. Refresh Client Care before retrying.');Object.assign(t,data.ticket)}
+  try{const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,expectedUpdatedAt:Number(t.updatedAt||t.createdAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update support status.');if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||String(data.ticket.id||'')!==key||String(data.ticket.status||'')!==String(status))throw new Error('Support status response was incomplete. Refresh Client Care before retrying.');Object.assign(t,data.ticket);if(data.warning)setAdminSupportReplyStatus(key,String(data.warning))}
   catch(err){t.status=previous;alert(err.message||'Could not update support status.')}
   finally{adminSupportStatusPending.delete(key);renderAdminSupport()}
 }
@@ -4071,7 +4073,7 @@ function openRetention(){if(!retentionModal)return;document.getElementById('rete
 document.getElementById('retentionButton')?.addEventListener('click',openRetention);retentionModal?.querySelector('.retention-close')?.addEventListener('click',closeRetention);retentionModal?.addEventListener('click',e=>{if(e.target===retentionModal)closeRetention()});
 async function requestRetention(kind){
   const status=document.getElementById('retentionStatus'),copy=kind==='pause'?'I would like to discuss temporarily pausing my CallerCore subscription. Please contact me before making any changes.':'I am considering cancelling and would like to review any available retention options, incentives, or a better-fit plan before I decide.';
-  if(status)status.textContent='Sending request…';try{const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:kind==='pause'?'Subscription pause request':'Subscription save-options request',message:copy,priority:'normal'})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not send request');if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||!String(data.ticket.id||'').trim())throw new Error('Request response was incomplete. Check Support before retrying.');if(status)status.textContent='Request sent. CallerCore support will follow up before any subscription change.'}catch(err){if(status)status.textContent=err.message||'Could not send request'}}
+  if(status)status.textContent='Sending request…';try{const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:kind==='pause'?'Subscription pause request':'Subscription save-options request',message:copy,priority:'normal'})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not send request');if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||!String(data.ticket.id||'').trim())throw new Error('Request response was incomplete. Check Support before retrying.');if(status)status.textContent=data.warning||'Request sent. CallerCore support will follow up before any subscription change.'}catch(err){if(status)status.textContent=err.message||'Could not send request'}}
 retentionModal?.querySelectorAll('[data-retention]').forEach(b=>b.addEventListener('click',()=>{const kind=b.dataset.retention;if(kind==='plan'){closeRetention();const p=document.getElementById('planOptionsPanel');if(p){p.hidden=false;p.scrollIntoView({behavior:'smooth'})}}else requestRetention(kind)}));
 document.getElementById('continueCancelButton')?.addEventListener('click',async e=>{const b=e.currentTarget;b.dataset.original='Continue to cancellation options';await openBillingPortal(b,'Opening cancellation options…')});
 
