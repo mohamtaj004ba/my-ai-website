@@ -3314,7 +3314,10 @@ async function saveLocations(req,res){
   const s=await requireWritableSession(req,res);if(!s)return;
   if(!await requireOperationalWorkspace(s,res))return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
-  const ent=entitlementsFor(ws.plan),incoming=Array.isArray((req.body||{}).locations)?req.body.locations:[];
+  const ent=entitlementsFor(ws.plan),body=req.body||{};
+  if(!Array.isArray(body.locations))return res.status(400).json({error:'Location list is required. No locations were changed.'});
+  if(body.locations.some(item=>!item||typeof item!=='object'||Array.isArray(item)))return res.status(400).json({error:'One or more location records are invalid. No locations were changed.'});
+  const incoming=body.locations;
   if(incoming.length>ent.locations)return res.status(403).json({error:'Your '+ent.plan+' plan supports up to '+ent.locations+' location'+(ent.locations===1?'':'s')});
   const clean=(v,n)=>String(v||'').trim().slice(0,n);
   const items=incoming.map((x,i)=>({
@@ -3426,8 +3429,10 @@ async function saveAutomations(req,res){
   if(!await requireOperationalWorkspace(s,res))return;
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   if(!entitlementsFor(ws.plan).features.automations)return res.status(403).json({error:'Upgrade required',feature:'automations'});
-  const access={session:s,workspace:ws};
-  const incoming=Array.isArray((req.body||{}).automations)?req.body.automations:[];
+  const access={session:s,workspace:ws},body=req.body||{};
+  if(!Array.isArray(body.automations))return res.status(400).json({error:'Automation list is required. No automations were changed.'});
+  if(body.automations.some(item=>!item||typeof item!=='object'||Array.isArray(item)))return res.status(400).json({error:'One or more automation records are invalid. No automations were changed.'});
+  const incoming=body.automations;
   const calendarLive=process.env.CALLERCORE_CALENDAR_ENABLED==='true',smsLive=process.env.CALLERCORE_SMS_ENABLED==='true';
   const allowedTriggers=['missed_call','new_lead','qualified_lead','after_hours_call',...(calendarLive?['appointment_booked']:[])];
   const allowedActions=['notify_team','create_followup','mark_priority',...(smsLive?['send_sms','send_confirmation']:[])];
