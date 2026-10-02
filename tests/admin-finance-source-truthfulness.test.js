@@ -53,10 +53,26 @@ test('finance mutation handlers reject malformed sibling expense rows before edi
 });
 
 test('malformed or duplicate reconciliation queue ids are disclosed as incomplete coverage',async()=>{
-  const r=await run({reconciliation:['case-1','case-1','',42],reconciliationRecords:{'stripe:reconciliation:case-1':{id:'case-1',sessionId:'case-1',eventId:'evt-1',reason:'test',createdAt:1,status:'resolved'}}});
+  const r=await run({reconciliation:['case-1','case-1','',42],reconciliationRecords:{'stripe:reconciliation:case-1':{id:'case-1',sessionId:'case-1',eventId:'evt-1',reason:'email_mismatch',createdAt:1,resolvedAt:2,status:'resolved'}}});
   assert.equal(r.status,200);
   assert.equal(r.payload.finance.reconciliationCoverage.retainedCaseIds,4);
   assert.equal(r.payload.finance.reconciliationCoverage.verifiedCaseIds,1);
   assert.equal(r.payload.finance.reconciliationCoverage.unavailableCaseRecords,3);
   assert.equal(r.payload.finance.reconciliationCoverage.isIncomplete,true);
+});
+
+test('malformed reconciliation records are excluded and disclosed as incomplete coverage',async()=>{
+  const bad=[
+    {id:'wrong',sessionId:'case-1',reason:'email_mismatch',createdAt:1,status:'open'},
+    {id:'case-1',sessionId:'case-1',reason:'unknown',createdAt:1,status:'open'},
+    {id:'case-1',sessionId:'case-1',reason:'email_mismatch',createdAt:0,status:'open'},
+    {id:'case-1',sessionId:'case-1',reason:'email_mismatch',createdAt:2,resolvedAt:1,status:'resolved'}
+  ];
+  for(const record of bad){
+    const r=await run({reconciliation:['case-1'],reconciliationRecords:{'stripe:reconciliation:case-1':record}});
+    assert.equal(r.status,200);
+    assert.equal(r.payload.finance.reconciliation.length,0);
+    assert.equal(r.payload.finance.reconciliationCoverage.unavailableCaseRecords,1);
+    assert.equal(r.payload.finance.reconciliationCoverage.isIncomplete,true);
+  }
 });
