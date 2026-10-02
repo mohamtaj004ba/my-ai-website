@@ -1212,3 +1212,15 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - **Exact verified implementation/test SHA `93b7c6c24d10831ff512e075fcd11e2ee2e52c2f`:** CallerCore CI `37059705708` SUCCESS with **1229 tests passed / 0 failed**; CodeQL `37059705870` SUCCESS; Jekyll `37059705742` SUCCESS; Vercel status SUCCESS. Feature branch was 2085 commits ahead / 0 behind `main`.
 - No production merge/deployment, live customer Gmail mutation, outbound email, billing action, provider activation, production migration, or release-gate change occurred.
 - Next queued reliability item: the admin “Send sign-in link” action already verifies the backend receipt but lacks an in-flight guard, allowing repeated clicks to issue multiple login emails/tokens while the first request is pending. Add duplicate-submit prevention and control restoration without changing auth backend semantics.
+
+
+## Admin sign-in-link duplicate-send guard — 2026-10-02
+
+- Continued the feature-only access-recovery reliability sweep while production `main` remained unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; PR #5 remained draft/unmerged.
+- The admin “Send sign-in link” action now participates in the existing admin-tech mutation lock. Repeated clicks and conflicting access/configuration actions are blocked while the sign-in email request is pending, preventing multiple one-time tokens/emails from being created by accidental duplicate submission.
+- The control shows `Sending…` while pending and restores through the shared mutation-state cleanup on both success and failure.
+- The action captures the target client ID/request generation before sending, preserves the existing canonical `{ok:true,email}` acknowledgement requirement, and refreshes diagnostics for the same client only after provider-confirmed success.
+- If the sign-in email was confirmed sent but diagnostics refresh fails, the UI reports that as a refresh problem rather than implying email delivery failed or inviting a duplicate send.
+- Added focused UI regression coverage for pending-state suppression, control labeling/restoration, stable target identity, canonical receipt validation, and post-send diagnostics semantics. Existing backend token readback/provider uncertainty safeguards remain unchanged.
+- **Exact verified implementation/test SHA `d45a4b0149ede12d168f7aa175cdd9669159c4c6`:** CallerCore CI `37060019656` SUCCESS with **1230 tests passed / 0 failed**; CodeQL `37060019723` SUCCESS; Jekyll `37060019852` SUCCESS; Vercel status SUCCESS. Feature branch was 2088 commits ahead / 0 behind `main`.
+- No production merge/deployment, live customer email, billing action, provider activation, production migration, or release-gate change occurred.
