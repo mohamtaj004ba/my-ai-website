@@ -1318,7 +1318,7 @@ function actionLabel(value=''){
 function renderAutomations(){
   if(!has('automations'))return;
   const wrap=document.getElementById('automationList');if(!wrap)return;
-  wrap.innerHTML=automationsData.map(x=>'<article class="automation-card"><div><h3>'+esc(x.name)+'</h3><p>When <b>'+esc(triggerLabel(x.trigger))+'</b> → '+esc(actionLabel(x.action))+'</p></div><div class="automation-actions"><button data-edit-auto="'+esc(x.id)+'">Edit</button><button class="danger-link" data-delete-auto="'+esc(x.id)+'">Delete</button><button class="switch '+(x.enabled?'on':'')+'" data-toggle-auto="'+esc(x.id)+'" aria-label="Toggle automation"><i></i></button></div></article>').join('');
+  wrap.innerHTML=automationsData.map(x=>'<article class="automation-card"><div><h3>'+esc(x.name)+'</h3><p>When <b>'+esc(triggerLabel(x.trigger))+'</b> → '+esc(actionLabel(x.action))+'</p></div><div class="automation-actions"><button data-edit-auto="'+esc(x.id)+'" '+(automationMutationPending?'disabled aria-busy="true"':'')+'>Edit</button><button class="danger-link" data-delete-auto="'+esc(x.id)+'" '+(automationMutationPending?'disabled aria-busy="true"':'')+'>Delete</button><button class="switch '+(x.enabled?'on':'')+'" data-toggle-auto="'+esc(x.id)+'" aria-label="Toggle automation" '+(automationMutationPending?'disabled aria-busy="true"':'')+'><i></i></button></div></article>').join('');
   document.getElementById('automationEmpty').hidden=automationsData.length!==0;
   wrap.querySelectorAll('[data-toggle-auto]').forEach(btn=>btn.addEventListener('click',()=>toggleAutomation(btn.dataset.toggleAuto)));
   wrap.querySelectorAll('[data-edit-auto]').forEach(btn=>btn.addEventListener('click',()=>openAutomation(btn.dataset.editAuto)));
@@ -1342,9 +1342,19 @@ async function persistAutomations(){
   finally{automationMutationPending=false}
 }
 async function toggleAutomation(id){
-  const item=automationsData.find(x=>String(x.id)===String(id));if(!item)return;
+  if(automationMutationPending)return false;
+  const item=automationsData.find(x=>String(x.id)===String(id));if(!item)return false;
   const before=item.enabled;item.enabled=!item.enabled;renderAutomations();
-  if(!await persistAutomations()){item.enabled=before;renderAutomations()}
+  if(!await persistAutomations()){item.enabled=before;renderAutomations();return false}
+  renderAutomations();return true;
+}
+async function deleteAutomation(id){
+  if(automationMutationPending)return false;
+  const key=String(id),index=automationsData.findIndex(x=>String(x.id)===key);if(index<0)return false;
+  const before=automationsData.map(x=>({...x}));
+  automationsData=automationsData.filter(x=>String(x.id)!==key);renderAutomations();
+  if(!await persistAutomations()){automationsData=before;renderAutomations();return false}
+  renderAutomations();return true;
 }
 let editingAutomationId=null;
 function openAutomation(id=null,preset=null){
@@ -1368,7 +1378,8 @@ function openAutomation(id=null,preset=null){
 }
 function closeAutomation(){const modal=document.getElementById('automationModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');editingAutomationId=null}
 async function saveAutomation(){
-  const name=document.getElementById('automationName').value.trim();if(!name)return;
+  if(automationMutationPending)return false;
+  const name=document.getElementById('automationName').value.trim();if(!name)return false;
   const item={id:editingAutomationId||('auto_'+Date.now()),name,trigger:document.getElementById('automationTrigger').value,action:document.getElementById('automationAction').value,enabled:true};
   const before=automationsData.map(x=>({...x})),i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));
   if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
