@@ -2635,23 +2635,41 @@ async function sendInboxReply(e){
   }catch(err){if(status)status.textContent=err.message||'Could not send reply'}
   finally{if(btn){btn.disabled=false;btn.textContent='Send reply'}}
 }
+let gmailConnectionMutationPending=false;
+function setGmailConnectionControls(pending,active=''){
+  gmailConnectionMutationPending=!!pending;
+  const connect=document.getElementById('gmailConnectButton'),disconnect=document.getElementById('gmailDisconnectButton');
+  if(connect){connect.disabled=!!pending;if(active==='connect')connect.textContent=pending?'Connecting…':'Connect Gmail'}
+  if(disconnect){disconnect.disabled=!!pending;if(active==='disconnect')disconnect.textContent=pending?'Disconnecting…':'Disconnect'}
+}
 async function connectGmail(){
-  if(!adminInboxData.gmailStatus?.configured){alert('Gmail OAuth needs three Vercel environment variables first: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY.');return}
-  const r=await fetch('/api/account?action=admin-gmail-connect',{method:'POST'}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not start Gmail connection.');return}location.href=data.url;
+  if(gmailConnectionMutationPending)return false;
+  if(!adminInboxData.gmailStatus?.configured){alert('Gmail OAuth needs three Vercel environment variables first: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY.');return false}
+  setGmailConnectionControls(true,'connect');
+  try{
+    const r=await fetch('/api/account?action=admin-gmail-connect',{method:'POST'}),data=await r.json().catch(()=>({}));
+    let oauthUrl=null;try{oauthUrl=data?.url?new URL(String(data.url)):null}catch(_){oauthUrl=null}
+    if(!r.ok||!oauthUrl||oauthUrl.protocol!=='https:'||oauthUrl.hostname!=='accounts.google.com'||oauthUrl.pathname!=='/o/oauth2/v2/auth'||!oauthUrl.searchParams.get('state')||!oauthUrl.searchParams.get('client_id'))
+      throw new Error(data.error||'Could not start a verified Gmail connection.');
+    location.href=oauthUrl.toString();return true;
+  }catch(err){alert(err.message||'Could not start Gmail connection.');setGmailConnectionControls(false,'connect');return false}
 }
 async function disconnectGmailAdmin(){
-  if(!confirm('Disconnect Gmail from CallerCore Admin? No messages will be deleted from Gmail.'))return;
+  if(gmailConnectionMutationPending)return false;
+  if(!confirm('Disconnect Gmail from CallerCore Admin? No messages will be deleted from Gmail.'))return false;
+  setGmailConnectionControls(true,'disconnect');
   try{
-    const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST'});
-    if(!r.ok)throw new Error('Could not disconnect Gmail');
+    const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST'}),data=await r.json().catch(()=>({}));
+    if(!r.ok||data.ok!==true)throw new Error(data.error||'Could not confirm Gmail disconnect');
     adminInboxData.gmailStatus={...adminInboxData.gmailStatus,connected:false,gmailEmail:''};
     adminSearchInboxRequest++;adminSearchInboxCacheLoaded=true;adminSearchInboxLoading=false;adminSearchInboxCacheError=false;
     adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;adminInboxData.liveError='';adminInboxData.aliasError='';adminInboxData.readError='';
     currentInboxItem=null;renderInboxThread();renderAdminInbox();
     const search=document.getElementById('adminSearch');
     if(search&&String(search.value||'').trim().length>=2)renderAdminGlobalSearch();
-    await loadAdminInbox();
-  }catch(err){alert('Could not disconnect Gmail.')}
+    await loadAdminInbox();return true;
+  }catch(err){alert(err.message||'Could not disconnect Gmail.');return false}
+  finally{setGmailConnectionControls(false,'disconnect')}
 }
 document.getElementById('inboxRefreshButton')?.addEventListener('click',()=>refreshAdminInboxLive({silent:false,force:true}));
 document.getElementById('gmailConnectButton')?.addEventListener('click',connectGmail);
