@@ -25,3 +25,14 @@ test('campaign save and delete reject malformed stored record or directory befor
   assert.match(del,/Campaign record could not be verified\. No changes were made/);
   assert.match(del,/Campaign directory is unavailable\. No changes were made/);
 });
+
+test('campaign rows and mutation fields are validated instead of silently normalized',()=>{
+  const read=block('adminMarketingCampaigns','adminMarketingCampaignSave');
+  const save=block('adminMarketingCampaignSave','adminMarketingCampaignDelete');
+  assert.match(read,/Campaign records could not be verified\. No partial campaign list was returned/);
+  assert.match(read,/Number\.isFinite\(Number\(campaign\.budget\)\)/);
+  assert.match(save,/Campaign channel is invalid\. No changes were made/);
+  assert.match(save,/Campaign status is invalid\. No changes were made/);
+  assert.match(save,/Campaign dates are invalid\. No changes were made/);
+  assert.match(save,/Campaign end date cannot precede its start date\. No changes were made/);
+});
