@@ -53,3 +53,19 @@ test('admin support status rejects unverifiable stored ticket identity before re
     assert.match(r.payload.error,/record is unavailable/);
   }
 });
+
+test('support mutations reject malformed message rows and impossible message counts',async()=>{
+  const malformed=[
+    {id:'ticket-1',workspaceId:'client-1',messages:[{id:'m1',direction:'client',body:'hello',at:0}],messageCount:1,updatedAt:10},
+    {id:'ticket-1',workspaceId:'client-1',messages:[{id:'m1',direction:'client',body:42,at:1}],messageCount:1,updatedAt:10},
+    {id:'ticket-1',workspaceId:'client-1',messages:[{id:'m1',direction:'client',body:'hello',at:1}],messageCount:0,updatedAt:10}
+  ];
+  for(const record of malformed){
+    const a=await invoke(clientReply,'replySupportTicket',{record,body:{id:'ticket-1',message:'A valid reply'},client:true});
+    assert.equal(a.status,503);assert.equal(a.writes,0);
+    const b=await invoke(adminReply,'adminSupportReply',{record,body:{id:'ticket-1',message:'A valid admin reply'}});
+    assert.equal(b.status,503);assert.equal(b.writes,0);
+    const d=await invoke(adminUpdate,'adminSupportUpdate',{record,body:{id:'ticket-1',status:'resolved',expectedUpdatedAt:10}});
+    assert.equal(d.status,503);assert.equal(d.writes,0);
+  }
+});
