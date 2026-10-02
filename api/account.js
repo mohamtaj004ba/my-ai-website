@@ -1305,12 +1305,17 @@ async function createSupportTicket(req,res){
 
 async function supportTickets(req,res){
   const s=await requireSession(req,res);if(!s)return;
-  const index=await kv.get('support:index')||[],tickets=[];
+  let rawIndex;
+  try{rawIndex=await kv.get('support:index')}
+  catch(err){console.error('client support index read failed',safeError(err));return res.status(503).json({error:'Support history is temporarily unavailable. Previously loaded requests should be preserved.'})}
+  const index=rawIndex||[],tickets=[];
   if(!Array.isArray(index)||index.length>2000||index.some(id=>typeof id!=='string'||!id.trim())||new Set(index).size!==index.length)
     return res.status(503).json({error:'Support history index is incomplete or exceeds supported capacity. No partial ticket list was returned.'});
   let missingRecords=0;
   for(let offset=0;offset<index.length;offset+=40){
-    const ids=index.slice(offset,offset+40),batch=await Promise.all(ids.map(id=>kv.get('support:'+id)));
+    const ids=index.slice(offset,offset+40);let batch;
+    try{batch=await Promise.all(ids.map(id=>kv.get('support:'+id)))}
+    catch(err){console.error('client support records read failed',safeError(err));return res.status(503).json({error:'Support history could not be verified. Previously loaded requests should be preserved.'})}
     for(let i=0;i<batch.length;i++){
       const ticket=batch[i];
       if(!ticket||typeof ticket!=='object'||Array.isArray(ticket)||String(ticket.id||'')!==String(ids[i])||!(ticket.messages==null||Array.isArray(ticket.messages)&&ticket.messages.length<=100&&!ticket.messages.some(message=>!message||typeof message!=='object'||Array.isArray(message)||!String(message.id||'').trim()||typeof message.body!=='string'||!String(message.direction||'').trim()||!Number.isFinite(Number(message.at))||Number(message.at)<=0))||!(ticket.messageCount==null||Number.isSafeInteger(Number(ticket.messageCount))&&Number(ticket.messageCount)>=0&&(!Array.isArray(ticket.messages)||Number(ticket.messageCount)>=ticket.messages.length))){missingRecords++;continue}
@@ -1350,12 +1355,17 @@ async function replySupportTicket(req,res){
 
 async function adminSupport(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const index=await kv.get('support:index')||[],tickets=[];
+  let rawIndex;
+  try{rawIndex=await kv.get('support:index')}
+  catch(err){console.error('admin support index read failed',safeError(err));return res.status(503).json({error:'Support history is temporarily unavailable. Previously loaded requests should be preserved.'})}
+  const index=rawIndex||[],tickets=[];
   if(!Array.isArray(index)||index.length>2000||index.some(id=>typeof id!=='string'||!id.trim())||new Set(index).size!==index.length)
     return res.status(503).json({error:'Support index is incomplete or exceeds supported capacity. No partial ticket list was returned.'});
   let missingRecords=0;
   for(let offset=0;offset<index.length;offset+=40){
-    const ids=index.slice(offset,offset+40),batch=await Promise.all(ids.map(id=>kv.get('support:'+id)));
+    const ids=index.slice(offset,offset+40);let batch;
+    try{batch=await Promise.all(ids.map(id=>kv.get('support:'+id)))}
+    catch(err){console.error('admin support records read failed',safeError(err));return res.status(503).json({error:'Support history could not be verified. Previously loaded requests should be preserved.'})}
     for(let i=0;i<batch.length;i++){
       const ticket=batch[i];
       if(!ticket||typeof ticket!=='object'||Array.isArray(ticket)||String(ticket.id||'')!==String(ids[i])||!(ticket.messages==null||Array.isArray(ticket.messages)&&ticket.messages.length<=100&&!ticket.messages.some(message=>!message||typeof message!=='object'||Array.isArray(message)||!String(message.id||'').trim()||typeof message.body!=='string'||!String(message.direction||'').trim()||!Number.isFinite(Number(message.at))||Number(message.at)<=0))||!(ticket.messageCount==null||Number.isSafeInteger(Number(ticket.messageCount))&&Number(ticket.messageCount)>=0&&(!Array.isArray(ticket.messages)||Number(ticket.messageCount)>=ticket.messages.length))){missingRecords++;continue}
