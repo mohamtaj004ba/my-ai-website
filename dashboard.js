@@ -2178,7 +2178,8 @@ async function moveGrowthProspectStage(id,bucket){
     const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     conflict=r.status===409;
     if(!r.ok)throw new Error(data.error||'Could not move prospect.');
-    if(!data.prospect||String(data.prospect.id)!==key)throw new Error('Prospect update was not confirmed. Refresh Growth before retrying.');
+    if(!data.prospect||typeof data.prospect!=='object'||Array.isArray(data.prospect)||String(data.prospect.id)!==key||String(data.prospect.stage)!==stage||!Number.isFinite(Number(data.prospect.updatedAt))||Number(data.prospect.updatedAt)<=expectedUpdatedAt)
+      throw new Error('Prospect update was not confirmed. Refresh Growth before retrying.');
     // Background analytics refresh can replace the prospect array while the drag request is pending.
     // Apply the acknowledged record to the current array, never a detached or newer snapshot.
     const current=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===key);
@@ -2386,12 +2387,6 @@ async function deleteCompanyDocument(){
   }catch(err){companyDocumentFeedback(err.message||'Could not delete document.')}
   finally{setCompanyDocumentMutationPending(false)}
 }
-async function updateWebsiteProspect(id,stage){
-  const before=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id));if(!before)return;
-  const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt:Number(before.updatedAt||before.createdAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||'Could not update prospect.');return}
-  const p=(adminWebsiteData.prospects||[]).find(x=>x.id===id);if(p)Object.assign(p,data.prospect);renderGrowth();renderWebsiteAnalytics();
-}
-
 async function loadAdminInbox({silent=false,force=false}={}){
   if(adminInboxData.loading)return;
   adminInboxData.loading=true;
