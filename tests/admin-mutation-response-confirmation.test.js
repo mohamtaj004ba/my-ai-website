@@ -13,7 +13,7 @@ test('admin business-record mutations require confirmed canonical payloads',()=>
   const campaignSave=segment('async function saveCampaign(','\nfunction companyDocumentIsExpired(');
   const campaignDelete=segment('async function deleteCampaign(','\nasync function saveCampaign(');
   const docSave=segment('async function saveCompanyDocument(','\nasync function deleteCompanyDocument(');
-  const docDelete=segment('async function deleteCompanyDocument(','\nasync function updateWebsiteProspect(');
+  const docDelete=segment('async function deleteCompanyDocument(','\nasync function loadAdminInbox(');
   const support=segment('async function updateSupportStatus(','\nfunction setPlatformSettingsDirty(');
   assert.match(campaignSave,/data\.ok!==true/);assert.match(campaignSave,/data\.campaign/);
   assert.match(campaignDelete,/data\.ok!==true/);
