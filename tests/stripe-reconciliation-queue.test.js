@@ -169,6 +169,25 @@ test('Finance reads all 200 retained reconciliation IDs and reports missing reco
  assert.equal(data.reconciliationCoverage.isRetentionCapped,true);
  assert.ok(!data.reconciliation.some(x=>x.status==='resolved'));
 });
+test('Finance fails closed with a targeted error when reconciliation queue read fails',async()=>{
+ const source=fs.readFileSync('api/account.js','utf8');
+ const start=source.indexOf('async function adminFinance(req,res)'),end=source.indexOf('\nasync function adminFinanceExpenseSave(',start);
+ let snapshotWrites=0;
+ const ctx=vm.createContext({
+   requireAdmin:async()=>({email:'admin@example.test'}),loadAdminWorkspaces:async()=>[],
+   kv:{lrange:async()=>{throw Error('WRONGTYPE')},get:async()=>[]},
+   financeMonthKey:()=> '2026-09',expenseMonthlyEquivalent:()=>0,currentBillableWorkspaces:()=>[],
+   recordFinanceSnapshot:async()=>{snapshotWrites++;return []},process:{env:{VERCEL_ENV:'production'}},
+   Date,Number,Math,Set,Promise,console:{error(){}},safeError:()=> 'redacted',
+   req:{},res:{status(n){this.code=n;return this},json(x){this.body=x;return x}}
+ });
+ vm.runInContext(source.slice(start,end),ctx);
+ await vm.runInContext('adminFinance(req,res)',ctx);
+ assert.equal(ctx.res.code,503);
+ assert.match(ctx.res.body.error,/reconciliation queue could not be loaded/i);
+ assert.equal(snapshotWrites,0);
+});
+
 test('Finance warns about missing reconciliation records and bounded retention',()=>{
  const ui=fs.readFileSync('dashboard.js','utf8');
  assert.match(ui,/coverage\.unavailableCaseRecords/);
