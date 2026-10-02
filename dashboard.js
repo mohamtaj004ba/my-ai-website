@@ -3002,10 +3002,17 @@ async function resolveOnboardingInviteDelivery(id,resolution,attemptId,button){
   finally{adminOnboardingInvitePending.delete(key);setOnboardingInviteControls(key,false);if(button?.isConnected)button.textContent=idleLabel;renderProvisioning()}
 }
 async function approveProvisioningBuild(id,button){
-  if(button){button.disabled=true;button.textContent='Approving…'}
-  const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field:'adminReview',value:true})}),data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));if(button){button.disabled=false;button.textContent='Approve build'};return}
-  await refreshAdminView('onboarding',{force:true,announce:false});await loadNotifications({silent:true});
+  const idleLabel=button?.textContent||'Approve build';if(button){button.disabled=true;button.textContent='Approving…'}
+  try{
+    const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field:'adminReview',value:true})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error((data.error||'Could not approve this build.')+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));
+    if(data.ok!==true||!data.onboarding||typeof data.onboarding!=='object'||Array.isArray(data.onboarding)||data.onboarding.checklist?.adminReview!==true)throw new Error('Build approval response was incomplete. Refresh onboarding before retrying.');
+    try{await refreshAdminView('onboarding',{force:true,announce:false})}catch(_){alert('Build approval was saved, but onboarding could not refresh. Reload the view before taking another action.')}
+    if(data.warning)alert(String(data.warning));
+    await loadNotifications({silent:true}).catch(()=>{});
+    return true;
+  }catch(err){alert(err.message||'Could not approve this build.');return false}
+  finally{if(button?.isConnected){button.disabled=false;button.textContent=idleLabel}}
 }
 async function updateProvisioningChecklist(id,field,value){
   const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field,value})}),data=await r.json().catch(()=>({}));
