@@ -26,3 +26,7 @@ test('monthly analytics rollup is visible as an optional health service with cov
 test('system health surfaces malformed phone inventory rows as data-integrity drift',()=>{
   assert.match(api,/Phone routing inventory contains unverifiable records/);
 });
+
+test('system health flags malformed workspace usage as data-integrity drift',()=>{
+  assert.match(api,/has malformed usage data/);
+});
