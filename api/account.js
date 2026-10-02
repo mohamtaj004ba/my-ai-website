@@ -2732,7 +2732,8 @@ function notificationReadKey(scope,email,workspaceId=''){
 }
 async function getNotificationReadSet(scope,email,workspaceId=''){
   const raw=await kv.get(notificationReadKey(scope,email,workspaceId));
-  if(raw!=null&&!Array.isArray(raw))throw new Error('Notification read-state history is malformed');
+  if(raw!=null&&(!Array.isArray(raw)||raw.length>2000||raw.some(id=>typeof id!=='string'||!id.trim()||id.length>220)||new Set(raw).size!==raw.length))
+    throw new Error('Notification read-state history is malformed');
   return new Set(raw||[]);
 }
 async function saveNotificationReadSet(scope,email,workspaceId,ids){
@@ -3069,7 +3070,10 @@ async function notificationsRead(req,res){
   let sessionData;
   if(scope==='admin'){sessionData=await requireAdmin(req,res);if(!sessionData)return}
   else{sessionData=await requireSession(req,res);if(!sessionData)return}
-  const ids=Array.isArray(req.body?.ids)?req.body.ids.map(x=>String(x).slice(0,220)).filter(Boolean):[];
+  const rawIds=req.body?.ids;
+  if(!Array.isArray(rawIds)||rawIds.length>2000||rawIds.some(id=>typeof id!=='string'||!id.trim()||id.length>220)||new Set(rawIds).size!==rawIds.length)
+    return res.status(400).json({error:'Notification IDs are invalid. Read state was not changed.'});
+  const ids=rawIds;
   const workspaceId=scope==='client'?sessionData.workspaceId:'';
   try{await saveNotificationReadSet(scope,sessionData.email,workspaceId,ids)}
   catch(err){console.error('notification read state save failed',safeError(err));return res.status(503).json({error:'Could not save notification read state. Refresh notifications before retrying.'})}
