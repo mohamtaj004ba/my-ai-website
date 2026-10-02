@@ -3323,6 +3323,7 @@ async function saveLocations(req,res){
   for(const item of items){if(item.phone&&!/^\+?[0-9() .-]{7,30}$/.test(item.phone))return res.status(400).json({error:'One or more location phone numbers are invalid'})}
   const key='locations:'+s.workspaceId,rawPrevious=await kv.get(key);
   if(rawPrevious!=null&&!Array.isArray(rawPrevious))return res.status(503).json({error:'Location records are unavailable. No changes were made.'});
+  if(Array.isArray(rawPrevious)&&rawPrevious.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Location records contain unverifiable entries. No changes were made.'});
   const previous=rawPrevious||[],audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'locations_save',section:'locations',before:previous,after:items,at:Date.now()};
   try{
     if(!await compareAndAudit(kv,{key,before:rawPrevious,after:items},'audit:'+s.workspaceId,audit))return res.status(409).json({error:'Locations changed during this save. Reload the latest locations before retrying.'});
@@ -3437,6 +3438,7 @@ async function saveAutomations(req,res){
   }));
   const key='automations:'+access.session.workspaceId,rawPrevious=await kv.get(key);
   if(rawPrevious!=null&&!Array.isArray(rawPrevious))return res.status(503).json({error:'Automation records are unavailable. No changes were made.'});
+  if(Array.isArray(rawPrevious)&&rawPrevious.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Automation records contain unverifiable entries. No changes were made.'});
   const previous=rawPrevious||[],audit={id:crypto.randomUUID(),workspaceId:access.session.workspaceId,actorEmail:access.session.email,actorRole:access.session.role||'client',action:'automations_save',section:'automations',before:previous,after:items,at:Date.now()};
   try{
     if(!await compareAndAudit(kv,{key,before:rawPrevious,after:items},'audit:'+access.session.workspaceId,audit))return res.status(409).json({error:'Automations changed during this save. Reload the latest automations before retrying.'});
@@ -3493,6 +3495,7 @@ async function updateAppointment(req,res){
   if(!id||!['Scheduled','Confirmed','Completed','Canceled'].includes(status))return res.status(400).json({error:'Invalid appointment update'});
   const key='appointments:'+access.session.workspaceId,rawItems=await kv.get(key);
   if(rawItems!=null&&!Array.isArray(rawItems))return res.status(503).json({error:'Appointment data is unavailable. No changes were made.'});
+  if(Array.isArray(rawItems)&&rawItems.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Appointment data contains unverifiable entries. No changes were made.'});
   const items=rawItems||[],index=items.findIndex(item=>item&&String(item.id)===id);
   if(index<0)return res.status(404).json({error:'Appointment not found'});
   const previous=items[index],updated={...previous,status,updatedAt:Math.max(Date.now(),Number(previous.updatedAt||0)+1)},next=items.slice();next[index]=updated;
@@ -3663,6 +3666,7 @@ async function callViewedMark(req,res){
   const callId=String((req.body||{}).callId||'').slice(0,120);if(!callId)return res.status(400).json({error:'Call ID is required'});
   const calls=await kv.get('calls:'+s.workspaceId);
   if(calls!=null&&!Array.isArray(calls))return res.status(503).json({error:'Call history is unavailable. Read state was not changed.'});
+  if(Array.isArray(calls)&&calls.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Call history contains unverifiable entries. Read state was not changed.'});
   if(!(calls||[]).some(x=>x&&String(x.id)===callId))return res.status(404).json({error:'Call not found'});
   const key=callViewedKey(s.workspaceId,s.email);
   try{await addBoundedIds(kv,key,[callId],{limit:2000})}
@@ -3677,12 +3681,12 @@ async function clientDashboardData(req,res){
   const keys=['calls:index:'+s.workspaceId,'agent:'+s.workspaceId,'settings:'+s.workspaceId,'integrations:'+s.workspaceId,'locations:'+s.workspaceId,'followup:state:'+s.workspaceId,'platform:settings','phone:index',callViewedKey(s.workspaceId,s.email),'leads:'+s.workspaceId,'appointments:'+s.workspaceId,'automations:'+s.workspaceId,'onboarding:workspace:'+s.workspaceId];
   const [callIndexRaw,agentRaw,settingsRaw,integrationsRaw,locationsRaw,followupRaw,platformRaw,phoneIndex,viewedRaw,leadsRaw,appointmentsRaw,automationsRaw,onboardingRaw]=await Promise.all(keys.map(k=>kv.get(k)));
   const invalid=[
-    ['call index',callIndexRaw,v=>Array.isArray(v)],['receptionist',agentRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],
+    ['call index',callIndexRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['receptionist',agentRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)&&(v.qualificationQuestions==null||Array.isArray(v.qualificationQuestions))],
     ['business settings',settingsRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],['integrations',integrationsRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],
-    ['locations',locationsRaw,v=>Array.isArray(v)],['follow-up state',followupRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],
-    ['platform defaults',platformRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],['phone routing',phoneIndex,v=>Array.isArray(v)],
-    ['call opened state',viewedRaw,v=>Array.isArray(v)],['leads',leadsRaw,v=>Array.isArray(v)],['appointments',appointmentsRaw,v=>Array.isArray(v)],
-    ['automations',automationsRaw,v=>Array.isArray(v)],['onboarding',onboardingRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)]
+    ['locations',locationsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['follow-up state',followupRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],
+    ['platform defaults',platformRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)],['phone routing',phoneIndex,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],
+    ['call opened state',viewedRaw,v=>Array.isArray(v)],['leads',leadsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['appointments',appointmentsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],
+    ['automations',automationsRaw,v=>Array.isArray(v)&&v.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['onboarding',onboardingRaw,v=>v&&typeof v==='object'&&!Array.isArray(v)]
   ].find(([,value,valid])=>value!=null&&!valid(value));
   if(invalid)return res.status(503).json({error:'Workspace '+invalid[0]+' data is unavailable. Last verified dashboard data should be preserved.'});
   let callsRaw=Array.isArray(callIndexRaw)&&callIndexRaw.length?callIndexRaw:null;
@@ -3765,6 +3769,7 @@ async function updateLead(req,res){
   if(!id||!allowed.includes(stage))return res.status(400).json({error:'Invalid lead update'});
   const key='leads:'+s.workspaceId,rawItems=await kv.get(key);
   if(rawItems!=null&&!Array.isArray(rawItems))return res.status(503).json({error:'Lead data is unavailable. No changes were made.'});
+  if(Array.isArray(rawItems)&&rawItems.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Lead data contains unverifiable entries. No changes were made.'});
   const items=rawItems||[],index=items.findIndex(item=>item&&String(item.id)===id);
   if(index<0)return res.status(404).json({error:'Lead not found'});
   const previous=items[index],updated={...previous,stage,updatedAt:Math.max(Date.now(),Number(previous.updatedAt||0)+1)},next=items.slice();next[index]=updated;
