@@ -13,3 +13,9 @@ test('feature gates refuse to evaluate entitlements from malformed workspace rec
   assert.match(block,/Feature access was not evaluated/);
   assert.match(block,/Array\.isArray\(ws\)/);
 });
+
+test('workspace summary rejects malformed usage instead of substituting zero minutes',()=>{
+  const start=api.indexOf('async function workspace('),end=api.indexOf('\nasync function requireFeature(',start),block=api.slice(start,end);
+  assert.match(block,/Workspace usage data could not be verified\. No zero usage was substituted/);
+  assert.match(block,/Number\.isFinite\(Number\(ws\.usage\.minutes\)\)/);
+});
