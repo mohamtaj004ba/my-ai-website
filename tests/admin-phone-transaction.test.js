@@ -25,3 +25,9 @@ test('admin label-only save does not invalidate an unchanged receptionist draft'
 test('admin transaction conflicts and ambiguous failures do not attempt unsafe rollback',async()=>{
   for(const transaction of [false,'error']){const r=await run({transaction});assert.equal(r.status,transaction===false?409:503);assert.equal(r.auditCommitted,null);assert.ok(!r.result.ok)}
 });
+
+test('admin phone routing rejects malformed nested onboarding or receptionist state before transaction',()=>{
+  assert.match(handler,/targetOnboardingBefore\?\.checklist!=null/);
+  assert.match(handler,/savedAgent\?\.qualificationQuestions!=null&&!Array\.isArray\(savedAgent\.qualificationQuestions\)/);
+  assert.match(handler,/previousOnboardingBefore\?\.checklist!=null/);
+});
