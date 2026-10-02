@@ -55,3 +55,19 @@ test('read receipt retention remains bounded and deduplicated before the atomic 
   assert.equal(saved.length,2000);
   assert.equal(new Set(saved).size,2000);
 });
+
+test('stored notification read receipts require unique bounded canonical ids',()=>{
+  const account=fs.readFileSync('api/account.js','utf8');
+  const start=account.indexOf('async function getNotificationReadSet('),end=account.indexOf('\nasync function saveNotificationReadSet(',start),block=account.slice(start,end);
+  assert.match(block,/raw\.length>2000/);
+  assert.match(block,/typeof id!=='string'/);
+  assert.match(block,/id\.length>220/);
+  assert.match(block,/new Set\(raw\)\.size!==raw\.length/);
+});
+test('notification read endpoint rejects malformed ids instead of coercing them to strings',()=>{
+  const account=fs.readFileSync('api/account.js','utf8');
+  const start=account.indexOf('async function notificationsRead('),end=account.indexOf('\nasync function notificationsReadAll(',start),block=account.slice(start,end);
+  assert.match(block,/Notification IDs are invalid\. Read state was not changed/);
+  assert.doesNotMatch(block,/req\.body\.ids\.map\(x=>String\(x\)/);
+  assert.match(block,/new Set\(rawIds\)\.size!==rawIds\.length/);
+});
