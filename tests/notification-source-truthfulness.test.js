@@ -42,3 +42,10 @@ test('admin notification coverage exposes malformed platform alert preferences',
 test('notification UI gives readable names to new incomplete-coverage sources',()=>{
   for(const token of ['Notification preferences unavailable','Onboarding source unavailable','AI receptionist source unavailable','Phone routing source unavailable','Call history source unavailable','Platform alert preferences unavailable'])assert.match(ui,new RegExp(token));
 });
+
+test('client notification coverage treats malformed provider rows and receptionist questions as unavailable',()=>{
+  const start=api.indexOf('async function buildClientNotifications('),end=api.indexOf('\nasync function buildAdminNotifications(',start),block=api.slice(start,end);
+  assert.match(block,/agent\.qualificationQuestions==null\|\|Array\.isArray\(agent\.qualificationQuestions\)/);
+  assert.match(block,/numbersValid=.*\.every/);
+  assert.match(block,/callsValid=.*\.every/);
+});
