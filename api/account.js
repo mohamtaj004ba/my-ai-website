@@ -906,15 +906,18 @@ async function adminPurgeClient(req,res){
 
       if(journal.phase==='content'){
         const now=Date.now(),retentionKey='retention:workspace:'+id,currentRetention=await kv.get(retentionKey);
-        if(!currentRetention||typeof currentRetention!=='object'||Array.isArray(currentRetention)||String(currentRetention.workspaceId||'')!==id)
+        if(!currentRetention||typeof currentRetention!=='object'||Array.isArray(currentRetention)||String(currentRetention.workspaceId||'')!==id||
+          String(currentRetention.purgeAttemptId||'')!==String(journal.attemptId)||!Number.isFinite(Number(currentRetention.purgeStartedAt))||Number(currentRetention.purgeStartedAt)<=0)
           return res.status(503).json({error:'Required workspace retention record is unavailable. Permanent purge completion is paused.',purgePhase:'content',resumable:true});
+        const retainedAuditKey='retention:audit:'+id,retainedAudit=await kv.get(retainedAuditKey);
+        if(!retainedAudit||typeof retainedAudit!=='object'||Array.isArray(retainedAudit)||String(retainedAudit.workspaceId||'')!==id||!Array.isArray(retainedAudit.events)||
+          retainedAudit.events.length>200||retainedAudit.events.some(event=>!event||typeof event!=='object'||Array.isArray(event)||!String(event.id||'').trim()||String(event.workspaceId||'')!==id||!Number.isFinite(Number(event.at))||Number(event.at)<=0)||
+          new Set(retainedAudit.events.map(event=>String(event.id))).size!==retainedAudit.events.length)
+          return res.status(503).json({error:'Required retained audit archive is unavailable. Permanent purge completion is paused.',purgePhase:'content',resumable:true});
         const completedRetention={...currentRetention,purgedAt:now,purgedBy:admin.email,purgeCompletedAt:now};
         await setRetentionRecord(retentionKey,completedRetention,journal.retainedUntil);
-        const retainedAuditKey='retention:audit:'+id,retainedAudit=await kv.get(retainedAuditKey);
-        if(retainedAudit&&typeof retainedAudit==='object'&&!Array.isArray(retainedAudit)&&Array.isArray(retainedAudit.events)){
-          const completionEvent={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_completed',section:'privacy',before:null,after:null,meta:{attemptId:journal.attemptId,supportDeleted:Number(journal.supportDeleted||0),feedbackDeleted:Number(journal.feedbackDeleted||0),prospectsDeidentified:Number(journal.prospectsDeidentified||0)},at:now};
-          await setRetentionRecord(retainedAuditKey,{...retainedAudit,events:[completionEvent,...retainedAudit.events].slice(0,200),updatedAt:now},journal.operationalRetainedUntil);
-        }
+        const completionEvent={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'permanent_purge_completed',section:'privacy',before:null,after:null,meta:{attemptId:journal.attemptId,supportDeleted:Number(journal.supportDeleted||0),feedbackDeleted:Number(journal.feedbackDeleted||0),prospectsDeidentified:Number(journal.prospectsDeidentified||0)},at:now};
+        await setRetentionRecord(retainedAuditKey,{...retainedAudit,events:[completionEvent,...retainedAudit.events].slice(0,200),updatedAt:now},journal.operationalRetainedUntil);
         const marker={workspaceId:id,businessName:journal.source.businessName||'',attemptId:journal.attemptId,completedAt:now,completedBy:admin.email,retainedUntil:journal.retainedUntil,
           supportDeleted:Number(journal.supportDeleted||0),feedbackDeleted:Number(journal.feedbackDeleted||0),prospectsDeidentified:Number(journal.prospectsDeidentified||0)};
         await kv.set(completeKey,marker,{ex:retentionTtlSeconds(journal.retainedUntil)});
