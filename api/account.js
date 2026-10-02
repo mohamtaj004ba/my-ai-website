@@ -3292,6 +3292,7 @@ async function workspace(req,res){
   const ws=await kv.get('workspace:'+s.workspaceId);
   if(!ws)return res.status(404).json({error:'Workspace not found'});
   if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||s.workspaceId)!==String(s.workspaceId))return res.status(503).json({error:'Workspace record could not be verified. No partial workspace summary was returned.'});
+  if(ws.usage!=null&&(!ws.usage||typeof ws.usage!=='object'||Array.isArray(ws.usage)||!Number.isFinite(Number(ws.usage.minutes))||Number(ws.usage.minutes)<0))return res.status(503).json({error:'Workspace usage data could not be verified. No zero usage was substituted.'});
   return res.status(200).json({workspace:{
     id:ws.id,name:ws.name,plan:entitlementsFor(ws.plan).plan,status:ws.status,ownerEmail:ws.ownerEmail,
     usage:ws.usage||{minutes:0},createdAt:ws.createdAt
