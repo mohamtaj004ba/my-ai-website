@@ -8,7 +8,7 @@ const end=api.indexOf('\nasync function adminAiFeedback(req,res){',start);
 assert.ok(start>=0&&end>start,'AI feedback mutation handler found');
 const clone=x=>x==null?x:JSON.parse(JSON.stringify(x));
 function fixture({global=null,workspace=null,fail=false,conflict=false,alwaysConflict=false,deny=false}={}){
-  const values=new Map([['workspace:customer',{name:'Sample Customer'}]]);
+  const values=new Map([['workspace:customer',{id:'customer',name:'Sample Customer'}]]);
   if(global!==null)values.set('ai-feedback:index',clone(global));
   if(workspace!==null)values.set('ai-feedback:workspace:customer',clone(workspace));
   let attempts=0,status=0,response,legacyWrites=0;
