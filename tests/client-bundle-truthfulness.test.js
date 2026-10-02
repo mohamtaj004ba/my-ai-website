@@ -51,3 +51,10 @@ test('bundled client dashboard validates rows inside provider-backed arrays and 
   assert.match(block,/\['phone routing',phoneIndex,v=>Array\.isArray\(v\)&&v\.every/);
   assert.match(block,/qualificationQuestions==null\|\|Array\.isArray\(v\.qualificationQuestions\)/);
 });
+
+test('bundled client dashboard validates workspace identity and usage before returning fallback values',()=>{
+  const block=extract('clientDashboardData','callDetail');
+  assert.match(block,/Workspace dashboard data is unavailable\. Last verified dashboard data should be preserved/);
+  assert.match(block,/Workspace usage data is unavailable\. Last verified dashboard data should be preserved/);
+  assert.match(block,/Number\.isFinite\(Number\(ws\.usage\.minutes\)\)/);
+});
