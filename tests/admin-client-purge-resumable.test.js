@@ -174,3 +174,46 @@ test('malformed onboarding retention state blocks purge before a durable journal
     assert.equal(f.records['retention:workspace:tenant'],undefined);
   }
 });
+
+test('malformed retained support archive pauses before deleting another support batch',async()=>{
+  for(const tickets of [
+    [{workspaceId:'tenant'}],
+    [{id:'dup',workspaceId:'tenant'},{id:'dup',workspaceId:'tenant'}],
+    [{id:'foreign',workspaceId:'other'}]
+  ]){
+    const f=fixture();
+    f.records['retention:support:tenant']={workspaceId:'tenant',tickets,retainedAt:1};
+    const r=await f.purge();
+    assert.equal(r.status,503);
+    assert.equal(r.result.purgePhase,'detached');
+    assert.match(r.result.error,/Retained support archive is malformed/);
+    assert.ok(f.records['support:s1']);
+    assert.deepEqual(f.records['support:index'],['s1','s2']);
+  }
+});
+
+test('missing or malformed workspace feedback records pause before feedback deletion',async()=>{
+  for(const mutate of [
+    f=>{delete f.records['ai-feedback:f1']},
+    f=>{f.records['ai-feedback:f1']='broken'},
+    f=>{f.records['ai-feedback:f1']={id:'wrong',workspaceId:'tenant'}},
+    f=>{f.records['ai-feedback:f1']={id:'f1',workspaceId:'other'}}
+  ]){
+    const f=fixture();mutate(f);
+    const r=await f.purge();
+    assert.ok([503,409].includes(r.status));
+    assert.equal(r.result.purgePhase,'support');
+    assert.ok(f.records['ai-feedback:workspace:tenant']?.includes('f1'));
+    assert.ok(f.records['ai-feedback:index']?.includes('f1'));
+  }
+});
+
+test('malformed audit rows pause before retention archive is written',async()=>{
+  const f=fixture();
+  f.records['audit:tenant']=[{id:'bad',workspaceId:'tenant',at:0}];
+  const r=await f.purge();
+  assert.equal(r.status,503);
+  assert.equal(r.result.purgePhase,'conversations');
+  assert.match(r.result.error,/audit history is malformed/);
+  assert.equal(f.records['retention:audit:tenant'],undefined);
+});
