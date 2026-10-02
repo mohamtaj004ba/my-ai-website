@@ -4083,7 +4083,19 @@ function closePlanModal(){modal?.classList.remove('open');modal?.setAttribute('a
 modal?.querySelector('.modal-close')?.addEventListener('click',closePlanModal);modal?.addEventListener('click',e=>{if(e.target===modal)closePlanModal()});
 document.getElementById('upgradeButton')?.addEventListener('click',()=>{const p=document.getElementById('planOptionsPanel');if(p){p.hidden=false;p.scrollIntoView({behavior:'smooth',block:'start'})}});
 document.getElementById('closePlanOptions')?.addEventListener('click',()=>{const p=document.getElementById('planOptionsPanel');if(p)p.hidden=true});
-async function openBillingPortal(button,label='Opening…'){if(button){button.disabled=true;button.textContent=label}const r=await fetch('/api/account?action=billing-portal',{method:'POST'}),data=await r.json().catch(()=>({}));if(r.ok&&data.url)location.href=data.url;else{alert(data.error||'Billing portal is unavailable.');if(button){button.disabled=false;button.textContent=button.dataset.original||'Manage billing'}}}
+async function openBillingPortal(button,label='Opening…'){
+  const idleLabel=button?.dataset.original||button?.textContent||'Manage billing';if(button){button.disabled=true;button.textContent=label}
+  try{
+    const r=await fetch('/api/account?action=billing-portal',{method:'POST'}),data=await r.json().catch(()=>({}));
+    let portalUrl=null;try{portalUrl=data?.url?new URL(String(data.url)):null}catch(_){portalUrl=null}
+    if(!r.ok||!portalUrl||portalUrl.protocol!=='https:'||portalUrl.hostname!=='billing.stripe.com')throw new Error(data.error||'Billing portal is unavailable.');
+    location.href=portalUrl.toString();return true;
+  }catch(err){
+    alert(err.message||'Billing portal is unavailable.');
+    if(button?.isConnected!==false){button.disabled=false;button.textContent=idleLabel}
+    return false;
+  }
+}
 document.getElementById('paymentButton')?.addEventListener('click',async e=>{const b=e.currentTarget;b.dataset.original='Manage billing & invoices';await openBillingPortal(b)});
 document.getElementById('modalCta')?.addEventListener('click',async e=>{const b=e.currentTarget;b.dataset.original='Continue to Stripe';await openBillingPortal(b,'Opening Stripe…')});
 const retentionModal=document.getElementById('retentionModal');
