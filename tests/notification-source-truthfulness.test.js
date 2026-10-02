@@ -101,3 +101,12 @@ test('notification builders validate canonical feedback, support, and Growth rec
 test('legacy direct onboarding phone sync helper is removed after atomic routing migration',()=>{
   assert.doesNotMatch(api,/async function syncOnboardingPhoneAssignment\(/);
 });
+
+test('client notifications reject duplicate phone, call, and support directory identities',()=>{
+  const start=api.indexOf('async function buildClientNotifications('),end=api.indexOf('\nasync function buildAdminNotifications(',start),block=api.slice(start,end);
+  assert.match(block,/new Set\(numbers\.map\(item=>String\(item\.id\)\)\)\.size===numbers\.length/);
+  assert.match(block,/new Set\(calls\.map\(item=>String\(item\.id\)\)\)\.size===calls\.length/);
+  assert.match(block,/supportIndexValid=/);
+  assert.match(block,/new Set\(index\)\.size===index\.length/);
+  assert.match(block,/!supportIndexValid\|\|supportRecordUnavailable/);
+});
