@@ -2780,8 +2780,9 @@ async function buildClientNotifications(s){
   const [agent,numbers,calls,index,feedbackIndex]=await Promise.all([
     kv.get('agent:'+ws.id),kv.get('phone:index'),kv.get('calls:'+ws.id),kv.get('support:index'),kv.get(aiFeedbackWorkspaceIndexKey(ws.id))
   ]),agentValid=agent==null||!!agent&&typeof agent==='object'&&!Array.isArray(agent)&&(agent.qualificationQuestions==null||Array.isArray(agent.qualificationQuestions)),
-    numbersValid=numbers==null||Array.isArray(numbers)&&numbers.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim()),
-    callsValid=calls==null||Array.isArray(calls)&&calls.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim());
+    numbersValid=numbers==null||Array.isArray(numbers)&&numbers.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())&&new Set(numbers.map(item=>String(item.id))).size===numbers.length,
+    callsValid=calls==null||Array.isArray(calls)&&calls.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())&&new Set(calls.map(item=>String(item.id))).size===calls.length,
+    supportIndexValid=index==null||Array.isArray(index)&&index.length<=2000&&index.every(id=>typeof id==='string'&&!!id.trim())&&new Set(index).size===index.length;
   const phone=numbersValid?(numbers||[]).find(x=>x&&x.workspaceId===ws.id):null;
   if(prefs.setup&&agentValid&&!agent)items.push(notificationItem('setup:'+ws.id+':agent',{title:'AI agent setup incomplete',body:'Your AI agent has not been configured yet.',kind:'warning',view:'agent',createdAt:ws.createdAt||now}));
   if(prefs.setup&&numbersValid&&!phone)items.push(notificationItem('setup:'+ws.id+':phone',{title:'Phone routing not configured',body:'No CallerCore phone number is currently assigned.',kind:'warning',view:'phone-routing',createdAt:ws.createdAt||now}));
@@ -2809,7 +2810,7 @@ async function buildClientNotifications(s){
   if(!agentValid)sources.push('agent_unavailable');
   if(!numbersValid)sources.push('phone_unavailable');
   if(!callsValid)sources.push('calls_unavailable');
-  if(index!=null&&!Array.isArray(index)||supportRecordUnavailable)sources.push('support_unavailable');else if(Array.isArray(index)&&index.length>100)sources.push('support');
+  if(!supportIndexValid||supportRecordUnavailable)sources.push('support_unavailable');else if(Array.isArray(index)&&index.length>100)sources.push('support');
   if(feedbackIndex!=null&&!Array.isArray(feedbackIndex)||feedbackRecordUnavailable)sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>20)sources.push('ai_feedback');
   return {items,coverage:{limited:sources.length>0,sources}};
 }
