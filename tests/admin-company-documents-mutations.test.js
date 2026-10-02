@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const source=fs.readFileSync('dashboard.js','utf8');
 const start=source.indexOf('let companyDocumentMutationPending=false;');
-const end=source.indexOf('\nasync function updateWebsiteProspect(',start);
+const end=source.indexOf('\nasync function loadAdminInbox(',start);
 assert.ok(start>=0&&end>start,'company document handlers must be present');
 
 function fixture({response,hold=false}={}){
