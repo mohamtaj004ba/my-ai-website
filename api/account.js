@@ -373,12 +373,18 @@ async function adminFinance(req,res){
   if(Array.isArray(storedHistory)&&storedHistory.some(row=>!row||typeof row!=='object'||Array.isArray(row)||!/^[0-9]{4}-[0-9]{2}$/.test(String(row.month||''))||!['revenue','expenses','net','activeClients'].every(key=>Number.isFinite(Number(row[key])))))
     return res.status(503).json({error:'Finance history contains malformed records. Finance figures were not refreshed.'});
   if(!Array.isArray(reconciliationIds))return res.status(503).json({error:'Checkout reconciliation queue could not be loaded. Finance figures were not refreshed.'});
-  const reconciliation=[],uniqueIds=[...new Set(reconciliationIds.map(x=>String(x||'').trim()).filter(Boolean))],coverage={retainedCaseIds:reconciliationIds.length,unavailableCaseRecords:0,isRetentionCapped:reconciliationIds.length>=200};
+  const seenReconciliationIds=new Set(),uniqueIds=[];let unavailableQueueEntries=0;
+  for(const rawId of reconciliationIds){
+    if(typeof rawId!=='string'||!rawId.trim()){unavailableQueueEntries++;continue}
+    const id=rawId.trim();if(seenReconciliationIds.has(id)){unavailableQueueEntries++;continue}
+    seenReconciliationIds.add(id);uniqueIds.push(id);
+  }
+  const reconciliation=[],coverage={retainedCaseIds:reconciliationIds.length,verifiedCaseIds:uniqueIds.length,unavailableCaseRecords:unavailableQueueEntries,isIncomplete:unavailableQueueEntries>0,isRetentionCapped:reconciliationIds.length>=200};
   for(let offset=0;offset<uniqueIds.length;offset+=50){
     const ids=uniqueIds.slice(offset,offset+50),records=await Promise.all(ids.map(id=>kv.get('stripe:reconciliation:'+id)));
     for(let i=0;i<ids.length;i++){
       const item=records[i];
-      if(!item||typeof item!=='object'||Array.isArray(item)||item.sessionId!==ids[i]||!['open','resolved'].includes(item.status)){coverage.unavailableCaseRecords++;continue}
+      if(!item||typeof item!=='object'||Array.isArray(item)||item.sessionId!==ids[i]||!['open','resolved'].includes(item.status)){coverage.unavailableCaseRecords++;coverage.isIncomplete=true;continue}
       if(item.status==='open')reconciliation.push({id:item.id,sessionId:item.sessionId,eventId:item.eventId,reason:item.reason,createdAt:item.createdAt,status:item.status});
     }
   }
