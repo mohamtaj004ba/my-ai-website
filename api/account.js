@@ -3289,6 +3289,7 @@ async function phoneRouting(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const rawNumbers=await kv.get('phone:index');
   if(rawNumbers!=null&&!Array.isArray(rawNumbers))return res.status(503).json({error:'Phone routing inventory is unavailable. No unassigned routing state was substituted.'});
+  if(Array.isArray(rawNumbers)&&rawNumbers.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Phone routing inventory contains unverifiable records. No unassigned routing state was substituted.'});
   const numbers=rawNumbers||[],item=numbers.find(x=>x&&x.workspaceId===s.workspaceId)||null;
   const smsLive=process.env.CALLERCORE_SMS_ENABLED==='true';
   return res.status(200).json({routing:clientRouting(item,{smsLive})});
@@ -3299,6 +3300,7 @@ async function locations(req,res){
   const ws=await kv.get('workspace:'+s.workspaceId);if(!ws)return res.status(404).json({error:'Workspace not found'});
   const raw=await kv.get('locations:'+s.workspaceId),ent=entitlementsFor(ws.plan);
   if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Location records are unavailable. No empty location list was substituted.'});
+  if(Array.isArray(raw)&&raw.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Location records contain unverifiable entries. No partial location list was returned.'});
   return res.status(200).json({locations:raw||[],limit:ent.locations});
 }
 
@@ -3334,6 +3336,7 @@ async function agent(req,res){
   if(!ws)return res.status(404).json({error:'Workspace not found'});
   const rawSaved=await kv.get('agent:'+s.workspaceId);
   if(rawSaved!=null&&(!rawSaved||typeof rawSaved!=='object'||Array.isArray(rawSaved)))return res.status(503).json({error:'Receptionist configuration is unavailable. No default configuration was substituted.'});
+  if(rawSaved?.qualificationQuestions!=null&&!Array.isArray(rawSaved.qualificationQuestions))return res.status(503).json({error:'Receptionist qualification questions are unavailable. No empty question list was substituted.'});
   const rawPlatform=await kv.get('platform:settings');
   if(rawPlatform!=null&&(!rawPlatform||typeof rawPlatform!=='object'||Array.isArray(rawPlatform)))return res.status(503).json({error:'Receptionist platform defaults are unavailable. No default receptionist configuration was substituted.'});
   const saved=rawSaved||{},platform=rawPlatform||{};
@@ -3358,6 +3361,7 @@ async function saveAgent(req,res){
   const body=req.body||{};
   const previous=await kv.get('agent:'+s.workspaceId)||null;
   if(previous!=null&&(!previous||typeof previous!=='object'||Array.isArray(previous)))return res.status(503).json({error:'Receptionist configuration is unavailable. No changes were made.'});
+  if(previous?.qualificationQuestions!=null&&!Array.isArray(previous.qualificationQuestions))return res.status(503).json({error:'Receptionist qualification questions are unavailable. No changes were made.'});
   if(body.expectedUpdatedAt!==undefined&&Number(body.expectedUpdatedAt||0)!==Number(previous?.updatedAt||0))return res.status(409).json({error:'Receptionist settings changed since you opened them. Reload to load the latest version before retrying.',code:'CONFIG_CONFLICT'});
   const sectionFields={identity:['name','role','tone','openingMessage'],knowledge:['serviceArea','businessHours','transferNumber','emergencyInstructions'],qualification:['qualificationQuestions'],handling:['handlingInstructions']};
   if(body.section&&!sectionFields[body.section])return res.status(400).json({error:'Unknown receptionist section'});
@@ -3406,6 +3410,7 @@ async function automations(req,res){
   const access=await requireFeature(req,res,'automations');if(!access)return;
   const raw=await kv.get('automations:'+access.session.workspaceId);
   if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Automation records are unavailable. No empty automation list was substituted.'});
+  if(Array.isArray(raw)&&raw.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Automation records contain unverifiable entries. No partial automation list was returned.'});
   return res.status(200).json({automations:raw||[]});
 }
 
@@ -3473,6 +3478,7 @@ async function appointments(req,res){
   const access=await requireFeature(req,res,'appointments');if(!access)return;
   const raw=await kv.get('appointments:'+access.session.workspaceId);
   if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Appointment history is unavailable. No empty schedule was substituted.'});
+  if(Array.isArray(raw)&&raw.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Appointment history contains unverifiable entries. No partial schedule was returned.'});
   return res.status(200).json({appointments:raw||[]});
 }
 
@@ -3504,6 +3510,8 @@ async function analytics(req,res){
   ]);
   if(callsRaw!=null&&!Array.isArray(callsRaw)||leadsRaw!=null&&!Array.isArray(leadsRaw)||appointmentsRaw!=null&&!Array.isArray(appointmentsRaw))
     return res.status(503).json({error:'Analytics source records are unavailable. No zero-value analytics were substituted.'});
+  if([callsRaw,leadsRaw,appointmentsRaw].some(list=>Array.isArray(list)&&list.some(item=>!item||typeof item!=='object'||Array.isArray(item))))
+    return res.status(503).json({error:'Analytics source records contain unverifiable entries. No partial analytics were calculated.'});
   const safeCalls=callsRaw||[],safeLeads=leadsRaw||[],safeAppointments=appointmentsRaw||[];
   const qualified=safeCalls.filter(x=>/qualified|booked/i.test(String(x.outcome||''))).length;
   const won=safeLeads.filter(x=>x&&x.stage==='Won').length;
@@ -3726,6 +3734,7 @@ async function callDetail(req,res){
   if(!id)return res.status(400).json({error:'Call ID is required'});
   const rawItems=await kv.get('calls:'+s.workspaceId);
   if(rawItems!=null&&!Array.isArray(rawItems))return res.status(503).json({error:'Call detail history is unavailable. No missing-call result was substituted.'});
+  if(Array.isArray(rawItems)&&rawItems.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Call detail history contains unverifiable entries. No missing-call result was substituted.'});
   const call=(rawItems||[]).find(x=>x&&String(x.id)===id)||null;
   if(!call)return res.status(404).json({error:'Call not found'});
   return res.status(200).json({call});
@@ -3735,6 +3744,7 @@ async function calls(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const raw=await kv.get('calls:'+s.workspaceId);
   if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Call history is unavailable. No empty history was substituted.'});
+  if(Array.isArray(raw)&&raw.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Call history contains unverifiable entries. No partial history was returned.'});
   return res.status(200).json({calls:raw||[]});
 }
 
@@ -3742,6 +3752,7 @@ async function leads(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const raw=await kv.get('leads:'+s.workspaceId);
   if(raw!=null&&!Array.isArray(raw))return res.status(503).json({error:'Lead history is unavailable. No empty pipeline was substituted.'});
+  if(Array.isArray(raw)&&raw.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Lead history contains unverifiable entries. No partial pipeline was returned.'});
   return res.status(200).json({leads:raw||[]});
 }
 
