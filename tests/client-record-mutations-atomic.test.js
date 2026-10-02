@@ -24,3 +24,10 @@ test('lead stage changes are conflict-safe and audited with the changed record',
   assert.match(body,/action:'lead_stage_update'/);
   assert.doesNotMatch(body,/await kv\.set\(/);
 });
+
+test('lead and appointment mutations reject malformed sibling records before changing anything',()=>{
+  const appointment=segment('updateAppointment','\nasync function analytics(');
+  const lead=segment('updateLead','\nasync function billingPortal(');
+  assert.match(appointment,/Appointment data contains unverifiable entries\. No changes were made/);
+  assert.match(lead,/Lead data contains unverifiable entries\. No changes were made/);
+});
