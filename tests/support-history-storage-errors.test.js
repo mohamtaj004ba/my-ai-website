@@ -201,3 +201,11 @@ test('confirmed admin Support status warns when client email delivery cannot be 
   assert.match(res.body.warning,/support status was saved/i);
   assert.match(res.body.warning,/email delivery could not be confirmed/i);
 });
+
+
+test('Support dashboard surfaces confirmed-write delivery warnings',()=>{
+  const ui=fs.readFileSync('dashboard.js','utf8');
+  assert.match(ui,/if\(data\.warning\)setClientSupportReplyStatus\(id,String\(data\.warning\)\)/);
+  assert.match(ui,/if\(data\.warning\)setAdminSupportReplyStatus\(key,String\(data\.warning\)\)/);
+  assert.match(ui,/status\.textContent=data\.warning\|\|'Request sent\. CallerCore support will follow up before any subscription change\.'/);
+});
