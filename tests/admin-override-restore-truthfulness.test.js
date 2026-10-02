@@ -32,3 +32,9 @@ test('admin override and restore reject malformed rows inside array configuratio
   assert.match(override,/Array\.isArray\(before\)&&before\.every/);
   assert.match(restore,/Array\.isArray\(current\)&&current\.every/);
 });
+
+test('admin override sanitizer rejects malformed array rows and receptionist question payloads',()=>{
+  const start=api.indexOf('function sanitizeAdminOverride('),end=api.indexOf('\nasync function configTransactionUpdates(',start),block=api.slice(start,end);
+  assert.match(block,/Section contains unverifiable records/);
+  assert.match(block,/Qualification questions must be a list of text values/);
+});
