@@ -71,3 +71,16 @@ test('admin Inbox shows website-thread retention warning instead of implying all
   assert.match(ui,/History limit: showing the most recent/);
   assert.match(ui,/Full website-thread history cannot be verified/);
 });
+
+test('atomic website conversation append validates retained rows and incoming message fields',async()=>{
+  assert.match(SITE_CONVERSATION_APPEND,/type\(row\.id\)~='string'/);
+  assert.match(SITE_CONVERSATION_APPEND,/type\(row\.direction\)~='string'/);
+  assert.match(SITE_CONVERSATION_APPEND,/type\(row\.body\)~='string'/);
+  assert.match(SITE_CONVERSATION_APPEND,/retained~=#history/);
+  for(const bad of [
+    {id:'',direction:'inbound',body:'x'},
+    {id:'m1',direction:'',body:'x'},
+    {id:'m1',direction:'inbound',body:42},
+    {id:'m1',direction:'inbound',body:''}
+  ])await assert.rejects(()=>appendSiteConversation(fixture().kv,'lead-1',bad),/Valid inquiry required/);
+});
