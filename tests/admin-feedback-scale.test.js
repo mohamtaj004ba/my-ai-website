@@ -7,7 +7,7 @@ const start=source.indexOf('async function adminAiFeedback(req,res){');
 const end=source.indexOf('\nasync function adminAiFeedbackUpdate(',start);
 assert.ok(start>=0&&end>start,'admin feedback read handler found');
 
-function fixture(count,{rawIndex,missing=[],denied=false}={}){
+function fixture(count,{rawIndex,missing=[],malformed=[],mismatched=[],denied=false}={}){
   const ids=rawIndex===undefined?Array.from({length:count},(_,i)=>'feedback-'+i):rawIndex;
   let status=0,result,reads=0,concurrent=0,peak=0;
   const context=vm.createContext({
@@ -17,7 +17,9 @@ function fixture(count,{rawIndex,missing=[],denied=false}={}){
       reads++;concurrent++;peak=Math.max(peak,concurrent);
       await Promise.resolve();concurrent--;
       const id=key.slice('ai-feedback:'.length);
-      return missing.includes(id)?null:{id,workspaceId:'workspace-'+id,status:'submitted',
+      if(missing.includes(id))return null;
+      if(malformed.includes(id))return 'broken';
+      return {id:mismatched.includes(id)?'wrong-id':id,workspaceId:'workspace-'+id,status:'submitted',
         createdAt:Number(id.split('-').at(-1))||0};
     }},
     req:{},res:{status(n){status=n;return this},json(x){result=x;return x}},
@@ -58,4 +60,12 @@ test('unauthorized request never reads feedback index',async()=>{
   const x=await fixture(5,{denied:true}).run();
   assert.equal(x.status,0);
   assert.equal(x.reads,0);
+});
+
+test('malformed or identity-mismatched feedback records are excluded and disclosed as incomplete',async()=>{
+  const x=await fixture(4,{malformed:['feedback-1'],mismatched:['feedback-2']}).run();
+  assert.equal(x.status,200);
+  assert.deepEqual(Array.from(x.result.feedback,item=>item.id).sort(),['feedback-0','feedback-3']);
+  assert.equal(x.result.coverage.incomplete,true);
+  assert.equal(x.result.coverage.missingRecords,2);
 });
