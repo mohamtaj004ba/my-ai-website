@@ -23,3 +23,12 @@ test('follow-up reads and mutations reject malformed rows and call history',()=>
   assert.match(readBlock,/Team follow-up records are incomplete or malformed/);
   assert.match(writeBlock,/Call history contains unverifiable entries\. Team follow-up state was not changed/);
 });
+
+test('follow-up reads and mutations validate individual note rows and sibling entries',()=>{
+  const readStart=api.indexOf('async function followups('),readEnd=api.indexOf('\nasync function followupUpdate(',readStart),readBlock=api.slice(readStart,readEnd);
+  const writeStart=api.indexOf('async function followupUpdate('),writeEnd=api.indexOf('\nfunction aiFeedbackWorkspaceIndexKey',writeStart),writeBlock=api.slice(writeStart,writeEnd);
+  assert.match(readBlock,/item\.notes\.some\(note=>/);
+  assert.match(readBlock,/typeof note\.text!=='string'/);
+  assert.match(writeBlock,/Object\.values\(rawState\)\.some/);
+  assert.match(writeBlock,/Team follow-up records are incomplete or malformed\. No changes were made/);
+});
