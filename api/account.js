@@ -404,6 +404,8 @@ async function adminFinanceExpenseSave(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const key='finance:expenses',raw=await kv.get(key),list=raw||[];
   if(!Array.isArray(list))return res.status(503).json({error:'Company expense records are unavailable. No changes were made.'});
+  if(list.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()||!String(item.name||'').trim()||!Number.isFinite(Number(item.amount))||Number(item.amount)<0||!['monthly','annual','one_time'].includes(String(item.frequency||''))||!['active','paused'].includes(String(item.status||''))))
+    return res.status(503).json({error:'Company expense records contain unverifiable entries. No changes were made.'});
   const items=list.slice(),body=req.body||{},id=String(body.id||'').slice(0,80),index=id?items.findIndex(x=>x&&x.id===id):-1;
   if(id&&index<0)return res.status(404).json({error:'This expense no longer exists. Refresh the ledger before editing.'});
   if(index>=0&&(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(items[index].updatedAt||0)))return res.status(409).json({error:'This expense changed while you were editing. Reopen it to load the latest values.'});
@@ -421,6 +423,8 @@ async function adminFinanceExpenseDelete(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80);if(!id)return res.status(400).json({error:'Expense id required'});
   const key='finance:expenses',raw=await kv.get(key),list=raw||[];if(!Array.isArray(list))return res.status(503).json({error:'Company expense records are unavailable. No changes were made.'});
+  if(list.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()||!String(item.name||'').trim()||!Number.isFinite(Number(item.amount))||Number(item.amount)<0||!['monthly','annual','one_time'].includes(String(item.frequency||''))||!['active','paused'].includes(String(item.status||''))))
+    return res.status(503).json({error:'Company expense records contain unverifiable entries. No changes were made.'});
   const items=list.slice(),item=items.find(x=>x&&x.id===id);if(!item)return res.status(404).json({error:'Expense not found'});
   if(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(item.updatedAt||0))return res.status(409).json({error:'This expense changed before deletion. Refresh the ledger and review it again.'});
   const next=items.filter(x=>x&&x.id!==id);
