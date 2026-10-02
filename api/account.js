@@ -2711,7 +2711,7 @@ async function buildClientNotifications(s){
       support:settingsValid&&savedSettings.notifySupport!==false,usage:settingsValid&&savedSettings.notifyUsage!==false
     };
   const items=[],now=Date.now(),plan=entitlementsFor(ws.plan),usage=Number(ws.usage?.minutes||0);
-  const feedbackItems=await aiFeedbackListForWorkspace(ws.id,20);
+  const feedbackResult=await aiFeedbackListForWorkspace(ws.id,20),feedbackItems=feedbackResult.items;
   for(const f of feedbackItems){if(['reviewed','applied'].includes(f.status))items.push(notificationItem('feedback:'+f.id+':'+f.status+':'+f.updatedAt,{title:f.status==='applied'?'AI feedback applied':'AI feedback reviewed',body:(f.context?f.context+' · ':'')+(f.status==='applied'?'CallerCore marked your feedback as applied.':'CallerCore has reviewed your feedback.'),kind:f.status==='applied'?'success':'info',view:'agent',createdAt:f.updatedAt||f.createdAt||now,meta:{feedbackId:f.id,callId:f.callId||''}}));}
   if(prefs.billing&&ws.subscriptionStatus==='past_due')items.push(notificationItem('billing:'+ws.id+':past_due',{title:'Billing needs attention',body:'Your CallerCore subscription is past due.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
   if(prefs.billing&&ws.subscriptionStatus==='canceled')items.push(notificationItem('billing:'+ws.id+':canceled',{title:'Subscription canceled',body:'Your CallerCore subscription is canceled.',kind:'danger',view:'billing',createdAt:ws.updatedAt||now}));
@@ -2753,7 +2753,7 @@ async function buildClientNotifications(s){
       items.push(notificationItem('support:'+t.id+':'+t.status+':'+t.updatedAt,{title:'Support request updated',body:'“'+t.subject+'” is now '+String(t.status||'').replace('_',' ')+'.',kind:t.status==='resolved'?'success':'info',view:'support',createdAt:t.updatedAt,meta:{ticketId:t.id}}));
     }
   }
-  const feedbackRecordUnavailable=Array.isArray(feedbackIndex)&&feedbackIndex.slice(0,20).some(id=>!feedbackItems.some(f=>f&&String(f.id||'')===String(id)));
+  const feedbackRecordUnavailable=!feedbackResult.sourceValid||Array.isArray(feedbackIndex)&&feedbackIndex.slice(0,20).some(id=>!feedbackItems.some(f=>f&&String(f.id||'')===String(id)));
   const sources=[];
   if(!settingsValid)sources.push('settings_unavailable');
   if(!onboardingValid)sources.push('onboarding_unavailable');
@@ -2773,7 +2773,9 @@ async function buildAdminNotifications(admin){
     };
   const [supportIndex,workspaceIndex,prospectIdsRaw,gmailConn,feedbackIndex]=await Promise.all([
     kv.get('support:index'),kv.get('workspace:index'),kv.lrange('site:prospect:index',0,100),getGmailConnection(admin.email),kv.get('ai-feedback:index')
-  ]),prospectIds=Array.isArray(prospectIdsRaw)?prospectIdsRaw.slice(0,100):[];
+  ]),prospectIds=Array.isArray(prospectIdsRaw)?prospectIdsRaw.slice(0,100):[],
+    validDirectory=(value,max)=>value==null||Array.isArray(value)&&value.length<=max&&value.every(id=>typeof id==='string'&&!!id.trim())&&new Set(value).size===value.length,
+    supportIndexValid=validDirectory(supportIndex,2000),workspaceIndexValid=validDirectory(workspaceIndex,2000),feedbackIndexValid=validDirectory(feedbackIndex,1500);
   let feedbackRecordUnavailable=false,supportRecordUnavailable=false,workspaceRecordUnavailable=false,onboardingRecordUnavailable=false,growthRecordUnavailable=false,gmailSummaryUnavailable=false;
   for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!f||typeof f!=='object'||Array.isArray(f)||String(f.id||'')!==String(id)){feedbackRecordUnavailable=true;continue}if(!alerts.clientCare||f.status!=='submitted')continue;const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'client-care',createdAt:f.createdAt||now,meta:{feedbackId:f.id,workspaceId:f.workspaceId||'',careTab:'feedback'}}));}
   for(const id of Array.isArray(supportIndex)?supportIndex.slice(0,100):[]){
@@ -2825,10 +2827,10 @@ async function buildAdminNotifications(admin){
   }
   const sources=[];
   if(!platformValid)sources.push('platform_unavailable');
-  if(supportIndex!=null&&!Array.isArray(supportIndex)||supportRecordUnavailable)sources.push('support_unavailable');else if(Array.isArray(supportIndex)&&supportIndex.length>100)sources.push('support');
-  if(feedbackIndex!=null&&!Array.isArray(feedbackIndex)||feedbackRecordUnavailable)sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>100)sources.push('ai_feedback');
+  if(!supportIndexValid||supportRecordUnavailable)sources.push('support_unavailable');else if(Array.isArray(supportIndex)&&supportIndex.length>100)sources.push('support');
+  if(!feedbackIndexValid||feedbackRecordUnavailable)sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>100)sources.push('ai_feedback');
   if(prospectIdsRaw!=null&&!Array.isArray(prospectIdsRaw)||growthRecordUnavailable)sources.push('growth_unavailable');else if(Array.isArray(prospectIdsRaw)&&prospectIdsRaw.length>100)sources.push('growth');
-  if(workspaceIndex!=null&&!Array.isArray(workspaceIndex)||workspaceRecordUnavailable)sources.push('clients_unavailable');else if(Array.isArray(workspaceIndex)&&workspaceIndex.length>300)sources.push('clients');
+  if(!workspaceIndexValid||workspaceRecordUnavailable)sources.push('clients_unavailable');else if(Array.isArray(workspaceIndex)&&workspaceIndex.length>300)sources.push('clients');
   if(onboardingRecordUnavailable)sources.push('onboarding_unavailable');
   if(gmailSummaryUnavailable)sources.push('gmail_unavailable');
   return {items,coverage:{limited:sources.length>0,sources}};
@@ -2883,9 +2885,17 @@ async function followupUpdate(req,res){
 }
 function aiFeedbackWorkspaceIndexKey(workspaceId){return 'ai-feedback:workspace:'+String(workspaceId||'')}
 async function aiFeedbackListForWorkspace(workspaceId,limit=50){
-  const ids=await kv.get(aiFeedbackWorkspaceIndexKey(workspaceId))||[],items=[];
-  for(const id of Array.isArray(ids)?ids.slice(0,limit):[]){const item=await kv.get('ai-feedback:'+id);if(item&&item.workspaceId===workspaceId)items.push(item)}
-  return items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
+  const raw=await kv.get(aiFeedbackWorkspaceIndexKey(workspaceId)),ids=raw==null?[]:raw,items=[];
+  const sourceValid=Array.isArray(ids)&&ids.length<=250&&ids.every(id=>typeof id==='string'&&!!id.trim())&&new Set(ids).size===ids.length;
+  if(!sourceValid)return {items:[],sourceValid:false};
+  let recordsValid=true;
+  for(const id of ids.slice(0,limit)){
+    const item=await kv.get('ai-feedback:'+id);
+    if(item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'')===String(id)&&String(item.workspaceId||'')===String(workspaceId))items.push(item);
+    else recordsValid=false;
+  }
+  items.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));
+  return {items,sourceValid:recordsValid};
 }
 async function aiFeedback(req,res){
   const s=await requireSession(req,res);if(!s)return;
