@@ -44,3 +44,10 @@ test('bundled client dashboard validates secondary/provider records before repla
   assert.match(block,/legacyCalls!=null&&!Array\.isArray\(legacyCalls\)/);
   assert.doesNotMatch(block,/numbers=Array\.isArray\(phoneIndex\)\?phoneIndex:\[\]/);
 });
+
+test('bundled client dashboard validates rows inside provider-backed arrays and receptionist questions',()=>{
+  const block=extract('clientDashboardData','callDetail');
+  assert.match(block,/\['call index',callIndexRaw,v=>Array\.isArray\(v\)&&v\.every/);
+  assert.match(block,/\['phone routing',phoneIndex,v=>Array\.isArray\(v\)&&v\.every/);
+  assert.match(block,/qualificationQuestions==null\|\|Array\.isArray\(v\.qualificationQuestions\)/);
+});
