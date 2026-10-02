@@ -1277,6 +1277,13 @@ async function createSupportTicket(req,res){
   return res.status(201).json({ok:true,ticket,...(notificationWarning?{warning:notificationWarning}:{})});
 }
 
+function validSupportMessageHistory(ticket){
+  if(!ticket||typeof ticket!=='object'||Array.isArray(ticket))return false;
+  if(ticket.messages!=null&&(!Array.isArray(ticket.messages)||ticket.messages.length>100||ticket.messages.some(message=>!message||typeof message!=='object'||Array.isArray(message)||!String(message.id||'').trim()||typeof message.body!=='string'||!String(message.direction||'').trim()||!Number.isFinite(Number(message.at))||Number(message.at)<=0)))return false;
+  if(ticket.messageCount!=null&&(!Number.isSafeInteger(Number(ticket.messageCount))||Number(ticket.messageCount)<0||Array.isArray(ticket.messages)&&Number(ticket.messageCount)<ticket.messages.length))return false;
+  return true;
+}
+
 async function supportTickets(req,res){
   const s=await requireSession(req,res);if(!s)return;
   const index=await kv.get('support:index')||[],tickets=[];
@@ -1287,7 +1294,7 @@ async function supportTickets(req,res){
     const ids=index.slice(offset,offset+40),batch=await Promise.all(ids.map(id=>kv.get('support:'+id)));
     for(let i=0;i<batch.length;i++){
       const ticket=batch[i];
-      if(!ticket||typeof ticket!=='object'||Array.isArray(ticket)||String(ticket.id||'')!==String(ids[i])){missingRecords++;continue}
+      if(!ticket||typeof ticket!=='object'||Array.isArray(ticket)||String(ticket.id||'')!==String(ids[i])||!validSupportMessageHistory(ticket)){missingRecords++;continue}
       if(ticket.workspaceId===s.workspaceId)tickets.push(ticket);
     }
   }
@@ -1302,7 +1309,7 @@ async function replySupportTicket(req,res){
   const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Support request not found'});
   if(typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==id)return res.status(503).json({error:'Support request record is unavailable. Your reply was not sent.'});
   if(String(t.workspaceId||'')!==String(s.workspaceId))return res.status(404).json({error:'Support request not found'});
-  if(t.messages!=null&&!Array.isArray(t.messages))return res.status(503).json({error:'Support conversation history is unavailable. Your reply was not sent.'});
+  if(!validSupportMessageHistory(t))return res.status(503).json({error:'Support conversation history is unavailable. Your reply was not sent.'});
   const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||s.email,body:t.message||'',at:t.createdAt||now}],
     hasCount=Number.isFinite(Number(t.messageCount))&&Number(t.messageCount)>=messages.length,
     priorCount=hasCount?Number(t.messageCount):messages.length,
@@ -1331,7 +1338,7 @@ async function adminSupport(req,res){
     const ids=index.slice(offset,offset+40),batch=await Promise.all(ids.map(id=>kv.get('support:'+id)));
     for(let i=0;i<batch.length;i++){
       const ticket=batch[i];
-      if(!ticket||typeof ticket!=='object'||Array.isArray(ticket)||String(ticket.id||'')!==String(ids[i])){missingRecords++;continue}
+      if(!ticket||typeof ticket!=='object'||Array.isArray(ticket)||String(ticket.id||'')!==String(ids[i])||!validSupportMessageHistory(ticket)){missingRecords++;continue}
       tickets.push(ticket);
     }
   }
@@ -1345,7 +1352,7 @@ async function adminSupportReply(req,res){
   if(!id||message.length<2)return res.status(400).json({error:'Reply is required'});
   const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
   if(typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==id||!String(t.workspaceId||''))return res.status(503).json({error:'Support request record is unavailable. Your reply was not sent.'});
-  if(t.messages!=null&&!Array.isArray(t.messages))return res.status(503).json({error:'Support conversation history is unavailable. Your reply was not sent.'});
+  if(!validSupportMessageHistory(t))return res.status(503).json({error:'Support conversation history is unavailable. Your reply was not sent.'});
   const now=Date.now(),messages=Array.isArray(t.messages)?t.messages.slice():[{id:crypto.randomUUID(),direction:'client',from:t.email||'',body:t.message||'',at:t.createdAt||now}],
     hasCount=Number.isFinite(Number(t.messageCount))&&Number(t.messageCount)>=messages.length,
     priorCount=hasCount?Number(t.messageCount):messages.length,
@@ -1389,6 +1396,7 @@ async function adminSupportUpdate(req,res){
   if(!id||!['open','in_progress','resolved'].includes(status))return res.status(400).json({error:'Invalid support update'});
   const key='support:'+id,t=await kv.get(key);if(!t)return res.status(404).json({error:'Ticket not found'});
   if(typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==id||!String(t.workspaceId||''))return res.status(503).json({error:'Support request record is unavailable. No status change was made.'});
+  if(!validSupportMessageHistory(t))return res.status(503).json({error:'Support conversation history is unavailable. No status change was made.'});
   if(body.expectedUpdatedAt===undefined||Number(body.expectedUpdatedAt||0)!==Number(t.updatedAt||t.createdAt||0))return res.status(409).json({error:'This support request changed while you were editing. Refresh it before retrying.'});
   const previousStatus=t.status||'open';
   if(status===previousStatus)return res.status(200).json({ok:true,ticket:t,unchanged:true});
