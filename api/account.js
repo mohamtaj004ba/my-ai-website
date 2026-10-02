@@ -472,6 +472,7 @@ async function adminRetentionReport(req,res){
 async function adminSummary(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const workspaces=await loadAdminWorkspaces();
+  if(workspaces.some(ws=>ws.usage!=null&&(!ws.usage||typeof ws.usage!=='object'||Array.isArray(ws.usage)||!Number.isFinite(Number(ws.usage.minutes))||Number(ws.usage.minutes)<0)))return res.status(503).json({error:'Client usage records are unavailable. Admin totals were not recalculated.'});
   const prices={Starter:349,Growth:599,Pro:999};
   const current=workspaces.filter(w=>String(w.subscriptionStatus||'active')!=='canceled'&&String(w.status||'active')!=='pending_deletion');
   const former=workspaces.filter(w=>String(w.subscriptionStatus||'active')==='canceled'||String(w.status||'active')==='pending_deletion');
@@ -490,6 +491,7 @@ async function adminSummary(req,res){
 async function adminClients(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const workspaces=await loadAdminWorkspaces();
+  if(workspaces.some(ws=>ws.usage!=null&&(!ws.usage||typeof ws.usage!=='object'||Array.isArray(ws.usage)||!Number.isFinite(Number(ws.usage.minutes))||Number(ws.usage.minutes)<0)))return res.status(503).json({error:'Client usage records are unavailable. No partial client directory was returned.'});
   const clients=[];
   for(const ws of workspaces){
     clients.push({
@@ -2641,10 +2643,12 @@ async function adminClient(req,res){
   if(!id)return res.status(400).json({error:'Client id required'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Client not found'});
   if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record could not be verified. No partial client drawer was returned.'});
+  if(ws.usage!=null&&(!ws.usage||typeof ws.usage!=='object'||Array.isArray(ws.usage)||!Number.isFinite(Number(ws.usage.minutes))||Number(ws.usage.minutes)<0))return res.status(503).json({error:'Client usage data could not be verified. No partial client drawer was returned.'});
   const [agent,locations,numbers,onboarding]=await Promise.all([
     kv.get('agent:'+id),kv.get('locations:'+id),kv.get('phone:index'),kv.get('onboarding:workspace:'+id)
-  ]),objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value);
-  if(!objectOrNull(agent)||locations!=null&&!Array.isArray(locations)||numbers!=null&&!Array.isArray(numbers)||!objectOrNull(onboarding))
+  ]),objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value),
+    validRows=value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim());
+  if(!objectOrNull(agent)||agent?.qualificationQuestions!=null&&!Array.isArray(agent.qualificationQuestions)||!validRows(locations)||!validRows(numbers)||!objectOrNull(onboarding))
     return res.status(503).json({error:'Client detail sources could not be verified. No partial client drawer was returned.'});
   const phone=(numbers||[]).find(x=>x&&x.workspaceId===id)||null;
   return res.status(200).json({client:{
