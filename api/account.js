@@ -1088,15 +1088,6 @@ async function adminPhoneNumbers(req,res){
   return res.status(200).json({numbers:numbers.map(item=>({...item,voice:voiceStatus(item)}))});
 }
 
-async function syncOnboardingPhoneAssignment(workspaceId,assigned){
-  if(!workspaceId)return;
-  const key='onboarding:workspace:'+workspaceId,state=await kv.get(key);
-  if(!state||typeof state!=='object'||Array.isArray(state))return;
-  const current=state.checklist&&typeof state.checklist==='object'&&!Array.isArray(state.checklist)?state.checklist:{};
-  if(current.phoneAssigned===!!assigned)return;
-  await kv.set(key,{...state,checklist:{...current,phoneAssigned:!!assigned},updatedAt:Date.now()});
-}
-
 async function adminSavePhoneNumber(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{};
@@ -2790,10 +2781,13 @@ async function buildClientNotifications(s){
   });
   let supportRecordUnavailable=false;
   for(const id of Array.isArray(index)?index.slice(0,100):[]){
-    const t=await kv.get('support:'+id);
-    if(!t||typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==String(id)){supportRecordUnavailable=true;continue}
+    const t=await kv.get('support:'+id),createdAt=Number(t?.createdAt),updatedAt=Number(t?.updatedAt||t?.createdAt),
+      validTicket=t&&typeof t==='object'&&!Array.isArray(t)&&String(t.id||'')===String(id)&&!!String(t.workspaceId||'').trim()&&
+        ['open','in_progress','resolved'].includes(String(t.status||''))&&typeof t.subject==='string'&&!!t.subject.trim()&&
+        Number.isFinite(createdAt)&&createdAt>0&&Number.isFinite(updatedAt)&&updatedAt>=createdAt;
+    if(!validTicket){supportRecordUnavailable=true;continue}
     if(t.workspaceId!==ws.id)continue;
-    if(prefs.support&&t.updatedAt&&t.updatedAt>t.createdAt){
+    if(prefs.support&&updatedAt>createdAt){
       items.push(notificationItem('support:'+t.id+':'+t.status+':'+t.updatedAt,{title:'Support request updated',body:'“'+t.subject+'” is now '+String(t.status||'').replace('_',' ')+'.',kind:t.status==='resolved'?'success':'info',view:'support',createdAt:t.updatedAt,meta:{ticketId:t.id}}));
     }
   }
@@ -2821,10 +2815,24 @@ async function buildAdminNotifications(admin){
     validDirectory=(value,max)=>value==null||Array.isArray(value)&&value.length<=max&&value.every(id=>typeof id==='string'&&!!id.trim())&&new Set(value).size===value.length,
     supportIndexValid=validDirectory(supportIndex,2000),workspaceIndexValid=validDirectory(workspaceIndex,2000),feedbackIndexValid=validDirectory(feedbackIndex,1500);
   let feedbackRecordUnavailable=false,supportRecordUnavailable=false,workspaceRecordUnavailable=false,onboardingRecordUnavailable=false,growthRecordUnavailable=false,gmailSummaryUnavailable=false;
-  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){const f=await kv.get('ai-feedback:'+id);if(!f||typeof f!=='object'||Array.isArray(f)||String(f.id||'')!==String(id)){feedbackRecordUnavailable=true;continue}if(!alerts.clientCare||f.status!=='submitted')continue;const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');items.push(notificationItem('admin-feedback:'+f.id+':'+f.updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'client-care',createdAt:f.createdAt||now,meta:{feedbackId:f.id,workspaceId:f.workspaceId||'',careTab:'feedback'}}));}
+  for(const id of Array.isArray(feedbackIndex)?feedbackIndex.slice(0,100):[]){
+    const f=await kv.get('ai-feedback:'+id),createdAt=Number(f?.createdAt),updatedAt=Number(f?.updatedAt||f?.createdAt),
+      validFeedback=f&&typeof f==='object'&&!Array.isArray(f)&&String(f.id||'')===String(id)&&!!String(f.workspaceId||'').trim()&&
+        ['call','receptionist'].includes(String(f.source||''))&&['submitted','reviewed','applied','dismissed'].includes(String(f.status||''))&&
+        typeof f.message==='string'&&!!f.message.trim()&&Number.isFinite(createdAt)&&createdAt>0&&Number.isFinite(updatedAt)&&updatedAt>=createdAt;
+    if(!validFeedback){feedbackRecordUnavailable=true;continue}
+    if(!alerts.clientCare||f.status!=='submitted')continue;
+    const sourceLabel=f.source==='call'?'Call-specific coaching':'AI receptionist update',category=String(f.category||'feedback').replaceAll('_',' ');
+    items.push(notificationItem('admin-feedback:'+f.id+':'+updatedAt,{title:'Client AI feedback needs review',body:(f.workspaceName||'Client')+' · '+sourceLabel+' · '+category,kind:'info',view:'client-care',createdAt,meta:{feedbackId:f.id,workspaceId:f.workspaceId||'',careTab:'feedback'}}));
+  }
   for(const id of Array.isArray(supportIndex)?supportIndex.slice(0,100):[]){
-    const t=await kv.get('support:'+id);if(!t||typeof t!=='object'||Array.isArray(t)||String(t.id||'')!==String(id)){supportRecordUnavailable=true;continue}if(!alerts.clientCare||t.status==='resolved')continue;
-    items.push(notificationItem('admin-support:'+t.id+':'+t.status,{title:(t.priority==='urgent'?'Urgent support request':'Client support request'),body:(t.workspaceName||'Client')+' · '+t.subject,kind:t.priority==='urgent'?'danger':'warning',view:'client-care',createdAt:t.updatedAt||t.createdAt||now,meta:{ticketId:t.id,careTab:'support'}}));
+    const t=await kv.get('support:'+id),createdAt=Number(t?.createdAt),updatedAt=Number(t?.updatedAt||t?.createdAt),
+      validTicket=t&&typeof t==='object'&&!Array.isArray(t)&&String(t.id||'')===String(id)&&!!String(t.workspaceId||'').trim()&&
+        ['open','in_progress','resolved'].includes(String(t.status||''))&&typeof t.subject==='string'&&!!t.subject.trim()&&
+        Number.isFinite(createdAt)&&createdAt>0&&Number.isFinite(updatedAt)&&updatedAt>=createdAt;
+    if(!validTicket){supportRecordUnavailable=true;continue}
+    if(!alerts.clientCare||t.status==='resolved')continue;
+    items.push(notificationItem('admin-support:'+t.id+':'+t.status,{title:(t.priority==='urgent'?'Urgent support request':'Client support request'),body:(t.workspaceName||'Client')+' · '+t.subject,kind:t.priority==='urgent'?'danger':'warning',view:'client-care',createdAt:updatedAt,meta:{ticketId:t.id,careTab:'support'}}));
   }
   for(const id of Array.isArray(workspaceIndex)?workspaceIndex.slice(0,300):[]){
     const ws=await kv.get('workspace:'+id);if(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(id)){workspaceRecordUnavailable=true;continue}
@@ -2851,8 +2859,10 @@ async function buildAdminNotifications(admin){
   const prospectRecords=await Promise.all((Array.isArray(prospectIds)?prospectIds:[]).slice(0,100).map(id=>kv.get('site:prospect:'+id)));
   const prospectList=[];
   for(let i=0;i<prospectRecords.length;i++){
-    const p=prospectRecords[i],id=prospectIds[i];
-    if(!p||typeof p!=='object'||Array.isArray(p)||String(p.id||'')!==String(id)){growthRecordUnavailable=true;continue}
+    const p=prospectRecords[i],id=prospectIds[i],updatedAt=Number(p?.updatedAt||p?.createdAt),
+      validProspect=p&&typeof p==='object'&&!Array.isArray(p)&&String(p.id||'')===String(id)&&
+        typeof p.stage==='string'&&!!p.stage.trim()&&Number.isFinite(updatedAt)&&updatedAt>0;
+    if(!validProspect){growthRecordUnavailable=true;continue}
     if(p.privacyState!=='deidentified')prospectList.push(p);
   }
   if(alerts.prospects)prospectList.filter(p=>['new','inquiry','checkout_started'].includes(p.stage)).slice(0,25).forEach(p=>{
