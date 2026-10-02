@@ -1763,7 +1763,7 @@ async function submitSupportTicket(){
     if(!data.ticket?.id)throw new Error('Unconfirmed support request response');
     invalidateClientSupportHistoryRequest();supportTicketsData.unshift(data.ticket);
     document.getElementById('supportSubject').value='';document.getElementById('supportMessage').value='';
-    if(status)status.textContent='Support request sent.';renderSupport();
+    if(status)status.textContent=data.warning||'Support request sent.';renderSupport();
   }catch(_){
     if(status)status.textContent='Could not confirm the request was saved. Check request history before retrying; your draft is preserved.';
   }finally{
