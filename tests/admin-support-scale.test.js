@@ -3,15 +3,15 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const source=fs.readFileSync('api/account.js','utf8');
-function fixture(count,{indexMalformed=false,missing=[]}={}){
-  const index=indexMalformed?{bad:true}:Array.from({length:count},(_,i)=>'ticket-'+i),gone=new Set(missing),reads=[];
+function fixture(count,{indexMalformed=false,missing=[],malformedMessages=[]}={}){
+  const index=indexMalformed?{bad:true}:Array.from({length:count},(_,i)=>'ticket-'+i),gone=new Set(missing),badMessages=new Set(malformedMessages),reads=[];
   let status=0,result;
   const context=vm.createContext({
     requireAdmin:async()=>({email:'admin@example.test'}),
     kv:{get:async key=>{
       reads.push(key);
       if(key==='support:index')return index;
-      if(key.startsWith('support:'))return gone.has(key.slice('support:'.length))?null:{id:key.slice('support:'.length),status:'open'};
+      if(key.startsWith('support:')){const id=key.slice('support:'.length);return gone.has(id)?null:badMessages.has(id)?{id,status:'open',messages:[{id:'m1',direction:'client',body:'broken',at:0}],messageCount:1}:{id,status:'open'}};
       throw Error('Unexpected key '+key);
     }},
     res:{status(n){status=n;return this},json(x){result=x;return x}},req:{},Promise,Array
@@ -41,4 +41,12 @@ test('malformed and over-capacity indexes fail instead of returning partial supp
     assert.match(r.result.error,/No partial ticket list/);
     assert.equal(f.reads.filter(key=>key.startsWith('support:ticket-')).length,0);
   }
+});
+
+test('malformed support message histories are omitted and disclosed as incomplete coverage',async()=>{
+  const r=await fixture(4,{malformedMessages:['ticket-2']}).run();
+  assert.equal(r.status,200);
+  assert.equal(r.result.tickets.length,3);
+  assert.equal(r.result.coverage.incomplete,true);
+  assert.equal(r.result.coverage.missingRecords,1);
 });
