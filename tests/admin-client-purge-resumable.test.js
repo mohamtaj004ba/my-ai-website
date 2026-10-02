@@ -150,3 +150,12 @@ test('unverifiable indexed support record pauses permanent purge before support 
     assert.equal(f.records['retention:support:tenant'],undefined);
   }
 });
+
+test('malformed phone inventory or owner mapping pauses purge before shared detachment',async()=>{
+  const phone=fixture();phone.records['phone:index']=[{workspaceId:'tenant',number:'5095550100'}];
+  let r=await phone.purge();assert.equal(r.status,503);assert.equal(r.result.purgePhase,'retained');assert.match(r.result.error,/Phone inventory contains unverifiable records/);
+  assert.deepEqual(phone.records['workspace:index'],['tenant','other']);
+  const owner=fixture();owner.records['user:email:owner@example.com']='broken';
+  r=await owner.purge();assert.equal(r.status,503);assert.equal(r.result.purgePhase,'retained');assert.match(r.result.error,/Owner access mapping is malformed/);
+  assert.deepEqual(owner.records['workspace:index'],['tenant','other']);
+});
