@@ -168,3 +168,20 @@ test('provisioning stage history limit is explicit instead of silently dropping 
   assert.match(save,/history\.length>=50/);assert.match(save,/50-entry safety limit/);assert.doesNotMatch(save,/nextHistory=\[[^\n]+\]\.slice\(0,50\)/);
   assert.match(clear,/history\.length>=50/);assert.match(clear,/50-entry safety limit/);
 });
+
+test('provisioning history requires recognized stages, positive timestamps and actor strings',async()=>{
+  for(const history of [
+    [{stage:'Nonsense',at:1,by:'admin'}],
+    [{stage:'Paid',at:0,by:'admin'}],
+    [{stage:'Paid',at:'bad',by:'admin'}],
+    [{stage:'Paid',at:1,by:{email:'admin'}}]
+  ]){
+    const f=fixture({history}),r=await f.run('adminSaveProvisioningStage');
+    assert.equal(r.code,503);assert.equal(f.calls.length,0);
+  }
+});
+test('provisioning mutations verify workspace identity before stage changes',async()=>{
+  const f=fixture({workspace:{id:'other'}}),r=await f.run('adminSaveProvisioningStage');
+  assert.equal(r.code,503);assert.equal(f.calls.length,0);
+  assert.match(r.payload.error,/Workspace record is unavailable/);
+});
