@@ -58,3 +58,8 @@ test('bundled client dashboard validates workspace identity and usage before ret
   assert.match(block,/Workspace usage data is unavailable\. Last verified dashboard data should be preserved/);
   assert.match(block,/Number\.isFinite\(Number\(ws\.usage\.minutes\)\)/);
 });
+
+test('bundled client dashboard validates onboarding checklist shape before applying progress',()=>{
+  const block=extract('clientDashboardData','callDetail');
+  assert.match(block,/\['onboarding',onboardingRaw,v=>v&&typeof v==='object'&&!Array\.isArray\(v\)&&\(v\.checklist==null/);
+});
