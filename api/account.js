@@ -109,9 +109,9 @@ async function getWorkspaceConfigSnapshot(workspaceId){
     kv.get('automations:'+workspaceId),kv.get('integrations:'+workspaceId),kv.get('locations:'+workspaceId),kv.get('phone:index')
   ]),objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value),
     invalid=[
-      ['workspace',workspace,value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value)],['settings',settings,objectOrNull],['agent',agent,objectOrNull],
-      ['automations',automations,value=>value==null||Array.isArray(value)],['integrations',integrations,objectOrNull],
-      ['locations',locations,value=>value==null||Array.isArray(value)],['phone inventory',phones,value=>value==null||Array.isArray(value)]
+      ['workspace',workspace,value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value)],['settings',settings,objectOrNull],['agent',agent,value=>objectOrNull(value)&&(value==null||value.qualificationQuestions==null||Array.isArray(value.qualificationQuestions))],
+      ['automations',automations,value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['integrations',integrations,objectOrNull],
+      ['locations',locations,value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())],['phone inventory',phones,value=>value==null||Array.isArray(value)&&value.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim())]
     ].find(([,value,valid])=>!valid(value));
   if(invalid)throw new Error('Workspace configuration source unavailable: '+invalid[0]);
   const phone=(phones||[]).find(x=>x&&x.workspaceId===workspaceId)||null;
@@ -1195,8 +1195,9 @@ async function adminFleet(req,res){
   for(let offset=0;offset<workspaces.length;offset+=40){
     const batch=await Promise.all(workspaces.slice(offset,offset+40).map(async ws=>{
       const id=ws.id,[agent,wsAutos]=await Promise.all([kv.get('agent:'+id),kv.get('automations:'+id)]),
-        agentValid=agent==null||!!agent&&typeof agent==='object'&&!Array.isArray(agent);
-      if(!agentValid||wsAutos!=null&&!Array.isArray(wsAutos))return {error:'Fleet source data could not be verified for '+(ws.name||id)+'. No partial fleet view was returned.'};
+        agentValid=agent==null||!!agent&&typeof agent==='object'&&!Array.isArray(agent)&&(agent.qualificationQuestions==null||Array.isArray(agent.qualificationQuestions)),
+        automationsValid=wsAutos==null||Array.isArray(wsAutos)&&wsAutos.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim());
+      if(!agentValid||!automationsValid)return {error:'Fleet source data could not be verified for '+(ws.name||id)+'. No partial fleet view was returned.'};
       const autos=wsAutos||[];
       return {agent:{workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,status:ws.status||'active',agent:agent||null},automation:{workspaceId:id,workspaceName:ws.name||'Unnamed workspace',plan:entitlementsFor(ws.plan).plan,total:autos.length,enabled:autos.filter(x=>x&&x.enabled!==false).length,workflows:autos.slice(0,20).filter(Boolean).map(x=>({id:x.id||'',name:String(x.name||'Automation').slice(0,120),trigger:String(x.trigger||'').slice(0,80),action:String(x.action||'').slice(0,80),enabled:x.enabled!==false})),workflowCoverage:{returned:Math.min(20,autos.length),total:autos.length,limited:autos.length>20}}};
     }));
@@ -2582,6 +2583,7 @@ async function adminSystemHealth(req,res){
   const [kvHealth,stripeHealth,platformSettings,workspaces,rawPhones,monthlyKpi]=await Promise.all([kvHealthCheck(),stripeConfigurationHealth(),kv.get('platform:settings'),loadAdminWorkspaces(),kv.get('phone:index'),kv.get('analytics:monthly:'+rollupMonth)]),kvOk=kvHealth.ok,launchGates=launchGateState(platformSettings?.launchGates),envScope=environmentScopeHealth();
   const phones=Array.isArray(rawPhones)?rawPhones:[],workspaceById=new Map(workspaces.map(ws=>[String(ws.id||''),ws])),dataIssues=[],digits=v=>String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
   if(!Array.isArray(rawPhones)&&rawPhones!=null)dataIssues.push('Phone routing inventory is malformed.');
+  if(Array.isArray(rawPhones)&&rawPhones.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))dataIssues.push('Phone routing inventory contains unverifiable records.');
   for(const ws of workspaces){
     const id=String(ws.id||''),label=ws.name||id||'Workspace',effectivePlan=entitlementsFor(ws.plan).plan;
     if(String(ws.plan||'')!==effectivePlan)dataIssues.push(label+' has invalid stored plan “'+String(ws.plan||'')+'”; effective access is '+effectivePlan+'.');
