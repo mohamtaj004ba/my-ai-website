@@ -26,3 +26,9 @@ test('admin client drawer validates usage and row-level secondary records',()=>{
   assert.match(block,/validRows=value=>/);
   assert.match(block,/agent\?\.qualificationQuestions!=null&&!Array\.isArray\(agent\.qualificationQuestions\)/);
 });
+
+test('admin client drawer rejects malformed onboarding checklist state',()=>{
+  const start=api.indexOf('async function adminClient('),end=api.indexOf('\n\nfunction notificationReadKey(',start),block=api.slice(start,end);
+  assert.match(block,/onboarding\?\.checklist!=null/);
+  assert.match(block,/Array\.isArray\(onboarding\.checklist\)/);
+});
