@@ -734,6 +734,8 @@ async function adminPurgeClient(req,res){
         ]);
         if(!validIdDirectory(workspaceIndexRaw,2000))return res.status(503).json({error:'Workspace directory is malformed. Permanent purge is paused before shared indexes are changed.',purgePhase:'retained',resumable:true});
         if(phoneIndexRaw!=null&&!Array.isArray(phoneIndexRaw))return res.status(503).json({error:'Phone inventory is malformed. Permanent purge is paused before shared indexes are changed.',purgePhase:'retained',resumable:true});
+        if(Array.isArray(phoneIndexRaw)&&phoneIndexRaw.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Phone inventory contains unverifiable records. Permanent purge is paused before shared indexes are changed.',purgePhase:'retained',resumable:true});
+        if(member!=null&&(!member||typeof member!=='object'||Array.isArray(member)))return res.status(503).json({error:'Owner access mapping is malformed. Permanent purge is paused before shared mappings are changed.',purgePhase:'retained',resumable:true});
         if(customerMapping!=null&&String(customerMapping)!==id)return res.status(409).json({error:'Stripe customer mapping points to another workspace. Reconcile billing identity before resuming permanent purge.',purgePhase:'retained',resumable:true});
         if(subscriptionMapping!=null&&String(subscriptionMapping)!==id)return res.status(409).json({error:'Stripe subscription mapping points to another workspace. Reconcile billing identity before resuming permanent purge.',purgePhase:'retained',resumable:true});
         if(auditRaw!=null&&!Array.isArray(auditRaw))return res.status(503).json({error:'Workspace audit history is malformed. Permanent purge is paused.',purgePhase:'retained',resumable:true});
@@ -2264,7 +2266,7 @@ async function adminOverrideConfig(req,res){
   if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No override was applied.'});
   const before=await kv.get(key);
   const beforeValid=section==='workspace'?before==null||!!before&&typeof before==='object'&&!Array.isArray(before):
-    section==='automations'||section==='locations'?before==null||Array.isArray(before):before==null||!!before&&typeof before==='object'&&!Array.isArray(before);
+    section==='automations'||section==='locations'?before==null||Array.isArray(before)&&before.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim()):before==null||!!before&&typeof before==='object'&&!Array.isArray(before);
   if(!beforeValid)return res.status(503).json({error:'Existing '+section+' configuration is unavailable. No override was applied.'});
   let after;try{after=sanitizeAdminOverride(section,body.value,before||ws)}catch(err){return res.status(400).json({error:err.message})}
   const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'admin_override',section,before:before||null,after,at:Date.now()};
@@ -2282,7 +2284,7 @@ async function adminRestoreAudit(req,res){
   if(!entry)return res.status(404).json({error:'Audit entry not found'});
   const key=configKey(entry.section,id);if(!key)return res.status(400).json({error:'This change cannot be restored automatically'});
   if(entry.before===undefined)return res.status(400).json({error:'No prior snapshot is available'});
-  const current=await kv.get(key),currentValid=entry.section==='automations'||entry.section==='locations'?current==null||Array.isArray(current):current==null||!!current&&typeof current==='object'&&!Array.isArray(current);
+  const current=await kv.get(key),currentValid=entry.section==='automations'||entry.section==='locations'?current==null||Array.isArray(current)&&current.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim()):current==null||!!current&&typeof current==='object'&&!Array.isArray(current);
   if(!currentValid)return res.status(503).json({error:'Current '+entry.section+' configuration is unavailable. No restore was attempted.'});
   const rawRestored=entry.before===null?(entry.section==='automations'||entry.section==='locations'?[]:{}):entry.before;
   const workspaceCurrent=entry.section==='workspace'?(current||null):await kv.get('workspace:'+id);
@@ -2702,7 +2704,9 @@ async function buildClientNotifications(s){
   }
   const [agent,numbers,calls,index,feedbackIndex]=await Promise.all([
     kv.get('agent:'+ws.id),kv.get('phone:index'),kv.get('calls:'+ws.id),kv.get('support:index'),kv.get(aiFeedbackWorkspaceIndexKey(ws.id))
-  ]),agentValid=agent==null||!!agent&&typeof agent==='object'&&!Array.isArray(agent),numbersValid=numbers==null||Array.isArray(numbers),callsValid=calls==null||Array.isArray(calls);
+  ]),agentValid=agent==null||!!agent&&typeof agent==='object'&&!Array.isArray(agent)&&(agent.qualificationQuestions==null||Array.isArray(agent.qualificationQuestions)),
+    numbersValid=numbers==null||Array.isArray(numbers)&&numbers.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim()),
+    callsValid=calls==null||Array.isArray(calls)&&calls.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim());
   const phone=numbersValid?(numbers||[]).find(x=>x&&x.workspaceId===ws.id):null;
   if(prefs.setup&&agentValid&&!agent)items.push(notificationItem('setup:'+ws.id+':agent',{title:'AI agent setup incomplete',body:'Your AI agent has not been configured yet.',kind:'warning',view:'agent',createdAt:ws.createdAt||now}));
   if(prefs.setup&&numbersValid&&!phone)items.push(notificationItem('setup:'+ws.id+':phone',{title:'Phone routing not configured',body:'No CallerCore phone number is currently assigned.',kind:'warning',view:'phone-routing',createdAt:ws.createdAt||now}));
