@@ -6,11 +6,11 @@ const source=fs.readFileSync('api/account.js','utf8');
 const start=source.indexOf('async function adminFinance(req,res)'),end=source.indexOf('\nasync function adminFinanceExpenseSave(',start),handler=source.slice(start,end);
 assert.ok(start>=0&&end>start);
 
-async function run({expenses=[],history=[],reconciliation=[]}={}){
+async function run({expenses=[],history=[],reconciliation=[],reconciliationRecords={}}={}){
   let status=0,payload,snapshots=0;
   const ctx=vm.createContext({
     requireAdmin:async()=>({email:'admin@example.test'}),loadAdminWorkspaces:async()=>[],
-    kv:{get:async key=>key==='finance:expenses'?expenses:key==='finance:history'?history:null,lrange:async()=>reconciliation},
+    kv:{get:async key=>key==='finance:expenses'?expenses:key==='finance:history'?history:(key.startsWith('stripe:reconciliation:')?reconciliationRecords[key]||null:null),lrange:async()=>reconciliation},
     financeMonthKey:()=> '2026-09',financeMonthEnd:()=>Date.now(),financeRevenueForMonth:()=>0,financeExpenseForMonth:()=>0,
     expenseMonthlyEquivalent:()=>0,currentBillableWorkspaces:()=>[],recordFinanceSnapshot:async()=>{snapshots++;return []},
     process:{env:{VERCEL_ENV:'production'}},Date,Number,Math,Set,String,Array,Promise,
@@ -53,7 +53,7 @@ test('finance mutation handlers reject malformed sibling expense rows before edi
 });
 
 test('malformed or duplicate reconciliation queue ids are disclosed as incomplete coverage',async()=>{
-  const r=await run({reconciliation:['case-1','case-1','',42]});
+  const r=await run({reconciliation:['case-1','case-1','',42],reconciliationRecords:{'stripe:reconciliation:case-1':{id:'case-1',sessionId:'case-1',eventId:'evt-1',reason:'test',createdAt:1,status:'resolved'}}});
   assert.equal(r.status,200);
   assert.equal(r.payload.finance.reconciliationCoverage.retainedCaseIds,4);
   assert.equal(r.payload.finance.reconciliationCoverage.verifiedCaseIds,1);
