@@ -365,7 +365,10 @@ function financeExpenseForMonth(expenses,monthKey){
 }
 async function adminFinance(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  const [workspaces,storedExpenses,storedHistory,reconciliationIds]=await Promise.all([loadAdminWorkspaces(),kv.get('finance:expenses'),kv.get('finance:history'),kv.lrange('stripe:reconciliation:index',0,199)]);
+  const [workspaces,storedExpenses,storedHistory]=await Promise.all([loadAdminWorkspaces(),kv.get('finance:expenses'),kv.get('finance:history')]);
+  let reconciliationIds;
+  try{reconciliationIds=await kv.lrange('stripe:reconciliation:index',0,199)}
+  catch(err){console.error('checkout reconciliation queue read failed',safeError(err));return res.status(503).json({error:'Checkout reconciliation queue could not be loaded. Finance figures were not refreshed.'})}
   if(storedExpenses!=null&&!Array.isArray(storedExpenses))return res.status(503).json({error:'Company expense records are unavailable. Finance figures were not refreshed.'});
   if(Array.isArray(storedExpenses)&&storedExpenses.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()||!String(item.name||'').trim()||!Number.isFinite(Number(item.amount))||Number(item.amount)<0||!['monthly','annual','one_time'].includes(item.frequency)||!['active','paused'].includes(item.status)))
     return res.status(503).json({error:'Company expense records are malformed. Finance figures were not refreshed.'});
