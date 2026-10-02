@@ -42,3 +42,12 @@ test('row-level source validation remains part of the finance handler',()=>{
   assert.match(handler,/storedExpenses\.some\(item=>/);
   assert.match(handler,/storedHistory\.some\(row=>/);
 });
+
+test('finance mutation handlers reject malformed sibling expense rows before editing or deleting',()=>{
+  const saveStart=source.indexOf('async function adminFinanceExpenseSave('),saveEnd=source.indexOf('\nasync function adminFinanceExpenseDelete(',saveStart),saveBlock=source.slice(saveStart,saveEnd);
+  const deleteStart=source.indexOf('async function adminFinanceExpenseDelete('),deleteEnd=source.indexOf('\nasync function ',deleteStart+1),deleteBlock=source.slice(deleteStart,deleteEnd);
+  assert.match(saveBlock,/Company expense records contain unverifiable entries\. No changes were made/);
+  assert.match(deleteBlock,/Company expense records contain unverifiable entries\. No changes were made/);
+  assert.match(saveBlock,/list\.some\(item=>/);
+  assert.match(deleteBlock,/list\.some\(item=>/);
+});
