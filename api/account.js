@@ -1850,13 +1850,22 @@ async function adminWebsiteAnalytics(req,res){
       kv.lrange('site:events',0,4999),kv.lrange('site:session:index',0,1999),kv.lrange('site:prospect:index',0,1999)
     ]);
     if(!Array.isArray(eventsRaw)||!Array.isArray(sessionIds)||!Array.isArray(prospectIds))return res.status(503).json({error:'Website analytics indexes are unavailable. No partial reporting was returned.'});
-    const validIds=ids=>ids.length<=2000&&ids.every(id=>typeof id==='string'&&!!id.trim())&&new Set(ids).size===ids.length;
-    if(!validIds(sessionIds)||!validIds(prospectIds))return res.status(503).json({error:'Website analytics indexes contain unverifiable entries. No partial reporting was returned.'});
-    if(eventsRaw.some(event=>!event||typeof event!=='object'||Array.isArray(event)||!String(event.type||'').trim()||!Number.isFinite(Number(event.at))||Number(event.at)<=0))
-      return res.status(503).json({error:'Website analytics events contain unverifiable entries. No partial reporting was returned.'});
-    const events=eventsRaw;
+    const normalizeIds=ids=>{
+      const clean=[],seen=new Set();let unavailable=0;
+      for(const rawId of ids.slice(0,2000)){
+        if(typeof rawId!=='string'||!rawId.trim()){unavailable++;continue}
+        const id=rawId.trim();if(seen.has(id)){unavailable++;continue}seen.add(id);clean.push(id);
+      }
+      return {ids:clean,unavailable};
+    };
+    const sessionDirectory=normalizeIds(sessionIds),prospectDirectory=normalizeIds(prospectIds);
+    let unavailableEventRecords=0;
+    const events=eventsRaw.filter(event=>{
+      const valid=event&&typeof event==='object'&&!Array.isArray(event)&&!!String(event.type||'').trim()&&Number.isFinite(Number(event.at))&&Number(event.at)>0;
+      if(!valid)unavailableEventRecords++;return valid;
+    });
     const loadIndexed=async(ids,prefix,validRecord)=>{
-      const records=[],batchSource=ids.slice(0,2000);
+      const records=[],batchSource=ids;
       let missing=0;
       for(let offset=0;offset<batchSource.length;offset+=100){
         const batchIds=batchSource.slice(offset,offset+100),batch=await Promise.all(batchIds.map(id=>kv.get(prefix+id)));
@@ -1875,13 +1884,15 @@ async function adminWebsiteAnalytics(req,res){
       (record.convertedAt==null||Number.isFinite(Number(record.convertedAt))&&Number(record.convertedAt)>=0)&&
       (record.monthlyValue==null||Number.isFinite(Number(record.monthlyValue))&&Number(record.monthlyValue)>=0)&&
       (record.setupValue==null||Number.isFinite(Number(record.setupValue))&&Number(record.setupValue)>=0);
-    const [sessionLoad,prospectLoad]=await Promise.all([loadIndexed(sessionIds,'site:session:',validSession),loadIndexed(prospectIds,'site:prospect:',validProspect)]);
+    const [sessionLoad,prospectLoad]=await Promise.all([loadIndexed(sessionDirectory.ids,'site:session:',validSession),loadIndexed(prospectDirectory.ids,'site:prospect:',validProspect)]);
     const sessions=sessionLoad.records,retainedProspects=prospectLoad.records.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)),
       prospects=retainedProspects.filter(p=>p.privacyState!=='deidentified'),
       deidentifiedProspectRecords=retainedProspects.length-prospects.length;
-    const coverage={retainedEvents:eventsRaw.length,retainedSessionIds:sessionIds.length,retainedProspectIds:prospectIds.length,
-      unavailableSessionRecords:sessionLoad.missing,unavailableProspectRecords:prospectLoad.missing,deidentifiedProspectRecords,
-      isIncomplete:prospectLoad.missing>0,
+    const unavailableSessionRecords=sessionDirectory.unavailable+sessionLoad.missing,
+      unavailableProspectRecords=prospectDirectory.unavailable+prospectLoad.missing;
+    const coverage={retainedEvents:eventsRaw.length,verifiedEvents:events.length,retainedSessionIds:sessionIds.length,verifiedSessionIds:sessionDirectory.ids.length,retainedProspectIds:prospectIds.length,verifiedProspectIds:prospectDirectory.ids.length,
+      unavailableEventRecords,unavailableSessionRecords,unavailableProspectRecords,deidentifiedProspectRecords,
+      isIncomplete:unavailableEventRecords>0||unavailableSessionRecords>0||unavailableProspectRecords>0,
       isRetentionCapped:eventsRaw.length>=5000||sessionIds.length>=2000||prospectIds.length>=2000};
     const now=Date.now(),days=clampInt(req.query?.days,7,90,30),cut=now-days*86400000,activeCut=now-15*60000;
     const periodSessions=sessions.filter(s=>Number(s.firstAt||0)>=cut),periodEvents=events.filter(e=>Number(e.at||0)>=cut);
