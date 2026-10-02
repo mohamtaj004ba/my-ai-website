@@ -25,3 +25,19 @@ test('admin configuration snapshot validates rows inside arrays and receptionist
   assert.match(block,/\['automations',automations,value=>value==null\|\|Array\.isArray\(value\)&&value\.every/);
   assert.match(block,/\['phone inventory',phones,value=>value==null\|\|Array\.isArray\(value\)&&value\.every/);
 });
+
+test('admin configuration snapshot verifies workspace identity and unambiguous phone routing',()=>{
+  const start=api.indexOf('async function getWorkspaceConfigSnapshot('),end=api.indexOf('\nasync function bootstrapPreview(',start),block=api.slice(start,end);
+  assert.match(block,/String\(value\.id\|\|''\)===String\(workspaceId\)/);
+  assert.match(block,/new Set\(value\.map\(item=>String\(item\.id\)\)\)\.size===value\.length/);
+  assert.match(block,/phoneMatches\.length>1/);
+  assert.match(block,/ambiguous phone routing/);
+});
+
+test('admin tech support rejects malformed owner mapping and malformed audit rows',()=>{
+  const start=api.indexOf('async function adminTechSupport('),end=api.indexOf('\nasync function adminSendClientLogin(',start),block=api.slice(start,end);
+  assert.match(block,/Client access mapping is unavailable\. No partial repair diagnostics were returned/);
+  assert.match(block,/Client access mapping revision is unavailable\. No partial repair diagnostics were returned/);
+  assert.match(block,/auditRaw\.every\(item=>item&&typeof item==='object'/);
+  assert.match(block,/auditRaw\.length<=200/);
+});
