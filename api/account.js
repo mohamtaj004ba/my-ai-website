@@ -961,9 +961,12 @@ async function adminProvisioning(req,res){
       const [settings,agent,onboarding,routing,override]=await Promise.all([
         kv.get('settings:'+id),kv.get('agent:'+id),kv.get('onboarding:workspace:'+id),
         kv.get('routing-request:'+id),kv.get('provisioning:override:'+id)
-      ]),objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value);
-      if(!objectOrNull(settings)||!objectOrNull(agent)||!objectOrNull(onboarding)||!objectOrNull(routing)||
-        !objectOrNull(override)||(override&&!ONBOARDING_STAGES.includes(override.stage)))
+      ]),objectOrNull=value=>value==null||!!value&&typeof value==='object'&&!Array.isArray(value),
+        onboardingValid=objectOrNull(onboarding)&&(onboarding==null||onboarding.checklist==null||!!onboarding.checklist&&typeof onboarding.checklist==='object'&&!Array.isArray(onboarding.checklist))&&
+          (onboarding==null||onboarding.onboardingInviteDelivery==null||!!onboarding.onboardingInviteDelivery&&typeof onboarding.onboardingInviteDelivery==='object'&&!Array.isArray(onboarding.onboardingInviteDelivery))&&
+          (onboarding==null||onboarding.completionPercent==null||Number.isFinite(Number(onboarding.completionPercent))&&Number(onboarding.completionPercent)>=0&&Number(onboarding.completionPercent)<=100),
+        overrideValid=objectOrNull(override)&&(override==null||ONBOARDING_STAGES.includes(override.stage)&&Number.isFinite(Number(override.updatedAt))&&Number(override.updatedAt)>0);
+      if(!objectOrNull(settings)||!objectOrNull(agent)||agent?.qualificationQuestions!=null&&!Array.isArray(agent.qualificationQuestions)||!onboardingValid||!objectOrNull(routing)||!overrideValid)
         return {error:'Provisioning source data could not be verified for '+(ws.name||id)+'. No partial onboarding view was returned.'};
     const hasIntake=!!(onboarding?.checklist?.intake||(settings&&((settings.businessName||'').trim()||(settings.primaryEmail||'').trim())));
     const hasAgent=!!(onboarding?.checklist?.agentDraft||(agent&&((agent.name||'').trim()||(agent.openingMessage||'').trim())));
@@ -1019,13 +1022,15 @@ async function adminProvisioning(req,res){
 }
 
 function validProvisioningHistory(raw){
-  return raw==null||(Array.isArray(raw)&&raw.length<=50&&raw.every(x=>x&&typeof x==='object'&&!Array.isArray(x)&&typeof x.stage==='string'));
+  const allowedStages=new Set([...ONBOARDING_STAGES,'Automatic']);
+  return raw==null||(Array.isArray(raw)&&raw.length<=50&&raw.every(x=>x&&typeof x==='object'&&!Array.isArray(x)&&allowedStages.has(String(x.stage||''))&&Number.isFinite(Number(x.at))&&Number(x.at)>0&&typeof x.by==='string'));
 }
 async function adminSaveProvisioningStage(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const body=req.body||{},id=String(body.id||'').slice(0,80),stage=String(body.stage||'');
   if(!id||!ONBOARDING_STAGES.includes(stage))return res.status(400).json({error:'Invalid provisioning stage'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Workspace record is unavailable. No provisioning changes were made.'});
   const key='provisioning:override:'+id,historyKey='provisioning:history:'+id;
   const [previous,history]=await Promise.all([kv.get(key),kv.get(historyKey)]);
   if(previous!=null&&(!previous||typeof previous!=='object'||Array.isArray(previous)||!ONBOARDING_STAGES.includes(previous.stage)||!Number.isFinite(Number(previous.updatedAt))||Number(previous.updatedAt)<=0))
@@ -1053,6 +1058,7 @@ async function adminClearProvisioningStage(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Workspace id required'});
   const ws=await kv.get('workspace:'+id);if(!ws)return res.status(404).json({error:'Workspace not found'});
+  if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Workspace record is unavailable. No provisioning changes were made.'});
   const key='provisioning:override:'+id,historyKey='provisioning:history:'+id;
   const [previous,history]=await Promise.all([kv.get(key),kv.get(historyKey)]);
   if(previous!=null&&(!previous||typeof previous!=='object'||Array.isArray(previous)||!ONBOARDING_STAGES.includes(previous.stage)||!Number.isFinite(Number(previous.updatedAt))||Number(previous.updatedAt)<=0))
