@@ -1130,12 +1130,15 @@ async function adminSavePhoneNumber(req,res){
     if(typeof workspaceBefore!=='object'||Array.isArray(workspaceBefore)||String(workspaceBefore.id||'')!==workspaceId)return res.status(503).json({error:'Target workspace record is unavailable. Phone routing was not changed.'});
     workspaceName=workspaceBefore.name||'';
     [targetOnboardingBefore,savedAgent,routingRequest]=await Promise.all([kv.get('onboarding:workspace:'+workspaceId),kv.get('agent:'+workspaceId),kv.get('routing-request:'+workspaceId)]);
-    if(!objectOrNull(targetOnboardingBefore)||!objectOrNull(savedAgent)||!objectOrNull(routingRequest))return res.status(503).json({error:'Target routing sources are unavailable. Phone routing was not changed.'});
+    if(!objectOrNull(targetOnboardingBefore)||targetOnboardingBefore?.checklist!=null&&(!targetOnboardingBefore.checklist||typeof targetOnboardingBefore.checklist!=='object'||Array.isArray(targetOnboardingBefore.checklist))||
+      !objectOrNull(savedAgent)||savedAgent?.qualificationQuestions!=null&&!Array.isArray(savedAgent.qualificationQuestions)||!objectOrNull(routingRequest))
+      return res.status(503).json({error:'Target routing sources are unavailable. Phone routing was not changed.'});
   }
   if(previous&&previous.workspaceId&&previous.workspaceId!==workspaceId){
     [previousWorkspaceBefore,previousOnboardingBefore]=await Promise.all([kv.get('workspace:'+previous.workspaceId),kv.get('onboarding:workspace:'+previous.workspaceId)]);
     if(!previousWorkspaceBefore||typeof previousWorkspaceBefore!=='object'||Array.isArray(previousWorkspaceBefore)||String(previousWorkspaceBefore.id||'')!==String(previous.workspaceId)||
-      !objectOrNull(previousOnboardingBefore))return res.status(503).json({error:'Previous workspace routing sources are unavailable. Phone routing was not changed.'});
+      !objectOrNull(previousOnboardingBefore)||previousOnboardingBefore?.checklist!=null&&(!previousOnboardingBefore.checklist||typeof previousOnboardingBefore.checklist!=='object'||Array.isArray(previousOnboardingBefore.checklist)))
+      return res.status(503).json({error:'Previous workspace routing sources are unavailable. Phone routing was not changed.'});
   }
   const item={...(previous||{}),id,number,workspaceId,workspaceName,provider,label,forwardingFrom,transferNumber,afterHours,smsEnabled,status:previous?.status||'configured',updatedAt:Math.max(Date.now(),Number(previous?.updatedAt||0)+1)};
   const nextList=list.slice(),i=nextList.findIndex(x=>x&&String(x.id)===id);
@@ -1185,7 +1188,8 @@ async function adminDeletePhoneNumber(req,res){
   const onboardingBefore=item.workspaceId?await kv.get('onboarding:workspace:'+item.workspaceId):null;
   if(item.workspaceId&&(!workspaceBefore||typeof workspaceBefore!=='object'||Array.isArray(workspaceBefore)||String(workspaceBefore.id||'')!==String(item.workspaceId)))
     return res.status(503).json({error:'Assigned workspace record is unavailable. Phone routing was not deleted.'});
-  if(onboardingBefore!=null&&(!onboardingBefore||typeof onboardingBefore!=='object'||Array.isArray(onboardingBefore)))
+  if(onboardingBefore!=null&&(!onboardingBefore||typeof onboardingBefore!=='object'||Array.isArray(onboardingBefore)||
+    onboardingBefore.checklist!=null&&(!onboardingBefore.checklist||typeof onboardingBefore.checklist!=='object'||Array.isArray(onboardingBefore.checklist))))
     return res.status(503).json({error:'Assigned onboarding record is unavailable. Phone routing was not deleted.'});
   const updates=[{key:'phone:index',before:rawCurrent,after:next}];
   if(item.workspaceId&&workspaceBefore&&String(workspaceBefore.phone||'')===String(item.number||''))updates.push({key:'workspace:'+item.workspaceId,before:workspaceBefore,after:{...workspaceBefore,phone:'',updatedAt:Date.now()}});
