@@ -37,3 +37,10 @@ test('receptionist read and save reject malformed qualification-question storage
   assert.match(readBlock,/qualification questions are unavailable\. No empty question list was substituted/);
   assert.match(saveBlock,/qualification questions are unavailable\. No changes were made/);
 });
+
+test('receptionist save rejects malformed qualification-question payloads before persistence',()=>{
+  const start=api.indexOf('async function saveAgent('),end=api.indexOf('\nasync function automations(',start),block=api.slice(start,end);
+  assert.match(block,/Qualification questions must be a list of text values\. No receptionist settings were changed/);
+  assert.match(block,/Phone routing data contains unverifiable records\. No changes were made/);
+  assert.match(block,/Routing request data is unavailable\. No receptionist settings were changed/);
+});
