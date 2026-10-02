@@ -1994,7 +1994,10 @@ async function adminMarketingCampaigns(req,res){
     const batchIds=ids.slice(offset,offset+40),batch=await Promise.all(batchIds.map(id=>kv.get('marketing:campaign:'+id)));
     for(let i=0;i<batch.length;i++){
       const campaign=batch[i];
-      if(!campaign||typeof campaign!=='object'||Array.isArray(campaign)||String(campaign.id||'')!==String(batchIds[i]))return res.status(503).json({error:'Campaign records could not be verified. No partial campaign list was returned.'});
+      if(!campaign||typeof campaign!=='object'||Array.isArray(campaign)||String(campaign.id||'')!==String(batchIds[i])||!String(campaign.name||'').trim()||
+        !['Email','Organic','Paid Search','Paid Social','Referral','Partnership','Outbound','Other'].includes(String(campaign.channel||''))||
+        !['draft','scheduled','active','paused','completed'].includes(String(campaign.status||''))||!Number.isFinite(Number(campaign.budget))||Number(campaign.budget)<0)
+        return res.status(503).json({error:'Campaign records could not be verified. No partial campaign list was returned.'});
       campaigns.push(campaign);
     }
   }
@@ -2016,9 +2019,15 @@ async function adminMarketingCampaignSave(req,res){
   if(editing&&(b.expectedUpdatedAt===undefined||Number(b.expectedUpdatedAt||0)!==Number(saved.updatedAt||saved.createdAt||0)))return res.status(409).json({error:'Campaign changed since you opened it. Refresh the list and reopen this campaign.'});
   if(!editing&&list.length>=500)return res.status(409).json({error:'Campaign directory reached its 500-record capacity.'});
   if(editing&&!list.includes(id))return res.status(409).json({error:'Campaign directory changed. Refresh the list and reopen the campaign.'});
+  const channels=['Email','Organic','Paid Search','Paid Social','Referral','Partnership','Outbound','Other'],statuses=['draft','scheduled','active','paused','completed'];
+  if(b.channel!==undefined&&!channels.includes(String(b.channel)))return res.status(400).json({error:'Campaign channel is invalid. No changes were made.'});
+  if(b.status!==undefined&&!statuses.includes(String(b.status)))return res.status(400).json({error:'Campaign status is invalid. No changes were made.'});
+  const startAt=b.startAt==null||b.startAt===''?null:Number(b.startAt),endAt=b.endAt==null||b.endAt===''?null:Number(b.endAt);
+  if(startAt!==null&&(!Number.isFinite(startAt)||startAt<=0)||endAt!==null&&(!Number.isFinite(endAt)||endAt<=0))return res.status(400).json({error:'Campaign dates are invalid. No changes were made.'});
+  if(startAt!==null&&endAt!==null&&endAt<startAt)return res.status(400).json({error:'Campaign end date cannot precede its start date. No changes were made.'});
   const budget=Number(b.budget??saved?.budget??0);
   if(!Number.isFinite(budget)||budget<0)return res.status(400).json({error:'Campaign budget must be a nonnegative number.'});
-  const old=saved||{},now=Date.now(),campaign={...old,id,name,channel:['Email','Organic','Paid Search','Paid Social','Referral','Partnership','Outbound','Other'].includes(b.channel)?b.channel:(old.channel||'Email'),status:['draft','scheduled','active','paused','completed'].includes(b.status)?b.status:(old.status||'draft'),utmSource:String(b.utmSource??old.utmSource??'').trim().slice(0,120),utmMedium:String(b.utmMedium??old.utmMedium??'').trim().slice(0,120),utmCampaign:String(b.utmCampaign??old.utmCampaign??name.toLowerCase().replace(/[^a-z0-9]+/g,'-')).trim().slice(0,160),budget,startAt:Number(b.startAt)||old.startAt||null,endAt:Number(b.endAt)||old.endAt||null,goal:String(b.goal??old.goal??'').trim().slice(0,300),notes:String(b.notes??old.notes??'').trim().slice(0,2000),createdAt:old.createdAt||now,updatedAt:Math.max(now,Number(old.updatedAt||old.createdAt||0)+1),updatedBy:admin.email};
+  const old=saved||{},now=Date.now(),campaign={...old,id,name,channel:b.channel===undefined?(old.channel||'Email'):String(b.channel),status:b.status===undefined?(old.status||'draft'):String(b.status),utmSource:String(b.utmSource??old.utmSource??'').trim().slice(0,120),utmMedium:String(b.utmMedium??old.utmMedium??'').trim().slice(0,120),utmCampaign:String(b.utmCampaign??old.utmCampaign??name.toLowerCase().replace(/[^a-z0-9]+/g,'-')).trim().slice(0,160),budget,startAt:b.startAt===undefined?(old.startAt||null):startAt,endAt:b.endAt===undefined?(old.endAt||null):endAt,goal:String(b.goal??old.goal??'').trim().slice(0,300),notes:String(b.notes??old.notes??'').trim().slice(0,2000),createdAt:old.createdAt||now,updatedAt:Math.max(now,Number(old.updatedAt||old.createdAt||0)+1),updatedBy:admin.email};
   const nextIndex=[id,...list.filter(x=>x!==id)];
   const audit={id:crypto.randomUUID(),workspaceId:admin.workspaceId,actorEmail:admin.email,actorRole:'admin',action:editing?'marketing_campaign_update':'marketing_campaign_create',section:'marketing',before:editing?{id,name:old.name||'',status:old.status||'draft',budget:Number(old.budget||0),updatedAt:old.updatedAt||old.createdAt||0}:null,after:{id,name:campaign.name,status:campaign.status,budget:campaign.budget,updatedAt:campaign.updatedAt},meta:{campaignId:id},at:now};
   try{
