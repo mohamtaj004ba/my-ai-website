@@ -97,3 +97,13 @@ test('automation persist supports inline modal errors without suppressing list-a
   assert.match(persist,/\{alertOnError=true\}=\{\}/);
   assert.match(persist,/if\(alertOnError\)alert\(/);
 });
+
+
+test('editing a disabled automation preserves disabled state and delete requires confirmation',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  const del=ui.slice(ui.indexOf('async function deleteAutomation('),ui.indexOf('let editingAutomationId=null;'));
+  const save=ui.slice(ui.indexOf('async function saveAutomation(){'),ui.indexOf("\ndocument.querySelectorAll(",ui.indexOf('async function saveAutomation(){')));
+  assert.match(del,/confirm\('Delete automation "'\+\(target\.name\|\|'Untitled automation'\)\+'"'\)/);
+  assert.match(save,/const existing=editingAutomationId\?automationsData\.find/);
+  assert.match(save,/enabled:existing\?existing\.enabled!==false:true/);
+});
