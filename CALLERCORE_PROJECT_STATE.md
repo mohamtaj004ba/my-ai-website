@@ -1317,3 +1317,17 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - **Exact verified implementation/test SHA `fcaa00e79520749729e36b92cd9124fcc6568b03`:** CallerCore test suite **1333 passed / 0 failed**; build SUCCESS; CodeQL push/PR SUCCESS; authenticated Preview Browser QA SUCCESS; Vercel Preview SUCCESS.
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Next phase: perform a deliberate Admin Onboarding live-status pass covering invite, delivery-resolution, build-approval, checklist, manual-stage, and automatic-stage-restore feedback while retaining confirmation prompts for consequential admin actions and preserving canonical response/revision safeguards.
+
+
+## Native-alert elimination / premium feedback checkpoint — 2026-10-03
+
+- Continued the authorized premium-polish sweep on `feature/callercore-dashboards`; production `main` remained unchanged and PR #5 remained draft/unmerged.
+- **Admin Onboarding:** added one accessible page-level action-status surface and moved invite sending, delivery resolution, build approval, checklist updates, manual stage changes, and automatic-stage restoration from blocking browser alerts to inline live feedback. The explicit Mailgun delivery-resolution confirmation remains.
+- **Admin workspace management:** added accessible drawer action feedback for workspace save/update, restore, client-view launch, and recovery-drill results. Confirmed deletion notices now use the global Admin sync banner after the drawer closes. The two-step deletion safeguard (`confirm` + typed `DELETE`) and restoration confirmation remain.
+- **Client Automations / Locations / Billing:** added accessible page-level live-status regions. Automation list-action failures and the 20-automation limit, location list-action failures, and Stripe Billing Portal failures now stay inline. Automation/location destructive confirmations remain.
+- Added regression coverage that requires **zero native `alert()` calls** in `dashboard.js` while explicitly preserving consequential `confirm()` / typed-delete safeguards.
+- Native browser-alert usage fell from **40** at the start of this polish sequence to **0**. Current native dialogs are **16 confirmations + 1 typed deletion prompt**, all tied to consequential actions such as unsaved navigation, deletes, provider disconnect, routing/access changes, rollback, and workspace deletion/restoration.
+- **Exact verified implementation head `adb6f377703922a2a1bc3ac54391b698240d86cf`:** CallerCore test suite **1340 passed / 0 failed**; build SUCCESS; CodeQL push/PR SUCCESS; authenticated Preview Browser QA SUCCESS; Vercel Preview SUCCESS.
+- Earlier exact verified heads in this sequence: `1fa1ba813078fea489820f5c54e754da40501018` (Onboarding inline feedback, **1334/1334**) and `f54ee7c90afe176cc8354d5416be243cc7b111c9` (workspace admin inline feedback, **1336/1336**).
+- No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
+- Next phase: move beyond native-dialog cleanup into the remaining premium-polish backlog: cross-dashboard visual consistency, mobile/keyboard reachability, loading/error truthfulness, stale controls, and any residual browser QA findings. Do not reopen already-verified backend mutation contracts unless a new regression is found.
