@@ -52,3 +52,13 @@ test('dashboard navigation exposes current page and mobile menu expansion state'
   assert.match(dashboard,/menu\.setAttribute\('aria-expanded','false'\)/);
   assert.match(dashboard,/e\.currentTarget\.setAttribute\('aria-expanded',String\(open\)\)/);
 });
+
+
+test('client and admin mobile navigation triggers declare the controlled sidebar and initial state',()=>{
+  for(const file of ['dashboard.html','admin-dashboard.html']){
+    const html=fs.readFileSync(path.join(__dirname,'..',file),'utf8');
+    assert.match(html,/id="dashboardSidebar"/);
+    assert.match(html,/class="mobile-menu" type="button" aria-label="Toggle navigation" aria-controls="dashboardSidebar" aria-expanded="false"/);
+    assert.match(html,/class="nav-item active" data-view="overview" aria-current="page"/);
+  }
+});
