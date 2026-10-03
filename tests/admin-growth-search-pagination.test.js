@@ -65,3 +65,8 @@ test('new search resets incremental page limits for a new result set',()=>{
 test('Growth filters expose selected state beyond visual styling',()=>{
   assert.match(source,/data-growth-filter[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
 });
+
+
+test('Growth empty columns distinguish search misses from an empty stage',()=>{
+  assert.match(source,/q\?'No matching prospects':'Drop prospect here'/);
+});

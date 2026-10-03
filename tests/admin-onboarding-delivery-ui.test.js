@@ -44,3 +44,9 @@ test('send UI refreshes authoritative onboarding state after failed or ambiguous
 test('onboarding filters expose selected state beyond visual styling',()=>{
   assert.match(source,/data-onboarding-filter[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
 });
+
+
+test('onboarding empty state distinguishes filters from a truly empty source',()=>{
+  assert.match(source,/all\.length\?'[<]div class="empty-state"[>][<]h3[>]No onboarding accounts match this view/);
+  assert.match(source,/No onboarding accounts yet/);
+});
