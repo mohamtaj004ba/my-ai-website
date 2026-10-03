@@ -133,6 +133,20 @@ test('confirmed expense deletion is not reported as failed when ledger refresh f
 });
 
 
+test('failed expense deletion uses admin sync feedback and preserves the verified ledger',async()=>{
+  const f=frontendFixture();
+  const deleting=vm.runInContext("deleteExpense('expense-1')",f.context);
+  f.pending.resolve({ok:false,json:async()=>({error:'Expense changed before deletion'})});
+  await deleting;
+  assert.equal(f.context.adminFinanceData.expenses.length,1);
+  assert.equal(f.context.adminExpenseDeletePending.size,0);
+  assert.deepEqual(f.alerts,[]);
+  assert.equal(f.sync.length,1);
+  assert.equal(f.sync[0][0],'error');
+  assert.match(f.sync[0][1],/Expense changed before deletion/);
+});
+
+
 test('expense form rejects blank amount before sending any API request',async()=>{
   const f=frontendFixture();
   f.node('expenseAmountInput').value='  ';

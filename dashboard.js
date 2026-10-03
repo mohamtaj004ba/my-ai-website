@@ -3541,7 +3541,7 @@ async function deleteExpense(id){
   const key=String(id),item=(adminFinanceData.expenses||[]).find(x=>String(x.id)===key);if(!item||adminExpenseDeletePending.has(key)||!confirm('Delete '+item.name+' from company expenses?'))return;
   adminExpenseDeletePending.add(key);renderAdminFinance();
   try{const r=await fetch('/api/account?action=admin-finance-expense-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,expectedUpdatedAt:Number(item.updatedAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not delete expense.');if(data.ok!==true||!data.deleted||typeof data.deleted!=='object'||Array.isArray(data.deleted)||String(data.deleted.id||'')!==key)throw new Error('Expense deletion response was incomplete. Refresh the ledger before retrying.');adminFinanceData.expenses=(adminFinanceData.expenses||[]).filter(x=>String(x.id)!==key);try{await refreshAdminView('finance',{force:true,announce:false})}catch(refreshError){renderAdminFinance();setAdminSyncState('error','Expense deleted, but the finance view could not refresh. Refresh to verify the latest ledger.')}}
-  catch(err){alert(err.message||'Could not delete expense.')}
+  catch(err){setAdminSyncState('error',err.message||'Could not delete expense.')}
   finally{adminExpenseDeletePending.delete(key);renderAdminFinance()}
 }
 function updateAdminRefreshStamp(){
