@@ -3391,7 +3391,7 @@ function openPhoneModal(id=null){
   const sel=document.getElementById('phoneWorkspaceInput');
   sel.innerHTML='<option value="">Unassigned</option>'+adminClientsData.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
   sel.value=item?.workspaceId||'';
-  modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.getElementById('phoneNumberInput')?.focus?.();
 }
 function closePhoneModal(){if(phoneSaving)return;const m=document.getElementById('phoneModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 async function savePhone(){
@@ -3540,7 +3540,7 @@ function openExpenseModal(id=''){
   modal.dataset.editId=id||'';modal.dataset.expectedUpdatedAt=String(item?.updatedAt||0);
   document.getElementById('expenseModalTitle').textContent=item?'Edit expense':'Add expense';
   document.getElementById('expenseNameInput').value=item?.name||'';document.getElementById('expenseVendorInput').value=item?.vendor||'';document.getElementById('expenseCategoryInput').value=item?.category||'Software';document.getElementById('expenseAmountInput').value=item?.amount??'';document.getElementById('expenseFrequencyInput').value=item?.frequency||'monthly';document.getElementById('expenseDateInput').value=item?.date||'';document.getElementById('expenseStatusInput').value=item?.status||'active';document.getElementById('expenseNotesInput').value=item?.notes||'';const status=document.getElementById('expenseFormStatus');if(status)status.textContent='';
-  modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.getElementById('expenseNameInput')?.focus?.();
 }
 function closeExpenseModal(){if(adminExpenseSaving)return;const modal=document.getElementById('expenseModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true')}
 function setAdminExpenseMutationState(saving){
