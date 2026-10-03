@@ -61,3 +61,16 @@ test('completion modal blocks duplicate saves and announces unconfirmed updates'
 test('completion modal backdrop follows the same guarded close path',()=>{
   assert.match(js,/teamStatusModal'\)\?\.addEventListener\('click',e=>\{if\(e\.target===e\.currentTarget\)closeTeamStatusModal\(\)\}\)/);
 });
+
+
+test('internal note composer locks during save and validates blank drafts',()=>{
+  const block=js.slice(js.indexOf('function setNoteComposerPending('),js.indexOf('async function deleteCallNote('));
+  assert.match(block,/composer\.setAttribute\('aria-busy',String\(!!pending\)\)/);
+  assert.match(block,/input\.disabled=!!pending/);
+  assert.match(block,/save\.disabled=!!pending/);
+  assert.match(block,/cancel\.disabled=!!pending/);
+  assert.match(block,/input\.setAttribute\('aria-invalid','true'\)/);
+  assert.match(block,/Write a note first\./);
+  assert.match(block,/setNoteComposerPending\(true\)/);
+  assert.match(block,/finally\{followupMutationPending\.delete\(key\);setNoteComposerPending\(false\)/);
+});
