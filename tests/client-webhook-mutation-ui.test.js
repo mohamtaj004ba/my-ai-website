@@ -60,3 +60,40 @@ test('webhook failure message survives the final integration rerender',()=>{
   assert.match(block,/failureMessage=err\.message/);
   assert.match(block,/renderIntegrations\(\);if\(failureMessage&&status\)status\.textContent=failureMessage/);
 });
+
+
+test('webhook save sends the displayed integration revision with the mutation',async()=>{
+  const status={textContent:''},url={value:'https://example.test/hook',removeAttribute(){},setAttribute(){},focus(){}},requests=[];
+  const ctx=vm.createContext({
+    webhookSaving:false,webhookEditing:true,integrationsData:{webhookUrl:'https://old.test/hook',updatedAt:17},demoMode:false,
+    has:()=>true,openModal:()=>{},setWebhookEditing:()=>{},renderIntegrations:()=>{},
+    document:{getElementById:id=>id==='webhookUrl'?url:id==='webhookEditStatus'?status:null},
+    fetch:async(_url,options)=>{requests.push(JSON.parse(options.body));return {ok:true,json:async()=>({ok:true,integrations:{webhookUrl:'https://example.test/hook',updatedAt:18}})}},
+    String,Number,Object,Array,Promise,Error,Math,Date
+  });
+  vm.runInContext(block,ctx);
+  assert.equal(await vm.runInContext('saveWebhook()',ctx),true);
+  assert.deepEqual(requests,[{webhookUrl:'https://example.test/hook',expectedUpdatedAt:17}]);
+});
+
+test('webhook save rejects non-HTTPS URLs locally and focuses the field',async()=>{
+  const status={textContent:''},url={value:'http://example.test/hook',setAttribute(k,v){this[k]=v},removeAttribute(k){delete this[k]},focus(){this.focused=true}},requests=[];
+  const ctx=vm.createContext({
+    webhookSaving:false,webhookEditing:true,integrationsData:{webhookUrl:'',updatedAt:0},demoMode:false,
+    has:()=>true,openModal:()=>{},setWebhookEditing:()=>{},renderIntegrations:()=>{},
+    document:{getElementById:id=>id==='webhookUrl'?url:id==='webhookEditStatus'?status:null},
+    fetch:async(...args)=>{requests.push(args);throw Error('must not fetch invalid URL')},
+    String,Number,Object,Array,Promise,Error,Math,Date
+  });
+  vm.runInContext(block,ctx);
+  assert.equal(await vm.runInContext('saveWebhook()',ctx),false);
+  assert.equal(requests.length,0);
+  assert.equal(url['aria-invalid'],'true');
+  assert.equal(url.focused,true);
+  assert.match(status.textContent,/must use HTTPS/i);
+});
+
+test('webhook field exposes URL semantics and shared validation status',()=>{
+  const html=fs.readFileSync('dashboard.html','utf8');
+  assert.match(html,/id="webhookUrl"[^>]*type="url"[^>]*aria-describedby="webhookEditStatus"/);
+});
