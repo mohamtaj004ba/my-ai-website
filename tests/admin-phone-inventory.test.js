@@ -18,7 +18,7 @@ test('malformed inventory and stale revisions fail closed',async()=>{
 test('phone inventory renders batches and searches formatted phone numbers',()=>{
   const js=fs.readFileSync('dashboard.js','utf8'),nodes=new Map();
   const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',innerHTML:'',textContent:'',hidden:false,querySelectorAll:()=>[],querySelector:()=>null});return nodes.get(id)};
-  const ctx=vm.createContext({phoneVisibleLimit:50,phoneFilterSignature:'',adminPhoneData:Array.from({length:125},(_,i)=>({id:String(i),number:'(509) 555-'+String(i).padStart(4,'0'),workspaceId:i%2?'ws':'',workspaceName:'Customer '+i})),esc:x=>String(x??''),document:{getElementById:node}});
+  const ctx=vm.createContext({phoneVisibleLimit:50,phoneFilterSignature:'',adminPhoneDeletePending:new Set(),adminPhoneData:Array.from({length:125},(_,i)=>({id:String(i),number:'(509) 555-'+String(i).padStart(4,'0'),workspaceId:i%2?'ws':'',workspaceName:'Customer '+i})),esc:x=>String(x??''),document:{getElementById:node}});
   vm.runInContext(js.slice(js.indexOf('function renderPhones(){'),js.indexOf("document.getElementById('phoneSearch')?.addEventListener")),ctx);
   vm.runInContext('renderPhones()',ctx);assert.equal(node('phoneListCount').textContent,'Showing 50 of 125 numbers');
   ctx.phoneVisibleLimit=100;vm.runInContext('renderPhones()',ctx);assert.equal(node('phoneListCount').textContent,'Showing 100 of 125 numbers');
