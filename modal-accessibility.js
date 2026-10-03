@@ -4,8 +4,9 @@
 
   function isRendered(element){
     if(element.hidden||element.closest('[hidden],[aria-hidden="true"]'))return false;
-    const style=window.getComputedStyle(element);
-    return style.display!=='none'&&style.visibility!=='hidden'&&(!element.getClientRects||element.getClientRects().length>0);
+    const view=element.ownerDocument?.defaultView||globalThis;
+    const style=typeof view.getComputedStyle==='function'?view.getComputedStyle(element):null;
+    return (!style||(style.display!=='none'&&style.visibility!=='hidden'))&&(!element.getClientRects||element.getClientRects().length>0);
   }
 
   function focusable(modal){
