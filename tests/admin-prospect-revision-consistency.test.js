@@ -53,6 +53,12 @@ test('concurrent prospect change and uncertain write reject without claiming suc
   const uncertain=await backend({id:'lead-1',expectedUpdatedAt:10,stage:'qualified'},{commit:'error'}).run();
   assert.equal(uncertain.code,503);assert.equal(uncertain.plainWrites,0);
 });
+test('stale prospect edit IDs fail closed with visible refresh guidance',()=>{
+  const editor=ui.slice(ui.indexOf('function openProspectModal('),ui.indexOf('function closeProspectModal('));
+  assert.match(editor,/if\(id&&!p\).*setAdminSyncState\('error','This prospect is no longer available\. Refresh Growth before editing\.'\).*return false/);
+  assert.ok(editor.indexOf('if(id&&!p)')<editor.indexOf("classList.add('open')"));
+});
+
 test('all live admin prospect edit paths submit displayed revisions and guard pending state',()=>{
   const pipeline=ui.slice(ui.indexOf('async function moveGrowthProspectStage('),ui.indexOf('function toLocalDateTimeInput('));
   const editor=ui.slice(ui.indexOf('let prospectModalPending=false;'),ui.indexOf('let adminCampaignMutationPending=false;'));
