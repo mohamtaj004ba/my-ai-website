@@ -21,3 +21,13 @@ test('stale location edits cannot report a no-op save as successful',()=>{
   assert.match(block,/if\(id&&!locationsData\.some\(x=>String\(x\.id\)===String\(id\)\)\).*no longer available.*return false/);
   assert.ok(block.indexOf('if(id&&!locationsData.some')<block.indexOf('persistLocations(next'));
 });
+
+
+test('location list saves include the displayed snapshot for stale-write protection',()=>{
+  const start=dashboard.indexOf('async function persistLocations(');
+  const end=dashboard.indexOf('\nasync function saveLocation(',start);
+  assert.ok(start>=0&&end>start);
+  const block=dashboard.slice(start,end);
+  assert.match(block,/expectedLocations=locationsData\.map/);
+  assert.match(block,/JSON\.stringify\(\{locations:submitted,expectedLocations\}\)/);
+});
