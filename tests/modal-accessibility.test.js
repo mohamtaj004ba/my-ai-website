@@ -157,3 +157,12 @@ test('client conversation and billing placeholders do not impersonate verified l
   assert.doesNotMatch(client,/id="billingPrice">\$599\/month/);
   assert.doesNotMatch(client,/id="billingUsageText">428 \/ 600/);
 });
+
+
+test('client receptionist placeholders stay neutral until workspace configuration loads',()=>{
+  const client=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
+  assert.match(client,/id="overviewAgentName">Checking receptionist…/);
+  assert.match(client,/id="agentName" maxlength="80" value=""/);
+  assert.match(client,/id="connectionAgentTitle">Checking receptionist…/);
+  assert.doesNotMatch(client,/id="overviewAgentName">Maya/);
+});
