@@ -7,7 +7,7 @@ const dashboard=fs.readFileSync('dashboard.js','utf8');
 test('admin Gmail unread state waits for provider confirmation and stale failures cannot double-count',()=>{
   const start=dashboard.indexOf('async function openInboxItem('),end=dashboard.indexOf('\nfunction inboxContactParts(',start),readFlow=dashboard.slice(start,end);
   assert.match(readFlow,/admin-gmail-read/);
-  assert.match(readFlow,/if\(!r\.ok\)throw new Error\('Gmail read sync failed'\)/);
+  assert.match(readFlow,/if\(!r\.ok\|\|data\.ok!==true\)throw new Error\(data\.error\|\|'Gmail read sync failed'\)/);
   assert.match(readFlow,/const current=\(adminInboxData\.gmail\?\.threads\|\|\[\]\)\.find/);
   assert.match(readFlow,/analytics\.unread=\(adminInboxData\.gmail\?\.threads\|\|\[\]\)\.filter/);
   assert.match(readFlow,/it remains unread/);
