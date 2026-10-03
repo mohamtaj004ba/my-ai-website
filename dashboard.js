@@ -853,10 +853,14 @@ function normalizedCallNotes(id){
   if(state.note&&String(state.note).trim()&&!notes.some(n=>n&&n.text===state.note))notes.unshift({id:'legacy',text:String(state.note),at:Number(state.updatedAt||0),by:state.updatedBy||''});
   return notes.filter(n=>n&&String(n.text||'').trim()).sort((a,b)=>Number(b.at||0)-Number(a.at||0));
 }
+function setNoteComposerPending(pending){
+  const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote'),save=document.getElementById('drawerSaveNote'),cancel=document.getElementById('drawerCancelNoteEdit');
+  if(composer)composer.setAttribute('aria-busy',String(!!pending));if(input)input.disabled=!!pending;if(save){save.disabled=!!pending;save.textContent=pending?'Saving…':(activeNoteEditId?'Update note':'Save note')}if(cancel)cancel.disabled=!!pending;
+}
 function resetNoteComposer(){
   activeNoteEditId='';
   const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),save=document.getElementById('drawerSaveNote'),cancel=document.getElementById('drawerCancelNoteEdit');
-  if(input)input.value='';if(status)status.textContent='';if(save)save.textContent='Save note';if(cancel)cancel.hidden=true;if(composer)composer.hidden=true;
+  if(input){input.value='';input.disabled=false;input.removeAttribute('aria-invalid')}if(status){status.textContent='';status.className=''}if(save){save.textContent='Save note';save.disabled=false}if(cancel){cancel.hidden=true;cancel.disabled=false}if(composer){composer.hidden=true;composer.setAttribute('aria-busy','false')}
 }
 function renderCallNotes(id=activeCallId){
   const list=document.getElementById('drawerNotesList'),count=document.getElementById('drawerNoteCount'),toggle=document.getElementById('drawerAddNoteToggle');if(!list)return;const key=String(id||''),pending=followupMutationPending.has(key),notes=normalizedCallNotes(id),atLimit=notes.length>=100;
@@ -868,11 +872,11 @@ function renderCallNotes(id=activeCallId){
 function startEditCallNote(noteId){
   const note=normalizedCallNotes(activeCallId).find(n=>String(n.id)===String(noteId));if(!note)return;
   activeNoteEditId=String(noteId);const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote'),save=document.getElementById('drawerSaveNote'),cancel=document.getElementById('drawerCancelNoteEdit'),status=document.getElementById('drawerNoteStatus');
-  if(composer)composer.hidden=false;if(input){input.value=note.text||'';input.placeholder='Update this internal note…'}if(save)save.textContent='Update note';if(cancel)cancel.hidden=false;if(status)status.textContent='Editing note';setTimeout(()=>input?.focus(),20);
+  if(composer){composer.hidden=false;composer.setAttribute('aria-busy','false')}if(input){input.value=note.text||'';input.placeholder='Update this internal note…';input.disabled=false;input.removeAttribute('aria-invalid')}if(save){save.textContent='Update note';save.disabled=false}if(cancel){cancel.hidden=false;cancel.disabled=false}if(status){status.textContent='Editing note';status.className=''}setTimeout(()=>input?.focus(),20);
 }
 async function saveCallNote(){
-  const id=activeCallId,key=String(id||'');if(!id||followupMutationPending.has(key))return false;const input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),text=String(input?.value||'').trim().slice(0,2000),current=followupState[String(id)]||{},call=callsData.find(x=>String(x.id)===String(id)),nextStatus=normalizedTeamStatusValue(current.status)||(call&&callNeedsTeam(call)?'needs_action':'no_action'),editId=activeNoteEditId;if(!text){if(status)status.textContent='Write a note first.';return}if(status)status.textContent='Saving…';
-  if(demoMode){let notes=normalizedCallNotes(id);if(!editId&&notes.length>=100){if(status)status.textContent='100-note history limit reached. Delete an older note before adding another.';return}if(editId)notes=notes.map(n=>String(n.id)===editId?{...n,text,editedAt:Date.now()}:n);else notes=[...notes,{id:'note_'+Date.now(),text,at:Date.now(),by:currentUserProfile.email||'Team'}];followupState[String(id)]={...current,status:nextStatus,notes,updatedAt:Date.now()};resetNoteComposer();renderCallNotes(id);return}
+  const id=activeCallId,key=String(id||'');if(!id||followupMutationPending.has(key))return false;const input=document.getElementById('drawerInternalNote'),status=document.getElementById('drawerNoteStatus'),text=String(input?.value||'').trim().slice(0,2000),current=followupState[String(id)]||{},call=callsData.find(x=>String(x.id)===String(id)),nextStatus=normalizedTeamStatusValue(current.status)||(call&&callNeedsTeam(call)?'needs_action':'no_action'),editId=activeNoteEditId;if(!text){if(input){input.setAttribute('aria-invalid','true');input.focus()}if(status){status.textContent='Write a note first.';status.className='error'}return false}input?.removeAttribute('aria-invalid');if(status){status.textContent='Saving…';status.className=''};setNoteComposerPending(true);
+  if(demoMode){let notes=normalizedCallNotes(id);if(!editId&&notes.length>=100){setNoteComposerPending(false);if(status){status.textContent='100-note history limit reached. Delete an older note before adding another.';status.className='error'}return false}if(editId)notes=notes.map(n=>String(n.id)===editId?{...n,text,editedAt:Date.now()}:n);else notes=[...notes,{id:'note_'+Date.now(),text,at:Date.now(),by:currentUserProfile.email||'Team'}];followupState[String(id)]={...current,status:nextStatus,notes,updatedAt:Date.now()};resetNoteComposer();renderCallNotes(id);return true}
   followupMutationPending.add(key);renderCallNotes(id);syncDrawerTeamStatus(call||{id});
   try{
     const payload=editId?{callId:id,status:nextStatus,updateNoteId:editId,updateNoteText:text}:{callId:id,status:nextStatus,appendNote:text},r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({})),confirmed=data.state?.[String(id)],confirmedNotes=Array.isArray(confirmed?.notes)?confirmed.notes:[];
@@ -881,7 +885,7 @@ async function saveCallNote(){
     const noteOk=editId?confirmedNotes.some(n=>String(n?.id||'')===String(editId)&&String(n?.text||'')===text):(confirmedNotes.length>previousNotes.length&&confirmedNotes.some(n=>String(n?.text||'')===text));
     if(data.ok!==true||!data.state||typeof data.state!=='object'||Array.isArray(data.state)||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||!revisionOk||!statusOk||!noteOk)throw new Error('Could not confirm the note was saved. Your draft is still open; refresh the call before retrying.');
     followupState=data.state;resetNoteComposer();renderCallNotes(id);return true
-  }catch(err){if(status)status.textContent=err.message||'Could not save note';return false}finally{followupMutationPending.delete(key);renderCallNotes(id);if(call)syncDrawerTeamStatus(call)}
+  }catch(err){if(status){status.textContent=err.message||'Could not save note';status.className='error'}return false}finally{followupMutationPending.delete(key);setNoteComposerPending(false);renderCallNotes(id);if(call)syncDrawerTeamStatus(call)}
 }
 async function deleteCallNote(noteId){
   const id=activeCallId,key=String(id||'');if(!id||!noteId||followupMutationPending.has(key))return false;if(!confirm('Delete this internal note?'))return false;
@@ -1215,7 +1219,7 @@ document.getElementById('contactDrawerBackdrop')?.addEventListener('click',close
 document.getElementById('drawerFollowupButton')?.addEventListener('click',e=>{const id=e.currentTarget.dataset.callId,status=document.getElementById('drawerTeamStatus')?.value;if(id&&status)requestTeamStatusChange(id,status)});
 document.getElementById('drawerSaveNote')?.addEventListener('click',saveCallNote);
 document.getElementById('drawerCancelNoteEdit')?.addEventListener('click',resetNoteComposer);
-document.getElementById('drawerAddNoteToggle')?.addEventListener('click',()=>{const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote');if(!composer)return;if(activeNoteEditId)resetNoteComposer();composer.hidden=false;if(input)input.value='';const save=document.getElementById('drawerSaveNote'),cancel=document.getElementById('drawerCancelNoteEdit'),status=document.getElementById('drawerNoteStatus');if(save)save.textContent='Save note';if(cancel)cancel.hidden=true;if(status)status.textContent='';setTimeout(()=>input?.focus(),20)});
+document.getElementById('drawerAddNoteToggle')?.addEventListener('click',()=>{const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote');if(!composer)return;if(activeNoteEditId)resetNoteComposer();composer.hidden=false;composer.setAttribute('aria-busy','false');if(input){input.value='';input.disabled=false;input.removeAttribute('aria-invalid')}const save=document.getElementById('drawerSaveNote'),cancel=document.getElementById('drawerCancelNoteEdit'),status=document.getElementById('drawerNoteStatus');if(save){save.textContent='Save note';save.disabled=false}if(cancel){cancel.hidden=true;cancel.disabled=false}if(status){status.textContent='';status.className=''}setTimeout(()=>input?.focus(),20)});
 
 function renderAppointments(){
   if(!has('appointments'))return;
