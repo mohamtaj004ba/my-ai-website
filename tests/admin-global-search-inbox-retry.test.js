@@ -116,3 +116,12 @@ test('late global Gmail cache response cannot repopulate after provider disconne
   assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
   assert.equal(f.ctx.adminSearchInboxCacheLoaded,true);
 });
+
+
+test('admin global search keeps listbox selection semantics synchronized with keyboard focus',()=>{
+  assert.match(source,/aria-selected="false" data-global-search-type/);
+  assert.match(source,/row\.setAttribute\('aria-selected',String\(active\)\)/);
+  assert.match(source,/input\.setAttribute\('aria-activedescendant',active\.id\)/);
+  assert.match(source,/input\.removeAttribute\('aria-activedescendant'\)/);
+  assert.match(source,/row\.id='admin-search-result-'\+i/);
+});

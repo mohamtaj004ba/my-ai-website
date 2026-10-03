@@ -3959,13 +3959,13 @@ async function loadAdminSearchInboxCache(){
   finally{if(request===adminSearchInboxRequest){adminSearchInboxLoading=false;if(String(document.getElementById('adminSearch')?.value||'').trim().length>=2)renderAdminGlobalSearch()}}
 }
 function setAdminSearchActive(index){
-  const wrap=document.getElementById('adminSearchResults'),rows=[...(wrap?.querySelectorAll('.admin-search-result')||[])];if(!rows.length)return;
+  const wrap=document.getElementById('adminSearchResults'),input=document.getElementById('adminSearch'),rows=[...(wrap?.querySelectorAll('.admin-search-result')||[])];if(!rows.length){input?.removeAttribute('aria-activedescendant');return}
   adminSearchActiveIndex=(index+rows.length)%rows.length;
-  rows.forEach((row,i)=>row.classList.toggle('active',i===adminSearchActiveIndex));
-  rows[adminSearchActiveIndex]?.scrollIntoView({block:'nearest'});
+  rows.forEach((row,i)=>{const active=i===adminSearchActiveIndex;row.classList.toggle('active',active);row.setAttribute('aria-selected',String(active));if(!row.id)row.id='admin-search-result-'+i});
+  const active=rows[adminSearchActiveIndex];if(input&&active?.id)input.setAttribute('aria-activedescendant',active.id);active?.scrollIntoView({block:'nearest'});
 }
 function closeAdminGlobalSearch(){
-  const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(wrap)wrap.hidden=true;if(input)input.setAttribute('aria-expanded','false');
+  const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(wrap)wrap.hidden=true;if(input){input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant')}
 }
 function renderAdminGlobalSearch(){
   const input=document.getElementById('adminSearch'),wrap=document.getElementById('adminSearchResults');if(!input||!wrap)return;
@@ -3977,7 +3977,7 @@ function renderAdminGlobalSearch(){
   wrap.hidden=false;input.setAttribute('aria-expanded','true');adminSearchActiveIndex=0;
   const body=groups.map(group=>{
     const rows=items.filter(x=>x.group===group);
-    return '<section class="admin-search-group"><div class="admin-search-group-title"><span>'+esc(group)+'</span><small>'+rows.length+'</small></div>'+rows.map(x=>'<button type="button" class="admin-search-result" role="option" data-global-search-type="'+esc(x.type)+'" data-global-search-id="'+esc(x.id||'')+'" data-global-search-view="'+esc(x.view)+'"><span class="admin-search-result-copy"><b>'+esc(x.title)+'</b><small>'+esc(x.meta||'')+'</small></span><em>'+esc(x.type==='page'?'Open page':x.group||'Result')+'</em></button>').join('')+'</section>';
+    return '<section class="admin-search-group"><div class="admin-search-group-title"><span>'+esc(group)+'</span><small>'+rows.length+'</small></div>'+rows.map(x=>'<button type="button" class="admin-search-result" role="option" aria-selected="false" data-global-search-type="'+esc(x.type)+'" data-global-search-id="'+esc(x.id||'')+'" data-global-search-view="'+esc(x.view)+'"><span class="admin-search-result-copy"><b>'+esc(x.title)+'</b><small>'+esc(x.meta||'')+'</small></span><em>'+esc(x.type==='page'?'Open page':x.group||'Result')+'</em></button>').join('')+'</section>';
   }).join('');
   wrap.innerHTML='<div class="admin-search-results-head"><div><b>Search all CallerCore</b><span>'+esc(resultLabel+inboxState)+'</span></div><kbd>↑ ↓ Enter</kbd></div>'+(items.length?body:'<div class="admin-search-empty"><b>No matches for “'+esc(q)+'”</b><span>Try a client name, email, phone number, prospect, document, support subject, workflow, setting, or admin page.</span></div>')+'<div class="admin-search-footer"><span>Search includes navigation, client operations, Growth, Finance, Documents, Client Care, Platform and cached Gmail. Website search covers loaded inquiry/prospect fields; full website reply bodies remain in Inbox.'+(coverage.text?' '+esc(coverage.text)+'.':'')+'</span><kbd>Esc to close</kbd></div>';
   const rows=[...wrap.querySelectorAll('[data-global-search-type]')];
