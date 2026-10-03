@@ -125,7 +125,7 @@ test('mobile Command Center attention rows stay inside their cards',()=>{
 test('mobile admin topbar gives profile controls fixed compact footprints',()=>{
   const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
   assert.match(css,/body\[data-dashboard="admin"\] \.top-actions\{flex:0 1 auto;min-width:0;gap:4px;justify-content:flex-end\}/);
-  assert.match(css,/body\[data-dashboard="admin"\] \.account-button\{\s*width:38px;\s*height:38px;\s*padding:3px;\s*justify-content:center;\s*overflow:hidden;\s*flex:0 0 38px;/);
+  assert.match(css,/body\[data-dashboard="admin"\] \.account-button\{\s*width:40px;\s*height:40px;\s*padding:3px;\s*justify-content:center;\s*overflow:hidden;\s*flex:0 0 40px;/);
   assert.match(css,/body\[data-dashboard="admin"\] \.profile-avatar\{width:30px;height:30px;flex:0 0 30px\}/);
 });
 
