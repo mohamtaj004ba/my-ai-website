@@ -32,3 +32,10 @@ test('follow-up reads and mutations validate individual note rows and sibling en
   assert.match(writeBlock,/Object\.values\(rawState\)\.some/);
   assert.match(writeBlock,/Team follow-up records are incomplete or malformed\. No changes were made/);
 });
+
+
+test('follow-up completed toggle exposes its pressed state',()=>{
+  const html=fs.readFileSync('dashboard.html','utf8'),js=fs.readFileSync('dashboard.js','utf8');
+  assert.match(html,/id="showHandledFollowups" aria-pressed="false"/);
+  assert.match(js,/showHandledFollowups[\s\S]*setAttribute\('aria-pressed',String\(showHandledFollowups\)\)/);
+});

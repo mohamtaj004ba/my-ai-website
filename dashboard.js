@@ -905,7 +905,7 @@ document.getElementById('callSort')?.addEventListener('change',()=>{saveCallLogP
 document.getElementById('callDateSortButton')?.addEventListener('click',()=>{callLogSort=callLogSort==='newest'?'oldest':'newest';const sort=document.getElementById('callSort');if(sort)sort.value=callLogSort;saveCallLogPrefs();renderCalls()});
 document.getElementById('leadSearch')?.addEventListener('input',renderLeads);
 document.getElementById('leadFilter')?.addEventListener('change',renderLeads);
-document.getElementById('showHandledFollowups')?.addEventListener('click',e=>{showHandledFollowups=!showHandledFollowups;e.currentTarget.textContent=showHandledFollowups?'Show active':'Show completed';renderLeads()});
+document.getElementById('showHandledFollowups')?.addEventListener('click',e=>{showHandledFollowups=!showHandledFollowups;e.currentTarget.textContent=showHandledFollowups?'Show active':'Show completed';e.currentTarget.setAttribute('aria-pressed',String(showHandledFollowups));renderLeads()});
 document.getElementById('closeCallDrawer')?.addEventListener('click',closeCall);
 document.getElementById('drawerBackdrop')?.addEventListener('click',closeCall);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeCall();closeContact()}});
