@@ -22,6 +22,6 @@ test('appointment updates fail closed when the record no longer exists',()=>{
 
 test('call read state rolls back when the server cannot persist it',()=>{
   assert.match(dashboard,/async function markCallViewed\(id\)/);
-  assert.match(dashboard,/if\(!r\.ok\)throw new Error\('Could not persist call read state'\)/);
+  assert.match(dashboard,/if\(!r\.ok\|\|data\.ok!==true\)throw new Error\(data\.error\|\|'Could not persist call read state'\)/);
   assert.match(dashboard,/callViewedIds\.delete\(key\);renderCalls\(\)/);
 });
