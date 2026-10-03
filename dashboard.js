@@ -1221,6 +1221,10 @@ document.getElementById('drawerSaveNote')?.addEventListener('click',saveCallNote
 document.getElementById('drawerCancelNoteEdit')?.addEventListener('click',resetNoteComposer);
 document.getElementById('drawerAddNoteToggle')?.addEventListener('click',()=>{const composer=document.getElementById('drawerNoteComposer'),input=document.getElementById('drawerInternalNote');if(!composer)return;if(activeNoteEditId)resetNoteComposer();composer.hidden=false;composer.setAttribute('aria-busy','false');if(input){input.value='';input.disabled=false;input.removeAttribute('aria-invalid')}const save=document.getElementById('drawerSaveNote'),cancel=document.getElementById('drawerCancelNoteEdit'),status=document.getElementById('drawerNoteStatus');if(save){save.textContent='Save note';save.disabled=false}if(cancel){cancel.hidden=true;cancel.disabled=false}if(status){status.textContent='';status.className=''}setTimeout(()=>input?.focus(),20)});
 
+function setAppointmentActionStatus(message='',tone=''){
+  const el=document.getElementById('appointmentActionStatus');if(!el)return;
+  el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
+}
 function renderAppointments(){
   if(!has('appointments'))return;
   const wrap=document.getElementById('appointmentTable');if(!wrap)return;
@@ -1236,14 +1240,14 @@ const appointmentStatusPending=new Set();
 async function updateAppointment(id,status){
   const key=String(id);if(appointmentStatusPending.has(key))return false;
   const item=appointmentsData.find(x=>String(x.id)===key);if(!item||String(item.status||'')===String(status))return false;
-  const previous=item.status;item.status=status;appointmentStatusPending.add(key);renderAppointments();
-  if(demoMode){appointmentStatusPending.delete(key);renderAppointments();return true}
+  const previous=item.status;item.status=status;appointmentStatusPending.add(key);setAppointmentActionStatus('Updating appointment…');renderAppointments();
+  if(demoMode){appointmentStatusPending.delete(key);setAppointmentActionStatus('Appointment updated.','success');renderAppointments();return true}
   try{
     const r=await fetch('/api/account?action=appointment-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,status})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update appointment.');
     if(data.updated!==true||!data.appointment||typeof data.appointment!=='object'||Array.isArray(data.appointment)||String(data.appointment.id||'')!==String(id)||String(data.appointment.status||'')!==String(status))throw new Error('Appointment update response was incomplete. Refresh appointments before retrying.');
-    Object.assign(item,data.appointment);return true;
-  }catch(err){if(item.status===status)item.status=previous;alert(err.message||'Could not update appointment. Check your connection and try again.');return false}
+    Object.assign(item,data.appointment);setAppointmentActionStatus('Appointment updated.','success');return true;
+  }catch(err){if(item.status===status)item.status=previous;setAppointmentActionStatus(err.message||'Could not update appointment. Check your connection and try again.','error');return false}
   finally{appointmentStatusPending.delete(key);renderAppointments()}
 }
 document.getElementById('conversationSearch')?.addEventListener('input',()=>{if(!conversationBackendPaging)return renderConversations();clearTimeout(conversationSearchTimer);conversationSearchTimer=setTimeout(()=>loadConversationPage(),250)});
