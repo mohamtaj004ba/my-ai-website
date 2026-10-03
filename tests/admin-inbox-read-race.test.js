@@ -14,6 +14,7 @@ function fixture(){
     adminInboxOpenRequest:0,currentInboxItem:null,
     adminInboxData:{gmailStatus:{connected:true},gmail:{threads:[original],analytics:{unread:1}},readError:'',aliasError:''},
     fetch:()=>pending.promise,JSON,String,Error,
+    setAdminInboxActionStatus:()=>{},
     renderInboxThread:()=>renders.push('thread'),renderAdminInbox:()=>renders.push('inbox')
   });
   vm.runInContext(source.slice(start,end),ctx);
