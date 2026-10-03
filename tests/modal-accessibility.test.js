@@ -224,3 +224,15 @@ test('Platform Settings cannot save defaults before the verified settings record
   assert.match(dashboard,/if\(!adminPlatformData\)\{if\(status\)\{status\.textContent='Platform settings are still loading/);
   assert.match(dashboard,/if\(save&&!settingsSaving\)save\.disabled=false/);
 });
+
+
+test('full-screen panels use dynamic viewport height and safe-area padding on mobile',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','dashboard.css'),'utf8');
+  assert.match(css,/\.modal-card\{[^}]*max-height:90dvh/);
+  assert.match(css,/\.admin-ai-panel\{[^}]*height:100dvh/);
+  assert.match(css,/\.onboarding-detail-drawer\{[^}]*height:100dvh/);
+  assert.match(css,/\.admin-ai-form\{[^}]*env\(safe-area-inset-bottom\)/);
+  assert.match(css,/\.onboarding-drawer-content\{[^}]*env\(safe-area-inset-bottom\)/);
+  assert.doesNotMatch(css,/\.admin-ai-panel\{[^}]*height:100vh/);
+  assert.doesNotMatch(css,/\.onboarding-detail-drawer\{[^}]*height:100vh/);
+});
