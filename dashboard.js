@@ -2922,6 +2922,7 @@ document.querySelectorAll('[data-settings-jump]').forEach(btn=>btn.addEventListe
 }));
 function renderPlatformSettings(){
   if(!adminPlatformData||adminPlatformDirty)return;
+  const save=document.getElementById('savePlatformSettings');if(save&&!settingsSaving)save.disabled=false;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=String(v??'')};
   set('platformBrandName',adminPlatformData.brandName||'CallerCore');
   set('platformAgentName',adminPlatformData.defaultAgentName||'Maya');
@@ -2944,6 +2945,7 @@ function renderPlatformSettings(){
 }
 async function savePlatformSettings(){
   const emailEl=document.getElementById('platformSupportEmail'),agentEl=document.getElementById('platformAgentName'),brandEl=document.getElementById('platformBrandName'),status=document.getElementById('platformSettingsFormStatus'),btn=document.getElementById('savePlatformSettings');
+  if(!adminPlatformData){if(status){status.textContent='Platform settings are still loading. Refresh before making changes.';status.className='form-status-line error'};return false}
   const email=String(emailEl?.value||'').trim(),agentName=String(agentEl?.value||'').trim(),brandName=String(brandEl?.value||'').trim(),badEmail=email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   settingsFieldError('platformSupportEmail',badEmail?'Enter a valid support email.':'');settingsFieldError('platformAgentName',!agentName?'Enter a default receptionist name.':'');settingsFieldError('platformBrandName',!brandName?'Enter the platform name.':'');
   if(badEmail||!agentName||!brandName){if(status){status.textContent='Please correct the highlighted fields.';status.className='form-status-line error'};return}

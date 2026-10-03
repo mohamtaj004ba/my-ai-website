@@ -215,3 +215,12 @@ test('Command Center metric cards expose keyboard semantics before dashboard Jav
   assert.match(admin,/data-admin-client-filter="active" role="button" tabindex="0" aria-label="Open active client accounts"/);
   assert.match(admin,/data-admin-metric-view="overview" role="button" tabindex="0" aria-label="Open attention queue"/);
 });
+
+
+test('Platform Settings cannot save defaults before the verified settings record loads',()=>{
+  const admin=fs.readFileSync(path.join(__dirname,'..','admin-dashboard.html'),'utf8');
+  const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(admin,/id="savePlatformSettings" disabled/);
+  assert.match(dashboard,/if\(!adminPlatformData\)\{if\(status\)\{status\.textContent='Platform settings are still loading/);
+  assert.match(dashboard,/if\(save&&!settingsSaving\)save\.disabled=false/);
+});
