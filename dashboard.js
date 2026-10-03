@@ -1434,9 +1434,10 @@ function renderAnalytics(){
   const hours=Array.from({length:12},(_,i)=>({h:i+7,n:0}));rows.forEach(x=>{const h=new Date(recordTime(x)).getHours(),slot=hours.find(v=>v.h===h);if(slot)slot.n++});const hourWrap=document.getElementById('insightHourBars');if(hourWrap){const max=Math.max(1,...hours.map(x=>x.n));hourWrap.innerHTML=hours.map(x=>'<div><small>'+new Date(2020,1,1,x.h).toLocaleTimeString(undefined,{hour:'numeric'})+'</small><span><i style="width:'+Math.round(x.n/max*100)+'%"></i></span><b>'+x.n+'</b></div>').join('')}
   const outcomes={};rows.forEach(x=>{const k=callDispositionLabel(x);outcomes[k]=(outcomes[k]||0)+1});const donut=document.getElementById('outcomeDonut'),legend=document.getElementById('outcomeLegend'),colors=['#4f9b6a','#5f7f9a','#d88736','#c65d4a','#87919b','#8b78a8','#5f6b73'];if(donut){let cursor=0,parts=Object.values(outcomes).map((v,i)=>{const pct=total?(v/total*100):0,start=cursor;cursor+=pct;return colors[i%colors.length]+' '+start+'% '+cursor+'%'});donut.style.background='conic-gradient('+(parts.join(',')||'#e8ebee 0 100%')+')';set('outcomeDonutLabel',total)}if(legend)legend.innerHTML=Object.entries(outcomes).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>'<div><span><i style="background:'+colors[i%colors.length]+'"></i>'+esc(k)+'</span><b>'+v+' · '+(total?Math.round(v/total*100):0)+'%</b></div>').join('');
 }
+let webhookSaving=false;
 function setWebhookEditing(editing){
-  webhookEditing=!!editing;const editor=document.getElementById('webhookEditor'),edit=document.getElementById('editWebhookButton'),url=document.getElementById('webhookUrl'),status=document.getElementById('webhookEditStatus');
-  if(editor)editor.hidden=!webhookEditing;if(edit){edit.hidden=webhookEditing;edit.textContent=(integrationsData?.webhookUrl?'Edit webhook':'Configure webhook')}if(url){url.disabled=!webhookEditing;if(webhookEditing)url.value=integrationsData?.webhookUrl||''}if(status)status.textContent='';
+  webhookEditing=!!editing;const editor=document.getElementById('webhookEditor'),edit=document.getElementById('editWebhookButton'),url=document.getElementById('webhookUrl'),status=document.getElementById('webhookEditStatus'),save=document.getElementById('saveWebhookButton'),cancel=document.getElementById('cancelWebhookButton');
+  if(editor)editor.hidden=!webhookEditing;if(edit){edit.hidden=webhookEditing;edit.disabled=webhookSaving;edit.textContent=(integrationsData?.webhookUrl?'Edit webhook':'Configure webhook')}if(url){url.disabled=!webhookEditing||webhookSaving;if(webhookEditing&&!webhookSaving)url.value=integrationsData?.webhookUrl||''}if(save){save.disabled=webhookSaving;save.textContent=webhookSaving?'Saving…':'Save webhook'}if(cancel)cancel.disabled=webhookSaving;if(status&&!webhookSaving)status.textContent='';
   if(webhookEditing)setTimeout(()=>url?.focus(),20);
 }
 function renderIntegrations(){
@@ -1452,14 +1453,17 @@ function renderIntegrations(){
 }
 async function saveWebhook(){
   if(!has('apiAccess'))return openModal('Pro');
-  const webhookUrl=document.getElementById('webhookUrl')?.value.trim()||'',status=document.getElementById('webhookEditStatus');if(status)status.textContent='Saving…';
-  if(demoMode){integrationsData={...(integrationsData||{}),webhookUrl};webhookEditing=false;renderIntegrations();return}
+  if(webhookSaving)return false;
+  const webhookUrl=document.getElementById('webhookUrl')?.value.trim()||'',status=document.getElementById('webhookEditStatus');webhookSaving=true;setWebhookEditing(true);if(status)status.textContent='Saving…';
+  if(demoMode){integrationsData={...(integrationsData||{}),webhookUrl};webhookEditing=false;webhookSaving=false;renderIntegrations();return true}
   try{
     const r=await fetch('/api/account?action=integrations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save webhook.');
-    if(!data.integrations||typeof data.integrations!=='object'||Array.isArray(data.integrations))throw new Error('Webhook save response was incomplete. Your draft remains open; refresh before retrying.');
-    integrationsData={...(integrationsData||{}),...data.integrations};webhookEditing=false;renderIntegrations();
-  }catch(err){if(status)status.textContent=err.message||'Could not save webhook. Check your connection and try again.'}
+    const confirmed=data.integrations;
+    if(data.ok!==true||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.webhookUrl||'')!==webhookUrl||!Number.isFinite(Number(confirmed.updatedAt))||Number(confirmed.updatedAt)<=0)throw new Error('Webhook save response was incomplete. Your draft remains open; refresh before retrying.');
+    integrationsData={...(integrationsData||{}),...confirmed};webhookEditing=false;return true;
+  }catch(err){if(status)status.textContent=err.message||'Could not save webhook. Check your connection and try again.';return false}
+  finally{webhookSaving=false;renderIntegrations()}
 }
 function settingsControlIds(){return ['settingsBusinessName','settingsContactName','settingsPrimaryEmail','settingsBusinessPhone','settingsWebsite','settingsIndustry','settingsServiceArea','settingsStreetAddress','settingsCity','settingsState','settingsPostalCode','settingsTimezone','settingsNotificationEmail','settingsEmailAlerts','settingsNotifyBilling','settingsNotifySetup','settingsNotifyCalls','settingsNotifySupport','settingsNotifyUsage']}
 function businessInitials(name=''){const parts=String(name||'Business').trim().split(/\s+/).filter(Boolean);return (parts.length>1?(parts[0][0]+parts[1][0]):String(parts[0]||'B').slice(0,2)).toUpperCase()}
@@ -1819,7 +1823,7 @@ async function submitSupportTicket(){
 document.getElementById('submitSupportButton')?.addEventListener('click',submitSupportTicket);
 
 document.getElementById('editWebhookButton')?.addEventListener('click',()=>setWebhookEditing(true));
-document.getElementById('cancelWebhookButton')?.addEventListener('click',()=>{webhookEditing=false;renderIntegrations()});
+document.getElementById('cancelWebhookButton')?.addEventListener('click',()=>{if(webhookSaving)return;webhookEditing=false;renderIntegrations()});
 document.getElementById('saveWebhookButton')?.addEventListener('click',saveWebhook);
 document.getElementById('insightsRange')?.addEventListener('change',renderAnalytics);
 document.getElementById('saveSettingsButton')?.addEventListener('click',saveSettings);
