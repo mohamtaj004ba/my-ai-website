@@ -3839,7 +3839,8 @@ async function integrations(req,res){
     googleCalendar:process.env.CALLERCORE_CALENDAR_ENABLED==='true'&&!!saved.googleCalendar,
     stripe:!!ws.stripeCustomerId,
     webhookUrl:saved.webhookUrl||'',
-    apiAccess:entitlementsFor(ws.plan).features.apiAccess
+    apiAccess:entitlementsFor(ws.plan).features.apiAccess,
+    updatedAt:Number(saved.updatedAt||0)
   }});
 }
 
@@ -3853,7 +3854,9 @@ async function saveIntegrations(req,res){
   if(url&&!/^https:\/\//i.test(url))return res.status(400).json({error:'Webhook URL must use HTTPS'});
   const key='integrations:'+access.session.workspaceId,rawSaved=await kv.get(key);
   if(rawSaved!=null&&(!rawSaved||typeof rawSaved!=='object'||Array.isArray(rawSaved)))return res.status(503).json({error:'Integration settings are unavailable. No changes were made.'});
-  const saved=rawSaved||{},next={...saved,webhookUrl:url,updatedAt:Date.now()};
+  const saved=rawSaved||{},expectedUpdatedAt=Number((req.body||{}).expectedUpdatedAt);
+  if(!Number.isFinite(expectedUpdatedAt)||expectedUpdatedAt!==Number(saved.updatedAt||0))return res.status(409).json({error:'Integration settings changed since this page loaded. Reload the latest settings before saving.'});
+  const next={...saved,webhookUrl:url,updatedAt:Math.max(Date.now(),Number(saved.updatedAt||0)+1)};
   const audit={id:crypto.randomUUID(),workspaceId:access.session.workspaceId,actorEmail:access.session.email,actorRole:access.session.role||'client',action:'integrations_save',section:'integrations',before:saved,after:next,at:Date.now()};
   try{
     if(!await compareAndAudit(kv,{key,before:rawSaved,after:next},'audit:'+access.session.workspaceId,audit))return res.status(409).json({error:'Integration settings changed during this save. Reload the latest settings before retrying.'});
@@ -3929,7 +3932,7 @@ async function clientDashboardData(req,res){
     },
     calls:Array.isArray(callsRaw)?callsRaw.map(x=>x?({id:x.id,caller:x.caller,phone:x.phone,address:x.address,category:x.category||'General question',reason:x.reason,disposition:x.disposition||'',duration:x.duration,outcome:x.outcome,agent:x.agent,time:x.time,date:x.date,createdAt:x.createdAt}):x):[],
     leads:Array.isArray(leadsRaw)?leadsRaw:[],agent,settings,
-    integrations:{googleCalendar:calendarLive&&!!savedIntegrations.googleCalendar,stripe:!!ws.stripeCustomerId,webhookUrl:savedIntegrations.webhookUrl||'',apiAccess:!!ent.features.apiAccess},
+    integrations:{googleCalendar:calendarLive&&!!savedIntegrations.googleCalendar,stripe:!!ws.stripeCustomerId,webhookUrl:savedIntegrations.webhookUrl||'',apiAccess:!!ent.features.apiAccess,updatedAt:Number(savedIntegrations.updatedAt||0)},
     locations:Array.isArray(locationsRaw)?locationsRaw:[],locationsLimit:ent.locations,routing,
     conversations:conversationDirectory,conversationPage,
     appointments:calendarLive&&ent.features.appointments&&Array.isArray(appointmentsRaw)?appointmentsRaw:[],
