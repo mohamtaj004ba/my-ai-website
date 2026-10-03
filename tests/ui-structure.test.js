@@ -89,3 +89,15 @@ test('top-level save badges announce state changes',()=>{
   for(const id of ['agentSaveStatus','settingsSaveStatus'])assert.match(client,new RegExp('id="'+id+'" role="status" aria-live="polite" aria-atomic="true"'));
   assert.match(admin,/id="platformSettingsStatus" role="status" aria-live="polite" aria-atomic="true"/);
 });
+
+
+test('admin prospect editor exposes useful field metadata and initial focus',()=>{
+  const admin=html('admin-dashboard.html'),js=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  assert.match(admin,/id="prospectNameInput"[^>]+autocomplete="name"/);
+  assert.match(admin,/id="prospectBusinessInput"[^>]+autocomplete="organization"/);
+  assert.match(admin,/id="prospectEmailInput" type="email" autocomplete="email" inputmode="email"/);
+  assert.match(admin,/id="prospectPhoneInput" type="tel" autocomplete="tel" inputmode="tel" maxlength="24"/);
+  const open=js.slice(js.indexOf('function openProspectModal('),js.indexOf('function closeProspectModal('));
+  assert.match(open,/nameInput\?\.focus\?\.\(\)/);
+  assert.match(open,/s\.className='form-status-line'/);
+});
