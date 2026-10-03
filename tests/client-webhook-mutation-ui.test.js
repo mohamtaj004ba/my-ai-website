@@ -24,7 +24,7 @@ test('second webhook save is blocked while first request is pending',async()=>{
   const status={textContent:''},url={value:'https://example.test/hook'};
   const ctx=vm.createContext({
     webhookSaving:false,webhookEditing:true,integrationsData:{webhookUrl:''},demoMode:false,
-    has:()=>true,openModal:()=>{},setWebhookEditing:()=>{},renderIntegrations:()=>{},
+    has:()=>true,openModal:()=>{},setWebhookEditing:()=>{},renderIntegrations:()=>{status.textContent=''},
     document:{getElementById:id=>id==='webhookUrl'?url:id==='webhookEditStatus'?status:null},
     fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>({ok:true,integrations:{webhookUrl:'https://example.test/hook',updatedAt:2}})}},
     String,Number,Object,Array,Promise,Error
@@ -54,4 +54,9 @@ test('mismatched successful webhook receipt keeps the draft open',async()=>{
   assert.equal(ctx.webhookEditing,true);
   assert.equal(ctx.integrationsData.webhookUrl,'https://old.test/hook');
   assert.match(status.textContent,/incomplete/i);
+});
+
+test('webhook failure message survives the final integration rerender',()=>{
+  assert.match(block,/failureMessage=err\.message/);
+  assert.match(block,/renderIntegrations\(\);if\(failureMessage&&status\)status\.textContent=failureMessage/);
 });
