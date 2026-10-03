@@ -1448,3 +1448,15 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Next phase: continue read-only inspection first for concrete validation/focus, stale draft/control, and keyboard/mobile workflow gaps. Avoid broad cosmetic churn and do not reopen verified backend/provider contracts absent a new regression.
 
+
+
+## Client custom call-date validation checkpoint — 2026-10-03
+
+- Continued the feature-branch-only premium workflow/accessibility sweep on `feature/callercore-dashboards`; production `main` remained unchanged and PR #5 remained draft/unmerged.
+- **Custom Call Log date range:** the client Call Log previously accepted a From date later than its To date and simply rendered an empty-looking result set. Reversed custom ranges now fail closed as a filter condition, mark both date controls with `aria-invalid`, focus the To field on correction, and surface an inline accessible status explaining that the To date must be on or after the From date.
+- Correcting the range or leaving custom-date mode clears stale invalid state. Both date controls now reference the shared live validation status with `aria-describedby`.
+- Added regression coverage in `tests/client-call-date-range-validation.test.js` for semantics, reversed-range focus/error behavior, and stale-state clearing.
+- **Exact verified implementation/test head `43be855a6fe5d3762b268a6ca324a924b2d194e1`:** CallerCore CI push `37145837142` and PR `37145839695` SUCCESS; CodeQL push `37145837159` and PR `37145839691` SUCCESS; Jekyll PR `37145839686` SUCCESS; authenticated Preview Browser QA `37145837149` SUCCESS including visual-drift comparison.
+- Vercel Preview status for that exact SHA is SUCCESS.
+- No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
+- Next phase: continue read-only inspection first for concrete validation/focus, stale draft/control, and keyboard/mobile workflow gaps. Prioritize user-facing truthfulness defects over cosmetic churn.
