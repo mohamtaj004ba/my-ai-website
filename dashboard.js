@@ -2273,7 +2273,8 @@ const prospectStagePending=new Set();
 async function moveGrowthProspectStage(id,bucket){
   const map={new:'new',nurture:'follow_up',qualified:'qualified',converted:'converted',lost:'lost'},stage=map[bucket];
   const key=String(id),item=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===key);
-  if(!item||!stage||item.stage===stage||prospectStagePending.has(key))return;
+  if(!item||!stage||item.stage===stage||prospectStagePending.has(key))return false;
+  const actionStatus=document.getElementById('growthActionStatus');if(actionStatus){actionStatus.textContent='Moving prospect…';actionStatus.className='muted'}
   prospectStagePending.add(key);
   const before=item.stage,expectedUpdatedAt=Number(item.updatedAt||item.createdAt||0);item.stage=stage;renderGrowth();
   let conflict=false;
@@ -2287,13 +2288,14 @@ async function moveGrowthProspectStage(id,bucket){
     // Apply the acknowledged record to the current array, never a detached or newer snapshot.
     const current=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===key);
     if(current&&Number(current.updatedAt||current.createdAt||0)<=Number(data.prospect.updatedAt||0))Object.assign(current,data.prospect);
-    renderGrowth();loadNotifications({silent:true});
+    if(actionStatus){actionStatus.textContent='Prospect moved to '+stage.replaceAll('_',' ')+'.';actionStatus.className='muted'}renderGrowth();loadNotifications({silent:true});return true;
   }catch(err){
     // Only undo our own optimistic edit; a newer refresh or editor save must not be rolled back.
     const current=(adminWebsiteData.prospects||[]).find(x=>String(x.id)===key);
     if(current===item&&item.stage===stage&&Number(item.updatedAt||item.createdAt||0)===expectedUpdatedAt)item.stage=before;
-    renderGrowth();alert(err.message||'Could not move prospect.');
+    renderGrowth();if(actionStatus){actionStatus.textContent=err.message||'Could not move prospect.';actionStatus.className='muted error-text'}
     if(conflict)await refreshAdminView('growth',{force:true,announce:false}).catch(()=>{});
+    return false;
   }finally{prospectStagePending.delete(key);renderGrowth()}
 }
 function toLocalDateTimeInput(ms){if(!ms)return'';const d=new Date(Number(ms));return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
