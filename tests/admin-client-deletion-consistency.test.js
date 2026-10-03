@@ -157,6 +157,11 @@ function uiFixture(fetch){
   return {ctx,node,alerts,closed,refreshes,run:cmd=>vm.runInContext(cmd,ctx)};
 }
 
+test('deletion UI requires the explicit server success receipt before closing the drawer',()=>{
+  const block=frontend.slice(frontend.indexOf('async function deleteAdminClient(){'));
+  assert.match(block,/data\.ok!==true\|\|data\.pendingDeletion!==true/);
+});
+
 test('deletion UI sends displayed revision, locks drawer and suppresses duplicate submissions',async()=>{
   const pending=deferred(),requests=[];
   const f=uiFixture(async(_url,options)=>{requests.push(JSON.parse(options.body));return pending.promise});
