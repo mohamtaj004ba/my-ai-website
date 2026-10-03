@@ -3565,7 +3565,7 @@ async function saveAgent(req,res){
   const previous=await kv.get('agent:'+s.workspaceId)||null;
   if(previous!=null&&(!previous||typeof previous!=='object'||Array.isArray(previous)))return res.status(503).json({error:'Receptionist configuration is unavailable. No changes were made.'});
   if(previous?.qualificationQuestions!=null&&!Array.isArray(previous.qualificationQuestions))return res.status(503).json({error:'Receptionist qualification questions are unavailable. No changes were made.'});
-  if(body.expectedUpdatedAt!==undefined&&Number(body.expectedUpdatedAt||0)!==Number(previous?.updatedAt||0))return res.status(409).json({error:'Receptionist settings changed since you opened them. Reload to load the latest version before retrying.',code:'CONFIG_CONFLICT'});
+  if(!Object.prototype.hasOwnProperty.call(body,'expectedUpdatedAt')||!Number.isFinite(Number(body.expectedUpdatedAt??0))||Number(body.expectedUpdatedAt??0)!==Number(previous?.updatedAt||0))return res.status(409).json({error:'Receptionist settings changed since you opened them. Reload to load the latest version before retrying.',code:'CONFIG_CONFLICT'});
   const sectionFields={identity:['name','role','tone','openingMessage'],knowledge:['serviceArea','businessHours','transferNumber','emergencyInstructions'],qualification:['qualificationQuestions'],handling:['handlingInstructions']};
   if(body.section&&!sectionFields[body.section])return res.status(400).json({error:'Unknown receptionist section'});
   if(Object.hasOwn(body,'qualificationQuestions')&&(!Array.isArray(body.qualificationQuestions)||body.qualificationQuestions.some(question=>typeof question!=='string')))return res.status(400).json({error:'Qualification questions must be a list of text values. No receptionist settings were changed.'});
@@ -3807,7 +3807,7 @@ async function saveSettings(req,res){
   if(settings.logoDataUrl&&!/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(settings.logoDataUrl))return res.status(400).json({error:'Business logo must be a JPG, PNG, or WebP image'});
   const previous=await kv.get('settings:'+s.workspaceId)||null;
   if(previous!=null&&(!previous||typeof previous!=='object'||Array.isArray(previous)))return res.status(503).json({error:'Business settings are unavailable. No changes were made.'});
-  if(body.expectedUpdatedAt!=null&&Number(body.expectedUpdatedAt)!==Number(previous?.updatedAt||0))return res.status(409).json({error:'Settings changed since you opened this draft. Cancel and refresh before editing again.'});
+  if(!Object.prototype.hasOwnProperty.call(body,'expectedUpdatedAt')||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==Number(previous?.updatedAt||0))return res.status(409).json({error:'Settings changed since you opened this draft. Cancel and refresh before editing again.'});
   settings.updatedAt=Math.max(Date.now(),Number(previous?.updatedAt||0)+1);
   settings.aiAnsweringPaused=previous?.aiAnsweringPaused===true;settings.aiPauseFallbackNumber=previous?.aiPauseFallbackNumber||'';settings.aiPausedAt=Number(previous?.aiPausedAt||0);settings.aiPausedBy=previous?.aiPausedBy||'';
   const key='workspace:'+s.workspaceId,ws=await kv.get(key);
