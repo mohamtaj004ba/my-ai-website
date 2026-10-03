@@ -1379,3 +1379,16 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Next phase: continue read-only inspection first for remaining premium workflow inconsistencies, stale-control/error-state gaps, and keyboard/mobile reachability issues; make narrowly scoped changes only when a concrete user-facing defect is found, and preserve all verified backend/provider boundaries.
 
+## Modal focus-return / chart context accessibility checkpoint — 2026-10-03
+
+- Continued the feature-branch-only premium accessibility/usability sweep on `feature/callercore-dashboards`; production `main` remained unchanged and PR #5 remained draft/unmerged.
+- **Overview chart accessible context:** the keyboard-accessible daily chart targets now expose the same operational context users otherwise discover from the mouse tooltip: total calls, captured requests, AI-resolved calls, and still-open actions, alongside the exact date and drill-down action.
+- **Follow-up completion focus preservation:** the prior unsaved **Completed** reset was refined so the existing Follow-ups select is reset in place instead of rebuilding the entire list while the completion modal opens. This preserves the shared modal layer's launcher/return-focus target while still preventing an unsaved **Completed** value from remaining visible.
+- **Admin editor primary focus:** Phone and Expense editors now move focus to their primary fields when opened, matching the existing Prospect/Campaign/Company Record editor behavior.
+- **Shared modal return-focus compatibility:** Prospect, Campaign, Company Record, Phone, and Expense editors now defer their primary-field focus until after the shared modal observer has captured the launcher. Closing these editors can therefore return keyboard focus to the control that opened them instead of losing that context because focus moved inside the modal too early.
+- Added regression coverage for chart accessible statistics, focus-safe completion reset, Phone/Expense primary-field focus, and delayed focus timing across the five admin editors.
+- **Exact verified implementation/test head `15f3d9870aa3dbf4f5eff9d19c97cd011af1c762`:** CallerCore CI push `37115760441` and PR `37115763632` SUCCESS with **1362 tests passed / 0 failed**; CodeQL push `37115760463` and PR `37115763562` SUCCESS; Jekyll PR `37115763519` SUCCESS; authenticated Preview Browser QA `37115760525` SUCCESS including visual-drift comparison.
+- Vercel Preview `dpl_3MMVRWCMBozKh48SnCY1c4gYb7RW` is **READY** at `https://my-ai-website-6pfir9zp3-mohamtaj004bas-projects.vercel.app` for that exact implementation SHA.
+- No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
+- Read-only follow-on inspection identified the next consistency area to verify before changing anything: stale edit IDs in Campaign, Phone, and Expense editors should never open a blank/new-looking editor for a record that disappeared between render and interaction. Keep this as the next narrow truthfulness/revision-guard pass rather than broad cosmetic churn.
+
