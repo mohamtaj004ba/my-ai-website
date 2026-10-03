@@ -111,7 +111,7 @@ test('malformed 200 lead and appointment responses roll optimistic UI changes ba
 test('automation and location saves preserve local records on malformed successful responses',async()=>{
   const alerts=[];
   const autoCtx=vm.createContext({
-    demoMode:false,automationsData:[{id:'existing'}],
+    demoMode:false,automationsData:[{id:'existing'}],setAutomationMutationUi:()=>{},
     fetch:async()=>({ok:true,json:async()=>({})}),alert:m=>alerts.push(m),Array
   });
   vm.runInContext(segment('let automationMutationPending=false;',"\nasync function toggleAutomation("),autoCtx);
