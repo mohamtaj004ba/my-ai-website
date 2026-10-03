@@ -72,6 +72,7 @@ jobs:
             ${{ runner.os }}-callercore-qa-npm-
 
       - name: Install pinned QA dependencies
+        id: qa-deps
         run: npm ci --ignore-scripts
 
       - name: Cache Playwright browser
@@ -111,7 +112,7 @@ jobs:
         run: npm run qa:preview
 
       - name: Compare visual drift
-        if: always()
+        if: always() && steps.qa-deps.outcome == 'success'
         continue-on-error: true
         run: node scripts/visual-diff.mjs qa-artifacts "$PREVIOUS_QA_DIR"
 
