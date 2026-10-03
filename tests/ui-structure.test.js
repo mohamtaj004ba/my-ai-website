@@ -57,6 +57,14 @@ test('client live dashboard bundle applies data without self-recursion',()=>{
 });
 
 
+test('client support and AI feedback required text fields expose validation semantics',()=>{
+  const client=html('dashboard.html');
+  for(const [id,status] of [['supportSubject','supportStatus'],['supportMessage','supportStatus'],['agentFeedbackMessage','agentFeedbackStatus'],['aiFeedbackMessage','aiFeedbackStatus']]){
+    assert.match(client,new RegExp('id="'+id+'"[^>]*\\brequired\\b'));
+    assert.match(client,new RegExp('id="'+id+'"[^>]*aria-describedby="'+status+'"'));
+  }
+});
+
 test('dynamic save and recovery feedback uses live status semantics',()=>{
   const client=html('dashboard.html'),admin=html('admin-dashboard.html');
   assert.match(client,/id="drawerNoteStatus" role="status" aria-live="polite" aria-atomic="true"/);
