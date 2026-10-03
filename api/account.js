@@ -2282,7 +2282,10 @@ async function adminForceLogout(req,res){
   const id=String((req.body||{}).id||'').slice(0,80),ws=await kv.get('workspace:'+id);
   if(!ws)return res.status(404).json({error:'Client not found'});
   if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No access changes were made.'});
-  const email=cleanEmail(ws.ownerEmail||''),key='user:email:'+email,member=email?await kv.get(key):null;
+  const email=cleanEmail(ws.ownerEmail||'');
+  if(!Object.prototype.hasOwnProperty.call(req.body||{},'expectedOwnerEmail')||cleanEmail(req.body.expectedOwnerEmail||'')!==email)
+    return res.status(409).json({error:'The workspace owner changed after the confirmation opened. Refresh diagnostics before revoking sessions.'});
+  const key='user:email:'+email,member=email?await kv.get(key):null;
   if(member!=null&&(!member||typeof member!=='object'||Array.isArray(member)))return res.status(503).json({error:'Client access mapping is unavailable. No access changes were made.'});
   if(!member||String(member.workspaceId||'')!==id)return res.status(409).json({error:'Client access mapping is missing or broken'});
   const previousVersion=Number(member.sessionVersion||0);
@@ -2291,7 +2294,7 @@ async function adminForceLogout(req,res){
   const sessionVersion=previousVersion+1,updated={...member,sessionVersion},now=Date.now();
   const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'force_logout',section:'access',before:{sessionVersion:previousVersion},after:{sessionVersion},meta:{sessionVersion},at:now};
   try{
-    if(!await compareAndAudit(kv,{key,before:member,after:updated},'audit:'+id,audit))
+    if(!await compareAndAuditBatch(kv,[{key:'workspace:'+id,before:ws,after:ws},{key,before:member,after:updated}],'audit:'+id,audit))
       return res.status(409).json({error:'Client access changed during sign-out. Refresh the account and retry.'});
   }catch(err){console.error('admin force logout failed',safeError(err));return res.status(503).json({error:'Could not confirm session revocation and audit together. Refresh the account before retrying.'})}
   return res.status(200).json({ok:true,sessionVersion});

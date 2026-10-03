@@ -588,6 +588,7 @@ async function runAdminInteractions(page){
   await page.locator('#adminClientDrawer.open').waitFor({state:'visible',timeout:8000});
   const clientDrawer=page.locator('#adminClientDrawer'),clientDrawerLabel=await clientDrawer.getAttribute('aria-labelledby');
   if(await clientDrawer.getAttribute('role')!=='dialog'||await clientDrawer.getAttribute('aria-modal')!=='true'||!clientDrawerLabel||!await page.locator('#'+clientDrawerLabel).count())throw new Error('Admin client drawer is missing accessible dialog semantics');
+  await page.waitForFunction(()=>currentAdminTech?.diagnostics?.workspaceId===currentAdminClient?.id&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(document.getElementById('adminRepairEmail')?.value||''),{},{timeout:15000});
   let canceledRepairs=0;const repairRoute=/\/api\/account\?action=admin-repair-access$/;
   await page.route(repairRoute,async route=>{canceledRepairs++;await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'QA intercepted unexpected repair'})})});
   try{
@@ -627,6 +628,7 @@ async function runAdminInteractions(page){
     await page.locator('#adminForceLogoutButton').click();
     await page.locator('#confirmAdminLogout').click();
     await page.waitForFunction(()=>!adminTechSaving&&document.getElementById('adminLogoutModal')?.getAttribute('aria-hidden')==='true');
+    await page.waitForFunction(()=>document.activeElement?.id==='adminForceLogoutButton');
     if(logoutRequests!==1)throw new Error('Confirmed sign-out did not send exactly one intercepted mutation');
   }finally{await page.unroute(logoutRoute)}
   report.admin.interactions.push('sign-out target identity + cancellation + keyboard focus/trap + intercepted confirmation');

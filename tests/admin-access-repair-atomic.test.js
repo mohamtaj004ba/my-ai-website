@@ -38,13 +38,13 @@ function forceFixture({member={workspaceId:'client-1',role:'owner',email:'owner@
       if(key==='user:email:owner@example.test')return clone(member);
       return null;
     },set:()=>assert.fail('force logout must not write member outside audited transaction')},
-    cleanEmail,compareAndAudit:async(_kv,update,auditKey,event)=>{
-      calls.push({update:clone(update),auditKey,event:clone(event)});
+    cleanEmail,compareAndAuditBatch:async(_kv,updates,auditKey,event)=>{
+      calls.push({update:clone(updates[1]),updates:clone(updates),auditKey,event:clone(event)});
       if(transaction==='error')throw Error('storage uncertain');
       return transaction!==false;
     },
     crypto:{randomUUID:()=> 'audit-logout'},safeError:()=>'',console:{error(){}},Date,Number,
-    req:{body:{id:'client-1'}},res:r.res
+    req:{body:{id:'client-1',expectedOwnerEmail:'owner@example.test'}},res:r.res
   });
   vm.runInContext(backend,ctx);
   return {ctx,calls,reads,run:async()=>{await vm.runInContext('adminForceLogout(req,res)',ctx);return r.read()}};
@@ -58,6 +58,14 @@ test('force sign-out increments session revision and workspace audit atomically'
   assert.equal(call.update.key,'user:email:owner@example.test');
   assert.equal(call.update.before.sessionVersion,4);assert.equal(call.update.after.sessionVersion,5);
   assert.equal(call.event.action,'force_logout');assert.deepEqual(call.event.before,{sessionVersion:4});assert.deepEqual(call.event.after,{sessionVersion:5});
+  assert.equal(call.updates[0].key,'workspace:client-1');assert.deepEqual(call.updates[0].before,call.updates[0].after);
+});
+
+test('force sign-out rejects stale or absent displayed owner before reading the user mapping',async()=>{
+  for(const expected of [undefined,'other@example.test']){
+    const f=forceFixture();if(expected===undefined)delete f.ctx.req.body.expectedOwnerEmail;else f.ctx.req.body.expectedOwnerEmail=expected;
+    const out=await f.run();assert.equal(out.code,409);assert.equal(f.calls.length,0);assert.deepEqual(f.reads,['workspace:client-1']);
+  }
 });
 
 test('force sign-out conflicts and uncertain persistence fail without success',async()=>{
@@ -165,7 +173,7 @@ function deferred(){let resolve,reject;const promise=new Promise((ok,no)=>{resol
 function uiFixture(fetch){
   const nodes=new Map(),alerts=[],diagnostics=[],refreshes=[];
   const node=id=>{
-    if(!nodes.has(id))nodes.set(id,{id,value:'',textContent:'',disabled:false,attrs:{},classList:{toggle(){},remove(){},add(){}},setAttribute(k,v){this.attrs[k]=String(v)}});
+    if(!nodes.has(id))nodes.set(id,{id,value:'',textContent:'',disabled:false,attrs:{},focus(){this.focused=true},classList:{toggle(){},remove(){},add(){}},setAttribute(k,v){this.attrs[k]=String(v)}});
     return nodes.get(id);
   };
   node('adminRepairEmail').value='new@example.test';
@@ -186,6 +194,7 @@ test('force sign-out locks access tools and ignores duplicate clicks until confi
   assert.equal(requests.length,0);
   const first=f.run('forceClientLogout()'),duplicate=f.run('forceClientLogout()');
   assert.equal(requests.length,1);assert.equal(f.ctx.adminTechSaving,true);
+  assert.equal(requests[0].body.expectedOwnerEmail,'old@example.test');
   assert.equal(f.node('adminForceLogoutButton').disabled,true);assert.equal(f.node('adminForceLogoutButton').textContent,'Revoking…');
   assert.equal(f.node('adminRepairAccessButton').disabled,true);assert.equal(f.node('closeAdminClient').disabled,true);
   assert.equal(f.node('adminClientDrawer').attrs['aria-busy'],'true');
@@ -196,6 +205,7 @@ test('force sign-out locks access tools and ignores duplicate clicks until confi
   assert.equal(f.node('adminForceLogoutButton').textContent,'Force sign out');
   assert.deepEqual(f.diagnostics,[{id:'client-1',request:7}]);
   assert.equal(f.node('adminTechStatus').textContent,'All existing client sessions have been revoked.');
+  assert.equal(f.node('adminForceLogoutButton').focused,true);
 });
 
 test('sign-out confirmation rejects changed workspace, owner and drawer request without mutation',async()=>{

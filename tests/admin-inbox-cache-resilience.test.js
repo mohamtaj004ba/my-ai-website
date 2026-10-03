@@ -68,6 +68,22 @@ test('invalid Gmail status object preserves last known connection until the prov
   assert.equal(f.liveCalls.length,1);
 });
 
+test('failed initial Gmail status does not turn an unverified connection into a confirmed disconnect',async()=>{
+  for(const failure of ['network','malformed']){
+    const f=fixture({status:failure});f.ctx.adminInboxData.gmailStatus={connected:false};
+    f.ctx.currentInboxItem={kind:'gmail',id:'original'};
+    assert.equal(await f.run(),false);
+    assert.equal(f.ctx.adminInboxData.gmail.threads[0].id,'original');assert.equal(f.ctx.currentInboxItem.id,'original');
+    assert.match(f.ctx.adminInboxData.connectionStatusError,/could not be verified/);assert.match(f.auto.textContent,/unavailable/);
+    assert.equal(f.refresh.disabled,false);assert.equal(f.liveCalls.length,0);
+  }
+});
+
+test('verified Gmail status clears a previous connection warning while retaining live retry behavior',async()=>{
+  const f=fixture();f.ctx.adminInboxData.connectionStatusError='Unverified';await f.run();
+  assert.equal(f.ctx.adminInboxData.connectionStatusError,'');assert.equal(f.liveCalls.length,1);
+});
+
 test('confirmed disconnect clears inbox cache, Gmail detail and old sync timestamp',async()=>{
   const f=fixture();
   f.ctx.currentInboxItem={kind:'gmail',id:'original'};

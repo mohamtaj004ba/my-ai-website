@@ -109,3 +109,9 @@ test('confirmed Gmail disconnect remains successful after refresh failure',async
   assert.equal(f.ctx.adminInboxData.gmailStatus.connected,false);assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
   assert.match(f.node('inboxActionStatus').textContent,/was disconnected.*could not be verified/);
 });
+
+test('Gmail connection mutation is blocked when the latest connection status cannot be verified',async()=>{
+  const f=fixture();f.ctx.adminInboxData.connectionStatusError='Connection unverified';
+  assert.equal(await f.run('disconnectGmailAdmin()'),false);assert.equal(await f.run('connectGmail()'),false);
+  assert.equal(f.requests.length,0);assert.equal(f.node('inboxActionStatus').textContent,'Connection unverified');
+});

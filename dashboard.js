@@ -2553,15 +2553,21 @@ async function loadAdminInbox({silent=false,force=false}={}){
   if(refresh&&!silent){refresh.disabled=true;refresh.textContent='Syncing…'}
   try{
     const sr=await fetch('/api/account?action=admin-gmail-status',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false}));
-    if(sr.ok){const status=await sr.json().catch(()=>null);if(status&&typeof status==='object'&&!Array.isArray(status)&&typeof status.connected==='boolean')adminInboxData.gmailStatus=status}
+    let statusVerified=false;
+    if(sr.ok){const status=await sr.json().catch(()=>null);if(status&&typeof status==='object'&&!Array.isArray(status)&&typeof status.connected==='boolean'){adminInboxData.gmailStatus=status;statusVerified=true}}
+    adminInboxData.connectionStatusError=statusVerified?'':'Gmail connection status could not be verified. Refresh before changing its connection.';
     if(!adminInboxData.gmailStatus.connected){
+      if(!statusVerified){
+        adminInboxData.loading=false;if(auto)auto.textContent='Gmail connection status unavailable';
+        if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}renderAdminInbox();return false;
+      }
       adminSearchInboxRequest++;adminSearchInboxCacheLoaded=true;adminSearchInboxLoading=false;adminSearchInboxCacheError=false;
       adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;adminInboxData.liveError='';adminInboxData.aliasError='';adminInboxData.readError='';adminInboxData.loading=false;
       if(currentInboxItem?.kind==='gmail'){currentInboxItem=null;renderInboxThread()}
       if(auto)auto.textContent='Gmail disconnected';
       if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}renderAdminInbox();
       const search=document.getElementById('adminSearch');if(search&&String(search.value||'').trim().length>=2)renderAdminGlobalSearch();
-      return;
+      return true;
     }
 
     // Render the last good Gmail snapshot immediately. Never blank the inbox while Google refreshes.
@@ -2643,17 +2649,17 @@ function gmailInboxItems(){
 }
 function renderAdminInbox(){
   const st=adminInboxData.gmailStatus||{},ga=adminInboxData.gmail?.analytics||{},website=websiteInboxItems(),gmail=gmailInboxItems(),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
-  set('inboxWebsiteCount',website.length);set('inboxGmailUnread',ga.unread||0);set('inboxGmailAccount',st.connected?(st.gmailEmail||'Connected'):(st.configured?'Not connected':'OAuth setup required'));
+  set('inboxWebsiteCount',website.length);set('inboxGmailUnread',ga.unread||0);set('inboxGmailAccount',adminInboxData.connectionStatusError?'Connection unverified':st.connected?(st.gmailEmail||'Connected'):(st.configured?'Not connected':'OAuth setup required'));
   set('inboxResponseTime',ga.avgFirstResponseSeconds?formatDuration(ga.avgFirstResponseSeconds):'—');set('inboxThreadCount',website.length+gmail.length);
   const connect=document.getElementById('gmailConnectButton'),disconnect=document.getElementById('gmailDisconnectButton'),title=document.getElementById('gmailStatusTitle'),copy=document.getElementById('gmailStatusCopy'),aliasList=document.getElementById('gmailAliasList');
-  if(connect){connect.hidden=!!st.connected;connect.textContent=st.configured?'Connect Gmail':'Set up Gmail OAuth'}
-  if(disconnect)disconnect.hidden=!st.connected;
-  if(title)title.textContent=st.connected?'Gmail connected':st.configured?'Gmail ready to connect':'Gmail OAuth setup required';
+  if(connect){connect.hidden=!!st.connected;connect.textContent=st.configured?'Connect Gmail':'Set up Gmail OAuth';connect.disabled=gmailConnectionMutationPending||!!adminInboxData.connectionStatusError}
+  if(disconnect){disconnect.hidden=!st.connected;disconnect.disabled=gmailConnectionMutationPending||!!adminInboxData.connectionStatusError}
+  if(title)title.textContent=adminInboxData.connectionStatusError?'Gmail connection not verified':st.connected?'Gmail connected':st.configured?'Gmail ready to connect':'Gmail OAuth setup required';
   if(copy){
     const coverage=adminInboxData.gmail?.coverage||{},loaded=Number(coverage.loadedThreads??gmail.length),estimated=Number(coverage.estimatedThreads),
       coverageText=coverage.verified!==true?' Gmail search coverage is not verified yet; refresh to confirm the current 30-day view.':coverage.limited===true?(' Only '+loaded+(Number.isFinite(estimated)&&estimated>loaded?' of about '+estimated:'')+' matching Gmail threads are loaded; use Gmail for older or additional matching mail.'):' Gmail coverage for the loaded 30-day query is verified.';
-    const syncWarnings=[adminInboxData.aliasError,adminInboxData.readError].filter(Boolean).join(' ');
-    copy.textContent=st.connected?('Connected as '+(st.gmailEmail||'Gmail')+'. '+Number(ga.inbound||0)+' received · '+Number(ga.outbound||0)+' sent in the loaded 30-day view. Threads remain in Google and sync into this inbox.'+coverageText+(syncWarnings?' '+syncWarnings:'')):st.configured?'Authorize the Gmail account you want CallerCore Admin to use.':'Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY in Vercel before connecting.';
+    const syncWarnings=[adminInboxData.connectionStatusError,adminInboxData.aliasError,adminInboxData.readError].filter(Boolean).join(' ');
+    copy.textContent=adminInboxData.connectionStatusError?adminInboxData.connectionStatusError+' Previously loaded inbox data is retained.':st.connected?('Connected as '+(st.gmailEmail||'Gmail')+'. '+Number(ga.inbound||0)+' received · '+Number(ga.outbound||0)+' sent in the loaded 30-day view. Threads remain in Google and sync into this inbox.'+coverageText+(syncWarnings?' '+syncWarnings:'')):st.configured?'Authorize the Gmail account you want CallerCore Admin to use.':'Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY in Vercel before connecting.';
   }
   if(aliasList)aliasList.innerHTML=(adminInboxData.aliases||[]).map(a=>'<span class="gmail-alias-chip '+(a.inboundSeen?'ok':'warn')+'"><b>'+esc(a.email)+'</b><small>'+(a.isPrimary?'Primary':(a.verificationStatus==='accepted'?'Send as verified':'Pending'))+' · '+(a.inboundSeen?'Inbound seen':'No inbound seen yet')+'</small></span>').join('');
   let items=[...website,...gmail].sort((a,b)=>b.at-a.at);
@@ -2808,11 +2814,12 @@ let gmailConnectionMutationPending=false;
 function setGmailConnectionControls(pending,active=''){
   gmailConnectionMutationPending=!!pending;
   const connect=document.getElementById('gmailConnectButton'),disconnect=document.getElementById('gmailDisconnectButton');
-  if(connect){connect.disabled=!!pending;if(active==='connect')connect.textContent=pending?'Connecting…':'Connect Gmail'}
-  if(disconnect){disconnect.disabled=!!pending;if(active==='disconnect')disconnect.textContent=pending?'Disconnecting…':'Disconnect'}
+  if(connect){connect.disabled=!!pending||!!adminInboxData.connectionStatusError;if(active==='connect')connect.textContent=pending?'Connecting…':'Connect Gmail'}
+  if(disconnect){disconnect.disabled=!!pending||!!adminInboxData.connectionStatusError;if(active==='disconnect')disconnect.textContent=pending?'Disconnecting…':'Disconnect'}
 }
 async function connectGmail(){
   if(gmailConnectionMutationPending)return false;
+  if(adminInboxData.connectionStatusError){setAdminInboxActionStatus(adminInboxData.connectionStatusError,'error');return false}
   if(!adminInboxData.gmailStatus?.configured){setAdminInboxActionStatus('Gmail OAuth needs three Vercel environment variables first: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY.','error');return false}
   setAdminInboxActionStatus('Opening secure Gmail connection…');
   setGmailConnectionControls(true,'connect');
@@ -2826,13 +2833,14 @@ async function connectGmail(){
 }
 async function disconnectGmailAdmin(){
   if(gmailConnectionMutationPending)return false;
+  if(adminInboxData.connectionStatusError){setAdminInboxActionStatus(adminInboxData.connectionStatusError,'error');return false}
   const gmailEmail=String(adminInboxData.gmailStatus?.gmailEmail||'');
   if(adminInboxData.gmailStatus?.connected!==true){setAdminInboxActionStatus('Refresh Gmail connection status before disconnecting.','error');return false}
   let failureMessage='';
   return openAdminActionConfirmation({title:'Disconnect admin Gmail',action:'Disconnect Gmail',
     copy:'Disconnect '+(gmailEmail||'the connected Gmail account')+' from CallerCore Admin.',
     consequences:'Gmail inbox and sending access in CallerCore will stop, and its cached inbox will be cleared. No messages will be deleted from Gmail. Reconnect through Google sign-in to restore access.',
-    validate:()=>gmailConnectionMutationPending||adminInboxData.gmailStatus?.connected!==true||String(adminInboxData.gmailStatus?.gmailEmail||'')!==gmailEmail?'Gmail connection changed. Cancel and refresh before disconnecting.':'',
+    validate:()=>gmailConnectionMutationPending||!!adminInboxData.connectionStatusError||adminInboxData.gmailStatus?.connected!==true||String(adminInboxData.gmailStatus?.gmailEmail||'')!==gmailEmail?'Gmail connection changed or could not be verified. Cancel and refresh before disconnecting.':'',
     failureMessage:()=>failureMessage,
     run:async()=>{
   setAdminInboxActionStatus('Disconnecting Gmail…');
@@ -2846,7 +2854,7 @@ async function disconnectGmailAdmin(){
     currentInboxItem=null;renderInboxThread();renderAdminInbox();
     const search=document.getElementById('adminSearch');
     if(search&&String(search.value||'').trim().length>=2)renderAdminGlobalSearch();
-    try{await loadAdminInbox();setAdminInboxActionStatus('Gmail disconnected.','success')}
+    try{if(await loadAdminInbox()===false)throw new Error('Connection refresh unavailable');setAdminInboxActionStatus('Gmail disconnected.','success')}
     catch(_){setAdminInboxActionStatus('Gmail was disconnected, but refreshed connection status could not be verified. Reload Inbox before reconnecting.','error')}
     return true;
   }catch(err){failureMessage=err.message||'Could not disconnect Gmail.';setAdminInboxActionStatus(failureMessage,'error');return false}
@@ -3932,18 +3940,19 @@ async function forceClientLogout(){
   const state=adminLogoutConfirmState;if(!state||!currentAdminClient||adminTechSaving||adminClientSaving)return false;
   if(String(currentAdminClient.id)!==state.id||adminClientOpenRequest!==state.request||String(currentAdminClient.ownerEmail||'')!==state.ownerEmail){setAdminLogoutStatus('Workspace or owner context changed. Cancel and reopen the confirmation before revoking sessions.',true);return false}
   const id=state.id,request=state.request;
+  let confirmed=false;
   setAdminLogoutPending(true);setAdminLogoutStatus('Revoking existing client sessions…');
   setAdminTechMutationState(true,'force-logout');adminTechMessage('Revoking existing client sessions…');
   try{
-    const r=await fetch('/api/account?action=admin-force-logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-force-logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedOwnerEmail:state.ownerEmail})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not revoke sessions.');
     if(data.ok!==true||!Number.isSafeInteger(Number(data.sessionVersion))||Number(data.sessionVersion)<1)throw new Error('Session-revocation response was incomplete. Reload diagnostics before retrying.');
-    adminLogoutConfirmState=null;const modal=document.getElementById('adminLogoutModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');
+    confirmed=true;adminLogoutConfirmState=null;const modal=document.getElementById('adminLogoutModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');
     adminTechMessage('All existing client sessions have been revoked.');
     try{await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('All existing client sessions were revoked, but diagnostics could not refresh. Reload diagnostics before another action.',true)}
     return true;
   }catch(err){const message=err.message||'Could not revoke sessions.';setAdminLogoutStatus(message,true);adminTechMessage(message,true);return false}
-  finally{setAdminTechMutationState(false);setAdminLogoutPending(false)}
+  finally{setAdminTechMutationState(false);setAdminLogoutPending(false);if(confirmed&&String(currentAdminClient?.id)===id&&adminClientOpenRequest===request)document.getElementById('adminForceLogoutButton')?.focus?.()}
 }
 async function repairClientAccess(){
   if(!currentAdminClient||adminTechSaving||adminClientSaving)return false;
