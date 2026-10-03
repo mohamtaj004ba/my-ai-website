@@ -36,6 +36,11 @@ test('call note save and delete share the follow-up per-call mutation lock',()=>
   assert.match(block,/deleteCallNote\(noteId\)[\s\S]*followupMutationPending\.has\(key\)/);
   assert.ok((block.match(/followupMutationPending\.add\(key\)/g)||[]).length>=2);
   assert.ok((block.match(/followupMutationPending\.delete\(key\)/g)||[]).length>=2);
+  assert.match(block,/data\.ok!==true/);
+  assert.match(block,/confirmedNotes\.some\(n=>String\(n\?\.id\|\|'\'\)===String\(editId\)/);
+  assert.match(block,/confirmedNotes\.length>previousNotes\.length/);
+  assert.match(block,/noteGone=!confirmedNotes\.some/);
+  assert.match(block,/Number\(confirmed\.updatedAt\)>Number\(current\.updatedAt\|\|0\)/);
   assert.match(ui,/drawerNotesList[\s\S]*pending\?'disabled aria-busy="true"'/);
 });
 
