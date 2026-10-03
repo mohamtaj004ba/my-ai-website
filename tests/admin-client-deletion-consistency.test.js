@@ -139,7 +139,7 @@ test('unauthorized deletion and restoration do not read client records',async()=
 
 function deferred(){let resolve;const promise=new Promise(ok=>resolve=ok);return {promise,resolve}}
 function uiFixture(fetch){
-  const nodes=new Map(),alerts=[],closed=[],refreshes=[];
+  const nodes=new Map(),alerts=[],statuses=[],sync=[],closed=[],refreshes=[];
   const node=id=>{
     if(!nodes.has(id))nodes.set(id,{id,value:'',textContent:'',disabled:false,attrs:{},setAttribute(k,v){this.attrs[k]=String(v)}});
     return nodes.get(id);
@@ -148,13 +148,13 @@ function uiFixture(fetch){
     currentAdminClient:{id:'client-1',name:'Client One',plan:'Starter',status:'active',updatedAt:20,stripe:{}},
     adminClientSaving:false,adminTechSaving:false,
     document:{getElementById:node,querySelectorAll:()=>[]},
-    confirm:()=>true,prompt:()=> 'DELETE',fetch,alert:x=>alerts.push(String(x)),
+    confirm:()=>true,prompt:()=> 'DELETE',fetch,alert:x=>alerts.push(String(x)),setAdminClientActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),setAdminSyncState:(state,message)=>sync.push({state,message:String(message||'')}),
     closeAdminClient:()=>closed.push('closed'),
     refreshAdminCore:async()=>refreshes.push('core'),loadAdminOps:async()=>refreshes.push('ops'),
     Date,Number,String,JSON
   });
   vm.runInContext(frontend,ctx);
-  return {ctx,node,alerts,closed,refreshes,run:cmd=>vm.runInContext(cmd,ctx)};
+  return {ctx,node,alerts,statuses,sync,closed,refreshes,run:cmd=>vm.runInContext(cmd,ctx)};
 }
 
 test('deletion UI requires the explicit server success receipt before closing the drawer',()=>{
@@ -175,14 +175,15 @@ test('deletion UI sends displayed revision, locks drawer and suppresses duplicat
   await Promise.all([first,duplicate]);
   assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.node('adminDeleteClientButton').textContent,'Delete workspace');
   assert.deepEqual(f.closed,['closed']);assert.equal(f.ctx.currentAdminClient,null);assert.deepEqual(f.refreshes,['core','ops']);
-  assert.match(f.alerts[0],/pending deletion/);
+  assert.deepEqual(f.alerts,[]);
+  assert.ok(f.sync.some(item=>/pending deletion/.test(item.message)));
 });
 
 test('failed deletion scheduling unlocks controls and keeps the same client open for retry',async()=>{
   const f=uiFixture(async()=>({ok:false,json:async()=>({error:'Workspace changed'})}));
   await f.run('deleteAdminClient()');
   assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.ctx.currentAdminClient.id,'client-1');
-  assert.equal(f.closed.length,0);assert.deepEqual(f.refreshes,[]);assert.deepEqual(f.alerts,['Workspace changed']);
+  assert.equal(f.closed.length,0);assert.deepEqual(f.refreshes,[]);assert.deepEqual(f.alerts,[]);assert.ok(f.statuses.some(item=>item.tone==='error'&&item.message==='Workspace changed'));
   assert.equal(f.node('adminDeleteClientButton').disabled,false);
 });
 
@@ -191,9 +192,10 @@ test('confirmed deletion is not misreported as failed when the directory refresh
   f.ctx.refreshAdminCore=async()=>{throw Error('offline')};
   await f.run('deleteAdminClient()');
   assert.equal(f.closed.length,1);assert.equal(f.ctx.currentAdminClient,null);
-  assert.match(f.alerts[0],/Provider cleanup needs review/);
-  assert.match(f.alerts.at(-1),/Deletion was scheduled, but the admin directory could not refresh/);
-  assert.doesNotMatch(f.alerts.at(-1),/Could not schedule/);
+  assert.deepEqual(f.alerts,[]);
+  assert.ok(f.sync.some(item=>/Provider cleanup needs review/.test(item.message)));
+  assert.match(f.sync.at(-1).message,/Deletion was scheduled, but the admin directory could not refresh/);
+  assert.doesNotMatch(f.sync.at(-1).message,/Could not schedule/);
 });
 
 

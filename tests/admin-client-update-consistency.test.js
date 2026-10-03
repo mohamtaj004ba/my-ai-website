@@ -53,18 +53,18 @@ function frontendFixture(){
     return nodes.get(id);
   };
   node('adminClientPlan').value='Growth';node('adminClientStatus').value='suspended';
-  const pending=deferred(),alerts=[],reopened=[];
+  const pending=deferred(),alerts=[],statuses=[],reopened=[];
   const context=vm.createContext({
     adminClientSaving:false,adminTechSaving:false,currentAdminClient:{id:'client-1',plan:'Starter',status:'active',updatedAt:10,stripe:{}},
     document:{getElementById:node,querySelectorAll:()=>[]},String,Number,JSON,
-    fetch:()=>pending.promise,alert:value=>alerts.push(value),refreshAdminCore:async()=>{},loadAdminOps:async()=>{},
+    fetch:()=>pending.promise,alert:value=>alerts.push(value),setAdminClientActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),refreshAdminCore:async()=>{},loadAdminOps:async()=>{},
     openAdminClient:async(id,options)=>reopened.push({id,options})
   });
   const stateStart=dashboardSource.indexOf('function setAdminClientMutationState('),stateEnd=dashboardSource.indexOf('\nasync function loadAdminTechSupport(',stateStart);
   vm.runInContext(dashboardSource.slice(stateStart,stateEnd),context);
   const saveStart=dashboardSource.indexOf('async function saveAdminClient('),saveEnd=dashboardSource.indexOf('\nasync function deleteAdminClient(',saveStart);
   vm.runInContext(dashboardSource.slice(saveStart,saveEnd),context);
-  return {context,node,pending,alerts,reopened};
+  return {context,node,pending,alerts,statuses,reopened};
 }
 
 test('admin workspace save locks the drawer, ignores duplicates and refreshes the same client',async()=>{
@@ -77,7 +77,7 @@ test('admin workspace save locks the drawer, ignores duplicates and refreshes th
 test('failed admin workspace save unlocks controls and preserves the selected draft',async()=>{
   const f=frontendFixture(),saving=vm.runInContext('saveAdminClient()',f.context);
   f.pending.resolve({ok:false,json:async()=>({error:'Workspace changed'})});await saving;
-  assert.equal(f.context.adminClientSaving,false);assert.equal(f.node('adminClientPlan').value,'Growth');assert.equal(f.node('adminClientStatus').value,'suspended');assert.deepEqual(f.alerts,['Workspace changed']);assert.equal(f.reopened.length,0);
+  assert.equal(f.context.adminClientSaving,false);assert.equal(f.node('adminClientPlan').value,'Growth');assert.equal(f.node('adminClientStatus').value,'suspended');assert.deepEqual(f.alerts,[]);assert.ok(f.statuses.some(item=>item.tone==='error'&&item.message==='Workspace changed'));assert.equal(f.reopened.length,0);
 });
 
 
@@ -90,9 +90,11 @@ test('confirmed workspace save is not misreported as failed when admin refresh f
   assert.equal(f.context.adminClientSaving,false);
   assert.equal(f.context.currentAdminClient.updatedAt,20);
   assert.equal(f.reopened.length,0);
-  assert.equal(f.alerts.length,1);
-  assert.match(f.alerts[0],/changes were saved, but the admin view could not refresh/);
-  assert.doesNotMatch(f.alerts[0],/Could not update client/);
+  assert.equal(f.alerts.length,0);
+  const status=f.statuses.at(-1);
+  assert.equal(status.tone,'error');
+  assert.match(status.message,/changes were saved, but the admin view could not refresh/);
+  assert.doesNotMatch(status.message,/Could not update client/);
 });
 
 test('combined audit transaction checks revisions and validates the event before any writes',async()=>{

@@ -4124,10 +4124,14 @@ function initAdminLiveRefresh(){
     window.addEventListener('online',()=>{if(document.body.dataset.dashboard==='admin')refreshAdminDashboard().catch(()=>{})});
   }
 }
+function setAdminClientActionStatus(message='',tone=''){
+  const el=document.getElementById('adminClientActionStatus');if(!el)return;
+  el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
+}
 async function saveAdminClient(){
   if(!currentAdminClient||adminClientSaving||adminTechSaving)return;
   const targetId=String(currentAdminClient.id),expectedUpdatedAt=Number(currentAdminClient.updatedAt||currentAdminClient.createdAt||0),plan=document.getElementById('adminClientPlan')?.value,status=document.getElementById('adminClientStatus')?.value;
-  setAdminClientMutationState(true);
+  setAdminClientMutationState(true);setAdminClientActionStatus('Saving workspace changes…');
   try{
     const r=await fetch('/api/account?action=admin-client-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:targetId,plan,status,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update client.');
@@ -4137,10 +4141,11 @@ async function saveAdminClient(){
     try{
       await Promise.all([refreshAdminCore(),loadAdminOps()]);
       if(String(currentAdminClient?.id)===targetId)await openAdminClient(targetId,{allowLocked:true});
+      setAdminClientActionStatus('Workspace changes saved.','success');
     }catch(refreshError){
-      alert('Workspace changes were saved, but the admin view could not refresh. Reopen this client to verify the latest account settings.');
+      setAdminClientActionStatus('Workspace changes were saved, but the admin view could not refresh. Reopen this client to verify the latest account settings.','error');
     }
-  }catch(err){alert(err.message||'Could not update client.')}
+  }catch(err){setAdminClientActionStatus(err.message||'Could not update client.','error')}
   finally{setAdminClientMutationState(false)}
 }
 async function deleteAdminClient(){
@@ -4149,8 +4154,8 @@ async function deleteAdminClient(){
   if(!confirm('Schedule '+name+' for deletion? Customer access will be disabled now and the workspace will enter a 30-day recovery period before permanent deletion can be completed.'))return;
   const typed=prompt('Type DELETE to schedule deletion of '+name+'.');
   if(typed!=='DELETE')return;
-  let confirmed=false;
-  setAdminClientMutationState(true,'delete');
+  let confirmed=false,postDeleteMessage='',postDeleteWarning=false;
+  setAdminClientMutationState(true,'delete');setAdminClientActionStatus('Scheduling workspace deletion…');
   try{
     const r=await fetch('/api/account?action=admin-client-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not schedule workspace deletion.');
@@ -4160,14 +4165,16 @@ async function deleteAdminClient(){
     confirmed=true;
     const notes=[];
     if(data.pendingDeletion&&data.purgeEligibleAt)notes.push(name+' is now pending deletion. Recovery is available until '+new Date(data.purgeEligibleAt).toLocaleString()+'.');
-    if(data.warning)notes.push(data.warning);
-    if(notes.length)alert(notes.join('\n\n'));
-  }catch(err){alert(err.message||'Could not schedule workspace deletion.')}
+    if(data.warning){notes.push(data.warning);postDeleteWarning=true}
+    postDeleteMessage=notes.join(' ');
+  }catch(err){setAdminClientActionStatus(err.message||'Could not schedule workspace deletion.','error')}
   finally{setAdminClientMutationState(false)}
   if(!confirmed)return;
   closeAdminClient();currentAdminClient=null;
-  try{await refreshAdminCore();await loadAdminOps()}
-  catch(_){alert('Deletion was scheduled, but the admin directory could not refresh. Reload the dashboard to verify the pending-deletion account.')}
+  try{
+    await refreshAdminCore();await loadAdminOps();
+    setAdminSyncState(postDeleteWarning?'error':'live',postDeleteMessage||'Workspace deletion scheduled.');
+  }catch(_){setAdminSyncState('error',(postDeleteMessage?postDeleteMessage+' ':'')+'Deletion was scheduled, but the admin directory could not refresh. Reload the dashboard to verify the pending-deletion account.')}
 }
 async function restoreAdminClient(){
   if(!currentAdminClient||currentAdminClient.status!=='pending_deletion'||adminClientSaving||adminTechSaving)return false;
@@ -4181,7 +4188,7 @@ async function restoreAdminClient(){
     const note=document.getElementById('adminClientManageNote');
     if(note&&!pending)note.textContent=(currentAdminClient?.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
   };
-  setAdminClientMutationState(true,'restore');
+  setAdminClientMutationState(true,'restore');setAdminClientActionStatus('Restoring workspace…');
   try{
     const r=await fetch('/api/account?action=admin-client-delete-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not restore workspace.');
@@ -4190,23 +4197,26 @@ async function restoreAdminClient(){
     currentAdminClient={...currentAdminClient,...data.client,status:restoredStatus,deletion:null};
     syncRestoredControls();
     confirmed=true;
-    if(data.warning)alert(data.warning);
+    const restoreWarning=String(data.warning||'');
+    if(restoreWarning)setAdminClientActionStatus(restoreWarning,'error');
     try{
       await Promise.all([refreshAdminCore(),loadAdminOps()]);
       if(String(currentAdminClient?.id)===id)await openAdminClient(id,{allowLocked:true});
+      if(!restoreWarning)setAdminClientActionStatus('Workspace restored.','success');
     }catch(_){
-      alert('Workspace restoration was confirmed, but the admin view could not refresh. Reopen this client to verify access and account status.');
+      setAdminClientActionStatus((restoreWarning?restoreWarning+' ':'')+'Workspace restoration was confirmed, but the admin view could not refresh. Reopen this client to verify access and account status.','error');
     }
     return true;
-  }catch(err){alert(err.message||'Could not restore workspace.');return false}
+  }catch(err){setAdminClientActionStatus(err.message||'Could not restore workspace.','error');return false}
   finally{setAdminClientMutationState(false);if(confirmed)syncRestoredControls()}
 }
 async function viewAdminClient(){
   if(!currentAdminClient)return;
+  setAdminClientActionStatus('Opening client view…');
   const r=await fetch('/api/account?action=admin-view-client',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id})});
   const data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not open client view.');return}
-  if(data.ok!==true||data.redirect!=='/dashboard'||!data.workspace||typeof data.workspace!=='object'||Array.isArray(data.workspace)||String(data.workspace.id||'')!==String(currentAdminClient.id)){alert('Client-view response was incomplete. Stay in admin and retry after refreshing the client.');return}
+  if(!r.ok){setAdminClientActionStatus(data.error||'Could not open client view.','error');return}
+  if(data.ok!==true||data.redirect!=='/dashboard'||!data.workspace||typeof data.workspace!=='object'||Array.isArray(data.workspace)||String(data.workspace.id||'')!==String(currentAdminClient.id)){setAdminClientActionStatus('Client-view response was incomplete. Stay in admin and retry after refreshing the client.','error');return}
   location.href=data.redirect;
 }
 document.getElementById('adminSaveClientButton')?.addEventListener('click',saveAdminClient);
@@ -4216,16 +4226,18 @@ document.getElementById('adminViewClientButton')?.addEventListener('click',viewA
 document.getElementById('adminExportClientButton')?.addEventListener('click',()=>{if(currentAdminClient)window.location.href='/api/account?action=admin-workspace-export&id='+encodeURIComponent(currentAdminClient.id)});
 document.getElementById('adminRecoveryDrillButton')?.addEventListener('click',async()=>{
   if(!currentAdminClient)return;
-  const btn=document.getElementById('adminRecoveryDrillButton');if(btn){btn.disabled=true;btn.textContent='Checking…'}
+  const btn=document.getElementById('adminRecoveryDrillButton');if(btn){btn.disabled=true;btn.textContent='Checking…'}setAdminClientActionStatus('Running recovery drill…');
   try{
     const r=await fetch('/api/account?action=admin-recovery-drill&id='+encodeURIComponent(currentAdminClient.id),{cache:'no-store'}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Recovery drill could not be completed.');
     const sections=data.sections?Object.entries(data.sections).filter(([,ok])=>ok).length:0,total=data.sections?Object.keys(data.sections).length:0;
     const notes=[data.recoverable?'Core export is structurally recoverable.':'Recovery validation failed.',sections+'/'+total+' sections structurally present'];
     if(data.requiresProviderReconnect)notes.push('provider secrets require reconnection');
     if(Array.isArray(data.warnings)&&data.warnings.length)notes.push(data.warnings.join(' '));
     if(Array.isArray(data.issues)&&data.issues.length)notes.push('Issues: '+data.issues.join('; '));
-    alert(notes.join('\n'));
-  }finally{if(btn){btn.disabled=false;btn.textContent='Run recovery drill'}}
+    setAdminClientActionStatus(notes.join(' · '),data.recoverable?'success':'error');
+  }catch(err){setAdminClientActionStatus(err.message||'Recovery drill could not be completed.','error')}
+  finally{if(btn){btn.disabled=false;btn.textContent='Run recovery drill'}}
 });
 
 

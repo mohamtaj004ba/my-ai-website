@@ -48,7 +48,7 @@ const frontend=[
 
 function deferred(){let resolve;const promise=new Promise(ok=>resolve=ok);return {promise,resolve}}
 function fixture(fetch){
-  const nodes=new Map(),alerts=[],reopens=[],refreshes=[];
+  const nodes=new Map(),alerts=[],statuses=[],reopens=[],refreshes=[];
   const node=id=>{
     if(!nodes.has(id))nodes.set(id,{id,value:'',textContent:'',disabled:false,hidden:false,attrs:{},setAttribute(k,v){this.attrs[k]=String(v)}});
     return nodes.get(id);
@@ -59,12 +59,12 @@ function fixture(fetch){
   const ctx=vm.createContext({
     currentAdminClient:current,adminClientSaving:false,adminTechSaving:false,
     document:{getElementById:node,querySelectorAll:()=>[]},fetch,confirm:()=>true,
-    alert:x=>alerts.push(String(x)),refreshAdminCore:async()=>refreshes.push('core'),loadAdminOps:async()=>refreshes.push('ops'),
+    alert:x=>alerts.push(String(x)),setAdminClientActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),refreshAdminCore:async()=>refreshes.push('core'),loadAdminOps:async()=>refreshes.push('ops'),
     openAdminClient:async(id,options)=>{reopens.push({id,options});return true},
     Date,Number,String,JSON
   });
   vm.runInContext(frontend,ctx);
-  return {ctx,node,alerts,reopens,refreshes,run:cmd=>vm.runInContext(cmd,ctx)};
+  return {ctx,node,alerts,statuses,reopens,refreshes,run:cmd=>vm.runInContext(cmd,ctx)};
 }
 
 test('pending-deletion drawer wiring exposes recovery instead of ordinary status edits',()=>{
@@ -101,7 +101,7 @@ test('failed restore keeps pending state visible and fully unlocks the recovery 
   assert.equal(await f.run('restoreAdminClient()'),false);
   assert.equal(f.ctx.currentAdminClient.status,'pending_deletion');assert.notEqual(f.ctx.currentAdminClient.deletion,null);
   assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.node('adminRestoreClientButton').hidden,false);assert.equal(f.node('adminRestoreClientButton').disabled,false);
-  assert.deepEqual(f.alerts,['Workspace changed']);assert.deepEqual(f.reopens,[]);
+  assert.deepEqual(f.alerts,[]);assert.ok(f.statuses.some(item=>item.tone==='error'&&item.message==='Workspace changed'));assert.deepEqual(f.reopens,[]);
 });
 
 test('confirmed restore stays confirmed if later admin refresh fails and surfaces access-repair warning',async()=>{
@@ -110,6 +110,9 @@ test('confirmed restore stays confirmed if later admin refresh fails and surface
   assert.equal(await f.run('restoreAdminClient()'),true);
   assert.equal(f.ctx.currentAdminClient.status,'suspended');assert.equal(f.ctx.currentAdminClient.deletion,null);
   assert.equal(f.node('adminRestoreClientButton').hidden,true);assert.equal(f.node('adminDeleteClientButton').hidden,false);
-  assert.equal(f.alerts.length,2);assert.match(f.alerts[0],/Repair access mapping/);assert.match(f.alerts[1],/restoration was confirmed, but the admin view could not refresh/);
-  assert.doesNotMatch(f.alerts[1],/Could not restore/);
+  assert.deepEqual(f.alerts,[]);
+  assert.ok(f.statuses.some(item=>/Repair access mapping/.test(item.message)));
+  const finalStatus=f.statuses.at(-1);
+  assert.equal(finalStatus.tone,'error');assert.match(finalStatus.message,/restoration was confirmed, but the admin view could not refresh/);
+  assert.doesNotMatch(finalStatus.message,/Could not restore/);
 });
