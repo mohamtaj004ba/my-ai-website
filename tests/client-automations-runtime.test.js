@@ -27,7 +27,7 @@ test('client automation saves serialize mutations and require canonical acknowle
   assert.match(fn,/data\.automations\.length!==submitted\.length/);
   assert.match(fn,/id!==submittedIds\[i\]/);
   assert.match(fn,/Number\.isFinite\(Number\(item\.updatedAt\)\)/);
-  assert.match(fn,/finally\{automationMutationPending=false\}/);
+  assert.match(fn,/finally\{automationMutationPending=false;setAutomationMutationUi\(false\)\}/);
 });
 
 
@@ -59,7 +59,8 @@ test('automation pending state is visible, blocks modal dismissal, and exposes t
   const persist=ui.slice(ui.indexOf('async function persistAutomations(){'),ui.indexOf('async function toggleAutomation('));
   const close=ui.slice(ui.indexOf('function closeAutomation(){'),ui.indexOf('async function saveAutomation(){'));
   assert.match(render,/aria-pressed="'\+String\(!!x\.enabled\)\+'"/);
-  assert.match(render,/Disable '\)\+\(x\.name\|\|'automation'/);
+  assert.match(render,/x\.enabled\?'Disable ':'Enable '/);
+  assert.match(render,/x\.name\|\|'automation'/);
   assert.match(render,/function setAutomationMutationUi\(pending\)/);
   assert.match(render,/modal\.setAttribute\('aria-busy',String\(busy\)\)/);
   assert.match(render,/save\.textContent=busy\?'Saving…':'Save automation'/);
