@@ -2334,8 +2334,8 @@ function setProspectModalPending(pending){
   const save=document.getElementById('saveProspectButton');if(save)save.textContent=pending?'Saving…':'Save prospect';
 }
 function openProspectModal(id='',prefill={}){
-  if(prospectModalPending||(id&&prospectStagePending.has(String(id))))return;
-  const p=id?(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id)):null,data=p||prefill||{},m=document.getElementById('prospectModal');if(!m)return;if(id&&!p)return;m.dataset.editId=p?.id||'';m.dataset.expectedUpdatedAt=p?String(p.updatedAt||p.createdAt||0):'';document.getElementById('prospectModalTitle').textContent=p?'Edit prospect':'Add prospect';
+  if(prospectModalPending||(id&&prospectStagePending.has(String(id))))return false;
+  const p=id?(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id)):null;if(id&&!p){setAdminSyncState('error','This prospect is no longer available. Refresh Growth before editing.');return false}const data=p||prefill||{},m=document.getElementById('prospectModal');if(!m)return false;m.dataset.editId=p?.id||'';m.dataset.expectedUpdatedAt=p?String(p.updatedAt||p.createdAt||0):'';document.getElementById('prospectModalTitle').textContent=p?'Edit prospect':'Add prospect';
   const defaultFollowup=!p&&adminPlatformData?.autoScheduleFirstFollowup!==false&&!data.nextFollowUpAt?Date.now()+Number(adminPlatformData?.leadFollowupHours||24)*3600000:data.nextFollowUpAt;
   const nameInput=document.getElementById('prospectNameInput');if(nameInput)nameInput.value=data.name||'';document.getElementById('prospectBusinessInput').value=data.business||'';document.getElementById('prospectEmailInput').value=data.email||'';document.getElementById('prospectPhoneInput').value=data.phone||'';document.getElementById('prospectStageInput').value=data.stage||'new';document.getElementById('prospectSourceInput').value=(data.source||'Website').replace(/^website$/i,'Website');document.getElementById('prospectCampaignInput').value=data.campaign||data.utmCampaign||'';document.getElementById('prospectPlanInput').value=data.plan||'';document.getElementById('prospectMrrInput').value=data.monthlyValue||'';document.getElementById('prospectFollowupInput').value=toLocalDateTimeInput(defaultFollowup);document.getElementById('prospectOwnerInput').value=data.owner||adminPlatformData?.defaultSalesOwner||'';document.getElementById('prospectLastContactInput').value=toLocalDateTimeInput(data.lastContactAt||data.lastRepliedAt);document.getElementById('prospectTagsInput').value=Array.isArray(data.tags)?data.tags.join(', '):'';document.getElementById('prospectNotesInput').value=data.notes||'';const consent=prospectConsentUi(data),consentLabel=document.getElementById('prospectConsentLabel'),consentMeta=document.getElementById('prospectConsentMeta'),consentBadge=document.getElementById('prospectConsentBadge');if(consentLabel)consentLabel.textContent=consent.label;if(consentMeta)consentMeta.textContent=consent.meta;if(consentBadge){consentBadge.textContent=consent.label;consentBadge.className='tag '+consent.tag}const s=document.getElementById('prospectFormStatus');if(s){s.textContent='';s.className='form-status-line'}m.classList.add('open');m.setAttribute('aria-hidden','false');m.setAttribute('aria-busy','false');if(typeof setTimeout==='function')setTimeout(()=>nameInput?.focus?.(),20);else nameInput?.focus?.();
 }
@@ -2459,9 +2459,8 @@ function companyDocumentFeedback(message,isError=true){
   if(status){status.textContent=message;status.className='form-status-line '+(isError?'error':'success')}
 }
 function openCompanyDocumentModal(id=''){
-  if(companyDocumentMutationPending)return;
-  const x=id?(adminDocumentsData.company||[]).find(v=>String(v.id)===String(id)):null,m=document.getElementById('companyDocumentModal');if(!m)return;
-  if(id&&!x)return;
+  if(companyDocumentMutationPending)return false;
+  const x=id?(adminDocumentsData.company||[]).find(v=>String(v.id)===String(id)):null;if(id&&!x){setAdminSyncState('error','This company record is no longer available. Refresh Documents before editing.');return false}const m=document.getElementById('companyDocumentModal');if(!m)return false;
   m.dataset.editId=x?.id||'';
   m.dataset.expectedUpdatedAt=x?String(x.updatedAt||x.createdAt||0):'';
   document.getElementById('companyDocumentModalTitle').textContent=x?'Edit company record':'Add company record';
