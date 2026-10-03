@@ -41,3 +41,8 @@ test('large contact message sessions show the newest 50 and load older batches',
 test('malformed conversation message collections are ignored in contact history',()=>{
   const {context}=fixture();context.item={key:'p:1',name:'Customer',calls:[],leads:[],conversations:[{messages:{broken:true}}]};assert.doesNotThrow(()=>vm.runInContext('contactHistoryEvents(item)',context));
 });
+
+
+test('contact history filters expose selected state beyond visual styling',()=>{
+  assert.match(source,/data-contact-history-filter[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
+});

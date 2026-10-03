@@ -85,3 +85,9 @@ test('remaining admin asynchronous status text uses polite live regions',()=>{
   assert.match(admin,/id="inboxReplyStatus" role="status" aria-live="polite" aria-atomic="true"/);
   assert.match(admin,/id="financeReconciliationStatus" role="status" aria-live="polite" aria-atomic="true"/);
 });
+
+
+test('platform settings section navigation exposes current state',()=>{
+  const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(dashboard,/data-settings-jump[\s\S]*setAttribute\('aria-current',selected\?'true':'false'\)/);
+});

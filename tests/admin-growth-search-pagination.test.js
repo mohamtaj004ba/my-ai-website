@@ -60,3 +60,8 @@ test('new search resets incremental page limits for a new result set',()=>{
   assert.equal(countCards(f.pipeline.innerHTML),12);
   assert.match(f.pipeline.innerHTML,/Show 12 more/);
 });
+
+
+test('Growth filters expose selected state beyond visual styling',()=>{
+  assert.match(source,/data-growth-filter[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
+});

@@ -755,7 +755,7 @@ async function runAdminInteractions(page){
       }
       if(target.includes('action=admin-onboarding-send')){
         const body=JSON.parse(options.body||'{}');requests.push({action:'send',body});lastAction='send';
-        return {ok:true,json:async()=>({ok:true,deliveryStatus:'sent'})};
+        return {ok:true,json:async()=>({ok:true,deliveryStatus:'sent',onboarding:{id,checklist:{...fixture.checklist,accountReview:true,onboardingSent:true},onboardingStatus:'awaiting_agreement'}})};
       }
       return realFetch(url,options);
     };

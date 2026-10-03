@@ -39,3 +39,8 @@ test('send UI refreshes authoritative onboarding state after failed or ambiguous
   assert.match(body,/data\.deliveryStatus!=='sent'&&data\.alreadySent!==true/);
   assert.match(body,/finally\{adminOnboardingInvitePending\.delete/);
 });
+
+
+test('onboarding filters expose selected state beyond visual styling',()=>{
+  assert.match(source,/data-onboarding-filter[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
+});
