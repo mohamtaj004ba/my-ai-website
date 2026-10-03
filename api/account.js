@@ -2987,7 +2987,8 @@ async function followupUpdate(req,res){
   const key='followup:state:'+s.workspaceId,rawState=await kv.get(key);
   if(rawState!=null&&(!rawState||typeof rawState!=='object'||Array.isArray(rawState)))return res.status(503).json({error:'Team follow-up history is unavailable. No changes were made.'});
   if(rawState&&Object.values(rawState).some(item=>!item||typeof item!=='object'||Array.isArray(item)||item.notes!=null&&!Array.isArray(item.notes)||Array.isArray(item.notes)&&(item.notes.length>100||item.notes.some(note=>!note||typeof note!=='object'||Array.isArray(note)||!String(note.id||'').trim()||typeof note.text!=='string'||!Number.isFinite(Number(note.at))||Number(note.at)<0))))return res.status(503).json({error:'Team follow-up records are incomplete or malformed. No changes were made.'});
-  const base=rawState||{},next={...base},previous=base[callId]&&typeof base[callId]==='object'&&!Array.isArray(base[callId])?base[callId]:{};
+  const base=rawState||{},next={...base},previous=base[callId]&&typeof base[callId]==='object'&&!Array.isArray(base[callId])?base[callId]:{},expectedUpdatedAt=Number(body.expectedUpdatedAt);
+  if(!Object.prototype.hasOwnProperty.call(body,'expectedUpdatedAt')||!Number.isFinite(expectedUpdatedAt)||expectedUpdatedAt!==Number(previous.updatedAt||0))return res.status(409).json({error:'This follow-up changed since the call was opened. Reload the call before retrying.'});
   let notes=Array.isArray(previous.notes)?previous.notes.slice():[];
   if(previous.note&&String(previous.note).trim()&&!notes.some(n=>n&&n.text===previous.note)&&notes.length<100)notes.unshift({id:'legacy',text:String(previous.note).slice(0,2000),at:Number(previous.updatedAt||0),by:previous.updatedBy||''});
   if(legacyNote&&!appendNote&&!notes.length)notes.push({id:'legacy_'+Date.now(),text:legacyNote,at:Date.now(),by:s.email||''});
