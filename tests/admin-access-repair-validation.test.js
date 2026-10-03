@@ -12,7 +12,7 @@ function fixture(value){
   const messages=[],requests=[];
   const ctx=vm.createContext({
     document:{getElementById:id=>id==='adminRepairEmail'?email:null},
-    currentAdminClient:{id:'ws-1',ownerEmail:'old@example.test'},adminTechSaving:false,adminClientSaving:false,adminClientOpenRequest:1,
+    currentAdminClient:{id:'ws-1',ownerEmail:'old@example.test'},currentAdminTech:{diagnostics:{ownerEmail:'old@example.test'}},adminTechSaving:false,adminClientSaving:false,adminClientOpenRequest:1,
     adminTechMessage:(message,error)=>messages.push({message,error}),confirm:()=>{throw Error('confirm must not run for invalid email')},
     String,fetch:(...args)=>{requests.push(args);throw Error('fetch must not run for invalid email')}
   });
