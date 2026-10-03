@@ -2581,8 +2581,9 @@ async function openInboxItem(kind,id){
     const thread=(adminInboxData.gmail?.threads||[]).find(x=>x.id===id);if(!thread)return;
     currentInboxItem={kind,id,thread,prospect:thread.prospect||null,messages:thread.messages||[]};
     if(thread.unread){
-      fetch('/api/account?action=admin-gmail-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({threadId:id})}).then(r=>{
-        if(!r.ok)throw new Error('Gmail read sync failed');
+      fetch('/api/account?action=admin-gmail-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({threadId:id})}).then(async r=>{
+        const data=await r.json().catch(()=>({}));
+        if(!r.ok||data.ok!==true)throw new Error(data.error||'Gmail read sync failed');
         if(adminInboxData.gmailStatus?.connected===false)return;
         const current=(adminInboxData.gmail?.threads||[]).find(item=>String(item.id)===String(id));
         if(current?.unread)current.unread=false;
