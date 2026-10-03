@@ -70,7 +70,7 @@ function frontendFixture(){
 test('admin workspace save locks the drawer, ignores duplicates and refreshes the same client',async()=>{
   const f=frontendFixture(),first=vm.runInContext('saveAdminClient()',f.context),ignored=vm.runInContext('saveAdminClient()',f.context);
   assert.equal(f.context.adminClientSaving,true);assert.equal(f.node('adminSaveClientButton').disabled,true);assert.equal(f.node('closeAdminClient').disabled,true);
-  f.pending.resolve({ok:true,json:async()=>({client:{id:'client-1',plan:'Growth',status:'suspended',updatedAt:20}})});await Promise.all([first,ignored]);
+  f.pending.resolve({ok:true,json:async()=>({ok:true,client:{id:'client-1',plan:'Growth',status:'suspended',updatedAt:20}})});await Promise.all([first,ignored]);
   assert.equal(f.context.adminClientSaving,false);assert.equal(f.context.currentAdminClient.updatedAt,20);assert.equal(f.reopened.length,1);assert.equal(f.reopened[0].id,'client-1');assert.equal(f.reopened[0].options.allowLocked,true);
 });
 
@@ -85,7 +85,7 @@ test('confirmed workspace save is not misreported as failed when admin refresh f
   const f=frontendFixture();
   f.context.refreshAdminCore=async()=>{throw Error('refresh offline')};
   const saving=vm.runInContext('saveAdminClient()',f.context);
-  f.pending.resolve({ok:true,json:async()=>({client:{id:'client-1',plan:'Growth',status:'suspended',updatedAt:20}})});
+  f.pending.resolve({ok:true,json:async()=>({ok:true,client:{id:'client-1',plan:'Growth',status:'suspended',updatedAt:20}})});
   await saving;
   assert.equal(f.context.adminClientSaving,false);
   assert.equal(f.context.currentAdminClient.updatedAt,20);
