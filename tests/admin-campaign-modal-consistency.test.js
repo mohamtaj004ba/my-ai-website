@@ -112,3 +112,14 @@ test('campaign name validation marks and focuses the field before any request',a
   assert.equal(name.focused,true);
   assert.match(f.el('campaignFormStatus').textContent,/required/);
 });
+
+
+test('campaign budget validation marks and focuses a negative value before any request',async()=>{
+  const f=fixture({existing:false});
+  f.el('campaignBudgetInput').value='-1';
+  await vm.runInContext('saveCampaign()',f.context);
+  assert.equal(f.requests.length,0);
+  assert.equal(f.el('campaignBudgetInput')['aria-invalid'],'true');
+  assert.equal(f.el('campaignBudgetInput').focused,true);
+  assert.match(f.el('campaignFormStatus').textContent,/nonnegative/i);
+});
