@@ -3523,7 +3523,10 @@ async function saveLocations(req,res){
   const key='locations:'+s.workspaceId,rawPrevious=await kv.get(key);
   if(rawPrevious!=null&&!Array.isArray(rawPrevious))return res.status(503).json({error:'Location records are unavailable. No changes were made.'});
   if(Array.isArray(rawPrevious)&&rawPrevious.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Location records contain unverifiable entries. No changes were made.'});
-  const previous=rawPrevious||[],audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'locations_save',section:'locations',before:previous,after:items,at:Date.now()};
+  const previous=rawPrevious||[],expectedPresent=Object.prototype.hasOwnProperty.call(body,'expectedLocations'),expectedLocations=body.expectedLocations;
+  if(!expectedPresent||!Array.isArray(expectedLocations)||JSON.stringify(expectedLocations)!==JSON.stringify(previous))
+    return res.status(409).json({error:'Locations changed after this page loaded. Reload the latest locations before saving.'});
+  const audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'locations_save',section:'locations',before:previous,after:items,at:Date.now()};
   try{
     if(!await compareAndAudit(kv,{key,before:rawPrevious,after:items},'audit:'+s.workspaceId,audit))return res.status(409).json({error:'Locations changed during this save. Reload the latest locations before retrying.'});
   }catch(err){console.error('location save failed',safeError(err));return res.status(503).json({error:'Could not confirm locations and audit history together. Reload before retrying.'})}
@@ -3643,7 +3646,10 @@ async function saveAutomations(req,res){
   const key='automations:'+access.session.workspaceId,rawPrevious=await kv.get(key);
   if(rawPrevious!=null&&!Array.isArray(rawPrevious))return res.status(503).json({error:'Automation records are unavailable. No changes were made.'});
   if(Array.isArray(rawPrevious)&&rawPrevious.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Automation records contain unverifiable entries. No changes were made.'});
-  const previous=rawPrevious||[],audit={id:crypto.randomUUID(),workspaceId:access.session.workspaceId,actorEmail:access.session.email,actorRole:access.session.role||'client',action:'automations_save',section:'automations',before:previous,after:items,at:Date.now()};
+  const previous=rawPrevious||[],expectedPresent=Object.prototype.hasOwnProperty.call(body,'expectedAutomations'),expectedAutomations=body.expectedAutomations;
+  if(!expectedPresent||!Array.isArray(expectedAutomations)||JSON.stringify(expectedAutomations)!==JSON.stringify(previous))
+    return res.status(409).json({error:'Automations changed after this page loaded. Reload the latest automations before saving.'});
+  const audit={id:crypto.randomUUID(),workspaceId:access.session.workspaceId,actorEmail:access.session.email,actorRole:access.session.role||'client',action:'automations_save',section:'automations',before:previous,after:items,at:Date.now()};
   try{
     if(!await compareAndAudit(kv,{key,before:rawPrevious,after:items},'audit:'+access.session.workspaceId,audit))return res.status(409).json({error:'Automations changed during this save. Reload the latest automations before retrying.'});
   }catch(err){console.error('automation save failed',safeError(err));return res.status(503).json({error:'Could not confirm automations and audit history together. Reload before retrying.'})}
