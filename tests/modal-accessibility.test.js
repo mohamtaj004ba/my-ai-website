@@ -180,3 +180,15 @@ test('non-button admin client filter cards remain keyboard operable',()=>{
   assert.match(dashboard,/el\.tabIndex=0;el\.setAttribute\('role','button'\)/);
   assert.match(dashboard,/el\.onkeydown=e=>\{if\(e\.key==='Enter'\|\|e\.key===' '/);
 });
+
+
+test('client overview starts in a neutral loading state instead of presenting fake live zeros',()=>{
+  const client=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
+  assert.match(client,/id="clientLiveLabel">Connecting/);
+  assert.match(client,/id="clientLastRefresh">Loading workspace data…/);
+  assert.match(client,/id="sidebarUsageLabel">Checking usage…/);
+  assert.match(client,/id="overviewCalls">—/);
+  assert.match(client,/id="overviewLeads">—/);
+  assert.match(client,/id="overviewWeekCalls">—/);
+  assert.match(client,/id="overviewFollowup">—/);
+});

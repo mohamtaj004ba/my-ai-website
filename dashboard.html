@@ -26,7 +26,7 @@
       <button class="nav-item" data-view="billing">Billing & plan</button>
       <button class="nav-item" data-view="support">Help & support</button>
     </nav>
-    <div class="sidebar-plan"><small>Current plan</small><strong id="sidebarPlan">—</strong><div class="usage-track"><i id="sidebarUsage" style="width:0"></i></div><span id="sidebarUsageLabel">0 min</span><button data-view="billing">Manage plan</button></div>
+    <div class="sidebar-plan"><small>Current plan</small><strong id="sidebarPlan">—</strong><div class="usage-track"><i id="sidebarUsage" style="width:0"></i></div><span id="sidebarUsageLabel">Checking usage…</span><button data-view="billing">Manage plan</button></div>
   </aside>
 
   <main class="dashboard-main" aria-busy="true"><div class="client-loading-state" id="clientLoadingState" role="status" aria-live="polite" aria-atomic="true"><div class="loading-spinner" aria-hidden="true"></div><span>Loading your CallerCore activity…</span></div>
@@ -56,13 +56,13 @@
 <div class="workspace-hold-banner" id="workspaceHoldBanner" role="status" aria-live="polite" hidden><div><span class="workspace-hold-icon">!</span><span><b>Workspace service is suspended</b><small>You can still review your data, manage billing, and contact support. Configuration changes are temporarily locked.</small></span></div><div><button type="button" class="secondary-btn" data-view="support">Contact support</button><button type="button" class="primary" data-view="billing">Review billing</button></div></div>
 
     <section class="view active" id="view-overview">
-      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>A simple view of today: what came in, what CallerCore resolved, and what your team still has open.</p></div><div class="page-actions"><span class="admin-live-status client-live-status" id="clientLiveStatus" role="status" aria-live="polite"><i></i><span id="clientLiveLabel">Live</span><small id="clientLastRefresh">Syncing…</small></span><button class="secondary-btn" id="refreshClientCommand" type="button">Refresh</button></div></div>
+      <div class="page-head overview-head"><div><span class="eyebrow" id="overviewDate">Today</span><h1 id="overviewGreeting">Welcome to CallerCore.</h1><p>A simple view of today: what came in, what CallerCore resolved, and what your team still has open.</p></div><div class="page-actions"><span class="admin-live-status client-live-status" id="clientLiveStatus" role="status" aria-live="polite"><i></i><span id="clientLiveLabel">Connecting</span><small id="clientLastRefresh">Loading workspace data…</small></span><button class="secondary-btn" id="refreshClientCommand" type="button">Refresh</button></div></div>
 
       <div class="metric-grid overview-metrics overview-metrics-clean">
-        <article class="overview-metric metric-calls" role="button" tabindex="0" data-overview-jump="calls"><span>Calls today</span><strong id="overviewCalls">0</strong><small id="overviewCallsMeta">Inbound calls today</small></article>
-        <article class="overview-metric metric-qualified" role="button" tabindex="0" data-overview-jump="calls"><span>Requests captured today</span><strong id="overviewLeads">0</strong><small id="overviewLeadsMeta">Requests or messages captured</small></article>
-        <article class="overview-metric metric-resolved" role="button" tabindex="0" data-overview-jump="calls"><span>Resolved by AI today</span><strong id="overviewWeekCalls">0</strong><small id="overviewWeekCallsMeta">No staff action needed</small></article>
-        <article class="overview-metric metric-followup" role="button" tabindex="0" data-overview-jump="leads"><span>Open team actions</span><strong id="overviewFollowup">0</strong><small id="overviewFollowupMeta">Requests and messages still open</small><span class="metric-link">Review queue →</span></article>
+        <article class="overview-metric metric-calls" role="button" tabindex="0" data-overview-jump="calls"><span>Calls today</span><strong id="overviewCalls">—</strong><small id="overviewCallsMeta">Inbound calls today</small></article>
+        <article class="overview-metric metric-qualified" role="button" tabindex="0" data-overview-jump="calls"><span>Requests captured today</span><strong id="overviewLeads">—</strong><small id="overviewLeadsMeta">Requests or messages captured</small></article>
+        <article class="overview-metric metric-resolved" role="button" tabindex="0" data-overview-jump="calls"><span>Resolved by AI today</span><strong id="overviewWeekCalls">—</strong><small id="overviewWeekCallsMeta">No staff action needed</small></article>
+        <article class="overview-metric metric-followup" role="button" tabindex="0" data-overview-jump="leads"><span>Open team actions</span><strong id="overviewFollowup">—</strong><small id="overviewFollowupMeta">Requests and messages still open</small><span class="metric-link">Review queue →</span></article>
       </div>
 
       <article class="panel overview-ai-status-card">
@@ -84,7 +84,7 @@
               <div class="chart-head-actions"><div class="chart-legend"><span><i class="legend-swatch total-calls"></i>Total calls</span><span><i class="legend-line followups"></i>Still open</span></div><div class="chart-range" id="overviewChartRange"><button data-chart-days="7" aria-pressed="false">7D</button><button class="active" data-chart-days="14" aria-pressed="true">14D</button><button data-chart-days="30" aria-pressed="false">30D</button></div></div>
             </div>
             <div class="overview-combo-chart" id="overviewLineChart" aria-label="Interactive daily call volume and team-action chart"></div>
-            <div class="chart-foot"><span>Bars show total calls. The line shows requests or messages from that day that are still open or in progress now. Click a day to open its call log.</span><b id="overviewChartPeak">Peak 0 calls</b></div>
+            <div class="chart-foot"><span>Bars show total calls. The line shows requests or messages from that day that are still open or in progress now. Click a day to open its call log.</span><b id="overviewChartPeak">Loading peak…</b></div>
             <div class="chart-tooltip rich" id="overviewChartTooltip" hidden></div>
           </div>
         </article>
