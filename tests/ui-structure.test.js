@@ -101,3 +101,14 @@ test('admin prospect editor exposes useful field metadata and initial focus',()=
   assert.match(open,/nameInput\?\.focus\?\.\(\)/);
   assert.match(open,/s\.className='form-status-line'/);
 });
+
+
+test('admin feedback updates use inline live feedback instead of alerts',()=>{
+  const admin=html('admin-dashboard.html'),js=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  assert.match(admin,/id="adminFeedbackActionStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  const start=js.indexOf('async function updateAdminFeedback('),end=js.indexOf('\nfunction renderWebsiteTrafficChart(',start),block=js.slice(start,end);
+  assert.match(block,/actionStatus\.textContent='Updating feedback…'/);
+  assert.match(block,/actionStatus\.textContent='Feedback marked '/);
+  assert.match(block,/actionStatus\.className='muted error-text'/);
+  assert.doesNotMatch(block,/alert\(/);
+});
