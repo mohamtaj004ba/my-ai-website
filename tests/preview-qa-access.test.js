@@ -169,3 +169,10 @@ test('Preview recovery QA intercepts the real delete-restore route and not the o
   assert.match(block,/action=admin-client-delete-restore/);
   assert.doesNotMatch(block,/action=admin-client-restore/);
 });
+
+
+test('visual diff only runs after QA dependencies are available',()=>{
+  const workflow=fs.readFileSync(path.join(root,'.github','workflows','preview-browser-qa.yml'),'utf8');
+  assert.match(workflow,/name: Install pinned QA dependencies\s+id: qa-deps\s+run: npm ci --ignore-scripts/);
+  assert.match(workflow,/name: Compare visual drift\s+if: always\(\) && steps\.qa-deps\.outcome == 'success'/);
+});
