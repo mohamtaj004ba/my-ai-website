@@ -1850,7 +1850,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{res
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:'',aliasError:'',readError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:'',aliasError:'',readError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminInboxReplyPending=false,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
 let adminSupportCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},adminFeedbackCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},adminSupportLoadError='',adminFeedbackLoadError='';
 let adminRetentionData=null,adminRetentionCheckedAt=0,adminRetentionLoadError='';
 let adminConversationMigrationData=null,adminConversationMigrationLoadError='';
@@ -2671,15 +2671,16 @@ function renderInboxThread(){
   const status=document.getElementById('inboxReplyStatus');if(status)status.textContent='';
 }
 async function sendInboxReply(e){
-  e?.preventDefault();if(!currentInboxItem)return;
+  e?.preventDefault();if(!currentInboxItem||adminInboxReplyPending)return false;
   const field=document.getElementById('inboxReplyText'),status=document.getElementById('inboxReplyStatus'),btn=document.querySelector('#inboxReplyForm button[type="submit"]'),message=String(field?.value||'').trim(),from=String(document.getElementById('inboxFromSelect')?.value||'').trim().toLowerCase();
-  if(!message)return;if(btn){btn.disabled=true;btn.textContent='Sending…'}if(status)status.textContent='';
+  if(!message)return false;adminInboxReplyPending=true;if(btn){btn.disabled=true;btn.textContent='Sending…'}if(field)field.readOnly=true;if(status)status.textContent='';
   let deliveryWarning='';
   try{
     if(currentInboxItem.kind==='website'){
       const r=await fetch('/api/account?action=admin-website-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentInboxItem.id,message,from})}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not send reply');
-      if(data.message)currentInboxItem.messages.push(data.message);
+      if(data.ok!==true||!data.message||typeof data.message!=='object'||Array.isArray(data.message)||!String(data.message.id||'').trim()||String(data.message.body||'')!==message)throw new Error('Website reply response was incomplete. Your draft remains open; refresh before retrying.');
+      currentInboxItem.messages.push(data.message);
       if(data.prospect)currentInboxItem.prospect=data.prospect;
       deliveryWarning=data.warning||'';
       const p=(adminWebsiteData.prospects||[]).find(x=>x.id===currentInboxItem.id);if(p&&data.prospect)Object.assign(p,data.prospect);
@@ -2690,14 +2691,15 @@ async function sendInboxReply(e){
       const refs=msgs.map(m=>m.messageId).filter(Boolean).join(' ');
       const r=await fetch('/api/account?action=admin-gmail-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,subject,body:message,from,threadId:currentInboxItem.id,inReplyTo:last.messageId||'',references:refs})}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not send Gmail reply');
+      if(data.ok!==true||!String(data.threadId||'').trim())throw new Error('Gmail reply response was incomplete. Your draft remains open; refresh before retrying.');
       deliveryWarning=data.warning||'';
       await loadAdminInbox();
       const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===(data.threadId||currentInboxItem.id));if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]}}
     }
     renderInboxThread();renderAdminInbox();renderWebsiteAnalytics();renderAdminFleet();
-    if(status)status.textContent=deliveryWarning||'Reply sent.';
-  }catch(err){if(status)status.textContent=err.message||'Could not send reply'}
-  finally{if(btn){btn.disabled=false;btn.textContent='Send reply'}}
+    if(status)status.textContent=deliveryWarning||'Reply sent.';return true;
+  }catch(err){if(status)status.textContent=err.message||'Could not send reply';return false}
+  finally{adminInboxReplyPending=false;if(btn){btn.disabled=false;btn.textContent='Send reply'}if(field)field.readOnly=false}
 }
 let gmailConnectionMutationPending=false;
 function setGmailConnectionControls(pending,active=''){
