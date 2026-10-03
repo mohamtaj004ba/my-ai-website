@@ -76,6 +76,9 @@ test('pending-deletion drawer wiring exposes recovery instead of ordinary status
   assert.match(open,/deleteButton\.hidden=pendingDeletion/);
   assert.match(open,/restoreButton\.hidden=!pendingDeletion/);
   assert.match(open,/Use Restore workspace to recover access/);
+  const restore=segment(ui,'async function restoreAdminClient(){','\nasync function viewAdminClient(){');
+  assert.match(restore,/action=admin-client-delete-restore/);
+  assert.doesNotMatch(restore,/action=admin-client-restore/);
 });
 
 test('restore action sends displayed revision, locks the drawer and suppresses duplicate recovery clicks',async()=>{
