@@ -4290,14 +4290,14 @@ function setProfileSaving(pending){
 }
 async function saveProfile(){
   if(profileSaving)return false;
-  const input=document.getElementById('profileNameInput'),status=document.getElementById('profileSaveStatus'),displayName=String(input?.value||'').trim().slice(0,80),avatarDataUrl=String(currentUserProfile.avatarDataUrl||'');if(!displayName){if(status)status.textContent='Enter your name.';return false}
-  setProfileSaving(true);if(status)status.textContent='';
+  const input=document.getElementById('profileNameInput'),status=document.getElementById('profileSaveStatus'),displayName=String(input?.value||'').trim().slice(0,80),avatarDataUrl=String(currentUserProfile.avatarDataUrl||'');if(!displayName){if(input){input.setAttribute('aria-invalid','true');input.focus()}if(status){status.textContent='Enter your name.';status.className='error'}return false}
+  input?.removeAttribute('aria-invalid');setProfileSaving(true);if(status){status.textContent='';status.className=''};
   try{
     const r=await fetch('/api/account?action=profile-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({displayName,avatarDataUrl})}),data=await r.json().catch(()=>({})),confirmed=data.profile;
     if(!r.ok)throw new Error(data.error||'Could not save profile');
     if(data.ok!==true||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.displayName||'')!==displayName||String(confirmed.avatarDataUrl||'')!==avatarDataUrl||!Number.isFinite(Number(confirmed.updatedAt))||Number(confirmed.updatedAt)<=0)throw new Error('Profile response was incomplete. Your current profile was preserved.');
-    currentUserProfile={...currentUserProfile,...confirmed};renderUserProfile();if(status)status.textContent='Saved.';return true;
-  }catch(err){if(status)status.textContent=err.message||'Could not save profile';return false}
+    currentUserProfile={...currentUserProfile,...confirmed};renderUserProfile();if(status){status.textContent='Saved.';status.className='success'}return true;
+  }catch(err){if(status){status.textContent=err.message||'Could not save profile';status.className='error'}return false}
   finally{setProfileSaving(false)}
 }
 function initProfileControls(){
