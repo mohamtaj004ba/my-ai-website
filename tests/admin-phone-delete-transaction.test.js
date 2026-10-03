@@ -23,12 +23,39 @@ test('stale, concurrent and malformed phone deletions fail without writing an au
   for(const [options,want] of [[{expected:9},409],[{transaction:false},409],[{malformed:true},503]]){const r=await run(options);assert.equal(r.status,want);assert.equal(r.auditCommitted,null)}
 });
 
-test('client sends the phone revision and updates local inventory after confirmed deletion',()=>{
+test('client sends the phone revision, serializes deletion and preserves confirmed success through refresh failure',()=>{
   const dashboard=fs.readFileSync('dashboard.js','utf8'),code=dashboard.slice(dashboard.indexOf('async function deletePhone('),dashboard.indexOf('function openPhoneModal('));
-  assert.match(code,/expectedUpdatedAt:Number\(item\.updatedAt\|\|0\)/);assert.match(code,/adminPhoneData=adminPhoneData\.filter/);
+  assert.match(dashboard,/const adminPhoneDeletePending=new Set\(\)/);
+  assert.match(code,/if\(adminPhoneDeletePending\.has\(key\)\)return false/);
+  assert.match(code,/expectedUpdatedAt:Number\(item\.updatedAt\|\|0\)/);
+  assert.match(code,/data\.ok!==true/);
+  assert.match(code,/adminPhoneData=adminPhoneData\.filter/);
+  assert.match(code,/Phone deletion was confirmed, but the inventory could not refresh/);
+  assert.match(code,/finally\{adminPhoneDeletePending\.delete\(key\);renderPhones\(\)\}/);
 });
 
 test('phone deletion rejects malformed onboarding checklist before changing routing',()=>{
   assert.match(handler,/onboardingBefore\.checklist!=null/);
   assert.match(handler,/Array\.isArray\(onboardingBefore\.checklist\)/);
+});
+
+
+test('duplicate phone deletion is ignored while the first request is pending',async()=>{
+  const dashboard=fs.readFileSync('dashboard.js','utf8'),start=dashboard.indexOf('async function deletePhone('),end=dashboard.indexOf('\nfunction openPhoneModal(',start),code=dashboard.slice(start,end);
+  let release,requests=0;
+  const ctx=vm.createContext({
+    adminPhoneDeletePending:new Set(),adminPhoneData:[{id:'p',number:'5095550100',updatedAt:10}],
+    confirm:()=>true,renderPhones(){},alert(){},
+    refreshAdminView:async()=>true,
+    fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>({ok:true,deleted:{id:'p',updatedAt:10}})}},
+    String,Number,Array,Object,JSON,Set,Promise,Error
+  });
+  vm.runInContext(code,ctx);
+  const first=vm.runInContext("deletePhone('p')",ctx);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(await vm.runInContext("deletePhone('p')",ctx),false);
+  assert.equal(requests,1);
+  release();assert.equal(await first,true);
+  assert.equal(ctx.adminPhoneData.length,0);
+  assert.equal(ctx.adminPhoneDeletePending.size,0);
 });
