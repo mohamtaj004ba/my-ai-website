@@ -81,6 +81,11 @@ test('confirmed phone save stays successful when inventory refresh fails',async(
   assert.equal(nodes.get('phoneFormStatus').textContent,'');
 });
 
+test('phone editor focuses the primary phone-number field when opened',()=>{
+  const js=fs.readFileSync('dashboard.js','utf8'),block=js.slice(js.indexOf('function openPhoneModal('),js.indexOf('\nfunction closePhoneModal',js.indexOf('function openPhoneModal(')));
+  assert.match(block,/phoneNumberInput'\)\?\.focus\?\.\(\)/);
+});
+
 test('phone save source separates confirmed mutation from later refresh failure',()=>{
   const js=fs.readFileSync('dashboard.js','utf8'),block=js.slice(js.indexOf('async function savePhone(){'),js.indexOf("document.getElementById('addPhoneButton')"));
   assert.match(block,/try\{await refreshAdminView\('phones'/);
