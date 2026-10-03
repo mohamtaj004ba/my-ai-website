@@ -2119,7 +2119,7 @@ async function updateAdminFeedback(id,status){
   try{
     const r=await fetch('/api/account?action=admin-ai-feedback-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update feedback.');
-    if(!data.feedback||typeof data.feedback!=='object'||Array.isArray(data.feedback)||String(data.feedback.id||'')!==key)throw new Error('Feedback update response was incomplete. Refresh Client Care before retrying.');
+    if(data.ok!==true||!data.feedback||typeof data.feedback!=='object'||Array.isArray(data.feedback)||String(data.feedback.id||'')!==key||String(data.feedback.status||'')!==String(status)||!Number.isFinite(Number(data.feedback.updatedAt))||Number(data.feedback.updatedAt)<=expectedUpdatedAt)throw new Error('Feedback update response was incomplete. Refresh Client Care before retrying.');
     Object.assign(item,data.feedback);loadNotifications({silent:true});
   }catch(err){
     item.status=before.status;item.updatedAt=before.updatedAt;
@@ -2281,7 +2281,7 @@ async function saveProspect(){
   if(payload.id)payload.expectedUpdatedAt=Number(m.dataset.expectedUpdatedAt||0);
   const action=payload.id?'admin-website-prospect-update':'admin-prospect-save';
   setProspectModalPending(true);
-  try{const r=await fetch('/api/account?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok){const error=new Error(data.error||'Could not save prospect.');if(r.status===409&&data.prospectId)error.prospectId=String(data.prospectId);throw error}if(!data.prospect)throw new Error('Prospect response was incomplete. Refresh the pipeline before retrying.');adminWebsiteData.prospects=[data.prospect,...(adminWebsiteData.prospects||[]).filter(x=>String(x.id)!==String(data.prospect.id))];setProspectModalPending(false);closeProspectModal();renderGrowth();renderWebsiteAnalytics()}
+  try{const r=await fetch('/api/account?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok){const error=new Error(data.error||'Could not save prospect.');if(r.status===409&&data.prospectId)error.prospectId=String(data.prospectId);throw error}const confirmed=data.prospect,confirmedRevision=Number(confirmed?.updatedAt);if(data.ok!==true||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||!String(confirmed.id||'').trim()||String(confirmed.stage||'')!==String(payload.stage||'')||!Number.isFinite(confirmedRevision)||confirmedRevision<=Number(payload.expectedUpdatedAt||0)||(payload.id&&String(confirmed.id)!==String(payload.id)))throw new Error('Prospect response was incomplete. Refresh the pipeline before retrying.');adminWebsiteData.prospects=[confirmed,...(adminWebsiteData.prospects||[]).filter(x=>String(x.id)!==String(confirmed.id))];setProspectModalPending(false);closeProspectModal();renderGrowth();renderWebsiteAnalytics()}
   catch(err){
     if(status){
       status.textContent=err.message||'Could not save prospect.';status.className='form-status-line error';
@@ -3056,7 +3056,7 @@ async function sendOnboardingInvite(id,button){
       try{await refreshAdminView('onboarding',{force:true,announce:false})}catch(_){}
       return false;
     }
-    if(data.deliveryStatus!=='sent'&&data.alreadySent!==true)throw new Error('Could not verify onboarding email delivery. Refresh onboarding before retrying.');
+    if(data.ok!==true||!data.onboarding||typeof data.onboarding!=='object'||Array.isArray(data.onboarding)||data.deliveryStatus!=='sent'&&data.alreadySent!==true)throw new Error('Could not verify onboarding email delivery. Refresh onboarding before retrying.');
     try{await refreshAdminView('onboarding',{force:true,announce:false})}catch(_){alert('Onboarding email was confirmed sent, but the onboarding view could not refresh. Reload the view before taking another action.')}
     await loadNotifications({silent:true}).catch(()=>{});
     return true;
@@ -4060,7 +4060,7 @@ async function saveAdminClient(){
   try{
     const r=await fetch('/api/account?action=admin-client-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:targetId,plan,status,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update client.');
-    if(!data.client||typeof data.client!=='object'||Array.isArray(data.client)||String(data.client.id||'')!==targetId)throw new Error('Workspace update response was incomplete. Reopen this client before retrying.');
+    if(data.ok!==true||!data.client||typeof data.client!=='object'||Array.isArray(data.client)||String(data.client.id||'')!==targetId||String(data.client.plan||'')!==String(plan||'')||String(data.client.status||'')!==String(status||'')||!Number.isFinite(Number(data.client.updatedAt))||Number(data.client.updatedAt)<=expectedUpdatedAt)throw new Error('Workspace update response was incomplete. Reopen this client before retrying.');
     if(String(currentAdminClient?.id)!==targetId)return;
     currentAdminClient={...currentAdminClient,...data.client};
     try{
@@ -4112,9 +4112,9 @@ async function restoreAdminClient(){
   };
   setAdminClientMutationState(true,'restore');
   try{
-    const r=await fetch('/api/account?action=admin-client-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-client-delete-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not restore workspace.');
-    const restoredStatus=String(data.client?.status||data.status||'');if(!data.client||typeof data.client!=='object'||Array.isArray(data.client)||String(data.client.id||'')!==id||!['active','onboarding','suspended'].includes(restoredStatus))throw new Error('Restoration response was incomplete. Reopen this client to verify its recovery state.');
+    const restoredStatus=String(data.client?.status||data.status||'');if(data.ok!==true||!data.client||typeof data.client!=='object'||Array.isArray(data.client)||String(data.client.id||'')!==id||!['active','onboarding','suspended'].includes(restoredStatus)||!Number.isFinite(Number(data.client.updatedAt))||Number(data.client.updatedAt)<=expectedUpdatedAt)throw new Error('Restoration response was incomplete. Reopen this client to verify its recovery state.');
     if(String(currentAdminClient?.id)!==id)return false;
     currentAdminClient={...currentAdminClient,...data.client,status:restoredStatus,deletion:null};
     syncRestoredControls();
