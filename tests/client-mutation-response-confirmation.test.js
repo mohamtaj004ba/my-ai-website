@@ -117,9 +117,9 @@ test('automation and location saves preserve local records on malformed successf
   const locationCtx=vm.createContext({
     locationsData:[{id:'existing'}],locationsLimit:3,
     fetch:async()=>({ok:true,json:async()=>({locations:null,limit:3})}),
-    alert:m=>alerts.push(m),renderLocations:()=>{},Number,Array
+    alert:m=>alerts.push(m),renderLocations:()=>{},Number,Array,Object,String,Set
   });
-  vm.runInContext(segment('async function persistLocations(',"\nasync function saveLocation("),locationCtx);
+  vm.runInContext(segment('let locationMutationPending=false;',"\nasync function saveLocation("),locationCtx);
   assert.equal(await vm.runInContext("persistLocations([{id:'new'}])",locationCtx),false);
   assert.equal(locationCtx.locationsData[0].id,'existing');
   assert.equal(locationCtx.locationsLimit,3);
@@ -145,4 +145,35 @@ test('appointment status mutation blocks duplicate in-flight changes and unlocks
   assert.equal(ctx.appointmentsData[0].status,'Scheduled');
   assert.equal(vm.runInContext("appointmentStatusPending.has('appt-1')",ctx),false);
   assert.ok(renders>=2);
+});
+
+
+test('location saves serialize mutations and require canonical row identities',async()=>{
+  let release,requests=0;
+  const ctx=vm.createContext({
+    locationsData:[{id:'loc-1',name:'Main',updatedAt:1}],locationsLimit:2,
+    fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>({ok:true,locations:[{id:'loc-1',name:'Main',updatedAt:2}],limit:2})}},
+    alert:()=>{},renderLocations:()=>{},Number,Array,Object,String,Set,Promise,Error
+  });
+  vm.runInContext(segment('let locationMutationPending=false;',"\nasync function saveLocation("),ctx);
+  const first=vm.runInContext("persistLocations([{id:'loc-1',name:'Main'}])",ctx);
+  await new Promise(resolve=>setImmediate(resolve));
+  const second=await vm.runInContext("persistLocations([{id:'loc-1',name:'Other'}])",ctx);
+  assert.equal(second,false);
+  assert.equal(requests,1);
+  release();
+  assert.equal(await first,true);
+  assert.equal(ctx.locationsData[0].updatedAt,2);
+  assert.equal(vm.runInContext('locationMutationPending',ctx),false);
+});
+
+test('location save rejects mismatched existing record identities despite HTTP 200',async()=>{
+  const ctx=vm.createContext({
+    locationsData:[{id:'loc-1',name:'Main',updatedAt:1}],locationsLimit:2,
+    fetch:async()=>({ok:true,json:async()=>({ok:true,locations:[{id:'different',name:'Main',updatedAt:2}],limit:2})}),
+    alert:()=>{},renderLocations:()=>{},Number,Array,Object,String,Set,Promise,Error
+  });
+  vm.runInContext(segment('let locationMutationPending=false;',"\nasync function saveLocation("),ctx);
+  assert.equal(await vm.runInContext("persistLocations([{id:'loc-1',name:'Main'}])",ctx),false);
+  assert.equal(ctx.locationsData[0].id,'loc-1');
 });
