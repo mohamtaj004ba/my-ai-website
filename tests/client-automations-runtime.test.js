@@ -70,3 +70,21 @@ test('automation pending state is visible, blocks modal dismissal, and exposes t
   assert.match(persist,/finally\{automationMutationPending=false;setAutomationMutationUi\(false\)\}/);
   assert.match(close,/if\(automationMutationPending\)return false/);
 });
+
+
+test('automation builder gives inline validation and accessible save feedback',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  const html=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
+  const open=ui.slice(ui.indexOf('function openAutomation('),ui.indexOf('function closeAutomation()'));
+  const save=ui.slice(ui.indexOf('async function saveAutomation(){'),ui.indexOf("\ndocument.querySelectorAll(",ui.indexOf('async function saveAutomation(){')));
+  assert.match(html,/id="automationFormStatus" role="status" aria-live="polite"/);
+  assert.match(html,/id="automationName" maxlength="120" autocomplete="off" aria-describedby="automationFormStatus"/);
+  assert.match(html,/id="saveAutomationButton" type="button"/);
+  assert.match(open,/status\.textContent=''/);
+  assert.match(open,/name\.removeAttribute\('aria-invalid'\)/);
+  assert.match(open,/setTimeout\(\(\)=>name\?\.focus\(\),20\)/);
+  assert.match(save,/nameInput\.setAttribute\('aria-invalid','true'\)/);
+  assert.match(save,/Add a name before saving this automation\./);
+  assert.match(save,/nameInput\?\.removeAttribute\('aria-invalid'\)/);
+  assert.match(save,/Automation was not saved\. Review the message and try again\./);
+});
