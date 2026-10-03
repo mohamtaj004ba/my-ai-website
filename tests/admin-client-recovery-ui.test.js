@@ -43,22 +43,22 @@ test('ordinary admin workspace edits cannot bypass the pending-deletion recovery
 
 const frontend=[
   segment(ui,'function setAdminClientMutationState(','\nasync function loadAdminTechSupport('),
-  segment(ui,'async function restoreAdminClient(){','\nasync function viewAdminClient(){')
+  segment(ui,'function setAdminRestoreWorkspaceStatus(','\nasync function viewAdminClient(){')
 ].join('\n');
 
 function deferred(){let resolve;const promise=new Promise(ok=>resolve=ok);return {promise,resolve}}
 function fixture(fetch){
   const nodes=new Map(),alerts=[],statuses=[],reopens=[],refreshes=[];
   const node=id=>{
-    if(!nodes.has(id))nodes.set(id,{id,value:'',textContent:'',disabled:false,hidden:false,attrs:{},setAttribute(k,v){this.attrs[k]=String(v)}});
+    if(!nodes.has(id))nodes.set(id,{id,value:'',textContent:'',disabled:false,hidden:false,attrs:{},classes:new Set(),classList:{add(...x){x.forEach(v=>node(id).classes.add(v))},remove(...x){x.forEach(v=>node(id).classes.delete(v))}},setAttribute(k,v){this.attrs[k]=String(v)},focus(){this.focused=true}});
     return nodes.get(id);
   };
   const current={id:'client-1',name:'Client One',plan:'Starter',status:'pending_deletion',createdAt:1,updatedAt:20,stripe:{},deletion:{requestedAt:10,purgeEligibleAt:999999,preDeletionStatus:'active'}};
   node('adminSaveClientButton').hidden=true;node('adminDeleteClientButton').hidden=true;node('adminRestoreClientButton').hidden=false;
   node('adminClientPlan').disabled=true;node('adminClientStatus').disabled=true;
   const ctx=vm.createContext({
-    currentAdminClient:current,adminClientSaving:false,adminTechSaving:false,
-    document:{getElementById:node,querySelectorAll:()=>[]},fetch,confirm:()=>true,
+    currentAdminClient:current,adminClientSaving:false,adminTechSaving:false,adminRestoreConfirmState:null,
+    document:{getElementById:node,querySelectorAll:()=>[]},fetch,setTimeout:fn=>fn(),
     alert:x=>alerts.push(String(x)),setAdminClientActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),refreshAdminCore:async()=>refreshes.push('core'),loadAdminOps:async()=>refreshes.push('ops'),
     openAdminClient:async(id,options)=>{reopens.push({id,options});return true},
     Date,Number,String,JSON
@@ -76,18 +76,21 @@ test('pending-deletion drawer wiring exposes recovery instead of ordinary status
   assert.match(open,/deleteButton\.hidden=pendingDeletion/);
   assert.match(open,/restoreButton\.hidden=!pendingDeletion/);
   assert.match(open,/Use Restore workspace to recover access/);
-  const restore=segment(ui,'async function restoreAdminClient(){','\nasync function viewAdminClient(){');
+  const restore=segment(ui,'function setAdminRestoreWorkspaceStatus(','\nasync function viewAdminClient(){');
+  assert.match(restore,/openAdminRestoreWorkspaceModal/);
   assert.match(restore,/action=admin-client-delete-restore/);
+  assert.match(restore,/This workspace changed after the confirmation opened/);
   assert.doesNotMatch(restore,/action=admin-client-restore/);
 });
 
 test('restore action sends displayed revision, locks the drawer and suppresses duplicate recovery clicks',async()=>{
   const pending=deferred(),requests=[],f=fixture(async(_url,options)=>{requests.push(JSON.parse(options.body));return pending.promise});
+  assert.equal(f.run('openAdminRestoreWorkspaceModal()'),true);
   const first=f.run('restoreAdminClient()'),duplicate=f.run('restoreAdminClient()');
   assert.equal(await duplicate,false);
   assert.deepEqual(requests,[{id:'client-1',expectedUpdatedAt:20}]);
   assert.equal(f.ctx.adminClientSaving,true);
-  assert.equal(f.node('adminRestoreClientButton').disabled,true);assert.equal(f.node('adminRestoreClientButton').textContent,'Restoring…');
+  assert.equal(f.node('adminRestoreClientButton').disabled,true);assert.equal(f.node('confirmAdminRestoreWorkspace').disabled,true);assert.equal(f.node('confirmAdminRestoreWorkspace').textContent,'Restoring…');
   assert.equal(f.node('closeAdminClient').disabled,true);assert.equal(f.node('adminClientDrawer').attrs['aria-busy'],'true');
   pending.resolve({ok:true,json:async()=>({ok:true,status:'active',client:{id:'client-1',status:'active',updatedAt:30}})});
   assert.equal(await first,true);
@@ -98,15 +101,17 @@ test('restore action sends displayed revision, locks the drawer and suppresses d
 
 test('failed restore keeps pending state visible and fully unlocks the recovery controls',async()=>{
   const f=fixture(async()=>({ok:false,json:async()=>({error:'Workspace changed'})}));
+  assert.equal(f.run('openAdminRestoreWorkspaceModal()'),true);
   assert.equal(await f.run('restoreAdminClient()'),false);
   assert.equal(f.ctx.currentAdminClient.status,'pending_deletion');assert.notEqual(f.ctx.currentAdminClient.deletion,null);
-  assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.node('adminRestoreClientButton').hidden,false);assert.equal(f.node('adminRestoreClientButton').disabled,false);
-  assert.deepEqual(f.alerts,[]);assert.ok(f.statuses.some(item=>item.tone==='error'&&item.message==='Workspace changed'));assert.deepEqual(f.reopens,[]);
+  assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.node('adminRestoreClientButton').hidden,false);assert.equal(f.node('adminRestoreClientButton').disabled,false);assert.equal(f.node('confirmAdminRestoreWorkspace').disabled,false);
+  assert.deepEqual(f.alerts,[]);assert.equal(f.node('adminRestoreWorkspaceStatus').textContent,'Workspace changed');assert.match(f.node('adminRestoreWorkspaceStatus').className,/error/);assert.deepEqual(f.reopens,[]);
 });
 
 test('confirmed restore stays confirmed if later admin refresh fails and surfaces access-repair warning',async()=>{
   const f=fixture(async()=>({ok:true,json:async()=>({ok:true,status:'suspended',warning:'Workspace restored, but no owner access mapping exists. Repair access mapping before sending a login link.',client:{id:'client-1',status:'suspended',updatedAt:31}})}));
   f.ctx.refreshAdminCore=async()=>{throw Error('offline')};
+  assert.equal(f.run('openAdminRestoreWorkspaceModal()'),true);
   assert.equal(await f.run('restoreAdminClient()'),true);
   assert.equal(f.ctx.currentAdminClient.status,'suspended');assert.equal(f.ctx.currentAdminClient.deletion,null);
   assert.equal(f.node('adminRestoreClientButton').hidden,true);assert.equal(f.node('adminDeleteClientButton').hidden,false);
