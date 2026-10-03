@@ -86,6 +86,13 @@ test('dynamic save and recovery feedback uses live status semantics',()=>{
 });
 
 
+test('date-range controls reference the validation status that explains invalid ranges',()=>{
+  const admin=html('admin-dashboard.html');
+  for(const [id,status] of [['campaignStartInput','campaignFormStatus'],['campaignEndInput','campaignFormStatus'],['companyDocumentEffective','companyDocumentStatusLine'],['companyDocumentExpires','companyDocumentStatusLine']]){
+    assert.match(admin,new RegExp('id="'+id+'"[^>]*aria-describedby="'+status+'"'));
+  }
+});
+
 test('required form controls reference their live validation feedback',()=>{
   const admin=html('admin-dashboard.html'),client=html('dashboard.html');
   for(const [id,status] of [['inboxReplyText','inboxReplyStatus'],['expenseNameInput','expenseFormStatus'],['expenseAmountInput','expenseFormStatus'],['phoneNumberInput','phoneFormStatus']]){
