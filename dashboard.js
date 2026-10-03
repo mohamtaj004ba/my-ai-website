@@ -1931,7 +1931,7 @@ document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{res
 document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
 
 
-let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminDeleteConfirmState=null,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:'',aliasError:'',readError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminInboxReplyPending=false,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
+let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminDeleteConfirmState=null,adminRestoreConfirmState=null,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:'',aliasError:'',readError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminInboxReplyPending=false,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
 let adminSupportCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},adminFeedbackCoverage={verified:false,incomplete:false,missingRecords:0,indexedRecords:0,loadedRecords:0},adminSupportLoadError='',adminFeedbackLoadError='';
 let adminRetentionData=null,adminRetentionCheckedAt=0,adminRetentionLoadError='';
 let adminConversationMigrationData=null,adminConversationMigrationLoadError='';
@@ -4267,10 +4267,30 @@ async function deleteAdminClient(){
   }catch(_){setAdminSyncState('error',(postDeleteMessage?postDeleteMessage+' ':'')+'Deletion was scheduled, but the admin directory could not refresh. Reload the dashboard to verify the pending-deletion account.')}
   return true;
 }
-async function restoreAdminClient(){
+function setAdminRestoreWorkspaceStatus(message='',tone=''){
+  const el=document.getElementById('adminRestoreWorkspaceStatus');if(!el)return;
+  el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
+}
+function setAdminRestoreWorkspacePending(pending){
+  const modal=document.getElementById('adminRestoreWorkspaceModal'),confirmButton=document.getElementById('confirmAdminRestoreWorkspace'),cancelButton=document.getElementById('cancelAdminRestoreWorkspace'),closeButton=document.getElementById('closeAdminRestoreWorkspaceModal');
+  modal?.setAttribute('aria-busy',String(!!pending));if(cancelButton)cancelButton.disabled=!!pending;if(closeButton)closeButton.disabled=!!pending;
+  if(confirmButton){confirmButton.disabled=!!pending;confirmButton.textContent=pending?'Restoring…':'Restore workspace'}
+}
+function closeAdminRestoreWorkspaceModal(){
+  if(adminClientSaving)return false;
+  adminRestoreConfirmState=null;const modal=document.getElementById('adminRestoreWorkspaceModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');modal?.setAttribute('aria-busy','false');setAdminRestoreWorkspaceStatus('');return true;
+}
+function openAdminRestoreWorkspaceModal(){
   if(!currentAdminClient||currentAdminClient.status!=='pending_deletion'||adminClientSaving||adminTechSaving)return false;
-  const id=String(currentAdminClient.id),name=currentAdminClient.name||'this workspace',expectedUpdatedAt=Number(currentAdminClient.updatedAt||currentAdminClient.createdAt||0);
-  if(!confirm('Restore '+name+' from the deletion recovery window? Access will be re-enabled only if its owner mapping is still healthy.'))return false;
+  const id=String(currentAdminClient.id),name=currentAdminClient.name||'this workspace',expectedUpdatedAt=Number(currentAdminClient.updatedAt||currentAdminClient.createdAt||0),modal=document.getElementById('adminRestoreWorkspaceModal'),copy=document.getElementById('adminRestoreWorkspaceCopy');
+  if(!modal)return false;
+  adminRestoreConfirmState={id,name,expectedUpdatedAt};if(copy)copy.textContent='Restore '+name+' from the deletion recovery window. CallerCore will re-enable access only if the owner mapping is still healthy; otherwise access will remain blocked for repair.';
+  setAdminRestoreWorkspaceStatus('');setAdminRestoreWorkspacePending(false);modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>document.getElementById('confirmAdminRestoreWorkspace')?.focus?.(),20);return true;
+}
+async function restoreAdminClient(){
+  const state=adminRestoreConfirmState;if(!state||adminClientSaving||adminTechSaving)return false;
+  const id=String(state.id),name=state.name||'this workspace',expectedUpdatedAt=Number(state.expectedUpdatedAt||0);
+  if(!currentAdminClient||String(currentAdminClient.id)!==id||currentAdminClient.status!=='pending_deletion'||Number(currentAdminClient.updatedAt||currentAdminClient.createdAt||0)!==expectedUpdatedAt){setAdminRestoreWorkspaceStatus('This workspace changed after the confirmation opened. Close this dialog, reopen the client, and try again.','error');return false}
   let confirmed=false;
   const syncRestoredControls=()=>{
     if(String(currentAdminClient?.id)!==id)return;
@@ -4279,7 +4299,7 @@ async function restoreAdminClient(){
     const note=document.getElementById('adminClientManageNote');
     if(note&&!pending)note.textContent=(currentAdminClient?.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
   };
-  setAdminClientMutationState(true,'restore');setAdminClientActionStatus('Restoring workspace…');
+  setAdminRestoreWorkspacePending(true);setAdminClientMutationState(true,'restore');setAdminRestoreWorkspaceStatus('Restoring workspace…');
   try{
     const r=await fetch('/api/account?action=admin-client-delete-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not restore workspace.');
@@ -4287,7 +4307,7 @@ async function restoreAdminClient(){
     if(String(currentAdminClient?.id)!==id)return false;
     currentAdminClient={...currentAdminClient,...data.client,status:restoredStatus,deletion:null};
     syncRestoredControls();
-    confirmed=true;
+    confirmed=true;adminRestoreConfirmState=null;const modal=document.getElementById('adminRestoreWorkspaceModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');modal?.setAttribute('aria-busy','false');
     const restoreWarning=String(data.warning||'');
     if(restoreWarning)setAdminClientActionStatus(restoreWarning,'error');
     try{
@@ -4298,8 +4318,8 @@ async function restoreAdminClient(){
       setAdminClientActionStatus((restoreWarning?restoreWarning+' ':'')+'Workspace restoration was confirmed, but the admin view could not refresh. Reopen this client to verify access and account status.','error');
     }
     return true;
-  }catch(err){setAdminClientActionStatus(err.message||'Could not restore workspace.','error');return false}
-  finally{setAdminClientMutationState(false);if(confirmed)syncRestoredControls()}
+  }catch(err){setAdminRestoreWorkspaceStatus(err.message||'Could not restore workspace.','error');return false}
+  finally{setAdminClientMutationState(false);if(!confirmed)setAdminRestoreWorkspacePending(false);if(confirmed)syncRestoredControls()}
 }
 async function viewAdminClient(){
   if(!currentAdminClient)return;
@@ -4316,7 +4336,10 @@ document.getElementById('adminDeleteWorkspaceInput')?.addEventListener('input',e
 document.getElementById('confirmAdminDeleteWorkspace')?.addEventListener('click',deleteAdminClient);
 document.getElementById('cancelAdminDeleteWorkspace')?.addEventListener('click',closeAdminDeleteWorkspaceModal);
 document.getElementById('closeAdminDeleteWorkspaceModal')?.addEventListener('click',closeAdminDeleteWorkspaceModal);
-document.getElementById('adminRestoreClientButton')?.addEventListener('click',restoreAdminClient);
+document.getElementById('adminRestoreClientButton')?.addEventListener('click',openAdminRestoreWorkspaceModal);
+document.getElementById('confirmAdminRestoreWorkspace')?.addEventListener('click',restoreAdminClient);
+document.getElementById('cancelAdminRestoreWorkspace')?.addEventListener('click',closeAdminRestoreWorkspaceModal);
+document.getElementById('closeAdminRestoreWorkspaceModal')?.addEventListener('click',closeAdminRestoreWorkspaceModal);
 document.getElementById('adminViewClientButton')?.addEventListener('click',viewAdminClient);
 document.getElementById('adminExportClientButton')?.addEventListener('click',()=>{if(currentAdminClient)window.location.href='/api/account?action=admin-workspace-export&id='+encodeURIComponent(currentAdminClient.id)});
 document.getElementById('adminRecoveryDrillButton')?.addEventListener('click',async()=>{
