@@ -7,6 +7,7 @@ const source=fs.readFileSync('modal-accessibility.js','utf8');
 test('dialog keyboard loop excludes controls that are not actually rendered',()=>{
   assert.match(source,/function isRendered\(element\)/);
   assert.match(source,/closest\('\[hidden\],\[aria-hidden="true"\]'\)/);
+  assert.match(source,/ownerDocument\?\.defaultView\|\|globalThis/);
   assert.match(source,/getComputedStyle\(element\)/);
   assert.match(source,/style\.display!=='none'/);
   assert.match(source,/style\.visibility!=='hidden'/);
