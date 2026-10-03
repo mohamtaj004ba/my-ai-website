@@ -3914,10 +3914,11 @@ async function applyAdminConfigOverride(){
   if(!currentAdminClient||adminTechSaving)return false;const section=document.getElementById('adminConfigSection')?.value||'settings',editor=document.getElementById('adminConfigEditor'),raw=editor?.value||'';
   let value;try{value=JSON.parse(raw)}catch(_){editor?.setAttribute?.('aria-invalid','true');editor?.focus?.();adminTechMessage('Configuration JSON is invalid.',true);return false}
   editor?.removeAttribute?.('aria-invalid');
+  const expectedBefore=currentAdminTech?.config?.[section]??(section==='automations'||section==='locations'?[]:null);
   if(!confirm('Apply this admin override to '+section+'? The previous value will remain available in Change History.'))return false;
   setAdminTechMutationState(true,'override');adminTechMessage('Applying '+section+' override…');
   try{
-    const r=await fetch('/api/account?action=admin-config-override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,section,value})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-config-override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,section,value,expectedBefore})}),data=await r.json().catch(()=>({}));
     if(!r.ok){adminTechMessage(data.error||'Could not apply override.',true);return}
     if(data.ok!==true||String(data.section||'')!==String(section)||!Object.hasOwn(data,'value')){adminTechMessage('Override response was incomplete. Reload diagnostics before retrying.',true);return}
     if(currentAdminTech?.config)currentAdminTech.config[section]=data.value;renderAdminConfigEditor();adminTechMessage('Admin override applied to '+section+'.');
