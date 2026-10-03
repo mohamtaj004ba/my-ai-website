@@ -48,6 +48,7 @@ test('completion modal blocks duplicate saves and announces unconfirmed updates'
   assert.match(html,/id="teamCompletionOther"[^>]+aria-describedby="teamStatusModalStatus"/);
   assert.match(open,/function setTeamStatusModalPending\(pending\)/);
   assert.match(open,/save\.disabled=!!pending/);
+  assert.match(open,/if\(close\)close\.disabled=!!pending/);
   assert.match(open,/save\.textContent=pending\?'Saving…':'Mark complete'/);
   assert.match(open,/if\(!id\|\|followupMutationPending\.has\(String\(id\)\)\)return false/);
   assert.match(open,/Saving completion…/);
