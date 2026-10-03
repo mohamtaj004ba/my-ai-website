@@ -93,6 +93,16 @@ test('expense deletion sends its revision and suppresses a duplicate action',asy
 });
 
 
+test('stale expense edit IDs fail closed before opening the editor',()=>{
+  const f=frontendFixture();f.context.adminFinanceData.expenses=[];
+  const start=dashboardSource.indexOf('function openExpenseModal('),end=dashboardSource.indexOf('\nfunction closeExpenseModal(',start);
+  vm.runInContext(dashboardSource.slice(start,end),f.context);
+  assert.equal(vm.runInContext("openExpenseModal('missing-expense')",f.context),false);
+  assert.notEqual(f.node('expenseModal')['aria-hidden'],'false');
+  assert.equal(f.sync.length,1);
+  assert.match(f.sync[0][1],/no longer available.*Refresh Finance/i);
+});
+
 test('opening the expense editor leaves phone form validation intact',()=>{
   const f=frontendFixture();
   f.node('phoneFormStatus').textContent='A phone number is required.';
