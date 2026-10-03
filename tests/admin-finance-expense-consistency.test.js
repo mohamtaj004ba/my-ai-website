@@ -111,7 +111,7 @@ test('opening the expense editor leaves phone form validation intact',()=>{
 
 test('expense editor focuses its primary name field when opened',()=>{
   const block=dashboardSource.slice(dashboardSource.indexOf('function openExpenseModal('),dashboardSource.indexOf('\nfunction closeExpenseModal(',dashboardSource.indexOf('function openExpenseModal(')));
-  assert.match(block,/expenseNameInput'\)\?\.focus\?\.\(\)/);
+  assert.match(block,/setTimeout\(\(\)=>nameInput\?\.focus\?\.\(\),20\)/);
 });
 
 test('confirmed expense save remains successful when the subsequent ledger refresh fails',async()=>{
