@@ -114,6 +114,7 @@
 
 <section class="view" id="view-inbox">
   <div class="page-head"><div><span class="eyebrow">Unified inbox</span><h1>Website and Gmail, one conversation view.</h1><p>Read inquiries, connect conversations to leads, and reply without leaving CallerCore.</p></div><div class="page-actions"><span class="auto-sync-status" id="inboxAutoStatus">Auto-sync · 3 min</span><button class="secondary-btn" id="inboxRefreshButton">Refresh inbox</button><button class="primary" id="gmailConnectButton">Connect Gmail</button></div></div>
+  <p class="form-status-line" id="inboxActionStatus" role="status" aria-live="polite" aria-atomic="true"></p>
   <div class="metric-grid"><article><span>Website inquiries</span><strong id="inboxWebsiteCount">0</strong><small>Contact + chatbot</small></article><article><span>Gmail unread</span><strong id="inboxGmailUnread">0</strong><small id="inboxGmailAccount">Not connected</small></article><article><span>Avg Gmail response</span><strong id="inboxResponseTime">—</strong><small>First response · last 30 days</small></article><article><span>Inbox threads</span><strong id="inboxThreadCount">0</strong><small>Loaded conversations</small></article></div>
   <article class="panel gmail-connect-panel" id="gmailConnectPanel">
     <div class="gmail-connect-copy"><span class="eyebrow">Gmail integration</span><h3 id="gmailStatusTitle">Gmail not connected</h3><p id="gmailStatusCopy">Connect your business Gmail to read and reply to email threads from CallerCore.</p><div class="gmail-alias-list" id="gmailAliasList"></div></div>

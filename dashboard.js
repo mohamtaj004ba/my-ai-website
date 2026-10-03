@@ -2616,15 +2616,22 @@ function renderAdminInbox(){
   list?.querySelectorAll('[data-inbox-id]').forEach(b=>b.addEventListener('click',()=>openInboxItem(b.dataset.inboxKind,b.dataset.inboxId)));
   document.querySelectorAll('[data-inbox-filter]').forEach(b=>{const selected=b.dataset.inboxFilter===adminInboxData.filter;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
 }
+function setAdminInboxActionStatus(message='',tone=''){
+  const el=document.getElementById('inboxActionStatus');if(!el)return;
+  el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
+}
 async function openInboxItem(kind,id){
   const request=++adminInboxOpenRequest;
   if(kind==='website'){
+    setAdminInboxActionStatus('Loading conversation…');
     const r=await fetch('/api/account?action=admin-website-conversation&id='+encodeURIComponent(id),{cache:'no-store'}),data=await r.json().catch(()=>({}));
     if(request!==adminInboxOpenRequest)return;
-    if(!r.ok){alert(data.error||'Could not load website conversation.');return}
-    if(!data?.prospect||typeof data.prospect!=='object'||Array.isArray(data.prospect)||String(data.prospect.id||'')!==String(id)||!Array.isArray(data.messages)||!data.coverage||typeof data.coverage!=='object'||Array.isArray(data.coverage)) {alert('Website conversation response was incomplete. The previous inbox selection was preserved.');return}
+    if(!r.ok){setAdminInboxActionStatus(data.error||'Could not load website conversation.','error');return}
+    if(!data?.prospect||typeof data.prospect!=='object'||Array.isArray(data.prospect)||String(data.prospect.id||'')!==String(id)||!Array.isArray(data.messages)||!data.coverage||typeof data.coverage!=='object'||Array.isArray(data.coverage)){setAdminInboxActionStatus('Website conversation response was incomplete. The previous inbox selection was preserved.','error');return}
     currentInboxItem={kind,id,prospect:data.prospect,messages:data.messages,coverage:data.coverage};
+    setAdminInboxActionStatus('Conversation loaded.','success');
   }else{
+    setAdminInboxActionStatus('');
     const thread=(adminInboxData.gmail?.threads||[]).find(x=>x.id===id);if(!thread)return;
     currentInboxItem={kind,id,thread,prospect:thread.prospect||null,messages:thread.messages||[]};
     if(thread.unread){
@@ -2757,7 +2764,8 @@ function setGmailConnectionControls(pending,active=''){
 }
 async function connectGmail(){
   if(gmailConnectionMutationPending)return false;
-  if(!adminInboxData.gmailStatus?.configured){alert('Gmail OAuth needs three Vercel environment variables first: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY.');return false}
+  if(!adminInboxData.gmailStatus?.configured){setAdminInboxActionStatus('Gmail OAuth needs three Vercel environment variables first: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and CALLERCORE_ENCRYPTION_KEY.','error');return false}
+  setAdminInboxActionStatus('Opening secure Gmail connection…');
   setGmailConnectionControls(true,'connect');
   try{
     const r=await fetch('/api/account?action=admin-gmail-connect',{method:'POST'}),data=await r.json().catch(()=>({}));
@@ -2765,11 +2773,12 @@ async function connectGmail(){
     if(!r.ok||!oauthUrl||oauthUrl.protocol!=='https:'||oauthUrl.hostname!=='accounts.google.com'||oauthUrl.pathname!=='/o/oauth2/v2/auth'||!oauthUrl.searchParams.get('state')||!oauthUrl.searchParams.get('client_id'))
       throw new Error(data.error||'Could not start a verified Gmail connection.');
     location.href=oauthUrl.toString();return true;
-  }catch(err){alert(err.message||'Could not start Gmail connection.');setGmailConnectionControls(false,'connect');return false}
+  }catch(err){setAdminInboxActionStatus(err.message||'Could not start Gmail connection.','error');setGmailConnectionControls(false,'connect');return false}
 }
 async function disconnectGmailAdmin(){
   if(gmailConnectionMutationPending)return false;
   if(!confirm('Disconnect Gmail from CallerCore Admin? No messages will be deleted from Gmail.'))return false;
+  setAdminInboxActionStatus('Disconnecting Gmail…');
   setGmailConnectionControls(true,'disconnect');
   try{
     const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST'}),data=await r.json().catch(()=>({}));
@@ -2780,8 +2789,8 @@ async function disconnectGmailAdmin(){
     currentInboxItem=null;renderInboxThread();renderAdminInbox();
     const search=document.getElementById('adminSearch');
     if(search&&String(search.value||'').trim().length>=2)renderAdminGlobalSearch();
-    await loadAdminInbox();return true;
-  }catch(err){alert(err.message||'Could not disconnect Gmail.');return false}
+    await loadAdminInbox();setAdminInboxActionStatus('Gmail disconnected.','success');return true;
+  }catch(err){setAdminInboxActionStatus(err.message||'Could not disconnect Gmail.','error');return false}
   finally{setGmailConnectionControls(false,'disconnect')}
 }
 document.getElementById('inboxRefreshButton')?.addEventListener('click',()=>refreshAdminInboxLive({silent:false,force:true}));
