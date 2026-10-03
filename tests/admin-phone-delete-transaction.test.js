@@ -5,11 +5,11 @@ const vm=require('node:vm');
 const source=fs.readFileSync('api/account.js','utf8');
 const handler=source.slice(source.indexOf('async function adminDeletePhoneNumber('),source.indexOf('async function adminFleet('));
 
-async function run({expected=10,transaction=true,malformed=false}={}){
+async function run({expected=10,transaction=true,malformed=false,omitExpected=false}={}){
   const phone={id:'p',number:'5095550100',workspaceId:'tenant',updatedAt:10};
   const records={'phone:index':malformed?{broken:true}:[phone],'workspace:tenant':{id:'tenant',phone:phone.number,name:'Client'},'onboarding:workspace:tenant':{checklist:{phoneAssigned:true,knowledgeApproved:true}}};
   let status=200,result,updates,auditCommitted=null;
-  const context=vm.createContext({requireAdmin:async()=>({email:'admin@example.com',workspaceId:'admin-home'}),crypto:{randomUUID:()=> 'audit-delete'},Date,kv:{get:async key=>records[key],set:()=>assert.fail('Deletion must use one atomic transaction')},compareAndAuditBatch:async(_,next,auditKey,event)=>{updates=next;if(transaction)auditCommitted={auditKey,event};return transaction},appendAudit:async()=>assert.fail('Phone deletion audit must be part of the atomic transaction'),safeError:()=>'',console:{error:()=>{}},req:{body:{id:'p',expectedUpdatedAt:expected}},res:{status(n){status=n;return this},json(x){result=x}}});
+  const context=vm.createContext({requireAdmin:async()=>({email:'admin@example.com',workspaceId:'admin-home'}),crypto:{randomUUID:()=> 'audit-delete'},Date,kv:{get:async key=>records[key],set:()=>assert.fail('Deletion must use one atomic transaction')},compareAndAuditBatch:async(_,next,auditKey,event)=>{updates=next;if(transaction)auditCommitted={auditKey,event};return transaction},appendAudit:async()=>assert.fail('Phone deletion audit must be part of the atomic transaction'),safeError:()=>'',console:{error:()=>{}},req:{body:{id:'p',...(omitExpected?{}:{expectedUpdatedAt:expected})}},res:{status(n){status=n;return this},json(x){result=x}}});
   vm.runInContext(handler,context);await vm.runInContext('adminDeletePhoneNumber(req,res)',context);return {status,result,updates,auditCommitted};
 }
 
@@ -20,7 +20,7 @@ test('phone deletion stages inventory, workspace and onboarding changes atomical
 });
 
 test('stale, missing-revision, concurrent and malformed phone deletions fail without writing an audit event',async()=>{
-  for(const [options,want] of [[{expected:9},409],[{expected:undefined},409],[{transaction:false},409],[{malformed:true},503]]){const r=await run(options);assert.equal(r.status,want);assert.equal(r.auditCommitted,null)}
+  for(const [options,want] of [[{expected:9},409],[{omitExpected:true},409],[{transaction:false},409],[{malformed:true},503]]){const r=await run(options);assert.equal(r.status,want);assert.equal(r.auditCommitted,null)}
 });
 
 test('client sends the phone revision, serializes deletion and preserves confirmed success through refresh failure',()=>{
