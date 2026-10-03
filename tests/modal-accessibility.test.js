@@ -115,3 +115,11 @@ test('Core Intelligence declares its controlled panel and restores launch focus 
   assert.match(dashboard,/wasOpen=panel\?\.classList\.contains\('open'\)/);
   assert.match(dashboard,/if\(wasOpen\)launch\.focus\(\)/);
 });
+
+
+test('Core Intelligence panel participates in shared dialog accessibility and focus trapping',()=>{
+  const source=fs.readFileSync(path.join(__dirname,'..','modal-accessibility.js'),'utf8');
+  assert.match(source,/\.admin-ai-panel/);
+  assert.match(source,/modal\.setAttribute\('role','dialog'\)/);
+  assert.match(source,/modal\.setAttribute\('aria-modal','true'\)/);
+});

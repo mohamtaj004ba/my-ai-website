@@ -40,7 +40,7 @@
     else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
   }
 
-  document.querySelectorAll('.modal,.call-drawer,.onboarding-detail-drawer').forEach((modal,index)=>{
+  document.querySelectorAll('.modal,.call-drawer,.onboarding-detail-drawer,.admin-ai-panel').forEach((modal,index)=>{
     modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.tabIndex=-1;
     const title=modal.querySelector('h1,h2,h3');
     if(title){if(!title.id)title.id=(modal.id||'dialog-'+index)+'-title';modal.setAttribute('aria-labelledby',title.id)}
