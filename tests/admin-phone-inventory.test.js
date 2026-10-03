@@ -11,9 +11,10 @@ async function rejected(current,body){
 }
 test('phone edit rejects a deleted record instead of recreating it',async()=>{assert.equal((await rejected([],{id:'missing'})).status,404)});
 test('full phone inventory refuses new records without truncating existing ones',async()=>{assert.equal((await rejected(Array.from({length:500},(_,i)=>({id:String(i)})),{})).status,409)});
-test('malformed inventory and stale revisions fail closed',async()=>{
+test('malformed inventory and stale or missing edit revisions fail closed',async()=>{
   assert.equal((await rejected({broken:true},{})).status,503);
   assert.equal((await rejected([{id:'p',updatedAt:10}],{id:'p',expectedUpdatedAt:9})).status,409);
+  assert.equal((await rejected([{id:'p',updatedAt:10}],{id:'p'})).status,409);
 });
 test('phone inventory renders batches and searches formatted phone numbers',()=>{
   const js=fs.readFileSync('dashboard.js','utf8'),nodes=new Map();
