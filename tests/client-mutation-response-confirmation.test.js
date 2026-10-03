@@ -193,8 +193,8 @@ test('location modal cannot close while a save is pending',()=>{
 
 
 test('location builder validates required name and exposes inline accessible status',()=>{
-  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
-  const html=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
+  const ui=fs.readFileSync('dashboard.js','utf8');
+  const html=fs.readFileSync('dashboard.html','utf8');
   const open=ui.slice(ui.indexOf("function openLocationModal(id='')"),ui.indexOf('function closeLocationModal()'));
   const save=ui.slice(ui.indexOf('async function saveLocation(){'),ui.indexOf('async function deleteLocation('));
   assert.match(html,/id="locationFormStatus" role="status" aria-live="polite"/);
