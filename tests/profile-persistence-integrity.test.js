@@ -66,3 +66,17 @@ test('client and admin profile save feedback is announced without stealing focus
     assert.match(html,/id="profileSaveStatus" role="status" aria-live="polite" aria-atomic="true"/);
   }
 });
+
+
+test('profile name validation is announced inline and linked to the field',()=>{
+  const block=dashboard.slice(dashboard.indexOf('async function saveProfile(){'),dashboard.indexOf('\nfunction initProfileControls('));
+  assert.match(block,/input\.setAttribute\('aria-invalid','true'\)/);
+  assert.match(block,/input\.focus\(\)/);
+  assert.match(block,/input\?\.removeAttribute\('aria-invalid'\)/);
+  assert.match(block,/status\.className='success'/);
+  assert.match(block,/status\.className='error'/);
+  for(const file of ['dashboard.html','admin-dashboard.html']){
+    const html=fs.readFileSync(file,'utf8');
+    assert.match(html,/id="profileNameInput"[^>]+aria-describedby="profileSaveStatus"/);
+  }
+});
