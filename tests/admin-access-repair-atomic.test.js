@@ -99,7 +99,7 @@ function repairFixture({
       return transaction!==false;
     },
     crypto:{randomUUID:()=> 'audit-repair'},safeError:()=>'',console:{error(){}},Date,Number,Promise,Array,String,Set,
-    req:{body:{id:'client-1',email:newEmail}},res:r.res
+    req:{body:{id:'client-1',email:newEmail,expectedOwnerEmail:oldEmail}},res:r.res
   });
   vm.runInContext(backend,ctx);
   return {ctx,calls,reads,run:async()=>{await vm.runInContext('adminRepairAccess(req,res)',ctx);return r.read()}};
@@ -118,6 +118,15 @@ test('access repair atomically moves owner mapping, workspace email and audit',a
   assert.equal(byKey['user:email:old@example.test'].after,null);
   assert.equal(call.auditKey,'audit:client-1');assert.equal(call.event.action,'access_repair');
   assert.equal(call.event.meta.oldEmail,'old@example.test');assert.equal(call.event.meta.newEmail,'new@example.test');
+});
+
+test('access repair rejects stale owner diagnostics before mapping reads',async()=>{
+  const f=repairFixture({workspace:{id:'client-1',ownerEmail:'newer@example.test',updatedAt:30},oldMember:null});
+  f.ctx.req.body.expectedOwnerEmail='old@example.test';
+  const out=await f.run();
+  assert.equal(out.code,409);assert.match(out.data.error,/owner changed after diagnostics/i);
+  assert.equal(f.calls.length,0);
+  assert.deepEqual(f.reads,['workspace:client-1']);
 });
 
 test('same-email access repair revokes sessions without deleting its own mapping',async()=>{
@@ -191,6 +200,7 @@ test('failed access repair preserves entered email, unlocks controls and remains
   const f=uiFixture(async(url,options)=>{requests.push(JSON.parse(options.body));return pending.promise});
   const first=f.run('repairClientAccess()'),duplicate=f.run('repairClientAccess()');
   assert.equal(requests.length,1);assert.equal(f.ctx.adminTechSaving,true);
+  assert.equal(requests[0].expectedOwnerEmail,'old@example.test');
   assert.equal(f.node('adminRepairAccessButton').textContent,'Repairing…');
   pending.resolve({ok:false,json:async()=>({error:'Mapping changed'})});
   await Promise.all([first,duplicate]);
