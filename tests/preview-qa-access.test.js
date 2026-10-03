@@ -158,3 +158,14 @@ test('System Health service cards stay readable and contained',()=>{
   assert.match(css,/\.admin-health-item>\.tag\{[\s\S]*max-width:110px;[\s\S]*white-space:normal;/);
   assert.match(css,/@media\(max-width:720px\)[\s\S]*\.admin-health-item\{\s*grid-template-columns:auto minmax\(0,1fr\)!important;/);
 });
+
+
+test('Preview recovery QA intercepts the real delete-restore route and not the obsolete route',()=>{
+  const qa=fs.readFileSync(path.join(root,'scripts','preview-browser-qa.mjs'),'utf8');
+  const start=qa.indexOf("// Exercise pending-deletion recovery entirely in memory.");
+  const end=qa.indexOf("report.admin.interactions.push('in-memory pending-deletion recovery + revision + duplicate-action lock');",start);
+  assert.ok(start>=0&&end>start);
+  const block=qa.slice(start,end);
+  assert.match(block,/action=admin-client-delete-restore/);
+  assert.doesNotMatch(block,/action=admin-client-restore/);
+});

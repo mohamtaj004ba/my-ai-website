@@ -804,7 +804,7 @@ async function runAdminInteractions(page){
       const target=String(url);
       if(target.includes('action=admin-client&id='+id))return {ok:true,json:async()=>({client:fakeClient()})};
       if(target.includes('action=admin-tech-support&id='+id))return {ok:true,json:async()=>({diagnostics:{workspaceId:id,workspaceStatus:restored?'active':'pending_deletion',subscriptionStatus:'canceled',ownerEmail:'qa-recovery@example.test',userMappingMatches:true},config:{},audit:[]})};
-      if(target.includes('action=admin-client-restore')){
+      if(target.includes('action=admin-client-delete-restore')){
         requests.push(JSON.parse(options.body||'{}'));
         return new Promise(resolve=>{releaseRestore=()=>{restored=true;resolve({ok:true,json:async()=>({ok:true,status:'active',client:{id,status:'active',updatedAt:30}})})}});
       }
