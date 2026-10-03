@@ -146,7 +146,7 @@ function uiFixture(fetch){
   };
   const ctx=vm.createContext({
     currentAdminClient:{id:'client-1',name:'Client One',plan:'Starter',status:'active',updatedAt:20,stripe:{}},
-    adminClientSaving:false,adminTechSaving:false,adminDeleteConfirmState:null,
+    adminClientSaving:false,adminTechSaving:false,adminDeleteConfirmState:null,adminRestoreConfirmState:null,
     document:{getElementById:node,querySelectorAll:()=>[]},
     fetch,alert:x=>alerts.push(String(x)),setAdminClientActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),setAdminSyncState:(state,message)=>sync.push({state,message:String(message||'')}),
     closeAdminClient:()=>closed.push('closed'),
@@ -199,6 +199,48 @@ test('failed deletion scheduling unlocks controls and keeps the same client open
   assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.ctx.currentAdminClient.id,'client-1');
   assert.equal(f.closed.length,0);assert.deepEqual(f.refreshes,[]);assert.deepEqual(f.alerts,[]);assert.equal(f.node('adminDeleteWorkspaceStatus').textContent,'Workspace changed');assert.match(f.node('adminDeleteWorkspaceStatus').className,/error/);
   assert.equal(f.node('adminDeleteClientButton').disabled,false);
+});
+
+
+
+test('restore UI opens an in-app recovery confirmation and rejects stale state before the server',async()=>{
+  const f=uiFixture(async()=>assert.fail('stale restore confirmation must not call the server'));
+  f.ctx.currentAdminClient={id:'client-1',name:'Client One',plan:'Starter',status:'pending_deletion',updatedAt:20,stripe:{}};
+  assert.equal(f.run('openAdminRestoreWorkspaceModal()'),true);
+  assert.equal(f.node('adminRestoreWorkspaceModal').attrs['aria-hidden'],'false');
+  assert.equal(f.ctx.adminRestoreConfirmState.id,'client-1');
+  f.ctx.currentAdminClient.updatedAt=21;
+  assert.equal(await f.run('restoreAdminClient()'),false);
+  assert.match(f.node('adminRestoreWorkspaceStatus').textContent,/changed after the confirmation opened/);
+});
+
+test('restore UI sends the displayed revision, locks the recovery modal and requires a confirmed receipt',async()=>{
+  const pending=deferred(),requests=[];
+  const f=uiFixture(async(_url,options)=>{requests.push(JSON.parse(options.body));return pending.promise});
+  f.ctx.currentAdminClient={id:'client-1',name:'Client One',plan:'Starter',status:'pending_deletion',updatedAt:20,stripe:{}};
+  f.run('openAdminRestoreWorkspaceModal()');
+  const first=f.run('restoreAdminClient()'),duplicate=f.run('restoreAdminClient()');
+  assert.equal(requests.length,1);assert.deepEqual(requests[0],{id:'client-1',expectedUpdatedAt:20});
+  assert.equal(f.ctx.adminClientSaving,true);assert.equal(f.node('confirmAdminRestoreWorkspace').disabled,true);
+  assert.equal(f.node('confirmAdminRestoreWorkspace').textContent,'Restoring…');
+  pending.resolve({ok:true,json:async()=>({ok:true,status:'active',client:{id:'client-1',status:'active',updatedAt:30}})});
+  await Promise.all([first,duplicate]);
+  assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.ctx.adminRestoreConfirmState,null);
+  assert.equal(f.ctx.currentAdminClient.status,'active');
+  assert.equal(f.node('adminRestoreWorkspaceModal').attrs['aria-hidden'],'true');
+  assert.deepEqual(f.refreshes,['core','ops']);
+});
+
+test('failed restore keeps the recovery modal open and unlocks it for retry',async()=>{
+  const f=uiFixture(async()=>({ok:false,json:async()=>({error:'Workspace changed'})}));
+  f.ctx.currentAdminClient={id:'client-1',name:'Client One',plan:'Starter',status:'pending_deletion',updatedAt:20,stripe:{}};
+  f.run('openAdminRestoreWorkspaceModal()');
+  assert.equal(await f.run('restoreAdminClient()'),false);
+  assert.equal(f.ctx.currentAdminClient.status,'pending_deletion');
+  assert.equal(f.node('adminRestoreWorkspaceModal').attrs['aria-hidden'],'false');
+  assert.equal(f.node('confirmAdminRestoreWorkspace').disabled,false);
+  assert.equal(f.node('adminRestoreWorkspaceStatus').textContent,'Workspace changed');
+  assert.match(f.node('adminRestoreWorkspaceStatus').className,/error/);
 });
 
 test('confirmed deletion is not misreported as failed when the directory refresh later fails',async()=>{
