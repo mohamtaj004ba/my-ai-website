@@ -4293,7 +4293,7 @@ function initProfileControls(){
   document.getElementById('profileSaveButton')?.addEventListener('click',saveProfile);
   document.getElementById('profilePanelLogout')?.addEventListener('click',logout);
   document.addEventListener('click',()=>{panel.hidden=true;button.setAttribute('aria-expanded','false')});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){panel.hidden=true;button.setAttribute('aria-expanded','false')}})
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){panel.hidden=true;button.setAttribute('aria-expanded','false');button.focus()}})
 }
 
 function notificationScope(){return document.body.dataset.dashboard==='admin'?'admin':'client'}
@@ -4532,8 +4532,8 @@ document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(btn=>
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
-  closeHelpPanel?.();
-  const np=document.getElementById('notificationPanel'),nb=document.getElementById('notificationBell');if(np&&!np.hidden){np.hidden=true;nb?.setAttribute('aria-expanded','false')}
+  const helpWasOpen=!!helpPanel&&!helpPanel.hidden;closeHelpPanel?.();if(helpWasOpen)helpButton?.focus();
+  const np=document.getElementById('notificationPanel'),nb=document.getElementById('notificationBell');if(np&&!np.hidden){np.hidden=true;nb?.setAttribute('aria-expanded','false');nb?.focus()}
   const openModalEl=document.querySelector('.modal.open');if(openModalEl)openModalEl.querySelector('.modal-close')?.click();
 });
 

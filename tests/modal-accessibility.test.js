@@ -62,3 +62,18 @@ test('client and admin mobile navigation triggers declare the controlled sidebar
     assert.match(html,/class="nav-item active" data-view="overview" aria-current="page"/);
   }
 });
+
+
+test('popover triggers identify their controlled panels and Escape restores trigger focus',()=>{
+  const client=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
+  const admin=fs.readFileSync(path.join(__dirname,'..','admin-dashboard.html'),'utf8');
+  assert.match(client,/id="helpButton"[^>]*aria-controls="helpPanel"/);
+  for(const html of [client,admin]){
+    assert.match(html,/id="notificationBell"[^>]*aria-controls="notificationPanel"/);
+    assert.match(html,/id="accountButton"[^>]*aria-controls="accountPanel"/);
+  }
+  const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(dashboard,/Escape'&&!panel\.hidden[\s\S]*button\.focus\(\)/);
+  assert.match(dashboard,/helpWasOpen[\s\S]*helpButton\?\.focus\(\)/);
+  assert.match(dashboard,/nb\?\.focus\(\)/);
+});
