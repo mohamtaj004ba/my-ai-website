@@ -1799,7 +1799,7 @@ async function replyClientSupportTicket(id,button){
     const r=await fetch('/api/account?action=support-ticket-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,message})});
     const data=await r.json().catch(()=>({}));
     if(!r.ok){setClientSupportReplyStatus(id,data.error||'Could not send reply. Your draft is preserved.');return}
-    if(!data.ticket||String(data.ticket.id)!==String(id))throw new Error('Unconfirmed reply response');
+    if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||String(data.ticket.id)!==String(id))throw new Error('Unconfirmed reply response');
     invalidateClientSupportHistoryRequest();const i=supportTicketsData.findIndex(x=>String(x.id)===String(id));
     if(i>=0)supportTicketsData[i]=data.ticket;
     renderSupport({clearDraftId:id});
@@ -1824,7 +1824,7 @@ async function submitSupportTicket(){
     const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject,message,priority})});
     const data=await r.json().catch(()=>({}));
     if(!r.ok){if(status)status.textContent=data.error||'Could not send support request. Your draft is preserved.';return}
-    if(!data.ticket?.id)throw new Error('Unconfirmed support request response');
+    if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||!String(data.ticket.id||'').trim()||String(data.ticket.subject||'')!==String(subject))throw new Error('Unconfirmed support request response');
     invalidateClientSupportHistoryRequest();supportTicketsData.unshift(data.ticket);
     document.getElementById('supportSubject').value='';document.getElementById('supportMessage').value='';
     if(status)status.textContent=data.warning||'Support request sent.';renderSupport();
@@ -2241,7 +2241,7 @@ async function moveGrowthProspectStage(id,bucket){
     const r=await fetch('/api/account?action=admin-website-prospect-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     conflict=r.status===409;
     if(!r.ok)throw new Error(data.error||'Could not move prospect.');
-    if(!data.prospect||typeof data.prospect!=='object'||Array.isArray(data.prospect)||String(data.prospect.id)!==key||String(data.prospect.stage)!==stage||!Number.isFinite(Number(data.prospect.updatedAt))||Number(data.prospect.updatedAt)<=expectedUpdatedAt)
+    if(data.ok!==true||!data.prospect||typeof data.prospect!=='object'||Array.isArray(data.prospect)||String(data.prospect.id)!==key||String(data.prospect.stage)!==stage||!Number.isFinite(Number(data.prospect.updatedAt))||Number(data.prospect.updatedAt)<=expectedUpdatedAt)
       throw new Error('Prospect update was not confirmed. Refresh Growth before retrying.');
     // Background analytics refresh can replace the prospect array while the drag request is pending.
     // Apply the acknowledged record to the current array, never a detached or newer snapshot.
