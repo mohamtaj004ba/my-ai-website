@@ -697,8 +697,8 @@ function renderCalls(){
   wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
 }
 async function openCall(id){
-  const request=++callDrawerOpenRequest;let x=callsData.find(c=>String(c.id)===String(id));if(!x)return;
-  if(!x.transcript&&!demoMode){try{const data=await fetchJsonRetry('/api/account?action=call-detail&id='+encodeURIComponent(id),{attempts:2,timeout:7000});if(!data?.call||typeof data.call!=='object'||Array.isArray(data.call)||String(data.call.id||'')!==String(id))throw new Error('Call detail response was incomplete');x=data.call}catch(err){console.warn('Call details delayed',err)}}
+  const request=++callDrawerOpenRequest;let x=callsData.find(c=>String(c.id)===String(id));if(!x)return,detailWarning='';
+  if(!x.transcript&&!demoMode){try{const data=await fetchJsonRetry('/api/account?action=call-detail&id='+encodeURIComponent(id),{attempts:2,timeout:7000});if(!data?.call||typeof data.call!=='object'||Array.isArray(data.call)||String(data.call.id||'')!==String(id))throw new Error('Call detail response was incomplete');x=data.call}catch(err){detailWarning='Full call details could not refresh. Showing the last verified call summary; the transcript may be unavailable or outdated.';console.warn('Call details delayed',err)}}
   if(request!==callDrawerOpenRequest)return;
   const callIndex=callsData.findIndex(c=>String(c.id)===String(id));if(callIndex>=0)callsData[callIndex]={...callsData[callIndex],...x};
   activeCallContactKey=contactKey(x);activeCallId=String(x.id||'');markCallViewed(activeCallId);
@@ -714,7 +714,8 @@ async function openCall(id){
   const addr=document.getElementById('drawerAddress');if(addr)addr.textContent=x.address||contactForRecord(x)?.address||'No address was captured on this call.';
   document.getElementById('drawerSummary').textContent=x.summary||'No AI summary is available yet.';
   const q=x.qualification||{};document.getElementById('drawerQualification').innerHTML=Object.entries(q).filter(([k])=>String(k).toLowerCase()!=='value').map(([k,v])=>{const key=String(k||''),label=key.toLowerCase()==='ai result'?'Call disposition':key;return '<div><b>'+esc(v)+'</b><span>'+esc(label)+'</span></div>'}).join('')||'<span class="muted">No additional call details yet.</span>';
-  const t=Array.isArray(x.transcript)?x.transcript:[];document.getElementById('drawerTranscript').innerHTML=t.map(pair=>'<div class="'+(String(pair[0]).toLowerCase()==='maya'?'ai':'')+'"><b>'+esc(pair[0])+'</b>'+esc(pair[1])+'</div>').join('')||'<span class="muted">Transcript unavailable.</span>';
+  const transcriptStatus=document.getElementById('drawerTranscriptStatus');if(transcriptStatus){transcriptStatus.textContent=detailWarning;transcriptStatus.className='form-status-line'+(detailWarning?' error':'')}
+  const t=Array.isArray(x.transcript)?x.transcript:[];document.getElementById('drawerTranscript').innerHTML=t.map(pair=>'<div class="'+(String(pair[0]).toLowerCase()==='maya'?'ai':'')+'"><b>'+esc(pair[0])+'</b>'+esc(pair[1])+'</div>').join('')||'<span class="muted">'+(detailWarning?'Transcript could not be verified from the latest detail request.':'Transcript unavailable.')+'</span>';
   const historyBtn=document.getElementById('drawerContactButton');if(historyBtn)historyBtn.onclick=()=>{const key=activeCallContactKey;closeCall();setTimeout(()=>openContact(key),30)};
   const feedbackBtn=document.getElementById('drawerAiFeedbackButton');if(feedbackBtn){feedbackBtn.dataset.callId=activeCallId;feedbackBtn.dataset.callContext=[x.caller||x.phone||'Caller',x.reason||x.category||'Call'].filter(Boolean).join(' · ')}
   const drawer=document.getElementById('callDrawer');resetSurfaceScroll(drawer);drawer.classList.add('open');document.getElementById('drawerBackdrop').classList.add('open');drawer.setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>{resetSurfaceScroll(drawer);document.getElementById('closeCallDrawer')?.focus()},20);
@@ -1538,8 +1539,9 @@ function setSettingsEditing(editing,{restore=false}={}){
   if(!settingsEditing){resetBusinessLogoProcessing();settingsControlIds().forEach(id=>settingsFieldError(id,''));const status=document.getElementById('settingsFormStatus');if(status){status.textContent='';status.className='form-status-line'}}
   settingsControlIds().forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!settingsEditing});
   const sms=document.getElementById('settingsSmsAlerts');if(sms)sms.disabled=true;
-  const edit=document.getElementById('settingsEditButton'),cancel=document.getElementById('settingsCancelButton'),save=document.getElementById('saveSettingsButton'),logo=document.getElementById('businessLogoButton');
+  const edit=document.getElementById('settingsEditButton'),cancel=document.getElementById('settingsCancelButton'),save=document.getElementById('saveSettingsButton'),logo=document.getElementById('businessLogoButton'),view=document.getElementById('view-settings');
   if(edit)edit.hidden=settingsEditing;if(cancel)cancel.hidden=!settingsEditing;if(save)save.hidden=!settingsEditing;if(logo)logo.hidden=!settingsEditing;
+  view?.classList.toggle('settings-editing',settingsEditing);
   renderBusinessLogo();
 }
 function renderAiAnsweringControl(){
@@ -3709,10 +3711,20 @@ function renderAdminClients(){
   wrap.querySelectorAll('[data-admin-client-row]').forEach(row=>{const go=e=>{if(e?.target?.closest?.('button,a,select,input'))return;openAdminClient(row.dataset.adminClientRow)};row.addEventListener('click',go);row.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go(e)}})});
 }
 async function openAdminClient(id,{allowLocked=false}={}){
-  if((adminTechSaving||adminClientSaving)&&!allowLocked)return false;const request=++adminClientOpenRequest;
-  const r=await fetch('/api/account?action=admin-client&id='+encodeURIComponent(id),{headers:{Accept:'application/json'},cache:'no-store'});
-  if(!r.ok||request!==adminClientOpenRequest)return false;
-  const x=(await r.json()).client;if(!x||String(x.id)!==String(id)||request!==adminClientOpenRequest)return false;
+  if((adminTechSaving||adminClientSaving)&&!allowLocked)return false;const request=++adminClientOpenRequest,key=String(id);
+  let x;
+  try{
+    const r=await fetch('/api/account?action=admin-client&id='+encodeURIComponent(key),{headers:{Accept:'application/json'},cache:'no-store'});
+    if(request!==adminClientOpenRequest)return false;
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok){setAdminSyncState('error',data.error||'Could not load client workspace details.');return false}
+    x=data.client;
+    if(!x||typeof x!=='object'||Array.isArray(x)||String(x.id)!==key){setAdminSyncState('error','Client workspace response was incomplete. Refresh the directory and retry.');return false}
+  }catch(err){
+    if(request===adminClientOpenRequest)setAdminSyncState('error',err.message||'Could not load client workspace details.');
+    return false;
+  }
+  if(request!==adminClientOpenRequest)return false;
   document.getElementById('adminClientName').textContent=x.name||'Client';
   document.getElementById('adminClientMeta').innerHTML=[x.plan,adminWorkspaceLabel(x.status),adminBillingLabel(x.subscriptionStatus),x.ownerEmail].filter(Boolean).map(v=>'<span>'+esc(v)+'</span>').join('');
   document.getElementById('adminClientAccount').innerHTML=[

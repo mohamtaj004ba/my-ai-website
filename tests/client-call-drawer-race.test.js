@@ -42,3 +42,22 @@ test('malformed successful call detail cannot overwrite the selected call record
   assert.equal(context.callsData.find(call=>call.id==='one').caller,'First');
   assert.equal(context.callsData.find(call=>call.id==='one').transcript,undefined);
 });
+
+
+test('failed call detail fetch keeps the last verified summary and discloses transcript uncertainty',async()=>{
+  const f=fixture(),pending=vm.runInContext("openCall('one')",f.context);
+  f.requests.get('one').resolve(Promise.reject(new Error('detail offline')));
+  await pending;
+  assert.equal(f.context.activeCallId,'one');
+  assert.match(f.node('drawerTranscriptStatus').textContent,/could not refresh/i);
+  assert.match(f.node('drawerTranscript').innerHTML,/could not be verified/i);
+  assert.equal(f.node('drawerTranscriptStatus').className,'form-status-line error');
+});
+
+test('verified call detail clears the transcript warning',async()=>{
+  const f=fixture(),pending=vm.runInContext("openCall('one')",f.context);
+  f.requests.get('one').resolve({call:{id:'one',caller:'First',transcript:[['Maya','Hello']]}});
+  await pending;
+  assert.equal(f.node('drawerTranscriptStatus').textContent,'');
+  assert.match(f.node('drawerTranscript').innerHTML,/Hello/);
+});
