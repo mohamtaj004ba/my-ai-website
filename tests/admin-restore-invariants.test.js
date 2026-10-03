@@ -9,6 +9,7 @@ const code=source.slice(source.indexOf('function sanitizeAdminOverride('),source
 async function run(functionName,body,{transaction=true}={}){
   const currentAgent={name:'Current',transferNumber:'5095550100',updatedAt:20};
   const oldAgent={name:'Prior',transferNumber:'5095550199',updatedAt:10};
+  body={...body,...(functionName==='adminOverrideConfig'&&!Object.prototype.hasOwnProperty.call(body,'expectedBefore')?{expectedBefore:currentAgent}:{}),...(functionName==='adminRestoreAudit'&&!Object.prototype.hasOwnProperty.call(body,'expectedCurrent')?{expectedCurrent:currentAgent}:{})};
   const records={
     'workspace:tenant':{id:'tenant',name:'Workspace',ownerEmail:'owner@example.com',phone:'5095550101',plan:'Growth',status:'active'},
     'agent:tenant':currentAgent,
