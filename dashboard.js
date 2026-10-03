@@ -1355,9 +1355,9 @@ async function loadClientFeedback({silent=false}={}){
     clientFeedbackLoadError='Could not refresh feedback history. Showing previously loaded items where available.';renderClientFeedback();
   }
 }
-async function submitAiFeedback({source='receptionist',callId='',category='',message='',context='',button,statusEl}={}){
-  const textValue=String(message||'').trim();if(!textValue){if(statusEl)statusEl.textContent='Add a short description first.';return false}
-  if(button){button.disabled=true;button.textContent='Sending…'}if(statusEl)statusEl.textContent='Sending feedback…';
+async function submitAiFeedback({source='receptionist',callId='',category='',message='',context='',button,statusEl,messageEl}={}){
+  const textValue=String(message||'').trim();if(!textValue){if(messageEl){messageEl.setAttribute?.('aria-invalid','true');messageEl.focus?.()}if(statusEl)statusEl.textContent='Add a short description first.';return false}
+  messageEl?.removeAttribute?.('aria-invalid');if(button){button.disabled=true;button.textContent='Sending…'}if(statusEl)statusEl.textContent='Sending feedback…';
   try{
     let item={id:'demo_feedback_'+Date.now(),source,callId,category,message:textValue,context,status:'submitted',createdAt:Date.now(),updatedAt:Date.now()};
     if(!demoMode){const r=await fetch('/api/account?action=ai-feedback-submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source,callId,category,message:textValue,context})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not send feedback.');if(!data.feedback||typeof data.feedback!=='object'||Array.isArray(data.feedback)||!String(data.feedback.id||'').trim())throw new Error('Feedback response was incomplete. Check feedback history before retrying.');item=data.feedback}
@@ -1367,7 +1367,7 @@ async function submitAiFeedback({source='receptionist',callId='',category='',mes
 }
 function openCallFeedbackModal(callId,context=''){
   const modal=document.getElementById('aiFeedbackModal');if(!modal)return;
-  closeCall();closeContact();document.getElementById('aiFeedbackCallId').value=callId||'';document.getElementById('aiFeedbackMessage').value='';document.getElementById('aiFeedbackCategory').value='incorrect_information';document.getElementById('aiFeedbackStatus').textContent='';modal.dataset.context=context||'';resetSurfaceScroll(modal);modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>{resetSurfaceScroll(modal);document.getElementById('aiFeedbackCategory')?.focus()},20);
+  closeCall();closeContact();document.getElementById('aiFeedbackCallId').value=callId||'';const feedbackMessage=document.getElementById('aiFeedbackMessage');if(feedbackMessage){feedbackMessage.value='';feedbackMessage.removeAttribute?.('aria-invalid')}document.getElementById('aiFeedbackCategory').value='incorrect_information';document.getElementById('aiFeedbackStatus').textContent='';modal.dataset.context=context||'';resetSurfaceScroll(modal);modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>{resetSurfaceScroll(modal);document.getElementById('aiFeedbackCategory')?.focus()},20);
 }
 function closeCallFeedbackModal(){const modal=document.getElementById('aiFeedbackModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}}
 function triggerLabel(value=''){
@@ -1474,11 +1474,11 @@ document.querySelectorAll('[data-agent-cancel]').forEach(btn=>btn.addEventListen
 document.querySelectorAll('[data-agent-save]').forEach(btn=>btn.addEventListener('click',()=>saveAgent(btn.dataset.agentSave)));
 document.getElementById('addQuestionButton')?.addEventListener('click',()=>{if(activeAgentSection()!=='qualification')return;if(!agentData)agentData={...DEMO_AGENT,qualificationQuestions:[]};agentData.qualificationQuestions=agentData.qualificationQuestions||[];const status=document.getElementById('agentFormStatus');if(agentData.qualificationQuestions.length>=12){if(status){status.textContent='12-question limit reached. Remove a qualification question before adding another.';status.className='form-status-line'}return}agentData.qualificationQuestions.push('');renderQuestions();setAgentEditing('qualification')});
 document.getElementById('clientFeedbackHistoryRetry')?.addEventListener('click',()=>loadClientFeedback({silent:false}));
-document.getElementById('submitAgentFeedback')?.addEventListener('click',async()=>{const button=document.getElementById('submitAgentFeedback'),statusEl=document.getElementById('agentFeedbackStatus'),message=document.getElementById('agentFeedbackMessage'),category=document.getElementById('agentFeedbackCategory');const ok=await submitAiFeedback({source:'receptionist',category:category?.value||'other',message:message?.value||'',context:agentData?.name||'AI receptionist',button,statusEl});if(ok&&message)message.value=''});
+document.getElementById('submitAgentFeedback')?.addEventListener('click',async()=>{const button=document.getElementById('submitAgentFeedback'),statusEl=document.getElementById('agentFeedbackStatus'),message=document.getElementById('agentFeedbackMessage'),category=document.getElementById('agentFeedbackCategory');const ok=await submitAiFeedback({source:'receptionist',category:category?.value||'other',message:message?.value||'',context:agentData?.name||'AI receptionist',button,statusEl,messageEl:message});if(ok&&message){message.value='';message.removeAttribute?.('aria-invalid')}});
 document.getElementById('drawerAiFeedbackButton')?.addEventListener('click',e=>openCallFeedbackModal(e.currentTarget.dataset.callId||activeCallId,e.currentTarget.dataset.callContext||''));
 document.getElementById('closeAiFeedbackModal')?.addEventListener('click',closeCallFeedbackModal);
 document.getElementById('aiFeedbackModal')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeCallFeedbackModal()});
-document.getElementById('submitCallFeedback')?.addEventListener('click',async()=>{const button=document.getElementById('submitCallFeedback'),statusEl=document.getElementById('aiFeedbackStatus'),message=document.getElementById('aiFeedbackMessage'),category=document.getElementById('aiFeedbackCategory'),modal=document.getElementById('aiFeedbackModal');const ok=await submitAiFeedback({source:'call',callId:document.getElementById('aiFeedbackCallId')?.value||'',category:category?.value||'other',message:message?.value||'',context:modal?.dataset.context||'',button,statusEl});if(ok)setTimeout(closeCallFeedbackModal,450)});
+document.getElementById('submitCallFeedback')?.addEventListener('click',async()=>{const button=document.getElementById('submitCallFeedback'),statusEl=document.getElementById('aiFeedbackStatus'),message=document.getElementById('aiFeedbackMessage'),category=document.getElementById('aiFeedbackCategory'),modal=document.getElementById('aiFeedbackModal');const ok=await submitAiFeedback({source:'call',callId:document.getElementById('aiFeedbackCallId')?.value||'',category:category?.value||'other',message:message?.value||'',context:modal?.dataset.context||'',button,statusEl,messageEl:message});if(ok)setTimeout(closeCallFeedbackModal,450)});
 document.getElementById('newAutomationButton')?.addEventListener('click',()=>openAutomation());
 document.querySelectorAll('[data-preset]').forEach(btn=>btn.addEventListener('click',()=>openAutomation(null,btn.dataset.preset)));
 document.getElementById('saveAutomationButton')?.addEventListener('click',saveAutomation);
@@ -1879,8 +1879,8 @@ async function replyClientSupportTicket(id,button){
 }
 async function submitSupportTicket(){
   if(clientSupportSubmitPending)return;
-  const subject=document.getElementById('supportSubject')?.value.trim(),message=document.getElementById('supportMessage')?.value.trim(),priority=document.getElementById('supportPriority')?.value||'normal',status=document.getElementById('supportStatus'),btn=document.getElementById('submitSupportButton');
-  if(!subject||!message){if(status)status.textContent='Add a subject and details before sending.';return}
+  const subjectEl=document.getElementById('supportSubject'),messageEl=document.getElementById('supportMessage'),subject=subjectEl?.value.trim(),message=messageEl?.value.trim(),priority=document.getElementById('supportPriority')?.value||'normal',status=document.getElementById('supportStatus'),btn=document.getElementById('submitSupportButton');
+  const subjectInvalid=!subject,messageInvalid=!message;if(subjectEl){if(subjectInvalid)subjectEl.setAttribute?.('aria-invalid','true');else subjectEl.removeAttribute?.('aria-invalid')}if(messageEl){if(messageInvalid)messageEl.setAttribute?.('aria-invalid','true');else messageEl.removeAttribute?.('aria-invalid')}if(subjectInvalid||messageInvalid){if(status)status.textContent=subjectInvalid&&messageInvalid?'Add a subject and details before sending.':subjectInvalid?'Add a subject before sending.':'Add details before sending.';(subjectInvalid?subjectEl:messageEl)?.focus?.();return false}
   clientSupportSubmitPending=true;
   invalidateClientSupportHistoryRequest();
   if(btn){btn.disabled=true;btn.textContent='Sending…'}if(status)status.textContent='';
@@ -1890,7 +1890,7 @@ async function submitSupportTicket(){
     if(!r.ok){if(status)status.textContent=data.error||'Could not send support request. Your draft is preserved.';return}
     if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||!String(data.ticket.id||'').trim()||String(data.ticket.subject||'')!==String(subject))throw new Error('Unconfirmed support request response');
     invalidateClientSupportHistoryRequest();supportTicketsData.unshift(data.ticket);
-    document.getElementById('supportSubject').value='';document.getElementById('supportMessage').value='';
+    if(subjectEl){subjectEl.value='';subjectEl.removeAttribute?.('aria-invalid')}if(messageEl){messageEl.value='';messageEl.removeAttribute?.('aria-invalid')};
     if(status)status.textContent=data.warning||'Support request sent.';renderSupport();
   }catch(_){
     if(status)status.textContent='Could not confirm the request was saved. Check request history before retrying; your draft is preserved.';
