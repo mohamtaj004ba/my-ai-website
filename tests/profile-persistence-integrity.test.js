@@ -17,7 +17,7 @@ function fixture({stored=null,workspace={id:'ws-1',ownerName:'Owner'},cas=true,c
     requireWritableSession:async()=>({workspaceId:'ws-1',email:'owner@example.test',role:'owner'}),
     compareAndSetConfig:async(_kv,changes)=>{writes++;assert.equal(changes.length,1);if(casError)throw casError;return cas},
     safeError:()=> 'redacted',console:{error(){}},
-    req:{body:{displayName:'Updated Owner',avatarDataUrl:'',expectedUpdatedAt:Number(stored?.updatedAt||0)}},
+    req:{body:{displayName:'Updated Owner',avatarDataUrl:''}},
     res:{status(n){status=n;return this},json(x){payload=x;return x}},
     Date,Array,Object,String,Number,Error
   });
@@ -79,21 +79,4 @@ test('profile name validation is announced inline and linked to the field',()=>{
     const html=fs.readFileSync(file,'utf8');
     assert.match(html,/id="profileNameInput"[^>]+aria-describedby="profileSaveStatus"/);
   }
-});
-
-
-test('profile save rejects a missing or stale displayed revision before compare-and-set',async()=>{
-  let f=fixture({stored:{displayName:'Old',avatarDataUrl:'',updatedAt:10}});
-  delete f.ctx.req.body.expectedUpdatedAt;
-  let out=await f.runSave();assert.equal(out.status,409);assert.equal(out.writes,0);
-  f=fixture({stored:{displayName:'Old',avatarDataUrl:'',updatedAt:10}});f.ctx.req.body.expectedUpdatedAt=9;
-  out=await f.runSave();assert.equal(out.status,409);assert.equal(out.writes,0);
-});
-
-test('profile UI preserves and sends the displayed revision',()=>{
-  const load=dashboard.slice(dashboard.indexOf('function loadUserProfile('),dashboard.indexOf('\nfunction renderUserProfile('));
-  const save=dashboard.slice(dashboard.indexOf('async function saveProfile(){'),dashboard.indexOf('\nfunction closeTopbarPopovers',dashboard.indexOf('async function saveProfile(){')));
-  assert.match(load,/updatedAt:Number\(p\.updatedAt\|\|0\)/);
-  assert.match(save,/expectedUpdatedAt:Number\(currentUserProfile\.updatedAt\|\|0\)/);
-  assert.match(save,/Number\(confirmed\.updatedAt\)<=Number\(currentUserProfile\.updatedAt\|\|0\)/);
 });

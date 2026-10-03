@@ -1026,7 +1026,6 @@ async function adminProvisioning(req,res){
       hasIntake,hasAgent,hasPhone,phone:ws.phone||'',checklist,
       checklistDone:doneCount,checklistTotal:totalCount,
       completionPercent:Number(onboarding?.completionPercent||0),
-      onboardingUpdatedAt:Number(onboarding?.updatedAt||0),
       onboardingStatus:onboarding?.status||'paid',
       reviewEligibleAt:onboarding?.reviewEligibleAt||null,
       onboardingLinkSent:!!onboarding?.onboardingLinkSent,
@@ -3212,9 +3211,7 @@ async function profileSave(req,res){
   const ws=await kv.get('workspace:'+s.workspaceId);
   if(ws!=null&&(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(s.workspaceId)))return res.status(503).json({error:'Workspace profile context is unavailable. No profile changes were made.'});
   let existing;try{existing=await getUserProfile(s.email,ws)}catch(err){if(err?.code==='PROFILE_UNAVAILABLE')return res.status(503).json({error:'User profile is unavailable. No profile changes were made.'});throw err}
-  const body=req.body||{},expectedUpdatedAt=Number(body.expectedUpdatedAt);
-  if(!Object.prototype.hasOwnProperty.call(body,'expectedUpdatedAt')||!Number.isFinite(expectedUpdatedAt)||expectedUpdatedAt!==Number(existing.updatedAt||0))return res.status(409).json({error:'Your profile changed since this menu was opened. Reload the latest profile before saving.'});
-  const displayName=String(body.displayName===undefined?existing.displayName:body.displayName).trim().slice(0,80);
+  const body=req.body||{},displayName=String(body.displayName===undefined?existing.displayName:body.displayName).trim().slice(0,80);
   if(displayName.length<1)return res.status(400).json({error:'Display name is required'});
   let avatarDataUrl=body.avatarDataUrl===undefined?existing.avatarDataUrl:String(body.avatarDataUrl||'');
   if(avatarDataUrl){
