@@ -72,3 +72,9 @@ test('company document rejects malformed link locally and focuses the URL field'
   assert.equal(f.el('companyDocumentUrl').focused,true);
   assert.match(f.el('companyDocumentStatusLine').textContent,/http\(s\) URL or CallerCore path/i);
 });
+
+
+test('prospect editor preserves an explicit zero monthly value instead of displaying it as blank',()=>{
+  const editor=source.slice(source.indexOf('function openProspectModal('),source.indexOf('function closeProspectModal('));
+  assert.match(editor,/prospectMrrInput'\)\.value=data\.monthlyValue\?\?''/);
+});

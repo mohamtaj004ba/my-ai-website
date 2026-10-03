@@ -123,3 +123,9 @@ test('campaign budget validation marks and focuses a negative value before any r
   assert.equal(f.el('campaignBudgetInput').focused,true);
   assert.match(f.el('campaignFormStatus').textContent,/nonnegative/i);
 });
+
+
+test('campaign editor preserves an explicit zero budget instead of displaying it as blank',()=>{
+  const editor=source.slice(source.indexOf('function openCampaignModal('),source.indexOf('function closeCampaignModal('));
+  assert.match(editor,/budgetInput\.value=c\?\.budget\?\?''/);
+});
