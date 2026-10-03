@@ -841,7 +841,7 @@ async function persistTeamStatus(id,status,{completionReason='',completionNote='
     const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:key,status,completionReason,completionNote,expectedUpdatedAt:Number(previous?.updatedAt||0)})}),data=await r.json().catch(()=>({}));
     const confirmed=data.state?.[key];
     if(!r.ok)throw new Error(data.error||'Could not update team status');
-    if(data.ok!==true||!data.state||typeof data.state!=='object'||Array.isArray(data.state)||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.status||'')!==String(status)||!Number.isFinite(Number(confirmed.updatedAt))||Number(confirmed.updatedAt)<=0)throw new Error('Could not confirm the team-status update. Refresh the call before retrying.');
+    if(data.ok!==true||!data.state||typeof data.state!=='object'||Array.isArray(data.state)||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.status||'')!==String(status)||!Number.isFinite(Number(confirmed.updatedAt))||Number(confirmed.updatedAt)<=Number(previous?.updatedAt||0))throw new Error('Could not confirm the team-status update. Refresh the call before retrying.');
     followupState=data.state;setFeedback('Team status updated.','success');return true
   }catch(err){if(followupState[key]===next){if(previous)followupState[key]=previous;else delete followupState[key]}setFeedback(err.message||'Could not update team status.','error');console.error(err);return false}
   finally{followupMutationPending.delete(key);renderLeads();renderOverview();renderCalls();if(x&&activeCallId===key)syncDrawerTeamStatus(x)}

@@ -20,3 +20,9 @@ test('team-status and note mutations send their current follow-up revision',()=>
   assert.match(note,/expectedUpdatedAt:Number\(current\.updatedAt\|\|0\)/);
   assert.match(del,/expectedUpdatedAt:Number\(current\.updatedAt\|\|0\)/);
 });
+
+
+test('team-status receipt must advance the follow-up revision before replacing local state',()=>{
+  const status=ui.slice(ui.indexOf('async function persistTeamStatus('),ui.indexOf('\nfunction requestTeamStatusChange',ui.indexOf('async function persistTeamStatus(')));
+  assert.match(status,/Number\(confirmed\.updatedAt\)<=Number\(previous\?\.updatedAt\|\|0\)/);
+});
