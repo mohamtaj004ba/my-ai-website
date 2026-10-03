@@ -1604,10 +1604,11 @@ function renderPhoneRouting(){
   set('clientRoutingHeadline',d?'Routing settings saved. Activation pending.':'Phone routing has not been assigned yet.');
   set('clientRoutingCopy',aiAnsweringState().detail);
 }
+let locationMutationPending=false;
 function renderLocations(){
   const wrap=document.getElementById('locationsGrid'),empty=document.getElementById('locationsEmpty'),label=document.getElementById('locationsLimitLabel'),add=document.getElementById('addLocationButton');if(!wrap)return;
-  wrap.innerHTML=locationsData.map(x=>'<article class="panel location-card"><div><span class="tag '+(x.active?'green':'amber')+'">'+(x.active?'Active':'Inactive')+'</span><h3>'+esc(x.name)+'</h3><p>'+esc(x.address||'No address added')+'</p><small>'+esc(x.phone||'No phone')+' · '+esc(x.timezone||'America/Los_Angeles')+'</small></div><div class="location-actions"><button class="admin-link" data-edit-location="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-location="'+esc(x.id)+'">Delete</button></div></article>').join('');
-  if(empty)empty.hidden=locationsData.length!==0;if(label)label.textContent=locationsData.length+' of '+locationsLimit+' locations used on '+currentPlan+'.';if(add)add.disabled=locationsData.length>=locationsLimit;
+  wrap.innerHTML=locationsData.map(x=>'<article class="panel location-card"><div><span class="tag '+(x.active?'green':'amber')+'">'+(x.active?'Active':'Inactive')+'</span><h3>'+esc(x.name)+'</h3><p>'+esc(x.address||'No address added')+'</p><small>'+esc(x.phone||'No phone')+' · '+esc(x.timezone||'America/Los_Angeles')+'</small></div><div class="location-actions"><button class="admin-link" data-edit-location="'+esc(x.id)+'" '+(locationMutationPending?'disabled aria-busy="true"':'')+'>Edit</button><button class="admin-link danger-link" data-delete-location="'+esc(x.id)+'" '+(locationMutationPending?'disabled aria-busy="true"':'')+'>Delete</button></div></article>').join('');
+  if(empty)empty.hidden=locationsData.length!==0;if(label)label.textContent=locationsData.length+' of '+locationsLimit+' locations used on '+currentPlan+'.';if(add){add.disabled=locationMutationPending||locationsData.length>=locationsLimit;add.setAttribute('aria-busy',String(locationMutationPending))}
   wrap.querySelectorAll('[data-edit-location]').forEach(b=>b.addEventListener('click',()=>openLocationModal(b.dataset.editLocation)));
   wrap.querySelectorAll('[data-delete-location]').forEach(b=>b.addEventListener('click',()=>deleteLocation(b.dataset.deleteLocation)));
 }
@@ -1617,18 +1618,26 @@ function openLocationModal(id=''){
 }
 function closeLocationModal(){const m=document.getElementById('locationModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
 async function persistLocations(next){
+  if(locationMutationPending)return false;
+  locationMutationPending=true;renderLocations();
   try{
-    const r=await fetch('/api/account?action=locations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:next})}),data=await r.json().catch(()=>({}));
+    const submitted=next.map(item=>({...item}));
+    const r=await fetch('/api/account?action=locations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:submitted})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save locations.');
-    const confirmedLimit=Number(data.limit);if(!Array.isArray(data.locations)||!Number.isFinite(confirmedLimit)||confirmedLimit<1)throw new Error('Location save response was incomplete. Your current locations were preserved; refresh before retrying.');
-    locationsData=data.locations;locationsLimit=confirmedLimit;renderLocations();return true;
+    const confirmedLimit=Number(data.limit),rows=data.locations;
+    if(data.ok!==true||!Array.isArray(rows)||rows.length!==submitted.length||!Number.isFinite(confirmedLimit)||confirmedLimit<1||rows.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()||!Number.isFinite(Number(item.updatedAt))||Number(item.updatedAt)<=0)||new Set(rows.map(item=>String(item.id))).size!==rows.length)
+      throw new Error('Location save response was incomplete. Your current locations were preserved; refresh before retrying.');
+    if(submitted.some((item,i)=>item.id&&String(rows[i]?.id)!==String(item.id)))throw new Error('Location save response did not match the submitted records. Your current locations were preserved; refresh before retrying.');
+    locationsData=rows;locationsLimit=confirmedLimit;return true;
   }catch(err){alert(err.message||'Could not save locations. Check your connection and try again.');return false}
+  finally{locationMutationPending=false;renderLocations()}
 }
 async function saveLocation(){
+  if(locationMutationPending)return false;
   const modal=document.getElementById('locationModal'),id=modal?.dataset.editId||'',item={id:id||undefined,name:document.getElementById('locationName')?.value||'',phone:document.getElementById('locationPhone')?.value||'',address:document.getElementById('locationAddress')?.value||'',timezone:document.getElementById('locationTimezone')?.value||'America/Los_Angeles',active:!!document.getElementById('locationActive')?.checked};
-  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];if(await persistLocations(next))closeLocationModal();
+  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];const ok=await persistLocations(next);if(ok)closeLocationModal();return ok;
 }
-async function deleteLocation(id){const x=locationsData.find(v=>String(v.id)===String(id));if(!x||!confirm('Delete location "'+x.name+'"?'))return;await persistLocations(locationsData.filter(v=>String(v.id)!==String(id)))}
+async function deleteLocation(id){if(locationMutationPending)return false;const x=locationsData.find(v=>String(v.id)===String(id));if(!x||!confirm('Delete location "'+x.name+'"?'))return false;return persistLocations(locationsData.filter(v=>String(v.id)!==String(id)))}
 document.getElementById('addLocationButton')?.addEventListener('click',()=>openLocationModal());
 document.getElementById('closeLocationModal')?.addEventListener('click',closeLocationModal);
 document.getElementById('saveLocationButton')?.addEventListener('click',saveLocation);
