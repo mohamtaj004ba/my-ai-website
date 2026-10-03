@@ -43,3 +43,12 @@ test('dynamic operational status text uses polite live regions across client and
   assert.match(admin,/id="adminAiStatus" role="status" aria-live="polite" aria-atomic="true"/);
   assert.match(admin,/id="adminAuditCoverage" role="status" aria-live="polite" aria-atomic="true"/);
 });
+
+
+test('dashboard navigation exposes current page and mobile menu expansion state',()=>{
+  const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(dashboard,/setAttribute\('aria-current','page'\)/);
+  assert.match(dashboard,/removeAttribute\('aria-current'\)/);
+  assert.match(dashboard,/menu\.setAttribute\('aria-expanded','false'\)/);
+  assert.match(dashboard,/e\.currentTarget\.setAttribute\('aria-expanded',String\(open\)\)/);
+});
