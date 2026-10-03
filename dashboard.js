@@ -1513,7 +1513,7 @@ function renderAnalytics(){
 let webhookSaving=false;
 function setWebhookEditing(editing){
   webhookEditing=!!editing;const editor=document.getElementById('webhookEditor'),edit=document.getElementById('editWebhookButton'),url=document.getElementById('webhookUrl'),status=document.getElementById('webhookEditStatus'),save=document.getElementById('saveWebhookButton'),cancel=document.getElementById('cancelWebhookButton');
-  if(editor)editor.hidden=!webhookEditing;if(edit){edit.hidden=webhookEditing;edit.disabled=webhookSaving;edit.textContent=(integrationsData?.webhookUrl?'Edit webhook':'Configure webhook')}if(url){url.disabled=!webhookEditing||webhookSaving;if(webhookEditing&&!webhookSaving)url.value=integrationsData?.webhookUrl||''}if(save){save.disabled=webhookSaving;save.textContent=webhookSaving?'Saving…':'Save webhook'}if(cancel)cancel.disabled=webhookSaving;if(status&&!webhookSaving)status.textContent='';
+  if(editor)editor.hidden=!webhookEditing;if(edit){edit.hidden=webhookEditing;edit.disabled=webhookSaving;edit.textContent=(integrationsData?.webhookUrl?'Edit webhook':'Configure webhook')}if(url){url.disabled=!webhookEditing||webhookSaving;if(webhookEditing&&!webhookSaving){url.value=integrationsData?.webhookUrl||'';url.removeAttribute?.('aria-invalid')}}if(save){save.disabled=webhookSaving;save.textContent=webhookSaving?'Saving…':'Save webhook'}if(cancel)cancel.disabled=webhookSaving;if(status&&!webhookSaving)status.textContent='';
   if(webhookEditing)setTimeout(()=>url?.focus(),20);
 }
 function renderIntegrations(){
@@ -1530,11 +1530,14 @@ function renderIntegrations(){
 async function saveWebhook(){
   if(!has('apiAccess'))return openModal('Pro');
   if(webhookSaving)return false;
-  const webhookUrl=document.getElementById('webhookUrl')?.value.trim()||'',status=document.getElementById('webhookEditStatus');webhookSaving=true;setWebhookEditing(true);if(status)status.textContent='Saving…';
-  if(demoMode){integrationsData={...(integrationsData||{}),webhookUrl};webhookEditing=false;webhookSaving=false;renderIntegrations();return true}
+  const urlInput=document.getElementById('webhookUrl'),webhookUrl=urlInput?.value.trim()||'',status=document.getElementById('webhookEditStatus'),invalidUrl=!!webhookUrl&&!/^https:\/\//i.test(webhookUrl);
+  if(invalidUrl){urlInput?.setAttribute?.('aria-invalid','true');urlInput?.focus?.();if(status)status.textContent='Webhook URL must use HTTPS, or leave it blank to disconnect.';return false}
+  urlInput?.removeAttribute?.('aria-invalid');
+  const expectedUpdatedAt=Number(integrationsData?.updatedAt||0);webhookSaving=true;setWebhookEditing(true);if(status)status.textContent='Saving…';
+  if(demoMode){integrationsData={...(integrationsData||{}),webhookUrl,updatedAt:Math.max(Date.now(),expectedUpdatedAt+1)};webhookEditing=false;webhookSaving=false;renderIntegrations();return true}
   let failureMessage='';
   try{
-    const r=await fetch('/api/account?action=integrations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=integrations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save webhook.');
     const confirmed=data.integrations;
     if(data.ok!==true||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.webhookUrl||'')!==webhookUrl||!Number.isFinite(Number(confirmed.updatedAt))||Number(confirmed.updatedAt)<=0)throw new Error('Webhook save response was incomplete. Your draft remains open; refresh before retrying.');
