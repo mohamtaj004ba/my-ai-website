@@ -3346,9 +3346,9 @@ async function deletePhone(id){
     if(data.ok!==true||!data.deleted||typeof data.deleted!=='object'||Array.isArray(data.deleted)||String(data.deleted.id||'')!==key)throw new Error('Phone deletion response was incomplete. Refresh the inventory before retrying.');
     adminPhoneData=adminPhoneData.filter(x=>String(x.id)!==key);renderPhones();
     try{await refreshAdminView('phones',{force:true,announce:false})}
-    catch(_){alert('Phone deletion was confirmed, but the inventory could not refresh. Reload Phone Numbers before taking another action.')}
+    catch(_){setAdminSyncState('error','Phone deletion was confirmed, but the inventory could not refresh. Reload Phone Numbers before taking another action.')}
     return true;
-  }catch(err){alert(err.message||'Could not delete phone number.');return false}
+  }catch(err){setAdminSyncState('error',err.message||'Could not delete phone number.');return false}
   finally{adminPhoneDeletePending.delete(key);renderPhones()}
 }
 
@@ -3392,7 +3392,7 @@ async function savePhone(){
     {const index=adminPhoneData.findIndex(x=>String(x.id)===String(data.number.id));if(index>=0)adminPhoneData[index]=data.number;else adminPhoneData.push(data.number);renderPhones()}
     release();phoneSaving=false;closePhoneModal();
     try{await refreshAdminView('phones',{force:true,announce:false})}
-    catch(_){alert('Phone number was saved, but the inventory could not refresh. Reload Phone Numbers before making another routing change.')}
+    catch(_){setAdminSyncState('error','Phone number was saved, but the inventory could not refresh. Reload Phone Numbers before making another routing change.')}
     return true;
   }catch(err){if(status){status.textContent=err.message||'Could not save phone number.';status.className='form-status-line error'}return false}
   finally{release();phoneSaving=false;if(btn){btn.disabled=false;btn.textContent='Save number'}}

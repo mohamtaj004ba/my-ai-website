@@ -57,7 +57,7 @@ test('phone inventory read and mutations reject malformed or duplicate inventory
 
 
 test('confirmed phone save stays successful when inventory refresh fails',async()=>{
-  const js=fs.readFileSync('dashboard.js','utf8'),nodes=new Map(),alerts=[];
+  const js=fs.readFileSync('dashboard.js','utf8'),nodes=new Map(),alerts=[],sync=[];
   for(const [id,value] of Object.entries({phoneNumberInput:'5095550100',phoneLabelInput:'New label',phoneProviderInput:'Vapi',phoneWorkspaceInput:'tenant',phoneTransferInput:'',phoneForwardingInput:'',phoneAfterHoursInput:'ai'}))nodes.set(id,{value,disabled:false,textContent:'',className:''});
   nodes.set('phoneModal',{dataset:{editId:'p',expectedUpdatedAt:'10'}});
   nodes.set('savePhoneButton',{disabled:false,textContent:'Save number'});
@@ -68,14 +68,16 @@ test('confirmed phone save stays successful when inventory refresh fails',async(
     phoneSaving:false,adminPhoneData:[{id:'p',number:'5095550100',label:'Old label',updatedAt:10}],
     document:{getElementById:id=>nodes.get(id)},validUsPhone:()=>true,settingsFieldError:()=>{},normalizePhone:x=>x,
     lockFormControls:()=>()=>{},fetch:async()=>({ok:true,json:async()=>({ok:true,number:record})}),renderPhones:()=>{},
-    closePhoneModal:()=>{closed++},refreshAdminView:async()=>{throw Error('offline')},alert:x=>alerts.push(String(x))
+    closePhoneModal:()=>{closed++},refreshAdminView:async()=>{throw Error('offline')},alert:x=>alerts.push(String(x)),setAdminSyncState:(...args)=>sync.push(args)
   });
   vm.runInContext(js.slice(js.indexOf('async function savePhone(){'),js.indexOf("document.getElementById('addPhoneButton')")),ctx);
   assert.equal(await vm.runInContext('savePhone()',ctx),true);
   assert.equal(ctx.adminPhoneData[0].updatedAt,11);
   assert.equal(closed,1);
-  assert.equal(alerts.length,1);
-  assert.match(alerts[0],/saved, but the inventory could not refresh/i);
+  assert.equal(alerts.length,0);
+  assert.equal(sync.length,1);
+  assert.equal(sync[0][0],'error');
+  assert.match(sync[0][1],/saved, but the inventory could not refresh/i);
   assert.equal(nodes.get('phoneFormStatus').textContent,'');
 });
 

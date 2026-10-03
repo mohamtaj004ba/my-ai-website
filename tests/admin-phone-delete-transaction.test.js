@@ -45,7 +45,7 @@ test('duplicate phone deletion is ignored while the first request is pending',as
   let release,requests=0;
   const ctx=vm.createContext({
     adminPhoneDeletePending:new Set(),adminPhoneData:[{id:'p',number:'5095550100',updatedAt:10}],
-    confirm:()=>true,renderPhones(){},alert(){},
+    confirm:()=>true,renderPhones(){},alert(){},setAdminSyncState(){},
     refreshAdminView:async()=>true,
     fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>({ok:true,deleted:{id:'p',updatedAt:10}})}},
     String,Number,Array,Object,JSON,Set,Promise,Error
@@ -58,4 +58,24 @@ test('duplicate phone deletion is ignored while the first request is pending',as
   release();assert.equal(await first,true);
   assert.equal(ctx.adminPhoneData.length,0);
   assert.equal(ctx.adminPhoneDeletePending.size,0);
+});
+
+
+test('failed phone deletion reports through admin sync status and preserves inventory',async()=>{
+  const dashboard=fs.readFileSync('dashboard.js','utf8'),start=dashboard.indexOf('async function deletePhone('),end=dashboard.indexOf('\nfunction openPhoneModal(',start),code=dashboard.slice(start,end);
+  const sync=[];
+  const ctx=vm.createContext({
+    adminPhoneDeletePending:new Set(),adminPhoneData:[{id:'p',number:'5095550100',updatedAt:10}],
+    confirm:()=>true,renderPhones(){},setAdminSyncState:(...args)=>sync.push(args),
+    refreshAdminView:async()=>true,
+    fetch:async()=>({ok:false,json:async()=>({error:'Phone routing changed before deletion'})}),
+    String,Number,Array,Object,JSON,Set,Promise,Error
+  });
+  vm.runInContext(code,ctx);
+  assert.equal(await vm.runInContext("deletePhone('p')",ctx),false);
+  assert.equal(ctx.adminPhoneData.length,1);
+  assert.equal(ctx.adminPhoneDeletePending.size,0);
+  assert.equal(sync.length,1);
+  assert.equal(sync[0][0],'error');
+  assert.match(sync[0][1],/Phone routing changed before deletion/);
 });
