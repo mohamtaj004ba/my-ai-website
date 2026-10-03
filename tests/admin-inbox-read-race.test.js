@@ -24,7 +24,7 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
 test('failed Gmail read sync does not double-count unread after a newer inbox snapshot arrives',async()=>{
   const f=fixture();await f.open();
   f.ctx.adminInboxData.gmail={threads:[{id:'gmail-one',unread:true,messages:[]}],analytics:{unread:1}};
-  f.pending.resolve({ok:false});await tick();
+  f.pending.resolve({ok:false,json:async()=>({error:'failed'})});await tick();
   assert.equal(f.ctx.adminInboxData.gmail.analytics.unread,1);
   assert.equal(f.ctx.adminInboxData.gmail.threads[0].unread,true);
   assert.match(f.ctx.adminInboxData.readError,/remains unread/);
@@ -34,7 +34,7 @@ test('successful Gmail read sync applies to the current thread snapshot, not an 
   const f=fixture();await f.open();
   const replacement={id:'gmail-one',unread:true,messages:[]};
   f.ctx.adminInboxData.gmail={threads:[replacement,{id:'other',unread:true}],analytics:{unread:2}};
-  f.pending.resolve({ok:true});await tick();
+  f.pending.resolve({ok:true,json:async()=>({ok:true})});await tick();
   assert.equal(replacement.unread,false);
   assert.equal(f.ctx.adminInboxData.gmail.analytics.unread,1);
   assert.equal(f.ctx.adminInboxData.readError,'');
@@ -43,7 +43,7 @@ test('successful Gmail read sync applies to the current thread snapshot, not an 
 test('late Gmail read response after disconnect cannot mutate disconnected inbox state',async()=>{
   const f=fixture();await f.open();
   f.ctx.adminInboxData.gmailStatus={connected:false};f.ctx.adminInboxData.gmail={threads:[],analytics:{unread:0}};f.ctx.adminInboxData.readError='';
-  f.pending.resolve({ok:false});await tick();
+  f.pending.resolve({ok:false,json:async()=>({error:'failed'})});await tick();
   assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
   assert.equal(f.ctx.adminInboxData.gmail.analytics.unread,0);
   assert.equal(f.ctx.adminInboxData.readError,'');
