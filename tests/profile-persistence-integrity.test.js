@@ -58,3 +58,11 @@ test('profile UI serializes saves and requires the exact submitted profile recei
   assert.match(dashboard,/profilePhotoButton[^\n]+if\(!profileSaving\)/);
   assert.match(dashboard,/profilePhotoRemove[^\n]+if\(profileSaving\)return/);
 });
+
+
+test('client and admin profile save feedback is announced without stealing focus',()=>{
+  for(const file of ['dashboard.html','admin-dashboard.html']){
+    const html=fs.readFileSync(file,'utf8');
+    assert.match(html,/id="profileSaveStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  }
+});
