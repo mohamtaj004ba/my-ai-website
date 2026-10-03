@@ -1204,7 +1204,7 @@ async function adminDeletePhoneNumber(req,res){
   const list=current.slice();
   const item=list.find(x=>String(x.id)===id);
   if(!item)return res.status(404).json({error:'Phone number not found'});
-  if(req.body?.expectedUpdatedAt!==undefined&&Number(req.body.expectedUpdatedAt||0)!==Number(item.updatedAt||0))return res.status(409).json({error:'This phone record changed before deletion. Refresh the inventory and review it again.'});
+  if(req.body?.expectedUpdatedAt===undefined||!Number.isFinite(Number(req.body.expectedUpdatedAt))||Number(req.body.expectedUpdatedAt)!==Number(item.updatedAt||0))return res.status(409).json({error:'This phone record changed before deletion. Refresh the inventory and review it again.'});
   const next=list.filter(x=>!x||String(x.id)!==id);
   const workspaceBefore=item.workspaceId?await kv.get('workspace:'+item.workspaceId):null;
   const onboardingBefore=item.workspaceId?await kv.get('onboarding:workspace:'+item.workspaceId):null;

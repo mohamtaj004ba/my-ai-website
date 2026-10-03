@@ -19,8 +19,8 @@ test('phone deletion stages inventory, workspace and onboarding changes atomical
   assert.equal(r.auditCommitted.auditKey,'audit:tenant');assert.equal(r.auditCommitted.event.action,'phone_routing_delete');
 });
 
-test('stale, concurrent and malformed phone deletions fail without writing an audit event',async()=>{
-  for(const [options,want] of [[{expected:9},409],[{transaction:false},409],[{malformed:true},503]]){const r=await run(options);assert.equal(r.status,want);assert.equal(r.auditCommitted,null)}
+test('stale, missing-revision, concurrent and malformed phone deletions fail without writing an audit event',async()=>{
+  for(const [options,want] of [[{expected:9},409],[{expected:undefined},409],[{transaction:false},409],[{malformed:true},503]]){const r=await run(options);assert.equal(r.status,want);assert.equal(r.auditCommitted,null)}
 });
 
 test('client sends the phone revision, serializes deletion and preserves confirmed success through refresh failure',()=>{
