@@ -63,3 +63,14 @@ test('dynamic save and recovery feedback uses live status semantics',()=>{
   assert.match(admin,/id="adminClientManageNote" role="status" aria-live="polite" aria-atomic="true"/);
   assert.match(admin,/id="adminTechStatus" role="status" aria-live="polite" aria-atomic="true"/);
 });
+
+
+test('admin modal validation feedback uses live status semantics',()=>{
+  const admin=html('admin-dashboard.html');
+  for(const id of ['companyDocumentStatusLine','prospectFormStatus','campaignFormStatus']){
+    assert.match(admin,new RegExp('id="'+id+'" role="status" aria-live="polite" aria-atomic="true"'));
+  }
+  assert.match(admin,/id="companyDocumentName"[^>]+aria-describedby="companyDocumentStatusLine"/);
+  assert.match(admin,/id="prospectNameInput"[^>]+aria-describedby="prospectFormStatus"/);
+  assert.match(admin,/id="campaignNameInput"[^>]+aria-describedby="campaignFormStatus"/);
+});
