@@ -1407,11 +1407,11 @@ function setAutomationActionStatus(message='',tone=''){
   const el=document.getElementById('automationActionStatus');if(!el)return;
   el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
 }
-let automationMutationPending=false;
+let automationMutationPending=false,automationLastMutationError='';
 async function persistAutomations({surfaceError=true,expectedBefore=null}={}){
   if(demoMode)return true;
   if(automationMutationPending)return false;
-  automationMutationPending=true;setAutomationMutationUi(true);
+  automationMutationPending=true;automationLastMutationError='';setAutomationMutationUi(true);
   try{
     const submitted=automationsData.map(item=>({...item})),expectedAutomations=Array.isArray(expectedBefore)?expectedBefore.map(item=>({...item})):submitted.map(item=>({...item}));
     const r=await fetch('/api/account?action=automations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({automations:submitted,expectedAutomations})}),data=await r.json().catch(()=>({}));
@@ -1421,7 +1421,7 @@ async function persistAutomations({surfaceError=true,expectedBefore=null}={}){
     if(returnedIds.some((id,i)=>!id||id!==submittedIds[i])||data.automations.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!Number.isFinite(Number(item.updatedAt))||Number(item.updatedAt)<=0))
       throw new Error('Could not confirm the automation save. Refresh automations before retrying.');
     automationsData=data.automations;if(surfaceError)setAutomationActionStatus('Automations updated.','success');return true;
-  }catch(err){if(surfaceError)setAutomationActionStatus(err.message||'Could not save automations right now.','error');return false}
+  }catch(err){automationLastMutationError=err.message||'Could not save automations right now.';if(surfaceError)setAutomationActionStatus(automationLastMutationError,'error');return false}
   finally{automationMutationPending=false;setAutomationMutationUi(false)}
 }
 async function toggleAutomation(id){
@@ -1475,7 +1475,7 @@ async function saveAutomation(){
   if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
   renderAutomations();
   if(await persistAutomations({surfaceError:false,expectedBefore:before})){if(status){status.textContent='Automation saved.';status.className='form-status-line success'}closeAutomation();return true}
-  automationsData=before;renderAutomations();if(status){status.textContent='Automation was not saved. Review the message and try again.';status.className='form-status-line error'}return false
+  automationsData=before;renderAutomations();if(status){status.textContent=automationLastMutationError||'Automation was not saved. Review the message and try again.';status.className='form-status-line error'}return false
 }
 document.querySelectorAll('[data-agent-edit]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(btn.dataset.agentEdit)));
 document.querySelectorAll('[data-agent-cancel]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(false,{restore:true})));
@@ -1690,7 +1690,7 @@ function renderPhoneRouting(){
   set('clientRoutingHeadline',d?'Routing settings saved. Activation pending.':'Phone routing has not been assigned yet.');
   set('clientRoutingCopy',aiAnsweringState().detail);
 }
-let locationMutationPending=false;
+let locationMutationPending=false,locationLastMutationError='';
 function renderLocations(){
   const wrap=document.getElementById('locationsGrid'),empty=document.getElementById('locationsEmpty'),label=document.getElementById('locationsLimitLabel'),add=document.getElementById('addLocationButton');if(!wrap)return;
   wrap.innerHTML=locationsData.map(x=>'<article class="panel location-card"><div><span class="tag '+(x.active?'green':'amber')+'">'+(x.active?'Active':'Inactive')+'</span><h3>'+esc(x.name)+'</h3><p>'+esc(x.address||'No address added')+'</p><small>'+esc(x.phone||'No phone')+' · '+esc(x.timezone||'America/Los_Angeles')+'</small></div><div class="location-actions"><button class="admin-link" data-edit-location="'+esc(x.id)+'" '+(locationMutationPending?'disabled aria-busy="true"':'')+'>Edit</button><button class="admin-link danger-link" data-delete-location="'+esc(x.id)+'" '+(locationMutationPending?'disabled aria-busy="true"':'')+'>Delete</button></div></article>').join('');
@@ -1709,7 +1709,7 @@ function setLocationActionStatus(message='',tone=''){
 }
 async function persistLocations(next,{surfaceError=true}={}){
   if(locationMutationPending)return false;
-  locationMutationPending=true;const unlock=lockFormControls('locationModal');renderLocations();
+  locationMutationPending=true;locationLastMutationError='';const unlock=lockFormControls('locationModal');renderLocations();
   try{
     const submitted=next.map(item=>({...item})),expectedLocations=locationsData.map(item=>({...item}));
     const r=await fetch('/api/account?action=locations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:submitted,expectedLocations})}),data=await r.json().catch(()=>({}));
@@ -1719,7 +1719,7 @@ async function persistLocations(next,{surfaceError=true}={}){
       throw new Error('Location save response was incomplete. Your current locations were preserved; refresh before retrying.');
     if(submitted.some((item,i)=>item.id&&String(rows[i]?.id)!==String(item.id)))throw new Error('Location save response did not match the submitted records. Your current locations were preserved; refresh before retrying.');
     locationsData=rows;locationsLimit=confirmedLimit;if(surfaceError)setLocationActionStatus('Locations updated.','success');return true;
-  }catch(err){if(surfaceError)setLocationActionStatus(err.message||'Could not save locations. Check your connection and try again.','error');return false}
+  }catch(err){locationLastMutationError=err.message||'Could not save locations. Check your connection and try again.';if(surfaceError)setLocationActionStatus(locationLastMutationError,'error');return false}
   finally{unlock();locationMutationPending=false;renderLocations()}
 }
 async function saveLocation(){
@@ -1731,7 +1731,7 @@ async function saveLocation(){
   const phoneInvalid=!!phone&&!/^\+?[0-9() .-]{7,30}$/.test(phone);if(phoneInput){if(phoneInvalid)phoneInput.setAttribute('aria-invalid','true');else phoneInput.removeAttribute?.('aria-invalid')}if(phoneInvalid){phoneInput?.focus?.();if(status){status.textContent='Enter a valid location phone number or leave it blank.';status.className='form-status-line error'}return false}
   if(status){status.textContent='Saving location…';status.className='form-status-line'}
   const item={id:id||undefined,name,phone,address:document.getElementById('locationAddress')?.value||'',timezone:document.getElementById('locationTimezone')?.value||'America/Los_Angeles',active:!!document.getElementById('locationActive')?.checked};
-  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];const ok=await persistLocations(next,{surfaceError:false});if(ok){if(status){status.textContent='Location saved.';status.className='form-status-line success'}closeLocationModal()}else if(status){status.textContent='Location was not saved. Review the message and try again.';status.className='form-status-line error'}return ok;
+  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];const ok=await persistLocations(next,{surfaceError:false});if(ok){if(status){status.textContent='Location saved.';status.className='form-status-line success'}closeLocationModal()}else if(status){status.textContent=locationLastMutationError||'Location was not saved. Review the message and try again.';status.className='form-status-line error'}return ok;
 }
 async function deleteLocation(id){if(locationMutationPending)return false;const x=locationsData.find(v=>String(v.id)===String(id));if(!x||!confirm('Delete location "'+x.name+'"?'))return false;return persistLocations(locationsData.filter(v=>String(v.id)!==String(id)))}
 document.getElementById('addLocationButton')?.addEventListener('click',()=>openLocationModal());
