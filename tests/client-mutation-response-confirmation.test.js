@@ -29,7 +29,7 @@ test('client configuration mutations require canonical response payloads before 
   assert.match(settings,/confirmedRevision<=Number\(payload\.expectedUpdatedAt\|\|0\)/);
   assert.match(settings,/String\(confirmed\.businessName\|\|'\'\)!==String\(payload\.businessName\|\|'\'\)/);
   assert.doesNotMatch(settings,/data\.settings\|\|payload/);
-  assert.match(locations,/Array\.isArray\(data\.locations\)/);
+  assert.match(locations,/!Array\.isArray\(rows\)/);
   assert.match(locations,/Number\.isFinite\(confirmedLimit\)/);
   assert.doesNotMatch(locations,/data\.locations\|\|\[\]/);
 });
