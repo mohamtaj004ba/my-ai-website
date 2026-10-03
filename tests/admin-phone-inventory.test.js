@@ -81,6 +81,17 @@ test('confirmed phone save stays successful when inventory refresh fails',async(
   assert.equal(nodes.get('phoneFormStatus').textContent,'');
 });
 
+test('stale phone edit IDs fail closed before opening the editor',()=>{
+  const js=fs.readFileSync('dashboard.js','utf8'),block=js.slice(js.indexOf('function openPhoneModal('),js.indexOf('\nfunction closePhoneModal',js.indexOf('function openPhoneModal(')));
+  const modal={dataset:{},classList:{add(){this.opened=true}},setAttribute(){this.opened=true}},sync=[];
+  const ctx=vm.createContext({phoneSaving:false,adminPhoneData:[],setAdminSyncState:(...args)=>modal.sync.push(args),document:{getElementById:id=>id==='phoneModal'?modal:null}});
+  vm.runInContext(block,ctx);
+  assert.equal(vm.runInContext("openPhoneModal('missing-phone')",ctx),false);
+  assert.equal(modal.opened,undefined);
+  assert.equal(modal.sync.length,1);
+  assert.match(modal.sync[0][1],/no longer available.*Refresh Phone Numbers/i);
+});
+
 test('phone editor focuses the primary phone-number field when opened',()=>{
   const js=fs.readFileSync('dashboard.js','utf8'),block=js.slice(js.indexOf('function openPhoneModal('),js.indexOf('\nfunction closePhoneModal',js.indexOf('function openPhoneModal(')));
   assert.match(block,/setTimeout\(\(\)=>numberInput\?\.focus\?\.\(\),20\)/);
