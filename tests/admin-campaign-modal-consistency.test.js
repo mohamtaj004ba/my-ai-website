@@ -81,3 +81,14 @@ test('campaign delete holds the lock and retains draft on server error',async()=
   assert.match(f.el('campaignFormStatus').textContent,/Campaign changed/);
   assert.ok(f.controls.every(el=>!el.disabled));
 });
+
+
+test('campaign name validation marks and focuses the field before any request',async()=>{
+  const f=fixture({existing:false});
+  const name=f.el('campaignNameInput');name.value='   ';name.setAttribute=function(k,v){this[k]=v};name.removeAttribute=function(k){delete this[k]};name.focus=function(){this.focused=true};
+  await vm.runInContext('saveCampaign()',f.context);
+  assert.equal(f.requests.length,0);
+  assert.equal(name['aria-invalid'],'true');
+  assert.equal(name.focused,true);
+  assert.match(f.el('campaignFormStatus').textContent,/required/);
+});
