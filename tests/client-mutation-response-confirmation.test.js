@@ -119,7 +119,7 @@ test('automation and location saves preserve local records on malformed successf
   const locationCtx=vm.createContext({
     locationsData:[{id:'existing'}],locationsLimit:3,
     fetch:async()=>({ok:true,json:async()=>({locations:null,limit:3})}),
-    alert:m=>alerts.push(m),renderLocations:()=>{},Number,Array,Object,String,Set
+    alert:m=>alerts.push(m),renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set
   });
   vm.runInContext(segment('let locationMutationPending=false;',"\nasync function saveLocation("),locationCtx);
   assert.equal(await vm.runInContext("persistLocations([{id:'new'}])",locationCtx),false);
@@ -155,7 +155,7 @@ test('location saves serialize mutations and require canonical row identities',a
   const ctx=vm.createContext({
     locationsData:[{id:'loc-1',name:'Main',updatedAt:1}],locationsLimit:2,
     fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>({ok:true,locations:[{id:'loc-1',name:'Main',updatedAt:2}],limit:2})}},
-    alert:()=>{},renderLocations:()=>{},Number,Array,Object,String,Set,Promise,Error
+    alert:()=>{},renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set,Promise,Error
   });
   vm.runInContext(segment('let locationMutationPending=false;',"\nasync function saveLocation("),ctx);
   const first=vm.runInContext("persistLocations([{id:'loc-1',name:'Main'}])",ctx);
@@ -173,9 +173,18 @@ test('location save rejects mismatched existing record identities despite HTTP 2
   const ctx=vm.createContext({
     locationsData:[{id:'loc-1',name:'Main',updatedAt:1}],locationsLimit:2,
     fetch:async()=>({ok:true,json:async()=>({ok:true,locations:[{id:'different',name:'Main',updatedAt:2}],limit:2})}),
-    alert:()=>{},renderLocations:()=>{},Number,Array,Object,String,Set,Promise,Error
+    alert:()=>{},renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set,Promise,Error
   });
   vm.runInContext(segment('let locationMutationPending=false;',"\nasync function saveLocation("),ctx);
   assert.equal(await vm.runInContext("persistLocations([{id:'loc-1',name:'Main'}])",ctx),false);
   assert.equal(ctx.locationsData[0].id,'loc-1');
+});
+
+
+test('location modal cannot close while a save is pending',()=>{
+  const block=segment('function closeLocationModal()',"\nasync function persistLocations(");
+  assert.match(block,/if\(locationMutationPending\)return false/);
+  const persist=segment('async function persistLocations(',"\nasync function saveLocation(");
+  assert.match(persist,/lockFormControls\('locationModal'\)/);
+  assert.match(persist,/finally\{unlock\(\);locationMutationPending=false/);
 });
