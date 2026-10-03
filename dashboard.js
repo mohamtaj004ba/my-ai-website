@@ -2153,17 +2153,18 @@ function renderAdminFeedback(){
   renderClientCareTabs();
 }
 async function updateAdminFeedback(id,status){
-  const key=String(id),item=adminFeedbackData.find(x=>String(x.id)===key);if(!item||adminFeedbackStatusPending.has(key))return;
-  const before={status:item.status,updatedAt:item.updatedAt},expectedUpdatedAt=Number(item.updatedAt||item.createdAt||0);
+  const key=String(id),item=adminFeedbackData.find(x=>String(x.id)===key);if(!item||adminFeedbackStatusPending.has(key))return false;
+  const actionStatus=document.getElementById('adminFeedbackActionStatus'),before={status:item.status,updatedAt:item.updatedAt},expectedUpdatedAt=Number(item.updatedAt||item.createdAt||0);
+  if(actionStatus){actionStatus.textContent='Updating feedback…';actionStatus.className='muted'}
   adminFeedbackStatusPending.add(key);item.status=status;item.updatedAt=Date.now();renderAdminFeedback();
   try{
     const r=await fetch('/api/account?action=admin-ai-feedback-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update feedback.');
     if(data.ok!==true||!data.feedback||typeof data.feedback!=='object'||Array.isArray(data.feedback)||String(data.feedback.id||'')!==key||String(data.feedback.status||'')!==String(status)||!Number.isFinite(Number(data.feedback.updatedAt))||Number(data.feedback.updatedAt)<=expectedUpdatedAt)throw new Error('Feedback update response was incomplete. Refresh Client Care before retrying.');
-    Object.assign(item,data.feedback);loadNotifications({silent:true});
+    Object.assign(item,data.feedback);if(actionStatus){actionStatus.textContent='Feedback marked '+feedbackStatusLabel(status)+'.';actionStatus.className='muted'}loadNotifications({silent:true});return true;
   }catch(err){
     item.status=before.status;item.updatedAt=before.updatedAt;
-    alert(err.message||'Could not update feedback.');
+    if(actionStatus){actionStatus.textContent=err.message||'Could not update feedback.';actionStatus.className='muted error-text'}return false;
   }finally{adminFeedbackStatusPending.delete(key);renderAdminFeedback()}
 }
 
