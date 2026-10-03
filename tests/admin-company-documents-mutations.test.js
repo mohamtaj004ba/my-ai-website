@@ -10,7 +10,7 @@ assert.ok(start>=0&&end>start,'company document handlers must be present');
 function fixture({response,hold=false}={}){
   const fields={},controls=[];
   for(const id of ['companyDocumentName','companyDocumentType','companyDocumentStatus','companyDocumentUrl','companyDocumentEffective','companyDocumentExpires','companyDocumentNotes','saveCompanyDocument','deleteCompanyDocument','companyDocumentStatusLine','companyDocumentModalTitle','closeCompanyDocumentModal']){
-    fields[id]={value:'',textContent:'',disabled:false,hidden:false,className:'',dataset:{}};
+    fields[id]={value:'',textContent:'',disabled:false,hidden:false,className:'',dataset:{},setAttribute(k,v){this[k]=v},removeAttribute(k){delete this[k]},focus(){this.focused=true}};
     controls.push(fields[id]);
   }
   const modal={dataset:{},attributes:{},classList:{add(){modal.open=true},remove(){modal.open=false}},setAttribute(k,v){this.attributes[k]=v},querySelectorAll(){return controls}};
@@ -75,6 +75,8 @@ test('company document warns about reversed dates before sending a request',asyn
   await f.run('saveCompanyDocument');
   assert.equal(f.requests.length,0);
   assert.match(f.fields.companyDocumentStatusLine.textContent,/cannot precede/);
+  assert.equal(f.fields.companyDocumentExpires['aria-invalid'],'true');
+  assert.equal(f.fields.companyDocumentExpires.focused,true);
   assert.equal(f.fields.saveCompanyDocument.disabled,false);
   assert.equal(f.modal.open,true);
 });
