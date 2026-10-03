@@ -1510,3 +1510,17 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - No production merge/deployment, live telephony activation, billing action, customer communication, destructive production mutation, production migration, or launch-gate change occurred.
 - Next phase: continue read-only inspection first for concrete keyboard/mobile reachability, stale-control recovery, and silent user-facing failure surfaces. Prefer active workflow defects over dead legacy helpers or cosmetic churn.
 
+## Dialog transition + escaped-focus recovery checkpoint — 2026-10-03
+
+- Continued the shared interaction hardening pass after the rendered/disabled-control focus work.
+- **Dialog-to-dialog focus handoff:** fixed a concrete same-action transition defect where closing a drawer and opening another modal (for example, Call details → AI feedback) could make the second modal capture the now-hidden drawer close button as its return target. The shared accessibility layer now transfers the original launcher across the transition, regardless of which MutationObserver callback runs first.
+- **Escaped-focus recovery:** if focus is moved outside an open dialog/drawer by a rerender or programmatic change, the next Tab/Shift+Tab is now trapped back into the active surface (first item for Tab, last item for Shift+Tab) instead of allowing keyboard navigation behind an aria-modal surface.
+- Expanded behavioral VM coverage in `tests/modal-accessibility.test.js` to exercise both dialog-transition observer orders plus forward/reverse Tab recapture when focus has escaped the active dialog.
+- Read-only follow-up review of the dashboard's intentionally swallowed outer refresh promises confirmed the active client/admin refresh functions already surface their own sync-error / last-good-data states; no unnecessary catch-wrapper churn was introduced.
+- Identified a separate premium UX target for a later standalone pass: destructive admin flows such as workspace deletion still use native browser `confirm()` / `prompt()`. The underlying deletion/recovery path remains revision guarded, atomic, and extensively tested, so that redesign was intentionally not mixed into this accessibility checkpoint.
+- **Exact verified implementation/test head `dc67e3da8547025eeccdab6f0f4530cf60a13b3c`:** CallerCore CI run `37155268153` SUCCESS with **1,444 tests passed / 0 failed**; CallerCore CodeQL run `37155268116` SUCCESS; Jekyll run `37155268057` SUCCESS.
+- Vercel Preview `dpl_AFv6gWt3c6cKRMbpGnfdwCrvSVek` is **READY** at `https://my-ai-website-ohlfkyvfd-mohamtaj004bas-projects.vercel.app` for that exact SHA.
+- PR #5 remained open/draft/unmerged during the pass, with production `main` still anchored to `37ef5cfcdccae35952822859f64fe83f0b9f09f0`.
+- No production merge/deployment, live telephony activation, billing action, customer communication, destructive production mutation, production migration, or launch-gate change occurred.
+- Next premium interaction pass: replace selected native destructive confirmations with accessible in-app confirmation surfaces while preserving the existing revision guards, duplicate-submission locks, recovery semantics, and concurrency tests; then continue evidence-first mobile/keyboard/stale-state inspection.
+
