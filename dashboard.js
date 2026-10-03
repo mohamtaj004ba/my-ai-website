@@ -3854,19 +3854,19 @@ function setAdminClientMutationState(saving,target='save'){
   const drawer=document.getElementById('adminClientDrawer');if(drawer)drawer.setAttribute('aria-busy',String(adminClientSaving||adminTechSaving));
 }
 async function loadAdminTechSupport(id=currentAdminClient?.id,request=adminClientOpenRequest){
-  if(!id)return;
+  if(!id)return false;
   adminTechMessage('Running diagnostics…');
   try{
     const r=await fetch('/api/account?action=admin-tech-support&id='+encodeURIComponent(id),{headers:{Accept:'application/json'},cache:'no-store'});
     const data=await r.json().catch(()=>({}));
-    if(request!==adminClientOpenRequest||String(currentAdminClient?.id)!==String(id))return;
-    if(!r.ok){adminTechMessage(data.error||'Could not load support diagnostics.',true);return}
+    if(request!==adminClientOpenRequest||String(currentAdminClient?.id)!==String(id))return false;
+    if(!r.ok){adminTechMessage(data.error||'Could not load support diagnostics.',true);return false}
     if(!data?.diagnostics||typeof data.diagnostics!=='object'||Array.isArray(data.diagnostics)||String(data.diagnostics.workspaceId)!==String(id)||!Array.isArray(data.audit)){
-      adminTechMessage('Support diagnostics returned incomplete data; retry diagnostics.',true);return;
+      adminTechMessage('Support diagnostics returned incomplete data; retry diagnostics.',true);return false;
     }
-    currentAdminTech=data;renderAdminTechSupport();adminTechMessage('Diagnostics refreshed.');
+    currentAdminTech=data;renderAdminTechSupport();adminTechMessage('Diagnostics refreshed.');return true;
   }catch(err){
-    if(request===adminClientOpenRequest&&String(currentAdminClient?.id)===String(id))adminTechMessage('Support diagnostics temporarily unavailable; retry diagnostics.',true);
+    if(request===adminClientOpenRequest&&String(currentAdminClient?.id)===String(id))adminTechMessage('Support diagnostics temporarily unavailable; retry diagnostics.',true);return false;
   }
 }
 function renderAdminTechSupport(){
@@ -3911,7 +3911,7 @@ async function sendClientLogin(){
     if(!r.ok)throw new Error(data.error||'Could not send sign-in link.');
     if(data.ok!==true||!String(data.email||'').trim())throw new Error('Sign-in link response was incomplete. Check delivery status before sending another link.');
     adminTechMessage('Sign-in link sent to '+data.email+(data.warning?' · '+data.warning:''),!!data.warning);
-    try{await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('Sign-in link was sent, but access diagnostics could not refresh. Reload diagnostics before sending another link.',true)}
+    try{if(await loadAdminTechSupport(id,request)===false)throw new Error('Diagnostics not verified')}catch(_){adminTechMessage('Sign-in link was sent, but access diagnostics could not refresh. Reload diagnostics before sending another link.',true)}
     return true;
   }catch(err){adminTechMessage(err.message||'Could not send sign-in link.',true);return false}
   finally{setAdminTechMutationState(false)}
@@ -3949,7 +3949,7 @@ async function forceClientLogout(){
     if(data.ok!==true||!Number.isSafeInteger(Number(data.sessionVersion))||Number(data.sessionVersion)<1)throw new Error('Session-revocation response was incomplete. Reload diagnostics before retrying.');
     confirmed=true;adminLogoutConfirmState=null;const modal=document.getElementById('adminLogoutModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');
     adminTechMessage('All existing client sessions have been revoked.');
-    try{await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('All existing client sessions were revoked, but diagnostics could not refresh. Reload diagnostics before another action.',true)}
+    try{if(await loadAdminTechSupport(id,request)===false)throw new Error('Diagnostics not verified')}catch(_){adminTechMessage('All existing client sessions were revoked, but diagnostics could not refresh. Reload diagnostics before another action.',true)}
     return true;
   }catch(err){const message=err.message||'Could not revoke sessions.';setAdminLogoutStatus(message,true);adminTechMessage(message,true);return false}
   finally{setAdminTechMutationState(false);setAdminLogoutPending(false);if(confirmed&&String(currentAdminClient?.id)===id&&adminClientOpenRequest===request)document.getElementById('adminForceLogoutButton')?.focus?.()}
@@ -3973,7 +3973,7 @@ async function repairClientAccess(){
     if(String(currentAdminClient?.id)===id)currentAdminClient.ownerEmail=data.email;
     adminTechMessage('Access mapping repaired for '+data.email+'.');
     try{await refreshAdminCore()}catch(_){adminTechMessage('Access mapping was repaired, but the client directory could not refresh. Diagnostics will retry independently.',true)}
-    try{await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('Access mapping was repaired, but diagnostics could not refresh. Reload diagnostics before another action.',true)}
+    try{if(await loadAdminTechSupport(id,request)===false)throw new Error('Diagnostics not verified')}catch(_){adminTechMessage('Access mapping was repaired, but diagnostics could not refresh. Reload diagnostics before another action.',true)}
     return true;
   }catch(err){adminTechMessage(err.message||'Could not repair access.',true);return false}
   finally{setAdminTechMutationState(false)}
@@ -3998,7 +3998,7 @@ async function applyAdminConfigOverride(){
     if(!r.ok){adminTechMessage(data.error||'Could not apply override.',true);return false}
     if(data.ok!==true||String(data.section||'')!==String(section)||!Object.hasOwn(data,'value')){adminTechMessage('Override response was incomplete. Reload diagnostics before retrying.',true);return false}
     if(currentAdminTech?.config)currentAdminTech.config[section]=data.value;renderAdminConfigEditor();adminTechMessage('Admin override applied to '+section+'.');
-    try{await Promise.all([refreshAdminCore(),loadAdminOps()]);await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('Admin override was applied, but refreshed diagnostics could not be verified. Reload before another configuration change.',true)}
+    try{await Promise.all([refreshAdminCore(),loadAdminOps()]);if(await loadAdminTechSupport(id,request)===false)throw new Error('Diagnostics not verified')}catch(_){adminTechMessage('Admin override was applied, but refreshed diagnostics could not be verified. Reload before another configuration change.',true)}
     return true;
   }catch(err){adminTechMessage(err.message||'Could not apply override.',true);return false}
   finally{setAdminTechMutationState(false)}
@@ -4022,7 +4022,7 @@ async function restoreAdminAudit(auditId){
     if(!r.ok){adminTechMessage(data.error||'Could not restore snapshot.',true);return false}
     if(data.ok!==true||String(data.section||'')!==section||!['workspace','settings','agent','integrations','automations','locations'].includes(String(data.section||''))||!Object.hasOwn(data,'value')){adminTechMessage('Restore response was incomplete. Reload diagnostics before retrying.',true);return false}
     if(currentAdminTech?.config)currentAdminTech.config[data.section]=data.value;renderAdminConfigEditor();adminTechMessage('Previous '+data.section+' configuration restored.');
-    try{await Promise.all([refreshAdminCore(),loadAdminOps()]);await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('Previous configuration was restored, but refreshed diagnostics could not be verified. Reload before another configuration change.',true)}
+    try{await Promise.all([refreshAdminCore(),loadAdminOps()]);if(await loadAdminTechSupport(id,request)===false)throw new Error('Diagnostics not verified')}catch(_){adminTechMessage('Previous configuration was restored, but refreshed diagnostics could not be verified. Reload before another configuration change.',true)}
     return true;
   }catch(err){adminTechMessage(err.message||'Could not restore snapshot.',true);return false}
   finally{setAdminTechMutationState(false);renderAdminTechSupport()}

@@ -53,3 +53,19 @@ test('audit restoration locks dismissal and exposes the returned snapshot immedi
   pending.resolve({ok:true,json:async()=>({ok:true,section:'settings',value:{businessName:'Restored'}})});await restore;
   assert.equal(ctx.adminTechSaving,false);assert.equal(ctx.currentAdminTech.config.settings.businessName,'Restored');assert.equal(node('closeAdminClient').disabled,false);
 });
+
+test('diagnostics failures return an explicit failed result and preserve the loaded snapshot',async()=>{
+  for(const response of [async()=>{throw new Error('offline')},async()=>({ok:false,json:async()=>({error:'Unavailable'})}),async()=>({ok:true,json:async()=>({diagnostics:{workspaceId:'other'},audit:[]})})]){
+    const {ctx}=fixture(response),before=ctx.currentAdminTech;
+    assert.equal(await vm.runInContext("loadAdminTechSupport('ws-1')",ctx),false);
+    assert.equal(ctx.currentAdminTech,before);
+  }
+});
+
+test('confirmed override with failed diagnostics remains saved and reports refresh recovery',async()=>{
+  const {ctx,node}=fixture(async url=>url.includes('admin-config-override')?{ok:true,json:async()=>({ok:true,section:'settings',value:{businessName:'Saved'}})}:{ok:false,json:async()=>({error:'Offline'})});
+  assert.equal(await vm.runInContext('applyAdminConfigOverride()',ctx),true);
+  assert.equal(ctx.currentAdminTech.config.settings.businessName,'Saved');
+  assert.match(node('adminTechStatus').textContent,/was applied.*could not be verified/);
+  assert.equal(ctx.adminTechSaving,false);
+});
