@@ -2916,10 +2916,10 @@ async function replyAdminSupportTicket(id,button){
   }
 }
 async function updateSupportStatus(id,status){
-  const key=String(id),t=adminSupportData.find(x=>String(x.id)===key);if(!t||adminSupportStatusPending.has(key))return;const previous=t.status;adminSupportStatusPending.add(key);t.status=status;renderAdminSupport();
-  try{const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,expectedUpdatedAt:Number(t.updatedAt||t.createdAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update support status.');if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||String(data.ticket.id||'')!==key||String(data.ticket.status||'')!==String(status))throw new Error('Support status response was incomplete. Refresh Client Care before retrying.');Object.assign(t,data.ticket);if(data.warning)setAdminSupportReplyStatus(key,String(data.warning))}
-  catch(err){t.status=previous;alert(err.message||'Could not update support status.')}
-  finally{adminSupportStatusPending.delete(key);renderAdminSupport()}
+  const key=String(id),t=adminSupportData.find(x=>String(x.id)===key);if(!t||adminSupportStatusPending.has(key))return false;const previous=t.status;let feedback='Updating status…',ok=false;adminSupportStatusPending.add(key);t.status=status;renderAdminSupport();setAdminSupportReplyStatus(key,feedback);
+  try{const r=await fetch('/api/account?action=admin-support-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status,expectedUpdatedAt:Number(t.updatedAt||t.createdAt||0)})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not update support status.');if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||String(data.ticket.id||'')!==key||String(data.ticket.status||'')!==String(status))throw new Error('Support status response was incomplete. Refresh Client Care before retrying.');Object.assign(t,data.ticket);feedback=data.warning?String(data.warning):'Support status updated.';ok=true}
+  catch(err){t.status=previous;feedback=err.message||'Could not update support status.'}
+  finally{adminSupportStatusPending.delete(key);renderAdminSupport();setAdminSupportReplyStatus(key,feedback)}return ok
 }
 function setPlatformSettingsDirty(dirty=true){
   adminPlatformDirty=!!dirty;
