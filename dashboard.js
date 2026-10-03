@@ -1358,17 +1358,25 @@ function actionLabel(value=''){
 function renderAutomations(){
   if(!has('automations'))return;
   const wrap=document.getElementById('automationList');if(!wrap)return;
-  wrap.innerHTML=automationsData.map(x=>'<article class="automation-card"><div><h3>'+esc(x.name)+'</h3><p>When <b>'+esc(triggerLabel(x.trigger))+'</b> → '+esc(actionLabel(x.action))+'</p></div><div class="automation-actions"><button data-edit-auto="'+esc(x.id)+'" '+(automationMutationPending?'disabled aria-busy="true"':'')+'>Edit</button><button class="danger-link" data-delete-auto="'+esc(x.id)+'" '+(automationMutationPending?'disabled aria-busy="true"':'')+'>Delete</button><button class="switch '+(x.enabled?'on':'')+'" data-toggle-auto="'+esc(x.id)+'" aria-label="Toggle automation" '+(automationMutationPending?'disabled aria-busy="true"':'')+'><i></i></button></div></article>').join('');
+  wrap.innerHTML=automationsData.map(x=>'<article class="automation-card"><div><h3>'+esc(x.name)+'</h3><p>When <b>'+esc(triggerLabel(x.trigger))+'</b> → '+esc(actionLabel(x.action))+'</p></div><div class="automation-actions"><button data-edit-auto="'+esc(x.id)+'" '+(automationMutationPending?'disabled aria-busy="true"':'')+'>Edit</button><button class="danger-link" data-delete-auto="'+esc(x.id)+'" '+(automationMutationPending?'disabled aria-busy="true"':'')+'>Delete</button><button class="switch '+(x.enabled?'on':'')+'" data-toggle-auto="'+esc(x.id)+'" aria-label="'+esc((x.enabled?'Disable ':'Enable ')+(x.name||'automation'))+'" aria-pressed="'+String(!!x.enabled)+'" '+(automationMutationPending?'disabled aria-busy="true"':'')+'><i></i></button></div></article>').join('');
   document.getElementById('automationEmpty').hidden=automationsData.length!==0;
   wrap.querySelectorAll('[data-toggle-auto]').forEach(btn=>btn.addEventListener('click',()=>toggleAutomation(btn.dataset.toggleAuto)));
   wrap.querySelectorAll('[data-edit-auto]').forEach(btn=>btn.addEventListener('click',()=>openAutomation(btn.dataset.editAuto)));
   wrap.querySelectorAll('[data-delete-auto]').forEach(btn=>btn.addEventListener('click',()=>deleteAutomation(btn.dataset.deleteAuto)));
 }
+function setAutomationMutationUi(pending){
+  const busy=!!pending,modal=document.getElementById('automationModal'),save=document.getElementById('saveAutomationButton'),create=document.getElementById('newAutomationButton');
+  renderAutomations();
+  if(modal){modal.setAttribute('aria-busy',String(busy));modal.querySelectorAll('input,select,button').forEach(el=>{el.disabled=busy})}
+  if(save)save.textContent=busy?'Saving…':'Save automation';
+  if(create){create.disabled=busy;create.setAttribute('aria-busy',String(busy))}
+  document.querySelectorAll('[data-preset]').forEach(btn=>{btn.disabled=busy;btn.setAttribute('aria-busy',String(busy))});
+}
 let automationMutationPending=false;
 async function persistAutomations(){
   if(demoMode)return true;
   if(automationMutationPending)return false;
-  automationMutationPending=true;
+  automationMutationPending=true;setAutomationMutationUi(true);
   try{
     const submitted=automationsData.map(item=>({...item}));
     const r=await fetch('/api/account?action=automations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({automations:submitted})}),data=await r.json().catch(()=>({}));
@@ -1379,7 +1387,7 @@ async function persistAutomations(){
       throw new Error('Could not confirm the automation save. Refresh automations before retrying.');
     automationsData=data.automations;return true;
   }catch(err){alert(err.message||'Could not save automations right now.');return false}
-  finally{automationMutationPending=false}
+  finally{automationMutationPending=false;setAutomationMutationUi(false)}
 }
 async function toggleAutomation(id){
   if(automationMutationPending)return false;
@@ -1416,7 +1424,7 @@ function openAutomation(id=null,preset=null){
   document.getElementById('automationAction').value=item?.action||'notify_team';
   modal.classList.add('open');modal.setAttribute('aria-hidden','false');
 }
-function closeAutomation(){const modal=document.getElementById('automationModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');editingAutomationId=null}
+function closeAutomation(){if(automationMutationPending)return false;const modal=document.getElementById('automationModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');editingAutomationId=null;return true}
 async function saveAutomation(){
   if(automationMutationPending)return false;
   const name=document.getElementById('automationName').value.trim();if(!name)return false;
