@@ -38,3 +38,15 @@ test('admin override sanitizer rejects malformed array rows and receptionist que
   assert.match(block,/Section contains unverifiable records/);
   assert.match(block,/Qualification questions must be a list of text values/);
 });
+
+
+test('admin override requires the configuration snapshot displayed by the editor',()=>{
+  const start=api.indexOf('async function adminOverrideConfig('),end=api.indexOf('\nasync function adminRestoreAudit(',start),block=api.slice(start,end);
+  assert.match(block,/hasOwnProperty\.call\(body,'expectedBefore'\)/);
+  assert.match(block,/JSON\.stringify\(expectedBefore\)!==JSON\.stringify\(displayedBefore\)/);
+  assert.match(block,/configuration changed after the editor was opened/i);
+  const ui=fs.readFileSync('dashboard.js','utf8');
+  const applyStart=ui.indexOf('async function applyAdminConfigOverride('),applyEnd=ui.indexOf('\nasync function restoreAdminAudit(',applyStart),apply=ui.slice(applyStart,applyEnd);
+  assert.match(apply,/expectedBefore=currentAdminTech\?\.config\?\.\[section\]/);
+  assert.match(apply,/JSON\.stringify\(\{id:currentAdminClient\.id,section,value,expectedBefore\}\)/);
+});
