@@ -41,7 +41,6 @@ test('webhook save accepts exact integration revision and advances it monotonica
 test('webhook save requires a revision even for an initially empty integration record',async()=>{
   const good=fixture(0,{stored:null}),a=await good.run();
   assert.equal(a.code,200);assert.equal(good.writes.length,1);
-  const missing=fixture(undefined,{stored:null});delete missing;
   const r=response(),writes=[];
   const ctx=vm.createContext({
     req:{body:{webhookUrl:'https://new.test/hook'}},res:r.res,
