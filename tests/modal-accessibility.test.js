@@ -238,3 +238,36 @@ test('full-screen panels use dynamic viewport height and safe-area padding on mo
   assert.doesNotMatch(css,/\.admin-ai-panel\{[^}]*height:100vh/);
   assert.doesNotMatch(css,/\.onboarding-detail-drawer\{[^}]*height:100vh/);
 });
+
+function transitionFixture(observerOrder='closing-first'){
+  const state={drawerOpen:false,drawerHidden:'true',modalOpen:false,modalHidden:'true'};
+  const trigger={isConnected:true,focus(){document.activeElement=this}};
+  const makeControl=()=>({hidden:false,isConnected:true,focus(){document.activeElement=this},closest(){return null},getAttribute(){return null}});
+  const drawerClose=makeControl(),modalClose=makeControl(),observers=new Map();
+  function surface(id,isDrawer=false){
+    const close=isDrawer?drawerClose:modalClose;
+    return {id,tabIndex:0,attrs:{},classList:{contains:name=>name==='open'&&(isDrawer?state.drawerOpen:state.modalOpen)},
+      contains:value=>value===close||value===this,
+      setAttribute(key,value){this.attrs[key]=String(value)},getAttribute:key=>key==='aria-hidden'?(isDrawer?state.drawerHidden:state.modalHidden):this.attrs[key],
+      querySelector:q=>q==='h1,h2,h3'?{id:id+'Title'}:q.includes('.modal-close')?close:null,
+      querySelectorAll:()=>[close],addEventListener(){},focus(){document.activeElement=this}};
+  }
+  const drawer=surface('transitionDrawer',true),modal=surface('transitionModal',false);
+  drawer.contains=value=>value===drawerClose||value===drawer;modal.contains=value=>value===modalClose||value===modal;
+  const document={activeElement:trigger,body:{},querySelectorAll:()=>[drawer,modal]};
+  class MutationObserver{constructor(callback){this.callback=callback}observe(target){observers.set(target,this.callback)}}
+  vm.runInNewContext(source,{document,MutationObserver,queueMicrotask:fn=>fn(),WeakMap,globalThis:{}});
+  state.drawerOpen=true;state.drawerHidden='false';observers.get(drawer)();assert.strictEqual(document.activeElement,drawerClose);
+  state.drawerOpen=false;state.drawerHidden='true';state.modalOpen=true;state.modalHidden='false';
+  if(observerOrder==='opening-first'){observers.get(modal)();observers.get(drawer)()}else{observers.get(drawer)();observers.get(modal)()}
+  assert.strictEqual(document.activeElement,modalClose);
+  state.modalOpen=false;state.modalHidden='true';observers.get(modal)();
+  return {document,trigger};
+}
+
+test('dialog transition focus handoff returns to the original launcher regardless of observer order',()=>{
+  for(const order of ['closing-first','opening-first']){
+    const f=transitionFixture(order);assert.strictEqual(f.document.activeElement,f.trigger);
+  }
+});
+
