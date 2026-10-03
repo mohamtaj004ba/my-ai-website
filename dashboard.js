@@ -637,8 +637,8 @@ async function markCallViewed(id){
   callViewedIds.add(key);renderCalls();
   if(demoMode)return;
   try{
-    const r=await fetch('/api/account?action=call-viewed-mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:key})});
-    if(!r.ok)throw new Error('Could not persist call read state');
+    const r=await fetch('/api/account?action=call-viewed-mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:key})}),data=await r.json().catch(()=>({}));
+    if(!r.ok||data.ok!==true)throw new Error(data.error||'Could not persist call read state');
   }catch(err){
     callViewedIds.delete(key);renderCalls();console.warn('Call read state sync failed',err);
   }
@@ -4317,8 +4317,8 @@ async function markNotifications(ids){
   if(!ids?.length)return false;
   const scope=notificationScope();
   try{
-    const r=await fetch('/api/account?action=notifications-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope,ids})});
-    if(!r.ok)throw new Error('Could not sync notification read state ('+r.status+')');
+    const r=await fetch('/api/account?action=notifications-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope,ids})}),data=await r.json().catch(()=>({}));
+    if(!r.ok||data.ok!==true)throw new Error(data.error||'Could not sync notification read state ('+r.status+')');
   }catch(err){
     notificationReadError='Alert opened, but its read state could not sync. It may reappear after refresh.';
     console.warn('Notification read sync failed',err);renderNotifications();return false
@@ -4435,8 +4435,8 @@ async function openNotification(id){
 async function markAllNotifications(){
   const scope=notificationScope();
   try{
-    const r=await fetch('/api/account?action=notifications-read-all',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope})});
-    if(!r.ok)throw new Error('Could not sync all notifications ('+r.status+')');
+    const r=await fetch('/api/account?action=notifications-read-all',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope})}),data=await r.json().catch(()=>({}));
+    if(!r.ok||data.ok!==true)throw new Error(data.error||'Could not sync all notifications ('+r.status+')');
   }catch(err){
     notificationReadError='Alerts could not be marked read. Nothing was hidden locally.';
     console.warn('Mark-all notification sync failed',err);renderNotifications();return false
