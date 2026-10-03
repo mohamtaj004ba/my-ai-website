@@ -65,6 +65,13 @@ test('dynamic save and recovery feedback uses live status semantics',()=>{
 });
 
 
+test('visually required admin fields expose required semantics',()=>{
+  const admin=html('admin-dashboard.html');
+  for(const id of ['expenseNameInput','expenseAmountInput','phoneNumberInput']){
+    assert.match(admin,new RegExp('id="'+id+'"[^>]*\\brequired\\b'));
+  }
+});
+
 test('admin modal validation feedback uses live status semantics',()=>{
   const admin=html('admin-dashboard.html');
   for(const id of ['companyDocumentStatusLine','prospectFormStatus','campaignFormStatus']){
