@@ -50,9 +50,10 @@
     if(event.key!=='Tab')return;
     const items=focusable(modal);
     if(!items.length){event.preventDefault();modal.focus();return}
-    const first=items[0],last=items[items.length-1];
-    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
-    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+    const first=items[0],last=items[items.length-1],active=document.activeElement;
+    if(!modal.contains(active)){event.preventDefault();(event.shiftKey?last:first).focus();return}
+    if(event.shiftKey&&active===first){event.preventDefault();last.focus()}
+    else if(!event.shiftKey&&active===last){event.preventDefault();first.focus()}
   }
 
   const dialogs=[...document.querySelectorAll('.modal,.call-drawer,.onboarding-detail-drawer,.admin-ai-panel')];
