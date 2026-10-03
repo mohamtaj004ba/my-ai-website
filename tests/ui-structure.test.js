@@ -82,3 +82,10 @@ test('notification refresh status is announced consistently',()=>{
     assert.match(src,/id="notificationSyncStatus" role="status" aria-live="polite" aria-atomic="true"/);
   }
 });
+
+
+test('top-level save badges announce state changes',()=>{
+  const client=html('dashboard.html'),admin=html('admin-dashboard.html');
+  for(const id of ['agentSaveStatus','settingsSaveStatus'])assert.match(client,new RegExp('id="'+id+'" role="status" aria-live="polite" aria-atomic="true"'));
+  assert.match(admin,/id="platformSettingsStatus" role="status" aria-live="polite" aria-atomic="true"/);
+});
