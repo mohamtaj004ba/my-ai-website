@@ -3864,7 +3864,7 @@ function renderAdminTechSupport(){
 function renderAdminConfigEditor(){
   const section=document.getElementById('adminConfigSection')?.value||'settings',editor=document.getElementById('adminConfigEditor');if(!editor||!currentAdminTech)return;
   const value=currentAdminTech.config?.[section]??(section==='automations'||section==='locations'?[]:{});
-  editor.value=JSON.stringify(value,null,2);
+  editor.value=JSON.stringify(value,null,2);editor.removeAttribute?.('aria-invalid');
 }
 async function sendClientLogin(){
   if(!currentAdminClient||adminTechSaving||adminClientSaving)return false;
@@ -3911,9 +3911,10 @@ async function repairClientAccess(){
   finally{setAdminTechMutationState(false)}
 }
 async function applyAdminConfigOverride(){
-  if(!currentAdminClient||adminTechSaving)return;const section=document.getElementById('adminConfigSection')?.value||'settings',raw=document.getElementById('adminConfigEditor')?.value||'';
-  let value;try{value=JSON.parse(raw)}catch(_){adminTechMessage('Configuration JSON is invalid.',true);return}
-  if(!confirm('Apply this admin override to '+section+'? The previous value will remain available in Change History.'))return;
+  if(!currentAdminClient||adminTechSaving)return false;const section=document.getElementById('adminConfigSection')?.value||'settings',editor=document.getElementById('adminConfigEditor'),raw=editor?.value||'';
+  let value;try{value=JSON.parse(raw)}catch(_){editor?.setAttribute?.('aria-invalid','true');editor?.focus?.();adminTechMessage('Configuration JSON is invalid.',true);return false}
+  editor?.removeAttribute?.('aria-invalid');
+  if(!confirm('Apply this admin override to '+section+'? The previous value will remain available in Change History.'))return false;
   setAdminTechMutationState(true,'override');adminTechMessage('Applying '+section+' override…');
   try{
     const r=await fetch('/api/account?action=admin-config-override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,section,value})}),data=await r.json().catch(()=>({}));
