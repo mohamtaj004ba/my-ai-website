@@ -55,6 +55,7 @@ test('completion modal blocks duplicate saves and announces unconfirmed updates'
   assert.match(open,/Could not confirm the completion update\. Your selection is still open; try again\./);
   assert.match(open,/finally\{setTeamStatusModalPending\(false\)\}/);
   assert.match(open,/if\(pendingTeamStatusCallId&&followupMutationPending\.has\(String\(pendingTeamStatusCallId\)\)\)return false/);
+  assert.match(open,/renderLeads\(\);if\(call&&activeCallId===String\(id\)\)syncDrawerTeamStatus\(call\)/);
 });
 
 
