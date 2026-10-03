@@ -12,16 +12,24 @@ function fixture(){
     return nodes.get(id);
   };
   const requests=new Map(),sync=[],fetch=async url=>{const id=new URL('https://example.test'+url).searchParams.get('id'),pending=deferred();requests.set(id,pending);return pending.promise};
-  const context=vm.createContext({adminTechSaving:false,adminClientSaving:false,adminClientOpenRequest:0,currentAdminClient:null,fetch,encodeURIComponent,PLAN_DATA:{Growth:{price:399}},financeMoney:value=>'  const openStart=source.indexOf('async function openAdminClient('),openEnd=source.indexOf('\nfunction adminTechMessage(',openStart);vm.runInContext(source.slice(openStart,openEnd),context);
+  const context=vm.createContext({
+    adminTechSaving:false,adminClientSaving:false,adminClientOpenRequest:0,currentAdminClient:null,
+    fetch,encodeURIComponent,PLAN_DATA:{Growth:{price:399}},financeMoney:value=>'$'+value,
+    adminClientLifecycle:()=> 'active',adminWorkspaceLabel:String,adminBillingLabel:String,esc:String,
+    loadAdminTechSupport:async()=>{},setAdminSyncState:(state,message)=>sync.push({state,message:String(message||'')}),
+    document:{getElementById:node}
+  });
+  const openStart=source.indexOf('async function openAdminClient('),openEnd=source.indexOf('\nfunction adminTechMessage(',openStart);vm.runInContext(source.slice(openStart,openEnd),context);
   const closeStart=source.indexOf('function closeAdminClient('),closeEnd=source.indexOf('\nlet adminSearchActiveIndex',closeStart);vm.runInContext(source.slice(closeStart,closeEnd),context);
   return {context,node,requests,sync};
 }
 
 test('a slower client response cannot replace a newer admin drawer selection',async()=>{
-  const {context,node,requests}=fixture(),first=vm.runInContext("openAdminClient('one')",context),second=vm.runInContext("openAdminClient('two')",context);
+  const {context,node,requests,sync}=fixture(),first=vm.runInContext("openAdminClient('one')",context),second=vm.runInContext("openAdminClient('two')",context);
   requests.get('two').resolve(response({id:'two',name:'Second client',plan:'Growth',status:'active',subscriptionStatus:'active',usage:{minutes:0},counts:{}}));await second;
   requests.get('one').resolve(response({id:'one',name:'First client',plan:'Growth',status:'active',subscriptionStatus:'active',usage:{minutes:0},counts:{}}));await first;
   assert.equal(context.currentAdminClient.id,'two');assert.equal(node('adminClientName').textContent,'Second client');assert.equal(node('adminClientDrawer')['aria-hidden'],'false');
+  assert.equal(sync.length,0);
 });
 
 test('closing the admin drawer invalidates pending opens and restores accessibility state',async()=>{
@@ -29,25 +37,6 @@ test('closing the admin drawer invalidates pending opens and restores accessibil
   requests.get('one').resolve(response({id:'one',name:'First client',plan:'Growth',status:'active',subscriptionStatus:'active',usage:{minutes:0},counts:{}}));await pending;
   assert.equal(context.currentAdminClient,null);assert.equal(node('adminClientDrawer')['aria-hidden'],'true');assert.equal(node('adminClientDrawer').classList.contains('open'),false);
 });
-+value,adminClientLifecycle:()=> 'active',adminWorkspaceLabel:String,adminBillingLabel:String,esc:String,loadAdminTechSupport:async()=>{},setAdminSyncState:(state,message)=>sync.push({state,message:String(message||'')}),document:{getElementById:node}});
-  const openStart=source.indexOf('async function openAdminClient('),openEnd=source.indexOf('\nfunction adminTechMessage(',openStart);vm.runInContext(source.slice(openStart,openEnd),context);
-  const closeStart=source.indexOf('function closeAdminClient('),closeEnd=source.indexOf('\nlet adminSearchActiveIndex',closeStart);vm.runInContext(source.slice(closeStart,closeEnd),context);
-  return {context,node,requests};
-}
-
-test('a slower client response cannot replace a newer admin drawer selection',async()=>{
-  const {context,node,requests}=fixture(),first=vm.runInContext("openAdminClient('one')",context),second=vm.runInContext("openAdminClient('two')",context);
-  requests.get('two').resolve(response({id:'two',name:'Second client',plan:'Growth',status:'active',subscriptionStatus:'active',usage:{minutes:0},counts:{}}));await second;
-  requests.get('one').resolve(response({id:'one',name:'First client',plan:'Growth',status:'active',subscriptionStatus:'active',usage:{minutes:0},counts:{}}));await first;
-  assert.equal(context.currentAdminClient.id,'two');assert.equal(node('adminClientName').textContent,'Second client');assert.equal(node('adminClientDrawer')['aria-hidden'],'false');
-});
-
-test('closing the admin drawer invalidates pending opens and restores accessibility state',async()=>{
-  const {context,node,requests}=fixture(),pending=vm.runInContext("openAdminClient('one')",context);vm.runInContext('closeAdminClient()',context);
-  requests.get('one').resolve(response({id:'one',name:'First client',plan:'Growth',status:'active',subscriptionStatus:'active',usage:{minutes:0},counts:{}}));await pending;
-  assert.equal(context.currentAdminClient,null);assert.equal(node('adminClientDrawer')['aria-hidden'],'true');assert.equal(node('adminClientDrawer').classList.contains('open'),false);
-});
-
 
 test('admin client drawer surfaces HTTP and network failures without opening stale details',async()=>{
   {
