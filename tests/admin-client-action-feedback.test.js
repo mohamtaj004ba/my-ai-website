@@ -22,5 +22,7 @@ test('workspace deletion and restoration safety confirmations remain explicit',(
   assert.match(html,/Type <b>DELETE<\/b> to confirm/);
   assert.match(block,/typed!=='DELETE'/);
   assert.match(block,/This workspace changed after the confirmation opened/);
-  assert.match(block,/confirm\('Restore '/);
+  assert.match(html,/id="adminRestoreWorkspaceModal" role="dialog"/);
+  assert.match(block,/openAdminRestoreWorkspaceModal/);
+  assert.match(block,/This workspace changed after the confirmation opened/);
 });
