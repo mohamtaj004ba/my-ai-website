@@ -96,16 +96,16 @@ test('malformed 200 lead and appointment responses roll optimistic UI changes ba
   await vm.runInContext("moveLead('lead-1','Qualified')",leadCtx);
   assert.equal(leadCtx.leadsData[0].stage,'New');
 
-  const alerts=[];
+  const statuses=[];
   const apptCtx=vm.createContext({
     appointmentsData:[{id:'appt-1',status:'Scheduled'}],demoMode:false,renderAppointments:()=>renders.push('appt'),
-    fetch:async()=>({ok:true,json:async()=>({updated:true})}),alert:m=>alerts.push(m),
+    fetch:async()=>({ok:true,json:async()=>({updated:true})}),setAppointmentActionStatus:m=>statuses.push(m),
     String,Object,Array,JSON,Error
   });
   vm.runInContext(segment('const appointmentStatusPending=new Set();',"\ndocument.getElementById('conversationSearch')"),apptCtx);
   await vm.runInContext("updateAppointment('appt-1','Completed')",apptCtx);
   assert.equal(apptCtx.appointmentsData[0].status,'Scheduled');
-  assert.ok(alerts.some(message=>/incomplete/i.test(message)));
+  assert.ok(statuses.some(message=>/incomplete/i.test(message)));
 });
 
 test('automation and location saves preserve local records on malformed successful responses',async()=>{
@@ -135,7 +135,7 @@ test('appointment status mutation blocks duplicate in-flight changes and unlocks
   let release,requests=0,renders=0;
   const ctx=vm.createContext({
     appointmentsData:[{id:'appt-1',status:'Scheduled'}],demoMode:false,
-    renderAppointments:()=>{renders++},alert:()=>{},
+    renderAppointments:()=>{renders++},setAppointmentActionStatus:()=>{},
     fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:false,json:async()=>({error:'Unavailable'})}},
     String,Object,Array,JSON,Error,Set,Promise
   });
