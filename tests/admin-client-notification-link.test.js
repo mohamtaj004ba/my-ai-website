@@ -24,7 +24,7 @@ function fixture({status=200,client=workspace('client-1'),locked=false,remoteErr
     loadAdminTechSupport:async id=>events.push('diagnostics:'+id),
     adminWorkspaceLabel:x=>x,adminBillingLabel:x=>x,adminClientLifecycle:()=> 'active',
     financeMoney:x=>String(x),PLAN_DATA:{Starter:{price:349}},esc:x=>String(x),Number,String,
-    adminStatusLabel:x=>x
+    adminStatusLabel:x=>x,setAdminSyncState:(state,message)=>events.push('sync:'+state+':'+String(message||''))
   });
   vm.runInContext(opener,ctx);
   return {ctx,elements,events,run:id=>vm.runInContext('openAdminClient('+JSON.stringify(id)+')',ctx)};
