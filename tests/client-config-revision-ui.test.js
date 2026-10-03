@@ -23,7 +23,7 @@ test('client settings save always sends the loaded settings revision',()=>{
 });
 
 test('admin phone edit carries the record revision captured when the modal opens',()=>{
-  const open=slice("function openPhoneModal(id='')",'\nfunction closePhoneModal');
+  const open=slice("function openPhoneModal(id=null)",'\nfunction closePhoneModal');
   const save=slice('async function savePhone(){',"\ndocument.getElementById('addPhoneButton')");
   assert.match(open,/dataset\.expectedUpdatedAt=String\(item\?\.updatedAt\|\|0\)/);
   assert.match(save,/expectedUpdatedAt:Number\(modal\?\.dataset\.expectedUpdatedAt\|\|0\)/);
