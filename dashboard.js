@@ -4315,7 +4315,7 @@ async function loadNotifications({silent=true}={}){
 function renderNotifications(){
   const badge=document.getElementById('notificationBadge'),list=document.getElementById('notificationList'),empty=document.getElementById('notificationEmpty'),items=notificationMode==='history'?notificationData:notificationData.filter(n=>!n.read);
   if(badge){badge.textContent=notificationUnreadCount>99?'99+':String(notificationUnreadCount);badge.hidden=notificationUnreadCount===0}
-  document.querySelectorAll('[data-notification-mode]').forEach(btn=>btn.classList.toggle('active',btn.dataset.notificationMode===notificationMode));
+  document.querySelectorAll('[data-notification-mode]').forEach(btn=>{const selected=btn.dataset.notificationMode===notificationMode;btn.classList.toggle('active',selected);btn.setAttribute('aria-selected',String(selected));btn.tabIndex=selected?0:-1});
   if(!list)return;
   list.innerHTML=items.map(n=>'<button class="notification-item '+(n.read?'read':'unread')+'" data-notification-id="'+esc(n.id)+'"><span class="notification-dot '+esc(n.kind||'info')+'">'+notificationKindIcon(n.kind)+'</span><span class="notification-copy"><b>'+esc(n.title||'Notification')+'</b><span>'+esc(n.body||'')+'</span><small>'+formatNotificationTime(n.createdAt)+(n.read?' · Read':'')+'</small></span><span class="notification-open-cue">→</span></button>').join('');
   const sync=document.getElementById('notificationSyncStatus'),retry=document.getElementById('notificationRetry');

@@ -216,3 +216,16 @@ test('notification UI preserves response-window metadata and discloses hidden un
   assert.match(ui,/generated alerts/);
   assert.match(ui,/unread outside this list/);
 });
+
+
+test('client and admin notification panels expose the same unread/history controls with tab semantics',()=>{
+  const clientHtml=fs.readFileSync('dashboard.html','utf8');
+  const adminHtml=fs.readFileSync('admin-dashboard.html','utf8');
+  for(const html of [clientHtml,adminHtml]){
+    assert.match(html,/class="notification-tabs" role="tablist" aria-label="Notification view"/);
+    assert.match(html,/data-notification-mode="unread"[^>]*role="tab"[^>]*aria-selected="true"/);
+    assert.match(html,/data-notification-mode="history"[^>]*role="tab"[^>]*aria-selected="false"[^>]*tabindex="-1"/);
+  }
+  assert.match(ui,/setAttribute\('aria-selected',String\(selected\)\)/);
+  assert.match(ui,/btn\.tabIndex=selected\?0:-1/);
+});
