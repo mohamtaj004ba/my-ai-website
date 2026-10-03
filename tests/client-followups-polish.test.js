@@ -74,3 +74,9 @@ test('internal note composer locks during save and validates blank drafts',()=>{
   assert.match(block,/setNoteComposerPending\(true\)/);
   assert.match(block,/finally\{followupMutationPending\.delete\(key\);setNoteComposerPending\(false\)/);
 });
+
+
+test('any follow-up mutation locks an open note composer',()=>{
+  const block=js.slice(js.indexOf('function renderCallNotes('),js.indexOf('function startEditCallNote('));
+  assert.match(block,/setNoteComposerPending\(pending\)/);
+});
