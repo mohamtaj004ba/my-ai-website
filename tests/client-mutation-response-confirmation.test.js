@@ -53,7 +53,9 @@ test('high-impact admin mutations verify returned record identity before changin
   const clientDelete=segment('async function deleteAdminClient(',"\nasync function restoreAdminClient(");
   const clientRestore=segment('async function restoreAdminClient(',"\nasync function viewAdminClient(");
   assert.match(feedback,/String\(data\.feedback\.id\|\|'\'\)!==key/);
+  assert.match(expenseSave,/data\.ok!==true/);
   assert.match(expenseSave,/String\(data\.expense\.id\|\|'\'\)\.trim\(\)/);
+  assert.match(expenseDelete,/data\.ok!==true/);
   assert.match(expenseDelete,/String\(data\.deleted\.id\|\|'\'\)!==key/);
   assert.match(clientSave,/String\(data\.client\.id\|\|'\'\)!==targetId/);
   assert.match(clientDelete,/data\.pendingDeletion!==true/);
