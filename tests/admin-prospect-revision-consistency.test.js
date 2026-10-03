@@ -64,7 +64,9 @@ test('all live admin prospect edit paths submit displayed revisions and guard pe
   assert.match(editor,/m\.dataset\.expectedUpdatedAt/);
   assert.match(editor,/payload\.expectedUpdatedAt=Number\(/);
   assert.match(editor,/if\(prospectModalPending\)return/);
-  assert.match(editor,/adminWebsiteData\.prospects=\[data\.prospect/);
+  assert.match(editor,/data\.ok!==true/);
+  assert.match(editor,/String\(confirmed\.stage\|\|'\'\)!==String\(payload\.stage\|\|'\'\)/);
+  assert.match(editor,/adminWebsiteData\.prospects=\[confirmed/);
   assert.doesNotMatch(ui,/async function updateWebsiteProspect\(/);
 });
 
