@@ -192,3 +192,11 @@ test('client overview starts in a neutral loading state instead of presenting fa
   assert.match(client,/id="overviewWeekCalls">—/);
   assert.match(client,/id="overviewFollowup">—/);
 });
+
+
+test('admin client rows expose keyboard semantics in both command center and directory',()=>{
+  const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(dashboard,/data-admin-client-row="'\+esc\(x\.id\)\+'" role="button" tabindex="0" aria-label="Open /);
+  assert.match(dashboard,/data-admin-client-row[\s\S]*row\.onkeydown=e=>/);
+  assert.match(dashboard,/wrap\.querySelectorAll\('\[data-admin-client-row\]'\)[\s\S]*addEventListener\('keydown'/);
+});
