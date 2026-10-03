@@ -138,9 +138,9 @@ test('save-state badges do not claim persisted data before their verified record
   const client=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
   const admin=fs.readFileSync(path.join(__dirname,'..','admin-dashboard.html'),'utf8');
   const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
-  assert.match(client,/id="agentSaveStatus">Checking…/);
-  assert.match(client,/id="settingsSaveStatus">Checking…/);
-  assert.match(admin,/id="platformSettingsStatus">Checking…/);
+  assert.match(client,/id="agentSaveStatus"[^>]*>Checking…/);
+  assert.match(client,/id="settingsSaveStatus"[^>]*>Checking…/);
+  assert.match(admin,/id="platformSettingsStatus"[^>]*>Checking…/);
   assert.match(dashboard,/agentSaveStatus'[\s\S]*textContent='Saved'/);
   assert.match(dashboard,/settingsSaveStatus'[\s\S]*textContent='Saved'/);
   assert.match(dashboard,/setPlatformSettingsDirty\(false\)/);
