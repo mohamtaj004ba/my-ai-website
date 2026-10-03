@@ -86,6 +86,14 @@ test('dynamic save and recovery feedback uses live status semantics',()=>{
 });
 
 
+test('required form controls reference their live validation feedback',()=>{
+  const admin=html('admin-dashboard.html'),client=html('dashboard.html');
+  for(const [id,status] of [['inboxReplyText','inboxReplyStatus'],['expenseNameInput','expenseFormStatus'],['expenseAmountInput','expenseFormStatus'],['phoneNumberInput','phoneFormStatus']]){
+    assert.match(admin,new RegExp('id="'+id+'"[^>]*aria-describedby="'+status+'"'));
+  }
+  assert.match(client,/id="settingsBusinessName"[^>]*aria-describedby="settingsFormStatus"/);
+});
+
 test('visually required admin fields expose required semantics',()=>{
   const admin=html('admin-dashboard.html');
   for(const id of ['expenseNameInput','expenseAmountInput','phoneNumberInput']){
