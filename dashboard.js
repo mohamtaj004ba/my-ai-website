@@ -1635,10 +1635,10 @@ function openLocationModal(id=''){
   const modal=document.getElementById('locationModal');if(!modal)return;const x=locationsData.find(v=>String(v.id)===String(id));
   modal.dataset.editId=x?.id||'';document.getElementById('locationModalTitle').textContent=x?'Edit location':'Add location';document.getElementById('locationName').value=x?.name||'';document.getElementById('locationPhone').value=x?.phone||'';document.getElementById('locationAddress').value=x?.address||'';document.getElementById('locationTimezone').value=x?.timezone||settingsData?.timezone||'America/Los_Angeles';document.getElementById('locationActive').checked=x?.active!==false;modal.classList.add('open');modal.setAttribute('aria-hidden','false');
 }
-function closeLocationModal(){const m=document.getElementById('locationModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
+function closeLocationModal(){if(locationMutationPending)return false;const m=document.getElementById('locationModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}return true}
 async function persistLocations(next){
   if(locationMutationPending)return false;
-  locationMutationPending=true;renderLocations();
+  locationMutationPending=true;const unlock=lockFormControls('locationModal');renderLocations();
   try{
     const submitted=next.map(item=>({...item}));
     const r=await fetch('/api/account?action=locations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:submitted})}),data=await r.json().catch(()=>({}));
@@ -1649,7 +1649,7 @@ async function persistLocations(next){
     if(submitted.some((item,i)=>item.id&&String(rows[i]?.id)!==String(item.id)))throw new Error('Location save response did not match the submitted records. Your current locations were preserved; refresh before retrying.');
     locationsData=rows;locationsLimit=confirmedLimit;return true;
   }catch(err){alert(err.message||'Could not save locations. Check your connection and try again.');return false}
-  finally{locationMutationPending=false;renderLocations()}
+  finally{unlock();locationMutationPending=false;renderLocations()}
 }
 async function saveLocation(){
   if(locationMutationPending)return false;
