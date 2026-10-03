@@ -1460,3 +1460,20 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Vercel Preview status for that exact SHA is SUCCESS.
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Next phase: continue read-only inspection first for concrete validation/focus, stale draft/control, and keyboard/mobile workflow gaps. Prioritize user-facing truthfulness defects over cosmetic churn.
+
+
+## Admin/client validation and accessibility consistency checkpoint — 2026-10-03
+
+- Continued the feature-branch-only evidence-first sweep across Growth, Documents, Locations, access recovery, configuration override, notes, and shared form semantics. Production `main` remained unchanged and PR #5 remained open/draft/unmerged.
+- **Admin Growth prospect editor:** local preflight now rejects a completely unidentified prospect unless at least one of name, business, email, or phone is present; malformed email and negative monthly-value entries are rejected and focused before any request. The Name field no longer falsely claims to be individually required, matching the backend contract. Explicit `0` monthly value is preserved when reopening.
+- **Marketing campaigns:** negative budgets fail locally with focused/accessible feedback, and explicit `0` budgets remain visible when reopening.
+- **Company documents:** malformed links fail locally before mutation; link and date controls are tied to live validation feedback. Existing date-range protections remain intact.
+- **Client locations:** malformed phone values fail before mutation with focus and accessible error feedback; blank phone remains optional.
+- **Admin access repair:** malformed owner email fails before confirmation or API mutation and is focused/announced.
+- **Admin config override:** malformed JSON is marked/focused before confirmation or API mutation.
+- **Team notes / required fields:** note composer exposes required semantics and all remaining required controls across client/admin surfaces now point at their live validation status. Campaign/company date-range controls also reference the explanatory status region.
+- **Explicit zero-value truthfulness:** admin prospect monthly value and campaign budget now use nullish preservation instead of falsy coercion so real zeroes do not reopen as blanks.
+- An intermediate CI failure on superseded SHA `41f3d6945d886ecbd8d087a22824373d45776aba` was traced to an outdated UI-structure assertion that incorrectly required Prospect Name specifically; the regression test was corrected to match the actual multi-identifier backend contract. That intermediate Preview failure was superseded and did not affect production.
+- **Exact verified implementation head `3549ccc1920a20adf1d578a7ad3e3e48dc7df9d0`:** CallerCore CI push `37146968539` SUCCESS with 1,397 tests passed / 0 failed; CallerCore CI PR `37146972366` SUCCESS; CodeQL push `37146968652` SUCCESS; CodeQL PR `37146972333` SUCCESS; Jekyll PR `37146972209` SUCCESS; authenticated Preview Browser QA `37146968565` SUCCESS including visual-drift comparison; Vercel Preview SUCCESS.
+- No production merge/deployment, live telephony activation, billing action, customer communication, production migration, destructive production mutation, or launch-gate change occurred.
+- Next phase: continue inspecting for stale editor state, confirmation truthfulness, keyboard/mobile reachability, and any remaining mismatches between UI constraints and backend contracts before broader cosmetic work.
