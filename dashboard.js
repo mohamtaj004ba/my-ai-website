@@ -4583,4 +4583,5 @@ document.getElementById('resetCallFilters')?.addEventListener('click',()=>{
 document.getElementById('teamCompletionReason')?.addEventListener('change',e=>{const wrap=document.getElementById('teamCompletionOtherWrap');if(wrap)wrap.hidden=e.target.value!=='other'});
 document.getElementById('closeTeamStatusModal')?.addEventListener('click',closeTeamStatusModal);
 document.getElementById('cancelTeamStatusModal')?.addEventListener('click',closeTeamStatusModal);
+document.getElementById('teamStatusModal')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeTeamStatusModal()});
 document.getElementById('saveTeamStatusModal')?.addEventListener('click',saveTeamStatusCompletion);
