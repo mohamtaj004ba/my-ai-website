@@ -76,7 +76,7 @@ function frontendFixture(response){
 test('expense save locks the modal, ignores duplicates and applies the server revision',async()=>{
   const f=frontendFixture(),first=vm.runInContext('saveExpense()',f.context),ignored=vm.runInContext('saveExpense()',f.context);
   assert.equal(f.context.adminExpenseSaving,true);assert.equal(f.node('closeExpenseModal').disabled,true);assert.equal(f.node('saveExpenseButton').textContent,'Saving…');
-  f.pending.resolve({ok:true,json:async()=>({expense:{id:'expense-1',name:'Hosting Plus',updatedAt:20}})});await Promise.all([first,ignored]);
+  f.pending.resolve({ok:true,json:async()=>({ok:true,expense:{id:'expense-1',name:'Hosting Plus',updatedAt:20}})});await Promise.all([first,ignored]);
   assert.equal(f.context.adminExpenseSaving,false);assert.equal(f.context.adminFinanceData.expenses[0].updatedAt,20);assert.equal(f.node('expenseModal')['aria-hidden'],'true');
 });
 
@@ -88,7 +88,7 @@ test('failed expense save unlocks the modal without replacing the draft',async()
 test('expense deletion sends its revision and suppresses a duplicate action',async()=>{
   const f=frontendFixture(),first=vm.runInContext("deleteExpense('expense-1')",f.context),ignored=vm.runInContext("deleteExpense('expense-1')",f.context);
   assert.equal(f.requests.length,1);assert.equal(JSON.parse(f.requests[0].options.body).expectedUpdatedAt,10);
-  f.pending.resolve({ok:true,json:async()=>({deleted:{id:'expense-1',updatedAt:10}})});await Promise.all([first,ignored]);
+  f.pending.resolve({ok:true,json:async()=>({ok:true,deleted:{id:'expense-1',updatedAt:10}})});await Promise.all([first,ignored]);
   assert.equal(f.context.adminFinanceData.expenses.length,0);assert.equal(f.context.adminExpenseDeletePending.size,0);
 });
 
@@ -112,7 +112,7 @@ test('opening the expense editor leaves phone form validation intact',()=>{
 test('confirmed expense save remains successful when the subsequent ledger refresh fails',async()=>{
   const f=frontendFixture();f.context.refreshAdminView=async()=>{throw Error('refresh offline')};
   const saving=vm.runInContext('saveExpense()',f.context);
-  f.pending.resolve({ok:true,json:async()=>({expense:{id:'expense-1',name:'Hosting Plus',updatedAt:20}})});
+  f.pending.resolve({ok:true,json:async()=>({ok:true,expense:{id:'expense-1',name:'Hosting Plus',updatedAt:20}})});
   await saving;
   assert.equal(f.node('expenseModal')['aria-hidden'],'true');
   assert.equal(f.context.adminFinanceData.expenses[0].updatedAt,20);
@@ -124,7 +124,7 @@ test('confirmed expense save remains successful when the subsequent ledger refre
 test('confirmed expense deletion is not reported as failed when ledger refresh fails',async()=>{
   const f=frontendFixture();f.context.refreshAdminView=async()=>{throw Error('refresh offline')};
   const deleting=vm.runInContext("deleteExpense('expense-1')",f.context);
-  f.pending.resolve({ok:true,json:async()=>({deleted:{id:'expense-1',updatedAt:10}})});
+  f.pending.resolve({ok:true,json:async()=>({ok:true,deleted:{id:'expense-1',updatedAt:10}})});
   await deleting;
   assert.equal(f.context.adminFinanceData.expenses.length,0);
   assert.deepEqual(f.alerts,[]);
