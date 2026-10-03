@@ -10,7 +10,8 @@ test('admin build approval validates the confirmed state and surfaces delivery w
   const fn=ui.slice(start,end);
   assert.match(fn,/data\.ok!==true/);
   assert.match(fn,/data\.onboarding\.checklist\?\.adminReview!==true/);
-  assert.match(fn,/if\(data\.warning\)alert\(String\(data\.warning\)\)/);
+  assert.match(fn,/setOnboardingActionStatus\(data\.warning\|\|'Build approved\.'/);
+  assert.doesNotMatch(fn,/\balert\s*\(/);
   assert.match(fn,/Build approval was saved, but onboarding could not refresh/);
   assert.match(fn,/finally\{if\(button\?\.isConnected\)\{button\.disabled=false;button\.textContent=idleLabel\}\}/);
   assert.match(fn,/loadNotifications\(\{silent:true\}\)\.catch/);
@@ -29,7 +30,8 @@ test('provisioning checklist mutations are serialized and require canonical ackn
   assert.match(block,/data\.ok!==true/);
   assert.match(block,/data\.onboarding\.checklist\?\.\[field\]!==value/);
   assert.match(block,/Checklist update was saved, but onboarding could not refresh/);
-  assert.match(block,/if\(data\.warning\)alert\(String\(data\.warning\)\)/);
+  assert.match(block,/setOnboardingActionStatus\(data\.warning\|\|'Checklist updated\.'/);
+  assert.doesNotMatch(block,/\balert\s*\(/);
   assert.match(block,/loadNotifications\(\{silent:true\}\)\.catch/);
   assert.match(block,/finally\{adminProvisioningChecklistPending\.delete\(key\);setProvisioningChecklistControls\(key,false\);renderProvisioning\(\)\}/);
 });

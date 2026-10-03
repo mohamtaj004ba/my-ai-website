@@ -119,7 +119,7 @@ function uiFixture({reply,loadFail=false,initial={id:'client-1',stage:'Paid',aut
     document:{querySelectorAll:()=>controls},
     fetch:async(_url,options)=>{calls.push(JSON.parse(options.body));return request()},
     refreshAdminView:async()=>{refreshes.push(1);if(loadFail)throw Error('refresh failed')},
-    renderProvisioning(){},alert:x=>alerts.push(x),Date,Number,JSON,String,Error
+    renderProvisioning(){},alert:x=>alerts.push(x),setOnboardingActionStatus:(message,tone='')=>alerts.push({message:String(message||''),tone:String(tone||'')}),Date,Number,JSON,String,Error
   });
   vm.runInContext(client,ctx);
   return {item,calls,alerts,controls,ctx,refreshes,run:x=>vm.runInContext(x,ctx)};
@@ -136,7 +136,7 @@ test('failed manual move never leaves false optimistic stage or revision behind'
   const f=uiFixture({reply:()=>Promise.resolve({ok:false,json:async()=>({error:'Stale stage'})})});
   assert.equal(await f.run("moveProvisioningStage('client-1','Review')"),false);
   assert.equal(f.item.stage,'Paid');assert.equal(f.item.manualOverride,false);assert.equal(f.item.stageUpdatedAt,null);
-  assert.deepEqual(f.alerts,['Stale stage']);
+  assert.ok(f.alerts.some(item=>item&&item.tone==='error'&&item.message==='Stale stage'));
 });
 test('one pending manual stage request blocks a second action on same account',async()=>{
   let release;const f=uiFixture({reply:()=>new Promise(done=>release=done)});
@@ -153,7 +153,7 @@ test('restoration sends revision, updates local stage and stays saved on refresh
   assert.equal(await f.run("clearProvisioningOverride('client-1')"),true);
   assert.equal(f.calls[0].expectedUpdatedAt,66);
   assert.equal(f.item.stage,'Paid');assert.equal(f.item.manualOverride,false);assert.equal(f.item.stageUpdatedAt,null);
-  assert.match(f.alerts[0],/restored, but onboarding could not refresh/);
+  assert.ok(f.alerts.some(item=>item&&item.tone==='error'&&/restored, but onboarding could not refresh/.test(item.message)));
 });
 test('failed restoration preserves manual label and permits retry',async()=>{
   const f=uiFixture({initial:{id:'client-1',stage:'Review',autoStage:'Paid',manualOverride:true,stageUpdatedAt:66},reply:()=>Promise.resolve({ok:false,json:async()=>({error:'Conflicting stage'})})});

@@ -3097,6 +3097,10 @@ function renderProvisioning(){
   board.querySelectorAll('[data-approve-build]').forEach(b=>b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();await approveProvisioningBuild(b.dataset.approveBuild,b)}));
   board.querySelectorAll('[data-open-documents]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showView('documents')}));
 }
+function setOnboardingActionStatus(message='',tone=''){
+  const el=document.getElementById('onboardingActionStatus');if(!el)return;
+  el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
+}
 function setOnboardingInviteControls(id,pending){
   document.querySelectorAll('[data-send-onboarding],[data-resolve-onboarding-delivery]').forEach(control=>{
     const target=String(control.dataset.sendOnboarding||control.dataset.resolveOnboardingId||'');if(target!==String(id))return;
@@ -3105,20 +3109,21 @@ function setOnboardingInviteControls(id,pending){
 }
 async function sendOnboardingInvite(id,button){
   const key=String(id);if(adminOnboardingInvitePending.has(key))return false;
-  adminOnboardingInvitePending.add(key);setOnboardingInviteControls(key,true);
+  adminOnboardingInvitePending.add(key);setOnboardingInviteControls(key,true);setOnboardingActionStatus('Sending onboarding invite…');
   const idleLabel=button?.textContent||'Approve & send onboarding';if(button)button.textContent='Sending…';
   try{
     const r=await fetch('/api/account?action=admin-onboarding-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key})}),data=await r.json().catch(()=>({}));
     if(!r.ok){
-      alert((data.error||'Could not send onboarding.')+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));
+      setOnboardingActionStatus((data.error||'Could not send onboarding.')+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''),'error');
       try{await refreshAdminView('onboarding',{force:true,announce:false})}catch(_){}
       return false;
     }
     if(data.ok!==true||!data.onboarding||typeof data.onboarding!=='object'||Array.isArray(data.onboarding)||data.deliveryStatus!=='sent'&&data.alreadySent!==true)throw new Error('Could not verify onboarding email delivery. Refresh onboarding before retrying.');
-    try{await refreshAdminView('onboarding',{force:true,announce:false})}catch(_){alert('Onboarding email was confirmed sent, but the onboarding view could not refresh. Reload the view before taking another action.')}
+    try{await refreshAdminView('onboarding',{force:true,announce:false});setOnboardingActionStatus(data.warning||'Onboarding invite sent.',data.warning?'':'success')}
+    catch(_){setOnboardingActionStatus('Onboarding email was confirmed sent, but the onboarding view could not refresh. Reload the view before taking another action.','error')}
     await loadNotifications({silent:true}).catch(()=>{});
     return true;
-  }catch(err){alert(err.message||'Could not send onboarding.');return false}
+  }catch(err){setOnboardingActionStatus(err.message||'Could not send onboarding.','error');return false}
   finally{adminOnboardingInvitePending.delete(key);setOnboardingInviteControls(key,false);if(button?.isConnected)button.textContent=idleLabel;renderProvisioning()}
 }
 async function resolveOnboardingInviteDelivery(id,resolution,attemptId,button){
@@ -3126,29 +3131,30 @@ async function resolveOnboardingInviteDelivery(id,resolution,attemptId,button){
   const sent=resolution==='sent';if(!sent&&resolution!=='not_sent')return false;
   const message=sent?'Only mark this invite as sent after confirming Mailgun accepted or delivered it. Continue?':'Only mark this invite as not sent after confirming Mailgun did not accept or deliver it. This will allow a retry. Continue?';
   if(!confirm(message))return false;
-  adminOnboardingInvitePending.add(key);setOnboardingInviteControls(key,true);
+  adminOnboardingInvitePending.add(key);setOnboardingInviteControls(key,true);setOnboardingActionStatus('Saving delivery resolution…');
   const idleLabel=button?.textContent||'';if(button)button.textContent='Saving…';
   try{
     const r=await fetch('/api/account?action=admin-onboarding-delivery-resolve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,resolution,attemptId:String(attemptId||'')})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not resolve onboarding delivery.');
     const expected=sent?'sent':'failed';if(data.ok!==true||data.deliveryStatus!==expected)throw new Error('Could not verify the saved delivery resolution. Refresh onboarding before retrying.');
-    try{await refreshAdminView('onboarding',{force:true,announce:false})}catch(_){alert('Delivery resolution was saved, but onboarding could not refresh. Reload the view before taking another action.')}
+    try{await refreshAdminView('onboarding',{force:true,announce:false});setOnboardingActionStatus('Delivery resolution saved.','success')}
+    catch(_){setOnboardingActionStatus('Delivery resolution was saved, but onboarding could not refresh. Reload the view before taking another action.','error')}
     await loadNotifications({silent:true}).catch(()=>{});
     return true;
-  }catch(err){alert(err.message||'Could not resolve onboarding delivery.');return false}
+  }catch(err){setOnboardingActionStatus(err.message||'Could not resolve onboarding delivery.','error');return false}
   finally{adminOnboardingInvitePending.delete(key);setOnboardingInviteControls(key,false);if(button?.isConnected)button.textContent=idleLabel;renderProvisioning()}
 }
 async function approveProvisioningBuild(id,button){
-  const idleLabel=button?.textContent||'Approve build';if(button){button.disabled=true;button.textContent='Approving…'}
+  const idleLabel=button?.textContent||'Approve build';if(button){button.disabled=true;button.textContent='Approving…'}setOnboardingActionStatus('Approving build…');
   try{
     const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field:'adminReview',value:true})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error((data.error||'Could not approve this build.')+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));
     if(data.ok!==true||!data.onboarding||typeof data.onboarding!=='object'||Array.isArray(data.onboarding)||data.onboarding.checklist?.adminReview!==true)throw new Error('Build approval response was incomplete. Refresh onboarding before retrying.');
-    try{await refreshAdminView('onboarding',{force:true,announce:false})}catch(_){alert('Build approval was saved, but onboarding could not refresh. Reload the view before taking another action.')}
-    if(data.warning)alert(String(data.warning));
+    try{await refreshAdminView('onboarding',{force:true,announce:false});setOnboardingActionStatus(data.warning||'Build approved.',data.warning?'':'success')}
+    catch(_){setOnboardingActionStatus('Build approval was saved, but onboarding could not refresh. Reload the view before taking another action.','error')}
     await loadNotifications({silent:true}).catch(()=>{});
     return true;
-  }catch(err){alert(err.message||'Could not approve this build.');return false}
+  }catch(err){setOnboardingActionStatus(err.message||'Could not approve this build.','error');return false}
   finally{if(button?.isConnected){button.disabled=false;button.textContent=idleLabel}}
 }
 function setProvisioningChecklistControls(id,pending){
@@ -3160,18 +3166,17 @@ function setProvisioningChecklistControls(id,pending){
 }
 async function updateProvisioningChecklist(id,field,value){
   const key=String(id);if(adminProvisioningChecklistPending.has(key))return false;
-  adminProvisioningChecklistPending.add(key);setProvisioningChecklistControls(key,true);
+  adminProvisioningChecklistPending.add(key);setProvisioningChecklistControls(key,true);setOnboardingActionStatus('Saving checklist update…');
   try{
     const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,field,value})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update provisioning checklist.');
     if(data.ok!==true||!data.onboarding||typeof data.onboarding!=='object'||Array.isArray(data.onboarding)||data.onboarding.checklist?.[field]!==value)
       throw new Error('Checklist update response was incomplete. Refresh onboarding before retrying.');
-    try{await refreshAdminView('onboarding',{force:true,announce:false})}
-    catch(_){alert('Checklist update was saved, but onboarding could not refresh. Reload the view before taking another action.')}
-    if(data.warning)alert(String(data.warning));
+    try{await refreshAdminView('onboarding',{force:true,announce:false});setOnboardingActionStatus(data.warning||'Checklist updated.',data.warning?'':'success')}
+    catch(_){setOnboardingActionStatus('Checklist update was saved, but onboarding could not refresh. Reload the view before taking another action.','error')}
     await loadNotifications({silent:true}).catch(()=>{});
     return true;
-  }catch(err){alert(err.message||'Could not update provisioning checklist.');return false}
+  }catch(err){setOnboardingActionStatus(err.message||'Could not update provisioning checklist.','error');return false}
   finally{adminProvisioningChecklistPending.delete(key);setProvisioningChecklistControls(key,false);renderProvisioning()}
 }
 function setProvisioningStageControls(id,pending){
@@ -3187,18 +3192,17 @@ async function moveProvisioningStage(id,stage){
   if(!item||adminProvisioningStagePending.has(key))return false;
   if(item.stage===stage)return true;
   const expectedUpdatedAt=Number(item.stageUpdatedAt||0);
-  adminProvisioningStagePending.add(key);setProvisioningStageControls(key,true);
-  let committed=false;
+  adminProvisioningStagePending.add(key);setProvisioningStageControls(key,true);setOnboardingActionStatus('Saving onboarding stage…');
   try{
     const r=await fetch('/api/account?action=admin-provisioning-stage-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not move provisioning stage.');
     if(data.ok!==true||data.stage!==stage||!Number.isFinite(Number(data.updatedAt))||Number(data.updatedAt)<=0)
       throw new Error('Could not verify the saved provisioning stage. Refresh onboarding before retrying.');
-    item.stage=stage;item.manualOverride=true;item.stageUpdatedAt=Number(data.updatedAt);committed=true;
-    try{await refreshAdminView('onboarding',{force:true,announce:false})}
-    catch(err){alert('Stage saved, but onboarding could not refresh. Reload the view to confirm the latest client state.')}
+    item.stage=stage;item.manualOverride=true;item.stageUpdatedAt=Number(data.updatedAt);
+    try{await refreshAdminView('onboarding',{force:true,announce:false});setOnboardingActionStatus('Onboarding stage saved.','success')}
+    catch(err){setOnboardingActionStatus('Stage saved, but onboarding could not refresh. Reload the view to confirm the latest client state.','error')}
     return true;
-  }catch(err){alert(err.message||'Could not move provisioning stage.');return false}
+  }catch(err){setOnboardingActionStatus(err.message||'Could not move provisioning stage.','error');return false}
   finally{adminProvisioningStagePending.delete(key);renderProvisioning();setProvisioningStageControls(key,false)}
 }
 async function clearProvisioningOverride(id){
@@ -3206,16 +3210,16 @@ async function clearProvisioningOverride(id){
   if(!item||adminProvisioningStagePending.has(key))return false;
   if(!item.manualOverride)return true;
   const expectedUpdatedAt=Number(item.stageUpdatedAt||0);
-  adminProvisioningStagePending.add(key);setProvisioningStageControls(key,true);
+  adminProvisioningStagePending.add(key);setProvisioningStageControls(key,true);setOnboardingActionStatus('Restoring automatic stage…');
   try{
     const r=await fetch('/api/account?action=admin-provisioning-stage-clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not restore automatic stage.');
     if(data.ok!==true)throw new Error('Could not verify stage restoration. Refresh onboarding before retrying.');
     item.stage=item.autoStage||item.stage;item.manualOverride=false;item.stageUpdatedAt=null;
-    try{await refreshAdminView('onboarding',{force:true,announce:false})}
-    catch(err){alert('Automatic stage restored, but onboarding could not refresh. Reload the view to confirm the latest client state.')}
+    try{await refreshAdminView('onboarding',{force:true,announce:false});setOnboardingActionStatus('Automatic stage restored.','success')}
+    catch(err){setOnboardingActionStatus('Automatic stage restored, but onboarding could not refresh. Reload the view to confirm the latest client state.','error')}
     return true;
-  }catch(err){alert(err.message||'Could not restore automatic stage.');return false}
+  }catch(err){setOnboardingActionStatus(err.message||'Could not restore automatic stage.','error');return false}
   finally{adminProvisioningStagePending.delete(key);renderProvisioning();setProvisioningStageControls(key,false)}
 }
 

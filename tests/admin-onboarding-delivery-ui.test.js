@@ -50,3 +50,19 @@ test('onboarding empty state distinguishes filters from a truly empty source',()
   assert.match(source,/all\.length\?'[<]div class="empty-state"[>][<]h3[>]No onboarding accounts match this view/);
   assert.match(source,/No onboarding accounts yet/);
 });
+
+
+test('onboarding operational feedback is inline while delivery resolution keeps confirmation',()=>{
+  const html=fs.readFileSync('admin-dashboard.html','utf8');
+  assert.match(html,/id="onboardingActionStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  const start=source.indexOf('async function sendOnboardingInvite('),end=source.indexOf('\nlet phoneVisibleLimit=50,',start),block=source.slice(start,end);
+  assert.match(source,/function setOnboardingActionStatus\(message='',tone=''\)/);
+  assert.doesNotMatch(block,/\balert\s*\(/);
+  assert.match(block,/if\(!confirm\(message\)\)return false/);
+  assert.match(block,/setOnboardingActionStatus\('Sending onboarding invite…'\)/);
+  assert.match(block,/setOnboardingActionStatus\('Saving delivery resolution…'\)/);
+  assert.match(block,/setOnboardingActionStatus\('Approving build…'\)/);
+  assert.match(block,/setOnboardingActionStatus\('Saving checklist update…'\)/);
+  assert.match(block,/setOnboardingActionStatus\('Saving onboarding stage…'\)/);
+  assert.match(block,/setOnboardingActionStatus\('Restoring automatic stage…'\)/);
+});
