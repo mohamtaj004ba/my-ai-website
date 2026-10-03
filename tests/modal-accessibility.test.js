@@ -166,3 +166,9 @@ test('client receptionist placeholders stay neutral until workspace configuratio
   assert.match(client,/id="connectionAgentTitle">Checking receptionist…/);
   assert.doesNotMatch(client,/id="overviewAgentName">Maya/);
 });
+
+
+test('client billing rendering waits for a verified workspace instead of defaulting to an active subscription',()=>{
+  const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(dashboard,/function renderBilling\(\)\{[\s\S]*document\.body\.dataset\.dashboard==='client'&&!sessionWorkspace\)return/);
+});

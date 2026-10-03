@@ -302,6 +302,7 @@ function planLosses(from,to){
   return losses;
 }
 function renderBilling(){
+  if(document.body.dataset.dashboard==='client'&&!sessionWorkspace)return;
   const d=PLAN_DATA[currentPlan],subscription=String(sessionWorkspace?.subscriptionStatus||'active').toLowerCase(),statusTag=document.getElementById('billingSubscriptionStatus'),statusMeta=subscription==='past_due'?{label:'Past due',tone:'red'}:subscription==='canceled'?{label:'Canceled',tone:'red'}:['unpaid','incomplete','incomplete_expired'].includes(subscription)?{label:'Payment issue',tone:'red'}:['trialing'].includes(subscription)?{label:'Trialing',tone:'amber'}:subscription==='paused'?{label:'Paused',tone:'amber'}:{label:'Active',tone:'green'};
   if(statusTag){statusTag.textContent=statusMeta.label;statusTag.className='tag '+statusMeta.tone}
   document.getElementById('billingPlan')&&(document.getElementById('billingPlan').textContent=currentPlan);
