@@ -1347,3 +1347,20 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Intermediate exact verified head `8bac4107a826d2d5a183ec273c58366742a39354` passed **1346/1346** tests plus build, CodeQL, Vercel, and authenticated Browser QA after the Settings/admin-client/call-detail batch.
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Next phase: continue cross-dashboard premium consistency and accessibility review, prioritizing remaining user-visible stale/error gaps and genuine mobile/keyboard reachability issues; avoid cosmetic churn and do not reopen already-verified backend mutation contracts without a new regression.
+
+
+## Accessibility / mobile interaction checkpoint — 2026-10-03
+
+- Continued the feature-branch-only premium-polish sweep on `feature/callercore-dashboards`; production `main` remained unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0` and PR #5 remained draft/unmerged.
+- **Modal-safe mobile Settings controls:** the phone Settings Save/Cancel action bar now remains above page content but below modal and drawer interaction layers, preventing it from visually covering an open dialog. Exact verified implementation `d5141c4913ac66137fc1c039284116fcdc08a2bf` passed **1349/1349** tests plus build, CodeQL, Vercel Preview, and authenticated Browser QA.
+- **Dynamic viewport cleanup:** the base dashboard shell and base call-drawer rule now use `100dvh` directly, removing legacy `100vh` dependence and eliminating reliance on a later cascade override for drawer height.
+- **Foreground layer integrity:** persistent sync-health toasts now sit beneath the mobile Settings action bar, normal modals, and drawers so background retry controls cannot cover a modal surface.
+- **Topbar popover exclusivity:** profile/account, Notifications, and Help panels now close one another when a different topbar panel opens. Core Intelligence also clears those popovers before its drawer takes focus.
+- **Admin global-search semantics:** the search input now exposes a complete combobox/listbox contract with `role="combobox"`, `aria-autocomplete="list"`, `aria-haspopup="listbox"`, `aria-expanded`, and `aria-controls`.
+- **Notification deep-link focus:** an open notification panel now closes and moves focus to the stable notification bell before navigating to a modal/drawer. Failed navigation reopens the panel and restores focus to the same notification. Read-state semantics remain unchanged: notifications are still marked read only after exact navigation succeeds.
+- **Mobile touch targets:** phone topbar controls now use deliberate 40px footprints for the hamburger control plus compact Admin Core Intelligence, search, notification, and account controls.
+- Structural accessibility sweep confirmed no duplicate dashboard IDs and no missing `label for`, `aria-controls`, `aria-describedby`, or `aria-labelledby` targets. Native `alert()` usage remains at zero; remaining native `confirm()` prompts are reserved for consequential actions.
+- Exact verified intermediate accessibility head `e826c5ddfec54103bea779c671d04fdf62504b59` passed **1354/1354** tests plus build, CodeQL, Vercel Preview, and authenticated Browser QA.
+- **Exact verified final implementation/test head `cdd0759f3521439528de0a7e2dfc5f2bcd8ed8fb`:** CallerCore test suite **1357 passed / 0 failed**; build SUCCESS; CodeQL push/PR SUCCESS; authenticated Preview Browser QA SUCCESS including visual drift comparison; Vercel Preview SUCCESS.
+- No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
+- Next phase: continue the premium client/admin sweep with emphasis on remaining real workflow usability and visual-consistency gaps revealed by Browser QA or code inspection; preserve the verified accessibility, stale-state, mobile-reachability, and backend mutation contracts unless a new regression is found.
