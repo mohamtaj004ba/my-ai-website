@@ -3,7 +3,7 @@
   const selector='button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
   function isRendered(element){
-    if(element.hidden||element.closest('[hidden],[aria-hidden="true"]'))return false;
+    if(element.hidden||(typeof element.closest==='function'&&element.closest('[hidden],[aria-hidden="true"]')))return false;
     const view=element.ownerDocument?.defaultView||globalThis;
     const style=typeof view.getComputedStyle==='function'?view.getComputedStyle(element):null;
     return (!style||(style.display!=='none'&&style.visibility!=='hidden'))&&(!element.getClientRects||element.getClientRects().length>0);
