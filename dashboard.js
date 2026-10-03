@@ -2859,7 +2859,7 @@ async function replyAdminSupportTicket(id,button){
     const r=await fetch('/api/account?action=admin-support-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,message})});
     const data=await r.json().catch(()=>({}));
     if(!r.ok){setAdminSupportReplyStatus(key,data.error||'Could not send reply. Your draft is preserved.');return}
-    if(!data.ticket||String(data.ticket.id)!==key)throw new Error('Unconfirmed support reply response');
+    if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||String(data.ticket.id||'')!==key)throw new Error('Unconfirmed support reply response');
     const i=adminSupportData.findIndex(x=>String(x.id)===key);if(i>=0)adminSupportData[i]=data.ticket;
     renderAdminSupport({clearDraftId:key});
     const thread=document.querySelector('[data-support-ticket-id="'+CSS.escape(key)+'"]');if(thread)thread.open=true;
