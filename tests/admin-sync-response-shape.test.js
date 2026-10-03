@@ -66,3 +66,14 @@ test('admin bootstrap sync announcements remain optional in isolated resilience 
   assert.match(source,/if\(typeof setAdminSyncState==='function'\)setAdminSyncState\('syncing','Loading admin data…'\)/);
   assert.match(source,/if\(typeof setAdminSyncState==='function'\)setAdminSyncState\('error','Admin data could not load · retry or refresh'\)/);
 });
+
+
+test('Command Center portfolio rings stay neutral until account data is verified',()=>{
+  const html=fs.readFileSync('admin-dashboard.html','utf8');
+  assert.match(html,/id="adminActivePct">—/);
+  assert.match(html,/id="adminActiveCount">Checking accounts…/);
+  assert.match(html,/id="adminBillingPct">—/);
+  assert.match(html,/id="adminBillingCount">Checking billing…/);
+  assert.match(html,/id="adminLivePct">—/);
+  assert.match(html,/id="adminLiveCount">Checking onboarding…/);
+});
