@@ -3713,7 +3713,9 @@ async function updateAppointment(req,res){
   if(Array.isArray(rawItems)&&rawItems.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Appointment data contains unverifiable entries. No changes were made.'});
   const items=rawItems||[],index=items.findIndex(item=>item&&String(item.id)===id);
   if(index<0)return res.status(404).json({error:'Appointment not found'});
-  const previous=items[index],updated={...previous,status,updatedAt:Math.max(Date.now(),Number(previous.updatedAt||0)+1)},next=items.slice();next[index]=updated;
+  const previous=items[index],expectedUpdatedAt=Number((req.body||{}).expectedUpdatedAt);
+  if(!Object.prototype.hasOwnProperty.call(req.body||{},'expectedUpdatedAt')||!Number.isFinite(expectedUpdatedAt)||expectedUpdatedAt!==Number(previous.updatedAt||0))return res.status(409).json({error:'This appointment changed since you opened the schedule. Reload appointments before retrying.'});
+  const updated={...previous,status,updatedAt:Math.max(Date.now(),Number(previous.updatedAt||0)+1)},next=items.slice();next[index]=updated;
   const audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'appointment_status_update',section:'appointments',before:previous,after:updated,meta:{appointmentId:id},at:Date.now()};
   try{
     if(!await compareAndAudit(kv,{key,before:rawItems,after:next},'audit:'+s.workspaceId,audit))return res.status(409).json({error:'Appointments changed during this update. Reload the schedule before retrying.'});
@@ -3995,7 +3997,9 @@ async function updateLead(req,res){
   if(Array.isArray(rawItems)&&rawItems.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()))return res.status(503).json({error:'Lead data contains unverifiable entries. No changes were made.'});
   const items=rawItems||[],index=items.findIndex(item=>item&&String(item.id)===id);
   if(index<0)return res.status(404).json({error:'Lead not found'});
-  const previous=items[index],updated={...previous,stage,updatedAt:Math.max(Date.now(),Number(previous.updatedAt||0)+1)},next=items.slice();next[index]=updated;
+  const previous=items[index],expectedUpdatedAt=Number((req.body||{}).expectedUpdatedAt);
+  if(!Object.prototype.hasOwnProperty.call(req.body||{},'expectedUpdatedAt')||!Number.isFinite(expectedUpdatedAt)||expectedUpdatedAt!==Number(previous.updatedAt||0))return res.status(409).json({error:'This lead changed since you opened the pipeline. Reload leads before retrying.'});
+  const updated={...previous,stage,updatedAt:Math.max(Date.now(),Number(previous.updatedAt||0)+1)},next=items.slice();next[index]=updated;
   const audit={id:crypto.randomUUID(),workspaceId:s.workspaceId,actorEmail:s.email,actorRole:s.role||'client',action:'lead_stage_update',section:'leads',before:previous,after:updated,meta:{leadId:id},at:Date.now()};
   try{
     if(!await compareAndAudit(kv,{key,before:rawItems,after:next},'audit:'+s.workspaceId,audit))return res.status(409).json({error:'Leads changed during this update. Reload the pipeline before retrying.'});

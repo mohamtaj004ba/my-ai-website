@@ -922,7 +922,7 @@ async function moveLead(id,stage){
   const previous=lead.stage;lead.stage=stage;renderLeads();
   if(demoMode)return;
   try{
-    const r=await fetch('/api/account?action=lead-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=lead-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,stage,expectedUpdatedAt:Number(lead.updatedAt||0)})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update this lead.');
     if(data.updated!==true||!data.lead||typeof data.lead!=='object'||Array.isArray(data.lead)||String(data.lead.id||'')!==String(id)||String(data.lead.stage||'')!==String(stage))throw new Error('Lead update response was incomplete. Refresh the pipeline before retrying.');
     Object.assign(lead,data.lead);renderLeads();
@@ -1260,7 +1260,7 @@ async function updateAppointment(id,status){
   const previous=item.status;item.status=status;appointmentStatusPending.add(key);setAppointmentActionStatus('Updating appointment…');renderAppointments();
   if(demoMode){appointmentStatusPending.delete(key);setAppointmentActionStatus('Appointment updated.','success');renderAppointments();return true}
   try{
-    const r=await fetch('/api/account?action=appointment-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,status})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=appointment-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,status,expectedUpdatedAt:Number(item.updatedAt||0)})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update appointment.');
     if(data.updated!==true||!data.appointment||typeof data.appointment!=='object'||Array.isArray(data.appointment)||String(data.appointment.id||'')!==String(id)||String(data.appointment.status||'')!==String(status))throw new Error('Appointment update response was incomplete. Refresh appointments before retrying.');
     Object.assign(item,data.appointment);setAppointmentActionStatus('Appointment updated.','success');return true;
