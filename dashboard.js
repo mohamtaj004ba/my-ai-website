@@ -4337,6 +4337,7 @@ function renderNotifications(){
     sync.textContent=statusError||(coverageWarning?'Updated '+formatNotificationTime(notificationLastSyncAt)+' · '+coverageNotes.join(' '):notificationsLoading?'Refreshing…':notificationLastSyncAt?'Updated '+formatNotificationTime(notificationLastSyncAt):'Not refreshed yet');
   }
   if(retry){retry.disabled=notificationsLoading;retry.textContent=notificationsLoading?'Refreshing…':'Refresh'}
+  const readAll=document.getElementById('notificationReadAll');if(readAll){readAll.disabled=notificationsLoading||notificationUnreadCount===0;readAll.textContent=notificationUnreadCount===0?'All read':'Mark all read'}
   if(empty){
     empty.hidden=items.length!==0;
     empty.textContent=notificationLoadError&&!notificationData.length?'Notifications could not be verified. Refresh to try again.':notificationMode==='history'?'No notification history yet.':'No unread notifications.';

@@ -245,3 +245,9 @@ test('closing the notification panel with Escape returns focus to its bell trigg
   assert.match(ui,/if\(e\.key==='Escape'&&!panel\.hidden\)/);
   assert.match(ui,/bell\.setAttribute\('aria-expanded','false'\);bell\.focus\(\)/);
 });
+
+
+test('notification controls do not offer stale mark-all actions while refreshing or already clear',()=>{
+  assert.match(ui,/readAll\.disabled=notificationsLoading\|\|notificationUnreadCount===0/);
+  assert.match(ui,/readAll\.textContent=notificationUnreadCount===0\?'All read':'Mark all read'/);
+});
