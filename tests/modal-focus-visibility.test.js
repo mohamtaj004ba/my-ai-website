@@ -15,6 +15,11 @@ test('dialog keyboard loop excludes controls that are not actually rendered',()=
   assert.match(source,/querySelectorAll\(selector\)\]\.filter\(isRendered\)/);
 });
 
+test('dialog focus loop excludes disabled and explicitly untabbable actions',()=>{
+  assert.match(source,/a\[href\]:not\(\[tabindex="-1"\]\):not\(\[aria-disabled="true"\]\)/);
+  assert.match(source,/getAttribute\?\.\('aria-disabled'\)==='true'/);
+});
+
 test('dialog focus return refuses disabled or hidden opener controls',()=>{
   assert.match(source,/!target\.hasAttribute\?\.\('disabled'\)/);
   assert.match(source,/isRendered\(target\)/);
