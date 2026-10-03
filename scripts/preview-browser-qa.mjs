@@ -591,6 +591,34 @@ async function runAdminInteractions(page){
   await assertAdminTechPendingOverride(page);
   report.admin.interactions.push('global search → client deep link');
   report.admin.interactions.push('configuration override pending lock + immediate refresh');
+  // Exercise the real confirmation controls without revoking any Preview user sessions.
+  let logoutRequests=0;
+  const logoutRoute=/\/api\/account\?action=admin-force-logout$/;
+  await page.route(logoutRoute,async route=>{
+    logoutRequests++;
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,sessionVersion:2})});
+  });
+  try{
+    await page.locator('#adminForceLogoutButton').click();
+    const logoutModal=page.locator('#adminLogoutModal');
+    await logoutModal.waitFor({state:'visible'});
+    if(await logoutModal.getAttribute('role')!=='dialog'||await logoutModal.getAttribute('aria-modal')!=='true')throw new Error('Sign-out confirmation lacks dialog semantics');
+    if(!/North Ridge Plumbing/.test(await page.locator('#adminLogoutCopy').textContent()))throw new Error('Sign-out confirmation omitted workspace identity');
+    await page.locator('#cancelAdminLogout').click();
+    if(logoutRequests!==0)throw new Error('Canceled sign-out sent a mutation');
+    await page.waitForFunction(()=>document.activeElement?.id==='adminForceLogoutButton');
+    await page.locator('#adminForceLogoutButton').click();
+    await page.locator('#closeAdminLogoutModal').focus();
+    await page.keyboard.press('Shift+Tab');
+    if(!await page.locator('#confirmAdminLogout').evaluate(el=>document.activeElement===el))throw new Error('Sign-out confirmation did not trap reverse Tab');
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(()=>document.activeElement?.id==='adminForceLogoutButton');
+    await page.locator('#adminForceLogoutButton').click();
+    await page.locator('#confirmAdminLogout').click();
+    await page.waitForFunction(()=>!adminTechSaving&&document.getElementById('adminLogoutModal')?.getAttribute('aria-hidden')==='true');
+    if(logoutRequests!==1)throw new Error('Confirmed sign-out did not send exactly one intercepted mutation');
+  }finally{await page.unroute(logoutRoute)}
+  report.admin.interactions.push('sign-out target identity + cancellation + keyboard focus/trap + intercepted confirmation');
   await page.locator('#closeAdminClient').click();
 
   await page.locator('#adminSearch').fill('System Health');
@@ -816,6 +844,7 @@ async function runAdminInteractions(page){
       const restoreButton=document.getElementById('adminRestoreClientButton'),deleteButton=document.getElementById('adminDeleteClientButton'),saveButton=document.getElementById('adminSaveClientButton'),status=document.getElementById('adminClientStatus');
       if(!restoreButton||restoreButton.hidden||!deleteButton.hidden||!saveButton.hidden||!status.disabled)throw new Error('Pending-deletion recovery controls were not isolated from ordinary edits');
       if(!/Recovery is available/.test(document.getElementById('adminClientManageNote')?.textContent||''))throw new Error('Pending-deletion recovery window was not explained');
+      if(openAdminRestoreWorkspaceModal()!==true)throw new Error('Workspace recovery confirmation did not open');
       const pending=restoreAdminClient();
       if(!restoreButton.disabled||restoreButton.textContent!=='Restoring…'||document.getElementById('adminClientDrawer')?.getAttribute('aria-busy')!=='true')throw new Error('Workspace recovery did not lock the admin drawer');
       if(await restoreAdminClient()!==false)throw new Error('Concurrent workspace recovery was not blocked');
