@@ -25,7 +25,9 @@ test('client configuration mutations require canonical response payloads before 
   assert.match(automations,/Array\.isArray\(data\.automations\)/);
   assert.doesNotMatch(automations,/\.automations\|\|automationsData/);
   assert.match(webhook,/!data\.integrations\|\|typeof data\.integrations!=='object'\|\|Array\.isArray\(data\.integrations\)/);
-  assert.match(settings,/!data\.settings\|\|typeof data\.settings!=='object'\|\|Array\.isArray\(data\.settings\)/);
+  assert.match(settings,/data\.ok!==true/);
+  assert.match(settings,/confirmedRevision<=Number\(payload\.expectedUpdatedAt\|\|0\)/);
+  assert.match(settings,/String\(confirmed\.businessName\|\|'\'\)!==String\(payload\.businessName\|\|'\'\)/);
   assert.doesNotMatch(settings,/data\.settings\|\|payload/);
   assert.match(locations,/Array\.isArray\(data\.locations\)/);
   assert.match(locations,/Number\.isFinite\(confirmedLimit\)/);
