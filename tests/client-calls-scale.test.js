@@ -40,3 +40,8 @@ test('call empty state distinguishes filtered zero results from a truly empty wo
   assert.match(js,/filtered\?'No matching calls':'No calls yet'/);
   assert.match(js,/Try another search, date range, category, disposition, or quick filter/);
 });
+
+
+test('call quick filters expose their selected state to assistive technology',()=>{
+  assert.match(js,/data-call-quick[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
+});

@@ -59,3 +59,10 @@ test('client and admin retry controls lock while their refresh is pending and al
   assert.match(dashboard,/clientSecondaryRetry'\)\?\.addEventListener\('click',e=>runRetryButton/);
   assert.match(dashboard,/adminDataRetry'\)\?\.addEventListener\('click',e=>runRetryButton/);
 });
+
+
+test('admin filter and range controls expose their selected state beyond visual styling',()=>{
+  assert.match(dashboard,/data-client-filter[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
+  assert.match(dashboard,/data-inbox-filter[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
+  assert.match(dashboard,/data-finance-range[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
+});

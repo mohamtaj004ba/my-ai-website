@@ -676,7 +676,7 @@ function renderCalls(){
   }
   const allBtn=document.getElementById('callsShownCount'),unviewedBtn=document.getElementById('callsUnviewedCount'),followBtn=document.getElementById('callsFollowupCount'),resolvedBtn=document.getElementById('callsResolvedCount');
   if(allBtn)allBtn.textContent=baseRows.length+' call'+(baseRows.length===1?'':'s');if(unviewedBtn)unviewedBtn.textContent=unviewedCount+' not opened';if(followBtn)followBtn.textContent=needsCount+' open team action'+(needsCount===1?'':'s');if(resolvedBtn)resolvedBtn.textContent=resolvedCount+' resolved by AI';
-  document.querySelectorAll('[data-call-quick]').forEach(b=>b.classList.toggle('active',b.dataset.callQuick===callQuickFilter));
+  document.querySelectorAll('[data-call-quick]').forEach(b=>{const selected=b.dataset.callQuick===callQuickFilter;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
   const footer=document.getElementById('callListFooter'),meta=document.getElementById('callListMeta'),loadMore=document.getElementById('loadMoreCalls'),shown=Math.min(visibleRows.length,totalRows),remaining=Math.max(0,totalRows-shown);
   if(footer)footer.hidden=totalRows===0;
   if(meta)meta.textContent='Showing '+shown+' of '+totalRows+' matching call'+(totalRows===1?'':'s');
@@ -2574,7 +2574,7 @@ function renderAdminInbox(){
   if(list)list.innerHTML=items.map(x=>'<button class="inbox-item '+(currentInboxItem?.kind===x.kind&&currentInboxItem?.id===x.id?'active':'')+'" data-inbox-kind="'+x.kind+'" data-inbox-id="'+esc(x.id)+'"><span class="inbox-source '+x.kind+'">'+(x.kind==='gmail'?'Gmail':'Website')+'</span><div><b>'+esc(x.title)+'</b><strong>'+esc(x.subject)+'</strong><p>'+esc(String(x.preview||'').slice(0,150))+'</p><small>'+new Date(x.at||Date.now()).toLocaleString()+(x.unread?' · unread':'')+'</small></div></button>').join('');
   if(empty)empty.hidden=items.length!==0;
   list?.querySelectorAll('[data-inbox-id]').forEach(b=>b.addEventListener('click',()=>openInboxItem(b.dataset.inboxKind,b.dataset.inboxId)));
-  document.querySelectorAll('[data-inbox-filter]').forEach(b=>b.classList.toggle('active',b.dataset.inboxFilter===adminInboxData.filter));
+  document.querySelectorAll('[data-inbox-filter]').forEach(b=>{const selected=b.dataset.inboxFilter===adminInboxData.filter;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
 }
 async function openInboxItem(kind,id){
   const request=++adminInboxOpenRequest;
@@ -3430,7 +3430,7 @@ function renderAdminFinance(){
     const verified=history.filter(r=>r.source!=='preview_reconstruction'),latest=verified.at(-1),previous=verified.at(-2),change=Number(latest?.revenue||0)-Number(previous?.revenue||0),pctRecorded=previous?.revenue?change/Number(previous.revenue)*100:null;const trend=verified.length>1?(change===0?'MRR flat vs previous recorded month':('MRR '+(change>0?'+':'')+(pctRecorded!==null?pctRecorded.toFixed(1).replace('.0','')+'%':financeMoney(change))+' vs previous recorded month')):history.some(r=>r.source==='preview_reconstruction')?'Preview reconstructed history · trend not verified':'Building recorded monthly history';
     summary.textContent=trend+' · '+financeMoney(d.netRecurring)+' net recurring';
   }
-  document.querySelectorAll('[data-finance-range]').forEach(btn=>{btn.classList.toggle('active',Number(btn.dataset.financeRange)===adminFinanceRange);btn.onclick=e=>{e.stopPropagation();adminFinanceRange=Number(btn.dataset.financeRange)||6;renderAdminFinance()}});
+  document.querySelectorAll('[data-finance-range]').forEach(btn=>{const selected=Number(btn.dataset.financeRange)===adminFinanceRange;btn.classList.toggle('active',selected);btn.setAttribute('aria-pressed',String(selected));btn.onclick=e=>{e.stopPropagation();adminFinanceRange=Number(btn.dataset.financeRange)||6;renderAdminFinance()}});
   renderFinanceChart('adminFinanceChart','adminFinanceTooltip');renderFinanceChart('financePageChart','financePageTooltip');
 
   const prices={Starter:PLAN_DATA.Starter?.price||349,Growth:PLAN_DATA.Growth?.price||599,Pro:PLAN_DATA.Pro?.price||999},chart=document.getElementById('adminRevenuePlanChart'),past=document.getElementById('adminPastDueAccounts');
@@ -3627,7 +3627,7 @@ function renderAdminClients(){
   const q=adminClientSearch.trim().toLowerCase(),all=adminClientsData;
   const counts={active:all.filter(x=>adminClientLifecycle(x)==='active').length,onboarding:all.filter(x=>adminClientLifecycle(x)==='onboarding').length,suspended:all.filter(x=>adminClientLifecycle(x)==='suspended').length,past:all.filter(x=>adminClientLifecycle(x)==='past').length};
   [['clientActiveCount','active'],['clientOnboardingCount','onboarding'],['clientSuspendedCount','suspended'],['clientPastCount','past']].forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.textContent=counts[key]});
-  document.querySelectorAll('[data-client-filter]').forEach(btn=>btn.classList.toggle('active',btn.dataset.clientFilter===adminClientFilter));
+  document.querySelectorAll('[data-client-filter]').forEach(btn=>{const selected=btn.dataset.clientFilter===adminClientFilter;btn.classList.toggle('active',selected);btn.setAttribute('aria-pressed',String(selected))});
   const search=document.getElementById('adminClientSearchInput');if(search){search.value=adminClientSearch;search.oninput=()=>{adminClientSearch=search.value;renderAdminClients()}}
   const sort=document.getElementById('adminClientSort');if(sort){sort.value=adminClientSort;sort.onchange=()=>{adminClientSort=sort.value;renderAdminClients()}}
   const filtered=all.filter(x=>adminClientMatchesFilter(x)&&(!q||[x.name,x.ownerEmail,x.plan,x.status,x.subscriptionStatus].filter(Boolean).join(' ').toLowerCase().includes(q))).sort((a,b)=>{
