@@ -57,10 +57,11 @@ test('client live dashboard bundle applies data without self-recursion',()=>{
 });
 
 
-test('JavaScript-required name fields expose native required semantics',()=>{
+test('individually mandatory name fields expose native required semantics',()=>{
   const admin=html('admin-dashboard.html'),client=html('dashboard.html');
-  for(const id of ['prospectNameInput','campaignNameInput','companyDocumentName'])assert.match(admin,new RegExp('id="'+id+'"[^>]*\\brequired\\b'));
+  for(const id of ['campaignNameInput','companyDocumentName'])assert.match(admin,new RegExp('id="'+id+'"[^>]*\\brequired\\b'));
   for(const id of ['automationName','locationName','profileNameInput'])assert.match(client,new RegExp('id="'+id+'"[^>]*\\brequired\\b'));
+  assert.doesNotMatch(admin,/id="prospectNameInput"[^>]*\\brequired\\b/,'prospects may instead be identified by business, email, or phone');
 });
 
 test('client support and AI feedback required text fields expose validation semantics',()=>{
