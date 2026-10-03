@@ -1494,3 +1494,19 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Read-only mutation audit after these changes found no remaining compare-and-set/audited **edit/update** handlers without an explicit displayed revision/snapshot contract; remaining no-revision handlers are creation-only support/feedback flows or internal login-token cleanup.
 - No production merge/deployment, live telephony activation, billing action, customer communication, destructive production mutation, production migration, or launch-gate change occurred.
 - Next phase: continue read-only inspection first for concrete premium interaction gaps (focus return/trap consistency, keyboard/mobile reachability, silent error surfaces, stale view recovery) before additional changes. Avoid cosmetic churn and do not reopen verified provider/billing contracts absent a new regression.
+
+## Shared dialog focus-loop hardening checkpoint — 2026-10-03
+
+- Continued the feature-branch-only premium interaction/accessibility sweep on `feature/callercore-dashboards`; production `main` remained unchanged and PR #5 remained open, draft, and unmerged.
+- The shared `modal-accessibility.js` layer already handled dialog semantics, Tab trapping, Escape-to-close, initial focus, and focus return. This pass hardened the focusable-control boundary rather than duplicating that verified behavior.
+- **Rendered visibility truthfulness:** dialog/drawer Tab traversal now excludes controls hidden by `hidden`, an `aria-hidden="true"` ancestor, `display:none`, `visibility:hidden`, or an empty client rect. CSS-hidden controls can no longer enter the keyboard loop merely because their DOM node exists.
+- **Disabled action truthfulness:** anchors and other controls explicitly removed from keyboard use with `tabindex="-1"` or `aria-disabled="true"` are excluded from the shared focus cycle. This is particularly important for disabled call/text actions in drawers.
+- **Focus-return safety:** closing a dialog no longer attempts to restore focus to an opener that has become disabled, hidden, disconnected, or otherwise non-rendered while the dialog was open.
+- Added dedicated regression coverage in `tests/modal-focus-visibility.test.js` for rendered-visibility checks, disabled/untabbable actions, and safe focus return.
+- Two superseded intermediate heads intentionally remain recorded as failed verification evidence: `69df08fc27c2df101495712ef007ee78310acf70` exposed that the minimal VM harness has no browser `window`; `883136d4e8a552909343b082cb64cf1e384ae1ef` exposed that one fake focus-return target does not implement `closest()`. Both failures were test-environment compatibility issues surfaced by the new helper, were corrected without weakening browser behavior, and affected only feature-branch Preview builds.
+- **Exact verified implementation/test head `43ebe9eb0e4115e957d476930b2fb78896ea11df`:** CallerCore CI run `37154949615` SUCCESS with **1,442 tests passed / 0 failed**; CallerCore CodeQL run `37154949626` SUCCESS; Jekyll run `37154949645` SUCCESS.
+- Vercel Preview `dpl_7vjQga6xnDkPEtYFtmspR2x6wp2Z` is **READY** at `https://my-ai-website-44i41jy93-mohamtaj004bas-projects.vercel.app` for that exact implementation SHA.
+- PR #5 read-back at the verified head remained open/draft/unmerged with base `main` SHA `37ef5cfcdccae35952822859f64fe83f0b9f09f0`.
+- No production merge/deployment, live telephony activation, billing action, customer communication, destructive production mutation, production migration, or launch-gate change occurred.
+- Next phase: continue read-only inspection first for concrete keyboard/mobile reachability, stale-control recovery, and silent user-facing failure surfaces. Prefer active workflow defects over dead legacy helpers or cosmetic churn.
+
