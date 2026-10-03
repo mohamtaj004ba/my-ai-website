@@ -1422,18 +1422,21 @@ function openAutomation(id=null,preset=null){
   document.getElementById('automationName').value=item?.name||'';
   document.getElementById('automationTrigger').value=item?.trigger||'new_lead';
   document.getElementById('automationAction').value=item?.action||'notify_team';
-  modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+  const status=document.getElementById('automationFormStatus'),name=document.getElementById('automationName');if(status){status.textContent='';status.className='form-status-line'}if(name)name.removeAttribute('aria-invalid');
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>name?.focus(),20);
 }
 function closeAutomation(){if(automationMutationPending)return false;const modal=document.getElementById('automationModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');editingAutomationId=null;return true}
 async function saveAutomation(){
   if(automationMutationPending)return false;
-  const name=document.getElementById('automationName').value.trim();if(!name)return false;
+  const nameInput=document.getElementById('automationName'),status=document.getElementById('automationFormStatus'),name=nameInput?.value.trim()||'';
+  if(!name){if(nameInput){nameInput.setAttribute('aria-invalid','true');nameInput.focus()}if(status){status.textContent='Add a name before saving this automation.';status.className='form-status-line error'}return false}
+  nameInput?.removeAttribute('aria-invalid');if(status){status.textContent='';status.className='form-status-line'}
   const item={id:editingAutomationId||('auto_'+Date.now()),name,trigger:document.getElementById('automationTrigger').value,action:document.getElementById('automationAction').value,enabled:true};
   const before=automationsData.map(x=>({...x})),i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));
   if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
   renderAutomations();
-  if(await persistAutomations())closeAutomation();
-  else{automationsData=before;renderAutomations()}
+  if(await persistAutomations()){if(status){status.textContent='Automation saved.';status.className='form-status-line success'}closeAutomation();return true}
+  automationsData=before;renderAutomations();if(status){status.textContent='Automation was not saved. Review the message and try again.';status.className='form-status-line error'}return false
 }
 document.querySelectorAll('[data-agent-edit]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(btn.dataset.agentEdit)));
 document.querySelectorAll('[data-agent-cancel]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(false,{restore:true})));
