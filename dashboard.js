@@ -3315,26 +3315,29 @@ function openPhoneModal(id=null){
 }
 function closePhoneModal(){if(phoneSaving)return;const m=document.getElementById('phoneModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 async function savePhone(){
-  if(phoneSaving)return;
+  if(phoneSaving)return false;
   const modal=document.getElementById('phoneModal'),numberEl=document.getElementById('phoneNumberInput'),forwardEl=document.getElementById('phoneForwardingInput'),transferEl=document.getElementById('phoneTransferInput'),status=document.getElementById('phoneFormStatus'),btn=document.getElementById('savePhoneButton');
   const number=String(numberEl?.value||'').trim(),forwarding=String(forwardEl?.value||'').trim(),transfer=String(transferEl?.value||'').trim(),errors={};
   if(!validUsPhone(number,true))errors.phoneNumberInput='Enter a valid 10-digit phone number.';
   if(forwarding&&!validUsPhone(forwarding))errors.phoneForwardingInput='Enter a valid forwarding number.';
   if(transfer&&!validUsPhone(transfer))errors.phoneTransferInput='Enter a valid transfer number.';
   ['phoneNumberInput','phoneForwardingInput','phoneTransferInput'].forEach(id=>settingsFieldError(id,errors[id]||''));
-  if(Object.keys(errors).length){if(status){status.textContent='Please correct the highlighted phone fields.';status.className='form-status-line error'};document.getElementById(Object.keys(errors)[0])?.focus();return}
+  if(Object.keys(errors).length){if(status){status.textContent='Please correct the highlighted phone fields.';status.className='form-status-line error'};document.getElementById(Object.keys(errors)[0])?.focus();return false}
   if(numberEl)numberEl.value=normalizePhone(number);if(forwardEl)forwardEl.value=normalizePhone(forwarding);if(transferEl)transferEl.value=normalizePhone(transfer);
   const payload={id:modal?.dataset.editId||undefined,expectedUpdatedAt:Number(modal?.dataset.expectedUpdatedAt||0),number:numberEl?.value||'',label:document.getElementById('phoneLabelInput')?.value||'',provider:document.getElementById('phoneProviderInput')?.value||'Vapi',workspaceId:document.getElementById('phoneWorkspaceInput')?.value||'',forwardingFrom:forwardEl?.value||'',transferNumber:transferEl?.value||'',afterHours:document.getElementById('phoneAfterHoursInput')?.value||'ai',smsEnabled:false};
-  phoneSaving=true;const unlock=lockFormControls('phoneModal');
+  phoneSaving=true;const unlock=lockFormControls('phoneModal');let unlocked=false;const release=()=>{if(!unlocked){unlock();unlocked=true}};
   if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status){status.textContent='';status.className='form-status-line'}
   try{
     const r=await fetch('/api/account?action=admin-phone-number-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save phone number.');
     if(data.ok!==true||!data.number||typeof data.number!=='object'||Array.isArray(data.number)||!String(data.number.id||'').trim()||(payload.id&&String(data.number.id)!==String(payload.id))||String(data.number.number||'')!==String(payload.number||''))throw new Error('Phone save response was incomplete. Keep this editor open and refresh the inventory before retrying.');
     {const index=adminPhoneData.findIndex(x=>String(x.id)===String(data.number.id));if(index>=0)adminPhoneData[index]=data.number;else adminPhoneData.push(data.number);renderPhones()}
-    unlock();phoneSaving=false;closePhoneModal();await refreshAdminView('phones',{force:true,announce:false});
-  }catch(err){if(status){status.textContent=err.message||'Could not save phone number.';status.className='form-status-line error'}}
-  finally{unlock();phoneSaving=false;if(btn){btn.disabled=false;btn.textContent='Save number'}}
+    release();phoneSaving=false;closePhoneModal();
+    try{await refreshAdminView('phones',{force:true,announce:false})}
+    catch(_){alert('Phone number was saved, but the inventory could not refresh. Reload Phone Numbers before making another routing change.')}
+    return true;
+  }catch(err){if(status){status.textContent=err.message||'Could not save phone number.';status.className='form-status-line error'}return false}
+  finally{release();phoneSaving=false;if(btn){btn.disabled=false;btn.textContent='Save number'}}
 }
 document.getElementById('addPhoneButton')?.addEventListener('click',()=>openPhoneModal());
 document.getElementById('addExpenseButton')?.addEventListener('click',()=>openExpenseModal());
