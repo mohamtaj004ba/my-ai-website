@@ -898,7 +898,7 @@ async function deleteCallNote(noteId){
     const revisionOk=Number.isFinite(Number(confirmed?.updatedAt))&&Number(confirmed.updatedAt)>Number(current.updatedAt||0),statusOk=String(confirmed?.status||'')===String(nextStatus),noteGone=!confirmedNotes.some(n=>String(n?.id||'')===String(noteId));
     if(data.ok!==true||!data.state||typeof data.state!=='object'||Array.isArray(data.state)||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||!revisionOk||!statusOk||!noteGone)throw new Error('Could not confirm the note was deleted. Refresh the call before retrying.');
     followupState=data.state;if(activeNoteEditId===String(noteId))resetNoteComposer();renderCallNotes(id);return true
-  }catch(err){alert(err.message||'Could not delete note');return false}finally{followupMutationPending.delete(key);renderCallNotes(id);if(call)syncDrawerTeamStatus(call)}
+  }catch(err){const status=document.getElementById('drawerNoteStatus');if(status){status.textContent=err.message||'Could not delete note';status.className='error'}return false}finally{followupMutationPending.delete(key);renderCallNotes(id);if(call)syncDrawerTeamStatus(call)}
 }
 async function moveLead(id,stage){
   const lead=leadsData.find(x=>String(x.id)===String(id));if(!lead||lead.stage===stage)return;
