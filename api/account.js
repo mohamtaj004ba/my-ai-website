@@ -2301,7 +2301,9 @@ async function adminRepairAccess(req,res){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Valid owner email required'});
   const key='workspace:'+id,ws=await kv.get(key);if(!ws)return res.status(404).json({error:'Client not found'});
   if(typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No mapping changes were made.'});
-  const newMemberKey='user:email:'+email,oldEmail=cleanEmail(ws.ownerEmail||''),oldMemberKey=oldEmail?'user:email:'+oldEmail:'';
+  const expectedOwnerPresent=Object.prototype.hasOwnProperty.call(body,'expectedOwnerEmail'),expectedOwnerEmail=cleanEmail(body.expectedOwnerEmail||''),currentOwnerEmail=cleanEmail(ws.ownerEmail||'');
+  if(!expectedOwnerPresent||expectedOwnerEmail!==currentOwnerEmail)return res.status(409).json({error:'The workspace owner changed after diagnostics were loaded. Refresh account diagnostics before repairing access.'});
+  const newMemberKey='user:email:'+email,oldEmail=currentOwnerEmail,oldMemberKey=oldEmail?'user:email:'+oldEmail:'';
   const [existing,oldMember]=await Promise.all([
     kv.get(newMemberKey),oldMemberKey&&oldMemberKey!==newMemberKey?kv.get(oldMemberKey):Promise.resolve(null)
   ]);
