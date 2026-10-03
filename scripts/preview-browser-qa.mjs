@@ -64,9 +64,9 @@ async function assertAdminTechPendingOverride(page){
   await page.waitForFunction(()=>document.querySelector('#adminConfigEditor')?.value.trim().length>1);
   let release,started;const held=new Promise(resolve=>release=resolve),seen=new Promise(resolve=>started=resolve);
   await page.route('**/api/account?action=admin-config-override',async route=>{started();await held;await route.continue()},{times:1});
-  page.once('dialog',dialog=>dialog.accept());
   try{
     await page.locator('#adminApplyOverrideButton').click();
+    await page.locator('#submitAdminActionConfirmation').click();
     await Promise.race([seen,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Admin override request not received')),10000))]);
     for(const selector of ['#adminConfigSection','#adminConfigEditor','#adminReloadConfigButton','#adminApplyOverrideButton','#closeAdminClient']){
       if(await page.locator(selector).isEnabled())throw new Error('Pending admin override left '+selector+' enabled');
@@ -588,6 +588,17 @@ async function runAdminInteractions(page){
   await page.locator('#adminClientDrawer.open').waitFor({state:'visible',timeout:8000});
   const clientDrawer=page.locator('#adminClientDrawer'),clientDrawerLabel=await clientDrawer.getAttribute('aria-labelledby');
   if(await clientDrawer.getAttribute('role')!=='dialog'||await clientDrawer.getAttribute('aria-modal')!=='true'||!clientDrawerLabel||!await page.locator('#'+clientDrawerLabel).count())throw new Error('Admin client drawer is missing accessible dialog semantics');
+  let canceledRepairs=0;const repairRoute=/\/api\/account\?action=admin-repair-access$/;
+  await page.route(repairRoute,async route=>{canceledRepairs++;await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'QA intercepted unexpected repair'})})});
+  try{
+    await page.locator('#adminRepairAccessButton').click();
+    await page.locator('#adminActionConfirmationModal').waitFor({state:'visible'});
+    if(!/North Ridge Plumbing/.test(await page.locator('#adminActionConfirmationCopy').textContent()))throw new Error('Repair confirmation omitted workspace identity');
+    await page.locator('#cancelAdminActionConfirmation').click();
+    await page.waitForFunction(()=>document.activeElement?.id==='adminRepairAccessButton');
+    if(canceledRepairs!==0)throw new Error('Canceled access repair sent a request');
+  }finally{await page.unroute(repairRoute)}
+  report.admin.interactions.push('access-repair identity + cancellation + focus return without mutation');
   await assertAdminTechPendingOverride(page);
   report.admin.interactions.push('global search → client deep link');
   report.admin.interactions.push('configuration override pending lock + immediate refresh');

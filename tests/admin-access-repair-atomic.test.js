@@ -171,7 +171,7 @@ function uiFixture(fetch){
   node('adminRepairEmail').value='new@example.test';
   const ctx=vm.createContext({
     currentAdminClient:{id:'client-1',ownerEmail:'old@example.test'},currentAdminTech:{diagnostics:{ownerEmail:'old@example.test'}},adminTechSaving:false,adminTechMutationTarget:'',adminClientSaving:false,adminClientOpenRequest:7,
-    document:{getElementById:node,querySelectorAll:()=>[]},fetch,confirm:()=>true,
+    document:{getElementById:node,querySelectorAll:()=>[]},fetch,confirm:()=>true,openAdminActionConfirmation:spec=>spec.run(),
     loadAdminTechSupport:async(id,request)=>diagnostics.push({id,request}),
     refreshAdminCore:async()=>refreshes.push('refresh'),String,JSON,console
   });

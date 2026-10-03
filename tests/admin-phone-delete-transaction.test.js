@@ -27,7 +27,8 @@ test('client sends the phone revision, serializes deletion and preserves confirm
   const dashboard=fs.readFileSync('dashboard.js','utf8'),code=dashboard.slice(dashboard.indexOf('async function deletePhone('),dashboard.indexOf('function openPhoneModal('));
   assert.match(dashboard,/const adminPhoneDeletePending=new Set\(\)/);
   assert.match(code,/if\(adminPhoneDeletePending\.has\(key\)\)return false/);
-  assert.match(code,/expectedUpdatedAt:Number\(item\.updatedAt\|\|0\)/);
+  assert.match(code,/expectedUpdatedAt=Number\(item\.updatedAt\|\|0\)/);
+  assert.match(code,/JSON\.stringify\(\{id:key,expectedUpdatedAt\}\)/);
   assert.match(code,/data\.ok!==true/);
   assert.match(code,/adminPhoneData=adminPhoneData\.filter/);
   assert.match(code,/Phone deletion was confirmed, but the inventory could not refresh/);
@@ -45,7 +46,7 @@ test('duplicate phone deletion is ignored while the first request is pending',as
   let release,requests=0;
   const ctx=vm.createContext({
     adminPhoneDeletePending:new Set(),adminPhoneData:[{id:'p',number:'5095550100',updatedAt:10}],
-    confirm:()=>true,renderPhones(){},alert(){},setAdminSyncState(){},
+    confirm:()=>true,openAdminActionConfirmation:spec=>spec.run(),renderPhones(){},alert(){},setAdminSyncState(){},
     refreshAdminView:async()=>true,
     fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>({ok:true,deleted:{id:'p',updatedAt:10}})}},
     String,Number,Array,Object,JSON,Set,Promise,Error
@@ -66,7 +67,7 @@ test('failed phone deletion reports through admin sync status and preserves inve
   const sync=[];
   const ctx=vm.createContext({
     adminPhoneDeletePending:new Set(),adminPhoneData:[{id:'p',number:'5095550100',updatedAt:10}],
-    confirm:()=>true,renderPhones(){},setAdminSyncState:(...args)=>sync.push(args),
+    confirm:()=>true,openAdminActionConfirmation:spec=>spec.run(),renderPhones(){},setAdminSyncState:(...args)=>sync.push(args),
     refreshAdminView:async()=>true,
     fetch:async()=>({ok:false,json:async()=>({error:'Phone routing changed before deletion'})}),
     String,Number,Array,Object,JSON,Set,Promise,Error

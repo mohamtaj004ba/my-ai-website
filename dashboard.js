@@ -2826,7 +2826,15 @@ async function connectGmail(){
 }
 async function disconnectGmailAdmin(){
   if(gmailConnectionMutationPending)return false;
-  if(!confirm('Disconnect Gmail from CallerCore Admin? No messages will be deleted from Gmail.'))return false;
+  const gmailEmail=String(adminInboxData.gmailStatus?.gmailEmail||'');
+  if(adminInboxData.gmailStatus?.connected!==true){setAdminInboxActionStatus('Refresh Gmail connection status before disconnecting.','error');return false}
+  let failureMessage='';
+  return openAdminActionConfirmation({title:'Disconnect admin Gmail',action:'Disconnect Gmail',
+    copy:'Disconnect '+(gmailEmail||'the connected Gmail account')+' from CallerCore Admin.',
+    consequences:'Gmail inbox and sending access in CallerCore will stop, and its cached inbox will be cleared. No messages will be deleted from Gmail. Reconnect through Google sign-in to restore access.',
+    validate:()=>gmailConnectionMutationPending||adminInboxData.gmailStatus?.connected!==true||String(adminInboxData.gmailStatus?.gmailEmail||'')!==gmailEmail?'Gmail connection changed. Cancel and refresh before disconnecting.':'',
+    failureMessage:()=>failureMessage,
+    run:async()=>{
   setAdminInboxActionStatus('Disconnecting Gmail…');
   setGmailConnectionControls(true,'disconnect');
   try{
@@ -2838,9 +2846,12 @@ async function disconnectGmailAdmin(){
     currentInboxItem=null;renderInboxThread();renderAdminInbox();
     const search=document.getElementById('adminSearch');
     if(search&&String(search.value||'').trim().length>=2)renderAdminGlobalSearch();
-    await loadAdminInbox();setAdminInboxActionStatus('Gmail disconnected.','success');return true;
-  }catch(err){setAdminInboxActionStatus(err.message||'Could not disconnect Gmail.','error');return false}
+    try{await loadAdminInbox();setAdminInboxActionStatus('Gmail disconnected.','success')}
+    catch(_){setAdminInboxActionStatus('Gmail was disconnected, but refreshed connection status could not be verified. Reload Inbox before reconnecting.','error')}
+    return true;
+  }catch(err){failureMessage=err.message||'Could not disconnect Gmail.';setAdminInboxActionStatus(failureMessage,'error');return false}
   finally{setGmailConnectionControls(false,'disconnect')}
+    }});
 }
 document.getElementById('inboxRefreshButton')?.addEventListener('click',()=>refreshAdminInboxLive({silent:false,force:true}));
 document.getElementById('gmailConnectButton')?.addEventListener('click',connectGmail);
@@ -3393,18 +3404,26 @@ async function deletePhone(id){
   const key=String(id);if(adminPhoneDeletePending.has(key))return false;
   const item=adminPhoneData.find(x=>String(x.id)===key);if(!item)return false;
   const assigned=item.workspaceName?' assigned to '+item.workspaceName:'';
-  if(!confirm('Delete '+item.number+assigned+'? This will remove the number from CallerCore'+(item.workspaceId?' and clear it from that workspace.':'.')))return false;
+  const expectedUpdatedAt=Number(item.updatedAt||0),snapshot=JSON.stringify(item);let failureMessage='';
+  if(!Number.isFinite(expectedUpdatedAt)||expectedUpdatedAt<=0){setAdminSyncState('error','Phone revision is unavailable. Refresh Phone Numbers before removing this record.');return false}
+  return openAdminActionConfirmation({title:'Remove phone routing record',action:'Remove routing record',
+    copy:'Remove '+item.number+assigned+' from CallerCore.',
+    consequences:'This removes the saved routing record'+(item.workspaceId?' and clears its workspace assignment and phone setup checklist.':'.')+' It does not release a provider-owned number or prove that live forwarding stopped. Verify provider routing separately; restoring this record requires adding it again.',
+    validate:()=>adminPhoneDeletePending.has(key)||(typeof phoneSaving!=='undefined'&&phoneSaving)||JSON.stringify(adminPhoneData.find(x=>String(x.id)===key))!==snapshot?'Phone routing changed. Cancel, refresh Phone Numbers and review the removal again.':'',
+    failureMessage:()=>failureMessage,
+    run:async()=>{
   adminPhoneDeletePending.add(key);renderPhones();
   try{
-    const r=await fetch('/api/account?action=admin-phone-number-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,expectedUpdatedAt:Number(item.updatedAt||0)})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-phone-number-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not delete phone number.');
     if(data.ok!==true||!data.deleted||typeof data.deleted!=='object'||Array.isArray(data.deleted)||String(data.deleted.id||'')!==key)throw new Error('Phone deletion response was incomplete. Refresh the inventory before retrying.');
     adminPhoneData=adminPhoneData.filter(x=>String(x.id)!==key);renderPhones();
     try{await refreshAdminView('phones',{force:true,announce:false})}
     catch(_){setAdminSyncState('error','Phone deletion was confirmed, but the inventory could not refresh. Reload Phone Numbers before taking another action.')}
     return true;
-  }catch(err){setAdminSyncState('error',err.message||'Could not delete phone number.');return false}
+  }catch(err){failureMessage=err.message||'Could not delete phone number.';setAdminSyncState('error',failureMessage);return false}
   finally{adminPhoneDeletePending.delete(key);renderPhones()}
+    }});
 }
 
 function openPhoneModal(id=null){
@@ -3931,49 +3950,74 @@ async function repairClientAccess(){
   const id=String(currentAdminClient.id),request=adminClientOpenRequest,emailInput=document.getElementById('adminRepairEmail'),email=String(emailInput?.value||'').trim(),
     expectedOwnerEmail=String(currentAdminTech?.diagnostics?.ownerEmail??currentAdminClient.ownerEmail??'').trim();
   const invalidEmail=!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);if(emailInput){if(invalidEmail)emailInput.setAttribute?.('aria-invalid','true');else emailInput.removeAttribute?.('aria-invalid')}if(invalidEmail){emailInput?.focus?.();adminTechMessage('Enter a valid owner email before repairing access.',true);return false}
-  if(!confirm('Repair the login mapping for '+email+' and revoke older sessions?'))return false;
+  return openAdminActionConfirmation({title:'Repair workspace access',action:'Repair access mapping',
+    copy:'Repair access for '+(currentAdminClient.name||'this workspace')+' ('+id+'). Current owner: '+(expectedOwnerEmail||'no owner mapping')+'. Requested owner: '+email+'.',
+    consequences:'Older sessions will be revoked. This repairs the login mapping; it does not verify live call handling. The requested owner will need a new secure sign-in link.',
+    validate:()=>!currentAdminClient||String(currentAdminClient.id)!==id||adminClientOpenRequest!==request||adminTechSaving||adminClientSaving||String(emailInput?.value||'').trim()!==email||String(currentAdminTech?.diagnostics?.ownerEmail??currentAdminClient.ownerEmail??'').trim()!==expectedOwnerEmail?'Workspace or owner details changed. Cancel, refresh diagnostics and review the repair again.':'',
+    failureMessage:()=>document.getElementById('adminTechStatus')?.textContent,
+    run:async()=>{
   setAdminTechMutationState(true,'repair-access');adminTechMessage('Repairing client access mapping…');
   try{
     const r=await fetch('/api/account?action=admin-repair-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,email,expectedOwnerEmail})}),data=await r.json().catch(()=>({}));
-    if(!r.ok){adminTechMessage(data.error||'Could not repair access.',true);return}
-    if(data.ok!==true||String(data.email||'').toLowerCase()!==String(email).toLowerCase()||!Number.isSafeInteger(Number(data.sessionVersion))||Number(data.sessionVersion)<1){adminTechMessage('Access-repair response was incomplete. Reload diagnostics before retrying.',true);return}
+    if(!r.ok){adminTechMessage(data.error||'Could not repair access.',true);return false}
+    if(data.ok!==true||String(data.email||'').toLowerCase()!==String(email).toLowerCase()||!Number.isSafeInteger(Number(data.sessionVersion))||Number(data.sessionVersion)<1){adminTechMessage('Access-repair response was incomplete. Reload diagnostics before retrying.',true);return false}
     if(String(currentAdminClient?.id)===id)currentAdminClient.ownerEmail=data.email;
     adminTechMessage('Access mapping repaired for '+data.email+'.');
     try{await refreshAdminCore()}catch(_){adminTechMessage('Access mapping was repaired, but the client directory could not refresh. Diagnostics will retry independently.',true)}
-    await loadAdminTechSupport(id,request);
-  }catch(err){adminTechMessage(err.message||'Could not repair access.',true)}
+    try{await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('Access mapping was repaired, but diagnostics could not refresh. Reload diagnostics before another action.',true)}
+    return true;
+  }catch(err){adminTechMessage(err.message||'Could not repair access.',true);return false}
   finally{setAdminTechMutationState(false)}
+    }});
 }
 async function applyAdminConfigOverride(){
   if(!currentAdminClient||adminTechSaving)return false;const section=document.getElementById('adminConfigSection')?.value||'settings',editor=document.getElementById('adminConfigEditor'),raw=editor?.value||'';
   let value;try{value=JSON.parse(raw)}catch(_){editor?.setAttribute?.('aria-invalid','true');editor?.focus?.();adminTechMessage('Configuration JSON is invalid.',true);return false}
   editor?.removeAttribute?.('aria-invalid');
   const expectedBefore=currentAdminTech?.config?.[section]??(section==='automations'||section==='locations'?[]:null);
-  if(!confirm('Apply this admin override to '+section+'? The previous value will remain available in Change History.'))return false;
+  const id=String(currentAdminClient.id),request=adminClientOpenRequest,beforeSnapshot=JSON.parse(JSON.stringify(expectedBefore));
+  return openAdminActionConfirmation({title:'Apply configuration override',action:'Apply override',
+    review:JSON.stringify({current:beforeSnapshot,replacement:value},null,2),
+    copy:'Replace '+section+' configuration for '+(currentAdminClient.name||'this workspace')+' ('+id+').',
+    consequences:'The submitted configuration replaces this section. Protected identity and Stripe fields remain protected. The previous snapshot remains in Change History for recovery; this does not establish verified live provider control.',
+    validate:()=>!currentAdminClient||String(currentAdminClient.id)!==id||adminClientOpenRequest!==request||adminTechSaving||adminClientSaving||document.getElementById('adminConfigSection')?.value!==section||editor?.value!==raw||JSON.stringify(currentAdminTech?.config?.[section]??(section==='automations'||section==='locations'?[]:null))!==JSON.stringify(beforeSnapshot)?'Workspace, configuration or draft changed. Cancel, reload and review the override again.':'',
+    failureMessage:()=>document.getElementById('adminTechStatus')?.textContent,
+    run:async()=>{
   setAdminTechMutationState(true,'override');adminTechMessage('Applying '+section+' override…');
   try{
-    const r=await fetch('/api/account?action=admin-config-override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,section,value,expectedBefore})}),data=await r.json().catch(()=>({}));
-    if(!r.ok){adminTechMessage(data.error||'Could not apply override.',true);return}
-    if(data.ok!==true||String(data.section||'')!==String(section)||!Object.hasOwn(data,'value')){adminTechMessage('Override response was incomplete. Reload diagnostics before retrying.',true);return}
+    const r=await fetch('/api/account?action=admin-config-override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,section,value,expectedBefore:beforeSnapshot})}),data=await r.json().catch(()=>({}));
+    if(!r.ok){adminTechMessage(data.error||'Could not apply override.',true);return false}
+    if(data.ok!==true||String(data.section||'')!==String(section)||!Object.hasOwn(data,'value')){adminTechMessage('Override response was incomplete. Reload diagnostics before retrying.',true);return false}
     if(currentAdminTech?.config)currentAdminTech.config[section]=data.value;renderAdminConfigEditor();adminTechMessage('Admin override applied to '+section+'.');
-    await Promise.all([refreshAdminCore(),loadAdminOps()]);await loadAdminTechSupport();
-  }catch(err){adminTechMessage(err.message||'Could not apply override.',true)}
+    try{await Promise.all([refreshAdminCore(),loadAdminOps()]);await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('Admin override was applied, but refreshed diagnostics could not be verified. Reload before another configuration change.',true)}
+    return true;
+  }catch(err){adminTechMessage(err.message||'Could not apply override.',true);return false}
   finally{setAdminTechMutationState(false)}
+    }});
 }
 async function restoreAdminAudit(auditId){
   if(!currentAdminClient||adminTechSaving)return false;
   const entry=(currentAdminTech?.audit||[]).find(item=>String(item?.id||'')===String(auditId||''));if(!entry){adminTechMessage('This history entry is no longer available. Refresh diagnostics before restoring.',true);return false}
   const section=String(entry.section||''),expectedCurrent=currentAdminTech?.config?.[section]??(section==='automations'||section==='locations'?[]:null);
-  if(!confirm('Restore the configuration that existed before this change? A new audit entry will record the rollback.'))return false;
+  const id=String(currentAdminClient.id),request=adminClientOpenRequest,currentSnapshot=JSON.parse(JSON.stringify(expectedCurrent)),entrySnapshot=JSON.stringify(entry);
+  return openAdminActionConfirmation({title:'Restore previous configuration',action:'Restore snapshot',
+    review:JSON.stringify({current:currentSnapshot,replacement:entry.before},null,2),
+    copy:'Restore the '+section+' snapshot from '+new Date(entry.at).toLocaleString()+' for '+(currentAdminClient.name||'this workspace')+' ('+id+').',
+    consequences:'This replaces the current section with the value before the selected change. A new audit entry records the rollback. Protected identity and billing fields remain protected; provider state still needs independent verification.',
+    validate:()=>!currentAdminClient||String(currentAdminClient.id)!==id||adminClientOpenRequest!==request||adminTechSaving||adminClientSaving||JSON.stringify((currentAdminTech?.audit||[]).find(item=>String(item?.id||'')===String(auditId||'')))!==entrySnapshot||JSON.stringify(currentAdminTech?.config?.[section]??(section==='automations'||section==='locations'?[]:null))!==JSON.stringify(currentSnapshot)?'Workspace, history or current configuration changed. Cancel and refresh before restoring this snapshot.':'',
+    failureMessage:()=>document.getElementById('adminTechStatus')?.textContent,
+    run:async()=>{
   setAdminTechMutationState(true,auditId);renderAdminTechSupport();adminTechMessage('Restoring previous configuration…');
   try{
-    const r=await fetch('/api/account?action=admin-audit-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,auditId,expectedCurrent})}),data=await r.json().catch(()=>({}));
-    if(!r.ok){adminTechMessage(data.error||'Could not restore snapshot.',true);return}
-    if(data.ok!==true||!['workspace','settings','agent','integrations','automations','locations'].includes(String(data.section||''))||!Object.hasOwn(data,'value')){adminTechMessage('Restore response was incomplete. Reload diagnostics before retrying.',true);return}
+    const r=await fetch('/api/account?action=admin-audit-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,auditId,expectedCurrent:currentSnapshot})}),data=await r.json().catch(()=>({}));
+    if(!r.ok){adminTechMessage(data.error||'Could not restore snapshot.',true);return false}
+    if(data.ok!==true||String(data.section||'')!==section||!['workspace','settings','agent','integrations','automations','locations'].includes(String(data.section||''))||!Object.hasOwn(data,'value')){adminTechMessage('Restore response was incomplete. Reload diagnostics before retrying.',true);return false}
     if(currentAdminTech?.config)currentAdminTech.config[data.section]=data.value;renderAdminConfigEditor();adminTechMessage('Previous '+data.section+' configuration restored.');
-    await Promise.all([refreshAdminCore(),loadAdminOps()]);await loadAdminTechSupport();
-  }catch(err){adminTechMessage(err.message||'Could not restore snapshot.',true)}
+    try{await Promise.all([refreshAdminCore(),loadAdminOps()]);await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('Previous configuration was restored, but refreshed diagnostics could not be verified. Reload before another configuration change.',true)}
+    return true;
+  }catch(err){adminTechMessage(err.message||'Could not restore snapshot.',true);return false}
   finally{setAdminTechMutationState(false);renderAdminTechSupport()}
+    }});
 }
 document.getElementById('adminConfigSection')?.addEventListener('change',renderAdminConfigEditor);
 document.getElementById('adminReloadConfigButton')?.addEventListener('click',()=>loadAdminTechSupport());

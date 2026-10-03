@@ -48,7 +48,7 @@ test('admin override requires the configuration snapshot displayed by the editor
   const ui=fs.readFileSync('dashboard.js','utf8');
   const applyStart=ui.indexOf('async function applyAdminConfigOverride('),applyEnd=ui.indexOf('\nasync function restoreAdminAudit(',applyStart),apply=ui.slice(applyStart,applyEnd);
   assert.match(apply,/expectedBefore=currentAdminTech\?\.config\?\.\[section\]/);
-  assert.match(apply,/JSON\.stringify\(\{id:currentAdminClient\.id,section,value,expectedBefore\}\)/);
+  assert.match(apply,/JSON\.stringify\(\{id,section,value,expectedBefore:beforeSnapshot\}\)/);
 });
 
 
@@ -60,6 +60,6 @@ test('audit restore requires the configuration snapshot shown with history',()=>
   const ui=fs.readFileSync('dashboard.js','utf8');
   const restoreStart=ui.indexOf('async function restoreAdminAudit('),restoreEnd=ui.indexOf('\ndocument.getElementById(\'adminConfigSection\')',restoreStart),restore=ui.slice(restoreStart,restoreEnd);
   assert.match(restore,/expectedCurrent=currentAdminTech\?\.config\?\.\[section\]/);
-  assert.match(restore,/JSON\.stringify\(\{id:currentAdminClient\.id,auditId,expectedCurrent\}\)/);
+  assert.match(restore,/JSON\.stringify\(\{id,auditId,expectedCurrent:currentSnapshot\}\)/);
   assert.match(restore,/history entry is no longer available/i);
 });

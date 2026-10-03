@@ -10,7 +10,7 @@ test('routine dashboard feedback no longer uses native browser alerts',()=>{
 test('consequential confirmations remain explicit after alert cleanup',()=>{
   assert.match(ui,/confirm\('Delete automation /);
   assert.match(ui,/confirm\('Delete location /);
-  assert.match(ui,/confirm\('Disconnect Gmail from CallerCore Admin/);
+  assert.match(ui,/openAdminActionConfirmation\(\{title:'Disconnect admin Gmail'/);
   assert.match(ui,/openAdminDeleteWorkspaceModal/);
   assert.match(ui,/typed!=='DELETE'/);
   assert.match(ui,/openAdminRestoreWorkspaceModal/);

@@ -307,4 +307,14 @@
     <div class="modal-action-row"><button class="secondary-btn" id="cancelAdminLogout" type="button">Cancel</button><button class="danger-btn" id="confirmAdminLogout" type="button">Revoke existing sessions</button></div>
   </div>
 </div>
-<script src="/dashboard.js"></script><script src="/modal-accessibility.js"></script></body></html>
+<div class="modal" id="adminActionConfirmationModal" role="dialog" aria-modal="true" aria-labelledby="adminActionConfirmationTitle" aria-describedby="adminActionConfirmationCopy adminActionConfirmationConsequences" aria-hidden="true">
+  <div class="modal-card admin-danger-confirm-modal">
+    <button class="modal-close" id="closeAdminActionConfirmation" type="button" aria-label="Close action confirmation">×</button>
+    <span class="eyebrow">Review admin action</span><h2 id="adminActionConfirmationTitle"></h2>
+    <p id="adminActionConfirmationCopy"></p><p id="adminActionConfirmationConsequences"></p>
+    <details id="adminActionConfirmationReview" hidden><summary>Review the current and replacement configuration</summary><pre id="adminActionConfirmationReviewCopy"></pre></details>
+    <div class="form-status-line" id="adminActionConfirmationStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div class="modal-action-row"><button class="secondary-btn" id="cancelAdminActionConfirmation" type="button">Cancel</button><button class="danger-btn" id="submitAdminActionConfirmation" type="button">Confirm</button></div>
+  </div>
+</div>
+<script src="/admin-confirmation.js"></script><script src="/dashboard.js"></script><script src="/modal-accessibility.js"></script></body></html>
