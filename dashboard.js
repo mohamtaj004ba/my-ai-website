@@ -3844,7 +3844,7 @@ function renderAdminTechSupport(){
     ['AI agent',d.agentConfigured?'Configured':'Missing',d.agentConfigured?'green':'amber'],
     ['Settings',d.settingsConfigured?'Configured':'Missing',d.settingsConfigured?'green':'amber']
   ].map(([k,v,color])=>'<div><span>'+esc(k)+'</span><b class="status-text '+color+'">'+esc(v)+'</b></div>').join('');
-  const email=document.getElementById('adminRepairEmail');if(email)email.value=d.ownerEmail||'';
+  const email=document.getElementById('adminRepairEmail');if(email){email.value=d.ownerEmail||'';email.removeAttribute?.('aria-invalid')};
   renderAdminConfigEditor();
   const list=document.getElementById('adminAuditList'),empty=document.getElementById('adminAuditEmpty'),audit=currentAdminTech.audit||[],coverage=currentAdminTech.auditCoverage||{},coverageEl=document.getElementById('adminAuditCoverage');
   if(coverageEl){
@@ -3894,9 +3894,10 @@ async function forceClientLogout(){
   finally{setAdminTechMutationState(false)}
 }
 async function repairClientAccess(){
-  if(!currentAdminClient||adminTechSaving||adminClientSaving)return;
-  const id=String(currentAdminClient.id),request=adminClientOpenRequest,email=(document.getElementById('adminRepairEmail')?.value||'').trim();
-  if(!confirm('Repair the login mapping for '+email+' and revoke older sessions?'))return;
+  if(!currentAdminClient||adminTechSaving||adminClientSaving)return false;
+  const id=String(currentAdminClient.id),request=adminClientOpenRequest,emailInput=document.getElementById('adminRepairEmail'),email=String(emailInput?.value||'').trim();
+  const invalidEmail=!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);if(emailInput){if(invalidEmail)emailInput.setAttribute?.('aria-invalid','true');else emailInput.removeAttribute?.('aria-invalid')}if(invalidEmail){emailInput?.focus?.();adminTechMessage('Enter a valid owner email before repairing access.',true);return false}
+  if(!confirm('Repair the login mapping for '+email+' and revoke older sessions?'))return false;
   setAdminTechMutationState(true,'repair-access');adminTechMessage('Repairing client access mapping…');
   try{
     const r=await fetch('/api/account?action=admin-repair-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,email})}),data=await r.json().catch(()=>({}));
