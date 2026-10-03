@@ -72,3 +72,14 @@ test('company document warns about reversed dates before sending a request',asyn
   assert.equal(f.fields.saveCompanyDocument.disabled,false);
   assert.equal(f.modal.open,true);
 });
+
+
+test('company document blank-name validation marks the field before any request',async()=>{
+  const f=fixture();f.run('openCompanyDocumentModal','doc-1');
+  const name=f.fields.companyDocumentName;name.value='   ';name.setAttribute=function(k,v){this[k]=v};name.removeAttribute=function(k){delete this[k]};name.focus=function(){this.focused=true};
+  await f.run('saveCompanyDocument');
+  assert.equal(f.requests.length,0);
+  assert.equal(name['aria-invalid'],'true');
+  assert.equal(name.focused,true);
+  assert.match(f.fields.companyDocumentStatusLine.textContent,/required/);
+});
