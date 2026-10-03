@@ -17,7 +17,7 @@ test('client automation renderer defines trigger and action label helpers',()=>{
 
 test('client automation saves serialize mutations and require canonical acknowledgement',()=>{
   const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
-  const start=ui.indexOf('let automationMutationPending=false;');
+  const start=ui.indexOf('let automationMutationPending=false');
   const end=ui.indexOf('\nasync function toggleAutomation(',start);
   assert.ok(start>=0&&end>start);
   const fn=ui.slice(start,end);
@@ -33,7 +33,7 @@ test('client automation saves serialize mutations and require canonical acknowle
 
 test('automation controls block overlapping mutations and delete rolls back on save failure',()=>{
   const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
-  const render=ui.slice(ui.indexOf('function renderAutomations(){'),ui.indexOf('let automationMutationPending=false;'));
+  const render=ui.slice(ui.indexOf('function renderAutomations(){'),ui.indexOf('let automationMutationPending=false'));
   const toggle=ui.slice(ui.indexOf('async function toggleAutomation('),ui.indexOf('let editingAutomationId=null;'));
   const saveStart=ui.indexOf('async function saveAutomation(){');
   const save=ui.slice(saveStart,ui.indexOf("\ndocument.querySelectorAll(",saveStart));
@@ -66,7 +66,7 @@ test('automation pending state is visible, blocks modal dismissal, and exposes t
   assert.match(render,/save\.textContent=busy\?'Saving…':'Save automation'/);
   assert.match(render,/create\.disabled=busy/);
   assert.match(render,/btn\.disabled=busy/);
-  assert.match(persist,/automationMutationPending=true;setAutomationMutationUi\(true\)/);
+  assert.match(persist,/automationMutationPending=true;automationLastMutationError='';setAutomationMutationUi\(true\)/);
   assert.match(persist,/finally\{automationMutationPending=false;setAutomationMutationUi\(false\)\}/);
   assert.match(close,/if\(automationMutationPending\)return false/);
 });
