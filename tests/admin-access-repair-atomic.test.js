@@ -17,7 +17,7 @@ const backend=[
 const frontend=[
   segment(ui,'function adminTechMessage(','\nfunction setAdminTechMutationState('),
   segment(ui,'function setAdminTechMutationState(','\nfunction setAdminClientMutationState('),
-  segment(ui,'async function forceClientLogout(){','\nasync function repairClientAccess(){'),
+  segment(ui,'let adminLogoutConfirmState=null;','\nasync function repairClientAccess(){'),
   segment(ui,'async function repairClientAccess(){','\nasync function applyAdminConfigOverride(){')
 ].join('\n');
 
@@ -182,17 +182,48 @@ function uiFixture(fetch){
 test('force sign-out locks access tools and ignores duplicate clicks until confirmed',async()=>{
   const pending=deferred(),requests=[];
   const f=uiFixture(async(url,options)=>{requests.push({url,body:JSON.parse(options.body)});return pending.promise});
+  f.run('openAdminLogout()');
+  assert.equal(requests.length,0);
   const first=f.run('forceClientLogout()'),duplicate=f.run('forceClientLogout()');
   assert.equal(requests.length,1);assert.equal(f.ctx.adminTechSaving,true);
   assert.equal(f.node('adminForceLogoutButton').disabled,true);assert.equal(f.node('adminForceLogoutButton').textContent,'Revoking…');
   assert.equal(f.node('adminRepairAccessButton').disabled,true);assert.equal(f.node('closeAdminClient').disabled,true);
   assert.equal(f.node('adminClientDrawer').attrs['aria-busy'],'true');
+  assert.equal(f.node('confirmAdminLogout').disabled,true);assert.equal(f.run('closeAdminLogout()'),false);
   pending.resolve({ok:true,json:async()=>({ok:true,sessionVersion:6})});
   await Promise.all([first,duplicate]);
   assert.equal(f.ctx.adminTechSaving,false);assert.equal(f.node('adminForceLogoutButton').disabled,false);
   assert.equal(f.node('adminForceLogoutButton').textContent,'Force sign out');
   assert.deepEqual(f.diagnostics,[{id:'client-1',request:7}]);
   assert.equal(f.node('adminTechStatus').textContent,'All existing client sessions have been revoked.');
+});
+
+test('sign-out confirmation rejects changed workspace, owner and drawer request without mutation',async()=>{
+  for(const change of ["currentAdminClient.id='client-2'","currentAdminClient.ownerEmail='different@example.test'","adminClientOpenRequest++"]){
+    const f=uiFixture(async()=>assert.fail('stale confirmation must not mutate'));
+    f.run('openAdminLogout()');f.run(change);
+    assert.equal(await f.run('forceClientLogout()'),false);
+    assert.match(f.node('adminLogoutStatus').textContent,/context changed/);
+    assert.equal(f.ctx.adminTechSaving,false);
+  }
+});
+
+test('sign-out cancellation prevents mutation and failed attempts preserve a retryable dialog',async()=>{
+  let requests=0;const f=uiFixture(async()=>{requests++;return {ok:false,json:async()=>({error:'Access changed'})}});
+  f.run('openAdminLogout()');assert.match(f.node('adminLogoutCopy').textContent,/client-1.*old@example.test/);
+  f.run('closeAdminLogout()');assert.equal(await f.run('forceClientLogout()'),false);assert.equal(requests,0);
+  f.run('openAdminLogout()');assert.equal(await f.run('forceClientLogout()'),false);
+  assert.equal(requests,1);assert.equal(f.node('adminLogoutModal').attrs['aria-hidden'],'false');
+  assert.equal(f.node('confirmAdminLogout').disabled,false);assert.equal(f.node('adminLogoutStatus').textContent,'Access changed');
+});
+
+test('confirmed sign-out stays truthful when its diagnostics refresh fails',async()=>{
+  const f=uiFixture(async()=>({ok:true,json:async()=>({ok:true,sessionVersion:6})}));
+  f.ctx.loadAdminTechSupport=async()=>{throw Error('offline')};f.run('openAdminLogout()');
+  assert.equal(await f.run('forceClientLogout()'),true);
+  assert.equal(f.node('adminLogoutModal').attrs['aria-hidden'],'true');
+  assert.match(f.node('adminTechStatus').textContent,/sessions were revoked, but diagnostics could not refresh/);
+  assert.equal(f.ctx.adminTechSaving,false);
 });
 
 test('failed access repair preserves entered email, unlocks controls and remains retryable',async()=>{

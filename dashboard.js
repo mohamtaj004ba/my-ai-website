@@ -3889,18 +3889,42 @@ async function sendClientLogin(){
   }catch(err){adminTechMessage(err.message||'Could not send sign-in link.',true);return false}
   finally{setAdminTechMutationState(false)}
 }
+let adminLogoutConfirmState=null;
+function setAdminLogoutStatus(message,error=false){
+  const el=document.getElementById('adminLogoutStatus');if(el){el.textContent=message;el.classList.toggle('error-text',error)}
+}
+function setAdminLogoutPending(pending){
+  document.getElementById('adminLogoutModal')?.setAttribute('aria-busy',String(pending));
+  for(const id of ['closeAdminLogoutModal','cancelAdminLogout','confirmAdminLogout']){const el=document.getElementById(id);if(el)el.disabled=pending}
+  const button=document.getElementById('confirmAdminLogout');if(button)button.textContent=pending?'Revoking…':'Revoke existing sessions';
+}
+function closeAdminLogout(){
+  if(adminTechSaving||adminClientSaving)return false;
+  adminLogoutConfirmState=null;const modal=document.getElementById('adminLogoutModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');setAdminLogoutStatus('');return true;
+}
+function openAdminLogout(){
+  if(!currentAdminClient||adminTechSaving||adminClientSaving)return false;
+  const modal=document.getElementById('adminLogoutModal');if(!modal)return false;
+  adminLogoutConfirmState={id:String(currentAdminClient.id),request:adminClientOpenRequest,ownerEmail:String(currentAdminClient.ownerEmail||'')};
+  const copy=document.getElementById('adminLogoutCopy');if(copy)copy.textContent='Revoke all existing CallerCore sessions for '+(currentAdminClient.name||'this workspace')+' ('+adminLogoutConfirmState.id+')'+(adminLogoutConfirmState.ownerEmail?' · '+adminLogoutConfirmState.ownerEmail:'')+'?';
+  setAdminLogoutStatus('');setAdminLogoutPending(false);modal.classList.add('open');modal.setAttribute('aria-hidden','false');return true;
+}
 async function forceClientLogout(){
-  if(!currentAdminClient||adminTechSaving||adminClientSaving||!confirm('Force this client to sign out of all existing CallerCore sessions?'))return;
-  const id=String(currentAdminClient.id),request=adminClientOpenRequest;
+  const state=adminLogoutConfirmState;if(!state||!currentAdminClient||adminTechSaving||adminClientSaving)return false;
+  if(String(currentAdminClient.id)!==state.id||adminClientOpenRequest!==state.request||String(currentAdminClient.ownerEmail||'')!==state.ownerEmail){setAdminLogoutStatus('Workspace or owner context changed. Cancel and reopen the confirmation before revoking sessions.',true);return false}
+  const id=state.id,request=state.request;
+  setAdminLogoutPending(true);setAdminLogoutStatus('Revoking existing client sessions…');
   setAdminTechMutationState(true,'force-logout');adminTechMessage('Revoking existing client sessions…');
   try{
     const r=await fetch('/api/account?action=admin-force-logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}),data=await r.json().catch(()=>({}));
-    if(!r.ok){adminTechMessage(data.error||'Could not revoke sessions.',true);return}
-    if(data.ok!==true||!Number.isSafeInteger(Number(data.sessionVersion))||Number(data.sessionVersion)<1){adminTechMessage('Session-revocation response was incomplete. Reload diagnostics before retrying.',true);return}
+    if(!r.ok)throw new Error(data.error||'Could not revoke sessions.');
+    if(data.ok!==true||!Number.isSafeInteger(Number(data.sessionVersion))||Number(data.sessionVersion)<1)throw new Error('Session-revocation response was incomplete. Reload diagnostics before retrying.');
+    adminLogoutConfirmState=null;const modal=document.getElementById('adminLogoutModal');modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');
     adminTechMessage('All existing client sessions have been revoked.');
-    await loadAdminTechSupport(id,request);
-  }catch(err){adminTechMessage(err.message||'Could not revoke sessions.',true)}
-  finally{setAdminTechMutationState(false)}
+    try{await loadAdminTechSupport(id,request)}catch(_){adminTechMessage('All existing client sessions were revoked, but diagnostics could not refresh. Reload diagnostics before another action.',true)}
+    return true;
+  }catch(err){const message=err.message||'Could not revoke sessions.';setAdminLogoutStatus(message,true);adminTechMessage(message,true);return false}
+  finally{setAdminTechMutationState(false);setAdminLogoutPending(false)}
 }
 async function repairClientAccess(){
   if(!currentAdminClient||adminTechSaving||adminClientSaving)return false;
@@ -3955,7 +3979,10 @@ document.getElementById('adminConfigSection')?.addEventListener('change',renderA
 document.getElementById('adminReloadConfigButton')?.addEventListener('click',()=>loadAdminTechSupport());
 document.getElementById('adminApplyOverrideButton')?.addEventListener('click',applyAdminConfigOverride);
 document.getElementById('adminSendLoginButton')?.addEventListener('click',sendClientLogin);
-document.getElementById('adminForceLogoutButton')?.addEventListener('click',forceClientLogout);
+document.getElementById('adminForceLogoutButton')?.addEventListener('click',openAdminLogout);
+document.getElementById('confirmAdminLogout')?.addEventListener('click',forceClientLogout);
+document.getElementById('closeAdminLogoutModal')?.addEventListener('click',closeAdminLogout);
+document.getElementById('cancelAdminLogout')?.addEventListener('click',closeAdminLogout);
 document.getElementById('adminRepairAccessButton')?.addEventListener('click',repairClientAccess);
 
 function closeAdminClient(){if(adminTechSaving||adminClientSaving)return;adminClientOpenRequest++;const drawer=document.getElementById('adminClientDrawer');drawer?.classList.remove('open');drawer?.setAttribute('aria-hidden','true');document.getElementById('adminClientBackdrop')?.classList.remove('open')}
