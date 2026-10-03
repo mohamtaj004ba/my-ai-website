@@ -76,10 +76,11 @@ test('successful mutation payload guards reject missing objects instead of deref
 test('lead and appointment mutations require canonical changed records',()=>{
   const lead=segment('async function moveLead(',"\ndocument.getElementById('callSearch')");
   const appointment=segment('async function updateAppointment(',"\ndocument.getElementById('conversationSearch')");
-  assert.doesNotMatch(lead,/expectedUpdatedAt/);
+  assert.match(lead,/expectedUpdatedAt:Number\(lead\.updatedAt\|\|0\)/);
   assert.match(lead,/data\.updated!==true\|\|!data\.lead/);
   assert.match(lead,/String\(data\.lead\.id\|\|'\'\)!==String\(id\)/);
   assert.match(lead,/String\(data\.lead\.stage\|\|'\'\)!==String\(stage\)/);
+  assert.match(appointment,/expectedUpdatedAt:Number\(item\.updatedAt\|\|0\)/);
   assert.match(appointment,/data\.updated!==true\|\|!data\.appointment/);
   assert.match(appointment,/String\(data\.appointment\.id\|\|'\'\)!==String\(id\)/);
   assert.match(appointment,/String\(data\.appointment\.status\|\|'\'\)!==String\(status\)/);
