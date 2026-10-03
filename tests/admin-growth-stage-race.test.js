@@ -20,7 +20,7 @@ function fixture({status=200,payload,wait=false}={}){
     fetch:async(url,options)=>{
       requests.push({url,options});
       if(wait)await new Promise(resolve=>{release=resolve});
-      return {ok:status>=200&&status<300,status,json:async()=>payload||{prospect:{...old,stage:'qualified',updatedAt:11}}};
+      return {ok:status>=200&&status<300,status,json:async()=>payload||{ok:true,prospect:{...old,stage:'qualified',updatedAt:11}}};
     },
     String,Number,Error,Set
   });
