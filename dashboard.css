@@ -2469,7 +2469,7 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
   #view-settings.settings-editing{padding-bottom:112px}
   #view-settings.settings-editing .page-head>.page-actions{
     position:fixed;
-    z-index:46;
+    z-index:12;
     left:12px;
     right:12px;
     bottom:max(12px,env(safe-area-inset-bottom));
