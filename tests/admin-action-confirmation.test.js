@@ -104,9 +104,11 @@ test('Gmail confirmation rejects a changed connection and cancellation preserves
 });
 test('confirmed Gmail disconnect remains successful after refresh failure',async()=>{
   const f=fixture(async()=>({ok:true,json:async()=>({ok:true})}));
-  f.ctx.fetch=async()=>({ok:true,json:async()=>({ok:true})});f.ctx.loadAdminInbox=async()=>{throw Error('offline')};
+  let submitted;
+  f.ctx.fetch=async(_url,options)=>{submitted=JSON.parse(options.body);return {ok:true,json:async()=>({ok:true})}};f.ctx.loadAdminInbox=async()=>{throw Error('offline')};
   await f.run('disconnectGmailAdmin()');assert.equal(await f.run('submitAdminActionConfirmation()'),true);
   assert.equal(f.ctx.adminInboxData.gmailStatus.connected,false);assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
+  assert.deepEqual(submitted,{expectedGmailEmail:'admin@example.test'});
   assert.match(f.node('inboxActionStatus').textContent,/was disconnected.*could not be verified/);
 });
 

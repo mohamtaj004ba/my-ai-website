@@ -2850,7 +2850,7 @@ async function disconnectGmailAdmin(){
   setAdminInboxActionStatus('Disconnecting Gmail…');
   setGmailConnectionControls(true,'disconnect');
   try{
-    const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST'}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expectedGmailEmail:gmailEmail})}),data=await r.json().catch(()=>({}));
     if(!r.ok||data.ok!==true)throw new Error(data.error||'Could not confirm Gmail disconnect');
     adminInboxData.connectionRevision=Number(adminInboxData.connectionRevision||0)+1;
     adminInboxData.gmailStatus={...adminInboxData.gmailStatus,connected:false,gmailEmail:''};

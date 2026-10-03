@@ -42,3 +42,29 @@ test('disconnect refuses a replacement connection written after its initial read
   await assert.rejects(f.api.disconnect('admin@test.example'),/changed during disconnect/);
   assert.equal(f.get().gmailEmail,'new@test.example');
 });
+
+test('stale displayed Gmail account cannot disconnect a replacement account',async()=>{
+  const f=fixture();await f.api.saveConnection('admin@test.example',{refresh_token:'refresh'},{email:'new@test.example'});
+  const before=f.get();await assert.rejects(f.api.disconnect('admin@test.example','old@test.example'),error=>error.code==='GMAIL_CONNECTION_CHANGED');
+  assert.deepEqual(f.get(),before);
+  await f.api.disconnect('admin@test.example','NEW@test.example');assert.equal(f.get(),null);
+});
+
+test('OAuth for a different Gmail account cannot inherit the previous account refresh token',async()=>{
+  const f=fixture();await f.api.saveConnection('admin@test.example',{refresh_token:'refresh'},{email:'old@test.example'});
+  const before=f.get();await assert.rejects(f.api.saveConnection('admin@test.example',{access_token:'new'},{email:'new@test.example'}),/did not return a refresh token/);
+  assert.deepEqual(f.get(),before);
+  await f.api.saveConnection('admin@test.example',{access_token:'same-account'},{email:'OLD@test.example'});
+  assert.equal(f.get().gmailEmail,'old@test.example');
+});
+
+test('disconnect endpoint requires displayed account identity and reports concurrent change as conflict',async()=>{
+  const account=fs.readFileSync('api/account.js','utf8'),start=account.indexOf('async function adminGmailDisconnect('),end=account.indexOf('\nasync function adminGmailInbox(',start);
+  const calls=[],ctx=vm.createContext({requireAdmin:async()=>({email:'admin@test.example'}),cleanEmail:value=>String(value).trim().toLowerCase(),
+    disconnectGmail:async(...args)=>{calls.push(args);const error=new Error('Changed account');error.code='GMAIL_CONNECTION_CHANGED';throw error},console,safeError:value=>value.message});
+  vm.runInContext(account.slice(start,end),ctx);
+  const response=()=>({code:0,body:null,status(value){this.code=value;return this},json(value){this.body=value;return this}});
+  let res=response();await ctx.adminGmailDisconnect({body:{}},res);assert.equal(res.code,409);assert.equal(calls.length,0);
+  res=response();await ctx.adminGmailDisconnect({body:{expectedGmailEmail:'Shown@Test.Example'}},res);assert.equal(res.code,409);
+  assert.deepEqual(Array.from(calls[0]),['admin@test.example','shown@test.example']);assert.match(res.body.error,/Changed account/);
+});

@@ -567,6 +567,21 @@ async function runAdminInteractions(page){
   await page.locator('#savePhoneButton').click();
   await page.locator('#phoneModal.open').waitFor({state:'hidden',timeout:10000});
   report.admin.interactions.push('phone search/reset + truthful readiness + saved edit/restore');
+  let phoneDeleteRequests=0;const phoneDeleteRoute=/\/api\/account\?action=admin-phone-number-delete$/;
+  await page.route(phoneDeleteRoute,async route=>{phoneDeleteRequests++;await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'QA intercepted unexpected phone removal'})})});
+  const phoneDeleteLauncher=page.locator('[data-delete-phone="'+qaPhone.id+'"]');
+  try{
+    await phoneDeleteLauncher.click();
+    const confirmation=page.locator('#adminActionConfirmationModal');await confirmation.waitFor({state:'visible'});
+    if(!(await page.locator('#adminActionConfirmationCopy').textContent()).includes(qaPhone.number))throw new Error('Phone removal confirmation omitted number identity');
+    if(!/does not release a provider-owned number/.test(await page.locator('#adminActionConfirmationConsequences').textContent()))throw new Error('Phone removal confirmation omitted provider limitation');
+    await page.locator('#closeAdminActionConfirmation').focus();await page.keyboard.press('Shift+Tab');
+    if(!await page.locator('#submitAdminActionConfirmation').evaluate(el=>document.activeElement===el))throw new Error('Phone confirmation did not trap reverse Tab');
+    await page.keyboard.press('Escape');await confirmation.waitFor({state:'hidden'});
+    await page.waitForFunction(id=>document.activeElement?.dataset?.deletePhone===id,qaPhone.id);
+    if(phoneDeleteRequests!==0)throw new Error('Phone cancellation sent a removal request');
+  }finally{await page.unroute(phoneDeleteRoute)}
+  report.admin.interactions.push('phone removal identity + provider truthfulness + keyboard cancellation without mutation');
 
   // In-page fictional record only: test global search without touching support KV or sending mail.
   await page.evaluate(()=>{

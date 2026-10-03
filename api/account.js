@@ -1728,8 +1728,10 @@ async function adminGmailConnect(req,res){
 }
 async function adminGmailDisconnect(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
-  try{await disconnectGmail(admin.email);return res.status(200).json({ok:true})}
-  catch(err){console.error('gmail disconnect failed',safeError(err));return res.status(503).json({error:'Gmail disconnect could not be confirmed. The existing connection state was preserved in the dashboard.'})}
+  const expectedGmailEmail=cleanEmail(req.body?.expectedGmailEmail||'');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(expectedGmailEmail))return res.status(409).json({error:'Refresh Gmail status and review the connected account before disconnecting.'});
+  try{await disconnectGmail(admin.email,expectedGmailEmail);return res.status(200).json({ok:true})}
+  catch(err){if(err.code==='GMAIL_CONNECTION_CHANGED')return res.status(409).json({error:err.message});console.error('gmail disconnect failed',safeError(err));return res.status(503).json({error:'Gmail disconnect could not be confirmed. The existing connection state was preserved in the dashboard.'})}
 }
 async function adminGmailInbox(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
