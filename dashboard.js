@@ -697,7 +697,7 @@ function renderCalls(){
   wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
 }
 async function openCall(id){
-  const request=++callDrawerOpenRequest;let x=callsData.find(c=>String(c.id)===String(id));if(!x)return,detailWarning='';
+  const request=++callDrawerOpenRequest;let x=callsData.find(c=>String(c.id)===String(id)),detailWarning='';if(!x)return;
   if(!x.transcript&&!demoMode){try{const data=await fetchJsonRetry('/api/account?action=call-detail&id='+encodeURIComponent(id),{attempts:2,timeout:7000});if(!data?.call||typeof data.call!=='object'||Array.isArray(data.call)||String(data.call.id||'')!==String(id))throw new Error('Call detail response was incomplete');x=data.call}catch(err){detailWarning='Full call details could not refresh. Showing the last verified call summary; the transcript may be unavailable or outdated.';console.warn('Call details delayed',err)}}
   if(request!==callDrawerOpenRequest)return;
   const callIndex=callsData.findIndex(c=>String(c.id)===String(id));if(callIndex>=0)callsData[callIndex]={...callsData[callIndex],...x};
