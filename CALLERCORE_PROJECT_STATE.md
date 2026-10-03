@@ -1539,3 +1539,20 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - No production merge/deployment, billing action, live telephony activation, customer communication, destructive production mutation, production migration, or launch-gate change occurred.
 - Next pass: continue evidence-first replacement of selected native consequential confirmations where the UX clearly benefits, while preserving explicit confirmation semantics and existing concurrency/revision protections.
 
+## In-app workspace restoration confirmation checkpoint — 2026-10-03
+
+- Continued the premium consequential-confirmation cleanup with the matching admin **Restore workspace** recovery action.
+- Replaced the native browser restore `confirm()` with an accessible in-app recovery modal that explains the owner-mapping constraint before recovery is submitted.
+- The modal captures the displayed workspace id and revision when opened and refuses a stale recovery attempt if the workspace changes before confirmation.
+- Duplicate recovery submissions remain blocked by the existing admin mutation lock; the recovery modal exposes pending state and disables close/cancel/confirm controls while the request is in flight.
+- Confirmed restore receipts still require a valid client payload, a recognized restored status, a strictly newer revision, and the same target workspace before local state is updated.
+- Existing backend recovery semantics were preserved: pending-deletion recovery remains atomic, owner access is re-enabled only for a healthy matching owner mapping, unhealthy/missing mappings continue to return repair guidance, and ordinary admin status edits cannot bypass the recovery path.
+- Added/updated UI regression coverage for opening the recovery modal, stale-state rejection before network mutation, displayed-revision submission, duplicate-click suppression, failed-restore retry state, and confirmed restore behavior when a later admin refresh fails.
+- Added shared premium styling for the workspace deletion/recovery confirmation dialogs, including responsive mobile action layout and stronger focus treatment.
+- Superseded intermediate head `5c6da8adb2cd706bf85c2e746fb3db1c584354f8` failed Preview/CI because older recovery fixtures still invoked `restoreAdminClient()` without the new confirmation-state setup and an older feedback assertion expected the previous status surface. Those regression fixtures were corrected; no backend recovery behavior was loosened.
+- **Exact verified implementation/test head `63e1b429b18881e131900e5f020b132a5ae5f1a6`:** CallerCore CI run `37155881324` SUCCESS with **1,448 tests passed / 0 failed**; CallerCore CodeQL run `37155881246` SUCCESS; Jekyll run `37155881244` SUCCESS.
+- Exact Vercel Preview `dpl_AdnrPkUyNWkUfHWVKo7DAAc1JN4y` is **READY** at `https://my-ai-website-re62cytum-mohamtaj004bas-projects.vercel.app` for that SHA.
+- PR #5 remained open/draft/unmerged and production `main` remained anchored to `37ef5cfcdccae35952822859f64fe83f0b9f09f0`.
+- No production merge/deployment, live telephony activation, billing action, customer communication, destructive production mutation, production migration, or launch-gate change occurred.
+- Next premium interaction pass: continue evidence-first review of remaining native confirmations, prioritizing consequential admin actions such as force logout, access repair, configuration override/rollback, phone removal, and provider disconnects; keep routine low-risk confirms unless an in-app replacement materially improves recovery or clarity.
+
