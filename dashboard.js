@@ -3194,9 +3194,10 @@ async function resolveOnboardingInviteDelivery(id,resolution,attemptId,button){
   finally{adminOnboardingInvitePending.delete(key);setOnboardingInviteControls(key,false);if(button?.isConnected)button.textContent=idleLabel;renderProvisioning()}
 }
 async function approveProvisioningBuild(id,button){
-  const idleLabel=button?.textContent||'Approve build';if(button){button.disabled=true;button.textContent='Approving…'}setOnboardingActionStatus('Approving build…');
+  const item=adminProvisioningData.find(x=>String(x.id)===String(id));if(!item){setOnboardingActionStatus('This onboarding record is no longer available. Refresh onboarding before approving the build.','error');return false}
+  const expectedUpdatedAt=Number(item.onboardingUpdatedAt||0),idleLabel=button?.textContent||'Approve build';if(button){button.disabled=true;button.textContent='Approving…'}setOnboardingActionStatus('Approving build…');
   try{
-    const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field:'adminReview',value:true})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,field:'adminReview',value:true,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error((data.error||'Could not approve this build.')+(data.eligibleAt?' Available '+new Date(data.eligibleAt).toLocaleString()+'.':''));
     if(data.ok!==true||!data.onboarding||typeof data.onboarding!=='object'||Array.isArray(data.onboarding)||data.onboarding.checklist?.adminReview!==true)throw new Error('Build approval response was incomplete. Refresh onboarding before retrying.');
     try{await refreshAdminView('onboarding',{force:true,announce:false});setOnboardingActionStatus(data.warning||'Build approved.',data.warning?'':'success')}
@@ -3214,10 +3215,11 @@ function setProvisioningChecklistControls(id,pending){
   });
 }
 async function updateProvisioningChecklist(id,field,value){
-  const key=String(id);if(adminProvisioningChecklistPending.has(key))return false;
+  const key=String(id),item=adminProvisioningData.find(x=>String(x.id)===key);if(!item){setOnboardingActionStatus('This onboarding record is no longer available. Refresh onboarding before updating the checklist.','error');return false}if(adminProvisioningChecklistPending.has(key))return false;
+  const expectedUpdatedAt=Number(item.onboardingUpdatedAt||0);
   adminProvisioningChecklistPending.add(key);setProvisioningChecklistControls(key,true);setOnboardingActionStatus('Saving checklist update…');
   try{
-    const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,field,value})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-provisioning-checklist-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,field,value,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update provisioning checklist.');
     if(data.ok!==true||!data.onboarding||typeof data.onboarding!=='object'||Array.isArray(data.onboarding)||data.onboarding.checklist?.[field]!==value)
       throw new Error('Checklist update response was incomplete. Refresh onboarding before retrying.');
