@@ -32,3 +32,12 @@ test('admin client drawer rejects malformed onboarding checklist state',()=>{
   assert.match(block,/onboarding\?\.checklist!=null/);
   assert.match(block,/Array\.isArray\(onboarding\.checklist\)/);
 });
+
+
+test('admin client and receptionist empty states distinguish filters from truly empty sources',()=>{
+  const ui=fs.readFileSync('dashboard.js','utf8');
+  assert.match(ui,/filteredView=all\.length>0/);
+  assert.match(ui,/filteredView\?'No clients match this view':'No client accounts yet'/);
+  assert.match(ui,/filteredView=agentRows\.length>0/);
+  assert.match(ui,/filteredView\?'No receptionists match this view':'No receptionist workspaces yet'/);
+});
