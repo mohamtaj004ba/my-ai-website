@@ -39,3 +39,19 @@ test('follow-up completed toggle exposes its pressed state',()=>{
   assert.match(html,/id="showHandledFollowups" aria-pressed="false"/);
   assert.match(js,/showHandledFollowups[\s\S]*setAttribute\('aria-pressed',String\(showHandledFollowups\)\)/);
 });
+
+
+test('completion modal blocks duplicate saves and announces unconfirmed updates',()=>{
+  const html=fs.readFileSync(path.join(root,'dashboard.html'),'utf8');
+  const open=js.slice(js.indexOf('function requestTeamStatusChange('),js.indexOf('function syncDrawerTeamStatus('));
+  assert.match(html,/id="teamStatusModalStatus" role="status" aria-live="polite"/);
+  assert.match(html,/id="teamCompletionOther"[^>]+aria-describedby="teamStatusModalStatus"/);
+  assert.match(open,/function setTeamStatusModalPending\(pending\)/);
+  assert.match(open,/save\.disabled=!!pending/);
+  assert.match(open,/save\.textContent=pending\?'Saving…':'Mark complete'/);
+  assert.match(open,/if\(!id\|\|followupMutationPending\.has\(String\(id\)\)\)return false/);
+  assert.match(open,/Saving completion…/);
+  assert.match(open,/Could not confirm the completion update\. Your selection is still open; try again\./);
+  assert.match(open,/finally\{setTeamStatusModalPending\(false\)\}/);
+  assert.match(open,/if\(pendingTeamStatusCallId&&followupMutationPending\.has\(String\(pendingTeamStatusCallId\)\)\)return false/);
+});
