@@ -28,5 +28,5 @@ test('business profile placeholders are neutral before client data loads',()=>{
   assert.match(html,/id="businessLogoInitials">—/);
   assert.doesNotMatch(html,/placeholder="Spokane/);
   assert.doesNotMatch(html,/\(509\) 555-0100/);
-  assert.match(html,/id="locationName" placeholder="Main office"/);
+  assert.match(html,/id="locationName"[^>]*placeholder="Main office"/);
 });
