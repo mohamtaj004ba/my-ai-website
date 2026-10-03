@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const crypto=require('node:crypto');
 const source=fs.readFileSync('api/account.js','utf8');
+const dashboard=fs.readFileSync('dashboard.js','utf8');
 const start=source.indexOf('function userProfileKey('),end=source.indexOf('\nasync function requestLogin(',start);
 assert.ok(start>=0&&end>start,'profile handlers exist');
 const code=source.slice(start,end);
@@ -41,4 +42,19 @@ test('profile save uses a compare-and-set revision instead of blind overwrite',a
 test('profile save reports ambiguous storage failure without claiming success',async()=>{
   const f=fixture({stored:{displayName:'Old',avatarDataUrl:'',updatedAt:10},casError:new Error('storage uncertain')});
   const out=await f.runSave();assert.equal(out.status,503);assert.match(out.payload.error,/Could not confirm/);
+});
+
+
+test('profile UI serializes saves and requires the exact submitted profile receipt',()=>{
+  const start=dashboard.indexOf('let profileSaving=false;'),end=dashboard.indexOf('\nfunction initProfileControls(',start),block=dashboard.slice(start,end);
+  assert.ok(start>=0&&end>start);
+  assert.match(block,/if\(profileSaving\)return false/);
+  assert.match(block,/setProfileSaving\(true\)/);
+  assert.match(block,/data\.ok!==true/);
+  assert.match(block,/String\(confirmed\.displayName\|\|'\'\)!==displayName/);
+  assert.match(block,/String\(confirmed\.avatarDataUrl\|\|'\'\)!==avatarDataUrl/);
+  assert.match(block,/Number\.isFinite\(Number\(confirmed\.updatedAt\)\)/);
+  assert.match(block,/finally\{setProfileSaving\(false\)\}/);
+  assert.match(dashboard,/profilePhotoButton[^\n]+if\(!profileSaving\)/);
+  assert.match(dashboard,/profilePhotoRemove[^\n]+if\(profileSaving\)return/);
 });
