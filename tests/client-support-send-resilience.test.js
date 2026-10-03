@@ -35,7 +35,7 @@ function fixture(fetcher){
 function ok(data,status=200){return {ok:status<400,json:async()=>data}}
 test('network failure preserves new support request and re-enables button for retry',async()=>{
   let fail=true,fetches=0;
-  const f=fixture(async()=>{fetches++;if(fail)throw Error('network down');return ok({ticket:{id:'new-ticket'}},201)});
+  const f=fixture(async()=>{fetches++;if(fail)throw Error('network down');return ok({ok:true,ticket:{id:'new-ticket',subject:'Need assistance'}},201)});
   await f.submit();
   assert.equal(f.fields.submitSupportButton.disabled,false);
   assert.equal(f.fields.supportSubject.value,'Need assistance');
@@ -57,14 +57,14 @@ test('double submit during pending request sends only one POST',async()=>{
   const a=f.submit(),b=f.submit();
   await b;
   assert.equal(count,1);
-  release(ok({ticket:{id:'created'}},201));
+  release(ok({ok:true,ticket:{id:'created',subject:'Need assistance'}},201));
   await a;
   assert.equal(f.fields.submitSupportButton.disabled,false);
   assert.equal(f.ctx.supportTicketsData.length,2);
 });
 test('reply network failure retains typed draft and retry succeeds',async()=>{
   let fail=true,count=0;
-  const f=fixture(async()=>{count++;if(fail)throw Error('network down');return ok({ticket:{id:'ticket-1',messages:[{body:'This reply should remain available'}]}})});
+  const f=fixture(async()=>{count++;if(fail)throw Error('network down');return ok({ok:true,ticket:{id:'ticket-1',messages:[{body:'This reply should remain available'}]}})});
   await f.reply();
   assert.equal(f.replyButton.disabled,false);
   assert.equal(f.input.readOnly,false);
@@ -96,7 +96,7 @@ test('pending client reply locks text and unlocks it after successful confirmati
   const sending=f.reply();
   assert.equal(f.input.readOnly,true);
   assert.equal(f.replyButton.disabled,true);
-  release(ok({ticket:{id:'ticket-1',messages:[{body:'Saved'}]}}));
+  release(ok({ok:true,ticket:{id:'ticket-1',messages:[{body:'Saved'}]}}));
   await sending;
   assert.equal(f.input.readOnly,false);
   assert.equal(f.replyButton.disabled,false);
@@ -104,7 +104,7 @@ test('pending client reply locks text and unlocks it after successful confirmati
 });
 
 test('saved support request surfaces server warning instead of claiming full send success',async()=>{
-  const f=fixture(async()=>ok({ticket:{id:'new-ticket'},warning:'Request saved, but notification delivery could not be verified.'},201));
+  const f=fixture(async()=>ok({ok:true,ticket:{id:'new-ticket',subject:'Need assistance'},warning:'Request saved, but notification delivery could not be verified.'},201));
   await f.submit();
   assert.equal(f.ctx.supportTicketsData[0].id,'new-ticket');
   assert.equal(f.fields.supportStatus.textContent,'Request saved, but notification delivery could not be verified.');
