@@ -70,3 +70,11 @@ test('Growth filters expose selected state beyond visual styling',()=>{
 test('Growth empty columns distinguish search misses from an empty stage',()=>{
   assert.match(source,/q\?'No matching prospects':'Drop prospect here'/);
 });
+
+
+test('Growth prospect cards are keyboard operable without requiring drag and drop',()=>{
+  assert.match(source,/class="growth-card [\s\S]*role="button" tabindex="0" aria-label="Open /);
+  assert.match(source,/data-edit-prospect[\s\S]*addEventListener\('keydown'/);
+  assert.match(source,/e\.key==='Enter'\|\|e\.key===' '/);
+  assert.match(source,/openProspectModal\(card\.dataset\.editProspect\)/);
+});
