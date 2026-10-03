@@ -190,3 +190,21 @@ test('location modal cannot close while a save is pending',()=>{
   assert.match(persist,/lockFormControls\('locationModal'\)/);
   assert.match(persist,/finally\{unlock\(\);locationMutationPending=false/);
 });
+
+
+test('location builder validates required name and exposes inline accessible status',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  const html=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
+  const open=ui.slice(ui.indexOf("function openLocationModal(id='')"),ui.indexOf('function closeLocationModal()'));
+  const save=ui.slice(ui.indexOf('async function saveLocation(){'),ui.indexOf('async function deleteLocation('));
+  assert.match(html,/id="locationFormStatus" role="status" aria-live="polite"/);
+  assert.match(html,/id="locationName" maxlength="120" autocomplete="organization" aria-describedby="locationFormStatus"/);
+  assert.match(html,/id="locationPhone" type="tel" inputmode="tel" maxlength="24"/);
+  assert.match(html,/id="saveLocationButton" type="button"/);
+  assert.match(open,/name\.removeAttribute\('aria-invalid'\)/);
+  assert.match(open,/setTimeout\(\(\)=>name\?\.focus\(\),20\)/);
+  assert.match(save,/nameInput\.setAttribute\('aria-invalid','true'\)/);
+  assert.match(save,/Add a location name before saving\./);
+  assert.match(save,/Saving location…/);
+  assert.match(save,/Location was not saved\. Review the message and try again\./);
+});
