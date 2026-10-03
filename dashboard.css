@@ -1377,7 +1377,7 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 .admin-client-overview button small{line-height:1.35}
 .admin-client-row-business{grid-template-columns:minmax(210px,1.45fr) .55fr .6fr .8fr .72fr .72fr .65fr .52fr!important;gap:14px!important;align-items:center!important}
 .admin-client-row-business:not(.head){cursor:pointer}
-.admin-client-row-business:not(.head):hover{background:#fafbfc;box-shadow:inset 3px 0 0 #d7a18c}
+.admin-client-row-business:not(.head):hover,.admin-client-row-business:not(.head):focus-visible{background:#fafbfc;box-shadow:inset 3px 0 0 #d7a18c}.admin-client-row-business:focus-visible,.admin-recent-row:focus-visible{outline:2px solid rgba(200,93,53,.42);outline-offset:2px}
 .admin-client-row-business .tag{width:max-content;max-width:100%}
 .admin-client-row-business>span:nth-child(3){font-weight:800;color:#384149}
 .admin-client-row-business>span:nth-child(7){color:#778189;font-size:8px}

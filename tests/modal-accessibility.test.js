@@ -200,3 +200,10 @@ test('admin client rows expose keyboard semantics in both command center and dir
   assert.match(dashboard,/data-admin-client-row[\s\S]*row\.onkeydown=e=>/);
   assert.match(dashboard,/wrap\.querySelectorAll\('\[data-admin-client-row\]'\)[\s\S]*addEventListener\('keydown'/);
 });
+
+
+test('keyboard-operable admin client rows have a visible focus treatment',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','dashboard.css'),'utf8');
+  assert.match(css,/\.admin-client-row-business:not\(\.head\):hover,\.admin-client-row-business:not\(\.head\):focus-visible/);
+  assert.match(css,/\.admin-client-row-business:focus-visible,\.admin-recent-row:focus-visible\{outline:/);
+});
