@@ -13,5 +13,6 @@ test('consequential confirmations remain explicit after alert cleanup',()=>{
   assert.match(ui,/confirm\('Disconnect Gmail from CallerCore Admin/);
   assert.match(ui,/openAdminDeleteWorkspaceModal/);
   assert.match(ui,/typed!=='DELETE'/);
-  assert.match(ui,/confirm\('Restore '/);
+  assert.match(ui,/openAdminRestoreWorkspaceModal/);
+  assert.match(ui,/admin-client-delete-restore/);
 });
