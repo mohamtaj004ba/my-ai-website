@@ -66,3 +66,19 @@ test('admin filter and range controls expose their selected state beyond visual 
   assert.match(dashboard,/data-inbox-filter[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
   assert.match(dashboard,/data-finance-range[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
 });
+
+
+test('admin operational empty states distinguish filtered views from genuinely empty sources',()=>{
+  assert.match(dashboard,/filteredView=autos\.length>0/);
+  assert.match(dashboard,/No workspaces match this view/);
+  assert.match(dashboard,/filteredView=items\.length>0/);
+  assert.match(dashboard,/No feedback matches this view/);
+  assert.match(dashboard,/filteredView=tickets\.length>0/);
+  assert.match(dashboard,/No support requests match this view/);
+  assert.match(dashboard,/allCount=website\.length\+gmail\.length/);
+  assert.match(dashboard,/No conversations match this view/);
+});
+
+test('Client Care tabs expose selected state beyond visual styling',()=>{
+  assert.match(dashboard,/data-care-tab[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
+});
