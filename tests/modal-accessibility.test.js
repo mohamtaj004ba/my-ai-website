@@ -207,3 +207,11 @@ test('keyboard-operable admin client rows have a visible focus treatment',()=>{
   assert.match(css,/\.admin-client-row-business:not\(\.head\):hover,\.admin-client-row-business:not\(\.head\):focus-visible/);
   assert.match(css,/\.admin-client-row-business:focus-visible,\.admin-recent-row:focus-visible\{outline:/);
 });
+
+
+test('Command Center metric cards expose keyboard semantics before dashboard JavaScript binds',()=>{
+  const admin=fs.readFileSync(path.join(__dirname,'..','admin-dashboard.html'),'utf8');
+  assert.match(admin,/data-admin-metric-view="finance" role="button" tabindex="0" aria-label="Open Finance for MRR"/);
+  assert.match(admin,/data-admin-client-filter="active" role="button" tabindex="0" aria-label="Open active client accounts"/);
+  assert.match(admin,/data-admin-metric-view="overview" role="button" tabindex="0" aria-label="Open attention queue"/);
+});

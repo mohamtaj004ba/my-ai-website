@@ -47,11 +47,11 @@
 <section class="view active" id="view-overview">
   <div class="page-head admin-command-head"><div><span class="eyebrow">Command Center</span><h1>Run CallerCore from one screen.</h1><p>Company performance, client health, cash commitments, and the few things that need your attention.</p></div><div class="page-actions"><span class="admin-live-status" id="adminLiveStatus" role="status" aria-live="polite"><i></i><span id="adminLiveLabel">Connecting</span><small id="adminLastRefresh">Loading admin data…</small></span><button class="secondary-btn" id="refreshAdminCommand">Refresh</button></div></div>
   <div class="metric-grid admin-command-metrics">
-    <article class="command-metric-link" data-admin-metric-view="finance"><span>MRR</span><strong id="adminMrr">—</strong><small>Current subscription run rate</small><i class="metric-arrow">→</i></article>
-    <article class="command-metric-link" data-admin-client-filter="active"><span>Active clients</span><strong id="adminActiveClients">—</strong><small>Currently in service</small><i class="metric-arrow">→</i></article>
-    <article class="command-metric-link attention-metric" data-admin-metric-view="overview"><span>Open actions</span><strong id="adminOpenActions">—</strong><small>Items requiring attention</small><i class="metric-arrow">↓</i></article>
-    <article class="command-metric-link" data-admin-metric-view="finance"><span>Monthly costs</span><strong id="adminMonthlyCosts">—</strong><small>Recurring company expenses</small><i class="metric-arrow">→</i></article>
-    <article class="command-metric-link" data-admin-metric-view="finance"><span>Net recurring</span><strong id="adminNetRecurring">—</strong><small id="adminMarginMeta">Awaiting verified finance data</small><i class="metric-arrow">→</i></article>
+    <article class="command-metric-link" data-admin-metric-view="finance" role="button" tabindex="0" aria-label="Open Finance for MRR"><span>MRR</span><strong id="adminMrr">—</strong><small>Current subscription run rate</small><i class="metric-arrow">→</i></article>
+    <article class="command-metric-link" data-admin-client-filter="active" role="button" tabindex="0" aria-label="Open active client accounts"><span>Active clients</span><strong id="adminActiveClients">—</strong><small>Currently in service</small><i class="metric-arrow">→</i></article>
+    <article class="command-metric-link attention-metric" data-admin-metric-view="overview" role="button" tabindex="0" aria-label="Open attention queue"><span>Open actions</span><strong id="adminOpenActions">—</strong><small>Items requiring attention</small><i class="metric-arrow">↓</i></article>
+    <article class="command-metric-link" data-admin-metric-view="finance" role="button" tabindex="0" aria-label="Open Finance for monthly costs"><span>Monthly costs</span><strong id="adminMonthlyCosts">—</strong><small>Recurring company expenses</small><i class="metric-arrow">→</i></article>
+    <article class="command-metric-link" data-admin-metric-view="finance" role="button" tabindex="0" aria-label="Open Finance for net recurring"><span>Net recurring</span><strong id="adminNetRecurring">—</strong><small id="adminMarginMeta">Awaiting verified finance data</small><i class="metric-arrow">→</i></article>
   </div>
 
   <div class="admin-business-grid">
