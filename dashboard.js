@@ -4240,31 +4240,37 @@ async function resizeProfilePhoto(file){
   ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
   return canvas.toDataURL('image/jpeg',.84);
 }
+let profileSaving=false;
+function setProfileSaving(pending){
+  profileSaving=!!pending;
+  for(const id of ['profileNameInput','profilePhotoButton','profilePhotoRemove','profileSaveButton','profilePhotoInput']){const el=document.getElementById(id);if(el){el.disabled=profileSaving;el.setAttribute('aria-busy',String(profileSaving))}}
+  const btn=document.getElementById('profileSaveButton');if(btn)btn.textContent=profileSaving?'Saving…':'Save profile';
+}
 async function saveProfile(){
-  const input=document.getElementById('profileNameInput'),status=document.getElementById('profileSaveStatus'),btn=document.getElementById('profileSaveButton');
-  const displayName=String(input?.value||'').trim();if(!displayName){if(status)status.textContent='Enter your name.';return}
-  if(btn){btn.disabled=true;btn.textContent='Saving…'}if(status)status.textContent='';
+  if(profileSaving)return false;
+  const input=document.getElementById('profileNameInput'),status=document.getElementById('profileSaveStatus'),displayName=String(input?.value||'').trim().slice(0,80),avatarDataUrl=String(currentUserProfile.avatarDataUrl||'');if(!displayName){if(status)status.textContent='Enter your name.';return false}
+  setProfileSaving(true);if(status)status.textContent='';
   try{
-    const r=await fetch('/api/account?action=profile-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({displayName,avatarDataUrl:currentUserProfile.avatarDataUrl||''})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=profile-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({displayName,avatarDataUrl})}),data=await r.json().catch(()=>({})),confirmed=data.profile;
     if(!r.ok)throw new Error(data.error||'Could not save profile');
-    if(data.ok!==true||!data.profile||typeof data.profile!=='object'||Array.isArray(data.profile)||!String(data.profile.displayName||'').trim())throw new Error('Profile response was incomplete. Your current profile was preserved.');
-    currentUserProfile={...currentUserProfile,...data.profile};renderUserProfile();if(status)status.textContent='Saved.';
-  }catch(err){if(status)status.textContent=err.message||'Could not save profile'}
-  finally{if(btn){btn.disabled=false;btn.textContent='Save profile'}}
+    if(data.ok!==true||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.displayName||'')!==displayName||String(confirmed.avatarDataUrl||'')!==avatarDataUrl||!Number.isFinite(Number(confirmed.updatedAt))||Number(confirmed.updatedAt)<=0)throw new Error('Profile response was incomplete. Your current profile was preserved.');
+    currentUserProfile={...currentUserProfile,...confirmed};renderUserProfile();if(status)status.textContent='Saved.';return true;
+  }catch(err){if(status)status.textContent=err.message||'Could not save profile';return false}
+  finally{setProfileSaving(false)}
 }
 function initProfileControls(){
   const button=document.getElementById('accountButton'),panel=document.getElementById('accountPanel'),photoInput=document.getElementById('profilePhotoInput');
   if(!button||!panel)return;renderUserProfile();
   button.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){resetSurfaceScroll(panel);document.getElementById('profileNameInput')?.focus()}});
   panel.addEventListener('click',e=>e.stopPropagation());
-  document.getElementById('profilePhotoButton')?.addEventListener('click',()=>photoInput?.click());
+  document.getElementById('profilePhotoButton')?.addEventListener('click',()=>{if(!profileSaving)photoInput?.click()});
   photoInput?.addEventListener('change',async()=>{
-    const status=document.getElementById('profileSaveStatus');
+    if(profileSaving){photoInput.value='';return}const status=document.getElementById('profileSaveStatus');
     try{const data=await resizeProfilePhoto(photoInput.files?.[0]);currentUserProfile.avatarDataUrl=data;renderUserProfile();if(status)status.textContent='Photo ready — save profile.'}
     catch(err){if(status)status.textContent=err.message||'Could not use that image'}
     photoInput.value='';
   });
-  document.getElementById('profilePhotoRemove')?.addEventListener('click',()=>{currentUserProfile.avatarDataUrl='';renderUserProfile();const s=document.getElementById('profileSaveStatus');if(s)s.textContent='Photo removed — save profile.'});
+  document.getElementById('profilePhotoRemove')?.addEventListener('click',()=>{if(profileSaving)return;currentUserProfile.avatarDataUrl='';renderUserProfile();const s=document.getElementById('profileSaveStatus');if(s)s.textContent='Photo removed — save profile.'});
   document.getElementById('profileSaveButton')?.addEventListener('click',saveProfile);
   document.getElementById('profilePanelLogout')?.addEventListener('click',logout);
   document.addEventListener('click',()=>{panel.hidden=true;button.setAttribute('aria-expanded','false')});
