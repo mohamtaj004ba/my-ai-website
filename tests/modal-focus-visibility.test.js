@@ -24,3 +24,12 @@ test('dialog focus return refuses disabled or hidden opener controls',()=>{
   assert.match(source,/!target\.hasAttribute\?\.\('disabled'\)/);
   assert.match(source,/isRendered\(target\)/);
 });
+
+test('dialog-to-dialog transitions inherit the original launcher for focus return',()=>{
+  assert.match(source,/const dialogs=\[\.\.\.document\.querySelectorAll/);
+  assert.match(source,/if\(!state\.returnFocus\)state\.returnFocus=/);
+  assert.match(source,/const successor=dialogs\.find\(other=>other!==modal&&isOpen\(other\)\)/);
+  assert.match(source,/!successorState\.returnFocus\|\|modal\.contains\(successorState\.returnFocus\)/);
+  assert.match(source,/successorState\.returnFocus=target;state\.returnFocus=null;return/);
+});
+
