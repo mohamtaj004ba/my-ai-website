@@ -74,3 +74,11 @@ test('admin modal validation feedback uses live status semantics',()=>{
   assert.match(admin,/id="prospectNameInput"[^>]+aria-describedby="prospectFormStatus"/);
   assert.match(admin,/id="campaignNameInput"[^>]+aria-describedby="campaignFormStatus"/);
 });
+
+
+test('notification refresh status is announced consistently',()=>{
+  for(const file of ['dashboard.html','admin-dashboard.html']){
+    const src=html(file);
+    assert.match(src,/id="notificationSyncStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  }
+});
