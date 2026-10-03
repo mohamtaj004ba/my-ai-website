@@ -15,7 +15,7 @@ test('webhook save serializes requests and requires canonical receipt',()=>{
   assert.match(block,/data\.ok!==true/);
   assert.match(block,/String\(confirmed\.webhookUrl\|\|'\'\)!==webhookUrl/);
   assert.match(block,/Number\.isFinite\(Number\(confirmed\.updatedAt\)\)/);
-  assert.match(block,/finally\{webhookSaving=false;renderIntegrations\(\)\}/);
+  assert.match(block,/finally\{webhookSaving=false;renderIntegrations\(\);if\(failureMessage&&status\)status\.textContent=failureMessage\}/);
   assert.match(ui,/cancelWebhookButton[^\n]+if\(webhookSaving\)return/);
 });
 
