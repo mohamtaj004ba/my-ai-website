@@ -3,6 +3,7 @@ const root=path.join(__dirname,'..');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const chat=fs.readFileSync(path.join(root,'api','chat.js'),'utf8');
 const dashboard=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+const adminDashboard=fs.readFileSync(path.join(root,'admin-dashboard.html'),'utf8');
 
 test('public launch copy does not promise unlaunched SMS or calendar booking',()=>{
   assert.doesNotMatch(index,/books appointments/i);
@@ -14,8 +15,9 @@ test('public launch copy does not promise unlaunched SMS or calendar booking',()
 });
 
 test('admin deletion copy reflects recoverable deletion instead of immediate destruction',()=>{
-  assert.match(dashboard,/30-day recovery period/);
-  assert.doesNotMatch(dashboard,/This permanently removes its CallerCore workspace data\. This cannot be undone/);
+  assert.match(adminDashboard,/recoverable for 30 days|30-day recovery period/);
+  assert.match(dashboard,/recoverable for 30 days/);
+  assert.doesNotMatch(dashboard+adminDashboard,/This permanently removes its CallerCore workspace data\. This cannot be undone/);
 });
 
 test('checkout and onboarding copy avoid unresolved scheduling and unlimited usage claims',()=>{
