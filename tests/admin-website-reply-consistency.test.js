@@ -66,3 +66,17 @@ test('malformed prospect identity blocks website reply before any provider send'
     assert.match(r.payload.error,/Prospect record is unavailable/);
   }
 });
+
+
+test('admin inbox reply serializes sends and requires canonical website/Gmail receipts',()=>{
+  const ui=fs.readFileSync('dashboard.js','utf8');
+  const start=ui.indexOf('async function sendInboxReply('),end=ui.indexOf('\nlet gmailConnectionMutationPending=',start),handler=ui.slice(start,end);
+  assert.ok(start>=0&&end>start);
+  assert.match(handler,/adminInboxReplyPending/);
+  assert.match(handler,/if\(!currentInboxItem\|\|adminInboxReplyPending\)return false/);
+  assert.match(handler,/data\.ok!==true\|\|!data\.message/);
+  assert.match(handler,/String\(data\.message\.body\|\|'\'\)!==message/);
+  assert.match(handler,/data\.ok!==true\|\|!String\(data\.threadId\|\|'\'\)\.trim\(\)/);
+  assert.match(handler,/finally\{adminInboxReplyPending=false/);
+  assert.match(handler,/field\.readOnly=false/);
+});
