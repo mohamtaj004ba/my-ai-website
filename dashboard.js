@@ -320,6 +320,7 @@ function setDataHealth(id,degraded){
 }
 function setClientLoading(loading,message='Loading your CallerCore activity…'){
   document.body.classList.toggle('client-data-loading',!!loading);
+  document.querySelector('.dashboard-main')?.setAttribute('aria-busy',String(!!loading));
   const overlay=document.getElementById('clientLoadingState');if(overlay){overlay.hidden=!loading;const copy=overlay.querySelector('span');if(copy)copy.textContent=message}
 }
 async function fetchJsonRetry(url,{attempts=2,timeout=9000}={}){

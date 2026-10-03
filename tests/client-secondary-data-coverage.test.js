@@ -93,3 +93,11 @@ test('successful bundled refresh clears obsolete secondary failure and invalidat
   assert.match(source,/applyClientDashboardData\(data\);\s*clearSecondaryClientCoverage\(\);renderClientData\(\)/);
   assert.match(source,/applyClientDashboardData\(data\);\s*clearSecondaryClientCoverage\(\);renderClientData\(\);setClientLoading/);
 });
+
+
+test('client loading state exposes busy and live status semantics while workspace data hydrates',()=>{
+  const html=fs.readFileSync('dashboard.html','utf8'),ui=fs.readFileSync('dashboard.js','utf8');
+  assert.match(html,/class="dashboard-main" aria-busy="true"/);
+  assert.match(html,/id="clientLoadingState" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(ui,/document\.querySelector\('\.dashboard-main'\)\?\.setAttribute\('aria-busy',String\(!!loading\)\)/);
+});
