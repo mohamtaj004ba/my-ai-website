@@ -110,6 +110,15 @@ test('editing a disabled automation preserves disabled state and delete requires
 });
 
 
+test('stale automation edits fail closed before opening or recreating a deleted automation',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  const open=ui.slice(ui.indexOf('function openAutomation('),ui.indexOf('function closeAutomation()'));
+  const save=ui.slice(ui.indexOf('async function saveAutomation(){'),ui.indexOf("\ndocument.querySelectorAll(",ui.indexOf('async function saveAutomation(){')));
+  assert.match(open,/if\(id&&!item\).*no longer available.*Refresh Automations.*return false/);
+  assert.match(save,/if\(editingAutomationId&&!existing\).*no longer available.*return false/);
+  assert.ok(save.indexOf('if(editingAutomationId&&!existing)')<save.indexOf('automationsData\.push')||!save.includes('automationsData.push'));
+});
+
 test('automation page exposes accessible action feedback and plan-limit errors stay inline',()=>{
   const html=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
   assert.match(html,/id="automationActionStatus" role="status" aria-live="polite" aria-atomic="true"/);
