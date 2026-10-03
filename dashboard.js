@@ -1373,7 +1373,7 @@ function setAutomationMutationUi(pending){
   document.querySelectorAll('[data-preset]').forEach(btn=>{btn.disabled=busy;btn.setAttribute('aria-busy',String(busy))});
 }
 let automationMutationPending=false;
-async function persistAutomations(){
+async function persistAutomations({alertOnError=true}={}){
   if(demoMode)return true;
   if(automationMutationPending)return false;
   automationMutationPending=true;setAutomationMutationUi(true);
@@ -1386,7 +1386,7 @@ async function persistAutomations(){
     if(returnedIds.some((id,i)=>!id||id!==submittedIds[i])||data.automations.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!Number.isFinite(Number(item.updatedAt))||Number(item.updatedAt)<=0))
       throw new Error('Could not confirm the automation save. Refresh automations before retrying.');
     automationsData=data.automations;return true;
-  }catch(err){alert(err.message||'Could not save automations right now.');return false}
+  }catch(err){if(alertOnError)alert(err.message||'Could not save automations right now.');return false}
   finally{automationMutationPending=false;setAutomationMutationUi(false)}
 }
 async function toggleAutomation(id){
@@ -1435,7 +1435,7 @@ async function saveAutomation(){
   const before=automationsData.map(x=>({...x})),i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));
   if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
   renderAutomations();
-  if(await persistAutomations()){if(status){status.textContent='Automation saved.';status.className='form-status-line success'}closeAutomation();return true}
+  if(await persistAutomations({alertOnError:false})){if(status){status.textContent='Automation saved.';status.className='form-status-line success'}closeAutomation();return true}
   automationsData=before;renderAutomations();if(status){status.textContent='Automation was not saved. Review the message and try again.';status.className='form-status-line error'}return false
 }
 document.querySelectorAll('[data-agent-edit]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(btn.dataset.agentEdit)));
@@ -1660,7 +1660,7 @@ function openLocationModal(id=''){
   modal.dataset.editId=x?.id||'';document.getElementById('locationModalTitle').textContent=x?'Edit location':'Add location';if(name){name.value=x?.name||'';name.removeAttribute('aria-invalid')}document.getElementById('locationPhone').value=x?.phone||'';document.getElementById('locationAddress').value=x?.address||'';document.getElementById('locationTimezone').value=x?.timezone||settingsData?.timezone||'America/Los_Angeles';document.getElementById('locationActive').checked=x?.active!==false;if(status){status.textContent='';status.className='form-status-line'}modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>name?.focus(),20);
 }
 function closeLocationModal(){if(locationMutationPending)return false;const m=document.getElementById('locationModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}return true}
-async function persistLocations(next){
+async function persistLocations(next,{alertOnError=true}={}){
   if(locationMutationPending)return false;
   locationMutationPending=true;const unlock=lockFormControls('locationModal');renderLocations();
   try{
@@ -1672,7 +1672,7 @@ async function persistLocations(next){
       throw new Error('Location save response was incomplete. Your current locations were preserved; refresh before retrying.');
     if(submitted.some((item,i)=>item.id&&String(rows[i]?.id)!==String(item.id)))throw new Error('Location save response did not match the submitted records. Your current locations were preserved; refresh before retrying.');
     locationsData=rows;locationsLimit=confirmedLimit;return true;
-  }catch(err){alert(err.message||'Could not save locations. Check your connection and try again.');return false}
+  }catch(err){if(alertOnError)alert(err.message||'Could not save locations. Check your connection and try again.');return false}
   finally{unlock();locationMutationPending=false;renderLocations()}
 }
 async function saveLocation(){
@@ -1681,7 +1681,7 @@ async function saveLocation(){
   if(!name){if(nameInput){nameInput.setAttribute('aria-invalid','true');nameInput.focus()}if(status){status.textContent='Add a location name before saving.';status.className='form-status-line error'}return false}
   nameInput?.removeAttribute('aria-invalid');if(status){status.textContent='Saving location…';status.className='form-status-line'}
   const item={id:id||undefined,name,phone:document.getElementById('locationPhone')?.value||'',address:document.getElementById('locationAddress')?.value||'',timezone:document.getElementById('locationTimezone')?.value||'America/Los_Angeles',active:!!document.getElementById('locationActive')?.checked};
-  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];const ok=await persistLocations(next);if(ok){if(status){status.textContent='Location saved.';status.className='form-status-line success'}closeLocationModal()}else if(status){status.textContent='Location was not saved. Review the message and try again.';status.className='form-status-line error'}return ok;
+  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];const ok=await persistLocations(next,{alertOnError:false});if(ok){if(status){status.textContent='Location saved.';status.className='form-status-line success'}closeLocationModal()}else if(status){status.textContent='Location was not saved. Review the message and try again.';status.className='form-status-line error'}return ok;
 }
 async function deleteLocation(id){if(locationMutationPending)return false;const x=locationsData.find(v=>String(v.id)===String(id));if(!x||!confirm('Delete location "'+x.name+'"?'))return false;return persistLocations(locationsData.filter(v=>String(v.id)!==String(id)))}
 document.getElementById('addLocationButton')?.addEventListener('click',()=>openLocationModal());
