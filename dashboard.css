@@ -1526,6 +1526,14 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 .secondary-btn.compact{padding:7px 9px;font-size:7px}
 .modal-action-row{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:2px}
 .modal-action-row .primary{margin-left:auto}
+.admin-danger-confirm-modal{max-width:560px;border:1px solid #eaded8;box-shadow:0 24px 70px rgba(31,41,51,.18)}
+.admin-danger-confirm-modal>.eyebrow{color:#a34a2f}
+.admin-danger-confirm-modal>.form-card{margin-top:18px;padding:16px;border:1px solid #eee3de;border-radius:14px;background:#fffaf8}
+.admin-danger-confirm-modal label{display:grid;gap:7px;font-size:11px;font-weight:700}
+.admin-danger-confirm-modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;letter-spacing:.04em}
+.admin-danger-confirm-modal input:focus{outline:3px solid rgba(208,100,62,.14);border-color:var(--accent)}
+.admin-danger-confirm-modal .modal-action-row{margin-top:8px;flex-wrap:wrap}
+@media(max-width:560px){.admin-danger-confirm-modal{padding:22px 18px}.admin-danger-confirm-modal .modal-action-row>*{flex:1 1 140px}}
 
 
 /* 2026-09-24 company operations refinement */
