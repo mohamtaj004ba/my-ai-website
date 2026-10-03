@@ -687,7 +687,7 @@ function renderCalls(){
     else if(callViewedCoverage.limited){readCoverage.hidden=false;readCoverage.textContent='Opened/not-opened tracking retains the '+callViewedCoverage.limit.toLocaleString()+' most recently opened calls. Older calls can appear not opened even if they were reviewed previously.'}
     else {readCoverage.hidden=true;readCoverage.textContent=''}
   }
-  document.getElementById('callsEmpty').hidden=totalRows!==0;
+  const callsEmpty=document.getElementById('callsEmpty');if(callsEmpty){callsEmpty.hidden=totalRows!==0;const title=callsEmpty.querySelector('h3'),copy=callsEmpty.querySelector('p'),filtered=!!callsData.length;if(title)title.textContent=filtered?'No matching calls':'No calls yet';if(copy)copy.textContent=filtered?'Try another search, date range, category, disposition, or quick filter.':'Caller activity for this workspace will appear here once your AI number begins handling calls.'}
   wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
 }
 async function openCall(id){
@@ -1043,7 +1043,7 @@ function renderContacts(){
   }).join('');
   const footer=document.getElementById('contactListFooter'),meta=document.getElementById('contactListMeta'),loadMore=document.getElementById('loadMoreContacts'),shown=Math.min(visibleRows.length,totalRows),remaining=Math.max(0,totalRows-shown);
   if(footer)footer.hidden=totalRows===0;if(meta)meta.textContent='Showing '+shown+' of '+totalRows+' matching contact'+(totalRows===1?'':'s');if(loadMore){loadMore.hidden=remaining===0;loadMore.textContent=remaining?'Load '+Math.min(50,remaining)+' more':'All matching contacts loaded'}
-  document.getElementById('contactsEmpty').hidden=totalRows!==0;
+  const contactsEmpty=document.getElementById('contactsEmpty');if(contactsEmpty){contactsEmpty.hidden=totalRows!==0;const title=contactsEmpty.querySelector('h3'),copy=contactsEmpty.querySelector('p'),filtered=all.length>0;if(title)title.textContent=filtered?'No matching contacts':'No contacts yet';if(copy)copy.textContent=filtered?'Try another search, contact type, or sort option.':'CallerCore creates contact records automatically from meaningful call and conversation history. Spam and wrong numbers stay in the Call log instead.'}
   wrap.querySelectorAll('[data-contact-key]').forEach(row=>{
     row.addEventListener('click',()=>openContactFromRow(row));
     row.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openContactFromRow(row)}});

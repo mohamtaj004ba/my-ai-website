@@ -33,3 +33,10 @@ test('call history supports unopened filtering and persisted density',()=>{
   assert.match(css,/\.call-history-panel\.call-density-compact \.call-row\.data/);
   assert.match(css,/button\[data-call-quick="unread"\]\.active/);
 });
+
+
+test('call empty state distinguishes filtered zero results from a truly empty workspace',()=>{
+  assert.match(js,/filtered=!!callsData\.length/);
+  assert.match(js,/filtered\?'No matching calls':'No calls yet'/);
+  assert.match(js,/Try another search, date range, category, disposition, or quick filter/);
+});

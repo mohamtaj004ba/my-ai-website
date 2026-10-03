@@ -35,3 +35,10 @@ test('contact directory supports type and recency/name sorting',()=>{
   assert.match(css,/\.contact-toolbar\{/);
   assert.match(css,/\.contact-list-footer\{/);
 });
+
+
+test('contact empty state distinguishes filtered zero results from a truly empty directory',()=>{
+  assert.match(js,/filtered=all\.length>0/);
+  assert.match(js,/filtered\?'No matching contacts':'No contacts yet'/);
+  assert.match(js,/Try another search, contact type, or sort option/);
+});
