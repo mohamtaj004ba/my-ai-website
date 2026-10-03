@@ -72,23 +72,24 @@ test('unauthorized reviewer never reads or changes client feedback',async()=>{
   assert.equal(called,false);
 });
 function frontend(){
-  const item={id:'feedback-1',status:'submitted',createdAt:100,updatedAt:110},requests=[],alerts=[],renders=[];
+  const item={id:'feedback-1',status:'submitted',createdAt:100,updatedAt:110},requests=[],alerts=[],renders=[],actionStatus={textContent:'',className:''};
   const ctx=vm.createContext({
     adminFeedbackData:[item],adminFeedbackStatusPending:new Set(),
+    document:{getElementById:id=>id==='adminFeedbackActionStatus'?actionStatus:null},
     Date,Number,String,JSON,fetch:async(_url,options)=>{
       requests.push(JSON.parse(options.body));return {ok:false,json:async()=>({error:'Server conflict'})}
     },
     renderAdminFeedback:()=>renders.push(item.status),loadNotifications:()=>{},alert:x=>alerts.push(x)
   });
   vm.runInContext(front,ctx);
-  return {item,requests,alerts,renders,ctx,run:cmd=>vm.runInContext(cmd,ctx)};
+  return {item,requests,alerts,renders,actionStatus,ctx,run:cmd=>vm.runInContext(cmd,ctx)};
 }
 test('failed optimistic admin feedback review restores original status and revision',async()=>{
   const f=frontend();
   await f.run("updateAdminFeedback('feedback-1','applied')");
   assert.deepEqual(f.requests,[{id:'feedback-1',status:'applied',expectedUpdatedAt:110}]);
   assert.equal(f.item.status,'submitted');assert.equal(f.item.updatedAt,110);
-  assert.deepEqual(f.alerts,['Server conflict']);assert.equal(f.ctx.adminFeedbackStatusPending.size,0);
+  assert.deepEqual(f.alerts,[]);assert.equal(f.actionStatus.textContent,'Server conflict');assert.equal(f.ctx.adminFeedbackStatusPending.size,0);
 });
 test('confirmed review sends displayed revision and adopts confirmed server record',async()=>{
   const f=frontend();
@@ -99,5 +100,6 @@ test('confirmed review sends displayed revision and adopts confirmed server reco
   await f.run("updateAdminFeedback('feedback-1','reviewed')");
   assert.equal(f.requests[0].expectedUpdatedAt,110);
   assert.equal(f.item.status,'reviewed');assert.equal(f.item.updatedAt,500);
+  assert.match(f.actionStatus.textContent,/Feedback marked reviewed/i);
   assert.equal(f.ctx.adminFeedbackStatusPending.size,0);
 });
