@@ -55,3 +55,11 @@ test('client live dashboard bundle applies data without self-recursion',()=>{
     assert.ok(body.includes(target),target+' assignment missing from client bundle applicator');
   }
 });
+
+
+test('dynamic save and recovery feedback uses live status semantics',()=>{
+  const client=html('dashboard.html'),admin=html('admin-dashboard.html');
+  assert.match(client,/id="drawerNoteStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(admin,/id="adminClientManageNote" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(admin,/id="adminTechStatus" role="status" aria-live="polite" aria-atomic="true"/);
+});
