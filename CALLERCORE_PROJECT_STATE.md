@@ -1437,3 +1437,14 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Next phase: continue read-only inspection first for concrete premium workflow defects. Prioritize validation/focus inconsistencies, stale draft/control state, and keyboard/mobile reachability only where evidence shows a real gap; avoid cosmetic churn and do not reopen verified backend/provider contracts absent a new regression.
 
+## Admin date-range validation focus checkpoint — 2026-10-03
+
+- Continued the feature-branch-only premium workflow/accessibility sweep on `feature/callercore-dashboards`; production `main` remained unchanged and PR #5 remained draft/unmerged.
+- **Campaign date range:** the backend already rejected campaign end dates earlier than the start date, but the editor had no matching client-side guard. The Campaign editor now rejects that range before any request, marks the End date with `aria-invalid`, moves focus to it, and surfaces the same rule inline. Opening the editor clears prior date invalid state.
+- **Company Record date range:** the editor already blocked expiration-before-effective-date, but only with a generic message. The Expiration field now receives `aria-invalid` and focus on that error, and both date fields clear stale invalid state when the editor reopens or before a valid retry.
+- Added regression coverage confirming both invalid ranges fail before network mutation, focus the end/expiration field, and surface the correct message.
+- **Exact verified implementation/test head `bb530e831658513de328f984c2d7f981f88c9f55`:** CallerCore CI push `37145172871` and PR `37145176167` SUCCESS with **1377 tests passed / 0 failed**; CodeQL push `37145172868` and PR `37145176188` SUCCESS; Jekyll PR `37145176151` SUCCESS; authenticated Preview Browser QA `37145172900` SUCCESS including visual-drift comparison.
+- Vercel Preview `dpl_4o38kGRBBr1ch6JTcH3XLpjdknno` is **READY** at `https://my-ai-website-423hi7pqx-mohamtaj004bas-projects.vercel.app` for that exact implementation SHA.
+- No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
+- Next phase: continue read-only inspection first for concrete validation/focus, stale draft/control, and keyboard/mobile workflow gaps. Avoid broad cosmetic churn and do not reopen verified backend/provider contracts absent a new regression.
+
