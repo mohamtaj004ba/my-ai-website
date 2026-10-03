@@ -10,7 +10,7 @@ test('admin client workspace actions use accessible inline feedback instead of b
   const start=ui.indexOf('async function saveAdminClient()'),end=ui.indexOf('\nconst modal=document.getElementById(\'upgradeModal\')',start),block=ui.slice(start,end);
   assert.doesNotMatch(block,/\balert\s*\(/);
   assert.match(block,/setAdminClientActionStatus\('Saving workspace changes…'\)/);
-  assert.match(block,/setAdminClientActionStatus\('Restoring workspace…'\)/);
+  assert.match(block,/setAdminRestoreWorkspaceStatus\('Restoring workspace…'\)/);
   assert.match(block,/setAdminClientActionStatus\('Opening client view…'\)/);
   assert.match(block,/setAdminClientActionStatus\('Running recovery drill…'\)/);
   assert.match(block,/setAdminSyncState\(postDeleteWarning\?'error':'live'/);
