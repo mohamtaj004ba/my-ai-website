@@ -75,7 +75,7 @@ function frontend(){
   const item={id:'feedback-1',status:'submitted',createdAt:100,updatedAt:110},requests=[],alerts=[],renders=[],actionStatus={textContent:'',className:''};
   const ctx=vm.createContext({
     adminFeedbackData:[item],adminFeedbackStatusPending:new Set(),
-    document:{getElementById:id=>id==='adminFeedbackActionStatus'?actionStatus:null},
+    document:{getElementById:id=>id==='adminFeedbackActionStatus'?actionStatus:null},feedbackStatusLabel:value=>String(value),
     Date,Number,String,JSON,fetch:async(_url,options)=>{
       requests.push(JSON.parse(options.body));return {ok:false,json:async()=>({error:'Server conflict'})}
     },
