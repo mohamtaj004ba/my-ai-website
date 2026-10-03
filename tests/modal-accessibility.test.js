@@ -123,3 +123,12 @@ test('Core Intelligence panel participates in shared dialog accessibility and fo
   assert.match(source,/modal\.setAttribute\('role','dialog'\)/);
   assert.match(source,/modal\.setAttribute\('aria-modal','true'\)/);
 });
+
+
+test('Escape closes the mobile navigation and restores menu focus',()=>{
+  const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(dashboard,/sidebar\?\.classList\.contains\('open'\)/);
+  assert.match(dashboard,/sidebar\.classList\.remove\('open'\)/);
+  assert.match(dashboard,/menu\?\.setAttribute\('aria-expanded','false'\)/);
+  assert.match(dashboard,/menu\?\.focus\(\)/);
+});

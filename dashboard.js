@@ -4534,6 +4534,7 @@ document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
   const helpWasOpen=!!helpPanel&&!helpPanel.hidden;closeHelpPanel?.();if(helpWasOpen)helpButton?.focus();
   const np=document.getElementById('notificationPanel'),nb=document.getElementById('notificationBell');if(np&&!np.hidden){np.hidden=true;nb?.setAttribute('aria-expanded','false');nb?.focus()}
+  const sidebar=document.querySelector('.sidebar'),menu=document.querySelector('.mobile-menu');if(sidebar?.classList.contains('open')){sidebar.classList.remove('open');menu?.setAttribute('aria-expanded','false');menu?.focus()}
   const openModalEl=document.querySelector('.modal.open');if(openModalEl)openModalEl.querySelector('.modal-close')?.click();
 });
 
