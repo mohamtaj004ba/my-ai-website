@@ -838,7 +838,7 @@ async function persistTeamStatus(id,status,{completionReason='',completionNote='
 }
 function requestTeamStatusChange(id,status){
   if(followupMutationPending.has(String(id)))return false;
-  if(status==='completed'){pendingTeamStatusCallId=String(id);const modal=document.getElementById('teamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther'),wrap=document.getElementById('teamCompletionOtherWrap'),statusEl=document.getElementById('teamStatusModalStatus');if(reason)reason.value='';if(other)other.value='';if(wrap)wrap.hidden=true;if(statusEl){statusEl.textContent='';statusEl.className='form-status-line'}if(modal){modal.classList.add('open');modal.setAttribute('aria-hidden','false');modal.setAttribute('aria-busy','false')}return}
+  if(status==='completed'){pendingTeamStatusCallId=String(id);const modal=document.getElementById('teamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther'),wrap=document.getElementById('teamCompletionOtherWrap'),statusEl=document.getElementById('teamStatusModalStatus'),call=callsData.find(c=>String(c.id)===String(id));if(reason)reason.value='';if(other)other.value='';if(wrap)wrap.hidden=true;if(statusEl){statusEl.textContent='';statusEl.className='form-status-line'}if(modal){modal.classList.add('open');modal.setAttribute('aria-hidden','false');modal.setAttribute('aria-busy','false')}renderLeads();if(call&&activeCallId===String(id))syncDrawerTeamStatus(call);return}
   persistTeamStatus(String(id),status);
 }
 function setTeamStatusModalPending(pending){
