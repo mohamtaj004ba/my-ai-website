@@ -45,3 +45,10 @@ test('call empty state distinguishes filtered zero results from a truly empty wo
 test('call quick filters expose their selected state to assistive technology',()=>{
   assert.match(js,/data-call-quick[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
 });
+
+
+test('client chart and advanced-filter toggles expose selected and controlled state',()=>{
+  assert.match(html,/id="toggleCallMoreFilters"[^>]*aria-controls="callMoreFilters"/);
+  assert.match(html,/data-chart-days="14" aria-pressed="true"/);
+  assert.match(js,/data-chart-days[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
+});
