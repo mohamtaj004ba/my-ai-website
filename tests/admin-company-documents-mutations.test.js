@@ -29,6 +29,12 @@ function fixture({response,hold=false}={}){
 }
 function flush(){return new Promise(resolve=>setImmediate(resolve))}
 
+test('stale company-record edit IDs fail closed with visible refresh guidance',()=>{
+  const block=source.slice(source.indexOf('function openCompanyDocumentModal('),source.indexOf('function closeCompanyDocumentModal('));
+  assert.match(block,/if\(id&&!x\).*setAdminSyncState\('error','This company record is no longer available\. Refresh Documents before editing\.'\).*return false/);
+  assert.ok(block.indexOf('if(id&&!x)')<block.indexOf("classList.add('open')"));
+});
+
 test('company document edit sends displayed revision, locks controls and applies confirmed response',async()=>{
   const f=fixture({hold:true});f.run('openCompanyDocumentModal','doc-1');
   f.fields.companyDocumentName.value='New record';
