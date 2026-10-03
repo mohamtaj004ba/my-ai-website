@@ -2,8 +2,14 @@
   const modalState=new WeakMap();
   const selector='button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
+  function isRendered(element){
+    if(element.hidden||element.closest('[hidden],[aria-hidden="true"]'))return false;
+    const style=window.getComputedStyle(element);
+    return style.display!=='none'&&style.visibility!=='hidden'&&(!element.getClientRects||element.getClientRects().length>0);
+  }
+
   function focusable(modal){
-    return [...modal.querySelectorAll(selector)].filter(element=>!element.hidden&&!element.closest('[hidden]'));
+    return [...modal.querySelectorAll(selector)].filter(isRendered);
   }
 
   function isOpen(modal){return modal.classList.contains('open')&&modal.getAttribute('aria-hidden')!=='true'}
@@ -21,7 +27,7 @@
       });
     }else{
       const target=state.returnFocus;state.returnFocus=null;
-      if(target&&target.isConnected&&typeof target.focus==='function'&&(!target.getClientRects||target.getClientRects().length))queueMicrotask(()=>target.focus());
+      if(target&&target.isConnected&&typeof target.focus==='function'&&!target.hasAttribute?.('disabled')&&isRendered(target))queueMicrotask(()=>target.focus());
     }
   }
 
