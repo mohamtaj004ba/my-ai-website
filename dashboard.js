@@ -1656,8 +1656,8 @@ function renderLocations(){
   wrap.querySelectorAll('[data-delete-location]').forEach(b=>b.addEventListener('click',()=>deleteLocation(b.dataset.deleteLocation)));
 }
 function openLocationModal(id=''){
-  const modal=document.getElementById('locationModal');if(!modal)return;const x=locationsData.find(v=>String(v.id)===String(id));
-  modal.dataset.editId=x?.id||'';document.getElementById('locationModalTitle').textContent=x?'Edit location':'Add location';document.getElementById('locationName').value=x?.name||'';document.getElementById('locationPhone').value=x?.phone||'';document.getElementById('locationAddress').value=x?.address||'';document.getElementById('locationTimezone').value=x?.timezone||settingsData?.timezone||'America/Los_Angeles';document.getElementById('locationActive').checked=x?.active!==false;modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+  const modal=document.getElementById('locationModal');if(!modal)return;const x=locationsData.find(v=>String(v.id)===String(id)),name=document.getElementById('locationName'),status=document.getElementById('locationFormStatus');
+  modal.dataset.editId=x?.id||'';document.getElementById('locationModalTitle').textContent=x?'Edit location':'Add location';if(name){name.value=x?.name||'';name.removeAttribute('aria-invalid')}document.getElementById('locationPhone').value=x?.phone||'';document.getElementById('locationAddress').value=x?.address||'';document.getElementById('locationTimezone').value=x?.timezone||settingsData?.timezone||'America/Los_Angeles';document.getElementById('locationActive').checked=x?.active!==false;if(status){status.textContent='';status.className='form-status-line'}modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>name?.focus(),20);
 }
 function closeLocationModal(){if(locationMutationPending)return false;const m=document.getElementById('locationModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}return true}
 async function persistLocations(next){
@@ -1677,8 +1677,11 @@ async function persistLocations(next){
 }
 async function saveLocation(){
   if(locationMutationPending)return false;
-  const modal=document.getElementById('locationModal'),id=modal?.dataset.editId||'',item={id:id||undefined,name:document.getElementById('locationName')?.value||'',phone:document.getElementById('locationPhone')?.value||'',address:document.getElementById('locationAddress')?.value||'',timezone:document.getElementById('locationTimezone')?.value||'America/Los_Angeles',active:!!document.getElementById('locationActive')?.checked};
-  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];const ok=await persistLocations(next);if(ok)closeLocationModal();return ok;
+  const modal=document.getElementById('locationModal'),id=modal?.dataset.editId||'',nameInput=document.getElementById('locationName'),status=document.getElementById('locationFormStatus'),name=nameInput?.value.trim()||'';
+  if(!name){if(nameInput){nameInput.setAttribute('aria-invalid','true');nameInput.focus()}if(status){status.textContent='Add a location name before saving.';status.className='form-status-line error'}return false}
+  nameInput?.removeAttribute('aria-invalid');if(status){status.textContent='Saving location…';status.className='form-status-line'}
+  const item={id:id||undefined,name,phone:document.getElementById('locationPhone')?.value||'',address:document.getElementById('locationAddress')?.value||'',timezone:document.getElementById('locationTimezone')?.value||'America/Los_Angeles',active:!!document.getElementById('locationActive')?.checked};
+  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];const ok=await persistLocations(next);if(ok){if(status){status.textContent='Location saved.';status.className='form-status-line success'}closeLocationModal()}else if(status){status.textContent='Location was not saved. Review the message and try again.';status.className='form-status-line error'}return ok;
 }
 async function deleteLocation(id){if(locationMutationPending)return false;const x=locationsData.find(v=>String(v.id)===String(id));if(!x||!confirm('Delete location "'+x.name+'"?'))return false;return persistLocations(locationsData.filter(v=>String(v.id)!==String(id)))}
 document.getElementById('addLocationButton')?.addEventListener('click',()=>openLocationModal());
