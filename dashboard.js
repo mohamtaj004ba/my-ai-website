@@ -4586,10 +4586,16 @@ async function navigateNotification(n){
   return false;
 }
 async function openNotification(id){
-  const n=notificationData.find(x=>x.id===id);if(!n)return;
-  const opened=await navigateNotification(n);if(!opened)return;
+  const n=notificationData.find(x=>x.id===id);if(!n)return false;
+  const panel=document.getElementById('notificationPanel'),bell=document.getElementById('notificationBell'),wasOpen=!!panel&&!panel.hidden;
+  if(wasOpen){panel.hidden=true;if(bell){bell.setAttribute('aria-expanded','false');bell.focus()}}
+  const opened=await navigateNotification(n);
+  if(!opened){
+    if(wasOpen&&panel){panel.hidden=false;if(bell)bell.setAttribute('aria-expanded','true');const target=panel.querySelector('[data-notification-id="'+CSS.escape(String(id))+'"]');(target||bell)?.focus()}
+    return false;
+  }
   if(!n.read)await markNotifications([id]);
-  const panel=document.getElementById('notificationPanel'),bell=document.getElementById('notificationBell');if(panel)panel.hidden=true;if(bell)bell.setAttribute('aria-expanded','false');
+  if(panel)panel.hidden=true;if(bell)bell.setAttribute('aria-expanded','false');return true;
 }
 async function markAllNotifications(){
   const scope=notificationScope();
