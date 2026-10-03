@@ -1139,7 +1139,7 @@ async function adminSavePhoneNumber(req,res){
   if(ids.some(existingId=>!existingId)||new Set(ids).size!==ids.length)return res.status(503).json({error:'Phone inventory contains unverifiable records. No changes were made.'});
   const list=current.slice(),previous=list.find(x=>String(x.id)===id),digits=v=>String(v||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
   if(body.id&&!previous)return res.status(404).json({error:'This phone record no longer exists. Refresh the inventory before editing.'});
-  if(previous&&body.expectedUpdatedAt!==undefined&&Number(body.expectedUpdatedAt||0)!==Number(previous.updatedAt||0))return res.status(409).json({error:'This phone record changed while you were editing. Reopen it to load the latest settings.'});
+  if(previous&&(!Object.prototype.hasOwnProperty.call(body,'expectedUpdatedAt')||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==Number(previous.updatedAt||0)))return res.status(409).json({error:'This phone record changed while you were editing. Reopen it to load the latest settings.'});
   if(!previous&&list.length>=500)return res.status(409).json({error:'Phone inventory has reached its 500-record limit. No number was added.'});
   const duplicateNumber=list.find(x=>x&&String(x.id)!==id&&digits(x.number)===digits(number));
   if(duplicateNumber)return res.status(409).json({error:'That CallerCore number is already in the routing inventory. Edit the existing number instead.'});
