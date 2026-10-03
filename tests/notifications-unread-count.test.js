@@ -251,3 +251,12 @@ test('notification controls do not offer stale mark-all actions while refreshing
   assert.match(ui,/readAll\.disabled=notificationsLoading\|\|notificationUnreadCount===0/);
   assert.match(ui,/readAll\.textContent=notificationUnreadCount===0\?'All read':'Mark all read'/);
 });
+
+
+test('notification mark-all starts disabled until a verified unread state is rendered',()=>{
+  for(const file of ['dashboard.html','admin-dashboard.html']){
+    const html=fs.readFileSync(file,'utf8');
+    assert.match(html,/id="notificationReadAll" disabled>Mark all read/);
+  }
+  assert.match(ui,/readAll\.disabled=notificationsLoading\|\|notificationUnreadCount===0/);
+});
