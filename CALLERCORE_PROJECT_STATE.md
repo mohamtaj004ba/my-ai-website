@@ -1282,3 +1282,13 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - **Exact verified implementation/test SHA `834668dd4bb8acbc2a60e9ea0ce4ea2b996ce55c`:** full suite **1328 tests passed / 0 failed**; CallerCore CI push and PR SUCCESS; CodeQL push and PR SUCCESS; Jekyll/build SUCCESS; authenticated Preview Browser QA SUCCESS; Vercel Preview SUCCESS. Feature branch was **2274 commits ahead / 0 behind** `main`.
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Next queued reliability polish: prevent the Preview Browser QA visual-diff cleanup step from attempting to import its image dependencies when an earlier Vercel/dependency-install gate fails, eliminating misleading secondary `pixelmatch` errors while preserving the original deployment failure as the actionable signal.
+
+
+## Preview QA dependency-guard verification — 2026-10-03
+
+- Completed the queued Preview Browser QA reliability polish on `feature/callercore-dashboards` while production `main` remained unchanged.
+- The visual-diff cleanup step is now explicitly gated on successful installation of the pinned QA dependencies, so an earlier Vercel/dependency gate failure remains the primary actionable signal instead of producing a misleading secondary `pixelmatch` import error.
+- Added regression coverage that asserts both the dependency-step ID and the guarded visual-diff condition.
+- **Exact verified head `0ac193c366021af4a909fc007a40142bb06ccf0a`:** CallerCore CI SUCCESS with **1329 tests passed / 0 failed**; CodeQL SUCCESS; Jekyll/build SUCCESS; authenticated Preview Browser QA SUCCESS; Vercel Preview SUCCESS.
+- PR #5 remains unmerged. No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
+- Next phase: continue residual premium-polish and cross-dashboard consistency checks only, prioritizing stale controls, keyboard/mobile reachability, loading/error truthfulness, and any remaining disruptive native-alert-only non-destructive flows without reopening already-verified backend mutation contracts unless a new regression is found.
