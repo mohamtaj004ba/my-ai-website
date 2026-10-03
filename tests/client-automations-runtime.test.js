@@ -56,7 +56,7 @@ test('automation delete binding points to an implemented handler',()=>{
 test('automation pending state is visible, blocks modal dismissal, and exposes toggle state accessibly',()=>{
   const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
   const render=ui.slice(ui.indexOf('function renderAutomations(){'),ui.indexOf('let automationMutationPending=false;'));
-  const persist=ui.slice(ui.indexOf('async function persistAutomations(){'),ui.indexOf('async function toggleAutomation('));
+  const persist=ui.slice(ui.indexOf('async function persistAutomations('),ui.indexOf('async function toggleAutomation('));
   const close=ui.slice(ui.indexOf('function closeAutomation(){'),ui.indexOf('async function saveAutomation(){'));
   assert.match(render,/aria-pressed="'\+String\(!!x\.enabled\)\+'"/);
   assert.match(render,/x\.enabled\?'Disable ':'Enable '/);
@@ -86,5 +86,14 @@ test('automation builder gives inline validation and accessible save feedback',(
   assert.match(save,/nameInput\.setAttribute\('aria-invalid','true'\)/);
   assert.match(save,/Add a name before saving this automation\./);
   assert.match(save,/nameInput\?\.removeAttribute\('aria-invalid'\)/);
+  assert.match(save,/persistAutomations\(\{alertOnError:false\}\)/);
   assert.match(save,/Automation was not saved\. Review the message and try again\./);
+});
+
+
+test('automation persist supports inline modal errors without suppressing list-action alerts',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  const persist=ui.slice(ui.indexOf('async function persistAutomations('),ui.indexOf('async function toggleAutomation('));
+  assert.match(persist,/\{alertOnError=true\}=\{\}/);
+  assert.match(persist,/if\(alertOnError\)alert\(/);
 });
