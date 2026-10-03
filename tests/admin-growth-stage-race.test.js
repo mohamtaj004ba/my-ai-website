@@ -9,12 +9,13 @@ const end=ui.indexOf('\nfunction toLocalDateTimeInput(',start);
 assert.ok(start>=0&&end>start,'Growth stage handler must exist');
 
 function fixture({status=200,payload,wait=false}={}){
-  const old={id:'lead-1',stage:'new',updatedAt:10,createdAt:1},requests=[],warnings=[];
+  const old={id:'lead-1',stage:'new',updatedAt:10,createdAt:1},requests=[],warnings=[],actionStatus={textContent:'',className:''};
   let release,renderCount=0,refreshes=0;
   const ctx=vm.createContext({
     adminWebsiteData:{prospects:[old]},
     renderGrowth:()=>{renderCount++},
     loadNotifications:()=>{},
+    document:{getElementById:id=>id==='growthActionStatus'?actionStatus:null},
     alert:message=>warnings.push(message),
     refreshAdminView:async(_view,opts)=>{refreshes++;assert.equal(opts.force,true)},
     fetch:async(url,options)=>{
@@ -25,7 +26,7 @@ function fixture({status=200,payload,wait=false}={}){
     String,Number,Error,Set
   });
   vm.runInContext(ui.slice(start,end),ctx);
-  return {ctx,old,requests,warnings,release:()=>release?.(),refreshes:()=>refreshes,renders:()=>renderCount,
+  return {ctx,old,requests,warnings,actionStatus,release:()=>release?.(),refreshes:()=>refreshes,renders:()=>renderCount,
     move:()=>vm.runInContext("moveGrowthProspectStage('lead-1','qualified')",ctx),
     setCurrent:x=>ctx.adminWebsiteData.prospects=[x]};
 }
@@ -42,6 +43,7 @@ test('Growth applies confirmed stage to the refreshed current prospect, not deta
   assert.equal(f.requests.length,1);
   assert.equal(JSON.parse(f.requests[0].options.body).expectedUpdatedAt,10);
   assert.deepEqual(f.warnings,[]);
+  assert.match(f.actionStatus.textContent,/moved to qualified/i);
 });
 
 test('Growth never overwrites a refreshed prospect with a newer revision',async()=>{
@@ -51,6 +53,7 @@ test('Growth never overwrites a refreshed prospect with a newer revision',async(
   f.setCurrent(newer);f.release();await saving;
   assert.equal(newer.stage,'converted');
   assert.equal(newer.updatedAt,15);
+  assert.match(f.actionStatus.textContent,/moved to qualified/i);
 });
 
 test('failed Growth move does not roll back a newer or replaced record',async()=>{
@@ -59,7 +62,8 @@ test('failed Growth move does not roll back a newer or replaced record',async()=
   const newer={id:'lead-1',stage:'converted',updatedAt:15};
   f.setCurrent(newer);f.release();await saving;
   assert.equal(newer.stage,'converted');
-  assert.deepEqual(f.warnings,['Unavailable']);
+  assert.deepEqual(f.warnings,[]);
+  assert.equal(f.actionStatus.textContent,'Unavailable');
 });
 test('failed Growth move restores unchanged optimistic draft and prevents duplicate in-flight moves',async()=>{
   const f=fixture({status:503,payload:{error:'Unavailable'},wait:true});
@@ -75,13 +79,15 @@ test('conflicting Growth stage request refreshes authoritative server snapshot',
   await f.move();
   assert.equal(f.old.stage,'new');
   assert.equal(f.refreshes(),1);
-  assert.deepEqual(f.warnings,['Stale revision']);
+  assert.deepEqual(f.warnings,[]);
+  assert.equal(f.actionStatus.textContent,'Stale revision');
 });
 test('incomplete success payload is not mistaken for confirmed stage change',async()=>{
   const f=fixture({payload:{ok:true}});
   await f.move();
   assert.equal(f.old.stage,'new');
-  assert.match(f.warnings[0],/not confirmed/);
+  assert.deepEqual(f.warnings,[]);
+  assert.match(f.actionStatus.textContent,/not confirmed/);
 });
 
 test('pending Growth card visibly blocks dragging and opening a stale prospect editor',()=>{
