@@ -1,0 +1,44 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const crypto=require('node:crypto');
+const source=fs.readFileSync('lib/gmail.js','utf8');
+function fixture(){
+  let record=null,providerResolve,providerStartedResolve;
+  const started=new Promise(ok=>{providerStartedResolve=ok});
+  const provider=new Promise(ok=>{providerResolve=ok});
+  const clone=value=>value==null?null:JSON.parse(JSON.stringify(value));
+  const kv={get:async()=>clone(record),eval:async(script,keys,args)=>{
+    if(script.includes('__CALLERCORE_DELETE__')){
+      if((record==null?'':JSON.stringify(record))!==args[1])return 0;
+      record=null;return 1;
+    }
+    if((record==null?'':JSON.stringify(record))!==args[0])return 0;
+    record=JSON.parse(args[1]);return 1;
+  }};
+  const ctx=vm.createContext({require:name=>name==='./kv'?{kv}:name==='./config-transaction'?require('../lib/config-transaction'):require(name),
+    module:{exports:{}},process:{env:{CALLERCORE_ENCRYPTION_KEY:'test-key-with-at-least-thirty-two-characters'}},Buffer,URL,URLSearchParams,Date,
+    fetch:async()=>{providerStartedResolve();return provider},setTimeout,crypto});
+  vm.runInContext(source,ctx);
+  return {api:ctx.module.exports,ctx,kv,started,resolve:()=>providerResolve({ok:true,json:async()=>({access_token:'fresh',expires_in:3600})}),get:()=>clone(record),set:value=>{record=clone(value)}};
+}
+test('provider token refresh cannot resurrect a disconnected Gmail connection',async()=>{
+  const f=fixture();await f.api.saveConnection('admin@test.example',{refresh_token:'refresh'}, {email:'gmail@test.example'});
+  const pending=vm.runInContext("accessToken('admin@test.example')",f.ctx);
+  await f.started;await f.api.disconnect('admin@test.example');f.resolve();
+  await assert.rejects(pending,/connection changed/);assert.equal(f.get(),null);
+});
+test('provider token refresh cannot overwrite a newer Gmail connection',async()=>{
+  const f=fixture();await f.api.saveConnection('admin@test.example',{refresh_token:'refresh'}, {email:'old@test.example'});
+  const pending=vm.runInContext("accessToken('admin@test.example')",f.ctx);await f.started;
+  await f.api.saveConnection('admin@test.example',{refresh_token:'new-refresh'}, {email:'new@test.example'});
+  const newer=f.get();f.resolve();await assert.rejects(pending,/connection changed/);assert.deepEqual(f.get(),newer);
+});
+test('disconnect refuses a replacement connection written after its initial read',async()=>{
+  const f=fixture();await f.api.saveConnection('admin@test.example',{refresh_token:'refresh'}, {email:'old@test.example'});
+  const originalGet=f.kv.get;let changed=false;
+  f.kv.get=async()=>{const before=await originalGet();if(!changed){changed=true;f.set({...before,gmailEmail:'new@test.example'})}return before};
+  await assert.rejects(f.api.disconnect('admin@test.example'),/changed during disconnect/);
+  assert.equal(f.get().gmailEmail,'new@test.example');
+});

@@ -2547,14 +2547,18 @@ async function deleteCompanyDocument(){
   finally{setCompanyDocumentMutationPending(false)}
 }
 async function loadAdminInbox({silent=false,force=false}={}){
-  if(adminInboxData.loading)return;
+  if(adminInboxData.loading)return false;
+  const connectionRevision=Number(adminInboxData.connectionRevision||0);
   adminInboxData.loading=true;
   const refresh=document.getElementById('inboxRefreshButton'),auto=document.getElementById('inboxAutoStatus');
   if(refresh&&!silent){refresh.disabled=true;refresh.textContent='Syncing…'}
   try{
     const sr=await fetch('/api/account?action=admin-gmail-status',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false}));
     let statusVerified=false;
-    if(sr.ok){const status=await sr.json().catch(()=>null);if(status&&typeof status==='object'&&!Array.isArray(status)&&typeof status.connected==='boolean'){adminInboxData.gmailStatus=status;statusVerified=true}}
+    if(sr.ok){const status=await sr.json().catch(()=>null);
+      if(connectionRevision!==Number(adminInboxData.connectionRevision||0)){adminInboxData.loading=false;if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}return false}
+      if(status&&typeof status==='object'&&!Array.isArray(status)&&typeof status.connected==='boolean'){adminInboxData.gmailStatus=status;statusVerified=true}}
+    if(connectionRevision!==Number(adminInboxData.connectionRevision||0)){adminInboxData.loading=false;if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}return false}
     adminInboxData.connectionStatusError=statusVerified?'':'Gmail connection status could not be verified. Refresh before changing its connection.';
     if(!adminInboxData.gmailStatus.connected){
       if(!statusVerified){
@@ -2848,6 +2852,7 @@ async function disconnectGmailAdmin(){
   try{
     const r=await fetch('/api/account?action=admin-gmail-disconnect',{method:'POST'}),data=await r.json().catch(()=>({}));
     if(!r.ok||data.ok!==true)throw new Error(data.error||'Could not confirm Gmail disconnect');
+    adminInboxData.connectionRevision=Number(adminInboxData.connectionRevision||0)+1;
     adminInboxData.gmailStatus={...adminInboxData.gmailStatus,connected:false,gmailEmail:''};
     adminSearchInboxRequest++;adminSearchInboxCacheLoaded=true;adminSearchInboxLoading=false;adminSearchInboxCacheError=false;
     adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;adminInboxData.liveError='';adminInboxData.aliasError='';adminInboxData.readError='';

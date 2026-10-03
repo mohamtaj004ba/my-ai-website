@@ -31,6 +31,19 @@ function fixture({cachedInbox='healthy',cachedAliases='healthy',status='healthy'
   vm.runInContext(source.slice(begin,end),ctx);
   return {ctx,refresh,auto,renders,liveCalls,run:()=>vm.runInContext('loadAdminInbox()',ctx)};
 }
+
+test('status response from before confirmed disconnect cannot reconnect or restore old inbox data',async()=>{
+  for(const duringJson of [false,true]){
+    const f=fixture();let resolve;const held=new Promise(ok=>{resolve=ok});
+    f.ctx.fetch=async()=>duringJson?{ok:true,json:()=>held}:held;
+    const pending=f.run();await Promise.resolve();
+    f.ctx.adminInboxData.connectionRevision=1;f.ctx.adminInboxData.gmailStatus={connected:false,gmailEmail:''};f.ctx.adminInboxData.gmail={threads:[]};
+    resolve(duringJson?{connected:true,gmailEmail:'old@example.test'}:{ok:true,json:async()=>({connected:true})});
+    assert.equal(await pending,false);assert.equal(f.ctx.adminInboxData.gmailStatus.connected,false);
+    assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);assert.equal(f.liveCalls.length,0);
+    assert.equal(f.ctx.adminInboxData.loading,false);assert.equal(f.refresh.disabled,false);
+  }
+});
 for(const failure of ['network','malformed']){
   test('cached alias '+failure+' does not prevent cached Gmail threads or live refresh',async()=>{
     const f=fixture({cachedAliases:failure});await f.run();
