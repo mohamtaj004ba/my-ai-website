@@ -24,7 +24,7 @@ test('client configuration mutations require canonical response payloads before 
   assert.doesNotMatch(feedback,/data\.feedback\|\|item/);
   assert.match(automations,/Array\.isArray\(data\.automations\)/);
   assert.doesNotMatch(automations,/\.automations\|\|automationsData/);
-  assert.match(webhook,/!data\.integrations\|\|typeof data\.integrations!=='object'\|\|Array\.isArray\(data\.integrations\)/);
+  assert.match(webhook,/data\.ok!==true/);assert.match(webhook,/String\(confirmed\.webhookUrl\|\|'\'\)!==webhookUrl/);
   assert.match(settings,/data\.ok!==true/);
   assert.match(settings,/confirmedRevision<=Number\(payload\.expectedUpdatedAt\|\|0\)/);
   assert.match(settings,/String\(confirmed\.businessName\|\|'\'\)!==String\(payload\.businessName\|\|'\'\)/);
@@ -40,7 +40,7 @@ test('follow-up and note mutations cannot accept a bare 200 response as confirma
   const del=segment('async function deleteCallNote(',"\nasync function moveLead(");
   for(const body of [team,note,del]){
     assert.match(body,/!data\.state\|\|typeof data\.state!=='object'\|\|Array\.isArray\(data\.state\)/);
-    assert.match(body,/!data\.state\[String\(id\)\]\|\|typeof data\.state\[String\(id\)\]!=='object'/);
+    assert.match(body,/!confirmed\|\|typeof confirmed!=='object'|data\.state\?\.\[String\(id\)\]/);
     assert.doesNotMatch(body,/data\.state\|\|followupState/);
   }
 });
@@ -66,7 +66,7 @@ test('successful mutation payload guards reject missing objects instead of deref
   const followup=segment('async function persistTeamStatus(',"\nfunction requestTeamStatusChange(");
   assert.match(followup,/!data\.state\|\|typeof data\.state!=='object'\|\|Array\.isArray\(data\.state\)/);
   const settings=segment('async function saveSettings(',"\n\nfunction renderPhoneRouting(");
-  assert.match(settings,/!data\.settings\|\|typeof data\.settings!=='object'\|\|Array\.isArray\(data\.settings\)/);
+  assert.match(settings,/!confirmed\|\|typeof confirmed!=='object'\|\|Array\.isArray\(confirmed\)/);
   const clients=segment('async function saveAdminClient(',"\nasync function deleteAdminClient(");
   assert.match(clients,/!data\.client\|\|typeof data\.client!=='object'\|\|Array\.isArray\(data\.client\)/);
 });
@@ -121,7 +121,7 @@ test('automation and location saves preserve local records on malformed successf
     fetch:async()=>({ok:true,json:async()=>({locations:null,limit:3})}),
     alert:m=>alerts.push(m),renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set
   });
-  vm.runInContext(segment('let locationMutationPending=false;',"\nasync function saveLocation("),locationCtx);
+  vm.runInContext("let locationMutationPending=false;\n"+segment('async function persistLocations(',"\nasync function saveLocation("),locationCtx);
   assert.equal(await vm.runInContext("persistLocations([{id:'new'}])",locationCtx),false);
   assert.equal(locationCtx.locationsData[0].id,'existing');
   assert.equal(locationCtx.locationsLimit,3);
@@ -157,7 +157,7 @@ test('location saves serialize mutations and require canonical row identities',a
     fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>({ok:true,locations:[{id:'loc-1',name:'Main',updatedAt:2}],limit:2})}},
     alert:()=>{},renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set,Promise,Error
   });
-  vm.runInContext(segment('let locationMutationPending=false;',"\nasync function saveLocation("),ctx);
+  vm.runInContext("let locationMutationPending=false;\n"+segment('async function persistLocations(',"\nasync function saveLocation("),ctx);
   const first=vm.runInContext("persistLocations([{id:'loc-1',name:'Main'}])",ctx);
   await new Promise(resolve=>setImmediate(resolve));
   const second=await vm.runInContext("persistLocations([{id:'loc-1',name:'Other'}])",ctx);
@@ -175,7 +175,7 @@ test('location save rejects mismatched existing record identities despite HTTP 2
     fetch:async()=>({ok:true,json:async()=>({ok:true,locations:[{id:'different',name:'Main',updatedAt:2}],limit:2})}),
     alert:()=>{},renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set,Promise,Error
   });
-  vm.runInContext(segment('let locationMutationPending=false;',"\nasync function saveLocation("),ctx);
+  vm.runInContext("let locationMutationPending=false;\n"+segment('async function persistLocations(',"\nasync function saveLocation("),ctx);
   assert.equal(await vm.runInContext("persistLocations([{id:'loc-1',name:'Main'}])",ctx),false);
   assert.equal(ctx.locationsData[0].id,'loc-1');
 });
