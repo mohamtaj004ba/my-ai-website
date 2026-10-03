@@ -1270,7 +1270,7 @@ function renderAgent(){
   set('agentHours',agentData.businessHours);set('agentTransfer',agentData.transferNumber);set('agentEmergency',agentData.emergencyInstructions);
   set('agentHandlingInstructions',agentData.handlingInstructions);
   const test=document.getElementById('agentTestCall'),digits=aiAnsweringState().active?String(phoneRoutingData?.number||'').replace(/\D/g,''):'';if(test){test.textContent='Call '+(agentData.name||'receptionist');test.hidden=!digits;if(digits)test.setAttribute('href','tel:'+digits);else test.removeAttribute('href');test.classList.toggle('disabled-link',!digits);test.setAttribute('aria-disabled',digits?'false':'true');test.tabIndex=digits?0:-1;test.title=digits?'Call '+phoneRoutingData.number+' to test '+(agentData.name||'Maya'):''}
-  renderQuestions();setAgentEditing(activeAgentSection());
+  renderQuestions();setAgentEditing(activeAgentSection());const saved=document.getElementById('agentSaveStatus');if(saved){saved.textContent='Saved';saved.classList.add('green')}
 }
 function renderQuestions(){
   const wrap=document.getElementById('qualificationQuestions');if(!wrap||!agentData)return;
@@ -1524,7 +1524,7 @@ function renderSettings(){
   put('settingsBusinessName',settingsData.businessName);put('settingsContactName',settingsData.contactName);put('settingsPrimaryEmail',settingsData.primaryEmail);put('settingsBusinessPhone',settingsData.businessPhone);put('settingsWebsite',settingsData.website);put('settingsIndustry',settingsData.industry);put('settingsServiceArea',settingsData.serviceArea);put('settingsStreetAddress',settingsData.streetAddress);put('settingsCity',settingsData.city);put('settingsState',settingsData.state);put('settingsPostalCode',settingsData.postalCode);put('settingsTimezone',settingsData.timezone);put('settingsNotificationEmail',settingsData.notificationEmail);
   const e=document.getElementById('settingsEmailAlerts'),sms=document.getElementById('settingsSmsAlerts');if(e)e.checked=settingsData.emailAlerts!==false;if(sms){sms.checked=capability('sms')&&settingsData.smsAlerts!==false;sms.disabled=true}
   for(const [id,key] of [['settingsNotifyBilling','notifyBilling'],['settingsNotifySetup','notifySetup'],['settingsNotifyCalls','notifyCalls'],['settingsNotifySupport','notifySupport'],['settingsNotifyUsage','notifyUsage']]){const el=document.getElementById(id);if(el)el.checked=settingsData[key]!==false}
-  pendingBusinessLogo=String(settingsData.logoDataUrl||'');setSettingsEditing(settingsEditing);renderAiAnsweringControl();
+  pendingBusinessLogo=String(settingsData.logoDataUrl||'');setSettingsEditing(settingsEditing);renderAiAnsweringControl();const saved=document.getElementById('settingsSaveStatus');if(saved){saved.textContent='Saved';saved.classList.add('green')}
 }
 async function resizeBusinessLogo(file){
   if(!file||!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('Choose a JPG, PNG, or WebP image.');if(file.size>8*1024*1024)throw new Error('Choose an image smaller than 8 MB.');
