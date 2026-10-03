@@ -138,3 +138,12 @@ test('automation list saves carry the displayed snapshot to reject stale full-li
   assert.match(mutations,/persistAutomations\(\{expectedBefore:before\}\)/);
   assert.match(save,/persistAutomations\(\{surfaceError:false,expectedBefore:before\}\)/);
 });
+
+
+test('automation modal surfaces the exact persistence failure instead of a generic retry message',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  const persist=ui.slice(ui.indexOf('let automationMutationPending=false'),ui.indexOf('async function toggleAutomation('));
+  const save=ui.slice(ui.indexOf('async function saveAutomation(){'),ui.indexOf("\ndocument.querySelectorAll(",ui.indexOf('async function saveAutomation(){')));
+  assert.match(persist,/automationLastMutationError=err\.message/);
+  assert.match(save,/status\.textContent=automationLastMutationError\|\|/);
+});
