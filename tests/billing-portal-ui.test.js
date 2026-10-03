@@ -62,3 +62,34 @@ test('Billing Portal network failure restores the initiating button',async()=>{
   assert.equal(button.textContent,'Continue to Stripe');
   assert.deepEqual(alerts,['offline']);
 });
+
+
+test('subscription support requests block duplicate submits and verify the returned ticket',()=>{
+  const start=ui.indexOf('async function requestRetention(kind){'),end=ui.indexOf("\nretentionModal?.querySelectorAll('[data-retention]')",start),block=ui.slice(start,end);
+  assert.ok(start>=0&&end>start);
+  assert.match(block,/if\(retentionRequestPending\)return false/);
+  assert.match(block,/setRetentionPending\(true\)/);
+  assert.match(block,/data\.ok!==true/);
+  assert.match(block,/String\(ticket\.subject\|\|'\'\)!==subject/);
+  assert.match(block,/finally\{setRetentionPending\(false\)\}/);
+  assert.match(ui,/function closeRetention\(\)\{if\(retentionRequestPending\)return false/);
+});
+
+test('second subscription support request is ignored while the first is pending',async()=>{
+  const start=ui.indexOf('async function requestRetention(kind){'),end=ui.indexOf("\nretentionModal?.querySelectorAll('[data-retention]')",start),block=ui.slice(start,end);
+  let release,requests=0;const status={textContent:''};
+  const ctx=vm.createContext({
+    retentionRequestPending:false,
+    setRetentionPending(value){this.retentionRequestPending=!!value;ctx.retentionRequestPending=!!value},
+    document:{getElementById:id=>id==='retentionStatus'?status:null},
+    fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>({ok:true,ticket:{id:'ticket-1',subject:'Subscription pause request'}})}},
+    String,Object,Array,Promise,Error
+  });
+  vm.runInContext(block,ctx);
+  const first=vm.runInContext("requestRetention('pause')",ctx);
+  await new Promise(resolve=>setImmediate(resolve));
+  const second=await vm.runInContext("requestRetention('pause')",ctx);
+  assert.equal(second,false);assert.equal(requests,1);
+  release();assert.equal(await first,true);
+  assert.equal(ctx.retentionRequestPending,false);
+});
