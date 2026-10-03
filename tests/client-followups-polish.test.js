@@ -80,3 +80,11 @@ test('any follow-up mutation locks an open note composer',()=>{
   const block=js.slice(js.indexOf('function renderCallNotes('),js.indexOf('function startEditCallNote('));
   assert.match(block,/setNoteComposerPending\(pending\)/);
 });
+
+
+test('note delete failures stay inline instead of using a browser alert',()=>{
+  const block=js.slice(js.indexOf('async function deleteCallNote('),js.indexOf('async function moveLead('));
+  assert.match(block,/document\.getElementById\('drawerNoteStatus'\)/);
+  assert.match(block,/status\.className='error'/);
+  assert.doesNotMatch(block,/alert\(/);
+});
