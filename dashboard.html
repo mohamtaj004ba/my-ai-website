@@ -200,6 +200,7 @@
 
     <section class="view" id="view-locations">
       <div class="page-head"><div><span class="eyebrow">Locations</span><h1>Manage your service locations.</h1><p>CallerCore plan limits apply automatically.</p></div><button class="primary" id="addLocationButton">+ Add location</button></div>
+      <p class="form-status-line" id="locationActionStatus" role="status" aria-live="polite" aria-atomic="true"></p>
       <div class="integration-grid" id="locationsGrid"></div>
       <div class="empty-state" id="locationsEmpty" hidden><h3>No locations configured</h3><p>Add your first business location to complete workspace setup.</p></div>
       <p class="muted" id="locationsLimitLabel"></p>
@@ -207,6 +208,7 @@
 
     <section class="view" id="view-automations">
       <div class="page-head"><div><span class="eyebrow">Automations</span><h1>Follow up without chasing.</h1><p>Turn call and lead events into automatic actions.</p></div><button class="primary" id="newAutomationButton">+ New automation</button></div>
+      <p class="form-status-line" id="automationActionStatus" role="status" aria-live="polite" aria-atomic="true"></p>
       <div id="automationGate" class="locked-stage" data-feature-card="automations"></div>
       <div id="automationApp" hidden>
         <div class="automation-presets">
@@ -254,6 +256,7 @@
 
     <section class="view" id="view-billing">
       <div class="page-head"><div><span class="eyebrow">Billing & plan</span><h1>Your CallerCore subscription.</h1><p>See what you have today first. Plan changes are reviewed before anything changes.</p></div></div>
+      <p class="form-status-line" id="billingActionStatus" role="status" aria-live="polite" aria-atomic="true"></p>
       <div class="billing-layout">
         <article class="panel current-plan"><span class="eyebrow">Current subscription</span><div class="plan-line"><div><h2 id="billingPlan">—</h2><p id="billingPrice">Loading plan details…</p></div><span class="tag" id="billingSubscriptionStatus">Checking</span></div><div class="current-plan-benefits" id="currentPlanBenefits"></div><div class="usage-block"><div><span>AI minutes</span><b id="billingUsageText">—</b></div><div class="usage-track"><i id="billingUsage"></i></div></div><div class="billing-actions"><button class="primary" id="upgradeButton">Review plan options</button><button class="secondary-btn danger-soft" id="retentionButton">Pause or cancel</button></div></article>
         <article class="panel payment-card"><span class="eyebrow">Billing connection</span><h2>Stripe-secured billing</h2><div class="billing-status-card" id="billingConnection"><b>Checking billing status…</b><small>Payment details are managed securely by Stripe and are never stored by CallerCore.</small></div><button class="secondary-btn" id="paymentButton" disabled>Manage billing & invoices</button></article>

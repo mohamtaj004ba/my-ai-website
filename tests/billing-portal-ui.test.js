@@ -10,7 +10,7 @@ assert.ok(start>=0&&end>start,'openBillingPortal must exist');
 const fn=ui.slice(start,end);
 
 function fixture({response,networkError=false}={}){
-  const alerts=[],location={href:''},button={disabled:false,textContent:'Manage billing',dataset:{original:'Manage billing & invoices'},isConnected:true};
+  const alerts=[],statuses=[],location={href:''},button={disabled:false,textContent:'Manage billing',dataset:{original:'Manage billing & invoices'},isConnected:true};
   const ctx=vm.createContext({
     fetch:async()=>{if(networkError)throw Error('offline');return response},
     alert:x=>alerts.push(String(x)),
@@ -22,10 +22,10 @@ function fixture({response,networkError=false}={}){
 
 test('Billing Portal opens only a canonical Stripe billing URL',async()=>{
   const button={disabled:false,textContent:'Manage billing',dataset:{original:'Manage billing & invoices'},isConnected:true};
-  const alerts=[],location={href:''};
+  const alerts=[],statuses=[],location={href:''};
   const ctx=vm.createContext({
     button,fetch:async()=>({ok:true,json:async()=>({url:'https://billing.stripe.com/p/session/test'})}),
-    alert:x=>alerts.push(String(x)),location,URL,String,Error
+    alert:x=>alerts.push(String(x)),setBillingActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),location,URL,String,Error
   });
   vm.runInContext(fn,ctx);
   assert.equal(await vm.runInContext('openBillingPortal(button)',ctx),true);
@@ -36,31 +36,33 @@ test('Billing Portal opens only a canonical Stripe billing URL',async()=>{
 
 test('Billing Portal rejects an unexpected successful URL and restores the button',async()=>{
   const button={disabled:false,textContent:'Manage billing',dataset:{original:'Manage billing & invoices'},isConnected:true};
-  const alerts=[],location={href:''};
+  const alerts=[],statuses=[],location={href:''};
   const ctx=vm.createContext({
     button,fetch:async()=>({ok:true,json:async()=>({url:'https://example.test/fake'})}),
-    alert:x=>alerts.push(String(x)),location,URL,String,Error
+    alert:x=>alerts.push(String(x)),setBillingActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),location,URL,String,Error
   });
   vm.runInContext(fn,ctx);
   assert.equal(await vm.runInContext('openBillingPortal(button)',ctx),false);
   assert.equal(location.href,'');
   assert.equal(button.disabled,false);
   assert.equal(button.textContent,'Manage billing & invoices');
-  assert.match(alerts[0],/Billing portal is unavailable/);
+  assert.deepEqual(alerts,[]);
+  assert.ok(statuses.some(item=>item.tone==='error'&&/Billing portal is unavailable/.test(item.message)));
 });
 
 test('Billing Portal network failure restores the initiating button',async()=>{
   const button={disabled:false,textContent:'Continue to Stripe',dataset:{original:'Continue to Stripe'},isConnected:true};
-  const alerts=[],location={href:''};
+  const alerts=[],statuses=[],location={href:''};
   const ctx=vm.createContext({
     button,fetch:async()=>{throw Error('offline')},
-    alert:x=>alerts.push(String(x)),location,URL,String,Error
+    alert:x=>alerts.push(String(x)),setBillingActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),location,URL,String,Error
   });
   vm.runInContext(fn,ctx);
   assert.equal(await vm.runInContext("openBillingPortal(button,'Opening Stripe…')",ctx),false);
   assert.equal(button.disabled,false);
   assert.equal(button.textContent,'Continue to Stripe');
-  assert.deepEqual(alerts,['offline']);
+  assert.deepEqual(alerts,[]);
+  assert.ok(statuses.some(item=>item.tone==='error'&&item.message==='offline'));
 });
 
 
@@ -92,4 +94,12 @@ test('second subscription support request is ignored while the first is pending'
   assert.equal(second,false);assert.equal(requests,1);
   release();assert.equal(await first,true);
   assert.equal(ctx.retentionRequestPending,false);
+});
+
+
+test('Billing page exposes accessible portal feedback and portal failures avoid browser alerts',()=>{
+  const html=fs.readFileSync('dashboard.html','utf8');
+  assert.match(html,/id="billingActionStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(ui,/function setBillingActionStatus\(message='',tone=''\)/);
+  assert.doesNotMatch(fn,/\balert\s*\(/);
 });

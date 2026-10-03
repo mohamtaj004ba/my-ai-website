@@ -86,16 +86,17 @@ test('automation builder gives inline validation and accessible save feedback',(
   assert.match(save,/nameInput\.setAttribute\('aria-invalid','true'\)/);
   assert.match(save,/Add a name before saving this automation\./);
   assert.match(save,/nameInput\?\.removeAttribute\('aria-invalid'\)/);
-  assert.match(save,/persistAutomations\(\{alertOnError:false\}\)/);
+  assert.match(save,/persistAutomations\(\{surfaceError:false\}\)/);
   assert.match(save,/Automation was not saved\. Review the message and try again\./);
 });
 
 
-test('automation persist supports inline modal errors without suppressing list-action alerts',()=>{
+test('automation persist supports inline modal errors and page-level list-action feedback',()=>{
   const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
   const persist=ui.slice(ui.indexOf('async function persistAutomations('),ui.indexOf('async function toggleAutomation('));
-  assert.match(persist,/\{alertOnError=true\}=\{\}/);
-  assert.match(persist,/if\(alertOnError\)alert\(/);
+  assert.match(persist,/\{surfaceError=true\}=\{\}/);
+  assert.match(persist,/if\(surfaceError\)setAutomationActionStatus/);
+  assert.doesNotMatch(persist,/\balert\s*\(/);
 });
 
 
@@ -106,4 +107,12 @@ test('editing a disabled automation preserves disabled state and delete requires
   assert.match(del,/confirm\('Delete automation /);
   assert.match(save,/const existing=editingAutomationId\?automationsData\.find/);
   assert.match(save,/enabled:existing\?existing\.enabled!==false:true/);
+});
+
+
+test('automation page exposes accessible action feedback and plan-limit errors stay inline',()=>{
+  const html=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
+  assert.match(html,/id="automationActionStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(dashboard,/function setAutomationActionStatus\(message='',tone=''\)/);
+  assert.match(dashboard,/setAutomationActionStatus\('This workspace already has the 20-automation limit/);
 });

@@ -1386,8 +1386,12 @@ function setAutomationMutationUi(pending){
   if(create){create.disabled=busy;create.setAttribute('aria-busy',String(busy))}
   document.querySelectorAll('[data-preset]').forEach(btn=>{btn.disabled=busy;btn.setAttribute('aria-busy',String(busy))});
 }
+function setAutomationActionStatus(message='',tone=''){
+  const el=document.getElementById('automationActionStatus');if(!el)return;
+  el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
+}
 let automationMutationPending=false;
-async function persistAutomations({alertOnError=true}={}){
+async function persistAutomations({surfaceError=true}={}){
   if(demoMode)return true;
   if(automationMutationPending)return false;
   automationMutationPending=true;setAutomationMutationUi(true);
@@ -1399,8 +1403,8 @@ async function persistAutomations({alertOnError=true}={}){
     const submittedIds=submitted.map(item=>String(item.id||'')),returnedIds=data.automations.map(item=>String(item?.id||''));
     if(returnedIds.some((id,i)=>!id||id!==submittedIds[i])||data.automations.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!Number.isFinite(Number(item.updatedAt))||Number(item.updatedAt)<=0))
       throw new Error('Could not confirm the automation save. Refresh automations before retrying.');
-    automationsData=data.automations;return true;
-  }catch(err){if(alertOnError)alert(err.message||'Could not save automations right now.');return false}
+    automationsData=data.automations;if(surfaceError)setAutomationActionStatus('Automations updated.','success');return true;
+  }catch(err){if(surfaceError)setAutomationActionStatus(err.message||'Could not save automations right now.','error');return false}
   finally{automationMutationPending=false;setAutomationMutationUi(false)}
 }
 async function toggleAutomation(id){
@@ -1422,7 +1426,7 @@ async function deleteAutomation(id){
 let editingAutomationId=null;
 function openAutomation(id=null,preset=null){
   if(!has('automations'))return;
-  if(!id&&automationsData.length>=20){alert('This workspace already has the 20-automation limit. Remove an automation before creating another.');return}
+  if(!id&&automationsData.length>=20){setAutomationActionStatus('This workspace already has the 20-automation limit. Remove an automation before creating another.','error');return}
   const modal=document.getElementById('automationModal');if(!modal)return;
   editingAutomationId=id;
   let item=id?automationsData.find(x=>String(x.id)===String(id)):null;
@@ -1451,7 +1455,7 @@ async function saveAutomation(){
   const before=automationsData.map(x=>({...x})),i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));
   if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
   renderAutomations();
-  if(await persistAutomations({alertOnError:false})){if(status){status.textContent='Automation saved.';status.className='form-status-line success'}closeAutomation();return true}
+  if(await persistAutomations({surfaceError:false})){if(status){status.textContent='Automation saved.';status.className='form-status-line success'}closeAutomation();return true}
   automationsData=before;renderAutomations();if(status){status.textContent='Automation was not saved. Review the message and try again.';status.className='form-status-line error'}return false
 }
 document.querySelectorAll('[data-agent-edit]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(btn.dataset.agentEdit)));
@@ -1676,7 +1680,11 @@ function openLocationModal(id=''){
   modal.dataset.editId=x?.id||'';document.getElementById('locationModalTitle').textContent=x?'Edit location':'Add location';if(name){name.value=x?.name||'';name.removeAttribute('aria-invalid')}document.getElementById('locationPhone').value=x?.phone||'';document.getElementById('locationAddress').value=x?.address||'';document.getElementById('locationTimezone').value=x?.timezone||settingsData?.timezone||'America/Los_Angeles';document.getElementById('locationActive').checked=x?.active!==false;if(status){status.textContent='';status.className='form-status-line'}modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>name?.focus(),20);
 }
 function closeLocationModal(){if(locationMutationPending)return false;const m=document.getElementById('locationModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}return true}
-async function persistLocations(next,{alertOnError=true}={}){
+function setLocationActionStatus(message='',tone=''){
+  const el=document.getElementById('locationActionStatus');if(!el)return;
+  el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
+}
+async function persistLocations(next,{surfaceError=true}={}){
   if(locationMutationPending)return false;
   locationMutationPending=true;const unlock=lockFormControls('locationModal');renderLocations();
   try{
@@ -1687,8 +1695,8 @@ async function persistLocations(next,{alertOnError=true}={}){
     if(data.ok!==true||!Array.isArray(rows)||rows.length!==submitted.length||!Number.isFinite(confirmedLimit)||confirmedLimit<1||rows.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()||!Number.isFinite(Number(item.updatedAt))||Number(item.updatedAt)<=0)||new Set(rows.map(item=>String(item.id))).size!==rows.length)
       throw new Error('Location save response was incomplete. Your current locations were preserved; refresh before retrying.');
     if(submitted.some((item,i)=>item.id&&String(rows[i]?.id)!==String(item.id)))throw new Error('Location save response did not match the submitted records. Your current locations were preserved; refresh before retrying.');
-    locationsData=rows;locationsLimit=confirmedLimit;return true;
-  }catch(err){if(alertOnError)alert(err.message||'Could not save locations. Check your connection and try again.');return false}
+    locationsData=rows;locationsLimit=confirmedLimit;if(surfaceError)setLocationActionStatus('Locations updated.','success');return true;
+  }catch(err){if(surfaceError)setLocationActionStatus(err.message||'Could not save locations. Check your connection and try again.','error');return false}
   finally{unlock();locationMutationPending=false;renderLocations()}
 }
 async function saveLocation(){
@@ -1697,7 +1705,7 @@ async function saveLocation(){
   if(!name){if(nameInput){nameInput.setAttribute('aria-invalid','true');nameInput.focus()}if(status){status.textContent='Add a location name before saving.';status.className='form-status-line error'}return false}
   nameInput?.removeAttribute('aria-invalid');if(status){status.textContent='Saving location…';status.className='form-status-line'}
   const item={id:id||undefined,name,phone:document.getElementById('locationPhone')?.value||'',address:document.getElementById('locationAddress')?.value||'',timezone:document.getElementById('locationTimezone')?.value||'America/Los_Angeles',active:!!document.getElementById('locationActive')?.checked};
-  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];const ok=await persistLocations(next,{alertOnError:false});if(ok){if(status){status.textContent='Location saved.';status.className='form-status-line success'}closeLocationModal()}else if(status){status.textContent='Location was not saved. Review the message and try again.';status.className='form-status-line error'}return ok;
+  const next=id?locationsData.map(x=>String(x.id)===String(id)?{...x,...item}:x):[...locationsData,item];const ok=await persistLocations(next,{surfaceError:false});if(ok){if(status){status.textContent='Location saved.';status.className='form-status-line success'}closeLocationModal()}else if(status){status.textContent='Location was not saved. Review the message and try again.';status.className='form-status-line error'}return ok;
 }
 async function deleteLocation(id){if(locationMutationPending)return false;const x=locationsData.find(v=>String(v.id)===String(id));if(!x||!confirm('Delete location "'+x.name+'"?'))return false;return persistLocations(locationsData.filter(v=>String(v.id)!==String(id)))}
 document.getElementById('addLocationButton')?.addEventListener('click',()=>openLocationModal());
@@ -4255,15 +4263,19 @@ function closePlanModal(){modal?.classList.remove('open');modal?.setAttribute('a
 modal?.querySelector('.modal-close')?.addEventListener('click',closePlanModal);modal?.addEventListener('click',e=>{if(e.target===modal)closePlanModal()});
 document.getElementById('upgradeButton')?.addEventListener('click',()=>{const p=document.getElementById('planOptionsPanel');if(p){p.hidden=false;p.scrollIntoView({behavior:'smooth',block:'start'})}});
 document.getElementById('closePlanOptions')?.addEventListener('click',()=>{const p=document.getElementById('planOptionsPanel');if(p)p.hidden=true});
+function setBillingActionStatus(message='',tone=''){
+  const el=document.getElementById('billingActionStatus');if(!el)return;
+  el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
+}
 async function openBillingPortal(button,label='Opening…'){
-  const idleLabel=button?.dataset.original||button?.textContent||'Manage billing';if(button){button.disabled=true;button.textContent=label}
+  const idleLabel=button?.dataset.original||button?.textContent||'Manage billing';if(button){button.disabled=true;button.textContent=label}setBillingActionStatus('Opening secure billing…');
   try{
     const r=await fetch('/api/account?action=billing-portal',{method:'POST'}),data=await r.json().catch(()=>({}));
     let portalUrl=null;try{portalUrl=data?.url?new URL(String(data.url)):null}catch(_){portalUrl=null}
     if(!r.ok||!portalUrl||portalUrl.protocol!=='https:'||portalUrl.hostname!=='billing.stripe.com')throw new Error(data.error||'Billing portal is unavailable.');
     location.href=portalUrl.toString();return true;
   }catch(err){
-    alert(err.message||'Billing portal is unavailable.');
+    setBillingActionStatus(err.message||'Billing portal is unavailable.','error');
     if(button?.isConnected!==false){button.disabled=false;button.textContent=idleLabel}
     return false;
   }

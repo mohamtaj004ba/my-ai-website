@@ -109,10 +109,10 @@ test('malformed 200 lead and appointment responses roll optimistic UI changes ba
 });
 
 test('automation and location saves preserve local records on malformed successful responses',async()=>{
-  const alerts=[];
+  const statuses=[];
   const autoCtx=vm.createContext({
-    demoMode:false,automationsData:[{id:'existing'}],setAutomationMutationUi:()=>{},
-    fetch:async()=>({ok:true,json:async()=>({})}),alert:m=>alerts.push(m),Array
+    demoMode:false,automationsData:[{id:'existing'}],setAutomationMutationUi:()=>{},setAutomationActionStatus:m=>statuses.push(m),
+    fetch:async()=>({ok:true,json:async()=>({})}),Array
   });
   vm.runInContext(segment('let automationMutationPending=false;',"\nasync function toggleAutomation("),autoCtx);
   assert.equal(await vm.runInContext('persistAutomations()',autoCtx),false);
@@ -121,13 +121,13 @@ test('automation and location saves preserve local records on malformed successf
   const locationCtx=vm.createContext({
     locationsData:[{id:'existing'}],locationsLimit:3,
     fetch:async()=>({ok:true,json:async()=>({locations:null,limit:3})}),
-    alert:m=>alerts.push(m),renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set
+    setLocationActionStatus:m=>statuses.push(m),renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set
   });
   vm.runInContext("let locationMutationPending=false;\n"+segment('async function persistLocations(',"\nasync function saveLocation("),locationCtx);
   assert.equal(await vm.runInContext("persistLocations([{id:'new'}])",locationCtx),false);
   assert.equal(locationCtx.locationsData[0].id,'existing');
   assert.equal(locationCtx.locationsLimit,3);
-  assert.ok(alerts.some(m=>/confirm|incomplete/i.test(m)));
+  assert.ok(statuses.some(m=>/confirm|incomplete/i.test(m)));
 });
 
 
@@ -157,7 +157,7 @@ test('location saves serialize mutations and require canonical row identities',a
   const ctx=vm.createContext({
     locationsData:[{id:'loc-1',name:'Main',updatedAt:1}],locationsLimit:2,
     fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>({ok:true,locations:[{id:'loc-1',name:'Main',updatedAt:2}],limit:2})}},
-    alert:()=>{},renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set,Promise,Error
+    setLocationActionStatus:()=>{},renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set,Promise,Error
   });
   vm.runInContext("let locationMutationPending=false;\n"+segment('async function persistLocations(',"\nasync function saveLocation("),ctx);
   const first=vm.runInContext("persistLocations([{id:'loc-1',name:'Main'}])",ctx);
@@ -175,7 +175,7 @@ test('location save rejects mismatched existing record identities despite HTTP 2
   const ctx=vm.createContext({
     locationsData:[{id:'loc-1',name:'Main',updatedAt:1}],locationsLimit:2,
     fetch:async()=>({ok:true,json:async()=>({ok:true,locations:[{id:'different',name:'Main',updatedAt:2}],limit:2})}),
-    alert:()=>{},renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set,Promise,Error
+    setLocationActionStatus:()=>{},renderLocations:()=>{},lockFormControls:()=>()=>{},Number,Array,Object,String,Set,Promise,Error
   });
   vm.runInContext("let locationMutationPending=false;\n"+segment('async function persistLocations(',"\nasync function saveLocation("),ctx);
   assert.equal(await vm.runInContext("persistLocations([{id:'loc-1',name:'Main'}])",ctx),false);
@@ -210,11 +210,12 @@ test('location builder validates required name and exposes inline accessible sta
 });
 
 
-test('location modal save keeps provider errors inline while delete can still alert',()=>{
+test('location modal save keeps provider errors inline while list actions use page feedback',()=>{
   const ui=fs.readFileSync('dashboard.js','utf8');
   const persist=ui.slice(ui.indexOf('async function persistLocations('),ui.indexOf('async function saveLocation('));
   const save=ui.slice(ui.indexOf('async function saveLocation(){'),ui.indexOf('async function deleteLocation('));
-  assert.match(persist,/\{alertOnError=true\}=\{\}/);
-  assert.match(persist,/if\(alertOnError\)alert\(/);
-  assert.match(save,/persistLocations\(next,\{alertOnError:false\}\)/);
+  assert.match(persist,/\{surfaceError=true\}=\{\}/);
+  assert.match(persist,/if\(surfaceError\)setLocationActionStatus/);
+  assert.doesNotMatch(persist,/\balert\s*\(/);
+  assert.match(save,/persistLocations\(next,\{surfaceError:false\}\)/);
 });
