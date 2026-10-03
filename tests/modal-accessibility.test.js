@@ -239,7 +239,7 @@ test('full-screen panels use dynamic viewport height and safe-area padding on mo
   assert.doesNotMatch(css,/\.onboarding-detail-drawer\{[^}]*height:100vh/);
 });
 
-function transitionFixture(observerOrder='closing-first'){
+function transitionFixture(observerOrder='closing-first',nested=false){
   const state={drawerOpen:false,drawerHidden:'true',modalOpen:false,modalHidden:'true'};
   const trigger={isConnected:true,focus(){document.activeElement=this}};
   const makeControl=()=>({hidden:false,isConnected:true,focus(){document.activeElement=this},closest(){return null},getAttribute(){return null}});
@@ -258,16 +258,26 @@ function transitionFixture(observerOrder='closing-first'){
   class MutationObserver{constructor(callback){this.callback=callback}observe(target){observers.set(target,this.callback)}}
   vm.runInNewContext(source,{document,MutationObserver,queueMicrotask:fn=>fn(),WeakMap,globalThis:{}});
   state.drawerOpen=true;state.drawerHidden='false';observers.get(drawer)();assert.strictEqual(document.activeElement,drawerClose);
-  state.drawerOpen=false;state.drawerHidden='true';state.modalOpen=true;state.modalHidden='false';
+  state.drawerOpen=nested;state.drawerHidden=nested?'false':'true';state.modalOpen=true;state.modalHidden='false';
   if(observerOrder==='opening-first'){observers.get(modal)();observers.get(drawer)()}else{observers.get(drawer)();observers.get(modal)()}
   assert.strictEqual(document.activeElement,modalClose);
   state.modalOpen=false;state.modalHidden='true';observers.get(modal)();
+  if(nested){
+    assert.strictEqual(document.activeElement,drawerClose,'nested confirmation returns focus inside the still-open drawer');
+    state.drawerOpen=false;state.drawerHidden='true';observers.get(drawer)();
+  }
   return {document,trigger};
 }
 
 test('dialog transition focus handoff returns to the original launcher regardless of observer order',()=>{
   for(const order of ['closing-first','opening-first']){
     const f=transitionFixture(order);assert.strictEqual(f.document.activeElement,f.trigger);
+  }
+});
+
+test('nested confirmation returns focus to its drawer launcher without losing the original drawer return target',()=>{
+  for(const order of ['closing-first','opening-first']){
+    const f=transitionFixture(order,true);assert.strictEqual(f.document.activeElement,f.trigger);
   }
 });
 

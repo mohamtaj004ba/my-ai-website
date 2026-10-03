@@ -29,7 +29,7 @@
     }else{
       const target=state.returnFocus;
       const successor=dialogs.find(other=>other!==modal&&isOpen(other));
-      if(successor&&target){
+      if(successor&&target&&!successor.contains(target)){
         const successorState=modalState.get(successor);
         if(successorState&&(!successorState.returnFocus||modal.contains(successorState.returnFocus))){
           successorState.returnFocus=target;state.returnFocus=null;return;
