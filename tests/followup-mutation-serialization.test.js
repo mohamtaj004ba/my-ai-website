@@ -51,6 +51,7 @@ test('second team-status update is rejected while the first request is pending',
   const ctx=vm.createContext({
     followupMutationPending:new Set(),followupState,callsData:[{id:'call-1'}],activeCallId:'',
     renderLeads(){},renderOverview(){},renderCalls(){},syncDrawerTeamStatus(){},demoMode:false,
+    document:{getElementById:()=>null},
     fetch:async()=>{requests++;await new Promise(resolve=>release=resolve);return {ok:true,json:async()=>({ok:true,state:{'call-1':{status:'in_progress',notes:[],updatedAt:2}}})}},
     console:{error(){}},String,Number,Array,Object,Date,Set,Promise,Error
   });
