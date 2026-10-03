@@ -4184,13 +4184,26 @@ async function openBillingPortal(button,label='Opening…'){
 }
 document.getElementById('paymentButton')?.addEventListener('click',async e=>{const b=e.currentTarget;b.dataset.original='Manage billing & invoices';await openBillingPortal(b)});
 document.getElementById('modalCta')?.addEventListener('click',async e=>{const b=e.currentTarget;b.dataset.original='Continue to Stripe';await openBillingPortal(b,'Opening Stripe…')});
-const retentionModal=document.getElementById('retentionModal');
-function closeRetention(){retentionModal?.classList.remove('open');retentionModal?.setAttribute('aria-hidden','true')}
-function openRetention(){if(!retentionModal)return;document.getElementById('retentionStatus').textContent='';retentionModal.classList.add('open');retentionModal.setAttribute('aria-hidden','false')}
+const retentionModal=document.getElementById('retentionModal');let retentionRequestPending=false;
+function setRetentionPending(pending){
+  retentionRequestPending=!!pending;retentionModal?.querySelectorAll('[data-retention]').forEach(button=>{button.disabled=retentionRequestPending;button.setAttribute('aria-busy',String(retentionRequestPending))});
+  const close=retentionModal?.querySelector('.retention-close');if(close)close.disabled=retentionRequestPending;
+}
+function closeRetention(){if(retentionRequestPending)return false;retentionModal?.classList.remove('open');retentionModal?.setAttribute('aria-hidden','true');return true}
+function openRetention(){if(!retentionModal)return;document.getElementById('retentionStatus').textContent='';setRetentionPending(false);retentionModal.classList.add('open');retentionModal.setAttribute('aria-hidden','false')}
 document.getElementById('retentionButton')?.addEventListener('click',openRetention);retentionModal?.querySelector('.retention-close')?.addEventListener('click',closeRetention);retentionModal?.addEventListener('click',e=>{if(e.target===retentionModal)closeRetention()});
 async function requestRetention(kind){
-  const status=document.getElementById('retentionStatus'),copy=kind==='pause'?'I would like to discuss temporarily pausing my CallerCore subscription. Please contact me before making any changes.':'I am considering cancelling and would like to review any available retention options, incentives, or a better-fit plan before I decide.';
-  if(status)status.textContent='Sending request…';try{const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:kind==='pause'?'Subscription pause request':'Subscription save-options request',message:copy,priority:'normal'})}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not send request');if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||!String(data.ticket.id||'').trim())throw new Error('Request response was incomplete. Check Support before retrying.');if(status)status.textContent=data.warning||'Request sent. CallerCore support will follow up before any subscription change.'}catch(err){if(status)status.textContent=err.message||'Could not send request'}}
+  if(retentionRequestPending)return false;
+  const status=document.getElementById('retentionStatus'),subject=kind==='pause'?'Subscription pause request':'Subscription save-options request',copy=kind==='pause'?'I would like to discuss temporarily pausing my CallerCore subscription. Please contact me before making any changes.':'I am considering cancelling and would like to review any available retention options, incentives, or a better-fit plan before I decide.';
+  setRetentionPending(true);if(status)status.textContent='Sending request…';
+  try{
+    const r=await fetch('/api/account?action=support-ticket-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject,message:copy,priority:'normal'})}),data=await r.json().catch(()=>({})),ticket=data.ticket;
+    if(!r.ok)throw new Error(data.error||'Could not send request');
+    if(data.ok!==true||!ticket||typeof ticket!=='object'||Array.isArray(ticket)||!String(ticket.id||'').trim()||String(ticket.subject||'')!==subject)throw new Error('Request response was incomplete. Check Support before retrying.');
+    if(status)status.textContent=data.warning||'Request sent. CallerCore support will follow up before any subscription change.';return true;
+  }catch(err){if(status)status.textContent=err.message||'Could not send request';return false}
+  finally{setRetentionPending(false)}
+}
 retentionModal?.querySelectorAll('[data-retention]').forEach(b=>b.addEventListener('click',()=>{const kind=b.dataset.retention;if(kind==='plan'){closeRetention();const p=document.getElementById('planOptionsPanel');if(p){p.hidden=false;p.scrollIntoView({behavior:'smooth'})}}else requestRetention(kind)}));
 document.getElementById('continueCancelButton')?.addEventListener('click',async e=>{const b=e.currentTarget;b.dataset.original='Continue to cancellation options';await openBillingPortal(b,'Opening cancellation options…')});
 
