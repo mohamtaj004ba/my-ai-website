@@ -56,3 +56,8 @@ test('completion modal blocks duplicate saves and announces unconfirmed updates'
   assert.match(open,/finally\{setTeamStatusModalPending\(false\)\}/);
   assert.match(open,/if\(pendingTeamStatusCallId&&followupMutationPending\.has\(String\(pendingTeamStatusCallId\)\)\)return false/);
 });
+
+
+test('completion modal backdrop follows the same guarded close path',()=>{
+  assert.match(js,/teamStatusModal'\)\?\.addEventListener\('click',e=>\{if\(e\.target===e\.currentTarget\)closeTeamStatusModal\(\)\}\)/);
+});
