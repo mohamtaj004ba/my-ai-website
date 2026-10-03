@@ -102,3 +102,22 @@ test('malformed conversation detail keeps the summary and exposes delayed histor
   assert.equal(Array.isArray(ctx.conversationsData[0].messages),false);
   assert.match(node('messageStream').innerHTML,/Message history is delayed/);
 });
+
+
+test('backend conversation loading and first-load failures never impersonate a verified empty inbox',async()=>{
+  let rejectRequest;
+  const pending=()=>new Promise((resolve,reject)=>{rejectRequest=reject});
+  const {ctx,node}=fixture([],{backend:true,fetchJsonRetry:pending});
+  ctx.conversationThreadsData=[];ctx.conversationPageTotal=0;ctx.conversationNextCursor=null;
+  const request=vm.runInContext('loadConversationPage()',ctx);
+  assert.match(node('conversationThreads').innerHTML,/Loading conversations/);
+  assert.equal(node('conversationCount').textContent,'Loading conversations…');
+  assert.equal(node('conversationName').textContent,'Loading conversations');
+  assert.doesNotMatch(node('conversationThreads').innerHTML,/No conversations yet/);
+  rejectRequest(new Error('offline'));await request;
+  assert.equal(ctx.conversationPageError,'Conversations could not be loaded');
+  assert.match(node('conversationThreads').innerHTML,/Conversations unavailable/);
+  assert.match(node('conversationThreads').innerHTML,/Retry conversations/);
+  assert.equal(node('conversationName').textContent,'Conversations unavailable');
+  assert.doesNotMatch(node('conversationThreads').innerHTML,/No conversations yet/);
+});

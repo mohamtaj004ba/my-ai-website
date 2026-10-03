@@ -946,7 +946,7 @@ async function loadConversationPage({append=false}={}){
     if(!Array.isArray(incoming)||incoming.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||''))||!Number.isSafeInteger(total)||total<0||total<incoming.length||(nextCursor!==null&&typeof nextCursor!=='string'))throw new Error('Conversation page response was incomplete');
     conversationThreadsData=append?[...conversationThreadsData,...incoming]:incoming;conversationPageTotal=total;conversationNextCursor=nextCursor;
     if(!append&&activeConversationId&&!conversationThreadsData.some(item=>String(item.id)===String(activeConversationId)))activeConversationId=null;
-  }catch(err){if(request===conversationPageRequest){console.warn('Conversation page delayed',err);conversationPageError='Could not update conversations · showing last loaded page'}}
+  }catch(err){if(request===conversationPageRequest){console.warn('Conversation page delayed',err);conversationPageError=conversationThreadsData.length?'Could not update conversations · showing last loaded page':'Conversations could not be loaded'}}
   finally{if(request===conversationPageRequest){conversationPageLoading=false;renderConversations()}}
 }
 function renderConversations(){
@@ -963,14 +963,21 @@ function renderConversations(){
     return searchOk&&filterOk;
   }).map(x=>({record:x,at:conversationActivity(x)})).sort((a,b)=>sort==='oldest'?a.at-b.at:b.at-a.at).map(x=>x.record);
   const rows=conversationBackendPaging?conversationThreadsData:localRows,visibleRows=conversationBackendPaging?rows:rows.slice(0,conversationVisibleLimit),resultTotal=conversationBackendPaging?conversationPageTotal:rows.length;
-  list.innerHTML=visibleRows.map(x=>'<button type="button" class="thread-item" data-thread-id="'+esc(x.id)+'"><div class="thread-top"><strong>'+esc(x.name||'Unknown')+'</strong><small>'+esc(conversationActivity(x)?new Date(conversationActivity(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.time||''))+'</small></div><small>'+esc(x.phone||'')+' · '+esc(x.status||'')+'</small><p>'+esc(x.last||'')+'</p></button>').join('')||'<div class="empty-state"><h3>'+(conversationsData.length?'No matching conversations':'No conversations yet')+'</h3><p>'+(conversationsData.length?'Try another search or clear the filters.':'Conversation history will appear here when available.')+'</p></div>';
+  if(visibleRows.length)list.innerHTML=visibleRows.map(x=>'<button type="button" class="thread-item" data-thread-id="'+esc(x.id)+'"><div class="thread-top"><strong>'+esc(x.name||'Unknown')+'</strong><small>'+esc(conversationActivity(x)?new Date(conversationActivity(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.time||''))+'</small></div><small>'+esc(x.phone||'')+' · '+esc(x.status||'')+'</small><p>'+esc(x.last||'')+'</p></button>').join('');
+  else if(conversationPageLoading)list.innerHTML='<div class="empty-state conversation-loading-empty" role="status"><div class="contact-inline-loading"><i></i><span>Loading conversations…</span></div><p>Checking the latest customer history for this workspace.</p></div>';
+  else if(conversationPageError)list.innerHTML='<div class="empty-state"><h3>Conversations unavailable</h3><p>The latest conversation list could not be verified. Retry without losing previously loaded history.</p><button type="button" class="secondary-btn" id="retryConversationPage">Retry conversations</button></div>';
+  else list.innerHTML='<div class="empty-state"><h3>'+(conversationsData.length?'No matching conversations':'No conversations yet')+'</h3><p>'+(conversationsData.length?'Try another search or clear the filters.':'Conversation history will appear here when available.')+'</p></div>';
   list.querySelectorAll('[data-thread-id]').forEach(btn=>btn.addEventListener('click',()=>openConversation(btn.dataset.threadId)));
-  document.getElementById('conversationCount').textContent=conversationPageError||(conversationPageLoading?'Updating · ':'Showing ')+visibleRows.length+' of '+resultTotal+' conversations'+(q||conversationFilter!=='all'?' matching filters':'');
+  document.getElementById('retryConversationPage')?.addEventListener('click',()=>loadConversationPage());
+  document.getElementById('conversationCount').textContent=conversationPageError||(conversationPageLoading?'Loading conversations…':('Showing '+visibleRows.length+' of '+resultTotal+' conversations'+(q||conversationFilter!=='all'?' matching filters':'')));
   const more=document.getElementById('loadMoreConversations');more.hidden=conversationBackendPaging?!conversationNextCursor:visibleRows.length>=rows.length;more.disabled=conversationPageLoading;more.textContent=conversationPageLoading?'Loading…':'Load 50 more';
   document.getElementById('resetConversationFilters').hidden=!q&&conversationFilter==='all'&&sort==='newest';
   const active=visibleRows.find(x=>String(x.id)===String(activeConversationId))||visibleRows[0];
   if(active)openConversation(active.id);else{
-    activeConversationId=null;document.getElementById('conversationName').textContent='No conversation selected';document.getElementById('conversationMeta').textContent='';document.getElementById('conversationContactButton').hidden=true;document.getElementById('conversationStatus').hidden=true;stream.innerHTML='<div class="empty-state"><h3>No conversation selected</h3><p>Select a conversation to view its history.</p></div>';
+    activeConversationId=null;document.getElementById('conversationMeta').textContent='';document.getElementById('conversationContactButton').hidden=true;document.getElementById('conversationStatus').hidden=true;
+    if(conversationPageLoading){document.getElementById('conversationName').textContent='Loading conversations';stream.innerHTML='<div class="empty-state"><h3>Loading customer history</h3><p>The latest conversations are being verified now.</p></div>'}
+    else if(conversationPageError){document.getElementById('conversationName').textContent='Conversations unavailable';stream.innerHTML='<div class="empty-state"><h3>Conversation history is temporarily unavailable</h3><p>Retry the conversation list to continue.</p></div>'}
+    else{document.getElementById('conversationName').textContent='No conversation selected';stream.innerHTML='<div class="empty-state"><h3>No conversation selected</h3><p>Select a conversation to view its history.</p></div>'}
   }
   document.querySelectorAll('[data-conversation-filter]').forEach(b=>{const selected=b.dataset.conversationFilter===conversationFilter;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
 }
