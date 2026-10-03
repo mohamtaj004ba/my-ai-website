@@ -9,8 +9,8 @@ const end=source.indexOf("document.getElementById('submitSupportButton')?.addEve
 assert.ok(start>=0&&end>start,'support form actions found');
 function fixture(fetcher){
   const fields={
-    supportSubject:{value:'Need assistance'},
-    supportMessage:{value:'Request details that should be preserved'},
+    supportSubject:{value:'Need assistance',setAttribute(k,v){this[k]=v},removeAttribute(k){delete this[k]},focus(){this.focused=true}},
+    supportMessage:{value:'Request details that should be preserved',setAttribute(k,v){this[k]=v},removeAttribute(k){delete this[k]},focus(){this.focused=true}},
     supportPriority:{value:'normal'},
     supportStatus:{textContent:''},
     submitSupportButton:{disabled:false,textContent:'Send support request'}
@@ -33,6 +33,18 @@ function fixture(fetcher){
   return {ctx,fields,input,replyStatus,replyButton,thread,submit:()=>vm.runInContext('submitSupportTicket()',ctx),reply:()=>vm.runInContext("replyClientSupportTicket('ticket-1',button)",ctx),renders:()=>renders,invalidations:()=>invalidations};
 }
 function ok(data,status=200){return {ok:status<400,json:async()=>data}}
+test('support request validation marks and focuses the first missing required field',async()=>{
+  let fetches=0;const f=fixture(async()=>{fetches++;return ok({ok:true})});
+  f.fields.supportSubject.value=' ';f.fields.supportMessage.value=' ';
+  assert.equal(await f.submit(),false);assert.equal(fetches,0);
+  assert.equal(f.fields.supportSubject['aria-invalid'],'true');assert.equal(f.fields.supportMessage['aria-invalid'],'true');assert.equal(f.fields.supportSubject.focused,true);
+  assert.match(f.fields.supportStatus.textContent,/subject and details/i);
+  f.fields.supportSubject.value='Need assistance';f.fields.supportSubject.focused=false;f.fields.supportMessage.value=' ';
+  assert.equal(await f.submit(),false);assert.equal(fetches,0);
+  assert.equal(f.fields.supportSubject['aria-invalid'],undefined);assert.equal(f.fields.supportMessage['aria-invalid'],'true');assert.equal(f.fields.supportMessage.focused,true);
+  assert.match(f.fields.supportStatus.textContent,/details before sending/i);
+});
+
 test('network failure preserves new support request and re-enables button for retry',async()=>{
   let fail=true,fetches=0;
   const f=fixture(async()=>{fetches++;if(fail)throw Error('network down');return ok({ok:true,ticket:{id:'new-ticket',subject:'Need assistance'}},201)});
