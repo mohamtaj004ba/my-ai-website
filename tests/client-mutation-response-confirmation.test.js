@@ -208,3 +208,13 @@ test('location builder validates required name and exposes inline accessible sta
   assert.match(save,/Saving location…/);
   assert.match(save,/Location was not saved\. Review the message and try again\./);
 });
+
+
+test('location modal save keeps provider errors inline while delete can still alert',()=>{
+  const ui=fs.readFileSync('dashboard.js','utf8');
+  const persist=ui.slice(ui.indexOf('async function persistLocations('),ui.indexOf('async function saveLocation('));
+  const save=ui.slice(ui.indexOf('async function saveLocation(){'),ui.indexOf('async function deleteLocation('));
+  assert.match(persist,/\{alertOnError=true\}=\{\}/);
+  assert.match(persist,/if\(alertOnError\)alert\(/);
+  assert.match(save,/persistLocations\(next,\{alertOnError:false\}\)/);
+});
