@@ -1408,13 +1408,13 @@ function setAutomationActionStatus(message='',tone=''){
   el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
 }
 let automationMutationPending=false;
-async function persistAutomations({surfaceError=true}={}){
+async function persistAutomations({surfaceError=true,expectedBefore=null}={}){
   if(demoMode)return true;
   if(automationMutationPending)return false;
   automationMutationPending=true;setAutomationMutationUi(true);
   try{
-    const submitted=automationsData.map(item=>({...item}));
-    const r=await fetch('/api/account?action=automations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({automations:submitted})}),data=await r.json().catch(()=>({}));
+    const submitted=automationsData.map(item=>({...item})),expectedAutomations=Array.isArray(expectedBefore)?expectedBefore.map(item=>({...item})):submitted.map(item=>({...item}));
+    const r=await fetch('/api/account?action=automations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({automations:submitted,expectedAutomations})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save automations right now.');
     if(data.ok!==true||!Array.isArray(data.automations)||data.automations.length!==submitted.length)throw new Error('Could not confirm the automation save. Refresh automations before retrying.');
     const submittedIds=submitted.map(item=>String(item.id||'')),returnedIds=data.automations.map(item=>String(item?.id||''));
@@ -1427,8 +1427,8 @@ async function persistAutomations({surfaceError=true}={}){
 async function toggleAutomation(id){
   if(automationMutationPending)return false;
   const item=automationsData.find(x=>String(x.id)===String(id));if(!item)return false;
-  const before=item.enabled;item.enabled=!item.enabled;renderAutomations();
-  if(!await persistAutomations()){item.enabled=before;renderAutomations();return false}
+  const snapshot=automationsData.map(x=>({...x})),before=item.enabled;item.enabled=!item.enabled;renderAutomations();
+  if(!await persistAutomations({expectedBefore:snapshot})){item.enabled=before;renderAutomations();return false}
   renderAutomations();return true;
 }
 async function deleteAutomation(id){
@@ -1437,7 +1437,7 @@ async function deleteAutomation(id){
   const target=automationsData[index];if(!confirm('Delete automation "'+(target.name||'Untitled automation')+'"?'))return false;
   const before=automationsData.map(x=>({...x}));
   automationsData=automationsData.filter(x=>String(x.id)!==key);renderAutomations();
-  if(!await persistAutomations()){automationsData=before;renderAutomations();return false}
+  if(!await persistAutomations({expectedBefore:before})){automationsData=before;renderAutomations();return false}
   renderAutomations();return true;
 }
 let editingAutomationId=null;
@@ -1474,7 +1474,7 @@ async function saveAutomation(){
   const before=automationsData.map(x=>({...x})),i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));
   if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
   renderAutomations();
-  if(await persistAutomations({surfaceError:false})){if(status){status.textContent='Automation saved.';status.className='form-status-line success'}closeAutomation();return true}
+  if(await persistAutomations({surfaceError:false,expectedBefore:before})){if(status){status.textContent='Automation saved.';status.className='form-status-line success'}closeAutomation();return true}
   automationsData=before;renderAutomations();if(status){status.textContent='Automation was not saved. Review the message and try again.';status.className='form-status-line error'}return false
 }
 document.querySelectorAll('[data-agent-edit]').forEach(btn=>btn.addEventListener('click',()=>setAgentEditing(btn.dataset.agentEdit)));
@@ -1708,8 +1708,8 @@ async function persistLocations(next,{surfaceError=true}={}){
   if(locationMutationPending)return false;
   locationMutationPending=true;const unlock=lockFormControls('locationModal');renderLocations();
   try{
-    const submitted=next.map(item=>({...item}));
-    const r=await fetch('/api/account?action=locations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:submitted})}),data=await r.json().catch(()=>({}));
+    const submitted=next.map(item=>({...item})),expectedLocations=locationsData.map(item=>({...item}));
+    const r=await fetch('/api/account?action=locations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locations:submitted,expectedLocations})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save locations.');
     const confirmedLimit=Number(data.limit),rows=data.locations;
     if(data.ok!==true||!Array.isArray(rows)||rows.length!==submitted.length||!Number.isFinite(confirmedLimit)||confirmedLimit<1||rows.some(item=>!item||typeof item!=='object'||Array.isArray(item)||!String(item.id||'').trim()||!Number.isFinite(Number(item.updatedAt))||Number(item.updatedAt)<=0)||new Set(rows.map(item=>String(item.id))).size!==rows.length)
