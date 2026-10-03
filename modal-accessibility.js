@@ -21,13 +21,21 @@
     state.open=open;
     if(open){
       const active=document.activeElement;
-      state.returnFocus=active&&active!==document.body&&!modal.contains(active)?active:null;
+      if(!state.returnFocus)state.returnFocus=active&&active!==document.body&&!modal.contains(active)?active:null;
       queueMicrotask(()=>{
         if(!isOpen(modal)||modal.contains(document.activeElement))return;
         (focusable(modal)[0]||modal).focus();
       });
     }else{
-      const target=state.returnFocus;state.returnFocus=null;
+      const target=state.returnFocus;
+      const successor=dialogs.find(other=>other!==modal&&isOpen(other));
+      if(successor&&target){
+        const successorState=modalState.get(successor);
+        if(successorState&&(!successorState.returnFocus||modal.contains(successorState.returnFocus))){
+          successorState.returnFocus=target;state.returnFocus=null;return;
+        }
+      }
+      state.returnFocus=null;
       if(target&&target.isConnected&&typeof target.focus==='function'&&!target.hasAttribute?.('disabled')&&isRendered(target))queueMicrotask(()=>target.focus());
     }
   }
@@ -47,7 +55,8 @@
     else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
   }
 
-  document.querySelectorAll('.modal,.call-drawer,.onboarding-detail-drawer,.admin-ai-panel').forEach((modal,index)=>{
+  const dialogs=[...document.querySelectorAll('.modal,.call-drawer,.onboarding-detail-drawer,.admin-ai-panel')];
+  dialogs.forEach((modal,index)=>{
     modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.tabIndex=-1;
     const title=modal.querySelector('h1,h2,h3');
     if(title){if(!title.id)title.id=(modal.id||'dialog-'+index)+'-title';modal.setAttribute('aria-labelledby',title.id)}
