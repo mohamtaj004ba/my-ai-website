@@ -3927,10 +3927,13 @@ async function applyAdminConfigOverride(){
   finally{setAdminTechMutationState(false)}
 }
 async function restoreAdminAudit(auditId){
-  if(!currentAdminClient||adminTechSaving||!confirm('Restore the configuration that existed before this change? A new audit entry will record the rollback.'))return;
+  if(!currentAdminClient||adminTechSaving)return false;
+  const entry=(currentAdminTech?.audit||[]).find(item=>String(item?.id||'')===String(auditId||''));if(!entry){adminTechMessage('This history entry is no longer available. Refresh diagnostics before restoring.',true);return false}
+  const section=String(entry.section||''),expectedCurrent=currentAdminTech?.config?.[section]??(section==='automations'||section==='locations'?[]:null);
+  if(!confirm('Restore the configuration that existed before this change? A new audit entry will record the rollback.'))return false;
   setAdminTechMutationState(true,auditId);renderAdminTechSupport();adminTechMessage('Restoring previous configuration…');
   try{
-    const r=await fetch('/api/account?action=admin-audit-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,auditId})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-audit-restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentAdminClient.id,auditId,expectedCurrent})}),data=await r.json().catch(()=>({}));
     if(!r.ok){adminTechMessage(data.error||'Could not restore snapshot.',true);return}
     if(data.ok!==true||!['workspace','settings','agent','integrations','automations','locations'].includes(String(data.section||''))||!Object.hasOwn(data,'value')){adminTechMessage('Restore response was incomplete. Reload diagnostics before retrying.',true);return}
     if(currentAdminTech?.config)currentAdminTech.config[data.section]=data.value;renderAdminConfigEditor();adminTechMessage('Previous '+data.section+' configuration restored.');
