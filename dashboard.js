@@ -3895,12 +3895,13 @@ async function forceClientLogout(){
 }
 async function repairClientAccess(){
   if(!currentAdminClient||adminTechSaving||adminClientSaving)return false;
-  const id=String(currentAdminClient.id),request=adminClientOpenRequest,emailInput=document.getElementById('adminRepairEmail'),email=String(emailInput?.value||'').trim();
+  const id=String(currentAdminClient.id),request=adminClientOpenRequest,emailInput=document.getElementById('adminRepairEmail'),email=String(emailInput?.value||'').trim(),
+    expectedOwnerEmail=String(currentAdminTech?.diagnostics?.ownerEmail??currentAdminClient.ownerEmail??'').trim();
   const invalidEmail=!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);if(emailInput){if(invalidEmail)emailInput.setAttribute?.('aria-invalid','true');else emailInput.removeAttribute?.('aria-invalid')}if(invalidEmail){emailInput?.focus?.();adminTechMessage('Enter a valid owner email before repairing access.',true);return false}
   if(!confirm('Repair the login mapping for '+email+' and revoke older sessions?'))return false;
   setAdminTechMutationState(true,'repair-access');adminTechMessage('Repairing client access mapping…');
   try{
-    const r=await fetch('/api/account?action=admin-repair-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,email})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-repair-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,email,expectedOwnerEmail})}),data=await r.json().catch(()=>({}));
     if(!r.ok){adminTechMessage(data.error||'Could not repair access.',true);return}
     if(data.ok!==true||String(data.email||'').toLowerCase()!==String(email).toLowerCase()||!Number.isSafeInteger(Number(data.sessionVersion))||Number(data.sessionVersion)<1){adminTechMessage('Access-repair response was incomplete. Reload diagnostics before retrying.',true);return}
     if(String(currentAdminClient?.id)===id)currentAdminClient.ownerEmail=data.email;
