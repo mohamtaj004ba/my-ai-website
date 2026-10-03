@@ -1526,6 +1526,8 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 .secondary-btn.compact{padding:7px 9px;font-size:7px}
 .modal-action-row{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:2px}
 .modal-action-row .primary{margin-left:auto}
+/* Confirmations launched from the client drawer must cover its backdrop too. */
+#adminDeleteWorkspaceModal,#adminRestoreWorkspaceModal,#adminLogoutModal{z-index:70}
 .admin-danger-confirm-modal{max-width:560px;border:1px solid #eaded8;box-shadow:0 24px 70px rgba(31,41,51,.18)}
 .admin-danger-confirm-modal>.eyebrow{color:#a34a2f}
 .admin-danger-confirm-modal>.form-card{margin-top:18px;padding:16px;border:1px solid #eee3de;border-radius:14px;background:#fffaf8}
