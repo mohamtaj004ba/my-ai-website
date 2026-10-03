@@ -114,7 +114,7 @@ test('automation and location saves preserve local records on malformed successf
     demoMode:false,automationsData:[{id:'existing'}],setAutomationMutationUi:()=>{},setAutomationActionStatus:m=>statuses.push(m),
     fetch:async()=>({ok:true,json:async()=>({})}),Array
   });
-  vm.runInContext(segment('let automationMutationPending=false;',"\nasync function toggleAutomation("),autoCtx);
+  vm.runInContext(segment('let automationMutationPending=false',"\nasync function toggleAutomation("),autoCtx);
   assert.equal(await vm.runInContext('persistAutomations()',autoCtx),false);
   assert.equal(autoCtx.automationsData[0].id,'existing');
 
