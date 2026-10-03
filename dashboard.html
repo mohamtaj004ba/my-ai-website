@@ -142,6 +142,8 @@
     </section>
     <section class="view" id="view-leads">
       <div class="page-head"><div><span class="eyebrow">Follow-ups</span><h1>Open team actions.</h1><p>Requests and messages stay here while your team still owes the caller a next step. Completing or dismissing the action removes it from the active queue without changing the original call record.</p></div><div class="page-actions"><button class="secondary-btn" id="showHandledFollowups" aria-pressed="false">Show completed</button></div></div>
+      <p class="form-status-line" id="followupCoverageStatus" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+      <p class="form-status-line" id="followupActionStatus" role="status" aria-live="polite" aria-atomic="true"></p>
       <div class="followup-summary">
         <article><span>Needs action</span><strong id="followupOpenCount">0</strong><small>Waiting on your team</small></article>
         <article><span>Priority</span><strong id="followupUrgentCount">0</strong><small>Flagged for faster attention</small></article>
@@ -291,7 +293,7 @@
   <div class="drawer-head"><div><span class="eyebrow">Call details</span><h2 id="drawerCaller">Caller</h2><p id="drawerWhen" class="drawer-when"></p></div><button id="closeCallDrawer" aria-label="Close">×</button></div>
   <div class="drawer-action-shell">
     <div class="drawer-primary-actions"><a class="drawer-action-button call disabled-link" id="drawerCallLink" aria-disabled="true" tabindex="-1">Call</a><a class="drawer-action-button text disabled-link" id="drawerTextLink" aria-disabled="true" tabindex="-1">Text</a></div>
-    <div class="drawer-status-row"><label class="drawer-status-control"><span>Team status</span><select id="drawerTeamStatus"><option value="no_action">No action needed</option><option value="needs_action">Needs action</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="dismissed">Dismissed</option></select></label><button class="primary" id="drawerFollowupButton" type="button">Update status</button></div>
+    <div class="drawer-status-row"><label class="drawer-status-control"><span>Team status</span><select id="drawerTeamStatus"><option value="no_action">No action needed</option><option value="needs_action">Needs action</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="dismissed">Dismissed</option></select></label><button class="primary" id="drawerFollowupButton" type="button">Update status</button></div><small class="form-status-line" id="drawerTeamStatusFeedback" role="status" aria-live="polite" aria-atomic="true"></small>
     <button class="drawer-contact-link" id="drawerContactButton" type="button">View complete contact history →</button>
   </div>
   <div class="drawer-meta compact-call-meta" id="drawerMeta"></div>

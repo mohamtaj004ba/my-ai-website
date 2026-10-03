@@ -88,3 +88,18 @@ test('note delete failures stay inline instead of using a browser alert',()=>{
   assert.match(block,/status\.className='error'/);
   assert.doesNotMatch(block,/alert\(/);
 });
+
+
+test('Follow-ups exposes separate stale-feed and mutation feedback live regions',()=>{
+  const html=fs.readFileSync(path.join(root,'dashboard.html'),'utf8');
+  assert.match(html,/id="followupCoverageStatus" role="status" aria-live="polite" aria-atomic="true" hidden/);
+  assert.match(html,/id="followupActionStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(html,/id="drawerTeamStatusFeedback" role="status" aria-live="polite" aria-atomic="true"/);
+  const load=js.slice(js.indexOf('async function loadFollowupState()'),js.indexOf('\nfunction followupIsHandled',js.indexOf('async function loadFollowupState()')));
+  assert.match(load,/Follow-up status could not refresh\. Showing the last verified team-action state/);
+  assert.match(load,/coverage\.hidden=true/);
+  const persist=js.slice(js.indexOf('async function persistTeamStatus('),js.indexOf('\nfunction requestTeamStatusChange(',js.indexOf('async function persistTeamStatus(')));
+  assert.match(persist,/Updating team status…/);
+  assert.match(persist,/Team status updated\./);
+  assert.match(persist,/setFeedback\(err\.message\|\|'Could not update team status\.'/);
+});

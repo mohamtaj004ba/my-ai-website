@@ -46,3 +46,19 @@ test('malformed conversation message collections are ignored in contact history'
 test('contact history filters expose selected state beyond visual styling',()=>{
   assert.match(source,/data-contact-history-filter[\s\S]*setAttribute\('aria-pressed',String\(selected\)\)/);
 });
+
+
+test('inline contact call detail failures disclose stale transcript state instead of silently looking complete',async()=>{
+  const body={innerHTML:''},details={dataset:{},querySelector:()=>body};
+  const context=vm.createContext({
+    callsData:[{id:'call-1',caller:'Customer',summary:'Last verified summary'}],demoMode:false,
+    fetchJsonRetry:async()=>{throw Error('offline')},encodeURIComponent,console:{warn(){}},
+    markCallViewed(){},contactInlineCallHtml:call=>'<div>'+call.summary+'</div>',esc:String
+  });
+  const start=source.indexOf('async function hydrateContactCallDetails('),end=source.indexOf('\nfunction renderContactHistoryItem(',start);
+  vm.runInContext(source.slice(start,end),context);
+  await vm.runInContext('hydrateContactCallDetails("call-1",details)',vm.createContext({...context,details}));
+  assert.match(body.innerHTML,/Full call details could not refresh/);
+  assert.match(body.innerHTML,/Last verified summary/);
+  assert.match(body.innerHTML,/role="status"/);
+});

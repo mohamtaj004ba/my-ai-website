@@ -785,11 +785,16 @@ function followupLabel(type){return ({urgent:'Urgent',callback:'Callback / messa
 function followupCandidates(){return callsData.filter(callNeedsTeam).sort((a,b)=>recordTime(b)-recordTime(a))}
 async function loadFollowupState(){
   if(demoMode)return;
+  const coverage=document.getElementById('followupCoverageStatus');
   try{
     const r=await fetch('/api/account?action=followups',{headers:{Accept:'application/json'},cache:'no-store'}),data=await r.json().catch(()=>({}));
     if(!r.ok||data.coverage?.verified!==true||!data.state||typeof data.state!=='object'||Array.isArray(data.state))throw new Error(data.error||'Invalid follow-up history response');
     followupState=data.state;
-  }catch(err){console.error('Follow-up state failed; preserving last good state',err)}
+    if(coverage){coverage.hidden=true;coverage.textContent='';coverage.className='form-status-line'}
+  }catch(err){
+    if(coverage){coverage.hidden=false;coverage.textContent='Follow-up status could not refresh. Showing the last verified team-action state; counts and status labels may be outdated.';coverage.className='form-status-line error'}
+    console.error('Follow-up state failed; preserving last good state',err);
+  }
 }
 function followupIsHandled(call){return teamStatusClosed(call)}
 function updateFollowupCounts(){
@@ -819,15 +824,16 @@ function renderLeads(){
 async function persistTeamStatus(id,status,{completionReason='',completionNote=''}={}){
   const key=String(id);if(followupMutationPending.has(key))return false;
   const previous=followupState[key],current=previous||{},notes=Array.isArray(current.notes)?current.notes:[],next={...current,status,notes,completionReason,completionNote,updatedAt:Date.now()};
-  followupMutationPending.add(key);followupState[key]=next;renderLeads();renderOverview();renderCalls();const x=callsData.find(c=>String(c.id)===key);if(x&&activeCallId===key)syncDrawerTeamStatus(x);
+  const feedbackTargets=['followupActionStatus','drawerTeamStatusFeedback'].map(id=>document.getElementById(id)).filter(Boolean),setFeedback=(message='',tone='')=>feedbackTargets.forEach(el=>{el.textContent=message;el.className='form-status-line'+(tone?' '+tone:'')});
+  followupMutationPending.add(key);followupState[key]=next;setFeedback('Updating team status…');renderLeads();renderOverview();renderCalls();const x=callsData.find(c=>String(c.id)===key);if(x&&activeCallId===key)syncDrawerTeamStatus(x);
   if(demoMode){followupMutationPending.delete(key);renderLeads();return true}
   try{
     const r=await fetch('/api/account?action=followup-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:key,status,completionReason,completionNote})}),data=await r.json().catch(()=>({}));
     const confirmed=data.state?.[key];
     if(!r.ok)throw new Error(data.error||'Could not update team status');
     if(data.ok!==true||!data.state||typeof data.state!=='object'||Array.isArray(data.state)||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.status||'')!==String(status)||!Number.isFinite(Number(confirmed.updatedAt))||Number(confirmed.updatedAt)<=0)throw new Error('Could not confirm the team-status update. Refresh the call before retrying.');
-    followupState=data.state;return true
-  }catch(err){if(followupState[key]===next){if(previous)followupState[key]=previous;else delete followupState[key]}console.error(err);return false}
+    followupState=data.state;setFeedback('Team status updated.','success');return true
+  }catch(err){if(followupState[key]===next){if(previous)followupState[key]=previous;else delete followupState[key]}setFeedback(err.message||'Could not update team status.','error');console.error(err);return false}
   finally{followupMutationPending.delete(key);renderLeads();renderOverview();renderCalls();if(x&&activeCallId===key)syncDrawerTeamStatus(x)}
 }
 function requestTeamStatusChange(id,status){
@@ -1129,7 +1135,7 @@ function contactInlineCallHtml(call){
 async function hydrateContactCallDetails(callId,details){
   if(!details||details.dataset.loaded==='1')return;markCallViewed(callId);
   details.dataset.loaded='1';
-  let call=callsData.find(x=>String(x.id)===String(callId));if(!call)return;
+  let call=callsData.find(x=>String(x.id)===String(callId)),detailWarning='';if(!call)return;
   const body=details.querySelector('[data-contact-inline-call-body]');
   if(!call.transcript&&!demoMode){
     if(body)body.innerHTML='<div class="contact-inline-loading"><i></i><span>Loading call details…</span></div>';
@@ -1137,9 +1143,9 @@ async function hydrateContactCallDetails(callId,details){
       const data=await fetchJsonRetry('/api/account?action=call-detail&id='+encodeURIComponent(callId),{attempts:2,timeout:7000});
       if(!data?.call||typeof data.call!=='object'||Array.isArray(data.call)||String(data.call.id||'')!==String(callId))throw new Error('Call detail response was incomplete');
       const idx=callsData.findIndex(x=>String(x.id)===String(callId));if(idx>=0)callsData[idx]={...callsData[idx],...data.call};call=callsData[idx>=0?idx:callsData.findIndex(x=>String(x.id)===String(callId))]||data.call
-    }catch(err){console.warn('Inline contact call detail delayed',err)}
+    }catch(err){detailWarning='Full call details could not refresh. Showing the last verified contact activity; the transcript may be unavailable or outdated.';console.warn('Inline contact call detail delayed',err)}
   }
-  if(body)body.innerHTML=contactInlineCallHtml(call);
+  if(body)body.innerHTML=(detailWarning?'<p class="form-status-line error" role="status" aria-live="polite" aria-atomic="true">'+esc(detailWarning)+'</p>':'')+contactInlineCallHtml(call);
 }
 function renderContactHistoryItem(e){
   if(e.filter==='call'){
