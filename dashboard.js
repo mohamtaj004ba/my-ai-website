@@ -1612,11 +1612,15 @@ async function prepareBusinessLogo(file){
 }
 function settingsFieldError(id,message=''){
   const input=document.getElementById(id);if(!input)return;
-  const label=input.closest('label')||input.parentElement;
+  const label=input.closest('label')||input.parentElement,errorId=id+'Error';
   input.classList.toggle('field-invalid',!!message);
   input.setAttribute('aria-invalid',message?'true':'false');
   let note=label?.querySelector('.field-error');
-  if(message&&!note){note=document.createElement('small');note.className='field-error';label?.appendChild(note)}
+  if(message&&!note){note=document.createElement('small');note.className='field-error';note.id=errorId;label?.appendChild(note)}
+  if(note&&!note.id)note.id=errorId;
+  const described=new Set(String(input.getAttribute?.('aria-describedby')||'').split(/\s+/).filter(Boolean));
+  if(message)described.add(errorId);else described.delete(errorId);
+  if(described.size)input.setAttribute('aria-describedby',[...described].join(' '));else input.removeAttribute?.('aria-describedby');
   if(note){note.textContent=message;note.hidden=!message}
 }
 function normalizePhone(value){
