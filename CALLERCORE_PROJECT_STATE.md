@@ -1331,3 +1331,19 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Earlier exact verified heads in this sequence: `1fa1ba813078fea489820f5c54e754da40501018` (Onboarding inline feedback, **1334/1334**) and `f54ee7c90afe176cc8354d5416be243cc7b111c9` (workspace admin inline feedback, **1336/1336**).
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Next phase: move beyond native-dialog cleanup into the remaining premium-polish backlog: cross-dashboard visual consistency, mobile/keyboard reachability, loading/error truthfulness, stale controls, and any residual browser QA findings. Do not reopen already-verified backend mutation contracts unless a new regression is found.
+
+
+## Mobile reachability / stale-state truthfulness checkpoint — 2026-10-03
+
+- Continued the premium client/admin polish sweep on `feature/callercore-dashboards`; production `main` remained unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0` and PR #5 remained draft/unmerged.
+- **Dynamic mobile viewport reachability:** modal cards now use `90dvh`; Admin Core Intelligence and the Onboarding detail drawer use `100dvh`; safe-area bottom padding was added where fixed-height mobile panels contain bottom controls. Exact verified implementation `64766e4ad6657af0031c1d56acd00c974c72dec9` passed **1341/1341** tests plus build, CodeQL, Vercel Preview, and authenticated Browser QA.
+- **Settings mobile save reachability:** while client Settings is in edit mode on phone-sized viewports, Save/Cancel/status controls become a safe-area-aware fixed bottom action bar and the view reserves enough bottom space so content is not covered.
+- **Admin client drawer truthfulness:** current-request HTTP, malformed-response, and network failures now surface through Admin sync status instead of silently returning false; superseded stale requests remain silent and cannot replace the current selection.
+- **Call detail truthfulness:** when a full call-detail/transcript fetch fails, the drawer explicitly says it is showing the last verified call summary and that transcript data may be unavailable/outdated, rather than making fallback data look complete.
+- **Follow-up truthfulness:** failed follow-up-state refreshes preserve the last verified state but now disclose that counts/status labels may be stale. Non-completion team-status mutations report updating/success/failure inline while retaining rollback and per-call serialization.
+- **Contact history truthfulness:** expanded contact call history now shows a live warning when detailed call/transcript hydration fails and continues to show only the last verified activity underneath it.
+- Regression fixtures were updated for the new live-status dependencies without weakening stale-request guards, optimistic rollback, canonical receipt checks, or mutation locking.
+- **Exact verified final head `9dbdd0217c1ff35e796ff75fd573c535d5c1d92f`:** CallerCore test suite **1348 passed / 0 failed**; build SUCCESS; CodeQL push/PR SUCCESS; authenticated Preview Browser QA SUCCESS; Vercel Preview SUCCESS.
+- Intermediate exact verified head `8bac4107a826d2d5a183ec273c58366742a39354` passed **1346/1346** tests plus build, CodeQL, Vercel, and authenticated Browser QA after the Settings/admin-client/call-detail batch.
+- No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
+- Next phase: continue cross-dashboard premium consistency and accessibility review, prioritizing remaining user-visible stale/error gaps and genuine mobile/keyboard reachability issues; avoid cosmetic churn and do not reopen already-verified backend mutation contracts without a new regression.
