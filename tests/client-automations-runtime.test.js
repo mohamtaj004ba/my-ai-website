@@ -51,3 +51,21 @@ test('automation delete binding points to an implemented handler',()=>{
   assert.match(ui,/async function deleteAutomation\(id\)/);
   assert.match(ui,/deleteAutomation\(btn\.dataset\.deleteAuto\)/);
 });
+
+
+test('automation pending state is visible, blocks modal dismissal, and exposes toggle state accessibly',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  const render=ui.slice(ui.indexOf('function renderAutomations(){'),ui.indexOf('let automationMutationPending=false;'));
+  const persist=ui.slice(ui.indexOf('async function persistAutomations(){'),ui.indexOf('async function toggleAutomation('));
+  const close=ui.slice(ui.indexOf('function closeAutomation(){'),ui.indexOf('async function saveAutomation(){'));
+  assert.match(render,/aria-pressed="'\+String\(!!x\.enabled\)\+'"/);
+  assert.match(render,/Disable '\)\+\(x\.name\|\|'automation'/);
+  assert.match(render,/function setAutomationMutationUi\(pending\)/);
+  assert.match(render,/modal\.setAttribute\('aria-busy',String\(busy\)\)/);
+  assert.match(render,/save\.textContent=busy\?'Saving…':'Save automation'/);
+  assert.match(render,/create\.disabled=busy/);
+  assert.match(render,/btn\.disabled=busy/);
+  assert.match(persist,/automationMutationPending=true;setAutomationMutationUi\(true\)/);
+  assert.match(persist,/finally\{automationMutationPending=false;setAutomationMutationUi\(false\)\}/);
+  assert.match(close,/if\(automationMutationPending\)return false/);
+});
