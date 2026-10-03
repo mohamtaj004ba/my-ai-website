@@ -31,6 +31,8 @@ test('opening focuses the first control and closing returns focus to the trigger
 
 test('Tab is trapped inside an open modal and Escape uses its guarded close control',()=>{
   const f=fixture();f.open();f.document.activeElement=f.field;const tab={key:'Tab'};f.keydown(tab);assert.equal(tab.prevented,true);assert.strictEqual(f.document.activeElement,f.close);
+  f.document.activeElement=f.trigger;const escapedTab={key:'Tab'};f.keydown(escapedTab);assert.equal(escapedTab.prevented,true);assert.strictEqual(f.document.activeElement,f.close);
+  f.document.activeElement=f.trigger;const escapedShiftTab={key:'Tab',shiftKey:true};f.keydown(escapedShiftTab);assert.equal(escapedShiftTab.prevented,true);assert.strictEqual(f.document.activeElement,f.field);
   const escape={key:'Escape'};f.keydown(escape);assert.equal(escape.prevented,true);assert.equal(escape.stopped,true);assert.strictEqual(f.document.activeElement,f.trigger);
 });
 
