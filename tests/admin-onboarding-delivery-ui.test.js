@@ -34,6 +34,8 @@ test('onboarding invite and delivery resolution share a per-client pending lock'
 test('send UI refreshes authoritative onboarding state after failed or ambiguous delivery',()=>{
   const start=source.indexOf('async function sendOnboardingInvite('),end=source.indexOf('\nasync function approveProvisioningBuild(',start),body=source.slice(start,end);
   assert.match(body,/if\(!r\.ok\)[\s\S]*refreshAdminView\('onboarding'/);
+  assert.match(body,/data\.ok!==true/);
+  assert.match(body,/!data\.onboarding\|\|typeof data\.onboarding!=='object'/);
   assert.match(body,/data\.deliveryStatus!=='sent'&&data\.alreadySent!==true/);
   assert.match(body,/finally\{adminOnboardingInvitePending\.delete/);
 });
