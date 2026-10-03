@@ -17,7 +17,7 @@ function harness(fetcher){
   context.button=button;vm.runInContext(source.slice(start,end),context);
   return {context,input,feedback,button,thread,records,rendered:()=>renders,send:()=>vm.runInContext("replyAdminSupportTicket('ticket-1',button)",context)};
 }
-function response(ticket,status=200){return {ok:status<400,json:async()=>({ticket})}}
+function response(ticket,status=200){return {ok:status<400,json:async()=>({ok:status<400,ticket})}}
 test('admin send locks draft and suppresses concurrent duplicate POSTs',async()=>{
   let release,count=0;
   const pending=new Promise(resolve=>{release=resolve});
