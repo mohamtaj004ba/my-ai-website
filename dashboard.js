@@ -3161,7 +3161,7 @@ async function clearProvisioningOverride(id){
   finally{adminProvisioningStagePending.delete(key);renderProvisioning();setProvisioningStageControls(key,false)}
 }
 
-let phoneVisibleLimit=50,phoneFilterSignature='';
+let phoneVisibleLimit=50,phoneFilterSignature='';const adminPhoneDeletePending=new Set();
 function renderPhones(){
   const wrap=document.getElementById('phoneTable'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
   if(!wrap)return;
@@ -3176,7 +3176,7 @@ function renderPhones(){
   set('phoneListCount','Showing '+visible.length+' of '+rows.length+' numbers'+(q||filter!=='all'?' matching filters':''));
   const more=document.getElementById('loadMorePhones');if(more)more.hidden=visible.length>=rows.length;
   const reset=document.getElementById('resetPhoneFilters');if(reset)reset.hidden=!q&&filter==='all';
-  wrap.innerHTML=visible.map(x=>{const after=x.afterHours==='transfer'?'Human transfer':x.afterHours==='voicemail'?'Voicemail':'AI answers',routing='<span class="admin-phone-routing"><b>'+(x.transferNumber?'Transfer '+esc(x.transferNumber):'No transfer destination')+'</b><small>After hours · '+esc(after)+'</small></span>';return '<div class="call-row admin-phone-row"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+(x.forwardingFrom?' · forwards from '+esc(x.forwardingFrom):'')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span>'+routing+'<span class="tag amber">'+esc(x.voice?.label||'Awaiting activation')+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'">Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'">Delete</button></span></div>'}).join('');
+  wrap.innerHTML=visible.map(x=>{const pending=adminPhoneDeletePending.has(String(x.id)),after=x.afterHours==='transfer'?'Human transfer':x.afterHours==='voicemail'?'Voicemail':'AI answers',routing='<span class="admin-phone-routing"><b>'+(x.transferNumber?'Transfer '+esc(x.transferNumber):'No transfer destination')+'</b><small>After hours · '+esc(after)+'</small></span>';return '<div class="call-row admin-phone-row" aria-busy="'+String(pending)+'"><span><strong>'+esc(x.number)+'</strong><small class="subtle">'+esc(x.label||'Primary')+(x.forwardingFrom?' · forwards from '+esc(x.forwardingFrom):'')+'</small></span><span>'+esc(x.workspaceName||'Unassigned')+'</span><span>'+esc(x.provider||'')+'</span>'+routing+'<span class="tag amber">'+esc(x.voice?.label||'Awaiting activation')+'</span><span class="phone-actions"><button class="admin-link" data-edit-phone="'+esc(x.id)+'" '+(pending?'disabled':'')+'>Edit</button><button class="admin-link danger-link" data-delete-phone="'+esc(x.id)+'" '+(pending?'disabled':'')+'>'+(pending?'Deleting…':'Delete')+'</button></span></div>'}).join('');
   const empty=document.getElementById('phoneEmpty');if(empty){empty.hidden=rows.length!==0;const title=empty.querySelector('h3'),copy=empty.querySelector('p');if(title)title.textContent=adminPhoneData.length?'No matching numbers':'No phone numbers yet';if(copy)copy.textContent=adminPhoneData.length?'Clear the filters or search another number or workspace.':'Add a number to start recording its routing settings.'}
   wrap.querySelectorAll('[data-edit-phone]').forEach(b=>b.addEventListener('click',()=>openPhoneModal(b.dataset.editPhone)));
   wrap.querySelectorAll('[data-delete-phone]').forEach(b=>b.addEventListener('click',()=>deletePhone(b.dataset.deletePhone)));
@@ -3277,15 +3277,21 @@ function renderHealth(){
   const refresh=document.getElementById('refreshSystemHealth');if(refresh)refresh.onclick=async()=>{refresh.disabled=true;refresh.textContent='Checking…';try{await refreshAdminView('health',{force:true,announce:false})}catch(_){}finally{refresh.disabled=false;refresh.textContent='Run checks'}};
 }
 async function deletePhone(id){
-  const item=adminPhoneData.find(x=>String(x.id)===String(id));if(!item)return;
+  const key=String(id);if(adminPhoneDeletePending.has(key))return false;
+  const item=adminPhoneData.find(x=>String(x.id)===key);if(!item)return false;
   const assigned=item.workspaceName?' assigned to '+item.workspaceName:'';
-  if(!confirm('Delete '+item.number+assigned+'? This will remove the number from CallerCore'+(item.workspaceId?' and clear it from that workspace.':'.')))return;
-  const r=await fetch('/api/account?action=admin-phone-number-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt:Number(item.updatedAt||0)})});
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok){alert(data.error||'Could not delete phone number.');return}
-  if(data.ok!==true||!data.deleted||typeof data.deleted!=='object'||Array.isArray(data.deleted)||String(data.deleted.id||'')!==String(id)){alert('Phone deletion response was incomplete. Refresh the inventory before retrying.');return}
-  adminPhoneData=adminPhoneData.filter(x=>String(x.id)!==String(id));renderPhones();
-  await refreshAdminView('phones',{force:true,announce:false});
+  if(!confirm('Delete '+item.number+assigned+'? This will remove the number from CallerCore'+(item.workspaceId?' and clear it from that workspace.':'.')))return false;
+  adminPhoneDeletePending.add(key);renderPhones();
+  try{
+    const r=await fetch('/api/account?action=admin-phone-number-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,expectedUpdatedAt:Number(item.updatedAt||0)})}),data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||'Could not delete phone number.');
+    if(data.ok!==true||!data.deleted||typeof data.deleted!=='object'||Array.isArray(data.deleted)||String(data.deleted.id||'')!==key)throw new Error('Phone deletion response was incomplete. Refresh the inventory before retrying.');
+    adminPhoneData=adminPhoneData.filter(x=>String(x.id)!==key);renderPhones();
+    try{await refreshAdminView('phones',{force:true,announce:false})}
+    catch(_){alert('Phone deletion was confirmed, but the inventory could not refresh. Reload Phone Numbers before taking another action.')}
+    return true;
+  }catch(err){alert(err.message||'Could not delete phone number.');return false}
+  finally{adminPhoneDeletePending.delete(key);renderPhones()}
 }
 
 function openPhoneModal(id=null){
