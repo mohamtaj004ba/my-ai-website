@@ -1292,3 +1292,16 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - **Exact verified head `0ac193c366021af4a909fc007a40142bb06ccf0a`:** CallerCore CI SUCCESS with **1329 tests passed / 0 failed**; CodeQL SUCCESS; Jekyll/build SUCCESS; authenticated Preview Browser QA SUCCESS; Vercel Preview SUCCESS.
 - PR #5 remains unmerged. No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Next phase: continue residual premium-polish and cross-dashboard consistency checks only, prioritizing stale controls, keyboard/mobile reachability, loading/error truthfulness, and any remaining disruptive native-alert-only non-destructive flows without reopening already-verified backend mutation contracts unless a new regression is found.
+
+
+## Admin Inbox inline-feedback checkpoint — 2026-10-03
+
+- Continued the feature-branch-only premium-polish sweep while production `main` remained unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; PR #5 remained draft/unmerged.
+- Replaced routine Admin Unified Inbox browser alerts with inline live status for website-thread loading failures and Gmail connect/disconnect errors. The explicit Gmail disconnect confirmation remains in place.
+- Website conversation loading now reports loading, success, incomplete-response, and request-failure state through the Inbox status surface while preserving the previous selection on failure.
+- Gmail connect continues to require a canonical Google OAuth URL and now reports configuration/start failures inline. Gmail disconnect continues to clear verified local Gmail state only after canonical success and now reports failures inline.
+- Regression fixtures were aligned to the new status helper without weakening stale-request, read-state race, canonical receipt, or disconnect invariants.
+- Raw `alert()` usage in `dashboard.js` decreased from **40 to 34** during this pass; remaining alerts are concentrated in onboarding, phone inventory, finance, workspace administration, and billing/recovery flows.
+- **Exact verified head `e930300bf4e9da5fe7cc99844e9c44904ebfe1d6`:** CallerCore test suite **1331 passed / 0 failed**; build SUCCESS; CodeQL push/PR SUCCESS; authenticated Preview Browser QA SUCCESS; Vercel Preview SUCCESS.
+- No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
+- Next phase: continue replacing non-destructive native alerts with existing inline/live-status surfaces, starting with finance expense deletion and then phone-inventory refresh/error feedback while retaining destructive confirmations.
