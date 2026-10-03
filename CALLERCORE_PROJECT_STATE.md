@@ -1392,3 +1392,19 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Read-only follow-on inspection identified the next consistency area to verify before changing anything: stale edit IDs in Campaign, Phone, and Expense editors should never open a blank/new-looking editor for a record that disappeared between render and interaction. Keep this as the next narrow truthfulness/revision-guard pass rather than broad cosmetic churn.
 
+## Stale editor fail-closed checkpoint — 2026-10-03
+
+- Continued the feature-branch-only premium truthfulness sweep on `feature/callercore-dashboards`; production `main` remained unchanged and PR #5 remained draft/unmerged.
+- **Campaign editor stale-ID guard:** an edit action for a campaign that is no longer present now fails closed before opening the modal and surfaces an admin refresh message instead of presenting default/new-looking fields.
+- **Phone editor stale-ID guard:** a removed phone-number record can no longer open as a blank routing editor; the action fails closed and tells the admin to refresh Phone Numbers.
+- **Expense editor stale-ID guard:** a removed expense can no longer open as an Add-expense-looking editor; the action fails closed and tells the admin to refresh Finance.
+- **Automation stale-edit protection:** stale automation IDs are rejected both when opening and again at save time. A deleted automation can no longer be silently recreated from an already-open stale editor.
+- **Location stale-edit protection:** stale location IDs are rejected before opening and again at save time. A removed location can no longer produce a no-op mutation that appears to save successfully.
+- Added regression coverage across Campaign, Phone, Expense, Automation, and Location stale-record behavior.
+- An intermediate exact-head CI run on `fcb96078d7811ad25799bcb9601ce0ccce9cb5c1` failed one new phone stale-guard test because the test fixture declared `sync` separately instead of attaching it to the mocked modal used by `setAdminSyncState`. The application guard itself was not the failing behavior. The fixture was corrected in `b8e660b601747012b3a7394bbcebde31b9aed4a0`.
+- That same superseded intermediate SHA also had a failed Vercel Preview deployment (`dpl_2EcckdNzGppC6vcqYp7NRW8tnkZz`); no production deployment occurred. The replacement exact-head deployment is healthy.
+- **Exact verified implementation/test head `b8e660b601747012b3a7394bbcebde31b9aed4a0`:** CallerCore CI push `37140399595` and PR `37140402273` SUCCESS with **1368 tests passed / 0 failed**; CodeQL push `37140399570` and PR `37140402248` SUCCESS; Jekyll PR `37140402203` SUCCESS; authenticated Preview Browser QA `37140399556` SUCCESS including visual-drift comparison.
+- Vercel Preview `dpl_Hho7mX3Z6KkrE9ohnPEQnNZ6W2er` is **READY** at `https://my-ai-website-bz7twdijz-mohamtaj004bas-projects.vercel.app` for that exact implementation SHA.
+- No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
+- Next phase: continue the stale-control/premium consistency sweep read-only first. Prospect and Company Record editors already fail closed on missing records but currently do so silently; verify whether surfacing consistent refresh feedback is warranted before changing them. Continue prioritizing concrete workflow truthfulness over cosmetic churn.
+
