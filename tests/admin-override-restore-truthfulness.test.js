@@ -50,3 +50,16 @@ test('admin override requires the configuration snapshot displayed by the editor
   assert.match(apply,/expectedBefore=currentAdminTech\?\.config\?\.\[section\]/);
   assert.match(apply,/JSON\.stringify\(\{id:currentAdminClient\.id,section,value,expectedBefore\}\)/);
 });
+
+
+test('audit restore requires the configuration snapshot shown with history',()=>{
+  const start=api.indexOf('async function adminRestoreAudit('),end=api.indexOf('\n\n\nasync function adminSendOnboardingInvite(',start),block=api.slice(start,end);
+  assert.match(block,/hasOwnProperty\.call\(body,'expectedCurrent'\)/);
+  assert.match(block,/JSON\.stringify\(expectedCurrent\)!==JSON\.stringify\(displayedCurrent\)/);
+  assert.match(block,/configuration changed after the history view was loaded/i);
+  const ui=fs.readFileSync('dashboard.js','utf8');
+  const restoreStart=ui.indexOf('async function restoreAdminAudit('),restoreEnd=ui.indexOf('\ndocument.getElementById(\'adminConfigSection\')',restoreStart),restore=ui.slice(restoreStart,restoreEnd);
+  assert.match(restore,/expectedCurrent=currentAdminTech\?\.config\?\.\[section\]/);
+  assert.match(restore,/JSON\.stringify\(\{id:currentAdminClient\.id,auditId,expectedCurrent\}\)/);
+  assert.match(restore,/history entry is no longer available/i);
+});
