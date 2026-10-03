@@ -11,7 +11,7 @@ function segment(source,start,end){
 const backend=segment(api,'async function adminDeleteClient(req,res){','\nasync function adminPurgeClient(req,res){');
 const frontend=[
   segment(ui,'function setAdminClientMutationState(','\nasync function loadAdminTechSupport('),
-  segment(ui,'async function deleteAdminClient(){','\nasync function viewAdminClient(){')
+  segment(ui,'function setAdminDeleteWorkspaceStatus(','\nasync function viewAdminClient(){')
 ].join('\n');
 const clone=x=>x==null?x:JSON.parse(JSON.stringify(x));
 function resultBox(){let code=0,data=null;return {res:{status(n){code=n;return this},json(x){data=x;return x}},read:()=>({code,data})}}
@@ -141,39 +141,52 @@ function deferred(){let resolve;const promise=new Promise(ok=>resolve=ok);return
 function uiFixture(fetch){
   const nodes=new Map(),alerts=[],statuses=[],sync=[],closed=[],refreshes=[];
   const node=id=>{
-    if(!nodes.has(id))nodes.set(id,{id,value:'',textContent:'',disabled:false,attrs:{},setAttribute(k,v){this.attrs[k]=String(v)}});
+    if(!nodes.has(id))nodes.set(id,{id,value:'',textContent:'',disabled:false,attrs:{},classes:new Set(),classList:{add(...x){x.forEach(v=>node(id).classes.add(v))},remove(...x){x.forEach(v=>node(id).classes.delete(v))}},setAttribute(k,v){this.attrs[k]=String(v)},removeAttribute(k){delete this.attrs[k]},focus(){this.focused=true}});
     return nodes.get(id);
   };
   const ctx=vm.createContext({
     currentAdminClient:{id:'client-1',name:'Client One',plan:'Starter',status:'active',updatedAt:20,stripe:{}},
-    adminClientSaving:false,adminTechSaving:false,
+    adminClientSaving:false,adminTechSaving:false,adminDeleteConfirmState:null,
     document:{getElementById:node,querySelectorAll:()=>[]},
-    confirm:()=>true,prompt:()=> 'DELETE',fetch,alert:x=>alerts.push(String(x)),setAdminClientActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),setAdminSyncState:(state,message)=>sync.push({state,message:String(message||'')}),
+    fetch,alert:x=>alerts.push(String(x)),setAdminClientActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),setAdminSyncState:(state,message)=>sync.push({state,message:String(message||'')}),
     closeAdminClient:()=>closed.push('closed'),
     refreshAdminCore:async()=>refreshes.push('core'),loadAdminOps:async()=>refreshes.push('ops'),
-    Date,Number,String,JSON
+    setTimeout:fn=>fn(),Date,Number,String,JSON
   });
   vm.runInContext(frontend,ctx);
   return {ctx,node,alerts,statuses,sync,closed,refreshes,run:cmd=>vm.runInContext(cmd,ctx)};
 }
 
 test('deletion UI requires the explicit server success receipt before closing the drawer',()=>{
-  const block=frontend.slice(frontend.indexOf('async function deleteAdminClient(){'));
+  const block=frontend.slice(frontend.indexOf('function setAdminDeleteWorkspaceStatus('));
   assert.match(block,/data\.ok!==true\|\|data\.pendingDeletion!==true/);
+});
+
+test('deletion UI uses an in-app typed confirmation and rejects stale confirmation state',async()=>{
+  const f=uiFixture(async()=>assert.fail('stale or mistyped confirmation must not call the server'));
+  assert.equal(f.run('openAdminDeleteWorkspaceModal()'),true);
+  assert.equal(f.node('adminDeleteWorkspaceModal').attrs['aria-hidden'],'false');
+  assert.equal(f.node('confirmAdminDeleteWorkspace').disabled,true);
+  f.node('adminDeleteWorkspaceInput').value='delete';assert.equal(await f.run('deleteAdminClient()'),false);
+  assert.match(f.node('adminDeleteWorkspaceStatus').textContent,/Type DELETE exactly/);
+  f.node('adminDeleteWorkspaceInput').value='DELETE';f.ctx.currentAdminClient.updatedAt=21;
+  assert.equal(await f.run('deleteAdminClient()'),false);
+  assert.match(f.node('adminDeleteWorkspaceStatus').textContent,/changed after the confirmation opened/);
 });
 
 test('deletion UI sends displayed revision, locks drawer and suppresses duplicate submissions',async()=>{
   const pending=deferred(),requests=[];
   const f=uiFixture(async(_url,options)=>{requests.push(JSON.parse(options.body));return pending.promise});
+  f.run('openAdminDeleteWorkspaceModal()');f.node('adminDeleteWorkspaceInput').value='DELETE';f.run('setAdminDeleteWorkspacePending(false)');
   const first=f.run('deleteAdminClient()'),duplicate=f.run('deleteAdminClient()');
   assert.equal(requests.length,1);assert.deepEqual(requests[0],{id:'client-1',expectedUpdatedAt:20});
   assert.equal(f.ctx.adminClientSaving,true);assert.equal(f.node('adminDeleteClientButton').disabled,true);
-  assert.equal(f.node('adminDeleteClientButton').textContent,'Scheduling…');
+  assert.equal(f.node('confirmAdminDeleteWorkspace').textContent,'Scheduling…');
   assert.equal(f.node('adminSaveClientButton').textContent,'Save changes');
   assert.equal(f.node('closeAdminClient').disabled,true);assert.equal(f.node('adminClientDrawer').attrs['aria-busy'],'true');
   pending.resolve({ok:true,json:async()=>({ok:true,pendingDeletion:true,purgeEligibleAt:9000,client:{id:'client-1',status:'pending_deletion',updatedAt:30,purgeEligibleAt:9000}})});
   await Promise.all([first,duplicate]);
-  assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.node('adminDeleteClientButton').textContent,'Delete workspace');
+  assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.node('adminDeleteClientButton').textContent,'Delete workspace');assert.equal(f.ctx.adminDeleteConfirmState,null);
   assert.deepEqual(f.closed,['closed']);assert.equal(f.ctx.currentAdminClient,null);assert.deepEqual(f.refreshes,['core','ops']);
   assert.deepEqual(f.alerts,[]);
   assert.ok(f.sync.some(item=>/pending deletion/.test(item.message)));
@@ -181,15 +194,17 @@ test('deletion UI sends displayed revision, locks drawer and suppresses duplicat
 
 test('failed deletion scheduling unlocks controls and keeps the same client open for retry',async()=>{
   const f=uiFixture(async()=>({ok:false,json:async()=>({error:'Workspace changed'})}));
+  f.run('openAdminDeleteWorkspaceModal()');f.node('adminDeleteWorkspaceInput').value='DELETE';f.run('setAdminDeleteWorkspacePending(false)');
   await f.run('deleteAdminClient()');
   assert.equal(f.ctx.adminClientSaving,false);assert.equal(f.ctx.currentAdminClient.id,'client-1');
-  assert.equal(f.closed.length,0);assert.deepEqual(f.refreshes,[]);assert.deepEqual(f.alerts,[]);assert.ok(f.statuses.some(item=>item.tone==='error'&&item.message==='Workspace changed'));
+  assert.equal(f.closed.length,0);assert.deepEqual(f.refreshes,[]);assert.deepEqual(f.alerts,[]);assert.equal(f.node('adminDeleteWorkspaceStatus').textContent,'Workspace changed');assert.match(f.node('adminDeleteWorkspaceStatus').className,/error/);
   assert.equal(f.node('adminDeleteClientButton').disabled,false);
 });
 
 test('confirmed deletion is not misreported as failed when the directory refresh later fails',async()=>{
   const f=uiFixture(async()=>({ok:true,json:async()=>({ok:true,pendingDeletion:true,purgeEligibleAt:9000,warning:'Provider cleanup needs review.',client:{id:'client-1',status:'pending_deletion',updatedAt:30}})}));
   f.ctx.refreshAdminCore=async()=>{throw Error('offline')};
+  f.run('openAdminDeleteWorkspaceModal()');f.node('adminDeleteWorkspaceInput').value='DELETE';f.run('setAdminDeleteWorkspacePending(false)');
   await f.run('deleteAdminClient()');
   assert.equal(f.closed.length,1);assert.equal(f.ctx.currentAdminClient,null);
   assert.deepEqual(f.alerts,[]);
