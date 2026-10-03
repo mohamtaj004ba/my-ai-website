@@ -20,3 +20,10 @@ test('real client billing never falls back to demo usage or an assumed active su
   assert.match(dashboard,/used==null\?'Usage unavailable'/);
   assert.match(dashboard,/used!=null&&d\.minutes\?Math\.min\(100,\(used\/d\.minutes\)\*100\):0/);
 });
+
+
+test('overview account strip shares the verified live usage source instead of demo plan counters',()=>{
+  assert.match(dashboard,/renderOverviewUnlocks\(\)[\s\S]*usage=currentUsageMinutes\(\)/);
+  assert.match(dashboard,/usage==null\?'Usage unavailable'/);
+  assert.match(dashboard,/const pct=usage==null\?0:/);
+});

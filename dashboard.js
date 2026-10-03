@@ -269,9 +269,9 @@ function renderStages(){
 
 function renderOverviewUnlocks(){
   const el=document.getElementById('overviewUnlocks');if(!el)return;
-  const plan=PLAN_DATA[currentPlan],usage=Number(plan?.used||0),limit=plan?.minutes;
-  const usageText=limit?(usage.toLocaleString()+' of '+limit.toLocaleString()+' included minutes used'):(usage.toLocaleString()+' AI minutes this billing period');
-  const pct=limit?Math.min(100,usage/limit*100):Math.min(100,Math.max(8,usage?38:0));
+  const plan=PLAN_DATA[currentPlan],usage=currentUsageMinutes(),limit=plan?.minutes;
+  const usageText=usage==null?'Usage unavailable':limit?(usage.toLocaleString()+' of '+limit.toLocaleString()+' included minutes used'):(usage.toLocaleString()+' AI minutes this billing period');
+  const pct=usage==null?0:limit?Math.min(100,usage/limit*100):Math.min(100,Math.max(8,usage?38:0));
   el.innerHTML='<div class="plan-strip-copy"><span class="eyebrow">Account</span><b>'+esc(currentPlan)+' plan</b><small>'+esc(usageText)+'</small></div><div class="plan-strip-usage"><div class="usage-track"><i style="width:'+pct+'%"></i></div><button data-view="billing">Billing & usage →</button></div>';
   el.querySelector('[data-view]')?.addEventListener('click',()=>showView('billing'));
 }
