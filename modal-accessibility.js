@@ -1,9 +1,9 @@
 (()=>{
   const modalState=new WeakMap();
-  const selector='button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  const selector='button:not([disabled]):not([aria-disabled="true"]),a[href]:not([tabindex="-1"]):not([aria-disabled="true"]),input:not([disabled]):not([aria-disabled="true"]),select:not([disabled]):not([aria-disabled="true"]),textarea:not([disabled]):not([aria-disabled="true"]),[tabindex]:not([tabindex="-1"]):not([aria-disabled="true"])';
 
   function isRendered(element){
-    if(element.hidden||(typeof element.closest==='function'&&element.closest('[hidden],[aria-hidden="true"]')))return false;
+    if(element.hidden||element.getAttribute?.('aria-disabled')==='true'||(typeof element.closest==='function'&&element.closest('[hidden],[aria-hidden="true"]')))return false;
     const view=element.ownerDocument?.defaultView||globalThis;
     const style=typeof view.getComputedStyle==='function'?view.getComputedStyle(element):null;
     return (!style||(style.display!=='none'&&style.visibility!=='hidden'))&&(!element.getClientRects||element.getClientRects().length>0);
