@@ -78,3 +78,10 @@ test('Growth prospect cards are keyboard operable without requiring drag and dro
   assert.match(source,/e\.key==='Enter'\|\|e\.key===' '/);
   assert.match(source,/openProspectModal\(card\.dataset\.editProspect\)/);
 });
+
+
+test('Growth prospect keyboard focus is visibly apparent',()=>{
+  const css=fs.readFileSync('dashboard.css','utf8');
+  assert.match(css,/\.growth-card:hover,\.growth-card:focus-visible/);
+  assert.match(css,/\.growth-card:focus-visible\{outline:/);
+});
