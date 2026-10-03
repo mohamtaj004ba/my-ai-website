@@ -229,3 +229,13 @@ test('client and admin notification panels expose the same unread/history contro
   assert.match(ui,/setAttribute\('aria-selected',String\(selected\)\)/);
   assert.match(ui,/btn\.tabIndex=selected\?0:-1/);
 });
+
+
+test('notification tabs support roving keyboard navigation',()=>{
+  assert.match(ui,/const notificationTabs=\[\.\.\.panel\.querySelectorAll\('\[data-notification-mode\]'\)\]/);
+  assert.match(ui,/e\.key==='ArrowRight'/);
+  assert.match(ui,/e\.key==='ArrowLeft'/);
+  assert.match(ui,/e\.key==='Home'/);
+  assert.match(ui,/e\.key==='End'/);
+  assert.match(ui,/target\.focus\(\)/);
+});

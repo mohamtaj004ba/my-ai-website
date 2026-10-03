@@ -4494,7 +4494,7 @@ function initNotifications(){
   panel.addEventListener('click',e=>e.stopPropagation());
   document.getElementById('notificationReadAll')?.addEventListener('click',markAllNotifications);
   document.getElementById('notificationRetry')?.addEventListener('click',e=>{e.stopPropagation();loadNotifications({silent:false})});
-  panel.querySelectorAll('[data-notification-mode]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();notificationMode=btn.dataset.notificationMode||'unread';renderNotifications()}));
+  const notificationTabs=[...panel.querySelectorAll('[data-notification-mode]')];notificationTabs.forEach((btn,index)=>{btn.addEventListener('click',e=>{e.stopPropagation();notificationMode=btn.dataset.notificationMode||'unread';renderNotifications()});btn.addEventListener('keydown',e=>{let next=index;if(e.key==='ArrowRight')next=(index+1)%notificationTabs.length;else if(e.key==='ArrowLeft')next=(index-1+notificationTabs.length)%notificationTabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=notificationTabs.length-1;else return;e.preventDefault();const target=notificationTabs[next];notificationMode=target.dataset.notificationMode||'unread';renderNotifications();target.focus()})});
   document.addEventListener('click',()=>{panel.hidden=true;bell.setAttribute('aria-expanded','false')});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){panel.hidden=true;bell.setAttribute('aria-expanded','false')}});
   loadNotifications({silent:true});
