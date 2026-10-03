@@ -17,6 +17,7 @@ test('admin Gmail unread state waits for provider confirmation and stale failure
 test('client-care status selector reverts when server update fails',()=>{
   assert.match(dashboard,/async function updateSupportStatus\(id,status\)/);
   assert.match(dashboard,/const previous=t\.status/);
-  assert.match(dashboard,/catch\(err\)\{t\.status=previous;alert/);
-  assert.match(dashboard,/finally\{adminSupportStatusPending\.delete\(key\);renderAdminSupport\(\)\}/);
+  assert.match(dashboard,/catch\(err\)\{t\.status=previous;feedback=err\.message\|\|'Could not update support status\.'/);
+  assert.match(dashboard,/finally\{adminSupportStatusPending\.delete\(key\);renderAdminSupport\(\);setAdminSupportReplyStatus\(key,feedback\)\}/);
+  assert.doesNotMatch(dashboard.slice(dashboard.indexOf('async function updateSupportStatus('),dashboard.indexOf('\nfunction setPlatformSettingsDirty(')),/alert\(/);
 });
