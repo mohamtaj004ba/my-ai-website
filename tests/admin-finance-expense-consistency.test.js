@@ -59,7 +59,7 @@ test('blank expense amount is rejected rather than silently saved as zero',async
 
 function frontendFixture(response){
   const nodes=new Map(),node=id=>{
-    if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',disabled:false,dataset:{},className:'',classList:{add(){},remove(){}},setAttribute(name,value){this[name]=value}});
+    if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',disabled:false,dataset:{},className:'',classList:{add(){},remove(){}},setAttribute(name,value){this[name]=value},removeAttribute(name){delete this[name]},focus(){this.focused=true}});
     return nodes.get(id);
   };
   Object.assign(node('expenseModal').dataset,{editId:'expense-1',expectedUpdatedAt:'10'});node('expenseNameInput').value='Hosting Plus';node('expenseAmountInput').value='20';node('expenseVendorInput').value='Vendor';node('expenseCategoryInput').value='Software';node('expenseFrequencyInput').value='monthly';node('expenseDateInput').value='2026-09-25';node('expenseStatusInput').value='active';node('expenseNotesInput').value='Updated';
@@ -162,11 +162,22 @@ test('failed expense deletion uses admin sync feedback and preserves the verifie
 });
 
 
-test('expense form rejects blank amount before sending any API request',async()=>{
+test('expense form identifies and focuses invalid required fields before sending any API request',async()=>{
   const f=frontendFixture();
-  f.node('expenseAmountInput').value='  ';
+  f.node('expenseNameInput').value='  ';f.node('expenseAmountInput').value='  ';
   await vm.runInContext('saveExpense()',f.context);
   assert.equal(f.requests.length,0);
   assert.equal(f.context.adminExpenseSaving,false);
-  assert.match(f.node('expenseFormStatus').textContent,/valid amount/);
+  assert.equal(f.node('expenseNameInput')['aria-invalid'],'true');
+  assert.equal(f.node('expenseAmountInput')['aria-invalid'],'true');
+  assert.equal(f.node('expenseNameInput').focused,true);
+  assert.match(f.node('expenseFormStatus').textContent,/name and valid amount/);
+
+  f.node('expenseNameInput').value='Hosting';f.node('expenseNameInput').focused=false;f.node('expenseAmountInput').value='-1';
+  await vm.runInContext('saveExpense()',f.context);
+  assert.equal(f.requests.length,0);
+  assert.equal(f.node('expenseNameInput')['aria-invalid'],undefined);
+  assert.equal(f.node('expenseAmountInput')['aria-invalid'],'true');
+  assert.equal(f.node('expenseAmountInput').focused,true);
+  assert.match(f.node('expenseFormStatus').textContent,/valid expense amount/);
 });
