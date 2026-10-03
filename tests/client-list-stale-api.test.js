@@ -5,9 +5,9 @@ const vm=require('node:vm');
 
 const api=fs.readFileSync('api/account.js','utf8');
 const locStart=api.indexOf('async function saveLocations(');
-const locEnd=api.indexOf('\n\nasync function workspace(',locStart);
+const locEnd=api.indexOf('\nasync function ',locStart+'async function saveLocations('.length);
 const autoStart=api.indexOf('async function saveAutomations(');
-const autoEnd=api.indexOf('\n\nasync function conversations(',autoStart);
+const autoEnd=api.indexOf('\nasync function ',autoStart+'async function saveAutomations('.length);
 assert.ok(locStart>=0&&locEnd>locStart&&autoStart>=0&&autoEnd>autoStart);
 const locationSource=api.slice(locStart,locEnd);
 const automationSource=api.slice(autoStart,autoEnd);
