@@ -158,7 +158,7 @@ function openAdminAiGuide(prefill=''){
   if(!panel)return;panel.classList.add('open');panel.setAttribute('aria-hidden','false');if(backdrop)backdrop.hidden=false;if(launch)launch.setAttribute('aria-expanded','true');if(prefill&&input)input.value=prefill;setTimeout(()=>input?.focus(),80);
 }
 function closeAdminAiGuide(){
-  const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),launch=document.getElementById('adminAiLaunch');panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(backdrop)backdrop.hidden=true;if(launch)launch.setAttribute('aria-expanded','false');
+  const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),launch=document.getElementById('adminAiLaunch'),wasOpen=panel?.classList.contains('open');panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(backdrop)backdrop.hidden=true;if(launch){launch.setAttribute('aria-expanded','false');if(wasOpen)launch.focus()}
 }
 function formatCoreIntelligenceAnswer(raw){
   const text=String(raw||'').replace(/\r\n?/g,'\n').trim();if(!text)return '';

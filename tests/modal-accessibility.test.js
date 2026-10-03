@@ -91,3 +91,27 @@ test('platform settings section navigation exposes current state',()=>{
   const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
   assert.match(dashboard,/data-settings-jump[\s\S]*setAttribute\('aria-current',selected\?'true':'false'\)/);
 });
+
+
+test('interactive filter controls have truthful initial selected state before JavaScript renders',()=>{
+  const client=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
+  const admin=fs.readFileSync(path.join(__dirname,'..','admin-dashboard.html'),'utf8');
+  assert.match(client,/data-call-quick="all"[^>]*aria-pressed="true"/);
+  assert.match(client,/data-conversation-filter="all"[^>]*aria-pressed="true"/);
+  assert.match(client,/data-contact-history-filter="all"[^>]*aria-pressed="true"/);
+  assert.match(admin,/data-client-filter="active"[^>]*aria-pressed="true"/);
+  assert.match(admin,/data-website-days="30"[^>]*aria-pressed="true"/);
+  assert.match(admin,/data-inbox-filter="all"[^>]*aria-pressed="true"/);
+  assert.match(admin,/data-growth-filter="open"[^>]*aria-pressed="true"/);
+  assert.match(admin,/data-onboarding-filter="active"[^>]*aria-pressed="true"/);
+  assert.match(admin,/data-care-tab="support"[^>]*aria-pressed="true"/);
+  assert.match(admin,/data-settings-jump="general"[^>]*aria-current="true"/);
+});
+
+test('Core Intelligence declares its controlled panel and restores launch focus on close',()=>{
+  const admin=fs.readFileSync(path.join(__dirname,'..','admin-dashboard.html'),'utf8');
+  const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(admin,/id="adminAiLaunch"[^>]*aria-controls="adminAiPanel"/);
+  assert.match(dashboard,/wasOpen=panel\?\.classList\.contains\('open'\)/);
+  assert.match(dashboard,/if\(wasOpen\)launch\.focus\(\)/);
+});
