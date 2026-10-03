@@ -54,3 +54,34 @@ test('phone inventory read and mutations reject malformed or duplicate inventory
   assert.match(del,/Assigned workspace record is unavailable/);
   assert.match(del,/Assigned onboarding record is unavailable/);
 });
+
+
+test('confirmed phone save stays successful when inventory refresh fails',async()=>{
+  const js=fs.readFileSync('dashboard.js','utf8'),nodes=new Map(),alerts=[];
+  for(const [id,value] of Object.entries({phoneNumberInput:'5095550100',phoneLabelInput:'New label',phoneProviderInput:'Vapi',phoneWorkspaceInput:'tenant',phoneTransferInput:'',phoneForwardingInput:'',phoneAfterHoursInput:'ai'}))nodes.set(id,{value,disabled:false,textContent:'',className:''});
+  nodes.set('phoneModal',{dataset:{editId:'p',expectedUpdatedAt:'10'}});
+  nodes.set('savePhoneButton',{disabled:false,textContent:'Save number'});
+  nodes.set('phoneFormStatus',{textContent:'',className:''});
+  const record={id:'p',number:'5095550100',label:'New label',updatedAt:11};
+  let closed=0;
+  const ctx=vm.createContext({
+    phoneSaving:false,adminPhoneData:[{id:'p',number:'5095550100',label:'Old label',updatedAt:10}],
+    document:{getElementById:id=>nodes.get(id)},validUsPhone:()=>true,settingsFieldError:()=>{},normalizePhone:x=>x,
+    lockFormControls:()=>()=>{},fetch:async()=>({ok:true,json:async()=>({ok:true,number:record})}),renderPhones:()=>{},
+    closePhoneModal:()=>{closed++},refreshAdminView:async()=>{throw Error('offline')},alert:x=>alerts.push(String(x))
+  });
+  vm.runInContext(js.slice(js.indexOf('async function savePhone(){'),js.indexOf("document.getElementById('addPhoneButton')")),ctx);
+  assert.equal(await vm.runInContext('savePhone()',ctx),true);
+  assert.equal(ctx.adminPhoneData[0].updatedAt,11);
+  assert.equal(closed,1);
+  assert.equal(alerts.length,1);
+  assert.match(alerts[0],/saved, but the inventory could not refresh/i);
+  assert.equal(nodes.get('phoneFormStatus').textContent,'');
+});
+
+test('phone save source separates confirmed mutation from later refresh failure',()=>{
+  const js=fs.readFileSync('dashboard.js','utf8'),block=js.slice(js.indexOf('async function savePhone(){'),js.indexOf("document.getElementById('addPhoneButton')"));
+  assert.match(block,/try\{await refreshAdminView\('phones'/);
+  assert.match(block,/Phone number was saved, but the inventory could not refresh/);
+  assert.match(block,/return true/);
+});
