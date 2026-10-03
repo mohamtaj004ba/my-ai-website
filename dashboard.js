@@ -1880,7 +1880,7 @@ async function refreshAdminMonthlyKpi(){
 }
 
 async function bootstrapAdmin(){
-  setAdminSyncState('syncing','Loading admin data…');
+  if(typeof setAdminSyncState==='function')setAdminSyncState('syncing','Loading admin data…');
   try{
     const [sr,cr]=await Promise.all([
       fetch('/api/account?action=admin-summary',{headers:{Accept:'application/json'},cache:'no-store'}),
@@ -1905,7 +1905,7 @@ async function bootstrapAdmin(){
     const qp=new URLSearchParams(location.search);
     if(qp.get('gmail')){showView('inbox');await loadAdminInbox();history.replaceState({},'',location.pathname)}
     return true;
-  }catch(err){console.error('Admin bootstrap failed',err);setAdminSyncState('error','Admin data could not load · retry or refresh');return false}
+  }catch(err){console.error('Admin bootstrap failed',err);if(typeof setAdminSyncState==='function')setAdminSyncState('error','Admin data could not load · retry or refresh');return false}
 }
 
 async function loadAdminOps(){
