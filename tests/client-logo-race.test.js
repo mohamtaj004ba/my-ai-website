@@ -21,3 +21,12 @@ test('failed image processing preserves the existing logo and enables retry',asy
   const f=fixture(),p=f.prepare();f.pending[0].reject(Error('Invalid image'));await p;
   assert.equal(f.ctx.pendingBusinessLogo,'original');assert.equal(f.save.disabled,false);assert.equal(f.ctx.businessLogoProcessing,false);assert.equal(f.status.textContent,'Invalid image');
 });
+
+
+test('business profile placeholders are neutral before client data loads',()=>{
+  const html=require('node:fs').readFileSync('dashboard.html','utf8');
+  assert.match(html,/id="businessLogoInitials">—/);
+  assert.doesNotMatch(html,/placeholder="Spokane/);
+  assert.doesNotMatch(html,/\(509\) 555-0100/);
+  assert.match(html,/id="locationName" placeholder="Main office"/);
+});
