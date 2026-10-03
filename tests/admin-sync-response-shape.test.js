@@ -63,6 +63,6 @@ test('admin bootstrap starts neutral and exposes busy/error state instead of fak
 
 
 test('admin bootstrap sync announcements remain optional in isolated resilience contexts',()=>{
-  assert.match(dashboard,/if\(typeof setAdminSyncState==='function'\)setAdminSyncState\('syncing','Loading admin data…'\)/);
-  assert.match(dashboard,/if\(typeof setAdminSyncState==='function'\)setAdminSyncState\('error','Admin data could not load · retry or refresh'\)/);
+  assert.match(source,/if\(typeof setAdminSyncState==='function'\)setAdminSyncState\('syncing','Loading admin data…'\)/);
+  assert.match(source,/if\(typeof setAdminSyncState==='function'\)setAdminSyncState\('error','Admin data could not load · retry or refresh'\)/);
 });
