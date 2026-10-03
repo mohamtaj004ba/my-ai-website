@@ -1880,6 +1880,7 @@ async function refreshAdminMonthlyKpi(){
 }
 
 async function bootstrapAdmin(){
+  setAdminSyncState('syncing','Loading admin data…');
   try{
     const [sr,cr]=await Promise.all([
       fetch('/api/account?action=admin-summary',{headers:{Accept:'application/json'},cache:'no-store'}),
@@ -1904,7 +1905,7 @@ async function bootstrapAdmin(){
     const qp=new URLSearchParams(location.search);
     if(qp.get('gmail')){showView('inbox');await loadAdminInbox();history.replaceState({},'',location.pathname)}
     return true;
-  }catch(err){console.error('Admin bootstrap failed',err);return false}
+  }catch(err){console.error('Admin bootstrap failed',err);setAdminSyncState('error','Admin data could not load · retry or refresh');return false}
 }
 
 async function loadAdminOps(){
@@ -1963,7 +1964,7 @@ async function loadAdminOps(){
 
 function currentAdminView(){return document.querySelector('.view.active')?.id?.replace('view-','')||'overview'}
 function setAdminSyncState(state='live',message=''){
-  const wrap=document.getElementById('adminLiveStatus'),label=document.getElementById('adminLiveLabel'),stamp=document.getElementById('adminLastRefresh');
+  const wrap=document.getElementById('adminLiveStatus'),label=document.getElementById('adminLiveLabel'),stamp=document.getElementById('adminLastRefresh');document.querySelector('.dashboard-main')?.setAttribute('aria-busy',String(state==='syncing'));
   if(wrap){wrap.classList.toggle('syncing',state==='syncing');wrap.classList.toggle('sync-error',state==='error')}
   if(label)label.textContent=state==='syncing'?'Syncing':state==='error'?'Sync issue':'Live';
   if(stamp&&message)stamp.textContent=message;

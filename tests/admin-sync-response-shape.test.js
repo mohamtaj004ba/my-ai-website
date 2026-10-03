@@ -47,3 +47,16 @@ test('well-formed background operational reads cache only confirmed payloads',as
   assert.equal((await documents.run('documents','documents')).documents.company.length,0);
   assert.ok(Number(documents.ctx.adminDataSyncAt.documents)>0);
 });
+
+
+test('admin bootstrap starts neutral and exposes busy/error state instead of fake zero metrics',()=>{
+  const html=fs.readFileSync('admin-dashboard.html','utf8'),ui=fs.readFileSync('dashboard.js','utf8');
+  assert.match(html,/class="dashboard-main" aria-busy="true"/);
+  assert.match(html,/id="adminLiveLabel">Connecting/);
+  assert.match(html,/id="adminMrr">—/);
+  assert.match(html,/id="adminActiveClients">—/);
+  assert.match(html,/id="adminPastDue">—/);
+  assert.match(ui,/bootstrapAdmin\(\)[\s\S]*setAdminSyncState\('syncing','Loading admin data…'\)/);
+  assert.match(ui,/Admin bootstrap failed[\s\S]*setAdminSyncState\('error','Admin data could not load · retry or refresh'\)/);
+  assert.match(ui,/setAttribute\('aria-busy',String\(state==='syncing'\)\)/);
+});
