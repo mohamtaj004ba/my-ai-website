@@ -9,6 +9,7 @@ test('Growth stage mutation requires canonical prospect identity, stage, and rev
   assert.ok(start>=0&&end>start);
   const fn=ui.slice(start,end);
   assert.match(fn,/prospectStagePending\.has\(key\)/);
+  assert.match(fn,/data\.ok!==true/);
   assert.match(fn,/String\(data\.prospect\.id\)!==key/);
   assert.match(fn,/String\(data\.prospect\.stage\)!==stage/);
   assert.match(fn,/Number\.isFinite\(Number\(data\.prospect\.updatedAt\)\)/);
