@@ -2554,8 +2554,6 @@ async function adminProvisioningChecklistSave(req,res){
   if(rawState!=null&&(!rawState||typeof rawState!=='object'||Array.isArray(rawState)))return res.status(503).json({error:'Onboarding state is unavailable. No changes were made.'});
   if(rawState?.checklist!=null&&(!rawState.checklist||typeof rawState.checklist!=='object'||Array.isArray(rawState.checklist)))return res.status(503).json({error:'Onboarding checklist is unavailable. No changes were made.'});
   const state=rawState||{workspaceId:id,status:'building_review',completionPercent:100,checklist:{}};
-  if(!Object.prototype.hasOwnProperty.call(body,'expectedUpdatedAt')||!Number.isFinite(Number(body.expectedUpdatedAt))||Number(body.expectedUpdatedAt)!==Number(state.updatedAt||0))
-    return res.status(409).json({error:'Onboarding changed since this view loaded. Refresh onboarding before updating the checklist.'});
   if(state.checklist?.[field]===value)return res.status(200).json({ok:true,onboarding:state,unchanged:true});
   if(field==='adminReview'&&value&&Number(state.buildEligibleAt||0)>Date.now())return res.status(409).json({error:'The build is still in its review hold.',eligibleAt:state.buildEligibleAt});
   if(field==='adminReview'&&value&&(!state.checklist?.agreement||!state.checklist?.intake))return res.status(409).json({error:'The signed agreement and completed intake are required before build approval.'});
