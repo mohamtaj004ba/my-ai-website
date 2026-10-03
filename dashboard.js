@@ -646,7 +646,7 @@ async function markCallViewed(id){
     const r=await fetch('/api/account?action=call-viewed-mark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({callId:key})}),data=await r.json().catch(()=>({}));
     if(!r.ok||data.ok!==true)throw new Error(data.error||'Could not persist call read state');
   }catch(err){
-    callViewedIds.delete(key);renderCalls();console.warn('Call read state sync failed',err);
+    callViewedIds.delete(key);callViewedCoverage={...callViewedCoverage,verified:false};renderCalls();console.warn('Call read state sync failed',err);
   }
 }
 function syncCallSortHeader(){
