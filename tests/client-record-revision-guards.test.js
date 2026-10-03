@@ -22,3 +22,11 @@ test('appointment status update requires the displayed record revision',()=>{
   const uiBlock=ui.slice(ui.indexOf('async function updateAppointment('),ui.indexOf("\ndocument.getElementById('conversationSearch')",ui.indexOf('async function updateAppointment(')));
   assert.match(uiBlock,/expectedUpdatedAt:Number\(item\.updatedAt\|\|0\)/);
 });
+
+
+test('client accepts lead and appointment mutations only with a newer revision receipt',()=>{
+  const lead=ui.slice(ui.indexOf('async function moveLead('),ui.indexOf("\ndocument.getElementById('callSearch')",ui.indexOf('async function moveLead(')));
+  const appointment=ui.slice(ui.indexOf('async function updateAppointment('),ui.indexOf("\ndocument.getElementById('conversationSearch')",ui.indexOf('async function updateAppointment(')));
+  assert.match(lead,/Number\(data\.lead\.updatedAt\)<=Number\(lead\.updatedAt\|\|0\)/);
+  assert.match(appointment,/Number\(data\.appointment\.updatedAt\)<=Number\(item\.updatedAt\|\|0\)/);
+});
