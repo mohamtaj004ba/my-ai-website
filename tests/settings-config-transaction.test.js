@@ -4,10 +4,10 @@ const vm=require('node:vm');
 const fs=require('node:fs');
 const source=fs.readFileSync('api/account.js','utf8');
 const handler=source.slice(source.indexOf('async function saveSettings('),source.indexOf('async function aiAnsweringControl('));
-async function run({revision=10,transaction=true,missing=false}={}){
+async function run({revision=10,transaction=true,missing=false,omitRevision=false}={}){
   const previous={businessName:'Original',updatedAt:10,aiAnsweringPaused:true},workspace={name:'Original',plan:'Growth',ownerName:'Owner'};
   let status=200,result,updates,auditCommitted=null;
-  const ctx=vm.createContext({requireWritableSession:async()=>({workspaceId:'tenant',email:'qa@test.invalid'}),requireOperationalWorkspace:async()=>true,process:{env:{}},crypto:{randomUUID:()=> 'settings-audit'},Date,kv:{get:async key=>key.startsWith('settings:')?previous:missing?null:workspace,set:()=>assert.fail('Use atomic writes')},compareAndAuditBatch:async(_,u,auditKey,event)=>{updates=u;if(transaction==='error')throw Error('network');if(transaction)auditCommitted={auditKey,event};return transaction},appendAudit:async()=>assert.fail('Settings audit must be part of the atomic transaction'),req:{body:{businessName:'Updated',expectedUpdatedAt:revision}},res:{status(n){status=n;return this},json(x){result=x}}});
+  const ctx=vm.createContext({requireWritableSession:async()=>({workspaceId:'tenant',email:'qa@test.invalid'}),requireOperationalWorkspace:async()=>true,process:{env:{}},crypto:{randomUUID:()=> 'settings-audit'},Date,kv:{get:async key=>key.startsWith('settings:')?previous:missing?null:workspace,set:()=>assert.fail('Use atomic writes')},compareAndAuditBatch:async(_,u,auditKey,event)=>{updates=u;if(transaction==='error')throw Error('network');if(transaction)auditCommitted={auditKey,event};return transaction},appendAudit:async()=>assert.fail('Settings audit must be part of the atomic transaction'),req:{body:{businessName:'Updated',...(omitRevision?{}:{expectedUpdatedAt:revision})}},res:{status(n){status=n;return this},json(x){result=x}}});
   vm.runInContext(handler,ctx);await vm.runInContext('saveSettings(req,res)',ctx);return {status,result,updates,auditCommitted};
 }
 test('settings and shared workspace name are staged together without losing plan or owner',async()=>{
@@ -34,4 +34,9 @@ test('settings save rejects malformed saved settings and workspace records befor
   const block=source.slice(source.indexOf('async function saveSettings('),source.indexOf('async function aiAnsweringControl('));
   assert.match(block,/Business settings are unavailable\. No changes were made/);
   assert.match(block,/Workspace record is unavailable\. Settings were not changed/);
+});
+
+
+test('missing settings revision is rejected before any write',async()=>{
+  const r=await run({omitRevision:true});assert.equal(r.status,409);assert.equal(r.updates,undefined);assert.equal(r.auditCommitted,null);
 });
