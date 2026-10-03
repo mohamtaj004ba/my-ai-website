@@ -11,3 +11,12 @@ test('client billing status is driven by live subscription state',()=>{
   assert.match(dashboard,/statusTag\.className='tag '\+statusMeta\.tone/);
   assert.match(dashboard,/Payment needs attention/);
 });
+
+
+test('real client billing never falls back to demo usage or an assumed active subscription',()=>{
+  assert.match(dashboard,/function currentUsageMinutes\(\)[\s\S]*demoMode\?PLAN_DATA\[currentPlan\]\?\.used:sessionWorkspace\?\.usage\?\.minutes/);
+  assert.match(dashboard,/!sessionWorkspace&&!demoMode\)return/);
+  assert.match(dashboard,/subscription==='active'\?\{label:'Active',tone:'green'\}:\{label:'Status unavailable',tone:'amber'\}/);
+  assert.match(dashboard,/used==null\?'Usage unavailable'/);
+  assert.match(dashboard,/used!=null&&d\.minutes\?Math\.min\(100,\(used\/d\.minutes\)\*100\):0/);
+});
