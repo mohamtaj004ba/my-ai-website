@@ -17,8 +17,10 @@ test('admin client workspace actions use accessible inline feedback instead of b
 });
 
 test('workspace deletion and restoration safety confirmations remain explicit',()=>{
-  const start=ui.indexOf('async function deleteAdminClient()'),end=ui.indexOf('\nasync function viewAdminClient()',start),block=ui.slice(start,end);
-  assert.match(block,/confirm\('Schedule '/);
-  assert.match(block,/prompt\('Type DELETE to schedule deletion of '/);
+  const start=ui.indexOf('function setAdminDeleteWorkspaceStatus('),end=ui.indexOf('\nasync function viewAdminClient()',start),block=ui.slice(start,end);
+  assert.match(html,/id="adminDeleteWorkspaceModal" role="dialog"/);
+  assert.match(html,/Type <b>DELETE<\/b> to confirm/);
+  assert.match(block,/typed!=='DELETE'/);
+  assert.match(block,/This workspace changed after the confirmation opened/);
   assert.match(block,/confirm\('Restore '/);
 });
