@@ -4092,7 +4092,7 @@ async function deleteAdminClient(){
   try{
     const r=await fetch('/api/account?action=admin-client-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not schedule workspace deletion.');
-    if(data.pendingDeletion!==true||!data.client||typeof data.client!=='object'||Array.isArray(data.client)||String(data.client.id||'')!==id||data.client.status!=='pending_deletion')throw new Error('Deletion response was incomplete. Reopen this client to verify whether deletion was scheduled.');
+    if(data.ok!==true||data.pendingDeletion!==true||!data.client||typeof data.client!=='object'||Array.isArray(data.client)||String(data.client.id||'')!==id||data.client.status!=='pending_deletion')throw new Error('Deletion response was incomplete. Reopen this client to verify whether deletion was scheduled.');
     if(String(currentAdminClient?.id)!==id)return;
     currentAdminClient={...currentAdminClient,...data.client};
     confirmed=true;
