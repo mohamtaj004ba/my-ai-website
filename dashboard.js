@@ -1405,6 +1405,7 @@ async function toggleAutomation(id){
 async function deleteAutomation(id){
   if(automationMutationPending)return false;
   const key=String(id),index=automationsData.findIndex(x=>String(x.id)===key);if(index<0)return false;
+  const target=automationsData[index];if(!confirm('Delete automation "'+(target.name||'Untitled automation')+'"?'))return false;
   const before=automationsData.map(x=>({...x}));
   automationsData=automationsData.filter(x=>String(x.id)!==key);renderAutomations();
   if(!await persistAutomations()){automationsData=before;renderAutomations();return false}
@@ -1437,7 +1438,8 @@ async function saveAutomation(){
   const nameInput=document.getElementById('automationName'),status=document.getElementById('automationFormStatus'),name=nameInput?.value.trim()||'';
   if(!name){if(nameInput){nameInput.setAttribute('aria-invalid','true');nameInput.focus()}if(status){status.textContent='Add a name before saving this automation.';status.className='form-status-line error'}return false}
   nameInput?.removeAttribute('aria-invalid');if(status){status.textContent='';status.className='form-status-line'}
-  const item={id:editingAutomationId||('auto_'+Date.now()),name,trigger:document.getElementById('automationTrigger').value,action:document.getElementById('automationAction').value,enabled:true};
+  const existing=editingAutomationId?automationsData.find(x=>String(x.id)===String(editingAutomationId)):null;
+  const item={id:editingAutomationId||('auto_'+Date.now()),name,trigger:document.getElementById('automationTrigger').value,action:document.getElementById('automationAction').value,enabled:existing?existing.enabled!==false:true};
   const before=automationsData.map(x=>({...x})),i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));
   if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
   renderAutomations();
