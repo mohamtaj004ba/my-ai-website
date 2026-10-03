@@ -172,3 +172,11 @@ test('client billing rendering waits for a verified workspace instead of default
   const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
   assert.match(dashboard,/function renderBilling\(\)\{[\s\S]*document\.body\.dataset\.dashboard==='client'&&!sessionWorkspace\)return/);
 });
+
+
+test('non-button admin client filter cards remain keyboard operable',()=>{
+  const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  assert.match(dashboard,/data-admin-client-filter[\s\S]*!\/\^\(BUTTON\|A\)\$\/.test\(el\.tagName\)/);
+  assert.match(dashboard,/el\.tabIndex=0;el\.setAttribute\('role','button'\)/);
+  assert.match(dashboard,/el\.onkeydown=e=>\{if\(e\.key==='Enter'\|\|e\.key===' '/);
+});
