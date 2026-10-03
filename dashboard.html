@@ -126,7 +126,7 @@
         </div>
       </div>
       <div class="calls-summary-strip" aria-label="Quick call filters"><button class="active" id="callsShownCount" data-call-quick="all" type="button">0 calls</button><button id="callsUnviewedCount" data-call-quick="unread" type="button">0 not opened</button><button id="callsFollowupCount" data-call-quick="followup" type="button">0 open team actions</button><button id="callsResolvedCount" data-call-quick="resolved" type="button">0 resolved by AI</button></div>
-      <small class="muted calls-read-coverage" id="callsReadCoverage" role="status" hidden></small>
+      <small class="muted calls-read-coverage" id="callsReadCoverage" role="status" aria-live="polite" aria-atomic="true" hidden></small>
       <article class="panel table-panel call-history-panel"><div class="call-row head sticky-table-head"><span>Caller</span><button class="sortable-table-head active" id="callDateSortButton" type="button" aria-label="Sort calls by date and time, newest first" title="Newest first"><span>Date & time</span><i id="callDateSortArrow">↓</i></button><span>Call type</span><span>Reason</span><span>Call disposition</span><span>Team status</span><span>Duration</span></div><div id="callsTable"></div></article>
       <div class="call-list-footer" id="callListFooter" hidden><span id="callListMeta">Showing 0 of 0 calls</span><button class="secondary-btn compact" id="loadMoreCalls" type="button">Load more calls</button></div>
       <div class="empty-state" id="callsEmpty" hidden><h3>No calls yet</h3><p>Caller activity for this workspace will appear here once your AI number begins handling calls.</p></div>

@@ -33,3 +33,13 @@ test('Tab is trapped inside an open modal and Escape uses its guarded close cont
   const f=fixture();f.open();f.document.activeElement=f.field;const tab={key:'Tab'};f.keydown(tab);assert.equal(tab.prevented,true);assert.strictEqual(f.document.activeElement,f.close);
   const escape={key:'Escape'};f.keydown(escape);assert.equal(escape.prevented,true);assert.equal(escape.stopped,true);assert.strictEqual(f.document.activeElement,f.trigger);
 });
+
+
+test('dynamic operational status text uses polite live regions across client and admin surfaces',()=>{
+  const client=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
+  const admin=fs.readFileSync(path.join(__dirname,'..','admin-dashboard.html'),'utf8');
+  assert.match(client,/id="callsReadCoverage" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(admin,/id="growthCoverageNote" class="muted" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(admin,/id="adminAiStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(admin,/id="adminAuditCoverage" role="status" aria-live="polite" aria-atomic="true"/);
+});
