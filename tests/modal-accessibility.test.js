@@ -170,7 +170,7 @@ test('client receptionist placeholders stay neutral until workspace configuratio
 
 test('client billing rendering waits for a verified workspace instead of defaulting to an active subscription',()=>{
   const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
-  assert.match(dashboard,/function renderBilling\(\)\{[\s\S]*document\.body\.dataset\.dashboard==='client'&&!sessionWorkspace\)return/);
+  assert.match(dashboard,/function renderBilling\(\)\{[\s\S]*document\.body\.dataset\.dashboard==='client'&&!sessionWorkspace&&!demoMode\)return/);
 });
 
 
