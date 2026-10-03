@@ -1439,6 +1439,7 @@ function openAutomation(id=null,preset=null){
   const modal=document.getElementById('automationModal');if(!modal)return;
   editingAutomationId=id;
   let item=id?automationsData.find(x=>String(x.id)===String(id)):null;
+  if(id&&!item){editingAutomationId=null;setAutomationActionStatus('This automation is no longer available. Refresh Automations before editing.','error');return false}
   if(!item&&preset){
     const defs={
       missed_call:{name:'Missed-call follow-up task',trigger:'missed_call',action:'create_followup'},
@@ -1460,6 +1461,7 @@ async function saveAutomation(){
   if(!name){if(nameInput){nameInput.setAttribute('aria-invalid','true');nameInput.focus()}if(status){status.textContent='Add a name before saving this automation.';status.className='form-status-line error'}return false}
   nameInput?.removeAttribute('aria-invalid');if(status){status.textContent='';status.className='form-status-line'}
   const existing=editingAutomationId?automationsData.find(x=>String(x.id)===String(editingAutomationId)):null;
+  if(editingAutomationId&&!existing){if(status){status.textContent='This automation is no longer available. Close this editor and refresh Automations before retrying.';status.className='form-status-line error'}return false}
   const item={id:editingAutomationId||('auto_'+Date.now()),name,trigger:document.getElementById('automationTrigger').value,action:document.getElementById('automationAction').value,enabled:existing?existing.enabled!==false:true};
   const before=automationsData.map(x=>({...x})),i=automationsData.findIndex(x=>String(x.id)===String(editingAutomationId));
   if(i>=0)automationsData[i]={...automationsData[i],...item};else automationsData.push(item);
@@ -1686,7 +1688,7 @@ function renderLocations(){
   wrap.querySelectorAll('[data-delete-location]').forEach(b=>b.addEventListener('click',()=>deleteLocation(b.dataset.deleteLocation)));
 }
 function openLocationModal(id=''){
-  const modal=document.getElementById('locationModal');if(!modal)return;const x=locationsData.find(v=>String(v.id)===String(id)),name=document.getElementById('locationName'),status=document.getElementById('locationFormStatus');
+  const x=id?locationsData.find(v=>String(v.id)===String(id)):null;if(id&&!x){setLocationActionStatus('This location is no longer available. Refresh Locations before editing.','error');return false}const modal=document.getElementById('locationModal');if(!modal)return false;const name=document.getElementById('locationName'),status=document.getElementById('locationFormStatus');
   modal.dataset.editId=x?.id||'';document.getElementById('locationModalTitle').textContent=x?'Edit location':'Add location';if(name){name.value=x?.name||'';name.removeAttribute('aria-invalid')}document.getElementById('locationPhone').value=x?.phone||'';document.getElementById('locationAddress').value=x?.address||'';document.getElementById('locationTimezone').value=x?.timezone||settingsData?.timezone||'America/Los_Angeles';document.getElementById('locationActive').checked=x?.active!==false;if(status){status.textContent='';status.className='form-status-line'}modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>name?.focus(),20);
 }
 function closeLocationModal(){if(locationMutationPending)return false;const m=document.getElementById('locationModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}return true}
@@ -1712,6 +1714,7 @@ async function persistLocations(next,{surfaceError=true}={}){
 async function saveLocation(){
   if(locationMutationPending)return false;
   const modal=document.getElementById('locationModal'),id=modal?.dataset.editId||'',nameInput=document.getElementById('locationName'),status=document.getElementById('locationFormStatus'),name=nameInput?.value.trim()||'';
+  if(id&&!locationsData.some(x=>String(x.id)===String(id))){if(status){status.textContent='This location is no longer available. Close this editor and refresh Locations before retrying.';status.className='form-status-line error'}return false}
   if(!name){if(nameInput){nameInput.setAttribute('aria-invalid','true');nameInput.focus()}if(status){status.textContent='Add a location name before saving.';status.className='form-status-line error'}return false}
   nameInput?.removeAttribute('aria-invalid');if(status){status.textContent='Saving location…';status.className='form-status-line'}
   const item={id:id||undefined,name,phone:document.getElementById('locationPhone')?.value||'',address:document.getElementById('locationAddress')?.value||'',timezone:document.getElementById('locationTimezone')?.value||'America/Los_Angeles',active:!!document.getElementById('locationActive')?.checked};
