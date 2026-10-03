@@ -71,6 +71,7 @@ function fixture({unreadCount=95,visible=80}={}){
     document:{getElementById:()=>({})},
     fetch:async(url,options)=>{
       network.push(url);
+      if(url.includes('notifications-read'))return {ok:true,json:async()=>({ok:true})};
       return {ok:true,json:async()=>payload()};
     },
     renderNotifications:()=>renders.push('render'),console:{error(){},warn(){}},
@@ -115,7 +116,7 @@ test('reading all clears count even when API displayed only 80 of 95 alerts',asy
 });
 test('late initial list response cannot resurrect notification already marked read',async()=>{
   const f=fixture(),p=pending();
-  f.ctx.fetch=async(url)=>url.includes('notifications-read')?{ok:true}:p.promise;
+  f.ctx.fetch=async(url)=>url.includes('notifications-read')?{ok:true,json:async()=>({ok:true})}:p.promise;
   const load=f.run('loadNotifications()');
   await f.run("markNotifications(['alert-0'])");
   assert.equal(f.ctx.notificationUnreadCount,94);
@@ -127,7 +128,7 @@ test('late initial list response cannot resurrect notification already marked re
 });
 test('late list response cannot restore unread count after mark-all',async()=>{
   const f=fixture(),p=pending();
-  f.ctx.fetch=async(url)=>url.includes('notifications-read-all')?{ok:true}:p.promise;
+  f.ctx.fetch=async(url)=>url.includes('notifications-read-all')?{ok:true,json:async()=>({ok:true})}:p.promise;
   const load=f.run('loadNotifications()');
   await f.run('markAllNotifications()');
   p.resolve({ok:true,json:async()=>({notifications:[{id:'alert-0',read:false}],unreadCount:95})});
