@@ -835,8 +835,8 @@ function requestTeamStatusChange(id,status){
   persistTeamStatus(String(id),status);
 }
 function setTeamStatusModalPending(pending){
-  const modal=document.getElementById('teamStatusModal'),save=document.getElementById('saveTeamStatusModal'),cancel=document.getElementById('cancelTeamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther');
-  if(modal)modal.setAttribute('aria-busy',String(!!pending));if(save){save.disabled=!!pending;save.textContent=pending?'Saving…':'Mark complete'}if(cancel)cancel.disabled=!!pending;if(reason)reason.disabled=!!pending;if(other)other.disabled=!!pending;
+  const modal=document.getElementById('teamStatusModal'),save=document.getElementById('saveTeamStatusModal'),cancel=document.getElementById('cancelTeamStatusModal'),close=document.getElementById('closeTeamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther');
+  if(modal)modal.setAttribute('aria-busy',String(!!pending));if(save){save.disabled=!!pending;save.textContent=pending?'Saving…':'Mark complete'}if(cancel)cancel.disabled=!!pending;if(close)close.disabled=!!pending;if(reason)reason.disabled=!!pending;if(other)other.disabled=!!pending;
 }
 function closeTeamStatusModal(){if(pendingTeamStatusCallId&&followupMutationPending.has(String(pendingTeamStatusCallId)))return false;pendingTeamStatusCallId='';const modal=document.getElementById('teamStatusModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');modal.setAttribute('aria-busy','false')}return true}
 async function saveTeamStatusCompletion(){
