@@ -1305,3 +1305,15 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - **Exact verified head `e930300bf4e9da5fe7cc99844e9c44904ebfe1d6`:** CallerCore test suite **1331 passed / 0 failed**; build SUCCESS; CodeQL push/PR SUCCESS; authenticated Preview Browser QA SUCCESS; Vercel Preview SUCCESS.
 - No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
 - Next phase: continue replacing non-destructive native alerts with existing inline/live-status surfaces, starting with finance expense deletion and then phone-inventory refresh/error feedback while retaining destructive confirmations.
+
+
+## Admin Finance / phone feedback checkpoint — 2026-10-03
+
+- Continued the feature-branch-only premium-polish sweep while production `main` remained unchanged at `37ef5cfcdccae35952822859f64fe83f0b9f09f0`; PR #5 remained draft/unmerged.
+- **Finance:** failed company-expense deletion now reports through the existing Admin sync-status surface instead of a blocking browser alert. The destructive delete confirmation remains unchanged, canonical deletion receipts remain required, duplicate-delete locking remains in place, and a failed delete preserves the last verified ledger.
+- **Phone inventory:** failed phone deletion plus post-save/post-delete inventory refresh warnings now report through the existing Admin sync-status surface. Destructive phone deletion confirmation, canonical mutation receipts, revision checks, atomic inventory/workspace/onboarding routing updates, and inline phone-form validation remain unchanged.
+- Added/updated regression coverage for failed expense deletion, failed phone deletion, confirmed phone-save refresh failure, and the associated live-status behavior.
+- Raw `alert()` usage in `dashboard.js` is now **30** calls, down from **40** at the start of this polish sequence. Remaining calls are primarily concentrated in Onboarding, workspace administration/recovery, automation/location fallback paths, and billing.
+- **Exact verified implementation/test SHA `fcaa00e79520749729e36b92cd9124fcc6568b03`:** CallerCore test suite **1333 passed / 0 failed**; build SUCCESS; CodeQL push/PR SUCCESS; authenticated Preview Browser QA SUCCESS; Vercel Preview SUCCESS.
+- No production merge/deployment, live voice/provider activation, billing action, customer communication, destructive production mutation, production migration, or release-gate change occurred.
+- Next phase: perform a deliberate Admin Onboarding live-status pass covering invite, delivery-resolution, build-approval, checklist, manual-stage, and automatic-stage-restore feedback while retaining confirmation prompts for consequential admin actions and preserving canonical response/revision safeguards.
