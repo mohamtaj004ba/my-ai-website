@@ -831,12 +831,18 @@ async function persistTeamStatus(id,status,{completionReason='',completionNote='
 }
 function requestTeamStatusChange(id,status){
   if(followupMutationPending.has(String(id)))return false;
-  if(status==='completed'){pendingTeamStatusCallId=String(id);const modal=document.getElementById('teamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther'),wrap=document.getElementById('teamCompletionOtherWrap');if(reason)reason.value='';if(other)other.value='';if(wrap)wrap.hidden=true;if(modal){modal.classList.add('open');modal.setAttribute('aria-hidden','false')}return}
+  if(status==='completed'){pendingTeamStatusCallId=String(id);const modal=document.getElementById('teamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther'),wrap=document.getElementById('teamCompletionOtherWrap'),statusEl=document.getElementById('teamStatusModalStatus');if(reason)reason.value='';if(other)other.value='';if(wrap)wrap.hidden=true;if(statusEl){statusEl.textContent='';statusEl.className='form-status-line'}if(modal){modal.classList.add('open');modal.setAttribute('aria-hidden','false');modal.setAttribute('aria-busy','false')}return}
   persistTeamStatus(String(id),status);
 }
-function closeTeamStatusModal(){pendingTeamStatusCallId='';const modal=document.getElementById('teamStatusModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}}
+function setTeamStatusModalPending(pending){
+  const modal=document.getElementById('teamStatusModal'),save=document.getElementById('saveTeamStatusModal'),cancel=document.getElementById('cancelTeamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther');
+  if(modal)modal.setAttribute('aria-busy',String(!!pending));if(save){save.disabled=!!pending;save.textContent=pending?'Saving…':'Mark complete'}if(cancel)cancel.disabled=!!pending;if(reason)reason.disabled=!!pending;if(other)other.disabled=!!pending;
+}
+function closeTeamStatusModal(){if(pendingTeamStatusCallId&&followupMutationPending.has(String(pendingTeamStatusCallId)))return false;pendingTeamStatusCallId='';const modal=document.getElementById('teamStatusModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');modal.setAttribute('aria-busy','false')}return true}
 async function saveTeamStatusCompletion(){
-  const id=pendingTeamStatusCallId;if(!id)return;const reason=document.getElementById('teamCompletionReason')?.value||'',note=String(document.getElementById('teamCompletionOther')?.value||'').trim().slice(0,160);const ok=await persistTeamStatus(id,'completed',{completionReason:reason,completionNote:note});if(ok)closeTeamStatusModal();
+  const id=pendingTeamStatusCallId;if(!id||followupMutationPending.has(String(id)))return false;const reason=document.getElementById('teamCompletionReason')?.value||'',note=String(document.getElementById('teamCompletionOther')?.value||'').trim().slice(0,160),status=document.getElementById('teamStatusModalStatus');setTeamStatusModalPending(true);if(status){status.textContent='Saving completion…';status.className='form-status-line'}
+  try{const ok=await persistTeamStatus(id,'completed',{completionReason:reason,completionNote:note});if(ok){closeTeamStatusModal();return true}if(status){status.textContent='Could not confirm the completion update. Your selection is still open; try again.';status.className='form-status-line error'}return false}
+  finally{setTeamStatusModalPending(false)}
 }
 function syncDrawerTeamStatus(call){
   const key=String(call.id||''),status=teamStatusForCall(call),pending=followupMutationPending.has(key),select=document.getElementById('drawerTeamStatus'),button=document.getElementById('drawerFollowupButton');if(select){select.value=status;select.disabled=pending;select.setAttribute('aria-busy',String(pending))}if(button){button.dataset.callId=key;button.textContent=pending?'Updating…':'Update status';button.disabled=pending;button.setAttribute('aria-busy',String(pending))}
