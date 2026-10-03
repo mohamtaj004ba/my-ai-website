@@ -77,3 +77,11 @@ test('popover triggers identify their controlled panels and Escape restores trig
   assert.match(dashboard,/helpWasOpen[\s\S]*helpButton\?\.focus\(\)/);
   assert.match(dashboard,/nb\?\.focus\(\)/);
 });
+
+
+test('remaining admin asynchronous status text uses polite live regions',()=>{
+  const admin=fs.readFileSync(path.join(__dirname,'..','admin-dashboard.html'),'utf8');
+  assert.match(admin,/id="inboxThreadCoverage" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(admin,/id="inboxReplyStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(admin,/id="financeReconciliationStatus" role="status" aria-live="polite" aria-atomic="true"/);
+});
