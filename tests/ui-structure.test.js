@@ -64,6 +64,12 @@ test('individually mandatory name fields expose native required semantics',()=>{
   assert.doesNotMatch(admin,/id="prospectNameInput"[^>]*\\brequired\\b/,'prospects may instead be identified by business, email, or phone');
 });
 
+test('team note composer exposes the same required semantics enforced by JavaScript',()=>{
+  const client=html('dashboard.html');
+  assert.match(client,/id="drawerInternalNote"[^>]*\brequired\b/);
+  assert.match(client,/id="drawerInternalNote"[^>]*aria-describedby="drawerNoteStatus"/);
+});
+
 test('client support and AI feedback required text fields expose validation semantics',()=>{
   const client=html('dashboard.html');
   for(const [id,status] of [['supportSubject','supportStatus'],['supportMessage','supportStatus'],['agentFeedbackMessage','agentFeedbackStatus'],['aiFeedbackMessage','aiFeedbackStatus']]){
