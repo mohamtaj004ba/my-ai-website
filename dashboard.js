@@ -155,7 +155,7 @@ function adminAiSnapshot(){
 }
 function openAdminAiGuide(prefill=''){
   const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),input=document.getElementById('adminAiInput'),launch=document.getElementById('adminAiLaunch');
-  if(!panel)return;panel.classList.add('open');panel.setAttribute('aria-hidden','false');if(backdrop)backdrop.hidden=false;if(launch)launch.setAttribute('aria-expanded','true');if(prefill&&input)input.value=prefill;setTimeout(()=>input?.focus(),80);
+  if(!panel)return;closeTopbarPopovers();panel.classList.add('open');panel.setAttribute('aria-hidden','false');if(backdrop)backdrop.hidden=false;if(launch)launch.setAttribute('aria-expanded','true');if(prefill&&input)input.value=prefill;setTimeout(()=>input?.focus(),80);
 }
 function closeAdminAiGuide(){
   const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),launch=document.getElementById('adminAiLaunch'),wasOpen=panel?.classList.contains('open');panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(backdrop)backdrop.hidden=true;if(launch){launch.setAttribute('aria-expanded','false');if(wasOpen)launch.focus()}
@@ -4374,10 +4374,19 @@ async function saveProfile(){
   }catch(err){if(status){status.textContent=err.message||'Could not save profile';status.className='error'}return false}
   finally{setProfileSaving(false)}
 }
+function closeTopbarPopovers(except=''){
+  const items=[['profile','accountPanel','accountButton'],['notifications','notificationPanel','notificationBell'],['help','helpPanel','helpButton']];
+  for(const [key,panelId,buttonId] of items){
+    if(key===except)continue;
+    const panel=document.getElementById(panelId),button=document.getElementById(buttonId);
+    if(panel&&!panel.hidden)panel.hidden=true;
+    if(button)button.setAttribute('aria-expanded','false');
+  }
+}
 function initProfileControls(){
   const button=document.getElementById('accountButton'),panel=document.getElementById('accountPanel'),photoInput=document.getElementById('profilePhotoInput');
   if(!button||!panel)return;renderUserProfile();
-  button.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){resetSurfaceScroll(panel);document.getElementById('profileNameInput')?.focus()}});
+  button.addEventListener('click',e=>{e.stopPropagation();const opening=!!panel.hidden;if(opening)closeTopbarPopovers('profile');panel.hidden=!opening;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){resetSurfaceScroll(panel);document.getElementById('profileNameInput')?.focus()}});
   panel.addEventListener('click',e=>e.stopPropagation());
   document.getElementById('profilePhotoButton')?.addEventListener('click',()=>{if(!profileSaving)photoInput?.click()});
   photoInput?.addEventListener('change',async()=>{
@@ -4595,7 +4604,7 @@ async function markAllNotifications(){
 }
 function initNotifications(){
   const bell=document.getElementById('notificationBell'),panel=document.getElementById('notificationPanel');if(!bell||!panel)return;
-  bell.addEventListener('click',e=>{e.stopPropagation();panel.hidden=!panel.hidden;bell.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){resetSurfaceScroll(panel);loadNotifications({silent:true})}});
+  bell.addEventListener('click',e=>{e.stopPropagation();const opening=!!panel.hidden;if(opening)closeTopbarPopovers('notifications');panel.hidden=!opening;bell.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){resetSurfaceScroll(panel);loadNotifications({silent:true})}});
   panel.addEventListener('click',e=>e.stopPropagation());
   document.getElementById('notificationReadAll')?.addEventListener('click',markAllNotifications);
   document.getElementById('notificationRetry')?.addEventListener('click',e=>{e.stopPropagation();loadNotifications({silent:false})});
@@ -4622,7 +4631,7 @@ document.querySelectorAll('[data-overview-jump]').forEach(card=>{const go=()=>sh
 
 const helpButton=document.getElementById('helpButton'),helpPanel=document.getElementById('helpPanel'),helpShell=helpButton?.closest('.help-shell');
 function closeHelpPanel(){if(helpPanel)helpPanel.hidden=true;if(helpButton)helpButton.setAttribute('aria-expanded','false')}
-helpButton?.addEventListener('click',e=>{e.stopPropagation();const opening=!!helpPanel?.hidden;if(helpPanel){helpPanel.hidden=!opening;if(opening)resetSurfaceScroll(helpPanel)}if(helpButton)helpButton.setAttribute('aria-expanded',opening?'true':'false')});
+helpButton?.addEventListener('click',e=>{e.stopPropagation();const opening=!!helpPanel?.hidden;if(opening)closeTopbarPopovers('help');if(helpPanel){helpPanel.hidden=!opening;if(opening)resetSurfaceScroll(helpPanel)}if(helpButton)helpButton.setAttribute('aria-expanded',opening?'true':'false')});
 document.addEventListener('click',e=>{if(helpShell&&!helpShell.contains(e.target))closeHelpPanel()});
 helpPanel?.querySelectorAll('[data-help-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.helpAction;closeHelpPanel();if(action==='billing'){showView('billing');return}showView('support');setTimeout(()=>{const subject=document.getElementById('supportSubject'),message=document.getElementById('supportMessage');if(action==='call-issue'&&subject){subject.value='Call review / issue';if(message&&!message.value)message.placeholder='Include the caller, approximate time, phone number, and what looked wrong.';subject.focus()}else subject?.focus()},50)}));
 document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(btn=>btn.addEventListener('click',()=>{overviewChartDays=Number(btn.dataset.chartDays||14);document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(x=>{const selected=x===btn;x.classList.toggle('active',selected);x.setAttribute('aria-pressed',String(selected))});renderOverview()}));
