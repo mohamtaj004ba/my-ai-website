@@ -1456,14 +1456,15 @@ async function saveWebhook(){
   if(webhookSaving)return false;
   const webhookUrl=document.getElementById('webhookUrl')?.value.trim()||'',status=document.getElementById('webhookEditStatus');webhookSaving=true;setWebhookEditing(true);if(status)status.textContent='Saving…';
   if(demoMode){integrationsData={...(integrationsData||{}),webhookUrl};webhookEditing=false;webhookSaving=false;renderIntegrations();return true}
+  let failureMessage='';
   try{
     const r=await fetch('/api/account?action=integrations-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not save webhook.');
     const confirmed=data.integrations;
     if(data.ok!==true||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.webhookUrl||'')!==webhookUrl||!Number.isFinite(Number(confirmed.updatedAt))||Number(confirmed.updatedAt)<=0)throw new Error('Webhook save response was incomplete. Your draft remains open; refresh before retrying.');
     integrationsData={...(integrationsData||{}),...confirmed};webhookEditing=false;return true;
-  }catch(err){if(status)status.textContent=err.message||'Could not save webhook. Check your connection and try again.';return false}
-  finally{webhookSaving=false;renderIntegrations()}
+  }catch(err){failureMessage=err.message||'Could not save webhook. Check your connection and try again.';return false}
+  finally{webhookSaving=false;renderIntegrations();if(failureMessage&&status)status.textContent=failureMessage}
 }
 function settingsControlIds(){return ['settingsBusinessName','settingsContactName','settingsPrimaryEmail','settingsBusinessPhone','settingsWebsite','settingsIndustry','settingsServiceArea','settingsStreetAddress','settingsCity','settingsState','settingsPostalCode','settingsTimezone','settingsNotificationEmail','settingsEmailAlerts','settingsNotifyBilling','settingsNotifySetup','settingsNotifyCalls','settingsNotifySupport','settingsNotifyUsage']}
 function businessInitials(name=''){const parts=String(name||'Business').trim().split(/\s+/).filter(Boolean);return (parts.length>1?(parts[0][0]+parts[1][0]):String(parts[0]||'B').slice(0,2)).toUpperCase()}
