@@ -18,17 +18,26 @@ function fixture({existing=true,confirmDelete=true}={}){
   const modal=el('campaignModal');modal.dataset.editId=existing?'campaign-1':'';
   modal.querySelectorAll=()=>controls;
   el('campaignNameInput').value='Campaign edited';
-  const calls=[],requests=[],alerts=[],context=vm.createContext({
+  const calls=[],requests=[],alerts=[],sync=[],context=vm.createContext({
     document:{getElementById:el},CSS:{escape:x=>x},Date,Number,String,
     adminCampaignData:existing?[{id:'campaign-1',name:'Original campaign',updatedAt:10,createdAt:1}]:[],
-    renderGrowth:()=>calls.push('render'),confirm:()=>confirmDelete,alert:x=>alerts.push(x),
+    renderGrowth:()=>calls.push('render'),confirm:()=>confirmDelete,alert:x=>alerts.push(x),setAdminSyncState:(...args)=>sync.push(args),
     fetch:(url,options)=>{const task=deferred();requests.push({url,options,task});return task.promise}
   });
   const start=source.indexOf('let adminCampaignMutationPending=false;'),end=source.indexOf('\nfunction renderDocuments(',start);
   assert.ok(start>=0&&end>start);
   vm.runInContext(source.slice(start,end),context);
-  return {context,modal,controls,el,requests,alerts,calls};
+  return {context,modal,controls,el,requests,alerts,calls,sync};
 }
+
+test('stale campaign edit IDs fail closed instead of opening an add-looking editor',()=>{
+  const f=fixture({existing:false});
+  assert.equal(vm.runInContext("openCampaignModal('missing-campaign')",f.context),false);
+  assert.notEqual(f.modal['aria-hidden'],'false');
+  assert.equal(f.sync.length,1);
+  assert.equal(f.sync[0][0],'error');
+  assert.match(f.sync[0][1],/no longer available.*Refresh Marketing/i);
+});
 
 test('saving a campaign locks duplicate actions and modal dismissal until success',async()=>{
   const f=fixture();
