@@ -46,3 +46,9 @@ test('multi-event audited helper writes configuration and both audit events in o
   assert.equal(calls,1);
   assert.equal(await compareAndAuditEventsBatch({eval:async()=>0},[{key:'a',before:null,after:{}}],'audit:a',[{id:'x'}]),false);
 });
+
+
+test('missing receptionist revision is rejected before any write',async()=>{
+  const r=await fixture({section:'identity',name:'No revision'}).run();
+  assert.equal(r.status,409);assert.equal(r.result.code,'CONFIG_CONFLICT');assert.equal(r.updates,undefined);assert.equal(r.auditEvents,null);
+});
