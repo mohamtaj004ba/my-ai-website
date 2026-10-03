@@ -2348,14 +2348,14 @@ let adminCampaignMutationPending=false;
 function setCampaignMutationPending(pending,action='save'){
   adminCampaignMutationPending=!!pending;
   const modal=document.getElementById('campaignModal');
-  modal?.querySelectorAll('input,select,textarea,button').forEach(el=>{el.disabled=!!pending});
+  modal?.setAttribute('aria-busy',String(!!pending));modal?.querySelectorAll('input,select,textarea,button').forEach(el=>{el.disabled=!!pending});
   const save=document.getElementById('saveCampaignButton'),del=document.getElementById('deleteCampaignButton');
   if(save)save.textContent=pending&&action==='save'?'Saving…':'Save campaign';
   if(del)del.textContent=pending&&action==='delete'?'Deleting…':'Delete campaign';
 }
 function openCampaignModal(id=''){
   if(adminCampaignMutationPending)return;
-  const c=id?(adminCampaignData||[]).find(x=>String(x.id)===String(id)):null,m=document.getElementById('campaignModal');if(!m)return;m.dataset.editId=id||'';document.getElementById('campaignModalTitle').textContent=c?'Edit campaign':'Add campaign';document.getElementById('campaignNameInput').value=c?.name||'';document.getElementById('campaignChannelInput').value=c?.channel||'Email';document.getElementById('campaignStatusInput').value=c?.status||'draft';document.getElementById('campaignUtmSourceInput').value=c?.utmSource||'';document.getElementById('campaignUtmMediumInput').value=c?.utmMedium||'';document.getElementById('campaignUtmCampaignInput').value=c?.utmCampaign||'';document.getElementById('campaignBudgetInput').value=c?.budget||'';document.getElementById('campaignGoalInput').value=c?.goal||'';document.getElementById('campaignStartInput').value=c?.startAt?new Date(c.startAt).toISOString().slice(0,10):'';document.getElementById('campaignEndInput').value=c?.endAt?new Date(c.endAt).toISOString().slice(0,10):'';document.getElementById('campaignNotesInput').value=c?.notes||'';const del=document.getElementById('deleteCampaignButton');if(del)del.hidden=!c;const s=document.getElementById('campaignFormStatus');if(s)s.textContent='';m.classList.add('open');m.setAttribute('aria-hidden','false');
+  const c=id?(adminCampaignData||[]).find(x=>String(x.id)===String(id)):null,m=document.getElementById('campaignModal');if(!m)return;m.dataset.editId=id||'';document.getElementById('campaignModalTitle').textContent=c?'Edit campaign':'Add campaign';const name=document.getElementById('campaignNameInput');if(name){name.value=c?.name||'';name.removeAttribute?.('aria-invalid')} document.getElementById('campaignChannelInput').value=c?.channel||'Email';document.getElementById('campaignStatusInput').value=c?.status||'draft';document.getElementById('campaignUtmSourceInput').value=c?.utmSource||'';document.getElementById('campaignUtmMediumInput').value=c?.utmMedium||'';document.getElementById('campaignUtmCampaignInput').value=c?.utmCampaign||'';document.getElementById('campaignBudgetInput').value=c?.budget||'';document.getElementById('campaignGoalInput').value=c?.goal||'';document.getElementById('campaignStartInput').value=c?.startAt?new Date(c.startAt).toISOString().slice(0,10):'';document.getElementById('campaignEndInput').value=c?.endAt?new Date(c.endAt).toISOString().slice(0,10):'';document.getElementById('campaignNotesInput').value=c?.notes||'';const del=document.getElementById('deleteCampaignButton');if(del)del.hidden=!c;const s=document.getElementById('campaignFormStatus');if(s){s.textContent='';s.className='form-status-line'}m.classList.add('open');m.setAttribute('aria-hidden','false');m.setAttribute('aria-busy','false');name?.focus?.();
 }
 function closeCampaignModal(){if(adminCampaignMutationPending)return;const m=document.getElementById('campaignModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 async function deleteCampaign(){
@@ -2383,8 +2383,8 @@ async function deleteCampaign(){
 async function saveCampaign(){
   if(adminCampaignMutationPending)return;
   const m=document.getElementById('campaignModal'),editing=(adminCampaignData||[]).find(x=>String(x.id)===String(m?.dataset.editId||'')),payload={id:m?.dataset.editId||undefined,expectedUpdatedAt:editing?Number(editing.updatedAt||editing.createdAt||0):undefined,name:document.getElementById('campaignNameInput')?.value||'',channel:document.getElementById('campaignChannelInput')?.value||'Email',status:document.getElementById('campaignStatusInput')?.value||'draft',utmSource:document.getElementById('campaignUtmSourceInput')?.value||'',utmMedium:document.getElementById('campaignUtmMediumInput')?.value||'',utmCampaign:document.getElementById('campaignUtmCampaignInput')?.value||'',budget:Number(document.getElementById('campaignBudgetInput')?.value||0),goal:document.getElementById('campaignGoalInput')?.value||'',startAt:document.getElementById('campaignStartInput')?.value?new Date(document.getElementById('campaignStartInput').value+'T12:00:00').getTime():null,endAt:document.getElementById('campaignEndInput')?.value?new Date(document.getElementById('campaignEndInput').value+'T12:00:00').getTime():null,notes:document.getElementById('campaignNotesInput')?.value||''},btn=document.getElementById('saveCampaignButton'),status=document.getElementById('campaignFormStatus');
-  if(payload.id&&!editing){if(status){status.textContent='This campaign is no longer available. Refresh before editing.';status.className='form-status-line error'}return}
-  if(!String(payload.name).trim()){if(status){status.textContent='Campaign name is required.';status.className='form-status-line error'}return}
+  if(payload.id&&!editing){if(status){status.textContent='This campaign is no longer available. Refresh before editing.';status.className='form-status-line error'}return false}
+  const nameInput=document.getElementById('campaignNameInput'),trimmedName=String(payload.name).trim();if(!trimmedName){nameInput?.setAttribute?.('aria-invalid','true');nameInput?.focus?.();if(status){status.textContent='Campaign name is required.';status.className='form-status-line error'}return false}nameInput?.removeAttribute?.('aria-invalid');payload.name=trimmedName;
   setCampaignMutationPending(true,'save');
   try{const r=await fetch('/api/account?action=admin-marketing-campaign-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Could not save campaign.');if(data.ok!==true||!data.campaign||typeof data.campaign!=='object'||Array.isArray(data.campaign)||!String(data.campaign.id||'').trim()||(payload.id&&String(data.campaign.id)!==String(payload.id)))throw new Error('Campaign save response was incomplete. Refresh campaigns before retrying.');adminCampaignData=[data.campaign,...(adminCampaignData||[]).filter(x=>String(x.id)!==String(data.campaign.id))];setCampaignMutationPending(false);closeCampaignModal();renderGrowth()}
   catch(err){if(status){status.textContent=err.message||'Could not save campaign.';status.className='form-status-line error'}}
@@ -2437,7 +2437,7 @@ function openCompanyDocumentModal(id=''){
   m.dataset.editId=x?.id||'';
   m.dataset.expectedUpdatedAt=x?String(x.updatedAt||x.createdAt||0):'';
   document.getElementById('companyDocumentModalTitle').textContent=x?'Edit company record':'Add company record';
-  document.getElementById('companyDocumentName').value=x?.name||'';
+  const name=document.getElementById('companyDocumentName');if(name){name.value=x?.name||'';name.removeAttribute?.('aria-invalid')}
   document.getElementById('companyDocumentType').value=x?.type||'Legal';
   document.getElementById('companyDocumentStatus').value=x?.status||'active';
   document.getElementById('companyDocumentUrl').value=x?.url||'';
@@ -2446,7 +2446,7 @@ function openCompanyDocumentModal(id=''){
   document.getElementById('companyDocumentNotes').value=x?.notes||'';
   const del=document.getElementById('deleteCompanyDocument');if(del)del.hidden=!x;
   companyDocumentFeedback('',false);
-  m.classList.add('open');m.setAttribute('aria-hidden','false');
+  m.classList.add('open');m.setAttribute('aria-hidden','false');name?.focus?.();
 }
 function closeCompanyDocumentModal(){
   if(companyDocumentMutationPending)return;
@@ -2462,8 +2462,8 @@ async function saveCompanyDocument(){
   const m=document.getElementById('companyDocumentModal');if(!m)return;
   const payload={id:m.dataset.editId||undefined,name:document.getElementById('companyDocumentName')?.value||'',type:document.getElementById('companyDocumentType')?.value||'Other',status:document.getElementById('companyDocumentStatus')?.value||'active',url:document.getElementById('companyDocumentUrl')?.value||'',effectiveDate:document.getElementById('companyDocumentEffective')?.value||'',expiresAt:document.getElementById('companyDocumentExpires')?.value||'',notes:document.getElementById('companyDocumentNotes')?.value||''};
   if(payload.id)payload.expectedUpdatedAt=Number(m.dataset.expectedUpdatedAt||0);
-  if(!String(payload.name).trim()){companyDocumentFeedback('Document name is required.');return}
-  if(payload.effectiveDate&&payload.expiresAt&&payload.expiresAt<payload.effectiveDate){companyDocumentFeedback('Expiration date cannot precede the effective date.');return}
+  const nameInput=document.getElementById('companyDocumentName'),trimmedName=String(payload.name).trim();if(!trimmedName){nameInput?.setAttribute?.('aria-invalid','true');nameInput?.focus?.();companyDocumentFeedback('Document name is required.');return false}nameInput?.removeAttribute?.('aria-invalid');payload.name=trimmedName;
+  if(payload.effectiveDate&&payload.expiresAt&&payload.expiresAt<payload.effectiveDate){companyDocumentFeedback('Expiration date cannot precede the effective date.');return false}
   setCompanyDocumentMutationPending(true,'save');
   try{
     const r=await fetch('/api/account?action=admin-document-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
