@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Email preferences — CallerCore</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#f5f2ea">
+  <link rel="icon" href="/logo-icon.png">
+  <link rel="stylesheet" href="/redesign.css">
+  <style>
+    .preference-shell{max-width:720px;margin:0 auto;padding:90px 28px 120px}.preference-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:38px;box-shadow:0 18px 50px rgba(35,31,25,.06)}.preference-card h1{font:700 clamp(34px,5vw,54px)/1.02 Manrope;margin:10px 0 16px;letter-spacing:-.045em}.preference-card p{color:var(--muted);line-height:1.65}.preference-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:26px}.preference-actions button{border:0;cursor:pointer}.preference-state{margin-top:22px;padding:15px 16px;border:1px solid var(--line);border-radius:12px;background:#faf8f2;font-size:13px;line-height:1.55}.preference-state.success{border-color:#cbe4d6;background:#f1faf5;color:#236342}.preference-state.error{border-color:#ebc8be;background:#fff4f0;color:#8b3b28}.preference-note{font-size:12px!important;margin-top:24px}.preference-note a{color:inherit;text-underline-offset:2px}@media(max-width:600px){.preference-shell{padding:55px 18px 90px}.preference-card{padding:28px 22px}.preference-actions{display:grid}.preference-actions .button{width:100%}}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="CallerCore home"><img src="/logo-icon.png" alt=""><span>Caller<b>Core</b></span></a>
+    <div class="header-actions"><a class="text-link" href="/privacy">Privacy Policy</a><a class="button small" href="/contact">Contact us</a></div>
+  </header>
+  <main class="preference-shell">
+    <section class="preference-card" aria-labelledby="preferenceTitle">
+      <span class="kicker">Email preferences</span>
+      <h1 id="preferenceTitle">Control marketing email.</h1>
+      <p id="preferenceIntro">We’re checking this unsubscribe link. Nothing will change until you confirm below.</p>
+      <div id="preferenceState" class="preference-state" role="status" aria-live="polite">Checking link…</div>
+      <div class="preference-actions">
+        <button class="button" id="unsubscribeButton" type="button" disabled>Unsubscribe from marketing emails</button>
+        <a class="button secondary-btn" href="/">Keep my current preference</a>
+      </div>
+      <p class="preference-note">Unsubscribing stops CallerCore marketing emails tied to this consent. It does not stop transactional, account, billing, security, support, or service messages that are necessary to provide CallerCore. Questions? <a href="mailto:support@callercore.com">support@callercore.com</a>.</p>
+    </section>
+  </main>
+  <script>
+  (()=> {
+    const fragment=String(location.hash||'').replace(/^#/,'');const params=new URLSearchParams(fragment),token=String(params.get('token')||'');
+    try{history.replaceState(null,'','/unsubscribe')}catch(_){}
+    const state=document.getElementById('preferenceState'),button=document.getElementById('unsubscribeButton'),intro=document.getElementById('preferenceIntro');
+    const show=(message,kind='')=>{state.textContent=message;state.className='preference-state'+(kind?' '+kind:'')};
+    if(!token){show('This unsubscribe link is invalid or incomplete. Please contact support@callercore.com if you need help.','error');return}
+    fetch('/api/marketing-unsubscribe',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({action:'inspect',token}),cache:'no-store'})
+      .then(async response=>({ok:response.ok,body:await response.json().catch(()=>null)}))
+      .then(({ok,body})=>{
+        if(!ok)throw new Error(body&&typeof body==='object'&&!Array.isArray(body)&&body.error?body.error:'This unsubscribe link could not be verified.');
+        if(!body||typeof body!=='object'||Array.isArray(body)||body.ok!==true||typeof body.active!=='boolean'||typeof body.alreadyUnsubscribed!=='boolean'||!String(body.state||''))
+          throw new Error('This unsubscribe link could not be verified.');
+        if(body.alreadyUnsubscribed){intro.textContent='Your preference is already saved.';show('You are already unsubscribed from CallerCore marketing emails.','success');return}
+        if(body.active!==true)throw new Error('This unsubscribe link is no longer active.');
+        show('This link is valid. Click the button to unsubscribe.');button.disabled=false;
+      })
+      .catch(err=>show(err.message||'This unsubscribe link could not be verified.','error'));
+    button.addEventListener('click',async()=>{
+      if(button.disabled)return;
+      button.disabled=true;button.textContent='Saving preference…';show('Confirming your unsubscribe request…');
+      try{
+        const response=await fetch('/api/marketing-unsubscribe',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({action:'unsubscribe',token})}),
+          body=await response.json().catch(()=>null);
+        if(!response.ok)throw new Error(body&&typeof body==='object'&&!Array.isArray(body)&&body.error?body.error:'We could not confirm your email preference change.');
+        if(!body||typeof body!=='object'||Array.isArray(body)||body.ok!==true||body.unsubscribed!==true||typeof body.alreadyUnsubscribed!=='boolean')
+          throw new Error('We could not verify your email preference change.');
+        intro.textContent='Your preference has been updated.';
+        show('You are unsubscribed from CallerCore marketing emails.','success');
+        button.hidden=true;
+      }catch(err){
+        show(err.message||'We could not confirm your email preference change.','error');
+        button.disabled=false;button.textContent='Try unsubscribe again';
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
