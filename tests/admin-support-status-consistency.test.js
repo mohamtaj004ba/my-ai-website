@@ -63,3 +63,12 @@ test('admin status control sends currently displayed ticket revision',()=>{
   assert.ok(a>=0&&b>a);
   assert.match(dashboardSource.slice(a,b),/expectedUpdatedAt:Number\(t\.updatedAt\|\|t\.createdAt\|\|0\)/);
 });
+
+
+test('admin support status failures stay in the ticket live region instead of alerts',()=>{
+  const a=dashboardSource.indexOf('async function updateSupportStatus('),b=dashboardSource.indexOf('\nfunction setPlatformSettingsDirty(',a),block=dashboardSource.slice(a,b);
+  assert.match(block,/setAdminSupportReplyStatus\(key,feedback\)/);
+  assert.match(block,/feedback=err\.message\|\|'Could not update support status\.'/);
+  assert.match(block,/feedback=data\.warning\?String\(data\.warning\):'Support status updated\.'/);
+  assert.doesNotMatch(block,/alert\(/);
+});
