@@ -239,3 +239,9 @@ test('notification tabs support roving keyboard navigation',()=>{
   assert.match(ui,/e\.key==='End'/);
   assert.match(ui,/target\.focus\(\)/);
 });
+
+
+test('closing the notification panel with Escape returns focus to its bell trigger',()=>{
+  assert.match(ui,/if\(e\.key==='Escape'&&!panel\.hidden\)/);
+  assert.match(ui,/bell\.setAttribute\('aria-expanded','false'\);bell\.focus\(\)/);
+});
