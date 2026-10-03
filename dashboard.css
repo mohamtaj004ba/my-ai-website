@@ -497,6 +497,7 @@ body.drawer-open{overflow:hidden}
 .call-toolbar-secondary{display:grid;grid-template-columns:minmax(330px,1.45fr) minmax(135px,.55fr) minmax(135px,.55fr) auto;gap:8px;align-items:end;padding-top:8px;margin-top:8px;border-top:1px solid #eef0f2}
 .call-toolbar-secondary[hidden]{display:none}
 .call-toolbar-secondary .custom-date-range.compact{grid-column:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0;border:0;background:transparent;border-radius:0}
+.call-toolbar-secondary .call-date-range-status{grid-column:1/-1;margin:0}
 .call-toolbar-secondary .custom-date-range.compact[hidden]{display:none}
 .call-reset-link{height:38px;border:0;background:transparent;color:#69727c;font:800 8px inherit;padding:0 8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .call-reset-link:hover{color:var(--ink)}

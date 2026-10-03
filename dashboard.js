@@ -624,6 +624,14 @@ function callLocalDateValue(ts){
   const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 function updateCustomDateVisibility(){const range=document.getElementById('customDateRange'),sel=document.getElementById('callDateFilter'),secondary=document.getElementById('callMoreFilters'),toggle=document.getElementById('toggleCallMoreFilters'),custom=sel?.value==='custom';if(range)range.hidden=!custom;if(secondary)secondary.hidden=!(custom||callMoreFiltersOpen);if(toggle){toggle.setAttribute('aria-expanded',(custom||callMoreFiltersOpen)?'true':'false');toggle.textContent=(custom||callMoreFiltersOpen)?'Less':'More'}}
+function syncCallDateRangeValidation({focusInvalid=false}={}){
+  const filter=document.getElementById('callDateFilter'),from=document.getElementById('callDateFrom'),to=document.getElementById('callDateTo'),status=document.getElementById('callDateRangeStatus'),custom=filter?.value==='custom';
+  const invalid=!!custom&&!!from?.value&&!!to?.value&&callDateBoundary(from.value)>callDateBoundary(to.value,true);
+  for(const field of [from,to]){if(!field)continue;if(invalid)field.setAttribute('aria-invalid','true');else field.removeAttribute('aria-invalid')}
+  if(status){status.textContent=invalid?'Choose a To date on or after the From date.':'';status.className='form-status-line call-date-range-status'+(invalid?' error':'')}
+  if(invalid&&focusInvalid)to?.focus();
+  return !invalid;
+}
 function callLogPrefsKey(){return 'callercore:calllog:prefs:'+(sessionWorkspace?.id||'default')}
 function loadCallLogPrefs(){
   try{const p=JSON.parse(localStorage.getItem(callLogPrefsKey())||'{}');if(['day','type','outcome','none'].includes(p.groupBy))callLogGroupBy=p.groupBy;if(['newest','oldest'].includes(p.sort))callLogSort=p.sort;if(['comfortable','compact'].includes(p.density))callLogDensity=p.density}catch(_){}
@@ -660,11 +668,11 @@ function syncCallSortHeader(){
 function renderCalls(){
   const wrap=document.getElementById('callsTable');if(!wrap)return;
   const q=(document.getElementById('callSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('callFilter')?.value||'all',categoryFilter=document.getElementById('callCategoryFilter')?.value||'all',dateFilter=document.getElementById('callDateFilter')?.value||'7',from=callDateBoundary(document.getElementById('callDateFrom')?.value||''),to=callDateBoundary(document.getElementById('callDateTo')?.value||'',true);
-  updateCustomDateVisibility();callLogGroupBy=document.getElementById('callGroupBy')?.value||callLogGroupBy;callLogSort=document.getElementById('callSort')?.value||callLogSort;callLogDensity=document.getElementById('callDensity')?.value||callLogDensity;syncCallSortHeader();
+  updateCustomDateVisibility();const dateRangeValid=syncCallDateRangeValidation();callLogGroupBy=document.getElementById('callGroupBy')?.value||callLogGroupBy;callLogSort=document.getElementById('callSort')?.value||callLogSort;callLogDensity=document.getElementById('callDensity')?.value||callLogDensity;syncCallSortHeader();
   const filterSignature=JSON.stringify([q,filter,categoryFilter,dateFilter,from||0,to||0,callQuickFilter,callLogGroupBy,callLogSort]);
   if(filterSignature!==callLastFilterSignature){callLastFilterSignature=filterSignature;callVisibleLimit=50}
   document.querySelector('.call-history-panel')?.classList.toggle('call-density-compact',callLogDensity==='compact');
-  const dateMatches=t=>dateFilter==='all'?true:dateFilter==='custom'?((!from||t>=from)&&(!to||t<=to)):withinDays(t,Number(dateFilter));
+  const dateMatches=t=>dateFilter==='all'?true:dateFilter==='custom'?(dateRangeValid&&(!from||t>=from)&&(!to||t<=to)):withinDays(t,Number(dateFilter));
   let baseRows=[...callsData].filter(x=>{
     const disposition=callDispositionKey(x),hay=[x.caller,x.phone,x.category,x.reason,callDispositionLabel(x),teamStatusLabel(x),x.agent,x.address].join(' ').toLowerCase(),t=recordTime(x);
     return (!q||hay.includes(q))&&(filter==='all'||disposition===filter)&&(categoryFilter==='all'||String(x.category||'General question')===categoryFilter)&&dateMatches(t);
@@ -922,8 +930,8 @@ async function moveLead(id,stage){
 }
 document.getElementById('callSearch')?.addEventListener('input',renderCalls);
 document.getElementById('callFilter')?.addEventListener('change',()=>{callQuickFilter='all';renderCalls()});
-document.getElementById('callDateFilter')?.addEventListener('change',()=>{updateCustomDateVisibility();renderCalls()});
-document.getElementById('callDateFrom')?.addEventListener('change',renderCalls);document.getElementById('callDateTo')?.addEventListener('change',renderCalls);
+document.getElementById('callDateFilter')?.addEventListener('change',()=>{updateCustomDateVisibility();syncCallDateRangeValidation();renderCalls()});
+document.getElementById('callDateFrom')?.addEventListener('change',()=>{syncCallDateRangeValidation({focusInvalid:true});renderCalls()});document.getElementById('callDateTo')?.addEventListener('change',()=>{syncCallDateRangeValidation({focusInvalid:true});renderCalls()});
 document.getElementById('callCategoryFilter')?.addEventListener('change',renderCalls);
 document.getElementById('callGroupBy')?.addEventListener('change',()=>{saveCallLogPrefs();renderCalls()});
 document.getElementById('callSort')?.addEventListener('change',()=>{saveCallLogPrefs();renderCalls()});
