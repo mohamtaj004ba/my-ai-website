@@ -2379,8 +2379,8 @@ function setCampaignMutationPending(pending,action='save'){
   if(del)del.textContent=pending&&action==='delete'?'Deleting…':'Delete campaign';
 }
 function openCampaignModal(id=''){
-  if(adminCampaignMutationPending)return;
-  const c=id?(adminCampaignData||[]).find(x=>String(x.id)===String(id)):null,m=document.getElementById('campaignModal');if(!m)return;m.dataset.editId=id||'';document.getElementById('campaignModalTitle').textContent=c?'Edit campaign':'Add campaign';const name=document.getElementById('campaignNameInput');if(name){name.value=c?.name||'';name.removeAttribute?.('aria-invalid')} document.getElementById('campaignChannelInput').value=c?.channel||'Email';document.getElementById('campaignStatusInput').value=c?.status||'draft';document.getElementById('campaignUtmSourceInput').value=c?.utmSource||'';document.getElementById('campaignUtmMediumInput').value=c?.utmMedium||'';document.getElementById('campaignUtmCampaignInput').value=c?.utmCampaign||'';document.getElementById('campaignBudgetInput').value=c?.budget||'';document.getElementById('campaignGoalInput').value=c?.goal||'';document.getElementById('campaignStartInput').value=c?.startAt?new Date(c.startAt).toISOString().slice(0,10):'';document.getElementById('campaignEndInput').value=c?.endAt?new Date(c.endAt).toISOString().slice(0,10):'';document.getElementById('campaignNotesInput').value=c?.notes||'';const del=document.getElementById('deleteCampaignButton');if(del)del.hidden=!c;const s=document.getElementById('campaignFormStatus');if(s){s.textContent='';s.className='form-status-line'}m.classList.add('open');m.setAttribute('aria-hidden','false');m.setAttribute('aria-busy','false');if(typeof setTimeout==='function')setTimeout(()=>name?.focus?.(),20);else name?.focus?.();
+  if(adminCampaignMutationPending)return false;
+  const c=id?(adminCampaignData||[]).find(x=>String(x.id)===String(id)):null;if(id&&!c){setAdminSyncState('error','This campaign is no longer available. Refresh Marketing before editing.');return false}const m=document.getElementById('campaignModal');if(!m)return false;m.dataset.editId=id||'';document.getElementById('campaignModalTitle').textContent=c?'Edit campaign':'Add campaign';const name=document.getElementById('campaignNameInput');if(name){name.value=c?.name||'';name.removeAttribute?.('aria-invalid')} document.getElementById('campaignChannelInput').value=c?.channel||'Email';document.getElementById('campaignStatusInput').value=c?.status||'draft';document.getElementById('campaignUtmSourceInput').value=c?.utmSource||'';document.getElementById('campaignUtmMediumInput').value=c?.utmMedium||'';document.getElementById('campaignUtmCampaignInput').value=c?.utmCampaign||'';document.getElementById('campaignBudgetInput').value=c?.budget||'';document.getElementById('campaignGoalInput').value=c?.goal||'';document.getElementById('campaignStartInput').value=c?.startAt?new Date(c.startAt).toISOString().slice(0,10):'';document.getElementById('campaignEndInput').value=c?.endAt?new Date(c.endAt).toISOString().slice(0,10):'';document.getElementById('campaignNotesInput').value=c?.notes||'';const del=document.getElementById('deleteCampaignButton');if(del)del.hidden=!c;const s=document.getElementById('campaignFormStatus');if(s){s.textContent='';s.className='form-status-line'}m.classList.add('open');m.setAttribute('aria-hidden','false');m.setAttribute('aria-busy','false');if(typeof setTimeout==='function')setTimeout(()=>name?.focus?.(),20);else name?.focus?.();
 }
 function closeCampaignModal(){if(adminCampaignMutationPending)return;const m=document.getElementById('campaignModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 async function deleteCampaign(){
@@ -3375,9 +3375,10 @@ async function deletePhone(id){
 }
 
 function openPhoneModal(id=null){
-  if(phoneSaving)return;
+  if(phoneSaving)return false;
   const item=id?adminPhoneData.find(x=>String(x.id)===String(id)):null;
-  const modal=document.getElementById('phoneModal');if(!modal)return;
+  if(id&&!item){setAdminSyncState('error','This phone number is no longer available. Refresh Phone Numbers before editing.');return false}
+  const modal=document.getElementById('phoneModal');if(!modal)return false;
   modal.dataset.editId=id||'';modal.dataset.expectedUpdatedAt=String(item?.updatedAt||0);
   ['phoneNumberInput','phoneForwardingInput','phoneTransferInput'].forEach(key=>settingsFieldError(key,''));
   const formStatus=document.getElementById('phoneFormStatus');if(formStatus){formStatus.textContent='';formStatus.className='form-status-line'}
@@ -3535,8 +3536,8 @@ function renderAdminFinance(){
   list?.querySelectorAll('[data-delete-expense]').forEach(b=>b.addEventListener('click',()=>deleteExpense(b.dataset.deleteExpense)));
 }
 function openExpenseModal(id=''){
-  if(adminExpenseSaving)return;
-  const item=id?(adminFinanceData.expenses||[]).find(x=>String(x.id)===String(id)):null,modal=document.getElementById('expenseModal');if(!modal)return;
+  if(adminExpenseSaving)return false;
+  const item=id?(adminFinanceData.expenses||[]).find(x=>String(x.id)===String(id)):null;if(id&&!item){setAdminSyncState('error','This expense is no longer available. Refresh Finance before editing.');return false}const modal=document.getElementById('expenseModal');if(!modal)return false;
   modal.dataset.editId=id||'';modal.dataset.expectedUpdatedAt=String(item?.updatedAt||0);
   document.getElementById('expenseModalTitle').textContent=item?'Edit expense':'Add expense';
   document.getElementById('expenseNameInput').value=item?.name||'';document.getElementById('expenseVendorInput').value=item?.vendor||'';document.getElementById('expenseCategoryInput').value=item?.category||'Software';document.getElementById('expenseAmountInput').value=item?.amount??'';document.getElementById('expenseFrequencyInput').value=item?.frequency||'monthly';document.getElementById('expenseDateInput').value=item?.date||'';document.getElementById('expenseStatusInput').value=item?.status||'active';document.getElementById('expenseNotesInput').value=item?.notes||'';const status=document.getElementById('expenseFormStatus');if(status)status.textContent='';
