@@ -12,7 +12,7 @@ function deferred(){
 function fixture({existing=true,confirmDelete=true}={}){
   const elements=new Map(),controls=['input','select','textarea','button'].map(()=>({disabled:false}));
   function el(id){
-    if(!elements.has(id))elements.set(id,{value:'',disabled:false,textContent:'',className:'',hidden:false,dataset:{},classList:{add(){},remove(){}},setAttribute(k,v){this[k]=v}});
+    if(!elements.has(id))elements.set(id,{value:'',disabled:false,textContent:'',className:'',hidden:false,dataset:{},classList:{add(){},remove(){}},setAttribute(k,v){this[k]=v},removeAttribute(k){delete this[k]},focus(){this.focused=true}});
     return elements.get(id);
   }
   const modal=el('campaignModal');modal.dataset.editId=existing?'campaign-1':'';
@@ -91,6 +91,17 @@ test('campaign delete holds the lock and retains draft on server error',async()=
   assert.ok(f.controls.every(el=>!el.disabled));
 });
 
+
+test('campaign date range validation marks and focuses the end date before any request',async()=>{
+  const f=fixture({existing:false});
+  f.el('campaignStartInput').value='2026-10-10';
+  f.el('campaignEndInput').value='2026-10-09';
+  await vm.runInContext('saveCampaign()',f.context);
+  assert.equal(f.requests.length,0);
+  assert.equal(f.el('campaignEndInput')['aria-invalid'],'true');
+  assert.equal(f.el('campaignEndInput').focused,true);
+  assert.match(f.el('campaignFormStatus').textContent,/end date cannot precede/i);
+});
 
 test('campaign name validation marks and focuses the field before any request',async()=>{
   const f=fixture({existing:false});
