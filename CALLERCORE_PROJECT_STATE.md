@@ -1524,3 +1524,18 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - No production merge/deployment, live telephony activation, billing action, customer communication, destructive production mutation, production migration, or launch-gate change occurred.
 - Next premium interaction pass: replace selected native destructive confirmations with accessible in-app confirmation surfaces while preserving the existing revision guards, duplicate-submission locks, recovery semantics, and concurrency tests; then continue evidence-first mobile/keyboard/stale-state inspection.
 
+## In-app workspace deletion confirmation checkpoint — 2026-10-03
+
+- Replaced the native browser `confirm()` + `prompt()` deletion flow for admin workspace deletion with an accessible in-app typed-confirmation modal.
+- The confirmation now requires typing `DELETE` exactly before the destructive action can be submitted.
+- The modal captures the displayed workspace id and revision at open time and refuses submission if the workspace changed before confirmation, preserving the existing stale-write / revision-guard safety model.
+- Duplicate submissions remain blocked through the existing admin mutation lock; destructive controls and the confirmation surface expose pending state while the request is in flight.
+- The backend deletion endpoint, atomic workspace/session mutation path, 30-day recovery window, owner-session revocation, provider cleanup handling, audit semantics, and restoration flow were not weakened or bypassed.
+- Updated deletion consistency, launch-copy, action-feedback, and native-alert regression tests to validate the in-app safety flow rather than the previous browser prompt implementation.
+- Superseded red intermediate Preview/CI heads were caused by safeguard tests that still asserted the old native `confirm()` / `prompt()` strings; those tests were updated to assert the new in-app confirmation semantics.
+- **Exact verified implementation/test head `779671d4935377a654647cd8bf6bf398c703d631`:** CallerCore CI run `37155593993` SUCCESS with **1,445 tests passed / 0 failed**; CallerCore CodeQL run `37155593988` SUCCESS; Jekyll run `37155594050` SUCCESS.
+- Exact Vercel Preview for the verified head is green at the deployment associated with status target `6HyB5vX2h3x5QZVbRsQX4o2j6SZh`.
+- PR #5 remained open/draft/unmerged with production `main` still anchored to `37ef5cfcdccae35952822859f64fe83f0b9f09f0`.
+- No production merge/deployment, billing action, live telephony activation, customer communication, destructive production mutation, production migration, or launch-gate change occurred.
+- Next pass: continue evidence-first replacement of selected native consequential confirmations where the UX clearly benefits, while preserving explicit confirmation semantics and existing concurrency/revision protections.
+
