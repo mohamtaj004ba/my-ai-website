@@ -48,3 +48,14 @@ test('global Client Care search results clear filters before revealing exact sup
   assert.match(dashboard,/if\(type==='support'\)\{adminSupportSearch='';adminSupportFilter='all';openClientCare\('support'\);renderAdminSupport\(\)\}/);
   assert.match(dashboard,/else if\(type==='feedback'\)\{adminFeedbackSearch='';adminFeedbackFilter='all';openClientCare\('feedback'\);renderAdminFeedback\(\)\}/);
 });
+
+
+test('client and admin retry controls lock while their refresh is pending and always restore',()=>{
+  assert.match(dashboard,/async function runRetryButton\(button,busyLabel,task\)/);
+  assert.match(dashboard,/if\(!button\|\|button\.disabled\)return false/);
+  assert.match(dashboard,/button\.disabled=true;button\.textContent=busyLabel/);
+  assert.match(dashboard,/finally\{button\.disabled=false;button\.textContent=prior\}/);
+  assert.match(dashboard,/clientDataRetry'\)\?\.addEventListener\('click',e=>runRetryButton/);
+  assert.match(dashboard,/clientSecondaryRetry'\)\?\.addEventListener\('click',e=>runRetryButton/);
+  assert.match(dashboard,/adminDataRetry'\)\?\.addEventListener\('click',e=>runRetryButton/);
+});

@@ -4512,10 +4512,14 @@ function initNotifications(){
 (async()=>{if(document.body.dataset.dashboard==='admin'){const ok=await bootstrapAdmin();if(ok){initProfileControls();initNotifications()}return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations();initProfileControls();initNotifications();initClientLiveRefresh()}else{renderBilling()}})();
 document.getElementById('logoutButton')?.addEventListener('click',logout);
 
-document.getElementById('clientDataRetry')?.addEventListener('click',async()=>{setDataHealth('clientDataHealth',false);setClientSyncState('syncing','Retrying workspace sync…');await loadOperations()});
-document.getElementById('clientSecondaryRetry')?.addEventListener('click',async()=>{const button=document.getElementById('clientSecondaryRetry');if(button){button.disabled=true;button.textContent='Retrying…'}try{await loadSecondaryClientData()}finally{if(button){button.disabled=false;button.textContent='Retry records'}}});
+async function runRetryButton(button,busyLabel,task){
+  if(!button||button.disabled)return false;const prior=button.textContent;button.disabled=true;button.textContent=busyLabel;
+  try{await task();return true}finally{button.disabled=false;button.textContent=prior}
+}
+document.getElementById('clientDataRetry')?.addEventListener('click',e=>runRetryButton(e.currentTarget,'Retrying…',async()=>{setDataHealth('clientDataHealth',false);setClientSyncState('syncing','Retrying workspace sync…');await loadOperations()}));
+document.getElementById('clientSecondaryRetry')?.addEventListener('click',e=>runRetryButton(e.currentTarget,'Retrying…',()=>loadSecondaryClientData()));
 document.getElementById('clientSupportHistoryRetry')?.addEventListener('click',()=>refreshClientSupportHistory());
-document.getElementById('adminDataRetry')?.addEventListener('click',async()=>{setDataHealth('adminDataHealth',false);await loadAdminOps()});
+document.getElementById('adminDataRetry')?.addEventListener('click',e=>runRetryButton(e.currentTarget,'Retrying…',async()=>{setDataHealth('adminDataHealth',false);await loadAdminOps()}));
 
 document.querySelectorAll('[data-overview-jump]').forEach(card=>{const go=()=>showView(card.dataset.overviewJump);card.addEventListener('click',e=>{if(e.target.closest('button,a'))return;go()});card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})});
 
