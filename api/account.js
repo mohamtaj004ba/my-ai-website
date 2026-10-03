@@ -2387,6 +2387,10 @@ async function adminOverrideConfig(req,res){
   const beforeValid=section==='workspace'?before==null||!!before&&typeof before==='object'&&!Array.isArray(before):
     section==='automations'||section==='locations'?before==null||Array.isArray(before)&&before.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim()):before==null||!!before&&typeof before==='object'&&!Array.isArray(before);
   if(!beforeValid)return res.status(503).json({error:'Existing '+section+' configuration is unavailable. No override was applied.'});
+  const expectedPresent=Object.prototype.hasOwnProperty.call(body,'expectedBefore'),expectedBefore=body.expectedBefore,
+    displayedBefore=before==null?(section==='automations'||section==='locations'?[]:null):before;
+  if(!expectedPresent||JSON.stringify(expectedBefore)!==JSON.stringify(displayedBefore))
+    return res.status(409).json({error:'This configuration changed after the editor was opened. Reload the current section before applying an override.'});
   let after;try{after=sanitizeAdminOverride(section,body.value,before||ws)}catch(err){return res.status(400).json({error:err.message})}
   const audit={id:crypto.randomUUID(),workspaceId:id,actorEmail:admin.email,actorRole:'admin',action:'admin_override',section,before:before||null,after,at:Date.now()};
   let updates;try{updates=await configTransactionUpdates(id,section,key,before,after);if(!await compareAndAuditBatch(kv,updates,'audit:'+id,audit))return res.status(409).json({error:'Client configuration changed during this save. Reload the client before retrying.'})}catch(err){console.error('admin override save failed',safeError(err));return res.status(503).json({error:'Could not confirm the configuration and audit history together. Reload the client before retrying.'})}
