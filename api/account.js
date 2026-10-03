@@ -2409,6 +2409,10 @@ async function adminRestoreAudit(req,res){
   if(entry.before===undefined)return res.status(400).json({error:'No prior snapshot is available'});
   const current=await kv.get(key),currentValid=entry.section==='automations'||entry.section==='locations'?current==null||Array.isArray(current)&&current.every(item=>item&&typeof item==='object'&&!Array.isArray(item)&&String(item.id||'').trim()):current==null||!!current&&typeof current==='object'&&!Array.isArray(current);
   if(!currentValid)return res.status(503).json({error:'Current '+entry.section+' configuration is unavailable. No restore was attempted.'});
+  const expectedCurrentPresent=Object.prototype.hasOwnProperty.call(body,'expectedCurrent'),expectedCurrent=body.expectedCurrent,
+    displayedCurrent=current==null?(entry.section==='automations'||entry.section==='locations'?[]:null):current;
+  if(!expectedCurrentPresent||JSON.stringify(expectedCurrent)!==JSON.stringify(displayedCurrent))
+    return res.status(409).json({error:'This configuration changed after the history view was loaded. Refresh diagnostics before restoring an older snapshot.'});
   const rawRestored=entry.before===null?(entry.section==='automations'||entry.section==='locations'?[]:{}):entry.before;
   const workspaceCurrent=entry.section==='workspace'?(current||null):await kv.get('workspace:'+id);
   if(!workspaceCurrent||typeof workspaceCurrent!=='object'||Array.isArray(workspaceCurrent)||String(workspaceCurrent.id||'')!==id)return res.status(503).json({error:'Client workspace record is unavailable. No restore was attempted.'});
