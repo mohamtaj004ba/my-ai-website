@@ -31,3 +31,11 @@ test('location list saves include the displayed snapshot for stale-write protect
   assert.match(block,/expectedLocations=locationsData\.map/);
   assert.match(block,/JSON\.stringify\(\{locations:submitted,expectedLocations\}\)/);
 });
+
+
+test('location modal surfaces the exact persistence failure instead of hiding stale-write guidance',()=>{
+  const persist=dashboard.slice(dashboard.indexOf('let locationMutationPending=false'),dashboard.indexOf('async function saveLocation('));
+  const save=dashboard.slice(dashboard.indexOf('async function saveLocation('),dashboard.indexOf('\nasync function deleteLocation('));
+  assert.match(persist,/locationLastMutationError=err\.message/);
+  assert.match(save,/status\.textContent=locationLastMutationError\|\|/);
+});
