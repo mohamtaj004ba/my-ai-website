@@ -1586,8 +1586,9 @@ async function saveSettings(){
     else{
       const r=await fetch('/api/account?action=settings-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not save workspace settings.');
-      if(!data.settings||typeof data.settings!=='object'||Array.isArray(data.settings))throw new Error('Settings save response was incomplete. Your draft is still open; refresh before retrying.');
-      settingsData=data.settings;
+      const confirmed=data.settings,confirmedRevision=Number(confirmed?.updatedAt);
+      if(data.ok!==true||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||!Number.isFinite(confirmedRevision)||confirmedRevision<=Number(payload.expectedUpdatedAt||0)||String(confirmed.businessName||'')!==String(payload.businessName||''))throw new Error('Settings save response was incomplete. Your draft is still open; refresh before retrying.');
+      settingsData=confirmed;
       if(settingsData.businessName){sessionWorkspace={...(sessionWorkspace||{}),name:settingsData.businessName};document.getElementById('workspaceName').textContent=settingsData.businessName;document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=settingsData.businessName);const avatar=document.querySelector('.avatar');if(avatar)avatar.textContent=settingsData.businessName.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase()}
     }
     unlock();settingsSaving=false;pendingBusinessLogo=String(settingsData.logoDataUrl||payload.logoDataUrl||'');setSettingsEditing(false);if(status){status.textContent='Settings saved successfully.';status.className='form-status-line success'}
