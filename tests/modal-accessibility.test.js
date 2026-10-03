@@ -145,3 +145,15 @@ test('save-state badges do not claim persisted data before their verified record
   assert.match(dashboard,/settingsSaveStatus'[\s\S]*textContent='Saved'/);
   assert.match(dashboard,/setPlatformSettingsDirty\(false\)/);
 });
+
+
+test('client conversation and billing placeholders do not impersonate verified live data before bootstrap',()=>{
+  const client=fs.readFileSync(path.join(__dirname,'..','dashboard.html'),'utf8');
+  assert.match(client,/id="conversationStatus" hidden>Status/);
+  assert.match(client,/id="billingPlan">—/);
+  assert.match(client,/id="billingPrice">Loading plan details…/);
+  assert.match(client,/id="billingSubscriptionStatus">Checking/);
+  assert.match(client,/id="billingUsageText">—/);
+  assert.doesNotMatch(client,/id="billingPrice">\$599\/month/);
+  assert.doesNotMatch(client,/id="billingUsageText">428 \/ 600/);
+});
