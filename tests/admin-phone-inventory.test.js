@@ -83,7 +83,7 @@ test('confirmed phone save stays successful when inventory refresh fails',async(
 
 test('stale phone edit IDs fail closed before opening the editor',()=>{
   const js=fs.readFileSync('dashboard.js','utf8'),block=js.slice(js.indexOf('function openPhoneModal('),js.indexOf('\nfunction closePhoneModal',js.indexOf('function openPhoneModal(')));
-  const modal={dataset:{},classList:{add(){this.opened=true}},setAttribute(){this.opened=true}},sync=[];
+  const modal={dataset:{},classList:{add(){this.opened=true}},setAttribute(){this.opened=true},sync:[]};
   const ctx=vm.createContext({phoneSaving:false,adminPhoneData:[],setAdminSyncState:(...args)=>modal.sync.push(args),document:{getElementById:id=>id==='phoneModal'?modal:null}});
   vm.runInContext(block,ctx);
   assert.equal(vm.runInContext("openPhoneModal('missing-phone')",ctx),false);
