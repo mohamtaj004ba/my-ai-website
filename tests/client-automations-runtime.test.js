@@ -86,7 +86,7 @@ test('automation builder gives inline validation and accessible save feedback',(
   assert.match(save,/nameInput\.setAttribute\('aria-invalid','true'\)/);
   assert.match(save,/Add a name before saving this automation\./);
   assert.match(save,/nameInput\?\.removeAttribute\('aria-invalid'\)/);
-  assert.match(save,/persistAutomations\(\{surfaceError:false\}\)/);
+  assert.match(save,/persistAutomations\(\{surfaceError:false,expectedBefore:before\}\)/);
   assert.match(save,/Automation was not saved\. Review the message and try again\./);
 });
 
@@ -94,7 +94,7 @@ test('automation builder gives inline validation and accessible save feedback',(
 test('automation persist supports inline modal errors and page-level list-action feedback',()=>{
   const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
   const persist=ui.slice(ui.indexOf('async function persistAutomations('),ui.indexOf('async function toggleAutomation('));
-  assert.match(persist,/\{surfaceError=true\}=\{\}/);
+  assert.match(persist,/\{surfaceError=true,expectedBefore=null\}=\{\}/);
   assert.match(persist,/if\(surfaceError\)setAutomationActionStatus/);
   assert.doesNotMatch(persist,/\balert\s*\(/);
 });
@@ -124,4 +124,17 @@ test('automation page exposes accessible action feedback and plan-limit errors s
   assert.match(html,/id="automationActionStatus" role="status" aria-live="polite" aria-atomic="true"/);
   assert.match(dashboard,/function setAutomationActionStatus\(message='',tone=''\)/);
   assert.match(dashboard,/setAutomationActionStatus\('This workspace already has the 20-automation limit/);
+});
+
+
+test('automation list saves carry the displayed snapshot to reject stale full-list replacement',()=>{
+  const ui=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
+  const persist=ui.slice(ui.indexOf('async function persistAutomations('),ui.indexOf('async function toggleAutomation('));
+  const mutations=ui.slice(ui.indexOf('async function toggleAutomation('),ui.indexOf('let editingAutomationId=null;'));
+  const save=ui.slice(ui.indexOf('async function saveAutomation(){'),ui.indexOf("\ndocument.querySelectorAll(",ui.indexOf('async function saveAutomation(){')));
+  assert.match(persist,/expectedAutomations/);
+  assert.match(persist,/JSON\.stringify\(\{automations:submitted,expectedAutomations\}\)/);
+  assert.match(mutations,/persistAutomations\(\{expectedBefore:snapshot\}\)/);
+  assert.match(mutations,/persistAutomations\(\{expectedBefore:before\}\)/);
+  assert.match(save,/persistAutomations\(\{surfaceError:false,expectedBefore:before\}\)/);
 });
