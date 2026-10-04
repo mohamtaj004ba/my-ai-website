@@ -5,6 +5,19 @@ const vm=require('node:vm');
 const api=fs.readFileSync('api/account.js','utf8');
 const ui=fs.readFileSync('dashboard.js','utf8');
 
+test('a completed onboarding checklist never claims verified live telephony in client alerts',()=>{
+  const line=api.split('\n').find(line=>line.includes("notificationItem('onboarding:'+ws.id+':live'"));
+  const ctx=vm.createContext({prefs:{setup:true},onboardingValid:true,onboarding:{checklist:{live:true},updatedAt:123},ws:{id:'ws'},now:456,items:[],notificationItem:(id,data)=>({id,...data})});
+  vm.runInContext(line,ctx);
+  assert.equal(ctx.items[0].id,'onboarding:ws:live');
+  assert.equal(ctx.items[0].createdAt,123);
+  assert.equal(ctx.items[0].view,'overview');
+  assert.equal(ctx.items[0].title,'Receptionist setup complete');
+  assert.match(ctx.items[0].body,/Check answering status/);
+  assert.doesNotMatch(ctx.items[0].title+' '+ctx.items[0].body,/is live|calling is active/);
+  ctx.prefs.setup=false;ctx.items=[];vm.runInContext(line,ctx);assert.equal(ctx.items.length,0);
+});
+
 test('malformed notification read state fails closed instead of marking every alert unread',async()=>{
   const start=api.indexOf('async function getNotificationReadSet('),end=api.indexOf('\nasync function saveNotificationReadSet(',start),block=api.slice(start,end);
   const ctx=vm.createContext({notificationReadKey:()=> 'read',kv:{get:async()=>({corrupt:true})},Set,Array,Error});
