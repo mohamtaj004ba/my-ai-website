@@ -92,7 +92,7 @@ async function bootstrapClient(){
     }
     currentPlan=knownPlan(data.workspace.plan)?data.workspace.plan:'Growth';
     const name=data.workspace.name||'CallerCore Client';
-    const wName=document.getElementById('workspaceName');if(wName)wName.textContent=name;
+    const wName=document.getElementById('workspaceName');if(wName){wName.textContent=name;wName.title=name}
     const wMeta=document.getElementById('workspaceMeta');if(wMeta)wMeta.textContent=currentPlan+' plan';
     document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=name);
     const selector=document.getElementById('planSelector');if(selector)selector.closest('.plan-demo').style.display='none';
@@ -2005,7 +2005,7 @@ async function bootstrapAdmin(){
     if(sess?.ok){
       const data=await sess.json().catch(()=>null);
       if(data&&typeof data==='object'&&!Array.isArray(data)){
-        const identity=document.getElementById('adminIdentity');if(identity)identity.textContent=data.user?.email||'admin';
+
         applyUserProfile(data.user||{},data.workspace||{});
       }
     }

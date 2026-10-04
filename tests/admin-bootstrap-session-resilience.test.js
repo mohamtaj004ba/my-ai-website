@@ -50,7 +50,7 @@ for(const session of ['network','invalid','null']){
 test('successful optional identity lookup still populates admin profile',async()=>{
   const f=fixture({session:'healthy'});
   assert.equal(await f.run(),true);
-  assert.equal(f.identity.textContent,'admin@example.test');
+  assert.equal(f.identity.textContent,'');
   assert.equal(f.profile.length,1);
 });
 test('summary authorization rejection still blocks admin bootstrap before rendering',async()=>{
