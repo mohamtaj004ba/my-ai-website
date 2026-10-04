@@ -28,3 +28,7 @@
 .public-site .checkout-stage .stage-number{display:block;margin-bottom:10px}
 .public-site .checkout-stage .stage-head h2{color:var(--ink)}
 @media(max-width:600px){.public-site .hero .kicker{font-size:12px}}
+.public-site .button.secondary-btn{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.public-site .button.secondary-btn:hover{background:#f1f4f2;border-color:#aab8b2}
+.public-site .site-footer .button{color:#fff}
+.public-site .checkout-stage.active{animation:none}

@@ -60,7 +60,9 @@ const progress=[null,document.getElementById('progress1'),document.getElementByI
 function showStage(n){
   stages.forEach((el,i)=>{if(i&&el)el.classList.toggle('active',i===n)});
   progress.forEach((el,i)=>{if(i&&el){el.classList.toggle('active',i===n);el.classList.toggle('done',i<n)}});
-  window.scrollTo({top:Math.max(0,document.querySelector('.checkout-shell').offsetTop-100),behavior:'smooth'});
+  const heading=stages[n]?.querySelector('.stage-head h2');
+  if(heading){heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true})}
+  window.scrollTo({top:Math.max(0,document.querySelector('.checkout-shell').offsetTop-100),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
 }
 function choose(p){
   plan=p;

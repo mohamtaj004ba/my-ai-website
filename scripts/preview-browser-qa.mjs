@@ -1355,9 +1355,11 @@ async function runPublicSiteQA(){
           const assertCheckoutHeading=async()=>{if(await page.locator('.checkout-stage.active .stage-head>div:has(h2)').evaluate(el=>getComputedStyle(el).display)!=='block')throw new Error('Checkout heading inherited the demo row layout')};
           await assertCheckoutHeading();
           await page.locator('[data-plan="Starter"]').click();await page.locator('#toBusiness').click();await page.locator('#stage2.active').waitFor();
+          if(!await page.locator('#stage2 .stage-head h2').evaluate(el=>el===document.activeElement))throw new Error('Business step did not receive keyboard focus');
           await assertCheckoutHeading();await contract(name+'-business-details');await shot(page,'public-'+name+'-business-details');
           await page.locator('#backToPlan').click();
           if(await page.locator('[data-plan="Starter"]').getAttribute('aria-pressed')!=='true')throw new Error('Public checkout lost the selected plan after navigation');
+          if(!await page.locator('#stage1 .stage-head h2').evaluate(el=>el===document.activeElement))throw new Error('Plan step did not recover keyboard focus');
           report.publicSite.interactions.push(name+' plan selection and business-step navigation without payment');
         }
         if(key==='contact'&&name==='phone'){
