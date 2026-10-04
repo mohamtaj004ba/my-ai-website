@@ -601,7 +601,16 @@ async function runAdminInteractions(page){
   await shot(page,'admin-keyboard-finance-detail',{fullPage:false});
   await financeMonth.press('Escape');await financeTip.waitFor({state:'hidden'});
   await financeMonth.press('Space');await financeTip.waitFor({state:'visible'});
-  await financeMonth.press('Tab');await financeTip.waitFor({state:'hidden'});
+  const financeMonths=page.locator('#adminFinanceChart [data-finance-index]');
+  const financeMonthCount=await financeMonths.count();
+  await financeMonth.press('Tab');
+  if(financeMonthCount>1){
+    await financeTip.waitFor({state:'visible'});
+    const nextMonth=await page.evaluate(()=>({index:document.activeElement?.dataset?.financeIndex,month:document.activeElement?.dataset?.financeMonth,copy:document.getElementById('adminFinanceTooltip')?.textContent}));
+    if(nextMonth.index!=='1'||!nextMonth.copy?.includes('MRR'))throw new Error('Tab did not expose the next finance month');
+    for(let i=1;i<financeMonthCount;i++)await financeMonths.nth(i).press('Tab');
+  }
+  await financeTip.waitFor({state:'hidden'});
   report.admin.interactions.push('finance chart keyboard details after initial loading + Escape/blur recovery');
   await page.waitForFunction(()=>typeof adminMonthlyKpiStatus!=='undefined'&&adminMonthlyKpiStatus?.ok===true,{timeout:20000});
   const monthlyStatus=await page.evaluate(()=>JSON.parse(JSON.stringify(adminMonthlyKpiStatus)));
