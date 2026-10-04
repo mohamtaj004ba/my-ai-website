@@ -6,7 +6,8 @@ const vm=require('node:vm');
 
 const source=fs.readFileSync(path.join(__dirname,'..','modal-accessibility.js'),'utf8');
 
-function fixture(){
+function fixture(deferred=false){
+  const microtasks=[];
   let observerCallback,keydown,open=false,hidden='true';
   const trigger={isConnected:true,focus(){document.activeElement=this}},title={id:''};
   const close={hidden:false,isConnected:true,focus(){document.activeElement=this},closest(){return null},click(){open=false;hidden='true';observerCallback()}};
@@ -16,8 +17,8 @@ function fixture(){
     querySelectorAll:()=>[close,field],addEventListener(type,fn){if(type==='keydown')keydown=fn},focus(){document.activeElement=this}};
   const document={activeElement:trigger,body:{},querySelectorAll:selector=>{assert.match(selector,/call-drawer/);assert.match(selector,/onboarding-detail-drawer/);return [modal]}};
   class MutationObserver{constructor(callback){observerCallback=callback}observe(){}}
-  vm.runInNewContext(source,{document,MutationObserver,queueMicrotask:fn=>fn(),WeakMap});
-  return {document,modal,trigger,close,field,open(){open=true;hidden='false';observerCallback()},keydown:event=>keydown({currentTarget:modal,preventDefault(){event.prevented=true},stopPropagation(){event.stopped=true},...event})};
+  vm.runInNewContext(source,{document,MutationObserver,queueMicrotask:fn=>deferred?microtasks.push(fn):fn(),WeakMap});
+  return {document,modal,trigger,close,field,flush(){while(microtasks.length)microtasks.shift()()},open(){open=true;hidden='false';observerCallback()},keydown:event=>keydown({currentTarget:modal,preventDefault(){event.prevented=true},stopPropagation(){event.stopped=true},...event})};
 }
 
 test('shared client and admin modals expose dialog names and modal semantics',()=>{
@@ -297,3 +298,10 @@ test('nested confirmation returns focus to its drawer launcher without losing th
   }
 });
 
+
+test('queued dialog focus return rechecks a launcher replaced by a refresh',()=>{
+  const f=fixture(true),fallback={isConnected:true,focus(){f.document.activeElement=this}};
+  f.document.getElementById=()=>fallback;f.modal.attrs['data-return-focus-fallback']='fallback';
+  f.open();f.flush();f.close.click();f.trigger.isConnected=false;f.flush();
+  assert.strictEqual(f.document.activeElement,fallback);
+});

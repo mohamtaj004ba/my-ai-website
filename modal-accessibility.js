@@ -40,7 +40,14 @@
         }
       }
       state.returnFocus=null;
-      if(target&&target.isConnected&&typeof target.focus==='function'&&!target.hasAttribute?.('disabled')&&isRendered(target))queueMicrotask(()=>target.focus());
+      if(target)queueMicrotask(()=>{
+        if(dialogs.some(other=>isOpen(other)&&!other.contains(target)))return;
+        if(!target.isConnected||target.hasAttribute?.('disabled')||!isRendered(target)){
+          const fallbackId=modal.getAttribute('data-return-focus-fallback');
+          if(fallbackId)target=document.getElementById?.(fallbackId)||target;
+        }
+        if(target?.isConnected&&typeof target.focus==='function'&&!target.hasAttribute?.('disabled')&&isRendered(target))target.focus();
+      });
     }
   }
 

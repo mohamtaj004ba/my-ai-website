@@ -694,7 +694,7 @@ async function runAdminInteractions(page){
     await page.locator('#closeAdminActionConfirmation').focus();await page.keyboard.press('Shift+Tab');
     if(!await page.locator('#submitAdminActionConfirmation').evaluate(el=>document.activeElement===el))throw new Error('Phone confirmation did not trap reverse Tab');
     await page.keyboard.press('Escape');await confirmation.waitFor({state:'hidden'});
-    await page.waitForFunction(id=>document.activeElement?.dataset?.deletePhone===id||document.activeElement?.id==='addPhoneButton',qaPhone.id);
+    try{await page.waitForFunction(id=>document.activeElement?.dataset?.deletePhone===id||document.activeElement?.id==='addPhoneButton',qaPhone.id)}catch(error){const active=await page.evaluate(()=>({tag:document.activeElement?.tagName,id:document.activeElement?.id,dataset:{...document.activeElement?.dataset}}));throw new Error('Phone cancellation focus recovery failed: '+JSON.stringify(active),{cause:error})}
     if(phoneDeleteRequests!==0)throw new Error('Phone cancellation sent a removal request');
     // A temporary in-page row tests confirmed deletion focus without deleting stored inventory.
     await page.route(phoneFixtureReadRoute,async route=>{
