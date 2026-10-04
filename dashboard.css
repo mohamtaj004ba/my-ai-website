@@ -362,7 +362,7 @@ body.drawer-open{overflow:hidden}
 .care-workspace-actions button{font-size:13px}
 .care-action-status{width:100%;font-size:13px;color:var(--muted)}
 @media(max-width:900px){.settings-card-grid{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:600px){.settings-card{padding:20px}.settings-card-head{flex-wrap:wrap}.settings-card-head button{min-height:42px}.settings-card.editing .settings-section-actions{position:sticky;bottom:12px;background:#fff;padding:14px;border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 18px #0001;z-index:20}.care-workspace-actions button{flex:1 1 140px;min-height:42px}}
+@media(max-width:600px){.settings-card{padding:20px}.settings-card-head{flex-wrap:wrap}.settings-card-head button{min-height:42px}.settings-card.editing .settings-section-actions{position:sticky;bottom:12px;background:#fff;padding:14px;border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 18px #0001;z-index:8}.care-workspace-actions button{flex:1 1 140px;min-height:42px}}
 @media(max-width:560px){.top-actions{gap:6px}.icon-btn,.help-button{width:40px;height:40px}.account-button{padding:4px 6px}.profile-avatar{width:32px;height:32px}}
 
 
@@ -2739,3 +2739,8 @@ body[data-dashboard="admin"] .top-actions>*:not(.admin-search-shell){flex-shrink
  body[data-dashboard="admin"] .admin-search-shell{flex:0 1 auto;min-width:40px}
  body[data-dashboard="admin"] .admin-search-shell .admin-search{min-width:0;width:100%}
 }
+
+@media(min-width:901px){.settings-card[data-settings-section="profile"]{grid-row:span 2}.settings-card[data-settings-section="notifications"]{grid-column:2}.settings-export{grid-column:1 / -1}}
+@media(max-width:600px){.settings-card.editing .settings-section-actions{position:fixed;left:16px;right:16px;bottom:max(12px,env(safe-area-inset-bottom));z-index:8}.settings-card.editing{padding-bottom:110px}.settings-section-actions #saveSettingsButton,.settings-section-actions #settingsCancelButton{min-height:42px}}
+
+.call-history-panel .call-day-heading{position:relative!important;top:auto!important}

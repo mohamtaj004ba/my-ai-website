@@ -220,11 +220,13 @@ async function sweepViews(page,kind){
 async function assertSectionAlertContext(page,kind,label=kind){
   const view=kind==='client'?'calls':'clients',drawer=kind==='client'?'#callDrawer':'#adminClientDrawer',close=kind==='client'?'#closeCallDrawer':'#closeAdminClient';
   await ensureView(page,view);
+  const refreshPattern='**/api/account?action=notifications&*';
+  await page.route(refreshPattern,async route=>{const data=await page.evaluate(()=>({notifications:notificationData,unreadCount:notificationUnreadCount}));await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)})});
   const pattern='**/api/account?action=notifications-read';
   await page.route(pattern,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true})}));
   try{
     await page.evaluate(({kind,view,workspaceId})=>{
-      window.__qaAlerts={data:notificationData,count:notificationUnreadCount};
+      window.__qaAlerts={data:notificationData,count:notificationUnreadCount};notificationRequest++;
       notificationData=[{id:'qa-section-alert',read:false,view,title:'A follow-up needs review',body:'Open the exact record for details.',kind:'warning',meta:kind==='client'?{callId:String(callsData[0].id)}:{workspaceId}}];
       notificationUnreadCount=1;renderNotifications();
     },{kind,view,workspaceId:report.workspaceId});
@@ -244,8 +246,8 @@ async function assertSectionAlertContext(page,kind,label=kind){
     await page.locator(close).click();
     report[kind].interactions.push('visible contextual unread alerts + exact record navigation + confirmed read removal');
   }finally{
-    await page.unroute(pattern);
-    await page.evaluate(()=>{notificationData=window.__qaAlerts.data;notificationUnreadCount=window.__qaAlerts.count;delete window.__qaAlerts;renderNotifications()});
+    await page.unroute(pattern);await page.unroute(refreshPattern);
+    await page.evaluate(()=>{notificationRequest++;notificationData=window.__qaAlerts.data;notificationUnreadCount=window.__qaAlerts.count;delete window.__qaAlerts;renderNotifications()});
   }
 }
 
@@ -472,6 +474,16 @@ async function runClientInteractions(page){
 
   await ensureView(page,'settings');
   if(await page.locator('#toggleAiAnsweringButton').isEnabled())throw new Error('Unconnected live call control is enabled');
+  for(const [section,field] of [['location','#settingsCity'],['notifications','#settingsNotificationEmail']]){
+    const original=await page.locator(field).inputValue();
+    await page.locator('[data-settings-edit="'+section+'"]').click();
+    if(await page.locator('#settingsBusinessName').isEnabled())throw new Error('Independent section edit enabled unrelated profile fields');
+    await page.locator(field).fill(original+' draft');
+    await page.locator('#settingsCancelButton').click();
+    if(await page.locator(field).inputValue()!==original)throw new Error('Independent section cancel lost the verified value');
+    if(!await page.locator('[data-settings-edit="'+section+'"]').evaluate(el=>document.activeElement===el))throw new Error('Cancel did not return focus to the section edit control');
+  }
+  report.client.interactions.push('independent Settings sections + draft rollback + focus restoration');
   const originalName=await page.locator('#settingsBusinessName').inputValue();
   await page.locator('#settingsEditButton').click();
   await page.locator('#saveSettingsButton').waitFor({state:'visible'});

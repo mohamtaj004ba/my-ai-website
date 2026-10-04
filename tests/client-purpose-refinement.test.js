@@ -29,3 +29,4 @@ test('Settings locks other sections while retaining the active draft',()=>{
 test('Recorded sessions stays accessible from Contacts without duplicating the primary navigation',()=>{
  assert.doesNotMatch(html,/<button[^>]*class="nav-item[^>]*data-view="conversations"/);assert.match(html,/data-view="conversations"[^>]*data-feature="unifiedInbox"[^>]*id="contactRecordedSessions"/);
 });
+test('Settings markup closes the main landmark without leaking broken tag text',()=>{assert.match(html,/<\/section><\/main>/);assert.doesNotMatch(html,/<\/section>\/main>/)});
