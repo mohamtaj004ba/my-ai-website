@@ -103,7 +103,7 @@ test('Follow-ups exposes separate stale-feed and mutation feedback live regions'
   assert.match(load,/Follow-up status could not refresh\. Showing the last verified team-action state/);
   assert.match(load,/coverage\.hidden=true/);
   const persist=js.slice(js.indexOf('async function persistTeamStatus('),js.indexOf('\nfunction requestTeamStatusChange(',js.indexOf('async function persistTeamStatus(')));
-  assert.match(persist,/Updating team status…/);
-  assert.match(persist,/Team status updated\./);
-  assert.match(persist,/setFeedback\(err\.message\|\|'Could not update team status\.'/);
+  assert.match(persist,/Updating follow-up status…/);
+  assert.match(persist,/Follow-up status updated\./);
+  assert.match(persist,/setFeedback\(err\.message\|\|'Could not update follow-up status\.'/);
 });

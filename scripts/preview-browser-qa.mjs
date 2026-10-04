@@ -192,6 +192,7 @@ async function assertReadableCopy(page,label){
 }
 
 async function ensureView(page,view){
+  if(view==='conversations'&&await page.locator('body').getAttribute('data-dashboard')==='client'){await ensureView(page,'contacts');await page.locator('#contactRecordedSessions').click();await page.locator('#view-conversations.active').waitFor();return;}
   const btn=page.locator('button.nav-item[data-view="'+view+'"]').first();
   if(!(await btn.count()))throw new Error('Missing nav view '+view);
   const menu=page.locator('.mobile-menu').first();
@@ -228,13 +229,18 @@ async function assertSectionAlertContext(page,kind,label=kind){
       notificationUnreadCount=1;renderNotifications();
     },{kind,view,workspaceId:report.workspaceId});
     const surface=page.locator('.view.active .section-alerts');
-    await surface.waitFor({state:'visible'});
-    if(!await surface.evaluate(el=>el.open))throw new Error('Unread section alert details were concealed');
+    if(kind==='client'){
+      if(await surface.count())throw new Error('Call alerts displaced the call log');
+      await page.locator('#callSearch').fill('');await page.locator('#callDateFilter').selectOption('all');await page.locator('#callCategoryFilter').selectOption('all');await page.locator('#callFilter').selectOption('all');
+      await page.evaluate(()=>{callQuickFilter='all';renderCalls()});
+      await page.locator('.call-record-alert').first().waitFor({state:'visible'});
+    }else{await surface.waitFor({state:'visible'});if(!await surface.evaluate(el=>el.open))throw new Error('Unread section alert details were concealed');}
     await assertLayout(page,label+'-section-alert');
     await shot(page,label+'-section-alert-context',{fullPage:false});
-    await page.locator('[data-section-notification="qa-section-alert"]').click();
+    if(kind==='client')await page.locator('.call-row').filter({has:page.locator('.call-record-alert')}).first().click();else await page.locator('[data-section-notification="qa-section-alert"]').click();
     await page.locator(drawer+'.open').waitFor({state:'visible'});
     await page.waitForFunction(()=>!document.querySelector('.view.active .section-alerts'));
+    if(kind==='client')await page.waitForFunction(()=>!document.querySelector('.call-record-alert'));
     await page.locator(close).click();
     report[kind].interactions.push('visible contextual unread alerts + exact record navigation + confirmed read removal');
   }finally{

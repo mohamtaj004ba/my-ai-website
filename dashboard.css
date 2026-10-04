@@ -334,6 +334,35 @@ body.drawer-open{overflow:hidden}
 .attention-call-badge{grid-column:1;grid-row:1;justify-self:start;white-space:normal}
 .attention-call-copy{grid-column:1;grid-row:2}
 .attention-call-arrow{grid-column:2;grid-row:1 / 3;align-self:center}
+.settings-card-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:start}
+.settings-card{padding:24px;min-width:0}
+.settings-card-head{display:flex;justify-content:space-between;align-items:start;gap:16px;margin-bottom:20px}
+.settings-card h2{font-size:20px;margin:0 0 6px}
+.settings-card p{color:var(--muted);margin:0;line-height:1.5;font-size:14px}
+.settings-card-head button{flex-shrink:0}
+.settings-card-fields{display:grid;gap:18px}
+.settings-card-fields>label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--muted);margin:0}
+.settings-read-value{display:block;font-size:15px;font-weight:500;color:var(--ink);line-height:1.5;overflow-wrap:anywhere}
+.settings-card:not(.editing) label>input,.settings-card:not(.editing) label>textarea,.settings-card:not(.editing) label>select{display:none}
+.settings-card.editing .settings-read-value{display:none}
+.settings-card.editing input,.settings-card.editing select,.settings-card.editing textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;color:var(--ink)}
+.settings-card.editing input[type=checkbox]{width:20px;height:20px}
+.settings-card .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px;background:#f7f9fa;border-radius:10px}
+.settings-card .business-logo-editor{margin:0;padding:16px;border:1px solid var(--line);border-radius:12px}
+.settings-card .required-mark{display:inline}
+.settings-section-actions{margin-top:20px;border-top:1px solid var(--line);padding-top:16px}
+.settings-section-actions>div:last-child{display:flex;justify-content:flex-end;gap:10px}
+.settings-export{display:grid;gap:14px}
+.settings-export button{justify-self:start}
+.call-row.call-unviewed{background:#fffaf3;border-left:4px solid #bd6033}
+.call-row.call-viewed{border-left:4px solid transparent}
+.call-row.call-unviewed .call-caller-cell strong{font-weight:800}
+.call-record-alert{display:inline-flex;max-width:100%;padding:3px 7px;margin-top:5px;background:#fff0e4;color:#963f20;border:1px solid #e7c5ad;border-radius:6px;font-size:12px;font-weight:700;white-space:normal;line-height:1.35}
+.care-workspace-actions{display:flex;gap:8px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--line);background:#f8fafb}
+.care-workspace-actions button{font-size:13px}
+.care-action-status{width:100%;font-size:13px;color:var(--muted)}
+@media(max-width:900px){.settings-card-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.settings-card{padding:20px}.settings-card-head{flex-wrap:wrap}.settings-card-head button{min-height:42px}.settings-card.editing .settings-section-actions{position:sticky;bottom:12px;background:#fff;padding:14px;border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 18px #0001;z-index:20}.care-workspace-actions button{flex:1 1 140px;min-height:42px}}
 @media(max-width:560px){.top-actions{gap:6px}.icon-btn,.help-button{width:40px;height:40px}.account-button{padding:4px 6px}.profile-avatar{width:32px;height:32px}}
 
 
