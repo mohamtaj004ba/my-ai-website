@@ -153,6 +153,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
       activeBox:box(active),
       topbarBox:box(topbar),
       mainBox:box(main),
+      renderedClosedDrawers:[...document.querySelectorAll('.call-drawer:not(.open)')].filter(el=>el.getBoundingClientRect().width>0).map(el=>el.id),
       overflowers:[...document.querySelectorAll('body *')].map(el=>{
         const r=el.getBoundingClientRect(),style=getComputedStyle(el);
         return {tag:el.tagName.toLowerCase(),id:el.id||'',className:String(el.className||'').slice(0,160),text:String(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,120),parent:el.parentElement?{tag:el.parentElement.tagName.toLowerCase(),id:el.parentElement.id||'',className:String(el.parentElement.className||'').slice(0,140)}:null,ancestor:el.parentElement?.parentElement?{tag:el.parentElement.parentElement.tagName.toLowerCase(),id:el.parentElement.parentElement.id||'',className:String(el.parentElement.parentElement.className||'').slice(0,140)}:null,left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width),position:style.position,display:style.display,overflowX:style.overflowX};
@@ -161,6 +162,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
   });
   report.layoutContracts.push({label,...state});
   if(!state.activeView)throw new Error(label+' has no active dashboard view');
+  if(state.renderedClosedDrawers.length)throw new Error(label+' leaves closed drawer controls rendered: '+state.renderedClosedDrawers.join(', '));
   if(!allowHorizontalOverflow&&state.scrollWidth>state.viewport.width+4){
     throw new Error(label+' horizontally overflows viewport: '+state.scrollWidth+'px > '+state.viewport.width+'px; offenders='+JSON.stringify(state.overflowers));
   }
