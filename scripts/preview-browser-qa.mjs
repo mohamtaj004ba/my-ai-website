@@ -884,7 +884,9 @@ async function runAdminInteractions(page){
       const sentButton=document.querySelector('[data-resolve-onboarding-delivery="sent"][data-resolve-onboarding-id="'+id+'"]');
       const notSentButton=document.querySelector('[data-resolve-onboarding-delivery="not_sent"][data-resolve-onboarding-id="'+id+'"]');
       if(!sentButton||!notSentButton)throw new Error('Invite delivery review controls were not rendered');
-      const pending=resolveOnboardingInviteDelivery(id,'not_sent','attempt-qa',notSentButton);
+      if(await resolveOnboardingInviteDelivery(id,'not_sent','attempt-qa',notSentButton)!==true)throw new Error('Invite delivery confirmation did not open');
+      if(requests.length!==0)throw new Error('Invite delivery resolution bypassed confirmation');
+      const pending=submitAdminActionConfirmation();
       if(!notSentButton.disabled||notSentButton.getAttribute('aria-busy')!=='true'||!sentButton.disabled)throw new Error('Invite delivery review controls were not locked while saving');
       if(await resolveOnboardingInviteDelivery(id,'sent','attempt-qa',sentButton)!==false)throw new Error('Concurrent invite delivery resolution was not blocked');
       if(requests.length!==1||requests[0].body.id!==id||requests[0].body.attemptId!=='attempt-qa'||requests[0].body.resolution!=='not_sent')throw new Error('Invite delivery resolution request did not preserve the reviewed attempt');
@@ -896,7 +898,7 @@ async function runAdminInteractions(page){
     }finally{
       window.fetch=realFetch;window.confirm=realConfirm;refreshAdminView=realRefresh;loadNotifications=realNotifications;
       adminProvisioningData=adminProvisioningData.filter(item=>item.id!==id);
-      adminOnboardingInvitePending.delete(id);renderProvisioning();
+      adminOnboardingInvitePending.delete(id);closeAdminActionConfirmation();renderProvisioning();
     }
   });
   report.admin.interactions.push('in-memory onboarding invite delivery review + safe retry');
