@@ -573,6 +573,7 @@ async function runAdminInteractions(page){
     await route.fulfill({status:id==='qa-confirmation-focus'?200:409,contentType:'application/json',body:JSON.stringify(id==='qa-confirmation-focus'?{ok:true,deleted:{id}}:{error:'QA intercepted unexpected phone removal'})});
   });
   const phoneDeleteLauncher=page.locator('[data-delete-phone="'+qaPhone.id+'"]');
+  const phoneFixtureReadRoute=/\/api\/account\?action=admin-phone-numbers$/;
   try{
     await phoneDeleteLauncher.click();
     const confirmation=page.locator('#adminActionConfirmationModal');await confirmation.waitFor({state:'visible'});
@@ -584,7 +585,11 @@ async function runAdminInteractions(page){
     await page.waitForFunction(id=>document.activeElement?.dataset?.deletePhone===id,qaPhone.id);
     if(phoneDeleteRequests!==0)throw new Error('Phone cancellation sent a removal request');
     // A temporary in-page row tests confirmed deletion focus without deleting stored inventory.
-    await page.evaluate(item=>{window.__qaOriginalPhoneData=adminPhoneData;adminPhoneData=[...adminPhoneData,{...item,id:'qa-confirmation-focus',updatedAt:1}];renderPhones()},qaPhone);
+    await page.route(phoneFixtureReadRoute,async route=>{
+      if(route.request().method()!=='GET')return route.continue();
+      await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({numbers:[...phoneItems,...(phoneDeleteRequests===0?[{...qaPhone,id:'qa-confirmation-focus',updatedAt:1}]:[])]})});
+    });
+    await page.evaluate(async item=>{window.__qaOriginalPhoneData=adminPhoneData;await refreshAdminView('phones',{force:true,announce:false});if(!adminPhoneData.some(x=>x.id==='qa-confirmation-focus'))adminPhoneData.push({...item,id:'qa-confirmation-focus',updatedAt:1});renderPhones()},qaPhone);
     await page.locator('[data-delete-phone="qa-confirmation-focus"]').click();await page.locator('#submitAdminActionConfirmation').click();
     await page.locator('#adminActionConfirmationModal').waitFor({state:'hidden'});
     await page.waitForFunction(()=>document.activeElement?.id==='addPhoneButton');
@@ -592,6 +597,7 @@ async function runAdminInteractions(page){
   }finally{
     await page.evaluate(()=>{if(window.__qaOriginalPhoneData){adminPhoneData=window.__qaOriginalPhoneData;delete window.__qaOriginalPhoneData;renderPhones()}});
     await page.unroute(phoneDeleteRoute);
+    await page.unroute(phoneFixtureReadRoute);
   }
   report.admin.interactions.push('phone removal identity + provider truthfulness + keyboard cancellation + confirmed focus recovery without stored deletion');
 

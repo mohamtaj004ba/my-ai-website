@@ -2715,7 +2715,7 @@ async function openInboxItem(kind,id){
         const current=(adminInboxData.gmail?.threads||[]).find(item=>String(item.id)===String(id));
         if(current?.unread)current.unread=false;
         if(adminInboxData.gmail?.analytics)adminInboxData.gmail.analytics.unread=(adminInboxData.gmail?.threads||[]).filter(item=>item?.unread).length;
-        adminInboxData.readError='';renderAdminInbox();
+        adminInboxData.readError=String(data.warning||'');renderAdminInbox();
       }).catch(()=>{
         if(adminInboxData.gmailStatus?.connected===false||connectionRevision!==Number(adminInboxData.connectionRevision||0))return;
         adminInboxData.readError='Could not mark this Gmail thread as read in Gmail; it remains unread.';

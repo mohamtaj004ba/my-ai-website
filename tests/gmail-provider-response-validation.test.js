@@ -10,8 +10,41 @@ function fixture({list={threads:[{id:'thread',historyId:'history'}],resultSizeEs
   const ctx=vm.createContext({require:name=>name==='./kv'?{kv}:name==='./config-transaction'?require('../lib/config-transaction'):require(name),module:{exports:{}},process:{env:{}},Buffer,URL,URLSearchParams,Date,setTimeout});
   vm.runInContext(source,ctx);
   ctx.gmailFetch=async(_admin,path)=>path.startsWith('/threads?')?list:path.startsWith('/threads/')?(thread===undefined?validThread:thread):path==='/settings/sendAs'?(aliases===undefined?{sendAs:[{sendAsEmail:'primary@test.example',isPrimary:true}]}:aliases):{messages:[]};
-  return {ctx,api:ctx.module.exports,writes};
+  return {ctx,api:ctx.module.exports,writes,kv};
 }
+
+test('confirmed Gmail sends survive cache invalidation failure without a duplicate provider request',async()=>{
+  const f=fixture();let calls=0;
+  f.kv.del=async()=>{throw Error('Cache unavailable')};
+  f.ctx.gmailFetch=async()=>{calls++;return {id:'sent-message',threadId:'thread'}};
+  const result=await f.api.sendMessage('admin@test.example',{to:'recipient@test.example',subject:'Reply',body:'Hello',threadId:'thread',expectedGmailEmail:'primary@test.example'});
+  assert.equal(result.id,'sent-message');assert.equal(result.threadId,'thread');assert.match(result.warning,/message sent.*cached detail/);assert.equal(calls,1);
+});
+test('confirmed Gmail read receipt survives cache invalidation failure',async()=>{
+  const f=fixture();let calls=0;
+  f.kv.del=async()=>{throw Error('Cache unavailable')};
+  f.ctx.gmailFetch=async()=>{calls++;return {id:'thread'}};
+  const result=await f.api.markThreadRead('admin@test.example','thread','primary@test.example');
+  assert.equal(result.id,'thread');assert.match(result.warning,/marked this thread as read/);assert.equal(calls,1);
+});
+test('unverified Gmail mutation receipts still fail before cache cleanup',async()=>{
+  const f=fixture();let deletions=0;f.kv.del=async()=>{deletions++};f.ctx.gmailFetch=async()=>({id:'wrong',threadId:'wrong'});
+  await assert.rejects(f.api.markThreadRead('admin@test.example','thread','primary@test.example'),/response could not be verified/);
+  await assert.rejects(f.api.sendMessage('admin@test.example',{to:'recipient@test.example',subject:'Reply',body:'Hello',threadId:'thread',expectedGmailEmail:'primary@test.example'}),/response could not be verified/);
+  assert.equal(deletions,0);
+});
+test('Gmail API receipts preserve confirmed mutations and independent cache/Growth warnings',async()=>{
+  const account=fs.readFileSync('api/account.js','utf8'),start=account.indexOf('async function adminGmailRead('),end=account.indexOf('\nasync function adminWebsiteConversation(',start);
+  const ctx=vm.createContext({requireAdmin:async()=>({email:'admin@test.example'}),cleanEmail:value=>String(value||'').trim().toLowerCase(),
+    markGmailThreadRead:async()=>({id:'thread',warning:'Read confirmed; cache unavailable.'}),validatedGmailFrom:async()=> 'primary@test.example',
+    sendGmailMessage:async()=>({id:'sent',threadId:'thread',warning:'Send confirmed; cache unavailable.'}),kv:{get:async()=>{throw Error('Growth unavailable')}},emailKey:value=>value,safeError:()=> 'Unavailable',console:{error(){}}});
+  vm.runInContext(account.slice(start,end),ctx);
+  const res=()=>({code:0,body:null,status(code){this.code=code;return this},json(body){this.body=body;return this}});
+  const read=res();await ctx.adminGmailRead({body:{threadId:'thread',expectedGmailEmail:'primary@test.example'}},read);
+  assert.equal(read.code,200);assert.equal(read.body.ok,true);assert.match(read.body.warning,/Read confirmed/);
+  const sent=res();await ctx.adminGmailSend({body:{to:'recipient@test.example',subject:'Reply',body:'Hello',threadId:'thread',expectedGmailEmail:'primary@test.example'}},sent);
+  assert.equal(sent.code,200);assert.equal(sent.body.ok,true);assert.equal(sent.body.id,'sent');assert.match(sent.body.warning,/Send confirmed.*lead follow-up status/);
+});
 test('Gmail transport rejects invalid JSON and non-object successful responses',async()=>{
   for(const body of [null,[], 'unexpected','invalid-json']){
     const f=fixture();f.ctx.accessToken=async()=> 'mock-token';f.ctx.fetch=async()=>({ok:true,json:async()=>{if(body==='invalid-json')throw Error('Invalid JSON');return body}});

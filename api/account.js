@@ -1817,7 +1817,7 @@ async function adminGmailRead(req,res){
   const id=String((req.body||{}).threadId||'').slice(0,120);if(!id)return res.status(400).json({error:'Thread id required'});
   const expectedGmailEmail=cleanEmail(req.body?.expectedGmailEmail||'');
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(expectedGmailEmail))return res.status(409).json({error:'Refresh the connected Gmail account before changing read state.'});
-  try{await markGmailThreadRead(admin.email,id,expectedGmailEmail);return res.status(200).json({ok:true})}
+  try{const receipt=await markGmailThreadRead(admin.email,id,expectedGmailEmail);return res.status(200).json({ok:true,warning:receipt.warning||''})}
   catch(err){if(err.code==='GMAIL_CONNECTION_CHANGED')return res.status(409).json({error:err.message});console.error('gmail mark read failed',safeError(err));return res.status(502).json({error:'Could not update Gmail thread'})}
 }
 
@@ -1849,7 +1849,7 @@ async function adminGmailSend(req,res){
       console.error('gmail sent prospect update failed',safeError(err));
       warning='Gmail message sent, but lead follow-up status could not be confirmed. Refresh Growth.';
     }
-    return res.status(200).json({ok:true,id:sent.id||'',threadId:sent.threadId||b.threadId||'',warning});
+    return res.status(200).json({ok:true,id:sent.id||'',threadId:sent.threadId||b.threadId||'',warning:[sent.warning,warning].filter(Boolean).join(' ')});
   }catch(err){if(err.code==='GMAIL_CONNECTION_CHANGED')return res.status(409).json({error:err.message});console.error('gmail send failed',safeError(err));return res.status(502).json({error:'Could not send Gmail message'})}
 }
 
