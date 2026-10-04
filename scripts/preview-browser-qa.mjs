@@ -774,8 +774,7 @@ async function runAdminInteractions(page){
 
   await page.evaluate(()=>{
     window.__qaDeliveryOriginalProvisioning=adminProvisioningData;
-    const base=adminProvisioningData[0]||{};
-    adminProvisioningData=[{...base,id:'qa-delivery-ui-only',name:'QA delivery review',stage:'Review',onboardingStatus:'awaiting_review',onboardingLinkSent:false,inviteDeliveryStatus:'uncertain',inviteDeliveryNeedsReview:true,inviteDeliveryAttemptId:'qa-attempt',onboardingUpdatedAt:1},...adminProvisioningData];renderProvisioning();
+    adminProvisioningData=[{id:'qa-delivery-ui-only',name:'QA delivery review',plan:'Starter',stage:'Review',autoStage:'Review',manualOverride:false,stageUpdatedAt:null,checklist:{},checklistDone:0,checklistTotal:13,onboardingStatus:'awaiting_review',onboardingLinkSent:false,inviteDeliveryStatus:'uncertain',inviteDeliveryNeedsReview:true,inviteDeliveryAttemptId:'qa-attempt',onboardingUpdatedAt:1},...adminProvisioningData];renderProvisioning();
   });
   let deliveryResolutions=0;const deliveryRoute=/\/api\/account\?action=admin-onboarding-delivery-resolve$/;
   await page.route(deliveryRoute,async route=>{

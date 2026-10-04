@@ -1681,7 +1681,7 @@ async function validatedGmailFrom(adminEmail,requested='',expectedGmailEmail){
     const error=new Error('Gmail account changed while checking sender aliases. Refresh before sending.');error.code='GMAIL_CONNECTION_CHANGED';throw error;
   }
   const wanted=String(requested||'').trim().toLowerCase();
-  if(!wanted)return (aliases.find(a=>a.isDefault&&a.verificationStatus!=='pending')||aliases.find(a=>a.isPrimary)||{}).email||conn.gmailEmail||adminEmail;
+  if(!wanted)return (aliases.find(a=>a.isDefault&&(a.isPrimary||a.verificationStatus==='accepted'))||aliases.find(a=>a.isPrimary)||{}).email||conn.gmailEmail||adminEmail;
   const match=aliases.find(a=>a.email===wanted&&(a.isPrimary||a.verificationStatus==='accepted'));
   if(!match)throw new Error('Selected From address is not an accepted Gmail send-as alias');
   return match.email;
