@@ -1309,7 +1309,7 @@ async function runReadOnlyBannerQA(viewport,name){
 
 async function runPublicSiteQA(){
   report.publicSite={pages:[],contracts:[],interactions:[]};
-  for(const [name,viewport] of [['laptop',{width:1440,height:1000}],['tablet',{width:768,height:1024}],['phone',{width:390,height:844}],['small-phone',{width:320,height:740}]]){
+  for(const [name,viewport] of [['wide',{width:1920,height:1080}],['laptop',{width:1440,height:1000}],['tablet',{width:768,height:1024}],['phone',{width:390,height:844}],['small-phone',{width:320,height:740}]]){
     const {context,page}=await makeContext(viewport,'public-'+name);
     try{
       await page.route('**/api/site-track',r=>r.fulfill({status:204,body:''}));
@@ -1324,12 +1324,14 @@ async function runPublicSiteQA(){
           const overflowing=[...document.querySelectorAll('main :is(section,article,form,input:not([type=checkbox]),select,textarea,.phone-demo,.live-stage,.business-day)')].filter(visible).filter(el=>{const r=el.getBoundingClientRect();return r.left<-1||r.right>innerWidth+1}).map(el=>el.className||el.id||el.tagName);
           const smallFields=innerWidth<=600?[...document.querySelectorAll('main input:not([type=checkbox]),main select,main textarea')].filter(visible).filter(el=>parseFloat(getComputedStyle(el).fontSize)<16).map(el=>el.name||el.id):[];
           const smallCopy=[...document.querySelectorAll('main p,main label,main summary')].filter(visible).filter(el=>parseFloat(getComputedStyle(el).fontSize)<12).map(el=>el.textContent.slice(0,80));
-          return {width:innerWidth,overflowing,smallFields,smallCopy,h1:document.querySelectorAll('main h1').length};
+          const footerTop=document.querySelector('.footer-top')?.getBoundingClientRect(),footerBottom=document.querySelector('.footer-bottom')?.getBoundingClientRect();
+          const brokenFooter=!!(footerTop&&footerBottom&&footerBottom.top<footerTop.bottom-1);
+          return {width:innerWidth,overflowing,smallFields,smallCopy,brokenFooter,h1:document.querySelectorAll('main h1').length};
         });
         report.publicSite.contracts.push({label,...state});
-        if(state.h1!==1||state.overflowing.length||state.smallFields.length||state.smallCopy.length)throw new Error('Public site layout failure '+label+': '+JSON.stringify(state));
+        if(state.h1!==1||state.overflowing.length||state.smallFields.length||state.smallCopy.length||state.brokenFooter)throw new Error('Public site layout failure '+label+': '+JSON.stringify(state));
       };
-      for(const [route,key] of [['/','home'],['/contact','contact'],['/live-demo','demo'],['/get-started','get-started'],['/privacy','privacy'],['/terms','terms']]){
+      for(const [route,key] of [['/','home'],['/contact','contact'],['/live-demo','demo'],['/get-started','get-started'],['/privacy','privacy'],['/terms','terms'],['/login','login'],['/404','not-found'],['/checkout-complete','checkout-status'],['/unsubscribe','email-preferences']]){
         await page.goto(baseURL+route,{waitUntil:'networkidle'});
         await page.locator('main h1').waitFor();await page.evaluate(()=>document.fonts.ready);
         await contract(name+'-'+key);await shot(page,'public-'+name+'-'+key);
@@ -1348,8 +1350,21 @@ async function runPublicSiteQA(){
           }
           await page.locator('[data-demo="booking"]').click();
           if(await page.locator('[data-demo="booking"]').getAttribute('aria-pressed')!=='true'||!(await page.locator('#demoIntent').innerText()).includes('Service request'))throw new Error('Public example selection did not update truthfully');
+          await page.locator('#demoNextButton').click();
+          if(await page.locator('#demoProgress').innerText()!=='2 of 4 moments')throw new Error('Walkthrough did not advance');
+          await page.locator('#demoPlay').click();
+          if(await page.locator('#demoPlay').getAttribute('aria-pressed')!=='true')throw new Error('Walkthrough playback did not start');
+          await page.locator('[data-demo="human"]').click();
+          if(await page.locator('#demoProgress').innerText()!=='1 of 4 moments'||await page.locator('#demoPlay').getAttribute('aria-pressed')!=='false')throw new Error('Switching scenario failed to reset and stop playback');
+          await shot(page,'public-'+name+'-walkthrough',{fullPage:false});
+          await page.locator('#weeklyCalls').press('Home');for(let step=0;step<9;step++)await page.locator('#weeklyCalls').press('ArrowRight');
+          if(await page.locator('#monthlyMinutes').innerText()!=='650'||!(await page.locator('#planSuggestion').innerText()).includes('Above Growth'))throw new Error('Call volume planner returned an incorrect estimate');
+          await page.locator('#weeklyCalls').press('ArrowLeft');
+          if(await page.locator('#monthlyMinutes').innerText()!=='585')throw new Error('Call volume planner is not keyboard operable');
+          await shot(page,'public-'+name+'-planner',{fullPage:false});
           await page.locator('.faq-list summary').first().click();await page.locator('.faq-list details[open] p').first().waitFor();
           await page.locator('#ccChatLauncher').click();await page.locator('#ccChatPanel.open').waitFor();await page.locator('#ccChatClose').click();
+          await page.locator('.footer-bottom').scrollIntoViewIfNeeded();await shot(page,'public-'+name+'-footer',{fullPage:false});
           report.publicSite.interactions.push(name+' menu/anchor/Escape, example selection, FAQ and chat open/close without sending');
         }
         if(key==='get-started'){

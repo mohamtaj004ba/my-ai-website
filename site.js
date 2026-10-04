@@ -31,7 +31,7 @@
   }
 
   document.querySelectorAll('a[href^="#"],a[href^="/#"]').forEach(a=>{
-    a.addEventListener('click',()=>{const hash=a.hash;if(!hash)return;const target=document.querySelector(hash);if(target)target.setAttribute('tabindex','-1')});
+    a.addEventListener('click',()=>{const hash=a.hash;if(!hash)return;const target=document.querySelector(hash);if(target){target.setAttribute('tabindex','-1');target.classList.add('anchor-destination')}});
   });
 
   // First-party analytics. No form field values or sensitive input are captured here.
