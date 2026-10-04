@@ -731,7 +731,7 @@ async function openCall(id){
   const disposition=callDispositionMeta(x),team=TEAM_STATUS_META[teamStatusForCall(x)]||TEAM_STATUS_META.no_action;
   document.getElementById('drawerMeta').innerHTML=[['Phone',x.phone],['Duration',x.duration],['Call disposition',disposition.label],['Follow-up status',team.label],['Answered by',x.agent||'Maya']].filter(([,v])=>v).map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('');
   const classification=document.getElementById('drawerClassification');if(classification)classification.innerHTML='<span class="call-type-pill large">'+esc(x.category||'General question')+'</span><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(disposition.label)+'</span><span class="team-status-pill '+team.tone+'">'+esc(team.label)+'</span>';
-  const explain=document.getElementById('drawerStatusExplainer');if(explain)explain.innerHTML='<b>What CallerCore did</b><span>'+esc(disposition.copy)+'</span>'+(followupState[String(x.id)]?.completionReason?'<b>Team completion</b><span>'+esc(String(followupState[String(x.id)].completionReason).replaceAll('_',' ')+(followupState[String(x.id)].completionNote?' · '+followupState[String(x.id)].completionNote:''))+'</span>':'');
+  const explain=document.getElementById('drawerStatusExplainer');if(explain)explain.innerHTML='<b>What CallerCore did</b><span>'+esc(disposition.copy)+'</span>'+(followupState[String(x.id)]?.completionReason?'<b>Follow-up outcome</b><span>'+esc(String(followupState[String(x.id)].completionReason).replaceAll('_',' ')+(followupState[String(x.id)].completionNote?' · '+followupState[String(x.id)].completionNote:''))+'</span>':'');
   const addr=document.getElementById('drawerAddress');if(addr)addr.textContent=x.address||contactForRecord(x)?.address||'No address was captured on this call.';
   document.getElementById('drawerSummary').textContent=x.summary||'No AI summary is available yet.';
   const q=x.qualification||{};document.getElementById('drawerQualification').innerHTML=Object.entries(q).filter(([k])=>String(k).toLowerCase()!=='value').map(([k,v])=>{const key=String(k||''),label=key.toLowerCase()==='ai result'?'Call disposition':key;return '<div><b>'+esc(v)+'</b><span>'+esc(label)+'</span></div>'}).join('')||'<span class="muted">No additional call details yet.</span>';
@@ -745,10 +745,10 @@ function closeCall(){if(document.getElementById('teamStatusModal')?.classList.co
 function money(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
 const CALL_DISPOSITIONS={
   resolved_by_ai:{label:'Resolved by AI',needsTeam:false,tone:'green',copy:'The caller got what they needed without staff action.'},
-  request_captured:{label:'Request captured',needsTeam:true,tone:'blue',copy:'CallerCore collected the request, but the business still owes the caller a next step.'},
-  message_taken:{label:'Message taken',needsTeam:true,tone:'blue',copy:'CallerCore captured a message or update for the team.'},
+  request_captured:{label:'Request captured',needsTeam:true,tone:'blue',copy:'CallerCore captured the request for follow-up.'},
+  message_taken:{label:'Message taken',needsTeam:true,tone:'blue',copy:'CallerCore captured a message or update for your business.'},
   transferred:{label:'Transferred',needsTeam:false,tone:'blue',copy:'The caller was connected to a person during the call.'},
-  escalated:{label:'Escalated',needsTeam:true,tone:'red',copy:'CallerCore identified a priority issue that needs human attention.'},
+  escalated:{label:'Escalated',needsTeam:true,tone:'red',copy:'CallerCore flagged a priority issue for follow-up.'},
   incomplete:{label:'Incomplete',needsTeam:true,tone:'red',copy:'The call ended before CallerCore could reach a useful conclusion.'},
   non_customer:{label:'Non-customer call',needsTeam:false,tone:'gray',copy:'This was spam, a wrong number, or another call that does not require customer follow-up.'}
 };
@@ -1161,7 +1161,7 @@ function contactInlineCallHtml(call){
   return '<div class="contact-inline-call-grid">'+details.map(([k,v])=>'<div><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>').join('')+'</div>'
     +(call.address?'<div class="contact-inline-block"><span>Location</span><p>'+esc(call.address)+'</p></div>':'')
     +'<div class="contact-inline-block"><span>AI summary</span><p>'+esc(call.summary||'No AI summary is available yet.')+'</p></div>'
-    +(notes.length?'<div class="contact-inline-block"><span>Team notes</span>'+notes.map(n=>'<p class="inline-team-note">'+esc(n.text)+'<small>'+esc(n.by||'Team')+(n.at?' · '+new Date(Number(n.at)).toLocaleString():'')+'</small></p>').join('')+'</div>':'')
+    +(notes.length?'<div class="contact-inline-block"><span>Internal notes</span>'+notes.map(n=>'<p class="inline-team-note">'+esc(n.text)+'<small>'+esc(n.by||'Team')+(n.at?' · '+new Date(Number(n.at)).toLocaleString():'')+'</small></p>').join('')+'</div>':'')
     +'<div class="contact-inline-block"><span>Transcript</span><div class="contact-inline-transcript">'+(transcript.length?transcript.map(pair=>'<div class="'+(String(pair[0]).toLowerCase()==='maya'?'ai':'caller')+'"><b>'+esc(pair[0])+'</b><p>'+esc(pair[1])+'</p></div>').join(''):'<p class="muted contact-transcript-loading">Open call details loaded without a transcript yet.</p>')+'</div></div>';
 }
 async function hydrateContactCallDetails(callId,details){
@@ -4776,7 +4776,8 @@ function renderSectionNotifications(){
   const name=view.id.replace(/^view-/,''),items=notificationData.filter(n=>!n.read&&(n.view||'overview')===name);
   let surface=view.querySelector('.section-alerts');
   if(!items.length){surface?.remove();return}
-  const expanded=surface?surface.open===true:true;
+  const phone=typeof matchMedia==='function'&&matchMedia('(max-width:600px)').matches;
+  const expanded=surface?surface.open===true:!phone;
   const active=document.activeElement,restoreSummary=!!surface&&active===surface.querySelector('summary'),restoreId=surface?.contains(active)?active?.dataset?.sectionNotification:'';
   if(!surface){surface=document.createElement('details');surface.className='section-alerts';const heading=view.querySelector('.page-head');if(heading)heading.after(surface);else view.prepend(surface)}
   surface.open=expanded;

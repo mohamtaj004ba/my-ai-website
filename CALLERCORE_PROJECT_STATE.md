@@ -1,6 +1,17 @@
 # CallerCore project state
 
-Latest verified implementation: **`0ccd4213504d909f6371e7b7114752d413dc3dc6`**. The public website redesign, phone layouts and dashboard regression sweep are verified in Preview. Provider/commercial launch gates remain separately restricted.
+Latest verified implementation: **`2def127d4b7786413ca5732a06b31f155fe29c26`**. Website intake, branded notifications, organized Inbox and Preview owner preservation are verified. Further phone review is in progress; provider/commercial launch gates remain separately restricted.
+
+## Website intake and dashboard synchronization — 2026-10-04
+
+- Contact success now hides and clears the submitted form, focuses a clean receipt and offers Send another message. Failed submissions retain the draft; duplicate submits remain guarded. Shared hidden styles can no longer expose successful forms.
+- Website inquiries and replies use escaped CallerCore branded HTML with plain-text fallback. Gmail HTML uses multipart MIME while preserving provider verification and uncertain-write safeguards. No customer message was sent during verification.
+- Inbox loads website records before Gmail, refreshes both sources, separates Website, Chatbot and Unfinished checkout, and labels checkout leads without claiming a message or completed payment. Fresh website counts replace the previous false zero. Message previews and reading/reply areas are reorganized. Prospect source selections preserve contact and other actual attribution values.
+- New business-logo resizing preserves actual image dimensions instead of adding a padded canvas. Header menus now appear above sticky call/day headings. Previously uploaded images with embedded whitespace are retained.
+- Preview QA seeding preserves owner-mapped workspaces and their directory, phone, support and feedback records. Automated fixtures no longer overwrite the user's existing client workspace.
+- **Verified implementation 2def127d4b7786413ca5732a06b31f155fe29c26**, tree ea15212930f8bd04c51b59d919f591ce0615f3c6: 1,581 local tests pass. CallerCore CI push 37235729924 / PR 37235734715, CodeQL push 37235729847 / PR 37235734677, Jekyll 37235734708 and authenticated Preview Browser QA 37235729858 all SUCCESS. QA artifact 11315249147.
+- Exact Preview dpl_7NDhkwWwA3GcmfRFZimFp3GPj226, https://my-ai-website-g0if8mip2-mohamtaj004bas-projects.vercel.app, READY, matching SHA and target null. Direct authorized sign-in also confirmed the real owner client portal at this exact Preview.
+- PR #5 remains draft/open/unmerged. Main, production, billing and live telephony remain unchanged. Phone filter/alert and wording follow-up is still being developed and is not included in this verified SHA.
 
 ## Public website composition, guided examples and final sweep — 2026-10-04
 

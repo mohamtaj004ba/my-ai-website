@@ -1190,6 +1190,14 @@ async function runResponsive(kind,viewport,name){
       await ensureView(page,kind==='admin'?'clients':'calls');
       await assertLayout(page,kind+'-'+name+'-secondary',{allowHorizontalOverflow:false});
       await shot(page,kind+'-'+name+'-'+(kind==='admin'?'clients':'calls'));
+      if(kind==='client'&&viewport.width<=600){
+        const toolbar=await page.locator('.call-toolbar-main').evaluate(el=>{const r=el.getBoundingClientRect(),search=el.querySelector('.call-search-field').getBoundingClientRect();return {fullSearch:search.width>=r.width-2,touch:[...el.querySelectorAll('input,select,button')].every(x=>x.getBoundingClientRect().height>=43)}});
+        if(!toolbar.fullSearch||!toolbar.touch)throw new Error('Phone call search or filters are too cramped at '+name+' width');
+        await ensureView(page,'integrations');
+        const connections=await page.locator('.connection-health').evaluateAll(cards=>cards.map(card=>{const copy=card.querySelector('div').getBoundingClientRect(),badge=card.querySelector('.tag').getBoundingClientRect();return copy.width>=180&&badge.y>=copy.bottom-1}));
+        if(!connections.every(Boolean))throw new Error('Phone connection status squeezes its explanation at '+name+' width');
+        await assertLayout(page,kind+'-'+name+'-connections');await shot(page,kind+'-'+name+'-connections');
+      }
     }
     if(kind==='admin'){
       await ensureView(page,'phones');await assertLayout(page,kind+'-'+name+'-phones');await shot(page,kind+'-'+name+'-phones');

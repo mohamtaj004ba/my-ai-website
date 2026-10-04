@@ -24,3 +24,7 @@ test('Today queue distinguishes older and undated calls instead of displaying on
   assert.match(vm.runInContext('formatAttentionDate({at:Date.UTC(2025,8,23,10,59)})',ctx),/2025/);
   ctx.sameLocalDay=()=>true;assert.match(vm.runInContext('formatAttentionDate({at:Date.now()})',ctx),/^Today · /);
 });
+
+test('phone alerts start compact, retain explicit expansion and never mark records read',()=>{
+ const f=fixture();f.ctx.matchMedia=()=>({matches:true});f.render();assert.equal(f.surface.open,false);assert.equal(f.ctx.notificationData[0].read,false);f.surface.open=true;f.render();assert.equal(f.surface.open,true);assert.equal(f.ctx.notificationData[0].read,false);
+});
