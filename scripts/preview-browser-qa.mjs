@@ -1362,7 +1362,7 @@ async function runPublicSiteQA(){
         }
         if(key==='contact'&&name==='phone'){
           let attempts=0;await page.route('**/api/contact',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(++attempts===1?{ok:true}:{ok:true,prospectId:'public-visual-qa'})}));
-          await page.locator('[name="name"]').fill('Preview Visual QA');await page.locator('[name="email"]').fill('preview-qa@callercore.test');await page.locator('[name="message"]').fill('Isolated UI verification; this request is intercepted and never sent.');
+          await page.locator('#contactForm [name="name"]').fill('Preview Visual QA');await page.locator('#contactForm [name="email"]').fill('preview-qa@callercore.test');await page.locator('#contactForm [name="message"]').fill('Isolated UI verification; this request is intercepted and never sent.');
           await page.locator('#contactForm button[type="submit"]').click();await page.locator('#contactStatus.error').waitFor();
           if(!await page.locator('#contactForm').isVisible())throw new Error('Unverified inquiry receipt hid the contact draft');
           await page.locator('#contactForm button[type="submit"]').click();await page.locator('#contactSuccess').waitFor({state:'visible'});await shot(page,'public-phone-contact-receipt',{fullPage:false});
