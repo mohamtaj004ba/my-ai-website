@@ -1,6 +1,18 @@
 # CallerCore project state
 
-Latest verified implementation: **`0703624a8b725a294462ffc714778474a47437e2`**. The client interaction and contextual-alert polish pass is verified in Preview. Historical milestones follow; provider/commercial launch gates remain unfinished and separately restricted.
+Latest verified implementation: **`c409fe421aa1ba342758ecf20d38189484534ff8`**. The client purpose, settings and Client Care refinement is verified in exact Preview. Historical milestones follow; provider/commercial launch gates remain separately restricted.
+
+## Client purpose, settings and Client Care refinement — 2026-10-04
+
+- Support prompts now fit questions, changes and problems; call-specific support retains contextual guidance. Follow-ups uses concise owner-inclusive wording (Your follow-ups, Follow-up status, To do) while stored states remain unchanged.
+- Recorded sessions are accessed from Contacts, with parent navigation and a return action. Stored conversation history, entitlement checks and guarded paging remain intact. Call log now starts with records rather than the large section-alert panel; exact unread alerts sit on matching rows beside explicit Opened / Not opened states. Confirmed navigation and read semantics remain intact.
+- Settings now has independent Business profile, Location and Notifications edit cards, with one active draft, unrelated fields locked, section-local Save/Cancel and mobile safe-area controls. Cancellation and confirmed save restore focus. Full save payloads, validation, revisions, pending locks, recovery and read-only protections remain intact.
+- Client Care exposes exact-workspace Diagnostics, Business settings, AI receptionist, Phone routing, Access & account and read-only portal shortcuts. Existing guarded admin editors are reused. Wrong/stale workspace, phone load failure and failed portal opening fail closed and remain retryable; no name/email inference or write-capable impersonation was introduced.
+- Proactive review corrected leaked closing-tag text, call date heading overlap, call-pill wrapping and modal/footer layering. Seven new regressions cover exact routing, stale failures, Settings isolation/read-only, recorded-history access and markup; existing mobile checks were consolidated. Local 1,563 passed / 0 failed, syntax and diff checks pass.
+- Failed candidate 210bfef5a267b82ef2ff60396f89f4c4c111b18c: Browser QA 37188262281 failed when scheduled notification refresh overwrote its temporary unread fixture; isolated refresh routing/inflight invalidation corrected the test. Failed candidate dae6dec9f2beac72208c5234f66aeb9977822767: Browser QA 37189079449 asserted Client Care focus before asynchronous navigation completed; the assertion now waits for the existing pending lock to clear. Neither red head is treated as verified.
+- **Verified implementation c409fe421aa1ba342758ecf20d38189484534ff8**, tree 688eee97000f6a6e9efcf4ff5fa1b49dc26f7761: CallerCore CI push 37189326409 / PR 37189329142, CodeQL push 37189326411 / PR 37189329228, Jekyll 37189329212, authenticated Preview Browser QA 37189326418 all SUCCESS.
+- Exact Preview dpl_LV8LegP6M8MgutN37rBCCPdwnAyH, https://my-ai-website-3fjso2458-mohamtaj004bas-projects.vercel.app, READY with matching Git SHA and target null. QA artifact 11297563962: 179 layout contracts, 128 readability contracts, 196 screenshots, zero visual/console/page/API errors; desktop and responsive recorded sessions, Settings edits, keyboard focus and Client Care shortcuts exercised.
+- Direct authenticated review confirmed exact-workspace configuration/phone shortcuts and read-only portal Settings, Contacts history and Call log. Gmail access was limited to authorized CallerCore sign-in links; tokens were not persisted in reports. PR #5 remains draft/unmerged. Main, production, billing and live telephony remain unchanged.
 
 ## Client interaction and contextual-alert polish — 2026-10-03
 
