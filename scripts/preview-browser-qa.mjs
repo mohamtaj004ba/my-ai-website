@@ -1352,8 +1352,10 @@ async function runPublicSiteQA(){
           report.publicSite.interactions.push(name+' menu/anchor/Escape, example selection, FAQ and chat open/close without sending');
         }
         if(key==='get-started'){
+          const assertCheckoutHeading=async()=>{if(await page.locator('.checkout-stage.active .stage-head>div').evaluate(el=>getComputedStyle(el).display)!=='block')throw new Error('Checkout heading inherited the demo row layout')};
+          await assertCheckoutHeading();
           await page.locator('[data-plan="Starter"]').click();await page.locator('#toBusiness').click();await page.locator('#stage2.active').waitFor();
-          await contract(name+'-business-details');await shot(page,'public-'+name+'-business-details');
+          await assertCheckoutHeading();await contract(name+'-business-details');await shot(page,'public-'+name+'-business-details');
           await page.locator('#backToPlan').click();
           if(await page.locator('[data-plan="Starter"]').getAttribute('aria-pressed')!=='true')throw new Error('Public checkout lost the selected plan after navigation');
           report.publicSite.interactions.push(name+' plan selection and business-step navigation without payment');
