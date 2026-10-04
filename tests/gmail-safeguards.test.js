@@ -36,7 +36,7 @@ test('Gmail sync is quota-conscious and cache-first',()=>{
   assert.match(account,/Date\.now\(\)-Number\(cached\.syncedAt\|\|0\)<2\*60\*1000/);
   assert.match(account,/Math\.min\(25/);
   assert.match(account,/6\*60\*60\*1000/);
-  assert.match(account,/parseGmailAliasCache\(aliasCache\)/);
+  assert.match(account,/parseGmailAliasCache\(aliasCache,conn\.gmailEmail\)/);
   assert.match(account,/validGmailInboxPayload\(rawCached,\{cached:true\}\)/);
   assert.match(account,/warning:'Fresh Gmail sync failed'/);
   assert.match(account,/error:'Gmail sync failed'/);
@@ -49,7 +49,7 @@ test('Gmail cache validators reject malformed successful cache payloads instead 
   const vm=require('node:vm'),ctx=vm.createContext({Array,Object,String,Number});
   vm.runInContext(account.slice(start,end),ctx);
   assert.equal(vm.runInContext("parseGmailAliasCache({broken:true}).valid",ctx),false);
-  assert.equal(vm.runInContext("parseGmailAliasCache([{email:'ok@example.test'}]).valid",ctx),true);
+  assert.equal(vm.runInContext("parseGmailAliasCache([{email:'ok@example.test',isPrimary:true}]).valid",ctx),true);
   ctx.good={threads:[{id:'t1',messages:[]}],analytics:{unread:0},coverage:{verified:true},syncedAt:1};
   assert.equal(vm.runInContext("validGmailInboxPayload(good,{cached:true})",ctx),true);
   ctx.bad={threads:[],analytics:{},coverage:{verified:false},syncedAt:1};

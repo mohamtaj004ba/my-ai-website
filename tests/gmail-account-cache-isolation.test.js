@@ -13,7 +13,7 @@ function fixture({connected=true,invalid=false}={}){
   const ctx=vm.createContext({requireAdmin:async()=>({email:admin}),getGmailConnection:async()=>connection,gmailConfigReady:()=>true,
     cleanEmail:value=>String(value||'').trim().toLowerCase(),crypto,Date,Number,String,Array,Math,Promise,console:{error(){}},safeError:()=>'',
     kv:{get:async key=>{reads.push(key);return legacy.get(key)||null},set:async(key,value)=>{writes.push({key,value})}},
-    listGmailInbox:async()=>({gmailEmail:email,connected:true,threads:[],analytics:{},coverage:{verified:true}}),listGmailAliases:async()=>[{email}],emailKey:value=>value});
+    listGmailInbox:async()=>({gmailEmail:email,connected:true,threads:[],analytics:{},coverage:{verified:true}}),listGmailAliases:async()=>[{email,isPrimary:true}],emailKey:value=>value});
   vm.runInContext(helpers+feeds,ctx);
   const run=async(action,cached=true)=>{code=0;body=null;await ctx[action]({query:cached?{cached:'1'}:{}},{status(value){code=value;return this},json(value){body=value;return this}});return {code,body}};
   return {ctx,reads,writes,run,change:value=>{connection=value},scope:crypto.createHash('sha256').update(JSON.stringify([admin,email])).digest('hex')};
@@ -35,6 +35,13 @@ test('disconnected and unverifiable Gmail account identities never read cached i
 test('provider response from a different Gmail account and changed alias connection cannot populate the reviewed account cache',async()=>{
   const f=fixture();f.ctx.listGmailInbox=async()=>({gmailEmail:'other@test.example',threads:[],analytics:{},coverage:{verified:true}});
   assert.equal((await f.run('adminGmailInbox',false)).code,502);assert.equal(f.writes.length,0);
-  f.ctx.listGmailAliases=async()=>{f.change({gmailEmail:'other@test.example'});return [{email:'other@test.example'}]};
+  f.ctx.listGmailAliases=async()=>{f.change({gmailEmail:'other@test.example'});return [{email:'other@test.example',isPrimary:true}]};
   assert.equal((await f.run('adminGmailAliases',false)).code,502);assert.equal(f.writes.length,0);
+});
+test('contradictory cached sender aliases cannot appear as verified or become stale provider fallbacks',async()=>{
+  for(const aliases of [[{email:'other@test.example',isPrimary:true}],[{email:'new@test.example',isPrimary:'true'}],[{email:'new@test.example',isPrimary:true,inboundSeen:'false'}],[{email:'new@test.example',isPrimary:true},{email:'NEW@test.example',verificationStatus:'accepted'}]]){
+    const f=fixture();f.ctx.kv.get=async()=>({aliases,cachedAt:Date.now()});f.ctx.listGmailAliases=async()=>{throw Error('Provider unavailable')};
+    const cached=await f.run('adminGmailAliases');assert.equal(cached.code,503);assert.equal(cached.body.aliases,undefined);
+    const live=await f.run('adminGmailAliases',false);assert.equal(live.code,502);assert.equal(live.body.aliases,undefined);assert.equal(f.writes.length,0);
+  }
 });

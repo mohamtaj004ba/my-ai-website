@@ -119,6 +119,11 @@ test('sender alias responses require primary identity, valid flags and canonical
     const f=fixture({aliases});await assert.rejects(f.api.listAliases('admin@test.example'),/aliases could not be verified/);
   }
 });
+test('provider sender aliases reject a different primary identity or duplicate normalized address',async()=>{
+  for(const sendAs of [[{sendAsEmail:'other@test.example',isPrimary:true}],[{sendAsEmail:'primary@test.example',isPrimary:true},{sendAsEmail:'PRIMARY@test.example',verificationStatus:'accepted'}]]){
+    const f=fixture({aliases:{sendAs}});await assert.rejects(f.api.listAliases('admin@test.example'),/alias identity could not be verified/);
+  }
+});
 test('unknown custom-alias verification is retained as unknown instead of accepted',async()=>{
   const f=fixture({aliases:{sendAs:[{sendAsEmail:'primary@test.example',isPrimary:true},{sendAsEmail:'custom@test.example',isDefault:true}]}}),aliases=await f.api.listAliases('admin@test.example');
   assert.equal(aliases[0].verificationStatus,'accepted');assert.equal(aliases[1].verificationStatus,'verificationStatusUnspecified');

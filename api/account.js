@@ -1693,13 +1693,16 @@ function validGmailConnection(value,adminEmail=''){
   const storedAdmin=cleanEmail(value.adminEmail||''),expectedAdmin=cleanEmail(adminEmail||'');
   return !storedAdmin||!expectedAdmin||storedAdmin===expectedAdmin;
 }
-function validGmailAliases(value){
-  return Array.isArray(value)&&value.every(alias=>alias&&typeof alias==='object'&&!Array.isArray(alias)&&String(alias.email||'').includes('@'));
+function validGmailAliases(value,expectedGmailEmail=''){
+  if(!Array.isArray(value)||value.some(alias=>!alias||typeof alias!=='object'||Array.isArray(alias)||typeof alias.email!=='string'||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(alias.email.trim())||['isPrimary','isDefault','treatAsAlias','inboundSeen','inboundVerified'].some(key=>alias[key]!==undefined&&typeof alias[key]!=='boolean')||alias.verificationStatus!==undefined&&!['verificationStatusUnspecified','accepted','pending'].includes(alias.verificationStatus)))return false;
+  if(!value.length)return true;
+  const primary=value.filter(alias=>alias.isPrimary===true),expected=String(expectedGmailEmail||'').trim().toLowerCase();
+  return primary.length===1&&(!expected||primary[0].email.trim().toLowerCase()===expected)&&new Set(value.map(alias=>alias.email.trim().toLowerCase())).size===value.length;
 }
-function parseGmailAliasCache(value){
+function parseGmailAliasCache(value,expectedGmailEmail=''){
   if(value==null)return {valid:true,aliases:[],cachedAt:0,present:false};
-  if(Array.isArray(value))return {valid:validGmailAliases(value),aliases:validGmailAliases(value)?value:[],cachedAt:0,present:true};
-  if(!value||typeof value!=='object'||Array.isArray(value)||!validGmailAliases(value.aliases))return {valid:false,aliases:[],cachedAt:0,present:true};
+  if(Array.isArray(value)){const valid=validGmailAliases(value,expectedGmailEmail);return {valid,aliases:valid?value:[],cachedAt:0,present:true}}
+  if(!value||typeof value!=='object'||Array.isArray(value)||!validGmailAliases(value.aliases,expectedGmailEmail))return {valid:false,aliases:[],cachedAt:0,present:true};
   const cachedAt=Number(value.cachedAt||0);
   if(value.cachedAt!==undefined&&(!Number.isFinite(cachedAt)||cachedAt<0))return {valid:false,aliases:[],cachedAt:0,present:true};
   return {valid:true,aliases:value.aliases,cachedAt,present:true};
@@ -1790,7 +1793,7 @@ async function adminGmailAliases(req,res){
   const conn=await getGmailConnection(admin.email);if(!conn)return res.status(200).json({connected:false,aliases:[]});
   if(!validGmailConnection(conn,admin.email))return res.status(503).json({error:'Gmail connection state is unavailable. Previously verified sender aliases should be preserved.'});
   const hash=crypto.createHash('sha256').update(JSON.stringify([String(admin.email||'').trim().toLowerCase(),String(conn.gmailEmail||'').trim().toLowerCase()])).digest('hex'),cacheKey='gmail:aliases:v2:'+hash;
-  const aliasCache=await kv.get(cacheKey),parsedCache=parseGmailAliasCache(aliasCache),cachedAliases=parsedCache.aliases,aliasCachedAt=parsedCache.cachedAt,force=String(req.query?.force||'')==='1';
+  const aliasCache=await kv.get(cacheKey),parsedCache=parseGmailAliasCache(aliasCache,conn.gmailEmail),cachedAliases=parsedCache.aliases,aliasCachedAt=parsedCache.cachedAt,force=String(req.query?.force||'')==='1';
   if(String(req.query?.cached||'')==='1'){
     if(!parsedCache.valid)return res.status(503).json({error:'Cached Gmail sender aliases are unavailable. Previously verified aliases should be preserved.'});
     return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases:cachedAliases,cached:true});
@@ -1800,7 +1803,7 @@ async function adminGmailAliases(req,res){
   }
   try{
     const aliases=await listGmailAliases(admin.email);
-    if(!validGmailAliases(aliases))throw new Error('Gmail alias provider response was incomplete');
+    if(!validGmailAliases(aliases,conn.gmailEmail))throw new Error('Gmail alias provider response was incomplete');
     const currentConnection=await getGmailConnection(admin.email);
     if(String(currentConnection?.gmailEmail||'').trim().toLowerCase()!==String(conn.gmailEmail||'').trim().toLowerCase())throw new Error('Gmail account changed during alias synchronization');
     await kv.set(cacheKey,{aliases,cachedAt:Date.now()},{ex:60*60*24*7});
