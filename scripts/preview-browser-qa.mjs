@@ -779,6 +779,7 @@ async function runAdminInteractions(page){
       if(!String(url).includes('action=admin-website-reply'))return window.__qaWebsiteReplyOriginalFetch(url,options);
       const body=JSON.parse(options?.body||'{}');window.__qaWebsiteReplyRequests++;
       if(body?.id!=='qa-recipient-review-ui-only'||body?.expectedRecipientEmail!=='reviewed@callercore.test'||body?.message!=='QA intercepted reply')throw new Error('Website reply lost its reviewed recipient or conversation');
+      if(window.__qaWebsiteReplyRequests===3)return new Response(JSON.stringify({error:'Reply delivery could not be confirmed. Review the delivery provider before retrying; another send could create duplicate mail.',deliveryStatus:'uncertain',retrySafe:false}),{status:502,headers:{'Content-Type':'application/json'}});
       const rejected=window.__qaWebsiteReplyRequests===1;
       return new Response(JSON.stringify(rejected?{error:'The recipient changed. Refresh this conversation before replying. No reply was sent.'}:{ok:true,message:{id:'qa-intercepted-reply',direction:'outbound',channel:'qa-intercepted',from:'support@callercore.test',to:'reviewed@callercore.test',body:body.message,at:Date.now()},warning:'QA intercepted reply; no email was sent.'}),{status:rejected?409:200,headers:{'Content-Type':'application/json'}});
     };
@@ -791,10 +792,13 @@ async function runAdminInteractions(page){
     await page.locator('#inboxReplyForm button[type="submit"]').click();
     await page.locator('#inboxReplyStatus').filter({hasText:'QA intercepted reply; no email was sent.'}).waitFor({state:'visible'});
     if(await page.evaluate(()=>window.__qaWebsiteReplyRequests)!==2||await page.locator('#inboxReplyText').inputValue()!=='')throw new Error('Website reply retry did not preserve confirmed receipt behavior');
+    await page.locator('#inboxReplyText').fill('QA intercepted reply');await page.locator('#inboxReplyForm button[type="submit"]').click();
+    await page.locator('#inboxReplyStatus').filter({hasText:'Review the delivery provider before retrying'}).waitFor({state:'visible'});
+    if(await page.evaluate(()=>window.__qaWebsiteReplyRequests)!==3||await page.locator('#inboxReplyText').inputValue()!=='QA intercepted reply')throw new Error('Uncertain website delivery hid review instructions, discarded its draft or automatically retried');
   }finally{
     await page.evaluate(()=>{window.fetch=window.__qaWebsiteReplyOriginalFetch;delete window.__qaWebsiteReplyOriginalFetch;delete window.__qaWebsiteReplyRequests;currentInboxItem=window.__qaOriginalInboxItem;delete window.__qaOriginalInboxItem;renderInboxThread()});
   }
-  report.admin.interactions.push('intercepted website reply recipient identity + stale draft recovery + confirmed receipt warning without sending mail');
+  report.admin.interactions.push('intercepted website reply recipient identity + stale draft recovery + confirmed receipt warning + uncertain delivery review without sending mail');
   await ensureView(page,'onboarding');
   await page.locator('#onboardingSearch').fill('Lakeview');
   await page.waitForTimeout(180);

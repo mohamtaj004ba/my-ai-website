@@ -1850,7 +1850,7 @@ async function adminGmailSend(req,res){
       warning='Gmail message sent, but lead follow-up status could not be confirmed. Refresh Growth.';
     }
     return res.status(200).json({ok:true,id:sent.id||'',threadId:sent.threadId||b.threadId||'',warning:[sent.warning,warning].filter(Boolean).join(' ')});
-  }catch(err){if(err.code==='GMAIL_CONNECTION_CHANGED')return res.status(409).json({error:err.message});console.error('gmail send failed',safeError(err));return res.status(502).json({error:'Could not send Gmail message'})}
+  }catch(err){if(err.code==='GMAIL_CONNECTION_CHANGED')return res.status(409).json({error:err.message});console.error('gmail send failed',safeError(err));if(err.deliveryState==='uncertain')return res.status(502).json({error:'Gmail delivery could not be confirmed. Check Gmail Sent and provider delivery before retrying; another send could create duplicate mail.',code:'GMAIL_DELIVERY_UNCERTAIN',deliveryStatus:'uncertain',retrySafe:false});return res.status(502).json({error:'Could not send Gmail message'})}
 }
 
 async function adminWebsiteConversation(req,res){
@@ -1897,7 +1897,7 @@ async function adminWebsiteReply(req,res){
     }else{
       await sendMail({to,subject,text:message,html:'<p>'+message.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])).replace(/\n/g,'<br>')+'</p>'});
     }
-  }catch(err){console.error('website reply failed',safeError(err));return res.status(502).json({error:'Unable to send reply'})}
+  }catch(err){console.error('website reply failed',safeError(err));if(err.deliveryState==='uncertain')return res.status(502).json({error:'Reply delivery could not be confirmed. Review the delivery provider before retrying; another send could create duplicate mail.',code:'REPLY_DELIVERY_UNCERTAIN',deliveryStatus:'uncertain',retrySafe:false});return res.status(502).json({error:'Unable to send reply'})}
   const item={id:crypto.randomUUID(),direction:'outbound',channel,from,to,subject,body:message,actorEmail:admin.email,at:Date.now()};
   try{await appendSiteConversation(kv,id,item)}
   catch(err){

@@ -64,6 +64,37 @@ test('Gmail transport rejects invalid JSON and non-object successful responses',
     await assert.rejects(f.ctx.gmailFetch('admin@test.example','/threads'),/response could not be verified/);
   }
 });
+test('Gmail retry rechecks account identity after quota backoff before issuing another request',async()=>{
+  const f=fixture();let accountChanged=false,calls=0,tokenChecks=0;
+  f.ctx.accessToken=async(_admin,expected)=>{tokenChecks++;assert.equal(expected,'primary@test.example');if(accountChanged)throw Object.assign(Error('Gmail account changed'),{code:'GMAIL_CONNECTION_CHANGED'});return 'token'};
+  f.ctx.fetch=async()=>{calls++;return {ok:false,status:429,json:async()=>({error:{message:'Quota exceeded'}}),headers:{get:()=>null}}};
+  f.ctx.setTimeout=resolve=>{accountChanged=true;resolve()};
+  vm.runInContext(source.slice(source.indexOf('async function gmailFetch('),source.indexOf('\nfunction b64urlDecode(')),f.ctx);
+  await assert.rejects(f.ctx.gmailFetch('admin@test.example','/messages/send',{method:'POST'},'primary@test.example'),error=>error.code==='GMAIL_CONNECTION_CHANGED');
+  assert.equal(calls,1);assert.equal(tokenChecks,2);
+});
+test('Gmail quota backoff retains bounded retries for the same verified account',async()=>{
+  const f=fixture();let calls=0,tokenChecks=0;
+  f.ctx.accessToken=async()=>{tokenChecks++;return 'token'};f.ctx.setTimeout=resolve=>resolve();
+  f.ctx.fetch=async()=>{calls++;return calls<3?{ok:false,status:429,json:async()=>({error:{message:'Quota exceeded'}}),headers:{get:()=>null}}:{ok:true,json:async()=>({threads:[]})}};
+  vm.runInContext(source.slice(source.indexOf('async function gmailFetch('),source.indexOf('\nfunction b64urlDecode(')),f.ctx);
+  assert.equal((await f.ctx.gmailFetch('admin@test.example','/threads',{},'primary@test.example')).threads.length,0);assert.equal(calls,3);assert.equal(tokenChecks,3);
+});
+test('lost transport, server failure and malformed Gmail send acknowledgements remain uncertain without automatic retry',async()=>{
+  for(const mode of ['transport','server','json']){
+    const f=fixture();let calls=0;f.ctx.accessToken=async()=> 'token';
+    f.ctx.fetch=async()=>{calls++;if(mode==='transport')throw Error('Response lost');return {ok:mode!=='server',status:mode==='server'?503:200,json:async()=>{if(mode==='json')throw Error('Invalid JSON');return {error:{message:'Unavailable'}}}}};
+    vm.runInContext(source.slice(source.indexOf('async function gmailFetch('),source.indexOf('\nfunction b64urlDecode(')),f.ctx);
+    await assert.rejects(f.ctx.gmailFetch('admin@test.example','/messages/send',{method:'POST'},'primary@test.example'),error=>error.code==='GMAIL_DELIVERY_UNCERTAIN'&&error.deliveryState==='uncertain');assert.equal(calls,1);
+  }
+});
+test('uncertain Gmail API receipt tells the operator to verify delivery before another send',async()=>{
+  const account=fs.readFileSync('api/account.js','utf8'),start=account.indexOf('async function adminGmailSend('),end=account.indexOf('\nasync function adminWebsiteConversation(',start);
+  const ctx=vm.createContext({requireAdmin:async()=>({email:'admin@test.example'}),cleanEmail:value=>String(value||'').trim().toLowerCase(),validatedGmailFrom:async()=> 'primary@test.example',sendGmailMessage:async()=>{throw Object.assign(Error('Acknowledgement lost'),{deliveryState:'uncertain'})},safeError:()=> 'Unavailable',console:{error(){}}});
+  vm.runInContext(account.slice(start,end),ctx);const res={status(code){this.code=code;return this},json(body){this.body=body;return this}};
+  await ctx.adminGmailSend({body:{to:'recipient@test.example',subject:'Reply',body:'Hello',expectedGmailEmail:'primary@test.example'}},res);
+  assert.equal(res.code,502);assert.equal(res.body.retrySafe,false);assert.equal(res.body.deliveryStatus,'uncertain');assert.match(res.body.error,/Check Gmail Sent.*duplicate mail/);assert.notEqual(res.body.ok,true);
+});
 test('malformed thread collections, identities and coverage cannot become a verified empty inbox',async()=>{
   for(const list of [{threads:null},{threads:{}},{threads:[{}]},{threads:[{id:'thread'},{id:'thread'}]},{threads:[],resultSizeEstimate:'10'},{threads:[],nextPageToken:{}}]){
     const f=fixture({list});await assert.rejects(f.api.listInbox('admin@test.example'),/could not be verified/);assert.equal(f.writes.length,0);

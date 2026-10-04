@@ -31,6 +31,10 @@ test('confirmed Gmail reply with failed refresh reports sent and does not invite
   assert.match(f.node('inboxReplyStatus').textContent,/reply was sent.*could not refresh/);assert.equal(f.node('inboxReplyText').value,'');
   assert.equal(f.requests[0].body.expectedGmailEmail,'old@test.example');assert.equal(f.requests.length,1);
 });
+test('uncertain reply retains the draft and explicit delivery review instructions without retrying',async()=>{
+  const f=fixture(),pending=f.send();f.resolve({ok:false,json:async()=>({error:'Gmail delivery could not be confirmed. Check Gmail Sent before retrying; another send could create duplicate mail.',deliveryStatus:'uncertain',retrySafe:false})});
+  assert.equal(await pending,false);assert.equal(f.node('inboxReplyText').value,'Reviewed reply');assert.match(f.node('inboxReplyStatus').textContent,/Check Gmail Sent.*duplicate mail/);assert.equal(f.requests.length,1);
+});
 test('confirmed Gmail send placed in another thread clears the sent draft and preserves reviewed conversation',async()=>{
   const f=fixture();f.ctx.loadAdminInbox=async()=>{f.ctx.adminInboxData.gmail.threads=[{id:'new-thread',messages:[]}]};const pending=f.send();
   f.resolve({ok:true,json:async()=>({ok:true,id:'sent',threadId:'new-thread',warning:'Gmail message sent, but Gmail placed it in a different thread.'})});

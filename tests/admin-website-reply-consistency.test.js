@@ -46,6 +46,10 @@ test('missing or changed displayed website recipient blocks every provider and h
     assert.equal(result.emails,0);assert.equal(result.appends,0);assert.equal(result.commits,0);
   }
 });
+test('uncertain website provider delivery reports review scope without claiming send failure or saving invented history',async()=>{
+  const f=fixture();f.ctx.sendMail=async()=>{throw Object.assign(Error('Acknowledgement lost'),{deliveryState:'uncertain'})};
+  const result=await f.run();assert.equal(result.status,502);assert.equal(result.payload.retrySafe,false);assert.equal(result.payload.deliveryStatus,'uncertain');assert.match(result.payload.error,/Review the delivery provider.*duplicate mail/);assert.equal(result.appends,0);assert.equal(result.commits,0);
+});
 test('sent website reply appends to history and revises prospect without overwriting later edits',async()=>{
   const r=await fixture().run();
   assert.equal(r.emails,1);assert.equal(r.appends,1);assert.equal(r.commits,1);
