@@ -2327,8 +2327,8 @@ body[data-dashboard="admin"] .admin-search-result:hover,body[data-dashboard="adm
   min-width:138px;
   justify-content:center;
 }
-@media(max-width:760px){
-  .contact-toolbar{grid-template-columns:1fr 1fr}
+@media(max-width:1050px){
+  .contact-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .contact-toolbar input{grid-column:1/-1}
 }
 @media(max-width:520px){
