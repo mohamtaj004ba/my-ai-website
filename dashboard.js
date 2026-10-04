@@ -4722,10 +4722,14 @@ function renderSectionNotifications(){
   if(!items.length){surface?.remove();return}
   const expanded=surface?surface.open===true:true;
   const active=document.activeElement,restoreSummary=!!surface&&active===surface.querySelector('summary'),restoreId=surface?.contains(active)?active?.dataset?.sectionNotification:'';
-  if(!surface){surface=document.createElement('details');surface.className='section-alerts';view.prepend(surface)}
+  if(!surface){surface=document.createElement('details');surface.className='section-alerts';const heading=view.querySelector('.page-head');if(heading)heading.after(surface);else view.prepend(surface)}
   surface.open=expanded;
   surface.innerHTML='<summary><span class="section-alert-symbol" aria-hidden="true">!</span><span><b>'+items.length+' unread alert'+(items.length===1?'':'s')+' in this section</b><small>Review the items below to see what needs your attention.</small></span><span class="section-alert-cue">Review alerts</span></summary><div class="section-alert-list">'+items.map(n=>'<button type="button" data-section-notification="'+esc(n.id)+'"><span><b>'+esc(n.title||'Notification')+'</b><small>'+esc(n.body||'')+'</small></span><span class="section-alert-link">Open item →</span></button>').join('')+'</div>';
   surface.querySelectorAll('[data-section-notification]').forEach(button=>button.addEventListener('click',()=>openNotification(button.dataset.sectionNotification)));
+  const cue=surface.querySelector('.section-alert-cue');if(cue)cue.textContent=expanded?'Hide alerts':'Review alerts';
+  surface.ontoggle=()=>{const cue=surface.querySelector('.section-alert-cue');if(cue)cue.textContent=surface.open?'Hide alerts':'Review alerts'};
+  const error=notificationLoadError||notificationReadError;
+  if(error){const status=document.createElement('p');status.className='section-alert-error';status.setAttribute('role','status');status.textContent=error;surface.append(status)}
   if(restoreSummary)surface.querySelector('summary')?.focus();
   else if(restoreId)surface.querySelector('[data-section-notification="'+CSS.escape(restoreId)+'"]')?.focus();
 }
@@ -4860,6 +4864,7 @@ async function openNotification(id){
   if(wasOpen){panel.hidden=true;if(bell){bell.setAttribute('aria-expanded','false');bell.focus()}}
   const opened=await navigateNotification(n);
   if(!opened){
+    notificationReadError='This alert could not open its record. Refresh alerts and try again; it remains unread.';renderNotifications();
     if(wasOpen&&panel){panel.hidden=false;if(bell)bell.setAttribute('aria-expanded','true');const target=panel.querySelector('[data-notification-id="'+CSS.escape(String(id))+'"]');(target||bell)?.focus()}
     return false;
   }

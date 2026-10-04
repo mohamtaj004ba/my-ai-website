@@ -214,7 +214,7 @@ async function sweepViews(page,kind){
     report[kind].views.push(view);
   }
 }
-async function assertSectionAlertContext(page,kind){
+async function assertSectionAlertContext(page,kind,label=kind){
   const view=kind==='client'?'calls':'clients',drawer=kind==='client'?'#callDrawer':'#adminClientDrawer',close=kind==='client'?'#closeCallDrawer':'#closeAdminClient';
   await ensureView(page,view);
   const pattern='**/api/account?action=notifications-read';
@@ -228,8 +228,8 @@ async function assertSectionAlertContext(page,kind){
     const surface=page.locator('.view.active .section-alerts');
     await surface.waitFor({state:'visible'});
     if(!await surface.evaluate(el=>el.open))throw new Error('Unread section alert details were concealed');
-    await assertLayout(page,kind+'-section-alert');
-    await shot(page,kind+'-section-alert-context',{fullPage:false});
+    await assertLayout(page,label+'-section-alert');
+    await shot(page,label+'-section-alert-context',{fullPage:false});
     await page.locator('[data-section-notification="qa-section-alert"]').click();
     await page.locator(drawer+'.open').waitFor({state:'visible'});
     await page.waitForFunction(()=>!document.querySelector('.view.active .section-alerts'));
@@ -239,6 +239,25 @@ async function assertSectionAlertContext(page,kind){
     await page.unroute(pattern);
     await page.evaluate(()=>{notificationData=window.__qaAlerts.data;notificationUnreadCount=window.__qaAlerts.count;delete window.__qaAlerts;renderNotifications()});
   }
+}
+
+async function assertCompletionRecovery(page,label){
+  await page.locator('#drawerTeamStatus').selectOption('completed');
+  await page.locator('#drawerFollowupButton').click();
+  await page.locator('#teamStatusModal.open').waitFor({state:'visible'});
+  const completionSurface=await page.evaluate(()=>{
+    const modal=document.getElementById('teamStatusModal'),drawer=document.getElementById('callDrawer'),button=document.getElementById('saveTeamStatusModal'),r=button.getBoundingClientRect();
+    return {inert:drawer.inert,onTop:modal.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),context:document.getElementById('teamStatusCallContext').textContent};
+  });
+  if(!completionSurface.inert||!completionSurface.onTop||!completionSurface.context)throw new Error('Completion is obscured by its drawer or lacks record context');
+  await shot(page,label+'-completion-dialog',{fullPage:false});
+  await page.locator('#saveTeamStatusModal').press('Tab');
+  if(await page.evaluate(()=>document.activeElement?.id)!=='closeTeamStatusModal')throw new Error('Completion keyboard focus escaped');
+  await page.locator('#closeTeamStatusModal').press('Escape');
+  await page.waitForFunction(()=>!document.querySelector('#teamStatusModal').classList.contains('open'));
+  if(!await page.locator('#callDrawer').evaluate(el=>el.classList.contains('open')&&!el.inert))throw new Error('Completion cancel lost the original drawer');
+  await page.waitForFunction(()=>document.activeElement?.id==='drawerFollowupButton');
+  report.client.interactions.push(label+' completion above drawer + context + focus trap + Escape recovery without mutation');
 }
 
 async function seedWorkspace(request){
@@ -404,20 +423,7 @@ async function runClientInteractions(page){
   const viewCall=firstFollowup.locator('.followup-view-call');
   await viewCall.click();
   await page.locator('#callDrawer.open').waitFor({state:'visible',timeout:5000});
-  await page.locator('#drawerTeamStatus').selectOption('completed');
-  await page.locator('#drawerFollowupButton').click();
-  await page.locator('#teamStatusModal.open').waitFor({state:'visible'});
-  const completionSurface=await page.evaluate(()=>{
-    const modal=document.getElementById('teamStatusModal'),drawer=document.getElementById('callDrawer'),button=document.getElementById('saveTeamStatusModal'),r=button.getBoundingClientRect();
-    return {inert:drawer.inert,onTop:modal.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),context:document.getElementById('teamStatusCallContext').textContent};
-  });
-  if(!completionSurface.inert||!completionSurface.onTop||!completionSurface.context)throw new Error('Completion is obscured by its drawer or lacks record context');
-  await page.locator('#saveTeamStatusModal').press('Tab');
-  if(await page.evaluate(()=>document.activeElement?.id)!=='closeTeamStatusModal')throw new Error('Completion keyboard focus escaped');
-  await page.locator('#closeTeamStatusModal').press('Escape');
-  await page.waitForFunction(()=>!document.querySelector('#teamStatusModal').classList.contains('open'));
-  if(!await page.locator('#callDrawer').evaluate(el=>el.classList.contains('open')&&!el.inert))throw new Error('Completion cancel lost the original drawer');
-  report.client.interactions.push('completion above drawer + context + focus trap + Escape recovery without mutation');
+  await assertCompletionRecovery(page,'client-desktop');
   await page.locator('#closeCallDrawer').click();
   report.client.interactions.push('Follow-ups action hierarchy + call detail');
 
@@ -1192,6 +1198,11 @@ async function runResponsive(kind,viewport,name){
         await shot(page,kind+'-'+name+'-'+view);
       }
     }
+    await assertSectionAlertContext(page,kind,kind+'-'+name);
+    if(kind==='client'){
+      await ensureView(page,'leads');await page.locator('.followup-view-call').first().click();await page.locator('#callDrawer.open').waitFor({state:'visible'});
+      await assertCompletionRecovery(page,kind+'-'+name);await page.locator('#closeCallDrawer').click();
+    }
     report[kind].responsive.push({name,...viewport});
   }catch(err){
     await shot(page,kind+'-'+name+'-failure').catch(()=>{});
@@ -1226,6 +1237,9 @@ async function runReadOnlyBannerQA(viewport,name){
     await page.locator('.followup-view-call').first().click();
     await page.locator('#callDrawer.open').waitFor({state:'visible'});
     if(await page.locator('#drawerTeamStatus').isEnabled()||await page.locator('#drawerFollowupButton').isEnabled())throw new Error('Read-only call drawer offered a status mutation');
+    const closeBounds=await page.locator('#closeCallDrawer').boundingBox(),bannerBounds=await page.locator('.admin-view-banner').boundingBox();
+    if(!closeBounds||!bannerBounds||closeBounds.y<bannerBounds.y+bannerBounds.height)throw new Error('Read-only banner obscures the call drawer close control');
+    await shot(page,'read-only-'+name+'-call-drawer',{fullPage:false});
     await page.locator('#closeCallDrawer').click();
     await ensureView(page,'overview');
     if(viewport.width<=760){

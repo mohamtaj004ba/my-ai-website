@@ -2533,6 +2533,7 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allo
 .section-alert-list button:last-child{border-bottom:0}
 .section-alert-list button>span:first-child{min-width:0;overflow-wrap:anywhere}
 .section-alert-list button:hover b{text-decoration:underline}
+.section-alert-error{margin:0;padding:12px 20px;background:#fff;color:var(--red);font-size:14px;line-height:1.5;border-top:1px solid var(--line)}
 #teamStatusModal{z-index:95;padding-top:calc(var(--admin-view-offset,0px) + 20px)}
 #teamStatusModal .team-status-card{width:min(560px,100%)}
 #teamStatusModal .completion-context{font-weight:600;color:var(--ink);font-size:14px;overflow-wrap:anywhere;margin-bottom:8px}
@@ -2608,6 +2609,9 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allo
 .admin-agent-title>.tag{justify-self:start}.admin-agent-card .admin-link{min-height:40px}
 .admin-client-view .topbar{top:var(--admin-view-offset,54px)}
 .admin-client-view .sidebar{top:var(--admin-view-offset,54px);height:calc(100dvh - var(--admin-view-offset,54px))}
+.admin-client-view .call-drawer{top:var(--admin-view-offset,54px);height:calc(100dvh - var(--admin-view-offset,54px))}
+.admin-client-view .drawer-backdrop{top:var(--admin-view-offset,54px)}
+.admin-client-view .modal{padding-top:calc(var(--admin-view-offset,54px) + 20px)}
 @media(min-width:1051px){.admin-client-view .sticky-table-head{top:calc(var(--admin-view-offset,54px) + var(--dashboard-topbar-height,74px))}}
 @media(max-width:1600px){
   #view-inbox .inbox-layout{grid-template-columns:minmax(280px,.75fr) minmax(520px,1.5fr)}

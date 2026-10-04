@@ -14,6 +14,7 @@ function fixture({opened=true}={}){
     document:{getElementById:id=>id==='notificationPanel'?panel:id==='notificationBell'?bell:null},
     navigateNotification:async()=>{events.push('navigate:panel-hidden='+panel.hidden);return opened},
     markNotifications:async()=>{events.push('mark')},
+    notificationReadError:'',renderNotifications(){events.push('render')},
     CSS:{escape:x=>x},String
   });
   vm.runInContext(block,ctx);
@@ -33,5 +34,6 @@ test('failed notification navigation reopens the panel and restores focus to the
   assert.equal(await f.run(),false);
   assert.equal(f.panel.hidden,false);
   assert.ok(f.events.includes('bell:aria-expanded=true'));
+  assert.match(f.ctx.notificationReadError,/remains unread/);assert.equal(f.events.includes('mark'),false);
   assert.equal(f.events.at(-1),'focus:item');
 });
