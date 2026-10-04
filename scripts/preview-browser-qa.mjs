@@ -1130,11 +1130,12 @@ async function runResponsive(kind,viewport,name){
         if(kind==='admin'&&(view==='overview'||view==='finance')){
           const chart=page.locator(view==='overview'?'#adminFinanceChart':'#financePageChart');
           const months=chart.locator('[data-finance-index]');
-          for(const month of [months.first(),months.last()]){
+          for(const [edge,month] of [['first',months.first()],['last',months.last()]]){
             await month.press('Enter');
             const tip=chart.locator('.admin-chart-tooltip');await tip.waitFor({state:'visible'});
             const bounds=await tip.boundingBox(),shellBounds=await chart.boundingBox();
             if(!bounds||!shellBounds||bounds.x<shellBounds.x-1||bounds.x+bounds.width>shellBounds.x+shellBounds.width+1)report.visualFailures.push(kind+'-'+name+'-'+view+' finance tooltip clips exact values');
+            if(edge==='last')await shot(page,kind+'-'+name+'-'+view+'-finance-detail',{fullPage:false});
             await month.press('Escape');await tip.waitFor({state:'hidden'});
           }
         }

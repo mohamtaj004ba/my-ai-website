@@ -2672,6 +2672,7 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allo
 @media(max-width:1140px){body[data-dashboard="client"] #analyticsApp .two-col{grid-template-columns:minmax(0,1fr)}}
 .overview-combo-chart,.admin-finance-chart-shell,#view-overview .admin-finance-chart-shell{height:auto}
 .overview-combo-chart svg,.admin-finance-chart-shell svg{height:auto}
+body[data-dashboard="admin"] .top-actions>*:not(.admin-search-shell){flex-shrink:0}
 @media(max-width:1050px){#view-platform-settings .platform-settings-grid{grid-template-columns:minmax(0,1fr)!important}}
 @media(max-width:1050px){
  body[data-dashboard="admin"] .topbar>div:first-child>.eyebrow{display:none}
