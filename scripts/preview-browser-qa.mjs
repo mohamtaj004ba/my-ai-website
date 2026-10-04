@@ -158,6 +158,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
       overlappingHeaderControls:controls.some((a,i)=>controls.slice(i+1).some(b=>a.x<b.right-1&&a.right>b.x+1&&a.y<b.bottom-1&&a.bottom>b.y+1)),
       clippedIntelligenceLabel:(()=>{const button=document.getElementById('adminAiLaunch');return !!button&&button.scrollWidth>button.clientWidth+2})(),
       renderedClosedDrawers:[...document.querySelectorAll('.call-drawer:not(.open)')].filter(el=>el.getBoundingClientRect().width>0).map(el=>el.id),
+      squeezedAttentionCopy:[...document.querySelectorAll('.view.active .attention-call-copy')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.width<160}).map(el=>({text:el.textContent,width:el.getBoundingClientRect().width})),
       overflowers:[...document.querySelectorAll('body *')].map(el=>{
         const r=el.getBoundingClientRect(),style=getComputedStyle(el);
         return {tag:el.tagName.toLowerCase(),id:el.id||'',className:String(el.className||'').slice(0,160),text:String(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,120),parent:el.parentElement?{tag:el.parentElement.tagName.toLowerCase(),id:el.parentElement.id||'',className:String(el.parentElement.className||'').slice(0,140)}:null,ancestor:el.parentElement?.parentElement?{tag:el.parentElement.parentElement.tagName.toLowerCase(),id:el.parentElement.parentElement.id||'',className:String(el.parentElement.parentElement.className||'').slice(0,140)}:null,left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width),position:style.position,display:style.display,overflowX:style.overflowX};
@@ -169,6 +170,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
   if(state.overlappingHeaderControls)throw new Error(label+' header controls overlap');
   if(state.clippedIntelligenceLabel)throw new Error(label+' Core Intelligence label spills outside its control');
   if(state.renderedClosedDrawers.length)throw new Error(label+' leaves closed drawer controls rendered: '+state.renderedClosedDrawers.join(', '));
+  if(state.squeezedAttentionCopy.length)throw new Error(label+' squeezes customer details beside attention badges: '+JSON.stringify(state.squeezedAttentionCopy));
   if(!allowHorizontalOverflow&&state.scrollWidth>state.viewport.width+4){
     throw new Error(label+' horizontally overflows viewport: '+state.scrollWidth+'px > '+state.viewport.width+'px; offenders='+JSON.stringify(state.overflowers));
   }
