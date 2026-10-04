@@ -772,6 +772,36 @@ async function runAdminInteractions(page){
   await page.locator('#onboardingSearch').fill('');
   report.admin.interactions.push('onboarding search');
 
+  await page.evaluate(()=>{
+    window.__qaDeliveryOriginalProvisioning=adminProvisioningData;
+    const base=adminProvisioningData[0]||{};
+    adminProvisioningData=[{...base,id:'qa-delivery-ui-only',name:'QA delivery review',stage:'Review',onboardingStatus:'awaiting_review',onboardingLinkSent:false,inviteDeliveryStatus:'uncertain',inviteDeliveryNeedsReview:true,inviteDeliveryAttemptId:'qa-attempt',onboardingUpdatedAt:1},...adminProvisioningData];renderProvisioning();
+  });
+  let deliveryResolutions=0;const deliveryRoute=/\/api\/account\?action=admin-onboarding-delivery-resolve$/;
+  await page.route(deliveryRoute,async route=>{
+    const body=route.request().postDataJSON();deliveryResolutions++;
+    if(body?.id!=='qa-delivery-ui-only'||body?.attemptId!=='qa-attempt'||body?.resolution!=='not_sent')throw new Error('Delivery fixture attempted an unexpected resolution');
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,deliveryStatus:'failed'})});
+  });
+  try{
+    await page.locator('.onboarding-row[data-provision-id="qa-delivery-ui-only"]>summary').click();
+    const drawer=page.locator('#onboardingDetailDrawer'),launcher=drawer.locator('[data-resolve-onboarding-delivery="not_sent"]');
+    await launcher.click();await page.locator('#adminActionConfirmationModal').waitFor({state:'visible'});
+    if(!/QA delivery review.*qa-attempt/.test(await page.locator('#adminActionConfirmationCopy').textContent()))throw new Error('Delivery review omitted target or attempt identity');
+    if(!/sends no email.*duplicate mail/.test(await page.locator('#adminActionConfirmationConsequences').textContent()))throw new Error('Delivery review omitted no-send and duplicate-mail recovery scope');
+    await page.locator('#cancelAdminActionConfirmation').click();
+    await page.waitForFunction(()=>document.activeElement?.dataset?.resolveOnboardingDelivery==='not_sent');
+    if(!await drawer.evaluate(el=>el.classList.contains('open'))||deliveryResolutions!==0)throw new Error('Canceled delivery review closed its drawer or sent a resolution');
+    await launcher.click();await page.locator('#submitAdminActionConfirmation').click();
+    await page.locator('#adminActionConfirmationModal').waitFor({state:'hidden'});
+    await page.waitForFunction(()=>!document.getElementById('onboardingDetailDrawer')?.classList.contains('open')&&document.activeElement?.id==='onboardingSearch');
+    if(deliveryResolutions!==1)throw new Error('Delivery fixture did not submit exactly one intercepted resolution');
+  }finally{
+    await page.unroute(deliveryRoute);
+    await page.evaluate(()=>{adminProvisioningData=window.__qaDeliveryOriginalProvisioning;delete window.__qaDeliveryOriginalProvisioning;closeAdminActionConfirmation();closeOnboardingDrawer();renderProvisioning()});
+  }
+  report.admin.interactions.push('uncertain delivery identity + no-send scope + nested drawer cancellation + intercepted resolution focus recovery');
+
   // Exercise a fictional in-memory stage record. Intercept only its requests: this
   // validates the real admin controls without changing any Preview/production KV.
   await page.evaluate(async()=>{

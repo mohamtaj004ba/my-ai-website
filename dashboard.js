@@ -3134,7 +3134,7 @@ function bindOnboardingDrawerActions(){
   drawer.querySelectorAll('[data-provision-stage-select]').forEach(sel=>sel.onchange=async e=>{e.stopPropagation();if(await moveProvisioningStage(sel.dataset.provisionStageSelect,sel.value))closeOnboardingDrawer();else{const item=adminProvisioningData.find(x=>String(x.id)===String(sel.dataset.provisionStageSelect));if(item)sel.value=item.stage}});
   drawer.querySelectorAll('[data-provision-check]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await updateProvisioningChecklist(b.dataset.provisionId,b.dataset.provisionCheck,!b.classList.contains('done')))closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-send-onboarding]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await sendOnboardingInvite(b.dataset.sendOnboarding,b))closeOnboardingDrawer()});
-  drawer.querySelectorAll('[data-resolve-onboarding-delivery]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await resolveOnboardingInviteDelivery(b.dataset.resolveOnboardingId,b.dataset.resolveOnboardingDelivery,b.dataset.attemptId,b))closeOnboardingDrawer()});
+  drawer.querySelectorAll('[data-resolve-onboarding-delivery]').forEach(b=>b.onclick=async e=>{e.preventDefault();await resolveOnboardingInviteDelivery(b.dataset.resolveOnboardingId,b.dataset.resolveOnboardingDelivery,b.dataset.attemptId,b)});
   drawer.querySelectorAll('[data-approve-build]').forEach(b=>b.onclick=async e=>{e.preventDefault();if(await approveProvisioningBuild(b.dataset.approveBuild,b))closeOnboardingDrawer()});
   drawer.querySelectorAll('[data-open-documents],[data-onboarding-documents]').forEach(b=>b.onclick=e=>{e.preventDefault();closeOnboardingDrawer();showView('documents')});
   drawer.querySelectorAll('[data-onboarding-open-client]').forEach(b=>b.onclick=e=>{e.preventDefault();closeOnboardingDrawer();openAdminClient(b.dataset.onboardingOpenClient)});
@@ -3220,20 +3220,30 @@ async function sendOnboardingInvite(id,button){
 async function resolveOnboardingInviteDelivery(id,resolution,attemptId,button){
   const key=String(id);if(adminOnboardingInvitePending.has(key))return false;
   const sent=resolution==='sent';if(!sent&&resolution!=='not_sent')return false;
+  const item=adminProvisioningData.find(x=>String(x.id)===key),attempt=String(attemptId||'');
+  if(!item||item.inviteDeliveryNeedsReview!==true||!attempt||String(item.inviteDeliveryAttemptId||'')!==attempt){setOnboardingActionStatus('Delivery review changed or is unavailable. Refresh onboarding before resolving it.','error');return false}
+  const snapshot=JSON.stringify(item),fromDrawer=!!document.getElementById('onboardingDetailDrawer')?.contains?.(button);let failureMessage='',confirmed=false;
   const message=sent?'Only mark this invite as sent after confirming Mailgun accepted or delivered it. Continue?':'Only mark this invite as not sent after confirming Mailgun did not accept or deliver it. This will allow a retry. Continue?';
-  if(!confirm(message))return false;
+  return openAdminActionConfirmation({title:'Resolve uncertain onboarding delivery',action:sent?'Record confirmed delivery':'Record confirmed non-delivery',returnFocusId:'onboardingSearch',
+    copy:'Record '+(sent?'confirmed delivery':'confirmed non-delivery')+' for '+(item.name||'this workspace')+' ('+key+'), attempt '+attempt+'.',
+    consequences:message+' This action records your independently verified result and sends no email.'+(sent?' The invite will remain recorded as sent.':' A separate retry becomes available; a mistaken non-delivery result can cause duplicate mail.'),
+    validate:()=>adminOnboardingInvitePending.has(key)||JSON.stringify(adminProvisioningData.find(x=>String(x.id)===key))!==snapshot?'Onboarding or its delivery attempt changed. Cancel and refresh before recording a result.':'',
+    failureMessage:()=>failureMessage,
+    run:async()=>{
   adminOnboardingInvitePending.add(key);setOnboardingInviteControls(key,true);setOnboardingActionStatus('Saving delivery resolution…');
   const idleLabel=button?.textContent||'';if(button)button.textContent='Saving…';
   try{
-    const r=await fetch('/api/account?action=admin-onboarding-delivery-resolve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,resolution,attemptId:String(attemptId||'')})}),data=await r.json().catch(()=>({}));
+    const r=await fetch('/api/account?action=admin-onboarding-delivery-resolve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,resolution,attemptId:attempt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not resolve onboarding delivery.');
     const expected=sent?'sent':'failed';if(data.ok!==true||data.deliveryStatus!==expected)throw new Error('Could not verify the saved delivery resolution. Refresh onboarding before retrying.');
+    confirmed=true;
     try{await refreshAdminView('onboarding',{force:true,announce:false});setOnboardingActionStatus('Delivery resolution saved.','success')}
     catch(_){setOnboardingActionStatus('Delivery resolution was saved, but onboarding could not refresh. Reload the view before taking another action.','error')}
     await loadNotifications({silent:true}).catch(()=>{});
     return true;
-  }catch(err){setOnboardingActionStatus(err.message||'Could not resolve onboarding delivery.','error');return false}
-  finally{adminOnboardingInvitePending.delete(key);setOnboardingInviteControls(key,false);if(button?.isConnected)button.textContent=idleLabel;renderProvisioning()}
+  }catch(err){failureMessage=err.message||'Could not resolve onboarding delivery.';setOnboardingActionStatus(failureMessage,'error');return false}
+  finally{adminOnboardingInvitePending.delete(key);setOnboardingInviteControls(key,false);if(button?.isConnected)button.textContent=idleLabel;renderProvisioning();if(confirmed&&fromDrawer)closeOnboardingDrawer()}
+    }});
 }
 async function approveProvisioningBuild(id,button){
   const item=adminProvisioningData.find(x=>String(x.id)===String(id));if(!item){setOnboardingActionStatus('This onboarding record is no longer available. Refresh onboarding before approving the build.','error');return false}

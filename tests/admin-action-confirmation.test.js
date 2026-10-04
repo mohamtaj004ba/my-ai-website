@@ -25,10 +25,13 @@ function fixture(fetch=async()=>({ok:true,json:async()=>({ok:true,email:'new@exa
   const phones=ui.slice(ui.indexOf('async function deletePhone('),ui.indexOf('\nfunction openPhoneModal('));
   const gmail=ui.slice(ui.indexOf('let gmailConnectionMutationPending=false;'),ui.indexOf("\ndocument.getElementById('inboxRefreshButton')"));
   const save=ui.slice(ui.indexOf('async function saveAdminClient(){'),ui.indexOf('\nfunction setAdminDeleteWorkspaceStatus('));
+  const delivery=ui.slice(ui.indexOf('async function resolveOnboardingInviteDelivery('),ui.indexOf('\nasync function approveProvisioningBuild('));
   ctx.currentAdminClient={...ctx.currentAdminClient,updatedAt:10,plan:'Starter',status:'active'};
   node('adminClientPlan').value='Starter';node('adminClientStatus').value='suspended';
   ctx.setAdminClientMutationState=value=>{ctx.adminClientSaving=value};ctx.setAdminClientActionStatus=message=>{node('adminClientActionStatus').textContent=message};ctx.openAdminClient=async()=>{};
-  vm.runInContext(helper+'\n'+ui.slice(start,end)+'\n'+phones+'\n'+gmail+'\n'+save,ctx);
+  ctx.adminProvisioningData=[{id:'ws',name:'Target workspace',inviteDeliveryNeedsReview:true,inviteDeliveryAttemptId:'attempt',onboardingUpdatedAt:10}];ctx.adminOnboardingInvitePending=new Set();
+  ctx.setOnboardingInviteControls=()=>{};ctx.setOnboardingActionStatus=message=>{node('onboardingActionStatus').textContent=message};ctx.renderProvisioning=()=>{};ctx.loadNotifications=async()=>{};ctx.closeOnboardingDrawer=()=>{ctx.drawerClosed=true};
+  vm.runInContext(helper+'\n'+ui.slice(start,end)+'\n'+phones+'\n'+gmail+'\n'+save+'\n'+delivery,ctx);
   return {ctx,node,requests,run:code=>vm.runInContext(code,ctx)};
 }
 test('consequential repair/configuration actions open named confirmations and cancellation sends no request',async()=>{
@@ -67,6 +70,30 @@ test('confirmed suspension submits reviewed revision and closes despite subseque
   assert.deepEqual(f.requests[0].body,{id:'ws',plan:'Starter',status:'suspended',expectedUpdatedAt:10});
   assert.equal(f.ctx.currentAdminClient.status,'suspended');assert.equal(f.ctx.adminClientSaving,false);
   assert.match(f.node('adminClientActionStatus').textContent,/were saved.*could not refresh/);
+});
+
+test('onboarding delivery review identifies exact attempt and cancellation neither resolves nor closes its drawer',async()=>{
+  const f=fixture();f.node('onboardingDetailDrawer').contains=()=>true;
+  assert.equal(await f.run("resolveOnboardingInviteDelivery('ws','not_sent','attempt',{})"),true);
+  assert.match(f.node('adminActionConfirmationCopy').textContent,/Target workspace.*attempt/);
+  assert.match(f.node('adminActionConfirmationConsequences').textContent,/sends no email.*duplicate mail/);
+  f.run('closeAdminActionConfirmation()');assert.equal(f.requests.length,0);assert.equal(f.ctx.drawerClosed,undefined);
+});
+
+test('delivery review rejects stale attempt or changed onboarding before recording a result',async()=>{
+  for(const change of ["adminProvisioningData[0].inviteDeliveryAttemptId='new'",'adminProvisioningData[0].inviteDeliveryNeedsReview=false','adminProvisioningData[0].onboardingUpdatedAt=11']){
+    const f=fixture();await f.run("resolveOnboardingInviteDelivery('ws','sent','attempt',{})");f.run(change);
+    assert.equal(await f.run('submitAdminActionConfirmation()'),false);assert.equal(f.requests.length,0);
+  }
+  const f=fixture();assert.equal(await f.run("resolveOnboardingInviteDelivery('ws','not_sent','wrong',{})"),false);assert.equal(f.requests.length,0);
+});
+
+test('confirmed non-delivery preserves attempt guard, unlocks controls and closes drawer only after success',async()=>{
+  const f=fixture(async()=>({ok:true,json:async()=>({ok:true,deliveryStatus:'failed'})}));f.node('onboardingDetailDrawer').contains=()=>true;
+  f.ctx.refreshAdminView=async()=>{throw Error('Offline')};await f.run("resolveOnboardingInviteDelivery('ws','not_sent','attempt',{})");
+  assert.equal(f.ctx.drawerClosed,undefined);assert.equal(await f.run('submitAdminActionConfirmation()'),true);
+  assert.deepEqual(f.requests[0].body,{id:'ws',resolution:'not_sent',attemptId:'attempt'});assert.equal(f.ctx.adminOnboardingInvitePending.size,0);assert.equal(f.ctx.drawerClosed,true);
+  assert.match(f.node('onboardingActionStatus').textContent,/was saved.*could not refresh/);
 });
 test('repair confirmation refuses changed email, owner, workspace or drawer generation',async()=>{
   for(const change of ["document.getElementById('adminRepairEmail').value='other@example.test'","currentAdminTech.diagnostics.ownerEmail='other@example.test'","currentAdminClient.id='other'",'adminClientOpenRequest++']){

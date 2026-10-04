@@ -58,7 +58,7 @@ test('onboarding operational feedback is inline while delivery resolution keeps 
   const start=source.indexOf('async function sendOnboardingInvite('),end=source.indexOf('\nlet phoneVisibleLimit=50,',start),block=source.slice(start,end);
   assert.match(source,/function setOnboardingActionStatus\(message='',tone=''\)/);
   assert.doesNotMatch(block,/\balert\s*\(/);
-  assert.match(block,/if\(!confirm\(message\)\)return false/);
+  assert.match(block,/openAdminActionConfirmation\(\{title:'Resolve uncertain onboarding delivery'/);
   assert.match(block,/setOnboardingActionStatus\('Sending onboarding invite…'\)/);
   assert.match(block,/setOnboardingActionStatus\('Saving delivery resolution…'\)/);
   assert.match(block,/setOnboardingActionStatus\('Approving build…'\)/);
