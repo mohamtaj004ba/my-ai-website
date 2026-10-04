@@ -105,6 +105,21 @@ test('legitimate empty thread responses remain supported',async()=>{
     const f=fixture({list}),result=await f.api.listInbox('admin@test.example');assert.equal(result.threads.length,0);assert.equal(result.coverage.verified,true);assert.equal(result.coverage.limited,false);
   }
 });
+test('Gmail MIME extraction ignores binary and named attachments before the actual message body',()=>{
+  const f=fixture(),encoded=value=>Buffer.from(value).toString('base64url');
+  const payload={mimeType:'multipart/mixed',parts:[{mimeType:'application/pdf',body:{data:encoded('Binary attachment')}},{mimeType:'text/plain',filename:'notes.txt',body:{data:encoded('Attached notes')}},{mimeType:'text/plain',body:{data:encoded('Actual message')}}]};
+  assert.equal(f.ctx.extractBody(payload),'Actual message');
+});
+test('Gmail MIME extraction prefers nested plain text and uses HTML only when no body text is available',()=>{
+  const f=fixture(),encoded=value=>Buffer.from(value).toString('base64url');
+  const html={mimeType:'text/html',body:{data:encoded('<p>HTML alternative</p>')}};
+  assert.equal(f.ctx.extractBody({mimeType:'multipart/alternative',parts:[html,{mimeType:'multipart/related',parts:[{mimeType:'text/plain',body:{data:encoded('Plain alternative')}}]}]}),'Plain alternative');
+  assert.equal(f.ctx.extractBody(html),'HTML alternative');
+  assert.equal(f.ctx.extractBody({mimeType:'image/png',body:{data:encoded('Binary')}}),'');
+});
+test('malformed MIME structure cannot be substituted with an empty verified body',()=>{
+  const f=fixture();for(const payload of [{mimeType:'multipart/mixed',parts:{}},{mimeType:'multipart/mixed',parts:[null]},{mimeType:'text/plain',body:{data:{}}},{mimeType:'text/plain',body:[]},{mimeType:123,body:{}},{filename:{},body:{}}])assert.throws(()=>f.ctx.extractBody(payload),/body could not be verified/);
+});
 test('incomplete or mismatched thread hydration cannot overwrite cached detail',async()=>{
   for(const thread of [{id:'other',messages:[]},{id:'thread'},{id:'thread',messages:[]},{id:'thread',messages:[null]},{id:'thread',messages:[{id:'message',payload:{headers:'broken'}}]},{id:'thread',messages:[{id:'message',threadId:'other',payload:{}}]}]){
     const f=fixture({thread});await assert.rejects(f.api.listInbox('admin@test.example'),/thread detail could not be verified/);assert.equal(f.writes.length,0);
