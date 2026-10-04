@@ -2824,7 +2824,7 @@ async function sendInboxReply(e){
       if(connectionRevision!==Number(adminInboxData.connectionRevision||0)){const notice='Reply sent from '+expectedGmailEmail+'. The connected account changed; refresh Inbox before another reply.';if(status)status.textContent=notice;setAdminInboxActionStatus(notice,'success');return true}
       try{if(await loadAdminInbox()===false)throw new Error('Inbox refresh unavailable')}catch(_){deliveryWarning=(deliveryWarning?deliveryWarning+' ':'')+'Gmail reply was sent, but the inbox could not refresh. Refresh before replying again.'}
       if(connectionRevision!==Number(adminInboxData.connectionRevision||0)){const notice='Reply sent from '+expectedGmailEmail+'. The connected account changed; refresh Inbox before another reply.';if(status)status.textContent=notice;setAdminInboxActionStatus(notice,'success');return true}
-      const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===(data.threadId||replyItem.id));if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]}}
+      const t=String(data.threadId)===String(replyItem.id)?(adminInboxData.gmail?.threads||[]).find(x=>x.id===replyItem.id):null;if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]}}
     }
     if(!currentInboxItem||currentInboxItem.kind!==replyItem.kind||String(currentInboxItem.id)!==String(replyItem.id)){setAdminInboxActionStatus(deliveryWarning||'Reply sent. The selected conversation changed; reopen the original conversation to review it.','success');return true}
     renderInboxThread();renderAdminInbox();renderWebsiteAnalytics();renderAdminFleet();

@@ -31,6 +31,11 @@ test('confirmed Gmail reply with failed refresh reports sent and does not invite
   assert.match(f.node('inboxReplyStatus').textContent,/reply was sent.*could not refresh/);assert.equal(f.node('inboxReplyText').value,'');
   assert.equal(f.requests[0].body.expectedGmailEmail,'old@test.example');assert.equal(f.requests.length,1);
 });
+test('confirmed Gmail send placed in another thread clears the sent draft and preserves reviewed conversation',async()=>{
+  const f=fixture();f.ctx.loadAdminInbox=async()=>{f.ctx.adminInboxData.gmail.threads=[{id:'new-thread',messages:[]}]};const pending=f.send();
+  f.resolve({ok:true,json:async()=>({ok:true,id:'sent',threadId:'new-thread',warning:'Gmail message sent, but Gmail placed it in a different thread.'})});
+  assert.equal(await pending,true);assert.equal(f.ctx.currentInboxItem,f.original);assert.equal(f.node('inboxReplyText').value,'');assert.match(f.node('inboxReplyStatus').textContent,/message sent.*different thread/);assert.equal(f.requests.length,1);
+});
 test('confirmed Gmail reply after account switch preserves new mailbox and announces original sender',async()=>{
   const f=fixture(),pending=f.send(),newItem={kind:'gmail',id:'thread',messages:[{body:'New mailbox'}]};
   f.ctx.adminInboxData.connectionRevision=1;f.ctx.adminInboxData.gmailStatus.gmailEmail='new@test.example';f.ctx.currentInboxItem=newItem;

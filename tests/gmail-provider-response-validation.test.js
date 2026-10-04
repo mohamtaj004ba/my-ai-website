@@ -30,8 +30,20 @@ test('confirmed Gmail read receipt survives cache invalidation failure',async()=
 test('unverified Gmail mutation receipts still fail before cache cleanup',async()=>{
   const f=fixture();let deletions=0;f.kv.del=async()=>{deletions++};f.ctx.gmailFetch=async()=>({id:'wrong',threadId:'wrong'});
   await assert.rejects(f.api.markThreadRead('admin@test.example','thread','primary@test.example'),/response could not be verified/);
+  f.ctx.gmailFetch=async()=>({id:123,threadId:'thread'});
   await assert.rejects(f.api.sendMessage('admin@test.example',{to:'recipient@test.example',subject:'Reply',body:'Hello',threadId:'thread',expectedGmailEmail:'primary@test.example'}),/response could not be verified/);
   assert.equal(deletions,0);
+});
+test('confirmed send in a different Gmail thread reports linkage uncertainty without retrying mail',async()=>{
+  const f=fixture(),keys=[];let calls=0;f.kv.del=async key=>keys.push(key);
+  f.ctx.gmailFetch=async()=>{calls++;return {id:'sent-message',threadId:'new-thread'}};
+  const result=await f.api.sendMessage('admin@test.example',{to:'recipient@test.example',subject:'Reply',body:'Hello',threadId:'thread',expectedGmailEmail:'primary@test.example'});
+  assert.equal(result.id,'sent-message');assert.equal(result.threadId,'new-thread');assert.equal(result.threadMismatch,true);assert.match(result.warning,/message sent.*different thread/);assert.equal(calls,1);assert.equal(keys.length,2);assert.notEqual(keys[0],keys[1]);
+});
+test('different-thread and cache recovery warnings both survive a confirmed Gmail send',async()=>{
+  const f=fixture();f.kv.del=async()=>{throw Error('Cache unavailable')};f.ctx.gmailFetch=async()=>({id:'sent-message',threadId:'new-thread'});
+  const result=await f.api.sendMessage('admin@test.example',{to:'recipient@test.example',subject:'Reply',body:'Hello',threadId:'thread',expectedGmailEmail:'primary@test.example'});
+  assert.match(result.warning,/different thread.*cached detail/);assert.equal(result.threadMismatch,true);
 });
 test('Gmail API receipts preserve confirmed mutations and independent cache/Growth warnings',async()=>{
   const account=fs.readFileSync('api/account.js','utf8'),start=account.indexOf('async function adminGmailRead('),end=account.indexOf('\nasync function adminWebsiteConversation(',start);
