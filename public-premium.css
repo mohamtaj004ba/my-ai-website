@@ -190,3 +190,5 @@
 .public-site .volume-planner input[type=range]{font-size:16px}
 
 .public-site .final .kicker{font-size:12px}
+.public-site .site-footer p{justify-self:start}
+.public-site .footer-cta p{width:100%}

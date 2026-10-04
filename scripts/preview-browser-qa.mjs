@@ -1226,7 +1226,9 @@ async function runResponsive(kind,viewport,name){
             const tip=chart.locator('.admin-chart-tooltip');await tip.waitFor({state:'visible'});
             const bounds=await tip.boundingBox(),shellBounds=await chart.boundingBox();
             if(!bounds||!shellBounds||bounds.x<shellBounds.x-1||bounds.x+bounds.width>shellBounds.x+shellBounds.width+1)report.visualFailures.push(kind+'-'+name+'-'+view+' finance tooltip clips exact values');
-            const lowContrast=await tip.evaluate(el=>{
+            const lowContrast=await chart.evaluate(shell=>{
+              const el=shell.querySelector('.admin-chart-tooltip');
+              if(!el||el.hidden)throw new Error('Finance details disappeared during chart refresh');
               const rgb=value=>value.match(/[\d.]+/g).map(Number);
               const composite=(fg,bg)=>fg.slice(0,3).map((c,i)=>c*(fg[3]??1)+bg[i]*(1-(fg[3]??1)));
               const luminance=c=>c.map(v=>{const s=v/255;return s<=.04045?s/12.92:((s+.055)/1.055)**2.4}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
@@ -1325,7 +1327,9 @@ async function runPublicSiteQA(){
           const smallFields=innerWidth<=600?[...document.querySelectorAll('main input:not([type=checkbox]),main select,main textarea')].filter(visible).filter(el=>parseFloat(getComputedStyle(el).fontSize)<16).map(el=>el.name||el.id):[];
           const smallCopy=[...document.querySelectorAll('main p,main label,main summary')].filter(visible).filter(el=>parseFloat(getComputedStyle(el).fontSize)<12).map(el=>el.textContent.slice(0,80));
           const footerTop=document.querySelector('.footer-top')?.getBoundingClientRect(),footerBottom=document.querySelector('.footer-bottom')?.getBoundingClientRect();
-          const brokenFooter=!!(footerTop&&footerBottom&&footerBottom.top<footerTop.bottom-1);
+          const footerCopy=document.querySelector('.footer-cta p'),footerCta=footerCopy?.parentElement;
+          const misalignedFooterCopy=!!(footerCopy&&footerCta&&getComputedStyle(footerCta).display==='block'&&Math.abs(footerCopy.getBoundingClientRect().left-footerCta.getBoundingClientRect().left)>2);
+          const brokenFooter=misalignedFooterCopy||!!(footerTop&&footerBottom&&footerBottom.top<footerTop.bottom-1);
           return {width:innerWidth,overflowing,smallFields,smallCopy,brokenFooter,h1:document.querySelectorAll('main h1').length};
         });
         report.publicSite.contracts.push({label,...state});
@@ -1362,6 +1366,9 @@ async function runPublicSiteQA(){
           await page.locator('#weeklyCalls').press('ArrowLeft');
           if(await page.locator('#monthlyMinutes').innerText()!=='585')throw new Error('Call volume planner is not keyboard operable');
           await shot(page,'public-'+name+'-planner',{fullPage:false});
+          await page.emulateMedia({reducedMotion:'reduce'});
+          if(await page.locator('#estimateBar').evaluate(el=>getComputedStyle(el).transitionDuration)!=='0s')throw new Error('Planner ignores reduced motion');
+          await page.emulateMedia({reducedMotion:'no-preference'});
           await page.locator('.faq-list summary').first().click();await page.locator('.faq-list details[open] p').first().waitFor();
           await page.locator('#ccChatLauncher').click();await page.locator('#ccChatPanel.open').waitFor();await page.locator('#ccChatClose').click();
           await page.locator('.footer-bottom').scrollIntoViewIfNeeded();await shot(page,'public-'+name+'-footer',{fullPage:false});

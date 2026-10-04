@@ -3641,6 +3641,8 @@ function financeMonthLabel(key){
 function financeMoney(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
 function renderFinanceChart(shellId,tooltipId){
   const shell=document.getElementById(shellId);if(!shell)return;
+  const activeMonth=shell.financeChartActiveMonth;
+  const restoreFocus=!!activeMonth&&shell.contains?.(document.activeElement)&&document.activeElement?.dataset?.financeMonth===activeMonth;
   if(typeof ResizeObserver==='function'&&!shell.financeChartResizeObserver){
     shell.financeChartResizeObserver=new ResizeObserver(()=>{
       const width=Math.round(shell.clientWidth||0);
@@ -3650,7 +3652,7 @@ function renderFinanceChart(shellId,tooltipId){
   }
   shell.financeChartRenderedWidth=Math.max(240,Math.round(shell.clientWidth||920));
   const rows=(adminFinanceData.history||[]).slice(-adminFinanceRange),hasEstimates=rows.some(r=>r.source==='preview_reconstruction');
-  if(!rows.length){shell.innerHTML='<div class="empty-state"><h3>No finance history yet</h3><p>Monthly snapshots will appear automatically.</p></div>';return}
+  if(!rows.length){shell.financeChartActiveMonth=null;shell.innerHTML='<div class="empty-state"><h3>No finance history yet</h3><p>Monthly snapshots will appear automatically.</p></div>';return}
   const w=Math.max(240,Math.round(shell.clientWidth||920)),h=300,left=58,right=32,top=22,bottom=45,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...rows.flatMap(r=>[Number(r.revenue||0),Number(r.expenses||0)])),step=rows.length>1?plotW/(rows.length-1):plotW;
   const x=i=>left+(rows.length===1?plotW/2:i*step),y=v=>top+plotH-(Number(v||0)/max)*plotH;
   const revenuePoints=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.revenue).toFixed(1)).join(' '),expensePoints=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.expenses).toFixed(1)).join(' ');
@@ -3660,15 +3662,17 @@ function renderFinanceChart(shellId,tooltipId){
   const revenueDots=rows.map((r,i)=>'<circle class="finance-dot revenue" cx="'+x(i).toFixed(1)+'" cy="'+y(r.revenue).toFixed(1)+'" r="4"></circle>').join('');
   const expenseDots=rows.map((r,i)=>'<circle class="finance-dot expense" cx="'+x(i).toFixed(1)+'" cy="'+y(r.expenses).toFixed(1)+'" r="4"></circle>').join('');
   const hitWidth=Math.max(30,plotW/Math.max(1,rows.length));
-  const hits=rows.map((r,i)=>'<rect class="finance-hit" data-finance-index="'+i+'" role="button" tabindex="0" aria-label="'+esc(financeMonthLabel(r.month)+(r.source==='preview_reconstruction'?' estimated':'')+': MRR '+financeMoney(r.revenue)+', expenses '+financeMoney(r.expenses))+'" x="'+(x(i)-hitWidth/2).toFixed(1)+'" y="'+top+'" width="'+hitWidth.toFixed(1)+'" height="'+plotH+'" fill="transparent"></rect>').join('');
+  const hits=rows.map((r,i)=>'<rect class="finance-hit" data-finance-index="'+i+'" data-finance-month="'+esc(r.month)+'" role="button" tabindex="0" aria-label="'+esc(financeMonthLabel(r.month)+(r.source==='preview_reconstruction'?' estimated':'')+': MRR '+financeMoney(r.revenue)+', expenses '+financeMoney(r.expenses))+'" x="'+(x(i)-hitWidth/2).toFixed(1)+'" y="'+top+'" width="'+hitWidth.toFixed(1)+'" height="'+plotH+'" fill="transparent"></rect>').join('');
   shell.innerHTML=(hasEstimates?'<div class="finance-estimate-notice" role="note">Preview estimate: earlier months are reconstructed, not recorded invoices or verified historic revenue.</div>':'')+'<svg viewBox="0 0 '+w+' '+h+'" role="group" aria-label="Monthly revenue and company expenses"><g class="admin-chart-grid">'+grid+'</g><polyline class="finance-line revenue" points="'+revenuePoints+'"></polyline><polyline class="finance-line expense" points="'+expensePoints+'"></polyline><g>'+revenueDots+expenseDots+'</g><g class="admin-chart-labels">'+labels+'</g><g>'+hits+'</g></svg>'+'<div class="admin-chart-tooltip" id="'+esc(tooltipId)+'" hidden></div>';
   const tip=document.getElementById(tooltipId);
+  shell.financeChartActiveMonth=null;
   shell.querySelectorAll('[data-finance-index]').forEach(hit=>{
-    const show=()=>{const i=Number(hit.dataset.financeIndex),r=rows[i];if(!tip||!r)return;tip.hidden=false;tip.innerHTML='<b>'+esc(financeMonthLabel(r.month))+(r.source==='preview_reconstruction'?' · estimated':'')+'</b><span>MRR <strong>'+financeMoney(r.revenue)+'</strong></span><span>Expenses <strong>'+financeMoney(r.expenses)+'</strong></span><span>Net run-rate <strong>'+financeMoney(Number(r.revenue||0)-Number(r.expenses||0))+'</strong></span>';const half=Math.min(w-16,tip.offsetWidth||180)/2;tip.style.left=Math.max(half+8,Math.min(w-half-8,x(i)))+'px';tip.style.top='18px'};
-    const hide=()=>{if(tip)tip.hidden=true};
+    const show=()=>{const i=Number(hit.dataset.financeIndex),r=rows[i];if(!tip||!r)return;shell.financeChartActiveMonth=r.month;tip.hidden=false;tip.innerHTML='<b>'+esc(financeMonthLabel(r.month))+(r.source==='preview_reconstruction'?' · estimated':'')+'</b><span>MRR <strong>'+financeMoney(r.revenue)+'</strong></span><span>Expenses <strong>'+financeMoney(r.expenses)+'</strong></span><span>Net run-rate <strong>'+financeMoney(Number(r.revenue||0)-Number(r.expenses||0))+'</strong></span>';const half=Math.min(w-16,tip.offsetWidth||180)/2;tip.style.left=Math.max(half+8,Math.min(w-half-8,x(i)))+'px';tip.style.top='18px'};
+    const hide=()=>{shell.financeChartActiveMonth=null;if(tip)tip.hidden=true};
     hit.addEventListener('mouseenter',show);hit.addEventListener('mousemove',show);hit.addEventListener('mouseleave',hide);
     hit.addEventListener('focus',show);hit.addEventListener('blur',hide);hit.addEventListener('click',e=>{e.stopPropagation();show()});
     hit.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();show()}else if(e.key==='Escape'){e.stopPropagation();hide()}});
+    if(activeMonth&&rows[Number(hit.dataset.financeIndex)]?.month===activeMonth){show();if(restoreFocus)hit.focus({preventScroll:true})}
   });
 }
 function renderAdminFinance(){

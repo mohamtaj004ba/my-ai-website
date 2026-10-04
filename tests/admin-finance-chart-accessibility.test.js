@@ -58,3 +58,24 @@ test('first and last finance month details fit inside compact chart edges',()=>{
     for(const show of handlers){show();const center=parseFloat(tip.style.left);assert.ok(center-105>=8);assert.ok(center+105<=width-8);assert.match(tip.innerHTML,/\$8688/)}
   }
 });
+
+
+test('refresh preserves the selected month and keyboard focus without reviving dismissed details',()=>{
+  let hits=[],tip,markup='';
+  const document={activeElement:null,getElementById:id=>id==='chart'?shell:tip};
+  const shell={clientWidth:390,contains:el=>hits.includes(el),querySelectorAll:()=>hits};
+  const context=vm.createContext({document,adminFinanceRange:6,adminFinanceData:{history:[{month:'2026-08',revenue:1000,expenses:100},{month:'2026-09',revenue:2000,expenses:300}]},esc:String,financeMonthLabel:x=>x,financeMoney:x=>'$'+x});
+  Object.defineProperty(shell,'innerHTML',{get:()=>markup,set:value=>{
+    markup=value;tip={hidden:true,innerHTML:'',style:{}};
+    hits=context.adminFinanceData.history.map((row,i)=>{const handlers={};return {dataset:{financeIndex:String(i),financeMonth:row.month},handlers,addEventListener:(event,fn)=>handlers[event]=fn,focus(){document.activeElement=this;handlers.focus()}}});
+  }});
+  vm.runInContext(source.slice(source.indexOf('function renderFinanceChart('),source.indexOf('function renderAdminFinance(')),context);
+  const render=()=>vm.runInContext("renderFinanceChart('chart','tip')",context);
+  render();hits[1].focus();const oldHit=document.activeElement;
+  context.adminFinanceData.history=[{month:'2026-09',revenue:2400,expenses:300}];render();
+  assert.notEqual(document.activeElement,oldHit);assert.equal(document.activeElement,hits[0]);
+  assert.equal(tip.hidden,false);assert.match(tip.innerHTML,/2400/);
+  hits[0].handlers.keydown({key:'Escape',stopPropagation(){}});render();assert.equal(tip.hidden,true);
+  hits[0].focus();const elsewhere={};document.activeElement=elsewhere;render();assert.equal(document.activeElement,elsewhere,'pointer details must not steal focus');
+  context.adminFinanceData.history=[{month:'2026-10',revenue:3000,expenses:300}];render();assert.equal(tip.hidden,true);assert.equal(shell.financeChartActiveMonth,null);
+});
