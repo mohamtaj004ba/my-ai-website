@@ -7,7 +7,7 @@ function fixture(kind='gmail'){
   let resolve;const held=new Promise(ok=>{resolve=ok}),requests=[],nodes=new Map(),renders=[];
   const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',disabled:false,readOnly:false});return nodes.get(id)};
   node('inboxReplyText').value='Reviewed reply';node('inboxFromSelect').value='old@test.example';
-  const original={kind,id:'thread',thread:{subject:'Inquiry'},messages:[{direction:'inbound',from:'customer@test.example',messageId:'message'}]};
+  const original={kind,id:'thread',thread:{subject:'Inquiry'},prospect:kind==='website'?{email:'customer@test.example'}:null,messages:[{direction:'inbound',from:'customer@test.example',messageId:'message'}]};
   const ctx=vm.createContext({currentInboxItem:original,adminInboxReplyPending:false,adminInboxOpenRequest:1,
     adminInboxData:{connectionRevision:0,gmailStatus:{connected:true,gmailEmail:'old@test.example'},gmail:{threads:[]}},adminWebsiteData:{prospects:[]},
     document:{getElementById:node,querySelector:()=>node('submit')},fetch:async(url,options)=>{requests.push({url,body:JSON.parse(options.body)});return held},
@@ -40,6 +40,7 @@ test('confirmed Gmail reply after account switch preserves new mailbox and annou
 });
 test('website reply receipt updates captured conversation without appending to a newer selection',async()=>{
   const f=fixture('website'),pending=f.send(),newItem={kind:'website',id:'new',messages:[]};f.ctx.currentInboxItem=newItem;f.node('inboxReplyText').value='New draft';
+  assert.equal(f.requests[0].body.expectedRecipientEmail,'customer@test.example');
   f.resolve({ok:true,json:async()=>({ok:true,message:{id:'sent',body:'Reviewed reply'}})});assert.equal(await pending,true);
   assert.equal(f.original.messages.length,2);assert.equal(newItem.messages.length,0);assert.equal(f.node('inboxReplyText').value,'New draft');
   assert.match(f.node('globalStatus').textContent,/Reply sent.*selected conversation changed/);assert.equal(f.renders.length,0);

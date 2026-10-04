@@ -9,7 +9,7 @@ function fixture({appendFails=false,conflicts=0,storageFails=false,prospect}={})
   const original=prospect===undefined?{id:'lead-1',email:'lead@example.test',stage:'new',notes:'Keep this',updatedAt:10}:prospect;
   let emails=0,appends=0,commits=0,status,payload;
   const ctx=vm.createContext({
-    req:{body:{id:'lead-1',message:'Hello from support'}},
+    req:{body:{id:'lead-1',message:'Hello from support',expectedRecipientEmail:'lead@example.test'}},
     res:{status(n){status=n;return this},json(v){payload=v;return v}},
     requireAdmin:async()=>({email:'admin@example.test'}),
     kv:{get:async()=>({...original}),set:()=>{throw Error('Reply must not use an unsafe prospect SET')}},
@@ -37,6 +37,14 @@ test('website Gmail account change during sender validation blocks send and Mail
   f.ctx.validatedGmailFrom=async()=>{throw Object.assign(Error('Gmail connection changed'),{code:'GMAIL_CONNECTION_CHANGED'})};
   f.ctx.sendGmailMessage=async()=>assert.fail('Changed account must not send');
   const result=await f.run();assert.equal(result.status,502);assert.equal(result.emails,0);assert.equal(result.appends,0);assert.equal(result.commits,0);
+});
+test('missing or changed displayed website recipient blocks every provider and history write',async()=>{
+  for(const expectedRecipientEmail of [undefined,'','different@example.test']){
+    const f=fixture();f.ctx.req.body.expectedRecipientEmail=expectedRecipientEmail;
+    f.ctx.getGmailConnection=async()=>assert.fail('Unverified recipient must not resolve a delivery provider');
+    const result=await f.run();assert.equal(result.status,409);assert.match(result.payload.error,/recipient changed or could not be verified/);
+    assert.equal(result.emails,0);assert.equal(result.appends,0);assert.equal(result.commits,0);
+  }
 });
 test('sent website reply appends to history and revises prospect without overwriting later edits',async()=>{
   const r=await fixture().run();

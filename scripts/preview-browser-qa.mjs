@@ -772,6 +772,25 @@ async function runAdminInteractions(page){
   });
   report.admin.interactions.push('growth pipeline search + read-only marketing consent visibility');
 
+  await ensureView(page,'inbox');
+  const websiteReplyRoute=/\/api\/account\?action=admin-website-reply$/;let websiteReplyRequests=0;
+  await page.route(websiteReplyRoute,async route=>{
+    const body=route.request().postDataJSON();websiteReplyRequests++;
+    if(body?.id!=='qa-recipient-review-ui-only'||body?.expectedRecipientEmail!=='reviewed@callercore.test'||body?.message!=='QA intercepted reply')throw new Error('Website reply lost its reviewed recipient or conversation');
+    await route.fulfill({status:websiteReplyRequests===1?409:200,contentType:'application/json',body:JSON.stringify(websiteReplyRequests===1?{error:'The recipient changed. Refresh this conversation before replying. No reply was sent.'}:{ok:true,message:{id:'qa-intercepted-reply',direction:'outbound',channel:'qa-intercepted',from:'support@callercore.test',to:'reviewed@callercore.test',body:body.message,at:Date.now()},warning:'QA intercepted reply; no email was sent.'})});
+  });
+  try{
+    await page.evaluate(()=>{window.__qaOriginalInboxItem=currentInboxItem;currentInboxItem={kind:'website',id:'qa-recipient-review-ui-only',prospect:{id:'qa-recipient-review-ui-only',email:'reviewed@callercore.test',name:'QA reviewed recipient',stage:'new'},messages:[]};renderInboxThread()});
+    await page.locator('#inboxReplyText').fill('QA intercepted reply');await page.locator('#inboxReplyForm button[type="submit"]').click();
+    await page.locator('#inboxReplyStatus').filter({hasText:'recipient changed'}).waitFor({state:'visible'});
+    if(await page.locator('#inboxReplyText').inputValue()!=='QA intercepted reply')throw new Error('Stale-recipient failure discarded the website reply draft');
+    await page.locator('#inboxReplyForm button[type="submit"]').click();
+    await page.locator('#inboxReplyStatus').filter({hasText:'QA intercepted reply; no email was sent.'}).waitFor({state:'visible'});
+    if(websiteReplyRequests!==2||await page.locator('#inboxReplyText').inputValue()!=='')throw new Error('Website reply retry did not preserve confirmed receipt behavior');
+  }finally{
+    await page.unroute(websiteReplyRoute);await page.evaluate(()=>{currentInboxItem=window.__qaOriginalInboxItem;delete window.__qaOriginalInboxItem;renderInboxThread()});
+  }
+  report.admin.interactions.push('intercepted website reply recipient identity + stale draft recovery + confirmed receipt warning without sending mail');
   await ensureView(page,'onboarding');
   await page.locator('#onboardingSearch').fill('Lakeview');
   await page.waitForTimeout(180);

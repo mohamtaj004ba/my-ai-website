@@ -1884,6 +1884,8 @@ async function adminWebsiteReply(req,res){
   if(typeof prospect!=='object'||Array.isArray(prospect)||String(prospect.id||'')!==id)return res.status(503).json({error:'Prospect record is unavailable. No reply was sent.'});
   const to=String(prospect.email||'').trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))return res.status(409).json({error:'This prospect has no valid email address'});
+  const expectedRecipientEmail=String(body.expectedRecipientEmail||'').trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(expectedRecipientEmail)||expectedRecipientEmail!==to)return res.status(409).json({error:'The recipient changed or could not be verified. Refresh this conversation before replying. No reply was sent.'});
   const subject='Re: '+(prospect.category||'Your CallerCore inquiry');
   let channel='mailgun',from='support@callercore.com';
   try{

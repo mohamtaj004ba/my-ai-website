@@ -2805,7 +2805,7 @@ async function sendInboxReply(e){
   let deliveryWarning='';
   try{
     if(replyItem.kind==='website'){
-      const r=await fetch('/api/account?action=admin-website-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:replyItem.id,message,from})}),data=await r.json().catch(()=>({}));
+      const r=await fetch('/api/account?action=admin-website-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:replyItem.id,message,from,expectedRecipientEmail:String(replyItem.prospect?.email||'').trim().toLowerCase()})}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not send reply');
       if(data.ok!==true||!data.message||typeof data.message!=='object'||Array.isArray(data.message)||!String(data.message.id||'').trim()||String(data.message.body||'')!==message)throw new Error('Website reply response was incomplete. Your draft remains open; refresh before retrying.');
       replyItem.messages.push(data.message);
