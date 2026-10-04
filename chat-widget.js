@@ -12,10 +12,10 @@
       <div class="cc-chat-quick" id="ccChatQuick" aria-label="Suggested questions"><button type="button" data-q="How does CallerCore work for a service business?">How it works</button><button type="button" data-q="What do the plans include?">Plans</button><button type="button" data-q="Can I hear the AI before signing up?">Try the AI</button><button type="button" id="ccChatHandoffButton">Talk to the team</button></div>
       <form class="cc-chat-handoff" id="ccChatHandoff" hidden>
         <strong>Have the CallerCore team follow up</strong>
-        <input name="name" autocomplete="name" placeholder="Your name" required>
-        <input name="email" type="email" autocomplete="email" placeholder="Email" required>
-        <input name="phone" type="tel" autocomplete="tel" placeholder="Phone (optional)">
-        <textarea name="message" placeholder="What can we help with?" required></textarea>
+        <input name="name" autocomplete="name" placeholder="Your name" aria-label="Your name" required>
+        <input name="email" type="email" autocomplete="email" placeholder="Email" aria-label="Email address" required>
+        <input name="phone" type="tel" autocomplete="tel" placeholder="Phone (optional)" aria-label="Phone number (optional)">
+        <textarea name="message" placeholder="What can we help with?" aria-label="Message for CallerCore" required></textarea>
         <div><button type="button" id="ccChatHandoffCancel">Cancel</button><button type="submit">Send to team</button></div>
         <small id="ccChatHandoffStatus" role="status"></small>
       </form>
@@ -105,17 +105,21 @@
     });
     handoffCancel?.addEventListener('click',()=>{handoff.hidden=true;form.hidden=false;quick.hidden=false;handoffStatus.textContent=''});
     handoff?.addEventListener('submit',async e=>{
-      e.preventDefault();if(!handoff.reportValidity())return;
+      e.preventDefault();if(handoff.getAttribute('aria-busy')==='true'||!handoff.reportValidity())return;
       const btn=handoff.querySelector('button[type="submit"]'),d=new FormData(handoff),a=window.CallerCoreAnalytics?.context||{};
-      btn.disabled=true;btn.textContent='Sending…';handoffStatus.textContent='';
+      handoff.setAttribute('aria-busy','true');btn.disabled=true;btn.textContent='Sending…';handoffStatus.textContent='';
       const payload={name:d.get('name'),business:'',email:d.get('email'),phone:d.get('phone'),category:'Chatbot inquiry',message:d.get('message'),visitorId:a.visitorId||'',sessionId:a.sessionId||'',utmSource:a.utmSource||'',utmMedium:a.utmMedium||'',utmCampaign:a.utmCampaign||''};
       try{
         const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>null);
         if(!r.ok)throw new Error(data&&typeof data==='object'&&!Array.isArray(data)&&data.error?data.error:'Could not send');
         if(!data||typeof data!=='object'||Array.isArray(data)||data.ok!==true||!String(data.prospectId||''))throw new Error('Could not verify that your message was saved');
         window.CallerCoreAnalytics?.track('chat_handoff',{label:'handoff_submitted'});
-        handoff.innerHTML='<div class="cc-chat-handoff-success"><b>✓</b><strong>Sent to the CallerCore team.</strong><small>We’ll follow up using the email you provided.</small></div>';
-      }catch(err){handoffStatus.textContent=err.message||'Could not send. Please try again.';btn.disabled=false;btn.textContent='Send to team'}
+        handoff.innerHTML='<div class="cc-chat-handoff-success" role="status" tabindex="-1"><b>✓</b><strong>Message received.</strong><small>We’ll follow up using the email you provided.</small><button type="button">Back to chat</button></div>';
+        const receipt=handoff.querySelector('.cc-chat-handoff-success');
+        if(typeof data.warning==='string'&&data.warning.trim()){const warning=document.createElement('p');warning.textContent=data.warning;receipt.insertBefore(warning,receipt.querySelector('button'))}
+        handoff.removeAttribute('aria-busy');receipt.focus();
+        receipt.querySelector('button').addEventListener('click',()=>{handoff.hidden=true;form.hidden=false;quick.hidden=false;handoffButton.hidden=true;input.focus()});
+      }catch(err){handoff.removeAttribute('aria-busy');handoffStatus.textContent=err.message||'Could not send. Please try again.';btn.disabled=false;btn.textContent='Send to team'}
     });
   }
 

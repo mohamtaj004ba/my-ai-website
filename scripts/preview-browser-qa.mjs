@@ -127,7 +127,8 @@ async function post(request,action,data){
 async function gotoAuthed(page,route,requiredSelector){
   const res=await page.goto(baseURL+route,{waitUntil:'domcontentloaded',timeout:30000});
   if(!res||!res.ok())throw new Error(route+' returned '+(res?res.status():'no response'));
-  await page.waitForSelector(requiredSelector,{timeout:20000});
+  await page.waitForSelector(requiredSelector,{state:'attached',timeout:20000});
+  await page.locator('.view.active').waitFor({state:'visible',timeout:20000});
   await page.waitForLoadState('networkidle',{timeout:10000}).catch(()=>{});
   await page.waitForTimeout(1000);
   const body=await page.locator('body').innerText();
@@ -1409,6 +1410,19 @@ async function runPublicSiteQA(){
           await page.emulateMedia({reducedMotion:'no-preference'});
           await page.locator('.faq-list summary').first().click();await page.locator('.faq-list details[open] p').first().waitFor();
           await page.locator('#ccChatLauncher').click();await page.locator('#ccChatPanel.open').waitFor();await page.locator('#ccChatClose').click();
+          if(viewport.width===390){
+            await page.route('**/api/contact',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,prospectId:'qa-intercepted-chat',warning:'Your inquiry was saved, but its email notification could not be confirmed.'})}));
+            try{
+              await page.locator('#ccChatLauncher').click();await page.locator('#ccChatHandoffButton').click();
+              await page.locator('#ccChatHandoff [name="name"]').fill('Preview QA');await page.locator('#ccChatHandoff [name="email"]').fill('preview-qa@example.test');await page.locator('#ccChatHandoff [name="message"]').fill('Intercepted phone receipt test');
+              await page.locator('#ccChatHandoff button[type="submit"]').click();await page.locator('.cc-chat-handoff-success').waitFor();
+              if(!(await page.locator('.cc-chat-handoff-success').innerText()).includes('notification could not be confirmed')||!await page.locator('.cc-chat-handoff-success').evaluate(el=>el===document.activeElement))throw new Error('Chat handoff lost saved-message warning or receipt focus');
+              await shot(page,'public-phone-chat-handoff-receipt',{fullPage:false});await page.locator('.cc-chat-handoff-success button').click();
+              if(!await page.locator('#ccChatForm').isVisible()||await page.locator('#ccChatHandoffButton').isVisible())throw new Error('Chat handoff receipt did not return safely to chat');
+              await page.locator('#ccChatClose').click();
+              report.publicSite.interactions.push('phone chat handoff saved receipt, escaped warning and keyboard focus with return to chat; no inquiry transmitted');
+            }finally{await page.unroute('**/api/contact')}
+          }
           await page.locator('.footer-bottom').scrollIntoViewIfNeeded();await shot(page,'public-'+name+'-footer',{fullPage:false});
           report.publicSite.interactions.push(name+' menu/anchor/Escape, example selection, FAQ and chat open/close without sending');
         }
