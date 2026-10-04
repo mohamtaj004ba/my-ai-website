@@ -34,3 +34,15 @@ test('finance tooltip recovers after empty loading state and remains usable acro
     listeners.blur();assert.equal(tip.hidden,true);
   }
 });
+
+test('hidden finance charts rebuild for the measured width when their view becomes visible',()=>{
+  let resized,observers=0;
+  const shell={clientWidth:0,innerHTML:'',querySelectorAll:()=>[]};
+  const context=vm.createContext({ResizeObserver:class{constructor(callback){resized=callback;observers++}observe(){}},document:{getElementById:()=>shell},adminFinanceRange:6,adminFinanceData:{history:[{month:'2026-09',revenue:2000,expenses:300}]},esc:String,financeMonthLabel:x=>x,financeMoney:x=>'$'+x});
+  vm.runInContext(source.slice(source.indexOf('function renderFinanceChart('),source.indexOf('function renderAdminFinance(')),context);
+  vm.runInContext("renderFinanceChart('chart','tip')",context);
+  assert.match(shell.innerHTML,/viewBox="0 0 920 300"/);
+  shell.clientWidth=390;resized();assert.match(shell.innerHTML,/viewBox="0 0 390 300"/);
+  shell.clientWidth=792;resized();assert.match(shell.innerHTML,/viewBox="0 0 792 300"/);
+  assert.equal(observers,1,'rerendering must not accumulate observers');
+});

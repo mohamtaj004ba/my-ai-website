@@ -2670,3 +2670,6 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allo
  #view-onboarding .onboarding-chevron{grid-column:3;grid-row:1 / 4}
 }
 @media(max-width:1140px){body[data-dashboard="client"] #analyticsApp .two-col{grid-template-columns:minmax(0,1fr)}}
+.overview-combo-chart,.admin-finance-chart-shell,#view-overview .admin-finance-chart-shell{height:auto}
+.overview-combo-chart svg,.admin-finance-chart-shell svg{height:auto}
+@media(max-width:1050px){#view-platform-settings .platform-settings-grid{grid-template-columns:minmax(0,1fr)!important}}

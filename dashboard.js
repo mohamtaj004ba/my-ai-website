@@ -3587,6 +3587,14 @@ function financeMonthLabel(key){
 function financeMoney(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
 function renderFinanceChart(shellId,tooltipId){
   const shell=document.getElementById(shellId);if(!shell)return;
+  if(typeof ResizeObserver==='function'&&!shell.financeChartResizeObserver){
+    shell.financeChartResizeObserver=new ResizeObserver(()=>{
+      const width=Math.round(shell.clientWidth||0);
+      if(width>0&&Math.max(240,width)!==shell.financeChartRenderedWidth)renderFinanceChart(shellId,tooltipId);
+    });
+    shell.financeChartResizeObserver.observe(shell);
+  }
+  shell.financeChartRenderedWidth=Math.max(240,Math.round(shell.clientWidth||920));
   const rows=(adminFinanceData.history||[]).slice(-adminFinanceRange),hasEstimates=rows.some(r=>r.source==='preview_reconstruction');
   if(!rows.length){shell.innerHTML='<div class="empty-state"><h3>No finance history yet</h3><p>Monthly snapshots will appear automatically.</p></div>';return}
   const w=Math.max(240,Math.round(shell.clientWidth||920)),h=300,left=58,right=32,top=22,bottom=45,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...rows.flatMap(r=>[Number(r.revenue||0),Number(r.expenses||0)])),step=rows.length>1?plotW/(rows.length-1):plotW;
