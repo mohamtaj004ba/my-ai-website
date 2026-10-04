@@ -11,7 +11,7 @@ function fixture(){
     return nodes.get(id);
   };
   const requests=new Map(),fetchJsonRetry=async url=>{const id=new URL('https://example.test'+url).searchParams.get('id'),pending=deferred();requests.set(id,pending);return pending.promise};
-  const callsData=[{id:'one',caller:'First'},{id:'two',caller:'Second'}],body={classList:{add(){},remove(){}}},context=vm.createContext({
+  const callsData=[{id:'one',caller:'First'},{id:'two',caller:'Second'}],body={classList:{add(){},remove(){},contains(){return false}}},context=vm.createContext({
     callsData,demoMode:false,callDrawerOpenRequest:0,activeCallContactKey:'',activeCallId:'',activeNoteEditId:'',followupState:{},fetchJsonRetry,encodeURIComponent,console:{warn(){}},String,
     contactKey:x=>'p:'+x.id,markCallViewed(){},syncDrawerTeamStatus(){},callNeedsTeam:()=>false,teamStatusForCall:()=> 'no_action',resetNoteComposer(){},renderCallNotes(){},formatFullDateTime:()=>'',callDispositionMeta:()=>({label:'Resolved',copy:'Done'}),TEAM_STATUS_META:{no_action:{label:'No action',tone:'gray'}},callDispositionClass:()=>'',contactForRecord:()=>null,esc:String,resetSurfaceScroll(){},setTimeout:fn=>fn(),document:{body,getElementById:node}
   });

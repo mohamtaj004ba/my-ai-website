@@ -234,7 +234,7 @@ function showView(name){
     if(agentEditing){if(agentEditSnapshot)agentData=JSON.parse(JSON.stringify(agentEditSnapshot));agentEditSnapshot=null;agentEditing=false;renderAgent()}
     if(settingsEditing){settingsEditing=false;pendingBusinessLogo=String(settingsData?.logoDataUrl||'');renderSettings()}
   }
-  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>{const activeNav=b.dataset.view===name;b.classList.toggle('active',activeNav);if(activeNav)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});const sidebar=document.querySelector('.sidebar'),menu=document.querySelector('.mobile-menu');sidebar?.classList.remove('open');if(menu)menu.setAttribute('aria-expanded','false');window.scrollTo({top:0,left:0,behavior:'auto'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent'){document.getElementById('agentFeedbackComposerDetails')?.removeAttribute('open');document.getElementById('agentFeedbackHistoryDetails')?.removeAttribute('open');renderAgent();loadClientFeedback({silent:true})};if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations'){webhookEditing=false;renderIntegrations()};if(name==='settings')renderSettings();if(name==='support'&&document.body.dataset.dashboard==='client'){renderSupport();refreshClientSupportHistory()}if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();if(document.body.dataset.dashboard==='admin'&&name!=='inbox')refreshAdminView(name,{force:false}).catch(()=>{});
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav-item').forEach(b=>{const activeNav=b.dataset.view===name;b.classList.toggle('active',activeNav);if(activeNav)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});const sidebar=document.querySelector('.sidebar'),menu=document.querySelector('.mobile-menu');sidebar?.classList.remove('open');if(menu)menu.setAttribute('aria-expanded','false');window.scrollTo({top:0,left:0,behavior:'auto'});if(name==='overview')renderOverview();if(name==='billing')renderBilling();if(name==='calls')renderCalls();if(name==='contacts')renderContacts();if(name==='leads')renderLeads();if(name==='conversations')renderConversations();if(name==='appointments')renderAppointments();if(name==='agent'){document.getElementById('agentFeedbackComposerDetails')?.removeAttribute('open');document.getElementById('agentFeedbackHistoryDetails')?.removeAttribute('open');renderAgent();loadClientFeedback({silent:true})};if(name==='automations')renderAutomations();if(name==='analytics')renderAnalytics();if(name==='integrations'){webhookEditing=false;renderIntegrations()};if(name==='settings')renderSettings();if(name==='support'&&document.body.dataset.dashboard==='client'){renderSupport();refreshClientSupportHistory()}if(name==='inbox'&&document.body.dataset.dashboard==='admin')loadAdminInbox();if(document.body.dataset.dashboard==='admin'&&name!=='inbox')refreshAdminView(name,{force:false}).catch(()=>{});renderSectionNotifications();
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.querySelector('.mobile-menu')?.addEventListener('click',e=>{const sidebar=document.querySelector('.sidebar');if(!sidebar)return;const open=sidebar.classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',String(open))});
@@ -541,6 +541,11 @@ function formatFullDateTime(x){
   const ts=recordTime(x);if(ts)return new Date(ts).toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
   return [x?.date,x?.time].filter(Boolean).join(' · ')||'Date unavailable';
 }
+function formatAttentionDate(x){
+  const ts=recordTime(x);if(!ts)return 'Date unavailable';
+  const time=new Date(ts).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+  return sameLocalDay(ts)?'Today · '+time:new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric',year:new Date(ts).getFullYear()!==new Date().getFullYear()?'numeric':undefined})+' · '+time;
+}
 function aiAnsweringState(){
   const number=phoneRoutingData?.number||'',voice=phoneRoutingData?.voice;
   return {number,assigned:!!number,active:false,paused:false,routingReady:false,controlsAvailable:false,label:voice?.label||(number?'Awaiting activation':'Not assigned'),detail:voice?.detail||(number?'Number and routing settings are saved. Live calling has not been activated and verified.':'A CallerCore number has not been assigned yet.')};
@@ -601,7 +606,7 @@ function renderOverview(){
   const attention=document.getElementById('overviewAttention');
   if(attention){
     const open=[...activeFollowups].sort((a,b)=>{const ap=followupType(a)==='urgent'?1:0,bp=followupType(b)==='urgent'?1:0;return bp-ap||recordTime(b)-recordTime(a)}).slice(0,5);
-    attention.innerHTML=open.length?open.map(x=>{const type=followupType(x),time=recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):'';return '<button class="attention-call '+(type==='urgent'?'urgent':'')+'" data-call-id="'+esc(x.id)+'"><span class="attention-call-badge">'+esc(followupLabel(type))+'</span><span class="attention-call-copy"><b>'+esc(x.caller||'Unknown caller')+'</b><small>'+esc(x.reason||'Call requires review')+'</small><em>'+esc(teamStatusLabel(x))+' · '+esc(time)+'</em></span><span class="attention-call-arrow">→</span></button>'}).join(''):'<div class="attention-clear"><b>You’re caught up.</b><span>No open team actions right now.</span></div>';
+    attention.innerHTML=open.length?open.map(x=>{const type=followupType(x),time=formatAttentionDate(x);return '<button class="attention-call '+(type==='urgent'?'urgent':'')+'" data-call-id="'+esc(x.id)+'"><span class="attention-call-badge">'+esc(followupLabel(type))+'</span><span class="attention-call-copy"><b>'+esc(x.caller||'Unknown caller')+'</b><small>'+esc(x.reason||'Call requires review')+'</small><em>'+esc(teamStatusLabel(x))+' · '+esc(time)+'</em></span><span class="attention-call-arrow">→</span></button>'}).join(''):'<div class="attention-clear"><b>You’re caught up.</b><span>No open team actions right now.</span></div>';
     attention.querySelectorAll('[data-call-id]').forEach(b=>b.addEventListener('click',()=>openCall(b.dataset.callId)));
   }
 
@@ -718,7 +723,7 @@ async function openCall(id){
   activeCallContactKey=contactKey(x);activeCallId=String(x.id||'');markCallViewed(activeCallId);
   document.getElementById('drawerCaller').textContent=x.caller||'Unknown caller';
   const digits=String(x.phone||'').replace(/\D/g,''),setActionLink=(el,href)=>{if(!el)return;const enabled=!!href;if(enabled)el.setAttribute('href',href);else el.removeAttribute('href');el.classList.toggle('disabled-link',!enabled);el.setAttribute('aria-disabled',enabled?'false':'true');el.tabIndex=enabled?0:-1};setActionLink(document.getElementById('drawerCallLink'),digits?'tel:'+digits:'');setActionLink(document.getElementById('drawerTextLink'),digits?'sms:'+digits:'');
-  syncDrawerTeamStatus(x);const select=document.getElementById('drawerTeamStatus'),statusButton=document.getElementById('drawerFollowupButton');if(select){const requires=callNeedsTeam(x),noActionOption=select.querySelector('option[value="no_action"]');if(noActionOption)noActionOption.disabled=requires;select.disabled=!requires&&teamStatusForCall(x)==='no_action';select.title=select.disabled?'CallerCore resolved this call without requiring staff action.':'';if(statusButton)statusButton.disabled=select.disabled}
+  syncDrawerTeamStatus(x);const select=document.getElementById('drawerTeamStatus'),statusButton=document.getElementById('drawerFollowupButton');if(select){const requires=callNeedsTeam(x),noActionOption=select.querySelector('option[value="no_action"]');if(noActionOption)noActionOption.disabled=requires;select.disabled=document.body?.classList?.contains('admin-client-view')||(!requires&&teamStatusForCall(x)==='no_action');select.title=document.body?.classList?.contains('admin-client-view')?'Read-only admin view. Team status can be changed from the client account.':select.disabled?'CallerCore resolved this call without requiring staff action.':'';if(statusButton)statusButton.disabled=select.disabled}
   activeNoteEditId='';resetNoteComposer();renderCallNotes(x.id);
   const when=document.getElementById('drawerWhen');if(when)when.textContent=formatFullDateTime(x);
   const disposition=callDispositionMeta(x),team=TEAM_STATUS_META[teamStatusForCall(x)]||TEAM_STATUS_META.no_action;
@@ -734,7 +739,7 @@ async function openCall(id){
   const feedbackBtn=document.getElementById('drawerAiFeedbackButton');if(feedbackBtn){feedbackBtn.dataset.callId=activeCallId;feedbackBtn.dataset.callContext=[x.caller||x.phone||'Caller',x.reason||x.category||'Call'].filter(Boolean).join(' · ')}
   const drawer=document.getElementById('callDrawer');resetSurfaceScroll(drawer);drawer.classList.add('open');document.getElementById('drawerBackdrop').classList.add('open');drawer.setAttribute('aria-hidden','false');document.body.classList.add('drawer-open');setTimeout(()=>{resetSurfaceScroll(drawer);document.getElementById('closeCallDrawer')?.focus()},20);
 }
-function closeCall(){callDrawerOpenRequest++;document.getElementById('callDrawer')?.classList.remove('open');document.getElementById('drawerBackdrop')?.classList.remove('open');document.getElementById('callDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('contactDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}
+function closeCall(){if(document.getElementById('teamStatusModal')?.classList.contains('open'))return false;callDrawerOpenRequest++;document.getElementById('callDrawer')?.classList.remove('open');document.getElementById('drawerBackdrop')?.classList.remove('open');document.getElementById('callDrawer')?.setAttribute('aria-hidden','true');if(!document.getElementById('contactDrawer')?.classList.contains('open'))document.body.classList.remove('drawer-open')}
 function money(v){return Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})}
 const CALL_DISPOSITIONS={
   resolved_by_ai:{label:'Resolved by AI',needsTeam:false,tone:'green',copy:'The caller got what they needed without staff action.'},
@@ -833,7 +838,7 @@ function renderLeads(){
   document.getElementById('leadsEmpty').hidden=rows.length!==0;updateFollowupCounts();
   board.querySelectorAll('[data-contact-key]').forEach(b=>b.addEventListener('click',()=>openContact(b.dataset.contactKey)));
   board.querySelectorAll('[data-call-id]').forEach(b=>b.addEventListener('click',()=>openCall(b.dataset.callId)));
-  board.querySelectorAll('[data-team-status]').forEach(sel=>sel.addEventListener('change',()=>requestTeamStatusChange(sel.dataset.teamStatus,sel.value)));
+  board.querySelectorAll('[data-team-status]').forEach(sel=>{if(document.body?.classList?.contains('admin-client-view')){sel.disabled=true;sel.title='Read-only admin view. Team status can be changed from the client account.'}sel.addEventListener('change',()=>requestTeamStatusChange(sel.dataset.teamStatus,sel.value))});
 }
 async function persistTeamStatus(id,status,{completionReason='',completionNote=''}={}){
   const key=String(id);if(followupMutationPending.has(key))return false;
@@ -851,22 +856,23 @@ async function persistTeamStatus(id,status,{completionReason='',completionNote='
   finally{followupMutationPending.delete(key);renderLeads();renderOverview();renderCalls();if(x&&activeCallId===key)syncDrawerTeamStatus(x)}
 }
 function requestTeamStatusChange(id,status){
+  if(document.body?.classList?.contains('admin-client-view'))return false;
   if(followupMutationPending.has(String(id)))return false;
-  if(status==='completed'){pendingTeamStatusCallId=String(id);const modal=document.getElementById('teamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther'),wrap=document.getElementById('teamCompletionOtherWrap'),statusEl=document.getElementById('teamStatusModalStatus'),call=callsData.find(c=>String(c.id)===String(id)),listSelect=[...document.querySelectorAll('[data-team-status]')].find(el=>String(el.dataset.teamStatus)===String(id));if(reason)reason.value='';if(other)other.value='';if(wrap)wrap.hidden=true;if(statusEl){statusEl.textContent='';statusEl.className='form-status-line'}if(call&&listSelect)listSelect.value=teamStatusForCall(call);if(call&&activeCallId===String(id))syncDrawerTeamStatus(call);if(modal){modal.classList.add('open');modal.setAttribute('aria-hidden','false');modal.setAttribute('aria-busy','false')}return}
+  if(status==='completed'){pendingTeamStatusCallId=String(id);const modal=document.getElementById('teamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther'),wrap=document.getElementById('teamCompletionOtherWrap'),statusEl=document.getElementById('teamStatusModalStatus'),call=callsData.find(c=>String(c.id)===String(id)),listSelect=[...document.querySelectorAll('[data-team-status]')].find(el=>String(el.dataset.teamStatus)===String(id));if(reason)reason.value='';if(other)other.value='';if(wrap)wrap.hidden=true;if(statusEl){statusEl.textContent='';statusEl.className='form-status-line'}if(call&&listSelect)listSelect.value=teamStatusForCall(call);if(call&&activeCallId===String(id))syncDrawerTeamStatus(call);if(modal){const context=document.getElementById('teamStatusCallContext');if(context)context.textContent=call?(call.caller||'Unknown caller')+' · '+(call.reason||'Team follow-up'):'';const drawer=document.getElementById('callDrawer');if(drawer?.classList.contains('open'))drawer.inert=true;modal.classList.add('open');modal.setAttribute('aria-hidden','false');modal.setAttribute('aria-busy','false')}return}
   persistTeamStatus(String(id),status);
 }
 function setTeamStatusModalPending(pending){
   const modal=document.getElementById('teamStatusModal'),save=document.getElementById('saveTeamStatusModal'),cancel=document.getElementById('cancelTeamStatusModal'),close=document.getElementById('closeTeamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther');
   if(modal)modal.setAttribute('aria-busy',String(!!pending));if(save){save.disabled=!!pending;save.textContent=pending?'Saving…':'Mark complete'}if(cancel)cancel.disabled=!!pending;if(close)close.disabled=!!pending;if(reason)reason.disabled=!!pending;if(other)other.disabled=!!pending;
 }
-function closeTeamStatusModal(){if(pendingTeamStatusCallId&&followupMutationPending.has(String(pendingTeamStatusCallId)))return false;pendingTeamStatusCallId='';const modal=document.getElementById('teamStatusModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');modal.setAttribute('aria-busy','false')}return true}
+function closeTeamStatusModal(){if(pendingTeamStatusCallId&&followupMutationPending.has(String(pendingTeamStatusCallId)))return false;pendingTeamStatusCallId='';const modal=document.getElementById('teamStatusModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');modal.setAttribute('aria-busy','false')}const drawer=document.getElementById('callDrawer');if(drawer)drawer.inert=false;return true}
 async function saveTeamStatusCompletion(){
   const id=pendingTeamStatusCallId;if(!id||followupMutationPending.has(String(id)))return false;const reason=document.getElementById('teamCompletionReason')?.value||'',note=String(document.getElementById('teamCompletionOther')?.value||'').trim().slice(0,160),status=document.getElementById('teamStatusModalStatus');setTeamStatusModalPending(true);if(status){status.textContent='Saving completion…';status.className='form-status-line'}
   try{const ok=await persistTeamStatus(id,'completed',{completionReason:reason,completionNote:note});if(ok){closeTeamStatusModal();return true}if(status){status.textContent='Could not confirm the completion update. Your selection is still open; try again.';status.className='form-status-line error'}return false}
   finally{setTeamStatusModalPending(false)}
 }
 function syncDrawerTeamStatus(call){
-  const key=String(call.id||''),status=teamStatusForCall(call),pending=followupMutationPending.has(key),select=document.getElementById('drawerTeamStatus'),button=document.getElementById('drawerFollowupButton');if(select){select.value=status;select.disabled=pending;select.setAttribute('aria-busy',String(pending))}if(button){button.dataset.callId=key;button.textContent=pending?'Updating…':'Update status';button.disabled=pending;button.setAttribute('aria-busy',String(pending))}
+  const key=String(call.id||''),status=teamStatusForCall(call),pending=followupMutationPending.has(key),select=document.getElementById('drawerTeamStatus'),button=document.getElementById('drawerFollowupButton');if(select){select.value=status;select.disabled=pending||document.body?.classList?.contains('admin-client-view');select.title=document.body?.classList?.contains('admin-client-view')?'Read-only admin view. Team status can be changed from the client account.':'';select.setAttribute('aria-busy',String(pending))}if(button){button.dataset.callId=key;button.textContent=pending?'Updating…':'Update status';button.disabled=pending||document.body?.classList?.contains('admin-client-view');button.setAttribute('aria-busy',String(pending))}
 }
 
 function normalizedCallNotes(id){
@@ -4698,7 +4704,7 @@ function renderNotifications(){
     empty.textContent=notificationLoadError&&!notificationData.length?'Notifications could not be verified. Refresh to try again.':notificationMode==='history'?'No notification history yet.':'No unread notifications.';
   }
   list.querySelectorAll('[data-notification-id]').forEach(b=>b.addEventListener('click',()=>openNotification(b.dataset.notificationId)));
-  renderSidebarNotificationDots();
+  renderSidebarNotificationDots();renderSectionNotifications();
 }
 function renderSidebarNotificationDots(){
   document.querySelectorAll('.nav-item[data-view]').forEach(btn=>{
@@ -4708,6 +4714,20 @@ function renderSidebarNotificationDots(){
     if(count)btn.title=count+' unread alert'+(count===1?'':'s')+' in '+view.replaceAll('-',' ');
     else if(btn.title&&btn.title.includes('unread alert'))btn.removeAttribute('title');
   });
+}
+function renderSectionNotifications(){
+  const view=document.querySelector('.view.active');if(!view)return;
+  const name=view.id.replace(/^view-/,''),items=notificationData.filter(n=>!n.read&&(n.view||'overview')===name);
+  let surface=view.querySelector('.section-alerts');
+  if(!items.length){surface?.remove();return}
+  const expanded=surface?surface.open===true:true;
+  const active=document.activeElement,restoreSummary=!!surface&&active===surface.querySelector('summary'),restoreId=surface?.contains(active)?active?.dataset?.sectionNotification:'';
+  if(!surface){surface=document.createElement('details');surface.className='section-alerts';view.prepend(surface)}
+  surface.open=expanded;
+  surface.innerHTML='<summary><span class="section-alert-symbol" aria-hidden="true">!</span><span><b>'+items.length+' unread alert'+(items.length===1?'':'s')+' in this section</b><small>Review the items below to see what needs your attention.</small></span><span class="section-alert-cue">Review alerts</span></summary><div class="section-alert-list">'+items.map(n=>'<button type="button" data-section-notification="'+esc(n.id)+'"><span><b>'+esc(n.title||'Notification')+'</b><small>'+esc(n.body||'')+'</small></span><span class="section-alert-link">Open item →</span></button>').join('')+'</div>';
+  surface.querySelectorAll('[data-section-notification]').forEach(button=>button.addEventListener('click',()=>openNotification(button.dataset.sectionNotification)));
+  if(restoreSummary)surface.querySelector('summary')?.focus();
+  else if(restoreId)surface.querySelector('[data-section-notification="'+CSS.escape(restoreId)+'"]')?.focus();
 }
 async function markViewNotificationsRead(view){
   const ids=notificationData.filter(n=>!n.read&&(n.view||'overview')===view).map(n=>n.id);

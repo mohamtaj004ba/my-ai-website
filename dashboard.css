@@ -2516,8 +2516,28 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allo
 .admin-nav-badge{font-size:12px;min-width:24px;height:24px;background:#f0d7cb;color:#79391f;flex-shrink:0}
 /* A numeric queue badge and an unread dot have different meanings; reserve
    their own positions so neither conceals the other. */
-.sidebar .nav-item.nav-has-alert{padding-right:30px}
-.sidebar .nav-item.nav-has-alert:after{right:10px;width:7px;height:7px;box-shadow:none}
+.sidebar .nav-item.nav-has-alert{padding-right:12px}
+.sidebar .nav-item.nav-has-alert:after{position:static;transform:none;flex:0 0 8px;width:8px;height:8px;margin-left:2px;box-shadow:none}
+.sidebar .nav-item :is(.admin-nav-badge,.nav-count){margin-left:auto;flex-shrink:0}
+.sidebar .nav-count{font-size:12px;min-width:24px;height:24px}
+.section-alerts{margin-bottom:24px;border:1px solid #ead4c5;border-radius:14px;background:#fffaf6;overflow:hidden}
+.section-alerts summary{display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer;list-style:none}
+.section-alerts summary::-webkit-details-marker{display:none}
+.section-alerts summary>span:nth-child(2){flex:1;min-width:0}
+.section-alerts b{display:block;font-size:14px;line-height:1.5}
+.section-alerts small{display:block;font-size:13px;color:var(--muted);line-height:1.5;margin-top:3px}
+.section-alert-symbol{display:grid;place-items:center;width:28px;height:28px;flex-shrink:0;border-radius:50%;background:#f5e1d2;color:#854026;font-weight:800}
+.section-alert-cue,.section-alert-link{font-size:13px;font-weight:700;color:#854026;flex-shrink:0}
+.section-alert-list{border-top:1px solid #ead4c5;padding:0 20px;background:#fff;max-height:320px;overflow:auto;overscroll-behavior:contain}
+.section-alert-list button{display:flex;align-items:center;justify-content:space-between;gap:18px;width:100%;padding:16px 0;background:none;border:0;border-bottom:1px solid var(--line);font:inherit;text-align:left;color:var(--ink);cursor:pointer}
+.section-alert-list button:last-child{border-bottom:0}
+.section-alert-list button>span:first-child{min-width:0;overflow-wrap:anywhere}
+.section-alert-list button:hover b{text-decoration:underline}
+#teamStatusModal{z-index:95;padding-top:calc(var(--admin-view-offset,0px) + 20px)}
+#teamStatusModal .team-status-card{width:min(560px,100%)}
+#teamStatusModal .completion-context{font-weight:600;color:var(--ink);font-size:14px;overflow-wrap:anywhere;margin-bottom:8px}
+.page-head p.contact-actions-note,.contact-actions-note{font-size:13px;line-height:1.5;color:var(--muted);margin:10px 0}
+@media(max-width:520px){.section-alerts summary{padding:14px;gap:10px;flex-wrap:wrap}.section-alert-cue{margin-left:38px}.section-alert-list{padding:0 14px}.section-alert-list button{align-items:flex-start;flex-direction:column;gap:8px}}
 .account-copy b{font-size:14px}.account-copy small{font-size:12px}
 .account-copy{line-height:1.4;max-width:190px}.account-button{gap:10px}
 .admin-live-status{border-radius:12px;padding:8px 12px;column-gap:9px}
