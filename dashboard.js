@@ -2786,6 +2786,10 @@ function renderInboxThread(){
       coverageEl.hidden=false;coverageEl.textContent='History limit: showing the most recent '+retained+(Number.isFinite(total)&&total>retained?' of '+total:'')+' website messages. Older messages are not retained in this Inbox.';
     }else if(website&&coverage.verified===false){
       coverageEl.hidden=false;coverageEl.textContent='Full website-thread history cannot be verified. Showing '+retained+' retained messages; older messages may not be available.';
+    }else if(!website&&messages.some(m=>m.bodyTruncated===true||!m.body&&m.snippet)){
+      coverageEl.hidden=false;coverageEl.textContent='Some Gmail message content is shortened or shown as a preview. Open the connected Gmail account to review the full message and attachments.';
+    }else if(!website&&messages.some(m=>m.bodyTruncated===undefined&&String(m.body||'').length>=12000)){
+      coverageEl.hidden=false;coverageEl.textContent='Full content cannot be verified for some cached Gmail messages. Open the connected Gmail account to review the full message and attachments.';
     }else coverageEl.hidden=true;
   }
   const lead=document.getElementById('inboxThreadLead');if(lead)lead.textContent=p.stage?('Growth · '+p.stage.replaceAll('_',' ')):(currentInboxItem.prospect?'Linked prospect':'Not in Growth');

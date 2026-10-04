@@ -120,6 +120,23 @@ test('Gmail MIME extraction prefers nested plain text and uses HTML only when no
 test('malformed MIME structure cannot be substituted with an empty verified body',()=>{
   const f=fixture();for(const payload of [{mimeType:'multipart/mixed',parts:{}},{mimeType:'multipart/mixed',parts:[null]},{mimeType:'text/plain',body:{data:{}}},{mimeType:'text/plain',body:[]},{mimeType:123,body:{}},{filename:{},body:{}}])assert.throws(()=>f.ctx.extractBody(payload),/body could not be verified/);
 });
+test('Gmail body limits retain bounded text with explicit truncation metadata',async()=>{
+  for(const size of [12000,12001]){
+    const payload={mimeType:'text/plain',body:{data:Buffer.from('x'.repeat(size)).toString('base64url')}};
+    const f=fixture({thread:{id:'thread',messages:[{id:'message',threadId:'thread',payload}]}}),result=await f.api.listInbox('admin@test.example');
+    assert.equal(result.threads[0].messages[0].body.length,12000);assert.equal(result.threads[0].messages[0].bodyTruncated,size>12000);
+  }
+});
+test('Inbox distinguishes shortened bodies, snippet previews and uncertain legacy content from complete body text',()=>{
+  const ui=fs.readFileSync('dashboard.js','utf8'),start=ui.indexOf('function renderInboxThread('),end=ui.indexOf('\nasync function sendInboxReply(',start),nodes=new Map();
+  const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',innerHTML:'',hidden:false});return nodes.get(id)};
+  const ctx=vm.createContext({currentInboxItem:{kind:'gmail',id:'thread',thread:{subject:'Inquiry'},messages:[]},document:{getElementById:node},renderInboxContext(){},renderInboxFromOptions(){},esc:value=>String(value||'')});
+  vm.runInContext(ui.slice(start,end),ctx);
+  for(const [message,expected] of [[{body:'Body',bodyTruncated:true},/shortened or shown as a preview/],[{body:'',snippet:'Preview'},/shortened or shown as a preview/],[{body:'x'.repeat(12000)},/Full content cannot be verified/]]){
+    ctx.currentInboxItem.messages=[{id:'message',from:'sender@test.example',at:1,...message}];ctx.renderInboxThread();assert.equal(node('inboxThreadCoverage').hidden,false);assert.match(node('inboxThreadCoverage').textContent,expected);
+  }
+  ctx.currentInboxItem.messages=[{id:'message',body:'x'.repeat(12000),bodyTruncated:false,at:1}];ctx.renderInboxThread();assert.equal(node('inboxThreadCoverage').hidden,true);
+});
 test('incomplete or mismatched thread hydration cannot overwrite cached detail',async()=>{
   for(const thread of [{id:'other',messages:[]},{id:'thread'},{id:'thread',messages:[]},{id:'thread',messages:[null]},{id:'thread',messages:[{id:'message',payload:{headers:'broken'}}]},{id:'thread',messages:[{id:'message',threadId:'other',payload:{}}]}]){
     const f=fixture({thread});await assert.rejects(f.api.listInbox('admin@test.example'),/thread detail could not be verified/);assert.equal(f.writes.length,0);
