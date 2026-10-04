@@ -1,6 +1,15 @@
 # CallerCore project state
 
-Latest verified implementation: **`c409fe421aa1ba342758ecf20d38189484534ff8`**. The client purpose, settings and Client Care refinement is verified in exact Preview. Historical milestones follow; provider/commercial launch gates remain separately restricted.
+Latest verified implementation: **`6427c4c6c0a8fb4af395db048c1be58936999c5b`**. Phone composition and annotation refinements are verified in exact Preview. Historical milestones follow; provider/commercial launch gates remain separately restricted.
+
+## Phone composition and annotation refinements — 2026-10-04
+
+- Removed the redundant admin sidebar email; profile identity remains available. Client workspace name occupies one line with a full-name title, while initials/logo and plan sit below it. Client Care requests have independent spacing, borders and a stronger expanded header so controls, messages and replies stay visually contained within the selected request.
+- Below 600px, client call and contact tables become individual cards with caller identity, request details and statuses retained. Unopened styling, exact unread alerts and existing record navigation remain unchanged. Summary tiles use two columns; filters and Client Care controls use compact grids. Phone buttons have 44px targets, fields retain 16px text, and existing Settings/footer/modal safeguards remain intact. Laptop tables and spacing remain preserved outside the mobile breakpoint.
+- Regression verification now rejects phone cards wider than the screen or hidden caller/request details. The optional admin identity test confirms profile initialization while the removed sidebar field stays empty. All 1,563 local tests, syntax and diff checks pass.
+- **Verified implementation 6427c4c6c0a8fb4af395db048c1be58936999c5b**, tree c8d1f4c38d3bf923fc4f9a72a893e7823494a530: CallerCore CI push 37191761148 / PR 37191764977, CodeQL push 37191761126 / PR 37191764945, Jekyll 37191764957 and authenticated Preview Browser QA 37191761105 all SUCCESS.
+- Exact Preview dpl_6gGsGFTC2949LyCFrxfonjmHAufh, https://my-ai-website-f28je4u11-mohamtaj004bas-projects.vercel.app, READY with matching Git SHA and target null. Artifact 11298834308: 179 layout contracts, 128 readability contracts, 196 screenshots, zero visual/console/page/API errors. Screenshot review confirmed readable phone cards, two-column Today tiles, separated Client Care requests and the removed admin email.
+- No backend/provider/billing/permission capability changed. Existing revisions, stale-state guards, concurrency locks, atomic writes, audit and recovery behavior remain intact. PR #5 remains draft/unmerged; production and live telephony remain unchanged.
 
 ## Client purpose, settings and Client Care refinement — 2026-10-04
 
