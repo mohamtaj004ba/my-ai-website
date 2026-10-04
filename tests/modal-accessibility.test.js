@@ -29,6 +29,22 @@ test('opening focuses the first control and closing returns focus to the trigger
   const f=fixture();f.open();assert.strictEqual(f.document.activeElement,f.close);f.close.click();assert.strictEqual(f.document.activeElement,f.trigger);
 });
 
+test('confirmation returns focus to a named visible fallback when its launcher is removed or hidden',()=>{
+  for(const removed of [true,false]){
+    const f=fixture(),fallback={isConnected:true,focus(){f.document.activeElement=this}};
+    f.document.getElementById=id=>id==='fallback'?fallback:null;f.modal.attrs['data-return-focus-fallback']='fallback';
+    f.open();if(removed)f.trigger.isConnected=false;else f.trigger.hidden=true;
+    f.close.click();assert.strictEqual(f.document.activeElement,fallback);
+  }
+});
+
+test('confirmation fallback does not replace a valid launcher or focus a hidden recovery control',()=>{
+  const f=fixture(),fallback={isConnected:true,hidden:true,focus(){assert.fail('Hidden fallback must not receive focus')}};
+  f.document.getElementById=()=>fallback;f.modal.attrs['data-return-focus-fallback']='fallback';
+  f.open();f.close.click();assert.strictEqual(f.document.activeElement,f.trigger);
+  f.open();f.trigger.isConnected=false;f.close.click();assert.strictEqual(f.document.activeElement,f.close);
+});
+
 test('Tab is trapped inside an open modal and Escape uses its guarded close control',()=>{
   const f=fixture();f.open();f.document.activeElement=f.field;const tab={key:'Tab'};f.keydown(tab);assert.equal(tab.prevented,true);assert.strictEqual(f.document.activeElement,f.close);
   f.document.activeElement=f.trigger;const escapedTab={key:'Tab'};f.keydown(escapedTab);assert.equal(escapedTab.prevented,true);assert.strictEqual(f.document.activeElement,f.close);

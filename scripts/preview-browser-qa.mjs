@@ -568,7 +568,10 @@ async function runAdminInteractions(page){
   await page.locator('#phoneModal.open').waitFor({state:'hidden',timeout:10000});
   report.admin.interactions.push('phone search/reset + truthful readiness + saved edit/restore');
   let phoneDeleteRequests=0;const phoneDeleteRoute=/\/api\/account\?action=admin-phone-number-delete$/;
-  await page.route(phoneDeleteRoute,async route=>{phoneDeleteRequests++;await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'QA intercepted unexpected phone removal'})})});
+  await page.route(phoneDeleteRoute,async route=>{
+    phoneDeleteRequests++;const id=route.request().postDataJSON()?.id;
+    await route.fulfill({status:id==='qa-confirmation-focus'?200:409,contentType:'application/json',body:JSON.stringify(id==='qa-confirmation-focus'?{ok:true,deleted:{id}}:{error:'QA intercepted unexpected phone removal'})});
+  });
   const phoneDeleteLauncher=page.locator('[data-delete-phone="'+qaPhone.id+'"]');
   try{
     await phoneDeleteLauncher.click();
@@ -580,8 +583,17 @@ async function runAdminInteractions(page){
     await page.keyboard.press('Escape');await confirmation.waitFor({state:'hidden'});
     await page.waitForFunction(id=>document.activeElement?.dataset?.deletePhone===id,qaPhone.id);
     if(phoneDeleteRequests!==0)throw new Error('Phone cancellation sent a removal request');
-  }finally{await page.unroute(phoneDeleteRoute)}
-  report.admin.interactions.push('phone removal identity + provider truthfulness + keyboard cancellation without mutation');
+    // A temporary in-page row tests confirmed deletion focus without deleting stored inventory.
+    await page.evaluate(item=>{window.__qaOriginalPhoneData=adminPhoneData;adminPhoneData=[...adminPhoneData,{...item,id:'qa-confirmation-focus',updatedAt:1}];renderPhones()},qaPhone);
+    await page.locator('[data-delete-phone="qa-confirmation-focus"]').click();await page.locator('#submitAdminActionConfirmation').click();
+    await page.locator('#adminActionConfirmationModal').waitFor({state:'hidden'});
+    await page.waitForFunction(()=>document.activeElement?.id==='addPhoneButton');
+    if(phoneDeleteRequests!==1)throw new Error('Phone focus fixture did not submit exactly one intercepted request');
+  }finally{
+    await page.evaluate(()=>{if(window.__qaOriginalPhoneData){adminPhoneData=window.__qaOriginalPhoneData;delete window.__qaOriginalPhoneData;renderPhones()}});
+    await page.unroute(phoneDeleteRoute);
+  }
+  report.admin.interactions.push('phone removal identity + provider truthfulness + keyboard cancellation + confirmed focus recovery without stored deletion');
 
   // In-page fictional record only: test global search without touching support KV or sending mail.
   await page.evaluate(()=>{
@@ -615,6 +627,18 @@ async function runAdminInteractions(page){
     if(canceledRepairs!==0)throw new Error('Canceled access repair sent a request');
   }finally{await page.unroute(repairRoute)}
   report.admin.interactions.push('access-repair identity + cancellation + focus return without mutation');
+  const originalWorkspaceStatus=await page.locator('#adminClientStatus').inputValue();
+  let serviceChangeRequests=0;const serviceChangeRoute=/\/api\/account\?action=admin-client-update$/;
+  await page.route(serviceChangeRoute,async route=>{serviceChangeRequests++;await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'QA intercepted unexpected service access change'})})});
+  try{
+    await page.locator('#adminClientStatus').selectOption(originalWorkspaceStatus==='suspended'?'active':'suspended');
+    await page.locator('#adminSaveClientButton').click();await page.locator('#adminActionConfirmationModal').waitFor({state:'visible'});
+    if(!/North Ridge Plumbing/.test(await page.locator('#adminActionConfirmationCopy').textContent()))throw new Error('Service access confirmation omitted workspace identity');
+    if(!/Stripe/.test(await page.locator('#adminActionConfirmationConsequences').textContent()))throw new Error('Service access confirmation omitted billing scope');
+    await page.locator('#cancelAdminActionConfirmation').click();await page.waitForFunction(()=>document.activeElement?.id==='adminSaveClientButton');
+    if(serviceChangeRequests!==0)throw new Error('Canceled service access change sent a mutation');
+  }finally{await page.locator('#adminClientStatus').selectOption(originalWorkspaceStatus);await page.unroute(serviceChangeRoute)}
+  report.admin.interactions.push('service suspension/restoration review + cancellation without mutation');
   await assertAdminTechPendingOverride(page);
   report.admin.interactions.push('global search → client deep link');
   report.admin.interactions.push('configuration override pending lock + immediate refresh');

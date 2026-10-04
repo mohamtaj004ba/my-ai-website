@@ -24,7 +24,11 @@ function fixture(fetch=async()=>({ok:true,json:async()=>({ok:true,email:'new@exa
   ctx.setAdminInboxActionStatus=message=>node('inboxActionStatus').textContent=message;
   const phones=ui.slice(ui.indexOf('async function deletePhone('),ui.indexOf('\nfunction openPhoneModal('));
   const gmail=ui.slice(ui.indexOf('let gmailConnectionMutationPending=false;'),ui.indexOf("\ndocument.getElementById('inboxRefreshButton')"));
-  vm.runInContext(helper+'\n'+ui.slice(start,end)+'\n'+phones+'\n'+gmail,ctx);
+  const save=ui.slice(ui.indexOf('async function saveAdminClient(){'),ui.indexOf('\nfunction setAdminDeleteWorkspaceStatus('));
+  ctx.currentAdminClient={...ctx.currentAdminClient,updatedAt:10,plan:'Starter',status:'active'};
+  node('adminClientPlan').value='Starter';node('adminClientStatus').value='suspended';
+  ctx.setAdminClientMutationState=value=>{ctx.adminClientSaving=value};ctx.setAdminClientActionStatus=message=>{node('adminClientActionStatus').textContent=message};ctx.openAdminClient=async()=>{};
+  vm.runInContext(helper+'\n'+ui.slice(start,end)+'\n'+phones+'\n'+gmail+'\n'+save,ctx);
   return {ctx,node,requests,run:code=>vm.runInContext(code,ctx)};
 }
 test('consequential repair/configuration actions open named confirmations and cancellation sends no request',async()=>{
@@ -34,6 +38,35 @@ test('consequential repair/configuration actions open named confirmations and ca
     assert.equal(f.run('closeAdminActionConfirmation()'),true);assert.equal(await f.run('submitAdminActionConfirmation()'),false);
     assert.equal(f.requests.length,0);
   }
+});
+
+test('suspending and restoring service access require named review while ordinary status edits save directly',async()=>{
+  for(const previousStatus of ['active','suspended']){
+    const f=fixture();f.ctx.currentAdminClient.status=previousStatus;f.node('adminClientStatus').value=previousStatus==='active'?'suspended':'active';
+    assert.equal(await f.run('saveAdminClient()'),true);assert.equal(f.requests.length,0);
+    assert.match(f.node('adminActionConfirmationCopy').textContent,/Target workspace.*ws/);
+    assert.match(f.node('adminActionConfirmationConsequences').textContent,/Stripe/);
+    f.run('closeAdminActionConfirmation()');assert.equal(f.requests.length,0);
+  }
+  const f=fixture(async()=>({ok:true,json:async()=>({ok:true,client:{id:'ws',plan:'Starter',status:'onboarding',updatedAt:11}})}));
+  f.node('adminClientStatus').value='onboarding';assert.equal(await f.run('saveAdminClient()'),true);
+  assert.equal(f.requests.length,1);assert.equal(f.run('adminActionConfirmationState'),null);
+});
+
+test('service suspension rejects changed revision, selection, drawer or workspace before request',async()=>{
+  for(const change of ['currentAdminClient.updatedAt=11',"document.getElementById('adminClientPlan').value='Growth'","document.getElementById('adminClientStatus').value='active'",'adminClientOpenRequest++',"currentAdminClient.id='other'"]){
+    const f=fixture();await f.run('saveAdminClient()');f.run(change);
+    assert.equal(await f.run('submitAdminActionConfirmation()'),false);assert.equal(f.requests.length,0);
+  }
+});
+
+test('confirmed suspension submits reviewed revision and closes despite subsequent refresh failure',async()=>{
+  const f=fixture(async()=>({ok:true,json:async()=>({ok:true,client:{id:'ws',plan:'Starter',status:'suspended',updatedAt:11}})}));
+  f.ctx.refreshAdminCore=async()=>{throw Error('offline')};await f.run('saveAdminClient()');
+  assert.equal(await f.run('submitAdminActionConfirmation()'),true);
+  assert.deepEqual(f.requests[0].body,{id:'ws',plan:'Starter',status:'suspended',expectedUpdatedAt:10});
+  assert.equal(f.ctx.currentAdminClient.status,'suspended');assert.equal(f.ctx.adminClientSaving,false);
+  assert.match(f.node('adminClientActionStatus').textContent,/were saved.*could not refresh/);
 });
 test('repair confirmation refuses changed email, owner, workspace or drawer generation',async()=>{
   for(const change of ["document.getElementById('adminRepairEmail').value='other@example.test'","currentAdminTech.diagnostics.ownerEmail='other@example.test'","currentAdminClient.id='other'",'adminClientOpenRequest++']){

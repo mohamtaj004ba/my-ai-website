@@ -19,6 +19,7 @@ function openAdminActionConfirmation(spec){
   const modal=document.getElementById('adminActionConfirmationModal');
   if(!modal||adminActionConfirmationState)return false;
   adminActionConfirmationState={...spec,pending:false};
+  modal.setAttribute('data-return-focus-fallback',spec.returnFocusId||'');
   for(const [id,value] of [['adminActionConfirmationTitle',spec.title],['adminActionConfirmationCopy',spec.copy],['adminActionConfirmationConsequences',spec.consequences]]){
     const node=document.getElementById(id);if(node)node.textContent=value||'';
   }

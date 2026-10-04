@@ -55,7 +55,7 @@ function frontendFixture(){
   node('adminClientPlan').value='Growth';node('adminClientStatus').value='suspended';
   const pending=deferred(),alerts=[],statuses=[],reopened=[];
   const context=vm.createContext({
-    adminClientSaving:false,adminTechSaving:false,currentAdminClient:{id:'client-1',plan:'Starter',status:'active',updatedAt:10,stripe:{}},
+    adminClientSaving:false,adminTechSaving:false,adminClientOpenRequest:1,openAdminActionConfirmation:spec=>spec.run(),currentAdminClient:{id:'client-1',plan:'Starter',status:'active',updatedAt:10,stripe:{}},
     document:{getElementById:node,querySelectorAll:()=>[]},String,Number,JSON,
     fetch:()=>pending.promise,alert:value=>alerts.push(value),setAdminClientActionStatus:(message,tone='')=>statuses.push({message:String(message||''),tone:String(tone||'')}),refreshAdminCore:async()=>{},loadAdminOps:async()=>{},
     openAdminClient:async(id,options)=>reopened.push({id,options})

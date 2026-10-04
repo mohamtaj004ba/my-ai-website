@@ -2841,7 +2841,7 @@ async function disconnectGmailAdmin(){
   const gmailEmail=String(adminInboxData.gmailStatus?.gmailEmail||'');
   if(adminInboxData.gmailStatus?.connected!==true){setAdminInboxActionStatus('Refresh Gmail connection status before disconnecting.','error');return false}
   let failureMessage='';
-  return openAdminActionConfirmation({title:'Disconnect admin Gmail',action:'Disconnect Gmail',
+  return openAdminActionConfirmation({title:'Disconnect admin Gmail',action:'Disconnect Gmail',returnFocusId:'gmailConnectButton',
     copy:'Disconnect '+(gmailEmail||'the connected Gmail account')+' from CallerCore Admin.',
     consequences:'Gmail inbox and sending access in CallerCore will stop, and its cached inbox will be cleared. No messages will be deleted from Gmail. Reconnect through Google sign-in to restore access.',
     validate:()=>gmailConnectionMutationPending||!!adminInboxData.connectionStatusError||adminInboxData.gmailStatus?.connected!==true||String(adminInboxData.gmailStatus?.gmailEmail||'')!==gmailEmail?'Gmail connection changed or could not be verified. Cancel and refresh before disconnecting.':'',
@@ -3419,7 +3419,7 @@ async function deletePhone(id){
   const assigned=item.workspaceName?' assigned to '+item.workspaceName:'';
   const expectedUpdatedAt=Number(item.updatedAt||0),snapshot=JSON.stringify(item);let failureMessage='';
   if(!Number.isFinite(expectedUpdatedAt)||expectedUpdatedAt<=0){setAdminSyncState('error','Phone revision is unavailable. Refresh Phone Numbers before removing this record.');return false}
-  return openAdminActionConfirmation({title:'Remove phone routing record',action:'Remove routing record',
+  return openAdminActionConfirmation({title:'Remove phone routing record',action:'Remove routing record',returnFocusId:'addPhoneButton',
     copy:'Remove '+item.number+assigned+' from CallerCore.',
     consequences:'This removes the saved routing record'+(item.workspaceId?' and clears its workspace assignment and phone setup checklist.':'.')+' It does not release a provider-owned number or prove that live forwarding stopped. Verify provider routing separately; restoring this record requires adding it again.',
     validate:()=>adminPhoneDeletePending.has(key)||(typeof phoneSaving!=='undefined'&&phoneSaving)||JSON.stringify(adminPhoneData.find(x=>String(x.id)===key))!==snapshot?'Phone routing changed. Cancel, refresh Phone Numbers and review the removal again.':'',
@@ -4283,14 +4283,16 @@ function setAdminClientActionStatus(message='',tone=''){
   el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
 }
 async function saveAdminClient(){
-  if(!currentAdminClient||adminClientSaving||adminTechSaving)return;
+  if(!currentAdminClient||adminClientSaving||adminTechSaving)return false;
   const targetId=String(currentAdminClient.id),expectedUpdatedAt=Number(currentAdminClient.updatedAt||currentAdminClient.createdAt||0),plan=document.getElementById('adminClientPlan')?.value,status=document.getElementById('adminClientStatus')?.value;
+  const request=adminClientOpenRequest,previousStatus=String(currentAdminClient.status||'');
+  const persist=async()=>{
   setAdminClientMutationState(true);setAdminClientActionStatus('Saving workspace changes…');
   try{
     const r=await fetch('/api/account?action=admin-client-update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:targetId,plan,status,expectedUpdatedAt})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Could not update client.');
     if(data.ok!==true||!data.client||typeof data.client!=='object'||Array.isArray(data.client)||String(data.client.id||'')!==targetId||String(data.client.plan||'')!==String(plan||'')||String(data.client.status||'')!==String(status||'')||!Number.isFinite(Number(data.client.updatedAt))||Number(data.client.updatedAt)<=expectedUpdatedAt)throw new Error('Workspace update response was incomplete. Reopen this client before retrying.');
-    if(String(currentAdminClient?.id)!==targetId)return;
+    if(String(currentAdminClient?.id)!==targetId)return true;
     currentAdminClient={...currentAdminClient,...data.client};
     try{
       await Promise.all([refreshAdminCore(),loadAdminOps()]);
@@ -4299,8 +4301,19 @@ async function saveAdminClient(){
     }catch(refreshError){
       setAdminClientActionStatus('Workspace changes were saved, but the admin view could not refresh. Reopen this client to verify the latest account settings.','error');
     }
-  }catch(err){setAdminClientActionStatus(err.message||'Could not update client.','error')}
+    return true;
+  }catch(err){setAdminClientActionStatus(err.message||'Could not update client.','error');return false}
   finally{setAdminClientMutationState(false)}
+  };
+  if(status!==previousStatus&&(status==='suspended'||previousStatus==='suspended'))return openAdminActionConfirmation({
+    title:status==='suspended'?'Suspend workspace service':'Restore workspace service access',action:status==='suspended'?'Suspend service':'Restore service access',
+    copy:'Change '+(currentAdminClient.name||'this workspace')+' ('+targetId+') from '+previousStatus+' to '+status+'. Saved plan: '+plan+'.',
+    consequences:status==='suspended'?'Client service changes will be blocked; billing and support remain available. This does not cancel a Stripe subscription, revoke existing sessions, or verify that provider call handling stopped. Restore the workspace status here to recover service access.':'Client service access will follow the restored workspace status. This does not change Stripe billing or verify live provider readiness.',
+    validate:()=>!currentAdminClient||String(currentAdminClient.id)!==targetId||adminClientOpenRequest!==request||adminClientSaving||adminTechSaving||Number(currentAdminClient.updatedAt||currentAdminClient.createdAt||0)!==expectedUpdatedAt||String(currentAdminClient.status||'')!==previousStatus||document.getElementById('adminClientPlan')?.value!==plan||document.getElementById('adminClientStatus')?.value!==status?'Workspace or selected changes changed. Cancel and refresh before changing service access.':'',
+    failureMessage:()=>document.getElementById('adminClientActionStatus')?.textContent,
+    run:persist
+  });
+  return persist();
 }
 function setAdminDeleteWorkspaceStatus(message='',tone=''){
   const el=document.getElementById('adminDeleteWorkspaceStatus');if(!el)return;

@@ -27,7 +27,11 @@
         (focusable(modal)[0]||modal).focus();
       });
     }else{
-      const target=state.returnFocus;
+      let target=state.returnFocus;
+      if(!target||!target.isConnected||target.hasAttribute?.('disabled')||!isRendered(target)){
+        const fallbackId=modal.getAttribute('data-return-focus-fallback');
+        if(fallbackId)target=document.getElementById?.(fallbackId)||target;
+      }
       const successor=dialogs.find(other=>other!==modal&&isOpen(other));
       if(successor&&target&&!successor.contains(target)){
         const successorState=modalState.get(successor);
