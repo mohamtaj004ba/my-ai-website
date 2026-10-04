@@ -31,6 +31,21 @@ test('backend conversation pages append and server filters replace the visible r
   node('conversationSearch').value='Customer 1';await vm.runInContext('loadConversationPage()',ctx);assert.equal(ctx.conversationThreadsData.length,1);assert.equal(ctx.conversationPageTotal,1);assert.match(requests[1],/q=Customer\+1/);assert.equal(node('loadMoreConversations').hidden,true);
 });
 
+test('a later server page opens and hydrates a timeline absent from the initial snapshot',async()=>{
+  const initial={id:'first',name:'First customer',messages:[{text:'Initial history'}]},later={id:'later',name:'Later customer',messageCount:120,createdAt:3};
+  const requests=[],fetchJsonRetry=async url=>{requests.push(url);return url.includes('conversation-detail')?{conversation:{...later,messages:Array.from({length:120},(_,i)=>({text:'Later message '+i,at:i+1}))}}:{conversations:[later],total:2,nextCursor:null}};
+  const {ctx,node}=fixture([initial],{backend:true,fetchJsonRetry});
+  await vm.runInContext('loadConversationPage({append:true})',ctx);
+  vm.runInContext("openConversation('later')",ctx);
+  assert.equal(node('conversationName').textContent,'Later customer');assert.match(node('messageStream').innerHTML,/Loading message history/);
+  await new Promise(setImmediate);await new Promise(setImmediate);
+  assert.match(node('messageStream').innerHTML,/Showing 50 of 120 messages/);assert.match(node('messageStream').innerHTML,/Later message 119/);
+  vm.runInContext("openConversation('later',{loadEarlier:true})",ctx);
+  assert.match(node('messageStream').innerHTML,/Showing 100 of 120 messages/);
+  assert.equal(requests.filter(url=>url.includes('conversation-detail')).length,1);
+  assert.equal(ctx.conversationsData.length,1,'server pages must not fabricate the contact snapshot');
+});
+
 test('a superseded conversation query cannot replace newer filter results',async()=>{
   const pending=[],fetchJsonRetry=url=>new Promise(resolve=>pending.push({url,resolve})),all=records(),{ctx,node}=fixture(all,{backend:true,fetchJsonRetry});
   node('conversationSearch').value='old';const oldRequest=vm.runInContext('loadConversationPage()',ctx);
