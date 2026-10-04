@@ -192,3 +192,7 @@
 .public-site .final .kicker{font-size:12px}
 .public-site .site-footer p{justify-self:start}
 .public-site .footer-cta p{width:100%}
+
+/* Keep footer copy clear of the fixed assistant launcher. */
+.public-site .footer-bottom{padding-inline-end:200px}
+@media(max-width:600px){.public-site .footer-bottom{padding-inline-end:56px}}
