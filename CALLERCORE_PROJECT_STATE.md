@@ -1,6 +1,6 @@
 # CallerCore project state
 
-Latest verified implementation: **`6427c4c6c0a8fb4af395db048c1be58936999c5b`**. Phone composition and annotation refinements are verified in exact Preview. Historical milestones follow; provider/commercial launch gates remain separately restricted.
+Latest verified implementation: **`962c26cd58326d1b3f963b367e25ac22fbe5af92`**. Phone composition and annotation refinements are verified in exact Preview. Historical milestones follow; provider/commercial launch gates remain separately restricted.
 
 ## Phone composition and annotation refinements — 2026-10-04
 
@@ -10,6 +10,9 @@ Latest verified implementation: **`6427c4c6c0a8fb4af395db048c1be58936999c5b`**. 
 - **Verified implementation 6427c4c6c0a8fb4af395db048c1be58936999c5b**, tree c8d1f4c38d3bf923fc4f9a72a893e7823494a530: CallerCore CI push 37191761148 / PR 37191764977, CodeQL push 37191761126 / PR 37191764945, Jekyll 37191764957 and authenticated Preview Browser QA 37191761105 all SUCCESS.
 - Exact Preview dpl_6gGsGFTC2949LyCFrxfonjmHAufh, https://my-ai-website-f28je4u11-mohamtaj004bas-projects.vercel.app, READY with matching Git SHA and target null. Artifact 11298834308: 179 layout contracts, 128 readability contracts, 196 screenshots, zero visual/console/page/API errors. Screenshot review confirmed readable phone cards, two-column Today tiles, separated Client Care requests and the removed admin email.
 - No backend/provider/billing/permission capability changed. Existing revisions, stale-state guards, concurrency locks, atomic writes, audit and recovery behavior remain intact. PR #5 remains draft/unmerged; production and live telephony remain unchanged.
+
+- Finishing screenshot review corrected mobile Follow-ups: badges now sit above full-width customer details below 600px; mobile sidebar motion is removed and browser QA waits for its fully visible position. A regression contract rejects customer columns below 200px. Laptop behavior remains unchanged.
+- **Verified finishing implementation 962c26cd58326d1b3f963b367e25ac22fbe5af92**, tree 31157fc338f35d273b4703265305bb1454ead2e9: 1,563 tests pass; CallerCore CI push 37192570720 / PR 37192574689, CodeQL push 37192570712 / PR 37192574740, Jekyll 37192574668 and authenticated Browser QA 37192570692 all SUCCESS. Exact Preview dpl_GBqHR7NNxvzbiutLwUTp8jUaiyaz, https://my-ai-website-q01lvrt6t-mohamtaj004bas-projects.vercel.app, READY with matching SHA and target null. Artifact 11299188510: 179 layout checks, 128 readability checks, 196 screenshots; zero visual/console/page/API errors. Final phone menu and Follow-ups screenshots inspected. Prior verified phone changes remain intact.
 
 ## Client purpose, settings and Client Care refinement — 2026-10-04
 
