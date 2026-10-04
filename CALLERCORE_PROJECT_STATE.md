@@ -1,6 +1,15 @@
 # CallerCore project state
 
-Latest verified implementation: **`8d31f644c900b0a600bcee45ccf7281c6a207ed7`**. Phone dashboard refinements, website intake, branded notifications, organized Inbox and Preview owner preservation are verified. Final onboarding wording and chat focus refinements are being checked; provider/commercial launch gates remain separately restricted.
+Latest verified implementation: **`a8ca856ea711c1d581c77e332ecbcdd1a38bd153`**. Phone dashboard refinements, website handoff design/accessibility, truthful assistant setup guidance and intake synchronization are verified. Provider/commercial launch gates remain separately restricted.
+
+## Final phone handoff and setup guidance review — 2026-10-04
+
+- Website handoff now has readable 16px fields, 44px touch controls, a styled focused receipt, safely rendered saved-message warnings and Back to chat. Receipt height follows its content. Opening/reopening focuses the appropriate visible field or receipt; cancel returns focus to the handoff launcher. Duplicate submissions remain guarded. No inquiry or provider message was sent in testing; browser handoff tests intercept the save request.
+- Onboarding assistant no longer invents a same-day build, one-business-day activation, provisioned number, SMS test/check-in or successful PDF email. It distinguishes reviewed setup, verified routing/testing, explicit activation and actual delivery evidence. Public chat matches the advertised plan features and demo availability checks. Existing agreement terms, billing amounts, provider protections and backend writes are unchanged.
+- **Verified implementation a8ca856ea711c1d581c77e332ecbcdd1a38bd153**, tree 4f8004752bcea0aafe0b7b564d072fa75eec79de: 1,589 local tests pass. CallerCore CI push 37240521659 / PR 37240524300, CodeQL push 37240521611 / PR 37240524314, Jekyll 37240524298 and authenticated Preview Browser QA 37240521619 all SUCCESS. Artifact 11317915438: 50 public page/viewport views, 55 public contracts, 180 dashboard layout contracts, 128 readability contracts and 280 screenshots; zero visual, console, page or API errors. Final phone form and receipt screenshots inspected.
+- Exact Preview dpl_3RJYTF4CScKUNnoTyS5zH6ixt9r9, https://my-ai-website-m74ko8bek-mohamtaj004bas-projects.vercel.app, READY, matching SHA and target null. Browser report confirms the same immutable URL.
+- Additional direct authorized owner sign-in confirmed the actual client portal, not admin impersonation. Manual 320px review covered Today, Call log, Settings and its cancelled profile editor, Connections and Follow-ups. Website handoff open/reopen/cancel focus also checked at 320px. No workspace edits, phone calls, SMS, payments or support messages were submitted. Gmail was read only for the exact Preview sign-in link.
+- PR #5 remains draft/open/unmerged; main remains 37ef5cfcdccae35952822859f64fe83f0b9f09f0. No production deployment, billing change, live-telephony activation or destructive production action occurred. Do not equate this usability/backend review with completing the separately documented commercial/provider launch requirements.
 
 ## Phone usability and exact Preview verification — 2026-10-04
 
@@ -11,7 +20,7 @@ Latest verified implementation: **`8d31f644c900b0a600bcee45ccf7281c6a207ed7`**. 
 - **Verified implementation 8d31f644c900b0a600bcee45ccf7281c6a207ed7**, tree 76df03e9ff7da39f27dad9c02c3743790033bfed: 1,588 local tests pass. CallerCore CI push 37239603974 / PR 37239608758, CodeQL push 37239603881 / PR 37239608704, Jekyll 37239608757 and authenticated Browser QA 37239603879 all SUCCESS. Artifact 11316513412: 50 public page/viewport views, 55 public contracts, 180 dashboard layout contracts, 128 readability contracts and 279 screenshots; zero visual, console, page or API errors.
 - Exact Preview dpl_2gmRuBKH1vKEsXQMiyorRLadyVAC, https://my-ai-website-3jhsuua04-mohamtaj004bas-projects.vercel.app, READY, matching SHA and target null. Browser report confirms this same immutable URL.
 - Intermediate ca7558cb55a32505371e2770c322e8c7f17482ed is **not verified**: Browser QA 37238958167 waited for the intentionally hidden phone navigation to be visible. Its artifact confirms the dashboard loaded; readiness now checks attached navigation and a visible active dashboard, then explicitly opens the menu. All other gates passed; corrected full run above passed.
-- PR #5 remains draft/open/unmerged. Main remains 37ef5cfcdccae35952822859f64fe83f0b9f09f0. Production, billing and live telephony remain unchanged. Final onboarding assistant wording and handoff open/reopen focus changes are pending the next exact candidate verification.
+- PR #5 remains draft/open/unmerged. Main remains 37ef5cfcdccae35952822859f64fe83f0b9f09f0. Production, billing and live telephony remain unchanged. The subsequent onboarding assistant wording and handoff open/reopen focus changes are verified in a8ca856ea711c1d581c77e332ecbcdd1a38bd153 above.
 
 ## Website intake and dashboard synchronization — 2026-10-04
 
