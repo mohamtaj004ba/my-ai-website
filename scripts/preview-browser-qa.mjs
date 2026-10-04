@@ -157,6 +157,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
       mainBox:box(main),
       overlappingHeaderControls:controls.some((a,i)=>controls.slice(i+1).some(b=>a.x<b.right-1&&a.right>b.x+1&&a.y<b.bottom-1&&a.bottom>b.y+1)),
       spillingCallBadges:[...document.querySelectorAll('.view.active .call-row.data :is(.call-type-pill,.team-status-pill,.disposition-pill)')].filter(el=>{const r=el.getBoundingClientRect(),p=el.parentElement.getBoundingClientRect();return r.width>0&&p.width>0&&(r.left<p.left-1||r.right>p.right+1)}).map(el=>el.textContent),
+      squeezedPhoneFollowups:window.innerWidth<=600?[...document.querySelectorAll('.view.active .followup-customer')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.width<200}).map(el=>el.textContent):[],
       brokenPhoneRecords:window.innerWidth<=600&&document.body.dataset.dashboard==='client'?[...document.querySelectorAll('.view.active .call-row.data,.view.active .contact-row.data')].filter(el=>{const r=el.getBoundingClientRect(),children=[...el.children];return r.width>window.innerWidth-24||children.slice(0,2).some(c=>getComputedStyle(c).display==='none')||(el.classList.contains('call-row')&&getComputedStyle(children[3]).display==='none')}).map(el=>el.getAttribute('aria-label')):[],
       clippedIntelligenceLabel:(()=>{const button=document.getElementById('adminAiLaunch');return !!button&&button.scrollWidth>button.clientWidth+2})(),
       renderedClosedDrawers:[...document.querySelectorAll('.call-drawer:not(.open)')].filter(el=>el.getBoundingClientRect().width>0).map(el=>el.id),
@@ -171,6 +172,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
   if(!state.activeView)throw new Error(label+' has no active dashboard view');
   if(state.overlappingHeaderControls)throw new Error(label+' header controls overlap');
   if(state.spillingCallBadges.length)throw new Error(label+' call labels spill into adjacent columns: '+state.spillingCallBadges.join(', '));
+  if(state.squeezedPhoneFollowups.length)throw new Error(label+' squeezes follow-up customer details');
   if(state.brokenPhoneRecords.length)throw new Error(label+' hides key phone record details or overflows card: '+JSON.stringify(state.brokenPhoneRecords));
   if(state.clippedIntelligenceLabel)throw new Error(label+' Core Intelligence label spills outside its control');
   if(state.renderedClosedDrawers.length)throw new Error(label+' leaves closed drawer controls rendered: '+state.renderedClosedDrawers.join(', '));
@@ -1162,6 +1164,7 @@ async function runResponsive(kind,viewport,name){
       await menu.waitFor({state:'visible',timeout:5000});
       await menu.click();
       if(!(await page.locator('.sidebar').evaluate(el=>el.classList.contains('open'))))throw new Error(kind+' '+name+' mobile menu did not open sidebar');
+      await page.waitForFunction(()=>Math.abs(document.querySelector('.sidebar').getBoundingClientRect().left)<1);
       await shot(page,kind+'-'+name+'-menu',{fullPage:false});
       await ensureView(page,kind==='admin'?'clients':'calls');
       await assertLayout(page,kind+'-'+name+'-secondary',{allowHorizontalOverflow:false});
