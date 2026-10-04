@@ -68,3 +68,16 @@ test('disconnect endpoint requires displayed account identity and reports concur
   res=response();await ctx.adminGmailDisconnect({body:{expectedGmailEmail:'Shown@Test.Example'}},res);assert.equal(res.code,409);
   assert.deepEqual(Array.from(calls[0]),['admin@test.example','shown@test.example']);assert.match(res.body.error,/Changed account/);
 });
+
+test('thread cache keys isolate Gmail accounts even when provider thread identifiers match',()=>{
+  const f=fixture(),first=vm.runInContext("threadCacheKey('Admin@test.example','same-thread','one@test.example')",f.ctx),second=vm.runInContext("threadCacheKey('admin@test.example','same-thread','two@test.example')",f.ctx);
+  assert.notEqual(first,second);assert.match(first,/^gmail:thread:v2:/);
+  assert.equal(first,vm.runInContext("threadCacheKey('admin@test.example','same-thread','ONE@test.example')",f.ctx));
+});
+
+test('expected account mismatch rejects token access before contacting the provider',async()=>{
+  const f=fixture();await f.api.saveConnection('admin@test.example',{refresh_token:'refresh'},{email:'new@test.example'});
+  let contacted=false;f.ctx.fetch=async()=>{contacted=true;throw Error('Unexpected provider call')};
+  await assert.rejects(vm.runInContext("accessToken('admin@test.example','old@test.example')",f.ctx),/account changed/);
+  assert.equal(contacted,false);
+});

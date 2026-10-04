@@ -44,6 +44,22 @@ test('status response from before confirmed disconnect cannot reconnect or resto
     assert.equal(f.ctx.adminInboxData.loading,false);assert.equal(f.refresh.disabled,false);
   }
 });
+
+test('verified Gmail account change discards previous account inbox, detail and aliases before cache refill',async()=>{
+  const f=fixture();f.ctx.adminInboxData.gmailStatus={connected:true,gmailEmail:'old@example.test'};f.ctx.currentInboxItem={kind:'gmail',id:'original'};
+  f.ctx.fetch=async url=>({ok:true,json:async()=>url.includes('admin-gmail-status')?{connected:true,gmailEmail:'new@example.test'}:url.includes('admin-gmail-inbox')?{emptyCache:true,threads:[]}:{aliases:[]}});
+  await f.run();assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);assert.equal(f.ctx.adminInboxData.aliases.length,0);
+  assert.equal(f.ctx.currentInboxItem,null);assert.equal(f.ctx.adminInboxData.lastSync,0);assert.equal(f.ctx.adminInboxData.connectionRevision,1);
+  assert.ok(f.renders.includes('thread'));assert.equal(f.liveCalls.length,1);
+});
+
+test('cached inbox JSON completing after disconnect cannot repopulate the retained account',async()=>{
+  const f=fixture();let resolve,startedResolve;const held=new Promise(ok=>{resolve=ok}),started=new Promise(ok=>{startedResolve=ok});
+  f.ctx.fetch=async url=>({ok:true,json:async()=>{if(url.includes('admin-gmail-status'))return {connected:true};if(url.includes('admin-gmail-inbox')){startedResolve();return held}return {aliases:[]}}});
+  const pending=f.run();await started;f.ctx.adminInboxData.connectionRevision=1;f.ctx.adminInboxData.gmailStatus={connected:false};f.ctx.adminInboxData.gmail={threads:[]};
+  resolve({threads:[{id:'old-account'}]});assert.equal(await pending,false);assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
+  assert.equal(f.liveCalls.length,0);assert.equal(f.ctx.adminInboxData.loading,false);assert.equal(f.refresh.disabled,false);
+});
 for(const failure of ['network','malformed']){
   test('cached alias '+failure+' does not prevent cached Gmail threads or live refresh',async()=>{
     const f=fixture({cachedAliases:failure});await f.run();

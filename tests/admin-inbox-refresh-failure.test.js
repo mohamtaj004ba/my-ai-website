@@ -47,6 +47,17 @@ test('successful retry clears stale warning and updates thread snapshot',async()
   assert.equal(f.refresh.disabled,false);
 });
 
+test('late live refresh and error from an earlier account cannot overwrite a newly connected account',async()=>{
+  for(const failure of [false,true]){
+    let resolve,reject;const held=new Promise((ok,no)=>{resolve=ok;reject=no});const f=fixture();f.ctx.fetch=async()=>held;
+    f.ctx.adminInboxData.gmailStatus={connected:true,gmailEmail:'old@example.test'};const pending=f.run();
+    f.ctx.adminInboxData.connectionRevision=1;f.ctx.adminInboxData.gmailStatus={connected:true,gmailEmail:'new@example.test'};f.ctx.adminInboxData.gmail={threads:[{id:'new-account'}]};
+    if(failure)reject(Error('Old request failed'));else resolve({ok:true,json:async()=>({threads:[{id:'old-account'}]})});
+    await pending;assert.equal(f.ctx.adminInboxData.gmail.threads[0].id,'new-account');assert.equal(f.ctx.adminInboxData.liveError,'');
+    assert.equal(f.errors.length,0);assert.equal(f.refresh.disabled,false);
+  }
+});
+
 test('pending live Gmail response cannot repopulate inbox after confirmed disconnect',async()=>{
   let resolve;
   const pending=new Promise(ok=>resolve=ok);

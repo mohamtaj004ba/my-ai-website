@@ -2548,7 +2548,7 @@ async function deleteCompanyDocument(){
 }
 async function loadAdminInbox({silent=false,force=false}={}){
   if(adminInboxData.loading)return false;
-  const connectionRevision=Number(adminInboxData.connectionRevision||0);
+  let connectionRevision=Number(adminInboxData.connectionRevision||0);
   adminInboxData.loading=true;
   const refresh=document.getElementById('inboxRefreshButton'),auto=document.getElementById('inboxAutoStatus');
   if(refresh&&!silent){refresh.disabled=true;refresh.textContent='Syncing…'}
@@ -2557,7 +2557,15 @@ async function loadAdminInbox({silent=false,force=false}={}){
     let statusVerified=false;
     if(sr.ok){const status=await sr.json().catch(()=>null);
       if(connectionRevision!==Number(adminInboxData.connectionRevision||0)){adminInboxData.loading=false;if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}return false}
-      if(status&&typeof status==='object'&&!Array.isArray(status)&&typeof status.connected==='boolean'){adminInboxData.gmailStatus=status;statusVerified=true}}
+      if(status&&typeof status==='object'&&!Array.isArray(status)&&typeof status.connected==='boolean'){
+        const previous=adminInboxData.gmailStatus||{},accountChanged=previous.connected!==status.connected||String(previous.gmailEmail||'').trim().toLowerCase()!==String(status.gmailEmail||'').trim().toLowerCase();
+        if(accountChanged){
+          connectionRevision=Number(adminInboxData.connectionRevision||0)+1;adminInboxData.connectionRevision=connectionRevision;
+          adminSearchInboxRequest++;adminSearchInboxCacheLoaded=false;adminSearchInboxLoading=false;adminSearchInboxCacheError=false;
+          adminInboxData.gmail={threads:[],analytics:{}};adminInboxData.aliases=[];adminInboxData.lastSync=0;adminInboxData.liveError='';adminInboxData.aliasError='';adminInboxData.readError='';
+          if(currentInboxItem?.kind==='gmail'){currentInboxItem=null;renderInboxThread()}
+        }
+        adminInboxData.gmailStatus=status;statusVerified=true}}
     if(connectionRevision!==Number(adminInboxData.connectionRevision||0)){adminInboxData.loading=false;if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}return false}
     adminInboxData.connectionStatusError=statusVerified?'':'Gmail connection status could not be verified. Refresh before changing its connection.';
     if(!adminInboxData.gmailStatus.connected){
@@ -2583,9 +2591,12 @@ async function loadAdminInbox({silent=false,force=false}={}){
       if(adminInboxData.gmailStatus?.connected===false){adminInboxData.loading=false;return}
       if(cachedInbox.ok){
         const d=await cachedInbox.json().catch(()=>({}));
+        if(adminInboxData.gmailStatus?.connected===false||connectionRevision!==Number(adminInboxData.connectionRevision||0)){adminInboxData.loading=false;if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}return false}
         if(!d.emptyCache&&Array.isArray(d.threads)){adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||0);adminInboxData.liveError=String(d.warning||'').slice(0,160)}
       }
-      if(cachedAliases.ok){const d=await cachedAliases.json().catch(()=>({}));if(Array.isArray(d.aliases)&&d.aliases.length)adminInboxData.aliases=d.aliases}
+      if(cachedAliases.ok){const d=await cachedAliases.json().catch(()=>({}));
+        if(adminInboxData.gmailStatus?.connected===false||connectionRevision!==Number(adminInboxData.connectionRevision||0)){adminInboxData.loading=false;if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}return false}
+        if(Array.isArray(d.aliases)&&d.aliases.length)adminInboxData.aliases=d.aliases}
       renderAdminInbox();
       if(auto)auto.textContent='Updating in background…'+(adminInboxData.lastSync?' · last '+new Date(adminInboxData.lastSync).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'');
     }else if(auto)auto.textContent='Syncing with Gmail…';
@@ -2602,37 +2613,38 @@ async function loadAdminInbox({silent=false,force=false}={}){
 }
 async function refreshAdminInboxLive({silent=true,force=false}={}){
   if(adminInboxData.liveLoading)return;
+  const connectionRevision=Number(adminInboxData.connectionRevision||0);
   adminInboxData.liveLoading=true;
   const refresh=document.getElementById('inboxRefreshButton'),auto=document.getElementById('inboxAutoStatus');
   if(refresh&&!silent){refresh.disabled=true;refresh.textContent='Syncing…'}
   if(auto)auto.textContent='Syncing with Gmail…';
   try{
     const gr=await fetch('/api/account?action=admin-gmail-inbox&limit=25'+(force?'&force=1':''),{headers:{Accept:'application/json'},cache:'no-store'});
-    if(adminInboxData.gmailStatus?.connected===false)return;
+    if(adminInboxData.gmailStatus?.connected===false||connectionRevision!==Number(adminInboxData.connectionRevision||0))return;
     if(!gr.ok)throw new Error('Gmail inbox unavailable');
     const d=await gr.json();
-    if(adminInboxData.gmailStatus?.connected===false)return;
+    if(adminInboxData.gmailStatus?.connected===false||connectionRevision!==Number(adminInboxData.connectionRevision||0))return;
     if(!d||!Array.isArray(d.threads))throw new Error('Incomplete Gmail inbox');
     adminInboxData.gmail=d;adminInboxData.lastSync=Number(d.syncedAt||adminInboxData.lastSync||Date.now());
     adminInboxData.liveError=String(d.warning||(d.stale===true?'Gmail refresh failed':'')).slice(0,160);
     if(d.stale!==true)adminInboxData.readError='';
     const ar=await fetch('/api/account?action=admin-gmail-aliases',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false}));
-    if(adminInboxData.gmailStatus?.connected===false)return;
+    if(adminInboxData.gmailStatus?.connected===false||connectionRevision!==Number(adminInboxData.connectionRevision||0))return;
     if(ar.ok){
       const aliasPayload=await ar.json().catch(()=>null);
-      if(adminInboxData.gmailStatus?.connected===false)return;
+      if(adminInboxData.gmailStatus?.connected===false||connectionRevision!==Number(adminInboxData.connectionRevision||0))return;
       if(aliasPayload&&Array.isArray(aliasPayload.aliases)){
         adminInboxData.aliases=aliasPayload.aliases;
         adminInboxData.aliasError=aliasPayload.stale===true?'Gmail sender aliases could not refresh; cached From addresses are shown.':'';
       }else adminInboxData.aliasError='Gmail sender aliases could not be verified; previously loaded From addresses are shown.';
     }else adminInboxData.aliasError='Gmail sender aliases could not refresh; previously loaded From addresses are shown.';
-    if(adminInboxData.gmailStatus?.connected===false)return;
+    if(adminInboxData.gmailStatus?.connected===false||connectionRevision!==Number(adminInboxData.connectionRevision||0))return;
     renderAdminInbox();
     if(currentInboxItem?.kind==='gmail'){
       const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===currentInboxItem.id);
       if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]};renderInboxThread()}
     }
-  }catch(e){if(adminInboxData.gmailStatus?.connected!==false){adminInboxData.liveError='Gmail refresh failed';console.error('Live Gmail sync failed',e);renderAdminInbox()}}
+  }catch(e){if(adminInboxData.gmailStatus?.connected!==false&&connectionRevision===Number(adminInboxData.connectionRevision||0)){adminInboxData.liveError='Gmail refresh failed';console.error('Live Gmail sync failed',e);renderAdminInbox()}}
   finally{
     adminInboxData.liveLoading=false;
     if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}

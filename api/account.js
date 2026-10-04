@@ -1682,6 +1682,7 @@ async function validatedGmailFrom(adminEmail,requested=''){
 
 function validGmailConnection(value,adminEmail=''){
   if(!value||typeof value!=='object'||Array.isArray(value)||!String(value.refreshTokenEnc||''))return false;
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value.gmailEmail||'').trim()))return false;
   const storedAdmin=cleanEmail(value.adminEmail||''),expectedAdmin=cleanEmail(adminEmail||'');
   return !storedAdmin||!expectedAdmin||storedAdmin===expectedAdmin;
 }
@@ -1736,7 +1737,10 @@ async function adminGmailDisconnect(req,res){
 async function adminGmailInbox(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   if(!gmailConfigReady())return res.status(200).json({configured:false,connected:false,threads:[],analytics:{}});
-  const hash=crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex'),cacheKey='gmail:inbox:'+hash,summaryKey='gmail:summary:'+hash;
+  const conn=await getGmailConnection(admin.email);
+  if(!conn)return res.status(200).json({configured:true,connected:false,threads:[],analytics:{}});
+  if(!validGmailConnection(conn,admin.email))return res.status(503).json({error:'Gmail connection state is unavailable. Previously verified inbox data should be preserved.'});
+  const hash=crypto.createHash('sha256').update(JSON.stringify([String(admin.email||'').trim().toLowerCase(),String(conn.gmailEmail||'').trim().toLowerCase()])).digest('hex'),cacheKey='gmail:inbox:v2:'+hash,summaryKey='gmail:summary:v2:'+hash;
   const rawCached=await kv.get(cacheKey),cachedValid=validGmailInboxPayload(rawCached,{cached:true}),cached=cachedValid?rawCached:null,force=String(req.query?.force||'')==='1';
   if(String(req.query?.cached||'')==='1'){
     if(rawCached!=null&&!cachedValid)return res.status(503).json({error:'Cached Gmail inbox is unavailable. Previously verified inbox data should be preserved.'});
@@ -1747,7 +1751,7 @@ async function adminGmailInbox(req,res){
   }
   try{
     const data=await listGmailInbox(admin.email,{maxResults:Math.min(25,Math.max(1,Number(req.query?.limit||25))),query:String(req.query?.q||'newer_than:30d').slice(0,200)});
-    if(!validGmailInboxPayload(data))throw new Error('Gmail inbox provider response was incomplete');
+    if(!validGmailInboxPayload(data)||String(data.gmailEmail||'').trim().toLowerCase()!==String(conn.gmailEmail||'').trim().toLowerCase())throw new Error('Gmail inbox provider response was incomplete or its account changed');
     let growthLinkWarning='';
     for(const t of data.threads||[]){
       const inbound=(t.messages||[]).find(m=>m.direction==='inbound'),sender=inbound?.from||'';
@@ -1778,7 +1782,7 @@ async function adminGmailAliases(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const conn=await getGmailConnection(admin.email);if(!conn)return res.status(200).json({connected:false,aliases:[]});
   if(!validGmailConnection(conn,admin.email))return res.status(503).json({error:'Gmail connection state is unavailable. Previously verified sender aliases should be preserved.'});
-  const hash=crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex'),cacheKey='gmail:aliases:'+hash;
+  const hash=crypto.createHash('sha256').update(JSON.stringify([String(admin.email||'').trim().toLowerCase(),String(conn.gmailEmail||'').trim().toLowerCase()])).digest('hex'),cacheKey='gmail:aliases:v2:'+hash;
   const aliasCache=await kv.get(cacheKey),parsedCache=parseGmailAliasCache(aliasCache),cachedAliases=parsedCache.aliases,aliasCachedAt=parsedCache.cachedAt,force=String(req.query?.force||'')==='1';
   if(String(req.query?.cached||'')==='1'){
     if(!parsedCache.valid)return res.status(503).json({error:'Cached Gmail sender aliases are unavailable. Previously verified aliases should be preserved.'});
@@ -1790,6 +1794,8 @@ async function adminGmailAliases(req,res){
   try{
     const aliases=await listGmailAliases(admin.email);
     if(!validGmailAliases(aliases))throw new Error('Gmail alias provider response was incomplete');
+    const currentConnection=await getGmailConnection(admin.email);
+    if(String(currentConnection?.gmailEmail||'').trim().toLowerCase()!==String(conn.gmailEmail||'').trim().toLowerCase())throw new Error('Gmail account changed during alias synchronization');
     await kv.set(cacheKey,{aliases,cachedAt:Date.now()},{ex:60*60*24*7});
     return res.status(200).json({connected:true,gmailEmail:conn.gmailEmail||'',aliases,cached:false});
   }catch(err){
@@ -2952,7 +2958,7 @@ async function buildAdminNotifications(admin){
   if(gmailConn){
     if(typeof gmailConn!=='object'||Array.isArray(gmailConn))gmailSummaryUnavailable=true;
     else try{
-      const summaryKey='gmail:summary:'+crypto.createHash('sha256').update(String(admin.email||'').toLowerCase()).digest('hex');
+      const summaryKey='gmail:summary:v2:'+crypto.createHash('sha256').update(JSON.stringify([String(admin.email||'').trim().toLowerCase(),String(gmailConn.gmailEmail||'').trim().toLowerCase()])).digest('hex');
       const cached=await kv.get(summaryKey),unread=Number(cached?.analytics?.unread),syncedAt=Number(cached?.syncedAt),
         cachedValid=!!cached&&typeof cached==='object'&&!Array.isArray(cached)&&!!cached.analytics&&typeof cached.analytics==='object'&&!Array.isArray(cached.analytics)&&Number.isSafeInteger(unread)&&unread>=0&&Number.isFinite(syncedAt)&&syncedAt>0;
       if(!cachedValid)gmailSummaryUnavailable=true;
