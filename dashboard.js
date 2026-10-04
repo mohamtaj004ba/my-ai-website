@@ -3575,20 +3575,24 @@ function renderFinanceChart(shellId,tooltipId){
   const shell=document.getElementById(shellId);if(!shell)return;
   const rows=(adminFinanceData.history||[]).slice(-adminFinanceRange),tooltip=document.getElementById(tooltipId),hasEstimates=rows.some(r=>r.source==='preview_reconstruction');
   if(!rows.length){shell.innerHTML='<div class="empty-state"><h3>No finance history yet</h3><p>Monthly snapshots will appear automatically.</p></div>';return}
-  const w=920,h=300,left=52,right=20,top=22,bottom=45,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...rows.flatMap(r=>[Number(r.revenue||0),Number(r.expenses||0)])),step=rows.length>1?plotW/(rows.length-1):plotW;
+  const w=Math.max(320,Math.round(shell.clientWidth||920)),h=300,left=58,right=32,top=22,bottom=45,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...rows.flatMap(r=>[Number(r.revenue||0),Number(r.expenses||0)])),step=rows.length>1?plotW/(rows.length-1):plotW;
   const x=i=>left+(rows.length===1?plotW/2:i*step),y=v=>top+plotH-(Number(v||0)/max)*plotH;
   const revenuePoints=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.revenue).toFixed(1)).join(' '),expensePoints=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.expenses).toFixed(1)).join(' ');
   const grid=[0,.25,.5,.75,1].map(p=>{const val=max*p,yy=y(val);return '<g><line x1="'+left+'" x2="'+(w-right)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'"></line><text x="'+(left-9)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end">'+esc(val>=1000?'$'+(val/1000).toFixed(val>=10000?0:1)+'k':'$'+Math.round(val))+'</text></g>'}).join('');
-  const labels=rows.map((r,i)=>'<text x="'+x(i).toFixed(1)+'" y="'+(h-14)+'" text-anchor="middle">'+esc(financeMonthLabel(r.month))+'</text>').join('');
+  const labelEvery=Math.max(1,Math.ceil(rows.length/Math.max(3,Math.floor(plotW/85))));
+  const labels=rows.map((r,i)=>i%labelEvery===0||i===rows.length-1?'<text x="'+x(i).toFixed(1)+'" y="'+(h-14)+'" text-anchor="middle">'+esc(financeMonthLabel(r.month))+'</text>':'').join('');
   const revenueDots=rows.map((r,i)=>'<circle class="finance-dot revenue" cx="'+x(i).toFixed(1)+'" cy="'+y(r.revenue).toFixed(1)+'" r="4"></circle>').join('');
   const expenseDots=rows.map((r,i)=>'<circle class="finance-dot expense" cx="'+x(i).toFixed(1)+'" cy="'+y(r.expenses).toFixed(1)+'" r="4"></circle>').join('');
   const hitWidth=Math.max(30,plotW/Math.max(1,rows.length));
-  const hits=rows.map((r,i)=>'<rect class="finance-hit" data-finance-index="'+i+'" x="'+(x(i)-hitWidth/2).toFixed(1)+'" y="'+top+'" width="'+hitWidth.toFixed(1)+'" height="'+plotH+'" fill="transparent"></rect>').join('');
-  shell.innerHTML=(hasEstimates?'<div class="finance-estimate-notice" role="note">Preview estimate: earlier months are reconstructed, not recorded invoices or verified historic revenue.</div>':'')+'<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Monthly revenue and company expenses"><g class="admin-chart-grid">'+grid+'</g><polyline class="finance-line revenue" points="'+revenuePoints+'"></polyline><polyline class="finance-line expense" points="'+expensePoints+'"></polyline><g>'+revenueDots+expenseDots+'</g><g class="admin-chart-labels">'+labels+'</g><g>'+hits+'</g></svg>'+(tooltip?'<div class="admin-chart-tooltip" id="'+tooltipId+'"></div>':'');
+  const hits=rows.map((r,i)=>'<rect class="finance-hit" data-finance-index="'+i+'" role="button" tabindex="0" aria-label="'+esc(financeMonthLabel(r.month)+(r.source==='preview_reconstruction'?' estimated':'')+': MRR '+financeMoney(r.revenue)+', expenses '+financeMoney(r.expenses))+'" x="'+(x(i)-hitWidth/2).toFixed(1)+'" y="'+top+'" width="'+hitWidth.toFixed(1)+'" height="'+plotH+'" fill="transparent"></rect>').join('');
+  shell.innerHTML=(hasEstimates?'<div class="finance-estimate-notice" role="note">Preview estimate: earlier months are reconstructed, not recorded invoices or verified historic revenue.</div>':'')+'<svg viewBox="0 0 '+w+' '+h+'" role="group" aria-label="Monthly revenue and company expenses"><g class="admin-chart-grid">'+grid+'</g><polyline class="finance-line revenue" points="'+revenuePoints+'"></polyline><polyline class="finance-line expense" points="'+expensePoints+'"></polyline><g>'+revenueDots+expenseDots+'</g><g class="admin-chart-labels">'+labels+'</g><g>'+hits+'</g></svg>'+(tooltip?'<div class="admin-chart-tooltip" id="'+tooltipId+'"></div>':'');
   const tip=document.getElementById(tooltipId);
   shell.querySelectorAll('[data-finance-index]').forEach(hit=>{
     const show=()=>{const i=Number(hit.dataset.financeIndex),r=rows[i];if(!tip||!r)return;tip.hidden=false;tip.innerHTML='<b>'+esc(financeMonthLabel(r.month))+(r.source==='preview_reconstruction'?' · estimated':'')+'</b><span>MRR <strong>'+financeMoney(r.revenue)+'</strong></span><span>Expenses <strong>'+financeMoney(r.expenses)+'</strong></span><span>Net run-rate <strong>'+financeMoney(Number(r.revenue||0)-Number(r.expenses||0))+'</strong></span>';tip.style.left=Math.min(88,Math.max(8,(x(i)/w)*100))+'%';tip.style.top='18px'};
-    hit.addEventListener('mouseenter',show);hit.addEventListener('mousemove',show);hit.addEventListener('mouseleave',()=>{if(tip)tip.hidden=true});
+    const hide=()=>{if(tip)tip.hidden=true};
+    hit.addEventListener('mouseenter',show);hit.addEventListener('mousemove',show);hit.addEventListener('mouseleave',hide);
+    hit.addEventListener('focus',show);hit.addEventListener('blur',hide);hit.addEventListener('click',e=>{e.stopPropagation();show()});
+    hit.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();show()}else if(e.key==='Escape'){e.stopPropagation();hide()}});
   });
 }
 function renderAdminFinance(){
