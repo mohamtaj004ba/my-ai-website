@@ -49,7 +49,7 @@ test('authenticated launch dashboard keeps deferred SMS and calendar capabilitie
   assert.doesNotMatch(dashHtml,/value="appointment_booked"/);
   assert.doesNotMatch(dashHtml,/value="send_confirmation"/);
   assert.match(dashHtml,/SMS alerts · coming later/);
-  assert.match(dashHtml,/Google Calendar<\/b><p>Calendar booking is planned for a later release/);
+  assert.match(dashHtml,/Google Calendar<\/h3><p>Calendar booking is planned for a later release/);
   assert.doesNotMatch(dashJs,/Unlimited minutes|unlimited plan/i);
 });
 

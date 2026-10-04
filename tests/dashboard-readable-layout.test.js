@@ -14,3 +14,10 @@ test('analytics locations decode provider-encoded spaces and unicode while malfo
   assert.equal(context.displayAnalyticsLocation('100% local'),'100% local');
   assert.equal(context.displayAnalyticsLocation('San%2520Jose'),'San%20Jose','decode once rather than recursively interpreting stored data');
 });
+
+test('admin sticky table offsets also follow the rendered topbar height',()=>{
+ const values=[],context=vm.createContext({document:{querySelector:()=>({getBoundingClientRect:()=>({height:73.4})}),documentElement:{style:{setProperty:(name,value)=>values.push([name,value])}}}});
+ vm.runInContext(js.slice(js.indexOf('function syncAdminViewOffset('),js.indexOf('function displayAnalyticsLocation(')),context);
+ context.syncAdminViewOffset({getBoundingClientRect:()=>({height:94.6})});
+ assert.deepEqual(values,[['--admin-view-offset','95px'],['--dashboard-topbar-height','74px']]);
+});
