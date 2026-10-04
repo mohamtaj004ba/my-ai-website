@@ -1122,6 +1122,17 @@ async function runResponsive(kind,viewport,name){
         for(const verify of [assertLayout,assertReadableCopy]){
           try{await verify(page,kind+'-'+name+'-'+view)}catch(error){report.visualFailures.push(String(error?.message||error))}
         }
+        if(kind==='admin'&&(view==='overview'||view==='finance')){
+          const chart=page.locator(view==='overview'?'#adminFinanceChart':'#financePageChart');
+          const months=chart.locator('[data-finance-index]');
+          for(const month of [months.first(),months.last()]){
+            await month.press('Enter');
+            const tip=chart.locator('.admin-chart-tooltip');await tip.waitFor({state:'visible'});
+            const bounds=await tip.boundingBox(),shellBounds=await chart.boundingBox();
+            if(!bounds||!shellBounds||bounds.x<shellBounds.x-1||bounds.x+bounds.width>shellBounds.x+shellBounds.width+1)report.visualFailures.push(kind+'-'+name+'-'+view+' finance tooltip clips exact values');
+            await month.press('Escape');await tip.waitFor({state:'hidden'});
+          }
+        }
         await shot(page,kind+'-'+name+'-'+view);
       }
     }

@@ -1353,7 +1353,7 @@ body[data-dashboard="admin"] .notification-item{min-height:72px}
 .finance-dot{stroke:#fff;stroke-width:2}
 .finance-dot.revenue{fill:#c85d35}.finance-dot.expense{fill:#527466}
 .finance-hit{cursor:crosshair;pointer-events:all}
-.admin-chart-tooltip{position:absolute;z-index:4;transform:translateX(-50%);min-width:150px;padding:10px 12px;border:1px solid #dfe4e7;border-radius:10px;background:rgba(255,255,255,.97);box-shadow:0 12px 30px rgba(27,32,36,.13);pointer-events:none}
+.admin-chart-tooltip{position:absolute;z-index:4;transform:translateX(-50%);box-sizing:border-box;min-width:150px;width:max-content;max-width:calc(100% - 16px);padding:10px 12px;border:1px solid #dfe4e7;border-radius:10px;background:rgba(255,255,255,.97);box-shadow:0 12px 30px rgba(27,32,36,.13);pointer-events:none}
 .admin-chart-tooltip b{display:block;margin-bottom:6px;font-size:var(--text-label)}
 .admin-chart-tooltip span{display:flex;justify-content:space-between;gap:14px;margin-top:4px;color:#707a82;font-size:var(--text-body)}
 .admin-chart-tooltip strong{color:#30383e}

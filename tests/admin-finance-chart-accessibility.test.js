@@ -46,3 +46,15 @@ test('hidden finance charts rebuild for the measured width when their view becom
   shell.clientWidth=792;resized();assert.match(shell.innerHTML,/viewBox="0 0 792 300"/);
   assert.equal(observers,1,'rerendering must not accumulate observers');
 });
+
+test('first and last finance month details fit inside compact chart edges',()=>{
+  for(const width of [240,314,792]){
+    const tip={hidden:true,innerHTML:'',offsetWidth:210,style:{}},handlers=[];
+    const hits=[0,5].map((i,n)=>({dataset:{financeIndex:String(i)},addEventListener:(event,fn)=>{if(event==='focus')handlers[n]=fn}}));
+    const shell={clientWidth:width,innerHTML:'',querySelectorAll:()=>hits};
+    const context=vm.createContext({document:{getElementById:id=>id==='chart'?shell:tip},adminFinanceRange:6,adminFinanceData:{history:Array.from({length:6},(_,i)=>({month:'2026-'+i,revenue:8688,expenses:0}))},esc:String,financeMonthLabel:x=>x,financeMoney:x=>'$'+x});
+    vm.runInContext(source.slice(source.indexOf('function renderFinanceChart('),source.indexOf('function renderAdminFinance(')),context);
+    vm.runInContext("renderFinanceChart('chart','tip')",context);
+    for(const show of handlers){show();const center=parseFloat(tip.style.left);assert.ok(center-105>=8);assert.ok(center+105<=width-8);assert.match(tip.innerHTML,/\$8688/)}
+  }
+});
