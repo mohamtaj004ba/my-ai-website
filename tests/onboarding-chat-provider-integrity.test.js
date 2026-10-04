@@ -4,10 +4,11 @@ const fs=require('node:fs');
 
 const src=fs.readFileSync('api/onboarding-chat.js','utf8');
 
-test('onboarding chat verifies Anthropic response structure before returning text',()=>{
-  assert.match(src,/!parsed\|\|typeof parsed!=='object'\|\|Array\.isArray\(parsed\)\|\|!Array\.isArray\(parsed\.content\)/);
-  assert.match(src,/parsed\.content\.find\(item=>item&&item\.type==='text'/);
-  assert.match(src,/Anthropic onboarding response did not contain verified text/);
+test('onboarding chat verifies OpenAI response structure before returning text',()=>{
+  assert.match(src,/!parsed\|\|typeof parsed!=='object'\|\|Array\.isArray\(parsed\)\|\|!Array\.isArray\(parsed\.output\)/);
+  assert.match(src,/parsed\.output\.flatMap/);
+  assert.match(src,/item\.type==='output_text'/);
+  assert.match(src,/OpenAI onboarding response did not contain verified text/);
   assert.match(src,/res\.status\(502\)\.json\(\{ error: 'Assistant response unavailable' \}\)/);
 });
 

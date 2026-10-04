@@ -216,3 +216,9 @@
 .public-site .cc-chat-handoff-success strong{font-size:20px;line-height:1.3}
 .public-site .cc-chat-handoff-success small{font-size:14px;line-height:1.5}
 .public-site .cc-chat-handoff-success p{margin:0;padding:12px;border-radius:10px;background:#fff3df;color:#734914;font-size:14px;line-height:1.5}
+
+/* Display headings retain Manrope; reading text uses the system's humanist face. */
+.public-site{font-family:Arial,Helvetica,ui-sans-serif,system-ui,sans-serif;font-weight:400}
+.public-site :is(h1,h2,h3,h4,.brand){font-family:Manrope,ui-sans-serif,system-ui,sans-serif}
+.public-site :is(p,input,textarea,select){font-weight:400}
+.public-site :is(input,textarea,select,button){font-family:inherit}

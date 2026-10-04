@@ -4,11 +4,12 @@ const fs=require('node:fs');
 
 const src=fs.readFileSync('api/prefill-crawl.js','utf8');
 
-test('prefill crawl verifies Anthropic response structure before parsing extracted fields',()=>{
-  assert.match(src,/!p\|\|typeof p!=='object'\|\|Array\.isArray\(p\)\|\|!Array\.isArray\(p\.content\)/);
-  assert.match(src,/p\.content\.find\(x=>x&&x\.type==='text'/);
-  assert.match(src,/anthropic_response_empty/);
-  assert.match(src,/anthropic_payload_unverified/);
+test('prefill crawl verifies OpenAI response structure before parsing extracted fields',()=>{
+  assert.match(src,/!p\|\|typeof p!=='object'\|\|Array\.isArray\(p\)\|\|!Array\.isArray\(p\.output\)/);
+  assert.match(src,/p\.output\.flatMap/);
+  assert.match(src,/x\.type==='output_text'/);
+  assert.match(src,/openai_response_empty/);
+  assert.match(src,/openai_payload_unverified/);
 });
 
 test('prefill crawl fails closed on malformed onboarding storage and confirms scan persistence',()=>{

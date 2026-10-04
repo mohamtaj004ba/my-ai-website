@@ -127,7 +127,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Cache-Control', 'no-store');
   const rl=await rateLimit({scope:'onboarding-chat',identifier:requestIp(req),limit:40,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ error: 'Too many requests' })}
-  if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Assistant unavailable' });
+  if (!process.env.OPENAI_API_KEY) return res.status(503).json({ error: 'Assistant unavailable' });
 
   const { context } = req.body || {};
   const safeMessages = sanitizeMessages(req.body && req.body.messages);
@@ -153,21 +153,20 @@ module.exports = async function handler(req, res) {
   }
 
   const body = JSON.stringify({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 600,
-    system: SYSTEM_PROMPT + contextLine,
-    messages: safeMessages,
+    model: 'gpt-5.4-mini-2026-03-17',
+    max_output_tokens: 600,
+    store:false, instructions: SYSTEM_PROMPT + contextLine,
+    input: safeMessages,
   });
 
   const options = {
-    hostname: 'api.anthropic.com',
-    path: '/v1/messages',
+    hostname: 'api.openai.com',
+    path: '/v1/responses',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Content-Length': Buffer.byteLength(body),
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
+      'Authorization': 'Bearer '+process.env.OPENAI_API_KEY
     },
   };
 
@@ -178,19 +177,20 @@ module.exports = async function handler(req, res) {
       apiRes.on('end', () => {
         try {
           if (apiRes.statusCode !== 200) {
-            console.error('Anthropic API error:', upstreamCode(data));
+            console.error('OpenAI API error:', upstreamCode(data));
             res.status(502).json({ error: 'Upstream API error' });
             return resolve();
           }
           const parsed = JSON.parse(data);
-          if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)||!Array.isArray(parsed.content))
-            throw new Error('Anthropic onboarding response could not be verified');
-          const reply=String(parsed.content.find(item=>item&&item.type==='text'&&typeof item.text==='string')?.text||'').trim();
-          if(!reply)throw new Error('Anthropic onboarding response did not contain verified text');
+          if(parsed?.status!=='completed'||parsed?.error)throw new Error('OpenAI onboarding response was not completed');
+          if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)||!Array.isArray(parsed.output))
+            throw new Error('OpenAI onboarding response could not be verified');
+          const reply=String(parsed.output.flatMap(item=>Array.isArray(item?.content)?item.content:[]).find(item=>item&&item.type==='output_text'&&typeof item.text==='string')?.text||'').trim();
+          if(!reply)throw new Error('OpenAI onboarding response did not contain verified text');
           res.status(200).json({ reply });
           resolve();
         } catch (err) {
-          console.error('Anthropic onboarding response validation failed:', safeError(err));
+          console.error('OpenAI onboarding response validation failed:', safeError(err));
           res.status(502).json({ error: 'Assistant response unavailable' });
           resolve();
         }
@@ -201,6 +201,7 @@ module.exports = async function handler(req, res) {
       res.status(500).json({ error: 'Request failed' });
       resolve();
     });
+    apiReq.setTimeout?.(20000,()=>apiReq.destroy(new Error('Assistant timeout')));
     apiReq.write(body);
     apiReq.end();
   });

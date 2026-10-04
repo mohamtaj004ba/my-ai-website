@@ -31,14 +31,14 @@
     <span class="account-copy"><b id="profileDisplayName">CallerCore User</b><small id="profileEmail"></small></span>
     <span class="account-caret">⌄</span>
   </button>
-  <div class="account-panel" id="accountPanel" hidden>
-    <div class="account-panel-head"><span class="eyebrow">Your profile</span><b>Account appearance</b></div>
+  <div class="account-panel" id="accountPanel" data-editing="false" hidden>
+    <div class="account-panel-head"><span class="eyebrow">Your profile</span><b>Your account</b></div>
     <div class="profile-editor">
       <span class="profile-avatar profile-avatar-large"><span id="profileInitialsLarge">CC</span><img id="profileAvatarImageLarge" alt="" hidden></span>
-      <div class="profile-photo-actions"><button type="button" id="profilePhotoButton">Change photo</button><button type="button" id="profilePhotoRemove">Remove</button><input id="profilePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>
+      <div class="profile-summary"><strong id="profileSummaryName"></strong><span id="profileSummaryEmail"></span><button type="button" id="profileEditButton">Edit profile</button></div><div class="profile-photo-actions"><button type="button" id="profilePhotoButton">Change photo</button><button type="button" id="profilePhotoRemove">Remove</button><input id="profilePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" hidden></div>
     </div>
     <label class="profile-name-field">Display name<input id="profileNameInput" maxlength="80" autocomplete="name" aria-describedby="profileSaveStatus"></label>
-    <div class="account-panel-actions"><small id="profileSaveStatus" role="status" aria-live="polite" aria-atomic="true"></small><button type="button" class="primary" id="profileSaveButton">Save profile</button></div><button type="button" class="profile-panel-signout" id="profilePanelLogout">↪ Sign out of CallerCore</button>
+    <div class="account-panel-actions"><small id="profileSaveStatus" role="status" aria-live="polite" aria-atomic="true"></small><button type="button" id="profileCancelButton">Cancel</button><button type="button" class="primary" id="profileSaveButton">Save profile</button></div><button type="button" class="profile-panel-signout" id="profilePanelLogout">↪ Sign out of CallerCore</button>
   </div>
 </div>
 </div></header>

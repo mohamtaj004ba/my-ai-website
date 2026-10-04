@@ -14,7 +14,7 @@ test('client live refresh reapplies plan usage billing and entitlements without 
   assert.match(dashboard,/if\(data\.workspace&&typeof data\.workspace==='object'\)/);
   assert.match(dashboard,/sessionWorkspace=\{\.\.\.\(sessionWorkspace\|\|\{\}\),\.\.\.data\.workspace\}/);
   assert.match(dashboard,/const planChanged=currentPlan!==previousPlan,billingChanged=/);
-  assert.match(dashboard,/if\(planChanged\)\{renderStages\(\);renderOverviewUnlocks\(\);renderEntitledApps\(\)\}/);
+  assert.match(dashboard,/if\(planChanged\)\{renderStages\(\);renderOverviewUnlocks\(\);renderEntitledApps\(\);initClientIntelligence\(\)\}/);
   assert.match(dashboard,/if\(billingChanged\)\{renderBilling\(\);renderBillingConnection\(\);renderPlanStrip\(\)\}/);
 });
 

@@ -2814,3 +2814,26 @@ body[data-dashboard="admin"] .top-actions>*:not(.admin-search-shell){flex-shrink
 }
 
 @media(max-width:760px){.sidebar:not(.open){visibility:hidden}.sidebar.open{visibility:visible}}
+
+/* Separate reading copy from the established display face across both portals. */
+body{font-family:Arial,Helvetica,ui-sans-serif,system-ui,sans-serif;font-weight:400}
+h1,h2,h3,h4,.dash-brand,.metric-grid strong{font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+.view p,.drawer p,.modal p,.account-copy small,.view td,.view input,.view textarea,.view select{font-weight:400}
+.eyebrow,.nav-label,.drawer-meta small,.followup-status-select>span{font-weight:650;letter-spacing:.055em}
+.team-status-pill.red{background:#fff0f0;border:1px solid #f0bbbb;color:#a82e2e}
+.account-panel[data-editing="false"] :is(.profile-photo-actions,.profile-name-field,#profileSaveButton,#profileCancelButton){display:none}
+.account-panel[data-editing="true"] .profile-summary{display:none}
+.profile-summary{min-width:0;display:grid;gap:4px;flex:1}
+.profile-summary strong{font-size:18px;line-height:1.3;overflow-wrap:anywhere}
+.profile-summary span{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.profile-summary button{justify-self:start;margin-top:10px;min-height:44px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 14px;font-weight:600}
+#profileCancelButton{min-height:44px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 14px}
+.intelligence-proposal{margin-top:18px;padding:18px;border:1px solid #ddc0b2;border-radius:14px;background:#fffaf7}
+.intelligence-proposal h3{font-size:18px;line-height:1.4;margin:8px 0 16px}
+.intelligence-proposal p{white-space:pre-wrap;overflow-wrap:anywhere;margin:4px 0 14px;line-height:1.6}
+.intelligence-proposal-buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.intelligence-proposal button{min-height:44px}
+body[data-dashboard="client"] .admin-ai-panel{grid-template-rows:auto minmax(0,1fr) auto}
+.admin-ai-panel:not(.open){visibility:hidden}
+@media(max-width:760px){body[data-dashboard="client"] #adminAiLaunch{padding:8px;font-size:13px;min-height:44px}.intelligence-proposal-buttons button{flex:1}}
+.account-panel[data-editing="false"] .profile-editor{align-items:center;margin-bottom:8px}

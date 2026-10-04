@@ -185,7 +185,7 @@ function formatCoreIntelligenceAnswer(raw){
 function renderAdminAiConversation({thinking=false,error=''}={}){
   const conversation=document.getElementById('adminAiConversation'),copy=document.getElementById('adminAiCopy'),fresh=document.getElementById('adminAiNew');if(!conversation)return;
   if(!adminAiHistory.length&&!thinking&&!error){
-    conversation.innerHTML='<div class="admin-ai-welcome"><span>✦</span><b>Operational help, grounded in CallerCore.</b><p>I can summarize what is happening, explain dashboard data, find priorities, and draft reports. I will say when the available snapshot does not contain the answer.</p></div>';
+    conversation.innerHTML='<div class="admin-ai-welcome"><span>✦</span><b>Operational help, grounded in CallerCore.</b><p>Ask about your records or request a supported change. You can review each proposed action before applying it. I’ll say when the available records do not contain the answer.</p></div>';
   }else{
     conversation.innerHTML=adminAiHistory.map(m=>m.role==='user'
       ?'<div class="admin-ai-question"><span>You</span><p>'+esc(m.content)+'</p></div>'
@@ -197,6 +197,7 @@ function renderAdminAiConversation({thinking=false,error=''}={}){
   requestAnimationFrame(()=>{conversation.scrollTop=conversation.scrollHeight});
 }
 async function askAdminAi(question){
+  if(document.getElementById('adminAiSend')?.disabled)return;
   const status=document.getElementById('adminAiStatus'),send=document.getElementById('adminAiSend'),input=document.getElementById('adminAiInput'),q=String(question||'').trim();if(!q)return;
   const priorHistory=adminAiHistory.slice(-8);
   if(input)input.value='';
@@ -204,12 +205,14 @@ async function askAdminAi(question){
   if(send){send.disabled=true;send.textContent='Thinking…'}if(status)status.textContent='Reading the latest admin snapshot…';
   renderAdminAiConversation({thinking:true});
   try{
-    const r=await fetch('/api/account?action=admin-ai-guide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,history:priorHistory,snapshot:adminAiSnapshot()})}),data=await r.json().catch(()=>({}));
+    const isClient=document.body.dataset.dashboard==='client';
+    const r=await fetch('/api/account?action='+(isClient?'client-ai-guide':'admin-ai-guide'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,history:priorHistory,...(!isClient?{snapshot:adminAiSnapshot()}:{})})}),data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'Core Intelligence unavailable');
     adminAiLastAnswer=String(data.answer||'');
     adminAiHistory.push({role:'assistant',content:adminAiLastAnswer});adminAiHistory=adminAiHistory.slice(-10);
     renderAdminAiConversation();
-    if(status)status.textContent='Generated from the latest loaded admin snapshot.';
+    renderIntelligenceProposal(data.proposal);
+    if(status)status.textContent='Generated from available records. Review proposed changes before applying.';
   }catch(err){
     adminAiLastAnswer='';renderAdminAiConversation({error:err.message||'Core Intelligence unavailable'});if(status)status.textContent='';
   }finally{if(send){send.disabled=false;send.textContent='Send'}}
@@ -223,6 +226,31 @@ document.getElementById('adminAiInput')?.addEventListener('keydown',e=>{if(e.key
 document.getElementById('adminAiCopy')?.addEventListener('click',async()=>{if(!adminAiLastAnswer)return;try{await navigator.clipboard.writeText(adminAiLastAnswer);const b=document.getElementById('adminAiCopy');b.textContent='Copied';setTimeout(()=>b.textContent='Copy answer',1200)}catch{}});
 document.getElementById('adminAiNew')?.addEventListener('click',()=>{adminAiHistory=[];adminAiLastAnswer='';const s=document.getElementById('adminAiStatus');if(s)s.textContent='';renderAdminAiConversation();document.getElementById('adminAiInput')?.focus()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('adminAiPanel')?.classList.contains('open'))closeAdminAiGuide()});
+
+function renderIntelligenceProposal(proposal){
+  document.getElementById('intelligenceProposal')?.remove();
+  if(!proposal?.id)return;
+  const host=document.getElementById('adminAiConversation');if(!host)return;
+  const card=document.createElement('section');card.id='intelligenceProposal';card.className='intelligence-proposal';
+  card.innerHTML='<span class="eyebrow">Proposed action · not saved</span><h3>'+esc(proposal.description)+'</h3>'+(proposal.before?'<div><small>Current</small><p>'+esc(proposal.before)+'</p></div>':'')+'<div><small>Proposed</small><p>'+esc(proposal.after)+'</p></div><small class="intelligence-apply-status" role="status" aria-live="polite"></small><div class="intelligence-proposal-buttons"><button type="button" class="secondary-btn" data-cancel>Dismiss proposal</button><button type="button" class="primary" data-apply>Apply action</button></div>';
+  host.append(card);card.querySelector('[data-cancel]').addEventListener('click',()=>card.remove());
+  card.querySelector('[data-apply]').addEventListener('click',async()=>{
+    const buttons=card.querySelectorAll('button'),feedback=card.querySelector('[role=status]');buttons.forEach(b=>b.disabled=true);feedback.textContent='Applying…';
+    try{
+      const r=await fetch('/api/account?action=intelligence-apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:proposal.id})}),data=await r.json().catch(()=>({}));
+      if(!r.ok||data.ok!==true)throw new Error(data.error||'Could not confirm this action. Refresh the affected record before retrying.');
+      feedback.textContent=data.warning?'Saved. '+data.warning:'Saved successfully.';card.querySelector('.intelligence-proposal-buttons').remove();card.querySelector('.eyebrow').textContent='Action saved';
+      try{if(document.body.dataset.dashboard==='client')await loadOperations();else await refreshAdminView(document.querySelector('.view.active')?.id.replace('view-','')||'overview',{force:true})}catch{feedback.textContent+=' The dashboard could not refresh; reload to see the saved change.'}
+    }catch(err){feedback.textContent=err.message||'Could not confirm the action. Refresh before retrying.';card.querySelector('[data-cancel]').disabled=false;}
+  });
+  card.scrollIntoView({block:'nearest'});
+}
+function initClientIntelligence(){
+  const launch=document.getElementById('adminAiLaunch');if(document.body.dataset.dashboard!=='client'||!launch)return;
+  launch.hidden=currentPlan!=='Pro'||document.body.classList.contains('admin-client-view');
+  if(launch.hidden)closeAdminAiGuide();
+  renderAdminAiConversation();
+}
 
 function showView(name){
   if(agentSaving||settingsSaving||phoneSaving)return;
@@ -422,7 +450,7 @@ function applyClientDashboardData(data={}){
     document.querySelectorAll('[data-business-name]').forEach(el=>el.textContent=name);
     const avatar=document.querySelector('.avatar');if(avatar&&name!==previousName)avatar.textContent=name.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
     const planChanged=currentPlan!==previousPlan,billingChanged=planChanged||String(sessionWorkspace?.subscriptionStatus||'')!==previousSubscription||String(sessionWorkspace?.status||'')!==previousStatus||nextUsage!==previousUsage||!!sessionWorkspace?.stripe?.customerLinked!==previousStripeCustomer||!!sessionWorkspace?.stripe?.subscriptionLinked!==previousStripeSubscription;
-    if(planChanged){renderStages();renderOverviewUnlocks();renderEntitledApps()}
+    if(planChanged){renderStages();renderOverviewUnlocks();renderEntitledApps();initClientIntelligence()}
     if(billingChanged){renderBilling();renderBillingConnection();renderPlanStrip()}
     renderWorkspaceAccessState();
   }
@@ -613,7 +641,7 @@ function renderOverview(){
   const wrap=document.getElementById('overviewActivity');
   if(wrap){
     const recent=[...callsData].sort((a,b)=>recordTime(b)-recordTime(a)).slice(0,6);
-    wrap.innerHTML=recent.length?recent.map(x=>{const initials=String(x.caller||'?').split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase()||'?',team=TEAM_STATUS_META[teamStatusForCall(x)]||TEAM_STATUS_META.no_action,disposition=callDispositionMeta(x),needs=teamStatusActive(x),label=needs?team.label:disposition.label,stateClass=needs?'activity-pending':callResolvedByAi(x)?'activity-resolved':'activity-neutral';return '<button class="activity-row overview-call-row '+stateClass+'" data-call-id="'+esc(x.id)+'"><span class="time">'+esc(formatFullDateTime(x))+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.caller||'Unknown caller')+'</strong><small>'+esc(x.reason||'Call activity')+'</small></span></div><span class="tag '+(needs?'amber':callResolvedByAi(x)?'green':'')+'">'+esc(label)+'</span><strong>'+esc(x.duration||'—')+'</strong></button>'}).join(''):'<div class="empty-state"><h3>No activity yet</h3><p>Calls will appear here as CallerCore starts answering traffic.</p></div>';
+    wrap.innerHTML=recent.length?recent.map(x=>{const initials=String(x.caller||'?').split(/\s+/).slice(0,2).map(s=>s[0]||'').join('').toUpperCase()||'?',team=TEAM_STATUS_META[teamStatusForCall(x)]||TEAM_STATUS_META.no_action,disposition=callDispositionMeta(x),needs=teamStatusActive(x),label=needs?team.label:disposition.label,stateClass=needs?'activity-pending':callResolvedByAi(x)?'activity-resolved':'activity-neutral';return '<button class="activity-row overview-call-row '+stateClass+'" data-call-id="'+esc(x.id)+'"><span class="time">'+esc(formatFullDateTime(x))+'</span><div class="person"><b>'+esc(initials)+'</b><span><strong>'+esc(x.caller||'Unknown caller')+'</strong><small>'+esc(x.reason||'Call activity')+'</small></span></div><span class="tag '+(needs?'red':callResolvedByAi(x)?'green':'')+'">'+esc(label)+'</span><strong>'+esc(x.duration||'—')+'</strong></button>'}).join(''):'<div class="empty-state"><h3>No activity yet</h3><p>Calls will appear here as CallerCore starts answering traffic.</p></div>';
     wrap.querySelectorAll('[data-call-id]').forEach(row=>row.addEventListener('click',()=>openCall(row.dataset.callId)));
   }
 }
@@ -729,7 +757,7 @@ async function openCall(id){
   activeNoteEditId='';resetNoteComposer();renderCallNotes(x.id);
   const when=document.getElementById('drawerWhen');if(when)when.textContent=formatFullDateTime(x);
   const disposition=callDispositionMeta(x),team=TEAM_STATUS_META[teamStatusForCall(x)]||TEAM_STATUS_META.no_action;
-  document.getElementById('drawerMeta').innerHTML=[['Phone',x.phone],['Duration',x.duration],['Call disposition',disposition.label],['Follow-up status',team.label],['Answered by',x.agent||'Maya']].filter(([,v])=>v).map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('');
+  document.getElementById('drawerMeta').innerHTML=[['Phone',x.phone],['Duration',x.duration],['Call disposition',disposition.label],['Follow-up status',team.label]].filter(([,v])=>v).map(([k,v])=>'<span><small>'+esc(k)+'</small><b>'+esc(v)+'</b></span>').join('');
   const classification=document.getElementById('drawerClassification');if(classification)classification.innerHTML='<span class="call-type-pill large">'+esc(x.category||'General question')+'</span><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(disposition.label)+'</span><span class="team-status-pill '+team.tone+'">'+esc(team.label)+'</span>';
   const explain=document.getElementById('drawerStatusExplainer');if(explain)explain.innerHTML='<b>What CallerCore did</b><span>'+esc(disposition.copy)+'</span>'+(followupState[String(x.id)]?.completionReason?'<b>Follow-up outcome</b><span>'+esc(String(followupState[String(x.id)].completionReason).replaceAll('_',' ')+(followupState[String(x.id)].completionNote?' · '+followupState[String(x.id)].completionNote:''))+'</span>':'');
   const addr=document.getElementById('drawerAddress');if(addr)addr.textContent=x.address||contactForRecord(x)?.address||'No address was captured on this call.';
@@ -754,8 +782,8 @@ const CALL_DISPOSITIONS={
 };
 const TEAM_STATUS_META={
   no_action:{label:'No action needed',tone:'gray'},
-  needs_action:{label:'To do',tone:'amber'},
-  in_progress:{label:'In progress',tone:'blue'},
+  needs_action:{label:'Pending',tone:'red'},
+  in_progress:{label:'Pending',tone:'red'},
   completed:{label:'Completed',tone:'green'},
   dismissed:{label:'Dismissed',tone:'gray'}
 };
@@ -820,7 +848,7 @@ async function loadFollowupState(){
 function followupIsHandled(call){return teamStatusClosed(call)}
 function updateFollowupCounts(){
   const all=followupCandidates(),active=all.filter(teamStatusActive),urgent=active.filter(x=>followupType(x)==='urgent'),inProgress=active.filter(x=>teamStatusForCall(x)==='in_progress'),completedToday=all.filter(x=>{const st=followupState[String(x.id)];return normalizedTeamStatusValue(st?.status)==='completed'&&sameLocalDay(Number(st?.updatedAt||0))});
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};set('followupOpenCount',active.filter(x=>teamStatusForCall(x)==='needs_action').length);set('followupUrgentCount',urgent.length);set('followupCallbackCount',inProgress.length);set('followupHandledCount',completedToday.length);
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};set('followupOpenCount',active.length);set('followupUrgentCount',urgent.length);set('followupCallbackCount',all.filter(x=>teamStatusForCall(x)==='dismissed').length);set('followupHandledCount',completedToday.length);
   const nav=document.getElementById('followupNavCount');if(nav){nav.textContent=active.length>99?'99+':active.length;nav.hidden=active.length===0}
   const overview=document.getElementById('overviewFollowup');if(overview)overview.textContent=active.length;
 }
@@ -835,11 +863,12 @@ function renderLeads(){
   });
   board.innerHTML=rows.map(x=>{
     const type=followupType(x),status=teamStatusForCall(x),phone=String(x.phone||''),digits=phone.replace(/\D/g,''),closed=['completed','dismissed'].includes(status),meta=callDispositionMeta(x),st=TEAM_STATUS_META[status]||TEAM_STATUS_META.needs_action;
-    return '<article class="followup-card '+(type==='urgent'?'urgent':'')+' '+(closed?'completed':'')+'"><div class="followup-main"><div class="followup-badge '+type+'">'+esc(followupLabel(type))+'</div><div class="followup-customer"><button class="customer-link" data-contact-key="'+esc(contactKey(x))+'"><b>'+esc(x.caller||'Unknown caller')+'</b></button><span>'+esc(phone||'No phone')+' · '+esc(formatFullDateTime(x))+'</span><p>'+esc(x.reason||'Call requires review')+'</p><div class="followup-status-line"><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(meta.label)+'</span><span class="team-status-pill '+st.tone+'">'+esc(st.label)+'</span></div></div></div><div class="followup-actions"><div class="followup-contact-actions">'+(digits?'<a class="secondary-btn action-link followup-quick-action" href="tel:'+digits+'"><span aria-hidden="true">☎</span> Call</a><a class="secondary-btn action-link followup-quick-action" href="sms:'+digits+'"><span aria-hidden="true">✉</span> Text</a>':'')+'<button class="followup-view-call" data-call-id="'+esc(x.id)+'">View call →</button></div><label class="followup-status-select"><span>Follow-up status</span><select data-team-status="'+esc(x.id)+'" '+(followupMutationPending.has(String(x.id))?'disabled aria-busy="true"':'')+'><option value="needs_action" '+(status==='needs_action'?'selected':'')+'>To do</option><option value="in_progress" '+(status==='in_progress'?'selected':'')+'>In progress</option><option value="completed" '+(status==='completed'?'selected':'')+'>Completed</option><option value="dismissed" '+(status==='dismissed'?'selected':'')+'>Dismissed</option></select></label></div></article>';
+    return '<article class="followup-card '+(type==='urgent'?'urgent':'')+' '+(closed?'completed':'')+'"><div class="followup-main"><div class="followup-badge '+type+'">'+esc(followupLabel(type))+'</div><div class="followup-customer"><button class="customer-link" data-contact-key="'+esc(contactKey(x))+'"><b>'+esc(x.caller||'Unknown caller')+'</b></button><span>'+esc(phone||'No phone')+' · '+esc(formatFullDateTime(x))+'</span><p>'+esc(x.reason||'Call requires review')+'</p><div class="followup-status-line"><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(meta.label)+'</span><span class="team-status-pill '+st.tone+'">'+esc(st.label)+'</span></div></div></div><div class="followup-actions"><div class="followup-contact-actions">'+(digits?'<a class="secondary-btn action-link followup-quick-action" href="tel:'+digits+'"><span aria-hidden="true">☎</span> Call</a><a class="secondary-btn action-link followup-quick-action" href="sms:'+digits+'"><span aria-hidden="true">✉</span> Text</a>':'')+'<button class="followup-view-call" data-call-id="'+esc(x.id)+'">View call →</button></div><label class="followup-status-select"><span>Follow-up status</span><select data-team-status="'+esc(x.id)+'" '+(followupMutationPending.has(String(x.id))?'disabled aria-busy="true"':'')+'><option value="needs_action" '+(['needs_action','in_progress'].includes(status)?'selected':'')+' disabled>Pending</option><option value="completed" '+(status==='completed'?'selected':'')+'>Completed</option><option value="dismissed" '+(status==='dismissed'?'selected':'')+'>Dismissed</option></select></label>'+(closed?'<button type="button" class="secondary-btn" data-reopen-followup="'+esc(x.id)+'" '+(followupMutationPending.has(String(x.id))||document.body.classList.contains('admin-client-view')?'disabled':'')+'>Reopen follow-up</button>':'')+'</div></article>';
   }).join('');
   document.getElementById('leadsEmpty').hidden=rows.length!==0;updateFollowupCounts();
   board.querySelectorAll('[data-contact-key]').forEach(b=>b.addEventListener('click',()=>openContact(b.dataset.contactKey)));
   board.querySelectorAll('[data-call-id]').forEach(b=>b.addEventListener('click',()=>openCall(b.dataset.callId)));
+  board.querySelectorAll('[data-reopen-followup]').forEach(btn=>btn.addEventListener('click',()=>requestTeamStatusChange(btn.dataset.reopenFollowup,'needs_action')));
   board.querySelectorAll('[data-team-status]').forEach(sel=>{if(document.body?.classList?.contains('admin-client-view')){sel.disabled=true;sel.title='Read-only admin view. Follow-up status can be changed from the client account.'}sel.addEventListener('change',()=>requestTeamStatusChange(sel.dataset.teamStatus,sel.value))});
 }
 async function persistTeamStatus(id,status,{completionReason='',completionNote=''}={}){
@@ -860,7 +889,7 @@ async function persistTeamStatus(id,status,{completionReason='',completionNote='
 function requestTeamStatusChange(id,status){
   if(document.body?.classList?.contains('admin-client-view'))return false;
   if(followupMutationPending.has(String(id)))return false;
-  if(status==='completed'){pendingTeamStatusCallId=String(id);const modal=document.getElementById('teamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther'),wrap=document.getElementById('teamCompletionOtherWrap'),statusEl=document.getElementById('teamStatusModalStatus'),call=callsData.find(c=>String(c.id)===String(id)),listSelect=[...document.querySelectorAll('[data-team-status]')].find(el=>String(el.dataset.teamStatus)===String(id));if(reason)reason.value='';if(other)other.value='';if(wrap)wrap.hidden=true;if(statusEl){statusEl.textContent='';statusEl.className='form-status-line'}if(call&&listSelect)listSelect.value=teamStatusForCall(call);if(call&&activeCallId===String(id))syncDrawerTeamStatus(call);if(modal){const context=document.getElementById('teamStatusCallContext');if(context)context.textContent=call?(call.caller||'Unknown caller')+' · '+(call.reason||'Team follow-up'):'';const drawer=document.getElementById('callDrawer');if(drawer?.classList.contains('open'))drawer.inert=true;modal.classList.add('open');modal.setAttribute('aria-hidden','false');modal.setAttribute('aria-busy','false')}return}
+  if(status==='completed'){pendingTeamStatusCallId=String(id);const modal=document.getElementById('teamStatusModal'),reason=document.getElementById('teamCompletionReason'),other=document.getElementById('teamCompletionOther'),wrap=document.getElementById('teamCompletionOtherWrap'),statusEl=document.getElementById('teamStatusModalStatus'),call=callsData.find(c=>String(c.id)===String(id)),listSelect=[...document.querySelectorAll('[data-team-status]')].find(el=>String(el.dataset.teamStatus)===String(id));if(reason)reason.value='';if(other)other.value='';if(wrap)wrap.hidden=true;if(statusEl){statusEl.textContent='';statusEl.className='form-status-line'}if(call&&listSelect)listSelect.value=teamStatusForCall(call)==='in_progress'?'needs_action':teamStatusForCall(call);if(call&&activeCallId===String(id))syncDrawerTeamStatus(call);if(modal){const context=document.getElementById('teamStatusCallContext');if(context)context.textContent=call?(call.caller||'Unknown caller')+' · '+(call.reason||'Team follow-up'):'';const drawer=document.getElementById('callDrawer');if(drawer?.classList.contains('open'))drawer.inert=true;modal.classList.add('open');modal.setAttribute('aria-hidden','false');modal.setAttribute('aria-busy','false')}return}
   persistTeamStatus(String(id),status);
 }
 function setTeamStatusModalPending(pending){
@@ -874,9 +903,10 @@ async function saveTeamStatusCompletion(){
   finally{setTeamStatusModalPending(false)}
 }
 function syncDrawerTeamStatus(call){
-  const key=String(call.id||''),status=teamStatusForCall(call),pending=followupMutationPending.has(key),select=document.getElementById('drawerTeamStatus'),button=document.getElementById('drawerFollowupButton');if(select){select.value=status;select.disabled=pending||document.body?.classList?.contains('admin-client-view');select.title=document.body?.classList?.contains('admin-client-view')?'Read-only admin view. Follow-up status can be changed from the client account.':'';select.setAttribute('aria-busy',String(pending))}if(button){button.dataset.callId=key;button.textContent=pending?'Updating…':'Update status';button.disabled=pending||document.body?.classList?.contains('admin-client-view');button.setAttribute('aria-busy',String(pending))}
+  const key=String(call.id||''),status=teamStatusForCall(call),pending=followupMutationPending.has(key),select=document.getElementById('drawerTeamStatus'),button=document.getElementById('drawerFollowupButton');if(select){select.value=status==='in_progress'?'needs_action':status;select.disabled=pending||document.body?.classList?.contains('admin-client-view');select.title=document.body?.classList?.contains('admin-client-view')?'Read-only admin view. Follow-up status can be changed from the client account.':'';select.setAttribute('aria-busy',String(pending))}const reopen=document.getElementById('drawerReopenFollowup');if(reopen){reopen.hidden=!['completed','dismissed'].includes(status);reopen.disabled=pending||document.body.classList.contains('admin-client-view')}if(button){button.dataset.callId=key;button.textContent=pending?'Updating…':'Update status';button.disabled=pending||document.body?.classList?.contains('admin-client-view');button.setAttribute('aria-busy',String(pending))}
 }
 
+document.getElementById('drawerReopenFollowup')?.addEventListener('click',()=>requestTeamStatusChange(activeCallId,'needs_action'));
 function normalizedCallNotes(id){
   const state=followupState[String(id)]||{},notes=Array.isArray(state.notes)?state.notes.slice():[];
   if(state.note&&String(state.note).trim()&&!notes.some(n=>n&&n.text===state.note))notes.unshift({id:'legacy',text:String(state.note),at:Number(state.updatedAt||0),by:state.updatedBy||''});
@@ -1155,8 +1185,7 @@ function contactInlineCallHtml(call){
   const details=[
     ['Call disposition',disposition.label],
     ['Follow-up status',team.label],
-    ['Duration',call.duration||'—'],
-    ['Answered by',call.agent||'Maya']
+    ['Duration',call.duration||'—']
   ];
   return '<div class="contact-inline-call-grid">'+details.map(([k,v])=>'<div><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>').join('')+'</div>'
     +(call.address?'<div class="contact-inline-block"><span>Location</span><p>'+esc(call.address)+'</p></div>':'')
@@ -4655,6 +4684,7 @@ function renderUserProfile(){
   const p=currentUserProfile,initials=profileInitials(p.displayName,p.email);
   const name=document.getElementById('profileDisplayName'),email=document.getElementById('profileEmail'),input=document.getElementById('profileNameInput');
   if(name)name.textContent=p.displayName;if(email)email.textContent=p.email;if(input&&!input.matches(':focus'))input.value=p.displayName;
+  const summary=document.getElementById('profileSummaryName'),summaryEmail=document.getElementById('profileSummaryEmail');if(summary)summary.textContent=p.displayName;if(summaryEmail)summaryEmail.textContent=p.email;
   for(const id of ['profileInitials','profileInitialsLarge']){const el=document.getElementById(id);if(el)el.textContent=initials}
   for(const id of ['profileAvatarImage','profileAvatarImageLarge']){
     const img=document.getElementById(id),initial=img?.previousElementSibling;if(!img)continue;
@@ -4673,10 +4703,23 @@ async function resizeProfilePhoto(file){
   ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
   return canvas.toDataURL('image/jpeg',.84);
 }
-let profileSaving=false;
+let profileSaving=false,profileEditing=false,profileEditSnapshot=null,profilePhotoRequest=0;
+function setProfileEditing(editing,{restore=false}={}){
+  if(profileSaving)return false;
+  if(editing&&!profileEditing)profileEditSnapshot={...currentUserProfile};
+  if(restore&&profileEditSnapshot)currentUserProfile={...profileEditSnapshot};
+  profileEditing=!!editing;profilePhotoRequest++;
+  if(!profileEditing)profileEditSnapshot=null;
+  const panel=document.getElementById('accountPanel');if(panel)panel.dataset.editing=String(profileEditing);
+  for(const id of ['profileNameInput','profilePhotoButton','profilePhotoRemove','profileSaveButton','profilePhotoInput']){const el=document.getElementById(id);if(el)el.disabled=!profileEditing}
+  renderUserProfile();
+  const summary=document.getElementById('profileSummaryName'),summaryEmail=document.getElementById('profileSummaryEmail');if(summary)summary.textContent=currentUserProfile.displayName;if(summaryEmail)summaryEmail.textContent=currentUserProfile.email;
+  if(editing)document.getElementById('profileNameInput')?.focus();
+  return true;
+}
 function setProfileSaving(pending){
   profileSaving=!!pending;
-  for(const id of ['profileNameInput','profilePhotoButton','profilePhotoRemove','profileSaveButton','profilePhotoInput']){const el=document.getElementById(id);if(el){el.disabled=profileSaving;el.setAttribute('aria-busy',String(profileSaving))}}
+  for(const id of ['profileNameInput','profilePhotoButton','profilePhotoRemove','profileSaveButton','profilePhotoInput']){const el=document.getElementById(id);if(el){el.disabled=profileSaving||!profileEditing;el.setAttribute('aria-busy',String(profileSaving))}}
   const btn=document.getElementById('profileSaveButton');if(btn)btn.textContent=profileSaving?'Saving…':'Save profile';
 }
 async function saveProfile(){
@@ -4689,7 +4732,7 @@ async function saveProfile(){
     if(data.ok!==true||!confirmed||typeof confirmed!=='object'||Array.isArray(confirmed)||String(confirmed.displayName||'')!==displayName||String(confirmed.avatarDataUrl||'')!==avatarDataUrl||!Number.isFinite(Number(confirmed.updatedAt))||Number(confirmed.updatedAt)<=Number(currentUserProfile.updatedAt||0))throw new Error('Profile response was incomplete. Your current profile was preserved.');
     currentUserProfile={...currentUserProfile,...confirmed};renderUserProfile();if(status){status.textContent='Saved.';status.className='success'}return true;
   }catch(err){if(status){status.textContent=err.message||'Could not save profile';status.className='error'}return false}
-  finally{setProfileSaving(false)}
+  finally{setProfileSaving(false);if(status?.className==='success')setProfileEditing(false)}
 }
 function closeTopbarPopovers(except=''){
   const items=[['profile','accountPanel','accountButton'],['notifications','notificationPanel','notificationBell'],['help','helpPanel','helpButton']];
@@ -4703,16 +4746,19 @@ function closeTopbarPopovers(except=''){
 function initProfileControls(){
   const button=document.getElementById('accountButton'),panel=document.getElementById('accountPanel'),photoInput=document.getElementById('profilePhotoInput');
   if(!button||!panel)return;renderUserProfile();
-  button.addEventListener('click',e=>{e.stopPropagation();const opening=!!panel.hidden;if(opening)closeTopbarPopovers('profile');panel.hidden=!opening;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){resetSurfaceScroll(panel);document.getElementById('profileNameInput')?.focus()}});
+  button.addEventListener('click',e=>{e.stopPropagation();const opening=!!panel.hidden;if(opening)closeTopbarPopovers('profile');panel.hidden=!opening;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){setProfileEditing(false,{restore:true});resetSurfaceScroll(panel);document.getElementById('profileEditButton')?.focus()}});
   panel.addEventListener('click',e=>e.stopPropagation());
-  document.getElementById('profilePhotoButton')?.addEventListener('click',()=>{if(!profileSaving)photoInput?.click()});
+  document.getElementById('profileEditButton')?.addEventListener('click',()=>setProfileEditing(true));
+  document.getElementById('profileCancelButton')?.addEventListener('click',()=>{if(setProfileEditing(false,{restore:true})){const s=document.getElementById('profileSaveStatus');if(s)s.textContent='';document.getElementById('profileEditButton')?.focus()}});
+  document.getElementById('profilePhotoButton')?.addEventListener('click',()=>{if(!profileSaving&&profileEditing)photoInput?.click()});
   photoInput?.addEventListener('change',async()=>{
-    if(profileSaving){photoInput.value='';return}const status=document.getElementById('profileSaveStatus');
-    try{const data=await resizeProfilePhoto(photoInput.files?.[0]);currentUserProfile.avatarDataUrl=data;renderUserProfile();if(status)status.textContent='Photo ready — save profile.'}
+    if(profileSaving||!profileEditing){photoInput.value='';return}const status=document.getElementById('profileSaveStatus');
+    const request=++profilePhotoRequest;
+    try{const data=await resizeProfilePhoto(photoInput.files?.[0]);if(request!==profilePhotoRequest||!profileEditing)return;currentUserProfile.avatarDataUrl=data;renderUserProfile();if(status)status.textContent='Photo ready — save profile.'}
     catch(err){if(status)status.textContent=err.message||'Could not use that image'}
     photoInput.value='';
   });
-  document.getElementById('profilePhotoRemove')?.addEventListener('click',()=>{if(profileSaving)return;currentUserProfile.avatarDataUrl='';renderUserProfile();const s=document.getElementById('profileSaveStatus');if(s)s.textContent='Photo removed — save profile.'});
+  document.getElementById('profilePhotoRemove')?.addEventListener('click',()=>{if(profileSaving||!profileEditing)return;currentUserProfile.avatarDataUrl='';renderUserProfile();const s=document.getElementById('profileSaveStatus');if(s)s.textContent='Photo removed — save profile.'});
   document.getElementById('profileSaveButton')?.addEventListener('click',saveProfile);
   document.getElementById('profilePanelLogout')?.addEventListener('click',logout);
   document.addEventListener('click',()=>{panel.hidden=true;button.setAttribute('aria-expanded','false')});
@@ -4959,7 +5005,7 @@ function initNotifications(){
   setInterval(()=>{if(!document.hidden)loadNotifications({silent:true})},60000);
 }
 
-(async()=>{if(document.body.dataset.dashboard==='admin'){const ok=await bootstrapAdmin();if(ok){initProfileControls();initNotifications()}return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations();initProfileControls();initNotifications();initClientLiveRefresh()}else{renderBilling()}})();
+(async()=>{if(document.body.dataset.dashboard==='admin'){const ok=await bootstrapAdmin();if(ok){initProfileControls();initNotifications()}return}const ok=await bootstrapClient();if(!ok)return;if(document.body.dataset.dashboard==='client'){setPlan(currentPlan);await loadOperations();initProfileControls();initNotifications();initClientIntelligence();initClientLiveRefresh()}else{renderBilling()}})();
 document.getElementById('logoutButton')?.addEventListener('click',logout);
 
 async function runRetryButton(button,busyLabel,task){

@@ -46,7 +46,7 @@ test('profile save reports ambiguous storage failure without claiming success',a
 
 
 test('profile UI serializes saves and requires the exact submitted profile receipt',()=>{
-  const start=dashboard.indexOf('let profileSaving=false;'),end=dashboard.indexOf('\nfunction initProfileControls(',start),block=dashboard.slice(start,end);
+  const start=dashboard.indexOf('let profileSaving=false,'),end=dashboard.indexOf('\nfunction initProfileControls(',start),block=dashboard.slice(start,end);
   assert.ok(start>=0&&end>start);
   assert.match(block,/if\(profileSaving\)return false/);
   assert.match(block,/setProfileSaving\(true\)/);
@@ -54,9 +54,9 @@ test('profile UI serializes saves and requires the exact submitted profile recei
   assert.match(block,/String\(confirmed\.displayName\|\|'\'\)!==displayName/);
   assert.match(block,/String\(confirmed\.avatarDataUrl\|\|'\'\)!==avatarDataUrl/);
   assert.match(block,/Number\.isFinite\(Number\(confirmed\.updatedAt\)\)/);
-  assert.match(block,/finally\{setProfileSaving\(false\)\}/);
-  assert.match(dashboard,/profilePhotoButton[^\n]+if\(!profileSaving\)/);
-  assert.match(dashboard,/profilePhotoRemove[^\n]+if\(profileSaving\)return/);
+  assert.match(block,/finally\{setProfileSaving\(false\)/);
+  assert.match(dashboard,/profilePhotoButton[^\n]+if\(!profileSaving&&profileEditing\)/);
+  assert.match(dashboard,/profilePhotoRemove[^\n]+if\(profileSaving\|\|!profileEditing\)return/);
 });
 
 

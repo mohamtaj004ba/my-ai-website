@@ -579,8 +579,33 @@ async function runClientInteractions(page){
 
   await page.locator('#accountButton').click();
   if(await page.locator('#accountPanel').getAttribute('hidden')!==null)throw new Error('Account panel did not open');
+  if(await page.locator('#profileNameInput').isVisible()||await page.locator('#profileSaveButton').isVisible())throw new Error('Profile opened in editing mode');
+  await page.locator('#profileEditButton').click();
+  await page.locator('#profileNameInput').waitFor({state:'visible'});
+  await page.locator('#profileNameInput').fill('Unsaved QA profile draft');
+  await page.locator('#profileCancelButton').click();
+  if(await page.locator('#profileNameInput').isVisible()||await page.locator('#profileSummaryName').textContent()==='Unsaved QA profile draft')throw new Error('Profile cancel did not restore the account summary');
   await page.locator('#accountButton').click();
-  report.client.interactions.push('account/profile panel');
+  report.client.interactions.push('profile summary + explicit edit + cancel without saving');
+
+  await page.evaluate(()=>{window.__qaIntelligencePlan=currentPlan;currentPlan='Pro';initClientIntelligence()});
+  await page.route('**/api/account?action=client-ai-guide',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({answer:'QA Intelligence summary.',proposal:{id:'00000000-0000-0000-0000-000000000000',description:'Review a sample greeting',before:'Original greeting',after:'Proposed greeting',expiresAt:Date.now()+600000}})}));
+  await page.locator('#adminAiLaunch').click();
+  await page.locator('#adminAiInput').fill('QA review interface only');await page.locator('#adminAiSend').click();
+  await page.locator('#intelligenceProposal').waitFor({state:'visible'});
+  if(!await page.locator('#intelligenceProposal').getByText('Proposed action · not saved').isVisible())throw new Error('Intelligence incorrectly claimed an unapplied change was saved');
+  const intelligenceViewport=page.viewportSize();
+  for(const width of [320,390]){
+    await page.setViewportSize({width,height:844});
+    const fits=await page.locator('#adminAiPanel').evaluate(el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1&&el.scrollWidth<=el.clientWidth+1});
+    if(!fits)throw new Error(`Pro Intelligence panel overflows at ${width}px`);
+    await page.screenshot({path:path.join(outDir,`client-intelligence-${width}.png`),fullPage:false});
+  }
+  await page.setViewportSize(intelligenceViewport);
+  await page.locator('#intelligenceProposal [data-cancel]').click();await page.locator('#adminAiClose').click();
+  await page.unroute('**/api/account?action=client-ai-guide');
+  await page.evaluate(()=>{currentPlan=window.__qaIntelligencePlan;delete window.__qaIntelligencePlan;initClientIntelligence()});
+  report.client.interactions.push('Pro Intelligence summary + specific change review + dismiss without mutation');
 
   await page.locator('#notificationBell').click();
   if(await page.locator('#notificationPanel').getAttribute('hidden')!==null)throw new Error('Notification panel did not open');
