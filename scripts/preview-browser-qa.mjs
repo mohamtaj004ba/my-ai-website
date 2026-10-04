@@ -1119,6 +1119,39 @@ async function runResponsive(kind,viewport,name){
   }
 }
 
+async function runReadOnlyBannerQA(viewport,name){
+  const {context,page}=await makeContext(viewport,'read-only-'+name);
+  try{
+    await startSession(context,'admin');
+    await post(context.request,'admin-view-client',{id:report.workspaceId});
+    await gotoAuthed(page,'/dashboard','button.nav-item[data-view="overview"]');
+    await page.locator('.admin-view-banner').waitFor({state:'visible'});
+    const check=async(label,{sidebar=false,table=false}={})=>{
+      const state=await page.evaluate(({sidebar,table})=>{
+        const box=selector=>{const el=document.querySelector(selector);if(!el)return null;const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height}};
+        return {banner:box('.admin-view-banner'),topbar:box('.topbar'),sidebar:sidebar?box('.sidebar'):null,table:table?box('.view.active .sticky-table-head'):null};
+      },{sidebar,table});
+      if(!state.banner||!state.topbar||state.topbar.top<state.banner.bottom-1)throw new Error(label+' banner covers the client header: '+JSON.stringify(state));
+      if(state.sidebar&&state.sidebar.top<state.banner.bottom-1)throw new Error(label+' banner covers the sidebar: '+JSON.stringify(state));
+      if(state.table&&state.table.top<state.topbar.bottom-1)throw new Error(label+' sticky table covers the client header: '+JSON.stringify(state));
+      report.layoutContracts.push({label,...state});
+    };
+    await assertLayout(page,'read-only-'+name+'-overview');
+    await check('read-only-'+name+'-header',{sidebar:viewport.width>760});
+    await shot(page,'read-only-'+name+'-overview');
+    if(viewport.width<=760){
+      await page.locator('.mobile-menu').click();await check('read-only-'+name+'-menu',{sidebar:true});
+      await shot(page,'read-only-'+name+'-menu',{fullPage:false});
+    }else{
+      await ensureView(page,'calls');await page.locator('.call-row.data').nth(15).scrollIntoViewIfNeeded();
+      await check('read-only-'+name+'-scrolled-table',{sidebar:true,table:true});
+      await shot(page,'read-only-'+name+'-scrolled-table',{fullPage:false});
+    }
+    await page.locator('#exitAdminView').click();
+    await page.waitForURL('**/admin-dashboard');
+  }finally{await context.close().catch(()=>{})}
+}
+
 try{
   const desktop=await makeContext({width:1440,height:1100},'desktop');
   const launcher=await desktop.page.goto(baseURL+'/api/preview-e2e',{waitUntil:'domcontentloaded',timeout:30000});
@@ -1160,6 +1193,8 @@ try{
   await runResponsive('admin',{width:768,height:1024},'tablet');
   await runResponsive('client',{width:390,height:844},'mobile');
   await runResponsive('admin',{width:390,height:844},'mobile');
+  await runReadOnlyBannerQA({width:1440,height:900},'desktop');
+  await runReadOnlyBannerQA({width:390,height:844},'mobile');
 
   if(report.pageErrors.length)throw new Error('Page errors: '+JSON.stringify(report.pageErrors));
   if(report.consoleErrors.length)throw new Error('Console errors: '+JSON.stringify(report.consoleErrors));

@@ -83,6 +83,8 @@ async function bootstrapClient(){
       document.body.prepend(banner);
       syncAdminViewOffset(banner);
       if(typeof ResizeObserver==='function')new ResizeObserver(()=>syncAdminViewOffset(banner)).observe(banner);
+      const topbar=document.querySelector('.topbar');
+      if(topbar&&typeof ResizeObserver==='function')new ResizeObserver(()=>syncAdminViewOffset(banner)).observe(topbar);
       document.getElementById('exitAdminView')?.addEventListener('click',async()=>{
         const x=await fetch('/api/account?action=admin-exit-client-view',{method:'POST'});const out=await x.json().catch(()=>({}));
         location.href=out.redirect||'/admin-dashboard';
@@ -966,6 +968,8 @@ function renderEntitledApps(){
 function syncAdminViewOffset(banner){
   const height=Math.ceil(banner?.getBoundingClientRect().height||0);
   document.documentElement.style.setProperty('--admin-view-offset',height+'px');
+  const topbar=document.querySelector?.('.topbar');
+  if(topbar)document.documentElement.style.setProperty('--dashboard-topbar-height',Math.ceil(topbar.getBoundingClientRect().height)+'px');
 }
 function displayAnalyticsLocation(value){
   const text=String(value||'');

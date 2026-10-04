@@ -2588,6 +2588,7 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allo
 .admin-agent-title>.tag{justify-self:start}.admin-agent-card .admin-link{min-height:40px}
 .admin-client-view .topbar{top:var(--admin-view-offset,54px)}
 .admin-client-view .sidebar{top:var(--admin-view-offset,54px);height:calc(100dvh - var(--admin-view-offset,54px))}
+@media(min-width:1051px){.admin-client-view .sticky-table-head{top:calc(var(--admin-view-offset,54px) + var(--dashboard-topbar-height,74px))}}
 @media(max-width:1600px){
   #view-inbox .inbox-layout{grid-template-columns:minmax(280px,.75fr) minmax(520px,1.5fr)}
   #view-inbox .inbox-context-panel{grid-column:1/-1;position:static;min-height:0;max-height:none}
@@ -2644,4 +2645,13 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allo
   #view-settings.settings-editing .page-head>.page-actions #saveSettingsButton{
     min-height:42px;
   }
+}
+
+/* Keep wide call columns within their own scroll region on laptop screens. */
+@media (min-width:1051px) and (max-width:1400px){
+ .call-history-panel{overflow-x:auto}
+ .call-history-panel .sticky-table-head,.call-history-panel .call-day-heading{position:relative!important;top:auto!important}
+}
+@media (min-width:1401px){
+ .admin-client-view .call-day-heading{top:calc(var(--admin-view-offset,54px) + var(--dashboard-topbar-height,74px) + 48px)!important}
 }
