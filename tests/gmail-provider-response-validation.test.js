@@ -136,6 +136,7 @@ test('Inbox distinguishes shortened bodies, snippet previews and uncertain legac
     ctx.currentInboxItem.messages=[{id:'message',from:'sender@test.example',at:1,...message}];ctx.renderInboxThread();assert.equal(node('inboxThreadCoverage').hidden,false);assert.match(node('inboxThreadCoverage').textContent,expected);
   }
   ctx.currentInboxItem.messages=[{id:'message',body:'x'.repeat(12000),bodyTruncated:false,at:1}];ctx.renderInboxThread();assert.equal(node('inboxThreadCoverage').hidden,true);
+  for(const at of [undefined,0,'invalid',Infinity]){ctx.currentInboxItem.messages=[{id:'message',body:'Undated content',at}];ctx.renderInboxThread();assert.match(node('inboxMessages').innerHTML,/Date unavailable/)}
 });
 test('incomplete or mismatched thread hydration cannot overwrite cached detail',async()=>{
   for(const thread of [{id:'other',messages:[]},{id:'thread'},{id:'thread',messages:[]},{id:'thread',messages:[null]},{id:'thread',messages:[{id:'message',payload:{headers:'broken'}}]},{id:'thread',messages:[{id:'message',threadId:'other',payload:{}}]}]){
@@ -145,6 +146,24 @@ test('incomplete or mismatched thread hydration cannot overwrite cached detail',
 test('malformed matching-history thread cache is rehydrated from verified provider detail',async()=>{
   const f=fixture({cached:{historyId:'history',thread:{id:'other',messages:[{id:'stale'}]}}}),result=await f.api.listInbox('admin@test.example');
   assert.equal(result.threads[0].id,'thread');assert.equal(result.threads[0].messages[0].body,'Hello');assert.equal(f.writes.length,1);
+});
+test('malformed cached message fields and duplicate identities rehydrate instead of trapping refresh until expiry',async()=>{
+  for(const messages of [[{id:'message',body:{}}],[{id:'message',at:'invalid'}],[{id:'message',direction:'invalid'}],[{id:'message',unread:'false'}],[{id:'message',bodyTruncated:'false'}],[{id:'message'},{id:'message'}],[{id:'message'}]]){
+    const f=fixture({cached:{historyId:'history',thread:{id:'thread',messages}}}),result=await f.api.listInbox('admin@test.example');
+    assert.equal(result.threads[0].messages[0].body,'Hello');assert.equal(result.threads[0].messages.length,1);assert.equal(f.writes.length,1);
+  }
+});
+test('canonical same-history thread cache remains reusable without another provider detail request',async()=>{
+  const thread={id:'thread',messages:[{id:'message',threadId:'thread',body:'Verified cached text',direction:'inbound',unread:false,at:1}],subject:'Inquiry',unread:false,lastAt:1};
+  const f=fixture({cached:{historyId:'history',thread}}),original=f.ctx.gmailFetch;
+  f.ctx.gmailFetch=async(admin,path)=>{if(path.startsWith('/threads/thread?'))assert.fail('Verified cache must not rehydrate');return original(admin,path)};
+  const result=await f.api.listInbox('admin@test.example');assert.equal(result.threads[0].messages[0].body,'Verified cached text');assert.equal(f.writes.length,0);
+});
+test('unverifiable provider message time, snippet or duplicate identity cannot populate thread cache',async()=>{
+  const valid={id:'message',payload:{mimeType:'text/plain',body:{data:Buffer.from('Hello').toString('base64url')}}};
+  for(const messages of [[{...valid,internalDate:'invalid'}],[{...valid,internalDate:''}],[{...valid,internalDate:-1}],[{...valid,snippet:{}}],[valid,valid]]){
+    const f=fixture({thread:{id:'thread',messages}});await assert.rejects(f.api.listInbox('admin@test.example'),/identity, time or preview could not be verified/);assert.equal(f.writes.length,0);
+  }
 });
 test('sender alias responses require primary identity, valid flags and canonical addresses',async()=>{
   for(const aliases of [{},{sendAs:[]},{sendAs:[{sendAsEmail:'custom@test.example'}]},{sendAs:[{sendAsEmail:'primary@test.example',isPrimary:'false'}]},{sendAs:[{sendAsEmail:'bad',isPrimary:true}]},{sendAs:[{sendAsEmail:'primary@test.example',isPrimary:true,verificationStatus:'invented'}]}]){

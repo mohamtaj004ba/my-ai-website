@@ -50,7 +50,7 @@ test('Gmail cache validators reject malformed successful cache payloads instead 
   vm.runInContext(account.slice(start,end),ctx);
   assert.equal(vm.runInContext("parseGmailAliasCache({broken:true}).valid",ctx),false);
   assert.equal(vm.runInContext("parseGmailAliasCache([{email:'ok@example.test',isPrimary:true}]).valid",ctx),true);
-  ctx.good={threads:[{id:'t1',messages:[]}],analytics:{unread:0},coverage:{verified:true},syncedAt:1};
+  ctx.good={threads:[{id:'t1',messages:[{id:'m1',body:'Hello',direction:'inbound',unread:false,at:1}]}],analytics:{unread:0},coverage:{verified:true},syncedAt:1};
   assert.equal(vm.runInContext("validGmailInboxPayload(good,{cached:true})",ctx),true);
   ctx.bad={threads:[],analytics:{},coverage:{verified:false},syncedAt:1};
   assert.equal(vm.runInContext("validGmailInboxPayload(bad,{cached:true})",ctx),false);

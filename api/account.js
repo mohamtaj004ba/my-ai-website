@@ -1710,7 +1710,13 @@ function parseGmailAliasCache(value,expectedGmailEmail=''){
 function validGmailInboxPayload(value,{cached=false}={}){
   if(!value||typeof value!=='object'||Array.isArray(value)||!Array.isArray(value.threads)||!value.analytics||typeof value.analytics!=='object'||Array.isArray(value.analytics)||
     !value.coverage||typeof value.coverage!=='object'||Array.isArray(value.coverage)||value.coverage.verified!==true)return false;
-  if(value.threads.some(thread=>!thread||typeof thread!=='object'||Array.isArray(thread)||typeof thread.id!=='string'||!thread.id.trim()||!Array.isArray(thread.messages)||thread.unread!==undefined&&typeof thread.unread!=='boolean'||thread.subject!==undefined&&typeof thread.subject!=='string'||thread.lastAt!==undefined&&(!Number.isFinite(thread.lastAt)||thread.lastAt<0)||thread.messages.some(message=>!message||typeof message!=='object'||Array.isArray(message)||typeof message.id!=='string'||!message.id.trim()||message.threadId!==undefined&&message.threadId!==thread.id||message.direction!==undefined&&!['inbound','outbound'].includes(message.direction)||['unread','bodyTruncated'].some(key=>message[key]!==undefined&&typeof message[key]!=='boolean')||message.at!==undefined&&(!Number.isFinite(message.at)||message.at<0)||['body','snippet','from','to','subject','date','messageId'].some(key=>message[key]!==undefined&&typeof message[key]!=='string'))||new Set(thread.messages.map(message=>message.id)).size!==thread.messages.length)||new Set(value.threads.map(thread=>thread.id)).size!==value.threads.length)return false;
+  const validMessage=(message,id)=>message&&typeof message==='object'&&!Array.isArray(message)&&typeof message.id==='string'&&!!message.id.trim()&&
+    (message.threadId===undefined||message.threadId===id)&&['inbound','outbound'].includes(message.direction)&&typeof message.unread==='boolean'&&typeof message.body==='string'&&
+    (message.bodyTruncated===undefined||typeof message.bodyTruncated==='boolean')&&Number.isFinite(message.at)&&message.at>=0&&
+    ['snippet','from','to','subject','date','messageId'].every(key=>message[key]===undefined||typeof message[key]==='string');
+  if(value.threads.some(thread=>!thread||typeof thread!=='object'||Array.isArray(thread)||typeof thread.id!=='string'||!thread.id.trim()||!Array.isArray(thread.messages)||!thread.messages.length||
+    thread.unread!==undefined&&typeof thread.unread!=='boolean'||thread.subject!==undefined&&typeof thread.subject!=='string'||thread.lastAt!==undefined&&(!Number.isFinite(thread.lastAt)||thread.lastAt<0)||
+    thread.messages.some(message=>!validMessage(message,thread.id))||new Set(thread.messages.map(message=>message.id)).size!==thread.messages.length)||new Set(value.threads.map(thread=>thread.id)).size!==value.threads.length)return false;
   if(cached&&(!Number.isFinite(Number(value.syncedAt))||Number(value.syncedAt)<=0))return false;
   return true;
 }

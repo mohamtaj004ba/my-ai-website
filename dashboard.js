@@ -2795,7 +2795,8 @@ function renderInboxThread(){
   const lead=document.getElementById('inboxThreadLead');if(lead)lead.textContent=p.stage?('Growth · '+p.stage.replaceAll('_',' ')):(currentInboxItem.prospect?'Linked prospect':'Not in Growth');
   const promote=document.getElementById('inboxPromoteLead');if(promote){promote.textContent=currentInboxItem.prospect?'Open in Growth':'Add to Growth';promote.onclick=()=>promoteInboxToGrowth()}
   const box=document.getElementById('inboxMessages');
-  if(box)box.innerHTML=messages.map(m=>'<div class="inbox-message '+(m.direction==='outbound'?'outbound':'inbound')+'"><div><b>'+(m.direction==='outbound'?'You':esc(m.from||p.email||'Visitor'))+'</b><small>'+new Date(m.at||Date.now()).toLocaleString()+' · '+esc(m.channel||currentInboxItem.kind)+'</small></div><p>'+esc(m.body||m.snippet||'')+'</p></div>').join('');
+  const messageTime=at=>{const date=new Date(Number(at));return Number(at)>0&&Number.isFinite(date.getTime())?date.toLocaleString():'Date unavailable'};
+  if(box)box.innerHTML=messages.map(m=>'<div class="inbox-message '+(m.direction==='outbound'?'outbound':'inbound')+'"><div><b>'+(m.direction==='outbound'?'You':esc(m.from||p.email||'Visitor'))+'</b><small>'+messageTime(m.at)+' · '+esc(m.channel||currentInboxItem.kind)+'</small></div><p>'+esc(m.body||m.snippet||'')+'</p></div>').join('');
   if(box)box.scrollTop=box.scrollHeight;
   const reply=document.getElementById('inboxReplyText');if(reply)reply.value='';
   renderInboxFromOptions();
