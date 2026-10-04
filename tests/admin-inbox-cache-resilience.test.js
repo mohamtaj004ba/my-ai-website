@@ -12,11 +12,11 @@ function fixture({cachedInbox='healthy',cachedAliases='healthy',status='healthy'
   const initial={threads:[{id:'original'}],analytics:{unread:1}};
   const payload=(name,data)=>name==='network'?Promise.reject(Error('Unavailable')):Promise.resolve({ok:true,json:async()=>{if(name==='malformed')throw Error('Invalid JSON');return data}});
   const ctx=vm.createContext({
-    adminInboxData:{loading:false,gmailStatus:{connected:true},gmail:initial,aliases:[{email:'original@example.test'}],lastSync:1700000000000},
+    adminInboxData:{loading:false,gmailStatus:{connected:true,gmailEmail:'original@example.test'},gmail:initial,aliases:[{email:'original@example.test'}],lastSync:1700000000000},
     currentInboxItem:null,
     adminSearchInboxRequest:0,adminSearchInboxCacheLoaded:false,adminSearchInboxLoading:false,adminSearchInboxCacheError:false,
     fetch:async url=>{
-      if(url.includes('admin-gmail-status'))return payload(status,{connected:true});
+      if(url.includes('admin-gmail-status'))return payload(status,{connected:true,gmailEmail:'original@example.test'});
       if(url.includes('admin-gmail-inbox'))return payload(cachedInbox,{threads:[{id:'cached'}],syncedAt:1800000000000});
       if(url.includes('admin-gmail-aliases'))return payload(cachedAliases,{aliases:[{email:'cached@example.test'}]});
       throw Error('Unexpected URL');
@@ -52,10 +52,17 @@ test('verified Gmail account change discards previous account inbox, detail and 
   assert.equal(f.ctx.currentInboxItem,null);assert.equal(f.ctx.adminInboxData.lastSync,0);assert.equal(f.ctx.adminInboxData.connectionRevision,1);
   assert.ok(f.renders.includes('thread'));assert.equal(f.liveCalls.length,1);
 });
+test('connected Gmail status without canonical account identity cannot clear last verified mailbox or detail',async()=>{
+  for(const gmailEmail of [undefined,'','invalid',{},['original@example.test']]){
+    const f=fixture(),original=f.ctx.adminInboxData.gmail,detail={kind:'gmail',id:'original'};f.ctx.currentInboxItem=detail;
+    f.ctx.fetch=async url=>url.includes('admin-gmail-status')?{ok:true,json:async()=>({connected:true,gmailEmail})}:Promise.reject(Error('Cache unavailable'));
+    await f.run();assert.equal(f.ctx.adminInboxData.gmail,original);assert.equal(f.ctx.currentInboxItem,detail);assert.equal(f.ctx.adminInboxData.gmailStatus.gmailEmail,'original@example.test');assert.equal(Number(f.ctx.adminInboxData.connectionRevision||0),0);assert.match(f.ctx.adminInboxData.connectionStatusError,/could not be verified/);
+  }
+});
 
 test('cached inbox JSON completing after disconnect cannot repopulate the retained account',async()=>{
   const f=fixture();let resolve,startedResolve;const held=new Promise(ok=>{resolve=ok}),started=new Promise(ok=>{startedResolve=ok});
-  f.ctx.fetch=async url=>({ok:true,json:async()=>{if(url.includes('admin-gmail-status'))return {connected:true};if(url.includes('admin-gmail-inbox')){startedResolve();return held}return {aliases:[]}}});
+  f.ctx.fetch=async url=>({ok:true,json:async()=>{if(url.includes('admin-gmail-status'))return {connected:true,gmailEmail:'original@example.test'};if(url.includes('admin-gmail-inbox')){startedResolve();return held}return {aliases:[]}}});
   const pending=f.run();await started;f.ctx.adminInboxData.connectionRevision=1;f.ctx.adminInboxData.gmailStatus={connected:false};f.ctx.adminInboxData.gmail={threads:[]};
   resolve({threads:[{id:'old-account'}]});assert.equal(await pending,false);assert.equal(f.ctx.adminInboxData.gmail.threads.length,0);
   assert.equal(f.liveCalls.length,0);assert.equal(f.ctx.adminInboxData.loading,false);assert.equal(f.refresh.disabled,false);

@@ -2557,7 +2557,7 @@ async function loadAdminInbox({silent=false,force=false}={}){
     let statusVerified=false;
     if(sr.ok){const status=await sr.json().catch(()=>null);
       if(connectionRevision!==Number(adminInboxData.connectionRevision||0)){adminInboxData.loading=false;if(refresh){refresh.disabled=false;refresh.textContent='Refresh inbox'}return false}
-      if(status&&typeof status==='object'&&!Array.isArray(status)&&typeof status.connected==='boolean'){
+      if(status&&typeof status==='object'&&!Array.isArray(status)&&typeof status.connected==='boolean'&&(!status.connected||typeof status.gmailEmail==='string'&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(status.gmailEmail.trim()))){
         const previous=adminInboxData.gmailStatus||{},accountChanged=previous.connected!==status.connected||String(previous.gmailEmail||'').trim().toLowerCase()!==String(status.gmailEmail||'').trim().toLowerCase();
         if(accountChanged){
           connectionRevision=Number(adminInboxData.connectionRevision||0)+1;adminInboxData.connectionRevision=connectionRevision;
