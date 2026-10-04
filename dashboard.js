@@ -81,6 +81,8 @@ async function bootstrapClient(){
       const banner=document.createElement('div');banner.className='admin-view-banner';
       banner.innerHTML='<span><b>Admin view</b> · Read only · Viewing '+esc(data.workspace.name||'client workspace')+'</span><button id="exitAdminView">Return to Admin</button>';
       document.body.prepend(banner);
+      syncAdminViewOffset(banner);
+      if(typeof ResizeObserver==='function')new ResizeObserver(()=>syncAdminViewOffset(banner)).observe(banner);
       document.getElementById('exitAdminView')?.addEventListener('click',async()=>{
         const x=await fetch('/api/account?action=admin-exit-client-view',{method:'POST'});const out=await x.json().catch(()=>({}));
         location.href=out.redirect||'/admin-dashboard';
@@ -573,7 +575,7 @@ function renderOverview(){
       const dayCalls=callsData.filter(x=>{const t=recordTime(x);return t>=d.getTime()&&t<next}),needs=dayCalls.filter(teamStatusActive).length,resolved=dayCalls.filter(callResolvedByAi).length,captured=dayCalls.filter(callCaptured).length;
       days.push({date:callLocalDateValue(d.getTime()),label:d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}),short:d.toLocaleDateString(undefined,overviewChartDays>14?{month:'numeric',day:'numeric'}:{weekday:'short'}),n:dayCalls.length,needs,resolved,captured});
     }
-    const max=Math.max(1,...days.map(d=>d.n)),w=780,h=248,pad={l:34,r:14,t:24,b:38},plotW=w-pad.l-pad.r,plotH=h-pad.t-pad.b,step=days.length>1?plotW/(days.length-1):plotW;
+    const max=Math.max(1,...days.map(d=>d.n)),w=Math.max(240,Math.round(chart.clientWidth||780)),h=248,pad={l:34,r:14,t:24,b:38},plotW=w-pad.l-pad.r,plotH=h-pad.t-pad.b,step=days.length>1?plotW/(days.length-1):plotW;
     const points=days.map((d,i)=>{const x=pad.l+(days.length===1?plotW/2:i*step),barH=d.n/max*plotH,y=pad.t+plotH-d.needs/max*plotH;return {...d,x,barH,y}});
     const line=points.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ');
     const grid=[0,.25,.5,.75,1].map(r=>{const y=pad.t+plotH*(1-r),v=Math.round(max*r);return '<line x1="'+pad.l+'" y1="'+y+'" x2="'+(w-pad.r)+'" y2="'+y+'" class="combo-grid"/><text x="'+(pad.l-8)+'" y="'+(y+3)+'" class="combo-axis" text-anchor="end">'+v+'</text>'}).join('');
@@ -960,6 +962,14 @@ function renderEntitledApps(){
   if(has('automations'))renderAutomations();
   if(has('advancedAnalytics'))renderAnalytics();
   renderIntegrations();
+}
+function syncAdminViewOffset(banner){
+  const height=Math.ceil(banner?.getBoundingClientRect().height||0);
+  document.documentElement.style.setProperty('--admin-view-offset',height+'px');
+}
+function displayAnalyticsLocation(value){
+  const text=String(value||'');
+  try{return decodeURIComponent(text)}catch(_){return text}
 }
 function conversationActivity(x){
   const timestamp=value=>{const n=Number(value);if(Number.isFinite(n)&&n>0)return n;const d=Date.parse(value);return Number.isFinite(d)?d:0};
@@ -2213,11 +2223,11 @@ async function updateAdminFeedback(id,status){
 function renderWebsiteTrafficChart(){
   const shell=document.getElementById('websiteTrafficChart'),rows=adminWebsiteData.daily||[];if(!shell)return;
   if(!rows.length){shell.innerHTML='<div class="empty-state"><h3>No traffic history yet</h3></div>';return}
-  const w=920,h=285,left=42,right=18,top=18,bottom=42,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...rows.flatMap(r=>[Number(r.sessions||0),Number(r.visitors||0)])),step=rows.length>1?plotW/(rows.length-1):plotW;
+  const w=Math.max(240,Math.round(shell.clientWidth||920)),h=285,left=42,right=24,top=18,bottom=42,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...rows.flatMap(r=>[Number(r.sessions||0),Number(r.visitors||0)])),step=rows.length>1?plotW/(rows.length-1):plotW;
   const x=i=>left+(rows.length===1?plotW/2:i*step),y=v=>top+plotH-(Number(v||0)/max)*plotH;
   const sessionPts=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.sessions).toFixed(1)).join(' '),visitorPts=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.visitors).toFixed(1)).join(' ');
   const grid=[0,.25,.5,.75,1].map(p=>{const val=Math.round(max*p),yy=y(val);return '<g><line x1="'+left+'" x2="'+(w-right)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'"></line><text x="'+(left-8)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end">'+val+'</text></g>'}).join('');
-  const labelEvery=rows.length>45?14:rows.length>20?7:2,labels=rows.map((r,i)=>i%labelEvery===0||i===rows.length-1?'<text x="'+x(i).toFixed(1)+'" y="'+(h-13)+'" text-anchor="middle">'+esc(new Date(r.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}))+'</text>':'').join('');
+  const labelEvery=Math.max(1,Math.ceil(rows.length/Math.max(3,Math.floor(plotW/85)))),labels=rows.map((r,i)=>i%labelEvery===0||i===rows.length-1?'<text x="'+x(i).toFixed(1)+'" y="'+(h-13)+'" text-anchor="middle">'+esc(new Date(r.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}))+'</text>':'').join('');
   const dots=rows.map((r,i)=>'<circle class="website-dot sessions" cx="'+x(i).toFixed(1)+'" cy="'+y(r.sessions).toFixed(1)+'" r="3"></circle><circle class="website-dot visitors" cx="'+x(i).toFixed(1)+'" cy="'+y(r.visitors).toFixed(1)+'" r="3"></circle>').join('');
   const hits=rows.map((r,i)=>'<rect class="finance-hit" data-web-index="'+i+'" x="'+(x(i)-Math.max(12,step/2)).toFixed(1)+'" y="'+top+'" width="'+Math.max(24,step).toFixed(1)+'" height="'+plotH+'" fill="transparent"></rect>').join('');
   shell.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Website sessions and visitors"><g class="admin-chart-grid">'+grid+'</g><polyline class="website-line sessions" points="'+sessionPts+'"></polyline><polyline class="website-line visitors" points="'+visitorPts+'"></polyline><g>'+dots+'</g><g class="admin-chart-labels">'+labels+'</g><g>'+hits+'</g></svg><div class="admin-chart-tooltip" id="websiteTrafficTooltip" hidden></div>';
@@ -2256,10 +2266,10 @@ function renderWebsiteAnalytics(){
   barRows('websiteSources',d.sources||[],'source','count',x=>Number(x.count||0)+' sessions'+(x.conversions?' · '+x.conversions+' conversions · '+financeMoney(x.mrr||0)+' MRR':''));
   barRows('websiteTopPages',d.topPages||[],'path','count',x=>Number(x.count||0)+' views · '+Number(x.share||0)+'% share · '+formatDuration(x.avgSeconds||0)+' avg');
   barRows('websiteDevices',d.devices||[],'device','count',x=>Number(x.count||0)+' sessions · '+Number(x.pct||0)+'%');
-  barRows('websiteLocations',d.locations||[],'location','count',x=>Number(x.count||0)+' sessions · '+Number(x.pct||0)+'%');
+  barRows('websiteLocations',(d.locations||[]).map(row=>({...row,location:displayAnalyticsLocation(row.location)})),'location','count',x=>Number(x.count||0)+' sessions · '+Number(x.pct||0)+'%');
   const campaigns=document.getElementById('websiteCampaigns');if(campaigns)campaigns.innerHTML=(d.campaigns||[]).map(x=>'<div class="campaign-analytics-row"><div><b>'+esc(x.campaign||'(none)')+'</b><small>'+esc(x.medium||'none')+'</small></div><span>'+Number(x.sessions||0)+' sessions</span><span>'+Number(x.conversions||0)+' conv.</span><strong>Not cohort linked</strong></div>').join('')||'<p class="muted">No UTM campaign traffic in this period.</p>';
   const journeys=document.getElementById('websiteJourneyList'),je=document.getElementById('websiteJourneyEmpty'),sessions=(d.recentSessions||[]).slice(0,12);
-  if(journeys)journeys.innerHTML=sessions.map(s=>'<div class="website-session-row"><span><b>'+esc(s.utmSource||s.source||'direct')+'</b><small>'+esc(s.utmCampaign||'No campaign')+'</small></span><span>'+esc([s.city,s.region,s.country].filter(Boolean).join(', ')||'Unknown')+'</span><span>'+esc(s.device||'unknown')+'</span><span>'+Number((s.pages||[]).length||0)+'</span><span>'+formatDuration(Math.round(Number(s.activeMs||0)/1000))+'</span><span>'+new Date(s.lastAt||s.firstAt||Date.now()).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+'</span></div>').join('');
+  if(journeys)journeys.innerHTML=sessions.map(s=>'<div class="website-session-row"><span><b>'+esc(s.utmSource||s.source||'direct')+'</b><small>'+esc(s.utmCampaign||'No campaign')+'</small></span><span>'+esc([s.city,s.region,s.country].map(displayAnalyticsLocation).filter(Boolean).join(', ')||'Unknown')+'</span><span>'+esc(s.device||'unknown')+'</span><span>'+Number((s.pages||[]).length||0)+'</span><span>'+formatDuration(Math.round(Number(s.activeMs||0)/1000))+'</span><span>'+new Date(s.lastAt||s.firstAt||Date.now()).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+'</span></div>').join('');
   if(je)je.hidden=sessions.length!==0;
 }
 function formatDuration(seconds){seconds=Math.max(0,Math.round(Number(seconds||0)));if(seconds<60)return seconds+'s';const m=Math.floor(seconds/60),s=seconds%60;return m+'m '+(s?s+'s':'')}
@@ -3575,7 +3585,7 @@ function renderFinanceChart(shellId,tooltipId){
   const shell=document.getElementById(shellId);if(!shell)return;
   const rows=(adminFinanceData.history||[]).slice(-adminFinanceRange),tooltip=document.getElementById(tooltipId),hasEstimates=rows.some(r=>r.source==='preview_reconstruction');
   if(!rows.length){shell.innerHTML='<div class="empty-state"><h3>No finance history yet</h3><p>Monthly snapshots will appear automatically.</p></div>';return}
-  const w=Math.max(320,Math.round(shell.clientWidth||920)),h=300,left=58,right=32,top=22,bottom=45,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...rows.flatMap(r=>[Number(r.revenue||0),Number(r.expenses||0)])),step=rows.length>1?plotW/(rows.length-1):plotW;
+  const w=Math.max(240,Math.round(shell.clientWidth||920)),h=300,left=58,right=32,top=22,bottom=45,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...rows.flatMap(r=>[Number(r.revenue||0),Number(r.expenses||0)])),step=rows.length>1?plotW/(rows.length-1):plotW;
   const x=i=>left+(rows.length===1?plotW/2:i*step),y=v=>top+plotH-(Number(v||0)/max)*plotH;
   const revenuePoints=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.revenue).toFixed(1)).join(' '),expensePoints=rows.map((r,i)=>x(i).toFixed(1)+','+y(r.expenses).toFixed(1)).join(' ');
   const grid=[0,.25,.5,.75,1].map(p=>{const val=max*p,yy=y(val);return '<g><line x1="'+left+'" x2="'+(w-right)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'"></line><text x="'+(left-9)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end">'+esc(val>=1000?'$'+(val/1000).toFixed(val>=10000?0:1)+'k':'$'+Math.round(val))+'</text></g>'}).join('');

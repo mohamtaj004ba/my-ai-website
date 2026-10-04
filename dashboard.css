@@ -2581,6 +2581,17 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allo
 .view :is(.admin-chart-grid text,.admin-chart-labels text,.combo-axis){font-size:13px;fill:#52616c}
 .finance-hit:focus-visible{outline:none;stroke:var(--focus);stroke-width:2;stroke-dasharray:4 3}
 .admin-chart-foot{flex-wrap:wrap;gap:12px;font-size:13px}
+.view .panel-head>div:first-child:has(h2,h3){display:grid;gap:5px;align-items:start}
+.view .panel-head>div:first-child:has(h2,h3)>:is(h2,h3,p,small){margin:0}
+.admin-agent-title{display:grid;gap:8px}.admin-agent-title>b{font-size:15px;line-height:1.45;overflow-wrap:anywhere}
+.admin-agent-title>.tag{justify-self:start}.admin-agent-card .admin-link{min-height:40px}
+.admin-client-view .topbar{top:var(--admin-view-offset,54px)}
+.admin-client-view .sidebar{top:var(--admin-view-offset,54px);height:calc(100dvh - var(--admin-view-offset,54px))}
+@media(max-width:1600px){
+  #view-inbox .inbox-layout{grid-template-columns:minmax(280px,.75fr) minmax(520px,1.5fr)}
+  #view-inbox .inbox-context-panel{grid-column:1/-1;position:static;min-height:0;max-height:none}
+}
+@media(max-width:1140px){#view-inbox .inbox-layout{grid-template-columns:1fr}}
 @media(max-width:1140px){.conversation-shell{grid-template-columns:1fr}.conversation-list{max-height:none}.conversation-panel{min-width:0}.message-stream{min-height:340px}}
 @media(max-width:760px){
   .page-head p{font-size:14px}.page-head{gap:16px}.view .page-head h1{font-size:28px}

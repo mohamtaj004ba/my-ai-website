@@ -25,6 +25,7 @@ const report={
   layoutContracts:[],
   visualScreenshots:[]
 };
+report.readabilityContracts=[];
 
 const browser=await chromium.launch({headless:true});
 const contexts=[];
@@ -166,6 +167,20 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
   if(!state.activeBox||state.activeBox.width<=0||state.activeBox.height<=0)throw new Error(label+' active view is not rendered');
 }
 
+async function assertReadableCopy(page,label){
+  const undersized=await page.evaluate(()=>[...document.querySelectorAll('.view.active :is(p,small,label,button,input,select,textarea,svg text)')].flatMap(el=>{
+    const r=el.getBoundingClientRect(),style=getComputedStyle(el),text=(el.textContent||el.getAttribute('aria-label')||el.getAttribute('placeholder')||'').trim();
+    if(!text||!r.width||!r.height||style.visibility==='hidden'||Number(style.opacity)===0)return [];
+    const scale=el instanceof SVGElement?Math.abs(el.getScreenCTM()?.a||1):1,size=parseFloat(style.fontSize)*scale;
+    // Zero-sized labels belong to intentionally icon-only controls. Their
+    // visible icon and accessible name are covered by the interaction checks.
+    if(!size||size>=12)return [];
+    return [{tag:el.tagName,id:el.id,text:text.slice(0,100),size}];
+  }));
+  report.readabilityContracts.push({label,undersized});
+  if(undersized.length)throw new Error(label+' contains consequential copy smaller than 12px: '+JSON.stringify(undersized.slice(0,10)));
+}
+
 async function ensureView(page,view){
   const btn=page.locator('button.nav-item[data-view="'+view+'"]').first();
   if(!(await btn.count()))throw new Error('Missing nav view '+view);
@@ -185,6 +200,8 @@ async function sweepViews(page,kind){
   const views=await page.locator(selector).evaluateAll(nodes=>[...new Set(nodes.map(n=>n.getAttribute('data-view')).filter(Boolean))]);
   for(const view of views){
     await ensureView(page,view);
+    await assertLayout(page,kind+'-desktop-'+view);
+    await assertReadableCopy(page,kind+'-desktop-'+view);
     await shot(page,kind+'-'+view);
     report[kind].views.push(view);
   }
@@ -1082,10 +1099,12 @@ async function runResponsive(kind,viewport,name){
       await page.evaluate(()=>{document.getElementById('inboxReplyStatus').textContent='Reply delivery could not be confirmed. Review the provider before retrying; another send could create duplicate mail.'});
       await assertLayout(page,kind+'-'+name+'-inbox-composer');await shot(page,kind+'-'+name+'-inbox-composer');
     }
-    if(kind==='client'){
-      for(const view of ['conversations','agent','settings']){
+    {
+      const views=await page.locator('button.nav-item[data-view]').evaluateAll(nodes=>[...new Set(nodes.map(node=>node.dataset.view).filter(Boolean))]);
+      for(const view of views){
         await ensureView(page,view);
         await assertLayout(page,kind+'-'+name+'-'+view);
+        await assertReadableCopy(page,kind+'-'+name+'-'+view);
         await shot(page,kind+'-'+name+'-'+view);
       }
     }
@@ -1133,6 +1152,7 @@ try{
 
   await runResponsive('client',{width:1280,height:800},'laptop');
   await runResponsive('admin',{width:1280,height:800},'laptop');
+  await runResponsive('admin',{width:1536,height:864},'wide-laptop');
   await runResponsive('admin',{width:1040,height:900},'small-laptop');
   await runResponsive('client',{width:768,height:1024},'tablet');
   await runResponsive('admin',{width:768,height:1024},'tablet');
