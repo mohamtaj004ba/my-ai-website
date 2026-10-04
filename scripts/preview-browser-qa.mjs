@@ -26,6 +26,7 @@ const report={
   visualScreenshots:[]
 };
 report.readabilityContracts=[];
+report.visualFailures=[];
 
 const browser=await chromium.launch({headless:true});
 const contexts=[];
@@ -510,6 +511,18 @@ async function runClientInteractions(page){
 }
 
 async function runAdminInteractions(page){
+  await ensureView(page,'overview');
+  const financeMonth=page.locator('#adminFinanceChart [data-finance-index="0"]');
+  await financeMonth.press('Enter');
+  const financeTip=page.locator('#adminFinanceTooltip');
+  await financeTip.waitFor({state:'visible'});
+  const financeCopy=await financeTip.innerText();
+  if(!financeCopy.includes('MRR')||!financeCopy.includes('Expenses')||!financeCopy.includes('Net run-rate')||!financeCopy.includes('$'))throw new Error('Keyboard finance selection omitted exact financial detail');
+  await shot(page,'admin-keyboard-finance-detail',{fullPage:false});
+  await financeMonth.press('Escape');await financeTip.waitFor({state:'hidden'});
+  await financeMonth.press('Space');await financeTip.waitFor({state:'visible'});
+  await financeMonth.press('Tab');await financeTip.waitFor({state:'hidden'});
+  report.admin.interactions.push('finance chart keyboard details after initial loading + Escape/blur recovery');
   await page.waitForFunction(()=>typeof adminMonthlyKpiStatus!=='undefined'&&adminMonthlyKpiStatus?.ok===true,{timeout:20000});
   const monthlyStatus=await page.evaluate(()=>JSON.parse(JSON.stringify(adminMonthlyKpiStatus)));
   const allowedStatusKeys=new Set(['ok','month','recordedAt','saved','cached','degraded','coverage','issues']);
@@ -1105,8 +1118,10 @@ async function runResponsive(kind,viewport,name){
       const views=await page.locator('button.nav-item[data-view]').evaluateAll(nodes=>[...new Set(nodes.map(node=>node.dataset.view).filter(Boolean))]);
       for(const view of views){
         await ensureView(page,view);
-        await assertLayout(page,kind+'-'+name+'-'+view);
-        await assertReadableCopy(page,kind+'-'+name+'-'+view);
+        // Gather independent view defects in one run without weakening the gate.
+        for(const verify of [assertLayout,assertReadableCopy]){
+          try{await verify(page,kind+'-'+name+'-'+view)}catch(error){report.visualFailures.push(String(error?.message||error))}
+        }
         await shot(page,kind+'-'+name+'-'+view);
       }
     }
@@ -1196,6 +1211,7 @@ try{
   await runReadOnlyBannerQA({width:1440,height:900},'desktop');
   await runReadOnlyBannerQA({width:390,height:844},'mobile');
 
+  if(report.visualFailures.length)throw new Error('Dashboard visual verification failures:\n'+report.visualFailures.join('\n'));
   if(report.pageErrors.length)throw new Error('Page errors: '+JSON.stringify(report.pageErrors));
   if(report.consoleErrors.length)throw new Error('Console errors: '+JSON.stringify(report.consoleErrors));
   if(report.apiErrors.length)throw new Error('Unexpected API errors: '+JSON.stringify(report.apiErrors));

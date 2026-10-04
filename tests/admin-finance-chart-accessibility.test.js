@@ -18,3 +18,19 @@ test('finance chart uses the rendered width and exposes exact, explicitly estima
   listeners.keydown({key:'Escape',stopPropagation:()=>stopped++});assert.equal(tip.hidden,true);
   listeners.click({stopPropagation:()=>stopped++});assert.equal(tip.hidden,false);
 });
+
+test('finance tooltip recovers after empty loading state and remains usable across rerenders',()=>{
+  const listeners={},tip={hidden:true,innerHTML:'',style:{}},hit={dataset:{financeIndex:'0'},addEventListener:(event,fn)=>listeners[event]=fn};
+  const shell={clientWidth:390,innerHTML:'',querySelectorAll:()=>[hit]};
+  const context=vm.createContext({document:{getElementById:id=>id==='chart'?shell:shell.innerHTML.includes('id="tip"')?tip:null},adminFinanceRange:6,adminFinanceData:{history:[]},esc:String,financeMonthLabel:x=>x,financeMoney:x=>'$'+x});
+  vm.runInContext(source.slice(source.indexOf('function renderFinanceChart('),source.indexOf('function renderAdminFinance(')),context);
+  vm.runInContext("renderFinanceChart('chart','tip')",context);
+  assert.match(shell.innerHTML,/No finance history yet/);
+  context.adminFinanceData.history=[{month:'2026-09',revenue:2000,expenses:300}];
+  for(let render=0;render<2;render++){
+    vm.runInContext("renderFinanceChart('chart','tip')",context);
+    assert.match(shell.innerHTML,/id="tip" hidden/);
+    listeners.focus();assert.equal(tip.hidden,false);assert.match(tip.innerHTML,/\$1700/);
+    listeners.blur();assert.equal(tip.hidden,true);
+  }
+});
