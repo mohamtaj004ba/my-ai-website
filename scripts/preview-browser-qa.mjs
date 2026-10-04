@@ -1135,6 +1135,14 @@ async function runResponsive(kind,viewport,name){
             const tip=chart.locator('.admin-chart-tooltip');await tip.waitFor({state:'visible'});
             const bounds=await tip.boundingBox(),shellBounds=await chart.boundingBox();
             if(!bounds||!shellBounds||bounds.x<shellBounds.x-1||bounds.x+bounds.width>shellBounds.x+shellBounds.width+1)report.visualFailures.push(kind+'-'+name+'-'+view+' finance tooltip clips exact values');
+            const lowContrast=await tip.evaluate(el=>{
+              const rgb=value=>value.match(/[\d.]+/g).map(Number);
+              const composite=(fg,bg)=>fg.slice(0,3).map((c,i)=>c*(fg[3]??1)+bg[i]*(1-(fg[3]??1)));
+              const luminance=c=>c.map(v=>{const s=v/255;return s<=.04045?s/12.92:((s+.055)/1.055)**2.4}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+              const bg=composite(rgb(getComputedStyle(el).backgroundColor),[255,255,255]);
+              return [...el.querySelectorAll('span,strong,b')].map(label=>{const fg=composite(rgb(getComputedStyle(label).color),bg),a=luminance(fg),b=luminance(bg);return {text:label.textContent,contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)}}).filter(label=>label.contrast<4.5);
+            });
+            if(lowContrast.length)report.visualFailures.push(kind+'-'+name+'-'+view+' finance tooltip text lacks contrast: '+JSON.stringify(lowContrast));
             if(edge==='last')await shot(page,kind+'-'+name+'-'+view+'-finance-detail',{fullPage:false});
             await month.press('Escape');await tip.waitFor({state:'hidden'});
           }
