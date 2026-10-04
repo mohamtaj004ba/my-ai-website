@@ -2812,3 +2812,5 @@ body[data-dashboard="admin"] .top-actions>*:not(.admin-search-shell){flex-shrink
   .agent-section-actions button,.contact-toolbar :is(input,select,button){min-height:44px;min-width:44px}
   #insightsRange{width:100%;min-height:44px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px 12px;font:inherit;color:var(--ink)}
 }
+
+@media(max-width:760px){.sidebar:not(.open){visibility:hidden}.sidebar.open{visibility:visible}}

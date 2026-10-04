@@ -243,7 +243,14 @@ async function assertSectionAlertContext(page,kind,label=kind){
       await page.locator('#callSearch').fill('');await page.locator('#callDateFilter').selectOption('all');await page.locator('#callCategoryFilter').selectOption('all');await page.locator('#callFilter').selectOption('all');
       await page.evaluate(()=>{callQuickFilter='all';renderCalls()});
       await page.locator('.call-record-alert').first().waitFor({state:'visible'});
-    }else{await surface.waitFor({state:'visible'});if(!await surface.evaluate(el=>el.open))throw new Error('Unread section alert details were concealed');}
+    }else{
+      await surface.waitFor({state:'visible'});
+      if(page.viewportSize().width<=600){
+        await shot(page,label+'-section-alert-compact',{fullPage:false});
+        if(!await surface.evaluate(el=>el.open))await surface.locator('summary').click();
+      }
+      if(!await surface.evaluate(el=>el.open))throw new Error('Unread section alert details could not be expanded');
+    }
     await assertLayout(page,label+'-section-alert');
     await shot(page,label+'-section-alert-context',{fullPage:false});
     if(kind==='client')await page.locator('.call-row').filter({has:page.locator('.call-record-alert')}).first().click();else await page.locator('[data-section-notification="qa-section-alert"]').click();
@@ -1183,6 +1190,8 @@ async function runResponsive(kind,viewport,name){
     const menu=page.locator('.mobile-menu');
     if(viewport.width<=760){
       await menu.waitFor({state:'visible',timeout:5000});
+      await menu.focus();await page.keyboard.press('Shift+Tab');
+      if(await page.locator('.sidebar').evaluate(el=>el.contains(document.activeElement)))throw new Error('Closed phone navigation contains off-screen keyboard focus at '+name+' width');
       await menu.click();
       if(!(await page.locator('.sidebar').evaluate(el=>el.classList.contains('open'))))throw new Error(kind+' '+name+' mobile menu did not open sidebar');
       await page.waitForFunction(()=>Math.abs(document.querySelector('.sidebar').getBoundingClientRect().left)<1);

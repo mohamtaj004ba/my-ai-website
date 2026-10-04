@@ -290,6 +290,13 @@ async function promotePreviewAdmin(req,res){
   }
   return res.status(409).json({error:'Preview account changed during promotion. Retry the QA launcher.'});
 }
+function previewQaBuild(req,res){
+  if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
+  const sha=String(process.env.VERCEL_GIT_COMMIT_SHA||''),host=String(process.env.VERCEL_URL||'');
+  res.setHeader('Cache-Control','no-store');
+  if(!/^[a-f0-9]{40}$/.test(sha)||!/^my-ai-website-[a-z0-9-]+\.vercel\.app$/.test(host))return res.status(503).json({error:'Preview build identity unavailable'});
+  return res.status(200).json({sha,url:'https://'+host});
+}
 async function previewQaSession(req,res){
   if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
   const email=cleanEmail((req.body||{}).email),mode=String((req.body||{}).mode||'client').toLowerCase();
@@ -4090,6 +4097,7 @@ module.exports=async function handler(req,res){
   if(action==='preview-conversation-migration-rehearsal'&&req.method==='POST')return previewConversationMigrationRehearsal(req,res);
   if(action==='promote-preview-admin'&&req.method==='POST')return promotePreviewAdmin(req,res);
   if(action==='preview-session'&&req.method==='POST')return previewQaSession(req,res);
+  if(action==='preview-build'&&req.method==='GET')return previewQaBuild(req,res);
   if(action==='admin-summary'&&req.method==='GET')return adminSummary(req,res);
   if(action==='admin-monthly-kpi-refresh'&&req.method==='POST')return adminMonthlyKpiRefresh(req,res);
   if(action==='admin-finance'&&req.method==='GET')return adminFinance(req,res);

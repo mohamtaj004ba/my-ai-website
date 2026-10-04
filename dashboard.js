@@ -2690,10 +2690,16 @@ async function refreshAdminInboxLive({silent=true,force=false}={}){
   }
 }
 function websiteInboxItems(){
-  return (adminWebsiteData.prospects||[]).filter(p=>p.message||['contact','chatbot'].includes(p.source)||p.stage==='checkout_started').map(p=>({
-    kind:'website',id:p.id,title:p.name||p.business||p.email||'Website inquiry',subject:p.stage==='checkout_started'?'Checkout not completed':p.category||'Website inquiry',category:p.stage==='checkout_started'?'checkout':p.source==='chatbot'?'chatbot':'website',
-    preview:p.message||(p.stage==='checkout_started'?'Plan selected: '+(p.plan||'Not specified')+' · Payment has not been confirmed.':''),at:p.updatedAt||p.createdAt||0,email:p.email||'',prospect:p
+  const unfinished=p=>!p.workspaceId&&!p.convertedAt&&!['converted','lost'].includes(p.stage)&&(p.stage==='checkout_started'||p.source==='get_started');
+  const category=p=>p.source==='chatbot'?'chatbot':p.source==='contact'?'website':unfinished(p)?'checkout':'website';
+  return (adminWebsiteData.prospects||[]).filter(p=>p.message||['contact','chatbot'].includes(p.source)||unfinished(p)).map(p=>({
+    kind:'website',id:p.id,title:p.name||p.business||p.email||'Website inquiry',subject:category(p)==='checkout'?'Checkout not completed':p.category||'Website inquiry',category:category(p),unfinishedCheckout:unfinished(p),
+    preview:p.message||(unfinished(p)?'Plan selected: '+(p.plan||'Not specified')+' · Payment has not been confirmed.':''),at:p.updatedAt||p.createdAt||0,email:p.email||'',prospect:p
   }));
+}
+function inboxWebsiteCoverageStatus(){
+  const coverage=adminWebsiteData.coverage||{},missing=Number(coverage.unavailableProspectRecords||0);
+  return [adminWebsiteLoadError,missing?missing+' website contact records could not be loaded; inquiry and checkout counts may be incomplete.':'',coverage.isRetentionCapped?'Website history is limited to retained records.':''].filter(Boolean).join(' ');
 }
 function gmailInboxItems(){
   return (adminInboxData.gmail?.threads||[]).map(t=>{
@@ -2703,7 +2709,7 @@ function gmailInboxItems(){
 }
 function renderAdminInbox(){
   const st=adminInboxData.gmailStatus||{},ga=adminInboxData.gmail?.analytics||{},website=websiteInboxItems(),gmail=gmailInboxItems(),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
-  set('inboxWebsiteCount',adminWebsiteLoadError?'Unavailable':website.filter(x=>x.category!=='checkout').length);set('inboxCheckoutCount',adminWebsiteLoadError?'Unavailable':website.filter(x=>x.category==='checkout').length);set('inboxWebsiteStatus',adminWebsiteLoadError||'');set('inboxGmailUnread',ga.unread||0);set('inboxGmailAccount',adminInboxData.connectionStatusError?'Connection unverified':st.connected?(st.gmailEmail||'Connected'):(st.configured?'Not connected':'OAuth setup required'));
+  set('inboxWebsiteCount',adminWebsiteLoadError?'Unavailable':website.filter(x=>x.category!=='checkout').length);set('inboxCheckoutCount',adminWebsiteLoadError?'Unavailable':website.filter(x=>x.unfinishedCheckout).length);set('inboxWebsiteStatus',inboxWebsiteCoverageStatus());set('inboxGmailUnread',ga.unread||0);set('inboxGmailAccount',adminInboxData.connectionStatusError?'Connection unverified':st.connected?(st.gmailEmail||'Connected'):(st.configured?'Not connected':'OAuth setup required'));
   set('inboxResponseTime',ga.avgFirstResponseSeconds?formatDuration(ga.avgFirstResponseSeconds):'—');set('inboxThreadCount',website.length+gmail.length);
   const connect=document.getElementById('gmailConnectButton'),disconnect=document.getElementById('gmailDisconnectButton'),title=document.getElementById('gmailStatusTitle'),copy=document.getElementById('gmailStatusCopy'),aliasList=document.getElementById('gmailAliasList');
   if(connect){connect.hidden=!!st.connected;connect.textContent=st.configured?'Connect Gmail':'Set up Gmail OAuth';connect.disabled=gmailConnectionMutationPending||!!adminInboxData.connectionStatusError}
@@ -2717,7 +2723,7 @@ function renderAdminInbox(){
   }
   if(aliasList)aliasList.innerHTML=(adminInboxData.aliases||[]).map(a=>'<span class="gmail-alias-chip '+(a.inboundVerified===true&&a.inboundSeen?'ok':'warn')+'"><b>'+esc(a.email)+'</b><small>'+(a.isPrimary?'Primary':a.verificationStatus==='accepted'?'Send as verified':a.verificationStatus==='pending'?'Verification pending':'Verification unverified')+' · '+(a.inboundVerified!==true?'Inbound check unverified':a.inboundSeen?'Inbound seen':'No inbound seen yet')+'</small></span>').join('');
   let items=[...website,...gmail].sort((a,b)=>b.at-a.at);
-  if(adminInboxData.filter!=='all')items=items.filter(x=>x.kind==='gmail'?adminInboxData.filter==='gmail':x.category===adminInboxData.filter);
+  if(adminInboxData.filter!=='all')items=items.filter(x=>x.kind==='gmail'?adminInboxData.filter==='gmail':adminInboxData.filter==='checkout'?x.unfinishedCheckout:x.category===adminInboxData.filter);
   const q=String(adminInboxData.search||'').toLowerCase();if(q)items=items.filter(x=>(x.title+' '+x.subject+' '+x.preview).toLowerCase().includes(q));
   const list=document.getElementById('inboxList'),empty=document.getElementById('inboxEmpty');
   if(list)list.innerHTML=items.map(x=>'<button class="inbox-item '+(currentInboxItem?.kind===x.kind&&currentInboxItem?.id===x.id?'active':'')+'" data-inbox-kind="'+x.kind+'" data-inbox-id="'+esc(x.id)+'"><span class="inbox-source '+x.kind+'">'+(x.kind==='gmail'?'Gmail':x.category==='checkout'?'Checkout':x.category==='chatbot'?'Chatbot':'Website')+'</span><div><b>'+esc(x.title)+'</b><strong>'+esc(x.subject)+'</strong><p>'+esc(String(x.preview||'').slice(0,150))+'</p><small>'+new Date(x.at||Date.now()).toLocaleString()+(x.unread?' · unread':'')+'</small></div></button>').join('');
@@ -2812,9 +2818,10 @@ function renderInboxThread(){
   if(!currentInboxItem){ph.hidden=false;wrap.hidden=true;renderInboxContext();return}
   ph.hidden=true;wrap.hidden=false;renderInboxContext();
   const website=currentInboxItem.kind==='website',p=currentInboxItem.prospect||{},messages=currentInboxItem.messages||[],last=messages[messages.length-1]||{};
-  const subject=website?(p.stage==='checkout_started'?'Checkout not completed':p.category||'Website inquiry'):(currentInboxItem.thread?.subject||last.subject||'Gmail thread');
+  const checkout=website&&!['contact','chatbot'].includes(p.source)&&!p.workspaceId&&!p.convertedAt&&!['converted','lost'].includes(p.stage)&&(p.stage==='checkout_started'||p.source==='get_started');
+  const subject=website?(checkout?'Checkout not completed':p.category||'Website inquiry'):(currentInboxItem.thread?.subject||last.subject||'Gmail thread');
   const contact=website?(p.email||p.phone||'Website visitor'):([...(messages||[])].reverse().find(m=>m.direction==='inbound')?.from||last.from||last.to||'Gmail contact');
-  document.getElementById('inboxThreadChannel').textContent=website?(p.stage==='checkout_started'?'Website · Checkout':p.source==='chatbot'?'Website · Chatbot':'Website · Contact'):'Gmail';
+  document.getElementById('inboxThreadChannel').textContent=website?(checkout?'Website · Checkout':p.source==='chatbot'?'Website · Chatbot':'Website · Contact'):'Gmail';
   document.getElementById('inboxThreadSubject').textContent=subject;
   document.getElementById('inboxThreadMeta').textContent=contact+(p.business?' · '+p.business:'');
   const coverageEl=document.getElementById('inboxThreadCoverage');
@@ -2835,7 +2842,7 @@ function renderInboxThread(){
   const box=document.getElementById('inboxMessages');
   const messageTime=at=>{const date=new Date(Number(at));return Number(at)>0&&Number.isFinite(date.getTime())?date.toLocaleString():'Date unavailable'};
   if(box)box.innerHTML=messages.map(m=>'<div class="inbox-message '+(m.direction==='outbound'?'outbound':'inbound')+'"><div><b>'+(m.direction==='outbound'?'You':esc(m.from||p.email||'Visitor'))+'</b><small>'+messageTime(m.at)+' · '+esc(m.channel||currentInboxItem.kind)+'</small></div><p>'+esc(m.body||m.snippet||'')+'</p></div>').join('');
-  if(box&&!messages.length&&website){box.innerHTML='<div class="empty-state"><h3>'+(p.stage==='checkout_started'?'Checkout started, payment not confirmed':'No saved messages')+'</h3><p>'+(p.stage==='checkout_started'?'Review the selected plan and contact in Growth. No payment failure or reminder is assumed.':'This lead has no recorded conversation yet.')+'</p></div>';}
+  if(box&&!messages.length&&website){box.innerHTML='<div class="empty-state"><h3>'+(checkout?'Checkout started, payment not confirmed':'No saved messages')+'</h3><p>'+(checkout?'Review the selected plan and contact in Growth. No payment failure or reminder is assumed.':'This lead has no recorded conversation yet.')+'</p></div>';}
   if(box)box.scrollTop=box.scrollHeight;
   const reply=document.getElementById('inboxReplyText');if(reply)reply.value='';
   renderInboxFromOptions();

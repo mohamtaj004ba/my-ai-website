@@ -26,3 +26,23 @@ test('contact receipt hides and clears submitted information and explicitly rese
   await handlers.submit({preventDefault(){},currentTarget:form});assert.equal(form.hidden,true);assert.equal(success.hidden,false);assert.equal(resets,1);assert.equal(heading.focused,true);
   handlers.new();assert.equal(form.hidden,false);assert.equal(success.hidden,true);assert.equal(button.disabled,false);assert.equal(field.focused,true);assert.equal(status.textContent,'');
 });
+
+test('unfinished checkout stays visible through sales follow-up without reintroducing converted or closed prospects',()=>{
+  const context=vm.createContext({adminWebsiteData:{prospects:[{id:'follow',source:'get_started',stage:'follow_up'},{id:'qualified',source:'get_started',stage:'qualified'},{id:'linked',source:'get_started',stage:'follow_up',workspaceId:'workspace'},{id:'converted',source:'get_started',stage:'converted'},{id:'closed',source:'get_started',stage:'lost'},{id:'paid',source:'get_started',stage:'proposal',convertedAt:123}]}});
+  vm.runInContext(source.slice(source.indexOf('function websiteInboxItems()'),source.indexOf('function gmailInboxItems()')),context);
+  assert.deepEqual(Array.from(context.websiteInboxItems(),x=>[x.id,x.category]),[['follow','checkout'],['qualified','checkout']]);
+});
+
+test('inbox discloses missing website contacts and retention without blaming complete contacts for missing traffic events',()=>{
+  const context=vm.createContext({adminWebsiteData:{coverage:{unavailableProspectRecords:2,isRetentionCapped:true}},adminWebsiteLoadError:''});
+  vm.runInContext(source.slice(source.indexOf('function inboxWebsiteCoverageStatus()'),source.indexOf('function gmailInboxItems()')),context);
+  assert.match(context.inboxWebsiteCoverageStatus(),/2 website contact records.*counts may be incomplete/);assert.match(context.inboxWebsiteCoverageStatus(),/retained records/);
+  context.adminWebsiteData.coverage={unavailableEventRecords:3,isIncomplete:true};assert.equal(context.inboxWebsiteCoverageStatus(),'');
+  context.adminWebsiteLoadError='Refresh failed';assert.equal(context.inboxWebsiteCoverageStatus(),'Refresh failed');
+});
+
+test('an inquiry after starting checkout retains its real channel and unpaid checkout context without duplicate entries',()=>{
+ const context=vm.createContext({adminWebsiteData:{prospects:[{id:'contact',source:'contact',stage:'checkout_started',message:'Setup question',category:'General question'},{id:'chat',source:'chatbot',stage:'checkout_started',message:'Chat question'}]}});
+ vm.runInContext(source.slice(source.indexOf('function websiteInboxItems()'),source.indexOf('function gmailInboxItems()')),context);
+ const items=context.websiteInboxItems();assert.equal(items.length,2);assert.deepEqual(Array.from(items,x=>[x.category,x.unfinishedCheckout]),[['website',true],['chatbot',true]]);assert.equal(items[0].subject,'General question');
+});

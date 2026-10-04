@@ -63,6 +63,31 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Pin browser QA to the exact Preview build
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const expected=process.env.GITHUB_SHA;
+          const headers={'x-vercel-protection-bypass':process.env.VERCEL_AUTOMATION_BYPASS_SECRET,'x-qa-secret':process.env.VERCEL_AUTOMATION_BYPASS_SECRET};
+          let pinned=false;
+          for(let attempt=0;attempt<36;attempt++){
+            const response=await fetch(process.env.PREVIEW_URL+'/api/account?action=preview-build',{headers});
+            const data=await response.json().catch(()=>null);
+            if(response.ok&&data?.sha===expected&&/^https:\/\/my-ai-website-[a-z0-9-]+\.vercel\.app$/.test(data.url||'')){
+              const exact=await fetch(data.url+'/api/account?action=preview-build',{headers});
+              const identity=await exact.json().catch(()=>null);
+              if(exact.ok&&identity?.sha===expected&&identity?.url===data.url){
+                fs.appendFileSync(process.env.GITHUB_ENV,'PREVIEW_URL='+data.url+'\n');
+                console.log('Verified exact Preview build '+expected+' at '+data.url);
+                pinned=true;break;
+              }
+            }
+            await new Promise(resolve=>setTimeout(resolve,5000));
+          }
+          if(!pinned)throw new Error('Could not verify the exact Preview build; browser QA will not test a moving branch alias.');
+          NODE
+
       - name: Cache npm downloads
         uses: actions/cache@v4
         with:

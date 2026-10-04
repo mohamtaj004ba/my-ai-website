@@ -4,6 +4,8 @@ Latest verified implementation: **`2def127d4b7786413ca5732a06b31f155fe29c26`**. 
 
 ## Website intake and dashboard synchronization — 2026-10-04
 
+- Follow-up candidate fec3f6b2689f2c6666907038a040f6397eceff40 is **not verified**: CI, CodeQL, Jekyll and exact deployment passed, but Browser QA 37237365042 failed because the admin phone alert test required initial expansion. Phone alerts intentionally start compact. The next candidate explicitly checks expansion/navigation, excludes closed phone navigation from keyboard focus, preserves unfinished checkout visibility through active sales stages, discloses missing website contacts and pins browser QA to a validated immutable build URL. These follow-up changes are still pending full verification.
+
 - Contact success now hides and clears the submitted form, focuses a clean receipt and offers Send another message. Failed submissions retain the draft; duplicate submits remain guarded. Shared hidden styles can no longer expose successful forms.
 - Website inquiries and replies use escaped CallerCore branded HTML with plain-text fallback. Gmail HTML uses multipart MIME while preserving provider verification and uncertain-write safeguards. No customer message was sent during verification.
 - Inbox loads website records before Gmail, refreshes both sources, separates Website, Chatbot and Unfinished checkout, and labels checkout leads without claiming a message or completed payment. Fresh website counts replace the previous false zero. Message previews and reading/reply areas are reorganized. Prospect source selections preserve contact and other actual attribution values.

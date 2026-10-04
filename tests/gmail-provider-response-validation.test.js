@@ -205,7 +205,7 @@ test('alias chips distinguish unknown verification and unavailable inbound evide
   const ui=fs.readFileSync('dashboard.js','utf8'),start=ui.indexOf('function renderAdminInbox('),end=ui.indexOf('\nfunction setAdminInboxActionStatus(',start),nodes=new Map();
   const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',innerHTML:'',classList:{toggle(){},add(){},remove(){}},querySelector:()=>null,querySelectorAll:()=>[]});return nodes.get(id)};
   const ctx=vm.createContext({adminInboxData:{gmailStatus:{connected:true,gmailEmail:'primary@test.example'},gmail:{analytics:{}},aliases:[{email:'unknown@test.example',verificationStatus:'verificationStatusUnspecified',inboundSeen:false,inboundVerified:false}],search:''},
-    adminWebsiteLoadError:'',websiteInboxItems:()=>[],gmailInboxItems:()=>[],currentInboxItem:null,gmailConnectionMutationPending:false,esc:value=>String(value||''),document:{getElementById:node,querySelectorAll:()=>[]}});
+    adminWebsiteLoadError:'',inboxWebsiteCoverageStatus:()=>'',websiteInboxItems:()=>[],gmailInboxItems:()=>[],currentInboxItem:null,gmailConnectionMutationPending:false,esc:value=>String(value||''),document:{getElementById:node,querySelectorAll:()=>[]}});
   vm.runInContext(ui.slice(start,end),ctx);ctx.renderAdminInbox();
   const html=node('inboxAliasList').innerHTML||node('gmailAliasList').innerHTML;
   assert.match(html,/Verification unverified/);assert.match(html,/Inbound check unverified/);assert.doesNotMatch(html,/No inbound seen yet/);
