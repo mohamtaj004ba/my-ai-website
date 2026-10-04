@@ -57,6 +57,15 @@ test('Gmail cache validators reject malformed successful cache payloads instead 
   ctx.bad={threads:null,analytics:{},coverage:{verified:true},syncedAt:1};
   assert.equal(vm.runInContext("validGmailInboxPayload(bad,{cached:true})",ctx),false);
 });
+test('cached Gmail thread and message identities and flags cannot make malformed history appear verified',()=>{
+  const start=account.indexOf('function validGmailAliases('),end=account.indexOf('\nasync function adminGmailStatus(',start),vm=require('node:vm'),ctx=vm.createContext({});
+  vm.runInContext(account.slice(start,end),ctx);
+  const thread={id:'thread',messages:[{id:'message',threadId:'thread',direction:'inbound',body:'Hello',at:1,unread:false}]};
+  for(const threads of [[{...thread,messages:[null]}],[{...thread,messages:[{id:'message',body:{}}]}],[{...thread,messages:[{id:'message',direction:'wrong'}]}],[{...thread,messages:[{id:'message',unread:'false'}]}],[{...thread,messages:[{id:'message',threadId:'another'}]}],[{...thread,unread:'false'}],[{...thread,messages:[thread.messages[0],thread.messages[0]]}],[thread,thread]]){
+    ctx.payload={threads,analytics:{},coverage:{verified:true},syncedAt:1};assert.equal(ctx.validGmailInboxPayload(ctx.payload,{cached:true}),false);
+  }
+  ctx.payload={threads:[thread],analytics:{},coverage:{verified:true},syncedAt:1};assert.equal(ctx.validGmailInboxPayload(ctx.payload,{cached:true}),true);
+});
 
 test('Gmail handlers never use malformed caches as stale provider fallbacks',()=>{
   const aliasStart=account.indexOf('async function adminGmailAliases('),aliasEnd=account.indexOf('\nasync function adminGmailInbox(',aliasStart);
