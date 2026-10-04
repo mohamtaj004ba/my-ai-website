@@ -20,8 +20,24 @@ function fixture({appendFails=false,conflicts=0,storageFails=false,prospect}={})
     safeError:()=> 'redacted',console:{error(){}}
   });
   vm.runInContext(source.slice(start,end),ctx);
-  return {run:async()=>{await vm.runInContext('adminWebsiteReply(req,res)',ctx);return {emails,appends,commits,status,payload}}};
+  return {ctx,run:async()=>{await vm.runInContext('adminWebsiteReply(req,res)',ctx);return {emails,appends,commits,status,payload}}};
 }
+
+test('website Gmail replies bind alias validation and provider send to the same observed mailbox',async()=>{
+  const f=fixture();let sends=0;
+  f.ctx.cleanEmail=value=>String(value||'').trim().toLowerCase();
+  f.ctx.getGmailConnection=async()=>({gmailEmail:'Observed@example.test'});
+  f.ctx.validatedGmailFrom=async(_admin,_from,expected)=>{assert.equal(expected,'observed@example.test');return expected};
+  f.ctx.sendGmailMessage=async(_admin,body)=>{sends++;assert.equal(body.expectedGmailEmail,'observed@example.test');return {id:'sent',threadId:'thread'}};
+  const result=await f.run();assert.equal(result.status,200);assert.equal(result.payload.message.channel,'gmail');assert.equal(sends,1);assert.equal(result.emails,0);
+});
+test('website Gmail account change during sender validation blocks send and Mailgun fallback',async()=>{
+  const f=fixture();
+  f.ctx.cleanEmail=value=>String(value||'').trim().toLowerCase();f.ctx.getGmailConnection=async()=>({gmailEmail:'observed@example.test'});
+  f.ctx.validatedGmailFrom=async()=>{throw Object.assign(Error('Gmail connection changed'),{code:'GMAIL_CONNECTION_CHANGED'})};
+  f.ctx.sendGmailMessage=async()=>assert.fail('Changed account must not send');
+  const result=await f.run();assert.equal(result.status,502);assert.equal(result.emails,0);assert.equal(result.appends,0);assert.equal(result.commits,0);
+});
 test('sent website reply appends to history and revises prospect without overwriting later edits',async()=>{
   const r=await fixture().run();
   assert.equal(r.emails,1);assert.equal(r.appends,1);assert.equal(r.commits,1);

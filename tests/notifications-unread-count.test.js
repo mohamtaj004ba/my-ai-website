@@ -147,6 +147,22 @@ test('invalid notification JSON cannot overwrite last verified list or count',as
   assert.equal(f.ctx.notificationsLoading,false);
 });
 
+test('malformed notification items and contradictory unread counts preserve last verified alerts',async()=>{
+  const valid={id:'new-alert',read:false};
+  for(const payload of [
+    {notifications:[null],unreadCount:1},{notifications:[[]],unreadCount:1},
+    {notifications:[{read:false}],unreadCount:1},{notifications:[{id:'new-alert',read:'false'}],unreadCount:1},
+    {notifications:[{...valid,title:{}}],unreadCount:1},{notifications:[valid,valid],unreadCount:2},
+    {notifications:[valid],unreadCount:0},{notifications:[],unreadCount:-1},
+    {notifications:[],unreadCount:1.5},{notifications:[],unreadCount:'1'}
+  ]){
+    const f=fixture(),original=f.ctx.notificationData;
+    f.ctx.fetch=async()=>({ok:true,json:async()=>payload});await f.run('loadNotifications()');
+    assert.equal(f.ctx.notificationData,original);assert.equal(f.ctx.notificationUnreadCount,95);
+    assert.match(f.ctx.notificationLoadError,/last verified alerts/);assert.equal(f.ctx.notificationsLoading,false);
+  }
+});
+
 test('failed notification refresh preserves last verified alerts and explicitly marks them stale',async()=>{
   const f=fixture();
   f.ctx.fetch=async()=>({ok:false,status:503,json:async()=>({error:'unavailable'})});

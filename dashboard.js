@@ -4631,7 +4631,7 @@ async function loadNotifications({silent=true}={}){
     const scope=notificationScope(),r=await fetch('/api/account?action=notifications&scope='+scope,{headers:{Accept:'application/json'},cache:'no-store'});
     if(!r.ok)throw new Error('Notification refresh failed ('+r.status+')');
     const data=await r.json();
-    if(!Array.isArray(data?.notifications)||!Number.isFinite(Number(data.unreadCount)))throw new Error('Notification response was incomplete');
+    if(!Array.isArray(data?.notifications)||!Number.isSafeInteger(data.unreadCount)||data.unreadCount<0||data.notifications.some(n=>!n||typeof n!=='object'||Array.isArray(n)||typeof n.id!=='string'||!n.id.trim()||typeof n.read!=='boolean'||['title','body','view','kind'].some(key=>n[key]!==undefined&&typeof n[key]!=='string'))||new Set(data.notifications.map(n=>n.id)).size!==data.notifications.length||data.unreadCount<data.notifications.filter(n=>!n.read).length)throw new Error('Notification response was incomplete');
     if(request===notificationRequest){
       notificationData=data.notifications;notificationUnreadCount=Math.max(0,Number(data.unreadCount));
       notificationCoverage={limited:data.coverage?.limited===true,sources:Array.isArray(data.coverage?.sources)?data.coverage.sources.map(String).slice(0,8):[],responseLimited:data.coverage?.responseLimited===true,totalItems:Math.max(0,Number(data.coverage?.totalItems||0)||0),returned:Math.max(0,Number(data.coverage?.returned||data.notifications.length)||0),unreadReturned:Math.max(0,Number(data.coverage?.unreadReturned??data.notifications.filter(item=>item&&!item.read).length)||0)};
