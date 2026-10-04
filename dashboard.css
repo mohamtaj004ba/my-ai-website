@@ -2746,3 +2746,5 @@ body[data-dashboard="admin"] .top-actions>*:not(.admin-search-shell){flex-shrink
 .call-history-panel .call-day-heading{position:relative!important;top:auto!important}
 
 .call-row .call-type-pill{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+
+.call-row .team-status-pill,.call-row .disposition-pill{max-width:100%;white-space:normal;overflow-wrap:anywhere}

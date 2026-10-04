@@ -156,6 +156,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
       topbarBox:box(topbar),
       mainBox:box(main),
       overlappingHeaderControls:controls.some((a,i)=>controls.slice(i+1).some(b=>a.x<b.right-1&&a.right>b.x+1&&a.y<b.bottom-1&&a.bottom>b.y+1)),
+      spillingCallBadges:[...document.querySelectorAll('.view.active .call-row.data :is(.call-type-pill,.team-status-pill,.disposition-pill)')].filter(el=>{const r=el.getBoundingClientRect(),p=el.parentElement.getBoundingClientRect();return r.width>0&&p.width>0&&(r.left<p.left-1||r.right>p.right+1)}).map(el=>el.textContent),
       clippedIntelligenceLabel:(()=>{const button=document.getElementById('adminAiLaunch');return !!button&&button.scrollWidth>button.clientWidth+2})(),
       renderedClosedDrawers:[...document.querySelectorAll('.call-drawer:not(.open)')].filter(el=>el.getBoundingClientRect().width>0).map(el=>el.id),
       squeezedAttentionCopy:[...document.querySelectorAll('.view.active .attention-call-copy')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.width<160}).map(el=>({text:el.textContent,width:el.getBoundingClientRect().width})),
@@ -168,6 +169,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
   report.layoutContracts.push({label,...state});
   if(!state.activeView)throw new Error(label+' has no active dashboard view');
   if(state.overlappingHeaderControls)throw new Error(label+' header controls overlap');
+  if(state.spillingCallBadges.length)throw new Error(label+' call labels spill into adjacent columns: '+state.spillingCallBadges.join(', '));
   if(state.clippedIntelligenceLabel)throw new Error(label+' Core Intelligence label spills outside its control');
   if(state.renderedClosedDrawers.length)throw new Error(label+' leaves closed drawer controls rendered: '+state.renderedClosedDrawers.join(', '));
   if(state.squeezedAttentionCopy.length)throw new Error(label+' squeezes customer details beside attention badges: '+JSON.stringify(state.squeezedAttentionCopy));
@@ -209,6 +211,7 @@ async function ensureView(page,view){
 async function sweepViews(page,kind){
   const selector='button.nav-item[data-view]';
   const views=await page.locator(selector).evaluateAll(nodes=>[...new Set(nodes.map(n=>n.getAttribute('data-view')).filter(Boolean))]);
+  if(kind==='client')views.push('conversations');
   for(const view of views){
     await ensureView(page,view);
     await assertLayout(page,kind+'-desktop-'+view);
@@ -1105,7 +1108,7 @@ async function runAdminInteractions(page){
   const careWorkspaceId=await adminSupportThread.locator('[data-care-action="settings"]').getAttribute('data-care-workspace');
   await adminSupportThread.locator('[data-care-action="settings"]').click();
   await page.locator('#adminClientDrawer.open').waitFor({state:'visible'});
-  await page.waitForFunction(id=>String(currentAdminClient?.id)===id&&document.getElementById('adminConfigSection').value==='settings',careWorkspaceId);
+  await page.waitForFunction(id=>String(currentAdminClient?.id)===id&&document.getElementById('adminConfigSection').value==='settings'&&!adminCareNavigationPending,careWorkspaceId);
   if(!await page.locator('#adminConfigEditor').evaluate(el=>document.activeElement===el))throw new Error('Client Care did not focus the selected configuration');
   await page.locator('#closeAdminClient').click();
   await adminSupportThread.locator('[data-care-action="access"]').click();
@@ -1203,6 +1206,7 @@ async function runResponsive(kind,viewport,name){
     }
     {
       const views=await page.locator('button.nav-item[data-view]').evaluateAll(nodes=>[...new Set(nodes.map(node=>node.dataset.view).filter(Boolean))]);
+      if(kind==='client')views.push('conversations');
       for(const view of views){
         await ensureView(page,view);
         // Gather independent view defects in one run without weakening the gate.
