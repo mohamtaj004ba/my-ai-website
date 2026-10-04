@@ -1307,7 +1307,72 @@ async function runReadOnlyBannerQA(viewport,name){
   }finally{await context.close().catch(()=>{})}
 }
 
+async function runPublicSiteQA(){
+  report.publicSite={pages:[],contracts:[],interactions:[]};
+  for(const [name,viewport] of [['laptop',{width:1440,height:1000}],['tablet',{width:768,height:1024}],['phone',{width:390,height:844}],['small-phone',{width:320,height:740}]]){
+    const {context,page}=await makeContext(viewport,'public-'+name);
+    try{
+      await page.route('**/api/site-track',r=>r.fulfill({status:204,body:''}));
+      await page.route('https://js.stripe.com/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:'/* Checkout is not initiated in this visual test. */'}));
+      await page.route('**/api/reveal-token',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({token:Date.now()+'.preview-qa'})}));
+      await page.route('**/api/demo-number',()=>{throw new Error('Public visual QA must not reveal or dial a live number')});
+      await page.route('**/api/create-checkout-session',()=>{throw new Error('Public visual QA must not create a payment session')});
+      await page.route('**/api/chat',()=>{throw new Error('Public visual QA must not send a chat message')});
+      const contract=async label=>{
+        const state=await page.evaluate(()=>{
+          const visible=el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'};
+          const overflowing=[...document.querySelectorAll('main :is(section,article,form,input:not([type=checkbox]),select,textarea,.phone-demo,.live-stage,.business-day)')].filter(visible).filter(el=>{const r=el.getBoundingClientRect();return r.left<-1||r.right>innerWidth+1}).map(el=>el.className||el.id||el.tagName);
+          const smallFields=innerWidth<=600?[...document.querySelectorAll('main input:not([type=checkbox]),main select,main textarea')].filter(visible).filter(el=>parseFloat(getComputedStyle(el).fontSize)<16).map(el=>el.name||el.id):[];
+          const smallCopy=[...document.querySelectorAll('main p,main label,main summary')].filter(visible).filter(el=>parseFloat(getComputedStyle(el).fontSize)<12).map(el=>el.textContent.slice(0,80));
+          return {width:innerWidth,overflowing,smallFields,smallCopy,h1:document.querySelectorAll('main h1').length};
+        });
+        report.publicSite.contracts.push({label,...state});
+        if(state.h1!==1||state.overflowing.length||state.smallFields.length||state.smallCopy.length)throw new Error('Public site layout failure '+label+': '+JSON.stringify(state));
+      };
+      for(const [route,key] of [['/','home'],['/contact','contact'],['/live-demo','demo'],['/get-started','get-started'],['/privacy','privacy'],['/terms','terms']]){
+        await page.goto(baseURL+route,{waitUntil:'networkidle'});
+        await page.locator('main h1').waitFor();await page.evaluate(()=>document.fonts.ready);
+        await contract(name+'-'+key);await shot(page,'public-'+name+'-'+key);
+        report.publicSite.pages.push(name+'-'+key);
+        if(key==='home'){
+          await shot(page,'public-'+name+'-home-first-screen',{fullPage:false});
+          if(viewport.width<=900){
+            await page.locator('.menu').click();await page.locator('#primary-nav.open').waitFor();
+            if(await page.locator('.menu').getAttribute('aria-expanded')!=='true')throw new Error('Public mobile menu did not announce its open state');
+            await shot(page,'public-'+name+'-navigation',{fullPage:false});
+            await page.locator('.menu').press('Escape');
+            if(await page.locator('.menu').getAttribute('aria-expanded')!=='false')throw new Error('Public mobile menu did not close on Escape');
+            await page.locator('.menu').click();await page.locator('#primary-nav a[href="/#pricing"]').click();
+            if(await page.locator('.menu').getAttribute('aria-expanded')!=='false')throw new Error('Public anchor navigation left the phone menu open');
+          }
+          await page.locator('[data-demo="booking"]').click();
+          if(await page.locator('[data-demo="booking"]').getAttribute('aria-pressed')!=='true'||!(await page.locator('#demoIntent').innerText()).includes('Service request'))throw new Error('Public example selection did not update truthfully');
+          await page.locator('.faq-list summary').first().click();await page.locator('.faq-list details[open] p').first().waitFor();
+          await page.locator('#ccChatLauncher').click();await page.locator('#ccChatPanel.open').waitFor();await page.locator('#ccChatClose').click();
+          report.publicSite.interactions.push(name+' menu/anchor/Escape, example selection, FAQ and chat open/close without sending');
+        }
+        if(key==='get-started'){
+          await page.locator('[data-plan="Starter"]').click();await page.locator('#toBusiness').click();await page.locator('#stage2.active').waitFor();
+          await contract(name+'-business-details');await shot(page,'public-'+name+'-business-details');
+          await page.locator('#backToPlan').click();
+          if(await page.locator('[data-plan="Starter"]').getAttribute('aria-pressed')!=='true')throw new Error('Public checkout lost the selected plan after navigation');
+          report.publicSite.interactions.push(name+' plan selection and business-step navigation without payment');
+        }
+        if(key==='contact'&&name==='phone'){
+          let attempts=0;await page.route('**/api/contact',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(++attempts===1?{ok:true}:{ok:true,prospectId:'public-visual-qa'})}));
+          await page.locator('[name="name"]').fill('Preview Visual QA');await page.locator('[name="email"]').fill('preview-qa@callercore.test');await page.locator('[name="message"]').fill('Isolated UI verification; this request is intercepted and never sent.');
+          await page.locator('#contactForm button[type="submit"]').click();await page.locator('#contactStatus.error').waitFor();
+          if(!await page.locator('#contactForm').isVisible())throw new Error('Unverified inquiry receipt hid the contact draft');
+          await page.locator('#contactForm button[type="submit"]').click();await page.locator('#contactSuccess').waitFor({state:'visible'});await shot(page,'public-phone-contact-receipt',{fullPage:false});
+          report.publicSite.interactions.push('contact malformed receipt preserves draft, verified intercepted receipt shows success; no inquiry transmitted');
+        }
+      }
+    }finally{await context.close().catch(()=>{})}
+  }
+}
+
 try{
+  await runPublicSiteQA();
   const desktop=await makeContext({width:1440,height:1100},'desktop');
   const launcher=await desktop.page.goto(baseURL+'/api/preview-e2e',{waitUntil:'domcontentloaded',timeout:30000});
   if(!launcher||!launcher.ok())throw new Error('Preview launcher returned '+(launcher?launcher.status():'no response'));
