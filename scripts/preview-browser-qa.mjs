@@ -1414,6 +1414,12 @@ async function runPublicSiteQA(){
             await page.route('**/api/contact',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,prospectId:'qa-intercepted-chat',warning:'Your inquiry was saved, but its email notification could not be confirmed.'})}));
             try{
               await page.locator('#ccChatLauncher').click();await page.locator('#ccChatHandoffButton').click();
+              if(!await page.locator('#ccChatHandoff [name="name"]').evaluate(el=>el===document.activeElement))throw new Error('Phone chat handoff did not focus its first field');
+              const handoffUsable=await page.locator('#ccChatHandoff').evaluate(el=>[...el.querySelectorAll('input,textarea,button')].every(x=>x.getBoundingClientRect().height>=43&&x.getBoundingClientRect().right<=innerWidth&&(!x.matches('input,textarea')||parseFloat(getComputedStyle(x).fontSize)>=16)));
+              if(!handoffUsable)throw new Error('Phone chat handoff has cramped or overflowing fields');
+              await shot(page,'public-phone-chat-handoff-form',{fullPage:false});
+              await page.locator('#ccChatClose').click();await page.locator('#ccChatLauncher').click();
+              await page.waitForFunction(()=>document.activeElement===document.querySelector('#ccChatHandoff [name="name"]'));
               await page.locator('#ccChatHandoff [name="name"]').fill('Preview QA');await page.locator('#ccChatHandoff [name="email"]').fill('preview-qa@example.test');await page.locator('#ccChatHandoff [name="message"]').fill('Intercepted phone receipt test');
               await page.locator('#ccChatHandoff button[type="submit"]').click();await page.locator('.cc-chat-handoff-success').waitFor();
               if(!(await page.locator('.cc-chat-handoff-success').innerText()).includes('notification could not be confirmed')||!await page.locator('.cc-chat-handoff-success').evaluate(el=>el===document.activeElement))throw new Error('Chat handoff lost saved-message warning or receipt focus');

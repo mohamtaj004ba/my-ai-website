@@ -55,7 +55,7 @@
       panel.setAttribute('aria-hidden',String(!open));
       launcher.setAttribute('aria-expanded',String(open));
       launcher.style.display=open?'none':'flex';
-      if(open) setTimeout(()=>input.focus(),80);
+      if(open) setTimeout(()=>{if(panel.classList.contains('open'))(handoff.hidden?input:handoff.querySelector('input,.cc-chat-handoff-success'))?.focus()},80);
       else launcher.focus();
     };
 
@@ -101,9 +101,10 @@
       quick.hidden=true;form.hidden=true;handoff.hidden=false;
       const last=[...history].reverse().find(x=>x.role==='user');
       if(last&&handoff.elements.message&&!handoff.elements.message.value)handoff.elements.message.value=last.content.slice(0,1000);
+      handoff.elements.name?.focus();
       window.CallerCoreAnalytics?.track('chat_handoff',{label:'handoff_open'});
     });
-    handoffCancel?.addEventListener('click',()=>{handoff.hidden=true;form.hidden=false;quick.hidden=false;handoffStatus.textContent=''});
+    handoffCancel?.addEventListener('click',()=>{handoff.hidden=true;form.hidden=false;quick.hidden=false;handoffStatus.textContent='';handoffButton.focus()});
     handoff?.addEventListener('submit',async e=>{
       e.preventDefault();if(handoff.getAttribute('aria-busy')==='true'||!handoff.reportValidity())return;
       const btn=handoff.querySelector('button[type="submit"]'),d=new FormData(handoff),a=window.CallerCoreAnalytics?.context||{};

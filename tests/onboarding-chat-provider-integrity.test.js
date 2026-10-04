@@ -10,3 +10,10 @@ test('onboarding chat verifies Anthropic response structure before returning tex
   assert.match(src,/Anthropic onboarding response did not contain verified text/);
   assert.match(src,/res\.status\(502\)\.json\(\{ error: 'Assistant response unavailable' \}\)/);
 });
+
+test('setup guidance keeps activation and provider delivery dependent on verified account evidence',()=>{
+  assert.doesNotMatch(src,/Most accounts are live|We start the same day|they get a text with a link|check-in text around day two|a PDF copy was emailed to them/);
+  assert.match(src,/Completing intake or payment does not activate their number/);
+  assert.match(src,/Do not claim a number has been provisioned without verified account evidence/);
+  assert.match(src,/Never infer successful email delivery from signing or form submission alone/);
+});

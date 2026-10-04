@@ -199,3 +199,20 @@
 
 .public-site [hidden]{display:none!important}
 .contact-page .success{padding:36px 12px;min-height:300px;display:grid;align-content:center;justify-items:center;gap:12px}.contact-page .success p{max-width:440px}.contact-page .success h2:focus{outline:none}
+
+/* The human handoff is a focused form, with a distinct saved receipt. */
+.public-site .cc-chat-panel:has(.cc-chat-handoff:not([hidden])) .cc-chat-messages{flex:0 1 auto;max-height:24%;min-height:0}
+.public-site .cc-chat-panel:has(.cc-chat-handoff:not([hidden]) .cc-chat-handoff-success){height:auto;max-height:calc(100dvh - 120px)}
+.public-site .cc-chat-handoff{display:grid;gap:12px;padding:18px;overflow:auto;border-top:1px solid var(--line);font-size:14px;line-height:1.5}
+.public-site .cc-chat-handoff>strong{font-size:16px}
+.public-site .cc-chat-handoff :is(input,textarea){width:100%;min-width:0;min-height:44px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--dark);font:inherit;font-size:16px}
+.public-site .cc-chat-handoff textarea{min-height:90px;resize:vertical}
+.public-site .cc-chat-handoff>div:not(.cc-chat-handoff-success){display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.public-site .cc-chat-handoff button{min-height:44px;padding:10px 16px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--dark);font:inherit;font-weight:700;cursor:pointer}
+.public-site .cc-chat-handoff button[type=submit],.public-site .cc-chat-handoff-success button{background:var(--orange);border-color:var(--orange);color:white}
+.public-site .cc-chat-handoff button:disabled{opacity:.6;cursor:wait}
+.public-site .cc-chat-handoff-success{display:grid;justify-items:start;gap:12px;padding:8px 2px}
+.public-site .cc-chat-handoff-success>b{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#e5f0ea;color:#285947;font-size:24px}
+.public-site .cc-chat-handoff-success strong{font-size:20px;line-height:1.3}
+.public-site .cc-chat-handoff-success small{font-size:14px;line-height:1.5}
+.public-site .cc-chat-handoff-success p{margin:0;padding:12px;border-radius:10px;background:#fff3df;color:#734914;font-size:14px;line-height:1.5}
