@@ -1057,6 +1057,20 @@ async function runResponsive(kind,viewport,name){
       if(await page.evaluate(()=>document.activeElement?.id)!=='savePhoneButton')throw new Error('Phone editor did not wrap keyboard focus at '+name+' width');
       await page.locator('#closePhoneModal').focus();await page.keyboard.press('Escape');await page.locator('#phoneModal.open').waitFor({state:'hidden'});
       if(!await edit.evaluate(element=>element===document.activeElement))throw new Error('Phone editor did not restore trigger focus at '+name+' width');
+      const removePhone=page.locator('#phoneTable [data-delete-phone]').first(),phoneId=await removePhone.getAttribute('data-delete-phone');
+      const phoneNumber=await page.evaluate(id=>adminPhoneData.find(item=>String(item.id)===String(id))?.number||'',phoneId);
+      const removeRoute=/\/api\/account\?action=admin-phone-number-delete$/;let removeRequests=0;
+      await page.route(removeRoute,async route=>{removeRequests++;await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Responsive QA must never delete stored inventory'})})});
+      try{
+        await removePhone.click();await page.locator('#adminActionConfirmationModal').waitFor({state:'visible'});
+        if(!phoneNumber||!(await page.locator('#adminActionConfirmationCopy').textContent()).includes(phoneNumber))throw new Error('Responsive phone review omitted its number at '+name+' width');
+        await page.locator('#closeAdminActionConfirmation').focus();await page.keyboard.press('Shift+Tab');
+        if(!await page.locator('#submitAdminActionConfirmation').evaluate(el=>el===document.activeElement))throw new Error('Responsive phone review did not trap keyboard focus at '+name+' width');
+        await page.locator('#cancelAdminActionConfirmation').scrollIntoViewIfNeeded();await assertLayout(page,kind+'-'+name+'-phone-removal-review');await shot(page,kind+'-'+name+'-phone-removal-review');
+        await page.locator('#cancelAdminActionConfirmation').click();await page.locator('#adminActionConfirmationModal').waitFor({state:'hidden'});
+        await page.waitForFunction(id=>document.activeElement?.dataset?.deletePhone===id||document.activeElement?.id==='addPhoneButton',phoneId);
+        if(removeRequests!==0)throw new Error('Responsive phone cancellation sent a deletion request');
+      }finally{await page.unroute(removeRoute)}
       await ensureView(page,'inbox');
       await page.evaluate(()=>{currentInboxItem={kind:'website',id:'qa-mobile-inbox-ui-only',prospect:{id:'qa-mobile-inbox-ui-only',name:'QA mobile inquiry',email:'mobile-review@callercore.test',business:'Fictional mobile workspace',stage:'new'},messages:[{id:'qa-mobile-message',direction:'inbound',from:'mobile-review@callercore.test',channel:'qa-in-page',body:'A fictional inquiry for mobile layout and keyboard verification. No message is sent by this check.',at:Date.now()}]};renderInboxThread()});
       await page.locator('#inboxReplyText').fill('Unsent mobile review draft');
