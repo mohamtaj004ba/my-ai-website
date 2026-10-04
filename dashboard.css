@@ -2673,3 +2673,10 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allo
 .overview-combo-chart,.admin-finance-chart-shell,#view-overview .admin-finance-chart-shell{height:auto}
 .overview-combo-chart svg,.admin-finance-chart-shell svg{height:auto}
 @media(max-width:1050px){#view-platform-settings .platform-settings-grid{grid-template-columns:minmax(0,1fr)!important}}
+@media(max-width:1050px){
+ body[data-dashboard="admin"] .topbar>div:first-child>.eyebrow{display:none}
+ body[data-dashboard="admin"] .top-actions{min-width:0;flex:1;justify-content:flex-end}
+ body[data-dashboard="admin"] .admin-ai-launch{width:40px;height:40px;flex:0 0 40px;padding:0;justify-content:center;font-size:0}
+ body[data-dashboard="admin"] .admin-ai-launch span{font-size:14px}
+ body[data-dashboard="admin"] .admin-search-shell{flex:0 1 auto;min-width:40px}
+}

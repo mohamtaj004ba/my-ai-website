@@ -147,6 +147,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
     const topbar=document.querySelector('.topbar');
     const main=document.querySelector('.dashboard-main');
     const box=el=>el?(()=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}})():null;
+    const controls=[...document.querySelectorAll('.top-actions> *')].map(box).filter(r=>r?.width>0&&r?.height>0);
     return {
       viewport:{width:window.innerWidth,height:window.innerHeight},
       scrollWidth:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth),
@@ -154,6 +155,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
       activeBox:box(active),
       topbarBox:box(topbar),
       mainBox:box(main),
+      overlappingHeaderControls:controls.some((a,i)=>controls.slice(i+1).some(b=>a.x<b.right-1&&a.right>b.x+1&&a.y<b.bottom-1&&a.bottom>b.y+1)),
       renderedClosedDrawers:[...document.querySelectorAll('.call-drawer:not(.open)')].filter(el=>el.getBoundingClientRect().width>0).map(el=>el.id),
       overflowers:[...document.querySelectorAll('body *')].map(el=>{
         const r=el.getBoundingClientRect(),style=getComputedStyle(el);
@@ -163,6 +165,7 @@ async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
   });
   report.layoutContracts.push({label,...state});
   if(!state.activeView)throw new Error(label+' has no active dashboard view');
+  if(state.overlappingHeaderControls)throw new Error(label+' header controls overlap');
   if(state.renderedClosedDrawers.length)throw new Error(label+' leaves closed drawer controls rendered: '+state.renderedClosedDrawers.join(', '));
   if(!allowHorizontalOverflow&&state.scrollWidth>state.viewport.width+4){
     throw new Error(label+' horizontally overflows viewport: '+state.scrollWidth+'px > '+state.viewport.width+'px; offenders='+JSON.stringify(state.overflowers));
