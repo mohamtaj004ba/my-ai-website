@@ -882,6 +882,7 @@ async function runAdminInteractions(page){
   await page.locator('#prospectModal.open').waitFor({state:'visible',timeout:5000});
   const consentLabel=(await page.locator('#prospectConsentLabel').textContent()||'').trim(),
     consentMeta=(await page.locator('#prospectConsentMeta').textContent()||'').trim();
+  if(await page.locator('#prospectSourceInput').inputValue()!=='contact')throw new Error('Contact prospect source was blank in its editor');
   if(consentLabel!=='Granted'||!/Contact form/.test(consentMeta))throw new Error('Growth prospect editor omitted read-only verified consent state');
   if(await page.locator('#prospectModal input[name*="consent" i],#prospectModal button[id*="consent" i]').count())throw new Error('Growth prospect editor exposed a consent mutation control');
   await page.locator('#closeProspectModal').click();
@@ -920,6 +921,17 @@ async function runAdminInteractions(page){
     await page.evaluate(()=>{window.fetch=window.__qaWebsiteReplyOriginalFetch;delete window.__qaWebsiteReplyOriginalFetch;delete window.__qaWebsiteReplyRequests;currentInboxItem=window.__qaOriginalInboxItem;delete window.__qaOriginalInboxItem;renderInboxThread()});
   }
   report.admin.interactions.push('intercepted website reply recipient identity + stale draft recovery + confirmed receipt warning + uncertain delivery review without sending mail');
+  await page.waitForFunction(()=>!adminInboxData.loading&&!adminWebsiteAnalyticsLoading);
+  await page.evaluate(()=>{window.__qaIntakeSaved={data:adminWebsiteData,filter:adminInboxData.filter,search:adminInboxData.search,error:adminWebsiteLoadError};adminWebsiteLoadError='';adminInboxData.search='';adminWebsiteData={...adminWebsiteData,prospects:[{id:'qa-intake-contact',source:'contact',name:'Website visitor',message:'A website question',stage:'inquiry',updatedAt:Date.now()},{id:'qa-intake-chat',source:'chatbot',name:'Chat visitor',message:'A chatbot question',stage:'inquiry',updatedAt:Date.now()},{id:'qa-intake-checkout',source:'get_started',name:'Signup visitor',stage:'checkout_started',plan:'Growth',updatedAt:Date.now()},{id:'qa-intake-paid',source:'get_started',name:'Paid visitor',stage:'converted',updatedAt:Date.now()}]};renderAdminInbox()});
+  try{
+    if((await page.locator('#inboxWebsiteCount').textContent()).trim()!=='2'||(await page.locator('#inboxCheckoutCount').textContent()).trim()!=='1')throw new Error('Intake counts mixed messages with completed or unpaid checkouts');
+    for(const [channel,id] of [['website','qa-intake-contact'],['chatbot','qa-intake-chat'],['checkout','qa-intake-checkout']]){await page.locator('[data-inbox-filter="'+channel+'"]').click();if(await page.locator('#inboxList [data-inbox-id]').count()!==1||await page.locator('#inboxList [data-inbox-id]').getAttribute('data-inbox-id')!==id)throw new Error('Inbox channel did not isolate '+channel);}
+    await page.evaluate(()=>{currentInboxItem={kind:'website',id:'qa-intake-checkout',prospect:adminWebsiteData.prospects.find(p=>p.id==='qa-intake-checkout'),messages:[],coverage:{verified:true,totalMessages:0}};renderInboxThread()});
+    if(!/payment not confirmed/i.test(await page.locator('#inboxMessages').innerText()))throw new Error('Unfinished checkout lacked an honest payment-status explanation');
+    await shot(page,'admin-inbox-unfinished-checkout',{fullPage:false});
+  }finally{await page.evaluate(()=>{adminWebsiteData=window.__qaIntakeSaved.data;adminInboxData.filter=window.__qaIntakeSaved.filter;adminInboxData.search=window.__qaIntakeSaved.search;adminWebsiteLoadError=window.__qaIntakeSaved.error;delete window.__qaIntakeSaved;currentInboxItem=null;renderAdminInbox();renderInboxThread()});}
+  report.admin.interactions.push('contact/chatbot/unfinished checkout channel isolation, truthful counts and payment state without sending messages');
+
   await ensureView(page,'onboarding');
   await page.locator('#onboardingSearch').fill('Lakeview');
   await page.waitForTimeout(180);
@@ -1399,7 +1411,8 @@ async function runPublicSiteQA(){
           await page.locator('#contactForm [name="name"]').fill('Preview Visual QA');await page.locator('#contactForm [name="email"]').fill('preview-qa@callercore.test');await page.locator('#contactForm [name="message"]').fill('Isolated UI verification; this request is intercepted and never sent.');
           await page.locator('#contactForm button[type="submit"]').click();await page.locator('#contactStatus.error').waitFor();
           if(!await page.locator('#contactForm').isVisible())throw new Error('Unverified inquiry receipt hid the contact draft');
-          await page.locator('#contactForm button[type="submit"]').click();await page.locator('#contactSuccess').waitFor({state:'visible'});await shot(page,'public-phone-contact-receipt',{fullPage:false});
+          await page.locator('#contactForm button[type="submit"]').click();await page.locator('#contactSuccess').waitFor({state:'visible'});if(await page.locator('#contactForm').isVisible()||await page.locator('#contactForm [name="message"]').inputValue())throw new Error('Contact receipt retained visible form or submitted message');await shot(page,'public-phone-contact-receipt',{fullPage:false});
+          await page.locator('#contactNewMessage').click();if(!await page.locator('#contactForm [name="name"]').evaluate(el=>el===document.activeElement)||await page.locator('#contactForm button[type="submit"]').isDisabled())throw new Error('New contact message did not reset form and keyboard focus');
           report.publicSite.interactions.push('contact malformed receipt preserves draft, verified intercepted receipt shows success; no inquiry transmitted');
         }
       }

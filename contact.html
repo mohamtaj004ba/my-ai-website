@@ -10,7 +10,7 @@
 <p class="required-note full">Name, email, and message are required.</p>
 <label class="consent-option"><input name="marketingEmailConsent" type="checkbox"><span>Email me occasional CallerCore product news and offers. This is optional, not required to send this message, and I can unsubscribe anytime. <a href="/privacy">Privacy Policy</a>.</span></label>
 <div class="form-status" id="contactStatus" role="status" aria-live="polite"></div>
-<button class="button submit full" type="submit">Send message →</button></form><div id="contactSuccess" hidden class="success" role="status" aria-live="polite"><b aria-hidden="true">✓</b><h2>Message received.</h2><p>Thanks for reaching out. We’ll be in touch.</p></div></div><aside class="panel dark"><p class="kicker light">Prefer another route?</p><h2>We’re easy to reach.</h2><div class="mini-list"><div><small>Email</small><strong><a href="mailto:support@callercore.com">support@callercore.com</a></strong></div><div><small>Want to hear it first?</small><strong><a href="/live-demo">Explore the phone demo →</a></strong></div><div><small>Ready to start?</small><strong><a href="/get-started">Choose a plan →</a></strong></div></div></aside></section></main><footer class="site-footer" aria-label="Site footer">
+<button class="button submit full" type="submit">Send message →</button></form><div id="contactSuccess" hidden class="success" role="status" aria-live="polite"><b aria-hidden="true">✓</b><h2 tabindex="-1">Message received.</h2><p>Thanks for reaching out. We’ll be in touch.</p><button id="contactNewMessage" class="button" type="button">Send another message</button></div></div><aside class="panel dark"><p class="kicker light">Prefer another route?</p><h2>We’re easy to reach.</h2><div class="mini-list"><div><small>Email</small><strong><a href="mailto:support@callercore.com">support@callercore.com</a></strong></div><div><small>Want to hear it first?</small><strong><a href="/live-demo">Explore the phone demo →</a></strong></div><div><small>Ready to start?</small><strong><a href="/get-started">Choose a plan →</a></strong></div></div></aside></section></main><footer class="site-footer" aria-label="Site footer">
  <div class="footer-top">
   <div class="footer-brand"><a class="brand" href="/" aria-label="CallerCore home"><img src="/logo-icon.png" alt=""><span>Caller<b>Core</b></span></a><h2>A better answer.<br>A better workday.</h2><p>AI call answering built around your business.</p></div>
   <div class="footer-links"><div><span>Product</span><a href="/#how">How it works</a><a href="/#capabilities">AI receptionist</a><a href="/#pricing">Plans & pricing</a><a href="/live-demo">Try the AI</a></div><div><span>CallerCore</span><a href="/contact">Talk to us</a><a href="/login">Client login</a><a href="/privacy">Privacy policy</a><a href="/terms">Terms of use</a></div></div>
@@ -19,6 +19,7 @@
 </footer><script>
 document.getElementById('contactForm').addEventListener('submit',async e=>{
   e.preventDefault();
+  if(e.currentTarget.querySelector('button[type="submit"]').disabled)return;
   const f=e.currentTarget,btn=f.querySelector('button[type="submit"]'),status=document.getElementById('contactStatus');
   status.className='form-status';status.textContent='';
   if(!f.reportValidity()) return;
@@ -32,12 +33,18 @@ document.getElementById('contactForm').addEventListener('submit',async e=>{
     const body=await r.json().catch(()=>null);
     if(!r.ok)throw new Error(body&&typeof body==='object'&&!Array.isArray(body)&&body.error?body.error:'We could not confirm your inquiry was saved.');
     if(!body||typeof body!=='object'||Array.isArray(body)||body.ok!==true||!String(body.prospectId||''))throw new Error('We could not verify the saved inquiry receipt.');
-    f.hidden=true;const success=document.getElementById('contactSuccess');success.hidden=false;
+    f.reset();f.hidden=true;const success=document.getElementById('contactSuccess');success.hidden=false;
     const note=success.querySelector('p');if(note)note.textContent=body.warning||'Thanks for reaching out. We’ll be in touch.';
+    success.querySelector('h2').focus();
   }catch(err){
     status.className='form-status error';
     status.textContent=err.message||'We could not confirm your inquiry was saved. Please email support@callercore.com if urgent.';
     btn.disabled=false;btn.textContent='Send message →';
   }
+});
+document.getElementById('contactNewMessage').addEventListener('click',()=>{
+  const f=document.getElementById('contactForm');document.getElementById('contactSuccess').hidden=true;f.hidden=false;
+  const btn=f.querySelector('button[type="submit"]');btn.disabled=false;btn.textContent='Send message →';
+  document.getElementById('contactStatus').textContent='';f.querySelector('[name="name"]').focus();
 });
 </script><script src="/site.js" defer></script><script src="/chat-widget.js" defer></script></body></html>

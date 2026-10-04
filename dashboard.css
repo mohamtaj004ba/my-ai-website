@@ -2795,3 +2795,7 @@ body[data-dashboard="admin"] .top-actions>*:not(.admin-search-shell){flex-shrink
 }
 
 @media(max-width:600px){.followup-main{flex-direction:column!important;gap:12px!important;width:100%}.followup-customer{width:100%;min-width:0}.followup-badge{align-self:flex-start}.sidebar{transition:none!important}.nav-item{min-height:44px!important}}
+
+/* Header menus remain above record-table sticky headings. */
+.topbar{z-index:15}.workspace-logo img{padding:0}.business-logo-preview img{padding:0}
+#view-inbox .inbox-tabs{flex-wrap:wrap}#view-inbox .inbox-item{grid-template-columns:1fr;gap:7px}#view-inbox .inbox-source{justify-self:start}#view-inbox .inbox-item p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}#view-inbox .inbox-item strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}#view-inbox .inbox-item>div{min-width:0;overflow-wrap:anywhere}#view-inbox .inbox-thread-panel .inbox-message{align-self:stretch;max-width:100%}#view-inbox .inbox-thread-panel .inbox-message.outbound{background:#f4f7f9;border-left:3px solid #738fa4}#view-inbox .inbox-thread-head h2{font-size:22px;overflow-wrap:anywhere}#view-inbox .inbox-thread-head{flex-wrap:wrap}#view-inbox .inbox-thread-panel{min-height:0;max-height:none}#view-inbox .inbox-messages{min-height:180px;max-height:420px}#view-inbox .inbox-context-panel{min-height:0}.inbox-reply>div{flex-wrap:wrap}

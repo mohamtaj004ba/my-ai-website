@@ -11,7 +11,8 @@ async function request({prospectError=false,prospectEmail='visitor@example.test'
     '../lib/safe-log':{safeError:()=> 'redacted'},
     crypto,
     '../lib/kv':{kv:{}},
-    './_lib/mailgun':{sendMail:async()=>{calls.mail++;if(mailError)throw Error('mailer failure')}},
+    '../lib/email-template':require('../lib/email-template'),
+    './_lib/mailgun':{sendMail:async args=>{calls.mail++;assert.match(args.html,/Caller<span/);assert.match(args.html,/A new message for CallerCore/);assert.equal(args.replyTo,'visitor@example.test');if(mailError)throw Error('mailer failure')}},
     '../lib/site-analytics':{
       upsertWebsiteProspect:async()=>{calls.prospect++;if(prospectError)throw Error('database error');return {id:'lead-1',email:prospectEmail}},
       recordSiteEvent:async()=>{calls.tracking++;if(trackingError)throw Error('tracking error')}

@@ -196,3 +196,6 @@
 /* Keep footer copy clear of the fixed assistant launcher. */
 .public-site .footer-bottom{padding-inline-end:200px}
 @media(max-width:600px){.public-site .footer-bottom{padding-inline-end:56px}}
+
+.public-site [hidden]{display:none!important}
+.contact-page .success{padding:36px 12px;min-height:300px;display:grid;align-content:center;justify-items:center;gap:12px}.contact-page .success p{max-width:440px}.contact-page .success h2:focus{outline:none}

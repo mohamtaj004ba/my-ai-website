@@ -11,7 +11,7 @@ function fixture({cachedInbox='healthy',cachedAliases='healthy',status='healthy'
   const refresh={disabled:false,textContent:''},auto={textContent:''},renders=[],liveCalls=[];
   const initial={threads:[{id:'original'}],analytics:{unread:1}};
   const payload=(name,data)=>name==='network'?Promise.reject(Error('Unavailable')):Promise.resolve({ok:true,json:async()=>{if(name==='malformed')throw Error('Invalid JSON');return data}});
-  const ctx=vm.createContext({
+  const ctx=vm.createContext({loadWebsiteAnalytics:async()=>{},renderAdminInbox(){},
     adminInboxData:{loading:false,gmailStatus:{connected:true,gmailEmail:'original@example.test'},gmail:initial,aliases:[{email:'original@example.test'}],lastSync:1700000000000},
     currentInboxItem:null,
     adminSearchInboxRequest:0,adminSearchInboxCacheLoaded:false,adminSearchInboxLoading:false,adminSearchInboxCacheError:false,

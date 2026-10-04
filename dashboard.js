@@ -1624,7 +1624,7 @@ function renderSettings(){
 async function resizeBusinessLogo(file){
   if(!file||!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('Choose a JPG, PNG, or WebP image.');if(file.size>8*1024*1024)throw new Error('Choose an image smaller than 8 MB.');
   const src=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error('Could not read image'));r.readAsDataURL(file)}),img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error('Could not load image'));i.src=src});
-  const w=420,h=220,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,w,h);const scale=Math.min((w-24)/img.width,(h-24)/img.height),dw=img.width*scale,dh=img.height*scale;ctx.drawImage(img,(w-dw)/2,(h-dh)/2,dw,dh);return canvas.toDataURL('image/webp',.82);
+  const scale=Math.min(1,420/img.width,420/img.height),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale)),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);return canvas.toDataURL('image/webp',.82);
 }
 function resetBusinessLogoProcessing(){
   businessLogoRequest++;businessLogoProcessing=false;
@@ -2270,11 +2270,11 @@ async function loadWebsiteAnalytics(days=adminWebsiteDays){
     if(request!==adminWebsiteAnalyticsRequest)return false;
     if(!r.ok||!data.analytics)throw new Error(data.error||'Website analytics could not refresh.');
     adminWebsiteData=data.analytics;adminWebsiteLoadError='';adminWebsiteAnalyticsLoading=false;
-    renderWebsiteAnalytics();renderGrowth();return true;
+    renderWebsiteAnalytics();renderGrowth();renderAdminInbox();return true;
   }catch(err){
     if(request!==adminWebsiteAnalyticsRequest)return false;
     adminWebsiteLoadError=String(err.message||'Website analytics could not refresh.').slice(0,180);adminWebsiteAnalyticsLoading=false;
-    renderWebsiteAnalytics();renderGrowth();return false;
+    renderWebsiteAnalytics();renderGrowth();renderAdminInbox();return false;
   }
 }
 function renderWebsiteAnalytics(){
@@ -2391,7 +2391,7 @@ function openProspectModal(id='',prefill={}){
   if(prospectModalPending||(id&&prospectStagePending.has(String(id))))return false;
   const p=id?(adminWebsiteData.prospects||[]).find(x=>String(x.id)===String(id)):null;if(id&&!p){setAdminSyncState('error','This prospect is no longer available. Refresh Growth before editing.');return false}const data=p||prefill||{},m=document.getElementById('prospectModal');if(!m)return false;m.dataset.editId=p?.id||'';m.dataset.expectedUpdatedAt=p?String(p.updatedAt||p.createdAt||0):'';document.getElementById('prospectModalTitle').textContent=p?'Edit prospect':'Add prospect';
   const defaultFollowup=!p&&adminPlatformData?.autoScheduleFirstFollowup!==false&&!data.nextFollowUpAt?Date.now()+Number(adminPlatformData?.leadFollowupHours||24)*3600000:data.nextFollowUpAt;
-  const nameInput=document.getElementById('prospectNameInput');if(nameInput)nameInput.value=data.name||'';document.getElementById('prospectBusinessInput').value=data.business||'';document.getElementById('prospectEmailInput').value=data.email||'';document.getElementById('prospectPhoneInput').value=data.phone||'';['prospectNameInput','prospectBusinessInput','prospectEmailInput','prospectPhoneInput','prospectMrrInput'].forEach(id=>document.getElementById(id)?.removeAttribute?.('aria-invalid'));document.getElementById('prospectStageInput').value=data.stage||'new';document.getElementById('prospectSourceInput').value=(data.source||'Website').replace(/^website$/i,'Website');document.getElementById('prospectCampaignInput').value=data.campaign||data.utmCampaign||'';document.getElementById('prospectPlanInput').value=data.plan||'';document.getElementById('prospectMrrInput').value=data.monthlyValue??'';document.getElementById('prospectFollowupInput').value=toLocalDateTimeInput(defaultFollowup);document.getElementById('prospectOwnerInput').value=data.owner||adminPlatformData?.defaultSalesOwner||'';document.getElementById('prospectLastContactInput').value=toLocalDateTimeInput(data.lastContactAt||data.lastRepliedAt);document.getElementById('prospectTagsInput').value=Array.isArray(data.tags)?data.tags.join(', '):'';document.getElementById('prospectNotesInput').value=data.notes||'';const consent=prospectConsentUi(data),consentLabel=document.getElementById('prospectConsentLabel'),consentMeta=document.getElementById('prospectConsentMeta'),consentBadge=document.getElementById('prospectConsentBadge');if(consentLabel)consentLabel.textContent=consent.label;if(consentMeta)consentMeta.textContent=consent.meta;if(consentBadge){consentBadge.textContent=consent.label;consentBadge.className='tag '+consent.tag}const s=document.getElementById('prospectFormStatus');if(s){s.textContent='';s.className='form-status-line'}m.classList.add('open');m.setAttribute('aria-hidden','false');m.setAttribute('aria-busy','false');if(typeof setTimeout==='function')setTimeout(()=>nameInput?.focus?.(),20);else nameInput?.focus?.();
+  const nameInput=document.getElementById('prospectNameInput');if(nameInput)nameInput.value=data.name||'';document.getElementById('prospectBusinessInput').value=data.business||'';document.getElementById('prospectEmailInput').value=data.email||'';document.getElementById('prospectPhoneInput').value=data.phone||'';['prospectNameInput','prospectBusinessInput','prospectEmailInput','prospectPhoneInput','prospectMrrInput'].forEach(id=>document.getElementById(id)?.removeAttribute?.('aria-invalid'));document.getElementById('prospectStageInput').value=data.stage||'new';const sourceInput=document.getElementById('prospectSourceInput'),sourceValue=(data.source||'Website').replace(/^website$/i,'Website');if(sourceInput){if(!Array.from(sourceInput.options||[]).some(o=>o.value===sourceValue)){const option=document.createElement('option');option.value=sourceValue;option.textContent=sourceValue;sourceInput.appendChild(option);}sourceInput.value=sourceValue;}document.getElementById('prospectCampaignInput').value=data.campaign||data.utmCampaign||'';document.getElementById('prospectPlanInput').value=data.plan||'';document.getElementById('prospectMrrInput').value=data.monthlyValue??'';document.getElementById('prospectFollowupInput').value=toLocalDateTimeInput(defaultFollowup);document.getElementById('prospectOwnerInput').value=data.owner||adminPlatformData?.defaultSalesOwner||'';document.getElementById('prospectLastContactInput').value=toLocalDateTimeInput(data.lastContactAt||data.lastRepliedAt);document.getElementById('prospectTagsInput').value=Array.isArray(data.tags)?data.tags.join(', '):'';document.getElementById('prospectNotesInput').value=data.notes||'';const consent=prospectConsentUi(data),consentLabel=document.getElementById('prospectConsentLabel'),consentMeta=document.getElementById('prospectConsentMeta'),consentBadge=document.getElementById('prospectConsentBadge');if(consentLabel)consentLabel.textContent=consent.label;if(consentMeta)consentMeta.textContent=consent.meta;if(consentBadge){consentBadge.textContent=consent.label;consentBadge.className='tag '+consent.tag}const s=document.getElementById('prospectFormStatus');if(s){s.textContent='';s.className='form-status-line'}m.classList.add('open');m.setAttribute('aria-hidden','false');m.setAttribute('aria-busy','false');if(typeof setTimeout==='function')setTimeout(()=>nameInput?.focus?.(),20);else nameInput?.focus?.();
 }
 function closeProspectModal(){if(prospectModalPending)return;const m=document.getElementById('prospectModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true')}
 document.getElementById('prospectContactNow')?.addEventListener('click',()=>{const el=document.getElementById('prospectLastContactInput');if(el)el.value=toLocalDateTimeInput(Date.now())});
@@ -2590,6 +2590,7 @@ async function loadAdminInbox({silent=false,force=false}={}){
   const refresh=document.getElementById('inboxRefreshButton'),auto=document.getElementById('inboxAutoStatus');
   if(refresh&&!silent){refresh.disabled=true;refresh.textContent='Syncing…'}
   try{
+    await loadWebsiteAnalytics();
     const sr=await fetch('/api/account?action=admin-gmail-status',{headers:{Accept:'application/json'},cache:'no-store'}).catch(()=>({ok:false}));
     let statusVerified=false;
     if(sr.ok){const status=await sr.json().catch(()=>null);
@@ -2689,9 +2690,9 @@ async function refreshAdminInboxLive({silent=true,force=false}={}){
   }
 }
 function websiteInboxItems(){
-  return (adminWebsiteData.prospects||[]).filter(p=>p.message||['contact','chatbot'].includes(p.source)).map(p=>({
-    kind:'website',id:p.id,title:p.name||p.business||p.email||'Website inquiry',subject:p.category||'Website inquiry',
-    preview:p.message||'',at:p.updatedAt||p.createdAt||0,email:p.email||'',prospect:p
+  return (adminWebsiteData.prospects||[]).filter(p=>p.message||['contact','chatbot'].includes(p.source)||p.stage==='checkout_started').map(p=>({
+    kind:'website',id:p.id,title:p.name||p.business||p.email||'Website inquiry',subject:p.stage==='checkout_started'?'Checkout not completed':p.category||'Website inquiry',category:p.stage==='checkout_started'?'checkout':p.source==='chatbot'?'chatbot':'website',
+    preview:p.message||(p.stage==='checkout_started'?'Plan selected: '+(p.plan||'Not specified')+' · Payment has not been confirmed.':''),at:p.updatedAt||p.createdAt||0,email:p.email||'',prospect:p
   }));
 }
 function gmailInboxItems(){
@@ -2702,7 +2703,7 @@ function gmailInboxItems(){
 }
 function renderAdminInbox(){
   const st=adminInboxData.gmailStatus||{},ga=adminInboxData.gmail?.analytics||{},website=websiteInboxItems(),gmail=gmailInboxItems(),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
-  set('inboxWebsiteCount',website.length);set('inboxGmailUnread',ga.unread||0);set('inboxGmailAccount',adminInboxData.connectionStatusError?'Connection unverified':st.connected?(st.gmailEmail||'Connected'):(st.configured?'Not connected':'OAuth setup required'));
+  set('inboxWebsiteCount',adminWebsiteLoadError?'Unavailable':website.filter(x=>x.category!=='checkout').length);set('inboxCheckoutCount',adminWebsiteLoadError?'Unavailable':website.filter(x=>x.category==='checkout').length);set('inboxWebsiteStatus',adminWebsiteLoadError||'');set('inboxGmailUnread',ga.unread||0);set('inboxGmailAccount',adminInboxData.connectionStatusError?'Connection unverified':st.connected?(st.gmailEmail||'Connected'):(st.configured?'Not connected':'OAuth setup required'));
   set('inboxResponseTime',ga.avgFirstResponseSeconds?formatDuration(ga.avgFirstResponseSeconds):'—');set('inboxThreadCount',website.length+gmail.length);
   const connect=document.getElementById('gmailConnectButton'),disconnect=document.getElementById('gmailDisconnectButton'),title=document.getElementById('gmailStatusTitle'),copy=document.getElementById('gmailStatusCopy'),aliasList=document.getElementById('gmailAliasList');
   if(connect){connect.hidden=!!st.connected;connect.textContent=st.configured?'Connect Gmail':'Set up Gmail OAuth';connect.disabled=gmailConnectionMutationPending||!!adminInboxData.connectionStatusError}
@@ -2716,10 +2717,10 @@ function renderAdminInbox(){
   }
   if(aliasList)aliasList.innerHTML=(adminInboxData.aliases||[]).map(a=>'<span class="gmail-alias-chip '+(a.inboundVerified===true&&a.inboundSeen?'ok':'warn')+'"><b>'+esc(a.email)+'</b><small>'+(a.isPrimary?'Primary':a.verificationStatus==='accepted'?'Send as verified':a.verificationStatus==='pending'?'Verification pending':'Verification unverified')+' · '+(a.inboundVerified!==true?'Inbound check unverified':a.inboundSeen?'Inbound seen':'No inbound seen yet')+'</small></span>').join('');
   let items=[...website,...gmail].sort((a,b)=>b.at-a.at);
-  if(adminInboxData.filter!=='all')items=items.filter(x=>x.kind===adminInboxData.filter);
+  if(adminInboxData.filter!=='all')items=items.filter(x=>x.kind==='gmail'?adminInboxData.filter==='gmail':x.category===adminInboxData.filter);
   const q=String(adminInboxData.search||'').toLowerCase();if(q)items=items.filter(x=>(x.title+' '+x.subject+' '+x.preview).toLowerCase().includes(q));
   const list=document.getElementById('inboxList'),empty=document.getElementById('inboxEmpty');
-  if(list)list.innerHTML=items.map(x=>'<button class="inbox-item '+(currentInboxItem?.kind===x.kind&&currentInboxItem?.id===x.id?'active':'')+'" data-inbox-kind="'+x.kind+'" data-inbox-id="'+esc(x.id)+'"><span class="inbox-source '+x.kind+'">'+(x.kind==='gmail'?'Gmail':'Website')+'</span><div><b>'+esc(x.title)+'</b><strong>'+esc(x.subject)+'</strong><p>'+esc(String(x.preview||'').slice(0,150))+'</p><small>'+new Date(x.at||Date.now()).toLocaleString()+(x.unread?' · unread':'')+'</small></div></button>').join('');
+  if(list)list.innerHTML=items.map(x=>'<button class="inbox-item '+(currentInboxItem?.kind===x.kind&&currentInboxItem?.id===x.id?'active':'')+'" data-inbox-kind="'+x.kind+'" data-inbox-id="'+esc(x.id)+'"><span class="inbox-source '+x.kind+'">'+(x.kind==='gmail'?'Gmail':x.category==='checkout'?'Checkout':x.category==='chatbot'?'Chatbot':'Website')+'</span><div><b>'+esc(x.title)+'</b><strong>'+esc(x.subject)+'</strong><p>'+esc(String(x.preview||'').slice(0,150))+'</p><small>'+new Date(x.at||Date.now()).toLocaleString()+(x.unread?' · unread':'')+'</small></div></button>').join('');
   if(empty){empty.hidden=items.length!==0;const allCount=website.length+gmail.length,filteredView=allCount>0;if(empty.querySelector('h3'))empty.querySelector('h3').textContent=filteredView?'No conversations match this view':'No conversations yet';if(empty.querySelector('p'))empty.querySelector('p').textContent=filteredView?'Change the channel filter or search another message.':'Website inquiries and Gmail threads will appear here.'}
   list?.querySelectorAll('[data-inbox-id]').forEach(b=>b.addEventListener('click',()=>openInboxItem(b.dataset.inboxKind,b.dataset.inboxId)));
   document.querySelectorAll('[data-inbox-filter]').forEach(b=>{const selected=b.dataset.inboxFilter===adminInboxData.filter;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});
@@ -2811,9 +2812,9 @@ function renderInboxThread(){
   if(!currentInboxItem){ph.hidden=false;wrap.hidden=true;renderInboxContext();return}
   ph.hidden=true;wrap.hidden=false;renderInboxContext();
   const website=currentInboxItem.kind==='website',p=currentInboxItem.prospect||{},messages=currentInboxItem.messages||[],last=messages[messages.length-1]||{};
-  const subject=website?(p.category||'Website inquiry'):(currentInboxItem.thread?.subject||last.subject||'Gmail thread');
+  const subject=website?(p.stage==='checkout_started'?'Checkout not completed':p.category||'Website inquiry'):(currentInboxItem.thread?.subject||last.subject||'Gmail thread');
   const contact=website?(p.email||p.phone||'Website visitor'):([...(messages||[])].reverse().find(m=>m.direction==='inbound')?.from||last.from||last.to||'Gmail contact');
-  document.getElementById('inboxThreadChannel').textContent=website?(p.source==='chatbot'?'Website · Chatbot':'Website · Contact'):'Gmail';
+  document.getElementById('inboxThreadChannel').textContent=website?(p.stage==='checkout_started'?'Website · Checkout':p.source==='chatbot'?'Website · Chatbot':'Website · Contact'):'Gmail';
   document.getElementById('inboxThreadSubject').textContent=subject;
   document.getElementById('inboxThreadMeta').textContent=contact+(p.business?' · '+p.business:'');
   const coverageEl=document.getElementById('inboxThreadCoverage');
@@ -2834,6 +2835,7 @@ function renderInboxThread(){
   const box=document.getElementById('inboxMessages');
   const messageTime=at=>{const date=new Date(Number(at));return Number(at)>0&&Number.isFinite(date.getTime())?date.toLocaleString():'Date unavailable'};
   if(box)box.innerHTML=messages.map(m=>'<div class="inbox-message '+(m.direction==='outbound'?'outbound':'inbound')+'"><div><b>'+(m.direction==='outbound'?'You':esc(m.from||p.email||'Visitor'))+'</b><small>'+messageTime(m.at)+' · '+esc(m.channel||currentInboxItem.kind)+'</small></div><p>'+esc(m.body||m.snippet||'')+'</p></div>').join('');
+  if(box&&!messages.length&&website){box.innerHTML='<div class="empty-state"><h3>'+(p.stage==='checkout_started'?'Checkout started, payment not confirmed':'No saved messages')+'</h3><p>'+(p.stage==='checkout_started'?'Review the selected plan and contact in Growth. No payment failure or reminder is assumed.':'This lead has no recorded conversation yet.')+'</p></div>';}
   if(box)box.scrollTop=box.scrollHeight;
   const reply=document.getElementById('inboxReplyText');if(reply)reply.value='';
   renderInboxFromOptions();
@@ -2926,7 +2928,7 @@ async function disconnectGmailAdmin(){
   finally{setGmailConnectionControls(false,'disconnect')}
     }});
 }
-document.getElementById('inboxRefreshButton')?.addEventListener('click',()=>refreshAdminInboxLive({silent:false,force:true}));
+document.getElementById('inboxRefreshButton')?.addEventListener('click',()=>loadAdminInbox({silent:false,force:true}));
 document.getElementById('gmailConnectButton')?.addEventListener('click',connectGmail);
 document.getElementById('gmailDisconnectButton')?.addEventListener('click',disconnectGmailAdmin);
 document.getElementById('inboxReplyForm')?.addEventListener('submit',sendInboxReply);
@@ -2935,7 +2937,7 @@ document.querySelectorAll('[data-inbox-filter]').forEach(b=>b.addEventListener('
 setInterval(()=>{
   if(document.body.dataset.dashboard!=='admin'||document.hidden)return;
   const view=document.getElementById('view-inbox');
-  if(view?.classList.contains('active'))refreshAdminInboxLive({silent:true});
+  if(view?.classList.contains('active'))loadAdminInbox({silent:true});
 },180000);
 
 

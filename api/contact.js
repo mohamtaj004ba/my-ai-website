@@ -2,6 +2,7 @@ const {safeError}=require('../lib/safe-log');
 const crypto=require('crypto');
 const {kv}=require('../lib/kv');
 const { sendMail } = require('./_lib/mailgun');
+const {brandedEmail}=require('../lib/email-template');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {appendSiteConversation}=require('../lib/site-conversation');
 const {rateLimit,requestIp}=require('../lib/rate-limit');
@@ -50,7 +51,8 @@ module.exports=async function handler(req,res){
       to:'support@callercore.com',
       subject:'Website inquiry — '+(category||'General')+' — '+(business||name),
       text,
-      html:'<p><b>New CallerCore website inquiry</b></p><p><b>Category:</b> '+escapeHtml(category)+'<br><b>Name:</b> '+escapeHtml(name)+'<br><b>Business:</b> '+escapeHtml(business)+'<br><b>Email:</b> '+escapeHtml(email)+'<br><b>Phone:</b> '+escapeHtml(phone)+'</p><p><b>Message</b><br>'+escapeHtml(message).replace(/\n/g,'<br>')+'</p>'
+      replyTo:email,
+      html:brandedEmail({eyebrow:'WEBSITE INQUIRY',title:'A new message for CallerCore',intro:escapeHtml(name)+' reached out about '+escapeHtml(category||'a general question')+'.',showSupport:false,bodyHtml:'<p><b>Name:</b> '+escapeHtml(name)+(business?'<br><b>Business:</b> '+escapeHtml(business):'')+'<br><b>Email:</b> '+escapeHtml(email)+(phone?'<br><b>Phone:</b> '+escapeHtml(phone):'')+'</p><div style="padding:18px;background:#F8FAFC;border:1px solid #E7E7E2;border-radius:12px">'+escapeHtml(message).replace(/\n/g,'<br>')+'</div>',footerNote:'Website message notification · CallerCore'}).html
     });
   }catch(err){
     console.error('contact notification failed',safeError(err));

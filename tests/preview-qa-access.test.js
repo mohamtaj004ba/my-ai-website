@@ -32,20 +32,20 @@ test('Preview launcher supports direct client and admin QA sessions',()=>{
 
 
 test('Preview reseeding removes stale generated admin fixtures',()=>{
-  assert.match(account,/staleSeedWorkspaceIds=index\.filter\(id=>String\(id\)\.startsWith\('seed_'\)\)/);
-  assert.ok(account.includes('replacePreviewWorkspaceIndex(kv,workspaceId,adminIds)'));
+  assert.match(account,/staleSeedWorkspaceIds=index\.filter\(id=>String\(id\)\.startsWith\('seed_'\)&&!protectedWorkspaces\.has\(id\)\)/);
+  assert.ok(account.includes('replacePreviewWorkspaceIndex(kv,workspaceId,adminIds,{protectedWorkspaceIds})'));
   const previewWorkspace=fs.readFileSync(path.join(root,'lib','preview-workspace-seed.js'),'utf8');
-  assert.ok(previewWorkspace.includes('const retained=(raw||[]).filter(id=>id!==workspaceId&&!id.startsWith(SEED_PREFIX))'));
-  assert.ok(account.includes('replacePreviewPhoneSeed(kv,workspaceId,previewSeed.primaryPhone(workspaceId),seedPhones)'));
+  assert.ok(previewWorkspace.includes('const retained=(raw||[]).filter(id=>id!==workspaceId&&(!id.startsWith(SEED_PREFIX)||protectedWorkspaceIds.includes(id))&&!adminIds.includes(id))'));
+  assert.ok(account.includes('replacePreviewPhoneSeed(kv,workspaceId,previewSeed.primaryPhone(workspaceId),seedPhones,{protectedWorkspaceIds})'));
   const previewPhone=fs.readFileSync(path.join(root,'lib','preview-phone-seed.js'),'utf8');
   assert.ok(previewPhone.includes("!x.workspaceId.startsWith('seed_')"));
-  assert.match(account,/replacePreviewSupportSeed\(kv,seedSupport\)/);
+  assert.match(account,/replacePreviewSupportSeed\(kv,seedSupport,\{protectedWorkspaceIds\}\)/);
   const previewSupport=fs.readFileSync(path.join(root,'lib','preview-support-seed.js'),'utf8');
-  assert.match(previewSupport,/oldSeedIds=index\.filter\(id=>String\(id\)\.startsWith\(SEED_PREFIX\)\)/);
+  assert.match(previewSupport,/oldSeedIds=index\.filter\(id=>String\(id\)\.startsWith\(SEED_PREFIX\)&&!protectedRecords\.has\(id\)\)/);
   assert.match(previewSupport,/Promise\.allSettled\(oldSeedIds\.filter/);
-  assert.ok(account.includes('replacePreviewFeedbackSeed(kv,seedFeedback)'));
+  assert.ok(account.includes('replacePreviewFeedbackSeed(kv,seedFeedback,{protectedWorkspaceIds})'));
   const previewFeedback=fs.readFileSync(path.join(root,'lib','preview-feedback-seed.js'),'utf8');
-  assert.ok(previewFeedback.includes('stale=globalIds.filter(id=>id.startsWith(SEED_PREFIX))'));
+  assert.ok(previewFeedback.includes('stale=globalIds.filter(id=>id.startsWith(SEED_PREFIX)&&!protectedRecords.has(id))'));
   assert.ok(previewFeedback.includes('Promise.allSettled(stale.filter'));
 });
 

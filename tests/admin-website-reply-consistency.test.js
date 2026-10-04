@@ -8,7 +8,7 @@ assert.ok(start>=0&&end>start);
 function fixture({appendFails=false,conflicts=0,storageFails=false,prospect}={}){
   const original=prospect===undefined?{id:'lead-1',email:'lead@example.test',stage:'new',notes:'Keep this',updatedAt:10}:prospect;
   let emails=0,appends=0,commits=0,status,payload;
-  const ctx=vm.createContext({
+  const ctx=vm.createContext({brandedEmail:require('../lib/email-template').brandedEmail,escapeEmailHtml:require('../lib/email-template').esc,
     req:{body:{id:'lead-1',message:'Hello from support',expectedRecipientEmail:'lead@example.test'}},
     res:{status(n){status=n;return this},json(v){payload=v;return v}},
     requireAdmin:async()=>({email:'admin@example.test'}),

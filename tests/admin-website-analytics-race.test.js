@@ -8,7 +8,7 @@ function deferred(){let resolve;const promise=new Promise(ok=>resolve=ok);return
 function fixture(){
   const requests=new Map(),renders=[];
   const fetch=async url=>{const days=new URL('https://example.test'+url).searchParams.get('days'),pending=deferred();requests.set(days,pending);return pending.promise};
-  const context=vm.createContext({adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,adminWebsiteAnalyticsLoading:false,adminWebsiteLoadError:'',adminWebsiteData:{periodDays:30},fetch,renderWebsiteAnalytics(){renders.push(context.adminWebsiteData.periodDays)},renderGrowth(){}});
+  const context=vm.createContext({loadWebsiteAnalytics:async()=>{},renderAdminInbox(){},adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,adminWebsiteAnalyticsLoading:false,adminWebsiteLoadError:'',adminWebsiteData:{periodDays:30},fetch,renderWebsiteAnalytics(){renders.push(context.adminWebsiteData.periodDays)},renderGrowth(){}});
   const start=source.indexOf('async function loadWebsiteAnalytics('),end=source.indexOf('\nfunction renderWebsiteAnalytics(',start);vm.runInContext(source.slice(start,end),context);
   return {context,requests,renders};
 }

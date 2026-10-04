@@ -20,6 +20,14 @@ test('confirmed Gmail sends survive cache invalidation failure without a duplica
   const result=await f.api.sendMessage('admin@test.example',{to:'recipient@test.example',subject:'Reply',body:'Hello',threadId:'thread',expectedGmailEmail:'primary@test.example'});
   assert.equal(result.id,'sent-message');assert.equal(result.threadId,'thread');assert.match(result.warning,/message sent.*cached detail/);assert.equal(calls,1);
 });
+test('branded Gmail replies retain plain text, Unicode and existing thread headers in multipart MIME',async()=>{
+  const f=fixture();let payload;f.kv.del=async()=>{};
+  f.ctx.gmailFetch=async(_admin,_path,options)=>{payload=JSON.parse(options.body);return {id:'sent',threadId:'thread'}};
+  await f.api.sendMessage('admin@test.example',{to:'recipient@test.example',subject:'Reply',body:'Thanks — we’re here.',html:'<p>CallerCore — hello</p>',threadId:'thread',inReplyTo:'<original@test>',references:'<original@test>',expectedGmailEmail:'primary@test.example'});
+  const mime=Buffer.from(payload.raw,'base64url').toString('utf8');assert.match(mime,/multipart\/alternative/);assert.match(mime,/In-Reply-To: <original@test>/);assert.equal(payload.threadId,'thread');
+  const bodies=[...mime.matchAll(/Content-Transfer-Encoding: base64\r\n\r\n([A-Za-z0-9+/=\r\n]+)\r\n--cc_/g)].map(m=>Buffer.from(m[1].replace(/\s/g,''),'base64').toString('utf8'));
+  assert.deepEqual(bodies,['Thanks — we’re here.','<p>CallerCore — hello</p>']);
+});
 test('confirmed Gmail read receipt survives cache invalidation failure',async()=>{
   const f=fixture();let calls=0;
   f.kv.del=async()=>{throw Error('Cache unavailable')};
@@ -197,7 +205,7 @@ test('alias chips distinguish unknown verification and unavailable inbound evide
   const ui=fs.readFileSync('dashboard.js','utf8'),start=ui.indexOf('function renderAdminInbox('),end=ui.indexOf('\nfunction setAdminInboxActionStatus(',start),nodes=new Map();
   const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',innerHTML:'',classList:{toggle(){},add(){},remove(){}},querySelector:()=>null,querySelectorAll:()=>[]});return nodes.get(id)};
   const ctx=vm.createContext({adminInboxData:{gmailStatus:{connected:true,gmailEmail:'primary@test.example'},gmail:{analytics:{}},aliases:[{email:'unknown@test.example',verificationStatus:'verificationStatusUnspecified',inboundSeen:false,inboundVerified:false}],search:''},
-    websiteInboxItems:()=>[],gmailInboxItems:()=>[],currentInboxItem:null,gmailConnectionMutationPending:false,esc:value=>String(value||''),document:{getElementById:node,querySelectorAll:()=>[]}});
+    adminWebsiteLoadError:'',websiteInboxItems:()=>[],gmailInboxItems:()=>[],currentInboxItem:null,gmailConnectionMutationPending:false,esc:value=>String(value||''),document:{getElementById:node,querySelectorAll:()=>[]}});
   vm.runInContext(ui.slice(start,end),ctx);ctx.renderAdminInbox();
   const html=node('inboxAliasList').innerHTML||node('gmailAliasList').innerHTML;
   assert.match(html,/Verification unverified/);assert.match(html,/Inbound check unverified/);assert.doesNotMatch(html,/No inbound seen yet/);

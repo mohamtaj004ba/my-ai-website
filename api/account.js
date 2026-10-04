@@ -2,7 +2,7 @@ const crypto=require('crypto');
 const {kv,storageEnvironment}=require('../lib/kv');
 const {cleanEmail,createSession,parseCookies,clearSessionCookie,requireSession,destroySessionToken}=require('../lib/auth');
 const {sendMail}=require('../lib/mail');
-const {lifecycleEmail,authEmail,esc:escapeEmailHtml}=require('../lib/email-template');
+const {lifecycleEmail,authEmail,brandedEmail,esc:escapeEmailHtml}=require('../lib/email-template');
 const {entitlementsFor,PLANS}=require('../lib/plans');
 const {emailKey,upsertWebsiteProspect}=require('../lib/site-analytics');
 const {appendSiteConversation}=require('../lib/site-conversation');
@@ -173,6 +173,16 @@ async function seedPreviewData(req,res){
   if(rawWorkspaceIndex!=null&&(!Array.isArray(rawWorkspaceIndex)||rawWorkspaceIndex.some(id=>typeof id!=='string'||!id.trim())||new Set(rawWorkspaceIndex).size!==rawWorkspaceIndex.length))
     return res.status(503).json({error:'Preview workspace directory is unavailable; seed data was not changed'});
   const index=rawWorkspaceIndex||[];
+  // Human-owned Preview fixtures must survive automated QA reseeding.
+  const protectedWorkspaceIds=[];
+  for(const id of index.filter(id=>id.startsWith('seed_'))){
+    const existing=await kv.get('workspace:'+id);
+    const owner=cleanEmail(existing?.ownerEmail||'');
+    if(!owner||owner.endsWith('@example-client.test'))continue;
+    const mapping=await kv.get('user:email:'+owner);
+    if(mapping?.workspaceId===id&&mapping.role==='owner')protectedWorkspaceIds.push(id);
+  }
+  const protectedWorkspaces=new Set(protectedWorkspaceIds);
   const workspace=previewSeed.primaryWorkspace(workspaceId,email,now);
   workspace.previewQa=true;
   workspace.usage.minutes=dataset.minutes;
@@ -205,13 +215,14 @@ async function seedPreviewData(req,res){
   ]);
   await publishNormalizedConversations(kv,workspaceId,dataset.conversations,{now});
   const seedPrefix=workspaceId.slice(0,8);
-  const staleSeedWorkspaceIds=index.filter(id=>String(id).startsWith('seed_'));
+  const staleSeedWorkspaceIds=index.filter(id=>String(id).startsWith('seed_')&&!protectedWorkspaces.has(id));
   const staleSeedPrefixes=['workspace:','settings:','agent:','automations:','calls:','calls:index:','leads:','conversations:','appointments:','locations:','onboarding:workspace:','routing-request:','integrations:','followup:state:'];
   await Promise.allSettled(staleSeedWorkspaceIds.flatMap(id=>staleSeedPrefixes.map(prefix=>kv.del(prefix+id))));
   await Promise.allSettled(staleSeedWorkspaceIds.map(id=>deleteNormalizedConversations(kv,id)));
   const adminIds=[],seedPhones=[],seedSupport=[],seedFeedback=[];
   for(let i=0;i<previewSeed.ADMIN_CLIENTS.length;i++){
     const ws=previewSeed.adminWorkspace(seedPrefix,i,now);adminIds.push(ws.id);
+    if(protectedWorkspaces.has(ws.id))continue;
     const settings={businessName:ws.name,primaryEmail:ws.ownerEmail,contactName:ws.ownerName,businessPhone:ws.phone||('(509) 555-'+String(5200+i*19).padStart(4,'0')),website:'https://example-client.test',streetAddress:(1200+i*113)+' W Riverside Ave',city:'Spokane',state:'WA',postalCode:'99201',industry:ws.industry,serviceArea:'Spokane metro and surrounding communities.',timezone:'America/Los_Angeles',notificationEmail:ws.ownerEmail,emailAlerts:true,smsAlerts:false,notifyBilling:true,notifySetup:true,notifyCalls:true,notifySupport:true,notifyUsage:true,updatedAt:now};
     const calls=previewSeed.adminSeedCalls(i,ws.name),leads=previewSeed.adminSeedLeads(i),agent=previewSeed.adminSeedAgent(i,ws.industry),autos=previewSeed.adminSeedAutomations(i),onboarding=previewSeed.adminSeedOnboarding(i,now),phone=previewSeed.adminSeedPhone(i,ws),support=previewSeed.adminSeedSupport(i,ws,now),feedback=previewSeed.adminSeedFeedback(i,ws,calls,now);
     if(phone)seedPhones.push(phone);if(support)seedSupport.push(support);if(feedback)seedFeedback.push(feedback);
@@ -226,13 +237,13 @@ async function seedPreviewData(req,res){
     ]);
     await publishNormalizedConversations(kv,ws.id,[],{now});
   }
-  await replacePreviewWorkspaceIndex(kv,workspaceId,adminIds);
+  await replacePreviewWorkspaceIndex(kv,workspaceId,adminIds,{protectedWorkspaceIds});
 
-  await replacePreviewPhoneSeed(kv,workspaceId,previewSeed.primaryPhone(workspaceId),seedPhones);
+  await replacePreviewPhoneSeed(kv,workspaceId,previewSeed.primaryPhone(workspaceId),seedPhones,{protectedWorkspaceIds});
 
-  await replacePreviewSupportSeed(kv,seedSupport);
+  await replacePreviewSupportSeed(kv,seedSupport,{protectedWorkspaceIds});
 
-  await replacePreviewFeedbackSeed(kv,seedFeedback);
+  await replacePreviewFeedbackSeed(kv,seedFeedback,{protectedWorkspaceIds});
   await appendAudit(workspaceId,{actorEmail:email,actorRole:'owner',action:'preview_seed_realistic_dataset',section:'workspace',before:null,after:{calls:dataset.calls.length,leads:dataset.leads.length,conversations:dataset.conversations.length,days:60,adminClients:adminIds.length}});
   return res.status(200).json({ok:true,workspaceId,businessName:workspace.name,days:60,calls:dataset.calls.length,leads:dataset.leads.length,conversations:dataset.conversations.length,appointments:dataset.appointments.length,adminClients:adminIds.length,plan:workspace.plan,minutes:dataset.minutes});
 }
@@ -1896,15 +1907,16 @@ async function adminWebsiteReply(req,res){
   const expectedRecipientEmail=String(body.expectedRecipientEmail||'').trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(expectedRecipientEmail)||expectedRecipientEmail!==to)return res.status(409).json({error:'The recipient changed or could not be verified. Refresh this conversation before replying. No reply was sent.'});
   const subject='Re: '+(prospect.category||'Your CallerCore inquiry');
+  const branded=brandedEmail({eyebrow:'CALLERCORE SUPPORT',title:'A reply from CallerCore',showDashboardSupport:false,bodyHtml:'<p>'+escapeEmailHtml(message).replace(/\n/g,'<br>')+'</p>'});
   let channel='mailgun',from='support@callercore.com';
   try{
     const gmail=await getGmailConnection(admin.email);
     if(gmail){
       const expectedGmailEmail=cleanEmail(gmail.gmailEmail||'');
-      from=await validatedGmailFrom(admin.email,requestedFrom,expectedGmailEmail);await sendGmailMessage(admin.email,{to,subject,body:message,from,expectedGmailEmail});
+      from=await validatedGmailFrom(admin.email,requestedFrom,expectedGmailEmail);await sendGmailMessage(admin.email,{to,subject,body:message,html:branded.html,from,expectedGmailEmail});
       channel='gmail';
     }else{
-      await sendMail({to,subject,text:message,html:'<p>'+message.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])).replace(/\n/g,'<br>')+'</p>'});
+      await sendMail({to,subject,text:message,html:branded.html});
     }
   }catch(err){console.error('website reply failed',safeError(err));if(err.deliveryState==='uncertain')return res.status(502).json({error:'Reply delivery could not be confirmed. Review the delivery provider before retrying; another send could create duplicate mail.',code:'REPLY_DELIVERY_UNCERTAIN',deliveryStatus:'uncertain',retrySafe:false});return res.status(502).json({error:'Unable to send reply'})}
   const item={id:crypto.randomUUID(),direction:'outbound',channel,from,to,subject,body:message,actorEmail:admin.email,at:Date.now()};
