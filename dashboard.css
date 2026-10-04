@@ -2744,3 +2744,5 @@ body[data-dashboard="admin"] .top-actions>*:not(.admin-search-shell){flex-shrink
 @media(max-width:600px){.settings-card.editing .settings-section-actions{position:fixed;left:16px;right:16px;bottom:max(12px,env(safe-area-inset-bottom));z-index:8}.settings-card.editing{padding-bottom:110px}.settings-section-actions #saveSettingsButton,.settings-section-actions #settingsCancelButton{min-height:42px}}
 
 .call-history-panel .call-day-heading{position:relative!important;top:auto!important}
+
+.call-row .call-type-pill{max-width:100%;white-space:normal;overflow-wrap:anywhere}

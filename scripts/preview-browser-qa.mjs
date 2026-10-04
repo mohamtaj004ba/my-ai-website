@@ -512,6 +512,7 @@ async function runClientInteractions(page){
   await page.locator('#settingsFormStatus.success').waitFor({state:'visible',timeout:10000});
   const savedSettings=await page.request.get(baseURL+'/api/account?action=settings');
   if(!savedSettings.ok()||(await savedSettings.json()).settings.businessName!==originalName+' QA')throw new Error('Settings name did not persist');
+  if(!await page.locator('#settingsEditButton').evaluate(el=>document.activeElement===el))throw new Error('Settings save did not restore section focus');
   await page.locator('#settingsEditButton').click();
   await page.locator('#settingsBusinessName').fill(originalName);
   await page.locator('#saveSettingsButton').click();
@@ -1101,6 +1102,19 @@ async function runAdminInteractions(page){
   if(await adminReplyDraft.inputValue()!=='Unsent admin reply preserved during case refresh and search.')throw new Error('Admin support draft disappeared after filter reset');
   await adminReplyDraft.fill('');
   report.admin.interactions.push('unsent admin support reply survives redraw and filtering');
+  const careWorkspaceId=await adminSupportThread.locator('[data-care-action="settings"]').getAttribute('data-care-workspace');
+  await adminSupportThread.locator('[data-care-action="settings"]').click();
+  await page.locator('#adminClientDrawer.open').waitFor({state:'visible'});
+  await page.waitForFunction(id=>String(currentAdminClient?.id)===id&&document.getElementById('adminConfigSection').value==='settings',careWorkspaceId);
+  if(!await page.locator('#adminConfigEditor').evaluate(el=>document.activeElement===el))throw new Error('Client Care did not focus the selected configuration');
+  await page.locator('#closeAdminClient').click();
+  await adminSupportThread.locator('[data-care-action="access"]').click();
+  await page.locator('#adminClientDrawer.open').waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.activeElement?.id==='adminRepairEmail');
+  if(await page.evaluate(()=>String(currentAdminClient?.id))!==careWorkspaceId)throw new Error('Client Care opened another client');
+  await page.locator('#closeAdminClient').click();
+  report.admin.interactions.push('Client Care exact workspace configuration + access shortcuts + keyboard focus without mutations');
+
 
   await page.route('**/api/account?action=admin-ai-guide',async route=>{
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({answer:'QA stub response from Core Intelligence.'})});
@@ -1220,6 +1234,15 @@ async function runResponsive(kind,viewport,name){
     }
     await assertSectionAlertContext(page,kind,kind+'-'+name);
     if(kind==='client'){
+      await ensureView(page,'settings');
+      await page.locator('[data-settings-edit="notifications"]').click();
+      await assertLayout(page,kind+'-'+name+'-settings-section-edit');
+      if(viewport.width<=600){
+        const footer=await page.locator('#settingsSectionActions').boundingBox();
+        if(!footer||footer.y<0||footer.y+footer.height>viewport.height)throw new Error('Mobile Settings actions fell outside the viewport');
+      }
+      await shot(page,kind+'-'+name+'-settings-section-edit',{fullPage:false});
+      await page.locator('#settingsCancelButton').click();
       await ensureView(page,'leads');await page.locator('.followup-view-call').first().click();await page.locator('#callDrawer.open').waitFor({state:'visible'});
       await assertCompletionRecovery(page,kind+'-'+name);await page.locator('#closeCallDrawer').click();
     }
