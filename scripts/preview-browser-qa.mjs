@@ -1057,6 +1057,16 @@ async function runResponsive(kind,viewport,name){
       if(await page.evaluate(()=>document.activeElement?.id)!=='savePhoneButton')throw new Error('Phone editor did not wrap keyboard focus at '+name+' width');
       await page.locator('#closePhoneModal').focus();await page.keyboard.press('Escape');await page.locator('#phoneModal.open').waitFor({state:'hidden'});
       if(!await edit.evaluate(element=>element===document.activeElement))throw new Error('Phone editor did not restore trigger focus at '+name+' width');
+      await ensureView(page,'inbox');
+      await page.evaluate(()=>{currentInboxItem={kind:'website',id:'qa-mobile-inbox-ui-only',prospect:{id:'qa-mobile-inbox-ui-only',name:'QA mobile inquiry',email:'mobile-review@callercore.test',business:'Fictional mobile workspace',stage:'new'},messages:[{id:'qa-mobile-message',direction:'inbound',from:'mobile-review@callercore.test',channel:'qa-in-page',body:'A fictional inquiry for mobile layout and keyboard verification. No message is sent by this check.',at:Date.now()}]};renderInboxThread()});
+      await page.locator('#inboxReplyText').fill('Unsent mobile review draft');
+      await page.locator('#inboxReplyText').focus();await page.keyboard.press('Tab');
+      if(!await page.locator('#inboxReplyForm button[type="submit"]').evaluate(el=>el===document.activeElement))throw new Error('Inbox composer keyboard order skipped its send action at '+name+' width');
+      await page.locator('#inboxReplyForm button[type="submit"]').scrollIntoViewIfNeeded();
+      const inboxSend=await page.locator('#inboxReplyForm button[type="submit"]').boundingBox();
+      if(!inboxSend||inboxSend.x<0||inboxSend.x+inboxSend.width>viewport.width+1||inboxSend.y<0||inboxSend.y+inboxSend.height>viewport.height+1)throw new Error('Inbox send action is not reachable at '+name+' width');
+      await page.evaluate(()=>{document.getElementById('inboxReplyStatus').textContent='Reply delivery could not be confirmed. Review the provider before retrying; another send could create duplicate mail.'});
+      await assertLayout(page,kind+'-'+name+'-inbox-composer');await shot(page,kind+'-'+name+'-inbox-composer');
     }
     if(kind==='client'){
       for(const view of ['conversations','agent','settings']){
@@ -1109,6 +1119,7 @@ try{
 
   await runResponsive('client',{width:1280,height:800},'laptop');
   await runResponsive('admin',{width:1280,height:800},'laptop');
+  await runResponsive('admin',{width:1040,height:900},'small-laptop');
   await runResponsive('client',{width:768,height:1024},'tablet');
   await runResponsive('admin',{width:768,height:1024},'tablet');
   await runResponsive('client',{width:390,height:844},'mobile');
