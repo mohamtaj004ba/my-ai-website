@@ -41,6 +41,17 @@ test('successful Gmail read sync applies to the current thread snapshot, not an 
   assert.equal(f.ctx.adminInboxData.readError,'');
 });
 
+test('read receipt or failure from an earlier mailbox cannot change a new mailbox with the same thread id',async()=>{
+  for(const ok of [true,false]){
+    const f=fixture();f.ctx.adminInboxData.gmailStatus.gmailEmail='old@example.test';await f.open();
+    f.ctx.adminInboxData.connectionRevision=1;f.ctx.adminInboxData.gmailStatus={connected:true,gmailEmail:'new@example.test'};
+    f.ctx.adminInboxData.gmail={threads:[{id:'gmail-one',unread:true,messages:[]}],analytics:{unread:1}};
+    f.pending.resolve({ok,json:async()=>({ok})});await tick();
+    assert.equal(f.ctx.adminInboxData.gmail.threads[0].unread,true);assert.equal(f.ctx.adminInboxData.gmail.analytics.unread,1);
+    assert.equal(f.ctx.adminInboxData.readError,'');
+  }
+});
+
 test('late Gmail read response after disconnect cannot mutate disconnected inbox state',async()=>{
   const f=fixture();await f.open();
   f.ctx.adminInboxData.gmailStatus={connected:false};f.ctx.adminInboxData.gmail={threads:[],analytics:{unread:0}};f.ctx.adminInboxData.readError='';

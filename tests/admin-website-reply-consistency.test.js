@@ -53,7 +53,7 @@ test('admin inbox shows a confirmed-send warning after rendering and retains lea
   assert.ok(start>=0&&end>start);
   const handler=ui.slice(start,end);
   assert.match(handler,/deliveryWarning=data\.warning\|\|''/);
-  assert.match(handler,/if\(data\.prospect\)currentInboxItem\.prospect=data\.prospect/);
+  assert.match(handler,/if\(data\.prospect\)replyItem\.prospect=data\.prospect/);
   assert.match(handler,/if\(p&&data\.prospect\)Object\.assign/);
   assert.ok(handler.indexOf('renderInboxThread();')<handler.indexOf("status.textContent=deliveryWarning||'Reply sent.'"));
 });

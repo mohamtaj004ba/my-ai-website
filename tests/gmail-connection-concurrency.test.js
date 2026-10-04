@@ -81,3 +81,37 @@ test('expected account mismatch rejects token access before contacting the provi
   await assert.rejects(vm.runInContext("accessToken('admin@test.example','old@test.example')",f.ctx),/account changed/);
   assert.equal(contacted,false);
 });
+
+test('read-state and send mutations reject a stale displayed account before provider contact',async()=>{
+  const f=fixture();await f.api.saveConnection('admin@test.example',{refresh_token:'refresh'},{email:'new@test.example'});
+  let contacted=false;f.ctx.fetch=async()=>{contacted=true;throw Error('Unexpected provider request')};
+  await assert.rejects(f.api.markThreadRead('admin@test.example','thread','old@test.example'),error=>error.code==='GMAIL_CONNECTION_CHANGED');
+  await assert.rejects(f.api.sendMessage('admin@test.example',{to:'customer@test.example',subject:'Draft',body:'Draft',expectedGmailEmail:'old@test.example'}),error=>error.code==='GMAIL_CONNECTION_CHANGED');
+  assert.equal(contacted,false);
+});
+
+test('From-address validation rejects changed account before loading aliases',async()=>{
+  const account=fs.readFileSync('api/account.js','utf8'),start=account.indexOf('async function validatedGmailFrom('),end=account.indexOf('\nfunction validGmailAliases(',start);
+  const ctx=vm.createContext({getGmailConnection:async()=>({gmailEmail:'new@test.example',refreshTokenEnc:'encrypted'}),cleanEmail:value=>String(value||'').trim().toLowerCase(),listGmailAliases:async()=>assert.fail('Stale mailbox must not load sender aliases')});
+  vm.runInContext(account.slice(start,end),ctx);
+  await assert.rejects(ctx.validatedGmailFrom('admin@test.example','alias@test.example','old@test.example'),error=>error.code==='GMAIL_CONNECTION_CHANGED');
+});
+
+test('account switch during sender-alias loading rejects send authorization',async()=>{
+  const account=fs.readFileSync('api/account.js','utf8'),start=account.indexOf('async function validatedGmailFrom('),end=account.indexOf('\nfunction validGmailAliases(',start);let reads=0;
+  const ctx=vm.createContext({getGmailConnection:async()=>({gmailEmail:++reads===1?'old@test.example':'new@test.example',refreshTokenEnc:'encrypted'}),cleanEmail:value=>String(value||'').trim().toLowerCase(),listGmailAliases:async()=>[{email:'old@test.example',isPrimary:true}]});
+  vm.runInContext(account.slice(start,end),ctx);
+  await assert.rejects(ctx.validatedGmailFrom('admin@test.example','','old@test.example'),error=>error.code==='GMAIL_CONNECTION_CHANGED');
+});
+
+test('read and send endpoints reject missing displayed identity without invoking provider mutations',async()=>{
+  const account=fs.readFileSync('api/account.js','utf8'),start=account.indexOf('async function adminGmailRead('),end=account.indexOf('\nasync function adminWebsiteConversation(',start);
+  const ctx=vm.createContext({requireAdmin:async()=>({email:'admin@test.example'}),cleanEmail:value=>String(value||'').trim().toLowerCase(),
+    markGmailThreadRead:async()=>assert.fail('Missing identity must not mark a thread'),validatedGmailFrom:async()=>assert.fail('Missing identity must not resolve a sender'),sendGmailMessage:async()=>assert.fail('Missing identity must not send'),console,safeError:()=>''});
+  vm.runInContext(account.slice(start,end),ctx);
+  for(const action of ['adminGmailRead','adminGmailSend']){
+    const res={code:0,status(value){this.code=value;return this},json(value){this.body=value;return this}};
+    await ctx[action]({body:{threadId:'thread',to:'customer@test.example',subject:'Draft',body:'Draft'}},res);
+    assert.equal(res.code,409);assert.match(res.body.error,/connected Gmail account/);
+  }
+});

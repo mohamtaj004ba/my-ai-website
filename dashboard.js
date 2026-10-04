@@ -2692,6 +2692,7 @@ function setAdminInboxActionStatus(message='',tone=''){
   el.textContent=String(message||'');el.className='form-status-line'+(tone?' '+tone:'');
 }
 async function openInboxItem(kind,id){
+  if(typeof adminInboxReplyPending!=='undefined'&&adminInboxReplyPending)return false;
   const request=++adminInboxOpenRequest;
   if(kind==='website'){
     setAdminInboxActionStatus('Loading conversation…');
@@ -2706,16 +2707,17 @@ async function openInboxItem(kind,id){
     const thread=(adminInboxData.gmail?.threads||[]).find(x=>x.id===id);if(!thread)return;
     currentInboxItem={kind,id,thread,prospect:thread.prospect||null,messages:thread.messages||[]};
     if(thread.unread){
-      fetch('/api/account?action=admin-gmail-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({threadId:id})}).then(async r=>{
+      const connectionRevision=Number(adminInboxData.connectionRevision||0),expectedGmailEmail=String(adminInboxData.gmailStatus?.gmailEmail||'');
+      fetch('/api/account?action=admin-gmail-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({threadId:id,expectedGmailEmail})}).then(async r=>{
         const data=await r.json().catch(()=>({}));
         if(!r.ok||data.ok!==true)throw new Error(data.error||'Gmail read sync failed');
-        if(adminInboxData.gmailStatus?.connected===false)return;
+        if(adminInboxData.gmailStatus?.connected===false||connectionRevision!==Number(adminInboxData.connectionRevision||0))return;
         const current=(adminInboxData.gmail?.threads||[]).find(item=>String(item.id)===String(id));
         if(current?.unread)current.unread=false;
         if(adminInboxData.gmail?.analytics)adminInboxData.gmail.analytics.unread=(adminInboxData.gmail?.threads||[]).filter(item=>item?.unread).length;
         adminInboxData.readError='';renderAdminInbox();
       }).catch(()=>{
-        if(adminInboxData.gmailStatus?.connected===false)return;
+        if(adminInboxData.gmailStatus?.connected===false||connectionRevision!==Number(adminInboxData.connectionRevision||0))return;
         adminInboxData.readError='Could not mark this Gmail thread as read in Gmail; it remains unread.';
         renderAdminInbox();
       });
@@ -2797,30 +2799,34 @@ function renderInboxThread(){
 }
 async function sendInboxReply(e){
   e?.preventDefault();if(!currentInboxItem||adminInboxReplyPending)return false;
+  const replyItem=currentInboxItem,connectionRevision=Number(adminInboxData.connectionRevision||0),expectedGmailEmail=String(adminInboxData.gmailStatus?.gmailEmail||'');
   const field=document.getElementById('inboxReplyText'),status=document.getElementById('inboxReplyStatus'),btn=document.querySelector('#inboxReplyForm button[type="submit"]'),message=String(field?.value||'').trim(),from=String(document.getElementById('inboxFromSelect')?.value||'').trim().toLowerCase();
   if(!message)return false;adminInboxReplyPending=true;if(btn){btn.disabled=true;btn.textContent='Sending…'}if(field)field.readOnly=true;if(status)status.textContent='';
   let deliveryWarning='';
   try{
-    if(currentInboxItem.kind==='website'){
-      const r=await fetch('/api/account?action=admin-website-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentInboxItem.id,message,from})}),data=await r.json().catch(()=>({}));
+    if(replyItem.kind==='website'){
+      const r=await fetch('/api/account?action=admin-website-reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:replyItem.id,message,from})}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not send reply');
       if(data.ok!==true||!data.message||typeof data.message!=='object'||Array.isArray(data.message)||!String(data.message.id||'').trim()||String(data.message.body||'')!==message)throw new Error('Website reply response was incomplete. Your draft remains open; refresh before retrying.');
-      currentInboxItem.messages.push(data.message);
-      if(data.prospect)currentInboxItem.prospect=data.prospect;
+      replyItem.messages.push(data.message);
+      if(data.prospect)replyItem.prospect=data.prospect;
       deliveryWarning=data.warning||'';
-      const p=(adminWebsiteData.prospects||[]).find(x=>x.id===currentInboxItem.id);if(p&&data.prospect)Object.assign(p,data.prospect);
+      const p=(adminWebsiteData.prospects||[]).find(x=>x.id===replyItem.id);if(p&&data.prospect)Object.assign(p,data.prospect);
     }else{
-      const msgs=currentInboxItem.messages||[],inbound=[...msgs].reverse().find(m=>m.direction==='inbound'),last=msgs[msgs.length-1]||{},to=inbound?.from||last.from;
+      const msgs=replyItem.messages||[],inbound=[...msgs].reverse().find(m=>m.direction==='inbound'),last=msgs[msgs.length-1]||{},to=inbound?.from||last.from;
       if(!to)throw new Error('No Gmail recipient found');
-      const subject=/^re:/i.test(currentInboxItem.thread.subject||'')?(currentInboxItem.thread.subject):'Re: '+(currentInboxItem.thread.subject||'CallerCore');
+      const subject=/^re:/i.test(replyItem.thread.subject||'')?(replyItem.thread.subject):'Re: '+(replyItem.thread.subject||'CallerCore');
       const refs=msgs.map(m=>m.messageId).filter(Boolean).join(' ');
-      const r=await fetch('/api/account?action=admin-gmail-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,subject,body:message,from,threadId:currentInboxItem.id,inReplyTo:last.messageId||'',references:refs})}),data=await r.json().catch(()=>({}));
+      const r=await fetch('/api/account?action=admin-gmail-send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,subject,body:message,from,expectedGmailEmail,threadId:replyItem.id,inReplyTo:last.messageId||'',references:refs})}),data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error||'Could not send Gmail reply');
       if(data.ok!==true||!String(data.threadId||'').trim())throw new Error('Gmail reply response was incomplete. Your draft remains open; refresh before retrying.');
       deliveryWarning=data.warning||'';
-      await loadAdminInbox();
-      const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===(data.threadId||currentInboxItem.id));if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]}}
+      if(connectionRevision!==Number(adminInboxData.connectionRevision||0)){const notice='Reply sent from '+expectedGmailEmail+'. The connected account changed; refresh Inbox before another reply.';if(status)status.textContent=notice;setAdminInboxActionStatus(notice,'success');return true}
+      try{if(await loadAdminInbox()===false)throw new Error('Inbox refresh unavailable')}catch(_){deliveryWarning=(deliveryWarning?deliveryWarning+' ':'')+'Gmail reply was sent, but the inbox could not refresh. Refresh before replying again.'}
+      if(connectionRevision!==Number(adminInboxData.connectionRevision||0)){const notice='Reply sent from '+expectedGmailEmail+'. The connected account changed; refresh Inbox before another reply.';if(status)status.textContent=notice;setAdminInboxActionStatus(notice,'success');return true}
+      const t=(adminInboxData.gmail?.threads||[]).find(x=>x.id===(data.threadId||replyItem.id));if(t){currentInboxItem={kind:'gmail',id:t.id,thread:t,prospect:t.prospect||null,messages:t.messages||[]}}
     }
+    if(!currentInboxItem||currentInboxItem.kind!==replyItem.kind||String(currentInboxItem.id)!==String(replyItem.id)){setAdminInboxActionStatus(deliveryWarning||'Reply sent. The selected conversation changed; reopen the original conversation to review it.','success');return true}
     renderInboxThread();renderAdminInbox();renderWebsiteAnalytics();renderAdminFleet();
     if(status)status.textContent=deliveryWarning||'Reply sent.';return true;
   }catch(err){if(status)status.textContent=err.message||'Could not send reply';return false}

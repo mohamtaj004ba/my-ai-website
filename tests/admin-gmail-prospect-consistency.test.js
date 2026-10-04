@@ -10,7 +10,7 @@ function fixture({conflicts=0,fail=false,lookup='lead-1',stored}={}){
   const record={id:'lead-1',stage:'inquiry',email:'lead@example.test',notes:'Keep this',updatedAt:10};
   const ctx=vm.createContext({
     requireAdmin:async()=>({email:'admin@example.test'}),
-    req:{body:{to:'lead@example.test',subject:'Re: Inquiry',body:'Following up'}},
+    req:{body:{to:'lead@example.test',subject:'Re: Inquiry',body:'Following up',expectedGmailEmail:'admin@example.test'}},
     res:{status(n){code=n;return this},json(x){data=x;return x}},
     getGmailConnection:async()=>({}),validatedGmailFrom:async()=> 'admin@example.test',
     sendGmailMessage:async()=>{sends++;return {id:'gmail-1',threadId:'thread-1'}},

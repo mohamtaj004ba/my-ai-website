@@ -1668,11 +1668,18 @@ async function adminPlatformSettingsSave(req,res){
 
 
 
-async function validatedGmailFrom(adminEmail,requested=''){
+async function validatedGmailFrom(adminEmail,requested='',expectedGmailEmail){
   const conn=await getGmailConnection(adminEmail);
+  if(expectedGmailEmail!==undefined&&cleanEmail(conn?.gmailEmail||'')!==cleanEmail(expectedGmailEmail)){
+    const error=new Error('Gmail account changed. Refresh the inbox before sending.');error.code='GMAIL_CONNECTION_CHANGED';throw error;
+  }
   if(!conn)return '';
   if(!validGmailConnection(conn,adminEmail))throw new Error('Gmail connection state is unavailable');
   const aliases=await listGmailAliases(adminEmail);
+  const currentConnection=await getGmailConnection(adminEmail);
+  if(cleanEmail(currentConnection?.gmailEmail||'')!==cleanEmail(conn.gmailEmail||'')){
+    const error=new Error('Gmail account changed while checking sender aliases. Refresh before sending.');error.code='GMAIL_CONNECTION_CHANGED';throw error;
+  }
   const wanted=String(requested||'').trim().toLowerCase();
   if(!wanted)return (aliases.find(a=>a.isDefault&&a.verificationStatus!=='pending')||aliases.find(a=>a.isPrimary)||{}).email||conn.gmailEmail||adminEmail;
   const match=aliases.find(a=>a.email===wanted&&(a.isPrimary||a.verificationStatus==='accepted'));
@@ -1808,16 +1815,20 @@ async function adminGmailAliases(req,res){
 async function adminGmailRead(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const id=String((req.body||{}).threadId||'').slice(0,120);if(!id)return res.status(400).json({error:'Thread id required'});
-  try{await markGmailThreadRead(admin.email,id);return res.status(200).json({ok:true})}
-  catch(err){console.error('gmail mark read failed',safeError(err));return res.status(502).json({error:'Could not update Gmail thread'})}
+  const expectedGmailEmail=cleanEmail(req.body?.expectedGmailEmail||'');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(expectedGmailEmail))return res.status(409).json({error:'Refresh the connected Gmail account before changing read state.'});
+  try{await markGmailThreadRead(admin.email,id,expectedGmailEmail);return res.status(200).json({ok:true})}
+  catch(err){if(err.code==='GMAIL_CONNECTION_CHANGED')return res.status(409).json({error:err.message});console.error('gmail mark read failed',safeError(err));return res.status(502).json({error:'Could not update Gmail thread'})}
 }
 
 async function adminGmailSend(req,res){
   const admin=await requireAdmin(req,res);if(!admin)return;
   const b=req.body||{},to=String(b.to||'').trim().toLowerCase(),subject=String(b.subject||'').trim().slice(0,300),body=String(b.body||'').trim().slice(0,20000),requestedFrom=String(b.from||'').trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)||!subject||!body)return res.status(400).json({error:'Valid recipient, subject, and message required'});
+  const expectedGmailEmail=cleanEmail(b.expectedGmailEmail||'');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(expectedGmailEmail))return res.status(409).json({error:'Refresh the connected Gmail account before sending.'});
   try{
-    const from=await validatedGmailFrom(admin.email,requestedFrom);const sent=await sendGmailMessage(admin.email,{to,subject,body,from,threadId:String(b.threadId||''),inReplyTo:String(b.inReplyTo||''),references:String(b.references||'')});
+    const from=await validatedGmailFrom(admin.email,requestedFrom,expectedGmailEmail);const sent=await sendGmailMessage(admin.email,{to,subject,body,from,expectedGmailEmail,threadId:String(b.threadId||''),inReplyTo:String(b.inReplyTo||''),references:String(b.references||'')});
     let warning='';
     try{
       const rawPid=await kv.get('site:prospect:email:'+emailKey(to)),pid=typeof rawPid==='string'?rawPid.trim():'';
@@ -1839,7 +1850,7 @@ async function adminGmailSend(req,res){
       warning='Gmail message sent, but lead follow-up status could not be confirmed. Refresh Growth.';
     }
     return res.status(200).json({ok:true,id:sent.id||'',threadId:sent.threadId||b.threadId||'',warning});
-  }catch(err){console.error('gmail send failed',safeError(err));return res.status(502).json({error:'Could not send Gmail message'})}
+  }catch(err){if(err.code==='GMAIL_CONNECTION_CHANGED')return res.status(409).json({error:err.message});console.error('gmail send failed',safeError(err));return res.status(502).json({error:'Could not send Gmail message'})}
 }
 
 async function adminWebsiteConversation(req,res){
