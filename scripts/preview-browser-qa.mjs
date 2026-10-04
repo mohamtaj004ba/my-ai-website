@@ -1352,7 +1352,7 @@ async function runPublicSiteQA(){
           report.publicSite.interactions.push(name+' menu/anchor/Escape, example selection, FAQ and chat open/close without sending');
         }
         if(key==='get-started'){
-          const assertCheckoutHeading=async()=>{if(await page.locator('.checkout-stage.active .stage-head>div').evaluate(el=>getComputedStyle(el).display)!=='block')throw new Error('Checkout heading inherited the demo row layout')};
+          const assertCheckoutHeading=async()=>{if(await page.locator('.checkout-stage.active .stage-head>div:has(h2)').evaluate(el=>getComputedStyle(el).display)!=='block')throw new Error('Checkout heading inherited the demo row layout')};
           await assertCheckoutHeading();
           await page.locator('[data-plan="Starter"]').click();await page.locator('#toBusiness').click();await page.locator('#stage2.active').waitFor();
           await assertCheckoutHeading();await contract(name+'-business-details');await shot(page,'public-'+name+'-business-details');
