@@ -20,6 +20,7 @@
       menu.textContent=open?'Close':'Menu';
       menu.setAttribute('aria-label',open?'Close navigation':'Open navigation');
       document.body.classList.toggle('nav-open',open);
+      if(open)nav.querySelector('a')?.focus();
     };
     menu.addEventListener('click',()=>setOpen(!nav.classList.contains('open')));
     const mobileNav=window.matchMedia('(max-width:900px)');

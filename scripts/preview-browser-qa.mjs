@@ -1339,6 +1339,7 @@ async function runPublicSiteQA(){
           if(viewport.width<=900){
             await page.locator('.menu').click();await page.locator('#primary-nav.open').waitFor();
             if(await page.locator('.menu').getAttribute('aria-expanded')!=='true')throw new Error('Public mobile menu did not announce its open state');
+            if(!await page.locator('#primary-nav a').first().evaluate(el=>el===document.activeElement))throw new Error('Opening phone navigation did not focus its first link');
             await shot(page,'public-'+name+'-navigation',{fullPage:false});
             await page.locator('.menu').press('Escape');
             if(await page.locator('.menu').getAttribute('aria-expanded')!=='false')throw new Error('Public mobile menu did not close on Escape');
