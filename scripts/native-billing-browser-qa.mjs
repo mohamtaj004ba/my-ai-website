@@ -22,6 +22,9 @@ export async function verifyBillingDialogs(page,{assertLayout,shot,label,ensureV
     if(action==='contact'&&viewport.width<=430){
       await page.setViewportSize({width:viewport.width,height:360});
       await page.locator('#billingContactForm input[name="name"]').focus();
+      // visualViewport resize is asynchronous; require settled geometry rather
+      // than reading the previous frame immediately after changing the viewport.
+      await page.waitForFunction(()=>{const r=document.querySelector('.billing-sheet-foot').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight},null,{timeout:5000});
       const footer=await page.locator('.billing-sheet-foot').boundingBox();
       if(!footer||footer.y<0||footer.y+footer.height>360)throw Error('Billing contact actions are hidden at keyboard height');
       if(await page.locator('#billingContactForm input[name="name"]').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))<16)throw Error('Billing phone inputs trigger browser zoom');
