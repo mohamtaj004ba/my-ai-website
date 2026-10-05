@@ -5097,6 +5097,8 @@ document.getElementById("adminSidebarIntelligence")?.addEventListener("click",()
 
 // Reset list filters when leaving a section; keep editing forms and unsent drafts intact.
 function resetAdminViewFilters(view){
+ if(view==='phones'){const search=document.getElementById('phoneSearch'),filter=document.getElementById('phoneAssignmentFilter');if(search)search.value='';if(filter)filter.value='all';phoneVisibleLimit=50;phoneFilterSignature=''}
+ if(view==='inbox'){adminInboxData.filter='all';adminInboxData.search=''}
  if(view==='clients'){adminClientFilter='active';adminClientSearch='';adminClientSort='updated'}
  if(view==='onboarding'){onboardingFilter='active';onboardingSearch=''}
  if(view==='agents'){adminAgentFilter='all';adminAgentSearch=''}
