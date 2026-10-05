@@ -68,6 +68,14 @@
       playback.reset();
     }));
     byId('demoPlay').addEventListener('click',()=>playback.toggle());
+    if ('IntersectionObserver' in root && !motion.matches) {
+      let introduced=false;
+      const observer=new root.IntersectionObserver(entries=>{
+        if(entries[0].isIntersecting&&!introduced){introduced=true;playback.toggle()}
+        else if(!entries[0].isIntersecting)playback.pause();
+      },{threshold:.4});
+      observer.observe(conversation);
+    }
     byId('demoNextButton').addEventListener('click',()=>playback.next());
     doc.addEventListener('visibilitychange',()=>{if(doc.hidden)playback.pause()});
     root.addEventListener('pagehide',()=>playback.pause());
