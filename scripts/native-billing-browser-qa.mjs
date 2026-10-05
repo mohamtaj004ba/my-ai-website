@@ -19,6 +19,15 @@ export async function verifyBillingDialogs(page,{assertLayout,shot,label,ensureV
     const geometry=await page.locator('.billing-sheet-box').boundingBox(),viewport=page.viewportSize();
     if(!geometry||geometry.x<0||geometry.y<0||geometry.x+geometry.width>viewport.width+1||geometry.y+geometry.height>viewport.height+1)throw Error('Billing dialog is outside the viewport');
     await shot(page,label+'-billing-'+action,{fullPage:false});
+    if(action==='contact'&&viewport.width<=430){
+      await page.setViewportSize({width:viewport.width,height:360});
+      await page.locator('#billingContactForm input[name="name"]').focus();
+      const footer=await page.locator('.billing-sheet-foot').boundingBox();
+      if(!footer||footer.y<0||footer.y+footer.height>360)throw Error('Billing contact actions are hidden at keyboard height');
+      if(await page.locator('#billingContactForm input[name="name"]').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))<16)throw Error('Billing phone inputs trigger browser zoom');
+      await shot(page,label+'-billing-contact-keyboard',{fullPage:false});
+      await page.setViewportSize(viewport);
+    }
     await page.keyboard.press('Escape');
     await page.locator('.billing-sheet').waitFor({state:'hidden'});
     if(!await page.locator('[data-billing-action="'+action+'"]').evaluate(el=>el===document.activeElement))throw Error('Billing dialog did not return focus');
