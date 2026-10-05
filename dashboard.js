@@ -675,7 +675,7 @@ function syncCallDateRangeValidation({focusInvalid=false}={}){
   return !invalid;
 }
 function callLogPrefsKey(){return 'callercore:calllog:prefs:'+(sessionWorkspace?.id||'default')}
-function loadCallLogPrefs(){callLogGroupBy='day';callLogSort='newest';callLogDensity='comfortable';const g=document.getElementById('callGroupBy'),sort=document.getElementById('callSort');if(g)g.value='day';if(sort)sort.value='newest'}
+function loadCallLogPrefs(){const g=document.getElementById('callGroupBy'),sort=document.getElementById('callSort');if(g)g.value=callLogGroupBy;if(sort)sort.value=callLogSort}
 function saveCallLogPrefs(){
   callLogGroupBy=document.getElementById('callGroupBy')?.value||'day';callLogSort=document.getElementById('callSort')?.value||'newest';callLogDensity=document.getElementById('callDensity')?.value||'comfortable';
   try{localStorage.setItem(callLogPrefsKey(),JSON.stringify({groupBy:callLogGroupBy,sort:callLogSort,density:callLogDensity}))}catch(_){}

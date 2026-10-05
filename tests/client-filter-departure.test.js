@@ -15,3 +15,6 @@ test('departing contacts resets its search, type, sort and pagination',()=>{
 test('departing follow-ups returns to pending without closing a support draft',()=>{
  const f=fixture();f.controls.supportSubject={value:'My draft'};f.reset('leads');assert.equal(f.ctx.followupStatusFilter,'pending');assert.equal(f.ctx.showHandledFollowups,false);assert.equal(f.controls.leadFilter.value,'all');assert.equal(f.controls.supportSubject.value,'My draft');
 });
+test('background refresh preserves active advanced filters until the page is left',()=>{
+ const f=fixture();const load=source.match(/function loadCallLogPrefs\(\)\{[^\n]+/)[0];vm.runInContext(load+'\nloadCallLogPrefs()',f.ctx);assert.equal(f.controls.callGroupBy.value,'type');assert.equal(f.controls.callSort.value,'oldest');f.reset('calls');vm.runInContext('loadCallLogPrefs()',f.ctx);assert.equal(f.controls.callGroupBy.value,'day');assert.equal(f.controls.callSort.value,'newest');
+});
