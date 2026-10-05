@@ -1375,7 +1375,7 @@ async function runResponsive(kind,viewport,name){
         await assertLayout(page,'admin-'+name+'-global-search');await shot(page,'admin-'+name+'-global-search',{fullPage:false});
         await page.locator('#adminSearch').press('Escape');
         if(await page.locator('#adminSearchResults').isVisible())throw new Error('Phone global search did not dismiss with Escape');
-        await page.locator('#adminSearch').fill('');await page.locator('.admin-header-identity').focus();
+        await page.locator('#adminSearch').fill('');await page.locator('#adminSearch').press('Escape');await page.locator('.admin-header-identity').focus();
         await page.locator('.admin-header-identity').click();
         if(!await page.locator('#view-overview').isVisible())throw new Error('Admin identity does not return to Command Center');
         await page.locator('#accountButton').click();
