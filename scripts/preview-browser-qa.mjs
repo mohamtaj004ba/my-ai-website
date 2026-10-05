@@ -1378,7 +1378,7 @@ async function runResponsive(kind,viewport,name){
         await page.locator('#adminSearch').fill('');await page.locator('#adminSearch').press('Escape');await page.locator('.admin-header-identity').focus();
         await page.locator('.admin-header-identity').click();
         if(!await page.locator('#view-overview').isVisible())throw new Error('Admin identity does not return to Command Center');
-        const totalsFit=await page.locator('.admin-command-metrics strong').evaluateAll(values=>values.every(el=>{const r=el.getBoundingClientRect(),p=el.parentElement,s=getComputedStyle(p);return r.width<=p.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight)+1&&r.height<=parseFloat(getComputedStyle(el).lineHeight)+1}));
+        const totalsFit=await page.locator('.admin-command-metrics strong').evaluateAll(values=>values.every(el=>{const r=el.getBoundingClientRect(),p=el.parentElement,s=getComputedStyle(p);return el.scrollWidth<=el.clientWidth+1&&r.width<=p.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight)+1&&r.height<=parseFloat(getComputedStyle(el).lineHeight)+1}));
         if(!totalsFit)throw new Error('Phone Command Center totals wrap or spill out of their cards');
         await page.locator('#accountButton').click();
         if(await page.locator('#accountPanel').evaluate(el=>el.getBoundingClientRect().height)>480)throw new Error('Admin account panel has excess blank space');
