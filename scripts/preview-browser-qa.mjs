@@ -1365,6 +1365,11 @@ async function runResponsive(kind,viewport,name){
         await menu.click();await page.locator('#adminSidebarIntelligence').click();
         await page.locator('#adminAiPanel.open').waitFor();
         await assertLayout(page,'admin-'+name+'-intelligence-phone');await shot(page,'admin-'+name+'-intelligence-phone',{fullPage:false});
+        await page.setViewportSize({width:viewport.width,height:250});
+        await page.waitForFunction(()=>{const panel=document.getElementById('adminAiPanel').getBoundingClientRect(),send=document.getElementById('adminAiSend').getBoundingClientRect();return panel.top>=0&&panel.bottom<=innerHeight+1&&send.right<=innerWidth&&send.bottom<=innerHeight},null,{timeout:5000});
+        await shot(page,'admin-'+name+'-intelligence-keyboard',{fullPage:false});
+        await page.setViewportSize(viewport);
+        await page.waitForFunction(()=>Math.abs(document.getElementById('adminAiPanel').getBoundingClientRect().height-innerHeight)<2);
         await page.locator('#adminAiClose').click();
         await ensureView(page,'clients');
         const rows=await page.locator('.admin-client-row-business:not(.head)').evaluateAll(rows=>rows.map(row=>({height:row.getBoundingClientRect().height,cells:[...row.children].every(cell=>getComputedStyle(cell).display!=='none')})));
