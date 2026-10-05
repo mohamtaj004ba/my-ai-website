@@ -4741,7 +4741,7 @@ async function saveProfile(){
 function syncTopbarSheetBackdrop(){const backdrop=document.getElementById('topbarSheetBackdrop');if(backdrop)backdrop.hidden=window.innerWidth>760||!['accountPanel','notificationPanel'].some(id=>{const p=document.getElementById(id);return p&&!p.hidden})}
  document.querySelectorAll('[data-close-topbar],#topbarSheetBackdrop').forEach(button=>button.addEventListener('click',()=>{const returnTo=document.getElementById('accountPanel')?.hidden===false?'accountButton':'notificationBell';closeTopbarPopovers();syncTopbarSheetBackdrop();document.getElementById(returnTo)?.focus({preventScroll:true})}));
  for(const id of ['accountPanel','notificationPanel'])document.getElementById(id)?.addEventListener('keydown',e=>{
-   if(window.innerWidth>760)return;
+   if(window.innerWidth>760||document.body.dataset.dashboard!=='client')return;
    if(e.key==='Escape'){e.preventDefault();e.stopPropagation();e.currentTarget.querySelector('[data-close-topbar]')?.click();return}
    if(e.key!=='Tab')return;
    const items=[...e.currentTarget.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled])')].filter(el=>el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden');
