@@ -12,10 +12,10 @@
   document.getElementById('scene-status').textContent=states[step];
   document.getElementById('scene-caption').textContent=descriptions[step];
   document.querySelectorAll('.scene-steps li').forEach((el,i)=>{el.classList.toggle('current',i===step);el.classList.toggle('complete',i<step)});
-  button.textContent=paused?'Replay example':'Pause animation';button.setAttribute('aria-pressed',String(!paused));
+  button.disabled=motion.matches;button.textContent=motion.matches?'Static example':paused?'Replay example':'Pause animation';button.setAttribute('aria-pressed',String(!paused));
  }
  function schedule(){clearTimeout(timer);render();if(paused||!visible||document.hidden||motion.matches)return;timer=setTimeout(()=>{step=(step+1)%4;schedule()},4500)}
- button.addEventListener('click',()=>{if(paused){step=0;paused=false}else paused=true;schedule()});
+ button.addEventListener('click',()=>{if(motion.matches)return;if(paused){step=0;paused=false}else paused=true;schedule()});
  document.addEventListener('visibilitychange',schedule);
  window.addEventListener('pagehide',()=>clearTimeout(timer));
  motion.addEventListener('change',()=>{paused=motion.matches;step=motion.matches?3:0;schedule()});
