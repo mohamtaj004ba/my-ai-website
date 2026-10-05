@@ -136,6 +136,11 @@ async function gotoAuthed(page,route,requiredSelector){
 }
 
 async function shot(page,name,{fullPage=true}={}){
+  const syncCaption=page.locator('#clientLiveStatus .sync-caption');
+  if(await syncCaption.isVisible()){
+    const readable=await syncCaption.evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=85&&r.height<35&&el.scrollWidth<=el.clientWidth+1});
+    if(!readable)throw new Error('Dashboard sync caption is squeezed or stacked vertically');
+  }
   const file=name.replace(/[^a-z0-9_-]+/gi,'-')+'.png';
   await page.screenshot({path:path.join(outDir,file),fullPage});
   report.visualScreenshots.push(file);
