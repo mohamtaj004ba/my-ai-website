@@ -1815,6 +1815,7 @@ body[data-dashboard="admin"] #view-platform-settings{max-width:1600px}
 /* System Health uses the canvas instead of stacking everything */
 .health-ops-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(360px,.7fr);gap:18px;align-items:start;margin-bottom:18px}
 .health-ops-grid>.health-map-panel,.health-ops-grid>.readiness-card{margin:0;height:100%}
+#view-health .health-ops-grid>.readiness-card{height:auto;align-self:start}
 #view-health .admin-health-groups{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
 #view-health .health-service-map{min-height:300px}
 
