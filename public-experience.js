@@ -81,8 +81,8 @@
       const observer=new root.IntersectionObserver(entries=>{
         if(entries[0].isIntersecting&&!introduced){introduced=true;playback.toggle()}
         else if(!entries[0].isIntersecting)playback.pause();
-      },{threshold:.4});
-      observer.observe(conversation);
+      },{threshold:.15});
+      observer.observe(conversation.closest('.live-stage'));
     }
     byId('demoNextButton').addEventListener('click',()=>playback.next());
     doc.addEventListener('visibilitychange',()=>{if(doc.hidden)playback.pause()});
