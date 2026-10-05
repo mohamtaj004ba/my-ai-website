@@ -2874,3 +2874,5 @@ body[data-dashboard="client"] .admin-ai-panel{grid-template-rows:auto minmax(0,1
  .followup-summary>button{padding:12px 4px;min-height:68px;gap:6px;align-content:center;text-align:center;border-radius:12px}.followup-summary>button span{font-size:11px}.followup-summary>button strong{font-size:22px}.followup-summary>button small{display:none}
  .overview-call-row{grid-template-columns:68px minmax(0,1fr)!important;gap:10px!important;padding:14px!important}.overview-call-row .time{font-size:12px!important;line-height:1.6}.overview-call-row .person{min-width:0}.overview-call-row .person small{overflow-wrap:anywhere}
 }
+
+@media(max-width:600px){#view-leads .page-head .page-actions{display:none}#view-leads .page-head{margin-bottom:12px!important}.followup-summary>button span{font-size:12px}}
