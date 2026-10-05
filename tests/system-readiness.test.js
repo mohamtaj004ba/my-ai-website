@@ -2,6 +2,37 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {classifyReadiness,VERIFIED_APPLICATION}=require('../lib/system-readiness');
 const row=(key,status='pending')=>({key,name:key,status,detail:'Check '+key});
+const fs=require('node:fs'),vm=require('node:vm'),api=fs.readFileSync('api/account.js','utf8');
+async function healthResponse({storage='preview-isolated',kvOk=true,scopeOk=true,gates={}}={}){
+  let response;
+  const context=vm.createContext({process:{env:{VERCEL_ENV:'preview',MAILGUN_API_KEY:'fixture',MAILGUN_DOMAIN:'fixture',OPENAI_API_KEY:'fixture'}},Date,Map,Set,Promise,
+    requireAdmin:async()=>({role:'admin'}),monthWindow:()=>({month:'2026-10'}),kvHealthCheck:async()=>({ok:kvOk,error:'unavailable'}),stripeConfigurationHealth:async()=>({ok:false}),
+    kv:{get:async key=>key==='platform:settings'?{launchGates:gates}:key==='phone:index'?[]:null},loadAdminWorkspaces:async()=>[],
+    environmentScopeHealth:()=>({ok:scopeOk,env:'preview',issues:[],detail:'Fixture scope check'}),gmailConfigReady:()=>true,storageEnvironment:()=>storage,
+    classifyReadiness,VERIFIED_APPLICATION,
+    req:{},res:{status(code){assert.equal(code,200);return this},json(value){response=value;return value}}
+  });
+  const gatesStart=api.indexOf('const LAUNCH_GATE_DEFS='),gatesEnd=api.indexOf('\nfunction clampInt',gatesStart);
+  vm.runInContext(api.slice(gatesStart,gatesEnd),context);
+  const start=api.indexOf('async function adminSystemHealth('),end=api.indexOf('\nasync function adminClient(',start);
+  vm.runInContext(api.slice(start,end),context);await vm.runInContext('adminSystemHealth(req,res)',context);
+  return response;
+}
+test('API reports verified isolated Preview without fabricating owner or voice confirmation',async()=>{
+  const result=await healthResponse(),isolation=result.services.find(x=>x.key==='gate-previewIsolation');
+  assert.equal(isolation.state,'operational');assert.equal(isolation.ownerConfirmed,false);assert.equal(result.readiness.ready,false);
+  assert.equal(result.services.find(x=>x.key==='application-e2e').state,'operational');assert.equal(result.services.find(x=>x.key==='gate-voiceLifecycle').state,'blocked');
+  assert.equal(result.readiness.counts.releaseSetup,4);assert.equal(result.readiness.counts.ownerActions,2);assert.equal(result.readiness.counts.technicalBlockers,2);
+});
+test('API never infers isolated storage from standard storage',async()=>{
+  assert.equal((await healthResponse({storage:'standard'})).services.find(x=>x.key==='gate-previewIsolation').state,'blocked');
+});
+test('API isolation evidence cannot override a failed current KV check',async()=>{
+  const result=await healthResponse({kvOk:false});assert.equal(result.services.find(x=>x.key==='gate-previewIsolation').state,'blocked');assert.equal(result.services.find(x=>x.key==='database').state,'blocked');
+});
+test('API isolation evidence cannot override dangerous current environment scope',async()=>{
+  const result=await healthResponse({scopeOk:false});assert.equal(result.services.find(x=>x.key==='gate-previewIsolation').state,'blocked');assert.equal(result.services.find(x=>x.key==='environment-scope').state,'blocked');
+});
 test('closed checkout and missing production Stripe are release setup, not technical failures',()=>{
   const {services,readiness}=classifyReadiness([row('checkout'),row('stripe')],['checkout','stripe']);
   assert.deepEqual(services.map(x=>x.state),['launch-gated','release-verification-required']);
