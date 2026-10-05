@@ -27,11 +27,11 @@
     if(!Number.isFinite(c)||!Number.isFinite(m))return null;
     return Math.round(Math.min(100,Math.max(5,c))*Math.min(8,Math.max(1,m))*4.33);
   }
-  function createPlayback({count,onChange,schedule=setTimeout,cancel=clearTimeout}){
+  function createPlayback({count,onChange,interval=6500,loop=false,schedule=setTimeout,cancel=clearTimeout}){
     let step=0,playing=false,timer=null,generation=0;
     const clear=()=>{generation++;if(timer!==null)cancel(timer);timer=null};
     const emit=()=>onChange({step,playing});
-    const queue=()=>{const token=generation;timer=schedule(()=>{if(token!==generation||!playing)return;timer=null;step=Math.min(count-1,step+1);if(step===count-1)playing=false;emit();if(playing)queue()},6500)};
+    const queue=()=>{const token=generation;timer=schedule(()=>{if(token!==generation||!playing)return;timer=null;step=loop?(step+1)%count:Math.min(count-1,step+1);if(step===count-1&&!loop)playing=false;emit();if(playing)queue()},interval)};
     return {
       reset(){clear();step=0;playing=false;emit()},
       next(){clear();playing=false;step=(step+1)%count;emit()},
@@ -47,25 +47,33 @@
   if(conversation){
     let selected='professional';
     const motion=root.matchMedia('(prefers-reduced-motion: reduce)');
-    const playback=createPlayback({count:4,onChange:({step,playing})=>{
+    const playback=createPlayback({count:4,interval:4600,loop:true,onChange:({step,playing})=>{
       const scenario=scenarios[selected],moment=scenario.moments[step];
       conversation.querySelector('.customer p').textContent=moment[0];
       conversation.querySelector('.agent p').textContent=moment[1];
       byId('demoIntent').textContent=scenario.intent;
       byId('demoUrgency').textContent=scenario.urgency;
       byId('demoNext').textContent=moment[2];
-      byId('demoProgress').textContent=`${step+1} of 4 moments`;
+      byId('demoProgress').textContent=['Listening to the caller','Understanding the request','Capturing the details','Ready for your team'][step];
+      const stage=conversation.closest('.live-stage');
+      stage.dataset.step=String(step);stage.dataset.playing=String(playing);
+      doc.querySelectorAll('.call-journey li').forEach((item,i)=>{item.classList.toggle('current',i===step);item.classList.toggle('complete',i<step)});
+      const payoff=byId('demoPayoff');if(payoff)payoff.hidden=step!==3;
       byId('demoTrack').style.width=`${(step+1)*25}%`;
-      byId('demoPlay').textContent=playing?'Pause walkthrough':step===3?'Replay walkthrough':'Play walkthrough';
+      byId('demoPlay').textContent=playing?'Pause animation':'Resume animation';
       byId('demoPlay').setAttribute('aria-pressed',String(playing));
       byId('demoNextButton').textContent=step===3?'Start again ↻':'Next moment →';
-      if(!motion.matches&&conversation.animate)conversation.animate([{opacity:.4,transform:'translateY(5px)'},{opacity:1,transform:'none'}],{duration:220});
+      if(!motion.matches){
+        conversation.querySelectorAll('.demo-line').forEach((line,i)=>line.animate?.([{opacity:0,transform:'translateY(18px) scale(.97)'},{opacity:1,transform:'none'}],{duration:500,delay:i*650,fill:'backwards'}));
+        doc.querySelector('.demo-outcome').animate?.([{opacity:.25,transform:'translateX(12px)'},{opacity:1,transform:'none'}],{duration:550,delay:1000,fill:'backwards'});
+      }
     }});
     doc.querySelectorAll('[data-demo]').forEach(button=>button.addEventListener('click',()=>{
       if(!Object.hasOwn(scenarios,button.dataset.demo))return;
       selected=button.dataset.demo;
       doc.querySelectorAll('[data-demo]').forEach(item=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-pressed',String(active))});
       playback.reset();
+      if(!motion.matches)playback.toggle();
     }));
     byId('demoPlay').addEventListener('click',()=>playback.toggle());
     if ('IntersectionObserver' in root && !motion.matches) {
