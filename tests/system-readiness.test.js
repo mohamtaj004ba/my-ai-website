@@ -1,6 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {classifyReadiness,VERIFIED_APPLICATION}=require('../lib/system-readiness');
+const {LIVE_BILLING_AUDIT,SUPPORT_EMAIL_EVIDENCE}=require('../lib/billing-readiness');
 const row=(key,status='pending')=>({key,name:key,status,detail:'Check '+key});
 const fs=require('node:fs'),vm=require('node:vm'),api=fs.readFileSync('api/account.js','utf8');
 async function healthResponse({storage='preview-isolated',kvOk=true,scopeOk=true,gates={}}={}){
@@ -9,7 +10,7 @@ async function healthResponse({storage='preview-isolated',kvOk=true,scopeOk=true
     requireAdmin:async()=>({role:'admin'}),monthWindow:()=>({month:'2026-10'}),kvHealthCheck:async()=>({ok:kvOk,error:'unavailable'}),stripeConfigurationHealth:async()=>({ok:false}),
     kv:{get:async key=>key==='platform:settings'?{launchGates:gates}:key==='phone:index'?[]:null},loadAdminWorkspaces:async()=>[],
     environmentScopeHealth:()=>({ok:scopeOk,env:'preview',issues:[],detail:'Fixture scope check'}),gmailConfigReady:()=>true,storageEnvironment:()=>storage,
-    classifyReadiness,VERIFIED_APPLICATION,
+    classifyReadiness,VERIFIED_APPLICATION,LIVE_BILLING_AUDIT,SUPPORT_EMAIL_EVIDENCE,
     req:{},res:{status(code){assert.equal(code,200);return this},json(value){response=value;return value}}
   });
   const gatesStart=api.indexOf('const LAUNCH_GATE_DEFS='),gatesEnd=api.indexOf('\nfunction clampInt',gatesStart);

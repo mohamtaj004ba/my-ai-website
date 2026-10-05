@@ -5,7 +5,7 @@ const account=fs.readFileSync(path.join(__dirname,'..','api','account.js'),'utf8
 test('Stripe event idempotency key is declared before lifecycle branches',()=>{
   const declaration=src.indexOf("const eventKey=event.id?'stripe:event:'+event.id:null");
   const lifecycle=src.indexOf("if(lifecycleEvent)");
-  const checkout=src.indexOf("const session=event.data&&event.data.object");
+  const checkout=src.indexOf("let session=event.data&&event.data.object");
   assert.ok(declaration>=0,'eventKey declaration missing');
   assert.ok(lifecycle>declaration,'lifecycle branch must come after eventKey declaration');
   assert.ok(checkout>declaration,'checkout branch must come after eventKey declaration');
@@ -37,23 +37,23 @@ test('embedded checkout uses verified CallerCore prices and preserves lead track
 });
 
 test('Stripe webhook accepts embedded checkout plan metadata as well as legacy payment links',()=>{
-  assert.match(src,/const metadataPlan=String\(session\.metadata\?\.plan\|\|''\)/);
+  assert.match(src,/const metadataPlan=String\(session\.metadata\?\.plan\|\|session\._verifiedPlan\|\|''\)/);
   assert.match(src,/PLAN_BY_PAYMENT_LINK\[session\.payment_link\]\|\|\(\['Starter','Growth','Pro'\]\.includes\(metadataPlan\)\?metadataPlan:null\)/);
 });
 
-test('get-started mounts Stripe Embedded Checkout instead of redirecting to Payment Links',()=>{
+test('get-started mounts secure Checkout Payment Element inside CallerCore',()=>{
   const page=fs.readFileSync(path.join(__dirname,'..','get-started.html'),'utf8');
   assert.match(page,/https:\/\/js\.stripe\.com\/v3\//);
   assert.match(page,/fetch\('\/api\/create-checkout-session'/);
-  assert.match(page,/initEmbeddedCheckout/);
+  assert.match(page,/initCheckoutElementsSdk/);assert.match(page,/createPaymentElement/);
   assert.doesNotMatch(page,/buy\.stripe\.com/);
 });
 
 test('checkout completion page distinguishes confirmed and pending payments',()=>{
   const page=fs.readFileSync(path.join(__dirname,'..','checkout-complete.html'),'utf8');
-  assert.match(page,/data\.status==='complete'&&\['paid','no_payment_required'\]\.includes\(data\.paymentStatus\)/);
+  assert.match(page,/data\.paid&&data\.onboarding/);
   assert.match(page,/Your payment is processing\./);
-  assert.match(page,/Do not submit another payment\./);
+  assert.match(page,/do not submit another payment\./i);
 });
 
 test('embedded checkout is closed unless the explicit sales launch flag is enabled',()=>{
@@ -96,9 +96,9 @@ test('billing portal refuses mismatched workspace identity and unverified redire
 test('embedded checkout verifies canonical Stripe session responses before reporting status or client secret',()=>{
   const checkout=fs.readFileSync(path.join(__dirname,'..','api','create-checkout-session.js'),'utf8');
   assert.match(checkout,/if\(!data\|\|typeof data!=='object'\|\|Array\.isArray\(data\)\)throw new Error\('Stripe response could not be verified'\)/);
-  assert.match(checkout,/session\.object!=='checkout\.session'\|\|String\(session\.id\|\|''\)!==sessionId/);
-  assert.match(checkout,/\['open','complete','expired'\]\.includes\(String\(session\.status\|\|''\)\)/);
-  assert.match(checkout,/\['paid','unpaid','no_payment_required'\]\.includes\(String\(session\.payment_status\|\|''\)\)/);
+  assert.match(checkout,/session.object!=='checkout.session'/);
+  assert.match(fs.readFileSync('lib/native-checkout.js','utf8'),/session.id!==attempt.sessionId/);
+  assert.match(fs.readFileSync('lib/native-checkout.js','utf8'),/session.metadata\?.attempt_hash!==hash\(receipt\)/);
   assert.match(checkout,/\^cs_\(\?:live\|test\)_\[A-Za-z0-9_\]\+\$/);
   assert.match(checkout,/clientSecret\.startsWith\(sessionId\+'_secret_'\)/);
   assert.match(checkout,/Stripe checkout creation response could not be verified/);
@@ -190,14 +190,13 @@ test('Stripe checkout account provisioning validates mapping shape and confirms 
 });
 
 
-test('Stripe lifecycle events are not acknowledged before workspace and subscription persistence are verified',()=>{
-  const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
-  assert.match(webhook,/const \[confirmedLifecycleWorkspace,confirmedSubscriptionMapping\]=await Promise\.all/);
-  assert.match(webhook,/String\(confirmedLifecycleWorkspace\.subscriptionStatus\|\|''\)!==String\(status\)/);
-  assert.match(webhook,/Stripe lifecycle persistence could not be confirmed/);
-  assert.match(webhook,/subscriptionId&&String\(confirmedSubscriptionMapping\|\|''\)!==String\(workspaceId\)/);
+test('Stripe lifecycle delegates canonical state and atomic persistence before acknowledging',()=>{
+  const webhook=fs.readFileSync('api/stripe-webhook.js','utf8'),sync=fs.readFileSync('lib/billing-webhook.js','utf8');
+  assert.match(webhook,/await synchronizeBillingEvent/);
+  assert.match(sync,/await provider.request\('\/subscriptions\/'/);
+  assert.match(sync,/await compareAndAuditBatch/);
+  assert.match(sync,/key:eventKey,before:null,after:true/);
 });
-
 
 test('Stripe lifecycle processing rejects malformed or conflicting customer/subscription mappings',()=>{
   const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
@@ -221,8 +220,8 @@ test('Stripe provisioning rejects malformed nested workspace acquisition, conver
   const webhook=fs.readFileSync(path.join(__dirname,'..','api','stripe-webhook.js'),'utf8');
   assert.match(webhook,/\[['"]acquisition['"],existing\.acquisition\].*\[['"]conversion['"],existing\.conversion\].*\[['"]usage['"],existing\.usage\].*\[['"]stripeBilling['"],existing\.stripeBilling\]/s);
   assert.match(webhook,/Existing workspace ['"]?\+field\+['"]? state is malformed|Existing workspace '\+field\+' state is malformed/);
-  assert.match(webhook,/ws\.stripeBilling!=null&&\(!ws\.stripeBilling\|\|typeof ws\.stripeBilling!=='object'\|\|Array\.isArray\(ws\.stripeBilling\)\)/);
-  assert.match(webhook,/Workspace billing state could not be verified/);
+  assert.match(fs.readFileSync('lib/billing-webhook.js','utf8'),/workspace.stripeBilling!=null/);
+  assert.match(fs.readFileSync('lib/billing-webhook.js','utf8'),/Workspace billing state could not be verified/);
 });
 
 

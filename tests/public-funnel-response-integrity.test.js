@@ -22,17 +22,19 @@ test('public embedded checkout validates publishable key and client secret befor
   assert.match(checkout,/\^cs_\(\?:live\|test\)_\[A-Za-z0-9_\]\+_secret_\[A-Za-z0-9_\]\+\$/);
   assert.match(checkout,/Secure checkout response could not be verified/);
   const verifyAt=checkout.indexOf('Secure checkout response could not be verified');
-  const mountAt=checkout.indexOf('stripe.initEmbeddedCheckout');
+  const mountAt=checkout.indexOf('stripe.initCheckoutElementsSdk');
   assert.ok(verifyAt>=0&&mountAt>verifyAt);
 });
 
 
-test('checkout completion page rejects malformed successful payment-status responses',()=>{
-  assert.match(complete,/const data=await r\.json\(\)\.catch\(\(\)=>null\)/);
-  assert.match(complete,/\['open','complete','expired'\]\.includes\(String\(data\.status\|\|''\)\)/);
-  assert.match(complete,/\['paid','unpaid','no_payment_required'\]\.includes\(String\(data\.paymentStatus\|\|''\)\)/);
-  assert.match(complete,/Payment verification response could not be verified/);
+test('checkout completion requires canonical payment and persisted onboarding',()=>{
+  assert.match(complete,/typeof data.paid!=='boolean'/);
+  assert.match(complete,/typeof data.onboarding!=='boolean'/);
+  assert.match(complete,/if\(data.paid&&data.onboarding\)/);
+  assert.match(complete,/receipt=\w*/);
+  assert.doesNotMatch(complete,/session_id/);
 });
+
 
 test('live demo verifies signed token and phone response shape before revealing a callable number',()=>{
   assert.match(live,/\^\\d\{13\}\\\.\[a-f0-9\]\{64\}\$\/i\.test\(String\(data\.token\|\|''\)\)/);

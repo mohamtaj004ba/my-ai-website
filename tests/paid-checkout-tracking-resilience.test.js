@@ -16,6 +16,8 @@ async function run({trackError=false,workspaceError=false}={}){
     token:null,sessionKey:'stripe:session:cs_test',eventKey:'stripe:event:evt_test',
     upsertWorkspace:async()=>{steps.push('workspace');if(workspaceError)throw Error('workspace storage unavailable');return {id:'workspace-1',name:'Paid business'}},
     upsertWebsiteProspect:async()=>{steps.push('prospect')},
+    enqueueRenderedBillingEmail:async(_kv,message)=>({key:message.operationId}),
+    deliverBillingEmail:async()=>{steps.push('mail')},
     recordSiteEvent:async()=>{steps.push('tracking');if(trackError)throw Error('analytics unavailable')},
     entitlementsFor:()=>({price:500}),
     kv:{

@@ -356,6 +356,10 @@ function renderBilling(){
   bindUpgradeButtons();
 }
 function setPlan(plan){if(!knownPlan(plan))return;currentPlan=plan;renderBilling();renderStages();renderOverviewUnlocks();renderEntitledApps()}
+window.addEventListener('callercore:canonical-billing',event=>{
+  const billing=event.detail;if(document.body.dataset.dashboard!=='client'||!knownPlan(billing?.plan)||!sessionWorkspace)return;
+  sessionWorkspace={...sessionWorkspace,plan:billing.plan,subscriptionStatus:billing.status};setPlan(billing.plan);renderPlanStrip();renderBillingConnection();
+});
 function setDataHealth(id,degraded){
   const el=document.getElementById(id);if(!el)return;
   el.hidden=!degraded;

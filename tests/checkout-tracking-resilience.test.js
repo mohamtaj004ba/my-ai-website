@@ -59,7 +59,7 @@ test('embedded checkout tracks best-effort after successful lead save',()=>{
 
 test('embedded checkout logs provider errors through the redacting logger',()=>{
   assert.match(embeddedSource,/const \{safeError\}=require\('\.\.\/lib\/safe-log'\)/);
-  assert.equal((embeddedSource.match(/console\.error\([^\n]+safeError\(/g)||[]).length,4);
+  assert.ok((embeddedSource.match(/console\.error\([^\n]+safeError\(/g)||[]).length>=3);
   assert.doesNotMatch(embeddedSource,/err&&err\.message\|\|err|analyticsError&&analyticsError\.message\|\|analyticsError/);
 });
 

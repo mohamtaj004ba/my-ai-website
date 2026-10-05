@@ -1,5 +1,11 @@
 # CallerCore project state
 
+## Native billing candidate — 2026-10-05, verification in progress
+
+- First-party billing, canonical server state, confirmed plan/contact/cancellation operations, owned SetupIntent payment updates and invoice authentication added. Website signup uses Stripe-controlled Payment Element in CallerCore with server-verified fulfillment. Branded billing outbox captures Preview mail; live sending remains separately gated. Architecture, live catalog and signed-in email-setting audit: docs/native-billing-audit.md.
+- Local candidate passes 1,673 tests. Actual Stripe sandbox acceptance is **not verified**. Exact candidate CI, CodeQL, immutable Preview and authenticated responsive QA are pending. The completed implementation below remains the last verified milestone; billing browser fixtures do not prove provider acceptance.
+- Support delivery reflects TJ's supplied independent verification. Live Stripe catalog/webhook/portal were confirmed read-only. Business/tax remains owner setup. Checkout remains disabled; no production/customer-data/live Stripe/email changes, automatic overages or voice activation. PR #5 stays draft/unmerged.
+
 Latest verified implementation: **`71a5bb3fabf4fa4ce2eeea999624cd9d166952dc`**. System Health separates verified core platform health from technical voice blockers, gated release setup, owner confirmations and optional services. Responsive map containment and full authenticated Preview regressions pass. Production remains unchanged.
 
 ## Classified System Health and production readiness — 2026-10-05

@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {installBillingFixture,verifyBillingDialogs} from './native-billing-browser-qa.mjs';
 
 const baseURL=String(process.env.PREVIEW_URL||'').replace(/\/$/,'');
 const secret=String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET||'');
@@ -105,6 +106,7 @@ async function makeContext(viewport,label){
   });
   contexts.push(context);
   const page=await context.newPage();
+  if(label==='desktop'||label.startsWith('client-'))await installBillingFixture(page);
   attachDiagnostics(page,label);
   return {context,page};
 }
@@ -1423,6 +1425,7 @@ async function runResponsive(kind,viewport,name){
     }
     await assertSectionAlertContext(page,kind,kind+'-'+name);
     if(kind==='client'){
+      await verifyBillingDialogs(page,{assertLayout,shot,label:kind+'-'+name});
       await ensureView(page,'settings');
       await page.locator('[data-settings-edit="notifications"]').click();
       await assertLayout(page,kind+'-'+name+'-settings-section-edit');
@@ -1610,6 +1613,8 @@ try{
   await assertLayout(desktop.page,'client-desktop-overview');
   await shot(desktop.page,'client-overview-initial');
   await sweepViews(desktop.page,'client');
+  report.nativeBilling={uiFixture:true,providerComplete:false,note:'Billing UI uses intercepted canonical fixtures. Real Stripe sandbox acceptance remains separately pending.'};
+  await verifyBillingDialogs(desktop.page,{assertLayout,shot,label:'client-desktop'});
   await runClientInteractions(desktop.page);
   await verifyLiveClientIntelligence(desktop.context,desktop.page);
 

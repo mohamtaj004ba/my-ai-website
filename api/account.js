@@ -1,4 +1,8 @@
 const crypto=require('crypto');
+const {createProvider,canonicalBilling,BillingError}=require('../lib/billing-provider');
+const {LIVE_BILLING_AUDIT,SUPPORT_EMAIL_EVIDENCE}=require('../lib/billing-readiness');
+const {rateLimit:billingRateLimit}=require('../lib/rate-limit');
+const {prepareChange,applyChange,setupPayment,confirmPayment}=require('../lib/billing-actions');
 const {classifyReadiness,VERIFIED_APPLICATION}=require('../lib/system-readiness');
 const {buildClientFollowupSnapshot}=require('../lib/client-followup-snapshot');
 const {TOOL:intelligenceTool,validateIntent,responseText:intelligenceResponseText}=require('../lib/intelligence-actions');
@@ -2872,6 +2876,10 @@ async function adminSystemHealth(req,res){
     ...LAUNCH_GATE_DEFS.map(g=>({key:'gate-'+g.key,name:g.name,status:launchGates[g.key]?'confirmed':'pending',detail:launchGates[g.key]?'Owner/admin confirmation recorded':'Verification required: '+g.detail,manual:true}))
   ];
   const isolation=services.find(x=>x.key==='gate-previewIsolation');
+  const support=services.find(x=>x.key==='gate-supportEmail');
+  Object.assign(support,{status:'confirmed',detail:'Inbound, outbound, CallerCore sign-in, and website inquiry delivery verified. Evidence supplied by TJ on 2026-10-05.',evidence:SUPPORT_EMAIL_EVIDENCE,manual:false});
+  if(storageEnvironment()==='preview-isolated')Object.assign(services.find(x=>x.key==='stripe'),{name:'Live billing infrastructure',status:'configured',detail:'Live billing infrastructure configured — tax registration and final commercial launch acceptance pending. Preview test credentials are tracked separately.',evidence:LIVE_BILLING_AUDIT});
+  services.push({key:'billing-native',name:'Embedded CallerCore billing',status:'pending',detail:'Native subscription, payment, contact and invoice controls implemented. Exact Preview acceptance is pending.'},{key:'stripe-test-e2e',name:'Provider-complete billing E2E',status:'pending',detail:'Requires an actual isolated Stripe test purchase, authenticated payment update, lifecycle events and reconciliation. Mock tests do not complete this check.'});
   if(storageEnvironment()==='preview-isolated'&&kvOk&&envScope.ok){
     Object.assign(isolation,{status:'operational',detail:'Isolated Preview storage boundary and authenticated application QA verified. Production bindings still require release review.',evidence:VERIFIED_APPLICATION,ownerConfirmed:launchGates.previewIsolation});
   }
@@ -4148,6 +4156,26 @@ async function billingPortal(req,res){
   }catch(err){console.error('billing portal failed',safeError(err));return res.status(502).json({error:'Could not open Stripe billing portal'})}
 }
 
+async function nativeBilling(req,res,action){
+  const s=action==='billing-state'?await requireSession(req,res):await requireWritableSession(req,res);if(!s)return;
+  try{
+    const limit=await billingRateLimit({scope:'native-billing',identifier:s.workspaceId,limit:action==='billing-state'?90:20,windowSeconds:600,failClosed:true});
+    if(limit.limited){res.setHeader('Retry-After',String(limit.retryAfter));return res.status(429).json({error:'Please wait before trying another billing request.'})}
+    const provider=createProvider();
+    if(action==='billing-state')return res.status(200).json({billing:(await canonicalBilling(kv,s.workspaceId,provider)).view});
+    const input=req.body||{};
+    if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(key=>['customer','customerId','subscription','subscriptionId','price','priceId','paymentMethodId','card','cvc','number'].includes(key)))return res.status(400).json({error:'Use the billing controls to submit this change.'});
+    const handlers={'billing-preview':()=>prepareChange(kv,s.workspaceId,provider,input),'billing-confirm':()=>applyChange(kv,s.workspaceId,s.email,provider,input),'billing-payment-setup':()=>setupPayment(kv,s.workspaceId,provider,input),'billing-payment-confirm':()=>confirmPayment(kv,s.workspaceId,s.email,provider,input)};
+    const result=await handlers[action]();
+    if(result.emailKey&&await kv.get(result.emailKey)){
+      try{await require('../lib/billing-email-outbox').deliverBillingEmail(kv,result.emailKey,sendMail)}
+      catch(_){result.warning='Your billing change is saved. Its email confirmation is awaiting reconciliation.'}
+    }
+    delete result.emailKey;
+    return res.status(200).json(result);
+  }catch(error){return res.status(error instanceof BillingError?error.status:503).json({error:error instanceof BillingError?error.message:'Billing could not be confirmed. Please refresh and try again.'})}
+}
+
 async function logout(req,res){
   const token=parseCookies(req).cc_session;
   try{if(token)await destroySessionToken(token)}
@@ -4159,6 +4187,7 @@ module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   const action=String((req.query||{}).action||'');
   if(req.method==='POST'&&!mutationOriginAllowed(req))return res.status(403).json({error:'Cross-site request blocked'});
+  if(action==='billing-state'&&req.method==='GET'||['billing-preview','billing-confirm','billing-payment-setup','billing-payment-confirm'].includes(action)&&req.method==='POST')return nativeBilling(req,res,action);
   if(action==='health'&&req.method==='GET')return publicHealth(req,res);
   if(action==='bootstrap-preview'&&req.method==='POST')return bootstrapPreview(req,res);
   if(action==='seed-preview-data'&&req.method==='POST')return seedPreviewData(req,res);

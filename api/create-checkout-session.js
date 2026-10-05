@@ -1,4 +1,6 @@
 const crypto=require('crypto');
+const {beginCheckout,checkoutStatus}=require('../lib/native-checkout');
+const {createProvider,BillingError}=require('../lib/billing-provider');
 const {kv}=require('../lib/kv');
 const {rateLimit,requestIp}=require('../lib/rate-limit');
 const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
@@ -61,33 +63,25 @@ module.exports=async function handler(req,res){
 
   if(req.method==='OPTIONS')return allowedOrigin(req)?res.status(200).end():res.status(403).end();
   if(!allowedOrigin(req))return res.status(403).json({error:'Forbidden'});
+  if(req.method==='GET'&&req.query?.receipt){
+    const limit=await rateLimit({scope:'checkout-receipt',identifier:requestIp(req),limit:60,windowSeconds:600,failClosed:true});
+    if(limit.limited)return res.status(429).json({error:'Please wait before refreshing payment confirmation.'});
+    try{return res.status(200).json(await checkoutStatus({kv,req,provider:createProvider()}))}
+    catch(error){return res.status(error instanceof BillingError?error.status:503).json({error:error instanceof BillingError?error.message:'Payment confirmation is temporarily unavailable. Do not pay again.'})}
+  }
   if(process.env.CALLERCORE_CHECKOUT_ENABLED!=='true')return res.status(503).json({error:'CallerCore checkout is not open yet'});
   if(!STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe checkout is not configured'});
   if(!stripeCredentialModesValid())return res.status(503).json({error:'Stripe credentials do not match this environment'});
-  if(process.env.VERCEL_ENV==='preview'&&(!process.env.STRIPE_STARTER_PRICE_ID||!process.env.STRIPE_GROWTH_PRICE_ID||!process.env.STRIPE_PRO_PRICE_ID||!process.env.STRIPE_SETUP_PRICE_ID))return res.status(503).json({error:'Preview checkout requires explicit Stripe test Price IDs'});
+  if(process.env.VERCEL_ENV==='preview'&&(!(process.env.STRIPE_STARTER_PRICE_ID||process.env.STRIPE_PRICE_STARTER)||!(process.env.STRIPE_GROWTH_PRICE_ID||process.env.STRIPE_PRICE_GROWTH)||!(process.env.STRIPE_PRO_PRICE_ID||process.env.STRIPE_PRICE_PRO)||!(process.env.STRIPE_SETUP_PRICE_ID||process.env.STRIPE_PRICE_SETUP)))return res.status(503).json({error:'Preview checkout requires explicit Stripe test Price IDs'});
 
   const rl=await rateLimit({scope:'embedded-checkout',identifier:requestIp(req),limit:req.method==='GET'?30:10,windowSeconds:600,failClosed:true});
   if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests'})}
-
-  if(req.method==='GET'){
-    const sessionId=String((req.query||{}).session_id||'').trim();
-    if(!/^cs_(?:live|test)_[A-Za-z0-9_]+$/.test(sessionId))return res.status(400).json({error:'Invalid session'});
-    try{
-      const session=await stripeRequest('/v1/checkout/sessions/'+encodeURIComponent(sessionId));
-      if(session.object!=='checkout.session'||String(session.id||'')!==sessionId||
-        !['open','complete','expired'].includes(String(session.status||''))||
-        !['paid','unpaid','no_payment_required'].includes(String(session.payment_status||'')))
-        throw new Error('Stripe checkout status response could not be verified');
-      return res.status(200).json({
-        status:session.status,
-        paymentStatus:session.payment_status,
-        customerEmail:session.customer_details?.email||session.customer_email||''
-      });
-    }catch(err){
-      console.error('Checkout status lookup failed',safeError(err));
-      return res.status(502).json({error:'Unable to verify checkout'});
-    }
+  if(req.method==='POST'&&req.body?.native===true){
+    try{return res.status(200).json(await beginCheckout({kv,req,res,upsertWebsiteProspect,origin:checkoutOrigin(req)}))}
+    catch(error){return res.status(error instanceof BillingError?error.status:503).json({error:error instanceof BillingError?error.message:'Checkout could not be confirmed. Retry the same checkout.'})}
   }
+
+  if(req.method==='GET')return res.status(403).json({error:'Use your secure CallerCore payment confirmation link.'});
 
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
   if(!STRIPE_PUBLISHABLE_KEY)return res.status(503).json({error:'Embedded checkout is not configured'});

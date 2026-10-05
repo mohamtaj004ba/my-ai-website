@@ -57,6 +57,9 @@ function fixture({blockFirstWorkspace=false,failFirstWorkspace=false}={}){
   };
   const modules={
     crypto,'../lib/kv':{kv},
+    '../lib/checkout-payment-proof':{verifiedPurchase:async session=>session},
+    '../lib/billing-webhook':{synchronizeBillingEvent:async()=>{throw Error('not a lifecycle fixture')}},
+    '../lib/billing-email-outbox':{enqueueRenderedBillingEmail:async(_kv,message)=>{const key='email:'+message.operationId;if(!store.has(key))store.set(key,message);return {key,record:store.get(key)}},deliverBillingEmail:async(_kv,key)=>{if(!store.get(key).captured){welcomes++;store.set(key,{...store.get(key),captured:true})}}},
     '../lib/mail':{sendMail:async()=>{welcomes++}},
     '../lib/safe-log':{safeError:()=> 'redacted'},
     '../lib/email-template':{lifecycleEmail:opts=>{emailOptions.push(opts);return {text:'Thanks',html:'Thanks'}},esc:input=>String(input).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')},
