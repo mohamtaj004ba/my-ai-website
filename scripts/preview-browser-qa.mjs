@@ -1359,8 +1359,10 @@ async function runResponsive(kind,viewport,name){
         if(!await page.locator('#view-overview').isVisible())throw new Error('Admin identity does not return to Command Center');
         await page.locator('#accountButton').click();
         if(await page.locator('#accountPanel').evaluate(el=>el.getBoundingClientRect().height)>480)throw new Error('Admin account panel has excess blank space');
+        await shot(page,'admin-'+name+'-account-panel',{fullPage:false});
         await page.locator('#accountPanel [data-close-topbar]').click();
         await page.locator('#notificationBell').click();
+        await shot(page,'admin-'+name+'-notification-panel',{fullPage:false});
         await page.locator('#topbarSheetBackdrop').click({position:{x:8,y:200}});
         if(await page.locator('#notificationPanel').isVisible())throw new Error('Admin notification outside tap did not dismiss');
         await menu.click();await page.locator('#adminSidebarIntelligence').click();
@@ -1672,6 +1674,8 @@ try{
   await runResponsive('client',{width:390,height:844},'mobile');
   await runResponsive('client',{width:430,height:932},'large-phone');
   await runResponsive('admin',{width:390,height:844},'mobile');
+  await runResponsive('admin',{width:320,height:760},'small-phone');
+  await runResponsive('admin',{width:430,height:932},'large-phone');
   await runReadOnlyBannerQA({width:1440,height:900},'desktop');
   await runReadOnlyBannerQA({width:390,height:844},'mobile');
 
