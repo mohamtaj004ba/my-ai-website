@@ -132,7 +132,7 @@ test('Core Intelligence declares its controlled panel and restores launch focus 
   const dashboard=fs.readFileSync(path.join(__dirname,'..','dashboard.js'),'utf8');
   assert.match(admin,/id="adminAiLaunch"[^>]*aria-controls="adminAiPanel"/);
   assert.match(dashboard,/wasOpen=panel\?\.classList\.contains\('open'\)/);
-  assert.match(dashboard,/if\(wasOpen\)\(window\.innerWidth<=760&&document\.body\.dataset\.dashboard==='client'\?document\.querySelector\('\.mobile-menu'\):launch\)\?\.focus\(\)/);
+  assert.match(dashboard,/if\(wasOpen\)\(window\.innerWidth<=760\?document\.querySelector\('\.mobile-menu'\):launch\)\?\.focus\(\)/);
 });
 
 

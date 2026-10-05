@@ -163,7 +163,7 @@ function openAdminAiGuide(prefill=''){
   if(!panel)return;closeTopbarPopovers();panel.classList.add('open');panel.setAttribute('aria-hidden','false');if(backdrop)backdrop.hidden=false;if(launch)launch.setAttribute('aria-expanded','true');if(prefill&&input)input.value=prefill;syncIntelligenceViewport();setTimeout(()=>{const target=window.innerWidth<=760?document.getElementById('adminAiClose'):input;target?.focus({preventScroll:true})},80);
 }
 function closeAdminAiGuide(){
-  const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),launch=document.getElementById('adminAiLaunch'),wasOpen=panel?.classList.contains('open');panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(backdrop)backdrop.hidden=true;if(launch){launch.setAttribute('aria-expanded','false');if(wasOpen)(window.innerWidth<=760&&document.body.dataset.dashboard==='client'?document.querySelector('.mobile-menu'):launch)?.focus()}
+  const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),launch=document.getElementById('adminAiLaunch'),wasOpen=panel?.classList.contains('open');panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(backdrop)backdrop.hidden=true;if(launch){launch.setAttribute('aria-expanded','false');if(wasOpen)(window.innerWidth<=760?document.querySelector('.mobile-menu'):launch)?.focus()}
 }
 function formatCoreIntelligenceAnswer(raw){
   const text=String(raw||'').replace(/\r\n?/g,'\n').trim();if(!text)return '';
@@ -261,6 +261,7 @@ function showView(name){
   const active=document.querySelector('.view.active')?.id?.replace('view-','')||'';
   if(active===name&&(agentEditing||settingsEditing))return;
   if(active!==name&&document.body.dataset.dashboard==='client')resetClientViewFilters(active);
+  if(active!==name&&document.body.dataset.dashboard==='admin')resetAdminViewFilters(active);
   if(active!==name&&document.body.dataset.dashboard==='client'&&(agentEditing||settingsEditing)){
     const area=agentEditing?'AI receptionist':'settings';
     if(!confirm('You are editing '+area+'. Leave without saving these changes?'))return;
@@ -4744,7 +4745,7 @@ async function saveProfile(){
 function syncTopbarSheetBackdrop(){const backdrop=document.getElementById('topbarSheetBackdrop');if(backdrop)backdrop.hidden=window.innerWidth>760||!['accountPanel','notificationPanel'].some(id=>{const p=document.getElementById(id);return p&&!p.hidden})}
  document.querySelectorAll('[data-close-topbar],#topbarSheetBackdrop').forEach(button=>button.addEventListener('click',()=>{const returnTo=document.getElementById('accountPanel')?.hidden===false?'accountButton':'notificationBell';closeTopbarPopovers();syncTopbarSheetBackdrop();document.getElementById(returnTo)?.focus({preventScroll:true})}));
  for(const id of ['accountPanel','notificationPanel'])document.getElementById(id)?.addEventListener('keydown',e=>{
-   if(window.innerWidth>760||document.body.dataset.dashboard!=='client')return;
+   if(window.innerWidth>760)return;
    if(e.key==='Escape'){e.preventDefault();e.stopPropagation();e.currentTarget.querySelector('[data-close-topbar]')?.click();return}
    if(e.key!=='Tab')return;
    const items=[...e.currentTarget.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled])')].filter(el=>el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden');
@@ -5086,4 +5087,20 @@ function resetClientViewFilters(view){
  if(view==='calls'){callLogGroupBy='day';callLogSort='newest';callLogDensity='comfortable';callQuickFilter='all';callMoreFiltersOpen=false;callVisibleLimit=50;callLastFilterSignature='';updateCustomDateVisibility()}
  if(view==='contacts'){contactVisibleLimit=50;contactLastFilterSignature=''}
  if(view==='leads'){followupStatusFilter='pending';showHandledFollowups=false;const button=document.getElementById('showHandledFollowups');if(button){button.textContent='Show completed';button.setAttribute('aria-pressed','false')}}
+}
+
+// Admin navigation keeps intelligence accessible without crowding the phone header.
+document.getElementById("adminSidebarIntelligence")?.addEventListener("click",()=>{document.querySelector(".sidebar")?.classList.remove("open");syncNavigationBackdrop(false);document.querySelector(".mobile-menu")?.setAttribute("aria-expanded","false");openAdminAiGuide()});
+
+// Reset list filters when leaving a section; keep editing forms and unsent drafts intact.
+function resetAdminViewFilters(view){
+ if(view==='clients'){adminClientFilter='active';adminClientSearch='';adminClientSort='updated'}
+ if(view==='onboarding'){onboardingFilter='active';onboardingSearch=''}
+ if(view==='agents'){adminAgentFilter='all';adminAgentSearch=''}
+ if(view==='admin-automations'){adminAutomationFilter='all';adminAutomationSearch=''}
+ if(view==='growth'){growthFilter='open';growthSearch=''}
+ if(view==='documents'){documentFilter='all';documentSearch='';companyDocumentFilter='all';companyDocumentSearch=''}
+ if(view==='client-care'){adminFeedbackFilter='submitted';adminFeedbackSearch='';adminSupportFilter='active';adminSupportSearch=''}
+ if(view==='finance'){adminExpenseFilter='all';adminFinanceRange=6}
+ if(view==='website')adminWebsiteDays=30;
 }

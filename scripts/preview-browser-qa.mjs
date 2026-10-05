@@ -1291,7 +1291,7 @@ async function runResponsive(kind,viewport,name){
       await menu.focus();await page.keyboard.press('Shift+Tab');
       if(await page.locator('.sidebar').evaluate(el=>el.contains(document.activeElement)))throw new Error('Closed phone navigation contains off-screen keyboard focus at '+name+' width');
       await menu.click();
-      if(kind==='client'){
+      if(kind==='client'||kind==='admin'){
         await page.locator('#navigationBackdrop').click({position:{x:viewport.width-12,y:180}});
         if(await page.locator('.sidebar').evaluate(el=>el.classList.contains('open')))throw new Error('Outside tap did not dismiss phone navigation');
         await menu.click();
@@ -1353,6 +1353,24 @@ async function runResponsive(kind,viewport,name){
       }
     }
     if(kind==='admin'){
+      if(viewport.width<=760){
+        await page.locator('.admin-header-identity').click();
+        if(!await page.locator('#view-overview').isVisible())throw new Error('Admin identity does not return to Command Center');
+        await page.locator('#accountButton').click();
+        if(await page.locator('#accountPanel').evaluate(el=>el.getBoundingClientRect().height)>480)throw new Error('Admin account panel has excess blank space');
+        await page.locator('#accountPanel [data-close-topbar]').click();
+        await page.locator('#notificationBell').click();
+        await page.locator('#topbarSheetBackdrop').click({position:{x:8,y:200}});
+        if(await page.locator('#notificationPanel').isVisible())throw new Error('Admin notification outside tap did not dismiss');
+        await menu.click();await page.locator('#adminSidebarIntelligence').click();
+        await page.locator('#adminAiPanel.open').waitFor();
+        await assertLayout(page,'admin-'+name+'-intelligence-phone');await shot(page,'admin-'+name+'-intelligence-phone',{fullPage:false});
+        await page.locator('#adminAiClose').click();
+        await ensureView(page,'clients');
+        const rows=await page.locator('.admin-client-row-business:not(.head)').evaluateAll(rows=>rows.map(row=>({height:row.getBoundingClientRect().height,cells:[...row.children].every(cell=>getComputedStyle(cell).display!=='none')})));
+        if(rows.some(row=>row.height>330||!row.cells))throw new Error('Admin account rows lost fields or remain excessively tall');
+        await ensureView(page,'onboarding');await shot(page,'admin-'+name+'-onboarding-viewport',{fullPage:false});
+      }
       await ensureView(page,'phones');await assertLayout(page,kind+'-'+name+'-phones');await shot(page,kind+'-'+name+'-phones');
       const edit=page.locator('#phoneTable [data-edit-phone]').first();
       if(!await edit.isVisible())throw new Error('Phone edit action is hidden at '+name+' width');
