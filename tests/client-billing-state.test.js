@@ -5,6 +5,16 @@ const fs=require('node:fs');
 const html=fs.readFileSync('dashboard.html','utf8');
 const dashboard=fs.readFileSync('dashboard.js','utf8');
 
+test('canonical billing refresh synchronizes plan entitlements and Intelligence without undefined callbacks',()=>{
+  const vm=require('node:vm'),calls=[];
+  const context={document:{body:{dataset:{dashboard:'client'}}},knownPlan:plan=>plan==='Pro',sessionWorkspace:{plan:'Starter',entitlements:{plan:'Starter'}},setPlan:plan=>calls.push(plan),renderBillingConnection:()=>calls.push('connection'),initClientIntelligence:()=>calls.push('intelligence')};
+  context.window={addEventListener:(_,handler)=>context.handler=handler};
+  const handler=dashboard.match(/window\.addEventListener\('callercore:canonical-billing',[\s\S]*?\n\}\);/)[0];
+  vm.runInNewContext(handler,context);
+  context.handler({detail:{plan:'Pro',status:'active',entitlements:{plan:'Pro',features:{apiAccess:true}}}});
+  assert.equal(context.sessionWorkspace.plan,'Pro');assert.equal(context.sessionWorkspace.entitlements.features.apiAccess,true);assert.deepEqual(calls,['Pro','connection','intelligence']);
+});
+
 test('client billing status is driven by live subscription state',()=>{
   assert.match(html,/id="billingSubscriptionStatus"/);
   assert.match(dashboard,/subscription==='past_due'\?\{label:'Past due',tone:'red'\}/);

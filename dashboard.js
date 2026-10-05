@@ -358,7 +358,7 @@ function renderBilling(){
 function setPlan(plan){if(!knownPlan(plan))return;currentPlan=plan;renderBilling();renderStages();renderOverviewUnlocks();renderEntitledApps()}
 window.addEventListener('callercore:canonical-billing',event=>{
   const billing=event.detail;if(document.body.dataset.dashboard!=='client'||!knownPlan(billing?.plan)||!sessionWorkspace)return;
-  sessionWorkspace={...sessionWorkspace,plan:billing.plan,subscriptionStatus:billing.status};setPlan(billing.plan);renderPlanStrip();renderBillingConnection();
+  sessionWorkspace={...sessionWorkspace,plan:billing.plan,subscriptionStatus:billing.status,...(billing.entitlements?{entitlements:billing.entitlements}:{})};setPlan(billing.plan);renderBillingConnection();initClientIntelligence();
 });
 function setDataHealth(id,degraded){
   const el=document.getElementById(id);if(!el)return;
@@ -460,7 +460,7 @@ function applyClientDashboardData(data={}){
     const avatar=document.querySelector('.avatar');if(avatar&&name!==previousName)avatar.textContent=name.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
     const planChanged=currentPlan!==previousPlan,billingChanged=planChanged||String(sessionWorkspace?.subscriptionStatus||'')!==previousSubscription||String(sessionWorkspace?.status||'')!==previousStatus||nextUsage!==previousUsage||!!sessionWorkspace?.stripe?.customerLinked!==previousStripeCustomer||!!sessionWorkspace?.stripe?.subscriptionLinked!==previousStripeSubscription;
     if(planChanged){renderStages();renderOverviewUnlocks();renderEntitledApps();initClientIntelligence()}
-    if(billingChanged){renderBilling();renderBillingConnection();renderPlanStrip()}
+    if(billingChanged){renderBilling();renderBillingConnection();renderOverviewUnlocks()}
     renderWorkspaceAccessState();
   }
   callsData=Array.isArray(data.calls)?data.calls:[];
