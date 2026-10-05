@@ -622,6 +622,15 @@ async function runClientInteractions(page){
     if(!fits)throw new Error(`Pro Intelligence panel overflows at ${width}px`);
     const responseFits=await page.locator('.admin-ai-rich').evaluate(el=>{const r=el.getBoundingClientRect(),children=[...el.children];return getComputedStyle(el).display==='grid'&&el.scrollWidth<=el.clientWidth+1&&children.every((child,i)=>{const c=child.getBoundingClientRect();return c.left>=r.left-1&&c.right<=r.right+1&&(!i||c.top>=children[i-1].getBoundingClientRect().bottom-1)})});
     if(!responseFits)throw new Error(`Intelligence response is not a readable single column at ${width}px`);
+    if(width<=760){
+      const inputSize=await page.locator('#adminAiInput').evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
+      if(inputSize<16)throw new Error('Intelligence input would trigger iPhone automatic zoom');
+      await page.setViewportSize({width,height:420});
+      await page.locator('#adminAiInput').focus();
+      const keyboardFits=await page.locator('#adminAiPanel').evaluate(el=>{const r=el.getBoundingClientRect(),send=document.getElementById('adminAiSend').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&send.right<=innerWidth&&send.bottom<=innerHeight});
+      if(!keyboardFits)throw new Error('Intelligence composer escapes the reduced keyboard viewport');
+      await page.setViewportSize({width,height:844});
+    }
     await page.screenshot({path:path.join(outDir,`client-intelligence-${width}.png`),fullPage:false});
   }
   await page.setViewportSize(intelligenceViewport);
@@ -1242,6 +1251,11 @@ async function runResponsive(kind,viewport,name){
       await menu.focus();await page.keyboard.press('Shift+Tab');
       if(await page.locator('.sidebar').evaluate(el=>el.contains(document.activeElement)))throw new Error('Closed phone navigation contains off-screen keyboard focus at '+name+' width');
       await menu.click();
+      if(kind==='client'){
+        await page.locator('#navigationBackdrop').click({position:{x:viewport.width-12,y:180}});
+        if(await page.locator('.sidebar').evaluate(el=>el.classList.contains('open')))throw new Error('Outside tap did not dismiss phone navigation');
+        await menu.click();
+      }
       if(!(await page.locator('.sidebar').evaluate(el=>el.classList.contains('open'))))throw new Error(kind+' '+name+' mobile menu did not open sidebar');
       await page.waitForFunction(()=>Math.abs(document.querySelector('.sidebar').getBoundingClientRect().left)<1);
       await shot(page,kind+'-'+name+'-menu',{fullPage:false});
@@ -1249,6 +1263,25 @@ async function runResponsive(kind,viewport,name){
       await assertLayout(page,kind+'-'+name+'-secondary',{allowHorizontalOverflow:false});
       await shot(page,kind+'-'+name+'-'+(kind==='admin'?'clients':'calls'));
       if(kind==='client'&&viewport.width<=600){
+        const identity=await page.locator('#headerWorkspaceName').textContent();
+        if(!identity||identity==='Your business')throw new Error('Mobile header is missing business identity');
+        await ensureView(page,'contacts');
+        const compact=await page.locator('.customer-summary-strip').evaluate(el=>{const boxes=[...el.children].map(x=>x.getBoundingClientRect());return boxes.every(b=>Math.abs(b.y-boxes[0].y)<1)&&el.getBoundingClientRect().height<100});
+        if(!compact)throw new Error('Mobile contact totals are not a compact single row');
+        await page.locator('#contactsTable [data-contact-key]').first().click();
+        await page.locator('#contactDrawer.open').waitFor();
+        await page.locator('#contactDrawerBackdrop').click({position:{x:8,y:200}});
+        if(await page.locator('#contactDrawer').evaluate(el=>el.classList.contains('open')))throw new Error('Outside tap did not dismiss contact details');
+        await ensureView(page,'leads');
+        for(const status of ['priority','dismissed','completed','pending']){
+          await page.locator('[data-followup-filter="'+status+'"]').click();
+          const actual=await page.locator('[data-followup-filter="'+status+'"]').getAttribute('aria-pressed');
+          if(actual!=='true')throw new Error('Follow-up filter is not active: '+status);
+          const statuses=await page.locator('#leadKanban .team-status-pill').allTextContents();
+          if(['dismissed','completed'].includes(status)&&statuses.some(s=>s.toLowerCase()!==status))throw new Error('Follow-up status filter mixed different statuses');
+        }
+        await shot(page,kind+'-'+name+'-followups');
+        await ensureView(page,'calls');
         const toolbar=await page.locator('.call-toolbar-main').evaluate(el=>{const r=el.getBoundingClientRect(),search=el.querySelector('.call-search-field').getBoundingClientRect();return {fullSearch:search.width>=r.width-2,touch:[...el.querySelectorAll('input,select,button')].every(x=>x.getBoundingClientRect().height>=43)}});
         if(!toolbar.fullSearch||!toolbar.touch)throw new Error('Phone call search or filters are too cramped at '+name+' width');
         await ensureView(page,'integrations');
