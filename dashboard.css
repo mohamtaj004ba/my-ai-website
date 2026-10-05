@@ -3069,3 +3069,4 @@ body[data-dashboard="client"] .intelligence-welcome{border:1px solid #dae5e3;bac
  body[data-dashboard="admin"] .admin-ai-welcome b{font-size:23px;line-height:1.2;color:#213b40}
 }
 @media(prefers-reduced-motion:reduce){body[data-dashboard="admin"] .admin-live-status>i{animation:none!important}}
+@media(min-width:761px){body[data-dashboard="admin"] .admin-mobile-intelligence{display:none!important}}

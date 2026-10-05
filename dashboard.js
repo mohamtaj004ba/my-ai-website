@@ -3449,6 +3449,7 @@ let phoneVisibleLimit=50,phoneFilterSignature='';const adminPhoneDeletePending=n
 function renderPhones(){
   const wrap=document.getElementById('phoneTable'),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};
   if(!wrap)return;
+  const focused=document.activeElement,phoneFocus=wrap.contains?.(focused)?{edit:focused.dataset?.editPhone,remove:focused.dataset?.deletePhone}:null;
   set('phoneAssignedCount',adminPhoneData.filter(x=>x.workspaceId).length);set('phoneUnassignedCount',adminPhoneData.filter(x=>!x.workspaceId).length);set('phoneTransferCount',adminPhoneData.filter(x=>x.transferNumber).length);set('phoneAfterHoursTransferCount',adminPhoneData.filter(x=>x.afterHours==='transfer').length);
   const q=(document.getElementById('phoneSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('phoneAssignmentFilter')?.value||'all',signature=JSON.stringify([q,filter]);
   if(signature!==phoneFilterSignature){phoneVisibleLimit=50;phoneFilterSignature=signature}
@@ -3464,7 +3465,9 @@ function renderPhones(){
   const empty=document.getElementById('phoneEmpty');if(empty){empty.hidden=rows.length!==0;const title=empty.querySelector('h3'),copy=empty.querySelector('p');if(title)title.textContent=adminPhoneData.length?'No matching numbers':'No phone numbers yet';if(copy)copy.textContent=adminPhoneData.length?'Clear the filters or search another number or workspace.':'Add a number to start recording its routing settings.'}
   wrap.querySelectorAll('[data-edit-phone]').forEach(b=>b.addEventListener('click',()=>openPhoneModal(b.dataset.editPhone)));
   wrap.querySelectorAll('[data-delete-phone]').forEach(b=>b.addEventListener('click',()=>deletePhone(b.dataset.deletePhone)));
+  if(phoneFocus)restorePhoneRowFocus(phoneFocus,wrap);
 }
+
 document.getElementById('phoneSearch')?.addEventListener('input',renderPhones);
 document.getElementById('phoneAssignmentFilter')?.addEventListener('change',renderPhones);
 document.getElementById('loadMorePhones')?.addEventListener('click',()=>{phoneVisibleLimit+=50;renderPhones()});
@@ -5103,4 +5106,11 @@ function resetAdminViewFilters(view){
  if(view==='client-care'){adminFeedbackFilter='submitted';adminFeedbackSearch='';adminSupportFilter='active';adminSupportSearch=''}
  if(view==='finance'){adminExpenseFilter='all';adminFinanceRange=6}
  if(view==='website')adminWebsiteDays=30;
+}
+
+function restorePhoneRowFocus(previous,wrap){
+  if(!previous||(!previous.edit&&!previous.remove))return;
+  const attribute=previous.edit?'data-edit-phone':'data-delete-phone',id=previous.edit||previous.remove;
+  const next=[...wrap.querySelectorAll('['+attribute+']')].find(button=>button.getAttribute(attribute)===String(id));
+  (next&&!next.disabled?next:document.getElementById('addPhoneButton'))?.focus({preventScroll:true});
 }
