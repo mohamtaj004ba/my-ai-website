@@ -228,6 +228,20 @@ async function ensureView(page,view){
   if(!active)throw new Error('Navigation did not activate '+view);
 }
 
+async function assertUtilityPanelContrast(page,panelSelector,label){
+  const lowContrast=await page.locator(panelSelector).evaluate(panel=>{
+    const rgb=value=>value.match(/[\d.]+/g).map(Number);
+    const luminance=values=>values.slice(0,3).map(v=>{const s=v/255;return s<=.04045?s/12.92:((s+.055)/1.055)**2.4}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+    const background=luminance(rgb(getComputedStyle(panel).backgroundColor));
+    return [...panel.querySelectorAll('.account-panel-head b,.notification-head b,#profileSummaryName')].map(el=>{
+      const foreground=luminance(rgb(getComputedStyle(el).color)),text=el.textContent.trim();
+      return {text,contrast:(Math.max(foreground,background)+.05)/(Math.min(foreground,background)+.05)};
+    }).filter(item=>!item.text||item.contrast<4.5);
+  });
+  report.readabilityContracts.push({label,lowContrast});
+  if(lowContrast.length)throw new Error(label+' has unreadable utility-panel titles: '+JSON.stringify(lowContrast));
+}
+
 async function sweepViews(page,kind){
   const selector='button.nav-item[data-view]';
   const views=await page.locator(selector).evaluateAll(nodes=>[...new Set(nodes.map(n=>n.getAttribute('data-view')).filter(Boolean))]);
@@ -1359,9 +1373,11 @@ async function runResponsive(kind,viewport,name){
         if(!await page.locator('#view-overview').isVisible())throw new Error('Admin identity does not return to Command Center');
         await page.locator('#accountButton').click();
         if(await page.locator('#accountPanel').evaluate(el=>el.getBoundingClientRect().height)>480)throw new Error('Admin account panel has excess blank space');
+        await assertUtilityPanelContrast(page,'#accountPanel','admin-'+name+'-account-contrast');
         await shot(page,'admin-'+name+'-account-panel',{fullPage:false});
         await page.locator('#accountPanel [data-close-topbar]').click();
         await page.locator('#notificationBell').click();
+        await assertUtilityPanelContrast(page,'#notificationPanel','admin-'+name+'-notification-contrast');
         await shot(page,'admin-'+name+'-notification-panel',{fullPage:false});
         await page.locator('#topbarSheetBackdrop').click({position:{x:8,y:200}});
         if(await page.locator('#notificationPanel').isVisible())throw new Error('Admin notification outside tap did not dismiss');
