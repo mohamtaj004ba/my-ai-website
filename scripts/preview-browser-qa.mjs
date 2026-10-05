@@ -304,6 +304,27 @@ async function seedWorkspace(request){
   report.admin.interactions.push('shadow-only conversation migration publish/rollback rehearsal');
 }
 
+async function verifyLiveClientIntelligence(context){
+  if(process.env.CALLERCORE_VERIFY_GPT!=='true')return;
+  // Only the isolated, fictional Pro QA workspace is eligible for this reversible check.
+  if(qaEmail!=='preview-qa@callercore.test'||!report.workspaceId)throw new Error('Live GPT verification requires the disposable Preview QA workspace');
+  const readAgent=async()=>{const response=await context.request.get(baseURL+'/api/account?action=agent');if(!response.ok())throw new Error('Cannot verify QA receptionist');const data=await response.json();if(!data.agent||!Number.isFinite(Number(data.agent.updatedAt)))throw new Error('QA receptionist revision is unverifiable');return data.agent};
+  const before=await readAgent(),greeting='Thanks for calling Summit Heating & Air. How can I help today?';
+  const guide=await post(context.request,'client-ai-guide',{question:'Set my receptionist openingMessage to exactly: '+greeting});
+  if(guide.provider!=='openai'||!guide.model||!guide.proposal?.id||guide.proposal.after!==greeting)throw new Error('Live GPT did not prepare the requested greeting');
+  const untouched=await readAgent();if(JSON.stringify(untouched)!==JSON.stringify(before))throw new Error('GPT changed the receptionist before applying its proposal');
+  let applied=null;
+  try{
+    applied=await post(context.request,'intelligence-apply',{id:guide.proposal.id});
+    if(applied.ok!==true||applied.agent?.openingMessage!==greeting)throw new Error('Intelligence did not return a verified canonical save receipt');
+    const after=await readAgent();if(after.openingMessage!==greeting||Number(after.updatedAt)<=Number(before.updatedAt))throw new Error('Live Intelligence save did not persist with a new revision');
+    const replay=await context.request.post(baseURL+'/api/account?action=intelligence-apply',{headers:qaHeaders,data:{id:guide.proposal.id}});if(replay.status()!==409)throw new Error('Live Intelligence proposal could be replayed');
+    report.client.liveIntelligence={provider:guide.provider,model:guide.model,proposalDidNotMutate:true,canonicalSaveVerified:true,replayRejected:true};
+  }finally{
+    if(applied?.agent){const current=await readAgent();const restored=await post(context.request,'agent-save',{section:'identity',openingMessage:before.openingMessage,expectedUpdatedAt:current.updatedAt});if(restored.ok!==true||restored.agent?.openingMessage!==before.openingMessage)throw new Error('QA greeting recovery was not verified');if(report.client.liveIntelligence)report.client.liveIntelligence.originalGreetingRestored=true;}
+  }
+}
+
 async function startSession(context,mode){
   const data=await post(context.request,'preview-session',{email:qaEmail,mode});
   const expected=mode==='admin'?'/admin-dashboard':'/dashboard';
@@ -1497,6 +1518,7 @@ try{
   await shot(desktop.page,'client-overview-initial');
   await sweepViews(desktop.page,'client');
   await runClientInteractions(desktop.page);
+  await verifyLiveClientIntelligence(desktop.context);
 
   // Close the client page before rotating the disposable session. Background
   // detail hydration must not survive into the admin login and report the

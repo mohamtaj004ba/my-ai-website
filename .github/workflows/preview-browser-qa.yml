@@ -24,6 +24,7 @@ jobs:
       PREVIEW_URL: https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       CALLERCORE_QA_EMAIL: preview-qa@callercore.test
+      CALLERCORE_VERIFY_GPT: 'true'
       GH_TOKEN: ${{ github.token }}
       PREVIOUS_QA_DIR: /tmp/previous-qa
 
