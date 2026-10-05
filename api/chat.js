@@ -40,7 +40,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Cache-Control', 'no-store');
   const rl=await rateLimit({scope:'public-chat',identifier:requestIp(req),limit:25,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ error: 'Too many requests' })}
-  if (!process.env.OPENAI_API_KEY) return res.status(503).json({ error: 'Assistant unavailable' });
+  if (!(process.env.OPENAI_API_KEY||'').trim()) return res.status(503).json({ error: 'Assistant unavailable' });
 
   const safeMessages = sanitizeMessages(req.body && req.body.messages);
   if (!safeMessages) return res.status(400).json({ error: 'Invalid request body' });
@@ -100,7 +100,7 @@ WHERE TO POINT PEOPLE:
     headers: {
       'Content-Type': 'application/json',
       'Content-Length': Buffer.byteLength(body),
-      'Authorization': 'Bearer '+process.env.OPENAI_API_KEY
+      'Authorization': 'Bearer '+(process.env.OPENAI_API_KEY||'').trim()
     }
   };
 

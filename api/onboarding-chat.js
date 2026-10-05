@@ -127,7 +127,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Cache-Control', 'no-store');
   const rl=await rateLimit({scope:'onboarding-chat',identifier:requestIp(req),limit:40,windowSeconds:600,failClosed:true});if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({ error: 'Too many requests' })}
-  if (!process.env.OPENAI_API_KEY) return res.status(503).json({ error: 'Assistant unavailable' });
+  if (!(process.env.OPENAI_API_KEY||'').trim()) return res.status(503).json({ error: 'Assistant unavailable' });
 
   const { context } = req.body || {};
   const safeMessages = sanitizeMessages(req.body && req.body.messages);
@@ -166,7 +166,7 @@ module.exports = async function handler(req, res) {
     headers: {
       'Content-Type': 'application/json',
       'Content-Length': Buffer.byteLength(body),
-      'Authorization': 'Bearer '+process.env.OPENAI_API_KEY
+      'Authorization': 'Bearer '+(process.env.OPENAI_API_KEY||'').trim()
     },
   };
 

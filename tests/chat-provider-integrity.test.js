@@ -21,8 +21,8 @@ test('public chat verifies a structured OpenAI text response before returning HT
 
 test('visitor questions use plan-aligned guidance without promising unverified activation or demo availability',async()=>{
   let submitted;
-  const context={module:{exports:{}},process:{env:{OPENAI_API_KEY:'test-key'}},Buffer,URL,console,require(name){
-    if(name==='https')return {request(options,callback){let responseHandlers={};return {on(){},write(body){submitted=JSON.parse(body)},end(){callback({statusCode:200,on(event,fn){responseHandlers[event]=fn}});responseHandlers.data(JSON.stringify({status:'completed',output:[{type:'message',content:[{type:'output_text',text:'Setup includes testing before activation.'}]}]}));responseHandlers.end()}}}};
+  const context={module:{exports:{}},process:{env:{OPENAI_API_KEY:'\n test-key \r\n'}},Buffer,URL,console,require(name){
+    if(name==='https')return {request(options,callback){assert.equal(options.headers.Authorization,'Bearer test-key');let responseHandlers={};return {on(){},write(body){submitted=JSON.parse(body)},end(){callback({statusCode:200,on(event,fn){responseHandlers[event]=fn}});responseHandlers.data(JSON.stringify({status:'completed',output:[{type:'message',content:[{type:'output_text',text:'Setup includes testing before activation.'}]}]}));responseHandlers.end()}}}};
     if(name==='../lib/rate-limit')return {rateLimit:async()=>({limited:false}),requestIp:()=> 'test'};
     if(name==='../lib/safe-log')return {safeError:()=> 'safe',upstreamCode:()=> 'safe'};
     throw new Error(name);
