@@ -97,6 +97,7 @@ test('platform settings persist launch confirmations without dropping existing g
   assert.match(src,/launchGateState\(saved\.launchGates\)/);
   assert.match(src,/body\.launchGates&&typeof body\.launchGates==='object'\?launchGateState\(body\.launchGates\):launchGateState\(previous\.launchGates\)/);
   assert.match(src,/status:launchGates\[g\.key\]\?'confirmed':'pending'/);
+  assert.match(src,/Verification required:/);
 });
 
 test('system health detects dangerous production and preview environment scoping',()=>{
