@@ -149,6 +149,8 @@ async function shot(page,name,{fullPage=true}={}){
 
 async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
   if(await page.locator('#view-health.active').count()){
+    const spills=await page.evaluate(()=>{const panel=document.querySelector('.health-map-panel').getBoundingClientRect();return [...document.querySelectorAll('.health-service-node')].filter(el=>{const r=el.getBoundingClientRect();return r.left<panel.left||r.right>panel.right}).map(el=>el.textContent)});
+    if(spills.length)throw new Error(label+' dependency map spills outside its panel: '+spills.join(', '));
     const health=await page.evaluate(()=>({core:adminReadinessData?.core,counts:adminReadinessData?.counts,display:{core:document.getElementById('healthReadinessPct')?.textContent,technical:document.getElementById('healthRequiredBlockers')?.textContent,release:document.getElementById('healthRequiredReady')?.textContent,owner:document.getElementById('healthTotalChecks')?.textContent,optional:document.getElementById('healthOptionalIssues')?.textContent},groups:document.querySelectorAll('#systemHealthGrid .admin-health-group').length}));
     if(!health.core||!health.counts||health.groups!==5||health.display.core!==health.core.healthy+'/'+health.core.total||Number(health.display.technical)!==health.counts.technicalBlockers||Number(health.display.release)!==health.counts.releaseSetup||Number(health.display.owner)!==health.counts.ownerActions||Number(health.display.optional)!==health.counts.optionalSetup)throw new Error(label+' rendered readiness totals disagree with the API');
   }
