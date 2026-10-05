@@ -15,6 +15,13 @@ test('Responses validation rejects partial, malformed and provider error output'
   for(const data of [null,{},[],{output:[],status:'incomplete'},{output:[],error:{message:'bad'}}])assert.throws(()=>responseText(data));
   assert.equal(responseText({status:'completed',output:[{type:'message',content:[{type:'output_text',text:'Verified answer'}]}]}),'Verified answer');
 });
+test('proposed receptionist values obey canonical field limits before review',()=>{
+  for(const [field,limit] of Object.entries({name:80,role:120,tone:80,openingMessage:1200,serviceArea:500,businessHours:500,handlingInstructions:1800})){
+    assert.throws(()=>validateIntent({kind:'receptionist',target:'',field,value:'x'.repeat(limit+1)}));
+    assert.equal(validateIntent({kind:'receptionist',target:'',field,value:'x'.repeat(limit)}).value.length,limit);
+  }
+  assert.equal(validateIntent({kind:'receptionist',target:'',field:'openingMessage',value:'  A helpful greeting  '}).value,'A helpful greeting');
+});
 test('client proposals bind to the authenticated workspace despite a model supplied target',async()=>{
   const f=fixture(),p=await f.prepare({kind:'receptionist',target:'other',field:'openingMessage',value:'New greeting'});
   assert.equal(f.invoked.length,0);assert.equal(f.records['agent:own'].openingMessage,'Old greeting');
