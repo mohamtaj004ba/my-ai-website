@@ -148,6 +148,10 @@ async function shot(page,name,{fullPage=true}={}){
 }
 
 async function assertLayout(page,label,{allowHorizontalOverflow=false}={}){
+  if(await page.locator('#view-health.active').count()){
+    const health=await page.evaluate(()=>({core:adminReadinessData?.core,counts:adminReadinessData?.counts,display:{core:document.getElementById('healthReadinessPct')?.textContent,technical:document.getElementById('healthRequiredBlockers')?.textContent,release:document.getElementById('healthRequiredReady')?.textContent,owner:document.getElementById('healthTotalChecks')?.textContent,optional:document.getElementById('healthOptionalIssues')?.textContent},groups:document.querySelectorAll('#systemHealthGrid .admin-health-group').length}));
+    if(!health.core||!health.counts||health.groups!==5||health.display.core!==health.core.healthy+'/'+health.core.total||Number(health.display.technical)!==health.counts.technicalBlockers||Number(health.display.release)!==health.counts.releaseSetup||Number(health.display.owner)!==health.counts.ownerActions||Number(health.display.optional)!==health.counts.optionalSetup)throw new Error(label+' rendered readiness totals disagree with the API');
+  }
   const state=await page.evaluate(()=>{
     const active=document.querySelector('.view.active');
     const topbar=document.querySelector('.topbar');
@@ -707,7 +711,15 @@ async function runAdminInteractions(page){
   if(['mrr','arr','planMix','callOutcomes','setupRevenue','sessions','visitors','leads'].some(key=>Object.prototype.hasOwnProperty.call(monthlyStatus,key)))throw new Error('Monthly KPI background refresh exposed aggregate KPI values to the maintenance response');
   const rollupHealthResponse=await page.request.get(baseURL+'/api/account?action=admin-system-health');
   if(!rollupHealthResponse.ok())throw new Error('System Health could not verify monthly KPI rollup status');
-  const rollupHealth=(await rollupHealthResponse.json()).services?.find(service=>service.key==='analytics-rollup');
+  const healthPayload=await rollupHealthResponse.json();
+  const rollupHealth=healthPayload.services?.find(service=>service.key==='analytics-rollup');
+  const healthServices=healthPayload.services||[],healthReadiness=healthPayload.readiness||{},healthByKey=new Map(healthServices.map(x=>[x.key,x]));
+  if(healthByKey.get('checkout')?.state!=='launch-gated'||healthByKey.get('stripe')?.category!=='release')throw new Error('Preview release setup was misclassified as infrastructure failure');
+  if(healthByKey.get('gate-previewIsolation')?.state!=='operational'||healthByKey.get('application-e2e')?.state!=='operational'||healthByKey.has('gate-disposableE2E'))throw new Error('Verified Preview/application evidence was not separated from voice lifecycle');
+  if(healthByKey.get('gate-voiceLifecycle')?.state!=='blocked'||healthByKey.get('voice')?.category!=='technical')throw new Error('Voice validation stopped being a technical launch gate');
+  if(healthServices.filter(x=>x.category==='core').length!==healthReadiness.core?.total||healthServices.filter(x=>x.state==='blocked').length!==healthReadiness.counts?.technicalBlockers)throw new Error('Readiness counts disagree with classified checks');
+  if(healthReadiness.blockers.some(x=>['release','owner','optional'].includes(healthByKey.get(x.key)?.category)))throw new Error('Manual/optional setup leaked into technical blockers');
+  report.admin.interactions.push('classified core health / technical blockers / release and owner setup parity');
   if(!rollupHealth||!['operational','warning'].includes(rollupHealth.status)||rollupHealth.meta?.month!==monthlyStatus.month||!Array.isArray(rollupHealth.meta?.incompleteSources))throw new Error('System Health did not expose the current monthly KPI rollup');
   const paymentCoverageComplete=monthlyStatus.coverage.paymentFailures===true;
   if(rollupHealth.meta.incompleteSources.includes('paymentFailures')===paymentCoverageComplete)throw new Error('System Health payment-failure coverage disagrees with the current monthly rollup');

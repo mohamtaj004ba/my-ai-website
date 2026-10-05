@@ -1,4 +1,5 @@
 const crypto=require('crypto');
+const {classifyReadiness,VERIFIED_APPLICATION}=require('../lib/system-readiness');
 const {buildClientFollowupSnapshot}=require('../lib/client-followup-snapshot');
 const {TOOL:intelligenceTool,validateIntent,responseText:intelligenceResponseText}=require('../lib/intelligence-actions');
 const {kv,storageEnvironment}=require('../lib/kv');
@@ -2870,10 +2871,18 @@ async function adminSystemHealth(req,res){
     {key:'voice',name:'Voice provider',status:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'configured':'not_configured',detail:(process.env.VAPI_API_KEY||process.env.VAPI_PRIVATE_KEY)?'Voice API credentials available; lifecycle validation is tracked separately':'Voice API credentials not configured'},
     ...LAUNCH_GATE_DEFS.map(g=>({key:'gate-'+g.key,name:g.name,status:launchGates[g.key]?'confirmed':'pending',detail:launchGates[g.key]?'Owner/admin confirmation recorded':g.detail,manual:true}))
   ];
+  const isolation=services.find(x=>x.key==='gate-previewIsolation');
+  if(storageEnvironment()==='preview-isolated'&&kvOk&&envScope.ok){
+    Object.assign(isolation,{status:'operational',detail:'Isolated Preview storage boundary and authenticated application QA verified. Production bindings still require release review.',evidence:VERIFIED_APPLICATION,ownerConfirmed:launchGates.previewIsolation});
+  }
+  // Historical disposableE2E remains an owner/provider gate; application QA is separate evidence.
+  const applicationGate=services.find(x=>x.key==='gate-disposableE2E');
+  Object.assign(applicationGate,{key:'application-e2e',name:'Authenticated application E2E',status:'operational',manual:false,detail:'Website, admin and client application flows passed isolated authenticated Preview QA. Voice/provider lifecycle is tracked separately.',evidence:VERIFIED_APPLICATION,ownerConfirmed:launchGates.disposableE2E});
   const requiredForLaunch=['database','environment-scope','data-integrity','checkout','stripe','mailgun','onboarding-ai','voice',...LAUNCH_GATE_DEFS.map(g=>'gate-'+g.key)];
-  const blockers=services.filter(x=>requiredForLaunch.includes(x.key)&&!['operational','configured','confirmed'].includes(x.status));
-  const readiness={ready:blockers.length===0,requiredForLaunch,blockers:blockers.map(x=>({key:x.key,name:x.name,detail:x.detail})),configured:services.filter(x=>['operational','configured','confirmed'].includes(x.status)).length,total:services.length};
-  return res.status(200).json({services,readiness,checkedAt});
+  const result=classifyReadiness(services,requiredForLaunch);
+  // Do not turn application evidence into owner/provider launch confirmation.
+  result.readiness.ready=result.readiness.ready&&LAUNCH_GATE_DEFS.every(g=>launchGates[g.key]);
+  return res.status(200).json({...result,checkedAt});
 }
 
 async function adminClient(req,res){

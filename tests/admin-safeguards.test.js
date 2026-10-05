@@ -81,7 +81,8 @@ test('production readiness requires checkout plus owner-confirmed launch gates',
     assert.ok(src.includes("key:'"+key+"'"),'missing launch gate '+key);
   }
   assert.match(src,/\.\.\.LAUNCH_GATE_DEFS\.map\(g=>'gate-'\+g\.key\)/);
-  assert.match(src,/\['operational','configured','confirmed'\]/);
+  assert.match(fs.readFileSync('lib/system-readiness.js','utf8'),/\['operational','configured','confirmed'\]/);
+  assert.match(src,/LAUNCH_GATE_DEFS\.every\(g=>launchGates\[g.key\]\)/);
 });
 
 test('privacy purge preserves policy-required support and audit archives separately',()=>{
