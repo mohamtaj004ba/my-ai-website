@@ -1536,7 +1536,11 @@ async function applyIntelligenceAction(req,res){
   if(!await compareAndSetConfig(kv,[{key,before:proposal,after:{...proposal,status:'attempted'}}]))return res.status(409).json({error:'This action is already being applied. Refresh before retrying.'});
   await kv.expire(key,600);
   // Reuse the canonical handler: authentication, revisions, atomic writes and audit remain authoritative.
-  return handlers[proposal.action]({...req,body:proposal.body},res);
+  // IncomingMessage headers and other request properties can be inherited/non-enumerable.
+  // Keep the original request so canonical authentication sees the real cookies.
+  const originalBody=req.body;
+  req.body=proposal.body;
+  try{return await handlers[proposal.action](req,res)}finally{req.body=originalBody}
 }
 async function clientAiGuide(req,res){
   const access=await intelligenceAccess(req,res);if(!access)return;
