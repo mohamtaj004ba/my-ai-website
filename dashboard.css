@@ -2948,3 +2948,5 @@ body[data-dashboard="client"] .admin-ai-panel{grid-template-rows:auto minmax(0,1
 }
 @media(max-width:760px){body[data-dashboard="client"] .topbar:has(:is(#accountPanel,#notificationPanel):not([hidden])){z-index:40}body[data-dashboard="client"]:has(:is(#accountPanel,#notificationPanel):not([hidden])){overflow:hidden}}
 .sidebar-intelligence{display:none}@media(max-width:760px){.sidebar-intelligence:not([hidden]){display:flex}}
+@media(max-width:760px){.sidebar-intelligence .lock{flex-shrink:0;white-space:nowrap;min-width:32px}.client-live-status #clientLiveLabel{white-space:nowrap;font-size:18px!important;letter-spacing:.025em}.client-live-status .sync-caption{text-transform:none;letter-spacing:0}}
+@media(max-width:600px){body[data-dashboard="client"] .followup-status-select{max-width:none!important}body[data-dashboard="client"] .followup-customer b{font-size:16px}}
