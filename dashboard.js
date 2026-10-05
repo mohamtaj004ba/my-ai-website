@@ -2286,6 +2286,14 @@ async function updateAdminFeedback(id,status){
 
 function renderWebsiteTrafficChart(){
   const shell=document.getElementById('websiteTrafficChart'),rows=adminWebsiteData.daily||[];if(!shell)return;
+  if(typeof ResizeObserver==='function'&&!shell.websiteTrafficResizeObserver){
+    shell.websiteTrafficResizeObserver=new ResizeObserver(()=>{
+      const width=Math.round(shell.clientWidth||0);
+      if(width>0&&Math.max(240,width)!==shell.websiteTrafficRenderedWidth)renderWebsiteTrafficChart();
+    });
+    shell.websiteTrafficResizeObserver.observe(shell);
+  }
+  shell.websiteTrafficRenderedWidth=Math.max(240,Math.round(shell.clientWidth||920));
   if(!rows.length){shell.innerHTML='<div class="empty-state"><h3>No traffic history yet</h3></div>';return}
   const w=Math.max(240,Math.round(shell.clientWidth||920)),h=285,left=42,right=24,top=18,bottom=42,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...rows.flatMap(r=>[Number(r.sessions||0),Number(r.visitors||0)])),step=rows.length>1?plotW/(rows.length-1):plotW;
   const x=i=>left+(rows.length===1?plotW/2:i*step),y=v=>top+plotH-(Number(v||0)/max)*plotH;
