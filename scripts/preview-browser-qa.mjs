@@ -1642,7 +1642,14 @@ async function runPublicSiteQA(){
               report.publicSite.interactions.push('phone chat handoff saved receipt, escaped warning and keyboard focus with return to chat; no inquiry transmitted');
             }finally{await page.unroute('**/api/contact')}
           }
-          await page.locator('.footer-bottom').scrollIntoViewIfNeeded();await shot(page,'public-'+name+'-footer',{fullPage:false});
+          await page.locator('.footer-bottom').scrollIntoViewIfNeeded();
+          const footerActionClear=await page.evaluate(()=>{
+            const a=document.querySelector('.footer-bottom a').getBoundingClientRect(),b=document.querySelector('#ccChatLauncher').getBoundingClientRect();
+            return a.right<=b.left||a.left>=b.right||a.bottom<=b.top||a.top>=b.bottom;
+          });
+          if(!footerActionClear)throw new Error('Floating assistant covers the footer plan link at '+name);
+          report.publicSite.contracts.push({label:name+'-footer-action-clear',ok:footerActionClear});
+          await shot(page,'public-'+name+'-footer',{fullPage:false});
           report.publicSite.interactions.push(name+' menu/anchor/Escape, example selection, FAQ and chat open/close without sending');
         }
         if(key==='get-started'){

@@ -246,7 +246,7 @@
 .public-site .footer-links>div{display:flex!important;gap:0!important;margin:0}
 .public-site .footer-links span{margin-bottom:6px}
 .public-site .footer-links a{min-height:36px;font-size:14px}
-.public-site .footer-bottom{padding:12px 0 16px}
+.public-site .footer-bottom{padding:12px 0 16px;justify-content:flex-start}
 .public-site .footer-bottom a{color:#d7e4dd;text-underline-offset:4px}
 @media(min-width:601px) and (max-width:900px){
  .public-site .price-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-width:none;gap:10px}
@@ -344,7 +344,7 @@
  .public-site .footer-links a{font-size:13px;min-height:36px}
  .public-site .footer-links span{font-size:10px;margin-bottom:4px}
  .public-site .footer-bottom{width:calc(100% - 40px);display:flex!important;padding:10px 0 14px;gap:12px!important}
- .public-site .footer-bottom a{font-size:12px;min-height:36px;margin-right:56px}
+ .public-site .footer-bottom a{font-size:12px;min-height:36px}
  .public-site .submain{padding:28px 20px 36px}
  .public-site .subhero2{margin-bottom:22px}
  .public-site .subhero2 h1{font-size:34px;line-height:1.12}
