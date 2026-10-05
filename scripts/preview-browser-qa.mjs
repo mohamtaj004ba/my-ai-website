@@ -610,16 +610,18 @@ async function runClientInteractions(page){
   report.client.interactions.push('profile summary + explicit edit + cancel without saving');
 
   await page.evaluate(()=>{window.__qaIntelligencePlan=currentPlan;currentPlan='Pro';initClientIntelligence()});
-  await page.route('**/api/account?action=client-ai-guide',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({answer:'QA Intelligence summary.',proposal:{id:'00000000-0000-0000-0000-000000000000',description:'Review a sample greeting',before:'Original greeting',after:'Proposed greeting',expiresAt:Date.now()+600000}})}));
+  await page.route('**/api/account?action=client-ai-guide',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({answer:'## Executive summary\nQA Intelligence summary with several readable paragraphs.\n\n## Key metrics\n- **Pending follow-ups:** 3\n- **Completed:** 2\n\n## Next steps\nReview the proposed greeting below before saving.',proposal:{id:'00000000-0000-0000-0000-000000000000',description:'Review a sample greeting',before:'Original greeting',after:'Proposed greeting',expiresAt:Date.now()+600000}})}));
   await page.locator('#adminAiLaunch').click();
   await page.locator('#adminAiInput').fill('QA review interface only');await page.locator('#adminAiSend').click();
   await page.locator('#intelligenceProposal').waitFor({state:'visible'});
   if(!await page.locator('#intelligenceProposal').getByText('Proposed action · not saved').isVisible())throw new Error('Intelligence incorrectly claimed an unapplied change was saved');
   const intelligenceViewport=page.viewportSize();
-  for(const width of [320,390]){
+  for(const width of [1280,768,320,390]){
     await page.setViewportSize({width,height:844});
     const fits=await page.locator('#adminAiPanel').evaluate(el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1&&el.scrollWidth<=el.clientWidth+1});
     if(!fits)throw new Error(`Pro Intelligence panel overflows at ${width}px`);
+    const responseFits=await page.locator('.admin-ai-rich').evaluate(el=>{const r=el.getBoundingClientRect(),children=[...el.children];return getComputedStyle(el).display==='grid'&&el.scrollWidth<=el.clientWidth+1&&children.every((child,i)=>{const c=child.getBoundingClientRect();return c.left>=r.left-1&&c.right<=r.right+1&&(!i||c.top>=children[i-1].getBoundingClientRect().bottom-1)})});
+    if(!responseFits)throw new Error(`Intelligence response is not a readable single column at ${width}px`);
     await page.screenshot({path:path.join(outDir,`client-intelligence-${width}.png`),fullPage:false});
   }
   await page.setViewportSize(intelligenceViewport);

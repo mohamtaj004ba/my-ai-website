@@ -558,7 +558,7 @@ async function adminUpdateClient(req,res){
     next.status=body.status;
   }
   if(body.plan!==undefined&&body.plan!==ws.plan){
-    if(ws.stripeSubscriptionId)return res.status(409).json({error:'Plan is managed by Stripe for this workspace'});
+    if(ws.stripeSubscriptionId&&!previewSeed.testPlanEditable(req,ws))return res.status(409).json({error:'Plan is managed by Stripe for this workspace'});
     if(!['Starter','Growth','Pro'].includes(body.plan))return res.status(400).json({error:'Invalid plan'});
     next.plan=body.plan;
   }
@@ -2894,6 +2894,7 @@ async function adminClient(req,res){
     createdAt:ws.createdAt||null,updatedAt:ws.updatedAt||ws.createdAt||null,
     deletion:ws.status==='pending_deletion'?{requestedAt:ws.deletionRequestedAt||null,purgeEligibleAt:ws.purgeEligibleAt||null,preDeletionStatus:ws.preDeletionStatus||''}:null,
     phone:ws.phone||'',industry:ws.industry||'',usage:ws.usage||{minutes:0},
+    previewTestPlanEditable:!!ws.stripeSubscriptionId&&previewSeed.testPlanEditable(req,ws),
     stripe:{customerLinked:!!ws.stripeCustomerId,subscriptionLinked:!!ws.stripeSubscriptionId},
     agent:agent||null,phoneRouting:phone?{number:phone.number||'',provider:phone.provider||'',transferConfigured:!!phone.transferNumber,status:phone.status||'configured',voice:voiceStatus(phone)}:null,
     onboarding:onboarding?{status:onboarding.status||'',completionPercent:Number(onboarding.completionPercent||0),stage:onboarding.stage||''}:null,

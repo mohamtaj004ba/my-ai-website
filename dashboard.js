@@ -3971,7 +3971,7 @@ async function openAdminClient(id,{allowLocked=false}={}){
   const auditEmpty=document.getElementById('adminAuditEmpty');if(auditEmpty)auditEmpty.hidden=true;
   currentAdminClient=x;
   const planSel=document.getElementById('adminClientPlan'),statusSel=document.getElementById('adminClientStatus'),pendingDeletion=x.status==='pending_deletion';
-  if(planSel){planSel.value=x.plan||'Starter';planSel.disabled=adminClientSaving||adminTechSaving||pendingDeletion||!!x.stripe?.subscriptionLinked}
+  if(planSel){planSel.value=x.plan||'Starter';planSel.disabled=adminClientSaving||adminTechSaving||pendingDeletion||!!x.stripe?.subscriptionLinked&&!x.previewTestPlanEditable}
   if(statusSel){statusSel.value=x.status||'active';statusSel.disabled=adminClientSaving||adminTechSaving||pendingDeletion}
   const saveButton=document.getElementById('adminSaveClientButton'),deleteButton=document.getElementById('adminDeleteClientButton'),restoreButton=document.getElementById('adminRestoreClientButton');
   if(saveButton)saveButton.hidden=pendingDeletion;if(deleteButton)deleteButton.hidden=pendingDeletion;if(restoreButton)restoreButton.hidden=!pendingDeletion;
@@ -3980,7 +3980,7 @@ async function openAdminClient(id,{allowLocked=false}={}){
     if(pendingDeletion){
       const eligible=Number(x.deletion?.purgeEligibleAt||0);
       note.textContent='Pending deletion. '+(eligible?'Recovery is available until '+new Date(eligible).toLocaleString()+'. ':'')+'Use Restore workspace to recover access; do not use ordinary status controls.';
-    }else note.textContent=(x.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
+    }else note.textContent=(x.previewTestPlanEditable?'Preview test plan only; no Stripe billing changes. ':x.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
   }
   const drawer=document.getElementById('adminClientDrawer');drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');document.getElementById('adminClientBackdrop').classList.add('open');
   await loadAdminTechSupport(id);if(request!==adminClientOpenRequest)return false;
@@ -4006,7 +4006,7 @@ function setAdminClientMutationState(saving,target='save'){
   ['adminSaveClientButton','adminDeleteClientButton','adminRestoreClientButton','adminViewClientButton','adminExportClientButton','adminRecoveryDrillButton','adminConfigSection','adminConfigEditor','adminReloadConfigButton','adminApplyOverrideButton','adminSendLoginButton','adminForceLogoutButton','adminRepairAccessButton','closeAdminClient'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=adminClientSaving||adminTechSaving});
   document.querySelectorAll('[data-restore-audit]').forEach(button=>button.disabled=adminClientSaving||adminTechSaving);
   const pending=currentAdminClient?.status==='pending_deletion',plan=document.getElementById('adminClientPlan'),status=document.getElementById('adminClientStatus');
-  if(plan)plan.disabled=adminClientSaving||adminTechSaving||pending||!!currentAdminClient?.stripe?.subscriptionLinked;
+  if(plan)plan.disabled=adminClientSaving||adminTechSaving||pending||!!currentAdminClient?.stripe?.subscriptionLinked&&!currentAdminClient?.previewTestPlanEditable;
   if(status)status.disabled=adminClientSaving||adminTechSaving||pending;
   const save=document.getElementById('adminSaveClientButton');if(save)save.textContent=adminClientSaving&&target==='save'?'Saving…':'Save changes';
   const del=document.getElementById('adminDeleteClientButton');if(del)del.textContent=adminClientSaving&&target==='delete'?'Scheduling…':'Delete workspace';
@@ -4550,7 +4550,7 @@ async function restoreAdminClient(){
     const pending=currentAdminClient.status==='pending_deletion',save=document.getElementById('adminSaveClientButton'),del=document.getElementById('adminDeleteClientButton'),restore=document.getElementById('adminRestoreClientButton');
     if(save)save.hidden=pending;if(del)del.hidden=pending;if(restore)restore.hidden=!pending;
     const note=document.getElementById('adminClientManageNote');
-    if(note&&!pending)note.textContent=(currentAdminClient?.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
+    if(note&&!pending)note.textContent=(currentAdminClient?.previewTestPlanEditable?'Preview test plan only; no Stripe billing changes. ':currentAdminClient?.stripe?.subscriptionLinked?'Plan is managed by Stripe. ':'Plan can be adjusted manually. ')+'Account status controls access; setup readiness is managed from Onboarding.';
   };
   setAdminRestoreWorkspacePending(true);setAdminClientMutationState(true,'restore');setAdminRestoreWorkspaceStatus('Restoring workspace…');
   try{
