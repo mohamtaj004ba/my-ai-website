@@ -1425,7 +1425,7 @@ async function runResponsive(kind,viewport,name){
     }
     await assertSectionAlertContext(page,kind,kind+'-'+name);
     if(kind==='client'){
-      await verifyBillingDialogs(page,{assertLayout,shot,label:kind+'-'+name});
+      await verifyBillingDialogs(page,{assertLayout,shot,ensureView,label:kind+'-'+name});
       await ensureView(page,'settings');
       await page.locator('[data-settings-edit="notifications"]').click();
       await assertLayout(page,kind+'-'+name+'-settings-section-edit');
@@ -1614,7 +1614,7 @@ try{
   await shot(desktop.page,'client-overview-initial');
   await sweepViews(desktop.page,'client');
   report.nativeBilling={uiFixture:true,providerComplete:false,note:'Billing UI uses intercepted canonical fixtures. Real Stripe sandbox acceptance remains separately pending.'};
-  await verifyBillingDialogs(desktop.page,{assertLayout,shot,label:'client-desktop'});
+  await verifyBillingDialogs(desktop.page,{assertLayout,shot,ensureView,label:'client-desktop'});
   await runClientInteractions(desktop.page);
   await verifyLiveClientIntelligence(desktop.context,desktop.page);
 

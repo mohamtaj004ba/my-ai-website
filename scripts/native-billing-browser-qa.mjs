@@ -6,8 +6,8 @@ export async function installBillingFixture(page){
   // Unexpected confirmation is intercepted; visual checks cannot change a subscription.
   await page.route('**/api/account?action=billing-confirm',route=>route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Isolated UI verification does not apply billing changes.'})}));
 }
-export async function verifyBillingDialogs(page,{assertLayout,shot,label}){
-  await page.locator('[data-view="billing"]').click();
+export async function verifyBillingDialogs(page,{assertLayout,shot,label,ensureView}){
+  await ensureView(page,'billing');
   await page.locator('[data-billing-action="plans"]').waitFor({state:'visible'});
   if(!/999/.test(await page.locator('#nativeBillingContent').innerText()))throw Error('Canonical fixture monthly amount is missing');
   if(await page.locator('#nativeBillingContent').getByRole('link',{name:'View invoice'}).getAttribute('href')!=='https://invoice.stripe.com/i/preview-fixture')throw Error('Invoice document link changed');
