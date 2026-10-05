@@ -309,10 +309,15 @@ async function seedWorkspace(request){
   report.admin.interactions.push('shadow-only conversation migration publish/rollback rehearsal');
 }
 
-async function verifyLiveClientIntelligence(context){
+async function verifyLiveClientIntelligence(context,page){
   if(process.env.CALLERCORE_VERIFY_GPT!=='true')return;
   // Only the isolated, fictional Pro QA workspace is eligible for this reversible check.
   if(qaEmail!=='preview-qa@callercore.test'||!report.workspaceId)throw new Error('Live GPT verification requires the disposable Preview QA workspace');
+  await ensureView(page,'leads');
+  const expectedPending=Number((await page.locator('#followupOpenCount').textContent()).trim());
+  if(!Number.isSafeInteger(expectedPending)||expectedPending<0)throw new Error('Dashboard pending count is unverifiable');
+  const summary=await post(context.request,'client-ai-guide',{question:'How many pending follow-ups do I have? Reply exactly Pending: N, replacing N with followups.totals.pending. Do not propose an action.'});
+  if(summary.provider!=='openai'||summary.proposal||!new RegExp('^Pending:\\s*'+expectedPending+'[.!]?$').test(String(summary.answer||'').replace(/\*\*/g,'').trim()))throw new Error('Live Intelligence pending count disagrees with the dashboard');
   const readAgent=async()=>{const response=await context.request.get(baseURL+'/api/account?action=agent');if(!response.ok())throw new Error('Cannot verify QA receptionist');const data=await response.json();if(!data.agent||!Number.isFinite(Number(data.agent.updatedAt)))throw new Error('QA receptionist revision is unverifiable');return data.agent};
   const before=await readAgent(),greeting='Thanks for calling Summit Heating & Air. How can I help today?';
   const guide=await post(context.request,'client-ai-guide',{question:'Set my receptionist openingMessage to exactly: '+greeting});
@@ -324,7 +329,7 @@ async function verifyLiveClientIntelligence(context){
     if(applied.ok!==true||applied.agent?.openingMessage!==greeting)throw new Error('Intelligence did not return a verified canonical save receipt');
     const after=await readAgent();if(after.openingMessage!==greeting||Number(after.updatedAt)<=Number(before.updatedAt))throw new Error('Live Intelligence save did not persist with a new revision');
     const replay=await context.request.post(baseURL+'/api/account?action=intelligence-apply',{headers:qaHeaders,data:{id:guide.proposal.id}});if(replay.status()!==409)throw new Error('Live Intelligence proposal could be replayed');
-    report.client.liveIntelligence={provider:guide.provider,model:guide.model,proposalDidNotMutate:true,canonicalSaveVerified:true,replayRejected:true};
+    report.client.liveIntelligence={provider:guide.provider,model:guide.model,pendingCountMatchesDashboard:true,pendingCount:expectedPending,proposalDidNotMutate:true,canonicalSaveVerified:true,replayRejected:true};
   }finally{
     if(applied?.agent){const current=await readAgent();const restored=await post(context.request,'agent-save',{section:'identity',openingMessage:before.openingMessage,expectedUpdatedAt:current.updatedAt});if(restored.ok!==true||restored.agent?.openingMessage!==before.openingMessage)throw new Error('QA greeting recovery was not verified');if(report.client.liveIntelligence)report.client.liveIntelligence.originalGreetingRestored=true;}
   }
@@ -1579,7 +1584,7 @@ try{
   await shot(desktop.page,'client-overview-initial');
   await sweepViews(desktop.page,'client');
   await runClientInteractions(desktop.page);
-  await verifyLiveClientIntelligence(desktop.context);
+  await verifyLiveClientIntelligence(desktop.context,desktop.page);
 
   // Close the client page before rotating the disposable session. Background
   // detail hydration must not survive into the admin login and report the
