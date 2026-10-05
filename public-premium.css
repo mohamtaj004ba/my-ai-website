@@ -251,7 +251,7 @@
 @media(min-width:601px) and (max-width:900px){
  .public-site .price-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-width:none;gap:10px}
  .public-site .price-grid article,.public-site .price-grid article.featured{padding:20px 16px}
- .public-site .price-grid .badge{position:static;align-self:flex-start;margin-bottom:12px}
+ .public-site .price-grid .badge{position:absolute;top:20px;right:12px;font-size:9px;padding:6px 8px}
  .public-site .price-grid h3{font-size:36px}
  .public-site .price-grid article>a{padding-inline:8px;font-size:13px}
 }
@@ -344,7 +344,7 @@
  .public-site .footer-links a{font-size:13px;min-height:36px}
  .public-site .footer-links span{font-size:10px;margin-bottom:4px}
  .public-site .footer-bottom{width:calc(100% - 40px);display:flex!important;padding:10px 0 14px;gap:12px!important}
- .public-site .footer-bottom a{font-size:12px;min-height:36px}
+ .public-site .footer-bottom a{font-size:12px;min-height:36px;margin-right:56px}
  .public-site .submain{padding:28px 20px 36px}
  .public-site .subhero2{margin-bottom:22px}
  .public-site .subhero2 h1{font-size:34px;line-height:1.12}
