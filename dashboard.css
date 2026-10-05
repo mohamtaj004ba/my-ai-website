@@ -3051,3 +3051,21 @@ body[data-dashboard="client"] .intelligence-welcome{border:1px solid #dae5e3;bac
  body[data-dashboard="admin"] .admin-search-shell:focus-within .admin-search{width:100%!important}
  body[data-dashboard="admin"] .navigation-backdrop{backdrop-filter:none}
 }
+@media(max-width:760px){
+ body[data-dashboard="admin"] .admin-search-shell>kbd{display:none}
+ body[data-dashboard="admin"] .admin-search-shell .admin-search{padding:0;color:transparent;cursor:pointer}
+ body[data-dashboard="admin"] .admin-search-shell .admin-search::placeholder{color:transparent}
+ body[data-dashboard="admin"] .admin-search-shell:focus-within{position:fixed;top:8px;left:8px;right:8px;z-index:1300}
+ body[data-dashboard="admin"] .admin-search-shell:focus-within .admin-search{padding:0 12px 0 38px;color:var(--ink);cursor:text}
+ body[data-dashboard="admin"] .admin-search-shell:focus-within .admin-search::placeholder{color:var(--muted)}
+ body[data-dashboard="admin"] .admin-search-shell:focus-within .admin-search-results{top:58px}
+ body[data-dashboard="admin"] .admin-command-head>.page-actions{width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px;border:1px solid #cdded7;border-radius:18px;background:linear-gradient(110deg,#edf7f1,#f8faf9)}
+ body[data-dashboard="admin"] .admin-live-status{border:0;background:transparent;padding:0;min-height:52px;grid-template-columns:14px minmax(0,1fr)}
+ body[data-dashboard="admin"] .admin-live-status>span{font-size:20px}
+ body[data-dashboard="admin"] .admin-live-status>small{font-size:11px;white-space:normal}
+ body[data-dashboard="admin"] .admin-live-status:not(.sync-error)>i{animation:adminPulse 2.5s ease-out infinite}
+ body[data-dashboard="admin"] #refreshAdminCommand{min-height:44px;font-size:12px;background:transparent;padding:8px}
+ body[data-dashboard="admin"] .admin-ai-welcome{border-style:solid;background:linear-gradient(145deg,#fff,#f0f6f4);padding:22px;gap:12px;border-radius:18px}
+ body[data-dashboard="admin"] .admin-ai-welcome b{font-size:23px;line-height:1.2;color:#213b40}
+}
+@media(prefers-reduced-motion:reduce){body[data-dashboard="admin"] .admin-live-status>i{animation:none!important}}
