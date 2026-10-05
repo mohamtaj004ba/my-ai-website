@@ -43,7 +43,7 @@ test('Stripe webhook accepts embedded checkout plan metadata as well as legacy p
 
 test('get-started mounts secure Checkout Payment Element inside CallerCore',()=>{
   const page=fs.readFileSync(path.join(__dirname,'..','get-started.html'),'utf8');
-  assert.match(page,/https:\/\/js\.stripe\.com\/v3\//);
+  assert.match(page,/https:\/\/js\.stripe\.com\/endive\/stripe\.js/);
   assert.match(page,/fetch\('\/api\/create-checkout-session'/);
   assert.match(page,/initCheckoutElementsSdk/);assert.match(page,/createPaymentElement/);
   assert.doesNotMatch(page,/buy\.stripe\.com/);
