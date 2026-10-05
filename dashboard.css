@@ -3084,4 +3084,6 @@ body[data-dashboard="client"] .intelligence-welcome{border:1px solid #dae5e3;bac
 @media(max-width:760px){
  body[data-dashboard="admin"] :is(.account-panel,.notification-panel,.admin-search-results){color:var(--ink)}
  body[data-dashboard="admin"] :is(.account-panel,.notification-panel) .eyebrow{display:block!important;color:var(--muted);font-size:12px}
+ body[data-dashboard="admin"] .topbar:has(.admin-search-shell:focus-within)>div:first-child,
+ body[data-dashboard="admin"] .topbar:has(.admin-search-shell:focus-within) .top-actions>:not(.admin-search-shell){display:none!important}
 }
