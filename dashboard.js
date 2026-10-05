@@ -191,7 +191,7 @@ function renderAdminAiConversation({thinking=false,error=''}={}){
     conversation.innerHTML=adminAiHistory.map(m=>m.role==='user'
       ?'<div class="admin-ai-question"><span>You</span><p>'+esc(m.content)+'</p></div>'
       :'<div class="admin-ai-answer"><div><span>✦</span><b>Core Intelligence</b></div><div class="admin-ai-rich">'+formatCoreIntelligenceAnswer(m.content)+'</div></div>').join('')
-      +(thinking?'<div class="admin-ai-thinking"><i></i><span>Core Intelligence is analyzing the latest operation snapshot…</span></div>':'')
+      +(thinking?'<div class="admin-ai-thinking"><i></i><span>Core Intelligence is reviewing your CallerCore activity…</span></div>':'')
       +(error?'<div class="admin-ai-error"><b>Could not answer that yet.</b><p>'+esc(error)+'</p></div>':'');
   }
   if(copy)copy.hidden=!adminAiLastAnswer;if(fresh)fresh.hidden=!adminAiHistory.length;
@@ -203,7 +203,7 @@ async function askAdminAi(question){
   const priorHistory=adminAiHistory.slice(-8);
   if(input)input.value='';
   adminAiHistory.push({role:'user',content:q});adminAiHistory=adminAiHistory.slice(-9);
-  if(send){send.disabled=true;send.textContent='Thinking…'}if(status)status.textContent='Reading the latest admin snapshot…';
+  if(send){send.disabled=true;send.textContent='Thinking…'}if(status)status.textContent='Reading your CallerCore activity…';
   renderAdminAiConversation({thinking:true});
   try{
     const isClient=document.body.dataset.dashboard==='client';
