@@ -2835,5 +2835,6 @@ h1,h2,h3,h4,.dash-brand,.metric-grid strong{font-family:Inter,ui-sans-serif,syst
 .intelligence-proposal button{min-height:44px}
 body[data-dashboard="client"] .admin-ai-panel{grid-template-rows:auto minmax(0,1fr) auto}
 .admin-ai-panel:not(.open){visibility:hidden}
-@media(max-width:760px){body[data-dashboard="client"] #adminAiLaunch{padding:8px;font-size:13px;min-height:44px}.intelligence-proposal-buttons button{flex:1}}
+.admin-ai-launch[hidden]{display:none!important}
+@media(max-width:760px){body[data-dashboard="client"] #adminAiLaunch{width:44px;height:44px;flex:0 0 44px;padding:0;font-size:0;justify-content:center}body[data-dashboard="client"] #adminAiLaunch .client-intelligence-icon{font-size:18px}body[data-dashboard="client"] #adminAiLaunch .client-intelligence-label{display:none}.intelligence-proposal-buttons button{flex:1}}
 .account-panel[data-editing="false"] .profile-editor{align-items:center;margin-bottom:8px}
