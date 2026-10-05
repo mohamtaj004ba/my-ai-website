@@ -186,7 +186,8 @@ function formatCoreIntelligenceAnswer(raw){
 function renderAdminAiConversation({thinking=false,error=''}={}){
   const conversation=document.getElementById('adminAiConversation'),copy=document.getElementById('adminAiCopy'),fresh=document.getElementById('adminAiNew');if(!conversation)return;
   if(!adminAiHistory.length&&!thinking&&!error){
-    conversation.innerHTML='<div class="admin-ai-welcome"><span>✦</span><b>Operational help, grounded in CallerCore.</b><p>Ask about your records or request a supported change. You can review each proposed action before applying it. I’ll say when the available records do not contain the answer.</p></div>';
+    conversation.innerHTML=document.body.dataset.dashboard==='client'?'<div class="admin-ai-welcome intelligence-welcome"><span>✦</span><small>YOUR PRO WORKSPACE</small><b>A clearer picture.<br>A smarter next step.</b><p>Catch up on calls, fine-tune your receptionist, or get help with your business.</p><div class="intelligence-starters"><button type="button" data-intelligence-start="Give me a brief summary of recent calls and outstanding follow-ups.">Review my calls <span>↗</span></button><button type="button" data-intelligence-start="Help me improve my receptionist greeting.">Improve my greeting <span>↗</span></button><button type="button" data-intelligence-start="Help me submit a support request to CallerCore.">Request support <span>↗</span></button></div><small class="intelligence-review-note">You’re in control: review changes before they’re saved.</small></div>':'<div class="admin-ai-welcome"><span>✦</span><b>Your operations, in focus.</b><p>Review activity, explore trends, and plan your next move.</p></div>';
+    conversation.querySelectorAll('[data-intelligence-start]').forEach(button=>button.addEventListener('click',()=>{const input=document.getElementById('adminAiInput');if(input){input.value=button.dataset.intelligenceStart;input.focus({preventScroll:true})}}));
   }else{
     conversation.innerHTML=adminAiHistory.map(m=>m.role==='user'
       ?'<div class="admin-ai-question"><span>You</span><p>'+esc(m.content)+'</p></div>'
@@ -259,6 +260,7 @@ function showView(name){
   if(agentSaving||settingsSaving||phoneSaving)return;
   const active=document.querySelector('.view.active')?.id?.replace('view-','')||'';
   if(active===name&&(agentEditing||settingsEditing))return;
+  if(active!==name&&document.body.dataset.dashboard==='client')resetClientViewFilters(active);
   if(active!==name&&document.body.dataset.dashboard==='client'&&(agentEditing||settingsEditing)){
     const area=agentEditing?'AI receptionist':'settings';
     if(!confirm('You are editing '+area+'. Leave without saving these changes?'))return;
@@ -673,10 +675,7 @@ function syncCallDateRangeValidation({focusInvalid=false}={}){
   return !invalid;
 }
 function callLogPrefsKey(){return 'callercore:calllog:prefs:'+(sessionWorkspace?.id||'default')}
-function loadCallLogPrefs(){
-  try{const p=JSON.parse(localStorage.getItem(callLogPrefsKey())||'{}');if(['day','type','outcome','none'].includes(p.groupBy))callLogGroupBy=p.groupBy;if(['newest','oldest'].includes(p.sort))callLogSort=p.sort;if(['comfortable','compact'].includes(p.density))callLogDensity=p.density}catch(_){}
-  const g=document.getElementById('callGroupBy'),s=document.getElementById('callSort'),d=document.getElementById('callDensity');if(g)g.value=callLogGroupBy;if(s)s.value=callLogSort;if(d)d.value=callLogDensity;
-}
+function loadCallLogPrefs(){callLogGroupBy='day';callLogSort='newest';callLogDensity='comfortable';const g=document.getElementById('callGroupBy'),sort=document.getElementById('callSort');if(g)g.value='day';if(sort)sort.value='newest'}
 function saveCallLogPrefs(){
   callLogGroupBy=document.getElementById('callGroupBy')?.value||'day';callLogSort=document.getElementById('callSort')?.value||'newest';callLogDensity=document.getElementById('callDensity')?.value||'comfortable';
   try{localStorage.setItem(callLogPrefsKey(),JSON.stringify({groupBy:callLogGroupBy,sort:callLogSort,density:callLogDensity}))}catch(_){}
@@ -1965,7 +1964,7 @@ async function replyClientSupportTicket(id,button){
 }
 async function submitSupportTicket(){
   if(clientSupportSubmitPending)return;
-  const subjectEl=document.getElementById('supportSubject'),messageEl=document.getElementById('supportMessage'),subject=subjectEl?.value.trim(),message=messageEl?.value.trim(),priority=document.getElementById('supportPriority')?.value||'normal',status=document.getElementById('supportStatus'),btn=document.getElementById('submitSupportButton');
+  const subjectEl=document.getElementById('supportSubject'),messageEl=document.getElementById('supportMessage'),rawSubject=subjectEl?.value.trim(),topic=document.getElementById('supportTopic'),topicLabel=topic&&topic.value!=='general'?topic.selectedOptions[0].textContent:'',subject=rawSubject?(topicLabel?'['+topicLabel+'] ':'')+rawSubject:'',message=messageEl?.value.trim(),priority=document.getElementById('supportPriority')?.value||'normal',status=document.getElementById('supportStatus'),btn=document.getElementById('submitSupportButton');
   const subjectInvalid=!subject,messageInvalid=!message;if(subjectEl){if(subjectInvalid)subjectEl.setAttribute?.('aria-invalid','true');else subjectEl.removeAttribute?.('aria-invalid')}if(messageEl){if(messageInvalid)messageEl.setAttribute?.('aria-invalid','true');else messageEl.removeAttribute?.('aria-invalid')}if(subjectInvalid||messageInvalid){if(status)status.textContent=subjectInvalid&&messageInvalid?'Add a subject and details before sending.':subjectInvalid?'Add a subject before sending.':'Add details before sending.';(subjectInvalid?subjectEl:messageEl)?.focus?.();return false}
   clientSupportSubmitPending=true;
   invalidateClientSupportHistoryRequest();
@@ -1977,7 +1976,7 @@ async function submitSupportTicket(){
     if(data.ok!==true||!data.ticket||typeof data.ticket!=='object'||Array.isArray(data.ticket)||!String(data.ticket.id||'').trim()||String(data.ticket.subject||'')!==String(subject))throw new Error('Unconfirmed support request response');
     invalidateClientSupportHistoryRequest();supportTicketsData.unshift(data.ticket);
     if(subjectEl){subjectEl.value='';subjectEl.removeAttribute?.('aria-invalid')}if(messageEl){messageEl.value='';messageEl.removeAttribute?.('aria-invalid')};
-    if(status)status.textContent=data.warning||'Support request sent.';renderSupport();
+    if(topic)topic.value='general';if(status)status.textContent=data.warning||'Support request sent.';renderSupport();
   }catch(_){
     if(status)status.textContent='Could not confirm the request was saved. Check request history before retrying; your draft is preserved.';
   }finally{
@@ -4758,6 +4757,7 @@ function syncTopbarSheetBackdrop(){const backdrop=document.getElementById('topba
     if(panel&&!panel.hidden)panel.hidden=true;
     if(button)button.setAttribute('aria-expanded','false');
   }
+  syncTopbarSheetBackdrop();
 }
 function initProfileControls(){
   const button=document.getElementById('accountButton'),panel=document.getElementById('accountPanel'),photoInput=document.getElementById('profilePhotoInput');
@@ -4987,15 +4987,15 @@ async function navigateNotification(n){
 async function openNotification(id){
   const n=notificationData.find(x=>x.id===id);if(!n)return false;
   const panel=document.getElementById('notificationPanel'),bell=document.getElementById('notificationBell'),wasOpen=!!panel&&!panel.hidden;
-  if(wasOpen){panel.hidden=true;if(bell){bell.setAttribute('aria-expanded','false');bell.focus()}}
+  if(wasOpen){panel.hidden=true;syncTopbarSheetBackdrop();if(bell){bell.setAttribute('aria-expanded','false');bell.focus({preventScroll:true})}}
   const opened=await navigateNotification(n);
   if(!opened){
     notificationReadError='This alert could not open its record. Refresh alerts and try again; it remains unread.';renderNotifications();
-    if(wasOpen&&panel){panel.hidden=false;if(bell)bell.setAttribute('aria-expanded','true');const target=panel.querySelector('[data-notification-id="'+CSS.escape(String(id))+'"]');(target||bell)?.focus()}
+    if(wasOpen&&panel){panel.hidden=false;syncTopbarSheetBackdrop();if(bell)bell.setAttribute('aria-expanded','true');const target=panel.querySelector('[data-notification-id="'+CSS.escape(String(id))+'"]');(target||bell)?.focus()}
     return false;
   }
   if(!n.read)await markNotifications([id]);
-  if(panel)panel.hidden=true;if(bell)bell.setAttribute('aria-expanded','false');return true;
+  if(panel)panel.hidden=true;syncTopbarSheetBackdrop();if(bell)bell.setAttribute('aria-expanded','false');return true;
 }
 async function markAllNotifications(){
   const scope=notificationScope();
@@ -5039,7 +5039,7 @@ const helpButton=document.getElementById('helpButton'),helpPanel=document.getEle
 function closeHelpPanel(){if(helpPanel)helpPanel.hidden=true;if(helpButton)helpButton.setAttribute('aria-expanded','false')}
 helpButton?.addEventListener('click',e=>{e.stopPropagation();const opening=!!helpPanel?.hidden;if(opening)closeTopbarPopovers('help');if(helpPanel){helpPanel.hidden=!opening;if(opening)resetSurfaceScroll(helpPanel)}if(helpButton)helpButton.setAttribute('aria-expanded',opening?'true':'false')});
 document.addEventListener('click',e=>{if(helpShell&&!helpShell.contains(e.target))closeHelpPanel()});
-document.querySelectorAll('[data-help-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.helpAction;closeHelpPanel();if(action==='billing'){showView('billing');return}showView('support');setTimeout(()=>{const subject=document.getElementById('supportSubject'),message=document.getElementById('supportMessage');if(message&&!message.value)message.placeholder='Describe your question or the change you need. For a problem, tell us what happened.';if(action==='call-issue'&&subject){subject.value='Call review / issue';if(message&&!message.value)message.placeholder='Include the caller, approximate time, phone number, and what looked wrong.';subject.focus()}else subject?.focus()},50)}));
+document.querySelectorAll('[data-help-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.helpAction;closeHelpPanel();showView('support');const topic=document.getElementById('supportTopic');if(topic)topic.value=action==='billing'?'billing':action==='call-issue'?'call':'general';setTimeout(()=>{const subject=document.getElementById('supportSubject'),message=document.getElementById('supportMessage');if(message&&!message.value)message.placeholder='Describe your question or the change you need. For a problem, tell us what happened.';if(action==='call-issue'&&subject){subject.value='Call review / issue';if(message&&!message.value)message.placeholder='Include the caller, approximate time, phone number, and what looked wrong.';subject.focus()}else subject?.focus()},50)}));
 document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(btn=>btn.addEventListener('click',()=>{overviewChartDays=Number(btn.dataset.chartDays||14);document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(x=>{const selected=x===btn;x.classList.toggle('active',selected);x.setAttribute('aria-pressed',String(selected))});renderOverview()}));
 
 document.addEventListener('keydown',e=>{
@@ -5075,3 +5075,11 @@ window.visualViewport?.addEventListener('resize',syncIntelligenceViewport);windo
 window.addEventListener('resize',()=>{syncIntelligenceViewport();if(window.innerWidth>760){document.querySelector('.sidebar')?.classList.remove('open');syncNavigationBackdrop(false)}});
 document.querySelectorAll('[data-followup-filter]').forEach(b=>b.addEventListener('click',()=>{followupStatusFilter=b.dataset.followupFilter;showHandledFollowups=['completed','dismissed'].includes(followupStatusFilter);const toggle=document.getElementById('showHandledFollowups');if(toggle){toggle.textContent=showHandledFollowups?'Show active':'Show completed';toggle.setAttribute('aria-pressed',String(showHandledFollowups))}renderLeads()}));
 function formatActivityTime(x){const ts=recordTime(x);if(!ts)return esc(formatFullDateTime(x));const d=new Date(ts);return '<span>'+esc(d.toLocaleDateString(undefined,{month:'short',day:'numeric'}))+'</span><span>'+esc(d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}))+'</span>'}
+
+function resetClientViewFilters(view){
+ const defaults=view==='calls'?{callSearch:'',callDateFilter:'7',callCategoryFilter:'all',callFilter:'all',callDateFrom:'',callDateTo:'',callGroupBy:'day',callSort:'newest'}:view==='contacts'?{contactSearch:'',contactTypeFilter:'all',contactSort:'recent'}:view==='leads'?{leadSearch:'',leadFilter:'all'}:{};
+ for(const [id,value] of Object.entries(defaults)){const input=document.getElementById(id);if(input)input.value=value}
+ if(view==='calls'){callLogGroupBy='day';callLogSort='newest';callLogDensity='comfortable';callQuickFilter='all';callMoreFiltersOpen=false;callVisibleLimit=50;callLastFilterSignature='';updateCustomDateVisibility()}
+ if(view==='contacts'){contactVisibleLimit=50;contactLastFilterSignature=''}
+ if(view==='leads'){followupStatusFilter='pending';showHandledFollowups=false;const button=document.getElementById('showHandledFollowups');if(button){button.textContent='Show completed';button.setAttribute('aria-pressed','false')}}
+}

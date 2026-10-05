@@ -10,7 +10,7 @@ const css=fs.readFileSync(path.join(root,'dashboard.css'),'utf8');
 
 test('call history exposes high-volume controls',()=>{
   assert.match(html,/id="callsUnviewedCount" data-call-quick="unread"/);
-  assert.match(html,/id="callDensity"/);
+  assert.doesNotMatch(html,/id="callDensity"/);
   assert.match(html,/id="callListFooter"/);
   assert.match(html,/id="callListMeta"/);
   assert.match(html,/id="loadMoreCalls"/);
@@ -25,7 +25,7 @@ test('call history progressively renders matching rows without losing filters',(
   assert.match(js,/Showing '\+shown\+' of '\+totalRows\+' matching call/);
 });
 
-test('call history supports unopened filtering and persisted density',()=>{
+test('call history supports unopened filtering without a density control',()=>{
   assert.match(js,/callQuickFilter==='unread'\?!callWasViewed\(x\.id\)/);
   assert.match(js,/unviewedCount=baseRows\.filter\(x=>!callWasViewed\(x\.id\)\)\.length/);
   assert.match(js,/density:callLogDensity/);

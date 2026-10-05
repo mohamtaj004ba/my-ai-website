@@ -363,14 +363,20 @@ async function runClientInteractions(page){
   }
   report.client.interactions.push('call progressive loading');
 
-  if(!(await page.locator('#callDensity').isVisible())){
+  if(!(await page.locator('#callSort').isVisible())){
     await page.locator('#toggleCallMoreFilters').click();
     await page.locator('#callMoreFilters').waitFor({state:'visible',timeout:5000});
   }
-  await page.locator('#callDensity').selectOption('compact');
-  if(!(await page.locator('.call-history-panel').evaluate(el=>el.classList.contains('call-density-compact'))))throw new Error('Compact call density did not apply');
-  await page.locator('#callDensity').selectOption('comfortable');
-  report.client.interactions.push('advanced call filters + density preference');
+  if(await page.locator('#callDensity').count())throw new Error('Removed density control is still exposed');
+  await page.locator('#callSort').selectOption('oldest');
+  await page.locator('.nav-item[data-view="contacts"]').click();
+  await page.locator('#contactSearch').fill('nonexistent contact');
+  await page.locator('.nav-item[data-view="calls"]').click();
+  if(await page.locator('#callSort').inputValue()!=='newest')throw new Error('Leaving calls did not reset sorting');
+  await page.locator('.nav-item[data-view="contacts"]').click();
+  if(await page.locator('#contactSearch').inputValue()!=='')throw new Error('Leaving contacts did not reset search');
+  await page.locator('.nav-item[data-view="calls"]').click();
+  report.client.interactions.push('advanced call filters reset on page departure');
 
   const unopened=page.locator('#callsUnviewedCount');
   await unopened.click();
@@ -1305,14 +1311,21 @@ async function runResponsive(kind,viewport,name){
         await shot(page,kind+'-'+name+'-contacts-viewport',{fullPage:false});
         if(await page.locator('#adminAiLaunch').isVisible()||await page.locator('#helpButton').isVisible())throw new Error('Phone header still contains sidebar utilities');
         await page.locator('#accountButton').click();
+        const accountHeight=await page.locator('#accountPanel').evaluate(el=>el.getBoundingClientRect().height);
+        if(accountHeight>480)throw new Error('Read-only account panel has excess blank space');
         await page.locator('#accountPanel [data-close-topbar]').click();
         if(await page.locator('#accountPanel').isVisible())throw new Error('Account sheet close did not dismiss');
         await page.locator('#notificationBell').click();
         await page.locator('#topbarSheetBackdrop').click({position:{x:8,y:200}});
         if(await page.locator('#notificationPanel').isVisible())throw new Error('Notification sheet outside tap did not dismiss');
         await ensureView(page,'overview');
+        await page.locator('.client-header-identity').click();
+        if(!(await page.locator('#view-overview').isVisible()))throw new Error('Business header does not return to Today');
         await shot(page,kind+'-'+name+'-overview-viewport',{fullPage:false});
         await ensureView(page,'calls');
+        const callHeights=await page.locator('#callsTable .call-row.data').evaluateAll(rows=>rows.slice(0,8).map(row=>row.getBoundingClientRect().height));
+        if(callHeights.some(height=>height>235))throw new Error('Phone call cards have excessive vertical space');
+        await shot(page,kind+'-'+name+'-compact-calls-viewport',{fullPage:false});
         const toolbar=await page.locator('.call-toolbar-main').evaluate(el=>{const r=el.getBoundingClientRect(),search=el.querySelector('.call-search-field').getBoundingClientRect();return {fullSearch:search.width>=r.width-2,touch:[...el.querySelectorAll('input,select,button')].every(x=>x.getBoundingClientRect().height>=43)}});
         if(!toolbar.fullSearch||!toolbar.touch)throw new Error('Phone call search or filters are too cramped at '+name+' width');
         await ensureView(page,'integrations');

@@ -2952,3 +2952,38 @@ body[data-dashboard="client"] .admin-ai-panel{grid-template-rows:auto minmax(0,1
 @media(max-width:600px){body[data-dashboard="client"] .followup-status-select{max-width:none!important}body[data-dashboard="client"] .followup-customer b{font-size:16px}}
 @media(max-width:350px){body[data-dashboard="client"] .followup-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}body[data-dashboard="client"] .followup-summary>button{min-height:44px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}body[data-dashboard="client"] .followup-summary>button strong{margin:0;font-size:18px}body[data-dashboard="client"] .followup-contact-actions .followup-view-call{font-size:12px;padding:8px 3px;white-space:nowrap}}
 @media(max-width:350px){.client-live-status:not([data-sync-state]) #clientLiveLabel,.client-live-status.sync-error #clientLiveLabel{font-size:14px!important}}
+
+/* Content-sized utilities and a quieter, compact call log. */
+.client-header-identity{border:0;background:transparent;text-align:left;padding:0;color:inherit;font:inherit;cursor:pointer}
+.intelligence-mobile-name{display:none}
+body[data-dashboard="client"] .intelligence-welcome{border:1px solid #dae5e3;background:linear-gradient(145deg,#fff,#f0f6f4);padding:28px;border-radius:20px;display:grid;gap:16px}
+.intelligence-welcome>b{font-size:28px;line-height:1.15;letter-spacing:-.035em;color:#213b40}
+.intelligence-welcome>small{font-size:10px;letter-spacing:.09em;color:#657b7d}
+.intelligence-welcome>p{margin:0;line-height:1.6;font-size:14px}
+.intelligence-starters{display:grid;gap:8px}
+.intelligence-starters button{min-height:48px;border:1px solid #d8e2df;background:#fff;border-radius:12px;text-align:left;padding:12px 14px;font:inherit;font-size:14px;color:#263b40;display:flex;justify-content:space-between;gap:12px;cursor:pointer}
+.intelligence-starters button:hover{background:#edf5f1;border-color:#92afa3}
+.intelligence-welcome .intelligence-review-note{letter-spacing:0;font-size:12px;line-height:1.5}
+@media(max-width:760px){
+ body[data-dashboard="client"] :is(.account-panel,.notification-panel){inset:auto 12px auto auto!important;top:calc(var(--admin-view-offset,0px) + 96px)!important;width:calc(100vw - 24px)!important;height:auto!important;max-width:420px!important;max-height:calc(100dvh - var(--admin-view-offset,0px) - 112px)!important;border-radius:18px!important;padding:20px!important;box-shadow:0 16px 50px #12202930}
+ body[data-dashboard="client"] .account-panel-head{min-height:44px;margin-bottom:8px}
+ body[data-dashboard="client"] .profile-panel-signout{margin-top:16px}
+ body[data-dashboard="client"] .notification-panel #notificationList{max-height:45dvh;overflow:auto}
+ body[data-dashboard="client"] .client-header-identity{min-height:44px}
+ .intelligence-mobile-name{display:inline}.intelligence-desktop-name{display:none}
+ body[data-dashboard="client"] .admin-ai-head{background:linear-gradient(115deg,#183139,#2c474c);color:#fff;border-bottom:3px solid #b95a38}
+ body[data-dashboard="client"] .admin-ai-head :is(h2,p,.eyebrow){color:inherit}
+ body[data-dashboard="client"] .admin-ai-head p{opacity:.8;line-height:1.5}
+ body[data-dashboard="client"] .intelligence-welcome{padding:22px;gap:14px}
+ body[data-dashboard="client"] .intelligence-welcome>b{font-size:26px}
+}
+@media(max-width:600px){
+ body[data-dashboard="client"] .call-row.data{min-height:0!important;height:auto!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto auto!important;align-content:start!important;align-items:center!important;gap:8px 12px!important;padding:14px!important;margin-bottom:10px!important}
+ body[data-dashboard="client"] .call-row.data>:nth-child(3){display:none!important}
+ body[data-dashboard="client"] .call-row.data>:nth-child(4){grid-row:2!important;margin:0!important;min-height:0!important;padding:0!important}
+ body[data-dashboard="client"] .call-row.data>:nth-child(5){grid-column:1!important;grid-row:3!important;border-top:1px solid #edf0f2;padding-top:10px}
+ body[data-dashboard="client"] .call-row.data>:nth-child(6){grid-column:2!important;grid-row:3!important;border-top:1px solid #edf0f2;padding-top:10px}
+ body[data-dashboard="client"] .call-row.data>:nth-child(7){grid-column:1/-1!important;grid-row:4!important;text-align:left!important;font-size:11px;color:var(--muted);padding:0!important;min-height:0!important}
+ body[data-dashboard="client"] .call-row.data .call-duration b{font-size:12px;font-weight:500}
+ body[data-dashboard="client"] .call-row.data .call-view-cue{display:inline!important;float:right;margin:0;color:#a64b2f;opacity:1;transform:none}
+}

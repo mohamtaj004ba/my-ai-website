@@ -8,23 +8,26 @@ assert.ok(start>=0&&end>start);
 const block=source.slice(start,end);
 
 function fixture({opened=true}={}){
-  const events=[],item={focus(){events.push('focus:item')}},panel={hidden:false,querySelector:()=>item},bell={setAttribute:(k,v)=>events.push('bell:'+k+'='+v),focus(){events.push('focus:bell')}};
+  const events=[],backdrop={hidden:false},item={focus(){events.push('focus:item')}},panel={hidden:false,querySelector:()=>item},bell={setAttribute:(k,v)=>events.push('bell:'+k+'='+v),focus(){events.push('focus:bell')}};
   const ctx=vm.createContext({
     notificationData:[{id:'n-1',read:true}],
-    document:{getElementById:id=>id==='notificationPanel'?panel:id==='notificationBell'?bell:null},
-    navigateNotification:async()=>{events.push('navigate:panel-hidden='+panel.hidden);return opened},
+    window:{innerWidth:390},
+    document:{getElementById:id=>id==='notificationPanel'?panel:id==='notificationBell'?bell:id==='topbarSheetBackdrop'?backdrop:null},
+    navigateNotification:async()=>{assert.equal(backdrop.hidden,true,'blur backdrop must be removed before opening call details');events.push('navigate:panel-hidden='+panel.hidden);return opened},
     markNotifications:async()=>{events.push('mark')},
     notificationReadError:'',renderNotifications(){events.push('render')},
     CSS:{escape:x=>x},String
   });
-  vm.runInContext(block,ctx);
-  return {ctx,panel,events,run:()=>vm.runInContext("openNotification('n-1')",ctx)};
+  const sync=source.match(/function syncTopbarSheetBackdrop\(\)\{[^\n]+/)[0];
+  vm.runInContext(sync+'\n'+block,ctx);
+  return {ctx,panel,backdrop,events,run:()=>vm.runInContext("openNotification('n-1')",ctx)};
 }
 
 test('notification navigation hides its popover and focuses the stable bell before opening another surface',async()=>{
   const f=fixture({opened:true});
   assert.equal(await f.run(),true);
   assert.equal(f.panel.hidden,true);
+  assert.equal(f.backdrop.hidden,true);
   assert.ok(f.events.indexOf('focus:bell')<f.events.indexOf('navigate:panel-hidden=true'));
   assert.equal(f.events.includes('focus:item'),false);
 });
@@ -33,6 +36,7 @@ test('failed notification navigation reopens the panel and restores focus to the
   const f=fixture({opened:false});
   assert.equal(await f.run(),false);
   assert.equal(f.panel.hidden,false);
+  assert.equal(f.backdrop.hidden,false);
   assert.ok(f.events.includes('bell:aria-expanded=true'));
   assert.match(f.ctx.notificationReadError,/remains unread/);assert.equal(f.events.includes('mark'),false);
   assert.equal(f.events.at(-1),'focus:item');
