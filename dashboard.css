@@ -3070,3 +3070,8 @@ body[data-dashboard="client"] .intelligence-welcome{border:1px solid #dae5e3;bac
 }
 @media(prefers-reduced-motion:reduce){body[data-dashboard="admin"] .admin-live-status>i{animation:none!important}}
 @media(min-width:761px){body[data-dashboard="admin"] .admin-mobile-intelligence{display:none!important}}
+@media(max-width:760px){
+ body[data-dashboard="admin"] .admin-workspace-card{display:none!important}
+ body[data-dashboard="admin"] .admin-search-shell:not(:focus-within) .admin-search{background:#ffffff12;border-color:#ffffff26;border-radius:12px}
+ body[data-dashboard="admin"] .admin-search-shell:not(:focus-within) .admin-search-icon{color:#d5e0e3}
+}

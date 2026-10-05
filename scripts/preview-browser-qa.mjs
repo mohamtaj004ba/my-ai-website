@@ -1354,6 +1354,7 @@ async function runResponsive(kind,viewport,name){
     }
     if(kind==='admin'){
       if(viewport.width<=760){
+        if(await page.locator('.admin-workspace-card').isVisible())throw new Error('Phone sidebar repeats the admin header identity');
         await page.locator('.admin-header-identity').click();
         if(!await page.locator('#view-overview').isVisible())throw new Error('Admin identity does not return to Command Center');
         await page.locator('#accountButton').click();
