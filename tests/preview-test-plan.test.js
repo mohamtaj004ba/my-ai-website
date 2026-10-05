@@ -6,10 +6,10 @@ const previewSeed=require('../lib/preview-seed');
 const api=fs.readFileSync('api/account.js','utf8');
 const source=api.slice(api.indexOf('async function adminUpdateClient('),api.indexOf('\nasync function adminDeleteClient('));
 const req={headers:{host:'test-preview.vercel.app'}};
-const workspace={...previewSeed.adminWorkspace('a602e6c2',0,100),ownerEmail:'m.tajadin@gmail.com'};
+const workspace={...previewSeed.adminWorkspace('a602e6c2',0,100),ownerEmail:'preview-owner@example-client.test'};
 test('Preview test plans require the exact seeded fixture and Preview host',()=>{
  assert.equal(previewSeed.testPlanEditable(req,workspace,'preview'),true);
- for(const environment of ['production','development','',undefined])assert.equal(previewSeed.testPlanEditable(req,workspace,environment),false);
+ for(const environment of ['production','development','',null])assert.equal(previewSeed.testPlanEditable(req,workspace,environment),false);
  for(const patch of [{id:'real-workspace'},{stripeSubscriptionId:'sub_real'},{stripeCustomerId:'cus_real'},{stripeSubscriptionId:'seed_sub_2'},{previewScenario:'unknown'}])assert.equal(previewSeed.testPlanEditable(req,{...workspace,...patch},'preview'),false);
  assert.equal(previewSeed.testPlanEditable({headers:{host:'callercore.com'}},workspace,'preview'),false);
 });
@@ -26,3 +26,5 @@ test('production, real subscriptions, stale state, nonadmins and transaction con
  const denied=await save({admin:false});assert.equal(denied.writes,0);
  const conflict=await save({transaction:false});assert.equal(conflict.code,409);
 });
+
+
