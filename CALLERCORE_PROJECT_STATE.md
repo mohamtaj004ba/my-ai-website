@@ -1,5 +1,14 @@
 # CallerCore project state
 
+## Public website mobile and laptop redesign — 2026-10-05
+
+- Published implementation **4d8ba38322a43c40ed6cd6060ccd6154509c3b9f**, tree **5d0c2ac4e0716e0a14d2631a25582238d32c353f**, exact Preview **https://my-ai-website-lrn9k3cxp-mohamtaj004bas-projects.vercel.app**, deployment **dpl_EgrrvzPppC893Gs5A5zNnBBRcm9K**, READY/target null/matching SHA. Details: docs/website-mobile-verification.md.
+- Premium mobile header and navigation, accessible dismissal/focus, readable scrolling header, compact hero/capability/pricing/demo/planner/FAQ layouts, wrapped industries, smaller footer with unobstructed actions, and responsive contact/signup/demo/legal pages. Laptop footer and final call to action improved. Existing routes, prices, gates and dashboard features retained.
+- **1,679 local tests pass**; current push CI 37363750056 and Jekyll 37363754550 SUCCESS. Direct exact-Preview Chrome review passed **60 public layout checks** across 320/390/430/768/1440/1920px, plus real keyboard navigation at four widths and walkthrough/planner/FAQ interactions. Phone/laptop visual review complete; browser emulation, not a physical iPhone check.
+- **Full automated acceptance remains pending:** authenticated Browser QA **37363750070** (job 111944327778), CodeQL 37363750042/37363754536 and PR CI 37363754584 were queued as of 2026-10-05T19:40:23Z. GitHub reports an Actions degraded-performance incident since 19:11 UTC. Do not claim a green authenticated regression report or screenshot artifact for this implementation. Recheck those runs after recovery; the previous fully green checkpoint remains **3ebd1c4bf24123bf6290926943d604c1e158b347 / QA 37333161944**.
+- Stripe remains paused, actual provider acceptance pending and checkout gated. Main remains 37ef5cfcdccae35952822859f64fe83f0b9f09f0; PR #5 draft/open/unmerged. No production deploy, live Stripe write, customer message/payment or telephony activation occurred. Documentation-only checkpoints do not represent new verified implementations.
+
+
 ## Admin mobile dashboard verification — 2026-10-05
 
 - Verified implementation **3ebd1c4bf24123bf6290926943d604c1e158b347**, exact Preview **https://my-ai-website-oh0jvrpaf-mohamtaj004bas-projects.vercel.app**, authenticated QA **37333161944** SUCCESS, completed **2026-10-05T15:38:46.244Z**. **1,678 local tests pass**; 278 layout, 187 readability, 55 public contracts and 420 screenshots, zero console/page/API/visual failures. Details: docs/admin-mobile-verification.md.
