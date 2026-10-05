@@ -625,14 +625,16 @@ async function runClientInteractions(page){
     if(width<=760){
       const inputSize=await page.locator('#adminAiInput').evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
       if(inputSize<16)throw new Error('Intelligence input would trigger iPhone automatic zoom');
-      await page.setViewportSize({width,height:420});
+      for(const keyboardHeight of [420,250]){
+      await page.setViewportSize({width,height:keyboardHeight});
       await page.locator('#adminAiInput').focus();
       // visualViewport resize is delivered asynchronously after the viewport
       // changes. Assert the settled visible geometry, with a bounded deadline.
       await page.waitForFunction(()=>{const panel=document.getElementById('adminAiPanel').getBoundingClientRect(),send=document.getElementById('adminAiSend').getBoundingClientRect();return panel.top>=0&&panel.bottom<=innerHeight+1&&send.right<=innerWidth&&send.bottom<=innerHeight},null,{timeout:5000});
-      await page.screenshot({path:path.join(outDir,`client-intelligence-keyboard-${width}.png`),fullPage:false});
+      await page.screenshot({path:path.join(outDir,`client-intelligence-keyboard-${width}-${keyboardHeight}.png`),fullPage:false});
       const keyboardFits=await page.locator('#adminAiPanel').evaluate(el=>{const r=el.getBoundingClientRect(),send=document.getElementById('adminAiSend').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&send.right<=innerWidth&&send.bottom<=innerHeight});
       if(!keyboardFits)throw new Error('Intelligence composer escapes the reduced keyboard viewport');
+      }
       await page.setViewportSize({width,height:844});
     }
     await page.screenshot({path:path.join(outDir,`client-intelligence-${width}.png`),fullPage:false});

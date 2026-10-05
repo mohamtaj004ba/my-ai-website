@@ -2876,3 +2876,13 @@ body[data-dashboard="client"] .admin-ai-panel{grid-template-rows:auto minmax(0,1
 }
 
 @media(max-width:600px){#view-leads .page-head .page-actions{display:none}#view-leads .page-head{margin-bottom:12px!important}.followup-summary>button span{font-size:12px}}
+
+@media(max-width:760px){
+ .admin-ai-panel.keyboard-compact .admin-ai-head{padding:8px 12px!important;align-items:center}
+ .admin-ai-panel.keyboard-compact .admin-ai-head :is(.eyebrow,p){display:none}
+ .admin-ai-panel.keyboard-compact .admin-ai-head h2{font-size:18px;line-height:1.25}
+ .admin-ai-panel.keyboard-compact .admin-ai-conversation{padding:12px!important}
+ .admin-ai-panel.keyboard-compact .admin-ai-form{gap:6px;padding:8px 12px max(8px,env(safe-area-inset-bottom))!important}
+ .admin-ai-panel.keyboard-compact .admin-ai-form textarea{min-height:52px;height:56px;max-height:76px}
+ .admin-ai-panel.keyboard-compact .admin-ai-form small{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+}
