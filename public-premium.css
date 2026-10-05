@@ -222,3 +222,140 @@
 .public-site :is(h1,h2,h3,h4,.brand){font-family:Manrope,ui-sans-serif,system-ui,sans-serif}
 .public-site :is(p,input,textarea,select){font-weight:400}
 .public-site :is(input,textarea,select,button){font-family:inherit}
+
+/* Visitor-first layout: content sets the height; shared navigation and footer. */
+.public-site .site-header{border-bottom:1px solid #dce3df;box-shadow:0 3px 18px #173a2c06}
+.public-site .nav-backdrop{display:none}
+.public-site .phone-demo,.public-site .live-stage{margin-top:0}
+.public-site .demo-conversation{min-height:0;gap:16px}
+.public-site .demo-line p{min-height:0}
+.public-site .proof div{white-space:normal;overflow:visible;max-width:100%;text-wrap:balance}
+.public-site .price-grid li,.public-site .price-grid .featured li{color:#4d5d56}
+.public-site .price-grid li:first-child,.public-site .price-grid .featured li:first-child{color:#355542;background:#edf3ee}
+.public-site .price-grid article{min-height:0;display:flex;flex-direction:column}
+.public-site .price-grid article>p{min-height:0}
+.public-site .price-grid ul{flex:1}
+.public-site .price-grid article>.button,.public-site .price-grid article>.secondary{margin-top:24px}
+.public-site .final{display:flex;justify-content:space-between;gap:28px}
+.public-site .final .actions{display:flex;gap:10px;margin:0;flex-wrap:wrap}
+.public-site .final .actions a{margin:0;min-height:48px}
+.public-site .footer-top{grid-template-columns:1fr 1fr;gap:40px;padding:32px 28px 24px}
+.public-site .footer-brand .brand{margin-bottom:10px}
+.public-site .footer-brand p{max-width:300px}
+.public-site .footer-links{padding:0;gap:32px!important}
+.public-site .footer-links>div{display:flex!important;gap:0!important;margin:0}
+.public-site .footer-links span{margin-bottom:6px}
+.public-site .footer-links a{min-height:36px;font-size:14px}
+.public-site .footer-bottom{padding:12px 0 16px}
+.public-site .footer-bottom a{color:#d7e4dd;text-underline-offset:4px}
+@media(min-width:601px) and (max-width:900px){
+ .public-site .price-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-width:none;gap:10px}
+ .public-site .price-grid article,.public-site .price-grid article.featured{padding:20px 16px}
+ .public-site .price-grid .badge{position:static;align-self:flex-start;margin-bottom:12px}
+ .public-site .price-grid h3{font-size:36px}
+ .public-site .price-grid article>a{padding-inline:8px;font-size:13px}
+}
+@media(max-width:900px){
+ .public-site .site-header{height:76px;padding:0 24px;background:#1c3034;color:#fff;border-bottom:3px solid #b44e2d;z-index:120}
+ .public-site .site-header.scrolled{background:#1c3034;box-shadow:0 4px 20px #102a3020}
+ .public-site .site-header .brand{color:#fff;font-size:23px;gap:9px}
+ .public-site .site-header .brand b{color:#ef996c}
+ .public-site .site-header .brand img{width:28px;height:28px}
+ .public-site .header-actions{display:none}
+ .public-site .menu{display:flex;align-items:center;justify-content:center;gap:10px;margin-left:auto;min-width:94px;min-height:46px;padding:10px 14px;border:1px solid #698082;border-radius:12px;background:#ffffff0b;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+ .public-site .menu:before{content:'';width:18px;height:14px;background:linear-gradient(#fff,#fff) 0 0/18px 2px no-repeat,linear-gradient(#fff,#fff) 0 6px/13px 2px no-repeat,linear-gradient(#fff,#fff) 0 12px/18px 2px no-repeat}
+ .public-site .menu[aria-expanded=true]:before{background:linear-gradient(45deg,transparent 45%,#fff 46%,#fff 54%,transparent 55%),linear-gradient(-45deg,transparent 45%,#fff 46%,#fff 54%,transparent 55%);height:18px}
+ .public-site .nav-backdrop:not([hidden]){display:block;position:fixed;inset:76px 0 0;z-index:110;background:#12242680;border:0;border-radius:0;padding:0;cursor:pointer}
+ .public-site .site-header nav{position:fixed;top:88px;left:auto;right:16px;bottom:auto;width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 104px);overflow:auto;padding:16px 20px 20px;background:#fff;border:1px solid #d6e1dc;border-radius:18px;box-shadow:0 16px 44px #102a3033;gap:0;grid-template-columns:1fr 1fr;color:#192327}
+ .public-site .site-header nav.open{display:grid}
+ .public-site .site-header nav:before{content:'Explore CallerCore';grid-column:1/-1;padding:4px 0 10px;color:#61736b;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+ .public-site .site-header nav>a{display:flex;align-items:center;justify-content:space-between;grid-column:1/-1;min-height:48px;padding:12px 2px;font-size:17px;font-weight:600;border-bottom:1px solid #e5ece8;color:#223b35}
+ .public-site .site-header nav>a:not(.nav-mobile-only):after{content:'↗';display:block;position:static;background:none;height:auto;margin-left:auto;color:#9b4a2e}
+ .public-site .site-header nav>a.nav-mobile-only:not(.nav-mobile-cta){grid-column:auto;min-height:44px;margin:12px 0 0;padding:10px 0;border:0;font-size:14px}
+ .public-site .site-header nav>a.nav-mobile-demo{justify-content:flex-end;color:#9b4327!important}
+ .public-site .site-header nav>a.nav-mobile-cta{grid-column:1/-1;justify-content:center;min-height:48px;margin-top:8px!important;border-radius:10px;background:#a84223}
+ .public-site :is(section,main)[id]{scroll-margin-top:96px}
+ .public-site .final{display:grid;gap:20px}
+ .public-site .final .actions{display:flex;margin:0;gap:10px}
+ .public-site .footer-top{grid-template-columns:1fr 1fr;gap:28px}
+}
+@media(max-width:600px){
+ .public-site .site-header{padding:0 18px}
+ .public-site .site-header .brand{font-size:21px}
+ .public-site .hero{padding:28px 20px 32px;gap:24px}
+ .public-site .hero h1{font-size:clamp(33px,8.8vw,42px);line-height:1.12}
+ .public-site .hero .actions{grid-template-columns:1fr 1fr;align-items:stretch;gap:8px}
+ .public-site .hero .actions a{min-width:0;padding:12px 9px;font-size:14px;min-height:48px;gap:6px}
+ .public-site .hero .fine{margin-top:12px;line-height:1.6}
+ .public-site .phone-demo{padding:18px;border-radius:18px;margin:0}
+ .public-site .call-top{gap:9px}
+ .public-site .call-top .live-pill{margin:0 0 0 auto;font-size:10px}
+ .public-site .transcript{padding:16px 0}
+ .public-site .transcript p{padding:13px 14px;font-size:14px;line-height:1.55}
+ .public-site .result-grid{grid-template-columns:1fr 1fr;gap:7px}
+ .public-site .proof{padding:18px 20px;gap:10px}
+ .public-site .proof p{margin:0;max-width:none}
+ .public-site .proof div{font-size:12px;line-height:1.9}
+ .public-site .how-wrap,.public-site .capabilities,.public-site .pricing,.public-site .site-faq{padding:32px 20px}
+ .public-site .section-heading{margin-bottom:20px}
+ .public-site .section-heading h2,.public-site .section-title h2,.public-site .site-faq h2{font-size:29px}
+ .public-site .flow article{padding:17px;gap:5px 12px}
+ .public-site .demo-band{padding:32px 20px;gap:20px}
+ .public-site .try-prompts{margin-top:20px;gap:6px}
+ .public-site .try-prompts button{padding:10px;font-size:12px}
+ .public-site .demo-band .example-disclosure{margin:12px 0 6px}
+ .public-site .live-stage{padding:18px;margin:0;border-radius:18px}
+ .public-site .live-stage .stage-head{margin-bottom:16px;padding-bottom:12px}
+ .public-site .demo-conversation{min-height:0;gap:14px}
+ .public-site .demo-line p{padding:12px 14px;font-size:14px;min-height:0}
+ .public-site .demo-line.agent p{margin-left:12px}
+ .public-site .demo-outcome{margin-top:16px;padding:12px 0;gap:8px}
+ .public-site .demo-outcome small{margin:0;font-size:10px}
+ .public-site .demo-controls{margin-top:12px}
+ .public-site .demo-controls button{flex:1;min-width:0;font-size:12px;padding:10px 8px}
+ .public-site .feature-grid{gap:0;margin-top:20px;border-top:1px solid #dce4de}
+ .public-site .feature-grid article{display:grid;grid-template-columns:36px minmax(0,1fr);gap:5px 13px;padding:18px 0;min-height:0;background:transparent;border:0!important;border-bottom:1px solid #dce4de!important;border-radius:0;box-shadow:none;transform:none}
+ .public-site .feature-grid article .feature-icon{grid-row:1/3;width:36px;height:36px;border-radius:10px}
+ .public-site .feature-grid article h3{margin:0;font-size:17px}
+ .public-site .feature-grid article p{grid-column:2;font-size:14px;line-height:1.55}
+ .public-site .price-grid{margin-top:22px;gap:14px}
+ .public-site .price-grid article,.public-site .price-grid article.featured{padding:22px 20px;min-height:0;border-radius:18px}
+ .public-site .price-grid h3{font-size:36px;margin:14px 0}
+ .public-site .price-grid article>p{font-size:14px;line-height:1.55;margin-bottom:0}
+ .public-site .price-grid ul{margin-top:18px;padding-top:16px;gap:9px}
+ .public-site .price-grid li{font-size:13px;line-height:1.5}
+ .public-site .price-grid article>a{min-height:46px;margin-top:18px;font-size:14px}
+ .public-site .founding{margin-top:16px;line-height:1.6}
+ .public-site .volume-planner{padding:20px;gap:18px;margin-top:20px;border-radius:18px}
+ .public-site .volume-planner h3{font-size:21px;line-height:1.25}
+ .public-site .planner-controls{gap:16px}
+ .public-site .planner-visual{padding-top:16px}
+ .public-site .planner-visual h4{font-size:36px;margin:8px 0 14px}
+ .public-site .faq-list{gap:8px}
+ .public-site .faq-list summary{padding:14px 40px 14px 16px;font-size:14px;min-height:48px;line-height:1.5}
+ .public-site .final{margin:0 20px 32px;padding:24px 20px;border-radius:18px;gap:18px}
+ .public-site .final h2{font-size:29px}
+ .public-site .final .actions{display:grid;grid-template-columns:1fr;gap:8px}
+ .public-site .final .actions a{width:100%;margin:0;min-height:46px;font-size:14px;padding:12px}
+ .public-site .footer-top{grid-template-columns:1fr;padding:24px 20px 16px;gap:18px}
+ .public-site .footer-brand .brand{font-size:22px;margin-bottom:8px}
+ .public-site .footer-brand p{font-size:13px;max-width:none}
+ .public-site .footer-links{gap:20px!important}
+ .public-site .footer-links a{font-size:13px;min-height:36px}
+ .public-site .footer-links span{font-size:10px;margin-bottom:4px}
+ .public-site .footer-bottom{width:calc(100% - 40px);display:flex!important;padding:10px 0 14px;gap:12px!important}
+ .public-site .footer-bottom a{font-size:12px;min-height:36px}
+ .public-site .submain{padding:28px 20px 36px}
+ .public-site .subhero2{margin-bottom:22px}
+ .public-site .subhero2 h1{font-size:34px;line-height:1.12}
+ .public-site .panel,.public-site .stage-card{padding:20px;border-radius:18px}
+ .public-site .mini-list{margin-top:18px}
+ .public-site .mini-list>div{padding:14px 0}
+ .public-site.demo-page .submain{padding:28px 20px 36px;gap:22px}
+ .public-site.demo-page .demo-phone{padding:22px 18px}
+ .public-site.demo-page .steps3{grid-template-columns:1fr;gap:0}
+ .public-site.demo-page .steps3 article{padding:14px 0}
+ .public-site.demo-page .steps3 h3{margin:6px 0}
+ .public-site .legal{padding:28px 20px 36px}
+ .public-site .legal h1{font-size:34px}
+}

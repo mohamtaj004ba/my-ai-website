@@ -1545,7 +1545,7 @@ async function runReadOnlyBannerQA(viewport,name){
 
 async function runPublicSiteQA(){
   report.publicSite={pages:[],contracts:[],interactions:[]};
-  for(const [name,viewport] of [['wide',{width:1920,height:1080}],['laptop',{width:1440,height:1000}],['tablet',{width:768,height:1024}],['phone',{width:390,height:844}],['small-phone',{width:320,height:740}]]){
+  for(const [name,viewport] of [['wide',{width:1920,height:1080}],['laptop',{width:1440,height:1000}],['tablet',{width:768,height:1024}],['large-phone',{width:430,height:932}],['phone',{width:390,height:844}],['small-phone',{width:320,height:740}]]){
     const {context,page}=await makeContext(viewport,'public-'+name);
     try{
       await page.route('**/api/site-track',r=>r.fulfill({status:204,body:''}));
@@ -1575,14 +1575,32 @@ async function runPublicSiteQA(){
         await contract(name+'-'+key);await shot(page,'public-'+name+'-'+key);
         report.publicSite.pages.push(name+'-'+key);
         if(key==='home'){
+          const visitorLayout=await page.evaluate(()=>{
+            const rect=s=>document.querySelector(s).getBoundingClientRect();
+            const conversation=document.querySelector('.demo-conversation');
+            const last=conversation.lastElementChild.getBoundingClientRect();
+            const proof=document.querySelector('.proof div');
+            return {footerHeight:rect('.site-footer').height,demoEmpty:conversation.getBoundingClientRect().bottom-last.bottom,industryOverflow:proof.scrollWidth-proof.clientWidth,featureHeights:[...document.querySelectorAll('.feature-grid article')].map(el=>el.getBoundingClientRect().height),growthColors:[...document.querySelectorAll('.featured li')].map(el=>getComputedStyle(el).color)};
+          });
+          if(visitorLayout.demoEmpty>24||visitorLayout.industryOverflow>1||visitorLayout.growthColors.some(color=>color==='rgb(208, 204, 195)'))throw new Error('Visitor layout retained empty demo space, clipped industries or faint plan features: '+JSON.stringify(visitorLayout));
+          if(viewport.width<=600&&(visitorLayout.footerHeight>420||visitorLayout.featureHeights.some(height=>height>190)))throw new Error('Phone footer or capability rows remain oversized: '+JSON.stringify(visitorLayout));
+          report.publicSite.contracts.push({label:name+'-visitor-layout',...visitorLayout});
           await shot(page,'public-'+name+'-home-first-screen',{fullPage:false});
           if(viewport.width<=900){
             await page.locator('.menu').click();await page.locator('#primary-nav.open').waitFor();
             if(await page.locator('.menu').getAttribute('aria-expanded')!=='true')throw new Error('Public mobile menu did not announce its open state');
             if(!await page.locator('#primary-nav a').first().evaluate(el=>el===document.activeElement))throw new Error('Opening phone navigation did not focus its first link');
+            const menuSize=await page.locator('.menu').boundingBox();
+            if(menuSize.width<90||menuSize.height<44||!await page.locator('.nav-backdrop').isVisible())throw new Error('Phone navigation lacks a prominent control or dismissible backdrop');
+            await page.locator('#primary-nav a').last().focus();await page.keyboard.press('Tab');
+            if(!await page.locator('.menu').evaluate(el=>el===document.activeElement))throw new Error('Phone menu keyboard focus escaped behind the navigation');
+            await page.keyboard.press('Tab');
+            if(!await page.locator('#primary-nav a').first().evaluate(el=>el===document.activeElement))throw new Error('Phone menu did not cycle back to its links');
             await shot(page,'public-'+name+'-navigation',{fullPage:false});
             await page.locator('.menu').press('Escape');
             if(await page.locator('.menu').getAttribute('aria-expanded')!=='false')throw new Error('Public mobile menu did not close on Escape');
+            await page.locator('.menu').click();await page.locator('.nav-backdrop').click({position:{x:2,y:600}});
+            if(await page.locator('.menu').getAttribute('aria-expanded')!=='false'||!await page.locator('.nav-backdrop').isHidden())throw new Error('Phone navigation backdrop failed to dismiss');
             await page.locator('.menu').click();await page.locator('#primary-nav a[href="/#pricing"]').click();
             if(await page.locator('.menu').getAttribute('aria-expanded')!=='false')throw new Error('Public anchor navigation left the phone menu open');
           }
