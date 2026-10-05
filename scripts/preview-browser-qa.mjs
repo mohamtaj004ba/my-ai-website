@@ -1283,10 +1283,25 @@ async function runResponsive(kind,viewport,name){
           await page.locator('[data-followup-filter="'+status+'"]').click();
           const actual=await page.locator('[data-followup-filter="'+status+'"]').getAttribute('aria-pressed');
           if(actual!=='true')throw new Error('Follow-up filter is not active: '+status);
-          const statuses=await page.locator('#leadKanban .team-status-pill').allTextContents();
+          const statuses=await page.locator('#leadKanban [data-team-status]').evaluateAll(selects=>selects.map(s=>s.selectedOptions[0]?.textContent.trim()||''));
           if(['dismissed','completed'].includes(status)&&statuses.some(s=>s.toLowerCase()!==status))throw new Error('Follow-up status filter mixed different statuses');
         }
         await shot(page,kind+'-'+name+'-followups');
+        if(await page.locator('#leadKanban .team-status-pill').count())throw new Error('Follow-up cards repeat their editable status');
+        await shot(page,kind+'-'+name+'-followups-viewport',{fullPage:false});
+        await ensureView(page,'contacts');
+        const cleanContacts=await page.locator('#contactsTable .contact-row.data').evaluateAll(rows=>rows.every(row=>[...row.children].slice(2).every(cell=>getComputedStyle(cell).display==='none')&&getComputedStyle(row.querySelector('.contact-open-cue')).display!=='none'));
+        if(!cleanContacts)throw new Error('Phone contact list exposes activity or unlabeled counts');
+        await shot(page,kind+'-'+name+'-contacts-viewport',{fullPage:false});
+        if(await page.locator('#adminAiLaunch').isVisible()||await page.locator('#helpButton').isVisible())throw new Error('Phone header still contains sidebar utilities');
+        await page.locator('#accountButton').click();
+        await page.locator('#accountPanel [data-close-topbar]').click();
+        if(await page.locator('#accountPanel').isVisible())throw new Error('Account sheet close did not dismiss');
+        await page.locator('#notificationBell').click();
+        await page.locator('#topbarSheetBackdrop').click({position:{x:8,y:200}});
+        if(await page.locator('#notificationPanel').isVisible())throw new Error('Notification sheet outside tap did not dismiss');
+        await ensureView(page,'overview');
+        await shot(page,kind+'-'+name+'-overview-viewport',{fullPage:false});
         await ensureView(page,'calls');
         const toolbar=await page.locator('.call-toolbar-main').evaluate(el=>{const r=el.getBoundingClientRect(),search=el.querySelector('.call-search-field').getBoundingClientRect();return {fullSearch:search.width>=r.width-2,touch:[...el.querySelectorAll('input,select,button')].every(x=>x.getBoundingClientRect().height>=43)}});
         if(!toolbar.fullSearch||!toolbar.touch)throw new Error('Phone call search or filters are too cramped at '+name+' width');

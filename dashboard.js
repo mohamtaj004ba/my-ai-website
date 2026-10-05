@@ -163,7 +163,7 @@ function openAdminAiGuide(prefill=''){
   if(!panel)return;closeTopbarPopovers();panel.classList.add('open');panel.setAttribute('aria-hidden','false');if(backdrop)backdrop.hidden=false;if(launch)launch.setAttribute('aria-expanded','true');if(prefill&&input)input.value=prefill;syncIntelligenceViewport();setTimeout(()=>{const target=window.innerWidth<=760?document.getElementById('adminAiClose'):input;target?.focus({preventScroll:true})},80);
 }
 function closeAdminAiGuide(){
-  const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),launch=document.getElementById('adminAiLaunch'),wasOpen=panel?.classList.contains('open');panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(backdrop)backdrop.hidden=true;if(launch){launch.setAttribute('aria-expanded','false');if(wasOpen)launch.focus()}
+  const panel=document.getElementById('adminAiPanel'),backdrop=document.getElementById('adminAiBackdrop'),launch=document.getElementById('adminAiLaunch'),wasOpen=panel?.classList.contains('open');panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(backdrop)backdrop.hidden=true;if(launch){launch.setAttribute('aria-expanded','false');if(wasOpen)(window.innerWidth<=760&&document.body.dataset.dashboard==='client'?document.querySelector('.mobile-menu'):launch)?.focus()}
 }
 function formatCoreIntelligenceAnswer(raw){
   const text=String(raw||'').replace(/\r\n?/g,'\n').trim();if(!text)return '';
@@ -219,6 +219,7 @@ async function askAdminAi(question){
   }finally{if(send){send.disabled=false;send.textContent='Send'}}
 }
 document.getElementById('adminAiLaunch')?.addEventListener('click',()=>openAdminAiGuide());
+document.getElementById('clientSidebarIntelligence')?.addEventListener('click',()=>{document.querySelector('.sidebar')?.classList.remove('open');syncNavigationBackdrop(false);document.querySelector('.mobile-menu')?.setAttribute('aria-expanded','false');openAdminAiGuide()});
 document.getElementById('adminAiClose')?.addEventListener('click',closeAdminAiGuide);
 document.getElementById('adminAiBackdrop')?.addEventListener('click',closeAdminAiGuide);
 document.querySelectorAll('[data-ai-prompt]').forEach(btn=>btn.addEventListener('click',()=>{const q=btn.dataset.aiPrompt||'';openAdminAiGuide(q);askAdminAi(q)}));
@@ -249,6 +250,7 @@ function renderIntelligenceProposal(proposal){
 function initClientIntelligence(){
   const launch=document.getElementById('adminAiLaunch');if(document.body.dataset.dashboard!=='client'||!launch)return;
   launch.hidden=currentPlan!=='Pro'||document.body.classList.contains('admin-client-view');
+  const sidebarLaunch=document.getElementById('clientSidebarIntelligence');if(sidebarLaunch)sidebarLaunch.hidden=launch.hidden;
   if(launch.hidden)closeAdminAiGuide();
   renderAdminAiConversation();
 }
@@ -480,7 +482,7 @@ function applyClientDashboardData(data={}){
 }
 function setClientSyncState(state='live',message=''){
   const wrap=document.getElementById('clientLiveStatus'),label=document.getElementById('clientLiveLabel'),stamp=document.getElementById('clientLastRefresh');
-  if(wrap){wrap.classList.toggle('syncing',state==='syncing');wrap.classList.toggle('sync-error',state==='error')}
+  if(wrap){wrap.dataset.syncState=state;wrap.classList.toggle('syncing',state==='syncing');wrap.classList.toggle('sync-error',state==='error')}
   if(label)label.textContent=state==='syncing'?'Syncing':state==='error'?'Sync issue':'Live';
   if(stamp&&message)stamp.textContent=message;
 }
@@ -865,7 +867,7 @@ function renderLeads(){
   document.querySelectorAll('[data-followup-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.followupFilter===followupStatusFilter)));
   board.innerHTML=rows.map(x=>{
     const type=followupType(x),status=teamStatusForCall(x),phone=String(x.phone||''),digits=phone.replace(/\D/g,''),closed=['completed','dismissed'].includes(status),meta=callDispositionMeta(x),st=TEAM_STATUS_META[status]||TEAM_STATUS_META.needs_action;
-    return '<article class="followup-card '+(type==='urgent'?'urgent':'')+' '+(closed?'completed':'')+'"><div class="followup-main"><div class="followup-badge '+type+'">'+esc(followupLabel(type))+'</div><div class="followup-customer"><button class="customer-link" data-contact-key="'+esc(contactKey(x))+'"><b>'+esc(x.caller||'Unknown caller')+'</b></button><span>'+esc(phone||'No phone')+' · '+esc(formatFullDateTime(x))+'</span><p>'+esc(x.reason||'Call requires review')+'</p><div class="followup-status-line"><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(meta.label)+'</span><span class="team-status-pill '+st.tone+'">'+esc(st.label)+'</span></div></div></div><div class="followup-actions"><div class="followup-contact-actions">'+(digits?'<a class="secondary-btn action-link followup-quick-action" href="tel:'+digits+'"><span aria-hidden="true">☎</span> Call</a><a class="secondary-btn action-link followup-quick-action" href="sms:'+digits+'"><span aria-hidden="true">✉</span> Text</a>':'')+'<button class="followup-view-call" data-call-id="'+esc(x.id)+'">View call →</button></div><label class="followup-status-select"><span>Follow-up status</span><select data-team-status="'+esc(x.id)+'" '+(followupMutationPending.has(String(x.id))?'disabled aria-busy="true"':'')+'><option value="needs_action" '+(['needs_action','in_progress'].includes(status)?'selected':'')+' disabled>Pending</option><option value="completed" '+(status==='completed'?'selected':'')+'>Completed</option><option value="dismissed" '+(status==='dismissed'?'selected':'')+'>Dismissed</option></select></label>'+(closed?'<button type="button" class="secondary-btn" data-reopen-followup="'+esc(x.id)+'" '+(followupMutationPending.has(String(x.id))||document.body.classList.contains('admin-client-view')?'disabled':'')+'>Reopen follow-up</button>':'')+'</div></article>';
+    return '<article class="followup-card '+(type==='urgent'?'urgent':'')+' '+(closed?'completed':'')+'"><div class="followup-main"><div class="followup-badge '+type+'">'+esc(followupLabel(type))+'</div><div class="followup-customer"><button class="customer-link" data-contact-key="'+esc(contactKey(x))+'"><b>'+esc(x.caller||'Unknown caller')+'</b></button><span class="followup-contact-meta"><span>'+esc(phone||'No phone')+'</span><span>'+esc(formatFullDateTime(x))+'</span></span><p>'+esc(x.reason||'Call requires review')+'</p><div class="followup-status-line"><span class="disposition-pill '+callDispositionClass(x)+'">'+esc(meta.label)+'</span></div></div></div><div class="followup-actions"><div class="followup-contact-actions">'+(digits?'<a class="secondary-btn action-link followup-quick-action" href="tel:'+digits+'"><span aria-hidden="true">☎</span> Call</a><a class="secondary-btn action-link followup-quick-action" href="sms:'+digits+'"><span aria-hidden="true">✉</span> Text</a>':'')+'<button class="followup-view-call" data-call-id="'+esc(x.id)+'">View call →</button></div><label class="followup-status-select"><span>Follow-up status</span><select class="followup-status-control '+st.tone+'" data-team-status="'+esc(x.id)+'" '+(followupMutationPending.has(String(x.id))?'disabled aria-busy="true"':'')+'><option value="needs_action" '+(['needs_action','in_progress'].includes(status)?'selected':'')+' disabled>Pending</option><option value="completed" '+(status==='completed'?'selected':'')+'>Completed</option><option value="dismissed" '+(status==='dismissed'?'selected':'')+'>Dismissed</option></select></label>'+(closed?'<button type="button" class="secondary-btn" data-reopen-followup="'+esc(x.id)+'" '+(followupMutationPending.has(String(x.id))||document.body.classList.contains('admin-client-view')?'disabled':'')+'>Reopen follow-up</button>':'')+'</div></article>';
   }).join('');
   document.getElementById('leadsEmpty').hidden=rows.length!==0;updateFollowupCounts();
   board.querySelectorAll('[data-contact-key]').forEach(b=>b.addEventListener('click',()=>openContact(b.dataset.contactKey)));
@@ -1126,7 +1128,7 @@ function renderContacts(){
   if(contactCount)contactCount.textContent=all.length;if(customerCount)customerCount.textContent=all.filter(c=>contactType(c)==='Customer').length;if(interactionCount)interactionCount.textContent=all.reduce((n,c)=>n+totalInteractions(c),0);
   wrap.innerHTML=visibleRows.map(c=>{
     const msgCount=c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:Number(x.messageCount||0)),0),openCount=c.calls.filter(x=>followupCandidates().some(v=>String(v.id)===String(x.id))&&!followupIsHandled(x)).length,latestCall=[...c.calls].sort((a,b)=>recordTime(b)-recordTime(a))[0],latestText=latestCall?.reason||[...c.services][0]||'General activity',kind=contactType(c),key=encodeURIComponent(c.key);
-    return '<div class="contact-row data '+(openCount?'customer-attention':'')+'" role="button" tabindex="0" data-contact-key="'+key+'" aria-label="Open '+esc(c.name)+' contact history"><span><strong>'+esc(c.name)+'</strong><small>'+esc(c.phone||'No phone captured')+(openCount?' · '+openCount+' open follow-up'+(openCount===1?'':'s'):'')+'</small></span><span><i class="contact-type-pill '+kind.toLowerCase()+'">'+esc(kind)+'</i></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span class="contact-count">'+c.calls.length+'</span><span class="contact-count">'+msgCount+'</span><span class="latest-need-link" title="'+esc(latestText)+'">'+esc(latestText)+'</span></div>';
+    return '<div class="contact-row data '+(openCount?'customer-attention':'')+'" role="button" tabindex="0" data-contact-key="'+key+'" aria-label="Open '+esc(c.name)+' contact history"><span><strong>'+esc(c.name)+'</strong><small>'+esc(c.phone||'No phone captured')+(openCount?'<span class="contact-list-followups"> · '+openCount+' open follow-up'+(openCount===1?'':'s')+'</span>':'')+'</small><span class="contact-open-cue">View contact &amp; history <span aria-hidden="true">→</span></span></span><span><i class="contact-type-pill '+kind.toLowerCase()+'">'+esc(kind)+'</i></span><span>'+esc(c.lastAt?new Date(c.lastAt).toLocaleString():'—')+'</span><span class="contact-count">'+c.calls.length+'</span><span class="contact-count">'+msgCount+'</span><span class="latest-need-link" title="'+esc(latestText)+'">'+esc(latestText)+'</span></div>';
   }).join('');
   const footer=document.getElementById('contactListFooter'),meta=document.getElementById('contactListMeta'),loadMore=document.getElementById('loadMoreContacts'),shown=Math.min(visibleRows.length,totalRows),remaining=Math.max(0,totalRows-shown);
   if(footer)footer.hidden=totalRows===0;if(meta)meta.textContent='Showing '+shown+' of '+totalRows+' matching contact'+(totalRows===1?'':'s');if(loadMore){loadMore.hidden=remaining===0;loadMore.textContent=remaining?'Load '+Math.min(50,remaining)+' more':'All matching contacts loaded'}
@@ -4736,7 +4738,12 @@ async function saveProfile(){
   }catch(err){if(status){status.textContent=err.message||'Could not save profile';status.className='error'}return false}
   finally{setProfileSaving(false);if(status?.className==='success')setProfileEditing(false)}
 }
-function closeTopbarPopovers(except=''){
+function syncTopbarSheetBackdrop(){const backdrop=document.getElementById('topbarSheetBackdrop');if(backdrop)backdrop.hidden=window.innerWidth>760||!['accountPanel','notificationPanel'].some(id=>{const p=document.getElementById(id);return p&&!p.hidden})}
+ document.querySelectorAll('[data-close-topbar],#topbarSheetBackdrop').forEach(button=>button.addEventListener('click',()=>{closeTopbarPopovers();syncTopbarSheetBackdrop()}));
+ window.addEventListener('resize',syncTopbarSheetBackdrop);
+ document.addEventListener('click',()=>syncTopbarSheetBackdrop());
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')setTimeout(syncTopbarSheetBackdrop,0)});
+ function closeTopbarPopovers(except=''){
   const items=[['profile','accountPanel','accountButton'],['notifications','notificationPanel','notificationBell'],['help','helpPanel','helpButton']];
   for(const [key,panelId,buttonId] of items){
     if(key===except)continue;
@@ -4748,7 +4755,7 @@ function closeTopbarPopovers(except=''){
 function initProfileControls(){
   const button=document.getElementById('accountButton'),panel=document.getElementById('accountPanel'),photoInput=document.getElementById('profilePhotoInput');
   if(!button||!panel)return;renderUserProfile();
-  button.addEventListener('click',e=>{e.stopPropagation();const opening=!!panel.hidden;if(opening)closeTopbarPopovers('profile');panel.hidden=!opening;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){setProfileEditing(false,{restore:true});resetSurfaceScroll(panel);document.getElementById('profileEditButton')?.focus()}});
+  button.addEventListener('click',e=>{e.stopPropagation();const opening=!!panel.hidden;if(opening)closeTopbarPopovers('profile');panel.hidden=!opening;button.setAttribute('aria-expanded',String(!panel.hidden));syncTopbarSheetBackdrop();if(!panel.hidden){syncTopbarSheetBackdrop();setProfileEditing(false,{restore:true});resetSurfaceScroll(panel);document.getElementById('profileEditButton')?.focus()}});
   panel.addEventListener('click',e=>e.stopPropagation());
   document.getElementById('profileEditButton')?.addEventListener('click',()=>setProfileEditing(true));
   document.getElementById('profileCancelButton')?.addEventListener('click',()=>{if(setProfileEditing(false,{restore:true})){const s=document.getElementById('profileSaveStatus');if(s)s.textContent='';document.getElementById('profileEditButton')?.focus()}});
@@ -4996,7 +5003,7 @@ async function markAllNotifications(){
 }
 function initNotifications(){
   const bell=document.getElementById('notificationBell'),panel=document.getElementById('notificationPanel');if(!bell||!panel)return;
-  bell.addEventListener('click',e=>{e.stopPropagation();const opening=!!panel.hidden;if(opening)closeTopbarPopovers('notifications');panel.hidden=!opening;bell.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden){resetSurfaceScroll(panel);loadNotifications({silent:true})}});
+  bell.addEventListener('click',e=>{e.stopPropagation();const opening=!!panel.hidden;if(opening)closeTopbarPopovers('notifications');panel.hidden=!opening;bell.setAttribute('aria-expanded',String(!panel.hidden));syncTopbarSheetBackdrop();if(!panel.hidden){syncTopbarSheetBackdrop();resetSurfaceScroll(panel);loadNotifications({silent:true})}});
   panel.addEventListener('click',e=>e.stopPropagation());
   document.getElementById('notificationReadAll')?.addEventListener('click',markAllNotifications);
   document.getElementById('notificationRetry')?.addEventListener('click',e=>{e.stopPropagation();loadNotifications({silent:false})});
@@ -5025,7 +5032,7 @@ const helpButton=document.getElementById('helpButton'),helpPanel=document.getEle
 function closeHelpPanel(){if(helpPanel)helpPanel.hidden=true;if(helpButton)helpButton.setAttribute('aria-expanded','false')}
 helpButton?.addEventListener('click',e=>{e.stopPropagation();const opening=!!helpPanel?.hidden;if(opening)closeTopbarPopovers('help');if(helpPanel){helpPanel.hidden=!opening;if(opening)resetSurfaceScroll(helpPanel)}if(helpButton)helpButton.setAttribute('aria-expanded',opening?'true':'false')});
 document.addEventListener('click',e=>{if(helpShell&&!helpShell.contains(e.target))closeHelpPanel()});
-helpPanel?.querySelectorAll('[data-help-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.helpAction;closeHelpPanel();if(action==='billing'){showView('billing');return}showView('support');setTimeout(()=>{const subject=document.getElementById('supportSubject'),message=document.getElementById('supportMessage');if(message&&!message.value)message.placeholder='Describe your question or the change you need. For a problem, tell us what happened.';if(action==='call-issue'&&subject){subject.value='Call review / issue';if(message&&!message.value)message.placeholder='Include the caller, approximate time, phone number, and what looked wrong.';subject.focus()}else subject?.focus()},50)}));
+document.querySelectorAll('[data-help-action]').forEach(btn=>btn.addEventListener('click',()=>{const action=btn.dataset.helpAction;closeHelpPanel();if(action==='billing'){showView('billing');return}showView('support');setTimeout(()=>{const subject=document.getElementById('supportSubject'),message=document.getElementById('supportMessage');if(message&&!message.value)message.placeholder='Describe your question or the change you need. For a problem, tell us what happened.';if(action==='call-issue'&&subject){subject.value='Call review / issue';if(message&&!message.value)message.placeholder='Include the caller, approximate time, phone number, and what looked wrong.';subject.focus()}else subject?.focus()},50)}));
 document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(btn=>btn.addEventListener('click',()=>{overviewChartDays=Number(btn.dataset.chartDays||14);document.querySelectorAll('#overviewChartRange [data-chart-days]').forEach(x=>{const selected=x===btn;x.classList.toggle('active',selected);x.setAttribute('aria-pressed',String(selected))});renderOverview()}));
 
 document.addEventListener('keydown',e=>{
