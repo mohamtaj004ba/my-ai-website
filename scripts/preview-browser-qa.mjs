@@ -233,7 +233,7 @@ async function assertUtilityPanelContrast(page,panelSelector,label){
     const rgb=value=>value.match(/[\d.]+/g).map(Number);
     const luminance=values=>values.slice(0,3).map(v=>{const s=v/255;return s<=.04045?s/12.92:((s+.055)/1.055)**2.4}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
     const background=luminance(rgb(getComputedStyle(panel).backgroundColor));
-    return [...panel.querySelectorAll('.account-panel-head b,.notification-head b,#profileSummaryName')].map(el=>{
+    return [...panel.querySelectorAll('.account-panel-head b,.notification-head b,#profileSummaryName,.admin-search-results-head b,.admin-search-empty b')].map(el=>{
       const foreground=luminance(rgb(getComputedStyle(el).color)),text=el.textContent.trim();
       return {text,contrast:(Math.max(foreground,background)+.05)/(Math.min(foreground,background)+.05)};
     }).filter(item=>!item.text||item.contrast<4.5);
@@ -1369,6 +1369,13 @@ async function runResponsive(kind,viewport,name){
     if(kind==='admin'){
       if(viewport.width<=760){
         if(await page.locator('.admin-workspace-card').isVisible())throw new Error('Phone sidebar repeats the admin header identity');
+        await page.locator('#adminSearch').fill('Summit');
+        await page.locator('#adminSearchResults').waitFor({state:'visible'});
+        await assertUtilityPanelContrast(page,'#adminSearchResults','admin-'+name+'-search-contrast');
+        await assertLayout(page,'admin-'+name+'-global-search');await shot(page,'admin-'+name+'-global-search',{fullPage:false});
+        await page.locator('#adminSearch').press('Escape');
+        if(await page.locator('#adminSearchResults').isVisible())throw new Error('Phone global search did not dismiss with Escape');
+        await page.locator('#adminSearch').fill('');await page.locator('.admin-header-identity').focus();
         await page.locator('.admin-header-identity').click();
         if(!await page.locator('#view-overview').isVisible())throw new Error('Admin identity does not return to Command Center');
         await page.locator('#accountButton').click();

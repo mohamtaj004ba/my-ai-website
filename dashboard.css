@@ -3082,6 +3082,6 @@ body[data-dashboard="client"] .intelligence-welcome{border:1px solid #dae5e3;bac
  body[data-dashboard="admin"] .campaign-analytics-row>strong{grid-column:1/-1;text-align:left;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
 }
 @media(max-width:760px){
- body[data-dashboard="admin"] :is(.account-panel,.notification-panel){color:var(--ink)}
+ body[data-dashboard="admin"] :is(.account-panel,.notification-panel,.admin-search-results){color:var(--ink)}
  body[data-dashboard="admin"] :is(.account-panel,.notification-panel) .eyebrow{display:block!important;color:var(--muted);font-size:12px}
 }
