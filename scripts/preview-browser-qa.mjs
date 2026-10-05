@@ -627,6 +627,10 @@ async function runClientInteractions(page){
       if(inputSize<16)throw new Error('Intelligence input would trigger iPhone automatic zoom');
       await page.setViewportSize({width,height:420});
       await page.locator('#adminAiInput').focus();
+      // visualViewport resize is delivered asynchronously after the viewport
+      // changes. Assert the settled visible geometry, with a bounded deadline.
+      await page.waitForFunction(()=>{const panel=document.getElementById('adminAiPanel').getBoundingClientRect(),send=document.getElementById('adminAiSend').getBoundingClientRect();return panel.top>=0&&panel.bottom<=innerHeight+1&&send.right<=innerWidth&&send.bottom<=innerHeight},null,{timeout:5000});
+      await page.screenshot({path:path.join(outDir,`client-intelligence-keyboard-${width}.png`),fullPage:false});
       const keyboardFits=await page.locator('#adminAiPanel').evaluate(el=>{const r=el.getBoundingClientRect(),send=document.getElementById('adminAiSend').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&send.right<=innerWidth&&send.bottom<=innerHeight});
       if(!keyboardFits)throw new Error('Intelligence composer escapes the reduced keyboard viewport');
       await page.setViewportSize({width,height:844});
@@ -1579,7 +1583,9 @@ try{
   await runResponsive('admin',{width:1040,height:900},'small-laptop');
   await runResponsive('client',{width:768,height:1024},'tablet');
   await runResponsive('admin',{width:768,height:1024},'tablet');
+  await runResponsive('client',{width:320,height:760},'small-phone');
   await runResponsive('client',{width:390,height:844},'mobile');
+  await runResponsive('client',{width:430,height:932},'large-phone');
   await runResponsive('admin',{width:390,height:844},'mobile');
   await runReadOnlyBannerQA({width:1440,height:900},'desktop');
   await runReadOnlyBannerQA({width:390,height:844},'mobile');
