@@ -9,3 +9,4 @@
 @keyframes film-signal{to{stroke-dashoffset:-608}}
 @media(max-width:600px){.hero-film{aspect-ratio:1}.film-center{padding-bottom:25px}.film-outcome{bottom:14%}.film-flow .flow-signal{stroke-width:1.5}}
 @media(prefers-reduced-motion:reduce){.film-flow .flow-signal{stroke-dasharray:none;opacity:.35}}
+.hero-film{overflow:clip}@media(max-width:600px){.hero-film{aspect-ratio:.85}.film-center{justify-content:flex-start;padding-top:45px;padding-bottom:0}.film-disc{width:80px;height:80px}.film-wave{margin-top:16px}.film-title,.film-subtitle{display:none}.film-note{padding:8px 10px;min-width:105px;max-width:44%}.film-caller,.film-request{top:57%}.film-outcome{bottom:12%;min-width:190px;max-width:75%}}
