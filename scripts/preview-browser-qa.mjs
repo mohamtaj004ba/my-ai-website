@@ -1,3 +1,4 @@
+import {previewRequestHeaders} from './preview-request-headers.mjs';
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -104,6 +105,7 @@ async function makeContext(viewport,label){
       'x-vercel-set-bypass-cookie':'true'
     }
   });
+  await context.route('**/*',route=>route.continue({headers:previewRequestHeaders(route.request().url(),route.request().headers(),baseURL)}));
   contexts.push(context);
   const page=await context.newPage();
   if(label==='desktop'||label.startsWith('client-'))await installBillingFixture(page);
