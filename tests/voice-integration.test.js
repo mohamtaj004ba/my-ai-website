@@ -151,6 +151,30 @@ test('pause is provider-backed and a failed read-back never claims paused',async
   const kv=memory(),p={retrieveNumber:async()=>({assistantId:'assistant_test'}),pauseNumber:async()=>({})};
   await assert.rejects(control(kv,'tenant',{paused:true,expectedRevision:1,fallbackNumber:'+15095550100'},{email:'owner',role:'owner'},{env,provider:p}));assert.equal(kv.values.get('voice:config:tenant').state,'error');
 });
+test('resume verifies the full assistant before reconnecting and after read-back',async()=>{
+  const kv=memory(),record=kv.values.get('voice:config:tenant');Object.assign(record,{state:'paused',fallbackNumber:'+15095550100'});
+  const adapter=createProvider({env}),desired=adapter.assistantConfig(kv.values.get('workspace:tenant'),{},policy);let resumes=0,reads=0;
+  const p={assistantConfig:adapter.assistantConfig,retrieveNumber:async()=>resumes?{assistantId:'assistant_test'}:{assistantId:null,fallbackDestination:{number:record.fallbackNumber}},retrieveAgent:async()=>{reads++;return desired},resumeNumber:async()=>{resumes++}};
+  const result=await control(kv,'tenant',{paused:false,expectedRevision:1},{email:'owner',role:'owner'},{env,provider:p});
+  assert.equal(resumes,1);assert.equal(reads,2);assert.equal(result.state,'ready');assert.equal(kv.values.get('voice:config:tenant').state,'ready');
+});
+test('resume refuses stale assistant or workspace revision before touching phone routing',async()=>{
+  for(const fault of ['assistant','revision']){
+    const kv=memory(),record=kv.values.get('voice:config:tenant');Object.assign(record,{state:'paused',fallbackNumber:'+15095550100'});
+    const adapter=createProvider({env}),desired=adapter.assistantConfig(kv.values.get('workspace:tenant'),{},policy);let resumes=0;
+    if(fault==='assistant')desired.model.speaker.instructions='unverified change';else kv.values.set('agent:tenant',{updatedAt:1});
+    const p={assistantConfig:adapter.assistantConfig,retrieveNumber:async()=>({assistantId:null,fallbackDestination:{number:record.fallbackNumber}}),retrieveAgent:async()=>desired,resumeNumber:async()=>{resumes++}};
+    await assert.rejects(control(kv,'tenant',{paused:false,expectedRevision:1},{email:'owner',role:'owner'},{env,provider:p}),e=>['VOICE_STALE_PROVIDER_STATE','VOICE_CONFIG_OUT_OF_SYNC'].includes(e.code));
+    assert.equal(resumes,0);assert.equal(kv.values.get('voice:config:tenant').state,'paused');
+  }
+});
+test('assistant drift during resume cannot be reported as verified readiness',async()=>{
+  const kv=memory(),record=kv.values.get('voice:config:tenant');Object.assign(record,{state:'paused',fallbackNumber:'+15095550100'});
+  const adapter=createProvider({env}),desired=adapter.assistantConfig(kv.values.get('workspace:tenant'),{},policy);let resumed=false;
+  const p={assistantConfig:adapter.assistantConfig,retrieveNumber:async()=>resumed?{assistantId:'assistant_test'}:{assistantId:null,fallbackDestination:{number:record.fallbackNumber}},retrieveAgent:async()=>resumed?{...desired,backgroundSound:'office'}:desired,resumeNumber:async()=>{resumed=true}};
+  await assert.rejects(control(kv,'tenant',{paused:false,expectedRevision:1},{email:'owner',role:'owner'},{env,provider:p}),e=>e.code==='VOICE_SYNC_UNVERIFIED');
+  assert.equal(kv.values.get('voice:config:tenant').state,'error');assert.equal(safeStatus(kv.values.get('voice:config:tenant'),env).operational,false);
+});
 test('status cannot infer live from saved config; stale evidence needs recheck',()=>{
   assert.equal(safeStatus({state:'ready',verifiedAt:Date.now()-600000},env).operational,false);assert.equal(safeStatus({state:'ready',verifiedAt:Date.now()},env).operational,true);assert.equal(safeStatus({state:'ready',verifiedAt:Date.now()},{VERCEL_ENV:'production'}).operational,false);
 });
