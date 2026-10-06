@@ -16,7 +16,8 @@
     card.dataset.state=p.state;$('returnTitle').textContent=p.title;$('returnStatus').textContent=p.message;$('confirmationDetail').textContent=p.detail;
     $('accountLink').hidden=!p.account;$('checkoutLink').hidden=!p.checkout;$('checkConfirmation').hidden=!!p.terminal;
     $('paymentStep').classList.toggle('complete',!!p.paid);$('accountStep').classList.toggle('complete',!!p.account);
-    $('paymentStepText').textContent=p.paid?'Payment confirmed. Your purchase is complete.':p.state==='processing'?'Awaiting your payment provider’s confirmation.':'Securely confirming your purchase.';
+    $('nextHeading').textContent=p.paid?'We’ll take it from here.':'Your setup, step by step.';
+    $('paymentStepText').textContent=p.paid?'Payment confirmed. Your purchase is complete.':({processing:'Awaiting your payment provider’s confirmation.',expired:'This checkout has expired without a confirmed payment.',open:'Your original checkout is available to complete.',link:'Your confirmation is available in your original checkout browser.',unavailable:'Confirmation is temporarily unavailable.'}[p.state]||'Securely confirming your purchase.');
     $('accountStepText').textContent=p.account?'Your account is ready. Our team will review your setup.':'Our team reviews your business details and prepares your setup.';
   }
   function unavailable(){

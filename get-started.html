@@ -125,7 +125,7 @@ document.getElementById('toPayment').addEventListener('click',async()=>{
   }catch(err){
     console.error(err);
     document.getElementById('paymentTermsRow').hidden=true;document.getElementById('confirmSignupPayment').hidden=true;
-    document.getElementById('paymentError').textContent=/not open/i.test(err.message)?'Signup is not open yet. Contact CallerCore to discuss your setup. No payment has been submitted.':'We couldn’t load your secure payment form. Your checkout details are saved in this browser. Return to your details to reopen it, or contact our team if you’ve already submitted payment.';
+    document.getElementById('paymentError').textContent=/not open/i.test(err.message)?'Signup is not open yet. Contact CallerCore to discuss your setup. No payment has been submitted.':'We couldn’t load your secure payment form. Your business details are still on this page. Return to your details to reopen it, or contact our team if you’ve already submitted payment.';
     document.getElementById('paymentError').hidden=false;
   }finally{
     document.getElementById('toPayment').disabled=false;
