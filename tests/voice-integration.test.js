@@ -248,7 +248,7 @@ test('voice endpoint uses current membership and ignores cross-workspace IDs fro
   const vm=require('node:vm'),fs=require('node:fs'),reads=[];let code,result;
   const kv={get:async k=>{reads.push(k);return k.startsWith('user:')?{role:'client'}:null}};
   const session={role:'admin',workspaceId:'tenant',email:'owner@example.test'};
-  const context=vm.createContext({module:{exports:{}},URL,Buffer,process:{env},require(path){if(path==='crypto')return require('crypto');if(path==='../lib/auth')return {requireSession:async()=>session};if(path==='../lib/kv')return {kv};if(path==='../lib/rate-limit')return {rateLimit:async()=>({limited:false})};if(path==='../lib/voice-provider')return {...require('../lib/voice-provider'),previewGate:()=>{}};return require(path.replace('../lib/','../lib/'))}});
+  const context=vm.createContext({module:{exports:{}},URL,Buffer,process:{env},require(path){if(path==='crypto')return require('crypto');if(path==='../lib/auth')return {requireSession:async()=>session};if(path==='../lib/kv')return {kv};if(path==='../lib/rate-limit')return {rateLimit:async()=>({limited:false})};if(path==='../lib/voice-provider')return {...require('../lib/voice-provider'),previewGate:()=>{}};return require(path)}});
   vm.runInContext(fs.readFileSync('api/voice.js','utf8'),context);
   const res={setHeader(){},status(n){code=n;return this},json(v){result=v;return v}};
   await context.module.exports({method:'POST',headers:{host:'preview.vercel.app',origin:'https://preview.vercel.app'},query:{action:'configure',workspaceId:'victim'},body:{}},res);assert.equal(code,403);assert.equal(reads.includes('voice:config:victim'),false);
