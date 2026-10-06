@@ -1738,7 +1738,10 @@ try{
   await desktop.page.locator('#voice-state').getByText('Voice testing is not enabled').waitFor();
   await desktop.page.locator('#save-status').getByText('Latest saved settings loaded.').waitFor();
   if(!await desktop.page.locator('#pause-voice').isDisabled()||!await desktop.page.locator('#resume-voice').isDisabled())throw new Error('Authenticated voice screen enabled unverified answering');
-  await assertLayout(desktop.page,'authenticated-voice-operations');
+  const voiceLayout=await desktop.page.evaluate(()=>({viewport:{width:innerWidth,height:innerHeight},scrollWidth:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth),smallTargets:[...document.querySelectorAll('button')].filter(e=>e.getClientRects().length&&e.getBoundingClientRect().height<44).length,undersized:[...document.querySelectorAll('#operations :is(p,small,label,button,input,select,textarea)')].filter(e=>e.getClientRects().length&&parseFloat(getComputedStyle(e).fontSize)<12).map(e=>e.id||e.tagName)}));
+  if(voiceLayout.scrollWidth>voiceLayout.viewport.width+4||voiceLayout.smallTargets||voiceLayout.undersized.length)throw new Error('Authenticated voice layout/readability failed: '+JSON.stringify(voiceLayout));
+  report.layoutContracts.push({label:'authenticated-voice-operations',...voiceLayout});
+  report.readabilityContracts.push({label:'authenticated-voice-operations',undersized:voiceLayout.undersized});
   await shot(desktop.page,'authenticated-voice-operations');
   report.voiceOperations.authenticatedAdmin={passed:true,providerActivated:false,realCalls:false};
 
