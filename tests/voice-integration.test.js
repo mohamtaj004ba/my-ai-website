@@ -151,6 +151,7 @@ test('voice endpoint uses current membership and ignores cross-workspace IDs fro
   const res={setHeader(){},status(n){code=n;return this},json(v){result=v;return v}};
   await context.module.exports({method:'POST',headers:{host:'preview.vercel.app',origin:'https://preview.vercel.app'},query:{action:'configure',workspaceId:'victim'},body:{}},res);assert.equal(code,403);assert.equal(reads.includes('voice:config:victim'),false);
   reads.length=0;await context.module.exports({method:'GET',headers:{},query:{workspaceId:'victim'}},res);assert.equal(code,200);assert.equal(reads.includes('voice:config:tenant'),true);assert.equal(reads.includes('voice:config:victim'),false);assert.equal(result.operations,undefined);
+  reads.length=0;await context.module.exports({method:'POST',headers:{host:'preview.vercel.app',origin:'https://preview.vercel.app'},query:{action:'verify',workspaceId:'victim'},body:{}},res);assert.equal(code,403);assert.equal(reads.some(k=>k.startsWith('voice:config:')),false);
 });
 test('voice endpoint rejects cross-origin changes before reading or mutating voice data',async()=>{
   const vm=require('node:vm'),fs=require('node:fs');let code;const context=vm.createContext({module:{exports:{}},URL,Buffer,process:{env},require(path){if(path==='crypto')return require('crypto');if(path==='../lib/auth')return {requireSession:async()=>({role:'admin',workspaceId:'tenant',email:'owner@example.test'})};if(path==='../lib/kv')return {kv:{get:async()=>assert.fail('Cross-origin request must stop before storage access')}};return require(path)}});

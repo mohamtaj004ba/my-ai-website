@@ -49,10 +49,10 @@ module.exports=async function handler(req,res){
     if(action==='control'){
       if(session.adminView||!['owner','admin'].includes(currentRole))return res.status(403).json({error:'Owner access required'});
       if(Object.keys(body).some(k=>!['paused','expectedRevision','fallbackNumber'].includes(k)))throw new VoiceError('VOICE_CONFIG_INVALID');
-      return res.status(200).json({voice:await control(kv,workspaceId,body,session)});
+      return res.status(200).json({voice:await control(kv,workspaceId,body,actor)});
     }
     if(action==='verify'){
-      if(session.adminView||!['owner','admin'].includes(session.role))return res.status(403).json({error:'Owner access required'});
+      if(session.adminView||!['owner','admin'].includes(currentRole))return res.status(403).json({error:'Owner access required'});
       const key='voice:config:'+workspaceId,record=await kv.get(key);
       if(!record)throw new VoiceError('VOICE_CONTROL_UNAVAILABLE');
       const provider=createProvider(),number=await provider.retrieveNumber(record.numberId),agent=await provider.retrieveAgent(record.assistantId);
