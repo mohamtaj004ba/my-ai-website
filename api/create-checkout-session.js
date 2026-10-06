@@ -1,4 +1,5 @@
 const crypto=require('crypto');
+const {checkoutAllowed:acceptanceCheckoutAllowed}=require('../lib/preview-billing-acceptance');
 const {beginCheckout,checkoutStatus}=require('../lib/native-checkout');
 const {createProvider,BillingError}=require('../lib/billing-provider');
 const {kv}=require('../lib/kv');
@@ -69,7 +70,7 @@ module.exports=async function handler(req,res){
     try{return res.status(200).json(await checkoutStatus({kv,req,provider:createProvider()}))}
     catch(error){return res.status(error instanceof BillingError?error.status:503).json({error:error instanceof BillingError?error.message:'Payment confirmation is temporarily unavailable. Do not pay again.'})}
   }
-  if(process.env.CALLERCORE_CHECKOUT_ENABLED!=='true')return res.status(503).json({error:'CallerCore checkout is not open yet'});
+  if(process.env.CALLERCORE_CHECKOUT_ENABLED!=='true'&&!acceptanceCheckoutAllowed(req))return res.status(503).json({error:'CallerCore checkout is not open yet'});
   if(!STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe checkout is not configured'});
   if(!stripeCredentialModesValid())return res.status(503).json({error:'Stripe credentials do not match this environment'});
   if(process.env.VERCEL_ENV==='preview'&&(!(process.env.STRIPE_STARTER_PRICE_ID||process.env.STRIPE_PRICE_STARTER)||!(process.env.STRIPE_GROWTH_PRICE_ID||process.env.STRIPE_PRICE_GROWTH)||!(process.env.STRIPE_PRO_PRICE_ID||process.env.STRIPE_PRICE_PRO)||!(process.env.STRIPE_SETUP_PRICE_ID||process.env.STRIPE_PRICE_SETUP)))return res.status(503).json({error:'Preview checkout requires explicit Stripe test Price IDs'});
@@ -77,7 +78,7 @@ module.exports=async function handler(req,res){
   const rl=await rateLimit({scope:'embedded-checkout',identifier:requestIp(req),limit:req.method==='GET'?30:10,windowSeconds:600,failClosed:true});
   if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests'})}
   if(req.method==='POST'&&req.body?.native===true){
-    try{return res.status(200).json(await beginCheckout({kv,req,res,upsertWebsiteProspect,origin:checkoutOrigin(req)}))}
+    try{return res.status(200).json(await beginCheckout({kv,req,res,upsertWebsiteProspect,origin:checkoutOrigin(req),env:acceptanceCheckoutAllowed(req)?{...process.env,CALLERCORE_CHECKOUT_ENABLED:'true'}:process.env}))}
     catch(error){return res.status(error instanceof BillingError?error.status:503).json({error:error instanceof BillingError?error.message:'Checkout could not be confirmed. Retry the same checkout.'})}
   }
 
