@@ -134,6 +134,8 @@ test('secret patterns are removed from transcript and summary before canonical s
 test('repeated calls about the same unresolved request do not create another open lead',async()=>{
   const kv=memory();for(const c of [call,{...call,id:'second'}])await processMessage(kv,{...message('save_call_request',{intent:'service',reason:'Repair',confirmed:true}),call:{id:c.id}},{provider:provider(c)});
   assert.equal(kv.values.get('leads:tenant').length,1);assert.equal(kv.values.get('leads:tenant')[0].callIds.length,2);
+  const anonymous=memory();for(const c of [{...call,id:'anonymous1',customer:{}},{...call,id:'anonymous2',customer:{}}])await processMessage(anonymous,{...message('save_call_request',{intent:'service',reason:'Repair',confirmed:true}),call:{id:c.id}},{provider:provider(c)});
+  assert.equal(anonymous.values.get('leads:tenant').length,2,'Unknown callers must not be merged merely because their request matches');
 });
 test('missing artifacts stay in durable reconciliation queue and complete artifacts remove it',async()=>{
   const kv=memory(),end={...call,status:'ended',endedAt:'2026-10-05T16:01:00Z'};
