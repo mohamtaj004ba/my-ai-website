@@ -60,6 +60,7 @@ module.exports = async function handler(req, res) {
   }
 
   if(!SECRET||SECRET.length<32)return res.status(503).json({error:'Demo unavailable'});
+  if(process.env.VERCEL_ENV==='preview'){try{const {kv}=require('../lib/kv'),{demoReadiness}=require('../lib/voice-demo');const ready=await demoReadiness(kv);if(!ready.available)return res.status(503).json({error:'Demo unavailable'});}catch{return res.status(503).json({error:'Demo unavailable'})}}
   if(!/^\+[1-9]\d{7,14}$/.test(String(DEMO_NUMBER_E164||''))||!String(DEMO_NUMBER_DISPLAY||'').trim()||String(DEMO_NUMBER_DISPLAY).length>40)
     return res.status(503).json({error:'Demo unavailable'});
 

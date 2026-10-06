@@ -156,3 +156,9 @@ test('voice endpoint rejects cross-origin changes before reading or mutating voi
   const vm=require('node:vm'),fs=require('node:fs');let code;const context=vm.createContext({module:{exports:{}},URL,Buffer,process:{env},require(path){if(path==='crypto')return require('crypto');if(path==='../lib/auth')return {requireSession:async()=>({role:'admin',workspaceId:'tenant',email:'owner@example.test'})};if(path==='../lib/kv')return {kv:{get:async()=>assert.fail('Cross-origin request must stop before storage access')}};return require(path)}});
   vm.runInContext(fs.readFileSync('api/voice.js','utf8'),context);await context.module.exports({method:'POST',headers:{host:'preview.vercel.app',origin:'https://evil.example'},query:{action:'configure'},body:{}},{setHeader(){},status(n){code=n;return this},json(v){return v}});assert.equal(code,403);
 });
+test('public demo cannot expose a number from stored config without real-call acceptance evidence',async()=>{
+  const {demoReadiness}=require('../lib/voice-demo'),kv=memory(),e={...env,CALLERCORE_DEMO_WORKSPACE_ID:'tenant',DEMO_PHONE_NUMBER:'+15095550100',VAPI_DEMO_NUMBER_ID:'number_test',VAPI_DEMO_ASSISTANT_ID:'assistant_test'};
+  Object.assign(kv.values.get('workspace:tenant'),{demoVoiceWorkspace:true});Object.assign(kv.values.get('voice:config:tenant'),{purpose:'demo',verifiedAt:Date.now()});
+  assert.equal((await demoReadiness(kv,e)).available,false);
+  kv.values.set('voice:acceptance:tenant',{source:'seed',internalAcceptancePassed:true,demoAcceptancePassed:true,numberAbuseControlsVerified:true,disclosureReviewed:true,configRevision:1,callIds:['fake1','fake2','fake3']});assert.equal((await demoReadiness(kv,e)).available,false);
+});

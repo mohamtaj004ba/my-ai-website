@@ -1733,6 +1733,14 @@ try{
   await shot(desktop.page,'admin-overview-initial');
   await sweepViews(desktop.page,'admin');
   await runAdminInteractions(desktop.page);
+  await desktop.page.goto(baseURL+'/voice-operations.html');
+  await desktop.page.locator('#operations').waitFor({state:'visible'});
+  await desktop.page.locator('#voice-state').getByText('Voice testing is not enabled').waitFor();
+  await desktop.page.locator('#save-status').getByText('Latest saved settings loaded.').waitFor();
+  if(!await desktop.page.locator('#pause-voice').isDisabled()||!await desktop.page.locator('#resume-voice').isDisabled())throw new Error('Authenticated voice screen enabled unverified answering');
+  await assertLayout(desktop.page,'authenticated-voice-operations');
+  await shot(desktop.page,'authenticated-voice-operations');
+  report.voiceOperations.authenticatedAdmin={passed:true,providerActivated:false,realCalls:false};
 
   // Preview QA sessions deliberately revoke older sessions. Close the desktop
   // context before issuing the next session so strict 401 detection only sees

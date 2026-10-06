@@ -52,7 +52,7 @@ For every row capture call ID, time, result, latency observations, interruptions
 
 ## Demo after internal acceptance
 
-Use the same core with a separate nonpaying demo workspace and `VAPI_DEMO_ASSISTANT_ID`/`VAPI_DEMO_NUMBER_ID`. Demo calls are marked sample, capped at five minutes, cannot transfer or contact actual customers, and cannot affect billing or private client data. Existing public number disclosure must remain unavailable until independent demo real-call acceptance and readiness are wired/verified. A website rate limit cannot stop abuse of a disclosed phone number; provider concurrency/number-level abuse controls must be verified before public exposure.
+Use the same core with a separate nonpaying demo workspace and `VAPI_DEMO_ASSISTANT_ID`/`VAPI_DEMO_NUMBER_ID`. Demo calls are marked sample, capped at five minutes, cannot transfer or contact actual customers, and cannot affect billing or private client data. Preview public number disclosure now requires isolated configuration, fresh provider read-back and operator-reviewed internal/demo call evidence, disclosure review and number-level abuse controls. Missing evidence keeps it unavailable; no acceptance records were fabricated. A website rate limit cannot stop abuse of a disclosed phone number; provider concurrency/number-level abuse controls must be verified before public exposure.
 
 ## Known technical limitations requiring provider evidence
 
