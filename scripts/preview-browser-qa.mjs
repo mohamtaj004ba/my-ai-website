@@ -1615,11 +1615,21 @@ async function runPublicSiteQA(){
           const viewerBox=await viewer.boundingBox();if(viewerBox.x<12||viewerBox.y<12||viewerBox.width>viewport.width-24||viewerBox.height>viewport.height*.82)throw Error('Dashboard viewer leaves no outside dismissal space');
           const fitted=await picture.evaluate(el=>({x:el.scrollWidth-el.clientWidth,y:el.scrollHeight-el.clientHeight}));if(fitted.x>2||fitted.y>2)throw Error('Dashboard picture did not initially fit');
           await shot(page,'public-'+name+'-dashboard-viewer-fit',{fullPage:false});
-          for(let z=0;z<6;z++)await page.locator('[data-zoom-in]').click();
+          await picture.focus();for(let z=0;z<6;z++)await page.keyboard.press('+');
           const enlarged=await picture.evaluate(el=>{el.scrollLeft=100;el.scrollTop=100;return {x:el.scrollWidth-el.clientWidth,y:el.scrollHeight-el.clientHeight,left:el.scrollLeft,top:el.scrollTop};});if(enlarged.x<=0||enlarged.y<=0||enlarged.left<=0||enlarged.top<=0)throw Error('Zoomed dashboard cannot scroll in both directions');
           const closeBox=await page.locator('[data-viewer-close]').boundingBox();if(closeBox.y<viewerBox.y||closeBox.y+closeBox.height>viewport.height||closeBox.x+closeBox.width>viewport.width)throw Error('Dashboard close action escaped the viewer');
           await shot(page,'public-'+name+'-dashboard-viewer-zoom',{fullPage:false});
-          await page.locator('[data-zoom-fit]').click();if(await page.locator('[data-zoom-level]').innerText()!=='100%')throw Error('Dashboard fit action did not reset zoom');
+          await picture.focus();await page.keyboard.press('0');if(await page.locator('[data-zoom-level]').innerText()!=='100%')throw Error('Dashboard fit action did not reset zoom');
+          if(viewport.width<=600){
+            const touch=await page.context().newCDPSession(page),box=await picture.boundingBox(),cx=box.x+box.width/2,cy=box.y+box.height/2;
+            const points=d=>[{x:cx-d,y:cy,id:1},{x:cx+d,y:cy,id:2}];
+            await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:points(25)});
+            for(const distance of [35,50,65])await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:points(distance)});
+            await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+            if(parseInt(await page.locator('[data-zoom-level]').innerText())<=100)throw Error('Two-finger picture pinch did not zoom');
+            const bounds=await page.locator('[data-viewer-close]').boundingBox();if(bounds.y!==closeBox.y)throw Error('Pinching picture moved its exit control');
+            await touch.detach();await shot(page,'public-'+name+'-dashboard-viewer-pinch',{fullPage:false});
+          }
           await page.locator('[data-viewer-close]').click();
           if(!await page.locator('.dashboard-layer.is-front .dashboard-window-head [data-dashboard-expand]').evaluate(el=>el===document.activeElement))throw new Error('Closing dashboard enlargement lost keyboard focus');
           await page.locator('.dashboard-layer.is-front .dashboard-window-head [data-dashboard-expand]').click();await page.locator('.dashboard-lightbox[open]').waitFor();await page.mouse.click(4,viewport.height/2);if(await viewer.getAttribute('open')!==null)throw Error('Dashboard outside tap did not close preview');
@@ -1764,4 +1774,5 @@ try{
   await Promise.allSettled(contexts.map(c=>c.close()));
   await browser.close();
 }
+
 

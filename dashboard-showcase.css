@@ -35,17 +35,17 @@
 .dashboard-lightbox header span{font-size:13px;line-height:1.4;min-width:0}
 .dashboard-lightbox button{min-height:44px;min-width:44px;background:#eaf0eb;color:#233d35;border:1px solid #c8d7cc;border-radius:8px;font:600 14px 'DM Sans',sans-serif;flex:none}
 .dashboard-lightbox [data-viewer-close]{background:#233d35;color:#fff;white-space:nowrap;padding:10px 14px}
-.dashboard-zoom-tools{display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 12px 0;flex:none}
-.dashboard-zoom-tools output{min-width:52px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
 .dashboard-lightbox button:disabled{opacity:.4;cursor:default}
 .dashboard-lightbox :focus-visible{outline:3px solid #ae4b2b;outline-offset:2px}
-.dashboard-zoom-hint{flex:none;text-align:center;font-size:11px;color:#61736b;margin:8px 12px 10px}
 .dashboard-viewport{flex:1;min-height:0;overflow:auto;touch-action:none;overscroll-behavior:contain;cursor:grab;background:#e7ece8;margin:0 12px 12px;border-radius:8px}
 .dashboard-viewport.is-dragging{cursor:grabbing}
 .dashboard-canvas{display:grid;place-items:center;min-width:100%;min-height:100%;width:max-content;height:max-content}
 .dashboard-lightbox .dashboard-canvas img{display:block;max-width:none;max-height:none;user-select:none;pointer-events:none}
-@media(max-width:600px){.dashboard-lightbox{width:calc(100% - 40px);height:78dvh;max-height:78dvh;border-radius:14px}.dashboard-lightbox header{width:100%;padding:10px 12px}.dashboard-lightbox header span{font-size:12px}.dashboard-lightbox [data-viewer-close]{padding:8px 12px}.dashboard-zoom-tools{gap:6px}}
+@media(max-width:600px){.dashboard-lightbox{width:calc(100% - 40px);height:78dvh;max-height:78dvh;border-radius:14px}.dashboard-lightbox header{width:100%;padding:10px 12px}.dashboard-lightbox header span{font-size:12px}.dashboard-lightbox [data-viewer-close]{padding:8px 12px}}
 
 
 .public-site:has(.dashboard-lightbox[open]){overflow:hidden}
+
+.dashboard-zoom-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.dashboard-viewport{margin-top:12px}
 
