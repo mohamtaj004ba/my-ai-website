@@ -2978,6 +2978,11 @@ async function buildClientNotifications(s){
   const phone=numbersValid?(numbers||[]).find(x=>x&&x.workspaceId===ws.id):null;
   if(prefs.setup&&agentValid&&!agent)items.push(notificationItem('setup:'+ws.id+':agent',{title:'AI agent setup incomplete',body:'Your AI agent has not been configured yet.',kind:'warning',view:'agent',createdAt:ws.createdAt||now}));
   if(prefs.setup&&numbersValid&&!phone)items.push(notificationItem('setup:'+ws.id+':phone',{title:'Phone routing not configured',body:'No CallerCore phone number is currently assigned.',kind:'warning',view:'phone-routing',createdAt:ws.createdAt||now}));
+  let voiceFollowupUnavailable=false;
+  if(prefs.calls&&callsValid)try{
+    const voiceState=await kv.get('followup:state:'+ws.id);
+    for(const item of require('../lib/voice-notifications').voiceNotifications(calls||[],voiceState||{}))items.push(notificationItem(item.id,item));
+  }catch{voiceFollowupUnavailable=true}
   const missed=callsValid?(calls||[]).filter(x=>String(x.disposition||'')==='incomplete'||/missed|failed/i.test(String(x.outcome||''))).slice(-8).reverse():[];
   if(prefs.calls)missed.forEach((x,i)=>{
     const id=String(x.id||x.callId||x.phone||i),at=Number(x.createdAt||x.at||x.timestamp||Date.now());
@@ -3002,6 +3007,7 @@ async function buildClientNotifications(s){
   if(!agentValid)sources.push('agent_unavailable');
   if(!numbersValid)sources.push('phone_unavailable');
   if(!callsValid)sources.push('calls_unavailable');
+  if(voiceFollowupUnavailable)sources.push('voice_followups_unavailable');
   if(!supportIndexValid||supportRecordUnavailable)sources.push('support_unavailable');else if(Array.isArray(index)&&index.length>100)sources.push('support');
   if(feedbackIndex!=null&&!Array.isArray(feedbackIndex)||feedbackRecordUnavailable)sources.push('ai_feedback_unavailable');else if(Array.isArray(feedbackIndex)&&feedbackIndex.length>20)sources.push('ai_feedback');
   return {items,coverage:{limited:sources.length>0,sources}};
