@@ -181,3 +181,16 @@ test('public demo cannot expose a number from stored config without real-call ac
   assert.equal((await demoReadiness(kv,e)).available,false);
   kv.values.set('voice:acceptance:tenant',{source:'seed',internalAcceptancePassed:true,demoAcceptancePassed:true,numberAbuseControlsVerified:true,disclosureReviewed:true,configRevision:1,callIds:['fake1','fake2','fake3']});assert.equal((await demoReadiness(kv,e)).available,false);
 });
+
+test('actual phone callback format failure is actionable and retry saves exactly once',async()=>{
+ const kv=memory(),bad=await processMessage(kv,message('save_call_request',{intent:'estimate',reason:'Bathroom plumbing estimate',callbackNumber:'5095550142',confirmed:true}),{provider:provider()});
+ const failure=JSON.parse(bad.results[0].error);assert.equal(failure.code,'VOICE_CALLBACK_FORMAT_INVALID');assert.match(failure.message,/international E.164/);assert.equal(kv.values.get('leads:tenant').length,0);
+ const retry=message('save_call_request',{intent:'estimate',reason:'Bathroom plumbing estimate',callbackNumber:'+15095550142',confirmed:true},'corrected');
+ const saved=await processMessage(kv,retry,{provider:provider()});assert.equal(JSON.parse(saved.results[0].result).status,'captured');await processMessage(kv,retry,{provider:provider()});assert.equal(kv.values.get('leads:tenant').length,1);
+});
+test('Vapi bot transcript turns survive normalization without exposing tool internals',()=>{
+ const n=normalizedCall({...call,artifact:{messages:[{role:'bot',message:'Thanks for calling.'},{role:'user',message:'Office hours?'},{role:'tool_call_result',message:'internal'}]}});assert.deepEqual(n.transcript,[{speaker:'CallerCore',text:'Thanks for calling.'},{speaker:'Caller',text:'Office hours?'}]);
+});
+test('configured opening message always contains required disclosure',()=>{
+ const c=createProvider({env}).assistantConfig({id:'test',name:'Cedar Office'},{openingMessage:'Welcome to Cedar.'},policy);assert.match(c.firstMessage,/Welcome to Cedar/);assert.ok(c.firstMessage.includes(policy.disclosure));
+});
