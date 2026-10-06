@@ -1577,12 +1577,9 @@ async function runPublicSiteQA(){
         if(key==='home'){
           const visitorLayout=await page.evaluate(()=>{
             const rect=s=>document.querySelector(s).getBoundingClientRect();
-            const conversation=document.querySelector('.demo-conversation');
-            const last=conversation.lastElementChild.getBoundingClientRect();
-            const proof=document.querySelector('.proof div');
-            return {footerHeight:rect('.site-footer').height,demoEmpty:conversation.getBoundingClientRect().bottom-last.bottom,industryOverflow:proof.scrollWidth-proof.clientWidth,featureHeights:[...document.querySelectorAll('.feature-grid article')].map(el=>el.getBoundingClientRect().height),growthColors:[...document.querySelectorAll('.featured li')].map(el=>getComputedStyle(el).color)};
+            return {footerHeight:rect('.site-footer').height,dashboardCards:document.querySelectorAll('[data-dashboard-card]').length,industryLinks:document.querySelectorAll('.industry-group:not([aria-hidden]) a').length,featureHeights:[...document.querySelectorAll('.feature-grid article')].map(el=>el.getBoundingClientRect().height),growthColors:[...document.querySelectorAll('.featured li')].map(el=>getComputedStyle(el).color)};
           });
-          if(visitorLayout.demoEmpty>24||visitorLayout.industryOverflow>1||visitorLayout.growthColors.some(color=>color==='rgb(208, 204, 195)'))throw new Error('Visitor layout retained empty demo space, clipped industries or faint plan features: '+JSON.stringify(visitorLayout));
+          if(visitorLayout.dashboardCards!==4||visitorLayout.industryLinks!==6||visitorLayout.growthColors.some(color=>color==='rgb(208, 204, 195)'))throw new Error('Visitor layout lacks dashboard views, industry destinations or legible plan features: '+JSON.stringify(visitorLayout));
           if(viewport.width<=600&&(visitorLayout.footerHeight>420||visitorLayout.featureHeights.some(height=>height>190)))throw new Error('Phone footer or capability rows remain oversized: '+JSON.stringify(visitorLayout));
           report.publicSite.contracts.push({label:name+'-visitor-layout',...visitorLayout});
           await shot(page,'public-'+name+'-home-first-screen',{fullPage:false});
@@ -1604,19 +1601,20 @@ async function runPublicSiteQA(){
             await page.locator('.menu').click();await page.locator('#primary-nav a[href="/#pricing"]').click();
             if(await page.locator('.menu').getAttribute('aria-expanded')!=='false')throw new Error('Public anchor navigation left the phone menu open');
           }
-          await page.locator('[data-demo="booking"]').click();
-          if(await page.locator('[data-demo="booking"]').getAttribute('aria-pressed')!=='true'||!(await page.locator('#demoIntent').innerText()).includes('Service request'))throw new Error('Public example selection did not update truthfully');
-          await page.locator('#demoNextButton').click();
-          if(await page.locator('#demoProgress').innerText()!=='2 of 4 moments')throw new Error('Walkthrough did not advance');
-          await page.locator('#demoPlay').click();
-          if(await page.locator('#demoPlay').getAttribute('aria-pressed')!=='true')throw new Error('Walkthrough playback did not start');
-          await page.locator('[data-demo="human"]').click();
-          if(await page.locator('#demoProgress').innerText()!=='1 of 4 moments'||await page.locator('#demoPlay').getAttribute('aria-pressed')!=='false')throw new Error('Switching scenario failed to reset and stop playback');
-          await shot(page,'public-'+name+'-walkthrough',{fullPage:false});
-          await page.locator('#weeklyCalls').press('Home');for(let step=0;step<9;step++)await page.locator('#weeklyCalls').press('ArrowRight');
-          if(await page.locator('#monthlyMinutes').innerText()!=='650'||!(await page.locator('#planSuggestion').innerText()).includes('Above Growth'))throw new Error('Call volume planner returned an incorrect estimate');
-          await page.locator('#weeklyCalls').press('ArrowLeft');
-          if(await page.locator('#monthlyMinutes').innerText()!=='585')throw new Error('Call volume planner is not keyboard operable');
+          await page.locator('[data-dashboard-view="calls"]').click();
+          if(await page.locator('[data-dashboard-view="calls"]').getAttribute('aria-pressed')!=='true'||!(await page.locator('[data-dashboard-caption]').innerText()).includes('who called'))throw new Error('Dashboard stack selection did not update');
+          await page.locator('[data-dashboard-view="calls"]').press('ArrowRight');
+          if(await page.locator('[data-dashboard-view="contacts"]').getAttribute('aria-pressed')!=='true')throw new Error('Dashboard stack is not keyboard operable');
+          await page.locator('.dashboard-layer.is-front .dashboard-window-head [data-dashboard-expand]').click();
+          await page.locator('.dashboard-lightbox[open]').waitFor();
+          if(!(await page.locator('[data-full-title]').innerText()).includes('Contacts · sample workspace'))throw new Error('Dashboard enlargement lost its sample label');
+          await page.locator('.dashboard-lightbox button').click();
+          if(!await page.locator('.dashboard-layer.is-front .dashboard-window-head [data-dashboard-expand]').evaluate(el=>el===document.activeElement))throw new Error('Closing dashboard enlargement lost keyboard focus');
+          await shot(page,'public-'+name+'-dashboard-stack',{fullPage:false});
+          await page.locator('#monthlyCalls').press('Home');for(let step=0;step<20;step++)await page.locator('#monthlyCalls').press('ArrowRight');
+          if(await page.locator('#monthlyMinutes').innerText()!=='630'||!(await page.locator('#planSuggestion').innerText()).includes('Above Growth'))throw new Error('Call volume planner returned an incorrect estimate');
+          await page.locator('#monthlyCalls').press('ArrowLeft');
+          if(await page.locator('#monthlyMinutes').innerText()!=='600')throw new Error('Call volume planner is not keyboard operable');
           await shot(page,'public-'+name+'-planner',{fullPage:false});
           await page.emulateMedia({reducedMotion:'reduce'});
           if(await page.locator('#estimateBar').evaluate(el=>getComputedStyle(el).transitionDuration)!=='0s')throw new Error('Planner ignores reduced motion');
