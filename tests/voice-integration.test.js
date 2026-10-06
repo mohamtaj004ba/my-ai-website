@@ -123,7 +123,7 @@ test('status cannot infer live from saved config; stale evidence needs recheck',
 });
 test('Vapi GPT-Live config uses speaker/reasoner, saved credentials and recording off',()=>{
   const p=createProvider({env}),config=p.assistantConfig({id:'tenant',name:'Business'},{},policy);assert.equal(config.model.model,'gpt-live-1');assert.equal(config.model.reasoner.model,'gpt-5.6-terra');assert.equal(config.artifactPlan.recordingEnabled,false);assert.ok(!config.transcriber);assert.equal(config.server.credentialId,'credential');assert.ok(!JSON.stringify(config).includes(env.CALLERCORE_VOICE_WEBHOOK_SECRET));
-  const {agentMatches}=require('../lib/voice-provider');assert.equal(agentMatches(structuredClone(config),config),true);for(const change of [c=>c.model.tools=[],c=>c.maxDurationSeconds=999,c=>c.voice.voiceId='different',c=>c.firstMessage='Different greeting']){const changed=structuredClone(config);change(changed);assert.equal(agentMatches(changed,config),false)}
+  const {agentMatches}=require('../lib/voice-provider');assert.equal(agentMatches(structuredClone(config),config),true);for(const change of [c=>c.model.tools=[],c=>c.maxDurationSeconds=999,c=>c.voice.voiceId='different',c=>c.firstMessage='Different greeting',c=>c.backgroundSound='office']){const changed=structuredClone(config);change(changed);assert.equal(agentMatches(changed,config),false)}
 });
 test('provider errors never include a raw response or secret',async()=>{
   const p=createProvider({env,fetchImpl:async()=>({ok:false,status:403,json:async()=>({secret:'do-not-leak'})})});await assert.rejects(p.retrieveCall('call'),e=>e.code==='VOICE_ACCESS_REQUIRED'&&!e.message.includes('do-not-leak'));
