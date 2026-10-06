@@ -19,7 +19,8 @@ test('public contact form only shows success after a canonical saved-inquiry ack
 test('public embedded checkout validates publishable key and client secret before mounting Stripe',()=>{
   assert.match(checkout,/const data=await sessionResponse\.json\(\)\.catch\(\(\)=>null\)/);
   assert.match(checkout,/\^pk_\(\?:live\|test\)_\[A-Za-z0-9_\]\+\$/);
-  assert.match(checkout,/\^cs_\(\?:live\|test\)_\[A-Za-z0-9_\]\+_secret_\[A-Za-z0-9_\]\+\$/);
+  assert.ok(checkout.includes('^cs_(?:live|test)_[A-Za-z0-9_]+_secret_[^\\s\\x00-\\x1f\\x7f]+$'));
+  assert.ok(checkout.includes("String(data.clientSecret||'').length>512"));
   assert.match(checkout,/Secure checkout response could not be verified/);
   const verifyAt=checkout.indexOf('Secure checkout response could not be verified');
   const mountAt=checkout.indexOf('stripe.initCheckoutElementsSdk');
