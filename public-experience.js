@@ -27,6 +27,11 @@
     if(!Number.isFinite(c)||!Number.isFinite(m))return null;
     return Math.round(Math.min(100,Math.max(5,c))*Math.min(8,Math.max(1,m))*4.33);
   }
+  function estimateMonthlyMinutes(calls,minutes){
+    const c=Number(calls),m=Number(minutes);
+    if(!Number.isFinite(c)||!Number.isFinite(m)||c<0||m<=0)return null;
+    return Math.round(c*m);
+  }
   function createPlayback({count,onChange,interval=6500,loop=false,schedule=setTimeout,cancel=clearTimeout}){
     let step=0,playing=false,timer=null,generation=0;
     const clear=()=>{generation++;if(timer!==null)cancel(timer);timer=null};
@@ -39,7 +44,7 @@
       pause(){clear();playing=false;emit()}
     };
   }
-  if(typeof module==='object'&&module.exports){module.exports={scenarios,estimateMinutes,createPlayback};return}
+  if(typeof module==='object'&&module.exports){module.exports={scenarios,estimateMinutes,estimateMonthlyMinutes,createPlayback};return}
   const doc=root.document;
   if(!doc)return;
   const byId=id=>doc.getElementById(id);
@@ -89,13 +94,14 @@
     root.addEventListener('pagehide',()=>playback.pause());
     motion.addEventListener?.('change',()=>playback.pause());
   }
-  const calls=byId('weeklyCalls'),length=byId('callLength');
+  const calls=byId('monthlyCalls'),length=byId('callLength');
   if(calls&&length){
     const update=()=>{
-      const minutes=estimateMinutes(calls.value,length.value);if(minutes===null)return;
-      byId('weeklyCallsValue').textContent=calls.value;
+      const minutes=estimateMonthlyMinutes(calls.value,length.value);if(minutes===null)return;
+      byId('monthlyCallsValue').textContent=calls.value;
       byId('callLengthValue').textContent=length.value+' '+(Number(length.value)===1?'minute':'minutes');
       byId('monthlyMinutes').textContent=minutes.toLocaleString('en-US');
+      byId('callCapacity').textContent=`At ${length.value} minutes per call, 300 minutes covers about ${Math.floor(300/Number(length.value))} calls; 600 minutes about ${Math.floor(600/Number(length.value))}. Included minutes are a time allowance, not a fixed call limit.`;
       const max=Math.max(600,minutes);
       byId('estimateBar').style.width=`${minutes/max*100}%`;
       byId('starterBar').style.width=`${300/max*100}%`;
