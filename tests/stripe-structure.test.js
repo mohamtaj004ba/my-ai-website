@@ -50,10 +50,11 @@ test('get-started mounts secure Checkout Payment Element inside CallerCore',()=>
 });
 
 test('checkout completion page distinguishes confirmed and pending payments',()=>{
-  const page=fs.readFileSync(path.join(__dirname,'..','checkout-complete.html'),'utf8');
+  const page=fs.readFileSync(path.join(__dirname,'..','checkout-complete.html'),'utf8')+fs.readFileSync(path.join(__dirname,'..','checkout-confirmation.js'),'utf8');
   assert.match(page,/data\.paid&&data\.onboarding/);
   assert.match(page,/Your payment is processing\./);
-  assert.match(page,/do not submit another payment\./i);
+  assert.match(page,/completed charge has not yet been confirmed/);
+  assert.doesNotMatch(page,/do not (?:pay|submit another payment)/i);
 });
 
 test('embedded checkout is closed unless the explicit sales launch flag is enabled',()=>{

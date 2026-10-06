@@ -67,7 +67,7 @@ module.exports=async function handler(req,res){
     const limit=await rateLimit({scope:'checkout-receipt',identifier:requestIp(req),limit:60,windowSeconds:600,failClosed:true});
     if(limit.limited)return res.status(429).json({error:'Please wait before refreshing payment confirmation.'});
     try{return res.status(200).json(await checkoutStatus({kv,req,provider:createProvider()}))}
-    catch(error){return res.status(error instanceof BillingError?error.status:503).json({error:error instanceof BillingError?error.message:'Payment confirmation is temporarily unavailable. Do not pay again.'})}
+    catch(error){return res.status(error instanceof BillingError?error.status:503).json({error:error instanceof BillingError?error.message:'Payment status is temporarily unavailable. Check your confirmation page or contact our team for help.'})}
   }
   if(process.env.CALLERCORE_CHECKOUT_ENABLED!=='true')return res.status(503).json({error:'CallerCore checkout is not open yet'});
   if(!STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe checkout is not configured'});

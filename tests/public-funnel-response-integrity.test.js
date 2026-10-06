@@ -4,7 +4,7 @@ const fs=require('node:fs');
 
 const contact=fs.readFileSync('contact.html','utf8');
 const checkout=fs.readFileSync('get-started.html','utf8');
-const complete=fs.readFileSync('checkout-complete.html','utf8');
+const complete=fs.readFileSync('checkout-complete.html','utf8')+fs.readFileSync('checkout-confirmation.js','utf8');
 const live=fs.readFileSync('live-demo.html','utf8');
 const demoApi=fs.readFileSync('api/demo-number.js','utf8');
 const chat=fs.readFileSync('chat-widget.js','utf8');
