@@ -194,3 +194,5 @@ test('Vapi bot transcript turns survive normalization without exposing tool inte
 test('configured opening message always contains required disclosure',()=>{
  const c=createProvider({env}).assistantConfig({id:'test',name:'Cedar Office'},{openingMessage:'Welcome to Cedar.'},policy);assert.match(c.firstMessage,/Welcome to Cedar/);assert.ok(c.firstMessage.includes(policy.disclosure));
 });
+
+test('speaker has approved routine knowledge without a needless lookup handoff',()=>{const p=prompts({name:'Cedar Office'},{},policy);assert.match(p.speaker,/Office hours are 9–5 on Monday/);assert.match(p.speaker,/Answer routine questions.*directly/);assert.match(p.speaker,/whether the office is open right now/);assert.doesNotMatch(p.speaker,/Delegate business questions to/)});
