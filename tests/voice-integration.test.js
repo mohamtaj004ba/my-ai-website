@@ -43,7 +43,7 @@ test('invalid hours, destinations, recording, policies fail closed',()=>{
 });
 test('prompts are workspace-specific and enforce truthful tools, correction and privacy',()=>{
   const p=prompts({name:'Cedar Office'},{name:'Ava',openingMessage:'Welcome to Cedar'},policy,{demo:true});
-  assert.match(p.speaker,/Cedar Office/);assert.match(p.speaker,/Interruption policy/);assert.match(p.reasoner,/untrusted data/);assert.match(p.reasoner,/never confirmed bookings/);assert.match(p.reasoner,/demo\/test/);
+  assert.match(p.speaker,/Cedar Office/);assert.match(p.speaker,/Interruption policy/);assert.match(p.speaker,/silently prefix \+1/);assert.match(p.reasoner,/normalize a confirmed US or Canadian ten-digit/);assert.match(p.speaker,/caller interrupts before it is delivered/);assert.match(p.reasoner,/untrusted data/);assert.match(p.reasoner,/never confirmed bookings/);assert.match(p.reasoner,/demo\/test/);
 });
 test('strict tool schemas reject cross-tenant IDs and private-history requests',()=>{
   for(const args of [{workspaceId:'victim'},{contactId:'victim'},{__proto__:null,unknown:'x'}])assert.throws(()=>argumentsFor('get_business_profile',args));

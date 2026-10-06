@@ -1875,3 +1875,10 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Explicit backgroundSound off and read-back equality added; prior configuration omitted this field and Vapi documents a default office sound on phone calls. This is a plausible source, not an acoustically proven diagnosis. Read-back regression rejects office background drift.
 - Estimate intake now asks what work needs assessing before collecting address/contact details. Conversational replies avoid repeated generic review/next-steps wording and unsupported callback timelines or visits. Unknown estimate timing is stated plainly; preference is captured rather than promised.
 - Local suite 1,771 passed; targeted voice suite 49 passed. These refinements require provider sync and telephone verification. Latest prior browser QA remains in runner dependency installation; no false pass recorded. Production unchanged; PR remains draft and live gates closed.
+
+
+### 2026-10-06 real-phone refinement acceptance
+- Preview 0b84965de173ced5eeca448eec3707161bfab87f synced to isolated Vapi assistant v7. Background sound explicitly off and strict provider read-back verified. Acoustic improvement still needs owner listening; a transcript cannot prove static eliminated.
+- Controlled PSTN call 01a1…ef675 lasted 140 seconds, cost $0.25, and ended with Assistant Ended Call. Transcript shows Save Call Request, Complete Call, and EndCall completed successfully after caller goodbye. Estimate confirmation described the specific bathroom sink request and preferred callback without promising a booking.
+- This call exposed unnecessary country-code repetition and repeated confirmation. Speaker/reasoner instructions now perform confirmed US/Canadian number formatting internally and carry caller agreement through delegation. An interrupted opening must finish the AI/transcription disclosure before answering. These additional prompt refinements require fresh real-call verification.
+- Production unchanged; customer telephony and public demo acceptance remain gated.
