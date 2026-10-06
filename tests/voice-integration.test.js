@@ -122,7 +122,7 @@ test('status cannot infer live from saved config; stale evidence needs recheck',
   assert.equal(safeStatus({state:'ready',verifiedAt:Date.now()-600000},env).operational,false);assert.equal(safeStatus({state:'ready',verifiedAt:Date.now()},env).operational,true);assert.equal(safeStatus({state:'ready',verifiedAt:Date.now()},{VERCEL_ENV:'production'}).operational,false);
 });
 test('Vapi GPT-Live config uses speaker/reasoner, saved credentials and recording off',()=>{
-  const p=createProvider({env}),config=p.assistantConfig({id:'tenant',name:'Business'},{},policy);assert.equal(config.model.model,'gpt-live-1');assert.equal(config.model.reasoner.model,'gpt-5.6-terra');assert.equal(config.artifactPlan.recordingEnabled,false);assert.ok(!config.transcriber);assert.equal(config.server.credentialId,'credential');assert.ok(!JSON.stringify(config).includes(env.CALLERCORE_VOICE_WEBHOOK_SECRET));
+  const p=createProvider({env}),config=p.assistantConfig({id:'tenant',name:'Business'},{},policy);assert.equal(config.model.model,'gpt-live-1');assert.equal(config.model.reasoner.model,'gpt-5.6-terra');assert.equal(config.artifactPlan.recordingEnabled,false);assert.ok(config.firstMessage.startsWith(policy.disclosure));assert.ok(!config.transcriber);assert.equal(config.server.credentialId,'credential');assert.ok(!JSON.stringify(config).includes(env.CALLERCORE_VOICE_WEBHOOK_SECRET));
   const {agentMatches}=require('../lib/voice-provider');assert.equal(agentMatches(structuredClone(config),config),true);for(const change of [c=>c.model.tools=[],c=>c.maxDurationSeconds=999,c=>c.voice.voiceId='different',c=>c.firstMessage='Different greeting',c=>c.backgroundSound='office']){const changed=structuredClone(config);change(changed);assert.equal(agentMatches(changed,config),false)}
 });
 test('provider errors never include a raw response or secret',async()=>{
@@ -196,3 +196,17 @@ test('configured opening message always contains required disclosure',()=>{
 });
 
 test('speaker has approved routine knowledge without a needless lookup handoff',()=>{const p=prompts({name:'Cedar Office'},{},policy);assert.match(p.speaker,/Office hours are 9–5 on Monday/);assert.match(p.speaker,/Answer routine questions.*directly/);assert.match(p.speaker,/whether the office is open right now/);assert.doesNotMatch(p.speaker,/Delegate business questions to/)});
+
+ test('a confirmed correction preserves previously captured contact and address details',async()=>{
+ const kv=memory();await processMessage(kv,message('save_call_request',{intent:'estimate',reason:'Kitchen sink leak',name:'Sam',callbackNumber:'+15095550142',address:'123 Example Lane',preferredTime:'Tomorrow afternoon',confirmed:true},'initial'),{provider:provider()});
+ await processMessage(kv,message('save_call_request',{intent:'estimate',reason:'Bathroom sink leak',confirmed:true},'correction'),{provider:provider()});
+ const saved=kv.values.get('leads:tenant');assert.equal(saved.length,1);assert.equal(saved[0].name,'Sam');assert.equal(saved[0].phone,'+15095550142');assert.equal(saved[0].address,'123 Example Lane');assert.equal(saved[0].service,'Bathroom sink leak');
+ const record=kv.values.get('voice:call:'+normalizedCall(call).id);assert.equal(record.request.preferredTime,'Tomorrow afternoon');assert.equal(record.request.name,'Sam');
+ });
+
+ test('correcting a repeat call amends its associated open lead without creating a duplicate',async()=>{
+ const kv=memory();for(const c of [call,{...call,id:'repeat'}])await processMessage(kv,{...message('save_call_request',{intent:'estimate',reason:'Kitchen sink leak',name:'Sam',confirmed:true},c.id),call:{id:c.id}},{provider:provider(c)});
+ assert.equal(kv.values.get('leads:tenant').length,1);
+ await processMessage(kv,{...message('save_call_request',{intent:'estimate',reason:'Bathroom sink leak',confirmed:true},'correct-repeat'),call:{id:'repeat'}},{provider:provider({...call,id:'repeat'})});
+ const leads=kv.values.get('leads:tenant');assert.equal(leads.length,1);assert.equal(leads[0].service,'Bathroom sink leak');assert.equal(leads[0].callIds.length,2);
+ });

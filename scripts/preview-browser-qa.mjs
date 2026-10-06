@@ -40,6 +40,7 @@ function attachDiagnostics(page,label){
     // This isolated fixture deliberately returns 401 to verify hidden admin controls.
     // Keep all other console errors, including failures in authenticated contexts.
     if(label==='voice-no-access'&&msg.type()==='error'&&msg.text()==='Failed to load resource: the server responded with a status of 401 (Unauthorized)')return;
+    if(page.__callerCoreExpectedVoiceTimeout&&msg.type()==='error'&&msg.text()==='Failed to load resource: the server responded with a status of 503 (Service Unavailable)')return;
     if(msg.type()==='error')report.consoleErrors.push({label,message:msg.text().slice(0,1200)});
   });
   page.on('pageerror',err=>report.pageErrors.push({label,message:String(err?.message||err).slice(0,1200)}));
@@ -50,6 +51,7 @@ function attachDiagnostics(page,label){
         if(label==='voice-no-access'&&u.pathname==='/api/account'&&u.searchParams.get('action')==='session'&&res.status()===401){
           (report.expectedAuthDenials??=[]).push({label,status:401,url:u.pathname+u.search});return;
         }
+        if(page.__callerCoreExpectedVoiceTimeout&&u.pathname==='/api/voice'&&u.searchParams.get('action')==='verify'&&res.status()===503){(report.expectedVoiceProviderFailures??=[]).push({label,status:503,url:u.pathname+u.search});return;}
         report.apiErrors.push({label,status:res.status(),url:u.pathname+u.search});
       }
     }catch{}

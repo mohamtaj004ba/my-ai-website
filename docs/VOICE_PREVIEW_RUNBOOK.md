@@ -33,7 +33,7 @@ The numbered steps above describe the setup procedure for another isolated envir
 
 ## Internal real-call acceptance matrix
 
-For every row capture call ID, time, result, latency observations, interruptions/corrections, canonical transcript, contact/lead/follow-up, transfer state, usage and audit evidence. First actual call ran on 2026-10-06 (195 seconds): regular-hours answer verified, estimate save failed because the tool received a local ten-digit callback number. Targeted format-recovery/direct-knowledge fixes are deployed and await real-call retry. No row is marked fully accepted yet.
+For every row capture call ID, time, result, latency observations, interruptions/corrections, canonical transcript, contact/lead/follow-up, transfer state, usage and audit evidence. First actual call ran on 2026-10-06 (195 seconds): regular-hours answer verified, estimate save failed because the tool received a local ten-digit callback number. Subsequent actual calls verified corrected estimate capture, direct routine answers, canonical CRM/usage updates and explicit endCall termination. This establishes those scenarios only; the rest of the matrix remains open.
 
 | Scenario | Expected proof |
 |---|---|
@@ -77,3 +77,14 @@ Official technical guidance: https://docs.vapi.ai/gpt-live/testing and https://d
 Actual inbound call 01a112a1-9a16-7bbd-ba60-9025de5257cc captured a corrected bathroom-sink estimate request and completed the canonical disposition. The direct hours answer needed no lookup. The caller interrupted the opening, so full disclosure delivery was not established in this run. The call ended on silence after goodbye; explicit complete_call ending guidance has been added and still requires a telephone retry. Canonical usage: 151 connected seconds for this call, 6.57 total minutes across three inbound calls. Provider cost of both controlled legs: $0.51. Recording stayed off; smooth speech still needs human listening.
 
 Intake questions and unsaved caller corrections now remain in the speaker conversation. The reasoner is used for confirmed saving/amendments, actual transfers, current policy decisions and final disposition. This removes avoidable backend waits without treating information capture as a completed CRM action.
+
+
+## Latest acceptance checkpoint (2026-10-06)
+
+- Verified feature commit f822e46d5cc84af3ddf1ab214ef8bfe1b5501acf, immutable Preview https://my-ai-website-f67hy91s6-mohamtaj004bas-projects.vercel.app, CI 37520865894 and CodeQL 37520866010 success. Authenticated Browser QA 37520860702 success (job 112466248373), including visual comparison.
+- Actual v8 controlled estimate call ending f50e6: 115 seconds, $0.20, request save/completion/endCall successful; local callback formatted without asking the caller for technical formatting; appointment request distinguished from confirmed booking.
+- Actual v8 owner call ending 3edf9: 116 seconds, $0.20; full opening disclosure delivered, leaking-faucet request captured, direct office hours, complete_call/endCall successful. Owner reports background static mostly gone and remaining noise minor. Name transcript is PJ; owner clarified TJ and then allowed that the name may have been unclear. No history was rewritten to pretend otherwise.
+- Separate interruption test still skipped disclosure; first-message ordering now moves disclosure before business greeting, and acoustic/interrupt delivery remains a separate acceptance condition.
+- No callback timeframe has been approved for the fictional office. Blank timing preferences should not be read out in confirmations.
+- Current non-blocked fixes: preserve holiday/duration settings through UI saves, disable controls after uncertain provider checks, preserve previously confirmed data on partial request corrections, and preserve the associated open lead when a repeat call is corrected.
+- Remaining external gates: reviewed privacy/retention policy; a controlled transfer receiver/no-answer test; broader real-call scenario matrix within the approved $5 limit; a new isolated demo assistant/number with separately authorized restricted key scope. No public demo or customer activation is implied by these internal successes.

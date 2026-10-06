@@ -1882,3 +1882,11 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - Controlled PSTN call 01a1…ef675 lasted 140 seconds, cost $0.25, and ended with Assistant Ended Call. Transcript shows Save Call Request, Complete Call, and EndCall completed successfully after caller goodbye. Estimate confirmation described the specific bathroom sink request and preferred callback without promising a booking.
 - This call exposed unnecessary country-code repetition and repeated confirmation. Speaker/reasoner instructions now perform confirmed US/Canadian number formatting internally and carry caller agreement through delegation. An interrupted opening must finish the AI/transcription disclosure before answering. These additional prompt refinements require fresh real-call verification.
 - Production unchanged; customer telephony and public demo acceptance remain gated.
+
+
+## 2026-10-06 — Autonomous voice completion sweep
+- Existing billing acceptance preserved; Production remains 6d36aa454241588140a3d9945eed1a5696a65db6, draft PR #5 unmerged.
+- Preview f822e46d5cc84af3ddf1ab214ef8bfe1b5501acf passed CI 37520865894, CodeQL 37520866010, authenticated Browser QA 37520860702 and visual comparison. Owner confirms remaining audio noise minor; actual estimate/CRM/usage/hangup verified.
+- Updated speaker confirmations to omit declined timing preferences, retain all collected details and briefly confirm unclear initials. Disclosure moved first in provider greeting; no legal acceptance claimed.
+- Fixed partial corrections erasing prior caller fields and duplicate open leads when a repeat call is corrected. Fixed UI saves erasing holidays/call limits; failure checks now disable unverified controls. Responsive browser QA covers preservation and uncertain-state controls.
+- 1,773 full local tests passed before publication; fresh exact-commit checks follow. Broader real telephone scenario tests and provider-backed controls underway. New demo credentials remain outside the current restricted internal-only scope. Production unchanged.
