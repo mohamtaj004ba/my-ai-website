@@ -1,6 +1,6 @@
 .dashboard-showcase{background:radial-gradient(ellipse at 70% 50%,#45694b30,transparent 65%),#172e2e;padding:48px max(20px,calc((100vw - 1240px)/2));color:#edf4e9;overflow:clip}
 .dashboard-showcase .showcase-heading{max-width:1120px;margin:0 auto 20px;display:grid;grid-template-columns:1fr 1fr;gap:0 50px;text-align:left}
-.dashboard-showcase .kicker{grid-column:1/-1;color:#e6a37d;margin-bottom:12px;font-size:11px}
+.dashboard-showcase .kicker{grid-column:1/-1;color:#e6a37d;margin-bottom:12px;font-size:12px}
 .dashboard-showcase h2{font-size:clamp(28px,3vw,40px);line-height:1.12;letter-spacing:-.045em;margin:0;max-width:540px}
 .dashboard-showcase .showcase-heading>p:last-child{font-size:15px;line-height:1.65;color:#b5c9bb;max-width:590px;margin:0;align-self:center}
 .dashboard-stack{--stack-step:52px;--stack-shift:32px;--stack-shrink:.012;display:grid;max-width:1120px;margin:180px auto 0;isolation:isolate;perspective:1800px}

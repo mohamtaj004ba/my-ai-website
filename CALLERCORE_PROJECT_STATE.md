@@ -1,5 +1,17 @@
 # CallerCore project state
 
+## Real Stripe sandbox acceptance — 2026-10-05
+
+- Feature branch only, PR #5 draft/unmerged. Production independently verified at 6d36aa454241588140a3d9945eed1a5696a65db6, deployment dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY. Older production notes below are historical. No live Stripe, production, tax, overage, or telephony activation changes in this pass.
+- Runtime inspection confirmed sandbox acct_1To8TZFMvbBcKVZe, test keys, active Starter/Growth/Pro/setup prices, isolated Preview storage, captured-only billing emails, and closed public checkout.
+- Temporary acceptance controls require an access token, feature Preview branch, vercel.app host, one of six disposable callercore.test identities, and expire absolutely at 2026-10-06T08:22:14.875Z. Only the token hash is committed. Private secrets, receipts, evidence JSON and screenshots are outside the repository. Native checkout is exercised without opening public signup or changing project environment flags.
+- Fixed real provider defects: valid opaque checkout secrets containing encoded characters were rejected; Checkout Elements appearance options used the wrong SDK level. Behavioral regressions cover both. Implementation head 58619dee602080dac97419b221dd2f78b1259b83 passed 1,698 local checks, GitHub test/build/CodeQL and Vercel Preview. Preview Browser QA found an existing 11px dashboard kicker; raised to 12px instead of weakening the layout gate.
+- Native provider sessions verified initial totals Starter $849, Growth $1,099, Pro $1,499, each exactly one monthly item and one $500 setup item, tax disabled. Repeated Starter creation reused the same session.
+- Browser tests passed insufficient-funds decline/retry, cancelled 3DS/retry, and successful 3DS payment on the SAME Recovery Starter order. Stripe session cs_test_b14eTiFEhoURjPWtO0gChZvRjlxUSUGIZ5XdFXlYeZitraQP5m8An0vnfy is complete/paid, amount 84900 USD, livemode false, customer cus_VOCdKzY9EMOB1H, subscription sub_1UNQFwFMvbBcKVZeGWL59Yw9. No real card/funds used; Link saving deselected.
+- Completion screen correctly shows payment received/account setup pending and warns against paying again. Provider evidence confirms fulfillment, workspace, captured billing email remain absent.
+- LAUNCH BLOCKER REMAINS: sandbox webhook we_1UNLMWFMvbBcKVZefg9FsClG reaches Vercel deployment protection HTTP 401 before app signature validation. Approval review rejected temporary project-wide automation bypass creation because it broadens protected Preview access without explicit authorization/expiry. No automation token was created; no workaround or manual webhook fulfillment was used.
+- Next step requires explicit approval for a temporary project-wide Vercel automation bypass used only by the sandbox webhook, revoked after acceptance with webhook URL restored. Then verify provider-backed fulfillment, owner login, captured emails, payment-method changes, upgrades/downgrades, cancellation/reactivation, and repeat orders. Do not mark launch acceptance complete until those pass. Public checkout stays closed.
+
 ## Public website mobile and laptop redesign — 2026-10-05
 
 - Published implementation **4d8ba38322a43c40ed6cd6060ccd6154509c3b9f**, tree **5d0c2ac4e0716e0a14d2631a25582238d32c353f**, exact Preview **https://my-ai-website-lrn9k3cxp-mohamtaj004bas-projects.vercel.app**, deployment **dpl_EgrrvzPppC893Gs5A5zNnBBRcm9K**, READY/target null/matching SHA. Details: docs/website-mobile-verification.md.
