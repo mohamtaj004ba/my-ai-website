@@ -47,6 +47,9 @@
     a.addEventListener('click',()=>{const hash=a.hash;if(!hash)return;const target=document.querySelector(hash);if(target){target.setAttribute('tabindex','-1');target.classList.add('anchor-destination')}});
   });
 
+  let analyticsStarted=false;
+  function startAnalytics(){
+  if(analyticsStarted)return;analyticsStarted=true;
   // First-party analytics. No form field values or sensitive input are captured here.
   const uuid=()=>{try{if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();if(globalThis.crypto?.getRandomValues){const bytes=new Uint8Array(16);globalThis.crypto.getRandomValues(bytes);bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;const hex=[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20)}}catch(_){}const perf=typeof performance!=='undefined'&&Number.isFinite(performance.now())?Math.round(performance.now()*1000):0;return 'legacy-'+Date.now().toString(36)+'-'+perf.toString(36)};
   let visitorId;
@@ -63,6 +66,7 @@
   };
   const payload=(type,extra={})=>({...ctx,type,...extra});
   const send=(type,extra={},beacon=false)=>{
+    if(window.CallerCorePrivacy?.analytics!==true)return;
     const body=JSON.stringify(payload(type,extra));
     try{
       if(beacon&&navigator.sendBeacon){navigator.sendBeacon('/api/site-track',new Blob([body],{type:'application/json'}));return}
@@ -71,6 +75,7 @@
   };
   window.CallerCoreAnalytics={track:send,context:ctx};
 
+  window.addEventListener('callercoreprivacychange',event=>{if(!event.detail.analytics){window.CallerCoreAnalytics.context={};return;}ctx.visitorId=uuid();ctx.sessionId=uuid();try{localStorage.setItem('cc_vid',ctx.visitorId);sessionStorage.setItem('cc_sid',ctx.sessionId);}catch(_){}window.CallerCoreAnalytics.context=ctx;send('session_start');send('page_view');});
   send('session_start');send('page_view');
   let activeSince=Date.now(),activeAccum=0,lastFlush=Date.now();
   const markInactive=()=>{if(activeSince){activeAccum+=Date.now()-activeSince;activeSince=0}};
@@ -103,4 +108,8 @@
     form.addEventListener('submit',()=>{started=true;submitted=true;send('form_submit',{label:id})});
     window.addEventListener('pagehide',()=>{if(started&&!submitted)send('form_abandon',{label:id},true)});
   });
+  }
+  window.CallerCoreAnalytics={track:()=>{},context:{}};
+  window.addEventListener('callercoreprivacychange',event=>{if(event.detail.analytics)startAnalytics();});
+  if(window.CallerCorePrivacy?.analytics===true)startAnalytics();
 })();
