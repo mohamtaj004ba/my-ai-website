@@ -12,11 +12,11 @@
 - Provider-backed pause/resume with approved fallback and read-back. Stale/configuration-changed/error state cannot claim operational. Saving existing receptionist settings invalidates voice verification; no silent provider sync is implied.
 - `/voice-operations.html`: gated responsive internal control surface. Customers do not see Vapi, keys or raw provider controls.
 
-## Smallest external setup needed
+## Current isolated setup and remaining acceptance
 
-Updated 2026-10-06: Vapi browser access is available. The isolated internal assistant was created and successfully converted to GPT-Live. A restricted private key permits only that assistant, with transient assistants disabled. The key and dedicated Bearer webhook secret are saved only in feature-branch Preview. The free internal number is (509) 408-9058; it remains unassigned pending CallerCore configuration verification. The previous public demo assistant/number and LeadConnector callback were not edited.
+Updated 2026-10-06: Vapi browser access is available. The isolated internal GPT-Live assistant and (509) 408-9058 are assigned and verified through CallerCore provider read-back. A restricted private key permits only that assistant, with transient assistants disabled. The key and dedicated Bearer webhook secret are saved only in feature-branch Preview. Administrator sign-in works. Actual inbound PSTN calls have reached authenticated tools and canonical call/contact/follow-up/usage records. The previous public demo assistant/number and LeadConnector callback were not edited.
 
-TJ explicitly approved public access to the stable feature-branch Preview alias for provider callbacks. That alias alone has a deployment-protection override; CallerCore session authorization and webhook Bearer checks remain mandatory. Other deployments and Production were not changed. The internal Preview gate is configured for the next deployment, but configuration read-back, provider API permissions, webhook delivery and real PSTN acceptance are not yet verified.
+TJ explicitly approved public access to the stable feature-branch Preview alias for provider callbacks. That alias alone has a deployment-protection override; CallerCore session authorization and webhook Bearer checks remain mandatory. Other deployments and Production were not changed. Resource read-back and actual webhook delivery are verified; full real-call and acoustic acceptance remain incomplete.
 
 1. Enable GPT-Live for the Vapi organization (or confirm existing access).
 2. Designate a **new/disposable internal** saved GPT-Live assistant and native Twilio/Vapi SIP phone number. Do not reuse a customer/production number. Supply the following securely as **Preview, feature-branch-scoped** Vercel variables, never in chat or Git:
@@ -29,11 +29,11 @@ TJ explicitly approved public access to the stable feature-branch Preview alias 
 4. Set `CALLERCORE_VOICE_PREVIEW_ENABLED=true` only after the above. Open `/voice-operations.html` as admin, create an internal workspace, enter business policy and save/verify. This endpoint cannot bind normal/paying workspaces.
 5. Place actual PSTN calls. An agent without authorized voice/microphone access cannot claim acoustic acceptance from fixtures. Record the acceptance matrix below; compare saved records against the conversation and provider call.
 
-The initial code-only phase created no provider resources. The subsequent approved setup created the isolated assistant, restricted key, webhook credential and free number described above. No acceptance calls have been placed and recording remains off. Administrator sign-in to Preview is required to configure the isolated workspace. Check organization credential fallback behavior before real calls; do not assume a newly created credential is isolated solely because it is explicitly selected on the internal number. Do not mark external acceptance or legal review complete.
+The numbered steps above describe the setup procedure for another isolated environment, rather than outstanding setup on this branch. Recording remains off. The controlled test caller uses fictional details and a three-minute cap within TJ's approved $5 budget. Do not mark full external acceptance or legal review complete. Do not assume organization credential fallback is isolated solely because a credential is explicitly selected on the internal number.
 
 ## Internal real-call acceptance matrix
 
-For every row capture call ID, time, result, latency observations, interruptions/corrections, canonical transcript, contact/lead/follow-up, transfer state, usage and audit evidence. All rows currently **not run**.
+For every row capture call ID, time, result, latency observations, interruptions/corrections, canonical transcript, contact/lead/follow-up, transfer state, usage and audit evidence. First actual call ran on 2026-10-06 (195 seconds): regular-hours answer verified, estimate save failed because the tool received a local ten-digit callback number. Targeted format-recovery/direct-knowledge fixes are deployed and await real-call retry. No row is marked fully accepted yet.
 
 | Scenario | Expected proof |
 |---|---|
@@ -67,3 +67,13 @@ Use the same core with a separate nonpaying demo workspace and `VAPI_DEMO_ASSIST
 ## Release boundaries
 
 Keep PR #5 draft/unmerged. Only `feature/callercore-dashboards` and Preview. Production remains older stable; Stripe acceptance preserved; live checkout/subscriptions, automatic overages, tax collection and customer telephony remain closed.
+
+
+## First-call latency investigation — 2026-10-06
+Observed ten reasoner rounds lasted approximately 1.98–3.95 seconds; routine-hours lookup added an avoidable handoff. The speaker now contains approved static business knowledge. Dynamic current-open/holiday/transfer decisions remain server verified. Vapi's classic Latency Summary reported no data for this GPT-Live call, so no turn-latency score was invented. Early audio trace samples showed arrival gaps approximately 100–296ms and queue peaks up to 160ms, but this limited sample does not establish the cause of TJ's audible buffering. Recording remained disabled, and transcript fragments alone do not prove acoustic quality. Further real-call observation required.
+Official technical guidance: https://docs.vapi.ai/gpt-live/testing and https://docs.vapi.ai/gpt-live/configuration. Separate time-to-useful-speech from time-to-confirmed-action; do not tune classic transcriber/TTS controls for GPT-Live, which generates speech directly.
+
+### Controlled estimate regression
+Actual inbound call 01a112a1-9a16-7bbd-ba60-9025de5257cc captured a corrected bathroom-sink estimate request and completed the canonical disposition. The direct hours answer needed no lookup. The caller interrupted the opening, so full disclosure delivery was not established in this run. The call ended on silence after goodbye; explicit complete_call ending guidance has been added and still requires a telephone retry. Canonical usage: 151 connected seconds for this call, 6.57 total minutes across three inbound calls. Provider cost of both controlled legs: $0.51. Recording stayed off; smooth speech still needs human listening.
+
+Intake questions and unsaved caller corrections now remain in the speaker conversation. The reasoner is used for confirmed saving/amendments, actual transfers, current policy decisions and final disposition. This removes avoidable backend waits without treating information capture as a completed CRM action.
