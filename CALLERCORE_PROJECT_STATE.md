@@ -1823,3 +1823,16 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - No production merge/deployment, live telephony activation, billing action, customer communication, destructive production mutation, production migration, or launch-gate change occurred.
 - Next premium interaction pass: continue evidence-first review of remaining native confirmations, prioritizing consequential admin actions such as force logout, access repair, configuration override/rollback, phone removal, and provider disconnects; keep routine low-risk confirms unless an in-app replacement materially improves recovery or clarity.
 
+
+
+## 2026-10-06 — Preview voice foundation and external acceptance gate
+
+- Audit completed before changes at 99c313adcfeb6d850dce8769d1764f179e6f5efc; see docs/VOICE_ARCHITECTURE_AUDIT.md. Existing phone inventory/settings were UI/storage-only; samples were not provider evidence.
+- Added provider-neutral canonical lifecycle, server-only Vapi GPT-Live speaker/reasoner adapter, credential-protected webhooks/tools, strict call-resource association and dedicated internal/demo workspace isolation. No customer number activation path.
+- Business policy supports structured timezone/hours/holidays, service/FAQ/pricing knowledge, voice/tone, instructions, transfer/after-hours and disclosure. Recording is blocked; legal/privacy review remains pending.
+- Calls, dashboard indexes, CRM contact/open lead, usage and audit use atomic revision-guarded writes with retry journals. Duplicate/out-of-order events cannot double usage or regress ended calls. Transcript/duration gaps remain queued for reconciliation. Automatic overage billing remains disabled.
+- Actual provider-backed internal pause/resume/configuration read-back and stale-state guards implemented. Existing agent saves invalidate voice verification; no silent sync claim. Internal operations screen at /voice-operations.html.
+- 36 initial voice tests and 1,755 full local tests passed; further privacy/reconciliation tests and exact Preview CI/browser/CodeQL verification follow. Fixtures are not acoustic/telephone acceptance.
+- External gate: Preview has OPENAI_API_KEY but no Vapi credentials, voice Custom Credential or designated internal test number/assistant. Vapi GPT-Live requires organization private-beta enablement. No real call, provider resource mutation or acoustic acceptance occurred. See docs/VOICE_PREVIEW_RUNBOOK.md for smallest secure setup and real-call matrix.
+- Public demo infrastructure shares the core, is isolated and five-minute capped; public number exposure stays closed pending internal/demo acceptance and phone-level abuse verification.
+- Production remains older stable release; main and draft PR #5 remain unmerged; Stripe sandbox acceptance preserved. Live checkout/subscriptions, customer voice, tax collection and automatic overages stay closed.

@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {installBillingFixture,verifyBillingDialogs} from './native-billing-browser-qa.mjs';
 import {verifyCustomerExperience} from './customer-experience-browser-qa.mjs';
+import {verifyVoiceOperations} from './voice-browser-qa.mjs';
 
 const baseURL=String(process.env.PREVIEW_URL||'').replace(/\/$/,'');
 const secret=String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET||'');
@@ -1702,6 +1703,7 @@ async function runPublicSiteQA(){
 try{
   await runPublicSiteQA();
   await verifyCustomerExperience({makeContext,baseURL,assertLayout,shot,report});
+  await verifyVoiceOperations({makeContext,baseURL,shot,report});
   const desktop=await makeContext({width:1440,height:1100},'desktop');
   const launcher=await desktop.page.goto(baseURL+'/api/preview-e2e',{waitUntil:'domcontentloaded',timeout:30000});
   if(!launcher||!launcher.ok())throw new Error('Preview launcher returned '+(launcher?launcher.status():'no response'));

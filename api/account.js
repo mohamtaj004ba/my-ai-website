@@ -3729,6 +3729,8 @@ async function saveAgent(req,res){
   const routingRequest=await kv.get('routing-request:'+s.workspaceId);
   if(routingRequest!=null&&(!routingRequest||typeof routingRequest!=='object'||Array.isArray(routingRequest)))return res.status(503).json({error:'Routing request data is unavailable. No receptionist settings were changed.'});
   const updates=[{key:'agent:'+s.workspaceId,before:previous,after:agent}];
+  const voiceConfig=await kv.get('voice:config:'+s.workspaceId);
+  if(voiceConfig){if(typeof voiceConfig!=='object'||Array.isArray(voiceConfig))return res.status(503).json({error:'Voice synchronization state is unavailable. Your draft is preserved.'});updates.push({key:'voice:config:'+s.workspaceId,before:voiceConfig,after:{...voiceConfig,state:'configuration_changed',verifiedAt:null,revision:Number(voiceConfig.revision||0)+1}});}
   let routing=clientRouting(phoneBefore,{smsLive:process.env.CALLERCORE_SMS_ENABLED==='true'});
   if(phonePos>=0&&String(phoneBefore.transferNumber||'')!==agent.transferNumber){
     const phoneAfter={...phoneBefore,transferNumber:agent.transferNumber,updatedAt:Date.now()};phoneIndex[phonePos]=phoneAfter;
