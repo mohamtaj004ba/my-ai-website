@@ -9,6 +9,30 @@ const env={VERCEL_ENV:'preview',CALLERCORE_VOICE_PREVIEW_ENABLED:'true',VAPI_PRI
 const policy=validatePolicy({timezone:'America/Los_Angeles',schedule:[{day:1,open:540,close:1020}],services:['Repair'],faqs:['Office hours are 9–5 on Monday.'],afterHours:'capture',transferNumber:'+15095550100'});
 const call={id:'call_test',assistantId:'assistant_test',phoneNumberId:'number_test',status:'in-progress',startedAt:'2026-10-05T16:00:00Z',customer:{number:'+15095550101'},artifact:{messages:[]}};
 const binding={workspaceId:'tenant',purpose:'internal',numberId:'number_test',provider:'vapi',agentName:'Maya'};
+test('read-back verification recovers an uncertain sync only when settings and routing match',async()=>{
+  const vm=require('node:vm'),fs=require('node:fs');
+  for(const fault of ['none','routing','settings','revision']){
+    const kv=memory();kv.values.set('user:email:owner@example.test',{role:'admin'});
+    Object.assign(kv.values.get('voice:config:tenant'),{state:'error',errorCode:'VOICE_PROVIDER_TIMEOUT'});
+    if(fault==='revision')kv.values.set('agent:tenant',{updatedAt:1});
+    const desired=createProvider({env}).assistantConfig(kv.values.get('workspace:tenant'),{},policy);
+    const live=structuredClone(desired);if(fault==='settings')live.model.speaker.instructions='outdated';
+    const context=vm.createContext({module:{exports:{}},URL,Buffer,process:{env},require(path){
+      if(path==='crypto')return require('crypto');
+      if(path==='../lib/auth')return {requireSession:async()=>({role:'admin',workspaceId:'tenant',email:'owner@example.test'})};
+      if(path==='../lib/kv')return {kv};
+      if(path==='../lib/rate-limit')return {rateLimit:async()=>({limited:false})};
+      if(path==='../lib/voice-provider')return {...require('../lib/voice-provider'),previewGate:()=>{},createProvider:()=>({assistantConfig:()=>desired,retrieveAgent:async()=>live,retrieveNumber:async()=>({assistantId:fault==='routing'?'other':'assistant_test'})})};
+      if(path==='../lib/voice-service')return {...require('../lib/voice-service'),safeStatus:r=>safeStatus(r,env)};
+      return require(path);
+    }});
+    vm.runInContext(fs.readFileSync('api/voice.js','utf8'),context);let code,result;
+    await context.module.exports({method:'POST',headers:{host:'preview.vercel.app',origin:'https://preview.vercel.app'},query:{action:'verify'},body:{}},{setHeader(){},status(n){code=n;return this},json(v){result=v;return v}});
+    const record=kv.values.get('voice:config:tenant');
+    if(fault==='none'){assert.equal(code,200);assert.equal(result.voice.state,'ready');assert.equal(record.errorCode,undefined);assert.equal(record.revision,1)}
+    else {assert.equal(code,503);assert.equal(record.state,'error');assert.equal(record.verifiedAt,null)}
+  }
+});
 function memory(){
   const values=new Map([['workspace:tenant',{id:'tenant',name:'Test service business',voiceTestWorkspace:true,usage:{minutes:0}}],['voice:binding:assistant_test',structuredClone(binding)],['voice:number:number_test',structuredClone(binding)],['voice:config:tenant',{policy,purpose:'internal',assistantId:'assistant_test',numberId:'number_test',state:'ready',revision:1,agentRevision:0}],['agent:tenant',{}]]);
   let conflict=0;

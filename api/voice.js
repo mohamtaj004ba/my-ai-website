@@ -62,7 +62,10 @@ module.exports=async function handler(req,res){
       const match=record.state==='paused'?!number.assistantId&&number.fallbackDestination?.number===record.fallbackNumber:number.assistantId===record.assistantId;
       const desired=provider.assistantConfig(await kv.get('workspace:'+workspaceId),savedAgent,record.policy,{demo:record.purpose==='demo'});
       if(!match||!agentMatches(agent,desired))throw new VoiceError('VOICE_SYNC_UNVERIFIED');
-      const next={...record,verifiedAt:Date.now()};
+      // An uncertain sync may have completed externally. Recover only after
+      // both the full assistant configuration and number routing match.
+      const next={...record,state:record.state==='error'?'ready':record.state,verifiedAt:Date.now()};
+      if(record.state==='error')delete next.errorCode;
       if(!await compareAndAuditBatch(kv,[{key,before:record,after:next}],'audit:'+workspaceId,{id:crypto.randomUUID(),workspaceId,actorEmail:session.email,actorRole:currentRole,action:'voice_state_verified',section:'voice',at:Date.now()}))throw new VoiceError('VOICE_CONFIG_CONFLICT');
       return res.status(200).json({voice:safeStatus(next)});
     }
