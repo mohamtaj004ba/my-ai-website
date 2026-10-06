@@ -1,0 +1,7 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm');
+const source=fs.readFileSync('native-billing.js','utf8');
+const pending=source.match(/  function pending\(value\)[^\n]+/)[0];
+const payment=source.match(/  async function payment\(\)[^\n]+/)[0];
+async function run(fail=false){const button={disabled:true,dataset:{},addEventListener(){}},status={textContent:''};const context={busy:false,elements:null,billing:{revision:'current'},sheetStatus:status,sheet:{querySelectorAll:()=>[button]},show(){},request:async()=>{if(fail)throw Error('Provider unavailable');return {token:'fixture',clientSecret:'seti_fixture_secret_opaque',publishableKey:'pk_test_fixture'}},sessionStorage:{setItem(){}},document:{getElementById:()=>button},Stripe:()=>({elements:()=>({create:()=>({mount(){}})})}),savePayment(){}};vm.createContext(context);vm.runInContext(pending+'\n'+payment,context);await context.payment();return {button,status,context};}
+test('successful secure payment setup enables explicit saving after pending controls restore',async()=>{const {button,context}=await run();assert.equal(button.disabled,false);assert.equal(context.busy,false);assert.ok(context.elements);});
+test('failed secure payment setup retains disabled saving and explains failure',async()=>{const {button,status}=await run(true);assert.equal(button.disabled,true);assert.equal(status.textContent,'Provider unavailable');});
