@@ -22,7 +22,8 @@ module.exports=async function handler(req,res){
     if(admin&&req.query.workspaceId)workspaceId=identifier(req.query.workspaceId);
     if(req.method==='GET'){
       const record=await kv.get('voice:config:'+workspaceId);
-      return res.status(200).json({voice:safeStatus(record),policy:record?.policy||null,...(admin?{operations:{assistantAssigned:!!record?.assistantId,numberAssigned:!!record?.numberId,errorCode:record?.errorCode||null,realCallAcceptance:false,recordingReview:'pending'}}:{})});
+      const inspection=admin?await require('../lib/voice-inspection').inspect(kv,workspaceId):null;
+      return res.status(200).json({voice:safeStatus(record),policy:record?.policy||null,...(admin?{inspection,operations:{assistantAssigned:!!record?.assistantId,numberAssigned:!!record?.numberId,errorCode:record?.errorCode||null,realCallAcceptance:false,recordingReview:'pending'}}:{})});
     }
     previewGate();
     const {rateLimit}=require('../lib/rate-limit');const limit=await rateLimit({scope:'voice-operations',identifier:session.workspaceId+':'+session.email,limit:15,windowSeconds:60,failClosed:true});if(limit.limited)return res.status(429).json({error:'Please wait a moment before checking again'});
