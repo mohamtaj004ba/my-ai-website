@@ -1836,3 +1836,15 @@ The implementation at `aadccad3a40368bf05b78a0b72d027135340e3a8` passed the full
 - External gate: Preview has OPENAI_API_KEY but no Vapi credentials, voice Custom Credential or designated internal test number/assistant. Vapi GPT-Live requires organization private-beta enablement. No real call, provider resource mutation or acoustic acceptance occurred. See docs/VOICE_PREVIEW_RUNBOOK.md for smallest secure setup and real-call matrix.
 - Public demo infrastructure shares the core, is isolated and five-minute capped; public number exposure stays closed pending internal/demo acceptance and phone-level abuse verification.
 - Production remains older stable release; main and draft PR #5 remain unmerged; Stripe sandbox acceptance preserved. Live checkout/subscriptions, customer voice, tax collection and automatic overages stay closed.
+
+
+## 2026-10-06 — Approved restricted Preview voice access
+- Existing feature branch only; PR #5 remains draft/unmerged. Public Production remains the older stable release, with live commercial billing/customer telephony closed.
+- Created CallerCore Internal Acceptance — Preview assistant c3f3150b-f3d9-411b-992c-4c3378bda984; Vapi UI confirmed successful GPT-Live conversion. No acoustic acceptance claimed.
+- Created approved private API key restricted to that assistant, transient assistants disabled. Stored as Secret in feature/callercore-dashboards Preview only; never in Git.
+- Dedicated Bearer webhook credential 3aeb7706-6dc2-4788-8bd6-bc185d6ea442 and random webhook secret stored in branch Preview. No project-wide CI access token given to Vapi.
+- Approved stable branch alias-only deployment protection override; anonymous public homepage response verified HTTP 200. CallerCore login/admin permissions and authenticated webhook remain enforced. Other deployment protection and Production unchanged.
+- Free internal test number +15094089058, provider ID 787a4491-bf38-44ba-8c82-1f8d5e41b825, provisioned separately from public demo. Callback settings prepared with dedicated credential; assistant routing intentionally unassigned pending secure CallerCore read-back.
+- Branch-only internal assistant/number/credential/callback variables and internal test gate configured. A fresh deployment is needed for these values.
+- Remaining: administrator Preview sign-in, provider permission/config read-back, organization credential fallback audit, webhook delivery, real phone-call scenarios, transfer/pause verification and isolated demo acceptance. Recording/privacy/legal review remains pending.
+- Local suite passed 1,762 tests. Prior CI and CodeQL green at 734792990dd574c58518c68e8a0dae5eba79c6df. Browser QA found a small-text issue fixed locally; final re-run still required. QA now accepts truthful unconfigured or launch-gated state, while requiring disabled unverified controls.

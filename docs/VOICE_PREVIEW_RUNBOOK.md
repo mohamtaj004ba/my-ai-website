@@ -14,7 +14,9 @@
 
 ## Smallest external setup needed
 
-Preview currently has an OpenAI key, but no Vapi credentials or provisioned voice test resources are available in this environment. GPT-Live requires Vapi private-beta organization enablement.
+Updated 2026-10-06: Vapi browser access is available. The isolated internal assistant was created and successfully converted to GPT-Live. A restricted private key permits only that assistant, with transient assistants disabled. The key and dedicated Bearer webhook secret are saved only in feature-branch Preview. The free internal number is (509) 408-9058; it remains unassigned pending CallerCore configuration verification. The previous public demo assistant/number and LeadConnector callback were not edited.
+
+TJ explicitly approved public access to the stable feature-branch Preview alias for provider callbacks. That alias alone has a deployment-protection override; CallerCore session authorization and webhook Bearer checks remain mandatory. Other deployments and Production were not changed. The internal Preview gate is configured for the next deployment, but configuration read-back, provider API permissions, webhook delivery and real PSTN acceptance are not yet verified.
 
 1. Enable GPT-Live for the Vapi organization (or confirm existing access).
 2. Designate a **new/disposable internal** saved GPT-Live assistant and native Twilio/Vapi SIP phone number. Do not reuse a customer/production number. Supply the following securely as **Preview, feature-branch-scoped** Vercel variables, never in chat or Git:
@@ -27,7 +29,7 @@ Preview currently has an OpenAI key, but no Vapi credentials or provisioned voic
 4. Set `CALLERCORE_VOICE_PREVIEW_ENABLED=true` only after the above. Open `/voice-operations.html` as admin, create an internal workspace, enter business policy and save/verify. This endpoint cannot bind normal/paying workspaces.
 5. Place actual PSTN calls. An agent without authorized voice/microphone access cannot claim acoustic acceptance from fixtures. Record the acceptance matrix below; compare saved records against the conversation and provider call.
 
-No provider resources were created, no calls placed, no recording enabled, no production changes made in the code-only phase. Do not mark these external steps or legal review complete.
+The initial code-only phase created no provider resources. The subsequent approved setup created the isolated assistant, restricted key, webhook credential and free number described above. No acceptance calls have been placed and recording remains off. Administrator sign-in to Preview is required to configure the isolated workspace. Check organization credential fallback behavior before real calls; do not assume a newly created credential is isolated solely because it is explicitly selected on the internal number. Do not mark external acceptance or legal review complete.
 
 ## Internal real-call acceptance matrix
 

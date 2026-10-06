@@ -1735,7 +1735,7 @@ try{
   await runAdminInteractions(desktop.page);
   await desktop.page.goto(baseURL+'/voice-operations.html');
   await desktop.page.locator('#operations').waitFor({state:'visible'});
-  await desktop.page.locator('#voice-state').getByText('Voice testing is not enabled').waitFor();
+  await desktop.page.locator('#voice-state').getByText(/Voice testing is not enabled|Voice setup is needed/).waitFor();
   await desktop.page.locator('#save-status').getByText('Latest saved settings loaded.').waitFor();
   if(!await desktop.page.locator('#pause-voice').isDisabled()||!await desktop.page.locator('#resume-voice').isDisabled())throw new Error('Authenticated voice screen enabled unverified answering');
   const voiceLayout=await desktop.page.evaluate(()=>({viewport:{width:innerWidth,height:innerHeight},scrollWidth:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth),smallTargets:[...document.querySelectorAll('button')].filter(e=>e.getClientRects().length&&e.getBoundingClientRect().height<44).length,undersized:[...document.querySelectorAll('#operations :is(p,small,label,button,input,select,textarea)')].filter(e=>e.getClientRects().length&&parseFloat(getComputedStyle(e).fontSize)<12).map(e=>e.id||e.tagName)}));
