@@ -1613,6 +1613,7 @@ async function runPublicSiteQA(){
           if(!(await page.locator('[data-full-title]').innerText()).includes('Contacts · sample workspace'))throw new Error('Dashboard enlargement lost its sample label');
           const viewer=page.locator('.dashboard-lightbox'),picture=page.locator('.dashboard-viewport');
           const viewerBox=await viewer.boundingBox();if(viewerBox.x<12||viewerBox.y<12||viewerBox.width>viewport.width-24||viewerBox.height>viewport.height*.82)throw Error('Dashboard viewer leaves no outside dismissal space');
+          await page.waitForFunction(()=>{const image=document.querySelector('.dashboard-lightbox img'),v=document.querySelector('.dashboard-viewport');return image.complete&&image.naturalWidth>0&&image.style.visibility==='visible'&&v.scrollWidth-v.clientWidth<=2&&v.scrollHeight-v.clientHeight<=2;},{},{timeout:10000});
           const fitted=await picture.evaluate(el=>({x:el.scrollWidth-el.clientWidth,y:el.scrollHeight-el.clientHeight}));if(fitted.x>2||fitted.y>2)throw Error('Dashboard picture did not initially fit');
           await shot(page,'public-'+name+'-dashboard-viewer-fit',{fullPage:false});
           await picture.focus();for(let z=0;z<6;z++)await page.keyboard.press('+');
@@ -1774,5 +1775,6 @@ try{
   await Promise.allSettled(contexts.map(c=>c.close()));
   await browser.close();
 }
+
 
 
