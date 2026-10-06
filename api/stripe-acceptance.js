@@ -39,6 +39,7 @@ module.exports=async(req,res)=>{
     if(!workspaceId||session.payment_status!=='paid')throw new BillingError('Paid disposable workspace required',409);
     const workspace=await kv.get('workspace:'+workspaceId);
     if(workspace?.ownerEmail!==attempt.email)throw new BillingError('Disposable workspace ownership mismatch',403);
+    if(action==='records'){const keys=await kv.keys('billing:email:*'),records=await Promise.all(keys.map(k=>kv.get(k)));return res.status(200).json({emails:records.filter(e=>e?.workspaceId===workspaceId).map(e=>({type:e.type,status:e.status,subject:e.subject,operationId:e.operationId,createdAt:e.createdAt,text:e.text,html:e.html})),audit:await kv.get('audit:'+workspaceId)});}
     if(action==='login'){
       const member=await kv.get('user:email:'+attempt.email);
       if(member?.workspaceId!==workspaceId||member.role==='admin')throw new BillingError('Disposable member ownership mismatch',403);
@@ -58,3 +59,4 @@ module.exports=async(req,res)=>{
     return res.status(200).json(result);
   }catch(error){return res.status(error instanceof BillingError?error.status:503).json({error:error instanceof BillingError?error.message:'Sandbox acceptance configuration or provider check failed'});}
 };
+
