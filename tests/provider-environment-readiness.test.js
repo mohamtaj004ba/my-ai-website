@@ -39,6 +39,14 @@ test('restricted Stripe keys follow the same environment boundaries as standard 
   assert.equal(environmentHealth({...preview,STRIPE_SECRET_KEY:'unrecognized_fixture'}).ok,false);
 });
 
+test('environment health accepts the explicit price aliases supported by native billing',()=>{
+  const preview={VERCEL_ENV:'preview',STRIPE_SECRET_KEY:'sk_test_fixture',STRIPE_PUBLISHABLE_KEY:'pk_test_fixture',STRIPE_PRICE_STARTER:'price_starter',STRIPE_PRICE_GROWTH:'price_growth',STRIPE_PRICE_PRO:'price_pro',STRIPE_PRICE_SETUP:'price_setup'};
+  assert.equal(environmentHealth(preview).ok,true);
+  for(const key of ['STRIPE_PRICE_STARTER','STRIPE_PRICE_GROWTH','STRIPE_PRICE_PRO','STRIPE_PRICE_SETUP'])assert.equal(environmentHealth({...preview,[key]:''}).ok,false);
+  assert.equal(environmentHealth({...preview,STRIPE_SECRET_KEY:'sk_live_fixture',STRIPE_PUBLISHABLE_KEY:'pk_live_fixture'}).ok,false);
+  assert.equal(environmentHealth({...preview,VERCEL_ENV:'production'}).ok,false);
+});
+
 test('checkout rejects invalid environment modes before starting a Stripe request',()=>{
   assert.match(checkout,/function stripeCredentialModesValid\(\)/);
   assert.match(checkout,/env==='preview'.*secretMode==='live'/s);
