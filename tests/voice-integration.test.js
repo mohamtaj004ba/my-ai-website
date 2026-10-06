@@ -133,6 +133,16 @@ test('provider configuration fits the assistant name limit with real workspace I
   assert.ok(config.name.length<=40);
   assert.ok(config.name.startsWith('CallerCore internal '));
 });
+test('provider read-back accepts reordered tool object keys but rejects changed credentials',()=>{
+  const config=createProvider({env}).assistantConfig({id:'tenant',name:'Business'},{},policy);
+  assert.equal(config.voice.voiceId,'marin');
+  const saved=structuredClone(config),reorder=v=>Array.isArray(v)?v.map(reorder):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).reverse().map(([k,x])=>[k,reorder(x)])):v;
+  saved.model.tools=reorder(saved.model.tools);
+  const {agentMatches}=require('../lib/voice-provider');
+  assert.equal(agentMatches(saved,config),true);
+  saved.model.tools[0].server.credentialId='wrong';
+  assert.equal(agentMatches(saved,config),false);
+});
 test('secret patterns are removed from transcript and summary before canonical storage',()=>{
   const n=normalizedCall({...call,artifact:{messages:[{role:'user',message:'sk-test_abcdefghijklmnopqrstuvwxyz0123456789'}]},analysis:{summary:'Bearer abcdefghijklmnopqrstuvwxyz0123456789'}});
   assert.equal(n.transcript[0].text,'[redacted]');assert.equal(n.summary,'[redacted]');
