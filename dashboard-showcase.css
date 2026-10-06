@@ -28,7 +28,7 @@
 @media(prefers-reduced-motion:reduce){.dashboard-layer,.dashboard-page-handle i,.dashboard-layer:not(.is-front) .dashboard-image-button{transition:none}.dashboard-layer:not(.is-front):hover{--stack-lift:0px}.dashboard-page-handle:hover i{transform:none}}
 
 /* Keep picture controls outside the independently scrollable canvas. */
-.dashboard-lightbox{width:min(1180px,calc(100vw - 40px));height:min(800px,80dvh);max-height:80dvh;max-width:none;overflow:hidden;margin:auto;border-radius:16px;background:#f6f8f5;padding:0}
+.dashboard-lightbox{width:min(1180px,calc(100% - 48px));height:min(800px,80dvh);max-height:80dvh;max-width:none;overflow:hidden;margin:auto;border-radius:16px;background:#f6f8f5;padding:0}
 .dashboard-lightbox[open]{display:flex;flex-direction:column}
 .dashboard-lightbox::backdrop{background:#081d1ba6;backdrop-filter:blur(4px)}
 .dashboard-lightbox header{position:relative;flex:none;width:100%;padding:12px 16px;background:#fffefa;color:#20372d;border-bottom:1px solid #dce5df;gap:12px}
@@ -44,5 +44,8 @@
 .dashboard-viewport.is-dragging{cursor:grabbing}
 .dashboard-canvas{display:grid;place-items:center;min-width:100%;min-height:100%;width:max-content;height:max-content}
 .dashboard-lightbox .dashboard-canvas img{display:block;max-width:none;max-height:none;user-select:none;pointer-events:none}
-@media(max-width:600px){.dashboard-lightbox{width:calc(100vw - 32px);height:78dvh;max-height:78dvh;border-radius:14px}.dashboard-lightbox header{width:100%;padding:10px 12px}.dashboard-lightbox header span{font-size:12px}.dashboard-lightbox [data-viewer-close]{padding:8px 12px}.dashboard-zoom-tools{gap:6px}}
+@media(max-width:600px){.dashboard-lightbox{width:calc(100% - 40px);height:78dvh;max-height:78dvh;border-radius:14px}.dashboard-lightbox header{width:100%;padding:10px 12px}.dashboard-lightbox header span{font-size:12px}.dashboard-lightbox [data-viewer-close]{padding:8px 12px}.dashboard-zoom-tools{gap:6px}}
+
+
+.public-site:has(.dashboard-lightbox[open]){overflow:hidden}
 
