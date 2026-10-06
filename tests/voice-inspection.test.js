@@ -1,9 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict'),{inspect}=require('../lib/voice-inspection');
 test('voice inspection refuses customer and billing-connected workspaces before reading calls',async()=>{
-  for(const ws of [{id:'tenant'},{voiceTestWorkspace:true,stripeCustomerId:'cus_test'},{voiceTestWorkspace:true,stripeSubscriptionId:'sub_test'}]){
+  for(const ws of [{id:'tenant'},{voiceTestWorkspace:true,stripeCustomerId:'cus_test'},{voiceTestWorkspace:true,stripeSubscriptionId:'sub_test'},{voiceTestWorkspace:true,deletedAt:1}]){
     const reads=[];assert.equal(await inspect({get:async key=>{reads.push(key);return ws}},'tenant'),null);assert.deepEqual(reads,['workspace:tenant']);
   }
 });
+
+test('inspection exposes recovery counts without cursor, provider errors or a fake scheduler',async()=>{const values={'workspace:test':{voiceTestWorkspace:true},'voice:recovery:test':{state:'attention',lastRunAt:1000,checked:2,failed:1,cursor:'private-call-id',error:'secret'}};const result=await inspect({get:async key=>values[key]},'test');assert.deepEqual(result.recovery,{state:'attention',lastRunAt:1000,checked:2,failed:1,automaticMode:'event_triggered',scheduledWorkerEnabled:false});assert.ok(!JSON.stringify(result.recovery).includes('private'));assert.ok(!JSON.stringify(result.recovery).includes('secret'))});
 test('voice inspection returns canonical results and current follow-up state without provider internals',async()=>{
   const values={'workspace:tenant':{voiceTestWorkspace:true,usage:{voiceMinutes:2.5}},'calls:tenant':[{id:'voice_1',source:'phone',caller:'Sam',category:'New service',disposition:'request_captured',outcome:'Follow-up',summary:'Repair',transcript:[['Caller','Bearer abcdefghijklmnopqrstuvwxyz0123456789']],providerCallId:'secret_provider_id',monitor:{controlUrl:'private'}},{id:'voice_2',source:'phone',disposition:'request_captured'},{id:'seed',source:'seed'}],'leads:tenant':[{source:'Phone call'},{source:'Website'}],'voice:contacts:tenant':[{id:'contact'}],'voice:pending:tenant':{voice_1:true},'followup:state:tenant':{voice_1:{status:'completed'}}};
   const result=await inspect({get:async key=>values[key]},'tenant');

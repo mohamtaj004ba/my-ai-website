@@ -11,7 +11,13 @@ module.exports=async function handler(req,res){
     const callId=req.body.message?.call?.id;
     const limit=await rateLimit({scope:'voice-webhook',identifier:String(callId||'invalid').slice(0,100),limit:100,windowSeconds:60,failClosed:true});
     if(limit.limited)return res.status(429).json({error:'Voice event limit reached'});
-    return res.status(200).json(await processMessage(kv,req.body.message));
+    const result=await processMessage(kv,req.body.message);
+    if(['status-update','end-of-call-report'].includes(req.body.message?.type)){
+      try{
+        require('@vercel/functions').waitUntil(require('../lib/voice-recovery').recoverAfterEvent(kv,callId).catch(()=>{console.error('CallerCore voice recovery pending','VOICE_RECOVERY_UNCONFIRMED')}));
+      }catch{console.error('CallerCore voice recovery pending','VOICE_RECOVERY_UNCONFIRMED')}
+    }
+    return res.status(200).json(result);
   }catch(e){
     const code=e instanceof VoiceError?e.code:'VOICE_EVENT_UNCONFIRMED';
     // Never print request bodies, provider response objects, credentials or transcripts.

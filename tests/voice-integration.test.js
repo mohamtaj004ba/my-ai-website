@@ -37,6 +37,7 @@ function memory(){
   const values=new Map([['workspace:tenant',{id:'tenant',name:'Test service business',voiceTestWorkspace:true,usage:{minutes:0}}],['voice:binding:assistant_test',structuredClone(binding)],['voice:number:number_test',structuredClone(binding)],['voice:config:tenant',{policy,purpose:'internal',assistantId:'assistant_test',numberId:'number_test',state:'ready',revision:1,agentRevision:0}],['agent:tenant',{}]]);
   let conflict=0;
   return {values,setConflict(n){conflict=n},async get(k){return structuredClone(values.get(k)??null)},async set(k,v,opts){if(opts?.nx&&values.has(k))return null;values.set(k,structuredClone(v));return 'OK'},async eval(script,keys,args){
+    if(script===require('../lib/voice-reconcile').RELEASE){if(values.get(keys[0])===args[0]){values.delete(keys[0]);return 1}return 0}
     assert.equal(script,CONFIG_COMPARE_AND_AUDIT_BATCH);if(conflict-->0)return 0;
     const count=Number(args[0]);for(let i=0;i<count;i++)if((values.has(keys[i])?JSON.stringify(values.get(keys[i])):'')!==args[i*2+1])return 0;
     const history=values.get(keys[count])||[];if(!Array.isArray(history))throw new Error('Corrupt audit');
@@ -53,6 +54,18 @@ test('authenticated active lifecycle submits call context once and records its t
   await processMessage(kv,event,{provider:p});await processMessage(kv,event,{provider:p});
   assert.equal(submissions,1);const record=[...kv.values].find(([key])=>key.startsWith('voice:call:'))[1];
   assert.equal(record.workspaceId,'tenant');assert.equal(record.speakerContextState,'submitted');assert.equal(record.status,'active');
+});
+
+test('delayed recovery runs the actual canonical processor without duplicate CRM or usage',async()=>{
+  const kv=memory(),ended={...call,status:'ended',endedAt:'2026-10-05T16:01:30Z',artifact:{messages:[]}};
+  await processMessage(kv,{type:'end-of-call-report',call:{id:call.id}},{provider:provider(ended)});
+  const id=require('../lib/voice-policy').revision(call.id),canonicalId='voice_'+id.slice(0,24);
+  const later={...ended,artifact:{messages:[{role:'user',message:'Just checking the office hours.'},{role:'assistant',message:'We open at nine.'}]}};
+  const process=(store,event)=>processMessage(store,event,{provider:provider(later)});
+  await require('../lib/voice-reconcile').reconcile(kv,'tenant',{process});
+  await require('../lib/voice-reconcile').reconcile(kv,'tenant',{process});
+  assert.equal(kv.values.get('calls:tenant').length,1);assert.equal(kv.values.get('workspace:tenant').usage.voiceMinutes,1.5);
+  assert.equal(kv.values.get('voice:call:'+canonicalId).transcriptState,'available');assert.deepEqual(kv.values.get('voice:pending:tenant'),{});assert.equal(kv.values.get('voice:recovery:tenant').state,'idle');
 });
 test('interactive provider reads retry transient failures but never access denial or rate limits',async()=>{
   for(const failure of ['timeout',503,401,429,'malformed']){
