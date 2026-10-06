@@ -128,6 +128,11 @@ test('Vapi GPT-Live config uses speaker/reasoner, saved credentials and recordin
 test('provider errors never include a raw response or secret',async()=>{
   const p=createProvider({env,fetchImpl:async()=>({ok:false,status:403,json:async()=>({secret:'do-not-leak'})})});await assert.rejects(p.retrieveCall('call'),e=>e.code==='VOICE_ACCESS_REQUIRED'&&!e.message.includes('do-not-leak'));
 });
+test('provider configuration fits the assistant name limit with real workspace IDs',()=>{
+  const config=createProvider({env}).assistantConfig({id:'voice_test_c62327723c4e4495a120c6aba96a2a28',name:'Business'},{},policy);
+  assert.ok(config.name.length<=40);
+  assert.ok(config.name.startsWith('CallerCore internal '));
+});
 test('secret patterns are removed from transcript and summary before canonical storage',()=>{
   const n=normalizedCall({...call,artifact:{messages:[{role:'user',message:'sk-test_abcdefghijklmnopqrstuvwxyz0123456789'}]},analysis:{summary:'Bearer abcdefghijklmnopqrstuvwxyz0123456789'}});
   assert.equal(n.transcript[0].text,'[redacted]');assert.equal(n.summary,'[redacted]');
