@@ -210,3 +210,9 @@ test('speaker has approved routine knowledge without a needless lookup handoff',
  await processMessage(kv,{...message('save_call_request',{intent:'estimate',reason:'Bathroom sink leak',confirmed:true},'correct-repeat'),call:{id:'repeat'}},{provider:provider({...call,id:'repeat'})});
  const leads=kv.values.get('leads:tenant');assert.equal(leads.length,1);assert.equal(leads[0].service,'Bathroom sink leak');assert.equal(leads[0].callIds.length,2);
  });
+
+ test('non-customer completion needs no intake and creates no lead or follow-up',async()=>{
+  const kv=memory();await processMessage(kv,message('complete_call',{disposition:'non_customer',summary:'Wrong number; caller said goodbye.'}),{provider:provider()});
+  await processMessage(kv,{type:'end-of-call-report',call:{id:call.id}},{provider:provider({...call,status:'ended',endedAt:'2026-10-05T16:00:25Z'})});
+  const view=kv.values.get('calls:tenant')[0];assert.equal(view.disposition,'non_customer');assert.equal(view.category,'Non-customer');assert.equal(view.outcome,'Resolved');assert.equal(kv.values.get('leads:tenant').length,0);
+ });

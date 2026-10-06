@@ -39,10 +39,8 @@ module.exports=async function handler(req,res){
     }
     if(action==='reconcile'){
       if(!admin)return res.status(403).json({error:'Administrator access required'});
-      const pending=await kv.get('voice:pending:'+workspaceId)||{};if(typeof pending!=='object'||Array.isArray(pending))throw new VoiceError('VOICE_STATE_INVALID');
-      let checked=0,failed=0;const {processMessage}=require('../lib/voice-service');
-      for(const id of Object.keys(pending).slice(0,25)){const record=await kv.get('voice:call:'+id);if(!record||record.workspaceId!==workspaceId){failed++;continue}try{await processMessage(kv,{type:'end-of-call-report',call:{id:record.providerCallId}});checked++}catch{failed++}}
-      return res.status(200).json({checked,failed,pending:Object.keys(await kv.get('voice:pending:'+workspaceId)||{}).length});
+      if(Object.keys(body).length)throw new VoiceError('VOICE_CONFIG_INVALID');
+      return res.status(200).json(await require('../lib/voice-reconcile').reconcile(kv,workspaceId));
     }
     if(action==='configure'){
       if(!admin)return res.status(403).json({error:'Administrator access required'});

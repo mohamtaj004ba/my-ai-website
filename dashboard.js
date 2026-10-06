@@ -1104,7 +1104,7 @@ function buildContacts(){
     if(!map.has(key))map.set(key,{key,name,phone:rec?.phone||'',address:rec?.address||'',calls:[],conversations:[],leads:[],lastAt:0,services:new Set()});
     const c=map.get(key);if(name&&c.name==='Unknown caller')c.name=name;if(rec?.phone&&!c.phone)c.phone=rec.phone;if(rec?.address&&!c.address)c.address=rec.address;c.lastAt=Math.max(c.lastAt,recordTime(rec)||0);if(rec?.reason)c.services.add(rec.reason);if(rec?.service)c.services.add(rec.service);if(nameNorm)nameIndex.set(nameNorm,key);return c;
   };
-  callsData.filter(x=>!['Spam','Wrong number'].includes(String(x.category||''))).forEach(x=>ensure(x,'caller').calls.push(x));
+  callsData.filter(x=>x.disposition!=='non_customer'&&!['Spam','Wrong number','Non-customer'].includes(String(x.category||''))).forEach(x=>ensure(x,'caller').calls.push(x));
   conversationsData.forEach(x=>ensure(x).conversations.push(x));
   leadsData.forEach(x=>ensure(x).leads.push(x));
   return [...map.values()].sort((a,b)=>b.lastAt-a.lastAt);
