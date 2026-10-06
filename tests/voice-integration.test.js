@@ -140,3 +140,19 @@ test('missing artifacts stay in durable reconciliation queue and complete artifa
   await ingest(kv,binding,normalizedCall(end));assert.equal(Object.keys(kv.values.get('voice:pending:tenant')).length,1);
   await ingest(kv,binding,normalizedCall({...end,artifact:{messages:[{role:'user',message:'Hello'}]}}));assert.equal(Object.keys(kv.values.get('voice:pending:tenant')).length,0);
 });
+
+test('old bindings cannot activate calls on a paying/customer workspace',async()=>{const kv=memory();kv.values.get('workspace:tenant').stripeCustomerId='customer';await assert.rejects(processMessage(kv,{type:'status-update',call:{id:call.id}},{provider:provider()}));assert.equal(kv.values.has('calls:tenant'),false)});
+test('voice endpoint uses current membership and ignores cross-workspace IDs from clients',async()=>{
+  const vm=require('node:vm'),fs=require('node:fs'),reads=[];let code,result;
+  const kv={get:async k=>{reads.push(k);return k.startsWith('user:')?{role:'client'}:null}};
+  const session={role:'admin',workspaceId:'tenant',email:'owner@example.test'};
+  const context=vm.createContext({module:{exports:{}},URL,Buffer,process:{env},require(path){if(path==='crypto')return require('crypto');if(path==='../lib/auth')return {requireSession:async()=>session};if(path==='../lib/kv')return {kv};if(path==='../lib/rate-limit')return {rateLimit:async()=>({limited:false})};if(path==='../lib/voice-provider')return {...require('../lib/voice-provider'),previewGate:()=>{}};return require(path.replace('../lib/','../lib/'))}});
+  vm.runInContext(fs.readFileSync('api/voice.js','utf8'),context);
+  const res={setHeader(){},status(n){code=n;return this},json(v){result=v;return v}};
+  await context.module.exports({method:'POST',headers:{host:'preview.vercel.app',origin:'https://preview.vercel.app'},query:{action:'configure',workspaceId:'victim'},body:{}},res);assert.equal(code,403);assert.equal(reads.includes('voice:config:victim'),false);
+  reads.length=0;await context.module.exports({method:'GET',headers:{},query:{workspaceId:'victim'}},res);assert.equal(code,200);assert.equal(reads.includes('voice:config:tenant'),true);assert.equal(reads.includes('voice:config:victim'),false);assert.equal(result.operations,undefined);
+});
+test('voice endpoint rejects cross-origin changes before reading or mutating voice data',async()=>{
+  const vm=require('node:vm'),fs=require('node:fs');let code;const context=vm.createContext({module:{exports:{}},URL,Buffer,process:{env},require(path){if(path==='crypto')return require('crypto');if(path==='../lib/auth')return {requireSession:async()=>({role:'admin',workspaceId:'tenant',email:'owner@example.test'})};if(path==='../lib/kv')return {kv:{get:async()=>assert.fail('Cross-origin request must stop before storage access')}};return require(path)}});
+  vm.runInContext(fs.readFileSync('api/voice.js','utf8'),context);await context.module.exports({method:'POST',headers:{host:'preview.vercel.app',origin:'https://evil.example'},query:{action:'configure'},body:{}},{setHeader(){},status(n){code=n;return this},json(v){return v}});assert.equal(code,403);
+});

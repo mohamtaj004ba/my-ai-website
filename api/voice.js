@@ -12,7 +12,10 @@ module.exports=async function handler(req,res){
   if(!['GET','POST'].includes(req.method))return res.status(405).json({error:'Method not allowed'});
   const session=await requireSession(req,res);if(!session)return;
   if(req.method==='POST'&&!sameOrigin(req))return res.status(403).json({error:'Refresh this page before trying again'});
-  const admin=session.role==='admin'&&!session.adminView;
+  const member=await kv.get('user:email:'+String(session.email||'').trim().toLowerCase());
+  if(!member||member.disabled)return res.status(403).json({error:'Workspace access is unavailable'});
+  const currentRole=member.role,actor={...session,role:currentRole};
+  const admin=currentRole==='admin'&&!session.adminView;
   let workspaceId=session.workspaceId;
   try{
     if(admin&&req.query.workspaceId)workspaceId=identifier(req.query.workspaceId);
@@ -41,10 +44,10 @@ module.exports=async function handler(req,res){
     }
     if(action==='configure'){
       if(!admin)return res.status(403).json({error:'Administrator access required'});
-      return res.status(200).json({voice:await configure(kv,workspaceId,body,session)});
+      return res.status(200).json({voice:await configure(kv,workspaceId,body,actor)});
     }
     if(action==='control'){
-      if(session.adminView||!['owner','admin'].includes(session.role))return res.status(403).json({error:'Owner access required'});
+      if(session.adminView||!['owner','admin'].includes(currentRole))return res.status(403).json({error:'Owner access required'});
       if(Object.keys(body).some(k=>!['paused','expectedRevision','fallbackNumber'].includes(k)))throw new VoiceError('VOICE_CONFIG_INVALID');
       return res.status(200).json({voice:await control(kv,workspaceId,body,session)});
     }
@@ -59,7 +62,7 @@ module.exports=async function handler(req,res){
       const desired=provider.assistantConfig(await kv.get('workspace:'+workspaceId),savedAgent,record.policy,{demo:record.purpose==='demo'});
       if(!match||agent.model?.model!=='gpt-live-1'||agent.artifactPlan?.recordingEnabled!==false||agent.model?.speaker?.instructions!==desired.model.speaker.instructions||agent.model?.reasoner?.instructions!==desired.model.reasoner.instructions||agent.server?.credentialId!==desired.server.credentialId||agent.server?.url!==desired.server.url)throw new VoiceError('VOICE_SYNC_UNVERIFIED');
       const next={...record,verifiedAt:Date.now()};
-      if(!await compareAndAuditBatch(kv,[{key,before:record,after:next}],'audit:'+workspaceId,{id:crypto.randomUUID(),workspaceId,actorEmail:session.email,actorRole:session.role,action:'voice_state_verified',section:'voice',at:Date.now()}))throw new VoiceError('VOICE_CONFIG_CONFLICT');
+      if(!await compareAndAuditBatch(kv,[{key,before:record,after:next}],'audit:'+workspaceId,{id:crypto.randomUUID(),workspaceId,actorEmail:session.email,actorRole:currentRole,action:'voice_state_verified',section:'voice',at:Date.now()}))throw new VoiceError('VOICE_CONFIG_CONFLICT');
       return res.status(200).json({voice:safeStatus(next)});
     }
     return res.status(404).json({error:'Voice action not found'});
