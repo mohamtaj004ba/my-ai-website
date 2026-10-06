@@ -9,3 +9,17 @@ test('Stripe checkout secrets are opaque: percent-encoded suffixes pass unchange
 test('checkout still rejects malformed identity, missing suffix, controls and unbounded secrets',()=>{
  for(const s of ['sk_test_secret','cs_test_fixture_secret_','cs_test_fixture_secret_bad\n','cs_test_fixture_secret_'+ 'a'.repeat(512)])assert.equal(accepts(s),false);
 });
+test('Checkout Elements initialization passes appearance through the supported elementsOptions contract',()=>{
+ const initialization=source.match(/embeddedCheckout=stripe\.initCheckoutElementsSdk\([^\n]+/)[0];
+ let called=false;
+ const context={data:{clientSecret:'cs_test_fixture_secret_encoded%2Fopaque%3D'},stripe:{initCheckoutElementsSdk(options){
+  called=true;
+  assert.deepEqual(Object.keys(options).sort(),['clientSecret','elementsOptions']);
+  assert.equal(options.clientSecret,context.data.clientSecret);
+  assert.equal(options.elementsOptions.appearance.variables.colorPrimary,'#b34a27');
+  return {providerCheckout:true};
+ }}};
+ vm.runInNewContext(initialization,context);
+ assert.equal(called,true);
+ assert.equal(context.embeddedCheckout.providerCheckout,true);
+});

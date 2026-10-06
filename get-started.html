@@ -117,7 +117,7 @@ document.getElementById('toPayment').addEventListener('click',async()=>{
       !/^cs_(?:live|test)_[A-Za-z0-9_]+_secret_[^\s\x00-\x1f\x7f]+$/.test(String(data.clientSecret||''))||String(data.clientSecret||'').length>512)throw new Error('Secure checkout response could not be verified');
     if(!window.Stripe) throw new Error('Stripe payment library did not load');
     const stripe=Stripe(data.publishableKey);
-    embeddedCheckout=stripe.initCheckoutElementsSdk({clientSecret:data.clientSecret,appearance:{variables:{colorPrimary:'#b34a27',fontSizeBase:'16px'}}});
+    embeddedCheckout=stripe.initCheckoutElementsSdk({clientSecret:data.clientSecret,elementsOptions:{appearance:{variables:{colorPrimary:'#b34a27',fontSizeBase:'16px'}}}});
     const loaded=await embeddedCheckout.loadActions();if(loaded.type!=='success')throw Error('Payment could not be prepared.');checkoutActions=loaded.actions;checkoutReceipt=data.receipt;
     document.getElementById('embeddedCheckout').innerHTML='';
     embeddedCheckout.createPaymentElement().mount('#embeddedCheckout');
