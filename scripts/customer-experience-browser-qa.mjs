@@ -17,6 +17,17 @@ export async function verifyCustomerExperience({makeContext,baseURL,shot,report}
   let loginOk=true;await page.route('**/api/account?action=request',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(loginOk?{ok:true}:null)}));
   await page.goto(baseURL+'/login');await page.locator('#email').fill('ui-fixture@example.test');await page.locator('#submit').click();await page.locator('#status[data-state=success]').waitFor();await assertLayout(page,'customer-'+label+'-sign-in-sent');await shot(page,'customer-'+label+'-sign-in-sent');
   loginOk=false;await page.locator('#submit').click();await page.locator('#status[data-state=error]').waitFor();await assertLayout(page,'customer-'+label+'-sign-in-unavailable');await shot(page,'customer-'+label+'-sign-in-unavailable');
+  await page.route('https://js.stripe.com/endive/stripe.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:`window.Stripe=function(){return {initCheckoutElementsSdk:function(){return {loadActions:async function(){return {type:'success',actions:{confirm:async function(){return {error:window.__paymentFixtureError};}}};},createPaymentElement:function(){return {mount:function(selector){document.querySelector(selector).textContent='Isolated payment form · no charge or card collection';}};},destroy:function(){}};}};};`}));
+  await page.route('**/api/create-checkout-session',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({receipt:'a'.repeat(48),publishableKey:'pk_test_uifixture',clientSecret:'cs_test_uifixture_secret_value',summary:{plan:'Starter',monthlyAmount:34900,setupAmount:50000,dueToday:84900}})}));
+  for(const [kind,error] of [['decline',{type:'card_error',message:'Your card has insufficient funds.'}],['connection',{type:'api_connection_error',message:'Connection interrupted.'}]]){
+   await page.goto(baseURL+'/get-started');await page.locator('#toBusiness').click();
+   for(const [name,value] of [['name','UI Fixture'],['business','Isolated example'],['email','ui-fixture@example.test'],['phone','2025550100']])await page.locator('#startForm [name="'+name+'"]').fill(value);
+   await page.locator('#startForm [name=industry]').selectOption({label:'Professional Services'});await page.locator('#startForm [name=billingTermsAccepted]').check();await page.locator('#toPayment').click();await page.locator('#confirmSignupPayment').waitFor({state:'visible'});await page.locator('#paymentTerms').check();
+   await page.evaluate(value=>{window.__paymentFixtureError=value;},error);await page.locator('#confirmSignupPayment').click();await page.locator('#paymentError').waitFor({state:'visible'});
+   if(kind==='connection'&&!await page.locator('.payment-status-link').isVisible())throw Error('Ambiguous payment lost its status recovery link');
+   if(kind==='decline'&&await page.locator('#confirmSignupPayment').isDisabled())throw Error('Card correction remained disabled after a clear decline');
+   await assertLayout(page,'customer-'+label+'-payment-'+kind);await shot(page,'customer-'+label+'-payment-'+kind);report.customerExperience.states.push(label+'-payment-'+kind);
+  }
   await context.close();
  }
 }

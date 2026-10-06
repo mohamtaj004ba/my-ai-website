@@ -32,17 +32,18 @@
       if(response.status===403&&!verifiedPaid){finished=true;render({state:'link',title:'Your confirmation is private.',message:'Open this link in the browser where you completed checkout.',detail:'This protects your payment details. If you’re using another device, our team can help you find your purchase.',terminal:true});return;}
       if(!response.ok||!data||typeof data.paid!=='boolean'||typeof data.onboarding!=='boolean')throw Error('Unverified confirmation');
       const p=presentation(data,verifiedPaid);verifiedPaid=verifiedPaid||!!p.paid;render(p);finished=!!p.terminal;
+      if(p.state==='open')$('checkoutLink').href='/get-started?resume='+encodeURIComponent(receipt);
       if(p.paid){$('confirmationReceipt').hidden=false;$('receiptPlan').textContent=['Starter','Growth','Pro'].includes(data.plan)?data.plan+' plan':'CallerCore plan';
         if(Number.isSafeInteger(data.amountTotal)&&data.amountTotal>=0&&/^[a-z]{3}$/i.test(data.currency||'')){try{$('receiptAmount').textContent=new Intl.NumberFormat(undefined,{style:'currency',currency:data.currency}).format(data.amountTotal/100);$('receiptAmountRow').hidden=false;}catch(_){}}
       }
-      if(p.account)sessionStorage.removeItem('cc_checkout_attempt');
+      if(p.account){sessionStorage.removeItem('cc_checkout_attempt');sessionStorage.removeItem('cc_checkout_draft');}
       $('checkNote').textContent=finished?'':'Last checked '+new Date().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})+'.';
     }catch(_){unavailable();}finally{clearTimeout(timeout);busy=false;$('checkConfirmation').disabled=false;$('checkConfirmation').textContent='Check status';}
     if(!finished&&++attempts<12)timer=setTimeout(check,Math.min(1500*Math.pow(1.5,attempts-1),15000));
     else if(!finished)$('checkNote').textContent=verifiedPaid?'Your payment is confirmed. You can check account setup again here, or contact our team.':'You can check again here whenever you’re ready. Our team can also help confirm your purchase.';
   }
   $('checkConfirmation').addEventListener('click',()=>{attempts=0;check(true);});
-  $('checkoutLink').addEventListener('click',()=>{if(card.dataset.state==='expired')sessionStorage.removeItem('cc_checkout_attempt');});
+  $('checkoutLink').addEventListener('click',()=>{if(card.dataset.state==='expired'){sessionStorage.removeItem('cc_checkout_attempt');sessionStorage.removeItem('cc_checkout_draft');}});
   scope.addEventListener('online',()=>{if(!finished){attempts=0;check();}});
   if(!/^[a-f0-9]{48}$/.test(receipt||'')){finished=true;render({state:'link',title:'Let’s find your confirmation.',message:'This page needs the private confirmation link from your checkout.',detail:'Open that link in the browser you used for payment, or contact our team and we’ll help locate your purchase.',terminal:true});return;}
   check();

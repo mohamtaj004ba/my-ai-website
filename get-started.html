@@ -119,6 +119,7 @@ document.getElementById('toPayment').addEventListener('click',async()=>{
     const stripe=Stripe(data.publishableKey);
     embeddedCheckout=stripe.initCheckoutElementsSdk({clientSecret:data.clientSecret,elementsOptions:{appearance:{variables:{colorPrimary:'#b34a27',fontSizeBase:'16px'}}}});
     const loaded=await embeddedCheckout.loadActions();if(loaded.type!=='success')throw Error('Payment could not be prepared.');checkoutActions=loaded.actions;checkoutReceipt=data.receipt;
+    try{sessionStorage.setItem('cc_checkout_draft',JSON.stringify({attemptId:checkoutPayload.attemptId,plan:checkoutPayload.plan,name:checkoutPayload.name,business:checkoutPayload.business,email:checkoutPayload.email,phone:checkoutPayload.phone,industry:checkoutPayload.industry,marketingEmailConsent:checkoutPayload.marketingEmailConsent,billingTermsAccepted:checkoutPayload.billingTermsAccepted}))}catch(_){}
     document.getElementById('embeddedCheckout').innerHTML='';
     embeddedCheckout.createPaymentElement().mount('#embeddedCheckout');
     document.getElementById('paymentTermsRow').hidden=false;document.getElementById('confirmSignupPayment').hidden=false;
@@ -136,6 +137,22 @@ document.getElementById('confirmSignupPayment').addEventListener('click',async()
   if(paymentProcessing||!checkoutActions)return;const errorBox=document.getElementById('paymentError');
   if(!document.getElementById('paymentTerms').checked){errorBox.textContent='Please review and accept the billing terms before payment.';errorBox.hidden=false;document.getElementById('paymentTerms').focus();return}
   paymentProcessing=true;const button=document.getElementById('confirmSignupPayment');button.disabled=true;document.getElementById('backToBusiness').disabled=true;button.textContent='Confirming payment…';errorBox.hidden=true;
-  try{const result=await checkoutActions.confirm();if(result?.error)throw Error(result.error.message||'Payment was not completed.');location.assign('/checkout-complete?receipt='+encodeURIComponent(checkoutReceipt))}catch(error){errorBox.textContent=error.message;errorBox.hidden=false;paymentProcessing=false;button.disabled=false;document.getElementById('backToBusiness').disabled=false;button.textContent='Confirm and pay'}
+  try{const result=await checkoutActions.confirm();if(result?.error)throw Object.assign(Error(result.error.message||'Your payment could not be completed. Review your payment details to continue.'),{type:result.error.type});location.assign('/checkout-complete?receipt='+encodeURIComponent(checkoutReceipt))}
+  catch(error){
+    const uncertain=['api_connection_error','api_error'].includes(error.type)||/failed to fetch|network|load failed|fetch failed|timed? ?out|aborted/i.test(error.message||'');
+    errorBox.textContent=uncertain?'The connection was interrupted while confirming payment. Check your payment status to see whether it completed.':error.message||'Your payment could not be completed. Review your payment details to continue.';
+    errorBox.hidden=false;paymentProcessing=false;button.disabled=uncertain;document.getElementById('backToBusiness').disabled=uncertain;button.textContent='Confirm and pay';
+    if(uncertain){const link=document.createElement('a');link.className='button payment-status-link';link.href='/checkout-complete?receipt='+encodeURIComponent(checkoutReceipt);link.textContent='Check payment status →';errorBox.appendChild(link);}
+  }
 });
+// Restore business details only for this browser's explicitly resumed original order.
+try{
+ const resume=new URLSearchParams(location.search).get('resume'),draft=JSON.parse(sessionStorage.getItem('cc_checkout_draft')||'null');
+ if(/^[a-f0-9]{48}$/.test(resume||'')&&draft?.attemptId===resume&&sessionStorage.getItem('cc_checkout_attempt')===resume&&PLAN[draft.plan]){
+  choose(draft.plan);const form=document.getElementById('startForm');
+  for(const key of ['name','business','email','phone','industry']){const field=form.elements.namedItem(key);if(field&&typeof draft[key]==='string')field.value=draft[key];}
+  for(const key of ['billingTermsAccepted','marketingEmailConsent']){const field=form.elements.namedItem(key);if(field)field.checked=draft[key]===true;}
+  showStage(2);
+ }
+}catch(_){}
 </script><script src="/site.js" defer></script><script src="/chat-widget.js" defer></script></body></html>
