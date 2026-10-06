@@ -54,6 +54,27 @@ test('authenticated active lifecycle submits call context once and records its t
   assert.equal(submissions,1);const record=[...kv.values].find(([key])=>key.startsWith('voice:call:'))[1];
   assert.equal(record.workspaceId,'tenant');assert.equal(record.speakerContextState,'submitted');assert.equal(record.status,'active');
 });
+test('interactive provider reads retry transient failures but never access denial or rate limits',async()=>{
+  for(const failure of ['timeout',503,401,429,'malformed']){
+    let reads=0;const p=createProvider({env,fetchImpl:async()=>{reads++;if(reads===1){if(failure==='timeout')throw Object.assign(new Error('timeout'),{name:'AbortError'});if(failure==='malformed')return {ok:true,status:200,json:async()=>{throw new SyntaxError('bad provider JSON')}};return {ok:false,status:failure}}return {ok:true,status:200,json:async()=>call}}});
+    if(failure==='timeout'||failure===503){assert.equal((await p.retrieveCall('call_test',{interactive:true})).id,'call_test');assert.equal(reads,2)}
+    else {await assert.rejects(p.retrieveCall('call_test',{interactive:true}));assert.equal(reads,1)}
+  }
+});
+test('interactive call verification has a bounded deadline and uncertain provider writes are never retried',async()=>{
+  let reads=0;const p=createProvider({env,fetchImpl:async(_url,options)=>{reads++;return new Promise((_,reject)=>options.signal.addEventListener('abort',()=>reject(Object.assign(new Error('timeout'),{name:'AbortError'})),{once:true}))}});
+  const started=Date.now();await assert.rejects(p.retrieveCall('call_test',{interactive:true}),e=>e.code==='VOICE_PROVIDER_TIMEOUT');assert.equal(reads,2);assert.ok(Date.now()-started<4500);
+  let writes=0;const writer=createProvider({env,fetchImpl:async()=>{writes++;throw Object.assign(new Error('timeout'),{name:'AbortError'})}});
+  await assert.rejects(writer.configureAgent('assistant_test',{}),e=>e.code==='VOICE_PROVIDER_TIMEOUT');assert.equal(writes,1);
+});
+test('failed live call verification returns actionable tool errors without any CRM mutation',async()=>{
+  const kv=memory(),before=JSON.stringify([...kv.values]);
+  const p={retrieveCall:async(_id,options)=>{assert.equal(options.interactive,true);throw new (require('../lib/voice-provider').VoiceError)('VOICE_PROVIDER_TIMEOUT')}};
+  const result=await processMessage(kv,message('save_call_request',{intent:'estimate',reason:'Repair',confirmed:true}),{provider:p});
+  assert.equal(JSON.parse(result.results[0].error).code,'VOICE_CALL_CHECK_UNAVAILABLE');assert.equal(JSON.stringify([...kv.values]),before);
+  const denied={retrieveCall:async()=>{throw new (require('../lib/voice-provider').VoiceError)('VOICE_ASSOCIATION_INVALID')}};
+  await assert.rejects(processMessage(kv,message('save_call_request',{confirmed:true}),{provider:denied}),e=>e.code==='VOICE_ASSOCIATION_INVALID');
+});
 test('production and disabled Preview reject every provider operation',async()=>{
   for(const e of [{VERCEL_ENV:'production',CALLERCORE_VOICE_PREVIEW_ENABLED:'true'},{VERCEL_ENV:'preview'}]){
     assert.throws(()=>previewGate(e));let called=false;const p=createProvider({env:e,fetchImpl:async()=>{called=true}});await assert.rejects(p.retrieveCall('a'));assert.equal(called,false);
