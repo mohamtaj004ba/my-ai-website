@@ -119,7 +119,7 @@ document.getElementById('toPayment').addEventListener('click',async()=>{
     const stripe=Stripe(data.publishableKey);
     embeddedCheckout=stripe.initCheckoutElementsSdk({clientSecret:data.clientSecret,elementsOptions:{appearance:{variables:{colorPrimary:'#b34a27',fontSizeBase:'16px'}}}});
     const loaded=await embeddedCheckout.loadActions();if(loaded.type!=='success')throw Error('Payment could not be prepared.');checkoutActions=loaded.actions;checkoutReceipt=data.receipt;
-    try{sessionStorage.setItem('cc_checkout_draft',JSON.stringify({attemptId:checkoutPayload.attemptId,plan:checkoutPayload.plan,name:checkoutPayload.name,business:checkoutPayload.business,email:checkoutPayload.email,phone:checkoutPayload.phone,industry:checkoutPayload.industry,marketingEmailConsent:checkoutPayload.marketingEmailConsent,billingTermsAccepted:checkoutPayload.billingTermsAccepted}))}catch(_){}
+    try{sessionStorage.setItem('cc_checkout_draft',JSON.stringify({attemptId:checkoutPayload.attemptId,plan:checkoutPayload.plan,name:checkoutPayload.name,business:checkoutPayload.business,email:checkoutPayload.email,phone:checkoutPayload.phone,industry:checkoutPayload.industry,marketingEmailConsent:checkoutPayload.marketingEmailConsent}))}catch(_){}
     document.getElementById('embeddedCheckout').innerHTML='';
     embeddedCheckout.createPaymentElement().mount('#embeddedCheckout');
     document.getElementById('paymentTermsRow').hidden=false;document.getElementById('confirmSignupPayment').hidden=false;
@@ -151,7 +151,7 @@ try{
  if(/^[a-f0-9]{48}$/.test(resume||'')&&draft?.attemptId===resume&&sessionStorage.getItem('cc_checkout_attempt')===resume&&PLAN[draft.plan]){
   choose(draft.plan);const form=document.getElementById('startForm');
   for(const key of ['name','business','email','phone','industry']){const field=form.elements.namedItem(key);if(field&&typeof draft[key]==='string')field.value=draft[key];}
-  for(const key of ['billingTermsAccepted','marketingEmailConsent']){const field=form.elements.namedItem(key);if(field)field.checked=draft[key]===true;}
+  for(const key of ['marketingEmailConsent']){const field=form.elements.namedItem(key);if(field)field.checked=draft[key]===true;}
   showStage(2);
  }
 }catch(_){}
