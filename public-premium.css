@@ -255,7 +255,7 @@
  .public-site .price-grid h3{font-size:36px}
  .public-site .price-grid article>a{padding-inline:8px;font-size:13px}
 }
-@keyframes public-menu-enter{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes public-menu-enter{from{opacity:0}to{opacity:1}}
 @media(max-width:900px){
  .public-site .site-header{height:76px;padding:0 24px;background:#fffefa;color:#192327;border-bottom:1px solid #e1e7e2;z-index:120;backdrop-filter:none}
  .public-site .site-header.scrolled{background:#fffefa;box-shadow:0 3px 16px #173a2c08}
