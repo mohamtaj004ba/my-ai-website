@@ -28,8 +28,9 @@
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
     try{
       const response=await fetch('/api/create-checkout-session?receipt='+encodeURIComponent(receipt),{headers:{Accept:'application/json'},signal:controller.signal}),data=await response.json().catch(()=>null);
+      if(response.status===403&&!verifiedPaid){finished=true;render({state:'link',title:'Your confirmation is private.',message:'Open this link in the browser where you completed checkout.',detail:'This protects your payment details. If you’re using another device, our team can help you find your purchase.',terminal:true});return;}
       if(!response.ok||!data||typeof data.paid!=='boolean'||typeof data.onboarding!=='boolean')throw Error('Unverified confirmation');
-      const p=presentation(data,verifiedPaid);verifiedPaid=verifiedPaid||p.paid;render(p);finished=!!p.terminal;
+      const p=presentation(data,verifiedPaid);verifiedPaid=verifiedPaid||!!p.paid;render(p);finished=!!p.terminal;
       if(p.paid){$('confirmationReceipt').hidden=false;$('receiptPlan').textContent=['Starter','Growth','Pro'].includes(data.plan)?data.plan+' plan':'CallerCore plan';
         if(Number.isSafeInteger(data.amountTotal)&&data.amountTotal>=0&&/^[a-z]{3}$/i.test(data.currency||'')){try{$('receiptAmount').textContent=new Intl.NumberFormat(undefined,{style:'currency',currency:data.currency}).format(data.amountTotal/100);$('receiptAmountRow').hidden=false;}catch(_){}}
       }
