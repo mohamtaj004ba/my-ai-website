@@ -1611,8 +1611,18 @@ async function runPublicSiteQA(){
           await page.locator('.dashboard-layer.is-front .dashboard-window-head [data-dashboard-expand]').click();
           await page.locator('.dashboard-lightbox[open]').waitFor();
           if(!(await page.locator('[data-full-title]').innerText()).includes('Contacts · sample workspace'))throw new Error('Dashboard enlargement lost its sample label');
-          await page.locator('.dashboard-lightbox button').click();
+          const viewer=page.locator('.dashboard-lightbox'),picture=page.locator('.dashboard-viewport');
+          const viewerBox=await viewer.boundingBox();if(viewerBox.x<12||viewerBox.y<12||viewerBox.width>viewport.width-24||viewerBox.height>viewport.height*.82)throw Error('Dashboard viewer leaves no outside dismissal space');
+          const fitted=await picture.evaluate(el=>({x:el.scrollWidth-el.clientWidth,y:el.scrollHeight-el.clientHeight}));if(fitted.x>2||fitted.y>2)throw Error('Dashboard picture did not initially fit');
+          await shot(page,'public-'+name+'-dashboard-viewer-fit',{fullPage:false});
+          for(let z=0;z<6;z++)await page.locator('[data-zoom-in]').click();
+          const enlarged=await picture.evaluate(el=>{el.scrollLeft=100;el.scrollTop=100;return {x:el.scrollWidth-el.clientWidth,y:el.scrollHeight-el.clientHeight,left:el.scrollLeft,top:el.scrollTop};});if(enlarged.x<=0||enlarged.y<=0||enlarged.left<=0||enlarged.top<=0)throw Error('Zoomed dashboard cannot scroll in both directions');
+          const closeBox=await page.locator('[data-viewer-close]').boundingBox();if(closeBox.y<viewerBox.y||closeBox.y+closeBox.height>viewport.height||closeBox.x+closeBox.width>viewport.width)throw Error('Dashboard close action escaped the viewer');
+          await shot(page,'public-'+name+'-dashboard-viewer-zoom',{fullPage:false});
+          await page.locator('[data-zoom-fit]').click();if(await page.locator('[data-zoom-level]').innerText()!=='100%')throw Error('Dashboard fit action did not reset zoom');
+          await page.locator('[data-viewer-close]').click();
           if(!await page.locator('.dashboard-layer.is-front .dashboard-window-head [data-dashboard-expand]').evaluate(el=>el===document.activeElement))throw new Error('Closing dashboard enlargement lost keyboard focus');
+          await page.locator('.dashboard-layer.is-front .dashboard-window-head [data-dashboard-expand]').click();await page.locator('.dashboard-lightbox[open]').waitFor();await page.mouse.click(4,viewport.height/2);if(await viewer.getAttribute('open')!==null)throw Error('Dashboard outside tap did not close preview');
           await shot(page,'public-'+name+'-dashboard-stack',{fullPage:false});
           await page.locator('#monthlyCalls').press('Home');for(let step=0;step<20;step++)await page.locator('#monthlyCalls').press('ArrowRight');
           if(await page.locator('#monthlyMinutes').innerText()!=='630'||!(await page.locator('#planSuggestion').innerText()).includes('Above Growth'))throw new Error('Call volume planner returned an incorrect estimate');
@@ -1754,3 +1764,4 @@ try{
   await Promise.allSettled(contexts.map(c=>c.close()));
   await browser.close();
 }
+
