@@ -21,6 +21,15 @@ function memory(){
 }
 function provider(current={...call}){return {retrieveCall:async()=>current,transfer:async()=>({state:'requested',connected:false})}}
 function message(name,args,id='tool_test'){return {type:'tool-calls',call:{id:'call_test'},toolCallList:[{id,function:{name,arguments:args}}]}}
+
+test('authenticated active lifecycle submits call context once and records its truthful state',async()=>{
+  const kv=memory();let submissions=0;
+  const p={...provider(),appendContext:async()=>{submissions++;return {submitted:true}}};
+  const event={type:'status-update',call:{id:'call_test'}};
+  await processMessage(kv,event,{provider:p});await processMessage(kv,event,{provider:p});
+  assert.equal(submissions,1);const record=[...kv.values].find(([key])=>key.startsWith('voice:call:'))[1];
+  assert.equal(record.workspaceId,'tenant');assert.equal(record.speakerContextState,'submitted');assert.equal(record.status,'active');
+});
 test('production and disabled Preview reject every provider operation',async()=>{
   for(const e of [{VERCEL_ENV:'production',CALLERCORE_VOICE_PREVIEW_ENABLED:'true'},{VERCEL_ENV:'preview'}]){
     assert.throws(()=>previewGate(e));let called=false;const p=createProvider({env:e,fetchImpl:async()=>{called=true}});await assert.rejects(p.retrieveCall('a'));assert.equal(called,false);
