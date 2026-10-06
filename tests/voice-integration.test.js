@@ -61,6 +61,12 @@ test('interactive provider reads retry transient failures but never access denia
     else {await assert.rejects(p.retrieveCall('call_test',{interactive:true}));assert.equal(reads,1)}
   }
 });
+test('verified assistant requires lifecycle callbacks and the intended reasoner effort',()=>{
+  const {agentMatches}=require('../lib/voice-provider'),desired=createProvider({env}).assistantConfig({id:'tenant',name:'Cedar'},{},policy);
+  const missing=structuredClone(desired);missing.serverMessages=['status-update','tool-calls'];assert.equal(agentMatches(missing,desired),false);
+  const changed=structuredClone(desired);changed.model.reasoner.reasoningEffort='high';assert.equal(agentMatches(changed,desired),false);
+  const extra=structuredClone(desired);extra.serverMessages.reverse();extra.serverMessages.push('speech-update');assert.equal(agentMatches(extra,desired),true);
+});
 test('interactive call verification has a bounded deadline and uncertain provider writes are never retried',async()=>{
   let reads=0;const p=createProvider({env,fetchImpl:async(_url,options)=>{reads++;return new Promise((_,reject)=>options.signal.addEventListener('abort',()=>reject(Object.assign(new Error('timeout'),{name:'AbortError'})),{once:true}))}});
   const started=Date.now();await assert.rejects(p.retrieveCall('call_test',{interactive:true}),e=>e.code==='VOICE_PROVIDER_TIMEOUT');assert.equal(reads,2);assert.ok(Date.now()-started<4500);
