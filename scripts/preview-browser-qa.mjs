@@ -37,6 +37,9 @@ const contexts=[];
 
 function attachDiagnostics(page,label){
   page.on('console',msg=>{
+    // This isolated fixture deliberately returns 401 to verify hidden admin controls.
+    // Keep all other console errors, including failures in authenticated contexts.
+    if(label==='voice-no-access'&&msg.type()==='error'&&msg.text()==='Failed to load resource: the server responded with a status of 401 (Unauthorized)')return;
     if(msg.type()==='error')report.consoleErrors.push({label,message:msg.text().slice(0,1200)});
   });
   page.on('pageerror',err=>report.pageErrors.push({label,message:String(err?.message||err).slice(0,1200)}));
@@ -44,6 +47,9 @@ function attachDiagnostics(page,label){
     try{
       const u=new URL(res.url());
       if(u.origin===parsed.origin&&u.pathname.startsWith('/api/')&&res.status()>=400){
+        if(label==='voice-no-access'&&u.pathname==='/api/account'&&u.searchParams.get('action')==='session'&&res.status()===401){
+          (report.expectedAuthDenials??=[]).push({label,status:401,url:u.pathname+u.search});return;
+        }
         report.apiErrors.push({label,status:res.status(),url:u.pathname+u.search});
       }
     }catch{}
