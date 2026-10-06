@@ -12,7 +12,7 @@
 
   async function getToken(){
     const r=await fetch('/api/reveal-token',{headers:{'Accept':'application/json'}});
-    if(!r.ok) throw new Error('token');
+    if(!r.ok) throw Object.assign(new Error('token'),{status:r.status});
     const data=await r.json().catch(()=>null);
     if(!data||typeof data!=='object'||Array.isArray(data)||!/^\d{13}\.[a-f0-9]{64}$/i.test(String(data.token||''))) throw new Error('token');
     token=data.token;
@@ -42,7 +42,7 @@
       if(wait) await new Promise(resolve=>setTimeout(resolve,wait));
 
       const r=await fetch('/api/demo-number',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({token})});
-      if(!r.ok) throw new Error('reveal');
+      if(!r.ok) throw Object.assign(new Error('reveal'),{status:r.status});
       const d=await r.json().catch(()=>null);
       if(!d||typeof d!=='object'||Array.isArray(d)||!/^\+[1-9]\d{7,14}$/.test(String(d.number||''))||
         !String(d.display||'').trim()||String(d.display).length>40)throw new Error('reveal');
@@ -53,8 +53,9 @@
       status.textContent='Demo number revealed.';
       if(matchMedia('(pointer:coarse)').matches) location.href='tel:'+num;
     }catch(e){
-      label.textContent='Try again';
-      status.textContent='We could not reveal the demo line. Please try again.';
+      label.textContent='Check demo availability';
+      status.textContent=e.status===503?'The phone demo is currently unavailable. You can explore the sample dashboard or ask us about a demo for your business.':e.status===429?'The demo is receiving a lot of requests. You can explore the dashboard or contact us to arrange a demo.':'We could not check the phone demo right now. You can explore the dashboard or contact us about a demo for your business.';
+      document.getElementById('demoFallback').hidden=false;
       token=null;btn.disabled=false;
     }
   });

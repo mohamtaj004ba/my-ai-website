@@ -182,3 +182,9 @@ For each new call record the provider/canonical call IDs, runtime SHA, assistant
 - A focused autonomous review found that future-dated provider verification and truthy non-boolean acceptance values could pass the public demo release gate. Tightened the gate to require fresh, finite, non-future verification, a positive integer settings revision, explicit boolean acceptance, matching canonical call identity, verified duration and an active isolated workspace.
 - Added regression coverage for malformed evidence, stale/future timestamps, inactive or mismatched workspaces and call records. All 1,819 local tests pass. Test acceptance records exist only in in-memory unit fixtures; no actual acceptance evidence or release flags were created.
 - No assistant configuration, credentials, phone routing, recording, payment or Production changes. Public demo disclosure remains gated. Actual phone quality/transfer testing and privacy review remain deferred. This backend-only hardening does not establish new acoustic acceptance.
+
+
+### Demo availability experience follow-up
+
+- Browser verification of guard runtime 6934c2b8e56a46eef73fb4c09a07c17aeae2279f confirmed the public line remained unavailable, but revealed an unhelpful generic retry message after clicking Check demo availability. Fixed the public experience to retain clear unavailable/rate-limit/network explanations and dashboard/contact alternatives. No automatic retries, leaked number or provider activation.
+- Actual inline-page regression tests exercise token failure, number failure, rate limits, network errors and successful verified-number reveal. Combined local suite: 1,822 passing tests, zero failures. Provider acceptance and legal review remain unverified; unit fixtures are not actual acceptance evidence. Production remains unchanged.
