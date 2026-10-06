@@ -17,7 +17,7 @@
       <button class="nav-item" data-view="contacts">Contacts</button>
       <button class="nav-item" data-view="leads">Follow-ups <span class="nav-count" id="followupNavCount" hidden>0</span></button>
       <div class="nav-label">CallerCore</div><button type="button" class="nav-item sidebar-intelligence" id="clientSidebarIntelligence" aria-controls="adminAiPanel" hidden>✦ Core Intelligence <span class="lock">PRO</span></button>
-      <button class="nav-item" data-view="agent">AI Receptionist</button>
+      <button class="nav-item" data-view="agent">AI Phone Assistant</button>
       <button class="nav-item" data-view="analytics" data-feature="advancedAnalytics">Insights <span class="lock">GROWTH</span></button>
       <button class="nav-item" data-view="integrations">Connections</button>
       <div class="nav-label">Account</div>
@@ -65,7 +65,7 @@
       </div>
 
       <article class="panel overview-ai-status-card">
-        <div class="panel-head"><div><span class="eyebrow">AI receptionist</span><h2 id="overviewAgentName">Checking receptionist…</h2></div><button data-view="agent">Receptionist settings →</button></div>
+        <div class="panel-head"><div><span class="eyebrow">AI phone assistant</span><h2 id="overviewAgentName">Checking receptionist…</h2></div><button data-view="agent">Receptionist settings →</button></div>
         <div class="ai-live-banner overview-ai-live" id="aiCoverageBanner"><div class="ai-live-visual" aria-hidden="true"><span class="ai-live-core"></span><i></i><i></i><i></i></div><div class="ai-live-copy"><span id="aiCoverageEyebrow">AI ANSWERING</span><strong id="aiCoverageTitle">Checking call coverage…</strong><small id="aiCoverageCopy">Confirming phone routing and answering status.</small></div><button class="secondary-btn" data-view="settings">Manage answering</button></div>
       </article>
 
@@ -164,13 +164,13 @@
       </div>
     </section>
     <section class="view" id="view-agent">
-      <div class="page-head"><div><span class="eyebrow">AI Receptionist</span><h1>Manage your receptionist.</h1><p>Review your business information, voice, and call-handling preferences. Saving this setup does not activate live calling.</p></div><div class="page-actions"><span class="tag" id="agentSaveStatus" role="status" aria-live="polite" aria-atomic="true">Checking…</span><a class="secondary-btn agent-test-call disabled-link" id="agentTestCall" aria-disabled="true" tabindex="-1" hidden>Call receptionist</a></div></div>
+      <div class="page-head"><div><span class="eyebrow">AI Phone Assistant</span><h1>Manage your receptionist.</h1><p>Review your business information, voice, and call-handling preferences. Saving this setup does not activate live calling.</p></div><div class="page-actions"><span class="tag" id="agentSaveStatus" role="status" aria-live="polite" aria-atomic="true">Checking…</span><a class="secondary-btn agent-test-call disabled-link" id="agentTestCall" aria-disabled="true" tabindex="-1" hidden>Call receptionist</a></div></div>
       <p id="agentFormStatus" class="form-status-line" role="status" aria-live="polite"></p>
       <div class="agent-layout">
         <article class="panel form-card agent-section-card" data-agent-section-card="identity">
           <div class="section-title-row agent-section-head"><div><span class="eyebrow">Identity & voice</span><h2>How your receptionist sounds</h2></div><div class="agent-section-actions"><button class="inline-note-button" data-agent-edit="identity" type="button">Edit</button><button class="inline-note-button" data-agent-cancel="identity" type="button" hidden>Cancel</button><button class="primary compact-save" data-agent-save="identity" type="button" hidden>Save</button></div></div>
           <label>Agent name<input id="agentName" maxlength="80" value=""></label>
-          <label>Role<input id="agentRole" maxlength="120" value="AI Receptionist"></label>
+          <label>Role<input id="agentRole" maxlength="120" value="AI Phone Assistant"></label>
           <label>Tone<select id="agentTone"><option>Warm & professional</option><option>Friendly & conversational</option><option>Direct & efficient</option><option>Luxury & polished</option></select></label>
           <label>Opening message<textarea id="agentOpening" maxlength="1200"></textarea></label>
         </article>
@@ -245,7 +245,7 @@
       <div class="page-head"><div><span class="eyebrow">Connections</span><h1>CallerCore in your daily operation.</h1><p>See what is connected, what CallerCore is syncing, and where your customer data goes next.</p></div></div>
       <div class="connection-health-grid">
         <article class="panel connection-health"><span class="connection-icon">☎</span><div><small>PHONE ROUTING</small><h3 id="connectionPhoneTitle">Checking line…</h3><p id="connectionPhoneCopy">Verifying your CallerCore number and transfer path.</p></div><span class="tag" id="connectionPhoneStatus">Checking</span></article>
-        <article class="panel connection-health"><span class="connection-icon">AI</span><div><small>AI RECEPTIONIST</small><h3 id="connectionAgentTitle">Checking receptionist…</h3><p id="connectionAgentCopy">Verifying the active call-handling configuration.</p></div><span class="tag" id="connectionAgentStatus">Checking</span></article>
+        <article class="panel connection-health"><span class="connection-icon">AI</span><div><small>AI PHONE ASSISTANT</small><h3 id="connectionAgentTitle">Checking receptionist…</h3><p id="connectionAgentCopy">Verifying the active call-handling configuration.</p></div><span class="tag" id="connectionAgentStatus">Checking</span></article>
         <article class="panel connection-health"><span class="connection-icon">↻</span><div><small>CRM / FIELD SERVICE</small><h3>Optional connection</h3><p>If your team uses another CRM or field-service platform, CallerCore can hand off captured requests there. Otherwise, no setup is required.</p><button class="inline-link" data-view="support">Request an integration →</button></div><span class="tag">Optional</span></article>
         <article class="panel connection-health"><span class="connection-icon">▦</span><div><small>CALENDAR / SCHEDULING</small><h3>Google Calendar</h3><p>Calendar booking is planned for a later release. Scheduling remains outside CallerCore until the calendar capability is explicitly enabled.</p></div><span class="tag amber" id="googleCalendarStatus">Not connected</span></article>
       </div>

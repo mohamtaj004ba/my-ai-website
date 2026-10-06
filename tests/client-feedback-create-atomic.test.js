@@ -32,7 +32,7 @@ function fixture({global=null,workspace=null,fail=false,conflict=false,alwaysCon
     requireWritableSession:async()=>deny?null:{workspaceId:'customer',email:'test@example.invalid',role:'owner'},
     kv,compareAndAuditBatch,aiFeedbackWorkspaceIndexKey:id=>'ai-feedback:workspace:'+id,crypto:{randomBytes:()=>({toString:()=> '0123456789abcdef'}),randomUUID:()=> 'audit-1'},
     Date:{now:()=>1000},Array,Promise,Set,String,console:{error:()=>{}},safeError:()=>({}),
-    req:{body:{source:'receptionist',category:'tone',message:'Please speak more slowly',context:'AI receptionist'}},
+    req:{body:{source:'receptionist',category:'tone',message:'Please speak more slowly',context:'AI phone assistant'}},
     res:{status(code){status=code;return this},json(data){response=data;return data}}
   });
   vm.runInContext(api.slice(start,end),ctx);

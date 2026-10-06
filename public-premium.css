@@ -255,25 +255,28 @@
  .public-site .price-grid h3{font-size:36px}
  .public-site .price-grid article>a{padding-inline:8px;font-size:13px}
 }
+@keyframes public-menu-enter{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:900px){
- .public-site .site-header{height:76px;padding:0 24px;background:#1c3034;color:#fff;border-bottom:3px solid #b44e2d;z-index:120}
- .public-site .site-header.scrolled{background:#1c3034;box-shadow:0 4px 20px #102a3020}
- .public-site .site-header .brand{color:#fff;font-size:23px;gap:9px}
- .public-site .site-header .brand b{color:#ef996c}
+ .public-site .site-header{height:76px;padding:0 24px;background:#fffefa;color:#192327;border-bottom:1px solid #e1e7e2;z-index:120;backdrop-filter:none}
+ .public-site .site-header.scrolled{background:#fffefa;box-shadow:0 3px 16px #173a2c08}
+ .public-site .site-header .brand{color:#192327;font-size:23px;gap:9px}
+ .public-site .site-header .brand b{color:#ad4627}
  .public-site .site-header .brand img{width:28px;height:28px}
  .public-site .header-actions{display:none}
- .public-site .menu{display:flex;align-items:center;justify-content:center;gap:10px;margin-left:auto;min-width:94px;min-height:46px;padding:10px 14px;border:1px solid #698082;border-radius:12px;background:#ffffff0b;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
- .public-site .menu:before{content:'';width:18px;height:14px;background:linear-gradient(#fff,#fff) 0 0/18px 2px no-repeat,linear-gradient(#fff,#fff) 0 6px/13px 2px no-repeat,linear-gradient(#fff,#fff) 0 12px/18px 2px no-repeat}
- .public-site .menu[aria-expanded=true]:before{background:linear-gradient(45deg,transparent 45%,#fff 46%,#fff 54%,transparent 55%),linear-gradient(-45deg,transparent 45%,#fff 46%,#fff 54%,transparent 55%);height:18px}
- .public-site .nav-backdrop:not([hidden]){display:block;position:fixed;inset:76px 0 0;z-index:110;background:#12242680;border:0;border-radius:0;padding:0;cursor:pointer}
- .public-site .site-header nav{position:fixed;top:88px;left:auto;right:16px;bottom:auto;width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 104px);overflow:auto;padding:16px 20px 20px;background:#fff;border:1px solid #d6e1dc;border-radius:18px;box-shadow:0 16px 44px #102a3033;gap:0;grid-template-columns:1fr 1fr;color:#192327}
- .public-site .site-header nav.open{display:grid}
- .public-site .site-header nav:before{content:'Explore CallerCore';grid-column:1/-1;padding:4px 0 10px;color:#61736b;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
- .public-site .site-header nav>a{display:flex;align-items:center;justify-content:space-between;grid-column:1/-1;min-height:48px;padding:12px 2px;font-size:17px;font-weight:600;border-bottom:1px solid #e5ece8;color:#223b35}
- .public-site .site-header nav>a:not(.nav-mobile-only):after{content:'↗';display:block;position:static;background:none;height:auto;margin-left:auto;color:#9b4a2e}
- .public-site .site-header nav>a.nav-mobile-only:not(.nav-mobile-cta){grid-column:auto;min-height:44px;margin:12px 0 0;padding:10px 0;border:0;font-size:14px}
+ .public-site .menu{display:flex;align-items:center;justify-content:center;gap:10px;margin-left:auto;min-width:94px;min-height:46px;padding:10px 14px;border:1px solid #dce5df;border-radius:10px;background:#edf2ee;color:#233d35;font-size:14px;font-weight:600;cursor:pointer;box-shadow:none}
+ .public-site .menu:before{content:'';width:18px;height:14px;background:linear-gradient(#233d35,#233d35) 0 2px/18px 2px no-repeat,linear-gradient(#233d35,#233d35) 0 10px/18px 2px no-repeat}
+ .public-site .menu[aria-expanded=true]{background:#e4ece6;border-color:#bdcec1}
+ .public-site .menu[aria-expanded=true]:before{background:linear-gradient(45deg,transparent 45%,#233d35 46%,#233d35 54%,transparent 55%),linear-gradient(-45deg,transparent 45%,#233d35 46%,#233d35 54%,transparent 55%);height:18px}
+ .public-site .nav-backdrop:not([hidden]){display:block;position:fixed;inset:76px 0 0;z-index:110;background:#17352a20;border:0;border-radius:0;padding:0;cursor:pointer}
+ .public-site .site-header nav{position:fixed;top:76px;left:0;right:0;bottom:auto;width:100%;max-height:calc(100dvh - 76px);overflow:auto;overscroll-behavior:contain;padding:20px 24px 24px;background:#fffefa;border:0;border-bottom:1px solid #dce5df;border-radius:0;box-shadow:0 16px 28px #17352a0c;gap:0;grid-template-columns:1fr 1fr;color:#192327}
+ .public-site .site-header nav.open{display:grid;animation:public-menu-enter .22s ease-out}
+ .public-site .site-header nav:before{content:'Explore CallerCore';grid-column:1/-1;padding:0 0 14px;color:#728078;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+ .public-site .site-header nav>a{display:flex;align-items:center;justify-content:space-between;grid-column:1/-1;min-height:56px;padding:14px 0;font-size:20px;font-weight:600;letter-spacing:-.025em;border-bottom:1px solid #e5ece6;color:#233d35}
+ .public-site .site-header nav>a:not(.nav-mobile-only):after{content:'→';display:block;position:static;background:none;height:auto;margin-left:auto;color:#9d6a51;font-size:19px;transition:transform .18s ease}
+ .public-site .site-header nav>a:not(.nav-mobile-only):hover:after{transform:translateX(3px)}
+ .public-site .site-header nav>a.nav-mobile-only:not(.nav-mobile-cta){grid-column:auto;min-height:48px;margin:10px 0 0;padding:12px 0;border:0;font-size:14px;letter-spacing:0}
  .public-site .site-header nav>a.nav-mobile-demo{justify-content:flex-end;color:#9b4327!important}
- .public-site .site-header nav>a.nav-mobile-cta{grid-column:1/-1;justify-content:center;min-height:48px;margin-top:8px!important;border-radius:10px;background:#a84223}
+ .public-site .site-header nav>a.nav-mobile-cta{grid-column:1/-1;justify-content:center;min-height:50px;margin-top:8px!important;border-radius:10px;background:#ad4627;font-size:16px;letter-spacing:0}
  .public-site :is(section,main)[id]{scroll-margin-top:96px}
  .public-site .final{display:grid;gap:20px}
  .public-site .final .actions{display:flex;margin:0;gap:10px}
@@ -359,3 +362,6 @@
  .public-site .legal{padding:28px 20px 36px}
  .public-site .legal h1{font-size:34px}
 }
+
+@media(prefers-reduced-motion:reduce){.public-site .site-header nav.open{animation:none}}
+

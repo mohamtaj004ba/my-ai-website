@@ -1588,6 +1588,8 @@ async function runPublicSiteQA(){
             await page.locator('.menu').click();await page.locator('#primary-nav.open').waitFor();
             if(await page.locator('.menu').getAttribute('aria-expanded')!=='true')throw new Error('Public mobile menu did not announce its open state');
             if(!await page.locator('#primary-nav a').first().evaluate(el=>el===document.activeElement))throw new Error('Opening phone navigation did not focus its first link');
+            const menuGeometry=await page.evaluate(()=>{const header=document.querySelector('.site-header'),nav=document.getElementById('primary-nav'),h=header.getBoundingClientRect(),n=nav.getBoundingClientRect();return {headerBottom:h.bottom,navTop:n.top,left:n.left,right:n.right,width:innerWidth,background:getComputedStyle(header).backgroundColor,radius:getComputedStyle(nav).borderRadius};});
+            if(Math.abs(menuGeometry.navTop-menuGeometry.headerBottom)>2||Math.abs(menuGeometry.left)>1||Math.abs(menuGeometry.right-menuGeometry.width)>2||menuGeometry.radius!=='0px'||menuGeometry.background!=='rgb(255, 254, 250)')throw Error('Mobile navigation is detached or the light header regressed: '+JSON.stringify(menuGeometry));
             const menuSize=await page.locator('.menu').boundingBox();
             if(menuSize.width<90||menuSize.height<44||!await page.locator('.nav-backdrop').isVisible())throw new Error('Phone navigation lacks a prominent control or dismissible backdrop');
             await page.locator('#primary-nav a').last().focus();await page.keyboard.press('Tab');
