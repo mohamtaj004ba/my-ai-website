@@ -2812,7 +2812,7 @@ function environmentScopeHealth(){
   const env=String(process.env.VERCEL_ENV||'').toLowerCase();
   const stripeSecret=String(process.env.STRIPE_SECRET_KEY||'');
   const stripePublishable=String(process.env.STRIPE_PUBLISHABLE_KEY||'');
-  const secretMode=(stripeSecret.match(/^sk_(live|test)_/)||[])[1]||'',publishableMode=(stripePublishable.match(/^pk_(live|test)_/)||[])[1]||'',issues=[];
+  const secretMode=(stripeSecret.match(/^(?:sk|rk)_(live|test)_/)||[])[1]||'',publishableMode=(stripePublishable.match(/^pk_(live|test)_/)||[])[1]||'',issues=[];
   if(stripeSecret&&!secretMode)issues.push('Stripe secret key mode is not recognizable');
   if(stripePublishable&&!publishableMode)issues.push('Stripe publishable key mode is not recognizable');
   if(secretMode&&publishableMode&&secretMode!==publishableMode)issues.push('Stripe secret and publishable key modes do not match');

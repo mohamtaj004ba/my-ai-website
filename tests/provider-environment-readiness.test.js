@@ -29,6 +29,16 @@ test('Preview test credentials require an explicit isolated Price catalog',()=>{
   assert.equal(result.ok,false);assert.ok(Array.from(result.issues).some(issue=>/explicit test Price IDs/.test(issue)));
 });
 
+test('restricted Stripe keys follow the same environment boundaries as standard keys',()=>{
+  const preview={VERCEL_ENV:'preview',STRIPE_SECRET_KEY:'rk_test_fixture',STRIPE_PUBLISHABLE_KEY:'pk_test_fixture',STRIPE_STARTER_PRICE_ID:'price_starter',STRIPE_GROWTH_PRICE_ID:'price_growth',STRIPE_PRO_PRICE_ID:'price_pro',STRIPE_SETUP_PRICE_ID:'price_setup'};
+  assert.equal(environmentHealth(preview).ok,true);
+  assert.equal(environmentHealth({...preview,STRIPE_SECRET_KEY:'rk_live_fixture'}).ok,false);
+  assert.equal(environmentHealth({...preview,VERCEL_ENV:'production'}).ok,false);
+  assert.equal(environmentHealth({VERCEL_ENV:'production',STRIPE_SECRET_KEY:'rk_live_fixture',STRIPE_PUBLISHABLE_KEY:'pk_live_fixture'}).ok,true);
+  assert.equal(environmentHealth({...preview,STRIPE_SETUP_PRICE_ID:''}).ok,false);
+  assert.equal(environmentHealth({...preview,STRIPE_SECRET_KEY:'unrecognized_fixture'}).ok,false);
+});
+
 test('checkout rejects invalid environment modes before starting a Stripe request',()=>{
   assert.match(checkout,/function stripeCredentialModesValid\(\)/);
   assert.match(checkout,/env==='preview'.*secretMode==='live'/s);
