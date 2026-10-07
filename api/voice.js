@@ -42,6 +42,11 @@ module.exports=async function handler(req,res){
       if(Object.keys(body).length)throw new VoiceError('VOICE_CONFIG_INVALID');
       return res.status(200).json(await require('../lib/voice-reconcile').reconcile(kv,workspaceId));
     }
+    if(action==='retention-review'){
+      if(!admin)return res.status(403).json({error:'Administrator access required'});
+      if(Object.keys(body).length)throw new VoiceError('VOICE_CONFIG_INVALID');
+      return res.status(200).json({retention:await require('../lib/voice-retention').review(kv,workspaceId)});
+    }
     if(action==='configure'){
       if(!admin)return res.status(403).json({error:'Administrator access required'});
       return res.status(200).json({voice:await configure(kv,workspaceId,body,actor)});
@@ -72,5 +77,5 @@ module.exports=async function handler(req,res){
     return res.status(404).json({error:'Voice action not found'});
   }catch(e){const code=e instanceof VoiceError?e.code:'VOICE_REQUEST_UNCONFIRMED';
     if(verificationSnapshot&&code!=='VOICE_CONFIG_CONFLICT')try{await compareAndAuditBatch(kv,[{key:'voice:config:'+workspaceId,before:verificationSnapshot,after:{...verificationSnapshot,state:'error',errorCode:code,verifiedAt:null}}],'audit:'+workspaceId,{id:crypto.randomUUID(),workspaceId,actorEmail:session.email,actorRole:currentRole,action:'voice_verification_failed',section:'voice',at:Date.now()})}catch{/* Do not claim a failed invalidation was saved. */}
-    return res.status(code==='VOICE_CONFIG_CONFLICT'?409:503).json({error:'The voice change could not be confirmed. Your saved settings are preserved; check the current state before trying again.',code})}
+    return res.status(code==='VOICE_CONFIG_CONFLICT'?409:503).json({error:req.query.action==='retention-review'?'The data review could not be completed. No records were changed.':'The voice change could not be confirmed. Your saved settings are preserved; check the current state before trying again.',code})}
 };

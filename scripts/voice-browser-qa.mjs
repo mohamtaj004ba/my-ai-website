@@ -24,9 +24,16 @@ export async function verifyVoiceOperations({makeContext,baseURL,shot,report}){
   if(await page.locator('[name=maxDurationSeconds]').inputValue()!=='180')throw Error('Saved duration was not loaded');
   await page.locator('#voice-config button[type=submit], #voice-config .actions button:not([type])').click();await page.locator('#save-status').getByText('Test configuration saved',{exact:false}).waitFor();
   if(savedPolicy?.holidays?.[0]!=='2026-12-25'||savedPolicy.maxDurationSeconds!==180)throw Error('Voice save erased holiday/duration policy');
+  await page.unroute('**/api/voice?*');await page.route('**/api/voice?*',r=>r.fulfill({json:r.request().url().includes('action=retention-review')?{retention:{checkedAt:Date.now(),mode:'review_only',deletionEnabled:false,counts:{calls:12,transcriptReview:2,recordingReview:0,metadataReview:0,unknownDates:1,activeCalls:0}}}:body}));
+  await page.locator('#review-retention').click();await page.locator('#retention-status').getByText('No records were changed.',{exact:false}).waitFor();
+  if(await page.locator('#retention-metrics article').count()!==6)throw Error('Retention review did not show verified counters');
+  if(!await page.getByText('Automatic deletion is off.',{exact:false}).isVisible())throw Error('Retention review omitted the deletion gate');
+  const retentionLayout=await page.evaluate(()=>({width:innerWidth,scrollWidth:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)}));if(retentionLayout.scrollWidth>retentionLayout.width+4)throw Error('Retention review overflow '+name);
+  await shot(page,'voice-'+name+'-retention-review');report.voiceOperations.states.push(name+'-retention-review');
   page.__callerCoreExpectedVoiceTimeout=true;await page.unroute('**/api/voice?*');await page.route('**/api/voice?*',r=>r.fulfill({status:503,json:{code:'VOICE_PROVIDER_TIMEOUT',error:'Voice provider timed out'}}));
   await page.locator('#verify-state').click();await page.locator('#save-status').getByText('Voice provider timed out').waitFor();if(!await page.locator('#pause-voice').isDisabled()||!await page.locator('#resume-voice').isDisabled())throw Error('Failed verification kept answering controls enabled');
   await page.locator('[name=workspaceId]').fill('other-fixture');if(!await page.locator('#pause-voice').isDisabled()||!await page.locator('#resume-voice').isDisabled())throw Error('Workspace switch retained prior controls');
+  if(await page.locator('#retention-metrics article').count())throw Error('Workspace switch retained another workspace’s retention results');
   report.voiceOperations.states.push(name+'-policy-preserved',name+'-failed-verification',name+'-workspace-switch-guarded');await context.close();
  }
  const {context,page}=await makeContext({width:390,height:844},'voice-no-access');await page.route('**/api/account?action=session',r=>r.fulfill({status:401,json:{error:'Authentication required'}}));await page.goto(baseURL+'/voice-operations.html');await page.locator('#page-status').getByText('Sign in with an administrator account').waitFor();if(await page.locator('#operations').isVisible())throw Error('Voice controls shown without access');await context.close();

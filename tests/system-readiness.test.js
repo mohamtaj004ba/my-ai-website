@@ -1,7 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {classifyReadiness,VERIFIED_APPLICATION}=require('../lib/system-readiness');
-const {LIVE_BILLING_AUDIT,SUPPORT_EMAIL_EVIDENCE}=require('../lib/billing-readiness');
+const {LIVE_BILLING_AUDIT,SUPPORT_EMAIL_EVIDENCE,billingAcceptanceServices}=require('../lib/billing-readiness');
 const row=(key,status='pending')=>({key,name:key,status,detail:'Check '+key});
 const fs=require('node:fs'),vm=require('node:vm'),api=fs.readFileSync('api/account.js','utf8');
 async function healthResponse({storage='preview-isolated',kvOk=true,scopeOk=true,gates={}}={}){
@@ -10,7 +10,7 @@ async function healthResponse({storage='preview-isolated',kvOk=true,scopeOk=true
     requireAdmin:async()=>({role:'admin'}),monthWindow:()=>({month:'2026-10'}),kvHealthCheck:async()=>({ok:kvOk,error:'unavailable'}),stripeConfigurationHealth:async()=>({ok:false}),
     kv:{get:async key=>key==='platform:settings'?{launchGates:gates}:key==='phone:index'?[]:null},loadAdminWorkspaces:async()=>[],
     environmentScopeHealth:()=>({ok:scopeOk,env:'preview',issues:[],detail:'Fixture scope check'}),gmailConfigReady:()=>true,storageEnvironment:()=>storage,
-    classifyReadiness,VERIFIED_APPLICATION,LIVE_BILLING_AUDIT,SUPPORT_EMAIL_EVIDENCE,
+    classifyReadiness,VERIFIED_APPLICATION,LIVE_BILLING_AUDIT,SUPPORT_EMAIL_EVIDENCE,billingAcceptanceServices,
     req:{},res:{status(code){assert.equal(code,200);return this},json(value){response=value;return value}}
   });
   const gatesStart=api.indexOf('const LAUNCH_GATE_DEFS='),gatesEnd=api.indexOf('\nfunction clampInt',gatesStart);
@@ -23,7 +23,9 @@ test('API reports verified isolated Preview without fabricating owner or voice c
   const result=await healthResponse(),isolation=result.services.find(x=>x.key==='gate-previewIsolation');
   assert.equal(isolation.state,'operational');assert.equal(isolation.ownerConfirmed,false);assert.equal(result.readiness.ready,false);
   assert.equal(result.services.find(x=>x.key==='application-e2e').state,'operational');assert.equal(result.services.find(x=>x.key==='gate-voiceLifecycle').state,'blocked');
-  assert.equal(result.readiness.counts.releaseSetup,4);assert.equal(result.readiness.counts.ownerActions,2);assert.equal(result.readiness.counts.technicalBlockers,2);
+  assert.equal(result.readiness.counts.releaseSetup,2);assert.equal(result.readiness.counts.ownerActions,2);assert.equal(result.readiness.counts.technicalBlockers,2);
+  assert.equal(result.services.find(x=>x.key==='stripe-test-e2e').status,'confirmed');
+  assert.equal(result.services.find(x=>x.key==='checkout').state,'launch-gated');
 });
 test('API never infers isolated storage from standard storage',async()=>{
   assert.equal((await healthResponse({storage:'standard'})).services.find(x=>x.key==='gate-previewIsolation').state,'blocked');
@@ -54,7 +56,7 @@ test('voice configuration and lifecycle are independent genuine technical blocke
 test('verified application and isolation evidence do not complete voice lifecycle',()=>{
   const result=classifyReadiness([row('gate-previewIsolation','operational'),row('application-e2e','operational'),row('gate-voiceLifecycle')],['gate-voiceLifecycle']);
   assert.deepEqual(result.readiness.core,{healthy:2,total:2});assert.equal(result.readiness.ready,false);assert.equal(result.readiness.blockers[0].key,'gate-voiceLifecycle');
-  assert.match(VERIFIED_APPLICATION.url,/37269220204$/);
+  assert.match(VERIFIED_APPLICATION.url,/37551645588$/);
 });
 test('optional failures remain optional and counts account for every service',()=>{
   const result=classifyReadiness([row('database','error'),row('voice'),row('checkout'),row('gate-businessTax'),row('demo'),row('analytics-rollup')],['database','voice','checkout','gate-businessTax']);
@@ -64,4 +66,9 @@ test('optional failures remain optional and counts account for every service',()
 test('core live failures remain blockers despite historical application QA',()=>{
   const result=classifyReadiness([row('environment-scope','error'),row('application-e2e','operational')],['environment-scope']);
   assert.equal(result.readiness.ready,false);assert.deepEqual(result.readiness.core,{healthy:1,total:2});assert.equal(result.readiness.blockers[0].key,'environment-scope');
+});
+test('sandbox billing evidence cannot mark a broken or production environment accepted',()=>{
+  for(const input of [{previewIsolated:false,scopeHealthy:true},{previewIsolated:true,scopeHealthy:false}]){
+    const services=billingAcceptanceServices(input);assert.ok(services.every(s=>s.status==='pending'));assert.ok(services.every(s=>s.evidence.productionAuthorized===false));
+  }
 });

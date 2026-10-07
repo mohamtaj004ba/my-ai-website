@@ -9,16 +9,7 @@ These items are intentionally deferred because they require owner authorization,
 ## Dedicated implementation sessions
 
 ### Vapi / voice engine
-Requires a focused session:
-- Vapi credentials
-- assistant architecture
-- phone-number provisioning
-- webhook setup
-- call event mapping
-- recordings/transcripts
-- transfers
-- voice cost tracking
-- test-call lifecycle
+Isolated Preview provider integration is implemented. Credentials, assistant architecture, internal/demo numbers, authenticated webhooks, canonical call processing and usage are no longer pending setup. Current remaining decisions/participation: deferred conversation/transfer retesting, recording/transcription retention review, public demo acceptance, recurring worker secret destination, managed backups/restore and customer activation authorization. See `AUTONOMOUS_BACKLOG.md`; September setup assumptions are historical.
 
 ### Calendar
 Decide:

@@ -214,3 +214,13 @@ For each new call record the provider/canonical call IDs, runtime SHA, assistant
 - Observed cost evidence is a small mixed-revision test sample only. No new calls or credit purchases. Phone quality and human-transfer retesting remain deferred; recurring Preview maintenance is prepared but unconnected.
 - Production is still READY on 6d36aa454241588140a3d9945eed1a5696a65db6. PR #5 remains draft/unmerged; checkout, taxes, automatic overages, recording and customer telephony remain gated. This final checkpoint changes documentation only; runtime acceptance above is tied to the specified SHA.
 
+### Autonomous actionable backlog completion — October 6, 2026
+
+- Added docs/AUTONOMOUS_BACKLOG.md as the current item-by-item inventory. Reconciled stale September voice/billing/SDK/search entries against implemented code and actual acceptance; conditional post-launch product extensions are separate from current launch work.
+- Added an admin-only isolated-workspace retention review: canonical source validation, content/metadata age separation, unknown-date/active-call reporting and concurrency checks. Returns aggregate counts only, never caller content/provider IDs. Deletion is always disabled and provider copies/holds remain separately unverified. Responsive voice operations now shows the report and clears it on workspace changes.
+- Prepared scripts/voice-maintenance-runner.mjs and its operating contract. Exact branch Preview target only, empty POST, bounded timeout, redirects and blind retries rejected, response counters validated and private exceptions suppressed. No scheduler, new credential destination, Production cron or provider activation was installed.
+- Replaced dashboard export navigation with a shared on-page download helper. Client/admin/internal exports handle failure without leaving the page, prevent duplicate clicks, reject malformed payloads and refuse delivery after a workspace change. Populated internal export browser proof remains pending this runtime's deployment.
+- System Health now presents recorded sandbox card-billing acceptance separately from Production sales authorization. Failed current environment/storage checks cannot inherit acceptance. Updated historical application browser evidence to the verified recovery runtime; no owner gate was confirmed.
+- All 1,852 local tests passed, zero failed. New behavioral tests cover retention authorization and timestamps, scheduler target/timeout/secret/error handling and export failure/stale/duplicate behavior. CI, CodeQL and exact-runtime hosted browser acceptance will be recorded after publication. Production remains unchanged and PR #5 draft/unmerged.
+
+

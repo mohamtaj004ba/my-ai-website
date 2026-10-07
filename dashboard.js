@@ -2001,7 +2001,10 @@ document.getElementById('settingsCancelButton')?.addEventListener('click',()=>{i
 document.getElementById('businessLogoButton')?.addEventListener('click',()=>document.getElementById('businessLogoInput')?.click());
 document.getElementById('businessLogoInput')?.addEventListener('change',e=>{const file=e.target.files?.[0];e.target.value='';prepareBusinessLogo(file)});
 document.getElementById('businessLogoRemove')?.addEventListener('click',()=>{resetBusinessLogoProcessing();pendingBusinessLogo='';renderBusinessLogo()});
-document.getElementById('exportWorkspaceButton')?.addEventListener('click',()=>{window.location.href='/api/account?action=workspace-export'});
+document.getElementById('exportWorkspaceButton')?.addEventListener('click',e=>{
+  const button=e.currentTarget;let status=document.getElementById('workspaceExportStatus');if(!status){status=document.createElement('p');status.id='workspaceExportStatus';status.setAttribute('role','status');button.after(status)}
+  CallerCoreExports.download({url:'/api/account?action=workspace-export',button,status:(text,error)=>{status.textContent=text;status.className=error?'form-status-line error':'form-status-line'}});
+});
 
 
 let adminClientsData=[],adminSummaryData=null,currentAdminClient=null,currentAdminTech=null,adminTechSaving=false,adminTechMutationTarget='',adminClientSaving=false,adminDeleteConfirmState=null,adminRestoreConfirmState=null,adminClientOpenRequest=0,adminProvisioningData=[],adminPhoneData=[],adminHealthData=[],adminReadinessData=null,adminHealthCheckedAt=0,adminFleetData={agents:[],automations:[]},adminSupportData=[],adminSupportStatusPending=new Set(),adminFinanceData={mrr:0,recurringExpenses:0,currentMonthExpenses:0,netRecurring:0,margin:0,expenses:[],history:[],reconciliation:[]},adminFinanceLoadError='Finance has not yet been verified.',adminExpenseSaving=false,adminExpenseDeletePending=new Set(),adminPlatformData=null,adminPlatformDirty=false,adminWebsiteData={prospects:[],recentSessions:[],topPages:[],sources:[],funnel:{},daily:[],campaigns:[],devices:[],locations:[]},adminWebsiteAnalyticsRequest=0,adminWebsiteAnalyticsLoading=false,adminCampaignData=[],adminDocumentsData={agreements:[],company:[],standard:[]},adminInboxData={gmailStatus:{configured:false,connected:false},gmail:{threads:[],analytics:{}},aliases:[],filter:'all',search:'',loading:false,lastSync:0,liveError:'',aliasError:'',readError:''},currentInboxItem=null,adminInboxOpenRequest=0,adminInboxReplyPending=false,adminClientFilter='active',adminClientSearch='',adminClientSort='updated',adminAgentFilter='all',adminAgentSearch='',adminAutomationFilter='all',adminAutomationSearch='',adminFeedbackFilter='submitted',adminFeedbackSearch='',adminFeedbackStatusPending=new Set(),adminSupportFilter='active',adminSupportSearch='',adminExpenseFilter='all',adminFinanceRange=6,adminCareTab='support',adminWebsiteDays=30,growthFilter='open',growthSearch='',documentFilter='all',documentSearch='',companyDocumentFilter='all',companyDocumentSearch='',onboardingFilter='active',onboardingSearch='',adminRefreshTimer=null,adminRefreshInFlight=false,adminLastRefreshAt=0,adminDataSyncAt={},adminDataSyncInFlight={};
@@ -4614,7 +4617,10 @@ document.getElementById('confirmAdminRestoreWorkspace')?.addEventListener('click
 document.getElementById('cancelAdminRestoreWorkspace')?.addEventListener('click',closeAdminRestoreWorkspaceModal);
 document.getElementById('closeAdminRestoreWorkspaceModal')?.addEventListener('click',closeAdminRestoreWorkspaceModal);
 document.getElementById('adminViewClientButton')?.addEventListener('click',viewAdminClient);
-document.getElementById('adminExportClientButton')?.addEventListener('click',()=>{if(currentAdminClient)window.location.href='/api/account?action=admin-workspace-export&id='+encodeURIComponent(currentAdminClient.id)});
+document.getElementById('adminExportClientButton')?.addEventListener('click',e=>{
+  if(!currentAdminClient)return;const id=String(currentAdminClient.id);
+  CallerCoreExports.download({url:'/api/account?action=admin-workspace-export&id='+encodeURIComponent(id),button:e.currentTarget,current:()=>String(currentAdminClient?.id)===id,status:(text,error)=>setAdminClientActionStatus(text,error?'error':'success')});
+});
 document.getElementById('adminRecoveryDrillButton')?.addEventListener('click',async()=>{
   if(!currentAdminClient)return;
   const btn=document.getElementById('adminRecoveryDrillButton');if(btn){btn.disabled=true;btn.textContent='Checking…'}setAdminClientActionStatus('Checking export data…');

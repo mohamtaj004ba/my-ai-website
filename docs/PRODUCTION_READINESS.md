@@ -59,15 +59,9 @@ This document tracks the release-readiness state of the feature branch. It is in
 ## Must complete before broad production launch
 
 ### Voice / telephony core
-- Real Vapi assistant provisioning.
-- Real phone-number purchase/assignment.
-- Number -> assistant connection.
-- Voice webhook signature/authentication.
-- Call status ingestion.
-- Recordings/transcripts/summaries.
-- Transfer outcome capture.
-- Cost and duration tracking.
-- Usage aggregation into plan billing/analytics.
+- Isolated Preview assistants/numbers, provider-backed routing, authenticated webhooks, transcripts/results, CRM and usage accounting are implemented. See `VOICE_PREVIEW_RUNBOOK.md` for actual evidence and `AUTONOMOUS_BACKLOG.md` for remaining work.
+- Customer production provisioning/activation is closed. Latest conversational/ending quality and controlled human-transfer acceptance remain deferred. Recording is off; recording/disclosure/retention review is separate.
+- The prepared recurring recovery runner is not installed, and managed database backups/restoration remain unverified.
 
 ### End-to-end launch test
 Run one complete disposable client through:
@@ -97,8 +91,7 @@ Run one complete disposable client through:
 - Define and implement minute overage policy, if any. Current unit-economics planning is documented in `docs/VOICE_UNIT_ECONOMICS.md`.
 - Policy-neutral customer/admin usage warnings are implemented at 70% / 85% / 100% of included Starter/Growth minutes; they do not imply or apply an overage charge.
 - Define Pro high-volume/fair-use policy before material high-volume usage.
-- Verify subscription-plan change behavior against real Stripe Price IDs.
-- Test failed-payment recovery and cancellation in Stripe test mode.
+- Subscription-plan changes, failed-payment recovery and cancellation passed actual Stripe sandbox acceptance. Preserve that subsystem; see `STRIPE_SANDBOX_ACCEPTANCE.md`. This does not authorize Production checkout.
 
 ### Calendar / appointments
 - Calendar booking is not part of the initial advertised launch scope.
@@ -132,8 +125,8 @@ Run one complete disposable client through:
 
 ## Non-blocking infrastructure debt
 
-- `@vercel/kv` is deprecated upstream and the underlying Vercel KV product has been replaced by the Upstash Marketplace integration. CallerCore's existing store remains operational, but the application should migrate deliberately to the supported Upstash Redis SDK after launch validation rather than changing the persistence client during the current release freeze.
-- The recurring Node `url.parse()` deprecation warning appears in runtime paths that use the current persistence/integration stack; no direct CallerCore source use of `url.parse()` was found. Re-check after the Upstash client migration.
+- The SDK migration is complete: `lib/kv.js` uses `@upstash/redis`, with strict Preview credential isolation. Do not treat the old `@vercel/kv` migration as unfinished work.
+- A Node `url.parse()` deprecation warning has appeared in runtime integration paths; no direct CallerCore source call was found. Track dependency diagnostics separately from data loss or provider failure.
 
 ## Next engineering improvements after core launch
 
@@ -143,7 +136,7 @@ Run one complete disposable client through:
 - Add true multi-user workspaces and granular roles.
 - Add unified Contact records across website, Gmail, calls, leads, and appointments.
 - Upgrade Gmail to history/push-based incremental synchronization if inbox volume justifies it.
-- Add global Admin search across clients, contacts, tickets, calls, prospects, and external IDs.
+- Existing Admin global search covers current client/support/prospect/call navigation and has accessibility/retry tests. Broader canonical cross-channel indexing remains a post-launch extension.
 - Add notification delivery preferences by channel in addition to portal categories.
 - Add marketing/campaign subsystem with suppression, unsubscribe, segmentation, analytics, and sender reputation controls.
 

@@ -1,7 +1,7 @@
 const crypto=require('crypto');
 const {buildVoiceExport,validateVoiceExport}=require('../lib/voice-export');
 const {createProvider,canonicalBilling,BillingError}=require('../lib/billing-provider');
-const {LIVE_BILLING_AUDIT,SUPPORT_EMAIL_EVIDENCE}=require('../lib/billing-readiness');
+const {LIVE_BILLING_AUDIT,SUPPORT_EMAIL_EVIDENCE,billingAcceptanceServices}=require('../lib/billing-readiness');
 const {rateLimit:billingRateLimit}=require('../lib/rate-limit');
 const {prepareChange,applyChange,setupPayment,confirmPayment}=require('../lib/billing-actions');
 const {classifyReadiness,VERIFIED_APPLICATION}=require('../lib/system-readiness');
@@ -2887,7 +2887,7 @@ async function adminSystemHealth(req,res){
   const support=services.find(x=>x.key==='gate-supportEmail');
   Object.assign(support,{status:'confirmed',detail:'Inbound, outbound, CallerCore sign-in, and website inquiry delivery verified. Evidence supplied by TJ on 2026-10-05.',evidence:SUPPORT_EMAIL_EVIDENCE,manual:false});
   if(storageEnvironment()==='preview-isolated')Object.assign(services.find(x=>x.key==='stripe'),{name:'Live billing infrastructure',status:'configured',detail:'Live billing infrastructure configured — tax registration and final commercial launch acceptance pending. Preview test credentials are tracked separately.',evidence:LIVE_BILLING_AUDIT});
-  services.push({key:'billing-native',name:'Embedded CallerCore billing',status:'pending',detail:'Native subscription, payment, contact and invoice controls implemented. Exact Preview acceptance is pending.'},{key:'stripe-test-e2e',name:'Provider-complete billing E2E',status:'pending',detail:'Requires an actual isolated Stripe test purchase, authenticated payment update, lifecycle events and reconciliation. Mock tests do not complete this check.'});
+  services.push(...billingAcceptanceServices({previewIsolated:storageEnvironment()==='preview-isolated',scopeHealthy:envScope.ok&&kvOk}));
   if(storageEnvironment()==='preview-isolated'&&kvOk&&envScope.ok){
     Object.assign(isolation,{status:'operational',detail:'Isolated Preview storage boundary and authenticated application QA verified. Production bindings still require release review.',evidence:VERIFIED_APPLICATION,ownerConfirmed:launchGates.previewIsolation});
   }

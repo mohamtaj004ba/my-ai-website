@@ -4,6 +4,8 @@ Updated: 2026-10-06
 
 This is the current status entry point. Older September planning documents retain historical context; their unfinished Stripe and voice-integration lists do not describe the current Preview implementation.
 
+See [the actionable backlog](AUTONOMOUS_BACKLOG.md) for the current item-by-item inventory and [the maintenance runner contract](VOICE_MAINTENANCE_WORKER.md) for the prepared recurring recovery work. Retention inventory, on-page export downloads and corrected sandbox-readiness labels passed 1,852 local tests in the autonomous follow-up; hosted verification is recorded separately by exact runtime.
+
 ## Release boundary
 
 Development remains on `feature/callercore-dashboards`; PR #5 remains draft and unmerged. Public Production intentionally serves an older stable release. Preview improvements do not authorize production checkout, customer telephony, automatic overage charges, tax registrations, or a Production promotion.
