@@ -11,6 +11,7 @@ Development remains on `feature/callercore-dashboards`; PR #5 remains draft and 
 ## Completed implementation and evidence
 
 - Stripe sandbox acceptance is complete; preserve its verified behavior.
+- Latest recovery safeguard runtime: `713058a48d3c56e7701a6e7ca82bbf4f9ceb7d6a`, immutable Preview https://my-ai-website-18rldj3nu-mohamtaj004bas-projects.vercel.app. All 1,835 local tests passed. CI run 37551649842 passed; CodeQL run 37551649887 passed with zero SARIF findings. Browser acceptance is recorded in the final checkpoint below.
 - Preview has provider-backed voice configuration, secure workspace-scoped tools, canonical call processing, CRM updates, usage accounting, and isolated internal/demo infrastructure.
 - Delayed call details have bounded webhook-triggered recovery and an authenticated Preview maintenance endpoint. This is not a connected recurring scheduler.
 - Public demo readiness requires explicit acceptance evidence and verified isolated resources. An unavailable demo presents a clear fallback instead of a generic retry message.
@@ -31,7 +32,7 @@ Workspace exports now include a versioned voice section containing configuration
 
 The `admin-recovery-drill` endpoint checks export structure; it does not restore a database. The new stateful configuration round-trip test exercises the real override and audit-restore handlers with an in-memory transaction double. It verifies routing derivatives, tenant isolation, unchanged workspace billing linkage, audit entries and refusal of stale restore requests. It does not prove Redis backup restoration or provider reconnection.
 
-Managed database backup/PITR availability and a full database restore drill still need verification. Never automatically activate provider resources from an imported snapshot. Existing secrets are not included in exports.
+Read-only inspection on October 6 confirmed that the isolated `callercore-preview-redis` database has Daily Backup disabled and no backups listed in its Upstash Backups tab. Its paid plan supports daily backups; no upgrade, retention change or restore was performed. Production backup state was not inspected. A managed backup and a restore into a separate disposable database remain unverified. Never automatically activate provider resources from an imported snapshot. Existing secrets are not included in exports.
 
 ## Deferred or gated work
 
@@ -47,3 +48,14 @@ See `VOICE_PREVIEW_RUNBOOK.md` for voice procedures and `CALLERCORE_PROJECT_STAT
 Observed costs: see [the test-call sample](VOICE_OBSERVED_COSTS.md). No new paid calls were placed for that review.
 
 Voice retention: the legacy permanent-purge path now refuses voice-bearing workspaces before deleting additional data. Complete voice-aware cleanup/provider detachment remains readiness work; it has not been performed or represented as complete.
+
+### Final recovery safeguard verification — October 6, 2026
+
+- Verified runtime: 713058a48d3c56e7701a6e7ca82bbf4f9ceb7d6a. Immutable Preview: https://my-ai-website-18rldj3nu-mohamtaj004bas-projects.vercel.app. Stable branch alias: https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app.
+- All 1,835 local tests passed. CallerCore CI 37551649842 passed. CodeQL 37551649887 passed with zero SARIF findings. Full authenticated Browser QA 37551645588 passed on this exact runtime: 279 layout, 188 readability and 490 screenshot checks, 479 PNGs, zero console/page/API/visual failures. Artifact 11452884702 was downloaded and its report inspected.
+- Hosted admin export validation reported 15/15 sections and explicitly stated no database restore was performed. Once automated QA finished, the normal Download export control successfully downloaded a sample-workspace export; its voice section passed the actual validator. That fixture contained zero canonical calls. A real internal-call workspace download was not independently captured; populated canonical voice bundles are covered by the handler/unit recovery tests, not by that empty fixture.
+- Read-only Upstash inspection confirmed the isolated Preview database has Daily Backup off and no saved backups. Its paid plan supports daily backups without a Prod Pack purchase. No backup setting, subscription, restore, Production resource or provider activation was changed. Managed backup retention approval and a restore into a separate disposable target remain open.
+- Permanent deletion remains fail-closed for voice-bearing workspaces pending verified provider detachment and voice-aware retention cleanup. Configuration round-trip and export checks do not claim a managed database restore or legal retention approval.
+- Observed cost evidence is a small mixed-revision test sample only. No new calls or credit purchases. Phone quality and human-transfer retesting remain deferred; recurring Preview maintenance is prepared but unconnected.
+- Production is still READY on 6d36aa454241588140a3d9945eed1a5696a65db6. PR #5 remains draft/unmerged; checkout, taxes, automatic overages, recording and customer telephony remain gated. This final checkpoint changes documentation only; runtime acceptance above is tied to the specified SHA.
+

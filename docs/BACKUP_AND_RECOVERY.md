@@ -4,6 +4,16 @@ Updated: 2026-09-21
 
 > Current status: see [Current delivery status](CURRENT_DELIVERY_STATUS.md). This September document retains historical planning context; newer Stripe and Preview voice work supersedes its older implementation status.
 
+## October 6 Preview inspection
+
+The isolated `callercore-preview-redis` database is on Pay As You Go. Its native Upstash Backups tab showed Daily Backup off (`aria-checked=false`) and no saved backups. This was a read-only inspection; no upgrade, backup setting, restore or Production database change occurred.
+
+Upstash documents daily backups on paid plans: https://upstash.com/docs/redis/help/production-checklist and https://upstash.com/docs/redis/features/backup. Basic daily backup does not require purchasing Prod Pack. Longer retention and point-in-time recovery must not be assumed from that feature.
+
+Next owner action: approve the desired Preview backup retention, then enable Daily Backup on this exact isolated database. Verify that a backup is created. Test restoration only into a separate disposable target after reviewing the provider's destructive restore behavior. Record source timestamp, target identity, recovered canonical call/usage counts, tenant isolation and provider bindings kept inactive. Do not restore over this active Preview database or Production as an acceptance shortcut.
+
+Current voice exports cover configuration, canonical calls, contacts, journals, pending recovery, usage and follow-up state with concurrency checks. They remain a portability layer, not proof of managed database recovery. See [current delivery status](CURRENT_DELIVERY_STATUS.md).
+
 ## Goals
 
 CallerCore must be able to:
