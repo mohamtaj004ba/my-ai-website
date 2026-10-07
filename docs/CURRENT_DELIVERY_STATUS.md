@@ -14,8 +14,8 @@ Development remains on `feature/callercore-dashboards`; PR #5 remains draft and 
 - Preview has provider-backed voice configuration, secure workspace-scoped tools, canonical call processing, CRM updates, usage accounting, and isolated internal/demo infrastructure.
 - Delayed call details have bounded webhook-triggered recovery and an authenticated Preview maintenance endpoint. This is not a connected recurring scheduler.
 - Public demo readiness requires explicit acceptance evidence and verified isolated resources. An unavailable demo presents a clear fallback instead of a generic retry message.
-- Runtime commit `50fb7b9a34d15fa8d665c1f8aeb5328b7ad16d10` passed 1,822 local tests, CI run 37548184415 and CodeQL run 37548184391 with zero findings. Its targeted hosted demo check passed. Do not infer the latest full browser sweep result from these checks.
-- Previous runtime `101f593ae7452ece46e4de231026b64c687dd6d1` completed full Browser QA run 37546198360: 279 layout, 188 readability and 490 screenshot checks, with 479 PNGs. This evidence is specific to that runtime.
+- Voice recovery runtime `0e4ab7e0db746afb6a189a1543e10293662d098b` passed 1,832 local tests, CI run 37550173848 and CodeQL run 37550173819 with zero findings. Hosted admin export validation passed with all 15 sections present. Full Browser QA run 37550169989 passed for that runtime.
+- Earlier runtime `101f593ae7452ece46e4de231026b64c687dd6d1` completed full Browser QA run 37546198360: 279 layout, 188 readability and 490 screenshot checks, with 479 PNGs. This evidence is specific to that runtime.
 
 ## Work that does not need TJ to participate
 
@@ -42,3 +42,8 @@ Managed database backup/PITR availability and a full database restore drill stil
 - Optional SMS and calendar booking remain disabled; they are not completed features or mandatory blockers for the currently defined service.
 
 See `VOICE_PREVIEW_RUNBOOK.md` for voice procedures and `CALLERCORE_PROJECT_STATE.md` for chronological evidence.
+
+
+Observed costs: see [the test-call sample](VOICE_OBSERVED_COSTS.md). No new paid calls were placed for that review.
+
+Voice retention: the legacy permanent-purge path now refuses voice-bearing workspaces before deleting additional data. Complete voice-aware cleanup/provider detachment remains readiness work; it has not been performed or represented as complete.

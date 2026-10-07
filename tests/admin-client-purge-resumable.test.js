@@ -83,6 +83,24 @@ function fixture({failConversationsOnce=false,foreignStripe=false}={}){
   };
 }
 
+test('permanent purge refuses unhandled voice records before deleting any workspace data',async()=>{
+  for(const prefix of ['voice:config:','voice:contacts:','voice:usage:','voice:pending:','voice:recovery:','voice:acceptance:']){
+    const f=fixture();f.records[prefix+'tenant']={saved:true};const before=structuredClone(f.records);
+    const r=await f.purge();assert.equal(r.status,409);assert.equal(r.result.voiceCleanupRequired,true);assert.deepEqual(f.records,before);
+  }
+  const f=fixture();f.records['calls:tenant']=[{id:'voice_'+'a'.repeat(24),source:'phone'}];const before=structuredClone(f.records);
+  assert.equal((await f.purge()).status,409);assert.equal(JSON.stringify(f.records),JSON.stringify(before));
+});
+test('resumed purge stops safely when voice state is discovered',async()=>{
+  const f=fixture({failConversationsOnce:true});assert.equal((await f.purge()).status,503);
+  f.records['voice:usage:tenant']={calls:{},overageEnabled:false};const before=structuredClone(f.records);
+  assert.equal((await f.purge()).status,409);assert.equal(JSON.stringify(f.records),JSON.stringify(before));
+});
+test('permanent purge fails closed when voice retention sources cannot be read',async()=>{
+  const f=fixture(),before=structuredClone(f.records),read=f.ctx.kv.get;
+  f.ctx.kv.get=async key=>{if(key==='voice:config:tenant')throw Error('unavailable');return read(key)};
+  const r=await f.purge();assert.equal(r.status,503);assert.match(r.result.error,/No additional data/);assert.deepEqual(f.records,before);
+});
 test('permanent purge completes through retained, shared, support, feedback, growth, conversation and content phases',async()=>{
   const f=fixture(),r=await f.purge();
   assert.equal(r.status,200);assert.equal(r.result.ok,true);assert.equal(r.result.supportDeleted,1);assert.equal(r.result.feedbackDeleted,1);assert.equal(r.result.prospectsDeidentified,1);

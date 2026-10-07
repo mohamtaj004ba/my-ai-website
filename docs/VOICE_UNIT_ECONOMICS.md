@@ -2,6 +2,8 @@
 
 Updated: 2026-09-21
 
+> Historical planning model. Its separate transcription/model/synthesis assumptions and quoted prices are not verified for the current GPT-Live implementation. See [Observed Preview voice costs](VOICE_OBSERVED_COSTS.md) and [Current delivery status](CURRENT_DELIVERY_STATUS.md) before using this memo.
+
 Status: Planning model only. No billing behavior or public pricing policy is changed by this document.
 
 ## Current public plan prices

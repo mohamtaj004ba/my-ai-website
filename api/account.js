@@ -710,6 +710,13 @@ async function adminPurgeClient(req,res){
   const body=req.body||{},id=String(body.id||'').slice(0,80);
   if(!id)return res.status(400).json({error:'Client id required'});
   if(String(body.confirm||'')!=='DELETE '+id)return res.status(400).json({error:'Confirmation must equal DELETE '+id});
+  // The legacy purge journal does not cover canonical voice records or provider
+  // bindings. Refuse before any deletion, including on resumed purges.
+  let voiceSources;
+  try{voiceSources=await Promise.all(['voice:config:','voice:contacts:','voice:usage:','voice:pending:','voice:recovery:','voice:acceptance:','calls:'].map(prefix=>kv.get(prefix+id)))}catch(_){return res.status(503).json({error:'Voice retention state could not be verified. No additional data was deleted.'})}
+  const voiceViews=voiceSources[6];
+  if(voiceSources.slice(0,6).some(value=>value!=null)||Array.isArray(voiceViews)&&voiceViews.some(call=>call?.source==='phone'||call?.source==='demo_phone'))
+    return res.status(409).json({error:'This workspace has voice records. Provider detachment and voice-aware retention cleanup must be verified before permanent deletion. No additional data was deleted.',voiceCleanupRequired:true});
   const journalKey=purgeJournalKey(id),completeKey=purgeCompleteKey(id);
   const completed=await kv.get(completeKey),validCompletionMarker=marker=>marker&&typeof marker==='object'&&!Array.isArray(marker)&&String(marker.workspaceId||'')===id&&
     !!String(marker.attemptId||'').trim()&&Number.isFinite(Number(marker.completedAt))&&Number(marker.completedAt)>0&&typeof marker.completedBy==='string'&&!!marker.completedBy.trim()&&
