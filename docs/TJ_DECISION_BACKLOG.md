@@ -2,6 +2,8 @@
 
 Updated: 2026-09-21
 
+> Current status: see [Current delivery status](CURRENT_DELIVERY_STATUS.md). This September document retains historical planning context; newer Stripe and Preview voice work supersedes its older implementation status.
+
 These items are intentionally deferred because they require owner authorization, credentials, commercial decisions, vendor choices, legal review, or dedicated implementation time.
 
 ## Dedicated implementation sessions

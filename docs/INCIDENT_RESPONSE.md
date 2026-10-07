@@ -2,6 +2,8 @@
 
 Updated: 2026-09-21
 
+> Current status: see [Current delivery status](CURRENT_DELIVERY_STATUS.md). This September document retains historical planning context; newer Stripe and Preview voice work supersedes its older implementation status.
+
 This is the first-response checklist for material CallerCore production incidents. It is intentionally practical and should evolve as live providers are added.
 
 ## Severity

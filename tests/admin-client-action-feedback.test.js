@@ -12,7 +12,7 @@ test('admin client workspace actions use accessible inline feedback instead of b
   assert.match(block,/setAdminClientActionStatus\('Saving workspace changes…'\)/);
   assert.match(block,/setAdminRestoreWorkspaceStatus\('Restoring workspace…'\)/);
   assert.match(block,/setAdminClientActionStatus\('Opening client view…'\)/);
-  assert.match(block,/setAdminClientActionStatus\('Running recovery drill…'\)/);
+  assert.match(block,/setAdminClientActionStatus\('Checking export data…'\)/);
   assert.match(block,/setAdminSyncState\(postDeleteWarning\?'error':'live'/);
 });
 

@@ -4617,18 +4617,18 @@ document.getElementById('adminViewClientButton')?.addEventListener('click',viewA
 document.getElementById('adminExportClientButton')?.addEventListener('click',()=>{if(currentAdminClient)window.location.href='/api/account?action=admin-workspace-export&id='+encodeURIComponent(currentAdminClient.id)});
 document.getElementById('adminRecoveryDrillButton')?.addEventListener('click',async()=>{
   if(!currentAdminClient)return;
-  const btn=document.getElementById('adminRecoveryDrillButton');if(btn){btn.disabled=true;btn.textContent='Checking…'}setAdminClientActionStatus('Running recovery drill…');
+  const btn=document.getElementById('adminRecoveryDrillButton');if(btn){btn.disabled=true;btn.textContent='Checking…'}setAdminClientActionStatus('Checking export data…');
   try{
     const r=await fetch('/api/account?action=admin-recovery-drill&id='+encodeURIComponent(currentAdminClient.id),{cache:'no-store'}),data=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(data.error||'Recovery drill could not be completed.');
+    if(!r.ok)throw new Error(data.error||'Export data could not be verified.');
     const sections=data.sections?Object.entries(data.sections).filter(([,ok])=>ok).length:0,total=data.sections?Object.keys(data.sections).length:0;
-    const notes=[data.recoverable?'Core export is structurally recoverable.':'Recovery validation failed.',sections+'/'+total+' sections structurally present'];
-    if(data.requiresProviderReconnect)notes.push('provider secrets require reconnection');
+    const notes=[data.recoverable?'Export data passed validation.':'Export data needs attention.',sections+'/'+total+' sections structurally present','No database restore was performed'];
+    if(data.requiresProviderReconnect)notes.push('provider setup requires separate reconciliation');
     if(Array.isArray(data.warnings)&&data.warnings.length)notes.push(data.warnings.join(' '));
     if(Array.isArray(data.issues)&&data.issues.length)notes.push('Issues: '+data.issues.join('; '));
     setAdminClientActionStatus(notes.join(' · '),data.recoverable?'success':'error');
-  }catch(err){setAdminClientActionStatus(err.message||'Recovery drill could not be completed.','error')}
-  finally{if(btn){btn.disabled=false;btn.textContent='Run recovery drill'}}
+  }catch(err){setAdminClientActionStatus(err.message||'Export data could not be verified.','error')}
+  finally{if(btn){btn.disabled=false;btn.textContent='Check export data'}}
 });
 
 

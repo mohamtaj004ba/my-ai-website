@@ -1970,3 +1970,17 @@ This checkpoint supersedes the earlier inactive-demo/access/budget notes above.
 
 - Browser verification of guard runtime 6934c2b8e56a46eef73fb4c09a07c17aeae2279f confirmed the public line remained unavailable, but revealed an unhelpful generic retry message after clicking Check demo availability. Fixed the public experience to retain clear unavailable/rate-limit/network explanations and dashboard/contact alternatives. No automatic retries, leaked number or provider activation.
 - Actual inline-page regression tests exercise token failure, number failure, rate limits, network errors and successful verified-number reveal. Combined local suite: 1,822 passing tests, zero failures. Provider acceptance and legal review remain unverified; unit fixtures are not actual acceptance evidence. Production remains unchanged.
+
+## 2026-10-06 autonomous recovery review (local, not deployed)
+
+- Added docs/CURRENT_DELIVERY_STATUS.md and pointers from September planning documents to separate current evidence from historical status.
+- Added tests/configuration-recovery-roundtrip.test.js: real admin override/restore handlers, stateful in-memory transaction double, configuration/routing restoration, other-tenant preservation, unchanged workspace billing linkage, atomic audit and stale-request rejection.
+- Full local suite: 1,823 passed, zero failed. This is not a managed database restore or a real phone acceptance test.
+- Identified export coverage gap: legacy workspace export does not include the complete newer canonical voice/configuration/contact/journal/pending/usage store. Voice-aware backup coverage remains implementation work; no claim of full voice recovery.
+- No provider, Stripe, Production, checkout or customer telephony configuration changed. These documentation/test additions remain local on feature/callercore-dashboards pending publication.
+### Voice-aware recovery export implementation
+
+- Closed the identified export coverage gap with lib/voice-export.js and integration into both authenticated workspace export routes. The versioned section includes configuration, contacts, canonical calls, retry journals, usage ledger, pending recovery and follow-up state.
+- Exports fail closed on missing or foreign canonical records, duplicate IDs, malformed contacts/usage, incorrect call-to-usage association and concurrent source changes. Reads are batched; no provider calls, new credentials or activation side effects.
+- Older phone-history exports without canonical voice state remain readable but are not classified as complete recovery sources. Restored voice resources require separate provider reconciliation.
+- Recovery rehearsal verifies serialized journals prevent repeated mutations. This is not a managed database backup/PITR restoration, customer activation or phone-quality acceptance.

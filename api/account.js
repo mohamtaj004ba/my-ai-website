@@ -1,4 +1,5 @@
 const crypto=require('crypto');
+const {buildVoiceExport,validateVoiceExport}=require('../lib/voice-export');
 const {createProvider,canonicalBilling,BillingError}=require('../lib/billing-provider');
 const {LIVE_BILLING_AUDIT,SUPPORT_EMAIL_EVIDENCE}=require('../lib/billing-readiness');
 const {rateLimit:billingRateLimit}=require('../lib/rate-limit');
@@ -3524,6 +3525,8 @@ async function buildWorkspaceExportData(id){
     if(t.workspaceId===id)support.push(t);
   }
   const phone=(phones||[]).find(x=>x&&x.workspaceId===id)||null;
+  const voice=await buildVoiceExport(kv,id,calls||[]);
+  if(JSON.stringify(await kv.get('workspace:'+id))!==JSON.stringify(workspace)||JSON.stringify(await kv.get('calls:'+id))!==JSON.stringify(calls))throw new Error('Workspace changed during export; retry');
   return {
     exportVersion:'1.0',exportedAt:new Date().toISOString(),
     workspace:redactExportSecrets(workspace),settings:redactExportSecrets(settings||null),agent:redactExportSecrets(agent||null),phone:redactExportSecrets(phone),
@@ -3531,7 +3534,7 @@ async function buildWorkspaceExportData(id){
     calls:redactExportSecrets(Array.isArray(calls)?calls:[]),leads:redactExportSecrets(Array.isArray(leads)?leads:[]),
     conversations:redactExportSecrets(Array.isArray(conversations)?conversations:[]),appointments:redactExportSecrets(Array.isArray(appointments)?appointments:[]),
     automations:redactExportSecrets(Array.isArray(automations)?automations:[]),support:redactExportSecrets(support),onboarding:redactExportSecrets(onboarding||null),
-    audit:redactExportSecrets(Array.isArray(audit)?audit:[])
+    audit:redactExportSecrets(Array.isArray(audit)?audit:[]),voice:redactExportSecrets(voice)
   };
 }
 function validateWorkspaceExportData(data){
@@ -3545,6 +3548,8 @@ function validateWorkspaceExportData(data){
   for(const key of ['settings','agent','phone','integrations','onboarding']){
     if(data[key]!==null&&typeof data[key]!=='object')issues.push(key+' must be an object or null');
   }
+  if(data.voice!==undefined){try{validateVoiceExport(data.voice,String(data.workspace?.id||''))}catch(_){issues.push('Voice recovery section is invalid')}}
+  else if(Array.isArray(data.calls)&&data.calls.some(x=>x.source==='phone'||x.source==='demo_phone'))warnings.push('This older export lacks canonical voice recovery records');
   const secretLeaks=[];
   const walk=(value,path='root')=>{
     if(Array.isArray(value)){value.forEach((v,i)=>walk(v,path+'['+i+']'));return}
@@ -3565,10 +3570,11 @@ function validateWorkspaceExportData(data){
     workspace:!!data.workspace,settings:!!data.settings,agent:!!data.agent,phone:!!data.phone,locations:Array.isArray(data.locations),
     integrations:!!data.integrations,calls:Array.isArray(data.calls),leads:Array.isArray(data.leads),conversations:Array.isArray(data.conversations),
     appointments:Array.isArray(data.appointments),automations:Array.isArray(data.automations),support:Array.isArray(data.support),
-    onboarding:!!data.onboarding,audit:Array.isArray(data.audit)
+    onboarding:!!data.onboarding,audit:Array.isArray(data.audit),voice:!!data.voice
   };
-  const recoverable=issues.length===0&&!!data.workspace;
-  return {ok:issues.length===0,issues,warnings,sections,recoverable,requiresProviderReconnect:hasRedactions};
+  const missingVoice=Array.isArray(data.calls)&&data.calls.some(x=>x.source==='phone'||x.source==='demo_phone')&&!data.voice;
+  const recoverable=issues.length===0&&!!data.workspace&&!missingVoice;
+  return {ok:issues.length===0,issues,warnings,sections,recoverable,requiresProviderReconnect:hasRedactions||!!data.voice?.configuration||!!data.voice?.calls?.length};
 }
 
 function sendWorkspaceExport(res,id,data,prefix='CallerCore-workspace-export'){
