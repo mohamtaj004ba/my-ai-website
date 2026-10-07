@@ -2,7 +2,7 @@
 
 Updated: 2026-10-06. Applies only to `feature/callercore-dashboards` and Preview. September roadmaps describe historical or post-launch work; they are not a list of current launch failures.
 
-## Completed or ready for current verification
+## Completed and verified
 
 | Item | Current implementation/evidence | Remaining limit |
 | --- | --- | --- |
@@ -12,7 +12,7 @@ Updated: 2026-10-06. Applies only to `feature/callercore-dashboards` and Preview
 | Delayed results recovery | Fair persistent cursor, deduplication, bounded event recovery and authenticated maintenance endpoint | Recurring worker installation needs its own authorized secret destination |
 | Maintenance runner | `scripts/voice-maintenance-runner.mjs`: exact branch URL, timeout, no redirects/retries, safe validated counters | Runner is not an installed schedule |
 | Recovery/export coverage | Canonical voice calls, configuration, journals, contacts, pending details, usage and follow-ups; source/concurrency validation | No managed database restore or automatic provider activation |
-| Export experience | On-page client/admin/test downloads; failed or stale requests deliver no file | Host/device download behavior still needs browser verification |
+| Export experience | On-page client/admin/test downloads; failed or stale requests deliver no file | Actual internal and demo downloads validated; physical-device checks remain separate |
 | Voice retention inventory | Administrator-only read-only counts, content/metadata age separation, invalid-date reporting, no content or provider IDs returned | Holds/provider deletion review and destructive execution remain gated |
 | Permanent deletion safety | Voice-bearing workspaces fail closed before new/resumed purge | Full voice cleanup is not implemented or silently enabled |
 | Monthly analytics and retention dry-run | `monthly-kpi-*`, `analytics-retention-policy`, `retention-report` and their tests already exist | Destructive prospect/session executors stay off pending consent/recovery review |
@@ -39,3 +39,5 @@ Updated: 2026-10-06. Applies only to `feature/callercore-dashboards` and Preview
 The September roadmap explicitly places these after core launch or behind a provider/product decision: broad account/dashboard modularization, relational datastore migration, multi-user workspace roles, canonical cross-channel contacts, Gmail push/history synchronization, notification delivery channels, calendar booking, SMS and marketing campaigns. Core launch remains gated. They are not represented as completed, and implementing/enabling third-party delivery or expanding customer scopes is not inferred from Preview maintenance authorization. Existing contacts/history, notification categories, search, campaign analytics and consent/suppression safeguards remain preserved.
 
 Verification for the new items above is recorded in `CURRENT_DELIVERY_STATUS.md` and `CALLERCORE_PROJECT_STATE.md`, with exact runtime SHA and workflow runs. Do not equate local fixtures with actual phone, legal, backup or Production acceptance.
+
+Final runtime verification: de290558a7c3685018e2e63a72f33bbdf1c0b7a6; 1,852 local tests, CI 37554473722, CodeQL 37554473654 (zero findings) and authenticated Browser QA 37554469549 passed (279 layout, 188 readability, 494 screenshot checks; zero reported failures). Actual populated internal and demo exports passed the canonical validator. No new paid calls, provider activation, deletion, backup setting or Production change.
