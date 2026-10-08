@@ -11,7 +11,7 @@ Updated October 8, 2026. Canonical planning/review handoff. This document replac
 - Latest fully accepted application runtime: de290558a7c3685018e2e63a72f33bbdf1c0b7a6. Immutable Preview: https://my-ai-website-q64uywptu-mohamtaj004bas-projects.vercel.app (dpl_6idJVwvXY2GdiL2bGxHgzfFoTkHy).
 - Stable branch Preview: https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app. An alias can move; exact acceptance belongs to the immutable runtime above.
 - Production: https://www.callercore.com/; READY deployment dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY, SHA 6d36aa454241588140a3d9945eed1a5696a65db6. This conversation DID include an explicitly authorized website-only Production release on October 5. Subsequent website/dashboard/billing/voice work remains in Preview; Production intentionally trails it. Do not describe the entire conversation as having never changed Production.
-- October 8 recovery-only authentication changes are preserved locally, NOT yet committed/deployed/hosted-verified: api/voice-maintenance.js, scripts/voice-maintenance-runner.mjs, tests/voice-maintenance-auth.test.js. Do not confuse this handoff commit with deployment of those edits.
+- October 8 recovery authentication patch published at 155c037a1d124d9c0e57bfefdcefaa9a251af409; READY Preview dpl_4qUjE69WvGgLRrwDowEG4Fj1N9X3, https://my-ai-website-pke49bpad-mohamtaj004bas-projects.vercel.app. Further malformed-body hardening follows in the continuation commit. Full hosted acceptance and positive maintenance authentication remain separate.
 
 ## 2. Completed work carried forward from this conversation
 
@@ -244,26 +244,27 @@ Evidence anchors: tests/industry-experience.test.js, tests/cookie-preferences.te
 - Historical claimed test counts are not aggregated or promoted to current acceptance. Current hosted evidence is pinned in section 5; preserved local maintenance edits are not hosted-verified. Subjective telephone quality, physical-device behavior, legal readiness, managed restore and the complete actual-call matrix remain unverified as stated.
 - This document can now serve as the canonical Work-to-ChatGPT synchronization document for the full accessible history and current verified scope. Future implementations must update it with evidence; the reconciliation does not remove launch gates or certify unavailable history.
 
+## October 8 continuation checkpoint
+
+- Published the three preserved recovery-only credential files at 155c037a1d124d9c0e57bfefdcefaa9a251af409. No callback/webhook/tool credential changed. Vercel confirmed maintenance secret is sensitive and feature-branch Preview-only.
+- Exact initial Preview is READY: dpl_4qUjE69WvGgLRrwDowEG4Fj1N9X3, https://my-ai-website-pke49bpad-mohamtaj004bas-projects.vercel.app. CallerCore CI push run 37747357769 and PR run 37747361096 passed; CodeQL push run 37747357959 and PR run 37747361066 passed. PR CodeQL job 113211917733 reported zero SARIF results. Jekyll 37747361100 passed.
+- Initial patch: 1,854 local tests passed; 13 focused auth/runner/recovery checks passed. Full authenticated Browser QA 37747357804 is still in progress at this checkpoint; exact deployment pin step passed. Do not claim its full acceptance yet.
+- Stable Preview direct hosted checks: GET maintenance 405, missing/invalid credential POST 401 with application JSON. Immutable deployment requests without Vercel authentication reached platform protection and are not application-auth evidence.
+- Found malformed-body edge case: authenticated JSON false/0 passed the previous truthiness condition. Hardened empty-body validation and added scalar/array/nonempty/query/method regression coverage. Full suite after hardening: 1,855 passed, zero failures/cancellations/skips. This follow-up needs its own CI/CodeQL/Browser QA acceptance.
+- QStash console accessible: zero active/paused schedules. Prepared, unsubmitted form: exact stable maintenance URL, POST, empty body, five-minute interval, zero retries, 60-second timeout, forwarded Authorization field awaiting secret. No delivery exists and no duplicate-mutation hosted proof claimed.
+- Genuine access blocker: the previously installed maintenance secret is sensitive/write-only in Vercel; this chat does not have its original value. TJ must securely enter that existing maintenance credential into the prepared QStash Authorization field, or complete equivalent scoped rotation in both destinations. Do not paste credentials into chat or use the callback secret. Scheduler scope is already approved; no repeat approval is needed.
+- Rechecked daily backup enabled, last-one-day retention. Only the completed 7.49 MB manual baseline is currently listed; no automatic daily execution yet observed. No setting changed. Overall database cost is not backup-specific cost; $1/month backup budget remains an unenforced owner limit.
+- Prepared docs/PREVIEW_RECOVERY_ACCEPTANCE.md with delivery evidence checklist and a provider-supported separate-target restore procedure. No target created or restore performed. Exact disposable target and destructive step still require TJ approval.
+- Production rechecked READY and unchanged at dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY / 6d36aa454241588140a3d9945eed1a5696a65db6. PR #5 remains draft/unmerged; no main, live Stripe, commercial checkout, tax, overage, customer telephony, recording or public demo changes.
+- Supersedes earlier local-only authentication-patch claims. Earlier full hosted application acceptance remains pinned to de290558 until the new complete QA evidence is inspected.
+
 ## CURRENT HANDOFF FOR CHATGPT
 
-- Work only on feature/callercore-dashboards in mohamtaj004ba/my-ai-website; PR #5 is draft/unmerged.
-- One website-only Production release was authorized earlier in this chat; subsequent Preview work remains unpublished. No commercial/customer voice activation is authorized.
-- Latest fully accepted runtime is de290558a7c3685018e2e63a72f33bbdf1c0b7a6; immutable and stable Preview URLs are above.
-- Public/client/admin redesigns, sample dashboard stack/pinch viewer and responsive layouts are browser-verified; physical-device behavior remains separate.
-- Industry transcripts were superseded by 18 business-specific interactive scenes; automatic cookie popup/floating settings were removed, analytics defaults off.
-- Gmail/account/thread/send integrity, guarded admin mutations, Inbox intake and native payment confirmation/recovery refinements are reconciled in section 10.
-- Stripe sandbox acceptance is complete; preserve it and do not restart the billing phase without regression evidence.
-- Actual isolated Vapi/GPT-Live calls reach CallerCore tools, CRM, normalized results, notifications and usage.
-- Voice quality and comprehensive real-call/transfer acceptance remain incomplete; latest owner feedback was negative.
-- Actual pause/resume routing read-backs passed for controlled internal resources.
-- Internal/demo populated exports passed validation; records are real test calls, businesses fictional.
-- Full latest hosted evidence: 1,852 tests, CI/CodeQL/Browser QA passed, 279 layout/188 readability/494 screenshot checks.
-- Managed Preview daily backup is now enabled; 7.49 MB manual baseline completed. No managed restore performed.
-- Free Preview QStash resource exists; schedule and delivery proof are not complete.
-- Recovery-only sensitive branch credential created; its accepting code and two new tests remain preserved locally, not deployed.
-- Next engineering work: publish/verify that patch, install approved five-minute schedule and verify deduplicated recovery.
-- Backup and scheduler approvals are already granted; no repeat approval needed for that scope.
-- Recording, public demo reveal, live checkout, tax/overage and customer telephony stay gated.
-- Owner participation needed later for phone/transfer quality, legal/disclosure decisions, disposable restore and final launch.
-- Full accessible Work archive reconciled with implementation and retained evidence; unavailable other-chat/pre-archive history is explicitly excluded. This is the canonical synchronization document within that scope.
-
+- Canonical repository/branch: mohamtaj004ba/my-ai-website, feature/callercore-dashboards. PR #5 draft/unmerged; Production intentionally trails Preview.
+- Preserved maintenance authentication patch is now published at 155c037a1d124d9c0e57bfefdcefaa9a251af409; READY Preview and successful CI/CodeQL/Jekyll evidence above. Follow-up malformed-body hardening has 1,855 passing local tests and awaits its own hosted acceptance.
+- Keep all previously accepted billing, voice, CRM, export and UX work. Actual isolated calls exist; sandbox Stripe acceptance complete. Latest phone quality/transfer, legal/disclosure and physical-device acceptance remain incomplete.
+- Already approved backup/scheduler scope remains authorized. Daily backups enabled; baseline complete; automatic daily execution still unobserved. Restore not proven.
+- QStash schedule prepared but not submitted; credential value is unavailable because Vercel secret is write-only. Smallest TJ action: secure entry of the existing maintenance-only credential in the prepared scheduler field. Callback credential must remain unchanged.
+- After entry: finish positive/negative hosted auth, install schedule, observe at least two deliveries and compare private canonical call/CRM/follow-up/usage snapshots. Do not claim hosted duplicate protection from simulated tests alone.
+- Disposable restore procedure prepared in docs/PREVIEW_RECOVERY_ACCEPTANCE.md; separately approve exact disposable target and its erasure before execution. Never restore over active Preview/Production or start provider/notification integrations from restored data.
+- Browser QA and follow-up exact deployment evidence must be refreshed before accepting the new runtime. Production/commercial/customer voice/demo/recording gates remain closed.
