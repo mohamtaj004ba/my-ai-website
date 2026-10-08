@@ -8,17 +8,15 @@ Updated October 8, 2026. Canonical status remains `CALLERCORE_PROJECT_STATE.md`.
 - POST only to `https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app/api/voice-maintenance`.
 - Every five minutes, empty body, 60-second delivery timeout, zero retries.
 - Forward `Authorization: Bearer <maintenance credential>` using only `CALLERCORE_VOICE_MAINTENANCE_SECRET`. Never copy the callback credential or add project-wide QStash variables.
-- QStash schedule scd_6X9ZUHpNFLW8NHZ7K1CrYsWcMhdU was created October 8 at 01:30:04 Pacific, then paused before its first scheduled run. Owner rotated the branch Preview maintenance credential, and same-code redeployment dpl_DzkJFSCoWoTaruXGnnhM2JuNzPSe is READY at bdc31fa7919d1399c3211a6574c3fa3b648945a5. Browser inspection exposed the entered credential in a tool result; owner must replace only this credential in Vercel and the paused schedule before resuming. Callback credential is unchanged. No positive or recurring delivery acceptance is claimed.
-- Do not count Vercel's protected-deployment response as application authentication evidence. The stable branch URL is reachable and rejects GET (405), missing credentials (401), and invalid credentials (401).
+- Schedule scd_6X9ZUHpNFLW8NHZ7K1CrYsWcMhdU is installed and hosted-verified on READY dpl_2RT2YKgzzSMDEx5DbuDHmXSBa58o (documentation head 3332bb44e50081c2cf32a2e72b02435616da6dd9, same accepted bdc31fa code). It is paused pending final maintenance credential replacement after browser tool-output exposure. Callback credential unchanged. No project-wide QStash injection.
 
-## Delivery acceptance remaining after secure credential entry
+## Hosted delivery acceptance
 
-1. Pin the stable alias to the current feature SHA and verify positive maintenance authentication, rejection of callback credentials, malformed body/query rejection, and rejection of the maintenance credential by webhook/tool routes.
-2. Capture private before/after exports from both designated isolated workspaces. Run `validateVoiceExport` from `lib/voice-export.js`; report aggregate counts only.
-3. Observe at least two distinct scheduled deliveries five minutes apart. Record schedule ID, timestamps, delivery IDs, destination, retry count, HTTP result and safe counters.
-4. Compare canonical call IDs, journals, usage seconds/entries, contacts, leads, follow-up state and notification identities. No new telephone call or billing action is needed. Recovery diagnostic/audit timestamps can change; business mutation counts must not.
-5. Existing behavioral tests cover concurrent ownership leases, replacement-lease preservation, bounded/fair recovery and canonical processor replay. They are simulated evidence, separate from scheduled hosted acceptance.
-
+- October 8 01:45:00/01:50:00 Pacific scheduled messages both delivered HTTP 200 at 01:45:01/01:50:02. Message IDs and exact deployment evidence are in the canonical project state. Zero retries and 60-second timeout preserved; empty body. Success counters were not present in inspected console history and are not claimed.
+- Authenticated JSON false, zero and arbitrary workspace selector rejected 400; maintenance credential on provider webhook/tool ingress rejected 401. GET/missing/invalid credentials were 405/401/401. No callback credential was retrieved.
+- Private after-delivery internal/demo exports validated and all 13 full-data comparison surfaces unchanged: canonical/display calls, journals, usage, contacts, leads, conversations, appointments, automations, pending/followup state and derived notification identity/content, plus workspace identity. Internal remained 14 calls/1,484 seconds; demo 1 call/177 seconds; zero pending in both. This demonstrates no duplicates across recurring scans of populated records.
+- Concurrent owned/replaced leases, pending-result processing and canonical replay remain separately simulated behavioral evidence (84 focused tests). This run did not manufacture new PSTN calls or pending events.
+- Owner must replace only the maintenance credential in branch Preview and this paused schedule, then agent redeploys Preview and verifies positive authentication before resuming. Future inspection must allowlist IDs/status/error fields only, never raw header/request snapshots. This credential remediation does not require another scheduler approval.
 ## Backup observation
 
 Source database `callercore-preview-redis`, provider ID `b7edf57b-6c72-4c5e-8582-308303f93ced`, Vercel store `store_BaC9e3h6wkqaXdWI`, is connected to Preview only. Daily Backup was rechecked enabled with one-day retention. Inventory currently shows only completed manual baseline `callercore-preview-baseline-20261008`, 7.49 MB; first automatic daily execution is not yet observed. The approved $1/month backup spending limit is not a provider-enforced cap. Overall database cost is not backup-specific cost.
