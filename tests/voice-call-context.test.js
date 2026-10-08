@@ -2,6 +2,23 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {businessContext,deliverContext}=require('../lib/voice-call-context');
 const {createProvider}=require('../lib/voice-provider');
 const policy={timezone:'America/Los_Angeles',schedule:[{day:1,open:540,close:1020}],holidays:[],afterHours:'capture',maxDurationSeconds:600};
+test('context failures retain safe diagnostic codes without secrets or retries',async()=>{
+ for(const code of ['VOICE_CONTROL_INVALID','VOICE_CONTEXT_TIMEOUT','VOICE_ACCESS_REQUIRED','private-provider-url']){
+  let attempts=0,claimed=false;
+  const ctx={canonical:{id:'voice_one',status:'active'},config:{state:'ready',agentRevision:0},agent:{},call:{},policy};
+  const kv={set:async()=>{if(claimed)return null;claimed=true;return 'OK'}};
+  const provider={appendContext:async()=>{attempts++;throw Object.assign(Error('Bearer private-secret'),{code})}};
+  const result=await deliverContext(kv,ctx,provider);
+  assert.equal(result.state,'unconfirmed');assert.equal(result.failureCode,code==='private-provider-url'?'VOICE_CONTEXT_UNCONFIRMED':code);
+  assert.ok(!JSON.stringify(result).includes('private'));assert.equal(await deliverContext(kv,ctx,provider),undefined);assert.equal(attempts,1);
+ }
+});
+test('provider access denial remains distinguishable from uncertain context delivery',async()=>{
+ const env={VERCEL_ENV:'preview',CALLERCORE_VOICE_PREVIEW_ENABLED:'true',VAPI_PRIVATE_KEY:'fixture'};let attempts=0;
+ const provider=createProvider({env,fetchImpl:async()=>{attempts++;return {ok:false,status:403}}});
+ await assert.rejects(provider.appendContext({id:'call_one',monitor:{controlUrl:'https://api.vapi.ai/call_one/control'}},'Verified hours'),{code:'VOICE_ACCESS_REQUIRED'});
+ assert.equal(attempts,1);
+});
 test('call-start hours are verified but never used across an opening boundary',()=>{
  assert.equal(businessContext(policy,Date.parse('2026-10-05T16:30:00Z')).validAcrossCall,true);
  const closing=businessContext(policy,Date.parse('2026-10-05T23:59:00Z'));assert.equal(closing.open,true);assert.equal(closing.validAcrossCall,false);
