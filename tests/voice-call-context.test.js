@@ -2,6 +2,14 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {businessContext,deliverContext}=require('../lib/voice-call-context');
 const {createProvider}=require('../lib/voice-provider');
 const policy={timezone:'America/Los_Angeles',schedule:[{day:1,open:540,close:1020}],holidays:[],afterHours:'capture',maxDurationSeconds:600};
+test('observed Vapi regional host permits context without broadening URL or call guards',async()=>{
+ const env={VERCEL_ENV:'preview',CALLERCORE_VOICE_PREVIEW_ENABLED:'true',VAPI_PRIVATE_KEY:'fixture'};let requests=0;
+ const provider=createProvider({env,fetchImpl:async()=>{requests++;return {ok:true,json:async()=>({status:'ok'})}}});
+ const host='phone-call-websocket.aws-us-west-2-backend-production1.vapi.ai';
+ assert.deepEqual(await provider.appendContext({id:'call_one',monitor:{controlUrl:'https://'+host+'/call_one/control'}},'Verified closed hours'),{submitted:true});
+ for(const url of ['https://'+host+'.evil.test/call_one/control','https://other.aws-us-west-2-backend-production1.vapi.ai/call_one/control','https://'+host+'/call_two/control','https://'+host+'/call_one/control?secret=x','https://user:password@'+host+'/call_one/control'])await assert.rejects(provider.appendContext({id:'call_one',monitor:{controlUrl:url}},'Hours'),{code:'VOICE_CONTROL_INVALID'});
+ assert.equal(requests,1);
+});
 test('context failures retain safe diagnostic codes without secrets or retries',async()=>{
  for(const code of ['VOICE_CONTROL_INVALID','VOICE_CONTEXT_TIMEOUT','VOICE_ACCESS_REQUIRED','private-provider-url']){
   let attempts=0,claimed=false;
