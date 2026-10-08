@@ -9,8 +9,8 @@ Updated: 2026-10-08. Canonical current state: `CALLERCORE_PROJECT_STATE.md`. App
 | Native billing and Stripe sandbox | `STRIPE_SANDBOX_ACCEPTANCE.md`; actual card payments, recovery, lifecycle and isolation passed | Production sales still closed; no repeat of accepted billing phase |
 | Readiness labels | Sandbox acceptance shown separately from production authorization; current environment failures cannot inherit acceptance | No automatic owner launch confirmation |
 | Voice configuration, secure tools, lifecycle, CRM and usage | Provider-backed isolated internal/demo infrastructure and tests in `VOICE_PREVIEW_RUNBOOK.md` | Latest acoustic/transfer acceptance is deferred |
-| Delayed results recovery | Fair persistent cursor, deduplication, bounded event recovery and authenticated maintenance endpoint | Two hosted deliveries and unchanged populated business data verified; schedule paused for final credential remediation |
-| Maintenance runner | `scripts/voice-maintenance-runner.mjs`: exact branch URL, timeout, no redirects/retries, safe validated counters | QStash schedule installed and delivery-verified; currently paused for credential remediation |
+| Delayed results recovery | Fair persistent cursor, deduplication, bounded event recovery and authenticated maintenance endpoint | Active five-minute schedule; two recurring deliveries and unchanged populated business data verified, final replacement credential verified HTTP 200 |
+| Maintenance runner | `scripts/voice-maintenance-runner.mjs`: exact branch URL, timeout, no redirects/retries, safe validated counters | QStash schedule active and delivery-verified with maintenance-only credential |
 | Recovery/export coverage | Canonical voice calls, configuration, journals, contacts, pending details, usage and follow-ups; source/concurrency validation | No managed database restore or automatic provider activation |
 | Export experience | On-page client/admin/test downloads; failed or stale requests deliver no file | Actual internal and demo downloads validated; physical-device checks remain separate |
 | Voice retention inventory | Administrator-only read-only counts, content/metadata age separation, invalid-date reporting, no content or provider IDs returned | Holds/provider deletion review and destructive execution remain gated |
@@ -24,7 +24,6 @@ Updated: 2026-10-08. Canonical current state: `CALLERCORE_PROJECT_STATE.md`. App
 
 | Item | Smallest next action | Prepared work |
 | --- | --- | --- |
-| Recurring maintenance | Replace maintenance-only credential in branch Preview and paused schedule after browser tool exposure; then redeploy and resume | Already approved Preview-only schedule; never use the callback secret. See `PREVIEW_RECOVERY_ACCEPTANCE.md` |
 | Managed backups | Observe first automatic daily backup when available; no further backup approval needed | Daily Backup enabled with one-day retention; 7.49 MB manual baseline completed. $1/month owner backup budget is not an enforced cap |
 | Database restore rehearsal | Approve a separate disposable database/restore target and the provider's destructive restore step | Export/state recovery tests; no restore over active Preview/Production |
 | Provider-aware deletion | Confirm voice/transcription retention and holds; authorize provider deletion only against disposable resources | Inventory, export validation and purge guard; no deletion endpoint |
