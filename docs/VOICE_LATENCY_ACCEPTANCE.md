@@ -18,3 +18,16 @@ TJ chose to investigate the over-prescriptive prompt before changing engines: th
 
 Next acceptance: current hours, a routine business question, an appointment availability question with a useful request-capture offer, interruption, and explicit goodbye on the internal line. If the simplified prompt still fails, revisit a controlled engine comparison or provider-level resolution. Any telephone test must remain inside the previously authorized $8 TOTAL working call budget. No additional purchases are authorized by this document.
 
+## Simplified prompt retest
+
+Prompt revision `14f9f76d7bc94cf81a1cb862a95ce7898287e4b7` was synced to the existing internal assistant only, with complete provider/routing read-back around 05:28 Pacific. Speaker fixture text decreased from 1,105 to 397 words (62% fewer characters); reasoner/server safeguards remain. Demo assistant and Production unchanged.
+
+Actual v19 call `01a11b7d-4e92-7dd0-a35d-7677d543d56d` at 05:29 Pacific lasted 197 canonical seconds, provider $0.34. It offered to capture the inspection request instead of only refusing calendar access. Corrected details were saved once and the result truthfully marked as a request, without confirming availability. This is observed tool/conversation behavior, not owner naturalness acceptance. Unnecessary checking narration and interpretation mistakes persisted. The owner only replied “called”; a separate qualitative verdict is pending.
+
+Hangup FAILED: after recording the request earlier in the call, the speaker said goodbye repeatedly but made no further delegation/endCall. The caller explicitly stated they would hang up; provider ended reason Customer. Canonical export validates 20 calls, zero pending and exactly one 197-second usage entry for this call; no additional lead. Context timed out without retry. No spoken current-hours or immediate-interruption acceptance inferred from this test.
+
+Follow-up preserves the concise prompt but makes the required platform action explicit: delegate endCall after an explicit goodbye even when complete_call already recorded the result. Also answer supplied facts directly without needless delegation, and explain unavailable calendar access without promising to check it. These are capability/transport boundaries, not a return to a scripted intake. Local suite remains 1,871 passed and 82 focused voice tests passed. Needs publication/provider sync/hosted QA and another actual ending test.
+
+TJ made an additional v19 call at 05:34 Pacific, `01a11b81-fe8a-7338-b7fc-456aff2e828e`, 83 canonical seconds. Owner reported improvement in some ways, but insufficiently firm responses: tomorrow-hours answer recited the weekly schedule before saying yes. Transcript confirms direct service-area response, honest uncertainty for an unlisted area with a useful capture offer, and continued fillers/delegation. No explicit goodbye in this test, so no new ending acceptance/failure inferred. The follow-up adds a general answer-first principle using verified facts and verified localDate for relative dates. Export validates 21 canonical calls/usage entries, 2,043 seconds, zero pending and no additional FAQ lead. Immediate acoustic interruption and overall naturalness still unaccepted.
+
+
