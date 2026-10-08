@@ -5,9 +5,9 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const source=fs.readFileSync('api/demo-number.js','utf8');
 const secret='isolated-demo-token-test-secret-32-characters';
-function harness({limited=false,available=false,environment='preview'}={}){
+function harness({limited=false,available=false,environment='preview',signingSecret=secret}={}){
   let limits=0,readiness=0;
-  const env={VERCEL_ENV:environment,DEMO_TOKEN_SECRET:secret,DEMO_PHONE_NUMBER:'+15095550100',DEMO_PHONE_NUMBER_DISPLAY:'(509) 555-0100'};
+  const env={VERCEL_ENV:environment,DEMO_TOKEN_SECRET:signingSecret,DEMO_PHONE_NUMBER:'+15095550100',DEMO_PHONE_NUMBER_DISPLAY:'(509) 555-0100'};
   const context={module:{exports:{}},process:{env},Buffer,URL,require(name){
     if(name==='crypto')return crypto;
     if(name==='../lib/rate-limit')return {requestIp:()=> '192.0.2.1',rateLimit:async options=>{limits++;assert.equal(options.failClosed,true);return {limited,retryAfter:60}}};
@@ -48,4 +48,11 @@ test('origin denial and existing Production behavior remain separate from Previe
   assert.deepEqual(denied.counts(),{limits:0,readiness:0});
   const production=harness({environment:'production'});assert.equal((await production.request(token())).status,200);
   assert.deepEqual(production.counts(),{limits:1,readiness:0});
+});
+test('unconfigured or weak signing credentials fail closed without touching rate or readiness storage',async()=>{
+  for(const signingSecret of ['', 'short']){
+    const h=harness({signingSecret});
+    for(let i=0;i<8;i++){const r=await h.request(token());assert.equal(r.status,503);assert.equal(r.body.number,undefined);}
+    assert.deepEqual(h.counts(),{limits:0,readiness:0});
+  }
 });
