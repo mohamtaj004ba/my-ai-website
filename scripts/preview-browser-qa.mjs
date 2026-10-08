@@ -1651,7 +1651,7 @@ async function runPublicSiteQA(){
           if(await page.locator('#monthlyMinutes').innerText()!=='600')throw new Error('Call volume planner is not keyboard operable');
           await shot(page,'public-'+name+'-planner',{fullPage:false});
           await page.emulateMedia({reducedMotion:'reduce'});
-          if(await page.locator('#estimateBar').evaluate(el=>getComputedStyle(el).transitionDuration)!=='0s')throw new Error('Planner ignores reduced motion');
+          if(await page.locator('.planner-result').evaluate(el=>getComputedStyle(el).transitionDuration)!=='0s')throw new Error('Planner ignores reduced motion');
           await page.emulateMedia({reducedMotion:'no-preference'});
           await page.locator('.faq-list summary').first().click();await page.locator('.faq-list details[open] p').first().waitFor();
           await page.locator('#ccChatLauncher').click();await page.locator('#ccChatPanel.open').waitFor();await page.locator('#ccChatClose').click();
