@@ -21,6 +21,13 @@ module.exports=async function handler(req,res){
   try{
     if(admin&&req.query.workspaceId)workspaceId=identifier(req.query.workspaceId);
     if(req.method==='GET'){
+      if(req.query.action==='call-control-diagnostics'){
+        if(!admin)return res.status(403).json({error:'Administrator access required'});
+        previewGate();
+        const limit=await require('../lib/rate-limit').rateLimit({scope:'voice-control-diagnostics',identifier:session.workspaceId+':'+session.email,limit:5,windowSeconds:60,failClosed:true});
+        if(limit.limited)return res.status(429).json({error:'Please wait a moment before checking again'});
+        return res.status(200).json({diagnostics:await require('../lib/voice-control-diagnostics').inspectControl(kv,workspaceId,req.query.callId,createProvider())});
+      }
       const record=await kv.get('voice:config:'+workspaceId);
       const inspection=admin?await require('../lib/voice-inspection').inspect(kv,workspaceId):null;
       return res.status(200).json({voice:safeStatus(record),policy:record?.policy||null,...(admin?{inspection,operations:{assistantAssigned:!!record?.assistantId,numberAssigned:!!record?.numberId,errorCode:record?.errorCode||null,realCallAcceptance:false,recordingReview:'pending'}}:{})});
