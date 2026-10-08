@@ -6,10 +6,11 @@ Updated October 8, 2026. Canonical planning/review handoff. This document replac
 
 - Repository: mohamtaj004ba/my-ai-website.
 - Development branch: feature/callercore-dashboards. PR #5 was rechecked open, draft and unmerged.
-- Current published documentation checkpoint: c4e8575ec7f43176b94ec5decdd4e6a68f2b358e. Its READY Preview: https://my-ai-website-hsldoddsj-mohamtaj004bas-projects.vercel.app (dpl_DdEYyfpKPvmZyZFxmaDfdfGxMN5S).
+- Remote main rechecked at 37ef5cfcdccae35952822859f64fe83f0b9f09f0; this documentation reconciliation does not move it.
+- Documentation baseline reviewed for this reconciliation: e8f96b7d67097b409d3306e03e00b2fd9f0393c7. Its READY Preview: https://my-ai-website-ndj7800tf-mohamtaj004bas-projects.vercel.app (dpl_82JbRcjVvyy3sHEm41VTPTcj7gTB). The reconciliation commit follows this baseline; obtain its own SHA from Git rather than treating the baseline as the new head.
 - Latest fully accepted application runtime: de290558a7c3685018e2e63a72f33bbdf1c0b7a6. Immutable Preview: https://my-ai-website-q64uywptu-mohamtaj004bas-projects.vercel.app (dpl_6idJVwvXY2GdiL2bGxHgzfFoTkHy).
 - Stable branch Preview: https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app. An alias can move; exact acceptance belongs to the immutable runtime above.
-- Production rechecked unchanged: https://www.callercore.com/; READY deployment dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY, SHA 6d36aa454241588140a3d9945eed1a5696a65db6. Production intentionally trails Preview.
+- Production: https://www.callercore.com/; READY deployment dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY, SHA 6d36aa454241588140a3d9945eed1a5696a65db6. This conversation DID include an explicitly authorized website-only Production release on October 5. Subsequent website/dashboard/billing/voice work remains in Preview; Production intentionally trails it. Do not describe the entire conversation as having never changed Production.
 - October 8 recovery-only authentication changes are preserved locally, NOT yet committed/deployed/hosted-verified: api/voice-maintenance.js, scripts/voice-maintenance-runner.mjs, tests/voice-maintenance-auth.test.js. Do not confuse this handoff commit with deployment of those edits.
 
 ## 2. Completed work carried forward from this conversation
@@ -17,8 +18,8 @@ Updated October 8, 2026. Canonical planning/review handoff. This document replac
 ### Public website and product presentation
 
 - Refined pricing card focus/hover movement, premium mobile header/navigation, dismissal/focus behavior, readable public layouts and phone/tablet/laptop sizing.
-- Replaced repetitive industry presentation with distinct industry imagery and business-specific content. Revised call examples and receptionist copy; conversational quality is not certified by marketing scripts.
-- Added detailed privacy, terms and cookie pages/preferences; choices persist rather than repeatedly leaving an overlay.
+- Replaced repetitive industry presentation with six distinct industry pages and imagery, then superseded the transcript experiment with 18 interactive business situations (three per industry). Sticky situation selection, industry-specific tasks and visitor-controlled progression remain; there is no timed conversation carousel or current claim of 36 polished transcripts.
+- Added expanded privacy, terms and standalone cookie policy. Removed the automatic cookie popup and floating settings control; optional analytics defaults off and preferences open explicitly from the policy page. Saved choices persist. These documents are implemented, not certified legal advice or completed compliance review.
 - Dashboard showcase uses stacked sample screens with transitions; enlarged previews retain easy dismissal and image interaction. Screenshots explicitly represent example data, not active customer operations or production readiness.
 - Improved public demo unavailable/failure/rate-limit explanations and alternative actions; removed reliance on obsolete walkthrough destinations.
 - Keep unsupported savings claims out of copy. Observed test-call cost evidence is a small mixed-revision sample, not a customer savings guarantee or another estimate calculator.
@@ -67,7 +68,7 @@ Updated October 8, 2026. Canonical planning/review handoff. This document replac
 | Usage accounting | complete/verified | Canonical duration/allocation deduplicated; no automatic overage charging |
 | Backups/recovery | partially implemented | Managed baseline completed, daily enabled, populated exports validated; managed restore and recurring schedule unverified |
 | Notifications | implemented but not fully verified | Canonical in-app call/follow-up and sandbox billing email evidence; all live external delivery channels not certified |
-| Security | complete/verified | Accepted runtime CI/CodeQL/auth isolation/redaction/browser checks; new local credential patch needs hosted checks |
+| Security | implemented but not fully verified | Accepted runtime CI/CodeQL/auth isolation/redaction/browser checks passed within stated scope; new local credential patch needs hosted checks, and launch/abuse/legal acceptance remains separate |
 | Mobile/responsive | complete/verified | Browser emulation at multiple sizes; actual physical devices not verified |
 | Demo line | implemented but not fully verified | Real isolated call saved; public number reveal gated by acceptance/disclosure/abuse evidence |
 | Production readiness | blocked | Explicit launch gates and actual voice acceptance remain; public website is live, commercial voice service not launched |
@@ -101,6 +102,7 @@ Latest FULL hosted runtime evidence: de290558a7c3685018e2e63a72f33bbdf1c0b7a6.
 - Real calls established connection, routine answers, corrected request capture, CRM/usage and explicit endCall on selected revisions. Exact latest records above are evidence, NOT a passed comprehensive scenario count. Latest owner quality review was negative; fresh acceptance deferred.
 - Recovery: real populated export validator passed; stateful in-memory actual-handler configuration round-trip and journal replay tests passed. No managed database restore, PITR or provider reconnection rehearsal performed.
 - October 8 new local maintenance authorization/runner tests: 8/8 passed. Full local suite including this patch: 1,854 passed, zero failures/cancellations/skips; this is local evidence only. No new CI/CodeQL/Browser QA or scheduled delivery result claimed.
+- History reconciliation verification: full local suite rerun, 1,854/1,854 passed with zero failures/cancellations/skips. Documentation diff/section/evidence-path checks passed. Only the canonical document is committed; local runtime edits remain separate. This docs-only pass does not claim new hosted browser/provider acceptance.
 - Managed baseline backup creation completed; first automatic daily execution not independently observed.
 - Earlier acceptance specifics remain in docs/VOICE_PREVIEW_RUNBOOK.md and docs/STRIPE_SANDBOX_ACCEPTANCE.md. Their chronological entries can contain superseded blockers; this document governs current status.
 
@@ -149,12 +151,107 @@ This run did NOT change main, Production deployment, live Stripe configuration, 
 - Preserve premium, concise customer-facing copy, easy mobile dismissal and pinch interaction without unnecessary visible image-control clutter.
 - No fabricated savings, readiness, legal compliance, real-device evidence or telephone acceptance. Distinguish Preview, sandbox, fixtures and Production throughout.
 
+## 10. Reconciled material implementation and decision inventory
+
+This inventory consolidates the accessible conversation, including autonomous runs, against current code/tests and retained acceptance reports. “Implemented and verified” below means accepted Preview/runtime evidence plus regression coverage within that scope; it never certifies untested real-device, telephone, legal or Production behavior. Earlier passing counts and Preview candidates are historical milestones, superseded by section 5 rather than summed together.
+
+### Website, sales presentation and customer-facing journeys — implemented and verified in Preview
+
+- Homepage motion illustration replaced the static call card/player. Dark sample dashboard pages are stacked with partially visible headers, hover/click/tap/keyboard switching and transitions. Samples include varied inquiries, billing, existing-customer updates, suppliers and follow-ups; removed production/pending-activation implications from marketing screenshots. A small example-data note remains.
+- Full-image viewer starts fitted with surrounding space, keeps Close reachable, supports image-only pinch and two-axis panning, desktop interaction, Escape/outside dismissal, focus return and background-scroll lock. Visible zoom/fit controls were deliberately removed. Browser-emulated checks do not prove every physical phone/browser gesture.
+- Pricing focus enlarges and illuminates the selected card while receding siblings. The original default “20 calls/week” estimator was replaced with explicit monthly coverage assumptions; it is not evidence of typical call volume or guaranteed value. No extra ROI/savings calculator was added.
+- Industry strip moves, pauses on interaction/offscreen and respects reduced motion. Six industry images and contextual office/tools/workspace imagery complement business-specific content. These are illustrations, not evidence of actual clients.
+- Current industry experiences use industry-story.js/CSS and 18 distinct situations; prior two-line examples, playback walkthroughs and longer transcript viewers are superseded. Existing call-types anchors remain. The medical experience concerns administrative support, not PHI suitability or HIPAA certification; legal content does not promise advice. Capturing appointment requests never confirms calendar availability.
+- Public naming moved toward “Call answering” and “AI phone assistant”; AI disclosure remains. Legacy receptionist identifiers/routes are preserved for compatibility. Unsupported one-business-day activation, automatic booking and SMS claims were removed. Obsolete demo walkthrough links were replaced with current destinations.
+- Footer alignment, anchor offsets, heading spacing, assistant/footer overlap, signup Back styling, step focus, menu focus/Escape and shared-style collisions were fixed across public, sign-in, missing-page, email-preference and checkout-status pages.
+- Contact/chat handoff uses a dedicated receipt and “send another message” rather than a lingering form. Saved inquiry versus uncertain notification delivery is explicit. Branded customer communications preserve delivery uncertainty instead of implying unsent data was lost.
+
+### Client/admin dashboards — implemented and verified in Preview
+
+- Shared typography distinguishes readable body text from headings; compact labelled records retain the laptop table layout. Calls become phone cards; Client Care request boundaries, Settings save/cancel actions, Contacts filters and platform grids reflow at narrow widths.
+- Mobile navigation, business heading, touch controls, compact account/notification panels, outside dismissal and backdrop cleanup were refined. Opening a notification’s call details clears the previous blur. Closed menus cannot retain offscreen keyboard targets. Read-only admin-client viewing retains its banner and prohibits writes.
+- Contacts show compact identities with details/history inside the record. Recorded website sessions live under Contacts; a separate unified live omnichannel inbox was not delivered. Conversation pagination supports later pages rather than presenting a truncated first page as complete history.
+- Follow-ups use one status control: red Pending, Completed, Dismissed, with historical In progress information retained and explicit Reopen recovery. Empty filtered lists do not falsely say all work is complete. Leaving a section resets filters; background refresh preserves active filters and unsaved drafts.
+- Profile opens as a summary with explicit Edit/Cancel, preserving saved values. Logos retain their proportions. Support categories, including Billing, are inside the support form/sidebar rather than cluttering the header.
+- Intelligence stays usable with the mobile keyboard, no forced autofocus, 16px input text and a compact reduced-height layout. Rich headings/paragraphs/lists stack correctly after a response-header CSS collision was fixed.
+- Finance charts support keyboard/tap month details, dismissal, edge positioning, restored focus/selection after refresh and hidden-tab resize. Revenue, expense and margin displays remain source-bound; small-screen totals, labels, legends and campaign entries were refined.
+- Alerts open the exact call/client/request; stale/malformed notification refresh retains the last verified data. Sync animation means dashboard data synchronization, not verified live phone answering. All existing admin sections and operational fields remain available.
+
+### Backend, Gmail and consequential administration — implemented and verified within accepted scope
+
+- Selective CallerCore confirmation dialogs cover access repair/force logout, configuration override/rollback, phone inventory removal, Gmail disconnect, suspension/resumption and uncertain onboarding email review. Target/revision guards, locks, atomic audit and recoverable errors survive the visual changes.
+- Nested dialog focus/backdrop handling, replacement-launcher races and hidden/disabled fallback controls were hardened. A confirmed mutation remains successful when subsequent diagnostics refresh fails.
+- Force logout checks current workspace ownership atomically; a changed owner cannot have sessions revoked by stale context. Suspension limits service changes while preserving billing/support access; it does not cancel a Stripe subscription or prove provider routing stopped.
+- Existing typed deletion, recoverable workspace deletion and guarded restoration were inherited from the initial handoff and preserved, not newly invented during this run. Voice-bearing permanent purge is now separately blocked pending complete provider-aware cleanup.
+- Gmail refresh cannot recreate a disconnected connection or reuse a previous account’s token. Inbox/thread/verified-alias caches are account-scoped; account changes clear stale data, same-account temporary failures preserve useful history, and retries recheck identity after delay.
+- Malformed provider results, contradictory aliases, duplicate thread IDs and corrupt cached messages fail closed. Invalid thread caches require fresh reads. MIME handling excludes attachments, prefers nested plain text with HTML fallback, and signals truncated/uncertain content; missing dates are not fabricated as today.
+- Replies bind the reviewed account, thread and recipient. Website prospect replies reject changed recipient context. A confirmed send stays confirmed despite cache/refresh/thread-placement failures; ambiguous transport remains delivery-unconfirmed rather than prompting blind resend or provider switching.
+- Website inquiry/chat/unfinished-checkout Inbox views, counts and refresh sources were repaired. Channel/history is preserved, no fabricated conversation or duplicate lead is created, and partial coverage is visible. Unfinished leads retain their business stage until explicitly closed/converted.
+- Onboarding delivery review binds the workspace and exact attempt, checks actual delivery evidence, and records resolution without sending another email. Support mailbox inbound/outbound and generated message delivery were verified in prior acceptance; this is not a new blanket assertion that every future notification channel is delivered.
+- The owner’s fictional Preview client workspace was preserved from automated reseeding and given a narrowly guarded test-plan control. This changes fixture entitlement only, never real Stripe subscriptions or customer billing.
+
+### OpenAI and Intelligence — implemented and verified for the scoped workflows
+
+- OpenAI Responses API replaced Anthropic calls/fallback for website assistance, onboarding and dashboard Intelligence. Default pinned text model is gpt-5.4-mini-2026-03-17; this is distinct from voice GPT-Live.
+- Proposal review shows current/proposed settings. Apply uses existing authenticated, revision-guarded handlers. Pro clients can manage permitted follow-ups or request admin review; unsupported billing, access, provider/transfer activation and cross-tenant actions are denied.
+- Strict fields, current ownership/role/entitlement, expiration, single use and replay protection are enforced. The live action handoff bug that dropped cookie headers was fixed; errors do not silently replay a save. Key whitespace is trimmed and errors redact credentials.
+- Real isolated GPT acceptance proved proposal alone made no mutation, Apply saved, replay was rejected and original greeting restored. Earlier missing-key/quota blockers were resolved and are historical only.
+- Follow-up totals use canonical effective status across all stored calls, not the limited detailed sample; actual GPT totals were compared to the dashboard.
+
+### Stripe, payment confirmation and onboarding — sandbox verified; customer launch deferred
+
+- Native first-party billing retains Stripe-controlled payment inputs and safe display metadata only. Canonical Stripe reads and workspace ownership guard plans, proration, cancellation/reactivation, billing contact, invoices and SetupIntent payment-method updates.
+- Actual sandbox acceptance exercised declines, authentication/3DS, canceled authentication, insufficient-funds recovery, same-order retries and setup-fee exact-once behavior. Payment Element save-default restrictions were fixed.
+- Unpaid upgrades remain pending; the existing plan changes only after the paid result. Delayed/replayed events read canonical subscription state rather than rolling it backward. Initial setup fee is not repeated at renewal/plan change.
+- Durable fulfillment separates a paid payment from account preparation; late checkout events cannot duplicate workspace/welcome side effects. Branded payment failure/recovery/plan/subscription messages are idempotent; uncertain email delivery is reconciled, not blindly resent.
+- Confirmation now distinguishes payment received, account ready, processing, open/expired/missing order, private verification and temporary unavailability. Bounded polling, manual/online recovery and specific bank-failure explanations replaced vague retry warnings. A network failure cannot turn a confirmed payment into a failure.
+- Ambiguous submissions check the original private order; return to payment only when the server confirms it is open. Recovery retains business fields, never card details or blanket agreement acceptance; terms require fresh review.
+- Customer-facing signup, agreement, payment, confirmation, sign-in and billing states received premium visual/loading/empty/error refinements. Full paid-customer onboarding through activated customer phone service remains unaccepted.
+- Live Stripe catalog/portal/webhook/email settings were inspected read-only, not changed. Existing finalized-invoice email overlap needs a release decision; historical “Stripe not configured” and “sandbox acceptance pending” are superseded. Tax registration/entity readiness is owner confirmation, not a broken runtime service.
+
+### Voice and reliability after Stripe — real isolated provider work; acceptance boundaries remain
+
+- Initial audit separated seeded/UI-only voice settings from real integration. Vapi is behind a provider-neutral adapter; saved GPT-Live speaker/reasoner configuration powers actual calls. Vercel serves secure tools/lifecycle APIs rather than streaming audio.
+- Assistant configuration/read-back canonicalizes provider limits, voice/tool ordering and permissions. Current roles are rechecked rather than trusting cached admin sessions. Verified provider/call binding derives workspace identity; caller-controlled metadata/IDs cannot cross tenants.
+- Caller-ID matching is not identity verification for private history. NANP numbers are normalized, withheld callers do not merge indiscriminately, existing contact/open-request matching avoids duplicates, and partial corrections preserve previously captured details.
+- Wrong-number, spam and resolved routine questions do not fabricate leads/follow-ups; noncustomer dispositions are excluded from customer directories. Call notes, request associations, follow-ups, notifications and usage are canonical journal results, replay-safe.
+- Provider state is verified before and after resume/routing changes, with revision/stale guards and truthful uncertainty. Controlled pause routing read-back passed; a fallback number being configured is not human-pickup acceptance. Holiday/date/duration settings survive edits; the temporary closed-hours test policy was restored.
+- Fresh local business-hours context is submitted at call start, avoiding routine “I’ll check” narration. The agent must not invent appointment availability. Goodbye handling waits for an in-flight save, preserves follow-up questions and does not hang up on ordinary acknowledgements. Latest actual retest still failed owner quality review.
+- Office background sound was disabled after static feedback; the owner reported minor residual static. This is subjective call feedback, not independent acoustic certification. Recording remains off; configurable disclosure support is not legal acceptance or proof every opening disclosure was delivered.
+- An actual demo tool verification read timed out after approximately 8.45 seconds; safe bounded transient read retries replaced that path. Writes are not automatically retried on uncertainty, malformed/access/rate-limit results are not treated as transient, and tools do not claim an uncertain request was saved.
+- Lifecycle checks cover timestamp freshness/future values, duration, canonical IDs, active workspace/revision and exact provider association. Delayed artifacts use bounded batches, a fair cursor and owned lease; two opportunistic background recovery attempts do not constitute a durable schedule.
+- Actual internal/demo populated exports and aggregate retention inspections passed. Configuration round-trip and journal replay have in-memory handler evidence; managed restore/provider reconnection remain unverified.
+- Observed voice cost report covers 14 inbound calls and approximately $2.53 in mixed-revision tests, excluding outbound legs; it is not production margin or savings proof. Export canonical connected seconds differ from rounded provider display totals. Check current credit balance before any new acceptance spend.
+
+### Approvals, constraints and superseded work to preserve
+
+- One explicit website-only public release was authorized and performed October 5. That authorization does not authorize promoting subsequent Preview work, merging PR #5 or opening commercial checkout.
+- Temporary project-wide Vercel automation bypass was approved for sandbox webhook acceptance only, then callback URL restored and token revoked; disposable sandbox subscription termination was approved and completed. Temporary acceptance harness was removed.
+- Persistent Preview Vapi access was approved for exactly isolated internal/demo assistants, with transient assistants disabled; matching authenticated callback access and branch-only public Preview reachability were approved. Application login/authorization and webhook authentication remain enforced. Older unrelated demo/provider resources were left alone.
+- Owner approved controlled internal test microphone access and a TOTAL $8 Vapi acceptance limit, not an additional recurring budget or unrestricted outbound calling. Internal calls are bounded to ten minutes; demo to five. Quality retesting was explicitly postponed.
+- Preview backup and recurring recovery scheduling approvals already exist; do not ask again for that defined scope. New destructive restore targets, policy-based deletion, customer activation and Production release still require their own authorization.
+- System Health separates core operational checks, real blockers, launch-gated release setup, owner confirmations and optional services. It must not use a fixed historical “2 blockers” count after conditions change, or let sandbox acceptance hide an actual environment failure.
+- Calendar booking, SMS, broad cross-channel CRM, multi-user roles, datastore migration, Gmail push/history and campaigns remain intentionally deferred. No generic transcript showcase, extra ROI calculator or visible mobile image-control toolbar should be reintroduced without a new product decision.
+- Preserve truthful distinction between real isolated calls, sandbox billing, seeded marketing/UI fixtures and customer Production. Do not mark physical-device, legal, complete telephone-matrix or managed restore acceptance complete from unit/browser tests.
+
+Evidence anchors: tests/industry-experience.test.js, tests/cookie-preferences.test.js, tests/admin-action-confirmation.test.js, tests/admin-access-repair-atomic.test.js, tests/gmail-account-cache-isolation.test.js, tests/gmail-connection-concurrency.test.js, tests/gmail-provider-response-validation.test.js, tests/gmail-safeguards.test.js, tests/intelligence-actions.test.js, tests/client-intelligence-followups.test.js, tests/checkout-confirmation-experience.test.js, tests/native-checkout.test.js, tests/voice-integration.test.js, tests/voice-call-context.test.js, tests/voice-recovery.test.js, tests/voice-export.test.js, tests/voice-retention.test.js; detailed provider evidence remains in the acceptance/runbook documents cited above.
+
+## HISTORY RECONCILIATION STATUS
+
+- The full accessible local Work conversation archive was scanned from October 3 through this October 8 request: 50,792 archived records at extraction, including 136 user messages, 963 assistant messages and 83 completion summaries. Material instructions, approvals, accomplishments and autonomous-run closeouts were reviewed together with available attached continuation briefs and current implementation/tests.
+- CALLERCORE_PROJECT_STATE.md was reconciled against that accessible history, repository sources, current draft PR, deployment metadata and retained acceptance reports. Missing current work was added; superseded transcript/cookie/Stripe/backup claims were consolidated. The earlier authorized Production website release is explicitly distinguished from subsequent Preview-only work.
+- Full conversations in other chats and any work preceding the earliest available archive were NOT accessible. Their supplied handoffs are context, not independently reviewed original conversations. This is not a claim that every raw tool payload, historical screenshot or remote acceptance was independently rerun.
+- Historical claimed test counts are not aggregated or promoted to current acceptance. Current hosted evidence is pinned in section 5; preserved local maintenance edits are not hosted-verified. Subjective telephone quality, physical-device behavior, legal readiness, managed restore and the complete actual-call matrix remain unverified as stated.
+- This document can now serve as the canonical Work-to-ChatGPT synchronization document for the full accessible history and current verified scope. Future implementations must update it with evidence; the reconciliation does not remove launch gates or certify unavailable history.
+
 ## CURRENT HANDOFF FOR CHATGPT
 
 - Work only on feature/callercore-dashboards in mohamtaj004ba/my-ai-website; PR #5 is draft/unmerged.
-- Production remains the older stable release; no commercial or customer voice activation authorized.
+- One website-only Production release was authorized earlier in this chat; subsequent Preview work remains unpublished. No commercial/customer voice activation is authorized.
 - Latest fully accepted runtime is de290558a7c3685018e2e63a72f33bbdf1c0b7a6; immutable and stable Preview URLs are above.
-- Public/client/admin redesigns, sample dashboard stack, responsive layouts and scoped Intelligence are implemented and browser-verified.
+- Public/client/admin redesigns, sample dashboard stack/pinch viewer and responsive layouts are browser-verified; physical-device behavior remains separate.
+- Industry transcripts were superseded by 18 business-specific interactive scenes; automatic cookie popup/floating settings were removed, analytics defaults off.
+- Gmail/account/thread/send integrity, guarded admin mutations, Inbox intake and native payment confirmation/recovery refinements are reconciled in section 10.
 - Stripe sandbox acceptance is complete; preserve it and do not restart the billing phase without regression evidence.
 - Actual isolated Vapi/GPT-Live calls reach CallerCore tools, CRM, normalized results, notifications and usage.
 - Voice quality and comprehensive real-call/transfer acceptance remain incomplete; latest owner feedback was negative.
@@ -168,4 +265,5 @@ This run did NOT change main, Production deployment, live Stripe configuration, 
 - Backup and scheduler approvals are already granted; no repeat approval needed for that scope.
 - Recording, public demo reveal, live checkout, tax/overage and customer telephony stay gated.
 - Owner participation needed later for phone/transfer quality, legal/disclosure decisions, disposable restore and final launch.
-- Current status supersedes stale chronological blockers in linked historical runbooks; do not infer readiness from fixtures.
+- Full accessible Work archive reconciled with implementation and retained evidence; unavailable other-chat/pre-archive history is explicitly excluded. This is the canonical synchronization document within that scope.
+
