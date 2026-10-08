@@ -64,12 +64,13 @@ test('authenticated active callback tolerates lagged REST state but never revive
   assert.equal(submissions,status==='ended'?0:1);
  }
 });
-test('first active tool request can deliver missed context once without duplicate writes',async()=>{
+test('hours lookup returns verified call-wide state without waiting for live context or creating leads',async()=>{
  const kv=memory();let submissions=0;
  const p={...provider(),appendContext:async()=>{submissions++;return {submitted:true}}};
  const event=message('check_after_hours_policy',{});
- await processMessage(kv,event,{provider:p});await processMessage(kv,event,{provider:p});
- assert.equal(submissions,1);assert.equal((await kv.get('voice:call:'+normalizedCall(call).id)).speakerContextState,'submitted');
+ const result=await processMessage(kv,event,{provider:p});await processMessage(kv,event,{provider:p});
+ assert.equal(submissions,0);assert.equal((await kv.get('voice:call:'+normalizedCall(call).id)).speakerContextState,undefined);
+ const hours=JSON.parse(result.results[0].result);assert.equal(typeof hours.open,'boolean');assert.equal(typeof hours.validAcrossCall,'boolean');assert.equal(hours.appointmentAvailability,'unknown; no calendar access');
  assert.equal((await kv.get('leads:tenant'))?.length||0,0);
 });
 test('ending a call never waits for an unrelated missed hours-context submission',async()=>{
@@ -336,3 +337,4 @@ test('speaker has approved routine knowledge without a needless lookup handoff',
   await processMessage(kv,{type:'end-of-call-report',call:{id:call.id}},{provider:provider({...call,status:'ended',endedAt:'2026-10-05T16:00:25Z'})});
   const view=kv.values.get('calls:tenant')[0];assert.equal(view.disposition,'non_customer');assert.equal(view.category,'Non-customer');assert.equal(view.outcome,'Resolved');assert.equal(kv.values.get('leads:tenant').length,0);
  });
+
