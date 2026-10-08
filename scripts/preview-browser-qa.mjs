@@ -1773,6 +1773,27 @@ try{
   await runReadOnlyBannerQA({width:1440,height:900},'desktop');
   await runReadOnlyBannerQA({width:390,height:844},'mobile');
 
+  // Exercise the real Preview admission guards using only invalid tokens.
+  // Never request/redeem a genuine reveal token or dial a demo number here.
+  const demoChecks=[];
+  async function deniedDemoRequest(method,origin,body,expected){
+    const headers={'x-vercel-protection-bypass':secret,Origin:origin};
+    if(body!==undefined)headers['Content-Type']='application/json';
+    const response=await fetch(baseURL+'/api/demo-number',{method,headers,body:body===undefined?undefined:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(20000)});
+    const data=await response.json().catch(()=>null);
+    if(response.status!==expected||!data||typeof data.error!=='string'||Object.hasOwn(data,'number')||Object.hasOwn(data,'display'))throw new Error('Demo admission guard failed: expected '+expected+', received '+response.status);
+    if(response.headers.get('cache-control')!=='no-store')throw new Error('Demo admission denial was cacheable');
+    if(expected===429&&!(Number(response.headers.get('retry-after'))>0))throw new Error('Demo rate denial omitted retry guidance');
+    demoChecks.push({method,status:response.status,numberRevealed:false});
+  }
+  await deniedDemoRequest('GET',baseURL,undefined,405);
+  await deniedDemoRequest('POST','https://example.invalid',{token:'invalid'},403);
+  await deniedDemoRequest('POST',baseURL,{token:'invalid'},400);
+  await deniedDemoRequest('POST',baseURL,{token:String(Date.now()-2000)+'.'+'0'.repeat(64)},403);
+  for(let i=0;i<4;i++)await deniedDemoRequest('POST',baseURL,{token:'invalid'},400);
+  await deniedDemoRequest('POST',baseURL,{token:'invalid'},429);
+  report.demoAdmission={passed:true,scope:'real hosted invalid-token and rate-limit denials; no real reveal token or telephone call',checks:demoChecks};
+
   if(report.visualFailures.length)throw new Error('Dashboard visual verification failures:\n'+report.visualFailures.join('\n'));
   if(report.pageErrors.length)throw new Error('Page errors: '+JSON.stringify(report.pageErrors));
   if(report.consoleErrors.length)throw new Error('Console errors: '+JSON.stringify(report.consoleErrors));

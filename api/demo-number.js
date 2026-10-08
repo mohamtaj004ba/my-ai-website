@@ -60,7 +60,6 @@ module.exports = async function handler(req, res) {
   }
 
   if(!SECRET||SECRET.length<32)return res.status(503).json({error:'Demo unavailable'});
-  if(process.env.VERCEL_ENV==='preview'){try{const {kv}=require('../lib/kv'),{demoReadiness}=require('../lib/voice-demo');const ready=await demoReadiness(kv);if(!ready.available)return res.status(503).json({error:'Demo unavailable'});}catch{return res.status(503).json({error:'Demo unavailable'})}}
   if(!/^\+[1-9]\d{7,14}$/.test(String(DEMO_NUMBER_E164||''))||!String(DEMO_NUMBER_DISPLAY||'').trim()||String(DEMO_NUMBER_DISPLAY).length>40)
     return res.status(503).json({error:'Demo unavailable'});
 
@@ -88,6 +87,11 @@ module.exports = async function handler(req, res) {
   if (age < MIN_TOKEN_AGE_MS || age > MAX_TOKEN_AGE_MS) {
     return res.status(403).json({ error: 'Token expired, refresh the page and try again' });
   }
+
+  // Readiness can read many canonical records. Admit the request through the
+  // distributed limiter and signed-token checks before touching that store,
+  // including while the public demo is deliberately unavailable.
+  if(process.env.VERCEL_ENV==='preview'){try{const {kv}=require('../lib/kv'),{demoReadiness}=require('../lib/voice-demo');const ready=await demoReadiness(kv);if(!ready.available)return res.status(503).json({error:'Demo unavailable'});}catch{return res.status(503).json({error:'Demo unavailable'})}}
 
   return res.status(200).json({
     number: DEMO_NUMBER_E164,
