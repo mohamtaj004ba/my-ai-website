@@ -72,7 +72,7 @@ module.exports=async function handler(req,res){
       const savedAgent=await kv.get('agent:'+workspaceId)||{};
       if(Number(savedAgent.updatedAt||0)!==record.agentRevision)throw new VoiceError('VOICE_CONFIG_OUT_OF_SYNC');
       const match=record.state==='paused'?!number.assistantId&&number.fallbackDestination?.number===record.fallbackNumber:number.assistantId===record.assistantId;
-      const desired=provider.assistantConfig(await kv.get('workspace:'+workspaceId),savedAgent,record.policy,{demo:record.purpose==='demo'});
+      const desired=provider.assistantConfig(await kv.get('workspace:'+workspaceId),savedAgent,record.policy,{demo:record.purpose==='demo',pipeline:record.pipeline||'gpt-live'});
       if(!match||!agentMatches(agent,desired))throw new VoiceError('VOICE_SYNC_UNVERIFIED');
       // An uncertain sync may have completed externally. Recover only after
       // both the full assistant configuration and number routing match.
@@ -86,3 +86,4 @@ module.exports=async function handler(req,res){
     if(verificationSnapshot&&code!=='VOICE_CONFIG_CONFLICT')try{await compareAndAuditBatch(kv,[{key:'voice:config:'+workspaceId,before:verificationSnapshot,after:{...verificationSnapshot,state:'error',errorCode:code,verifiedAt:null}}],'audit:'+workspaceId,{id:crypto.randomUUID(),workspaceId,actorEmail:session.email,actorRole:currentRole,action:'voice_verification_failed',section:'voice',at:Date.now()})}catch{/* Do not claim a failed invalidation was saved. */}
     return res.status(code==='VOICE_CONFIG_CONFLICT'?409:503).json({error:req.query.action==='retention-review'?'The data review could not be completed. No records were changed.':'The voice change could not be confirmed. Your saved settings are preserved; check the current state before trying again.',code})}
 };
+
