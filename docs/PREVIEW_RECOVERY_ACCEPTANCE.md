@@ -8,7 +8,7 @@ Updated October 8, 2026. Canonical status remains `CALLERCORE_PROJECT_STATE.md`.
 - POST only to `https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app/api/voice-maintenance`.
 - Every five minutes, empty body, 60-second delivery timeout, zero retries.
 - Forward `Authorization: Bearer <maintenance credential>` using only `CALLERCORE_VOICE_MAINTENANCE_SECRET`. Never copy the callback credential or add project-wide QStash variables.
-- The QStash form is prepared but not submitted. The existing Vercel credential is sensitive/write-only; its original value is unavailable to this chat. Secure owner entry or equivalent scoped credential rotation is needed before delivery acceptance.
+- QStash schedule scd_6X9ZUHpNFLW8NHZ7K1CrYsWcMhdU was created October 8 at 01:30:04 Pacific, then paused before its first scheduled run. Owner rotated the branch Preview maintenance credential, and same-code redeployment dpl_DzkJFSCoWoTaruXGnnhM2JuNzPSe is READY at bdc31fa7919d1399c3211a6574c3fa3b648945a5. Browser inspection exposed the entered credential in a tool result; owner must replace only this credential in Vercel and the paused schedule before resuming. Callback credential is unchanged. No positive or recurring delivery acceptance is claimed.
 - Do not count Vercel's protected-deployment response as application authentication evidence. The stable branch URL is reachable and rejects GET (405), missing credentials (401), and invalid credentials (401).
 
 ## Delivery acceptance remaining after secure credential entry

@@ -1,18 +1,16 @@
 # CallerCore Backup and Recovery
 
-Updated: 2026-09-21
+Updated: 2026-10-08
 
 > Current status: see [Current delivery status](CURRENT_DELIVERY_STATUS.md). This September document retains historical planning context; newer Stripe and Preview voice work supersedes its older implementation status.
 
-## October 6 Preview inspection
+## Current Preview backup and restore status
 
-The isolated `callercore-preview-redis` database is on Pay As You Go. Its native Upstash Backups tab showed Daily Backup off (`aria-checked=false`) and no saved backups. This was a read-only inspection; no upgrade, backup setting, restore or Production database change occurred.
+Canonical status: `CALLERCORE_PROJECT_STATE.md`. Daily Backup is enabled on isolated `callercore-preview-redis` (provider ID `b7edf57b-6c72-4c5e-8582-308303f93ced`) with last-one-day retention. Manual baseline `callercore-preview-baseline-20261008` completed, 7.49 MB. October 8 live inventory still showed only this manual baseline: first automatic daily execution remains unobserved. This supersedes the October 6 empty/off inspection.
 
-Upstash documents daily backups on paid plans: https://upstash.com/docs/redis/help/production-checklist and https://upstash.com/docs/redis/features/backup. Basic daily backup does not require purchasing Prod Pack. Longer retention and point-in-time recovery must not be assumed from that feature.
+Backup/scheduler scope is already approved. Approved backup budget is $1/month at $0.25/GB-month; no enforced hard cap or upgrade is claimed. Managed restore remains unproven. The separate disposable target and its destructive restore still require explicit TJ authorization.
 
-Next owner action: approve the desired Preview backup retention, then enable Daily Backup on this exact isolated database. Verify that a backup is created. Test restoration only into a separate disposable target after reviewing the provider's destructive restore behavior. Record source timestamp, target identity, recovered canonical call/usage counts, tenant isolation and provider bindings kept inactive. Do not restore over this active Preview database or Production as an acceptance shortcut.
-
-Current voice exports cover configuration, canonical calls, contacts, journals, pending recovery, usage and follow-up state with concurrency checks. They remain a portability layer, not proof of managed database recovery. See [current delivery status](CURRENT_DELIVERY_STATUS.md).
+See `PREVIEW_RECOVERY_ACCEPTANCE.md` for the exact source identity, provider-supported cross-database restore procedure, target isolation requirements and canonical validation checklist. Never restore over active Preview, Production or retained data; never auto-reconnect provider or notification integrations from a restored database.
 
 ## Goals
 
@@ -86,7 +84,7 @@ CallerCore exports identifiers, not card data or Stripe credentials. Stripe rema
 OAuth tokens are not part of workspace exports. Reconnect Gmail through the OAuth flow when credentials are unavailable or invalid.
 
 ### Voice / telephony
-When Vapi/telephony is implemented, the provider must remain the source of truth for number ownership, call media, and provider-native call IDs. Do not recreate number assignments from an export without provider verification.
+Vapi/telephony is implemented for isolated test resources. The provider remains the source of truth for number ownership, call media, and provider-native call IDs. Do not recreate number assignments from an export without provider verification.
 
 ### Email
 Sent-message history may exist in Gmail/Mailgun rather than CallerCore KV. Workspace export should not be assumed to contain a complete legal archive of outbound email.
