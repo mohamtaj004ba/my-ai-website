@@ -35,4 +35,4 @@ PR #5 remains draft/unmerged. Production remains the older website release. No l
 
 Earlier hosted QA 37767068165 stopped at an obsolete assertion for the removed planner chart. The replacement tests reduced motion on the recommendation result; the earlier failure is not acceptance.
 
-The owner’s later request to broaden the audience wording and correct the number/setup line is a follow-up. The first proposed wording was rejected and has not been published. Keep that follow-up separate from this accepted runtime.
+The owner’s later request to broaden the audience wording and correct the number/setup line is a follow-up. The approved follow-up is “AI call answering, built around your business” and “Your number or a new one. Setup tailored to your business.” Its new integrated revision awaits its own hosted acceptance.

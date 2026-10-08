@@ -312,5 +312,5 @@ Evidence anchors: tests/industry-experience.test.js, tests/cookie-preferences.te
 
 - Applied all 15 feedback points across the homepage, six industry pages, demo, pricing/plan signup and redesigned login with inline help. Owner-approved hero paragraph is retained verbatim.
 - Accepted runtime and hosted evidence above are pinned to 182512c4. Earlier QA 37767068165 failed at an obsolete removed-chart assertion and is superseded by passing QA 37767555400.
-- The owner subsequently requested broader audience language and accurate new/existing-number and form-based setup copy. First proposed follow-up wording was rejected; no such follow-up copy is published in this checkpoint.
+- The owner subsequently requested broader audience language and accurate new/existing-number and form-based setup copy. Approved follow-up copy: “AI call answering, built around your business” and “Your number or a new one. Setup tailored to your business.” Related page titles, sharing metadata, demo metadata and Growth description are broadened. The integrated follow-up revision awaits its own hosted acceptance.
 - PR #5 stays draft/unmerged; Production rechecked unchanged at 6d36aa454241588140a3d9945eed1a5696a65db6 / dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY.
