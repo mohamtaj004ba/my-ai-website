@@ -51,7 +51,7 @@ test('classic internal comparison preserves authenticated tools and rejects prov
   const p=createProvider({env}),w={id:'tenant',name:'Test service business'};
   const live=p.assistantConfig(w,{},policy),classic=p.assistantConfig(w,{},policy,{pipeline:'classic-comparison'});
   assert.equal(live.model.model,'gpt-live-1');assert.equal(classic.model.model,'gpt-4.1-mini');
-  assert.deepEqual(classic.model.tools,live.model.tools);assert.deepEqual(classic.server,live.server);
+  assert.deepEqual(classic.model.tools.map(({messages,...tool})=>tool),live.model.tools);assert.equal(classic.model.tools.at(-1).messages[0].content,'Goodbye.');assert.equal(classic.model.tools.at(-1).messages[0].blocking,true);assert.deepEqual(classic.server,live.server);
   assert.equal(classic.artifactPlan.recordingEnabled,false);assert.equal(classic.model.speaker,undefined);
   assert.equal(classic.voice.voiceId,'Elliot');assert.equal(classic.stopSpeakingPlan.voiceSeconds,0.2);
   assert.throws(()=>p.assistantConfig(w,{},policy,{demo:true,pipeline:'classic-comparison'}),{code:'VOICE_PIPELINE_INVALID'});
@@ -63,6 +63,12 @@ test('classic internal comparison preserves authenticated tools and rejects prov
     const drift=structuredClone(classic);mutate(drift);assert.equal(matches(drift,classic),false);
   }
 });
+test('optional null callback means originating number, without accepting missing consent or unknown fields',()=>{
+  const valid={intent:'estimate',reason:'Repair estimate',confirmed:true,callbackNumber:null};
+  assert.deepEqual(argumentsFor('save_call_request',valid),{intent:'estimate',reason:'Repair estimate',confirmed:true});
+  assert.equal(valid.callbackNumber,null);
+  for(const input of [{...valid,confirmed:null},{...valid,intent:null},{...valid,reason:null},{...valid,workspaceId:null},{...valid,callbackNumber:123}])assert.throws(()=>argumentsFor('save_call_request',input));
+});
 test('classic configuration persists through resume, skips GPT-Live context and retains replay protections',async()=>{
   const kv=memory(),real=createProvider({env});let desired,options,submissions=0;
   const p={...provider(),assistantConfig(w,a,b,o){options=o;return real.assistantConfig(w,a,b,o)},retrieveNumber:async()=>({assistantId:'assistant_test'}),configureAgent:async(id,c)=>{desired=c},retrieveAgent:async()=>desired,connectNumber:async()=>{},resumeNumber:async()=>{},appendContext:async()=>{submissions++;return {submitted:true}}};
@@ -71,8 +77,8 @@ test('classic configuration persists through resume, skips GPT-Live context and 
   assert.equal(status.pipeline,'classic-comparison');assert.equal(options.pipeline,'classic-comparison');
   await assert.rejects(configure(kv,'tenant',{policy,expectedRevision:2,purpose:'demo',pipeline:'classic-comparison'},actor,{env,provider:p}),{code:'VOICE_PIPELINE_INVALID'});
   await processMessage(kv,{type:'status-update',call:{id:'call_test'}},{provider:p});assert.equal(submissions,0);
-  const item=message('save_call_request',{confirmed:true,reason:'Repair request',intent:'new_service',name:'Test Caller'});
-  const first=await processMessage(kv,item,{provider:p}),again=await processMessage(kv,item,{provider:p});assert.deepEqual(first,again);
+  const item=message('save_call_request',{confirmed:true,reason:'Repair request',intent:'service',name:'Test Caller',callbackNumber:null});
+  const first=await processMessage(kv,item,{provider:p}),again=await processMessage(kv,item,{provider:p});assert.deepEqual(first,again);assert.equal(JSON.parse(first.results[0].result).status,'captured');
   kv.values.set('voice:config:tenant',{...kv.values.get('voice:config:tenant'),state:'paused',fallbackNumber:'+15095550100'});
   p.retrieveNumber=async()=>({assistantId:null,fallbackDestination:{number:'+15095550100'}});
   p.resumeNumber=async()=>{p.retrieveNumber=async()=>({assistantId:'assistant_test'})};
@@ -370,6 +376,7 @@ test('speaker has approved routine knowledge without a needless lookup handoff',
   await processMessage(kv,{type:'end-of-call-report',call:{id:call.id}},{provider:provider({...call,status:'ended',endedAt:'2026-10-05T16:00:25Z'})});
   const view=kv.values.get('calls:tenant')[0];assert.equal(view.disposition,'non_customer');assert.equal(view.category,'Non-customer');assert.equal(view.outcome,'Resolved');assert.equal(kv.values.get('leads:tenant').length,0);
  });
+
 
 
 
