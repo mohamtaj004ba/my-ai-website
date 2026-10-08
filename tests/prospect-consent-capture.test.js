@@ -29,7 +29,7 @@ test('browser payloads send explicit booleans rather than checkbox string values
 test('server capture trusts only literal true and stamps a known first-party source',()=>{
   assert.match(contactApi,/req\.body\?\.marketingEmailConsent===true/);
   assert.match(contactApi,/marketingEmailConsent:\{granted:marketingEmailConsent,source:'contact_form'\}/);
-  assert.match(contactApi,/category==='Chatbot inquiry'\?\{\}:\{marketingEmailConsent/);
+  assert.match(contactApi,/\['Chatbot inquiry','Login help'\]\.includes\(category\)\?\{\}:\{marketingEmailConsent/);
   for(const api of [checkoutApi,legacyLeadApi]){
     assert.match(api,/marketingEmailConsent=raw\.marketingEmailConsent===true/);
     assert.match(api,/marketingEmailConsent:\{granted:marketingEmailConsent,source:'get_started'\}/);

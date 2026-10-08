@@ -365,3 +365,9 @@
 
 @media(prefers-reduced-motion:reduce){.public-site .site-header nav.open{animation:none}}
 
+
+.public-site .price-grid article{position:relative;isolation:isolate;cursor:pointer}.public-site .price-grid article>a:after{content:"";position:absolute;inset:0;border-radius:inherit;z-index:1}.public-site .price-grid article>:not(a){position:relative;z-index:2;pointer-events:none}.public-site .price-grid article :is(p,h3,span,li){pointer-events:auto;cursor:text}.public-site .price-grid article:focus-within{outline:3px solid #ae4727;outline-offset:5px}.public-site .price-grid article>a{position:static}.public-site .planner-result h4{font:750 38px/1.15 Manrope,sans-serif;margin:8px 0 12px;letter-spacing:-.04em;color:#203c33}.public-site .planner-result #planReason{font-size:15px;line-height:1.6;min-height:48px;margin:0 0 20px}.public-site .planner-total{display:block;border-top:1px solid #cadacf;padding-top:16px;margin-bottom:20px}.public-site .planner-total strong{font-size:26px}.public-site .planner-total strong span{font:inherit;color:inherit}.public-site .planner-total small{font:500 14px Manrope,sans-serif}.public-site .planner-visual>.button{margin-bottom:14px}.public-site .planner-copy>p{margin-bottom:22px}.public-site .price-grid article>:not(a) a{pointer-events:auto}
+
+.public-site .demo-visible-number{font-size:24px;font-weight:650;margin:18px 0;user-select:all}.public-site #demoNumberActions .button{display:inline-flex;margin-bottom:8px}
+
+.public-site .planner-visual #planSuggestion{font:750 38px/1.15 Manrope,sans-serif;min-height:0;margin:8px 0 12px;color:#203c33}

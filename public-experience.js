@@ -32,6 +32,10 @@
     if(!Number.isFinite(c)||!Number.isFinite(m)||c<0||m<=0)return null;
     return Math.round(c*m);
   }
+  function recommendPlan(minutes){
+    if(!Number.isFinite(minutes)||minutes<0)return null;
+    return minutes<=300?{name:'Starter',reason:'Fits your estimate within 300 included minutes.'}:minutes<=600?{name:'Growth',reason:'Fits your estimate within 600 included minutes.'}:{name:'Pro',reason:'A starting point for higher-volume coverage. Confirm the included allowance and expected usage with us before choosing.'};
+  }
   function createPlayback({count,onChange,interval=6500,loop=false,schedule=setTimeout,cancel=clearTimeout}){
     let step=0,playing=false,timer=null,generation=0;
     const clear=()=>{generation++;if(timer!==null)cancel(timer);timer=null};
@@ -44,7 +48,7 @@
       pause(){clear();playing=false;emit()}
     };
   }
-  if(typeof module==='object'&&module.exports){module.exports={scenarios,estimateMinutes,estimateMonthlyMinutes,createPlayback};return}
+  if(typeof module==='object'&&module.exports){module.exports={scenarios,estimateMinutes,estimateMonthlyMinutes,recommendPlan,createPlayback};return}
   const doc=root.document;
   if(!doc)return;
   const byId=id=>doc.getElementById(id);
@@ -94,6 +98,10 @@
     root.addEventListener('pagehide',()=>playback.pause());
     motion.addEventListener?.('change',()=>playback.pause());
   }
+  doc.querySelectorAll('.price-grid article').forEach(card=>card.addEventListener('click',event=>{
+    if(event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.target.closest('a,button,input,select,textarea')||root.getSelection()?.toString())return;
+    const link=card.querySelector('a[href]');if(link)link.click();
+  }));
   const calls=byId('monthlyCalls'),length=byId('callLength');
   if(calls&&length){
     const update=()=>{
@@ -101,12 +109,11 @@
       byId('monthlyCallsValue').textContent=calls.value;
       byId('callLengthValue').textContent=length.value+' '+(Number(length.value)===1?'minute':'minutes');
       byId('monthlyMinutes').textContent=minutes.toLocaleString('en-US');
-      byId('callCapacity').textContent=`At ${length.value} minutes per call, 300 minutes covers about ${Math.floor(300/Number(length.value))} calls; 600 minutes about ${Math.floor(600/Number(length.value))}. Included minutes are a time allowance, not a fixed call limit.`;
-      const max=Math.max(600,minutes);
-      byId('estimateBar').style.width=`${minutes/max*100}%`;
-      byId('starterBar').style.width=`${300/max*100}%`;
-      byId('growthBar').style.width=`${600/max*100}%`;
-      byId('planSuggestion').textContent=minutes<=300?'Within Starter’s 300 included minutes.':minutes<=600?'Above Starter’s included minutes; within Growth’s 600.':'Above Growth’s 600 included minutes. Talk to us about expected usage and plan options.';
+      const plan=recommendPlan(minutes);
+      byId('planSuggestion').textContent=plan.name;
+      byId('planReason').textContent=plan.reason;
+      byId('planChoice').textContent='Choose '+plan.name+' →';
+      byId('planChoice').href='/get-started?plan='+encodeURIComponent(plan.name);
     };
     calls.addEventListener('input',update);length.addEventListener('input',update);update();
   }

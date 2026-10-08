@@ -5,8 +5,8 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const source=fs.readFileSync('api/contact.js','utf8'),frontend=fs.readFileSync('contact.html','utf8');
 
-async function request({prospectError=false,prospectEmail='visitor@example.test',inboxError=false,trackingError=false,mailError=false}={}){
-  const calls={prospect:0,inbox:0,tracking:0,mail:0};let status=0,body=null;
+async function request({prospectError=false,prospectEmail='visitor@example.test',inboxError=false,trackingError=false,mailError=false,category='General'}={}){
+  const calls={prospect:0,inbox:0,tracking:0,mail:0};let status=0,body=null,captured;
   const modules={
     '../lib/safe-log':{safeError:()=> 'redacted'},
     crypto,
@@ -14,7 +14,7 @@ async function request({prospectError=false,prospectEmail='visitor@example.test'
     '../lib/email-template':require('../lib/email-template'),
     './_lib/mailgun':{sendMail:async args=>{calls.mail++;assert.match(args.html,/Caller<span/);assert.match(args.html,/A new message for CallerCore/);assert.equal(args.replyTo,'visitor@example.test');if(mailError)throw Error('mailer failure')}},
     '../lib/site-analytics':{
-      upsertWebsiteProspect:async()=>{calls.prospect++;if(prospectError)throw Error('database error');return {id:'lead-1',email:prospectEmail}},
+      upsertWebsiteProspect:async raw=>{captured=raw;calls.prospect++;if(prospectError)throw Error('database error');return {id:'lead-1',email:prospectEmail}},
       recordSiteEvent:async()=>{calls.tracking++;if(trackingError)throw Error('tracking error')}
     },
     '../lib/site-conversation':{appendSiteConversation:async(_kv,id,message)=>{
@@ -27,10 +27,10 @@ async function request({prospectError=false,prospectEmail='visitor@example.test'
   vm.runInNewContext(source,{module,exports:module.exports,URL,Date,Number,String,console:{error(){}},
     require:name=>{if(!(name in modules))throw Error('unexpected dependency '+name);return modules[name]}});
   const req={method:'POST',headers:{origin:'https://callercore.com',host:'callercore.com'},
-    body:{name:'Visitor',email:'visitor@example.test',message:'Please call me',category:'General'}};
+    body:{name:'Visitor',email:'visitor@example.test',message:'Please call me',category}};
   const res={setHeader(){},status(n){status=n;return this},json(x){body=x;return x}};
   await module.exports(req,res);
-  return {status,body,calls};
+  return {status,body,calls,captured};
 }
 test('inquiry success confirms saved prospect and notification once',async()=>{
   const r=await request();
@@ -84,3 +84,5 @@ test('mismatched persisted prospect identity cannot claim inquiry receipt',async
   assert.match(source,/contact prospect identity could not be verified/);
   assert.match(source,/String\(prospect\.email\|\|''\)\.toLowerCase\(\)!==email\.toLowerCase\(\)/);
 });
+
+test('login help reaches the inbox without rewriting sales or consent metadata',async()=>{const r=await request({category:'Login help'});assert.equal(r.status,200);assert.equal(r.calls.inbox,1);assert.equal(r.calls.mail,1);assert.equal(r.captured.category,'Login help');for(const key of ['stage','source','business','phone','utmSource','marketingEmailConsent'])assert.equal(Object.hasOwn(r.captured,key),false);});

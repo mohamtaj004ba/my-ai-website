@@ -29,7 +29,7 @@ module.exports=async function handler(req,res){
   const text=['New CallerCore website inquiry','','Category: '+category,'Name: '+name,'Business: '+business,'Email: '+email,'Phone: '+phone,'','Message:',message].join('\n');
   let prospect;
   try{
-    prospect=await upsertWebsiteProspect({name,business,email,phone,category,message,source:category==='Chatbot inquiry'?'chatbot':'contact',stage:'inquiry',visitorId,sessionId,utmSource,utmMedium,utmCampaign,...(category==='Chatbot inquiry'?{}:{marketingEmailConsent:{granted:marketingEmailConsent,source:'contact_form'}})});
+    prospect=await upsertWebsiteProspect({name,email,category,message,...(category==='Login help'?{}:{business,phone,source:category==='Chatbot inquiry'?'chatbot':'contact',stage:'inquiry',visitorId,sessionId,utmSource,utmMedium,utmCampaign}),...(['Chatbot inquiry','Login help'].includes(category)?{}:{marketingEmailConsent:{granted:marketingEmailConsent,source:'contact_form'}})});
     if(!prospect||typeof prospect!=='object'||Array.isArray(prospect)||!String(prospect.id||'')||String(prospect.email||'').toLowerCase()!==email.toLowerCase())
       throw new Error('contact prospect identity could not be verified');
   }catch(err){

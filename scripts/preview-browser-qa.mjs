@@ -1,3 +1,4 @@
+import {verifyPublicFeedback} from './public-feedback-browser-qa.mjs';
 import {previewRequestHeaders} from './preview-request-headers.mjs';
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
@@ -1645,7 +1646,7 @@ async function runPublicSiteQA(){
           await page.locator('.dashboard-layer.is-front .dashboard-window-head [data-dashboard-expand]').click();await page.locator('.dashboard-lightbox[open]').waitFor();await page.mouse.click(4,viewport.height/2);if(await viewer.getAttribute('open')!==null)throw Error('Dashboard outside tap did not close preview');
           await shot(page,'public-'+name+'-dashboard-stack',{fullPage:false});
           await page.locator('#monthlyCalls').press('Home');for(let step=0;step<20;step++)await page.locator('#monthlyCalls').press('ArrowRight');
-          if(await page.locator('#monthlyMinutes').innerText()!=='630'||!(await page.locator('#planSuggestion').innerText()).includes('Above Growth'))throw new Error('Call volume planner returned an incorrect estimate');
+          if(await page.locator('#monthlyMinutes').innerText()!=='630'||(await page.locator('#planSuggestion').innerText())!=='Pro')throw new Error('Call volume planner returned an incorrect estimate');
           await page.locator('#monthlyCalls').press('ArrowLeft');
           if(await page.locator('#monthlyMinutes').innerText()!=='600')throw new Error('Call volume planner is not keyboard operable');
           await shot(page,'public-'+name+'-planner',{fullPage:false});
@@ -1709,6 +1710,7 @@ async function runPublicSiteQA(){
 }
 
 try{
+  report.publicFeedback=await verifyPublicFeedback({browser,baseURL,headers:{'x-vercel-protection-bypass':secret,'x-qa-secret':secret},outDir});
   await runPublicSiteQA();
   await verifyCustomerExperience({makeContext,baseURL,assertLayout,shot,report});
   await verifyVoiceOperations({makeContext,baseURL,shot,report});
