@@ -36,8 +36,7 @@ export async function verifyPublicFeedback({browser,baseURL,headers={},outDir}){
   }
   await page.goto(baseURL+'/');await page.locator('.price-grid article a').first().focus();await page.keyboard.press('Enter');await page.waitForURL('**/get-started?plan=Starter');
   for(const slug of ['home-services','medical','legal','property','automotive','professional-services']){
-   await page.goto(baseURL+'/industries/'+slug);assert.equal(await page.locator('.industry-moment').count(),3);await layout(slug);
-   await page.locator('.industry-moment summary').first().click();assert.equal(await page.locator('.industry-moment details').first().getAttribute('open'),'');
+   await page.goto(baseURL+'/industries/'+slug);assert.ok(await page.locator('.industry-narrative').count()>=2);await layout(slug);
    if(outDir&&slug==='medical'){await page.evaluate(()=>{document.activeElement?.blur();scrollTo(0,0)});const file='feedback-medical-'+width+'.png';await page.screenshot({path:path.join(outDir,file),fullPage:true});report.screenshots.push(file);}
   }
   await page.goto(baseURL+'/live-demo');assert.equal(await page.locator('#demoNote').count(),0);assert.equal(await page.locator('.demo-prompt-card a').count(),0);

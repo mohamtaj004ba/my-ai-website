@@ -1,4 +1,5 @@
 import {verifyPublicFeedback} from './public-feedback-browser-qa.mjs';
+import {verifyIndustryNarratives} from './industry-narrative-browser-qa.mjs';
 import {previewRequestHeaders} from './preview-request-headers.mjs';
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
@@ -1711,6 +1712,7 @@ async function runPublicSiteQA(){
 
 try{
   report.publicFeedback=await verifyPublicFeedback({browser,baseURL,headers:{'x-vercel-protection-bypass':secret,'x-qa-secret':secret},outDir});
+  report.industryNarratives=await verifyIndustryNarratives({browser,baseURL,headers:{'x-vercel-protection-bypass':secret,'x-qa-secret':secret},outDir});
   await runPublicSiteQA();
   await verifyCustomerExperience({makeContext,baseURL,assertLayout,shot,report});
   await verifyVoiceOperations({makeContext,baseURL,shot,report});
