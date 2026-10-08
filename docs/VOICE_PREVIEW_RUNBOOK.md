@@ -1,6 +1,6 @@
 # CallerCore voice Preview runbook
 
-Use [the latest continuation checkpoint](#voice-continuation-checkpoint--2026-10-06-owner-feedback-and-recovery) for current resources, verified builds, budget and remaining gates. Earlier dated sections are historical evidence; they are not current voice acceptance.
+Use [CALLERCORE_PROJECT_STATE.md](../CALLERCORE_PROJECT_STATE.md) for current resources, exact verified builds, granted approvals, budgets and remaining gates, and [Preview recovery acceptance](PREVIEW_RECOVERY_ACCEPTANCE.md) for the active maintenance-only QStash schedule and completed disposable managed restore. Dated sections below retain historical evidence; their earlier scheduler/backup/restore blockers are superseded by canonical state and do not require repeat approval. Telephone quality/transfer, disclosure/legal, physical devices and customer/public demo activation remain separate gates.
 
 ## What is implemented
 
