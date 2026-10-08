@@ -11,7 +11,7 @@ Updated: 2026-10-08. Canonical current state: `CALLERCORE_PROJECT_STATE.md`. App
 | Voice configuration, secure tools, lifecycle, CRM and usage | Provider-backed isolated internal/demo infrastructure and tests in `VOICE_PREVIEW_RUNBOOK.md` | Latest acoustic/transfer acceptance is deferred |
 | Delayed results recovery | Fair persistent cursor, deduplication, bounded event recovery and authenticated maintenance endpoint | Active five-minute schedule; two recurring deliveries and unchanged populated business data verified, final replacement credential verified HTTP 200 |
 | Maintenance runner | `scripts/voice-maintenance-runner.mjs`: exact branch URL, timeout, no redirects/retries, safe validated counters | QStash schedule active and delivery-verified with maintenance-only credential |
-| Recovery/export coverage | Canonical voice calls, configuration, journals, contacts, pending details, usage and follow-ups; source/concurrency validation | No managed database restore or automatic provider activation |
+| Recovery/export coverage | Canonical voice recovery exports; actual managed baseline restored into separate unconnected disposable database; recovered records validated and 51 isolated journal operations replayed with zero writes | Whole-database/TTL identity, PITR and provider reconnection not claimed |
 | Export experience | On-page client/admin/test downloads; failed or stale requests deliver no file | Actual internal and demo downloads validated; physical-device checks remain separate |
 | Voice retention inventory | Administrator-only read-only counts, content/metadata age separation, invalid-date reporting, no content or provider IDs returned | Holds/provider deletion review and destructive execution remain gated |
 | Permanent deletion safety | Voice-bearing workspaces fail closed before new/resumed purge | Full voice cleanup is not implemented or silently enabled |
@@ -25,7 +25,7 @@ Updated: 2026-10-08. Canonical current state: `CALLERCORE_PROJECT_STATE.md`. App
 | Item | Smallest next action | Prepared work |
 | --- | --- | --- |
 | Managed backups | Observe first automatic daily backup when available; no further backup approval needed | Daily Backup enabled with one-day retention; 7.49 MB manual baseline completed. $1/month owner backup budget is not an enforced cap |
-| Database restore rehearsal | Approve a separate disposable database/restore target and the provider's destructive restore step | Export/state recovery tests; no restore over active Preview/Production |
+| Disposable restore follow-up | Scoped managed restore completed; keep target unconnected, any future deletion/reconnection needs exact authorization | TJ approved target/erasure and up to $1 total additional spend; actual evidence in PREVIEW_RECOVERY_ACCEPTANCE.md; active Preview/Production preserved |
 | Provider-aware deletion | Confirm voice/transcription retention and holds; authorize provider deletion only against disposable resources | Inventory, export validation and purge guard; no deletion endpoint |
 | Phone conversation quality, ending and human/no-answer transfer | Resume the telephone retests deferred by TJ, with a controlled transfer receiver | Actual scenarios and evidence matrix in voice runbook |
 | Demo abuse and public exposure | Complete number-level acceptance within remaining approved spending and disclosure limits | Isolated core, duration/rate controls, readiness guard and unavailable fallback |
