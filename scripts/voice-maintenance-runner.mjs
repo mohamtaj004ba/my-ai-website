@@ -5,7 +5,7 @@ export async function runMaintenance({env=process.env,fetchImpl=fetch,timeoutMs=
   // No arbitrary target, redirect, caller-selected workspace or production
   // credential. Credential installation in a scheduler remains an owner step.
   if(env.CALLERCORE_VOICE_MAINTENANCE_URL!==PREVIEW_ORIGIN+'/api/voice-maintenance')throw new Error('Use the approved feature-branch Preview maintenance URL');
-  const secret=env.CALLERCORE_VOICE_WEBHOOK_SECRET;
+  const secret=env.CALLERCORE_VOICE_MAINTENANCE_SECRET||env.CALLERCORE_VOICE_WEBHOOK_SECRET;
   if(typeof secret!=='string'||secret.length<32||/[\r\n]/.test(secret))throw new Error('Restricted Preview callback credential is required');
   const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),timeoutMs);
   try{

@@ -5,7 +5,9 @@ module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
   try{previewGate()}catch{return res.status(503).json({error:'Voice recovery is not enabled'})}
-  if(!authenticated(req.headers,process.env.CALLERCORE_VOICE_WEBHOOK_SECRET))return res.status(401).json({error:'Authentication required'});
+  // A configured recovery-only credential supersedes the provider callback
+  // credential here. It is never accepted by webhook or live tool routes.
+  if(!authenticated(req.headers,process.env.CALLERCORE_VOICE_MAINTENANCE_SECRET||process.env.CALLERCORE_VOICE_WEBHOOK_SECRET))return res.status(401).json({error:'Authentication required'});
   if(Object.keys(req.query||{}).length||req.body&&(typeof req.body!=='object'||Array.isArray(req.body)||Object.keys(req.body).length))return res.status(400).json({error:'This recovery endpoint does not accept workspace selectors'});
   try{
     const {rateLimit}=require('../lib/rate-limit');
