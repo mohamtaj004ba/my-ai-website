@@ -55,6 +55,29 @@ test('authenticated active lifecycle submits call context once and records its t
   assert.equal(submissions,1);const record=[...kv.values].find(([key])=>key.startsWith('voice:call:'))[1];
   assert.equal(record.workspaceId,'tenant');assert.equal(record.speakerContextState,'submitted');assert.equal(record.status,'active');
 });
+test('authenticated active callback tolerates lagged REST state but never revives ended calls',async()=>{
+ for(const status of ['queued','ringing','ended']){
+  const kv=memory();let submissions=0;
+  const current={...call,status,...(status==='ended'?{endedAt:'2026-10-05T16:01:00Z'}:{})};
+  const p={...provider(current),appendContext:async()=>{submissions++;return {submitted:true}}};
+  await processMessage(kv,{type:'status-update',status:'in-progress',call:{id:'call_test'}},{provider:p});
+  assert.equal(submissions,status==='ended'?0:1);
+ }
+});
+test('first active tool request can deliver missed context once without duplicate writes',async()=>{
+ const kv=memory();let submissions=0;
+ const p={...provider(),appendContext:async()=>{submissions++;return {submitted:true}}};
+ const event=message('check_after_hours_policy',{});
+ await processMessage(kv,event,{provider:p});await processMessage(kv,event,{provider:p});
+ assert.equal(submissions,1);assert.equal((await kv.get('voice:call:'+normalizedCall(call).id)).speakerContextState,'submitted');
+ assert.equal((await kv.get('leads:tenant'))?.length||0,0);
+});
+test('ending a call never waits for an unrelated missed hours-context submission',async()=>{
+ const kv=memory();let submissions=0;
+ const p={...provider(),appendContext:async()=>{submissions++;return {submitted:true}}};
+ const result=await processMessage(kv,message('complete_call',{disposition:'resolved_by_ai',summary:'Answered service area; explicit goodbye'}),{provider:p});
+ assert.equal(submissions,0);assert.equal(JSON.parse(result.results[0].result).status,'recorded');
+});
 
 test('delayed recovery runs the actual canonical processor without duplicate CRM or usage',async()=>{
   const kv=memory(),ended={...call,status:'ended',endedAt:'2026-10-05T16:01:30Z',artifact:{messages:[]}};
