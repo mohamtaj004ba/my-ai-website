@@ -57,6 +57,8 @@ test('classic internal comparison preserves authenticated tools and rejects prov
   assert.throws(()=>p.assistantConfig(w,{},policy,{demo:true,pipeline:'classic-comparison'}),{code:'VOICE_PIPELINE_INVALID'});
   const matches=require('../lib/voice-provider').agentMatches;
   assert.equal(matches(classic,classic),true);
+  const normalized=structuredClone(classic);normalized.voice.version='2';assert.equal(matches(normalized,classic),true);
+  for(const version of ['02','2.0',null,undefined,1,'1']){const drift=structuredClone(classic);drift.voice.version=version;assert.equal(matches(drift,classic),false)}
   for(const mutate of [c=>c.transcriber.model='other',c=>c.voice.version=1,c=>c.stopSpeakingPlan.voiceSeconds=1,c=>c.startSpeakingPlan.smartEndpointingPlan={provider:'livekit'},c=>c.model.messages[0].content='stale',c=>c.model.reasoner=live.model.reasoner,c=>c.model.tools.pop(),c=>c.server.credentialId='other']){
     const drift=structuredClone(classic);mutate(drift);assert.equal(matches(drift,classic),false);
   }
