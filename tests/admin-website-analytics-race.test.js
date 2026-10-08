@@ -1,0 +1,144 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const source=fs.readFileSync('dashboard.js','utf8');
+
+function deferred(){let resolve;const promise=new Promise(ok=>resolve=ok);return {promise,resolve}}
+function fixture(){
+  const requests=new Map(),renders=[];
+  const fetch=async url=>{const days=new URL('https://example.test'+url).searchParams.get('days'),pending=deferred();requests.set(days,pending);return pending.promise};
+  const context=vm.createContext({loadWebsiteAnalytics:async()=>{},renderAdminInbox(){},adminWebsiteDays:30,adminWebsiteAnalyticsRequest:0,adminWebsiteAnalyticsLoading:false,adminWebsiteLoadError:'',adminWebsiteData:{periodDays:30},fetch,renderWebsiteAnalytics(){renders.push(context.adminWebsiteData.periodDays)},renderGrowth(){}});
+  const start=source.indexOf('async function loadWebsiteAnalytics('),end=source.indexOf('\nfunction renderWebsiteAnalytics(',start);vm.runInContext(source.slice(start,end),context);
+  return {context,requests,renders};
+}
+
+test('a slower website analytics range cannot replace the latest range',async()=>{
+  const {context,requests,renders}=fixture(),first=vm.runInContext('loadWebsiteAnalytics(90)',context),second=vm.runInContext('loadWebsiteAnalytics(7)',context);
+  requests.get('7').resolve({ok:true,json:async()=>({analytics:{periodDays:7,sessions:7}})});await second;
+  requests.get('90').resolve({ok:true,json:async()=>({analytics:{periodDays:90,sessions:90}})});await first;
+  assert.equal(context.adminWebsiteDays,7);assert.equal(context.adminWebsiteData.periodDays,7);assert.equal(context.adminWebsiteData.sessions,7);assert.deepEqual(renders,[30,30,7]);
+});
+
+test('failed analytics refresh retains previous results and identifies their stale status',async()=>{
+  const {context,requests,renders}=fixture();
+  const task=vm.runInContext('loadWebsiteAnalytics(7)',context);
+  requests.get('7').resolve({ok:false,json:async()=>({error:'Website analytics indexes are unavailable.'})});
+  assert.equal(await task,false);
+  assert.equal(context.adminWebsiteData.periodDays,30);
+  assert.match(context.adminWebsiteLoadError,/indexes are unavailable/);
+  assert.deepEqual(renders,[30,30]);
+  const next=vm.runInContext('loadWebsiteAnalytics(30)',context);
+  requests.get('30').resolve({ok:true,json:async()=>({analytics:{periodDays:30,sessions:55}})});
+  assert.equal(await next,true);
+  assert.equal(context.adminWebsiteLoadError,'');
+  assert.equal(context.adminWebsiteData.sessions,55);
+});
+test('late failed request does not override a newer successful analytics range',async()=>{
+  const {context,requests}=fixture();
+  const old=vm.runInContext('loadWebsiteAnalytics(90)',context);
+  const latest=vm.runInContext('loadWebsiteAnalytics(7)',context);
+  requests.get('7').resolve({ok:true,json:async()=>({analytics:{periodDays:7,sessions:7}})});
+  assert.equal(await latest,true);
+  requests.get('90').resolve({ok:false,json:async()=>({error:'Late network error'})});
+  assert.equal(await old,false);
+  assert.equal(context.adminWebsiteData.periodDays,7);
+  assert.equal(context.adminWebsiteLoadError,'');
+});
+test('analytics refresh errors remain visible on both Growth and website views',()=>{
+  assert.match(source,/Refresh issue: /);
+  assert.match(source,/showing previously loaded data/);
+  assert.match(source,/Growth refresh failed:/);
+  assert.match(source,/websiteUpdated===false/);
+  assert.match(source,/Growth could not refresh\. Try again before opening the existing prospect/);
+});
+
+test('periodic admin analytics refresh clears stale warnings after a successful sync',()=>{
+  const success="d=>{if(d.analytics){adminWebsiteData=d.analytics;adminWebsiteLoadError=''}}";
+  assert.equal(source.split(success).length-1,3);
+  assert.match(source,/if\(wr\.ok\)\{const latest=\(await wr\.json\(\)\)\.analytics;if\(latest\)\{adminWebsiteData=latest;adminWebsiteLoadError=''\}/);
+  assert.match(source,/if\(rr\.ok\)\{const latest=\(await rr\.json\(\)\)\.analytics;if\(latest\)\{adminWebsiteData=latest;adminWebsiteLoadError=''\}/);
+});
+
+test('website and Growth disclose a mismatched loaded analytics date window',()=>{
+  assert.match(source,/Showing '\+Number\(d\.periodDays\)\+'-day data; requested '\+Number\(adminWebsiteDays\)/);
+  assert.match(source,/Website traffic charts show the last loaded '\+Number\(adminWebsiteData\.periodDays\)\+'-day range/);
+});
+
+test('requested website range remains selected and loading until latest fetch resolves',async()=>{
+  const {context,requests,renders}=fixture();
+  const old=vm.runInContext('loadWebsiteAnalytics(90)',context);
+  assert.equal(context.adminWebsiteAnalyticsLoading,true);
+  const latest=vm.runInContext('loadWebsiteAnalytics(7)',context);
+  assert.equal(context.adminWebsiteDays,7);
+  assert.equal(context.adminWebsiteAnalyticsLoading,true);
+  requests.get('90').resolve({ok:true,json:async()=>({analytics:{periodDays:90}})});
+  assert.equal(await old,false);
+  assert.equal(context.adminWebsiteAnalyticsLoading,true,'obsolete completion cannot clear newer loading state');
+  requests.get('7').resolve({ok:true,json:async()=>({analytics:{periodDays:7}})});
+  assert.equal(await latest,true);
+  assert.equal(context.adminWebsiteAnalyticsLoading,false);
+  assert.equal(renders.at(-1),7);
+});
+test('failed selected range restores controls without falsely selecting the loaded historical range',async()=>{
+  const {context,requests}=fixture();
+  const task=vm.runInContext('loadWebsiteAnalytics(7)',context);
+  assert.equal(context.adminWebsiteAnalyticsLoading,true);
+  requests.get('7').resolve({ok:false,json:async()=>({error:'Try again'})});
+  assert.equal(await task,false);
+  assert.equal(context.adminWebsiteAnalyticsLoading,false);
+  assert.equal(context.adminWebsiteDays,7);
+  assert.equal(context.adminWebsiteData.periodDays,30);
+  assert.match(context.adminWebsiteLoadError,/Try again/);
+});
+test('analytics selector uses requested range and exposes pressed state and pending range',()=>{
+  assert.match(source,/btn\.classList\.toggle\('active',Number\(btn\.dataset\.websiteDays\)===Number\(adminWebsiteDays\)\)/);
+  assert.match(source,/btn\.setAttribute\('aria-pressed',String\(Number\(btn\.dataset\.websiteDays\)===Number\(adminWebsiteDays\)\)\)/);
+  assert.match(source,/adminWebsiteAnalyticsLoading\?' · Loading '\+Number\(adminWebsiteDays\)/);
+});
+
+test('website analytics summary announces selected and stale date-range information accessibly',()=>{
+  const html=fs.readFileSync('admin-dashboard.html','utf8');
+  assert.match(html,/<small id="websiteTrafficSummary" role="status" aria-live="polite" aria-atomic="true">/);
+});
+
+test('Refresh action follows the latest analytics request rather than an older completion',()=>{
+  assert.match(source,/refresh\.disabled=adminWebsiteAnalyticsLoading/);
+  assert.match(source,/refresh\.textContent=adminWebsiteAnalyticsLoading\?'Refreshing…':'Refresh'/);
+  assert.match(source,/refresh\.onclick=\(\)=>loadWebsiteAnalytics\(adminWebsiteDays\)/);
+  assert.doesNotMatch(source,/finally\{refresh\.disabled=false;refresh\.textContent='Refresh'\}/);
+});
+
+test('background website refresh started during a manual range load cannot overwrite its result',async()=>{
+  const pending=deferred(),sourceFn=source.slice(source.indexOf('async function refreshAdminView('),source.indexOf('\nfunction adminAgentGroup(',source.indexOf('async function refreshAdminView(')));
+  const context=vm.createContext({
+    document:{body:{dataset:{dashboard:'admin'}}},adminWebsiteAnalyticsRequest:4,adminWebsiteAnalyticsLoading:true,
+    adminWebsiteDays:7,adminWebsiteData:{periodDays:30},adminWebsiteLoadError:'',
+    adminDataSyncAt:{},adminSyncCacheKey:(key,url)=>key==='website'?url:key,
+    adminSyncFetch:()=>pending.promise,renderWebsiteAnalytics(){},renderGrowth(){},renderAdmin(){},
+    setDataHealth(){throw Error('An ignored background failure must not mark the workspace stale')},
+  });
+  vm.runInContext(sourceFn,context);
+  const task=vm.runInContext("refreshAdminView('website',{announce:false})",context);
+  context.adminWebsiteData={periodDays:7,sessions:77};context.adminWebsiteAnalyticsLoading=false;
+  pending.resolve({analytics:{periodDays:7,sessions:12}});
+  await task;
+  assert.equal(context.adminWebsiteData.sessions,77);
+  assert.equal(context.adminWebsiteLoadError,'');
+});
+test('background website refresh still applies while no manual load is active',async()=>{
+  const pending=deferred(),sourceFn=source.slice(source.indexOf('async function refreshAdminView('),source.indexOf('\nfunction adminAgentGroup(',source.indexOf('async function refreshAdminView(')));
+  const context=vm.createContext({
+    document:{body:{dataset:{dashboard:'admin'}}},adminWebsiteAnalyticsRequest:4,adminWebsiteAnalyticsLoading:false,
+    adminWebsiteDays:7,adminWebsiteData:{periodDays:30},adminWebsiteLoadError:'Earlier refresh failed',
+    adminDataSyncAt:{},adminSyncCacheKey:(key,url)=>key==='website'?url:key,
+    adminSyncFetch:()=>pending.promise,renderWebsiteAnalytics(){},renderGrowth(){},renderAdmin(){},
+    setDataHealth(){throw Error('Unexpected failure')},
+  });
+  vm.runInContext(sourceFn,context);
+  const task=vm.runInContext("refreshAdminView('website',{announce:false})",context);
+  pending.resolve({analytics:{periodDays:7,sessions:31}});
+  await task;
+  assert.equal(context.adminWebsiteData.sessions,31);
+  assert.equal(context.adminWebsiteLoadError,'');
+});

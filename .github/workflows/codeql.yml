@@ -1,0 +1,33 @@
+name: CallerCore CodeQL
+
+on:
+  push:
+    branches: [main, feature/callercore-dashboards]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '23 9 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: Analyze JavaScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - name: Analyze JavaScript and retain diagnostic SARIF
+        id: codeql
+        uses: github/codeql-action/analyze@v3
+        with:
+          output: codeql-results
+      - name: Summarize CodeQL findings
+        if: ${{ always() && steps.codeql.outputs.sarif-output != '' }}
+        run: node scripts/report-codeql.mjs "${{ steps.codeql.outputs.sarif-output }}"

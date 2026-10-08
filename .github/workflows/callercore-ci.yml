@@ -1,0 +1,74 @@
+name: CallerCore CI
+
+on:
+  push:
+    branches: [main, feature/callercore-dashboards]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Plans and entitlements
+        run: node --test tests/plans.test.js
+      - name: Business hours
+        run: node --test tests/business-hours.test.js
+      - name: Agreement snapshots
+        run: node --test tests/agreement.test.js
+      - name: Commercial copy consistency
+        run: node --test tests/commercial-copy.test.js
+      - name: Launch capability copy safeguards
+        run: node --test tests/launch-copy-safeguards.test.js
+      - name: Regulated data safeguards
+        run: node --test tests/regulated-data.test.js
+      - name: Email templates
+        run: node --test tests/email-template.test.js
+      - name: Repository cleanliness
+        run: node --test tests/repository-cleanliness.test.js
+      - name: Security hygiene
+        run: node --test tests/security-hygiene.test.js
+      - name: Log privacy safeguards
+        run: node --test tests/log-privacy.test.js
+      - name: Environment scope safeguards
+        run: node --test tests/environment-scope.test.js
+      - name: KV isolation safeguards
+        run: node --test tests/kv-isolation.test.js
+      - name: Origin safeguards
+        run: node --test tests/origin-safeguards.test.js
+      - name: Rate limit safeguards
+        run: node --test tests/rate-limit-safeguards.test.js
+      - name: Stripe structure
+        run: node --test tests/stripe-structure.test.js
+      - name: Gmail safeguards
+        run: node --test tests/gmail-safeguards.test.js
+      - name: Mailgun domain safeguards
+        run: node --test tests/mailgun-domain.test.js
+      - name: Admin safeguards
+        run: node --test tests/admin-safeguards.test.js
+      - name: Authentication safeguards
+        run: node --test tests/auth-safeguards.test.js
+      - name: Vercel alert webhook safeguards
+        run: node --test tests/vercel-alert-webhook.test.js
+      - name: Export safeguards
+        run: node --test tests/export-safeguards.test.js
+      - name: UI structure
+        run: node --test tests/ui-structure.test.js
+      - name: Asset links
+        run: node --test tests/asset-links.test.js
+      - name: JavaScript syntax
+        run: node --test tests/syntax.test.js
+      - name: Full test suite
+        run: npm test

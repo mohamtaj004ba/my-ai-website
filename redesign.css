@@ -152,6 +152,9 @@ body{line-height:1.5;overflow-x:hidden}
 .form-status.error{color:#9b2c20}
 .form-status.success{color:#2f6f3a}
 .required-note{font-size:12px;color:var(--muted);margin:8px 0 0}
+.fields .consent-option{grid-column:1/-1;display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;align-items:start;padding:12px 13px;border:1px solid var(--line);border-radius:11px;background:#faf8f2;font-size:12px;font-weight:500;line-height:1.5;color:var(--muted)}
+.fields .consent-option input[type="checkbox"]{width:18px;height:18px;margin:1px 0 0;padding:0;accent-color:var(--orange);cursor:pointer}
+.fields .consent-option span{min-width:0}.fields .consent-option a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .planpick button:focus-visible{outline:3px solid #8ab4ff;outline-offset:3px}
 .planpick button[aria-pressed="true"]{border-color:var(--orange)}
 @media(max-width:900px){.fields label.full{grid-column:auto}}
