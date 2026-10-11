@@ -1,9 +1,15 @@
 'use strict';
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {ORIGIN,allowed,oidcHeaders,previewTransport}=require('../scripts/agent-operations-preview-access.cjs');
+const {ORIGIN,allowed,oidcHeaders,previewTransport,offlineFonts}=require('../scripts/agent-operations-preview-access.cjs');
 const claims={project_id:'prj_AkD7VoSNCE6fRYXQnXkX1ywGqjLX',owner_id:'team_6Rg3DdCrvOml6oEGwx6Ndf1I',environment:'development',nbf:0,exp:900};
 const token=(change={})=>'fixture.'+Buffer.from(JSON.stringify({...claims,...change})).toString('base64url')+'.not-a-real-signature';
+test('licensed pinned fonts are fulfilled offline only for exact stylesheet and font requests',()=>{
+  const manifest=require('../scripts/agent-operations-fonts/manifest.json'),read=offlineFonts();
+  assert.equal(read({url:manifest.cssUrl,method:'GET',type:'stylesheet'}).contentType,'text/css');
+  for(const f of manifest.fonts)assert.ok(read({url:ORIGIN+'/__agentops_fonts/'+f.file,method:'GET',type:'font'}).body.length>0);
+  for(const r of [{url:manifest.cssUrl,method:'POST',type:'stylesheet'},{url:manifest.cssUrl+'&other=1',method:'GET',type:'stylesheet'},{url:manifest.cssUrl,method:'GET',type:'document'},{url:manifest.fonts[0].source,method:'GET',type:'font'}])assert.equal(read(r),null);
+});
 test('Preview request scope permits only pinned documents and explicit render resources',()=>{
   for(const p of ['/','/industries/legal'])assert.ok(allowed(ORIGIN+p,'GET','document'));
   assert.ok(allowed(ORIGIN+'/industry-refinement.css','GET','stylesheet'));

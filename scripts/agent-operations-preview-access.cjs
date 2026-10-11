@@ -1,5 +1,13 @@
 'use strict';
 const ORIGIN='https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app';
+function offlineFonts(){
+  const fs=require('node:fs'),path=require('node:path'),{createHash}=require('node:crypto');
+  const dir=path.join(__dirname,'agent-operations-fonts'),manifest=JSON.parse(fs.readFileSync(path.join(dir,'manifest.json'),'utf8'));
+  const read=(file,sha)=>{if(!/^(?:fonts\.css|[a-f0-9]{64}\.(?:ttf|woff2))$/.test(file))throw new Error('Invalid font artifact');const body=fs.readFileSync(path.join(dir,file));if(body.length>500000||createHash('sha256').update(body).digest('hex')!==sha)throw new Error('Font artifact unconfirmed');return body;};
+  const css=read('fonts.css',manifest.cssSha256),fonts=new Map(manifest.fonts.map(f=>[ORIGIN+'/__agentops_fonts/'+f.file,{status:200,contentType:f.file.endsWith('.woff2')?'font/woff2':'font/ttf',body:read(f.file,f.sha256)}]));
+  // The original stylesheet URL is fulfilled offline. No external fetch or Vercel identity is involved.
+  return ({url,method,type})=>method!=='GET'?null:url===manifest.cssUrl&&type==='stylesheet'?{status:200,contentType:'text/css',body:css}:type==='font'?fonts.get(url)||null:null;
+}
 const ASSETS=new Set([
   '/logo-icon.png','/redesign.css','/public-premium.css','/home-motion.css','/hero-film.css',
   '/dashboard-showcase.css','/industries.css','/homepage-imagery.css','/industry-platform.css',
@@ -37,4 +45,4 @@ function previewTransport({token,signal,fetchImpl=fetch,clock=Date.now}={}){
     return {status:200,contentType,body:Buffer.concat(chunks)};
   };
 }
-module.exports={ORIGIN,allowed,oidcHeaders,previewTransport};
+module.exports={ORIGIN,allowed,oidcHeaders,previewTransport,offlineFonts};
