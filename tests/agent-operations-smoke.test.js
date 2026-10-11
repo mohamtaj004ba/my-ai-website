@@ -46,3 +46,13 @@ test('only trusted Preview smoke approval initializes a fixed idempotent task; c
   for(const b of [{action:'initialize-pilot'},{action:'initialize-smoke',objective:'changed'},{action:'initialize-smoke',profile:SMOKE.profile}])assert.equal((await call(b)).status,403);
   assert.equal((await call({action:'initialize-smoke'},false)).status,403);env.CALLERCORE_AGENTOPS_PAID_ENABLED='false';assert.equal((await call({action:'initialize-smoke'})).status,403);env.CALLERCORE_AGENTOPS_PAID_ENABLED='true';env.VERCEL_ENV='production';assert.equal((await call({action:'initialize-smoke'})).status,503);
 });
+test('terminal smoke outcome consumes hosted paid gate immediately even before manifest expiry',async()=>{
+  for(const finish of [true,false]){
+    const f=await setup(async()=>assert.fail('Offline admission only'));const env={VERCEL_ENV:'preview',CALLERCORE_AGENTOPS_ENABLED:'true',CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_WORKER_SECRET:'w'.repeat(40),CALLERCORE_AGENTOPS_PILOT_APPROVAL:JSON.stringify(f.approval)};
+    const h=createHandler({env,store:f.store,getSession:async()=>null,getMember:async()=>null,rateLimit:async()=>({limited:false})});
+    async function call(method,body){let status,value;await h({method,headers:{authorization:'Bearer '+env.CALLERCORE_AGENTOPS_WORKER_SECRET},body},{setHeader(){},status(n){status=n;return this;},json(v){value=v;}});return {status,value};}
+    assert.equal((await call('GET')).value.paidExecution,true);const c=await f.store.command(f.task.id,{type:'claim'});await f.store.command(f.task.id,{type:'reserve',fence:c.fence,executionId:'exec_consumed_smoke'});
+    await f.store.command(f.task.id,{type:finish?'finish':'fail',fence:c.fence,executionId:'exec_consumed_smoke',...(finish?{...PROJECT,model:MODEL,inputTokens:20,outputTokens:10,actualMicros:120,result:{stage:'chief',note:'SMOKE_OK'}}:{})});
+    const after=await call('GET');assert.equal(after.value.paidExecution,false);assert.equal(after.value.chiefSmoke.enabled,false);assert.equal(after.value.pilotApproval,undefined);assert.equal((await call('POST',{action:'initialize-smoke'})).status,403);assert(f.approval.expiresAt>Date.now());
+  }
+});
