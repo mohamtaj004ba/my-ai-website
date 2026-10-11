@@ -110,7 +110,7 @@ test('classic configuration persists through resume, skips GPT-Live context and 
   await assert.rejects(configure(kv,'tenant',{policy,expectedRevision:2,purpose:'demo',pipeline:'classic-comparison'},actor,{env,provider:p}),{code:'VOICE_PIPELINE_INVALID'});
   await processMessage(kv,{type:'status-update',call:{id:'call_test'}},{provider:p});assert.equal(submissions,0);
   const item=message('save_call_request',{confirmed:true,reason:'Repair request',intent:'service',name:'Test Caller',callbackNumber:null});
-  const first=await processMessage(kv,item,{provider:p}),again=await processMessage(kv,item,{provider:p});assert.deepEqual(first,again);assert.equal(JSON.parse(first.results[0].result).status,'captured');
+  const first=await processMessage(kv,item,{provider:p}),again=await processMessage(kv,item,{provider:p});assert.deepEqual(first,again);assert.equal(JSON.parse(first.results[0].result).status,'captured');const receipt=JSON.parse(first.results[0].result);assert.equal(receipt.officeDeliveryConfirmed,false);assert.equal(receipt.callbackTimeConfirmed,false);assert.match(receipt.nextAction,/saved for team review/);
   kv.values.set('voice:config:tenant',{...kv.values.get('voice:config:tenant'),state:'paused',fallbackNumber:'+15095550100'});
   p.retrieveNumber=async()=>({assistantId:null,fallbackDestination:{number:'+15095550100'}});
   p.resumeNumber=async()=>{p.retrieveNumber=async()=>({assistantId:'assistant_test'})};
