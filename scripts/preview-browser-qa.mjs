@@ -43,10 +43,11 @@ function attachDiagnostics(page,label){
     // Keep all other console errors, including failures in authenticated contexts.
     if(label==='voice-no-access'&&msg.type()==='error'&&msg.text()==='Failed to load resource: the server responded with a status of 401 (Unauthorized)')return;
     if(page.__callerCoreExpectedVoiceTimeout&&msg.type()==='error'&&msg.text()==='Failed to load resource: the server responded with a status of 503 (Service Unavailable)')return;
+    if(msg.type()==='error'&&new URL(msg.location().url||baseURL).pathname==='/api/agent-operations'&&msg.text()==='Failed to load resource: the server responded with a status of 503 (Service Unavailable)')return;
     if(msg.type()==='error')report.consoleErrors.push({label,message:msg.text().slice(0,1200)});
   });
   page.on('pageerror',err=>report.pageErrors.push({label,message:String(err?.message||err).slice(0,1200)}));
-  page.on('response',res=>{
+  page.on('response',async res=>{
     try{
       const u=new URL(res.url());
       if(u.origin===parsed.origin&&u.pathname.startsWith('/api/')&&res.status()>=400){
@@ -54,6 +55,12 @@ function attachDiagnostics(page,label){
           (report.expectedAuthDenials??=[]).push({label,status:401,url:u.pathname+u.search});return;
         }
         if(page.__callerCoreExpectedVoiceTimeout&&u.pathname==='/api/voice'&&u.searchParams.get('action')==='verify'&&res.status()===503){(report.expectedVoiceProviderFailures??=[]).push({label,status:503,url:u.pathname+u.search});return;}
+        if(u.pathname==='/api/agent-operations'&&res.status()===503){
+          const body=await res.json().catch(()=>null);
+          if(body?.error==='Agent Operations is disabled outside authorized Preview.'){
+            (report.expectedAgentOperationsDisabled??=[]).push({label,status:503,url:u.pathname});return;
+          }
+        }
         report.apiErrors.push({label,status:res.status(),url:u.pathname+u.search});
       }
     }catch{}
@@ -260,6 +267,18 @@ async function sweepViews(page,kind){
   if(kind==='client')views.push('conversations');
   for(const view of views){
     await ensureView(page,view);
+    if(kind==='admin'&&view==='agent-operations'){
+      const response=await page.context().request.get(baseURL+'/api/agent-operations'),body=await response.json();
+      if(response.status()===503){
+        if(body.error!=='Agent Operations is disabled outside authorized Preview.')throw new Error('Agent Operations configuration failed unexpectedly');
+        await page.waitForFunction(()=>document.getElementById('agentOpsStatus').textContent.includes('disabled'));
+        if(!await page.locator('#agentOpsCreate').isDisabled())throw new Error('Disabled Agent Operations allowed queueing');
+        report.agentOperations={mode:'disabled',paidExecution:false,readOnlyCheck:true};
+      }else{
+        if(response.status()!==200||!Array.isArray(body.tasks)||typeof body.paidExecution!=='boolean')throw new Error('Agent Operations persisted state is invalid');
+        report.agentOperations={mode:body.mode,paidExecution:body.paidExecution,readOnlyCheck:true};
+      }
+    }
     await assertLayout(page,kind+'-desktop-'+view);
     await assertReadableCopy(page,kind+'-desktop-'+view);
     await shot(page,kind+'-'+view);
