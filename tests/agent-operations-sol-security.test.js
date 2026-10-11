@@ -28,7 +28,7 @@ test('server refuses forged legacy rates and excess stage output without consumi
  await store.command(task.id,{type:'reserve',fence:running.fence,executionId:'exec_independent_sol_receipt'});
  const result={stage:'observe',facts:[1,2,3,4].map(i=>({id:'O'+i,imageId:'I'+i,region:[.1,.1,.3,.3],observed:'Offline fixture',readability:'limited',uncertainty:'Not visual acceptance'})),note:'Offline'};
  const finish={type:'finish',fence:running.fence,executionId:'exec_independent_sol_receipt',...PROJECT,result,model:vm.HYBRID.model,inputTokens:100,outputTokens:100,actualMicros:1200};
- for(const patch of [{actualMicros:1000},{outputTokens:16001,actualMicros:160210},{model:'gpt-4.1-2025-04-14'},{projectId:'foreign'}])await assert.rejects(store.command(task.id,{...finish,...patch}));
+ for(const patch of [{actualMicros:1000},{outputTokens:25001,actualMicros:250210},{model:'gpt-4.1-2025-04-14'},{projectId:'foreign'}])await assert.rejects(store.command(task.id,{...finish,...patch}));
  const state=await store.read();assert.equal(state.reservations[0].status,'pending');assert.equal(state.reservations[0].ceilingMicros,500000);assert.equal(state.tasks[1].usage.length,0);assert.deepEqual(state.tasks[0],source);
 });
 test('blind hybrid projection excludes server geometry, reference labels and arbitrary model config extras',()=>{
