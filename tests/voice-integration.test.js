@@ -51,7 +51,7 @@ test('classic internal comparison preserves authenticated tools and rejects prov
   const p=createProvider({env}),w={id:'tenant',name:'Test service business'};
   const live=p.assistantConfig(w,{},policy),classic=p.assistantConfig(w,{},policy,{pipeline:'classic-comparison'});
   assert.equal(live.model.model,'gpt-live-1');assert.equal(classic.model.model,'gpt-4.1');
-  assert.deepEqual(classic.model.tools.map(({messages,...tool})=>tool),live.model.tools);assert.equal(classic.model.tools.at(-1).messages[0].content,'Goodbye.');assert.equal(classic.model.tools.at(-1).messages[0].blocking,true);assert.deepEqual(classic.server,live.server);
+  assert.deepEqual(classic.model.tools.map(({messages,rejectionPlan,...tool})=>tool),live.model.tools);assert.equal(classic.model.tools.at(-1).messages[0].content,'Goodbye.');assert.equal(classic.model.tools.at(-1).messages[0].blocking,true);assert.deepEqual(classic.server,live.server);
   assert.equal(classic.artifactPlan.recordingEnabled,false);assert.equal(classic.model.speaker,undefined);
   assert.equal(classic.voice.voiceId,'Elliot');assert.equal(classic.stopSpeakingPlan.voiceSeconds,0.2);
   assert.throws(()=>p.assistantConfig(w,{},policy,{demo:true,pipeline:'classic-comparison'}),{code:'VOICE_PIPELINE_INVALID'});
@@ -59,9 +59,21 @@ test('classic internal comparison preserves authenticated tools and rejects prov
   assert.equal(matches(classic,classic),true);
   const normalized=structuredClone(classic);normalized.voice.version='2';assert.equal(matches(normalized,classic),true);
   for(const version of ['02','2.0',null,undefined,1,'1']){const drift=structuredClone(classic);drift.voice.version=version;assert.equal(matches(drift,classic),false)}
-  for(const mutate of [c=>c.model.model='gpt-4.1-mini',c=>c.transcriber.model='other',c=>c.voice.version=1,c=>c.stopSpeakingPlan.voiceSeconds=1,c=>c.startSpeakingPlan.smartEndpointingPlan={provider:'livekit'},c=>c.model.messages[0].content='stale',c=>c.model.reasoner=live.model.reasoner,c=>c.model.tools.pop(),c=>c.server.credentialId='other']){
+  for(const mutate of [c=>c.model.model='gpt-4.1-mini',c=>c.transcriber.model='other',c=>c.voice.version=1,c=>c.stopSpeakingPlan.voiceSeconds=1,c=>c.startSpeakingPlan.smartEndpointingPlan={provider:'livekit'},c=>c.model.messages[0].content='stale',c=>c.model.reasoner=live.model.reasoner,c=>c.model.tools.pop(),c=>delete c.model.tools.at(-1).rejectionPlan,c=>c.model.tools.at(-1).rejectionPlan.conditions[0].conditions[0].target.role=String(1),c=>c.server.credentialId='other']){
     const drift=structuredClone(classic);mutate(drift);assert.equal(matches(drift,classic),false);
   }
+});
+test('classic native ending rejects corrections, continued questions and negated closing requests',()=>{
+  const p=createProvider({env}),w={id:'tenant',name:'Test service business'};
+  const classic=p.assistantConfig(w,{},policy,{pipeline:'classic-comparison'}),live=p.assistantConfig(w,{},policy);
+  const group=classic.model.tools.at(-1).rejectionPlan.conditions[0];
+  assert.equal(group.operator,'OR');
+  for(const condition of group.conditions)assert.deepEqual(condition.target,{position:-1,role:'user'});
+  assert.equal(live.model.tools.at(-1).rejectionPlan,undefined);
+  assert.equal(classic.model.tools.slice(0,-1).some(t=>t.rejectionPlan),false);
+  const rejected=text=>group.conditions.some(c=>new RegExp(c.regex.replace('(?i)',''),'i').test(text)!==!!c.negate);
+  for(const text of ['Goodbye.','Yes, correct. Bye!','Thanks, take care.','Please end the call.','Hang up.','Disconnect this call'])assert.equal(rejected(text),false,text);
+  for(const text of ['', 'Yes, correct.','Thanks.','It should be eighty one Example Court, Spokane.','Before we say goodbye I need to correct the address.','Goodbye, but are you open tomorrow?','I have another question.','Do not hang up.','Don’t end the call.','Wait, goodbye.'])assert.equal(rejected(text),true,text);
 });
 test('female classic comparison voices retain exact version, authentication and default pipeline isolation',()=>{
   const p=createProvider({env}),w={id:'tenant',name:'Test service business'},base=p.assistantConfig(w,{},policy,{pipeline:'classic-comparison'});
@@ -397,8 +409,3 @@ test('speaker has approved routine knowledge without a needless lookup handoff',
   await processMessage(kv,{type:'end-of-call-report',call:{id:call.id}},{provider:provider({...call,status:'ended',endedAt:'2026-10-05T16:00:25Z'})});
   const view=kv.values.get('calls:tenant')[0];assert.equal(view.disposition,'non_customer');assert.equal(view.category,'Non-customer');assert.equal(view.outcome,'Resolved');assert.equal(kv.values.get('leads:tenant').length,0);
  });
-
-
-
-
-
