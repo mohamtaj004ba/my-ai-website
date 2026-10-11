@@ -2,6 +2,8 @@
 
 Scope: bounded Preview infrastructure, mock execution and a disabled one-task paid adapter. Passing these checks does not establish real-agent website acceptance or authorize spending.
 
+Protected Preview follow-up, October11: 1,918 local tests pass, including five bounded-transport tests. Independent review found no material permissions/spending regression. Exact immutable target read-back is READY/8133597; both approved documents reject unauthenticated requests with Vercel302 redirects. Protection remains enabled. OIDC identity is retained only in trusted Node transport; browser receives no identity/cookies/provider headers. Explicit documents/static assets, expiry, cancellation, 256-request cap (request257 denied), resource size and redirect denial are covered with fixtures. Actual authenticated capture, its four screenshots, broker secret/configuration and hosted mock worker remain unverified external gates. No paid execution or release acceptance is claimed.
+
 ## Control evidence
 
 | Control | Demonstrated behavior |
