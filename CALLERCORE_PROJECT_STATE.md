@@ -1,5 +1,20 @@
 # CallerCore project state
 
+## Agent Operations broker and hosted mock verified — October 11
+
+Status: technically ready for the bounded pilot, awaiting explicit human authorization. Paid execution remains false locally and on the hosted broker; no approval manifest or inference request exists. This checkpoint supersedes earlier pending broker/access statements below.
+
+- Verified runtime source 9a1c70999ad19e44db50bc947bb2153855532b1e, READY Preview dpl_5Qcuy3m2vQvoVWp6KnnmhEuaS2Sd at https://my-ai-website-b37hdvesd-mohamtaj004bas-projects.vercel.app. Trusted parent pins both origin and SHA. Preserved cf56811, a3eea54 and 6f51165; fetched remote c5d82e2 with zero remote-only divergence before publication.
+- Independent random worker/broker secret securely provisioned only to the authorized branch Preview and private local file outside Git. Existing OpenAI and Preview keys unchanged. File ACL permits only current Windows user; no credential value in repository, stdout or artifacts.
+- Hosted happy task 8c5bc6d8-2f0d-4ef3-91ef-7ae988bad061 completed Chief of Staff, specialist, independent QA and report with four distinct execution IDs, matched evidence hashes, zero tokens and zero actual cost. Four pessimistic reservations total $1.20.
+- Hosted cancellation task 77b840f2-71c3-4483-9b9f-4a0c08c52f1c cancelled during execution. Its $0.30 pending reservation remained charged to the allowance; stale revision/completion rejected409. Wrong credential401; foreign-task, paid, approval, release, arbitrary fixture/objective and unauthorized commands403. Idempotent delivery did not duplicate execution.
+- Both actual worker children attested zero Vercel and broker credential variables, denied private credential-file access, enabled Node permission model, and denied child-process access. Mock children receive no OpenAI credential. Parent alone retains short-lived development OIDC and broker secret; IPC is scoped to one task and an exact command schema. Fixed-code defense in depth is verified, not an OS sandbox guarantee for hostile code.
+- Temporary mock-verifier capability durably revoked; subsequent read/create denied403. All four temporary hosted variables and local copies removed. Old immutable deployment also observes durable revocation. Production has no Agent Operations variables.
+- Local full suite: 1,925 passed, zero failures/skips; six worker-boundary tests passed. Independent review found no remaining material application safeguard issue, including the deliberate mode/local gate launch entrypoint. Published runtime CI, disposable Redis, CodeQL and Jekyll passed; Browser QA status is recorded separately when final.
+- Protection read-back remains enabled/all_except_custom_domains. PR5 open/draft/unmerged. Production READY dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY / 6d36aa454241588140a3d9945eed1a5696a65db6 unchanged.
+- Final proposal: docs/AGENT_OPERATIONS_PILOT.md. One read-only Legal/Growth task on fixed source8133597, four expected/six maximum calls, ten minutes, $2 total/task/day/month ceilings, no automatic paid retries or recurrence. Launch requires explicit authorization, one-use task-bound manifest, deliberate local/server paid gates, fresh development identity and a newly read-back pinned Preview runtime. Current paid-disabled runtime cannot launch a paid task.
+
+
 ## Agent Operations authenticated Preview access verified — October 11
 
 - Owner completed official device authorization; isolated VercelCLI63.1.2 whoami confirms mohamtaj004ba. No new device login required. CLI env run obtained same-project development OIDC in process; local project/team/environment/expiry checks passed and Vercel accepted the signed identity for the exact pinned Legal and homepage documents (HTTP200). No token printed, copied into artifacts or persisted in an environment file. Existing Default/Preview API keys remain unchanged.

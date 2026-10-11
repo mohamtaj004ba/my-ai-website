@@ -65,6 +65,6 @@ function hostedBroker({runtime,workerSecret,oidcToken,fetchImpl=fetch}){
     if(!response.ok)throw new Error('Broker request unconfirmed');const data=await response.json();
     if(!body&&(data.runtime?.origin!==runtime.origin||data.runtime?.commit!==runtime.commit||data.runtime?.environment!=='preview'))throw new Error('Broker runtime mismatch');return data;
   };
-  return {read:()=>request(),command:async(id,command)=>(await request({action:'command',id,command})).task};
+  return {read:()=>request(),command:async(id,command)=>(await request({action:'command',id,command})).task,initializePilot:async()=>(await request({action:'initialize-pilot'})).task};
 }
 module.exports={launch,scopedBridge,childEnvironment,hostedBroker};

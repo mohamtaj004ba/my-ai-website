@@ -5,6 +5,12 @@ const {createHandler}=require('../lib/agent-operations-api');
 const {launch,scopedBridge,childEnvironment}=require('../scripts/agent-operations-launcher.cjs');
 const {ORIGIN}=require('../scripts/agent-operations-preview-access.cjs');
 const scope={origin:ORIGIN,commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8'};
+test('launch entrypoint requires deliberate matching gates and never defaults to pilot',()=>{
+  const {requestedMode}=require('../scripts/agent-operations-run.cjs'),local={CALLERCORE_AGENTOPS_WORKER_MODE:'mock',CALLERCORE_AGENTOPS_PAID_ENABLED:'false'};
+  for(const args of [[],['--pilot'],['--pilot','extra'],['--mock'],['--mock','arbitrary']])assert.throws(()=>requestedMode(args,local));
+  assert.equal(requestedMode(['--mock','a'.repeat(36)],local),'mock');
+  assert.equal(requestedMode(['--pilot'],{CALLERCORE_AGENTOPS_WORKER_MODE:'pilot',CALLERCORE_AGENTOPS_PAID_ENABLED:'true'}),'pilot');
+});
 function store(){let raw=null;return createStore({read:async()=>raw,compare:async(before,after)=>{if(raw!==before)return false;raw=after;return true;}},{scope});}
 const env=()=>({VERCEL_ENV:'preview',CALLERCORE_AGENTOPS_ENABLED:'true',CALLERCORE_AGENTOPS_PAID_ENABLED:'false',CALLERCORE_AGENTOPS_WORKER_SECRET:'w'.repeat(40),CALLERCORE_AGENTOPS_VERIFICATION_SECRET:'v'.repeat(40),CALLERCORE_AGENTOPS_VERIFICATION_ID:'a'.repeat(24),CALLERCORE_AGENTOPS_VERIFICATION_START:String(Date.now()-1000),CALLERCORE_AGENTOPS_VERIFICATION_END:String(Date.now()+600000)});
 async function request(h,secret,body){const r={setHeader(){},status(code){this.code=code;return this;},json(body){this.body=body;return this;}};await h({method:body?'POST':'GET',query:{},headers:{authorization:'Bearer '+secret},body},r);return r;}
