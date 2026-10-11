@@ -30,12 +30,12 @@ test('real Redis Lua serializes creation, claims, budgets and a persisted manage
   await store().command(t.id,{type:'finish',fence:t.fence,executionId:'exec_chief',actualMicros:0,result:{stage:'chief',delegate:'website-visual-qa'}});
   for(let i=0;i<3;i++)await runStage(store(),mockAdapter(),{taskId:a.id});
   const final=(await store().read()).tasks[0];assert.equal(final.status,'verified');assert.equal(final.calls,4);assert.notEqual(final.results.inspect.executionId,final.results.review.executionId);
-  for(let i=0;i<2;i++){
+  for(let i=0;i<12;i++){
     const j=await store().create({...input,idempotencyKey:'extra_task_'+i}),c=await store().command(j.id,{type:'claim'});
     await store().command(j.id,{type:'reserve',fence:c.fence,executionId:'exec_extra_'+i});await store().command(j.id,{type:'fail',fence:c.fence});
   }
   const over=await store().create({...input,idempotencyKey:'over_budget'}),c=await store().command(over.id,{type:'claim'});
   await assert.rejects(store().command(over.id,{type:'reserve',fence:c.fence,executionId:'exec_over'}),/budget/);
-  assert.equal((await store().read()).reservations.length,6);
+  assert.equal((await store().read()).reservations.length,16);
   // No deletes/FLUSH commands; the CI container is disposed by the runner.
 });

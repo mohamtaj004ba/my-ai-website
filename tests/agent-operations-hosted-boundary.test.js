@@ -45,7 +45,7 @@ test('capture cannot start after lease or task deadline expiry even with valid a
   const {PROJECT}=require('../lib/agent-operations-project'),{hash}=require('../lib/agent-operations-store'),{MODEL,PRICING}=require('../lib/agent-operations-pilot');
   for(const expired of ['leaseUntil','deadline']){
     const task={...PROJECT,id:'bounded-task',mode:'pilot',approvalId:'pilot_12345678',scope:{...scope,paths:['/industries/legal','/#pricing']},status:'running',stage:'inspect',fence:1,leaseUntil:Date.now()+30000,deadline:Date.now()+60000};task[expired]=Date.now()-1;
-    const pilotApproval={...PROJECT,id:task.approvalId,taskId:task.id,authorized:true,scopeHash:hash(task.scope),expiresAt:Date.now()+60000,maxMicros:2000000,model:MODEL,pricingVersion:PRICING.version};let captures=0;
+    const pilotApproval={...PROJECT,id:task.approvalId,taskId:task.id,authorized:true,scopeHash:hash(task.scope),expiresAt:Date.now()+60000,maxMicros:5000000,model:MODEL,pricingVersion:PRICING.version};let captures=0;
     const bridge=scopedBridge({broker:{read:async()=>({tasks:[task],pilotApproval,reservations:[{taskId:task.id,executionId:'exec_pending',stage:'inspect',fence:1,status:'pending'}]})},taskIds:[task.id],mode:'pilot',capture:async()=>{captures++;}});
     await assert.rejects(bridge({op:'capture',id:task.id,executionId:'exec_pending'}));assert.equal(captures,0);
   }
@@ -58,7 +58,7 @@ test('real restricted child completes delegation over parent IPC with zero Verce
 
 test('real restricted preflight failure writes sanitized parent fallback journal without provider access',async()=>{
   const {PROJECT}=require('../lib/agent-operations-project'),{hash}=require('../lib/agent-operations-store'),{MODEL,PRICING}=require('../lib/agent-operations-pilot'),fs=require('node:fs'),path=require('node:path');
-  const s=store(),approval={...PROJECT,authorized:true,id:'pilot_offline_journal',scopeHash:hash(s.scope),expiresAt:Date.now()+60000,maxMicros:2000000,model:MODEL,pricingVersion:PRICING.version};
+  const s=store(),approval={...PROJECT,authorized:true,id:'pilot_offline_journal',scopeHash:hash(s.scope),expiresAt:Date.now()+60000,maxMicros:5000000,model:MODEL,pricingVersion:PRICING.version};
   const task=await s.create({principal:'offline',idempotencyKey:'offline_journal',objective:'Offline preflight denial',mode:'pilot',approval});
   const broker={read:async()=>({...await s.read(),paidExecution:true}),command:s.command};
   // No task-bound approval returned: fixed adapter must reject before fetch.
@@ -69,7 +69,7 @@ test('real restricted preflight failure writes sanitized parent fallback journal
 
 test('actual restricted pilot child preserves broker budget denial over IPC before adapter execution',async()=>{
   const {PROJECT}=require('../lib/agent-operations-project'),{hash}=require('../lib/agent-operations-store'),{MODEL,PRICING}=require('../lib/agent-operations-pilot'),fs=require('node:fs'),path=require('node:path');
-  const s=store(),approval={...PROJECT,authorized:true,id:'pilot_ipc_budget_denial',scopeHash:hash(s.scope),expiresAt:Date.now()+60000,maxMicros:2000000,model:MODEL,pricingVersion:PRICING.version};
+  const s=store(),approval={...PROJECT,authorized:true,id:'pilot_ipc_budget_denial',scopeHash:hash(s.scope),expiresAt:Date.now()+60000,maxMicros:5000000,model:MODEL,pricingVersion:PRICING.version};
   const task=await s.create({principal:'offline',idempotencyKey:'ipc_budget_denial',objective:'Offline IPC budget denial',mode:'pilot',approval});approval.taskId=task.id;let reserveAttempts=0,attestation;
   const broker={read:async()=>({...await s.read(),paidExecution:true,pilotApproval:approval}),command:async(id,c)=>{if(c.type==='reserve'){reserveAttempts++;const e=new Error('secret-provider-body-must-not-escape');e.code='BROKER_BUDGET_EXHAUSTED';e.brokerStatus=409;throw e;}return s.command(id,c);}};
   await launch({broker,taskId:task.id,mode:'pilot',env:{...process.env,CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_OPENAI_API_KEY:'synthetic-offline-key',CALLERCORE_AGENTOPS_OPENAI_PROJECT_ID:PROJECT.projectId,CALLERCORE_AGENTOPS_OPENAI_ORGANIZATION_ID:PROJECT.organizationId},onAttestation:a=>{attestation=a;}});

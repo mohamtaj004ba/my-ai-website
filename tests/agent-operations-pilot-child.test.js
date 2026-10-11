@@ -8,7 +8,7 @@ const {ORIGIN}=require('../scripts/agent-operations-preview-access.cjs');
 async function offlinePilot(scenario){
   let raw=null,providerCalls=0,captures=0,attestation;
   const store=createStore({read:async()=>raw,compare:async(before,after)=>{if(raw!==before)return false;raw=after;return true;}},{scope:{origin:ORIGIN,commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8'}});
-  const approval={...PROJECT,authorized:true,id:'pilot_offline_'+scenario,scopeHash:hash(store.scope),expiresAt:Date.now()+60000,maxMicros:2000000,model:MODEL,pricingVersion:PRICING.version};
+  const approval={...PROJECT,authorized:true,id:'pilot_offline_'+scenario,scopeHash:hash(store.scope),expiresAt:Date.now()+60000,maxMicros:5000000,model:MODEL,pricingVersion:PRICING.version};
   const task=await store.create({principal:'offline-test',idempotencyKey:'offline_child_'+scenario,objective:'Synthetic offline inspection only',mode:'pilot',approval});approval.taskId=task.id;
   const bridge=scopedBridge({broker:{read:async()=>({...await store.read(),paidExecution:true,pilotApproval:approval}),command:store.command},taskIds:[task.id],mode:'pilot',capture:async()=>{captures++;return [0,1,2,3].map(n=>({sha256:String(n).repeat(64),path:'offline-'+n+'.png',viewport:n%2?390:1440,dataUrl:'data:image/png;base64,AA=='}));}});
   const fixture=path.resolve('tests/fixtures/agent-operations-offline-child.cjs'),worker=path.resolve('scripts/agent-operations-worker.cjs');

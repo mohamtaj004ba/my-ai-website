@@ -50,7 +50,7 @@ test('interrupted unreserved stage recovers but uncertain execution retains spen
 });
 test('daily/monthly budgets serialize reservations across tasks; no refunds on failure',async t=>{
   const f=fixture(t),s=f.connect();
-  for(let i=0;i<6;i++){const j=await enqueue(s,'budget_'+i+'xx'),c=await s.command(j.id,{type:'claim'});await s.command(j.id,{type:'reserve',fence:c.fence,executionId:'exec_budget_'+i});await s.command(j.id,{type:'fail',fence:c.fence});}
+  for(let i=0;i<16;i++){const j=await enqueue(s,'budget_'+i+'xx'),c=await s.command(j.id,{type:'claim'});await s.command(j.id,{type:'reserve',fence:c.fence,executionId:'exec_budget_'+i});await s.command(j.id,{type:'fail',fence:c.fence});}
   const j=await enqueue(s,'budget_last'),c=await s.command(j.id,{type:'claim'});
   await assert.rejects(s.command(j.id,{type:'reserve',fence:c.fence,executionId:'exec_over'}),/Daily budget/);
   f.setTime(86401000);const next=await enqueue(s,'budget_next'),n=await s.command(next.id,{type:'claim'});
@@ -59,7 +59,7 @@ test('daily/monthly budgets serialize reservations across tasks; no refunds on f
 test('deadline, exhausted calls, audit capacity and storage uncertainty fail closed',async t=>{
   const f=fixture(t),s=f.connect(),j=await enqueue(s);f.setTime(601001);await assert.rejects(s.command(j.id,{type:'claim'}),/deadline/);
   let writes=0;const broken=createStore({read:async()=>null,compare:async()=>{writes++;throw new Error('uncertain');}},{scope});await assert.rejects(enqueue(broken),/uncertain/);assert.equal(writes,1);
-  const state=await s.read();state.tasks[0].deadline=9999999;state.tasks[0].calls=6;state.tasks[0].status='running';state.tasks[0].leaseUntil=9999999;state.tasks[0].fence=1;
+  const state=await s.read();state.tasks[0].deadline=9999999;state.tasks[0].calls=10;state.tasks[0].status='running';state.tasks[0].leaseUntil=9999999;state.tasks[0].fence=1;
   let raw=JSON.stringify(state);const capped=createStore({read:async()=>raw,compare:async(_before,after)=>{raw=after;return true;}},{scope,clock:()=>1000});
   await assert.rejects(capped.command(j.id,{type:'reserve',fence:1,executionId:'exec_exhausted'}),/Call limit/);
   state.tasks[0].events=Array.from({length:100},()=>({type:'fixture'}));raw=JSON.stringify(state);await assert.rejects(capped.command(j.id,{type:'cancel'}),/Audit capacity/);
@@ -117,7 +117,7 @@ test('paid adapter fixed model/endpoint, no tools, output cap and safe usage wit
   const out=await adapter.execute({stage:'chief',task,signal:new AbortController().signal,executionId:'exec_test'});assert.equal(calls,1);assert.equal(out.actualMicros,600);assert.equal('tool' in out.result,false);
 });
 test('one-task approval is bound to scope and consumed once; server gate revocation blocks worker writes',async t=>{
-  const f=fixture(t),s=f.connect(),approval={...PROJECT,authorized:true,id:'pilot_fixture_123',scopeHash:hash(s.scope),expiresAt:Date.now()+600000,maxMicros:2000000,model:MODEL,pricingVersion:PRICING.version};
+  const f=fixture(t),s=f.connect(),approval={...PROJECT,authorized:true,id:'pilot_fixture_123',scopeHash:hash(s.scope),expiresAt:Date.now()+600000,maxMicros:5000000,model:MODEL,pricingVersion:PRICING.version};
   const env={VERCEL_ENV:'preview',CALLERCORE_AGENTOPS_ENABLED:'true',CALLERCORE_AGENTOPS_WORKER_SECRET:'w'.repeat(40),CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_PILOT_APPROVAL:JSON.stringify(approval)};
   const h=createHandler({env,store:s,getSession:async()=>null,getMember:async()=>null,rateLimit:async()=>({limited:false})}),headers={authorization:'Bearer '+'w'.repeat(40)};
   const initialize=()=>apiCall(h,{headers,method:'POST',body:{action:'initialize-pilot'}});
@@ -133,7 +133,7 @@ test('one-task approval is bound to scope and consumed once; server gate revocat
   assert.equal((await initialize()).code,403);
 });
 test('mocked paid Responses transport follows four delegated stages and records exact token cost',async t=>{
-  const f=fixture(t),s=f.connect(),approval={...PROJECT,authorized:true,id:'pilot_transport_123',scopeHash:hash(s.scope),expiresAt:5000,maxMicros:2000000,model:MODEL,pricingVersion:PRICING.version};
+  const f=fixture(t),s=f.connect(),approval={...PROJECT,authorized:true,id:'pilot_transport_123',scopeHash:hash(s.scope),expiresAt:5000,maxMicros:5000000,model:MODEL,pricingVersion:PRICING.version};
   const j=await s.create({principal:'owner-fixture',idempotencyKey:'pilot_transport_123',objective:'Inspect',mode:'pilot',approval});approval.taskId=j.id;
   let calls=0;const adapter=pilotAdapter({enabled:true,apiKey:'fake-key',clock:()=>1000,getApproval:async()=>approval,
     capture:async()=>[0,1,2,3].map(n=>({sha256:String(n).repeat(64),path:'fixture-'+n+'.png',viewport:390,dataUrl:'data:image/png;base64,AA=='})),

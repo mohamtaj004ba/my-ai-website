@@ -8,7 +8,7 @@ const {diagnostic}=require('../lib/agent-operations-diagnostics');
 async function fixture(fetchImpl){
   let raw=null;const scope={origin:'https://fixture.vercel.app',commit:'a'.repeat(40)};
   const store=createStore({read:async()=>raw,compare:async(before,after)=>{if(raw!==before)return false;raw=after;return true;}},{scope});
-  const approval={...PROJECT,authorized:true,id:'offline_diagnostic',scopeHash:hash(store.scope),expiresAt:Date.now()+600000,maxMicros:2000000,model:MODEL,pricingVersion:PRICING.version};
+  const approval={...PROJECT,authorized:true,id:'offline_diagnostic',scopeHash:hash(store.scope),expiresAt:Date.now()+600000,maxMicros:5000000,model:MODEL,pricingVersion:PRICING.version};
   const task=await store.create({principal:'offline',idempotencyKey:'offline_diagnostic',objective:'Offline only',mode:'pilot',approval});approval.taskId=task.id;
   return {store,task,adapter:pilotAdapter({enabled:true,apiKey:'synthetic-only',getApproval:async()=>approval,capture:async()=>[],fetchImpl})};
 }
@@ -62,11 +62,11 @@ test('failed durable dispatch checkpoint prevents provider invocation and eviden
 test('broker budget and state denials retain safe distinct codes without provider invocation',async()=>{
   const {createHandler}=require('../lib/agent-operations-api'),{hostedBroker}=require('../scripts/agent-operations-launcher.cjs');let raw=null;
   const store=createStore({read:async()=>raw,compare:async(a,b)=>{if(raw!==a)return false;raw=b;return true;}},{scope:{origin:'https://fixture.vercel.app',commit:'a'.repeat(40)}});
-  for(let n=0;n<6;n++){const t=await store.create({principal:'offline',idempotencyKey:'budget_fixture_'+n,objective:'Offline budget'}),c=await store.command(t.id,{type:'claim'});await store.command(t.id,{type:'reserve',fence:c.fence,executionId:'exec_budget_'+n});await store.command(t.id,{type:'fail',fence:c.fence});}
+  for(let n=0;n<16;n++){const t=await store.create({principal:'offline',idempotencyKey:'budget_fixture_'+n,objective:'Offline budget'}),c=await store.command(t.id,{type:'claim'});await store.command(t.id,{type:'reserve',fence:c.fence,executionId:'exec_budget_'+n});await store.command(t.id,{type:'fail',fence:c.fence});}
   const task=await store.create({principal:'offline',idempotencyKey:'budget_denial_task',objective:'Offline budget denial'}),runtime={origin:'https://my-ai-website-offline-mohamtaj004bas-projects.vercel.app',deploymentId:'dpl_offline',commit:'a'.repeat(40)},secret='w'.repeat(40);
   const handler=createHandler({env:{VERCEL_ENV:'preview',VERCEL_URL:runtime.origin.slice(8),VERCEL_GIT_COMMIT_SHA:runtime.commit,CALLERCORE_AGENTOPS_ENABLED:'true',CALLERCORE_AGENTOPS_PAID_ENABLED:'false',CALLERCORE_AGENTOPS_WORKER_SECRET:secret},store,getSession:async()=>null,getMember:async()=>null,rateLimit:async()=>({limited:false})});
   const broker=hostedBroker({runtime,workerSecret:secret,oidcToken:'fixture.'+Buffer.from(JSON.stringify({project_id:'prj_AkD7VoSNCE6fRYXQnXkX1ywGqjLX',owner_id:'team_6Rg3DdCrvOml6oEGwx6Ndf1I',environment:'development',nbf:0,exp:Math.floor(Date.now()/1000)+600})).toString('base64url')+'.synthetic-signature',fetchImpl:async(_url,options)=>{const res={setHeader(){},status(code){this.code=code;return this;},json(body){this.body=body;return this;}};await handler({method:options.method,headers:{authorization:'Bearer '+secret},query:{},body:options.body?JSON.parse(options.body):undefined},res);return new Response(JSON.stringify(res.body),{status:res.code});}});
   let calls=0;const result=await runStage(broker,{mode:'mock',execute:async()=>{calls++;throw Error('must not run');}},{taskId:task.id});
-  assert.equal(calls,0);assert.equal(result.status,'blocked');const d=result.events.at(-1).diagnostic;assert.equal(d.errorType,'BudgetError');assert.equal(d.code,'BROKER_BUDGET_EXHAUSTED');assert.equal(d.brokerStatus,409);assert.equal(d.requestAttempted,false);assert.equal((await store.read()).reservations.length,6);
+  assert.equal(calls,0);assert.equal(result.status,'blocked');const d=result.events.at(-1).diagnostic;assert.equal(d.errorType,'BudgetError');assert.equal(d.code,'BROKER_BUDGET_EXHAUSTED');assert.equal(d.brokerStatus,409);assert.equal(d.requestAttempted,false);assert.equal((await store.read()).reservations.length,16);
   await assert.rejects(broker.command(task.id,{type:'claim'}),e=>e.code==='BROKER_STATE_DENIED'&&e.brokerStatus===409);
 });
