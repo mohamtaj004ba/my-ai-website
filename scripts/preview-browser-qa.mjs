@@ -43,7 +43,7 @@ function attachDiagnostics(page,label){
     // Keep all other console errors, including failures in authenticated contexts.
     if(label==='voice-no-access'&&msg.type()==='error'&&msg.text()==='Failed to load resource: the server responded with a status of 401 (Unauthorized)')return;
     if(page.__callerCoreExpectedVoiceTimeout&&msg.type()==='error'&&msg.text()==='Failed to load resource: the server responded with a status of 503 (Service Unavailable)')return;
-    if(msg.type()==='error'&&new URL(msg.location().url||baseURL).pathname==='/api/agent-operations'&&msg.text()==='Failed to load resource: the server responded with a status of 503 (Service Unavailable)')return;
+    if(msg.type()==='error'&&new URL(msg.location().url||baseURL).pathname==='/api/agent-operations'&&/^Failed to load resource: the server responded with a status of 503 \((?:Service Unavailable)?\)$/.test(msg.text()))return;
     if(msg.type()==='error')report.consoleErrors.push({label,message:msg.text().slice(0,1200)});
   });
   page.on('pageerror',err=>report.pageErrors.push({label,message:String(err?.message||err).slice(0,1200)}));
