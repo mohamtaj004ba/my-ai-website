@@ -72,7 +72,7 @@ module.exports=async function handler(req,res){
       const savedAgent=await kv.get('agent:'+workspaceId)||{};
       if(Number(savedAgent.updatedAt||0)!==record.agentRevision)throw new VoiceError('VOICE_CONFIG_OUT_OF_SYNC');
       const match=record.state==='paused'?!number.assistantId&&number.fallbackDestination?.number===record.fallbackNumber:number.assistantId===record.assistantId;
-      const desired=provider.assistantConfig(await kv.get('workspace:'+workspaceId),savedAgent,record.policy,{demo:record.purpose==='demo',pipeline:record.pipeline||'gpt-live'});
+      const desired=provider.assistantConfig(await kv.get('workspace:'+workspaceId),savedAgent,record.policy,{demo:record.purpose==='demo',pipeline:record.pipeline||'gpt-live',classicVoice:record.classicVoice||'Elliot'});
       if(!match||!agentMatches(agent,desired))throw new VoiceError('VOICE_SYNC_UNVERIFIED');
       // An uncertain sync may have completed externally. Recover only after
       // both the full assistant configuration and number routing match.

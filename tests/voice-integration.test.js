@@ -63,6 +63,25 @@ test('classic internal comparison preserves authenticated tools and rejects prov
     const drift=structuredClone(classic);mutate(drift);assert.equal(matches(drift,classic),false);
   }
 });
+test('female classic comparison voices retain exact version, authentication and default pipeline isolation',()=>{
+  const p=createProvider({env}),w={id:'tenant',name:'Test service business'},base=p.assistantConfig(w,{},policy,{pipeline:'classic-comparison'});
+  for(const classicVoice of ['Clara','Emma']){
+    const desired=p.assistantConfig(w,{},policy,{pipeline:'classic-comparison',classicVoice});
+    assert.deepEqual(desired,{...base,voice:{provider:'vapi',voiceId:classicVoice,version:2}});
+    const drift=structuredClone(desired);drift.voice.voiceId='Elliot';
+    assert.equal(require('../lib/voice-provider').agentMatches(drift,desired),false);
+    assert.throws(()=>p.assistantConfig(w,{},policy,{classicVoice}),{code:'VOICE_CLASSIC_VOICE_INVALID'});
+    assert.throws(()=>p.assistantConfig(w,{},policy,{demo:true,classicVoice}),{code:'VOICE_CLASSIC_VOICE_INVALID'});
+  }
+  for(const classicVoice of ['clara','Clara v2','Mia',null,{},''])assert.throws(()=>p.assistantConfig(w,{},policy,{pipeline:'classic-comparison',classicVoice}),{code:'VOICE_CLASSIC_VOICE_INVALID'});
+});
+test('classic voice validation rejects unsupported settings before provider writes or configuration mutation',async()=>{
+  for(const body of [{pipeline:'gpt-live',classicVoice:'Clara'},{pipeline:'classic-comparison',classicVoice:'Mia'},{pipeline:'classic-comparison',classicVoice:''},{pipeline:'classic-comparison',classicVoice:null}]){
+    const kv=memory(),before=structuredClone([...kv.values]);
+    await assert.rejects(configure(kv,'tenant',{policy,expectedRevision:1,...body},{email:'owner@example.test',role:'admin'},{env,provider:{retrieveNumber:()=>assert.fail('must reject before provider access')}}),{code:'VOICE_CLASSIC_VOICE_INVALID'});
+    assert.deepEqual([...kv.values],before);
+  }
+});
 test('optional null callback means originating number, without accepting missing consent or unknown fields',()=>{
   const valid={intent:'estimate',reason:'Repair estimate',confirmed:true,callbackNumber:null};
   assert.deepEqual(argumentsFor('save_call_request',valid),{intent:'estimate',reason:'Repair estimate',confirmed:true});
@@ -73,8 +92,9 @@ test('classic configuration persists through resume, skips GPT-Live context and 
   const kv=memory(),real=createProvider({env});let desired,options,submissions=0;
   const p={...provider(),assistantConfig(w,a,b,o){options=o;return real.assistantConfig(w,a,b,o)},retrieveNumber:async()=>({assistantId:'assistant_test'}),configureAgent:async(id,c)=>{desired=c},retrieveAgent:async()=>desired,connectNumber:async()=>{},resumeNumber:async()=>{},appendContext:async()=>{submissions++;return {submitted:true}}};
   const actor={email:'owner@example.test',role:'admin'};
-  const status=await configure(kv,'tenant',{policy,expectedRevision:1,pipeline:'classic-comparison'},actor,{env,provider:p});
+  const status=await configure(kv,'tenant',{policy,expectedRevision:1,pipeline:'classic-comparison',classicVoice:'Clara'},actor,{env,provider:p});
   assert.equal(status.pipeline,'classic-comparison');assert.equal(options.pipeline,'classic-comparison');
+  assert.equal(status.classicVoice,'Clara');assert.equal(desired.voice.voiceId,'Clara');assert.equal(kv.values.get('voice:config:tenant').classicVoice,'Clara');
   await assert.rejects(configure(kv,'tenant',{policy,expectedRevision:2,purpose:'demo',pipeline:'classic-comparison'},actor,{env,provider:p}),{code:'VOICE_PIPELINE_INVALID'});
   await processMessage(kv,{type:'status-update',call:{id:'call_test'}},{provider:p});assert.equal(submissions,0);
   const item=message('save_call_request',{confirmed:true,reason:'Repair request',intent:'service',name:'Test Caller',callbackNumber:null});
@@ -84,6 +104,7 @@ test('classic configuration persists through resume, skips GPT-Live context and 
   p.resumeNumber=async()=>{p.retrieveNumber=async()=>({assistantId:'assistant_test'})};
   const resumed=await control(kv,'tenant',{paused:false,expectedRevision:2},actor,{env,provider:p});
   assert.equal(resumed.pipeline,'classic-comparison');assert.equal(options.pipeline,'classic-comparison');
+  assert.equal(resumed.classicVoice,'Clara');assert.equal(options.classicVoice,'Clara');
 });
 
 test('authenticated active lifecycle submits call context once and records its truthful state',async()=>{
