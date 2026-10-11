@@ -136,8 +136,40 @@
       "expectedToolsAndMutations": "save estimate confirmed; omit callbackNumber; one lead",
       "instructions": "Caller persona and scenario: Busy Jamie gives estimate reason, name, address and this number. Use fictional information only. Goal: Ask only missing fields; confirm once; save once. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "NOT_ACCEPTED_INDEPENDENT_AUDIT",
+      "runEvidence": [
+        {
+          "mode": "voice",
+          "runId": "4ab4ab4c-3fae-46e2-90e0-dfe8da3c8f79",
+          "model": "gpt-4.1-mini",
+          "version": 25,
+          "result": "judge pass; provisional"
+        },
+        {
+          "mode": "voice",
+          "runId": "db8135b1-a0f4-436d-acd4-ae7b348717fd",
+          "model": "gpt-4.1",
+          "version": 26,
+          "result": "judge pass; provisional"
+        },
+        {
+          "runId": "819544aa-9dd8-4166-a236-a05d0e45c5d0",
+          "mode": "voice",
+          "iterations": 3,
+          "automatedPasses": 2,
+          "accepted": false,
+          "criticalFinding": null
+        },
+        {
+          "runId": "90745b48-69a0-4ad3-a653-a338ea30bc4a",
+          "mode": "voice",
+          "iterations": 3,
+          "result": "complete; independent audit required",
+          "candidate": "055f7195/revision34",
+          "callerFidelityChanged": true,
+          "auditFile": "VOICE_SIMULATION_AUDIT_90745.json"
+        }
+      ]
     },
     {
       "id": "H04",
@@ -164,8 +196,40 @@
       "expectedToolsAndMutations": "save once with final details",
       "instructions": "Caller persona and scenario: Casey changes surname, address and callback before saving. Use fictional information only. Goal: Latest corrected values only, concise confirmation. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "NOT_ACCEPTED_INDEPENDENT_AUDIT",
+      "runEvidence": [
+        {
+          "mode": "voice",
+          "runId": "4ab4ab4c-3fae-46e2-90e0-dfe8da3c8f79",
+          "model": "gpt-4.1-mini",
+          "version": 25,
+          "result": "failed"
+        },
+        {
+          "mode": "voice",
+          "runId": "db8135b1-a0f4-436d-acd4-ae7b348717fd",
+          "model": "gpt-4.1",
+          "version": 26,
+          "result": "failed"
+        },
+        {
+          "runId": "819544aa-9dd8-4166-a236-a05d0e45c5d0",
+          "mode": "voice",
+          "iterations": 3,
+          "automatedPasses": 1,
+          "accepted": false,
+          "criticalFinding": "Iteration3 premature native end during correction before caller goodbye"
+        },
+        {
+          "runId": "90745b48-69a0-4ad3-a653-a338ea30bc4a",
+          "mode": "voice",
+          "iterations": 3,
+          "result": "complete; independent audit required",
+          "candidate": "055f7195/revision34",
+          "callerFidelityChanged": true,
+          "auditFile": "VOICE_SIMULATION_AUDIT_90745.json"
+        }
+      ]
     },
     {
       "id": "H05",
@@ -248,8 +312,40 @@
       "expectedToolsAndMutations": "hours; no lead",
       "instructions": "Caller persona and scenario: Caller asks open now, tomorrow and next holiday. Use fictional information only. Goal: Lead with yes/no when verified; accurate relative date. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "NOT_ACCEPTED_INDEPENDENT_AUDIT",
+      "runEvidence": [
+        {
+          "mode": "voice",
+          "runId": "4ab4ab4c-3fae-46e2-90e0-dfe8da3c8f79",
+          "model": "gpt-4.1-mini",
+          "version": 25,
+          "result": "failed"
+        },
+        {
+          "mode": "voice",
+          "runId": "db8135b1-a0f4-436d-acd4-ae7b348717fd",
+          "model": "gpt-4.1",
+          "version": 26,
+          "result": "failed"
+        },
+        {
+          "runId": "819544aa-9dd8-4166-a236-a05d0e45c5d0",
+          "mode": "voice",
+          "iterations": 3,
+          "automatedPasses": 3,
+          "accepted": false,
+          "criticalFinding": null
+        },
+        {
+          "runId": "90745b48-69a0-4ad3-a653-a338ea30bc4a",
+          "mode": "voice",
+          "iterations": 3,
+          "result": "complete; independent audit required",
+          "candidate": "055f7195/revision34",
+          "callerFidelityChanged": false,
+          "auditFile": "VOICE_SIMULATION_AUDIT_90745.json"
+        }
+      ]
     },
     {
       "id": "H08",
@@ -472,8 +568,40 @@
       "expectedToolsAndMutations": "complete non_customer/end; zero lead",
       "instructions": "Caller persona and scenario: Polite caller realizes wrong business. Use fictional information only. Goal: Briefly identify business, gracious end. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "NOT_ACCEPTED_INDEPENDENT_AUDIT",
+      "runEvidence": [
+        {
+          "mode": "voice",
+          "runId": "4ab4ab4c-3fae-46e2-90e0-dfe8da3c8f79",
+          "model": "gpt-4.1-mini",
+          "version": 25,
+          "result": "judge pass; provisional"
+        },
+        {
+          "mode": "voice",
+          "runId": "db8135b1-a0f4-436d-acd4-ae7b348717fd",
+          "model": "gpt-4.1",
+          "version": 26,
+          "result": "judge pass; provisional"
+        },
+        {
+          "runId": "819544aa-9dd8-4166-a236-a05d0e45c5d0",
+          "mode": "voice",
+          "iterations": 3,
+          "automatedPasses": 3,
+          "accepted": false,
+          "criticalFinding": null
+        },
+        {
+          "runId": "90745b48-69a0-4ad3-a653-a338ea30bc4a",
+          "mode": "voice",
+          "iterations": 3,
+          "result": "complete; independent audit required",
+          "candidate": "055f7195/revision34",
+          "callerFidelityChanged": false,
+          "auditFile": "VOICE_SIMULATION_AUDIT_90745.json"
+        }
+      ]
     },
     {
       "id": "H16",
@@ -965,5 +1093,15 @@
       "latestResult": "NOT_RUN",
       "runEvidence": []
     }
-  ]
+  ],
+  "currentApplicationSHA": "281f19f552e9f1ee7b2f0ce9b9e3e07d947cca2d",
+  "currentCandidate": {
+    "voice": "Clara v2 female American",
+    "model": "gpt-4.1",
+    "configurationRevision": 34,
+    "maxDurationSeconds": 120,
+    "accepted": false,
+    "providerSyncedApplicationSHA": "055f7195a3a76ebe7007039f4bdef1235ba17fdf"
+  },
+  "lastObservedCredits": 23.71
 }

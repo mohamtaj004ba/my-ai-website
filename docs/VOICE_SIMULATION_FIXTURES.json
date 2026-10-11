@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "fictionalOnly": true,
+  "frozenAt": "2026-10-11T04:30:00.000Z",
+  "noCanonicalMutation": true,
+  "toolResults": {
+    "get_business_profile": {
+      "businessName": "Cedar Service Studio — Internal Acceptance",
+      "greeting": "",
+      "services": [
+        "Heating and cooling maintenance",
+        "Plumbing repairs",
+        "Home service estimates"
+      ],
+      "faqs": [
+        "Office hours: Monday through Friday, 9am to 5pm Pacific.",
+        "Service area: Spokane and Spokane Valley.",
+        "Estimates: Ask what work is needed. Save the confirmed estimate request for the office. No visit or callback timeframe has been approved; capture the caller’s preferred time without promising it.",
+        "Existing appointments: The office can check the schedule; do not invent an arrival time."
+      ],
+      "serviceArea": "Spokane and Spokane Valley, Washington",
+      "pricingGuidance": "Do not quote repair prices. Collect the issue and request an estimate from the team.",
+      "hours": {
+        "open": false,
+        "localDate": "2026-10-10",
+        "timezone": "America/Los_Angeles",
+        "afterHours": true,
+        "policy": "capture",
+        "tomorrow": {
+          "localDate": "2026-10-11",
+          "weekday": "Sunday",
+          "openDuringDay": false,
+          "holiday": false,
+          "intervals": []
+        }
+      },
+      "emergencyGuidance": "For immediate danger, gas smell, fire, or a medical emergency, advise calling 911 and moving to safety. Do not promise emergency dispatch.",
+      "appointmentRule": "Capture a request for the team; no booking, cancellation or reschedule is confirmed.",
+      "privateAccountRule": "Do not disclose private customer/account details to an unverified caller."
+    },
+    "check_after_hours_policy": {
+      "source": "Synthetic QA fixture using approved business policy; NOT live hours verification",
+      "open": false,
+      "localDate": "2026-10-10",
+      "timezone": "America/Los_Angeles",
+      "afterHours": true,
+      "policy": "capture",
+      "validAcrossCall": true,
+      "checkedAt": "2026-10-11T04:30:00.000Z",
+      "appointmentAvailability": "unknown; no calendar access",
+      "tomorrow": {
+        "localDate": "2026-10-11",
+        "weekday": "Sunday",
+        "openDuringDay": false,
+        "holiday": false,
+        "intervals": []
+      }
+    },
+    "save_call_request": {
+      "status": "captured",
+      "callId": "synthetic-qa-only",
+      "request": {},
+      "appointmentConfirmed": false,
+      "customerContacted": false
+    },
+    "complete_call": {
+      "status": "recorded",
+      "disposition": "request_captured",
+      "nextAction": "This result records the call; it does not authorize a hangup. Keep listening. Only invoke endCall after the caller explicitly says goodbye or asks to end, after their latest question has been answered. Okay, thanks, or request confirmation alone is not a goodbye. A new question cancels any planned closing."
+    },
+    "transfer_call": {
+      "status": "unavailable",
+      "message": "Synthetic QA: service unavailable; no action performed"
+    }
+  },
+  "limitations": [
+    "Static save result does not echo or validate arguments; review actual requested arguments and separate backend tests",
+    "Set completion disposition per scenario, never report request_captured for FAQ-only or failed save",
+    "Unavailable mock is a handled result string, not HTTP error or network timeout",
+    "Frozen hours test date reasoning against a fixture, not actual call-time lookup"
+  ]
+}
