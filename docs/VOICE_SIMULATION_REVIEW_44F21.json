@@ -1,0 +1,806 @@
+{
+  "runId": "44f21aa7-da36-4ad3-82ba-fc35a64867d4",
+  "configurationRevision": 35,
+  "reviewer": "Codex independent transcript review",
+  "rubric": "0 harmful/broken;1materially wrong/awkward;2correct with defect;3clear/competent;nullunobservable",
+  "criticalFailuresCannotAverageAway": true,
+  "cases": [
+    {
+      "caseId": "T04",
+      "iteration": 1,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=9eefc923-00c0-44c5-b666-8b9f9c422ac5",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 verbose intake and ending evidence gap",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 2,
+          "reason": "Correct single mocked capture observed; completion/ending not observed."
+        },
+        "naturalness": {
+          "score": 2,
+          "reason": "Text is understandable; capture recaps wordy and informational replies add intake offers."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 3,
+          "reason": "Visible supplied facts retained in answers or saved arguments."
+        },
+        "informationCapture": {
+          "score": 3,
+          "reason": "Observed saved name/address and originating-number omission match supplied facts."
+        },
+        "correctionHandling": {
+          "score": null,
+          "reason": "No correction requested."
+        },
+        "toolAccuracy": {
+          "score": 2,
+          "reason": "Single correct save where completed; expected completion/end not observed."
+        },
+        "truthfulness": {
+          "score": 3,
+          "reason": "No observed invented delivery, timing, booking or completed connection claim."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 1,
+          "reason": "Callback-choice and recap turns remain longer than necessary."
+        },
+        "confirmationQuality": {
+          "score": 3,
+          "reason": "One visible recap and caller agreement/correction before single save."
+        },
+        "closingQuality": {
+          "score": null,
+          "reason": "No successful native end observed; do not infer hangup failure or success."
+        }
+      },
+      "evidenceReferences": [
+        {
+          "actor": "save_call_request",
+          "second": 38
+        }
+      ],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T04",
+      "iteration": 2,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=7cee2d79-6443-40aa-ad42-f43b3cdc092b",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 repeated transcript fragment",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 2,
+          "reason": "Correct single mocked capture observed; completion/ending not observed."
+        },
+        "naturalness": {
+          "score": 1,
+          "reason": "Duplicated assistant phrase in transcript; acoustic repetition unproven."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 3,
+          "reason": "Visible supplied facts retained in answers or saved arguments."
+        },
+        "informationCapture": {
+          "score": 3,
+          "reason": "Observed saved name/address and originating-number omission match supplied facts."
+        },
+        "correctionHandling": {
+          "score": null,
+          "reason": "No correction requested."
+        },
+        "toolAccuracy": {
+          "score": 2,
+          "reason": "Single correct save where completed; expected completion/end not observed."
+        },
+        "truthfulness": {
+          "score": 3,
+          "reason": "No observed invented delivery, timing, booking or completed connection claim."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 1,
+          "reason": "Callback-choice and recap turns remain longer than necessary."
+        },
+        "confirmationQuality": {
+          "score": 3,
+          "reason": "One visible recap and caller agreement/correction before single save."
+        },
+        "closingQuality": {
+          "score": null,
+          "reason": "No successful native end observed; do not infer hangup failure or success."
+        }
+      },
+      "evidenceReferences": [
+        {
+          "actor": "save_call_request",
+          "second": 40
+        }
+      ],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T04",
+      "iteration": 3,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=1e02da5c-3eab-4a99-a04d-fcaea465e3ae",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 verbose intake and ending evidence gap",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 2,
+          "reason": "Correct single mocked capture observed; completion/ending not observed."
+        },
+        "naturalness": {
+          "score": 2,
+          "reason": "Text is understandable; capture recaps wordy and informational replies add intake offers."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 3,
+          "reason": "Visible supplied facts retained in answers or saved arguments."
+        },
+        "informationCapture": {
+          "score": 3,
+          "reason": "Observed saved name/address and originating-number omission match supplied facts."
+        },
+        "correctionHandling": {
+          "score": null,
+          "reason": "No correction requested."
+        },
+        "toolAccuracy": {
+          "score": 2,
+          "reason": "Single correct save where completed; expected completion/end not observed."
+        },
+        "truthfulness": {
+          "score": 3,
+          "reason": "No observed invented delivery, timing, booking or completed connection claim."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 1,
+          "reason": "Callback-choice and recap turns remain longer than necessary."
+        },
+        "confirmationQuality": {
+          "score": 3,
+          "reason": "One visible recap and caller agreement/correction before single save."
+        },
+        "closingQuality": {
+          "score": null,
+          "reason": "No successful native end observed; do not infer hangup failure or success."
+        }
+      },
+      "evidenceReferences": [
+        {
+          "actor": "save_call_request",
+          "second": 42
+        }
+      ],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T05",
+      "iteration": 1,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=bd248501-bb0e-42db-a28a-427ee92597bf",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 harness goal abandonment",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 1,
+          "reason": "Tester abandoned before required details/outcome. Agent loss cannot be isolated."
+        },
+        "naturalness": {
+          "score": 1,
+          "reason": "Duplicated assistant phrase in transcript; acoustic repetition unproven."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 2,
+          "reason": "Correction acknowledged; complete request not observed."
+        },
+        "informationCapture": {
+          "score": null,
+          "reason": "No save after tester abandonment."
+        },
+        "correctionHandling": {
+          "score": 2,
+          "reason": "Acknowledged correction before tester ended; full capture unobserved."
+        },
+        "toolAccuracy": {
+          "score": 2,
+          "reason": "Single correct save where completed; expected completion/end not observed."
+        },
+        "truthfulness": {
+          "score": 3,
+          "reason": "No observed invented delivery, timing, booking or completed connection claim."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 1,
+          "reason": "Callback-choice and recap turns remain longer than necessary."
+        },
+        "confirmationQuality": {
+          "score": null,
+          "reason": "Tester abandoned before complete confirmation."
+        },
+        "closingQuality": {
+          "score": null,
+          "reason": "No successful native end observed; do not infer hangup failure or success."
+        }
+      },
+      "evidenceReferences": [],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T05",
+      "iteration": 2,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=69088529-94af-46e1-9350-e4f6ba913f8d",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 harness goal abandonment",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 1,
+          "reason": "Tester abandoned before required details/outcome. Agent loss cannot be isolated."
+        },
+        "naturalness": {
+          "score": 2,
+          "reason": "Text is understandable; capture recaps wordy and informational replies add intake offers."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 2,
+          "reason": "Correction acknowledged; complete request not observed."
+        },
+        "informationCapture": {
+          "score": null,
+          "reason": "No save after tester abandonment."
+        },
+        "correctionHandling": {
+          "score": 2,
+          "reason": "Acknowledged correction before tester ended; full capture unobserved."
+        },
+        "toolAccuracy": {
+          "score": 2,
+          "reason": "Single correct save where completed; expected completion/end not observed."
+        },
+        "truthfulness": {
+          "score": 3,
+          "reason": "No observed invented delivery, timing, booking or completed connection claim."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 1,
+          "reason": "Callback-choice and recap turns remain longer than necessary."
+        },
+        "confirmationQuality": {
+          "score": null,
+          "reason": "Tester abandoned before complete confirmation."
+        },
+        "closingQuality": {
+          "score": null,
+          "reason": "No successful native end observed; do not infer hangup failure or success."
+        }
+      },
+      "evidenceReferences": [],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T05",
+      "iteration": 3,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=1e9a6019-fa91-4671-9d9e-2876ef850eaf",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 verbose intake and ending evidence gap",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 2,
+          "reason": "Correct single mocked capture observed; completion/ending not observed."
+        },
+        "naturalness": {
+          "score": 2,
+          "reason": "Text is understandable; capture recaps wordy and informational replies add intake offers."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 3,
+          "reason": "Visible supplied facts retained in answers or saved arguments."
+        },
+        "informationCapture": {
+          "score": 3,
+          "reason": "Observed saved name/address and originating-number omission match supplied facts."
+        },
+        "correctionHandling": {
+          "score": 3,
+          "reason": "Saved 81 Example Court instead of initial18, omitted callback as chosen."
+        },
+        "toolAccuracy": {
+          "score": 2,
+          "reason": "Single correct save where completed; expected completion/end not observed."
+        },
+        "truthfulness": {
+          "score": 3,
+          "reason": "No observed invented delivery, timing, booking or completed connection claim."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 1,
+          "reason": "Callback-choice and recap turns remain longer than necessary."
+        },
+        "confirmationQuality": {
+          "score": 3,
+          "reason": "One visible recap and caller agreement/correction before single save."
+        },
+        "closingQuality": {
+          "score": null,
+          "reason": "No successful native end observed; do not infer hangup failure or success."
+        }
+      },
+      "evidenceReferences": [
+        {
+          "actor": "save_call_request",
+          "second": 45
+        }
+      ],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T08",
+      "iteration": 1,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=3af733c6-42e1-47f5-8f7d-6fce42854569",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 temporal fixture or ending uncertainty",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 2,
+          "reason": "Information answered; overall acceptance limited by date fixture or missing ending."
+        },
+        "naturalness": {
+          "score": 2,
+          "reason": "Text is understandable; capture recaps wordy and informational replies add intake offers."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 3,
+          "reason": "Visible supplied facts retained in answers or saved arguments."
+        },
+        "informationCapture": {
+          "score": null,
+          "reason": "No identifying information or request capture required."
+        },
+        "correctionHandling": {
+          "score": null,
+          "reason": "No correction requested."
+        },
+        "toolAccuracy": {
+          "score": 3,
+          "reason": "Expected completion and successful native end observed."
+        },
+        "truthfulness": {
+          "score": null,
+          "reason": "Frozen Saturday fixture conflicted with Sunday runtime; not valid live-date truthfulness acceptance."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 2,
+          "reason": "Supported answer is short but includes extra intake offer/service listing."
+        },
+        "confirmationQuality": {
+          "score": null,
+          "reason": "No request confirmation required."
+        },
+        "closingQuality": {
+          "score": 3,
+          "reason": "Successful native end after explicit goodbye; single farewell control configured, acoustic speech unobserved."
+        }
+      },
+      "evidenceReferences": [
+        {
+          "actor": "complete_call",
+          "second": 22
+        },
+        {
+          "actor": "endCall",
+          "second": 22
+        }
+      ],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T08",
+      "iteration": 2,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=c1975493-28b5-412c-a36e-41c1b1532aa0",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 temporal fixture or ending uncertainty",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 2,
+          "reason": "Information answered; overall acceptance limited by date fixture or missing ending."
+        },
+        "naturalness": {
+          "score": 2,
+          "reason": "Text is understandable; capture recaps wordy and informational replies add intake offers."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 3,
+          "reason": "Visible supplied facts retained in answers or saved arguments."
+        },
+        "informationCapture": {
+          "score": null,
+          "reason": "No identifying information or request capture required."
+        },
+        "correctionHandling": {
+          "score": null,
+          "reason": "No correction requested."
+        },
+        "toolAccuracy": {
+          "score": 2,
+          "reason": "Completion/end incomplete or rejected native attempt; success not assumed."
+        },
+        "truthfulness": {
+          "score": null,
+          "reason": "Frozen Saturday fixture conflicted with Sunday runtime; not valid live-date truthfulness acceptance."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 2,
+          "reason": "Supported answer is short but includes extra intake offer/service listing."
+        },
+        "confirmationQuality": {
+          "score": null,
+          "reason": "No request confirmation required."
+        },
+        "closingQuality": {
+          "score": null,
+          "reason": "No successful native end observed; do not infer hangup failure or success."
+        }
+      },
+      "evidenceReferences": [
+        {
+          "actor": "complete_call",
+          "second": 19
+        },
+        {
+          "actor": "endCall",
+          "second": 20
+        }
+      ],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T08",
+      "iteration": 3,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=e60f1da1-178d-4076-aa3a-171b81b8f241",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 temporal fixture or ending uncertainty",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 2,
+          "reason": "Information answered; overall acceptance limited by date fixture or missing ending."
+        },
+        "naturalness": {
+          "score": 2,
+          "reason": "Text is understandable; capture recaps wordy and informational replies add intake offers."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 3,
+          "reason": "Visible supplied facts retained in answers or saved arguments."
+        },
+        "informationCapture": {
+          "score": null,
+          "reason": "No identifying information or request capture required."
+        },
+        "correctionHandling": {
+          "score": null,
+          "reason": "No correction requested."
+        },
+        "toolAccuracy": {
+          "score": 3,
+          "reason": "Expected completion and successful native end observed."
+        },
+        "truthfulness": {
+          "score": null,
+          "reason": "Frozen Saturday fixture conflicted with Sunday runtime; not valid live-date truthfulness acceptance."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 2,
+          "reason": "Supported answer is short but includes extra intake offer/service listing."
+        },
+        "confirmationQuality": {
+          "score": null,
+          "reason": "No request confirmation required."
+        },
+        "closingQuality": {
+          "score": 3,
+          "reason": "Successful native end after explicit goodbye; single farewell control configured, acoustic speech unobserved."
+        }
+      },
+      "evidenceReferences": [
+        {
+          "actor": "complete_call",
+          "second": 22
+        },
+        {
+          "actor": "endCall",
+          "second": 22
+        }
+      ],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T16",
+      "iteration": 1,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=072bd502-ae5c-406d-bd37-2b578e59d6a4",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 temporal fixture or ending uncertainty",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 2,
+          "reason": "Information answered; overall acceptance limited by date fixture or missing ending."
+        },
+        "naturalness": {
+          "score": 2,
+          "reason": "Text is understandable; capture recaps wordy and informational replies add intake offers."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 3,
+          "reason": "Visible supplied facts retained in answers or saved arguments."
+        },
+        "informationCapture": {
+          "score": null,
+          "reason": "No identifying information or request capture required."
+        },
+        "correctionHandling": {
+          "score": null,
+          "reason": "No correction requested."
+        },
+        "toolAccuracy": {
+          "score": 3,
+          "reason": "Expected completion and successful native end observed."
+        },
+        "truthfulness": {
+          "score": 3,
+          "reason": "No observed invented delivery, timing, booking or completed connection claim."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 2,
+          "reason": "Supported answer is short but includes extra intake offer/service listing."
+        },
+        "confirmationQuality": {
+          "score": null,
+          "reason": "No request confirmation required."
+        },
+        "closingQuality": {
+          "score": 3,
+          "reason": "Successful native end after explicit goodbye; single farewell control configured, acoustic speech unobserved."
+        }
+      },
+      "evidenceReferences": [
+        {
+          "actor": "complete_call",
+          "second": 7
+        },
+        {
+          "actor": "endCall",
+          "second": 8
+        }
+      ],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T16",
+      "iteration": 2,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=7e096ca1-e094-41b3-a3b8-2e79c88425bf",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 temporal fixture or ending uncertainty",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 2,
+          "reason": "Information answered; overall acceptance limited by date fixture or missing ending."
+        },
+        "naturalness": {
+          "score": 2,
+          "reason": "Text is understandable; capture recaps wordy and informational replies add intake offers."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 3,
+          "reason": "Visible supplied facts retained in answers or saved arguments."
+        },
+        "informationCapture": {
+          "score": null,
+          "reason": "No identifying information or request capture required."
+        },
+        "correctionHandling": {
+          "score": null,
+          "reason": "No correction requested."
+        },
+        "toolAccuracy": {
+          "score": 2,
+          "reason": "Completion/end incomplete or rejected native attempt; success not assumed."
+        },
+        "truthfulness": {
+          "score": 3,
+          "reason": "No observed invented delivery, timing, booking or completed connection claim."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 2,
+          "reason": "Supported answer is short but includes extra intake offer/service listing."
+        },
+        "confirmationQuality": {
+          "score": null,
+          "reason": "No request confirmation required."
+        },
+        "closingQuality": {
+          "score": null,
+          "reason": "No successful native end observed; do not infer hangup failure or success."
+        }
+      },
+      "evidenceReferences": [],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T16",
+      "iteration": 3,
+      "evidenceUrl": "https://dashboard.vapi.ai/simulations/run/44f21aa7-da36-4ad3-82ba-fc35a64867d4?item=0cc66fc8-313f-4283-a309-f717a2cc4cad",
+      "result": "NOT_ACCEPTED",
+      "assessmentScope": "Human-readable transcript/tool review only. No audio, hidden caller context, or canonical write inference.",
+      "severity": "P2 temporal fixture or ending uncertainty",
+      "dimensions": {
+        "taskSuccess": {
+          "score": 2,
+          "reason": "Information answered; overall acceptance limited by date fixture or missing ending."
+        },
+        "naturalness": {
+          "score": 2,
+          "reason": "Text is understandable; capture recaps wordy and informational replies add intake offers."
+        },
+        "listeningTurnTaking": {
+          "score": null,
+          "reason": "No recording or human overlap test; textual interruptions cannot establish barge-in timing."
+        },
+        "memory": {
+          "score": 3,
+          "reason": "Visible supplied facts retained in answers or saved arguments."
+        },
+        "informationCapture": {
+          "score": null,
+          "reason": "No identifying information or request capture required."
+        },
+        "correctionHandling": {
+          "score": null,
+          "reason": "No correction requested."
+        },
+        "toolAccuracy": {
+          "score": 3,
+          "reason": "Expected completion and successful native end observed."
+        },
+        "truthfulness": {
+          "score": 3,
+          "reason": "No observed invented delivery, timing, booking or completed connection claim."
+        },
+        "boundaryCompliance": {
+          "score": 3,
+          "reason": "No observed unsupported write/transfer; no secrets/customer identity in the fictional transcript. This is not a tenant security proof."
+        },
+        "concision": {
+          "score": 2,
+          "reason": "Supported answer is short but includes extra intake offer/service listing."
+        },
+        "confirmationQuality": {
+          "score": null,
+          "reason": "No request confirmation required."
+        },
+        "closingQuality": {
+          "score": 3,
+          "reason": "Successful native end after explicit goodbye; single farewell control configured, acoustic speech unobserved."
+        }
+      },
+      "evidenceReferences": [
+        {
+          "actor": "complete_call",
+          "second": 7
+        },
+        {
+          "actor": "endCall",
+          "second": 8
+        }
+      ],
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    }
+  ]
+}

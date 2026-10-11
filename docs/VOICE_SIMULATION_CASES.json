@@ -190,6 +190,14 @@
           "candidate": "055f7195/revision34",
           "callerFidelityChanged": true,
           "auditFile": "VOICE_SIMULATION_AUDIT_90745.json"
+        },
+        {
+          "runId": "44f21aa7-da36-4ad3-82ba-fc35a64867d4",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "result": "NOT_ACCEPTED",
+          "audit": "docs/VOICE_SIMULATION_AUDIT_44F21.json",
+          "limitation": "Frozen Saturday hours crossed actual midnight; missing endings remain unknown; some testers abandoned goal."
         }
       ]
     },
@@ -250,6 +258,14 @@
           "candidate": "055f7195/revision34",
           "callerFidelityChanged": true,
           "auditFile": "VOICE_SIMULATION_AUDIT_90745.json"
+        },
+        {
+          "runId": "44f21aa7-da36-4ad3-82ba-fc35a64867d4",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "result": "NOT_ACCEPTED",
+          "audit": "docs/VOICE_SIMULATION_AUDIT_44F21.json",
+          "limitation": "Frozen Saturday hours crossed actual midnight; missing endings remain unknown; some testers abandoned goal."
         }
       ]
     },
@@ -278,8 +294,22 @@
       "expectedToolsAndMutations": "one save; FAQ; complete/end only after goodbye",
       "instructions": "Caller persona and scenario: Short-answer caller confirms then asks a new FAQ. Use fictional information only. Goal: Acknowledge once, answer new question, retain intake. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "RUNNING",
+      "runEvidence": [
+        {
+          "runId": "22725c68-c722-4b30-8d07-55fe25e925c3",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "mode": "voice",
+          "iterations": 3,
+          "result": "RUNNING",
+          "hoursFixture": "sunday20261011",
+          "callerStoppingCondition": "Wait for outcome then say goodbye once and remain connected up to10s."
+        }
+      ],
+      "providerScenarioId": "b8a2f3a5-7887-4a2c-aada-11ce00f2c9ca",
+      "providerSimulationId": "d891b2bc-c80d-47e1-b00e-9608798494d4",
+      "providerSuiteId": "5773c0ca-0200-47e8-8be3-633da48cee3a"
     },
     {
       "id": "H06",
@@ -377,6 +407,14 @@
           "candidate": "055f7195/revision34",
           "callerFidelityChanged": false,
           "auditFile": "VOICE_SIMULATION_AUDIT_90745.json"
+        },
+        {
+          "runId": "44f21aa7-da36-4ad3-82ba-fc35a64867d4",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "result": "NOT_ACCEPTED",
+          "audit": "docs/VOICE_SIMULATION_AUDIT_44F21.json",
+          "limitation": "Frozen Saturday hours crossed actual midnight; missing endings remain unknown; some testers abandoned goal."
         }
       ]
     },
@@ -405,8 +443,22 @@
       "expectedToolsAndMutations": "hours; save service once if confirmed",
       "instructions": "Caller persona and scenario: Tired caller requests service after closing. Use fictional information only. Goal: State closed, capture follow-up with honest timing. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "RUNNING",
+      "runEvidence": [
+        {
+          "runId": "22725c68-c722-4b30-8d07-55fe25e925c3",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "mode": "voice",
+          "iterations": 3,
+          "result": "RUNNING",
+          "hoursFixture": "sunday20261011",
+          "callerStoppingCondition": "Wait for outcome then say goodbye once and remain connected up to10s."
+        }
+      ],
+      "providerScenarioId": "730d20d8-3b98-427d-b517-510c9e715da9",
+      "providerSimulationId": "9f35e36e-6a56-4b17-a9b5-530272b4fdfa",
+      "providerSuiteId": "5773c0ca-0200-47e8-8be3-633da48cee3a"
     },
     {
       "id": "H09",
@@ -472,8 +524,22 @@
       "expectedToolsAndMutations": "profile optional; acoustic acceptance separate",
       "instructions": "Caller persona and scenario: Talkative caller cuts across explanation to change topic. Use fictional information only. Goal: Yield, answer changed question, retain useful context. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "RUNNING",
+      "runEvidence": [
+        {
+          "runId": "22725c68-c722-4b30-8d07-55fe25e925c3",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "mode": "voice",
+          "iterations": 3,
+          "result": "RUNNING",
+          "hoursFixture": "sunday20261011",
+          "callerStoppingCondition": "Wait for outcome then say goodbye once and remain connected up to10s."
+        }
+      ],
+      "providerScenarioId": "ab572ef6-07d6-4588-bb9f-7648d1b5217f",
+      "providerSimulationId": "fe7d3df1-347c-4703-a43f-602033afd6b1",
+      "providerSuiteId": "5773c0ca-0200-47e8-8be3-633da48cee3a"
     },
     {
       "id": "H11",
@@ -500,8 +566,22 @@
       "expectedToolsAndMutations": "no save until confirmed",
       "instructions": "Caller persona and scenario: Uncertain caller pauses and changes their mind. Use fictional information only. Goal: Patient one-question flow, no rushed closure. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "RUNNING",
+      "runEvidence": [
+        {
+          "runId": "22725c68-c722-4b30-8d07-55fe25e925c3",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "mode": "voice",
+          "iterations": 3,
+          "result": "RUNNING",
+          "hoursFixture": "sunday20261011",
+          "callerStoppingCondition": "Wait for outcome then say goodbye once and remain connected up to10s."
+        }
+      ],
+      "providerScenarioId": "4bab3aa8-d2fd-49b4-8e9d-36596061be04",
+      "providerSimulationId": "bfb8c005-3a22-412d-9d0f-c592f3300dc3",
+      "providerSuiteId": "5773c0ca-0200-47e8-8be3-633da48cee3a"
     },
     {
       "id": "H12",
@@ -528,8 +608,22 @@
       "expectedToolsAndMutations": "confirmed save with both reasons; no accidental duplicate",
       "instructions": "Caller persona and scenario: Organized caller wants estimate and update. Use fictional information only. Goal: Address both, clarify priority, preserve both. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "RUNNING",
+      "runEvidence": [
+        {
+          "runId": "22725c68-c722-4b30-8d07-55fe25e925c3",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "mode": "voice",
+          "iterations": 3,
+          "result": "RUNNING",
+          "hoursFixture": "sunday20261011",
+          "callerStoppingCondition": "Wait for outcome then say goodbye once and remain connected up to10s."
+        }
+      ],
+      "providerScenarioId": "4cc8ffb8-5f3a-4fe4-b389-fdc13175ded3",
+      "providerSimulationId": "8cae7546-4406-44c9-a506-e1e32540d9f4",
+      "providerSuiteId": "5773c0ca-0200-47e8-8be3-633da48cee3a"
     },
     {
       "id": "H13",
@@ -556,8 +650,22 @@
       "expectedToolsAndMutations": "hours as needed; no lead",
       "instructions": "Caller persona and scenario: Distracted caller asks same hours question twice. Use fictional information only. Goal: Brief consistent re-answer without scolding. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "RUNNING",
+      "runEvidence": [
+        {
+          "runId": "22725c68-c722-4b30-8d07-55fe25e925c3",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "mode": "voice",
+          "iterations": 3,
+          "result": "RUNNING",
+          "hoursFixture": "sunday20261011",
+          "callerStoppingCondition": "Wait for outcome then say goodbye once and remain connected up to10s."
+        }
+      ],
+      "providerScenarioId": "26f01aaa-7108-419e-8eaa-4ab26bc9a018",
+      "providerSimulationId": "cc187ae3-bbf8-4824-8811-536e1b40db2f",
+      "providerSuiteId": "5773c0ca-0200-47e8-8be3-633da48cee3a"
     },
     {
       "id": "H14",
@@ -644,6 +752,14 @@
           "candidate": "055f7195/revision34",
           "callerFidelityChanged": false,
           "auditFile": "VOICE_SIMULATION_AUDIT_90745.json"
+        },
+        {
+          "runId": "44f21aa7-da36-4ad3-82ba-fc35a64867d4",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "result": "NOT_ACCEPTED",
+          "audit": "docs/VOICE_SIMULATION_AUDIT_44F21.json",
+          "limitation": "Frozen Saturday hours crossed actual midnight; missing endings remain unknown; some testers abandoned goal."
         }
       ]
     },
@@ -672,8 +788,22 @@
       "expectedToolsAndMutations": "save complaint once if confirmed",
       "instructions": "Caller persona and scenario: Upset caller complains about missed response. Use fictional information only. Goal: Acknowledge briefly and move toward concrete follow-up. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "RUNNING",
+      "runEvidence": [
+        {
+          "runId": "22725c68-c722-4b30-8d07-55fe25e925c3",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "mode": "voice",
+          "iterations": 3,
+          "result": "RUNNING",
+          "hoursFixture": "sunday20261011",
+          "callerStoppingCondition": "Wait for outcome then say goodbye once and remain connected up to10s."
+        }
+      ],
+      "providerScenarioId": "ec62ab4e-60bc-4408-b849-672aabe1b005",
+      "providerSimulationId": "141676c2-fde8-4099-bf67-9ff818c64f40",
+      "providerSuiteId": "5773c0ca-0200-47e8-8be3-633da48cee3a"
     },
     {
       "id": "H17",
@@ -700,8 +830,22 @@
       "expectedToolsAndMutations": "transfer when allowed; fallback confirmed save",
       "instructions": "Caller persona and scenario: Firm caller asks human now. Use fictional information only. Goal: Obtain consent, truthful availability/failure handling. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "RUNNING",
+      "runEvidence": [
+        {
+          "runId": "22725c68-c722-4b30-8d07-55fe25e925c3",
+          "applicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
+          "configurationRevision": 35,
+          "mode": "voice",
+          "iterations": 3,
+          "result": "RUNNING",
+          "hoursFixture": "sunday20261011",
+          "callerStoppingCondition": "Wait for outcome then say goodbye once and remain connected up to10s."
+        }
+      ],
+      "providerScenarioId": "dda8f8ae-8716-45e1-8408-77a7cc663832",
+      "providerSimulationId": "35213f63-025e-4a72-8743-4c9e04abcbdb",
+      "providerSuiteId": "5773c0ca-0200-47e8-8be3-633da48cee3a"
     },
     {
       "id": "H18",
@@ -1169,5 +1313,10 @@
     "accepted": false,
     "providerSyncedApplicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99"
   },
-  "lastObservedCredits": 22.49
+  "lastObservedCredits": {
+    "credits": 20.99,
+    "baseline": 29.01,
+    "roundedMovementUSD": 8.02,
+    "limitation": "Account movement, not per-run invoice or authorized budget."
+  }
 }

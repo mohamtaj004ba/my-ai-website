@@ -47,6 +47,8 @@ test('simulation audit distinguishes rejected end attempts from a successful dis
   assert.ok(result.quality.includes('REJECTED_NATIVE_END_ATTEMPT'));
   assert.ok(!result.failures.includes('PREMATURE_NATIVE_END'));
   assert.ok(!result.failures.includes('REPEATED_NATIVE_END'));
+  assert.equal(result.counts.nativeEndAttempts,2);
+  assert.equal(result.counts.successfulNativeEnds,1);
 });
 test('simulation audit accepts explicitly allowed backend dispositions and rejects others',()=>{
   const input=[m('AI Tester','Goodbye.'),m('complete_call','',{disposition:'request_captured'}),m('endCall','RESPONSE\nSuccess.')];

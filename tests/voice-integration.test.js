@@ -72,8 +72,8 @@ test('classic native ending rejects corrections, continued questions and negated
   assert.equal(live.model.tools.at(-1).rejectionPlan,undefined);
   assert.equal(classic.model.tools.slice(0,-1).some(t=>t.rejectionPlan),false);
   const rejected=text=>group.conditions.some(c=>new RegExp(c.regex.replace('(?i)',''),'i').test(text)!==!!c.negate);
-  for(const text of ['Goodbye.','Yes, correct. Bye!','Thanks, take care.','Please end the call.','Hang up.','Disconnect this call'])assert.equal(rejected(text),false,text);
-  for(const text of ['', 'Yes, correct.','Thanks.','It should be eighty one Example Court, Spokane.','Before we say goodbye I need to correct the address.','Goodbye, but are you open tomorrow?','I have another question.','Do not hang up.','Don’t end the call.','Wait, goodbye.'])assert.equal(rejected(text),true,text);
+  for(const text of ['Goodbye.','Yes, correct. Bye!','Thanks, take care.','Please end the call.','Hang up.','Disconnect this call','Goodbye. Got it.','Bye, thank you.','Goodbye, thanks. You too.'])assert.equal(rejected(text),false,text);
+  for(const text of ['', 'Yes, correct.','Thanks.','It should be eighty one Example Court, Spokane.','Before we say goodbye I need to correct the address.','Goodbye, but are you open tomorrow?','I have another question.','Do not hang up.','Don’t end the call.','Wait, goodbye.','Goodbye, thanks, are you open tomorrow?','Goodbye. Got it. Wait, correct the address.','Thanks. Got it.','Do not hang up, thanks.','Goodbye. Understood. No for'])assert.equal(rejected(text),true,text);
 });
 test('female classic comparison voices retain exact version, authentication and default pipeline isolation',()=>{
   const p=createProvider({env}),w={id:'tenant',name:'Test service business'},base=p.assistantConfig(w,{},policy,{pipeline:'classic-comparison'});
@@ -409,3 +409,7 @@ test('speaker has approved routine knowledge without a needless lookup handoff',
   await processMessage(kv,{type:'end-of-call-report',call:{id:call.id}},{provider:provider({...call,status:'ended',endedAt:'2026-10-05T16:00:25Z'})});
   const view=kv.values.get('calls:tenant')[0];assert.equal(view.disposition,'non_customer');assert.equal(view.category,'Non-customer');assert.equal(view.outcome,'Resolved');assert.equal(kv.values.get('leads:tenant').length,0);
  });
+
+
+
+

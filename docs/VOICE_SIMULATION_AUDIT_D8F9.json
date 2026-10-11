@@ -70,8 +70,9 @@
         "LONG_ASSISTANT_TURN"
       ],
       "counts": {
-        "saves": 1,
-        "nativeEnds": 0
+        "saveAttempts": 1,
+        "nativeEndAttempts": 0,
+        "successfulNativeEnds": 0
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -93,8 +94,9 @@
         "LONG_ASSISTANT_TURN"
       ],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 0
+        "saveAttempts": 0,
+        "nativeEndAttempts": 0,
+        "successfulNativeEnds": 0
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -113,8 +115,9 @@
         "LONG_ASSISTANT_TURN"
       ],
       "counts": {
-        "saves": 1,
-        "nativeEnds": 1
+        "saveAttempts": 1,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 1
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -136,8 +139,9 @@
         "LONG_ASSISTANT_TURN"
       ],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 0
+        "saveAttempts": 0,
+        "nativeEndAttempts": 0,
+        "successfulNativeEnds": 0
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -157,8 +161,9 @@
         "LONG_ASSISTANT_TURN"
       ],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 1
+        "saveAttempts": 0,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 1
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -178,8 +183,9 @@
         "LONG_ASSISTANT_TURN"
       ],
       "counts": {
-        "saves": 1,
-        "nativeEnds": 1
+        "saveAttempts": 1,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 0
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -194,8 +200,9 @@
       "unknown": [],
       "quality": [],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 1
+        "saveAttempts": 0,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 1
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -213,8 +220,9 @@
       ],
       "quality": [],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 0
+        "saveAttempts": 0,
+        "nativeEndAttempts": 0,
+        "successfulNativeEnds": 0
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -233,8 +241,9 @@
         "REJECTED_NATIVE_END_ATTEMPT"
       ],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 1
+        "saveAttempts": 0,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 0
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -251,8 +260,9 @@
       "unknown": [],
       "quality": [],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 1
+        "saveAttempts": 0,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 1
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -269,8 +279,9 @@
         "LONG_ASSISTANT_TURN"
       ],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 1
+        "saveAttempts": 0,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 1
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -290,8 +301,9 @@
         "LONG_ASSISTANT_TURN"
       ],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 1
+        "saveAttempts": 0,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 1
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -306,8 +318,9 @@
       "unknown": [],
       "quality": [],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 1
+        "saveAttempts": 0,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 1
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -322,8 +335,9 @@
       "unknown": [],
       "quality": [],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 1
+        "saveAttempts": 0,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 1
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -338,8 +352,9 @@
       "unknown": [],
       "quality": [],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 1
+        "saveAttempts": 0,
+        "nativeEndAttempts": 1,
+        "successfulNativeEnds": 1
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -358,8 +373,9 @@
         "LONG_ASSISTANT_TURN"
       ],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 0
+        "saveAttempts": 0,
+        "nativeEndAttempts": 0,
+        "successfulNativeEnds": 0
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -376,8 +392,9 @@
       ],
       "quality": [],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 0
+        "saveAttempts": 0,
+        "nativeEndAttempts": 0,
+        "successfulNativeEnds": 0
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,
@@ -396,8 +413,9 @@
         "LONG_ASSISTANT_TURN"
       ],
       "counts": {
-        "saves": 0,
-        "nativeEnds": 0
+        "saveAttempts": 0,
+        "nativeEndAttempts": 0,
+        "successfulNativeEnds": 0
       },
       "requiresSemanticReview": true,
       "acousticAcceptance": false,

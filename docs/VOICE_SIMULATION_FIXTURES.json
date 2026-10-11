@@ -82,5 +82,30 @@
     "Unavailable mock is a handled result string, not HTTP error or network timeout",
     "Frozen hours test date reasoning against a fixture, not actual call-time lookup",
     "Fixture local date must be aligned to runtime clock before new relative-date batches; older frozen Saturday runs crossing midnight cannot establish live-date accuracy."
-  ]
+  ],
+  "datedFixtures": {
+    "sunday20261011": {
+      "source": "Synthetic Sunday QA hours fixture, not live verification",
+      "open": false,
+      "localDate": "2026-10-11",
+      "timezone": "America/Los_Angeles",
+      "afterHours": true,
+      "policy": "capture",
+      "validAcrossCall": true,
+      "checkedAt": "2026-10-11T07:00:00.000Z",
+      "appointmentAvailability": "unknown; no calendar access",
+      "tomorrow": {
+        "localDate": "2026-10-12",
+        "weekday": "Monday",
+        "openDuringDay": true,
+        "holiday": false,
+        "intervals": [
+          {
+            "open": 540,
+            "close": 1020
+          }
+        ]
+      }
+    }
+  }
 }

@@ -59,7 +59,7 @@ function audit(messages,expected={}){
   if(speech.some(m=>m.text.split(/\s+/).length>40))quality.push('LONG_ASSISTANT_TURN');
   // These checks deliberately do not pretend to understand every natural-language
   // consent, promise or phone digit. Their absence never proves semantic quality.
-  return {evidenceGatePassed:failures.length===0&&unknown.length===0,failures:[...new Set(failures)],unknown:[...new Set(unknown)],quality:[...new Set(quality)],counts:{saves:saves.length,nativeEnds:ends.length},requiresSemanticReview:true,acousticAcceptance:false,canonicalMutationProof:false};
+  return {evidenceGatePassed:failures.length===0&&unknown.length===0,failures:[...new Set(failures)],unknown:[...new Set(unknown)],quality:[...new Set(quality)],counts:{saveAttempts:saves.length,nativeEndAttempts:ends.length,successfulNativeEnds:successfulEnds.length},requiresSemanticReview:true,acousticAcceptance:false,canonicalMutationProof:false};
 }
 module.exports={parseTranscript,audit};
 if(require.main===module){
