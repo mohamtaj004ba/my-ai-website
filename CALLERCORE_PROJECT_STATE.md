@@ -1,5 +1,13 @@
 # CallerCore project state
 
+## Agent Operations architecture checkpoint — October 11
+
+- Separate local checkout `work/callercore-agent-operations` starts at verified remote feature head `bd6e7406da0d48fb88dd1360e3983cc26806f164`; unrelated existing checkout edits preserved. PR #5 independently rechecked open/draft/unmerged. No remote publication, deployment, provider configuration, schedule, external write permission or paid API execution in this checkpoint.
+- Architecture/feasibility plan: `docs/AGENT_OPERATIONS_PHASE1.md`. Proposes manager-owned specialist tools, separate bounded worker, durable Preview task/budget/lease broker and internal admin view. Evaluates SDK, managed Agents API, Responses background and eve; no framework/service installed or selected for deployment.
+- Offline-only CommonJS policy/lifecycle scaffold plus six behavioral tests: tool allowlist/Production denial, independent artifact-bound review, bounded rework, stale revision/fencing/expiry, cancellation and unsupported release gates. No routes, admin UI, durable store or actual model delegation yet; Phase 1 operational acceptance is NOT complete.
+- Validation: 1,897 tests passed, zero failures/cancellations/skips after checkout-local Windows line-ending correction; existing tracked source restored byte-for-byte before final run. Dependencies resolved from existing sibling node_modules; no install or provider requests. Full test log stays local/ignored. New architecture and scaffold require their own hosted evidence if later integrated/published.
+- Next: implement disposable-storage atomicity and internal API/UI; before live pilot obtain explicit Agent Operations budget approval (proposed one task, $2 total, six calls, ten minutes, no recurrence). Existing voice allowance does not apply. New external write permissions require separate approval. Preserve all existing visual/voice/Production acceptance boundaries below.
+
 Updated October 11, 2026. Canonical planning/review handoff. This document replaces accumulated chronological status entries; linked acceptance reports retain detailed evidence. “Verified” always refers to the scope stated, never implicit customer or Production activation.
 
 ## 1. Current branch / release state
