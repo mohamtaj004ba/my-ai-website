@@ -20,8 +20,9 @@
     const tasks=byId('agentOpsTasks');tasks.replaceChildren();
     if(!data.tasks.length)tasks.append(text('p','No tasks queued.'));
     for(const t of [...data.tasks].reverse()){
-      const card=text('article','');card.className='panel';card.append(text('h3',t.objective),text('p',t.mode.toUpperCase()+' · '+t.status.replaceAll('_',' ')+' · Stage '+t.stage+' · '+t.calls+'/6 executions · '+t.attempts+'/2 inspection attempts'),text('p','Task '+t.id),text('p','Starting commit '+t.scope.commit+' · Preview '+t.scope.origin));
+      const card=text('article','');card.className='panel';card.append(text('h3',t.objective),text('p',t.mode.toUpperCase()+' · '+t.status.replaceAll('_',' ')+' · Stage '+t.stage+' · '+t.calls+'/'+(t.profile===data.evidenceFirstQA?.profile?data.evidenceFirstQA.maxCalls:6)+' executions · '+t.attempts+'/2 inspection attempts'),text('p','Task '+t.id),text('p','Starting commit '+t.scope.commit+' · Preview '+t.scope.origin));
       card.append(text('p','Last activity '+new Date(t.updatedAt).toLocaleString()+' · Lease '+(t.leaseUntil?new Date(t.leaseUntil).toLocaleTimeString():'none')));
+      if(t.outcomes)card.append(text('p','Execution validation: '+t.outcomes.structural+' · Evidence: '+t.outcomes.integrity+' · Accuracy: '+t.outcomes.substantive+' · Final acceptance: '+t.outcomes.finalAcceptance+'. Completed execution does not establish accepted work.'));
       if(!['verified','failed','blocked','cancelled'].includes(t.status)){
         const cancel=text('button','Cancel task');cancel.type='button';cancel.className='secondary-btn';cancel.disabled=busy;
         cancel.addEventListener('click',()=>mutate({action:'cancel',id:t.id,expectedRevision:t.revision}));card.append(cancel);

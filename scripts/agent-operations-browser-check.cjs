@@ -38,6 +38,7 @@ async function main(){
     assert.equal(await page.locator('#agentOpsTasks h3 img').count(),0);
     const task=(await store.read()).tasks[0];for(let i=0;i<4;i++)await runStage(store,mockAdapter(),{taskId:task.id});
     await page.locator('#agentOpsRefresh').click();await page.waitForFunction(()=>document.getElementById('agentOpsTasks').textContent.includes('verified'));
+    const before=await db.read(),state=JSON.parse(before);state.tasks.find(t=>t.id===task.id).outcomes={structural:'passed',integrity:'passed',substantive:'failed',finalAcceptance:'rejected',acceptedWork:false};await db.compare(before,JSON.stringify(state));await page.locator('#agentOpsRefresh').click();await page.waitForFunction(()=>document.getElementById('agentOpsTasks').textContent.includes('Accuracy: failed'));assert((await page.locator('#agentOpsTasks').textContent()).includes('Final acceptance: rejected'));
     await page.locator('#agentOpsObjective').fill('Cancellation fixture');await page.locator('#agentOpsCreate').click();
     await page.getByRole('button',{name:'Cancel task',exact:true}).click();await page.waitForFunction(()=>document.getElementById('agentOpsTasks').textContent.includes('cancelled'));
     const layouts=[];
@@ -49,7 +50,7 @@ async function main(){
     }
     env.CALLERCORE_AGENTOPS_ENABLED='false';await page.locator('#agentOpsRefresh').click();await page.waitForFunction(()=>document.getElementById('agentOpsStatus').textContent.includes('disabled'));
     assert.equal(await page.locator('#agentOpsCreate').isDisabled(),true);assert.deepEqual(errors,[]);
-    const report={ok:true,scope:'local real UI/API/SQLite with mock auth/models',layouts,tests:['persisted queue','four-stage mock delegation','independent review','cancel','escaped output','disabled gate'],taskId:task.id,apiCalls:0,pageErrors:errors};
+    const report={ok:true,scope:'local real UI/API/SQLite with mock auth/models',layouts,tests:['persisted queue','four-stage mock delegation','independent review','cancel','escaped output','separate failed acceptance display','disabled gate'],taskId:task.id,apiCalls:0,pageErrors:errors};
     await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));process.stdout.write(JSON.stringify(report)+'\n');
   }finally{await browser.close();await new Promise(r=>server.close(r));db.close();}
 }
