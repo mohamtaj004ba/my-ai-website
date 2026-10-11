@@ -17,3 +17,13 @@ test('simplified regulated pages preserve service boundaries',()=>{
  const medical=fs.readFileSync(path.join(__dirname,'../industries/medical.html'),'utf8');assert.match(medical,/Do not submit protected health information/);assert.match(medical,/No diagnosis, medical advice, emergency triage, or automatic booking/);assert.match(medical,/Staff confirms all appointments/);
  const legal=fs.readFileSync(path.join(__dirname,'../industries/legal.html'),'utf8');assert.match(legal,/legal advice/i);
 });
+test('industry proof uses existing sample assets and accurate current-service boundaries',()=>{
+ for(const slug of slugs){const html=fs.readFileSync(path.join(__dirname,'../industries',slug+'.html'),'utf8');
+  const proof=[...html.matchAll(/href="(\/assets\/dashboard\/[a-z-]+-sample\.jpg)" data-proof-open/g)];assert.equal(proof.length,1);
+  assert.ok(fs.existsSync(path.join(__dirname,'..',proof[0][1])));assert.match(html,/Dashboard sample · Example data/);
+  assert.doesNotMatch(html,/href="tel:|internal test number|HIPAA.compliant|guaranteed ROI/i);
+  const controls=[...html.matchAll(/aria-controls="([^"]+)"/g)];for(const control of controls)assert.ok(html.includes('id="'+control[1]+'"'));
+ }
+ const automotive=fs.readFileSync(path.join(__dirname,'../industries/automotive.html'),'utf8');assert.match(automotive,/Live job-status lookup is not part of the current service/);
+ const property=fs.readFileSync(path.join(__dirname,'../industries/property.html'),'utf8');assert.match(property,/Live transfers follow your configured destination and hours/);assert.match(property,/External ticketing or property-system updates need a separately supported integration/);
+});
