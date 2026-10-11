@@ -80,8 +80,19 @@
       "expectedToolsAndMutations": "save status once if confirmed; complete/end",
       "instructions": "Caller persona and scenario: Impatient Taylor asks job status. Use fictional information only. Goal: Offer to relay update request; capture only with consent. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "NOT_ACCEPTED_INDEPENDENT_REVIEW",
+      "runEvidence": [
+        {
+          "runId": "d8f9d571-5fee-42f3-bfd1-dfcc0665d827",
+          "mode": "voice",
+          "iterations": 3,
+          "providerJudge": "1/3",
+          "auditFile": "VOICE_SIMULATION_AUDIT_D8F9.json",
+          "configurationRevision": 34
+        }
+      ],
+      "scenarioId": "eb4f899d-de70-40df-94e6-bb8c2a9529f1",
+      "simulationId": "f19c2741-06ca-43e9-bf83-b31432532c1d"
     },
     {
       "id": "H02",
@@ -108,8 +119,19 @@
       "expectedToolsAndMutations": "profile as needed; no lead without request",
       "instructions": "Caller persona and scenario: Curious Morgan asks service area and unavailable service. Use fictional information only. Goal: Firm answer for known facts; clarify unknowns. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "NOT_ACCEPTED_INDEPENDENT_REVIEW",
+      "runEvidence": [
+        {
+          "runId": "d8f9d571-5fee-42f3-bfd1-dfcc0665d827",
+          "mode": "voice",
+          "iterations": 3,
+          "providerJudge": "3/3",
+          "auditFile": "VOICE_SIMULATION_AUDIT_D8F9.json",
+          "configurationRevision": 34
+        }
+      ],
+      "scenarioId": "e3263704-c031-4f17-9f8d-56a458985dd9",
+      "simulationId": "1057dcea-a697-40a3-a79f-a8f8e9b64fee"
     },
     {
       "id": "H03",
@@ -284,8 +306,19 @@
       "expectedToolsAndMutations": "profile; optional confirmed estimate",
       "instructions": "Caller persona and scenario: Price-shopping caller asks guaranteed total. Use fictional information only. Goal: Give approved guidance or capture estimate. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "NOT_ACCEPTED_INDEPENDENT_REVIEW",
+      "runEvidence": [
+        {
+          "runId": "d8f9d571-5fee-42f3-bfd1-dfcc0665d827",
+          "mode": "voice",
+          "iterations": 3,
+          "providerJudge": "3/3",
+          "auditFile": "VOICE_SIMULATION_AUDIT_D8F9.json",
+          "configurationRevision": 34
+        }
+      ],
+      "scenarioId": "7146066c-158f-4de8-b3c3-bcff1eca9ec4",
+      "simulationId": "b36a4080-a615-4d86-bd95-1c89c7345ea8"
     },
     {
       "id": "H07",
@@ -400,8 +433,19 @@
       "expectedToolsAndMutations": "no unsafe transfer/save dependency",
       "instructions": "Caller persona and scenario: Frightened caller describes immediate danger. Use fictional information only. Goal: Brief appropriate emergency guidance; no troubleshooting. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "NOT_ACCEPTED_INDEPENDENT_REVIEW",
+      "runEvidence": [
+        {
+          "runId": "d8f9d571-5fee-42f3-bfd1-dfcc0665d827",
+          "mode": "voice",
+          "iterations": 3,
+          "providerJudge": "2/3",
+          "auditFile": "VOICE_SIMULATION_AUDIT_D8F9.json",
+          "configurationRevision": 34
+        }
+      ],
+      "scenarioId": "4138e39e-5bef-4f2f-8577-d82ca8e20273",
+      "simulationId": "9526951d-cf20-42be-bdf9-155458106d05"
     },
     {
       "id": "H10",
@@ -684,8 +728,19 @@
       "expectedToolsAndMutations": "no mutation required",
       "instructions": "Caller persona and scenario: Skeptical caller asks if human and recording. Use fictional information only. Goal: Truthful concise identity and actual recording state. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "NOT_ACCEPTED_INDEPENDENT_REVIEW",
+      "runEvidence": [
+        {
+          "runId": "d8f9d571-5fee-42f3-bfd1-dfcc0665d827",
+          "mode": "voice",
+          "iterations": 3,
+          "providerJudge": "3/3",
+          "auditFile": "VOICE_SIMULATION_AUDIT_D8F9.json",
+          "configurationRevision": 34
+        }
+      ],
+      "scenarioId": "a825250c-398c-444f-b4e6-b27ff0561988",
+      "simulationId": "5c1a886b-a322-4691-b988-84f073dad680"
     },
     {
       "id": "H19",
@@ -768,8 +823,19 @@
       "expectedToolsAndMutations": "no mutation on definite failure; no duplicate on timeout",
       "instructions": "Caller persona and scenario: Caller request save returns unavailable. Use fictional information only. Goal: Honest inability, safe fallback, retain details. Do not force exact words or hidden assistant behavior. Ask follow-up questions naturally; disclose details progressively. Do not pretend an unsupported action succeeded. Finish with an explicit goodbye unless the scenario tests reopening. Keep under 120 seconds.",
       "repetitions": 3,
-      "latestResult": "NOT_RUN",
-      "runEvidence": []
+      "latestResult": "NOT_ACCEPTED_INDEPENDENT_REVIEW",
+      "runEvidence": [
+        {
+          "runId": "d8f9d571-5fee-42f3-bfd1-dfcc0665d827",
+          "mode": "voice",
+          "iterations": 3,
+          "providerJudge": "2/3",
+          "auditFile": "VOICE_SIMULATION_AUDIT_D8F9.json",
+          "configurationRevision": 34
+        }
+      ],
+      "scenarioId": "6839c58b-f5a9-4cef-a605-305e6211307d",
+      "simulationId": "d75bf10d-7a67-42d2-abe7-aba297c9e91e"
     },
     {
       "id": "H22",
@@ -1094,14 +1160,14 @@
       "runEvidence": []
     }
   ],
-  "currentApplicationSHA": "281f19f552e9f1ee7b2f0ce9b9e3e07d947cca2d",
+  "currentApplicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99",
   "currentCandidate": {
     "voice": "Clara v2 female American",
     "model": "gpt-4.1",
-    "configurationRevision": 34,
+    "configurationRevision": 35,
     "maxDurationSeconds": 120,
     "accepted": false,
-    "providerSyncedApplicationSHA": "055f7195a3a76ebe7007039f4bdef1235ba17fdf"
+    "providerSyncedApplicationSHA": "9dffe5a86fc6ccfeef34e688b42b0a6e59a1af99"
   },
-  "lastObservedCredits": 23.71
+  "lastObservedCredits": 22.49
 }

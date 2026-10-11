@@ -61,7 +61,10 @@
       "callId": "synthetic-qa-only",
       "request": {},
       "appointmentConfirmed": false,
-      "customerContacted": false
+      "customerContacted": false,
+      "officeDeliveryConfirmed": false,
+      "callbackTimeConfirmed": false,
+      "nextAction": "The request is saved for team review. Office delivery, a booking, dispatch and a callback time are not confirmed."
     },
     "complete_call": {
       "status": "recorded",
@@ -77,6 +80,7 @@
     "Static save result does not echo or validate arguments; review actual requested arguments and separate backend tests",
     "Set completion disposition per scenario, never report request_captured for FAQ-only or failed save",
     "Unavailable mock is a handled result string, not HTTP error or network timeout",
-    "Frozen hours test date reasoning against a fixture, not actual call-time lookup"
+    "Frozen hours test date reasoning against a fixture, not actual call-time lookup",
+    "Fixture local date must be aligned to runtime clock before new relative-date batches; older frozen Saturday runs crossing midnight cannot establish live-date accuracy."
   ]
 }

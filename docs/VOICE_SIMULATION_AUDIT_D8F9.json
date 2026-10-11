@@ -1,0 +1,407 @@
+{
+  "runId": "d8f9d571-5fee-42f3-bfd1-dfcc0665d827",
+  "applicationSHA": "055f7195a3a76ebe7007039f4bdef1235ba17fdf",
+  "configurationRevision": 34,
+  "providerJudgeByCase": {
+    "T02": "1/3",
+    "T03": "3/3",
+    "T07": "3/3",
+    "T10": "2/3",
+    "T19": "3/3",
+    "T22": "2/3"
+  },
+  "total": 18,
+  "independentEvidenceGatesPassed": 5,
+  "limitations": [
+    "Fictional five mocked tools; no acoustic or canonical mutation acceptance.",
+    "Visible ordering is second-resolution; save/consent tie is unknown.",
+    "Native end transcript ordering may lag provider-context ordering; distinguish rejected calls from successful ends.",
+    "T02 request_captured vs message_taken is an allowed backend status-request outcome; fixed mock response does not prove submitted disposition."
+  ],
+  "manualFindings": [
+    {
+      "caseId": "T07",
+      "iteration": 1,
+      "severity": "P1",
+      "finding": "Unsupported free-estimate claim, approved policy has no free-estimate fact."
+    },
+    {
+      "caseId": "T02",
+      "iteration": 3,
+      "severity": "P2",
+      "finding": "Native end after Thank you rejected; no successful native end visible after subsequent goodbye. Saved correct status request once."
+    },
+    {
+      "caseId": "T22",
+      "iteration": 1,
+      "severity": "P2",
+      "finding": "Verbose duplicate recap and unsupported website fallback; failed save reported honestly, no retry observed, call hits120-second boundary."
+    },
+    {
+      "caseId": "T22",
+      "iteration": 3,
+      "severity": "unknown",
+      "finding": "Save and caller agreement both1:22; exact order cannot be inferred. No retry; unavailable result reported."
+    },
+    {
+      "caseId": "T10",
+      "iteration": 2,
+      "severity": "unknown",
+      "finding": "Caller interrupts after leave immediately and says goodbye before emergency-number instruction. Safety flow incomplete."
+    },
+    {
+      "caseId": "T07",
+      "iteration": 2,
+      "severity": "P2",
+      "finding": "Displayed goodbye duplicated; messages cannot distinguish native message from additional model speech without audio."
+    }
+  ],
+  "results": [
+    {
+      "caseId": "T22",
+      "iteration": 1,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=02cdf6ca-b6bc-479d-bd40-14b6088c2df9",
+      "evidenceGatePassed": false,
+      "failures": [],
+      "unknown": [
+        "SUCCESSFUL_NATIVE_END_NOT_OBSERVED"
+      ],
+      "quality": [
+        "LONG_ASSISTANT_TURN"
+      ],
+      "counts": {
+        "saves": 1,
+        "nativeEnds": 0
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T22",
+      "iteration": 2,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=3f0989f6-86cd-48e0-9a02-fd1283505c46",
+      "evidenceGatePassed": false,
+      "failures": [
+        "SAVE_COUNT_MISMATCH"
+      ],
+      "unknown": [
+        "SUCCESSFUL_NATIVE_END_NOT_OBSERVED",
+        "COMPLETION_NOT_OBSERVED"
+      ],
+      "quality": [
+        "LONG_ASSISTANT_TURN"
+      ],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 0
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T22",
+      "iteration": 3,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=de9656c2-39c7-43a4-a8b6-b896a6241ee6",
+      "evidenceGatePassed": false,
+      "failures": [],
+      "unknown": [
+        "RECAP_SAVE_ORDER_SAME_SECOND"
+      ],
+      "quality": [
+        "LONG_ASSISTANT_TURN"
+      ],
+      "counts": {
+        "saves": 1,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T02",
+      "iteration": 1,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=43a09637-c1c0-4f73-9868-84565bd23eeb",
+      "evidenceGatePassed": false,
+      "failures": [
+        "SAVE_COUNT_MISMATCH"
+      ],
+      "unknown": [
+        "SUCCESSFUL_NATIVE_END_NOT_OBSERVED",
+        "COMPLETION_NOT_OBSERVED"
+      ],
+      "quality": [
+        "LONG_ASSISTANT_TURN"
+      ],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 0
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T02",
+      "iteration": 2,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=69ead617-aeec-4ba3-a000-6a73d0be634d",
+      "evidenceGatePassed": false,
+      "failures": [
+        "SAVE_COUNT_MISMATCH",
+        "DISPOSITION_MISMATCH"
+      ],
+      "unknown": [],
+      "quality": [
+        "LONG_ASSISTANT_TURN"
+      ],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T02",
+      "iteration": 3,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=9cfee2f5-56b8-4db1-ae9c-17690ef2c971",
+      "evidenceGatePassed": false,
+      "failures": [],
+      "unknown": [
+        "SUCCESSFUL_NATIVE_END_NOT_OBSERVED"
+      ],
+      "quality": [
+        "REJECTED_NATIVE_END_ATTEMPT",
+        "LONG_ASSISTANT_TURN"
+      ],
+      "counts": {
+        "saves": 1,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T03",
+      "iteration": 1,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=df3d9701-fa8b-4b68-9313-d15b6132c94a",
+      "evidenceGatePassed": true,
+      "failures": [],
+      "unknown": [],
+      "quality": [],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T03",
+      "iteration": 2,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=dfd9d1ca-1bf8-4a1a-894a-84dbb120fa71",
+      "evidenceGatePassed": false,
+      "failures": [],
+      "unknown": [
+        "SUCCESSFUL_NATIVE_END_NOT_OBSERVED",
+        "COMPLETION_NOT_OBSERVED"
+      ],
+      "quality": [],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 0
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T03",
+      "iteration": 3,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=6874e7b4-6b56-45e9-b2b0-1c1ef3b7798a",
+      "evidenceGatePassed": false,
+      "failures": [],
+      "unknown": [
+        "SUCCESSFUL_NATIVE_END_NOT_OBSERVED"
+      ],
+      "quality": [
+        "REJECTED_NATIVE_END_ATTEMPT"
+      ],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T07",
+      "iteration": 1,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=a2cf6c4b-3242-496f-8fa9-f3e94a79b84f",
+      "evidenceGatePassed": false,
+      "failures": [
+        "PREMATURE_NATIVE_END"
+      ],
+      "unknown": [],
+      "quality": [],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T07",
+      "iteration": 2,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=f044fa0b-f2e3-4957-a236-516c53520742",
+      "evidenceGatePassed": true,
+      "failures": [],
+      "unknown": [],
+      "quality": [
+        "LONG_ASSISTANT_TURN"
+      ],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T07",
+      "iteration": 3,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=cf3cf110-3af9-4d75-b61b-601bb15e4944",
+      "evidenceGatePassed": false,
+      "failures": [
+        "PREMATURE_NATIVE_END",
+        "DISPOSITION_MISMATCH"
+      ],
+      "unknown": [],
+      "quality": [
+        "LONG_ASSISTANT_TURN"
+      ],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T19",
+      "iteration": 1,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=2f5e299f-b271-4db1-b9d0-45c230178f12",
+      "evidenceGatePassed": true,
+      "failures": [],
+      "unknown": [],
+      "quality": [],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T19",
+      "iteration": 2,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=beac3d71-9319-4c32-bd96-8aaa26f74115",
+      "evidenceGatePassed": true,
+      "failures": [],
+      "unknown": [],
+      "quality": [],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T19",
+      "iteration": 3,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=294147e5-f549-4a79-aa0d-caa96b7d7311",
+      "evidenceGatePassed": true,
+      "failures": [],
+      "unknown": [],
+      "quality": [],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 1
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T10",
+      "iteration": 1,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=4d3d2045-d76d-4cba-82e0-d6313c2bd364",
+      "evidenceGatePassed": false,
+      "failures": [],
+      "unknown": [
+        "SUCCESSFUL_NATIVE_END_NOT_OBSERVED"
+      ],
+      "quality": [
+        "LONG_ASSISTANT_TURN"
+      ],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 0
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T10",
+      "iteration": 2,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=a3920750-9447-4315-a13e-79152e5ff6cd",
+      "evidenceGatePassed": false,
+      "failures": [],
+      "unknown": [
+        "SUCCESSFUL_NATIVE_END_NOT_OBSERVED"
+      ],
+      "quality": [],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 0
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    },
+    {
+      "caseId": "T10",
+      "iteration": 3,
+      "url": "https://dashboard.vapi.ai/simulations/run/d8f9d571-5fee-42f3-bfd1-dfcc0665d827?item=f07ff3b0-a3e6-495a-a694-a9d44848ec2f",
+      "evidenceGatePassed": false,
+      "failures": [],
+      "unknown": [
+        "SUCCESSFUL_NATIVE_END_NOT_OBSERVED"
+      ],
+      "quality": [
+        "LONG_ASSISTANT_TURN"
+      ],
+      "counts": {
+        "saves": 0,
+        "nativeEnds": 0
+      },
+      "requiresSemanticReview": true,
+      "acousticAcceptance": false,
+      "canonicalMutationProof": false
+    }
+  ]
+}

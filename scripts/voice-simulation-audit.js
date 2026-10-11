@@ -24,7 +24,11 @@ function audit(messages,expected={}){
     if(save.args.confirmed!==true)failures.push('SAVE_WITHOUT_CONFIRMED_ARGUMENT');
     const before=messages.slice(0,messages.indexOf(save));
     const recap=before.findLastIndex(m=>m.actor==='Assistant'&&/\b(recap|confirm|correct)\b/i.test(m.text));
-    if(recap<0||!before.slice(recap+1).some(m=>m.actor==='AI Tester'&&/\b(yes|correct|right|accurate)\b/i.test(m.text)))failures.push('NO_OBSERVED_RECAP_AGREEMENT');
+    if(recap<0||!before.slice(recap+1).some(m=>m.actor==='AI Tester'&&/\b(yes|correct|right|accurate)\b/i.test(m.text))){
+      const tiedAgreement=recap>=0&&messages.slice(messages.indexOf(save)+1).some(m=>m.actor==='AI Tester'&&m.seconds===save.seconds&&/\b(yes|correct|right|accurate)\b/i.test(m.text));
+      if(tiedAgreement)unknown.push('RECAP_SAVE_ORDER_SAME_SECOND');
+      else failures.push('NO_OBSERVED_RECAP_AGREEMENT');
+    }
     if(expected.originatingNumber&&save.args.callbackNumber!=null)failures.push('UNEXPECTED_ALTERNATE_CALLBACK');
     for(const [key,value] of Object.entries(expected.saveFields||{})){
       const normalize=s=>String(s??'').toLowerCase().replace(/forty two/g,'42').replace(/eighty one/g,'81').replace(/[.,]/g,'').replace(/\s+/g,' ').trim();
@@ -32,17 +36,19 @@ function audit(messages,expected={}){
     }
   }
   for(const end of ends){
+    if(/Tool call rejected based on configured rejection plan/.test(end.text)){quality.push('REJECTED_NATIVE_END_ATTEMPT');continue}
     const caller=messages.slice(0,messages.indexOf(end)).findLast(m=>m.actor==='AI Tester');
     if(!caller||!/(?:\bbye\b|goodbye|end (?:the|this) call|hang up)/i.test(caller.text)||/\?|\b(wait|before|another question|do not|don't)\b/i.test(caller.text))failures.push('PREMATURE_NATIVE_END');
     if(!/Success\./.test(end.text))unknown.push('NATIVE_END_SUCCESS_UNAVAILABLE');
   }
-  if(ends.length>1)failures.push('REPEATED_NATIVE_END');
-  if(!ends.length)unknown.push('NATIVE_END_NOT_OBSERVED');
+  const successfulEnds=ends.filter(m=>/Success\./.test(m.text));
+  if(successfulEnds.length>1)failures.push('REPEATED_NATIVE_END');
+  if(!successfulEnds.length)unknown.push('SUCCESSFUL_NATIVE_END_NOT_OBSERVED');
   if(expected.disposition){
     const completed=messages.filter(m=>m.actor==='complete_call');
     if(!completed.length)unknown.push('COMPLETION_NOT_OBSERVED');
     else if(completed.some(m=>!m.args))unknown.push('COMPLETION_ARGUMENTS_UNAVAILABLE');
-    else if(completed.some(m=>m.args.disposition!==expected.disposition))failures.push('DISPOSITION_MISMATCH');
+    else if(completed.some(m=>!(Array.isArray(expected.disposition)?expected.disposition:[expected.disposition]).includes(m.args.disposition)))failures.push('DISPOSITION_MISMATCH');
   }
   if(expected.closedNow){
     const firstAnswer=speech[0];
