@@ -52,7 +52,7 @@ export async function verifyIndustryNarratives({browser,baseURL,headers={},outDi
    await page.waitForFunction(()=>document.body.style.overflow==='');
    await proof.click();await page.locator('[data-proof-close]').click();assert.equal(await dialog.evaluate(el=>el.open),false);
    const cta=page.locator('.industry-close .close-link'),href=await cta.getAttribute('href');assert.ok(['/live-demo','/contact','/get-started'].includes(href));await cta.click();assert.equal(new URL(page.url()).pathname,href);await page.goBack();
-   if(outDir){await page.evaluate(async()=>{await Promise.all([...document.querySelectorAll('main img')].map(async img=>{img.loading='eager';await img.decode();}));document.activeElement?.blur();scrollTo(0,0);await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)});const file='industry-'+slug+'-'+width+'.png';await page.screenshot({path:path.join(outDir,file),fullPage:true});report.screenshots.push(file);}
+   if(outDir){await page.evaluate(async()=>{await Promise.all([...document.querySelectorAll('main img[src]')].filter(img=>img.getAttribute('src')).map(async img=>{img.loading='eager';await img.decode();}));document.activeElement?.blur();scrollTo(0,0);await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)});const file='industry-'+slug+'-'+width+'.png';await page.screenshot({path:path.join(outDir,file),fullPage:true});report.screenshots.push(file);}
    report.checks.push({slug,width,passed:true,workflowChoices:await experience.locator('[data-choice]').count(),proofViewer:'keyboard/escape/close/focus restoration'});
   }
   assert.deepEqual(errors,[]);await context.close();
