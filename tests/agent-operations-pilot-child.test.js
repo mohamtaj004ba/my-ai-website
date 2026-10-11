@@ -5,15 +5,18 @@ const {PROJECT}=require('../lib/agent-operations-project');
 const {MODEL,PRICING}=require('../lib/agent-operations-pilot');
 const {scopedBridge,childEnvironment}=require('../scripts/agent-operations-launcher.cjs');
 const {ORIGIN}=require('../scripts/agent-operations-preview-access.cjs');
+const {QA}=require('../lib/agent-operations-qa');
+const sourceQA=require('./fixtures/agent-operations-qa-source.json');
 const {SMOKE}=require('../lib/agent-operations-smoke');
 const {SPECIALIST}=require('../lib/agent-operations-specialist');
 async function offlinePilot(scenario){
-  let raw=null,providerCalls=0,captures=0,attestation;
+  let raw=scenario==='qa'?JSON.stringify({version:1,revision:0,tasks:[structuredClone(sourceQA)],reservations:[]}):null,providerCalls=0,captures=0,attestation;
   const store=createStore({read:async()=>raw,compare:async(before,after)=>{if(raw!==before)return false;raw=after;return true;}},{scope:{origin:ORIGIN,commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8'}});
+  const qa=scenario==='qa';
   const smoke=scenario.startsWith('smoke'),specialist=scenario==='specialist';
-  const approval={...PROJECT,authorized:true,id:'pilot_offline_'+scenario,scopeHash:hash(store.scope),expiresAt:Date.now()+60000,maxMicros:smoke?SMOKE.maxMicros:specialist?SPECIALIST.maxMicros:5000000,...(smoke?{profile:SMOKE.profile,maxCalls:SMOKE.calls}:specialist?{profile:SPECIALIST.profile,maxCalls:2}:{}),model:MODEL,pricingVersion:PRICING.version};
-  const task=await store.create({principal:'offline-test',idempotencyKey:'offline_child_'+scenario,objective:smoke?SMOKE.objective:specialist?SPECIALIST.objective:'Synthetic offline inspection only',mode:'pilot',approval});approval.taskId=task.id;
-  const bridge=scopedBridge({broker:{read:async()=>({...await store.read(),paidExecution:true,pilotApproval:approval}),command:store.command},taskIds:[task.id],mode:'pilot',capture:async(scope,{executionId})=>{captures++;if(specialist)return ['legal','pricing'].flatMap(name=>[1440,390].map(viewport=>({sha256:require('node:crypto').createHash('sha256').update(Buffer.from([0])).digest('hex'),path:executionId+'-'+name+'-'+viewport+'.png',viewport,capturedAt:Date.now(),dataUrl:'data:image/png;base64,AA=='})));return [0,1,2,3].map(n=>({sha256:String(n).repeat(64),path:'offline-'+n+'.png',viewport:n%2?390:1440,dataUrl:'data:image/png;base64,AA=='}));}});
+  const approval={...PROJECT,authorized:true,id:'pilot_offline_'+scenario,scopeHash:hash(store.scope),expiresAt:Date.now()+60000,maxMicros:qa?QA.maxMicros:smoke?SMOKE.maxMicros:specialist?SPECIALIST.maxMicros:5000000,...(qa?{profile:QA.profile,maxCalls:1,sourceTaskId:QA.sourceTaskId,findingsHash:QA.findingsHash,evidenceHash:QA.evidenceHash}:smoke?{profile:SMOKE.profile,maxCalls:SMOKE.calls}:specialist?{profile:SPECIALIST.profile,maxCalls:2}:{}),model:MODEL,pricingVersion:PRICING.version};
+  const task=await store.create({principal:'offline-test',idempotencyKey:'offline_child_'+scenario,objective:qa?QA.objective:smoke?SMOKE.objective:specialist?SPECIALIST.objective:'Synthetic offline inspection only',mode:'pilot',approval});approval.taskId=task.id;
+  const bridge=scopedBridge({broker:{read:async()=>({...await store.read(),paidExecution:true,pilotApproval:approval}),command:store.command},taskIds:[task.id],mode:'pilot',loadEvidence:s=>require('../scripts/agent-operations-qa-evidence.cjs').loadEvidence(s,{directory:path.join(__dirname,'fixtures/agent-operations-qa')}),capture:async(scope,{executionId})=>{captures++;if(specialist)return ['legal','pricing'].flatMap(name=>[1440,390].map(viewport=>({sha256:require('node:crypto').createHash('sha256').update(Buffer.from([0])).digest('hex'),path:executionId+'-'+name+'-'+viewport+'.png',viewport,capturedAt:Date.now(),dataUrl:'data:image/png;base64,AA=='})));return [0,1,2,3].map(n=>({sha256:String(n).repeat(64),path:'offline-'+n+'.png',viewport:n%2?390:1440,dataUrl:'data:image/png;base64,AA=='}));}});
   const fixture=path.resolve('tests/fixtures/agent-operations-offline-child.cjs'),worker=path.resolve('scripts/agent-operations-worker.cjs');
   const env=childEnvironment({...process.env,CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_OPENAI_API_KEY:'synthetic-offline-key',CALLERCORE_AGENTOPS_OPENAI_PROJECT_ID:PROJECT.projectId,CALLERCORE_AGENTOPS_OPENAI_ORGANIZATION_ID:PROJECT.organizationId,VERCEL_TOKEN:'must-not-pass',VERCEL_OIDC_TOKEN:'must-not-pass',CALLERCORE_AGENTOPS_WORKER_SECRET:'must-not-pass'},'pilot');
   env.OFFLINE_PROVIDER_SCENARIO=scenario;
@@ -26,6 +29,10 @@ async function offlinePilot(scenario){
   assert.equal(output.includes('synthetic-offline-key'),false);
   return {...await store.read(),providerCalls,captures};
 }
+test('actual restricted QA-only worker sends four original high-detail images and persists one separate terminal verdict without capture',async()=>{
+ const state=await offlinePilot('qa'),task=state.tasks.find(t=>t.profile===QA.profile);assert.equal(state.providerCalls,1);assert.equal(state.captures,0);assert.equal(task.status,'verified');assert.equal(task.stage,'review');assert.equal(task.calls,1);assert.deepEqual(Object.keys(task.results),['qaVerdict']);assert.equal(task.results.qaVerdict.findings.length,4);assert.equal(task.results.qaVerdict.decision,'reject');assert.equal(state.reservations.length,1);assert.equal(state.reservations[0].status,'settled');assert.deepEqual(state.tasks[0],sourceQA);
+});
+
 test('exact restricted pilot worker completes four stages with synthetic Responses and zero external network',async()=>{
   const state=await offlinePilot('success'),task=state.tasks[0];assert.equal(state.providerCalls,4);assert.equal(state.captures,2);assert.equal(task.status,'verified');assert.equal(task.usage.length,4);assert.equal(task.usage.reduce((n,u)=>n+u.actualMicros,0),2400);assert.ok(state.reservations.every(r=>r.status==='settled'));assert.notEqual(task.results.inspect.executionId,task.results.review.executionId);
 });

@@ -7,6 +7,7 @@ const {approvalCheck}=require('../lib/agent-operations-pilot');
 const {workerCredential,PROJECT}=require('../lib/agent-operations-project');
 const {isSmoke}=require('../lib/agent-operations-smoke');
 const {SPECIALIST,isSpecialist,validArtifacts,evidenceHash}=require('../lib/agent-operations-specialist');
+const {QA,isQA,validSource,validImages,validVerdict}=require('../lib/agent-operations-qa');
 const fields={claim:['type','expectedRevision'],reserve:['type','fence','executionId'],evidence:['type','fence','executionId','diagnostic'],finish:['type','fence','executionId','diagnostic','result','actualMicros','model','inputTokens','outputTokens','projectId','organizationId'],heartbeat:['type','fence'],recover:['type'],fail:['type','fence','executionId','diagnostic']};
 function childEnvironment(env,mode){
   const safe=Object.fromEntries(['PATH','SystemRoot','TEMP','TMP','USERPROFILE','LOCALAPPDATA','APPDATA','HOME','NODE_PATH'].filter(k=>env[k]).map(k=>[k,env[k]]));
@@ -18,9 +19,9 @@ function childEnvironment(env,mode){
   }
   return safe;
 }
-function scopedBridge({broker,taskIds,mode,capture,signal}){
+function scopedBridge({broker,taskIds,mode,capture,loadEvidence=require('./agent-operations-qa-evidence.cjs').loadEvidence,signal}){
   if(!Array.isArray(taskIds)||taskIds.length!==1||!['mock','pilot'].includes(mode))throw new Error('Invalid assignment');
-  let calls=0;const activeCaptures=new Map(),completedCaptures=new Map();
+  let calls=0,qaEvidenceLoaded=false,qaLoading=false;const activeCaptures=new Map(),completedCaptures=new Map();
   const read=async()=>{
     const state=await broker.read(),tasks=state.tasks.filter(t=>taskIds.includes(t.id));
     if(tasks.length!==taskIds.length||tasks.some(t=>t.mode!==mode||t.scope.origin!==ORIGIN||t.scope.commit!=='8133597ff2fc5b48e3de42336e9e06fa4191c2a8'||JSON.stringify(t.scope.paths)!==JSON.stringify(['/industries/legal','/#pricing'])))throw new Error('Task scope mismatch');
@@ -36,6 +37,9 @@ function scopedBridge({broker,taskIds,mode,capture,signal}){
       const c=message.command,keys=fields[c?.type];
       if(!keys||Object.keys(c).some(k=>!keys.includes(k))||c.type==='claim'&&!Number.isSafeInteger(c.expectedRevision)||['reserve','finish','heartbeat','fail','evidence'].includes(c.type)&&!Number.isSafeInteger(c.fence)||['reserve','finish','evidence'].includes(c.type)&&!/^exec_[a-zA-Z0-9_-]{1,80}$/.test(c.executionId||'')||c.type==='fail'&&c.executionId!==undefined&&!/^exec_[a-zA-Z0-9_-]{1,80}$/.test(c.executionId)||mode==='mock'&&c.type==='finish'&&(c.actualMicros!==0||c.model!=='mock'))throw new Error('Worker command denied');
       const current=await read(),task=current.tasks[0];
+      if(isQA(task)){
+        if(task.stage!=='review'||!validSource(task.source)||['claim','reserve'].includes(c.type)&&task.calls!==0||c.type==='reserve'&&!qaEvidenceLoaded||c.type==='finish'&&(!qaEvidenceLoaded||!validVerdict(c.result,task.source)))throw new Error('QA command denied');
+      }
       if(isSpecialist(task)){
         if(!['chief','inspect'].includes(task.stage)||['claim','reserve'].includes(c.type)&&task.calls>=SPECIALIST.calls)throw new Error('Specialist stage denied');
         if(c.type==='finish'&&task.stage==='inspect'){
@@ -45,9 +49,15 @@ function scopedBridge({broker,taskIds,mode,capture,signal}){
       }
       return broker.command(message.id,c);
     }
+    if(message.op==='qa-evidence'&&mode==='pilot'&&Object.keys(message).length===2&&taskIds.includes(message.id)){
+      const state=await read(),task=state.tasks[0];approvalCheck(state.pilotApproval,task);
+      if(!isQA(task)||task.status!=='running'||task.stage!=='review'||task.calls!==0||task.leaseUntil<=Date.now()||task.deadline<=Date.now()||qaEvidenceLoaded||qaLoading)throw new Error('QA evidence denied');
+      qaLoading=true;
+      try{const images=await loadEvidence(task.source);if(signal?.aborted||!validImages(images,task.source))throw new Error('Original QA evidence mismatch');const latest=(await read()).tasks[0];if(latest.status!=='running'||latest.fence!==task.fence||latest.leaseUntil<=Date.now())throw new Error('QA evidence revoked');qaEvidenceLoaded=true;return images;}finally{qaLoading=false;}
+    }
     if(message.op==='capture'&&mode==='pilot'&&Object.keys(message).length===3&&taskIds.includes(message.id)){
       const state=await read(),task=state.tasks[0];approvalCheck(state.pilotApproval,task);
-      if(isSmoke(task)||task.status!=='running'||task.leaseUntil<=Date.now()||task.deadline<=Date.now()||!['inspect','review'].includes(task.stage)||!state.reservations.some(r=>r.taskId===task.id&&r.executionId===message.executionId&&r.stage===task.stage&&r.fence===task.fence&&r.status==='pending')||activeCaptures.has(task.id))throw new Error('Capture not reserved');
+      if(isQA(task)||isSmoke(task)||task.status!=='running'||task.leaseUntil<=Date.now()||task.deadline<=Date.now()||!['inspect','review'].includes(task.stage)||!state.reservations.some(r=>r.taskId===task.id&&r.executionId===message.executionId&&r.stage===task.stage&&r.fence===task.fence&&r.status==='pending')||activeCaptures.has(task.id))throw new Error('Capture not reserved');
       const controller=new AbortController();activeCaptures.set(task.id,controller);
       try{
         if(isSpecialist(task)&&completedCaptures.has(message.executionId))throw new Error('Specialist capture already consumed');
@@ -63,8 +73,8 @@ function scopedBridge({broker,taskIds,mode,capture,signal}){
     throw new Error('Worker operation denied');
   };
 }
-async function launch({broker,taskId,mode='mock',env=process.env,delayMs=0,capture,signal=AbortSignal.timeout(600000),onOutput=()=>{},onAttestation=()=>{}}){
-  const bridge=scopedBridge({broker,taskIds:[taskId],mode,capture,signal}),assignment=await bridge({op:'read'}),assignedTask=assignment.tasks[0];
+async function launch({broker,taskId,mode='mock',env=process.env,delayMs=0,capture,loadEvidence,signal=AbortSignal.timeout(600000),onOutput=()=>{},onAttestation=()=>{}}){
+  const bridge=scopedBridge({broker,taskIds:[taskId],mode,capture,loadEvidence,signal}),assignment=await bridge({op:'read'}),assignedTask=assignment.tasks[0];
   const workerFile=path.join(__dirname,'agent-operations-worker.cjs');
   const child=fork(workerFile,[],{env:childEnvironment(env,mode),execArgv:['--permission','--allow-fs-read='+path.join(__dirname,'../lib'),'--allow-fs-read='+workerFile,'--allow-fs-read='+path.join(__dirname,'../package.json')],stdio:['ignore','pipe','pipe','ipc'],windowsHide:true});
   const stop=()=>child.kill();signal.addEventListener('abort',stop,{once:true});
@@ -98,6 +108,6 @@ function hostedBroker({runtime,workerSecret,oidcToken,fetchImpl=fetch}){
     }const data=await response.json();
     if(!body&&(data.runtime?.origin!==runtime.origin||data.runtime?.commit!==runtime.commit||data.runtime?.environment!=='preview'))throw new Error('Broker runtime mismatch');return data;
   };
-  return {read:()=>request(),command:async(id,command)=>(await request({action:'command',id,command})).task,initializePilot:async()=>(await request({action:'initialize-pilot'})).task,initializeSmoke:async()=>(await request({action:'initialize-smoke'})).task,initializeSpecialist:async()=>(await request({action:'initialize-specialist'})).task};
+  return {read:()=>request(),command:async(id,command)=>(await request({action:'command',id,command})).task,initializeQA:async()=>(await request({action:'initialize-qa'})).task,initializePilot:async()=>(await request({action:'initialize-pilot'})).task,initializeSmoke:async()=>(await request({action:'initialize-smoke'})).task,initializeSpecialist:async()=>(await request({action:'initialize-specialist'})).task};
 }
 module.exports={launch,scopedBridge,childEnvironment,hostedBroker};

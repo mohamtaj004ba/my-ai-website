@@ -19,7 +19,7 @@ async function main(){
   if(mode==='pilot'){
     if(process.env.CALLERCORE_AGENTOPS_PAID_ENABLED!=='true')throw new Error('Paid worker disabled');
     const {workerCredential}=require('../lib/agent-operations-project');
-    adapter=require('../lib/agent-operations-pilot').pilotAdapter({enabled:true,apiKey:workerCredential(process.env),getApproval:async()=>(await broker.read()).pilotApproval,capture:(_scope,{executionId})=>rpc({op:'capture',id:config.taskIds[0],executionId})});
+    adapter=require('../lib/agent-operations-pilot').pilotAdapter({enabled:true,apiKey:workerCredential(process.env),getApproval:async()=>(await broker.read()).pilotApproval,loadEvidence:()=>rpc({op:'qa-evidence',id:config.taskIds[0]}),capture:(_scope,{executionId})=>rpc({op:'capture',id:config.taskIds[0],executionId})});
   }
   let cycles=0;
   while(!signal.aborted&&cycles++<8){
