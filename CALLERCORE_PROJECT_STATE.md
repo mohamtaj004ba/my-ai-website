@@ -1,5 +1,14 @@
 # CallerCore project state
 
+## Diagnostic hosted boundary refinement — October 11
+
+- Initial diagnostic source published cd75cf42750bd5fac9a90d76307142527e6a1495, READY Preview dpl_7iLih31TGfxdcM7Cr72B9V5SUVmY / https://my-ai-website-c6a1qnfia-mohamtaj004bas-projects.vercel.app. Exact metadata matches feature branch/project; paidExecution=false throughout.
+- Hosted synthetic mock task b7a5258c-f7ec-47ec-bd2b-26beaa528e8d completed Chief with one settled zero-cost mock receipt and persisted sanitized evidence checkpoint. Further stages blocked at existing daily/monthly mock allowance: prior mock ceilings1.5m plus new.3m=1.8m, below a further.3m reservation. Second fixture ec0f08b5-dfa8-4be8-a4b2-3a9fb030f216 blocked before reserve/calls0. This was NOT a complete new hosted happy workflow; it verifies diagnostic persistence and conservative gate enforcement. Full synthetic delegation remains independently verified offline, with earlier hosted mock acceptance separately preserved. No model request occurred.
+- Existing generic broker409 initially appeared as StorageError. Small diagnostic refinement adds static safe budget/state/storage codes and distinct brokerStatus, without exposing raw exception messages. Independent review found parent/child IPC had discarded those codes; corrected sanitized IPC propagation and adapter checkpoint classification. Actual restricted-child reserve-denial regression now records BudgetError/BROKER_BUDGET_EXHAUSTED/brokerStatus409, no provider status, requestAttempted=false, calls0/reservations0.21 focused independent tests passed; no material publication blocker remains.
+- Read2026-10-11T12:46:18.479Z deep-compared original paid task AND reservation to historical saved report: exact unchanged, still$0.30pending. Mock verifier durably revoked; old immutable verifier GET403. All four temporary feature-Preview and local verifier variables removed; paidfalse/mock and existing project key preserved. No reset, refund, wider permission, Production or main change.
+- Final full suite follows this refinement before publication. Diagnostic review/recommendation is docs/AGENT_OPERATIONS_DIAGNOSTIC_REVIEW.md. A second pilot may be technically justified AFTER final exact-source hosted checks, as a diagnostic experiment requiring fresh explicit authorization. Original cause may remain permanently unprovable. The unchanged$2 paid cumulative ceiling minus original$.30 hold leaves$1.70: four expected calls fit, at most five additional$.30 reservations fit, and a sixth new reservation must fail closed. No budget increase or release is proposed.
+
+
 ## Diagnostic publication preparation — October 11
 
 - Deeper independent review of creation, approval, reservation, restricted child, fixed Responses request, validation and persistence found no remaining publication blocker after correcting pre-dispatch semantics. Original failure may remain permanently unprovable; no recovery attempt repeated.

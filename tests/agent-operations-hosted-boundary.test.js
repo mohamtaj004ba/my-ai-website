@@ -66,3 +66,17 @@ test('real restricted preflight failure writes sanitized parent fallback journal
   const journal=fs.readFileSync(path.resolve('artifacts/agent-operations/worker-diagnostics.jsonl'),'utf8').trim().split('\n').map(JSON.parse).filter(x=>x.taskId===task.id);
   assert.ok(journal.length>=1);assert.ok(journal.every(x=>x.diagnostic.requestAttempted===false&&x.diagnostic.errorType==='ApprovalError'));assert.equal(JSON.stringify(journal).includes('synthetic-offline-key'),false);assert.equal((await s.read()).reservations[0].status,'pending');
 });
+
+test('actual restricted pilot child preserves broker budget denial over IPC before adapter execution',async()=>{
+  const {PROJECT}=require('../lib/agent-operations-project'),{hash}=require('../lib/agent-operations-store'),{MODEL,PRICING}=require('../lib/agent-operations-pilot'),fs=require('node:fs'),path=require('node:path');
+  const s=store(),approval={...PROJECT,authorized:true,id:'pilot_ipc_budget_denial',scopeHash:hash(s.scope),expiresAt:Date.now()+60000,maxMicros:2000000,model:MODEL,pricingVersion:PRICING.version};
+  const task=await s.create({principal:'offline',idempotencyKey:'ipc_budget_denial',objective:'Offline IPC budget denial',mode:'pilot',approval});approval.taskId=task.id;let reserveAttempts=0,attestation;
+  const broker={read:async()=>({...await s.read(),paidExecution:true,pilotApproval:approval}),command:async(id,c)=>{if(c.type==='reserve'){reserveAttempts++;const e=new Error('secret-provider-body-must-not-escape');e.code='BROKER_BUDGET_EXHAUSTED';e.brokerStatus=409;throw e;}return s.command(id,c);}};
+  await launch({broker,taskId:task.id,mode:'pilot',env:{...process.env,CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_OPENAI_API_KEY:'synthetic-offline-key',CALLERCORE_AGENTOPS_OPENAI_PROJECT_ID:PROJECT.projectId,CALLERCORE_AGENTOPS_OPENAI_ORGANIZATION_ID:PROJECT.organizationId},onAttestation:a=>{attestation=a;}});
+  const state=await s.read(),out=state.tasks[0],d=out.events.at(-1).diagnostic;
+  assert.equal(reserveAttempts,1);assert.equal(out.status,'blocked');assert.equal(out.calls,0);assert.equal(out.usage.length,0);assert.equal(state.reservations.length,0);assert.equal(d.phase,'reserve');assert.equal(d.requestAttempted,false);assert.equal(d.errorType,'BudgetError');assert.equal(d.code,'BROKER_BUDGET_EXHAUSTED');assert.equal(d.brokerStatus,409);assert.equal(d.httpStatus,undefined);
+  assert.equal(attestation.vercelCredentialVariables,0);assert.equal(attestation.brokerCredentialVariables,0);assert.equal(attestation.privateFileReadDenied,true);assert.equal(attestation.childProcessAllowed,false);
+  const journal=fs.readFileSync(path.resolve('artifacts/agent-operations/worker-diagnostics.jsonl'),'utf8').trim().split('\n').map(JSON.parse).filter(x=>x.taskId===task.id);assert.ok(journal.length>=1);
+  assert.ok(journal.every(x=>x.diagnostic.errorType==='BudgetError'&&x.diagnostic.code==='BROKER_BUDGET_EXHAUSTED'&&x.diagnostic.brokerStatus===409&&x.diagnostic.requestAttempted===false));
+  const text=JSON.stringify({out,journal});assert.equal(text.includes('synthetic-offline-key'),false);assert.equal(text.includes('secret-provider-body'),false);
+});

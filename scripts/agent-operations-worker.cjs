@@ -1,12 +1,13 @@
 'use strict';
 // Trusted fixed worker code; Vercel and broker credentials remain in the parent.
+const {diagnostic}=require('../lib/agent-operations-diagnostics');
 const {runStage,mockAdapter}=require('../lib/agent-operations-worker');
 async function main(){
   if(!process.send)throw new Error('Restricted launcher required');
   for(const key of Object.keys(process.env))if(/VERCEL|WORKER_SECRET|VERIFICATION_SECRET|BROKER|KV_|REDIS|AUTH_TOKEN/.test(key))throw new Error('Unexpected worker authority');
   let next=0;const pending=new Map();
   const rpc=request=>new Promise((resolve,reject)=>{const id=++next;pending.set(id,{resolve,reject});process.send({id,request});});
-  process.on('message',message=>{if(message.reply){const p=pending.get(message.reply);if(p){pending.delete(message.reply);message.ok?p.resolve(message.value):p.reject(new Error('Parent request denied'));}}});
+  process.on('message',message=>{if(message.reply){const p=pending.get(message.reply);if(p){pending.delete(message.reply);if(message.ok)p.resolve(message.value);else{const safe=diagnostic(message.diagnostic),error=new Error('Parent request denied');error.code=safe.code;error.brokerStatus=safe.brokerStatus;p.reject(error);}}}});
   const config=await new Promise(resolve=>process.once('message',resolve));
   if(config.type!=='start'||!['mock','pilot'].includes(config.mode)||!Array.isArray(config.taskIds)||config.taskIds.length!==1)throw new Error('Invalid worker assignment');
   const privateFile=require('node:path').resolve(__dirname,'../../../private-agent-operations/.env.agent-operations.local');

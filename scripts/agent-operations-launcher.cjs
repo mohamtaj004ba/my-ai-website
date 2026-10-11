@@ -64,7 +64,7 @@ async function launch({broker,taskId,mode='mock',env=process.env,delayMs=0,captu
     if(Date.now()-windowStart>=60000){windowStart=Date.now();count=0;}
     if(message?.diagnosticNotice&&Object.keys(message).length===1&&++count<=120){try{journal(message.diagnosticNotice);}catch{stop();}return;}
     if(!message||!Number.isSafeInteger(message.id)||!message.request||Object.keys(message).length!==2||++count>120){stop();return;}
-    try{if(message.request?.op==='command'&&['evidence','fail'].includes(message.request.command?.type))journal({taskId:message.request.id,executionId:message.request.command.executionId,diagnostic:message.request.command.diagnostic});const value=await bridge(message.request);if(child.connected)child.send({reply:message.id,ok:true,value});}catch{if(child.connected)child.send({reply:message.id,ok:false});}
+    try{if(message.request?.op==='command'&&['evidence','fail'].includes(message.request.command?.type))journal({taskId:message.request.id,executionId:message.request.command.executionId,diagnostic:message.request.command.diagnostic});const value=await bridge(message.request);if(child.connected)child.send({reply:message.id,ok:true,value});}catch(error){if(child.connected)child.send({reply:message.id,ok:false,diagnostic:diagnostic({code:error?.code,brokerStatus:error?.brokerStatus})});}
   });
   child.send({type:'start',mode,taskIds:[taskId],delayMs});
   return new Promise((resolve,reject)=>{child.on('error',reject);child.on('exit',code=>{signal.removeEventListener('abort',stop);if(code!==0&&lastNotice){try{journal({...lastNotice,diagnostic:{...lastNotice.diagnostic,phase:'worker',errorType:'WorkerInterrupted'}});}catch{}}code===0?resolve():reject(new Error('Worker outcome unconfirmed'));});});
@@ -73,7 +73,10 @@ function hostedBroker({runtime,workerSecret,oidcToken,fetchImpl=fetch}){
   if(!/^https:\/\/my-ai-website-[a-z0-9]+-mohamtaj004bas-projects\.vercel\.app$/.test(runtime.origin)||!/^dpl_[A-Za-z0-9]+$/.test(runtime.deploymentId)||!/^[a-f0-9]{40}$/.test(runtime.commit)||typeof workerSecret!=='string'||workerSecret.length<32)throw new Error('Pinned broker configuration required');
   const request=async body=>{
     const response=await fetchImpl(runtime.origin+'/api/agent-operations',{method:body?'POST':'GET',redirect:'error',signal:AbortSignal.timeout(10000),headers:{Authorization:'Bearer '+workerSecret,'Content-Type':'application/json',...oidcHeaders(oidcToken)},...(body?{body:JSON.stringify(body)}:{})});
-    if(!response.ok)throw new Error('Broker request unconfirmed');const data=await response.json();
+    if(!response.ok){
+      let body;try{body=await response.json();}catch{}
+      const error=new Error('Broker request unconfirmed');error.code=['BROKER_BUDGET_EXHAUSTED','BROKER_STATE_DENIED','BROKER_STORAGE_UNCONFIRMED'].includes(body?.code)?body.code:'BROKER_DENIED';error.brokerStatus=response.status;throw error;
+    }const data=await response.json();
     if(!body&&(data.runtime?.origin!==runtime.origin||data.runtime?.commit!==runtime.commit||data.runtime?.environment!=='preview'))throw new Error('Broker runtime mismatch');return data;
   };
   return {read:()=>request(),command:async(id,command)=>(await request({action:'command',id,command})).task,initializePilot:async()=>(await request({action:'initialize-pilot'})).task};
