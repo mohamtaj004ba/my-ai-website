@@ -1,5 +1,14 @@
 # CallerCore project state
 
+## Agent Operations dedicated credential checkpoint — October 11
+
+- New CallerCore Agent Operations project verified in Personal organization; fixed project/org identity enforced throughout worker, paid approval, durable task, reservation and usage receipt. Dedicated key only, no generic Preview fallback; provider redirects rejected. Existing Default project and CallerCore Preview API key untouched. All paid gates remain disabled and no inference/pilot executed.
+- Verified platform advisory $5 monthly budget with 50/80/100 percent alerts, project $0.00 spend and organization $9.07 credits. Project model allowlist now only gpt-4.1-2025-04-14, future models blocked. New 30-day key expires November 10, 2026, Restricted: List models Read, Responses Write, all other endpoint families None. Model metadata GET200 verifies visibility, not inference success. Auto reload remains user-reported disabled; no billing settings changed.
+- Credential securely saved to approved private-agent-operations/.env.agent-operations.local outside Git. Protected parent NTFS ACL only current Windows user; final file ACL independently checked by parent process after save. Repository fallback filename ignored, private directory wildcard ignored, no secret output or artifact inclusion. Temporary local recipient key removed. Worker/browser logging and environment paths reviewed; mock browser now uses the same OS-only environment allowlist as capture.
+- Independent safeguard source review completed: no remaining application-level blocker for bounded pilot; model reviewer uses separate execution/fresh screenshots under one trusted worker. Latest local full suite 1,913/1,913 and focused22/22 pass. Existing real Redis/hosted disabled-state evidence below remains scoped to4a49aeb; these new isolation edits need their own publication checks.
+- Exact one-task proposal in docs/AGENT_OPERATIONS_PILOT.md remains unapproved: read-only Legal imagery and Growth pricing overlap, pinned8133597 Preview, four calls expected/six maximum, ten minutes, two inspection attempts, $2 total ceiling. Secure broker/protection credential injection and final runtime checks must precede launch. Request explicit paid approval only after final launch details are concrete.
+
+
 ## Agent Operations implementation checkpoint — October 11
 
 - Preserved local architecture commit `6f51165f66d54908f7eb60e270a272a907adacc6` and unrelated working trees. Refetched remote feature branch before publication: still `bd6e7406da0d48fb88dd1360e3983cc26806f164`, so no newer changes needed reconciliation. PR #5 remains draft/unmerged. Production independently rechecked READY at `6d36aa454241588140a3d9945eed1a5696a65db6` / `dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY`.

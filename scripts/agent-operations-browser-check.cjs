@@ -26,7 +26,8 @@ async function main(){
     }catch{res.statusCode=500;res.end('Local fixture unavailable');}
   });
   await new Promise(r=>server.listen(0,'127.0.0.1',r));
-  const {chromium}=require('playwright'),browser=await chromium.launch({headless:true,...(process.env.CALLERCORE_AGENTOPS_BROWSER_EXECUTABLE?{executablePath:process.env.CALLERCORE_AGENTOPS_BROWSER_EXECUTABLE}:{})});
+  const browserEnv=Object.fromEntries(['PATH','SystemRoot','TEMP','TMP','USERPROFILE','LOCALAPPDATA','APPDATA','HOME','DISPLAY','XDG_RUNTIME_DIR'].filter(k=>process.env[k]).map(k=>[k,process.env[k]]));
+  const {chromium}=require('playwright'),browser=await chromium.launch({headless:true,env:browserEnv,...(process.env.CALLERCORE_AGENTOPS_BROWSER_EXECUTABLE?{executablePath:process.env.CALLERCORE_AGENTOPS_BROWSER_EXECUTABLE}:{})});
   const errors=[];
   try{
     const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);
