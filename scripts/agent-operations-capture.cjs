@@ -39,7 +39,7 @@ async function capture(scope,{signal,executionId,outputDir='artifacts/agent-oper
       const bytes=await page.screenshot({animations:'disabled',fullPage:false});
       const name=executionId+'-'+(routePath==='/#pricing'?'pricing':'legal')+'-'+width+'.png';
       await fs.writeFile(path.join(outputDir,name),bytes,{flag:'wx'});
-      images.push({path:name,viewport:width,sha256:createHash('sha256').update(bytes).digest('hex'),dataUrl:'data:image/png;base64,'+bytes.toString('base64')});await page.close();
+      images.push({path:name,viewport:width,sha256:createHash('sha256').update(bytes).digest('hex'),capturedAt:Date.now(),dataUrl:'data:image/png;base64,'+bytes.toString('base64')});await page.close();
     }
     return images;
   }finally{signal?.removeEventListener('abort',abort);await browser.close();}

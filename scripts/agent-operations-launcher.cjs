@@ -6,6 +6,7 @@ const {ORIGIN,oidcHeaders}=require('./agent-operations-preview-access.cjs');
 const {approvalCheck}=require('../lib/agent-operations-pilot');
 const {workerCredential,PROJECT}=require('../lib/agent-operations-project');
 const {isSmoke}=require('../lib/agent-operations-smoke');
+const {SPECIALIST,isSpecialist,validArtifacts,evidenceHash}=require('../lib/agent-operations-specialist');
 const fields={claim:['type','expectedRevision'],reserve:['type','fence','executionId'],evidence:['type','fence','executionId','diagnostic'],finish:['type','fence','executionId','diagnostic','result','actualMicros','model','inputTokens','outputTokens','projectId','organizationId'],heartbeat:['type','fence'],recover:['type'],fail:['type','fence','executionId','diagnostic']};
 function childEnvironment(env,mode){
   const safe=Object.fromEntries(['PATH','SystemRoot','TEMP','TMP','USERPROFILE','LOCALAPPDATA','APPDATA','HOME','NODE_PATH'].filter(k=>env[k]).map(k=>[k,env[k]]));
@@ -19,7 +20,7 @@ function childEnvironment(env,mode){
 }
 function scopedBridge({broker,taskIds,mode,capture,signal}){
   if(!Array.isArray(taskIds)||taskIds.length!==1||!['mock','pilot'].includes(mode))throw new Error('Invalid assignment');
-  let calls=0;const activeCaptures=new Map();
+  let calls=0;const activeCaptures=new Map(),completedCaptures=new Map();
   const read=async()=>{
     const state=await broker.read(),tasks=state.tasks.filter(t=>taskIds.includes(t.id));
     if(tasks.length!==taskIds.length||tasks.some(t=>t.mode!==mode||t.scope.origin!==ORIGIN||t.scope.commit!=='8133597ff2fc5b48e3de42336e9e06fa4191c2a8'||JSON.stringify(t.scope.paths)!==JSON.stringify(['/industries/legal','/#pricing'])))throw new Error('Task scope mismatch');
@@ -34,13 +35,30 @@ function scopedBridge({broker,taskIds,mode,capture,signal}){
     if(message.op==='command'&&Object.keys(message).length===3&&taskIds.includes(message.id)){
       const c=message.command,keys=fields[c?.type];
       if(!keys||Object.keys(c).some(k=>!keys.includes(k))||c.type==='claim'&&!Number.isSafeInteger(c.expectedRevision)||['reserve','finish','heartbeat','fail','evidence'].includes(c.type)&&!Number.isSafeInteger(c.fence)||['reserve','finish','evidence'].includes(c.type)&&!/^exec_[a-zA-Z0-9_-]{1,80}$/.test(c.executionId||'')||c.type==='fail'&&c.executionId!==undefined&&!/^exec_[a-zA-Z0-9_-]{1,80}$/.test(c.executionId)||mode==='mock'&&c.type==='finish'&&(c.actualMicros!==0||c.model!=='mock'))throw new Error('Worker command denied');
-      await read();return broker.command(message.id,c);
+      const current=await read(),task=current.tasks[0];
+      if(isSpecialist(task)){
+        if(!['chief','inspect'].includes(task.stage)||['claim','reserve'].includes(c.type)&&task.calls>=SPECIALIST.calls)throw new Error('Specialist stage denied');
+        if(c.type==='finish'&&task.stage==='inspect'){
+          const captured=completedCaptures.get(c.executionId);
+          if(!captured||JSON.stringify(c.result?.artifacts)!==JSON.stringify(captured)||c.result?.evidenceHash!==evidenceHash(captured))throw new Error('Specialist capture mismatch');
+        }
+      }
+      return broker.command(message.id,c);
     }
     if(message.op==='capture'&&mode==='pilot'&&Object.keys(message).length===3&&taskIds.includes(message.id)){
       const state=await read(),task=state.tasks[0];approvalCheck(state.pilotApproval,task);
       if(isSmoke(task)||task.status!=='running'||task.leaseUntil<=Date.now()||task.deadline<=Date.now()||!['inspect','review'].includes(task.stage)||!state.reservations.some(r=>r.taskId===task.id&&r.executionId===message.executionId&&r.stage===task.stage&&r.fence===task.fence&&r.status==='pending')||activeCaptures.has(task.id))throw new Error('Capture not reserved');
       const controller=new AbortController();activeCaptures.set(task.id,controller);
-      try{return await capture(task.scope,{executionId:message.executionId,signal:AbortSignal.any([...(signal?[signal]:[]),controller.signal,AbortSignal.timeout(90000)])});}finally{activeCaptures.delete(task.id);}
+      try{
+        if(isSpecialist(task)&&completedCaptures.has(message.executionId))throw new Error('Specialist capture already consumed');
+        const images=await capture(task.scope,{executionId:message.executionId,signal:AbortSignal.any([...(signal?[signal]:[]),controller.signal,AbortSignal.timeout(90000)])});
+        if(isSpecialist(task)){
+          const artifacts=images.map(({sha256,path,viewport,capturedAt})=>({sha256,path,viewport,capturedAt})),r=state.reservations.find(r=>r.executionId===message.executionId);
+          if(!validArtifacts(artifacts,message.executionId,r.at,Date.now()))throw new Error('Fresh specialist capture required');
+          completedCaptures.set(message.executionId,artifacts);
+        }
+        return images;
+      }finally{activeCaptures.delete(task.id);}
     }
     throw new Error('Worker operation denied');
   };
@@ -80,6 +98,6 @@ function hostedBroker({runtime,workerSecret,oidcToken,fetchImpl=fetch}){
     }const data=await response.json();
     if(!body&&(data.runtime?.origin!==runtime.origin||data.runtime?.commit!==runtime.commit||data.runtime?.environment!=='preview'))throw new Error('Broker runtime mismatch');return data;
   };
-  return {read:()=>request(),command:async(id,command)=>(await request({action:'command',id,command})).task,initializePilot:async()=>(await request({action:'initialize-pilot'})).task,initializeSmoke:async()=>(await request({action:'initialize-smoke'})).task};
+  return {read:()=>request(),command:async(id,command)=>(await request({action:'command',id,command})).task,initializePilot:async()=>(await request({action:'initialize-pilot'})).task,initializeSmoke:async()=>(await request({action:'initialize-smoke'})).task,initializeSpecialist:async()=>(await request({action:'initialize-specialist'})).task};
 }
 module.exports={launch,scopedBridge,childEnvironment,hostedBroker};

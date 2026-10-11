@@ -6,13 +6,14 @@ const {MODEL,PRICING}=require('../lib/agent-operations-pilot');
 const {scopedBridge,childEnvironment}=require('../scripts/agent-operations-launcher.cjs');
 const {ORIGIN}=require('../scripts/agent-operations-preview-access.cjs');
 const {SMOKE}=require('../lib/agent-operations-smoke');
+const {SPECIALIST}=require('../lib/agent-operations-specialist');
 async function offlinePilot(scenario){
   let raw=null,providerCalls=0,captures=0,attestation;
   const store=createStore({read:async()=>raw,compare:async(before,after)=>{if(raw!==before)return false;raw=after;return true;}},{scope:{origin:ORIGIN,commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8'}});
-  const smoke=scenario.startsWith('smoke');
-  const approval={...PROJECT,authorized:true,id:'pilot_offline_'+scenario,scopeHash:hash(store.scope),expiresAt:Date.now()+60000,maxMicros:smoke?SMOKE.maxMicros:5000000,...(smoke?{profile:SMOKE.profile,maxCalls:SMOKE.calls}:{}),model:MODEL,pricingVersion:PRICING.version};
-  const task=await store.create({principal:'offline-test',idempotencyKey:'offline_child_'+scenario,objective:smoke?SMOKE.objective:'Synthetic offline inspection only',mode:'pilot',approval});approval.taskId=task.id;
-  const bridge=scopedBridge({broker:{read:async()=>({...await store.read(),paidExecution:true,pilotApproval:approval}),command:store.command},taskIds:[task.id],mode:'pilot',capture:async()=>{captures++;return [0,1,2,3].map(n=>({sha256:String(n).repeat(64),path:'offline-'+n+'.png',viewport:n%2?390:1440,dataUrl:'data:image/png;base64,AA=='}));}});
+  const smoke=scenario.startsWith('smoke'),specialist=scenario==='specialist';
+  const approval={...PROJECT,authorized:true,id:'pilot_offline_'+scenario,scopeHash:hash(store.scope),expiresAt:Date.now()+60000,maxMicros:smoke?SMOKE.maxMicros:specialist?SPECIALIST.maxMicros:5000000,...(smoke?{profile:SMOKE.profile,maxCalls:SMOKE.calls}:specialist?{profile:SPECIALIST.profile,maxCalls:2}:{}),model:MODEL,pricingVersion:PRICING.version};
+  const task=await store.create({principal:'offline-test',idempotencyKey:'offline_child_'+scenario,objective:smoke?SMOKE.objective:specialist?SPECIALIST.objective:'Synthetic offline inspection only',mode:'pilot',approval});approval.taskId=task.id;
+  const bridge=scopedBridge({broker:{read:async()=>({...await store.read(),paidExecution:true,pilotApproval:approval}),command:store.command},taskIds:[task.id],mode:'pilot',capture:async(scope,{executionId})=>{captures++;if(specialist)return ['legal','pricing'].flatMap(name=>[1440,390].map(viewport=>({sha256:require('node:crypto').createHash('sha256').update(Buffer.from([0])).digest('hex'),path:executionId+'-'+name+'-'+viewport+'.png',viewport,capturedAt:Date.now(),dataUrl:'data:image/png;base64,AA=='})));return [0,1,2,3].map(n=>({sha256:String(n).repeat(64),path:'offline-'+n+'.png',viewport:n%2?390:1440,dataUrl:'data:image/png;base64,AA=='}));}});
   const fixture=path.resolve('tests/fixtures/agent-operations-offline-child.cjs'),worker=path.resolve('scripts/agent-operations-worker.cjs');
   const env=childEnvironment({...process.env,CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_OPENAI_API_KEY:'synthetic-offline-key',CALLERCORE_AGENTOPS_OPENAI_PROJECT_ID:PROJECT.projectId,CALLERCORE_AGENTOPS_OPENAI_ORGANIZATION_ID:PROJECT.organizationId,VERCEL_TOKEN:'must-not-pass',VERCEL_OIDC_TOKEN:'must-not-pass',CALLERCORE_AGENTOPS_WORKER_SECRET:'must-not-pass'},'pilot');
   env.OFFLINE_PROVIDER_SCENARIO=scenario;
@@ -27,6 +28,9 @@ async function offlinePilot(scenario){
 }
 test('exact restricted pilot worker completes four stages with synthetic Responses and zero external network',async()=>{
   const state=await offlinePilot('success'),task=state.tasks[0];assert.equal(state.providerCalls,4);assert.equal(state.captures,2);assert.equal(task.status,'verified');assert.equal(task.usage.length,4);assert.equal(task.usage.reduce((n,u)=>n+u.actualMicros,0),2400);assert.ok(state.reservations.every(r=>r.status==='settled'));assert.notEqual(task.results.inspect.executionId,task.results.review.executionId);
+});
+test('actual restricted specialist-only worker persists two separate executions and fresh evidence then terminates without QA',async()=>{
+  const state=await offlinePilot('specialist'),task=state.tasks[0];assert.equal(state.providerCalls,2);assert.equal(state.captures,1);assert.equal(task.status,'verified');assert.equal(task.stage,'inspect');assert.equal(task.calls,2);assert.equal(task.costCeilingMicros,600000);assert.deepEqual(Object.keys(task.results),['chief','inspect']);assert.equal(task.results.inspect.artifacts.length,4);assert.notEqual(task.results.chief.executionId,task.results.inspect.executionId);assert(state.reservations.every(r=>r.status==='settled'));assert.equal(task.usage.length,2);
 });
 test('exact restricted pilot worker blocks after synthetic provider denial and retains its reservation',async()=>{
   const state=await offlinePilot('deny'),task=state.tasks[0];assert.equal(state.providerCalls,1);assert.equal(state.captures,0);assert.equal(task.status,'blocked');assert.equal(task.calls,1);assert.equal(task.usage.length,0);assert.equal(state.reservations.length,1);assert.equal(state.reservations[0].status,'pending');assert.equal(state.reservations[0].ceilingMicros,300000);const d=task.events.find(e=>e.type==='execution_blocked').diagnostic;assert.equal(d.phase,'provider_http');assert.equal(d.requestAttempted,true);assert.equal(d.httpStatus,403);assert.equal(d.code,'insufficient_permissions');
