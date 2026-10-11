@@ -24,7 +24,7 @@ test('ten-call hard gate rejects an eleventh reservation and ten-minute deadline
   const queued=await create(f,'deadline');f.advance(600000);await assert.rejects(f.store.command(queued.id,{type:'claim'}),/deadline/);
 });
 test('trusted approval accepts exact $5 manifest and rejects previous $2 manifest without network',()=>{
-  const f=fixture(),a=approval(f.store,Date.now(),'approval_gate'),env={CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_PILOT_APPROVAL:JSON.stringify(a)};
+  const f=fixture(),a=approval(f.store,Date.now(),'approval_gate'),env={VERCEL_ENV:'preview',CALLERCORE_AGENTOPS_ENABLED:'true',CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_PILOT_APPROVAL:JSON.stringify(a)};
   assert.deepEqual(trustedApproval(env,f.store.scope),a);assert.equal(trustedApproval({...env,CALLERCORE_AGENTOPS_PILOT_APPROVAL:JSON.stringify({...a,maxMicros:2000000})},f.store.scope),null);
   const task={...PROJECT,id:'offline-task',approvalId:a.id,scope:f.store.scope};assert.doesNotThrow(()=>approvalCheck({...a,taskId:task.id},task));assert.throws(()=>approvalCheck({...a,taskId:task.id,maxMicros:2000000},task));assert.equal(trustedApproval({...env,CALLERCORE_AGENTOPS_PAID_ENABLED:'false'},f.store.scope),null);
 });

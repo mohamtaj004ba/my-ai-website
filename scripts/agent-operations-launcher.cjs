@@ -1,10 +1,11 @@
 'use strict';
 const fs=require('node:fs');
-const {diagnostic}=require('../lib/agent-operations-diagnostics');
+const {diagnostic,taskDiagnostic}=require('../lib/agent-operations-diagnostics');
 const {fork}=require('node:child_process'),path=require('node:path');
 const {ORIGIN,oidcHeaders}=require('./agent-operations-preview-access.cjs');
 const {approvalCheck}=require('../lib/agent-operations-pilot');
 const {workerCredential,PROJECT}=require('../lib/agent-operations-project');
+const {isSmoke}=require('../lib/agent-operations-smoke');
 const fields={claim:['type','expectedRevision'],reserve:['type','fence','executionId'],evidence:['type','fence','executionId','diagnostic'],finish:['type','fence','executionId','diagnostic','result','actualMicros','model','inputTokens','outputTokens','projectId','organizationId'],heartbeat:['type','fence'],recover:['type'],fail:['type','fence','executionId','diagnostic']};
 function childEnvironment(env,mode){
   const safe=Object.fromEntries(['PATH','SystemRoot','TEMP','TMP','USERPROFILE','LOCALAPPDATA','APPDATA','HOME','NODE_PATH'].filter(k=>env[k]).map(k=>[k,env[k]]));
@@ -37,7 +38,7 @@ function scopedBridge({broker,taskIds,mode,capture,signal}){
     }
     if(message.op==='capture'&&mode==='pilot'&&Object.keys(message).length===3&&taskIds.includes(message.id)){
       const state=await read(),task=state.tasks[0];approvalCheck(state.pilotApproval,task);
-      if(task.status!=='running'||task.leaseUntil<=Date.now()||task.deadline<=Date.now()||!['inspect','review'].includes(task.stage)||!state.reservations.some(r=>r.taskId===task.id&&r.executionId===message.executionId&&r.stage===task.stage&&r.fence===task.fence&&r.status==='pending')||activeCaptures.has(task.id))throw new Error('Capture not reserved');
+      if(isSmoke(task)||task.status!=='running'||task.leaseUntil<=Date.now()||task.deadline<=Date.now()||!['inspect','review'].includes(task.stage)||!state.reservations.some(r=>r.taskId===task.id&&r.executionId===message.executionId&&r.stage===task.stage&&r.fence===task.fence&&r.status==='pending')||activeCaptures.has(task.id))throw new Error('Capture not reserved');
       const controller=new AbortController();activeCaptures.set(task.id,controller);
       try{return await capture(task.scope,{executionId:message.executionId,signal:AbortSignal.any([...(signal?[signal]:[]),controller.signal,AbortSignal.timeout(90000)])});}finally{activeCaptures.delete(task.id);}
     }
@@ -45,7 +46,7 @@ function scopedBridge({broker,taskIds,mode,capture,signal}){
   };
 }
 async function launch({broker,taskId,mode='mock',env=process.env,delayMs=0,capture,signal=AbortSignal.timeout(600000),onOutput=()=>{},onAttestation=()=>{}}){
-  const bridge=scopedBridge({broker,taskIds:[taskId],mode,capture,signal});await bridge({op:'read'});
+  const bridge=scopedBridge({broker,taskIds:[taskId],mode,capture,signal}),assignment=await bridge({op:'read'}),assignedTask=assignment.tasks[0];
   const workerFile=path.join(__dirname,'agent-operations-worker.cjs');
   const child=fork(workerFile,[],{env:childEnvironment(env,mode),execArgv:['--permission','--allow-fs-read='+path.join(__dirname,'../lib'),'--allow-fs-read='+workerFile,'--allow-fs-read='+path.join(__dirname,'../package.json')],stdio:['ignore','pipe','pipe','ipc'],windowsHide:true});
   const stop=()=>child.kill();signal.addEventListener('abort',stop,{once:true});
@@ -56,7 +57,7 @@ async function launch({broker,taskId,mode='mock',env=process.env,delayMs=0,captu
     const file=path.resolve(__dirname,'../artifacts/agent-operations/worker-diagnostics.jsonl');fs.mkdirSync(path.dirname(file),{recursive:true});
     if(fs.existsSync(file)&&fs.statSync(file).size>2000000)throw new Error('Diagnostic journal capacity reached');
     lastNotice=notice;
-    fs.appendFileSync(file,JSON.stringify({at:Date.now(),taskId,executionId:notice.executionId,diagnostic:diagnostic(notice.diagnostic)})+'\n',{mode:0o600});
+    fs.appendFileSync(file,JSON.stringify({at:Date.now(),taskId,executionId:notice.executionId,diagnostic:taskDiagnostic(notice.diagnostic,assignedTask)})+'\n',{mode:0o600});
   };
   let windowStart=Date.now(),count=0;
   child.on('message',async message=>{
@@ -79,6 +80,6 @@ function hostedBroker({runtime,workerSecret,oidcToken,fetchImpl=fetch}){
     }const data=await response.json();
     if(!body&&(data.runtime?.origin!==runtime.origin||data.runtime?.commit!==runtime.commit||data.runtime?.environment!=='preview'))throw new Error('Broker runtime mismatch');return data;
   };
-  return {read:()=>request(),command:async(id,command)=>(await request({action:'command',id,command})).task,initializePilot:async()=>(await request({action:'initialize-pilot'})).task};
+  return {read:()=>request(),command:async(id,command)=>(await request({action:'command',id,command})).task,initializePilot:async()=>(await request({action:'initialize-pilot'})).task,initializeSmoke:async()=>(await request({action:'initialize-smoke'})).task};
 }
 module.exports={launch,scopedBridge,childEnvironment,hostedBroker};
