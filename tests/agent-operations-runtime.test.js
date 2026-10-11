@@ -95,7 +95,7 @@ test('worker credential is separate and cannot enqueue, cancel, approve, release
 });
 test('paid adapter does zero network calls when disabled, mismatched, revoked or expired',async()=>{
   let calls=0;const task={id:'task',approvalId:'approval',scope,objective:'x'},approval={authorized:true,id:'approval',taskId:'task',scopeHash:hash(scope),expiresAt:5000,maxMicros:LIMITS.taskMicros,model:MODEL,pricingVersion:PRICING.version};
-  for(const [enabled,a] of [[false,approval],[true,{...approval,taskId:'other'}],[true,{...approval,authorized:false}],[true,{...approval,expiresAt:0}]]){
+  for(const [enabled,a] of [[false,approval],[true,{...approval,taskId:'other'}],[true,{...approval,authorized:false}],[true,{...approval,expiresAt:0}],...[undefined,null,NaN,Infinity,'Infinity','5000',5000.5].map(expiresAt=>[true,{...approval,expiresAt}])]){
     const adapter=pilotAdapter({enabled,apiKey:'test-key',clock:()=>1000,getApproval:async()=>a,capture:async()=>[],fetchImpl:async()=>{calls++;}});
     await assert.rejects(adapter.execute({stage:'chief',task,signal:new AbortController().signal,executionId:'exec_test'}));
   }
@@ -120,6 +120,12 @@ test('one-task approval is bound to scope and consumed once; server gate revocat
   const env={VERCEL_ENV:'preview',CALLERCORE_AGENTOPS_ENABLED:'true',CALLERCORE_AGENTOPS_WORKER_SECRET:'w'.repeat(40),CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_PILOT_APPROVAL:JSON.stringify(approval)};
   const h=createHandler({env,store:s,getSession:async()=>null,getMember:async()=>null,rateLimit:async()=>({limited:false})}),headers={authorization:'Bearer '+'w'.repeat(40)};
   const initialize=()=>apiCall(h,{headers,method:'POST',body:{action:'initialize-pilot'}});
+  for(const expiresAt of [null,'Infinity',String(approval.expiresAt),approval.expiresAt+0.5]){
+    env.CALLERCORE_AGENTOPS_PILOT_APPROVAL=JSON.stringify({...approval,expiresAt});
+    assert.equal((await initialize()).code,403);assert.equal((await s.read()).tasks.length,0);
+    await assert.rejects(s.create({principal:'owner-fixture',idempotencyKey:'invalid_expiry',objective:'Inspect',mode:'pilot',approval:{...approval,expiresAt}}));
+  }
+  env.CALLERCORE_AGENTOPS_PILOT_APPROVAL=JSON.stringify(approval);
   const a=await initialize(),b=await initialize();assert.equal(a.code,201);assert.equal(a.body.task.id,b.body.task.id);assert.equal((await s.read()).tasks.length,1);
   const status=await apiCall(h,{headers});assert.equal(status.body.pilotApproval.taskId,a.body.task.id);
   env.CALLERCORE_AGENTOPS_PAID_ENABLED='false';assert.equal((await apiCall(h,{headers,method:'POST',body:{action:'command',id:a.body.task.id,command:{type:'claim'}}})).code,403);

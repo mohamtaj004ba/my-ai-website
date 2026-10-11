@@ -8,6 +8,8 @@ One read-only task: inspect the Legal dashboard example for industry relevance a
 
 Proposed target: accepted application source `8133597ff2fc5b48e3de42336e9e06fa4191c2a8`, immutable origin `https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app`. Reverify the deployment-to-SHA mapping before approval/launch. The new operations runtime can be newer while its inspected website remains this explicit fixed target. Scope hash is computed from `{origin,commit,paths:["/industries/legal","/#pricing"]}` and must match the server approval manifest and task.
 
+Verified October 11: deployment `dpl_C9my58Cfk9Dv1m3gter1GcnaRqmK` remains READY at that exact URL/SHA. Exact scope hash: `02601501cd10466210bf3501af4a8320229cb0fb52e447338535de8935390cdf`. Recheck before launch; this verification grants no approval.
+
 No fixes, pushes, source edits, customer/admin browser cookies, third-party browsing, Production requests, telephony, Stripe or hosted OpenAI tools. Findings include observed screenshot evidence and a proposed correction in text. Independent review may reject; absence of a reproduced defect is an honest outcome, not permission to fabricate one.
 
 ## Calls and model
@@ -35,6 +37,8 @@ Do not set these gates until TJ explicitly approves this pilot and its target/co
 3. After explicit paid authorization, set server `CALLERCORE_AGENTOPS_PAID_ENABLED=true` and a trusted `CALLERCORE_AGENTOPS_PILOT_APPROVAL` JSON manifest: `authorized:true`, unique `pilot_...` id, exact scopeHash, short expiry, `maxMicros:2000000`, pinned `model`, exact `pricingVersion`. Initialization consumes this approval ID once; repeat delivery returns the same task. No user-provided task objective or approval object is accepted for paid initialization.
 4. In the bounded external worker, set mode `pilot`, its separate local paid gate, broker origin/worker secret, existing scoped OpenAI API credential and Preview protection bypass. Never print/store secrets in the repository. Sensitive Vercel credentials are not retrievable through the current connector; arrange approved secure injection into the worker if they are not already available. The browser process inherits only an OS environment allowlist, not provider/database credentials.
 5. Run `scripts/agent-operations-worker.cjs` once, optionally hidden as an independent process. No recurring automation is created. It reads current approval before capture and before each model request; cancellation/revocation/timeout aborts execution and preserves reservations. Remove the paid gates after the one task regardless of outcome. A blocked task cannot consume a second approval automatically.
+
+For an emergency stop, cancel the persisted task through the admin control center and stop the worker; this changes shared durable state visible to its pinned deployment. Do not rely on changing Vercel environment variables alone to revoke an older immutable deployment, which retains its deployment-time environment. Then disable paid gates for future deployments. Approval expiry must be an integer Unix timestamp in milliseconds; malformed/string/nonfinite expiry fails closed. Use a short expiry for the approved launch.
 
 ## Acceptance evidence
 
