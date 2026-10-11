@@ -24,7 +24,7 @@ async function main(){
   while(!signal.aborted&&cycles++<8){
     const state=await broker.read(),task=state.tasks.find(t=>config.taskIds.includes(t.id)&&t.mode===mode&&(t.status==='assigned'||t.status==='running'&&t.leaseUntil<=Date.now()));
     if(!task)break;
-    const result=await runStage(broker,adapter,{taskId:task.id,signal});
+    const result=await runStage(broker,adapter,{taskId:task.id,signal,onDiagnostic:async evidence=>{await new Promise((resolve,reject)=>process.send({diagnosticNotice:{taskId:task.id,...evidence}},error=>error?reject(error):resolve()));}});
     process.stdout.write(JSON.stringify({taskId:task.id,status:result.status,stage:result.stage,mode})+'\n');
   }
   process.disconnect();

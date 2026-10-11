@@ -55,3 +55,14 @@ test('real restricted child completes delegation over parent IPC with zero Verce
   await launch({broker:s,taskId:task.id,env:{...process.env,VERCEL_TOKEN:'account-fixture',VERCEL_OIDC_TOKEN:'oidc-fixture',CALLERCORE_AGENTOPS_WORKER_SECRET:'broker-fixture'},onAttestation:a=>{attestation=a;}});
   const t=(await s.read()).tasks[0];assert.equal(t.status,'verified');assert.equal(t.calls,4);assert.equal(t.usage.reduce((n,u)=>n+u.actualMicros,0),0);assert.equal(attestation.vercelCredentialVariables,0);assert.equal(attestation.privateFileReadDenied,true);assert.equal(attestation.childProcessAllowed,false);assert.notEqual(t.results.inspect.executionId,t.results.review.executionId);
 });
+
+test('real restricted preflight failure writes sanitized parent fallback journal without provider access',async()=>{
+  const {PROJECT}=require('../lib/agent-operations-project'),{hash}=require('../lib/agent-operations-store'),{MODEL,PRICING}=require('../lib/agent-operations-pilot'),fs=require('node:fs'),path=require('node:path');
+  const s=store(),approval={...PROJECT,authorized:true,id:'pilot_offline_journal',scopeHash:hash(s.scope),expiresAt:Date.now()+60000,maxMicros:2000000,model:MODEL,pricingVersion:PRICING.version};
+  const task=await s.create({principal:'offline',idempotencyKey:'offline_journal',objective:'Offline preflight denial',mode:'pilot',approval});
+  const broker={read:async()=>({...await s.read(),paidExecution:true}),command:s.command};
+  // No task-bound approval returned: fixed adapter must reject before fetch.
+  await launch({broker,taskId:task.id,mode:'pilot',env:{...process.env,CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_OPENAI_API_KEY:'synthetic-offline-key',CALLERCORE_AGENTOPS_OPENAI_PROJECT_ID:PROJECT.projectId,CALLERCORE_AGENTOPS_OPENAI_ORGANIZATION_ID:PROJECT.organizationId}});
+  const journal=fs.readFileSync(path.resolve('artifacts/agent-operations/worker-diagnostics.jsonl'),'utf8').trim().split('\n').map(JSON.parse).filter(x=>x.taskId===task.id);
+  assert.ok(journal.length>=1);assert.ok(journal.every(x=>x.diagnostic.requestAttempted===false&&x.diagnostic.errorType==='ApprovalError'));assert.equal(JSON.stringify(journal).includes('synthetic-offline-key'),false);assert.equal((await s.read()).reservations[0].status,'pending');
+});

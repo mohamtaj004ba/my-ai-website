@@ -1,9 +1,11 @@
 'use strict';
+const fs=require('node:fs');
+const {diagnostic}=require('../lib/agent-operations-diagnostics');
 const {fork}=require('node:child_process'),path=require('node:path');
 const {ORIGIN,oidcHeaders}=require('./agent-operations-preview-access.cjs');
 const {approvalCheck}=require('../lib/agent-operations-pilot');
 const {workerCredential,PROJECT}=require('../lib/agent-operations-project');
-const fields={claim:['type','expectedRevision'],reserve:['type','fence','executionId'],finish:['type','fence','executionId','result','actualMicros','model','inputTokens','outputTokens','projectId','organizationId'],heartbeat:['type','fence'],recover:['type'],fail:['type','fence']};
+const fields={claim:['type','expectedRevision'],reserve:['type','fence','executionId'],evidence:['type','fence','executionId','diagnostic'],finish:['type','fence','executionId','diagnostic','result','actualMicros','model','inputTokens','outputTokens','projectId','organizationId'],heartbeat:['type','fence'],recover:['type'],fail:['type','fence','executionId','diagnostic']};
 function childEnvironment(env,mode){
   const safe=Object.fromEntries(['PATH','SystemRoot','TEMP','TMP','USERPROFILE','LOCALAPPDATA','APPDATA','HOME','NODE_PATH'].filter(k=>env[k]).map(k=>[k,env[k]]));
   safe.CALLERCORE_AGENTOPS_PAID_ENABLED=mode==='pilot'?'true':'false';
@@ -30,7 +32,7 @@ function scopedBridge({broker,taskIds,mode,capture,signal}){
     if(message.op==='read'&&Object.keys(message).length===1)return read();
     if(message.op==='command'&&Object.keys(message).length===3&&taskIds.includes(message.id)){
       const c=message.command,keys=fields[c?.type];
-      if(!keys||Object.keys(c).some(k=>!keys.includes(k))||c.type==='claim'&&!Number.isSafeInteger(c.expectedRevision)||['reserve','finish','heartbeat','fail'].includes(c.type)&&!Number.isSafeInteger(c.fence)||['reserve','finish'].includes(c.type)&&!/^exec_[a-zA-Z0-9_-]{1,80}$/.test(c.executionId||'')||mode==='mock'&&c.type==='finish'&&(c.actualMicros!==0||c.model!=='mock'))throw new Error('Worker command denied');
+      if(!keys||Object.keys(c).some(k=>!keys.includes(k))||c.type==='claim'&&!Number.isSafeInteger(c.expectedRevision)||['reserve','finish','heartbeat','fail','evidence'].includes(c.type)&&!Number.isSafeInteger(c.fence)||['reserve','finish','evidence'].includes(c.type)&&!/^exec_[a-zA-Z0-9_-]{1,80}$/.test(c.executionId||'')||c.type==='fail'&&c.executionId!==undefined&&!/^exec_[a-zA-Z0-9_-]{1,80}$/.test(c.executionId)||mode==='mock'&&c.type==='finish'&&(c.actualMicros!==0||c.model!=='mock'))throw new Error('Worker command denied');
       await read();return broker.command(message.id,c);
     }
     if(message.op==='capture'&&mode==='pilot'&&Object.keys(message).length===3&&taskIds.includes(message.id)){
@@ -48,15 +50,24 @@ async function launch({broker,taskId,mode='mock',env=process.env,delayMs=0,captu
   const child=fork(workerFile,[],{env:childEnvironment(env,mode),execArgv:['--permission','--allow-fs-read='+path.join(__dirname,'../lib'),'--allow-fs-read='+workerFile,'--allow-fs-read='+path.join(__dirname,'../package.json')],stdio:['ignore','pipe','pipe','ipc'],windowsHide:true});
   const stop=()=>child.kill();signal.addEventListener('abort',stop,{once:true});
   child.stdout.on('data',b=>onOutput(b.toString()));child.stderr.resume();
+  let lastNotice;
+  const journal=notice=>{
+    if(notice?.taskId!==taskId||!/^exec_[a-zA-Z0-9_-]{1,80}$/.test(notice.executionId||''))throw new Error('Diagnostic correlation denied');
+    const file=path.resolve(__dirname,'../artifacts/agent-operations/worker-diagnostics.jsonl');fs.mkdirSync(path.dirname(file),{recursive:true});
+    if(fs.existsSync(file)&&fs.statSync(file).size>2000000)throw new Error('Diagnostic journal capacity reached');
+    lastNotice=notice;
+    fs.appendFileSync(file,JSON.stringify({at:Date.now(),taskId,executionId:notice.executionId,diagnostic:diagnostic(notice.diagnostic)})+'\n',{mode:0o600});
+  };
   let windowStart=Date.now(),count=0;
   child.on('message',async message=>{
     if(message?.attestation){onAttestation(message.attestation);return;}
     if(Date.now()-windowStart>=60000){windowStart=Date.now();count=0;}
+    if(message?.diagnosticNotice&&Object.keys(message).length===1&&++count<=120){try{journal(message.diagnosticNotice);}catch{stop();}return;}
     if(!message||!Number.isSafeInteger(message.id)||!message.request||Object.keys(message).length!==2||++count>120){stop();return;}
-    try{const value=await bridge(message.request);if(child.connected)child.send({reply:message.id,ok:true,value});}catch{if(child.connected)child.send({reply:message.id,ok:false});}
+    try{if(message.request?.op==='command'&&['evidence','fail'].includes(message.request.command?.type))journal({taskId:message.request.id,executionId:message.request.command.executionId,diagnostic:message.request.command.diagnostic});const value=await bridge(message.request);if(child.connected)child.send({reply:message.id,ok:true,value});}catch{if(child.connected)child.send({reply:message.id,ok:false});}
   });
   child.send({type:'start',mode,taskIds:[taskId],delayMs});
-  return new Promise((resolve,reject)=>{child.on('error',reject);child.on('exit',code=>{signal.removeEventListener('abort',stop);code===0?resolve():reject(new Error('Worker outcome unconfirmed'));});});
+  return new Promise((resolve,reject)=>{child.on('error',reject);child.on('exit',code=>{signal.removeEventListener('abort',stop);if(code!==0&&lastNotice){try{journal({...lastNotice,diagnostic:{...lastNotice.diagnostic,phase:'worker',errorType:'WorkerInterrupted'}});}catch{}}code===0?resolve():reject(new Error('Worker outcome unconfirmed'));});});
 }
 function hostedBroker({runtime,workerSecret,oidcToken,fetchImpl=fetch}){
   if(!/^https:\/\/my-ai-website-[a-z0-9]+-mohamtaj004bas-projects\.vercel\.app$/.test(runtime.origin)||!/^dpl_[A-Za-z0-9]+$/.test(runtime.deploymentId)||!/^[a-f0-9]{40}$/.test(runtime.commit)||typeof workerSecret!=='string'||workerSecret.length<32)throw new Error('Pinned broker configuration required');
