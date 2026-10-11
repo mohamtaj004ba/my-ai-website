@@ -10,6 +10,28 @@ permissions:
   contents: read
 
 jobs:
+  agent-operations-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    services:
+      disposable-redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Disposable Redis atomicity and mock orchestration
+        run: node --test tests/agent-operations-redis.integration.cjs
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
