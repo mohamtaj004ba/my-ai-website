@@ -30,12 +30,13 @@ test('independent adjudication adversaries reject wrong atom, borrowed image, un
  const unsupported=structuredClone(w);unsupported.claims[0].atoms[0].text='The illustration is contextually appropriate for Legal.';assert.equal(qa.adjudication(base,unsupported),false);
 });
 test('independent final report cannot falsely report acceptance or add authority fields',()=>{
- const response=note=>({model:'gpt-6.1-sol',status:'completed',service_tier:'default',usage:{input_tokens:100,output_tokens:20,input_tokens_details:{cached_tokens:0,cache_write_tokens:0},output_tokens_details:{reasoning_tokens:10}},output:[{type:'message',content:[{type:'output_text',text:JSON.stringify({stage:'chief_review',note})}]}]});
- const dto={stage:'chief_review',outcomes:{acceptedWork:false}};
- assert.equal(model.receipt(dto,response(contracts.REPORT.rejected)).result.note,contracts.REPORT.rejected);
- assert.throws(()=>model.receipt(dto,response(contracts.REPORT.accepted)),/contradicts/);
- assert.throws(()=>model.receipt(dto,response('Everything succeeded.')),/contract mismatch/);
- assert.equal(contracts.valid('chief_review',{stage:'chief_review',note:contracts.REPORT.rejected,acceptedWork:true}),false);
+ const response=result=>({model:'gpt-6.1-sol',status:'completed',service_tier:'default',usage:{input_tokens:100,output_tokens:20,input_tokens_details:{cached_tokens:0,cache_write_tokens:0},output_tokens_details:{reasoning_tokens:10}},output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(result)}]}]});
+ const dto=require('./helpers/agent-operations-final-report-fixture.cjs').fixture({scenario:'rejected'}),certified=require('../lib/agent-operations-final-report').build(dto).report;
+ assert.deepEqual(model.receipt(dto,response(certified)).result,certified);
+ const forged=structuredClone(certified);forged.overallStatus='accepted';forged.independentAcceptance.accepted=true;
+ assert.throws(()=>model.receipt(dto,response(forged)),/contradicts|binding|authoritative/i);
+ assert.throws(()=>model.receipt(dto,response({stage:'chief_review',note:'Everything succeeded.'})),/contract mismatch/);
+ assert.equal(contracts.valid('chief_review',{...certified,acceptedWork:true}),false);
 });
 test('independent release gate detects helper drift and rejects legacy or foreign approval identities',()=>{
  const release=contracts.assertRelease();assert(contracts.approved({contractVersion:release.version,contractHash:release.digest}));
@@ -49,17 +50,19 @@ test('independent transport-only mock follows exposed claim and observation IDs 
  const body=request('adjudicate',{claims,observation:{result:observed}}),out=JSON.parse(reply(body).output[0].content[0].text);
  assert.equal(out.findings[0].code,'PUBLIC_ONLY');assert.deepEqual(out.findings[0].atoms[0].observations,['O77']);
  assert.throws(()=>reply(request('observe',{evidence,claims})),/Blind input leak/);
- const final=JSON.parse(reply(request('chief_review',{outcomes:{acceptedWork:false}})).output[0].content[0].text);assert.equal(final.note,contracts.REPORT.rejected);
+ const dto=require('./helpers/agent-operations-final-report-fixture.cjs').fixture({scenario:'rejected'}),projection=require('../lib/agent-operations-final-report').build(dto);
+ const final=JSON.parse(reply(model.request(dto).body).output[0].content[0].text);assert.deepEqual(final,projection.report);assert.equal(final.overallStatus,'not-accepted');
 });
 test('independent atomic final-stage boundary refuses a forged success after rejected QA without settling its reservation',async()=>{
  // Explicit synthetic backend-state seed tests a hostile direct command, not provider behavior.
  const {createOrganization}=require('../lib/agent-operations-organization');let raw=null;
  const adapter={read:async()=>raw,compare:async(old,next)=>{if(raw!==old)return false;raw=next;return true;}},scope={origin:'https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app',commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8',paths:['/industries/legal','/#pricing']},owner={kind:'owner',id:'review-owner',verifiedOwner:true},org=createOrganization(adapter,{scope});
  const g=await org.issueGrant(owner,{idempotencyKey:'independent-review-grant',level:'inspect-and-test',expiresAt:Date.now()+600000,budgetMicros:3600000,maxWorkflows:1,maxConcurrent:1,roles:['chief-of-staff','website-visual-qa','independent-qa']}),c=await org.create(owner,{grantId:g.id,idempotencyKey:'independent-review-final'}),s=JSON.parse(raw),w=s.operations.workflows[0];
- w.stage='chief_review';w.outcomes={acceptedWork:false,substantive:'failed',finalAcceptance:'rejected'};await adapter.compare(raw,JSON.stringify(s));
+ const seed=require('./helpers/agent-operations-final-report-fixture.cjs').fixture({scenario:'rejected'});w.stage='chief_review';w.outcomes=seed.outcomes;w.results=seed.results;w.evidence=seed.evidence;w.evidence.workflowId=w.id;w.geometry=seed.geometry;await adapter.compare(raw,JSON.stringify(s));
  const actor={workflowId:c.workflow.id,token:c.capability};let dto=await org.command(actor,c.workflow.id,{type:'claim',expectedRevision:0});dto=await org.command(actor,dto.id,{type:'reserve',expectedRevision:dto.revision,fence:dto.fence,executionId:'exec_review_final'});
- const command={type:'finish',expectedRevision:dto.revision,fence:dto.fence,executionId:'exec_review_final',receipt:{model:'gpt-6.1-sol',inputTokens:0,outputTokens:0,reasoningTokens:0,cacheReadTokens:0,cacheWriteTokens:0,actualMicros:0,providerStatus:'completed'},result:{stage:'chief_review',note:contracts.REPORT.accepted}};
+ const certified=require('../lib/agent-operations-final-report').build(dto).report,forged=structuredClone(certified);forged.overallStatus='accepted';forged.independentAcceptance.accepted=true;
+ const command={type:'finish',expectedRevision:dto.revision,fence:dto.fence,executionId:'exec_review_final',receipt:{model:'gpt-6.1-sol',inputTokens:0,outputTokens:0,reasoningTokens:0,cacheReadTokens:0,cacheWriteTokens:0,actualMicros:0,providerStatus:'completed'},result:forged};
  await assert.rejects(org.command(actor,dto.id,command),/cannot override QA/);let summary=await org.summary();assert.equal(summary.reservations[0].status,'pending');assert.equal(summary.workflows[0].outcomes.acceptedWork,false);
- command.result.note=contracts.REPORT.rejected;const result=await org.command(actor,dto.id,command);assert.equal(result.status,'rejected');assert.equal(result.outcomes.acceptedWork,false);
+ command.result=certified;const result=await org.command(actor,dto.id,command);assert.equal(result.status,'rejected');assert.equal(result.outcomes.acceptedWork,false);
 });
 

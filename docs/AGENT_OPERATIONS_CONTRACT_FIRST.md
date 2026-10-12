@@ -1,5 +1,7 @@
 # Contract-first verification and failure review
 
+Current extension: organization-contracts-v2 / chief-report-v2 and stage-capabilities-v1 are documented in AGENT_OPERATIONS_FINAL_REPORT_V2.md. The previous v1 checkpoint/matrix below remains historical evidence. Current release covers19 whole selected runtime/boundary/preflight source files, supplies detailed per-finding QA data and checks semantic input completeness before transport. New capability remains live-unverified; prior standalone QA or v1 stage success is not proof of the new release. Frozen original Chief/observation replays are unchanged, and the non-billable final-report capability blocker has its own immutable fixture.
+
 ## Why the previous green suites were insufficient
 
 The Chief pilot exposed two valid revision namespaces: workflow revision2 and ledger snapshot212. The response schema required a generic expectedRevision integer. Backend semantic validation correctly rejected the model's2. Earlier mocks selected the expected ledger value from internal state; they tested a validator-compatible response rather than whether the model-facing contract described a valid response. The chief-intent-v2 correction removed model-owned concurrency metadata; its next live invocation successfully bound task2/global219 in the backend.

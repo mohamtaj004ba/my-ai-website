@@ -1,5 +1,7 @@
 # CallerCore internal agent organization roadmap
 
+Recovery foundations now exist as disabled offline policy/simulation only (AGENT_OPERATIONS_RECOVERY.md). Future Chief remediation may route to a different specialist or Engineering Auditor within separately enforced grants; independent QA remains mandatory, original failed evidence stays immutable, and new candidate acceptance requires fresh bindings. No recovery executor, department lead, Auditor model, paid retry or write capability is activated. Detailed final reporting is covered by AGENT_OPERATIONS_FINAL_REPORT_V2.md.
+
 Planning only: no new paid execution, autonomous write authority, credentials, tool grants, Production capabilities or mandatory lead-model calls. Chief remains GPT-6.1 Sol Medium; independent visual QA also prefers Sol Medium. GPT-4.1 remains an explicit simple-coordination/comparison choice with no automatic paid fallback. Existing five-stage contracts and historical results are preserved.
 
 | Department | Logical lead and future specialists | Boundary and dependencies |
