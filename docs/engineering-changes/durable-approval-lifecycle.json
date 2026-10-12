@@ -1,0 +1,46 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e67839734e13e7d8d2e0f2cdd3bb6cc0c3ba857afac82212c64c198fecf58324",
+  "risk": "critical",
+  "scope": "Preview-only non-billable durable temporary approval lifecycle correction. No hosted paid approval or activation, model request, new task, grant or reservation.",
+  "riskAnalysis": "Environment-only approval survived pre-initialization failure on an old immutable deployment. Every execution boundary must require central durable current authority; fail closed on store outage. Owner-only activation and renewal, revoke-only cleanup capability, bounded leases and cleanup headroom prevent orphan authority.",
+  "threatModel": {
+    "assets": "Credentials, task permissions, immutable history, spending holds, release authority and independent QA acceptance.",
+    "trustBoundaries": "Owner session versus worker; deployment environment versus central Redis CAS; controller versus hosted runtime; dispatch admission versus in-flight provider transport.",
+    "abuseCases": "Partial activation, lost response, stale deployment, replay, cross-task/source reuse, unavailable store, cancellation/dispatch race, capacity exhaustion and lease expiry.",
+    "mitigations": "Dormant preparation, exact runtime/source binding, atomic task initialization/consumption, per-boundary durable checks, irreversible revocation/tombstone, owner renewal lease, emergency headroom, independent bounded cleanup."
+  },
+  "rollback": "Revert only reviewed feature implementation after checking unrelated changes. Keep paid execution false and do not mutate original task records or settle historical holds. No generic destructive or Production rollback is authorized.",
+  "negativePaths": {
+    "malformed-response": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover malformed-response; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "stale-state": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover stale-state; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "concurrency": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover concurrency; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "cancellation": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover cancellation; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "worker-interruption": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover worker-interruption; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "api-outage": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover api-outage; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "authorization-denial": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover authorization-denial; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "spending-limit": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover spending-limit; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "partial-execution": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover partial-execution; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Environment approval was sufficient before any task existed; disabled replacement could not revoke old deployment.",
+      "detectionGap": "Tests assumed task initialization and terminal workflow state rather than interrupted activation/pre-task authority.",
+      "regression": "17 independent lifecycle QA groups,4 Auditor groups, real Redis lifecycle race case, mandatory108 contract checks.",
+      "historicalPrevention": "Shared-store original/replacement instances: revoke before task creation immediately makes both disabled and paid admission denied; lost prepare/activation responses create no surviving usable authority."
+    }
+  ]
+}

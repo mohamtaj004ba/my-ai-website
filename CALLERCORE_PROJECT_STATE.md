@@ -1,5 +1,20 @@
 # CallerCore project state
 
+## Durable approval lifecycle correction — non-billable publication checkpoint
+
+Root cause: an immutable Preview environment approval remained usable before task initialization; disabling a replacement did not revoke the original. The former tests started after task creation and therefore missed the orphan-authority boundary.
+
+Implemented organization-contracts-v3 / durable-approval-v1. Exact release fingerprint: 924490a9fd5ce3e23941ae6e9fc596c203d574e6f2661c6f63e874216c11dbbe. Central Redis-CAS registry binds owner, preselected task, complete approval digest, scope/budget/expiry, release and exact deployment/source. Owner preparation is dormant; activation is revision guarded; initialization consumes authority and creates task/grant atomically. Revocation works before task creation, cancels active work/grants, preserves terminal records and all holds, and is enforced at every consequential admission. Revoked/expired/replayed/mismatched authorizations and unavailable storage fail closed. Reserved revocation headroom protects cleanup at normal ledger capacity. Actual runtime retires legacy standalone paid entry points.
+
+Trusted-parent callback controller handles lost prepare/activation responses, cancellation, renewal failures, bounded execution and independently bounded revoke/readback cleanup. Owner lease maximum30seconds; renewals cannot extend fixed expiry or revive revoked state. Renewal does not invalidate an otherwise current Chief snapshot; unrelated concurrent state changes still reject. The old outside-Git live controller MUST NOT be reused. No default transport or usable hosted approval is created by this implementation.
+
+Verified locally: full suite2177/2177; mandatory contract gate108/108 including frozen historical failures, request-only five-stage mocks, QA17groups and independent Auditor4groups. Independent QA/Auditor reviewed the exact fingerprint with zero paid transport. Redis third lifecycle integration case added; remote CI/CodeQL/Redis and authenticated disabled Preview/browser checks pending publication, not inferred complete.
+
+Accounting unchanged: $7 retained/$15 ceiling, $2.20 pending uncertainty, $0.128106 known token-derived settled usage already included, $8 remaining. No new paid calls, approvals, grants, captures, tasks or reservations. Historical evidence unchanged. PR5 remains draft/unmerged; Production unchanged. Future four-department roles, Engineering Auditor product capability, autonomous recovery/write executors remain disabled/planned.
+
+Limitations: pre-lifecycle immutable binaries cannot be retrofitted and must remain demonstrably expired/disabled; committed revocation immediately blocks subsequent admissions, but cannot recall a request already admitted/transmitted. A hard-killed controller cannot run finally and authority expires within the30second owner lease. Hosted authenticated owner prepare/activate/renew and real live lifecycle are NOT verified in this paid-disabled pass. Before a separately approved pilot, a trusted owner transport adapter must prove fresh exact-release activation, lease renewal, revocation and both-broker readback; no automatic reuse of historical authorization. See docs/AGENT_OPERATIONS_APPROVAL_LIFECYCLE.md.
+
+
 ## Authorized 4867cb6 pilot — stopped at fresh shutdown preflight (no activation)
 
 Owner authorized one read-only five-stage Sol Medium pilot, subject to every fresh gate. Reconciled feature remote4867cb6656cd29dd8fd967ae9d07fcbdaf114dce with preserved local documentation checkpoint0fa5ef797599a0d5d008444f64dc047b71a30b6e; zero remote-only changes. No application source changes, deployed configuration changes, new hosted approval/grant/task/reservation, model transport, capture, or autonomous remediation occurred. All five stages NOT RUN; technical completion, substantive accuracy and final report live acceptance remain UNVERIFIED. Authorization was not exercised; this checkpoint does not authorize an automatic later attempt after code changes.
