@@ -1,7 +1,7 @@
 {
   "version": "agent-operations-fmea-v1",
   "baseline": "d744f3b",
-  "assessment": "in-progress-nonbillable",
+  "assessment": "verified-with-explicit-limitations-nonbillable",
   "noCriticalFindingInvented": true,
   "risks": [
     {
@@ -11,7 +11,7 @@
       "title": "Pre-task orphan approval",
       "evidence": "d744f3b lifecycle counterfactual and17QA groups",
       "controls": "Durable registry/full binding/CAS consume/revoke/ownerlease",
-      "missingProtection": "Actual hosted owner lifecycle was unverified",
+      "missingProtection": "Harmless actual owner lifecycle now verified; real Node paid-controller transport and paid pipeline remain intentionally unverified.",
       "detectionStrategy": "Inert real-owner hosted probes; expired/revoked/admission readback",
       "recoveryBehavior": "Irreversible revoke; preserveholds; storageoutage deniesadmission",
       "acceptanceCriteria": "Actual old/replacement reject centralrevoke; no paid approval",
@@ -20,7 +20,7 @@
     {
       "id": "AO-02",
       "severity": "High",
-      "status": "corrected-awaiting-final-verification",
+      "status": "corrected-verified",
       "title": "Late provider diagnostics lost after revoke",
       "evidence": "Auditor actualprovider offline reproduction: HTTP200 usage/requestID in thrown error, durable diagnostic null",
       "controls": "Pending hold remains; new execution-bound append-only diagnostic sink",
@@ -33,7 +33,7 @@
     {
       "id": "AO-03",
       "severity": "High",
-      "status": "corrected-awaiting-final-verification",
+      "status": "corrected-verified",
       "title": "Trusted capture bundle outside release lock",
       "evidence": "Prior whole-source list omitted capture/access/geometry/fontmanifest",
       "controls": "New exact source bindings + manifest SHA validation in preview-access",
@@ -46,11 +46,11 @@
     {
       "id": "AO-04",
       "severity": "High",
-      "status": "hosted-verification-pending",
+      "status": "hosted-control-verified-with-restrictions",
       "title": "Owner controller/session transport not demonstrated",
-      "evidence": "Prior callback-only proof, no hosted owner activation",
+      "evidence": "48 preserved owner events plus10 expiration/cleanup events on70458be/c194: real BrowserWorker renewals, crossdeployment revoke before leaseexpiry, hardtermination before/after lease, fixedexpiry activation denial, all8revoked. Independent QA/Auditor read actual downloaded files.",
       "controls": "New owner-only inert zero-call/zero-budget namespace using actuallifecycle/CAS",
-      "missingProtection": "Paid activation/provider end-to-end intentionally untested",
+      "missingProtection": "No Node paid-controller integration; hosted overlapping HTTP/CAS race not proven; adapter faults are not a real Redis outage. Offline and real Redis concurrency tests pass.",
       "detectionStrategy": "Existing owner session, CSRF/member denials, real30second lease and aliasreplacement probes",
       "recoveryBehavior": "Revoke owner-selectedID evenlostresponse; lostcontroller leaseexpires; no recurringwork",
       "acceptanceCriteria": "Owner path passes under real Preview; operational ledger unchanged; exactlimitszero",
@@ -163,7 +163,7 @@
     {
       "id": "AO-13",
       "severity": "Low",
-      "status": "corrected-awaiting-final-verification",
+      "status": "corrected-verified",
       "title": "Dynamic map dispatch diagnostic warning",
       "evidence": "CodeQL unchangedmockverificationmapline31 constrainedprefix",
       "controls": "Own-property checks nowexplicit on all APIaction maps",
@@ -176,15 +176,41 @@
     {
       "id": "AO-14",
       "severity": "Medium",
-      "status": "corrected-awaiting-hosted-repeat",
+      "status": "corrected-verified",
       "title": "Harmless Blob renewal controller used relative URL and hid transport failure",
       "evidence": "Authenticated owner issuance/activate/renew/consume passed onf566; BrowserWorker produced no acknowledgment. ExecutedgeneratedWorker harness reproduces relativeURL failure.",
       "controls": "Absolute same-origin endpoint; visible HTTP/networkerrors; automaticallyrevoke immutableoriginalnonce/slot; capturedWorker preventsrestart race.",
-      "missingProtection": "Corrected controller mustbe reverifiedhosted; Nodepaidparentcontroller remains separate.",
+      "missingProtection": "Corrected real BrowserWorker renewal and hardtermination verified; Node paidparentcontroller remains separate.",
       "detectionStrategy": "Execute actualrenderedworkerscript withrelativeURL-rejectingfetch; actualownerbrowser observesack andtermination expiry.",
       "recoveryBehavior": "Ordinaryfailure attemptscentralrevoke; abruptWorkertermination sendsnorevoke andauthorityexpireswithin30secondlease; no paidpath exists.",
       "acceptanceCriteria": "Realrenewalacks occur, termination preventsfurtheracks, authoritativecontrol falseafterlease; failedresponsesautorevoke correctrecord.",
       "relevantScope": "nonbillable verification harness only"
+    },
+    {
+      "id": "AO-15",
+      "severity": "Medium",
+      "status": "restricted-future",
+      "title": "Distributed lease deadlines use instance clocks",
+      "evidence": "Lifecycle Date.now per instance; exact30second boundary tested with deterministic clocks, no measured crossinstance clockskew bound.",
+      "controls": "Central revocation tombstones remain decisive; shortownerlease, source/deploymentbinding and failclosed storage.",
+      "missingProtection": "No centraltime authority or measured drift bound; slow clock can extend wallclock lease and fastclock can deny early.",
+      "detectionStrategy": "Measure clock offsets and add skew fault cases before unattended operations.",
+      "recoveryBehavior": "Explicit centralrevoke; never claim hardkill causes instantaneous denial.",
+      "acceptanceCriteria": "Document acceptable drift or use authoritative bounded clock before unattended authority.",
+      "relevantScope": "unattended control leases"
+    },
+    {
+      "id": "AO-16",
+      "severity": "Medium",
+      "status": "corrected-verified",
+      "title": "Browser QA relied on absent legacy deployment status",
+      "evidence": "38293688492 stopped before browser tests; commit70458be statusesempty while exactREADYPreviews verified.",
+      "controls": "933d6e0 removes redundant legacywait; authenticated expectedSHA plus immutableURL/SHA remains mandatory,10secondtimeouts/redirecterror.",
+      "missingProtection": "Final933d6e0browser38296134780passed; actual downloaded artifact digest/reports/desktopmobile inspected. Transient network failure still failsclosed; mobileloadeddata and combinedaccounting remain separate AO10.",
+      "detectionStrategy": "Execute actual workflow embedded gate for absentstatus, stale alias, mismatched target, hostile URL and deniedauth.",
+      "recoveryBehavior": "Failclosed with no QAacceptance; rerun nonbillable checks only after exactidentity verified.",
+      "acceptanceCriteria": "Full authenticated browser run on exactpublishedsource with inspectedartifact; no paidverification.",
+      "relevantScope": "hosted verification reliability"
     }
   ]
 }
