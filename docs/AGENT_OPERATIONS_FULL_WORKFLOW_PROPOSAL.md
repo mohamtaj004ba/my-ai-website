@@ -1,6 +1,6 @@
 # Proposed single end-to-end acceptance pilot — requires separate approval
 
-The previous v1 full-pilot authorization was consumed by a blocked single request; it cannot authorize another attempt. The original $0.30 hold and $0.008468 observed-but-unsettled token cost remain separate. No paid request is authorized by the development checkpoint. Do not activate until the final exact-source hosted checks and independent review pass.
+The prior v1 and v2 pilot authorizations are consumed. Latest v2 run stopped after three calls at blind observation; it cannot authorize another attempt. Its full $1 observation hold remains pending, with $0.042616 observed but unsettled usage. The original $0.30 hold and $0.008468 observed-but-unsettled token cost remain separate. No paid request is authorized by the development checkpoint. Do not activate until the mandatory contract-first preflight, final exact-source hosted checks and independent review pass. The new shared release remains live-unverified.
 
 Scope: dedicated CallerCore Agent Operations project `proj_yXcOqJDtCRl2chdkRYAJ6VvH`, pinned protected application source `8133597ff2fc5b48e3de42336e9e06fa4191c2a8`, Legal page illustration and Growth pricing badge only. Four fresh read-only screenshots, desktop/mobile 1440/390 ×1000, capture hashes and same-session geometry. Preserve every historical record and screenshot. No code/customer/Production mutation, additional navigation, recurrence or retries.
 
@@ -16,7 +16,7 @@ Five calls maximum, each admitted separately before dispatch. Up to 150 seconds/
 
 ## Cost and uncertainty
 
-Current retained ceilings $4.70, including $1.20 uncertain history; known settled token-derived usage $0.106654 is already covered and is not added again. New maximum internal reservations **$3.60**, producing **$8.30/$15 retained accounting** if all stages dispatch. Separate holds are never released merely because a dashboard is empty. Every subsequent call requires remaining task/grant/cumulative/period headroom.
+Current retained ceilings $7.00, including $2.20 uncertain history; known settled token-derived usage $0.128106 is already covered and is not added again. New maximum internal reservations **$3.60**, producing **$10.60/$15 retained accounting** if all stages dispatch. Separate holds are never released merely because a dashboard is empty. Every subsequent call requires remaining task/grant/cumulative/period headroom.
 
 Pinned standard Global explicit-no-cache rates: $2/M input, $10/M output below the long-context threshold. Conservative image planning envelope: 102,004 image tokens +40,000 non-image tokens per vision request, at most $0.484008 each. Chief text planning envelope 32,000 input +20,000 output yields $0.264 each. **Full maximum-allowance planning estimate $1.980024**, often actual usage is lower; not a quote or provider cap. Accepted receipts permit up to 200,000 input/20,000 output ($0.60) for each vision call and 32,000/20,000 ($0.264) for each Chief call: **$2.328** total within all per-call holds.
 
@@ -31,7 +31,7 @@ Record execution completion, structural validity, image integrity, substantive a
 ## Activation and cleanup
 
 1. Verify exact feature Preview deployment/source, pinned inspection target, restricted credential/project identity, protection boundaries, ledger headroom and a working disabled rollback deployment. No Production access.
-2. Only after explicit approval: bind the verified issuing owner identity hash in the exact short-lived `organization-evidence-first-v1` approval with `chiefContractVersion=chief-intent-v2` and set required Sol access/estimate flags on the feature Preview branch; enable paid execution and redeploy that branch. Verify all bounds before one initialization. Keep credentials exclusively in the trusted parent.
+2. Only after explicit approval: bind the verified issuing owner identity hash in the exact short-lived `organization-evidence-first-v1` approval with `chiefContractVersion=chief-intent-v2` and the verified `contractVersion`/`contractHash` from mandatory `npm run preflight:agentops` and set required Sol access/estimate flags on the feature Preview branch; enable paid execution and redeploy that branch. Verify all bounds before one initialization. Keep credentials exclusively in the trusted parent.
 3. Execute once, with independent acceptance and abort monitoring; no retry of unknown dispatch or capability loss.
 4. On success, failure or cancellation: immediately set paid false, remove temporary approval/access/estimate activation settings, redeploy disabled configuration, and authenticate both activated and replacement broker readbacks showing `paidExecution=false`. Preserve task/reservation/audit evidence and report any cleanup failure.
 

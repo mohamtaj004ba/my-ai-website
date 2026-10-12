@@ -1,0 +1,40 @@
+{
+  "provenance": {
+    "kind": "recorded-live-response",
+    "stage": "inspect",
+    "sourceReport": "organization-v2-live-report.json",
+    "sourceReportSha256": "f3c4fa2d97973f62cd948ef0305eef8f5bda7988402a9480fd558d2ff65944cd",
+    "requestHash": "068e6da50f192865ccf60936b27925050be00df3148fee8bea310dc72cbe7343",
+    "requestId": "req_143e5fe333264093a05be73582222b52",
+    "responseId": "resp_071516e2cb43f4ae016acc67cd6c8087d08ac1df8dd5abac7c",
+    "rawProviderOutputHash": "e6be5f386aca0bbe48d8101eb689d554f9f6235914ee16a9d02fe8c9fab4d451"
+  },
+  "response": {
+    "model": "gpt-6.1-sol",
+    "status": "completed",
+    "service_tier": "default",
+    "usage": {
+      "input_tokens": 5221,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "output_tokens": 396,
+      "output_tokens_details": {
+        "reasoning_tokens": 107
+      },
+      "total_tokens": 5617
+    },
+    "output": [
+      {
+        "type": "message",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\n  \"stage\": \"inspect\",\n  \"findings\": [\n    {\n      \"code\": \"LEGAL_SAMPLE_LABEL\",\n      \"imageId\": \"I1\",\n      \"note\": \"The Legal section pairs firm-approved intake guidance with a call-log illustration explicitly captioned “Dashboard sample · Example data.”\"\n    },\n    {\n      \"code\": \"LEGAL_MOBILE_HEADING_CLIPPED\",\n      \"imageId\": \"I2\",\n      \"note\": \"The section heading is partially obscured by the top navigation, leaving “contact on your terms.” visible above the intake guidance and sample dashboard.\"\n    },\n    {\n      \"code\": \"GROWTH_DESKTOP_HEADING_OVERLAP\",\n      \"imageId\": \"I3\",\n      \"note\": \"The “Growth” plan heading overlaps the “BUILT TO GROW” badge text, while the $599/mo price remains separately visible below.\"\n    },\n    {\n      \"code\": \"GROWTH_MOBILE_HEADING_OVERLAP\",\n      \"imageId\": \"I4\",\n      \"note\": \"The mobile Growth card also shows its “Growth” heading overlapping the “BUILT TO GROW” badge text, with the $599/mo price clearly displayed beneath it.\"\n    }\n  ],\n  \"note\": \"Read-only inspection of the four supplied screenshots; no external tools used.\"\n}"
+          }
+        ]
+      }
+    ]
+  }
+}

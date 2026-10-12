@@ -1,0 +1,7 @@
+'use strict';
+const path=require('node:path'),{spawnSync}=require('node:child_process'),contracts=require('../lib/agent-operations-contracts'),root=path.resolve(__dirname,'..');
+const release=contracts.assertRelease();
+const tests=['agent-operations-contract-first.test.js','agent-operations-contract-security-review.test.js','agent-operations-chief-v2.test.js','agent-operations-chief-v2-review.test.js','agent-operations-organization-contract.test.js','agent-operations-organization.test.js','agent-operations-organization-api.test.js','agent-operations-diagnostics.test.js'].map(n=>path.join(root,'tests',n));
+const env=Object.fromEntries(Object.entries(process.env).filter(([k])=>!/^OPENAI_|^CALLERCORE_|^VERCEL_/i.test(k))),result=spawnSync(process.execPath,['--require',path.join(root,'tests/helpers/agent-operations-offline-only.cjs'),'--test',...tests],{cwd:root,env,stdio:'inherit',windowsHide:true});
+if(result.status!==0)process.exit(result.status||1);
+console.log(JSON.stringify({contractPreflight:'passed',...release,modelRequests:0,liveWorkflowVerified:false,approvalMustBind:['contractVersion','contractHash'],requiresFreshHostedSourceAndBudgetChecks:true}));

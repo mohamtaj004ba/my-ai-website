@@ -1,0 +1,14 @@
+'use strict';
+// Transport-only provider double. No store, DTO, capability, revision, or expected answer input.
+module.exports=function reply(body,{reject=false}={}){
+ const {REPORT,valid,assertRequest}=require('../../lib/agent-operations-contracts');
+ const stage=body.tools?.[0]?.name==='delegate_inspection_v2'?'chief':body.text.format.schema.properties.stage.enum[0];assertRequest(stage,body);
+ const data=stage==='chief'?null:JSON.parse(body.input[0].content[0].text);let result;
+ if(stage==='chief')result={action:'delegate',agent:'website-visual-qa',reason:'Inspect only the backend-assigned read-only scope.'};
+ if(stage==='inspect')result={stage,findings:[{code:'BADGE_VISIBLE',imageId:'I3',note:reject?'The badge overlaps the price.':'A badge is visible in the pricing image.'}],note:'Synthetic provider observation, not live visual evidence.'};
+ if(stage==='observe'){if(Object.hasOwn(data,'claims')||Object.hasOwn(data,'results'))throw Error('Blind input leak');result={stage,facts:data.evidence.images.map((im,i)=>({id:'O'+(i+1),imageId:im.id,region:[.1,.1,.9,.9],observed:i>=2?'A badge and separate price are visible.':'A dashboard illustration is visible.',readability:'clear',uncertainty:''})),note:'Synthetic transport-only blind observations.'};}
+ if(stage==='adjudicate')result={stage,findings:data.claims.map(c=>{const refs=data.observation.result.facts.filter(o=>o.imageId===c.imageId);return{code:c.code,decision:reject?'reject':'accept',atoms:c.atoms.map(a=>({id:a.id,support:reject?'contradicted':'supported',probability:reject?.1:.99,reason:reject?'The sealed fact identifies separate price.':'The sealed fact identifies the visible badge.',observations:[refs[0].id],evidence:[{imageId:c.imageId,region:refs[0].region}],uncertainty:''}))};}),note:'Synthetic transport-only adjudication.'};
+ if(stage==='chief_review')result={stage,note:REPORT[data.outcomes.acceptedWork?'accepted':'rejected']};
+ if(!valid(stage,result))throw Error('Mock response violates model-facing contract');
+ return{model:'gpt-6.1-sol',status:'completed',service_tier:'default',usage:{input_tokens:100,output_tokens:20,input_tokens_details:{cached_tokens:0,cache_write_tokens:0},output_tokens_details:{reasoning_tokens:10}},output:stage==='chief'?[{type:'function_call',name:'delegate_inspection_v2',arguments:JSON.stringify(result)}]:[{type:'message',content:[{type:'output_text',text:JSON.stringify(result)}]}]};
+};

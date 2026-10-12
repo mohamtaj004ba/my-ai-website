@@ -44,6 +44,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Agent Operations contract preflight
+        run: node scripts/agent-operations-contract-preflight.cjs
       - name: Plans and entitlements
         run: node --test tests/plans.test.js
       - name: Business hours
