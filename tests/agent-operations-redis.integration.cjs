@@ -39,3 +39,10 @@ test('real Redis Lua serializes creation, claims, budgets and a persisted manage
   assert.equal((await store().read()).reservations.length,16);
   // No deletes/FLUSH commands; the CI container is disposed by the runner.
 });
+test('organization grants, delegation, sealed QA and cancellation persist through real Redis CAS connections',async()=>{
+  const prefix='test:org-agentops:'+randomUUID()+':',kv={get:key=>command(['GET',prefix+key]),eval:(script,keys,args)=>command(['EVAL',script,keys.length,...keys.map(k=>prefix+k),...args])};
+  const scope={origin:'https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app',commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8',paths:['/industries/legal','/#pricing']},owner={kind:'owner',id:'ci-fixture',verifiedOwner:true},connect=()=>require('../lib/agent-operations-organization').createOrganization(redisAdapter(kv),{scope});
+  const input={idempotencyKey:'redis-owner-grant',level:'inspect-and-test',expiresAt:Date.now()+3600000,budgetMicros:5000000,maxWorkflows:2,maxConcurrent:1,roles:['chief-of-staff','website-visual-qa','independent-qa']};const [a,b]=await Promise.all([connect().issueGrant(owner,input),connect().issueGrant(owner,input)]);assert.equal(a.id,b.id);
+  const created=await connect().create(owner,{grantId:a.id,idempotencyKey:'redis-full-workflow'});const outcome=await require('../lib/agent-operations-organization-runner').runMock(connect(),created);assert.equal(outcome.status,'verified');assert.equal((await connect().summary()).workflows[0].outcomes.acceptedWork,true);
+  const second=await connect().create(owner,{grantId:a.id,idempotencyKey:'redis-cancel-workflow'});await connect().revoke(owner,{grantId:a.id,expectedRevision:1});assert.equal((await connect().summary()).workflows.find(w=>w.id===second.workflow.id).status,'cancelled');assert.equal((await connect().summary()).budget.retainedMicros,0);
+});

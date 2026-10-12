@@ -4,20 +4,20 @@ const {createStore,hash,LIMITS}=require('../lib/agent-operations-store');
 const {PROJECT}=require('../lib/agent-operations-project');
 const {MODEL,PRICING,approvalCheck}=require('../lib/agent-operations-pilot');
 const {trustedApproval}=require('../lib/agent-operations-api');
-function fixture(){let raw=null,now=Date.UTC(2026,9,11,12);const store=createStore({read:async()=>raw,compare:async(a,b)=>{if(raw!==a)return false;raw=b;return true;}},{clock:()=>now,scope:{origin:'https://offline-expanded.vercel.app',commit:'a'.repeat(40)}});return {store,clock:()=>now,advance:ms=>{now+=ms;}};}
+function fixture(prior=0){let raw=prior?JSON.stringify({version:1,revision:0,tasks:[],reservations:[{mode:'pilot',taskId:'historical',ceilingMicros:prior,status:'pending'}]}):null,now=Date.UTC(2026,9,11,12);const store=createStore({read:async()=>raw,compare:async(a,b)=>{if(raw!==a)return false;raw=b;return true;}},{clock:()=>now,scope:{origin:'https://offline-expanded.vercel.app',commit:'a'.repeat(40)}});return {store,clock:()=>now,advance:ms=>{now+=ms;}};}
 function approval(store,now,id){return {...PROJECT,authorized:true,id:'pilot_expanded_'+id,scopeHash:hash(store.scope),expiresAt:now+600000,maxMicros:5000000,model:MODEL,pricingVersion:PRICING.version};}
 async function create(f,id){const a=approval(f.store,f.clock(),id);return f.store.create({principal:'offline-expanded',idempotencyKey:'expanded_'+id,objective:'Synthetic offline limits verification',mode:'pilot',approval:a});}
 async function reserveAndBlock(f,id){const task=await create(f,id),claimed=await f.store.command(task.id,{type:'claim'});await f.store.command(task.id,{type:'reserve',fence:claimed.fence,executionId:'exec_expanded_'+id});await f.store.command(task.id,{type:'fail',fence:claimed.fence});return task;}
-test('$5 cumulative paid allowance includes retained $.30 and refuses another full reservation beyond ceiling',async()=>{
-  const f=fixture();await reserveAndBlock(f,'retained');const retained=structuredClone((await f.store.read()).reservations[0]);
-  for(let n=0;n<15;n++)await reserveAndBlock(f,'new_'+n);
-  let state=await f.store.read();assert.equal(state.reservations.length,16);assert.equal(state.reservations.reduce((n,r)=>n+r.ceilingMicros,0),4800000);assert.deepEqual(state.reservations[0],retained);
-  const extra=await create(f,'denied_day'),claimed=await f.store.command(extra.id,{type:'claim'});await assert.rejects(f.store.command(extra.id,{type:'reserve',fence:claimed.fence,executionId:'exec_over_day'}),/Daily budget exhausted/);
-  f.advance(86400000);const next=await create(f,'denied_month'),c=await f.store.command(next.id,{type:'claim'});await assert.rejects(f.store.command(next.id,{type:'reserve',fence:c.fence,executionId:'exec_over_month'}),/Monthly budget exhausted/);
-  state=await f.store.read();assert.equal(state.reservations.length,16);assert.deepEqual(state.reservations[0],retained);assert.ok(state.reservations.every(r=>r.status==='pending'));
+test('$15 cumulative paid allowance includes retained $.30 and refuses another full reservation beyond ceiling',async()=>{
+  const f=fixture(14700000);await reserveAndBlock(f,'retained');const retained=structuredClone((await f.store.read()).reservations[0]);
+  // Historical allowance remains intact; one final $.30 reservation fills the $15 ceiling.
+  let state=await f.store.read();assert.equal(state.reservations.length,2);assert.equal(state.reservations.reduce((n,r)=>n+r.ceilingMicros,0),15000000);assert.deepEqual(state.reservations[0],retained);
+  const extra=await create(f,'denied_day'),claimed=await f.store.command(extra.id,{type:'claim'});await assert.rejects(f.store.command(extra.id,{type:'reserve',fence:claimed.fence,executionId:'exec_over_day'}),/Cumulative budget exhausted/);
+  f.advance(86400000);const next=await create(f,'denied_month'),c=await f.store.command(next.id,{type:'claim'});await assert.rejects(f.store.command(next.id,{type:'reserve',fence:c.fence,executionId:'exec_over_month'}),/Cumulative budget exhausted/);
+  state=await f.store.read();assert.equal(state.reservations.length,2);assert.deepEqual(state.reservations[0],retained);assert.ok(state.reservations.every(r=>r.status==='pending'));
 });
 test('ten-call hard gate rejects an eleventh reservation and ten-minute deadline is unchanged',async()=>{
-  assert.equal(LIMITS.calls,10);assert.equal(LIMITS.durationMs,600000);assert.equal(LIMITS.taskMicros,5000000);assert.equal(LIMITS.dayMicros,5000000);assert.equal(LIMITS.monthMicros,5000000);assert.equal(LIMITS.callMicros,300000);assert.equal(LIMITS.attempts,2);
+  assert.equal(LIMITS.calls,10);assert.equal(LIMITS.durationMs,600000);assert.equal(LIMITS.taskMicros,5000000);assert.equal(LIMITS.dayMicros,15000000);assert.equal(LIMITS.monthMicros,15000000);assert.equal(LIMITS.callMicros,300000);assert.equal(LIMITS.attempts,2);
   const f=fixture(),task=await create(f,'call_gate'),claimed=await f.store.command(task.id,{type:'claim'});assert.equal(task.deadline-task.createdAt,600000);
   for(let n=0;n<10;n++)await f.store.command(task.id,{type:'reserve',fence:claimed.fence,executionId:'exec_call_gate_'+n});
   await assert.rejects(f.store.command(task.id,{type:'reserve',fence:claimed.fence,executionId:'exec_call_gate_11'}),/Call limit reached/);assert.equal((await f.store.read()).tasks[0].calls,10);

@@ -9,7 +9,8 @@ module.exports=async(req,res)=>{
     const {getSession}=require('../lib/auth');
     const {rateLimit}=require('../lib/rate-limit');
     const {createStore,redisAdapter}=require('../lib/agent-operations-store');
-    const store=createStore(redisAdapter(kv),{scope:{origin:process.env.CALLERCORE_AGENTOPS_PREVIEW_ORIGIN,commit:process.env.CALLERCORE_AGENTOPS_COMMIT}});
-    return require('../lib/agent-operations-api').createHandler({env:process.env,store,getSession,getMember:email=>kv.get('user:email:'+String(email).trim().toLowerCase()),rateLimit})(req,res);
+    const adapter=redisAdapter(kv),store=createStore(adapter,{scope:{origin:process.env.CALLERCORE_AGENTOPS_PREVIEW_ORIGIN,commit:process.env.CALLERCORE_AGENTOPS_COMMIT}});
+    const organization=require('../lib/agent-operations-organization').createOrganization(adapter,{scope:store.scope,liveApproval:()=>require('../lib/agent-operations-organization-approval').approval(process.env,store.scope)});
+    return require('../lib/agent-operations-api').createHandler({env:process.env,store,organization,getSession,getWorkspace:id=>kv.get('workspace:'+id),getMember:email=>kv.get('user:email:'+String(email).trim().toLowerCase()),rateLimit})(req,res);
   }catch{res.setHeader('Cache-Control','no-store');return res.status(503).json({error:'Agent Operations configuration is unavailable.'});}
 };
