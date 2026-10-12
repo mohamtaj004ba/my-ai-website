@@ -31,7 +31,7 @@ Record execution completion, structural validity, image integrity, substantive a
 ## Activation and cleanup
 
 1. Verify exact feature Preview deployment/source, pinned inspection target, restricted credential/project identity, protection boundaries, ledger headroom and a working disabled rollback deployment. No Production access.
-2. Only after explicit approval: set the exact short-lived `organization-evidence-first-v1` approval and required Sol access/estimate flags on the feature Preview branch; enable paid execution and redeploy that branch. Verify all bounds before one initialization. Keep credentials exclusively in the trusted parent.
+2. Only after explicit approval: bind the verified issuing owner identity hash in the exact short-lived `organization-evidence-first-v1` approval and set required Sol access/estimate flags on the feature Preview branch; enable paid execution and redeploy that branch. Verify all bounds before one initialization. Keep credentials exclusively in the trusted parent.
 3. Execute once, with independent acceptance and abort monitoring; no retry of unknown dispatch or capability loss.
 4. On success, failure or cancellation: immediately set paid false, remove temporary approval/access/estimate activation settings, redeploy disabled configuration, and authenticate both activated and replacement broker readbacks showing `paidExecution=false`. Preserve task/reservation/audit evidence and report any cleanup failure.
 
