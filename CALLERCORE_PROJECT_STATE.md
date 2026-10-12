@@ -1,5 +1,16 @@
 # CallerCore project state
 
+## Actual Node controller integration — non-billable publication checkpoint
+
+Continuefrompublished933d6e0 and preservedlocalf73de36. Entire16-risk register reviewed; no newlysubstantiatedCritical. HighAO04 historicallocalhelper was notwiredtothe durableownerlifecycle andusedobsolete911fce/4.7/1.2assumptions; retiredunconditionally withbyteexactbackuphashc69742ad6a0b0fa9bbbc5feb0c02c9d5613c9198ec292b1c55fb120b51d41e94. Newtrackednode-owner-controller-v1 hasactualbackendorganizationports, boundedrenewal, exactreceipt/terminalbindings, configuredrunPilot and owner-authenticatedsupervisePilot plusrestrictedremote-worker initializeOnce. No ownercookie export,newcredential/operationalrole orlivepermissionactivated.
+
+SeparateAuditor/QA exposedhungrenewals/latequeuedrenewals, automaticterminalrevoke falselyreportedfailure, terminal-before-observation andterminalrenewal races, andownerworkspace-switchreauthorization. Corrected withboundedrenewals, backendterminalprojectionchecks andoriginalworkspacebinding; no hiddenmockdelay/response repair. ActualownerAPI +remoteWorker +runApproved mocks accepted/rejected full5stages; disabledownerpilotaction denieswithoutmutations. NewlocalhostHTTPdisconnect testusesactual Node responseclosehook andsharedinertCAS; paidfetchpreloader remainsunchanged. RealRedisNodeprocesshardkill/30secondlease andcontroller/race tests added forCI.
+
+HostedNodeverification andfreshCI/CodeQL/Redis/browser evidence pendingpublication, notinferredpassing. Existingowner-onlyinertaction invokesSAME Nodecore/actualsharedlifecycle with0calls/0micros/authorizedfalse. Serverselectsallports/scenarios; no operationaltask/grant/reservation/provider. Newactualpilotownerpage/route requirespaidtrue andconfiguredexactexistingapproval/currentowner; realconfiguration stayspaidfalse. ExistingProplanverified; APIfunction660secondlimitprepared for600secondtask+boundedcleanup, no billing/planchange. Independentoriginal/replacementreadback stillrequired.
+
+Historical$7retained/$2.20pending/$15ceiling/$8remaining unchanged; no newpaidrequest/approval orsettlement. Fullcurrentverification andexactrelease willreplacependingstatus atfinalcheckpoint. Architecture/riskreview: docs/AGENT_OPERATIONS_NODE_CONTROLLER.md; existingfourdepartment/Auditor/recoveryfoundations preserved.
+
+
 ## Proactive engineering assessment — final non-billable checkpoint (October 12)
 
 Published security implementation **f566f89e045693890b166846d54aeda8c1b335f3** and **70458befc1eabeaa2837f7495d092dbce988d3a7**; verification infrastructure correction **933d6e0a6c8891ef06e1f92cc29b591c8b2de866** on feature/callercore-dashboards. Existing d744f3b, local8cd69dc/68d1966 and historical results preserved. Execution fingerprint **organization-contracts-v3 / c194a01ef23461484ec23670713c75997f79d5f33d6e8935b3f09361bff377c2**. Chief-intent-v2, chief-report-v2 and stage-capabilities-v1 unchanged. The last commit changes only CI verification and its tests/plan, so the execution bundle fingerprint remains the same; deployed commit identity is checked separately.

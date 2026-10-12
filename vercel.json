@@ -64,5 +64,10 @@
       "path": "/api/analytics-maintenance",
       "schedule": "17 5 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "api/agent-operations.js": {
+      "maxDuration": 660
+    }
+  }
 }
