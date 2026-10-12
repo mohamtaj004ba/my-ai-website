@@ -1,5 +1,7 @@
 # Proposed single end-to-end acceptance pilot — requires separate approval
 
+Permanent quality prerequisite: run `npm run preflight:live -- --base <verified-before-sha>` (engineering change/source gate plus unchanged contract-first gate). This is offline evidence only; independently reviewed exact-source hosted safeguards, current spending/uncertainty, disabled rollback and fresh owner approval remain mandatory. No execution is authorized by this document.
+
 The prior v1 and v2 pilot authorizations are consumed. Latest v2 run stopped after three calls at blind observation; it cannot authorize another attempt. Its full $1 observation hold remains pending, with $0.042616 observed but unsettled usage. The original $0.30 hold and $0.008468 observed-but-unsettled token cost remain separate. No paid request is authorized by the development checkpoint. Do not activate until the mandatory contract-first preflight, final exact-source hosted checks and independent review pass. The new shared release remains live-unverified.
 
 Scope: dedicated CallerCore Agent Operations project `proj_yXcOqJDtCRl2chdkRYAJ6VvH`, pinned protected application source `8133597ff2fc5b48e3de42336e9e06fa4191c2a8`, Legal page illustration and Growth pricing badge only. Four fresh read-only screenshots, desktop/mobile 1440/390 ×1000, capture hashes and same-session geometry. Preserve every historical record and screenshot. No code/customer/Production mutation, additional navigation, recurrence or retries.

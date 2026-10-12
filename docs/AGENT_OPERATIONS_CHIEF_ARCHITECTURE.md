@@ -1,5 +1,11 @@
 # CallerCore Chief model and graduated autonomy architecture
 
+## Current architecture synchronization — permanent quality framework
+
+The historical preparation checkpoint below is preserved. Current implementation, accounting and readiness are authoritative in `CALLERCORE_PROJECT_STATE.md` and `AGENT_OPERATIONS_CONTRACT_FIRST.md`; the earlier $5 budget/"no initializer" statements below are historical, not current. Current retained accounting is $7/$15 with $2.20 pending uncertainty, $0.128106 known settled token-derived usage already covered, no release/reclassification. The five-stage organization path now exists with backend-owned chief-intent-v2 and shared organization-contracts-v1; corrected observation/adjudication/final Chief remain live unverified.
+
+Chief remains GPT-6.1 Sol Medium. Permanent cross-product engineering standards are in `ENGINEERING_QUALITY.md`, including a distinct Engineering Auditor / Red Team role, independent mandatory acceptance and risk-based CI plan gates. `AGENT_ORGANIZATION_ROADMAP.md` defines four logical departments and staged implementation. Department leads are not mandatory model calls. Auditor metadata and acceptance evaluators do not activate a model, runtime executor, authenticated review store or new permission. Paid execution and autonomous writes remain disabled. Existing worker roles/contracts are unchanged.
+
 This is Preview-only preparation. Paid execution and new write capabilities remain disabled. QA hardening was completed first at7477f21, including exact-source hosted browser checks. Historical execution profiles, screenshots, findings, observations, verdicts and reservations are immutable.
 
 ## Model selection and native contract

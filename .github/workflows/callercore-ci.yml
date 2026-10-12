@@ -38,14 +38,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Agent Operations contract preflight
         run: node scripts/agent-operations-contract-preflight.cjs
+      - name: Engineering risk and prevention preflight
+        env:
+          QUALITY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/engineering-quality-preflight.cjs --base "$QUALITY_BASE"
       - name: Plans and entitlements
         run: node --test tests/plans.test.js
       - name: Business hours
