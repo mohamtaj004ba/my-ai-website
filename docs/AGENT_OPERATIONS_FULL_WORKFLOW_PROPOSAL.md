@@ -1,5 +1,7 @@
 # Proposed single end-to-end acceptance pilot — requires separate approval
 
+Execution approval must not yet be requested: actual owner-authenticated hosted Node lifecycle scenarios remain outstanding because the Chrome extension is unavailable. Proposed source c13ef81da3363d2e734f984e87912a6297ff0d0e; disabled replacement dpl_6NcvyPyH7tqXRjaSGvCnoBXhpZiu. Revalidate exact deployed source and ledger after that blocker is resolved.
+
 Current correction: node-owner-controller-v1 uses authenticated backend owner supervision and the existing restricted remote worker. Current execution release is organization-contracts-v3 / 7363ce3ab23d41aa667fe6137db4244e26535a34825bf1218360fa678594c813. Chief-intent-v2, chief-report-v2 and stage-capabilities-v1 remain authoritative. No paid approval or live execution is created by this document. Hosted Node, CI/Redis/browser results must be recorded in the final canonical handoff before requesting execution approval.
 
 Permanent quality prerequisite: run `npm run preflight:live -- --base <verified-before-sha>` (engineering change/source gate plus unchanged contract-first gate). This is offline evidence only; independently reviewed exact-source hosted safeguards, current spending/uncertainty, disabled rollback and fresh owner approval remain mandatory. No execution is authorized by this document.

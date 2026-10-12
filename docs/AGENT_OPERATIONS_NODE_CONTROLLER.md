@@ -1,6 +1,6 @@
 # Tracked Node owner controller and restricted worker
 
-Status: non-billable implementation verification in progress. Paid execution remains disabled. Historical standalone organization-v2-live-control.cjs is retired unconditionally; its exact original bytes are preserved outside Git under SHA256 c69742ad6a0b0fa9bbbc5feb0c02c9d5613c9198ec292b1c55fb120b51d41e94. Never patch its obsolete source/accounting constants and reuse it.
+Status: actual source/offline composition and real Redis verified; actual hosted owner Node scenarios blocked by absent Chrome extension. No live pilot readiness claim. Paid execution remains disabled. Historical standalone organization-v2-live-control.cjs is retired unconditionally; its exact original bytes are preserved outside Git under SHA256 c69742ad6a0b0fa9bbbc5feb0c02c9d5613c9198ec292b1c55fb120b51d41e94. Never patch its obsolete source/accounting constants and reuse it.
 
 ## Risk analysis and actual boundaries
 
@@ -39,3 +39,17 @@ Before autonomous writes, distinct reviewer attestations, monitoring, capacity-a
 ## Build configuration identity
 
 The first36b59ac Preview build failed closed: Vercel minified vercel.json before npm build, unlike the GitHub checkout. A diagnostic-only Preview build printed identical parsed configuration and the differing raw-source fingerprint. The release now fingerprints onlyvercel.json as parsed JSON, preserving every key/value/type and array order. Whitespace can differ; semantic changes and malformedJSON still fail closed. All other selected sources retain exact normalized-text binding.
+
+## Evidence-based readiness at c13ef81
+
+| Boundary | Verified evidence | Remaining limitation |
+|---|---|---|
+| Chief delegation, specialist, blind observation, adjudication, detailed final report | Shared contract unit/integration checks, historical frozen-response replays, request-faithful five-stage mocks; accepted and rejected work preserve backend authority | Complete current five-stage live provider workflow remains unverified |
+| Actual owner supervisor and restricted worker | Real API handler composition, initialization once, terminal and renewal races, owner workspace changes, no hidden response repairs | Actual owner-authenticated hosted Node scenario has not run |
+| Revocation/partial failures/concurrency | Native localhost HTTP disconnect and disposable real Redis6cases, including killed actualNodeprocess with30second lease | Cloud Redis outage and hosted function hardkill not induced |
+| Hosted release and accounting | c13ef81/7363ce exact protected deployment; current and six older/original brokers paidfalse; baseline window removed on replacement; historical ledger unchanged | Immutable original inert test window expires at its fixed deadline; it can only issue zero-call/zero-budget probe records, never paid authority |
+| Independent review | QA19groups and Auditor9groups, mandatory preflight154 and full2230 | Both reviewers explicitly withhold livepilot readiness pending hosted owner Node verification |
+
+Explicit centralrevocation denies new admission immediately at the next authoritative boundary; it does not wait for the30secondlease. Abruptprocessdeath without revocation leaves the last valid ownerlease until expiry; instance clock skew remains AO15. A request already transmitted cannot be recalled. Diagnostic receipts never restore permission, alter acceptance or silently settle a pendinghold.
+
+Browser QA38304701184attempt2 passed on exactc13ef81, verified artifact11772807860 ZIP0f25c7b256030c31ced2af331733c16826ba26ffd78b4595a3ea74e1a553a9d3;502manifest screenshots/0browsererrors/6nonseveredrift. Independent QA inspected actual reports and desktop/mobile PNGs. Legacy desktop combined-accounting and mobile data-readiness limitations remainAO10, not resolved by fixture pass. This does not replace actual ownerNode lifecycle scenarios.
