@@ -2,7 +2,7 @@
 // No shell interpolation, no plan-provided commands, no network or model dispatch.
 const {execFileSync,spawnSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 const policy=require('../lib/engineering-quality'),root=path.resolve(__dirname,'..');
-const BASELINE='edc7a89d43d807012b796e470d8fb80d187739ba';
+const BASELINE='edc7a89d43d807012b796e470d8fb80d187739ba',PROACTIVE_BASELINE='68d19669a149e873f6ff9d5a6dad8bfe1d4d3e22';
 function git(args){return execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:20*1024*1024});}
 function recordPath(p){return /^docs\/engineering-changes\/[a-z0-9-]+\.json$/.test(p);}
 function digestEntries(entries){return policy.hash(entries.sort((a,b)=>a.path.localeCompare(b.path,'en')));}
@@ -11,12 +11,12 @@ function changes(base,head){
  const names=git(['diff','--no-renames','--name-only','-z',base,head,'--']).split('\0').filter(Boolean);
  return names.filter(p=>!recordPath(p)).map(p=>{policy.canonical(p);return{path:p,oldBlob:treeBlob(base,p),blob:treeBlob(head,p)};});
 }
-function check(entries,records){
+function check(entries,records,{proactive=false}={}){
  if(!entries.length)return {skipped:'records-only-or-empty'};
  const digest=digestEntries(entries),classification=policy.classify(entries.map(x=>x.path));
  const plans=records.filter(p=>p.changeDigest===digest);
  if(plans.length!==1)throw Error('Exactly one matching engineering change plan required: '+digest);
- policy.validatePlan(plans[0],digest,classification);
+ policy.validatePlan(plans[0],digest,classification);if(proactive&&classification.risk==='critical')policy.validateProactive(plans[0]);
  return {digest,...classification,planRisk:plans[0].risk,verified:'plan-and-source-binding',liveVerified:false};
 }
 function working(){
@@ -36,7 +36,7 @@ function committed(base,head='HEAD'){
   if(parents.length!==1)throw Error('Merge commits require explicit review; linear feature history required');
   const entries=changes(parents[0],commit),files=git(['ls-tree','-r','--name-only',commit,'--','docs/engineering-changes']).trim().split('\n').filter(recordPath);
   const records=files.map(p=>JSON.parse(git(['show',commit+':'+p])));
-  results.push({commit,...check(entries,records)});
+  let proactive=false;try{git(['merge-base','--is-ancestor',PROACTIVE_BASELINE,commit]);proactive=commit!==PROACTIVE_BASELINE;}catch{}results.push({commit,...check(entries,records,{proactive})});
  }
  return results;
 }
@@ -48,7 +48,7 @@ if(require.main===module){try{
   if(!base)throw Error('Explicit --base required; no silent empty diff');
   const results=committed(base);
   const env=Object.fromEntries(Object.entries(process.env).filter(([k])=>!/^OPENAI_|^CALLERCORE_|^VERCEL_/i.test(k)));
-  const t=spawnSync(process.execPath,['--require',path.join(root,'tests/helpers/agent-operations-offline-only.cjs'),'--test',path.join(root,'tests/engineering-quality.test.js'),path.join(root,'tests/engineering-quality-security-review.test.js')],{cwd:root,env,stdio:'inherit',windowsHide:true});
+  const t=spawnSync(process.execPath,['--require',path.join(root,'tests/helpers/agent-operations-offline-only.cjs'),'--test',path.join(root,'tests/engineering-quality.test.js'),path.join(root,'tests/engineering-quality-security-review.test.js'),path.join(root,'tests/engineering-proactive-review.test.js')],{cwd:root,env,stdio:'inherit',windowsHide:true});
   if(t.status!==0)throw Error('Engineering policy regressions failed');
   console.log(JSON.stringify({engineeringPreflight:'passed',version:policy.VERSION,results,paidPermission:false,writePermission:false,acceptanceNotInferred:true}));
  }
