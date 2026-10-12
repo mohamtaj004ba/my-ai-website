@@ -1,5 +1,10 @@
 # CallerCore project state
 
+## Owner Verification panel — implementation checkpoint
+
+Owner authorized the missing authenticated admin integration. Added the minimal Preview-only inert panel using existing owner/session/workspace/same-origin endpoints and actual tracked Node controller. Server advertises availability only in a finite paid-disabled Preview context with current release lock; nonowner/worker/Production denied. Fixed eleven scenarios plus cancellation, exact record readback/revocation and evidence download; no paid route, new credentials, operational tasks/grants/reservations or provider requests. Separate outcomes preserve failed controller results even after successful cleanup. Independent QA7groups and Auditor3groups passed; reviewers prompted stricter record/release/runtime/zero-limit/lease0 cleanup checks. Full2240/2240 and mandatory164/164 passed before publication; final CI/Redis/CodeQL/hosted results pending. Original evidence and 15/7/2.20/8 accounting unchanged. See docs/AGENT_OPERATIONS_OWNER_VERIFICATION.md. No paid pilot approval.
+
+
 ## Normal admin navigation review — owner controls not implemented
 
 Owner supplied new differential evidence: regular Chrome reaches the exact API URL and receives CallerCore Authentication required, while the Work-connected browser returned ERR_BLOCKED_BY_CLIENT. This is user-provided evidence, not an independent regular-Chrome retest. Refreshed Chrome connection5 and used only normal /admin-dashboard → Agent Operations navigation. The existing authenticated session again loaded actual persisted state with paid execution disabled. DOM inspection shows zero links and only Refresh/Queue mock inspection in that region.
