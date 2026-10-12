@@ -3,6 +3,7 @@ const routing=require('../lib/agent-operations-model-policy'),chief=require('../
 const scope={commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8'};
 const snapshot=()=>({revision:3,tasks:[{id:'task-one',revision:2,status:'blocked',stage:'chief',secret:'PRIVATE_SECRET',results:{note:'DO_NOT_INJECT'},outcomes:{acceptedWork:false}}],reservations:[{mode:'pilot',ceilingMicros:900000,status:'pending'},{mode:'pilot',ceilingMicros:3500000,status:'settled',actualMicros:106654}]});
 const ctx=()=>context.fromSnapshot(snapshot(),scope);
+test('Chief context distinguishes synthetic acceptance from real accepted work',()=>{const s=snapshot();s.operations={workflows:[{id:'mock-workflow',profile:'organization-evidence-first-v1',mode:'mock',revision:1,status:'verified',outcomes:{acceptedWork:true,finalAcceptance:'passed',substantive:'passed'}}],reservations:[]};const t=context.fromSnapshot(s,scope).body.tasks.find(t=>t.id==='mock-workflow');assert.equal(t.mode,'mock');assert.equal(t.mockAccepted,true);assert.equal(t.acceptedWork,false);});
 test('preferred Chief and independent QA use Sol Medium; fallback is explicit, simple/comparison-only, never an automatic retry',()=>{
  for(const role of ['chief-of-staff','independent-qa']){const p=routing.select({role});assert.equal(p.model,'gpt-6.1-sol');assert.equal(p.reasoningEffort,'medium');assert.equal(p.executionAuthorized,false);assert.equal(p.automaticFallback,false);}
  assert.equal(routing.select({role:'chief-of-staff',purpose:'simple-coordination',fallbackExplicitlySelected:true}).model,'gpt-4.1-2025-04-14');
