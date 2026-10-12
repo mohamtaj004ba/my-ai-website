@@ -1,5 +1,16 @@
 # CallerCore project state
 
+## Sol image-budget prerequisite review — October 11
+
+Status: offline reservation/arithmetic checks passed; live image-budget prerequisite remains NOT PASSED. Paid execution is disabled. The conservative envelope across documented image methods is 102,004 image tokens plus 40,000 non-image tokens/request. Current 25,000 total output tokens gives $1.068016/two calls, exceeding proposed $1. Recommend 20,000 total output tokens/call and verified pre-dispatch input <=145,000: $0.49 maximum/call, $0.50 reservation/call, $1 new/$3.40 retained within $5. This adjustment is proposed only, not implemented or activated.
+
+Official vision documentation omits Sol6.1 sizing; a cross-model envelope cannot be represented as a Sol-specific guaranteed bound. The existing120,000input receipt guard acts after charging and does not prove pre-dispatch cost. Do not enable the vision verification flag from the20,000/image heuristic or from this estimate. Same-body non-generating token counting is documented, but its zero-charge billing contract is not established by opened sources; no endpoint call was made. Lower output or detail alone cannot prove an unknown input charge. Further searches/probes stopped at this specific blocker; no access, credit or tier blocker is inferred.
+
+Verified 00:45:04.843 UTC: all four original PNG hashes/dimensions; pure offline budget assertions. Actual model request/security suite 15/15 passed. Protected e10d359 broker 00:45:36.222 UTC paidExecution=false/approval absent/vision flag false; six initializers403, foreign task403, wrong key401, missing OIDC302; all six history records/accounting and four original hashes unchanged. Retained $2.40, pending $0.90 (historical $0.60 + incomplete $0.30), settled token-derived $0.037254 unchanged. No new task/reservation/inference, key/config/application change, or deployment. Fresh PR5 open/draft/unmerged e10; latest Production READY dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY/source6d36aa454241588140a3d9945eed1a5696a65db6 unchanged. No Production application access.
+
+Exact calculation, official sources, limitations and conditional two-call proposal: docs/AGENT_OPERATIONS_SOL_IMAGE_BUDGET.md. Offline helper outsideGit: ../../agentops-tools/sol-image-budget-offline.cjs; ignored evidence sol-image-budget-offline.json. Previous proposal below is superseded for budget readiness by this entry. No live approval requested while the guaranteed input-cost prerequisite is unresolved. Only documentation changed in the repository; existing local checkpoints preserved.
+
+
 ## Sol project access investigation and authorized allowlist correction — October 11
 
 Status: **HTTP404 access blocker resolved without inference, key changes, credit purchases or tier upgrades.** The dedicated CallerCore Agent Operations project now explicitly allows exactly `gpt-4.1-2025-04-14` and `gpt-6.1-sol`; all other/current-future models remain blocked. Paid execution remains false. The bounded comparison is prepared but still conditional on verified Sol image-token sizing, exact-source disabled rollback checks and separate explicit paid authorization. No live request was submitted.

@@ -39,6 +39,8 @@ Execution, output structure, evidence integrity, substantive classifications, ob
 
 ## Conditional bounded live comparison proposal
 
+**Budget review supersedes the output/input readiness assumptions below:** see [Sol image-budget review](AGENT_OPERATIONS_SOL_IMAGE_BUDGET.md). The broad documented-method envelope puts the current 25,000-output configuration at $1.068016 for two calls. Recommended adjustment is 20,000 output tokens/call with verified pre-dispatch input <=145,000, $0.50 reservation/call. This is proposed only; current code/Preview limits remain unchanged. Sol-specific image sizing is still unverified, so paid approval is not yet requested. Project model access itself has been resolved as recorded in the later access update.
+
 This proposal is **blocked, not ready for execution** until dedicated-project model access, precise supported image detail/token bound and billing basis are independently verified, followed by exact-source disabled Preview/rollback verification and explicit owner paid authorization. No activation is requested while those gates remain unresolved.
 
 - One new task; exactly two attempted `gpt-6.1-sol`/Medium Responses requests, no retry/recurrence/fallback. Observation then fresh-context adjudication. Four original PNGs only, high-detail image input subject to verified model sizing. No Chief/specialist rerun, new captures, live browsing, customer/Production access, repository mutation or unrelated tools.
