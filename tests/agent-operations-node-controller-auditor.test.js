@@ -72,3 +72,19 @@ test('Auditor remote: cancellation bypass exists only for bound diagnostic recei
  await remote.organization.recordDiagnostic(actor,actor.workflowId,{executionId:'exec_test',diagnostic:{clientRequestId:'exec_test'}});assert.equal(requests.length,1);assert.equal(requests[0].action,'organization-diagnostic');
  await assert.rejects(remote.organization.recordDiagnostic({...actor,workflowId:'wf_foreign'},'wf_foreign',{}),/Foreign/);assert.equal(requests.length,1);
 });
+test('Auditor release: only Vercel JSON formatting is immaterial; deployment values remain bound',()=>{
+ const fs=require('node:fs'),path=require('node:path'),contracts=require('../lib/agent-operations-contracts'),target=require.resolve('../vercel.json'),read=fs.readFileSync,base=contracts.release(),raw=read(target,'utf8'),config=JSON.parse(raw);
+ const mutate=text=>{fs.readFileSync=function(file,...args){return path.resolve(String(file))===target?text:read.call(this,file,...args);};};
+ try{
+  mutate(JSON.stringify(config));assert.deepEqual(contracts.release(),base);
+  mutate(JSON.stringify(config,null,4));assert.deepEqual(contracts.release(),base);
+  for(const variant of ['duration','unknown','type']){
+   const changed=structuredClone(config);if(variant==='duration')changed.functions['api/agent-operations.js'].maxDuration=659;
+   if(variant==='unknown')changed.auditUnknown={mustRemainBound:true};
+   if(variant==='type')changed.functions['api/agent-operations.js'].maxDuration='660';
+   mutate(JSON.stringify(changed));assert.notEqual(contracts.release().digest,base.digest,variant);
+  }
+  mutate('{invalid');assert.throws(()=>contracts.release(),SyntaxError);
+ }finally{fs.readFileSync=read;}
+ assert.deepEqual(contracts.release(),base);
+});
