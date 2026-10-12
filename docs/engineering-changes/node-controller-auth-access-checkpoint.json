@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "9b62032721bf7cbd8e0eff11b66c0bdb7996a744a9038c9430b9cee40d06caaa",
+  "risk": "routine",
+  "scope": "Documentation-only fresh connected-Chrome access/authentication diagnosis and unchanged disabled hosted baseline; explicitly preserve actual owner Node verification blocker. No code, policy, credential, execution or deployment change.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "evidence": "Actual current alias admin/API works, owner main-frame navigation client-blocked; freshsevenbrokersfalse/historyledgerunchanged; separateQA/Auditorwithholdreadiness; zero modelcalls/authorizations."
+}
