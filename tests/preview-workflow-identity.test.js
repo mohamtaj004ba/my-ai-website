@@ -1,0 +1,10 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const workflow=fs.readFileSync(path.join(__dirname,'../.github/workflows/preview-browser-qa.yml'),'utf8');
+const script=workflow.match(/node --input-type=module <<'NODE'\r?\n([\s\S]*?)\r?\n\s+NODE/)[1].replace(/import fs from 'node:fs';/,'');
+const sha='7'.repeat(40),alias='https://my-ai-website-git-feature-example.vercel.app',exact='https://my-ai-website-exact-example.vercel.app';
+async function run(responses){const calls=[],writes=[];let i=0;const context={process:{env:{GITHUB_SHA:sha,PREVIEW_URL:alias,VERCEL_AUTOMATION_BYPASS_SECRET:'test-only',GITHUB_ENV:'test-env'}},fs:{appendFileSync:(p,v)=>writes.push(v)},console:{log(){}},AbortSignal,setTimeout:fn=>fn(),fetch:async(url,options)=>{calls.push({url,options});const value=responses[(i++)%responses.length];return{ok:value.ok!==false,json:async()=>value};}};await vm.runInNewContext('(async()=>{'+script+'})()',context);return{calls,writes};}
+test('actual workflow pins authenticated exact source without a legacy commit-status signal',async()=>{assert(!workflow.includes('commits/$GITHUB_SHA/status'));const r=await run([{sha,url:exact},{sha,url:exact}]);assert.deepEqual(r.writes,['PREVIEW_URL='+exact+'\n']);assert.equal(r.calls.length,2);for(const c of r.calls){assert.equal(c.options.redirect,'error');assert(c.options.signal);assert.equal(c.options.headers['x-qa-secret'],'test-only');}});
+test('actual workflow rejects stale alias before immutable fetch or QA handoff',async()=>{await assert.rejects(run([{sha:'8'.repeat(40),url:exact}]),/Could not verify/);});
+test('actual workflow rejects mismatched immutable identity',async()=>{await assert.rejects(run([{sha,url:exact},{sha,url:alias}]),/Could not verify/);});
+test('actual workflow rejects untrusted target and authorization denial',async()=>{await assert.rejects(run([{sha,url:'https://attacker.invalid'}]),/Could not verify/);await assert.rejects(run([{ok:false,sha,url:exact}]),/Could not verify/);assert(workflow.includes("CALLERCORE_VERIFY_GPT: 'false'"));});
