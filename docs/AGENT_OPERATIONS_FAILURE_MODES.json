@@ -172,6 +172,19 @@
       "recoveryBehavior": "Deny unknownaction; no authority",
       "acceptanceCriteria": "Own-property map guards +unchanged role/taskchecks",
       "relevantScope": "internal API hygiene"
+    },
+    {
+      "id": "AO-14",
+      "severity": "Medium",
+      "status": "corrected-awaiting-hosted-repeat",
+      "title": "Harmless Blob renewal controller used relative URL and hid transport failure",
+      "evidence": "Authenticated owner issuance/activate/renew/consume passed onf566; BrowserWorker produced no acknowledgment. ExecutedgeneratedWorker harness reproduces relativeURL failure.",
+      "controls": "Absolute same-origin endpoint; visible HTTP/networkerrors; automaticallyrevoke immutableoriginalnonce/slot; capturedWorker preventsrestart race.",
+      "missingProtection": "Corrected controller mustbe reverifiedhosted; Nodepaidparentcontroller remains separate.",
+      "detectionStrategy": "Execute actualrenderedworkerscript withrelativeURL-rejectingfetch; actualownerbrowser observesack andtermination expiry.",
+      "recoveryBehavior": "Ordinaryfailure attemptscentralrevoke; abruptWorkertermination sendsnorevoke andauthorityexpireswithin30secondlease; no paidpath exists.",
+      "acceptanceCriteria": "Realrenewalacks occur, termination preventsfurtheracks, authoritativecontrol falseafterlease; failedresponsesautorevoke correctrecord.",
+      "relevantScope": "nonbillable verification harness only"
     }
   ]
 }

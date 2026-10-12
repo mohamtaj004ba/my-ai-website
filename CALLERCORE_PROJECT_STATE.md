@@ -1,5 +1,10 @@
 # CallerCore project state
 
+## Non-billable hosted controller correction — verification in progress
+
+Publishedf566f89 owner-authenticated realPreview prepare/activate/renew/consume passed; expiration deniedrenewal andautorevoked. Injectedlostcommit duringprepare andactivation each produced409 followedby automaticauthoritativerevoke; exact tool/browserhistory preserved. No operationaltask/grant/hold/modelcall. A newlyintroduced BlobWorker-relativeURL andsilentfailure issue wascaughtduringharmlesshostedverification, notpaidexecution. Corrected absoluteprotectedendpoint, visibleacks/errors, boundoriginalnonce/slotcleanup and per-worker termination identity. Two executedgenerated-worker regressions reproduce historicalfailure andverify HTTP/networkcleanup evenaftercontrols edited. Evidence download contains metadataonly, nocookies/credentials. Latestrelease c194a01ef23461484ec23670713c75997f79d5f33d6e8935b3f09361bff377c2. Hostedcontroller/crossdeployment verification awaitsupdatedsource; priorfailedworker evidence is notoverwritten or declaredpassing.
+
+
 ## Proactive architecture assessment and inert hosted lifecycle verification — prepublication
 
 Owner authorizes non-billable Preview investigation/corrections and harmless zero-call authorizations, not paid approvals or models. Continuedfrom publishedd744f3b and preserved local8cd69dc/68d1966; freshfeaturefetch2localdocs/0remote-only. Historical$7retained/$2.20pending/$15ceiling unchanged. No customer/Production/writeexecutor change.
