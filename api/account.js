@@ -303,7 +303,9 @@ function previewQaBuild(req,res){
   const sha=String(process.env.VERCEL_GIT_COMMIT_SHA||''),host=String(process.env.VERCEL_URL||'');
   res.setHeader('Cache-Control','no-store');
   if(!/^[a-f0-9]{40}$/.test(sha)||!/^my-ai-website-[a-z0-9-]+\.vercel\.app$/.test(host))return res.status(503).json({error:'Preview build identity unavailable'});
-  return res.status(200).json({sha,url:'https://'+host});
+  const deploymentId=String(process.env.VERCEL_DEPLOYMENT_ID||'');
+  if(!/^dpl_[A-Za-z0-9]+$/.test(deploymentId))return res.status(503).json({error:'Preview deployment identity unavailable'});
+  return res.status(200).json({sha,url:'https://'+host,deploymentId,projectId:process.env.VERCEL_PROJECT_ID,environment:process.env.VERCEL_ENV,branch:process.env.VERCEL_GIT_COMMIT_REF,release:require('../lib/agent-operations-contracts').assertRelease()});
 }
 async function previewQaSession(req,res){
   if(!previewQaRequestAllowed(req))return res.status(404).json({error:'Not found'});
