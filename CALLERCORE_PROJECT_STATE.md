@@ -1,5 +1,10 @@
 # CallerCore project state
 
+## Heartbeat reliability correction — local verification in progress
+
+Preserved7195/8a history and all failure artifacts. Documentation checkpoint8a BrowserQA38348734627 completed successfully; other automatic checks were already passed. New bounded lease-only parent renewal correction passed frozen2344/2344 full regressions and14/14 targeted lease tests. Separate Auditor and QA inspected final source; QA independently reran14/14. Actual supervisor/restricted fork35s capture with committed lostrenewal reply completed5stages offline. Mandatory contracts/engineering/publication/hosted remain pending. First full2343/2344 failed only because my whitespace cleanup changed the source fingerprint during the long test; raw failure/trace preserved and frozen rerun passed. No validation was weakened. Existing30s tasklease,150s stage,10m total, semantic revisions, independent QA authority and historical accounting remain enforced. Exact design/tests/limitations: docs/AGENT_OPERATIONS_HEARTBEAT_RELIABILITY.md. Paid disabled; no paid approvals/provider calls/new historical reservations.
+
+
 ## Resumed run — verified shutdown, hosted workflow blocked (October 12 PDT)
 
 **Preserved checkpoint56e21e2; did not restart the assignment.** Finished its interrupted pinned dependency installation (Playwright1.55.0, lockfile unchanged) and exercised the actual authenticated dashboard→Node supervisor→tracked restricted organizational worker. Published narrowly justified diagnostic correction **8687bfa6ec8dcbcb2edd2ab72a9091316b0d55cb** and test-only shallow-build portability correction **7195de1d3df56e3200b4af72ec597e56b1b2543d**. No unrelated work, credentials or historical evidence changed.
