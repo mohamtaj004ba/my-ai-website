@@ -27,4 +27,28 @@ test('actual guarded identity function returns exact nonsecret runtime fields an
  const env={VERCEL_GIT_COMMIT_SHA:source,VERCEL_URL:'my-ai-website-test.vercel.app',VERCEL_DEPLOYMENT_ID:'dpl_Test',VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:identity.branch};assert.equal(run(false,env).status,404);assert.equal(run(true,{...env,VERCEL_DEPLOYMENT_ID:''}).status,503);assert.equal(run(true,env).data.deploymentId,'dpl_Test');assert.equal(run(true,env).data.release.digest,release.digest);
 });
 
-test('real historical Git proves f95 documentation equivalence but rejects older runtime',()=>{assert.equal(equivalent('6fbc2bd6ea515f0cb719bbeed650ff0b70b1c260','f95ed62b937ef767608de2ff7dbc5b0a73038c0b').length,4);assert.throws(()=>equivalent('47e35258d677a9deba2299a432ef9cfdb2bbc5cc','f95ed62b937ef767608de2ff7dbc5b0a73038c0b'),/application-source-mismatch/);assert.throws(()=>equivalent('f95ed62b937ef767608de2ff7dbc5b0a73038c0b','6fbc2bd6ea515f0cb719bbeed650ff0b70b1c260'));});
+// Historical replays are distinct from the always-required missing-object denial.
+// Vercel may provide shallow history; CI explicitly checks out the full history.
+function historicalReplay(t,refs,verify){
+ const {spawnSync}=require('node:child_process');
+ const repository=spawnSync('git',['rev-parse','--is-inside-work-tree'],{encoding:'utf8',windowsHide:true});
+ assert.ifError(repository.error);assert.equal(repository.status,0,'Historical replay requires a real Git checkout');
+ assert.equal(repository.stdout.trim(),'true');
+ const shallowResult=spawnSync('git',['rev-parse','--is-shallow-repository'],{encoding:'utf8',windowsHide:true});assert.ifError(shallowResult.error);assert.equal(shallowResult.status,0);assert(['true','false'].includes(shallowResult.stdout.trim()));const shallow=shallowResult.stdout.trim()==='true';
+ const missing=refs.filter(ref=>{const result=spawnSync('git',['cat-file','-e',ref+'^{commit}'],{encoding:'utf8',windowsHide:true});assert.ifError(result.error);return result.status!==0;});
+ if(shallow||missing.length){
+  t.diagnostic(JSON.stringify({historicalReplay:'unavailable',shallowRepository:shallow,missingCommits:missing,livePinVerified:false}));
+  assert.notEqual(process.env.GITHUB_ACTIONS,'true','CI must have full ancestry and required historical commits; fetch-depth: 0 is mandatory. Missing: '+missing.join(', '));
+  t.skip('Historical replay unavailable: '+(shallow?'shallow ancestry; ':'')+(missing.length?'missing '+missing.join(', '):'')+'. This does not establish release equivalence.');return;
+ }
+ verify();t.diagnostic(JSON.stringify({historicalReplay:'verified',commits:refs}));
+}
+const historical={application:'6fbc2bd6ea515f0cb719bbeed650ff0b70b1c260',documentation:'f95ed62b937ef767608de2ff7dbc5b0a73038c0b',older:'47e35258d677a9deba2299a432ef9cfdb2bbc5cc'};
+test('real historical Git verifies the f95 documentation-only checkpoint when its history is available',t=>historicalReplay(t,[historical.application,historical.documentation],()=>assert.equal(equivalent(historical.application,historical.documentation).length,4)));
+test('real historical Git rejects the older application runtime when its history is available',t=>historicalReplay(t,[historical.older,historical.documentation],()=>assert.throws(()=>equivalent(historical.older,historical.documentation),/application-source-mismatch/)));
+test('real historical Git rejects reversed checkpoint ancestry when its history is available',t=>historicalReplay(t,[historical.application,historical.documentation],()=>assert.throws(()=>equivalent(historical.documentation,historical.application))));
+test('real Git missing source or checkpoint objects always fail closed before equivalence or pin success',()=>{
+ const {execFileSync,spawnSync}=require('node:child_process'),head=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim(),absent='0'.repeat(40);
+ assert.match(head,/^[a-f0-9]{40}$/);const probe=spawnSync('git',['cat-file','-e',absent+'^{commit}'],{encoding:'utf8',windowsHide:true});assert.ifError(probe.error);assert.notEqual(probe.status,0,'The negative fixture must be absent from actual Git storage');
+ for(const [source,checkpoint]of [[absent,head],[head,absent]])assert.throws(()=>equivalent(source,checkpoint),error=>Number.isInteger(error.status)&&error.status!==0);
+});
