@@ -1,5 +1,9 @@
 # Bounded organizational lease renewal
 
+## Final verified checkpoint
+
+The pending labels below are historical. Source1bcf72d completed four actual hosted five-stage outcomes and ten bounded failure profiles, including genuine owner cancellation, unavailable renewal and cleanup fallback. All original evidence is preserved. Full2363/contracts279/engineering17/realRedis8/CI/CodeQL and exact-source Browser QA passed. Disabled replacement1er9lup7v/dpl_8WcUt5GCe3VtLH1Avg6Hscq1W8BT is READY at the same source/release;11brokers paidfalse and19records unusable verified. No paid requests or historical accounting changes. See [the detailed hosted checkpoint](AGENT_OPERATIONS_HEARTBEAT_HOSTED_CHECKPOINT.md) for actual scenario boundaries, independent reviews and remaining live/cloud evidence gaps. This establishes non-billable infrastructure completion, not live-model accuracy or unconditional pilot readiness.
+
 ## Supported cause and limits
 
 Preserved run9e63 proves a10985ms UND_ERR_CONNECT_TIMEOUT on worker broker renewal, capture interruption and eventual30s lease expiry. cd987's initiating cause is still unproved. No evidence attributes the network fault to Chrome, Redis, Vercel or a local network. Existing renewal required protected authority GET plus revision-changing POST, with a10s cadence and15s request deadlines; realistic latency could consume the entire30s lease. This is a timing/control-plane design weakness, not proof of the network's root location.
