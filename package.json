@@ -11,7 +11,10 @@
     "preflight:agentops": "node scripts/agent-operations-contract-preflight.cjs",
     "preflight:engineering": "node scripts/engineering-quality-preflight.cjs",
     "preflight:live": "node scripts/agent-operations-live-readiness.cjs",
-    "qa:preview": "node scripts/preview-browser-qa.mjs"
+    "qa:preview": "node scripts/preview-browser-qa.mjs",
+    "verify:development": "node scripts/development-verification.cjs --run",
+    "verify:plan": "node scripts/development-verification.cjs --plan",
+    "checkpoint:development": "node scripts/development-checkpoint.cjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.39.0",

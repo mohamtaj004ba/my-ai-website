@@ -25,6 +25,7 @@ jobs:
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       CALLERCORE_QA_EMAIL: preview-qa@callercore.test
       CALLERCORE_VERIFY_GPT: 'false' # Paid verification requires separate authorization.
+      QUALITY_BASE: ${{ github.event.before || github.event.pull_request.base.sha }}
       GH_TOKEN: ${{ github.token }}
       PREVIOUS_QA_DIR: /tmp/previous-qa
 
@@ -47,12 +48,24 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Select source-derived browser scope
+        id: selection
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            QUALITY_BASE="$(git rev-parse HEAD^)"
+            echo "QUALITY_BASE=$QUALITY_BASE" >> "$GITHUB_ENV"
+            node scripts/development-verification.cjs --strict-plan --base "$QUALITY_BASE"
+          else
+            node scripts/development-verification.cjs --plan --base "$QUALITY_BASE"
+          fi
+
       - name: Pin browser QA to the exact Preview build
         shell: bash
         run: |
           node scripts/preview-release-pin.cjs
 
       - name: Cache npm downloads
+        if: steps.selection.outputs.browser != 'identity'
         uses: actions/cache@v4
         with:
           path: ~/.npm
@@ -63,8 +76,10 @@ jobs:
       - name: Install pinned QA dependencies
         id: qa-deps
         run: npm ci --ignore-scripts
+        if: steps.selection.outputs.browser != 'identity'
 
       - name: Cache Playwright browser
+        if: steps.selection.outputs.browser != 'identity'
         id: playwright-cache
         uses: actions/cache@v4
         with:
@@ -72,13 +87,15 @@ jobs:
           key: ${{ runner.os }}-playwright-1.55.0-chromium
 
       - name: Install Chromium system dependencies
+        if: steps.selection.outputs.browser != 'identity'
         run: npx playwright install-deps chromium
 
       - name: Install Chromium browser
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: steps.selection.outputs.browser != 'identity' && steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install chromium
 
       - name: Restore previous successful visual baseline
+        if: steps.selection.outputs.browser != 'identity'
         shell: bash
         continue-on-error: true
         run: |
@@ -97,11 +114,20 @@ jobs:
           unzip -q /tmp/previous-qa.zip -d "$PREVIOUS_QA_DIR"
           echo "Restored visual baseline from run $previous_run."
 
+      - name: Run affected public presentation QA
+        if: steps.selection.outputs.browser == 'affected'
+        run: node scripts/affected-public-qa.mjs
+
+      - name: Documentation identity verification only
+        if: steps.selection.outputs.browser == 'identity'
+        run: echo "No application visual changes; exact deployment identity verified. Screenshots not required; no fresh visual acceptance claimed."
+
       - name: Run authenticated client and admin QA
+        if: steps.selection.outputs.browser == 'full'
         run: npm run qa:preview
 
       - name: Compare visual drift
-        if: always() && steps.qa-deps.outcome == 'success'
+        if: always() && steps.qa-deps.outcome == 'success' && steps.selection.outputs.browser == 'full'
         continue-on-error: true
         run: node scripts/visual-diff.mjs qa-artifacts "$PREVIOUS_QA_DIR"
 

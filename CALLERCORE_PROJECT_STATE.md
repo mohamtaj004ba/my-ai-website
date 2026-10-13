@@ -1,5 +1,12 @@
 # CallerCore project state
 
+## Development efficiency optimization — verification in progress
+
+Preserved636fbfa application/7961feb handoff and all historical pilot/rehearsal evidence. No paid execution or authorization changes. Measured prior BrowserQA706.046s/502screenshots plus153.988s pin; CI separately repeats93.303s contracts and97.401s fulltest step plus24 named groups. New source-derived FAST/STANDARD/STRICT tooling removes within-run duplicate execution, retains every mandatory STRICT contract/policy test and independent Redis/CodeQL/fullBrowser gates, and gives documentation fresh identity-only checks. No general evidence cache or Work-credit savings claim. Unknown/shared/backend/security/test/workflow/configuration changes stay STRICT.
+
+Independent QA60 adversarial cases passed; Auditor corrections cover escapedCSS, activeHTML, manualfullBrowser, stale source after testing and explicit skipped-analysis reporting. Compact DEVELOPMENT_CHECKPOINT.json records exact next action and old authority observations without granting permission. Frozen whole-source verification, CI/Redis/CodeQL and hosted checks are pending. Design, measured baseline, commands and limitations: docs/DEVELOPMENT_VERIFICATION.md. Preserve15/7/2.20/8 accounting, PR5 draft, Production/main and disabled recovery/write foundations.
+
+
 ## Operation Pina Colada — preflight stopped, correction verified
 
 Fresh October13 18:04UTC protected readback confirms exact1bcf72d/READY dpl_8WcUt5GCe3VtLH1Avg6Hscq1W8BT, aligned feature alias and eb41ee release. Owner dashboard authenticated, paidfalse, zero paid approvals, $15 ceiling/$7 retained/$2.20 pending included/$8 remaining; Production unchanged. Dedicated project GET model metadata200, no inference. Official Standard rates still $2/M input/$10/M output; prior $1.980024 estimate/$5.964 modeled residual unchanged. PR5 draft/open/unmerged atba1ce. Preserve four actual hosted outcome rehearsals and fault/shutdown evidence.
