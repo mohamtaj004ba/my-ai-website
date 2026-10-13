@@ -1,5 +1,14 @@
 # CallerCore project state
 
+## Operation Pina Colada — preflight stopped, non-billable correction in progress
+
+Fresh October13 18:04UTC protected readback confirms exact1bcf72d/READY dpl_8WcUt5GCe3VtLH1Avg6Hscq1W8BT, aligned feature alias and eb41ee release. Owner dashboard authenticated, paidfalse, zero paid approvals, $15 ceiling/$7 retained/$2.20 pending included/$8 remaining; Production unchanged. Dedicated project GET model metadata200, no inference. Official Standard rates still $2/M input/$10/M output; prior $1.980024 estimate/$5.964 modeled residual unchanged. PR5 draft/open/unmerged atba1ce. Preserve four actual hosted outcome rehearsals and fault/shutdown evidence.
+
+**Paid pilot NOT started: zero model calls, tokens, charges or new reservations.** Independent Auditor confirmed tracked paid launcher required approval.deploymentOrigin before Vercel assigns the immutable deployment URL. Backend activation correctly binds the deployment centrally. Paid composition tests skipped this launcher gate, while hosted nonbillable mode used a different bootstrap. No safe config-only workaround found; no obsolete helper or hash rewrite used.
+
+Correction validates fresh authoritative active record task/hash/source/release/deployment/expiry/integer lease before dependencies and dispatch, retaining explicit optional origin mismatch denial and downstream checks. Independent QA actual-launcher23/23 and original-source counterfactual verified; separate Auditor passes with scope qualification. Frozen full2386/2386, mandatorycontracts302/302 and engineering17/17 pass. Initial full/contract runs were blocked only by sandbox localhost EACCES; preserved failures, network-permitted reruns pass with offline provider guard. New release c78c913ffab6cc51eedb360476ca8a5c428dd84db365093583614a66f7065671. Publication/remoteCI/Redis/CodeQL and disabled hosted checks remain pending. This is a material release change: Operation Pina Colada authorization will not be reused; another paid execution requires fresh authorization after verification. Durable progress: ignored artifacts/agent-operations/PINA_COLADA_CHECKPOINT.json.
+
+
 ## Hosted organizational rehearsal completed — October 13 PDT
 
 **Resumed the interrupted run without restarting completed investigations.** Preserved application commits a5076d6, b94c310, 2ce942c and **1bcf72d6fdde28a9f1b48a797895037351c517be**. The first three fix independent lease renewal, reserved audit-field collision and referenced shutdown timing; the last durably seals the backend Chief context across only its own approval maintenance. Exact earlier network origin and the historical0ab409 validator remain unproved. Original failures, test logs, model results and accounting are unchanged.

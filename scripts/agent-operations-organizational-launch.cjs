@@ -51,7 +51,12 @@ async function run({runtime,env=process.env,mode='rehearsal',nonce,outputDir,fet
   if(!response.ok||state.paidExecution!==false||state.runtime?.origin!==runtime.origin||state.runtime?.commit!==runtime.commit||!require('../lib/agent-operations-rehearsal-profile').isApproval(approval)||approval.nonce!==nonce||approval.contractHash!==require('../lib/agent-operations-contracts').assertRelease().digest)throw Error('Active exact rehearsal unavailable');
  }else{
   approval=require('../lib/agent-operations-organization-approval').approval(env,scope);
-  if(!approval||approval.sourceCommit!==runtime.commit||approval.deploymentOrigin!==runtime.origin||typeof providerFetch!=='function')throw Error('Separately authorized configured organizational pilot required');
+  if(!approval||approval.sourceCommit!==runtime.commit||Object.hasOwn(approval,'deploymentOrigin')&&approval.deploymentOrigin!==runtime.origin||typeof providerFetch!=='function')throw Error('Separately authorized configured organizational pilot required');
+  // Vercel assigns the immutable URL after configuration is frozen. Activation
+  // binds it centrally; never invent or rewrite the signed approval's identity.
+  const response=await brokerFetch(endpoint,{redirect:'error',signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)}),state=await response.json();
+  const organization=state.organization,record=organization?.approvals?.find(r=>r.id===approval.id),release=require('../lib/agent-operations-contracts').assertRelease();
+  if(!response.ok||state.runtime?.origin!==runtime.origin||state.runtime?.commit!==runtime.commit||state.paidExecution!==true||organization?.paidExecution!==true||organization.contractPreflight?.version!==release.version||organization.contractPreflight?.digest!==release.digest||record?.status!=='active'||record.version!==approval.lifecycleVersion||!Number.isSafeInteger(record.leaseUntil)||record.leaseUntil>record.expiresAt||record.workflowId!==approval.workflowId||record.approvalHash!==require('../lib/agent-operations-organization').hash(approval)||record.deploymentOrigin!==runtime.origin||record.sourceCommit!==runtime.commit||record.contractVersion!==approval.contractVersion||record.contractHash!==approval.contractHash||record.expiresAt!==approval.expiresAt||record.expiresAt<=Date.now()||record.leaseUntil<=Date.now())throw Error('Authoritative activated deployment binding required');
  }
  ready=await check({runtime,env,mode,outputDir,signal});
  return await require('./agent-operations-organizational-driver.cjs').run({runtime,approval,headers,env,scope,brokerFetch,signal,onEvent,
