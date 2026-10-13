@@ -17,3 +17,9 @@ The tracked trusted parent owns a singleflight5s pump. Each request is bounded4s
 ## Residual restrictions
 
 Chief pre-dispatch construction intentionally does not renew because a ledger mutation would invalidate its verified context snapshot. It must complete within its original30s lease, otherwise stop without paid dispatch. Requests already transmitted cannot be recalled. Arbitrary outages beyond confirmed authority must stop, never revive. Hosted cloud hardkill/Redis outage remain distinct from faithful offline injections. General visual/Legal suitability acceptance still requires trusted substantive review; capture-time deterministic price-spacing is the only automatic acceptance oracle. No paid-pilot readiness until full actual hosted path and shutdown are independently verified.
+
+## First hosted evidence and audit correction
+
+Publisheda5076d6 completed actual hosted acceptedec95 and rejected63b workflows through all5stages; hashes/seals/finalreport/revoke independently verified. A manual workerhandoff missedf469 initialization deadline; no taskcreated and centralrevoke succeeded. Newmaterialdefect: renewal event data.sequence overwrote reserved global audit sequence despitevalid hashlinks. Rename to leaseSequence preserves protocol/authority; permanent per-auditindex regression passes14/14 and independent replay of actuala507source fails expected5/actual1. Historical artifacts unchanged. Corrected-source full/contracts and freshhosted audit verification pending.
+
+CI a507 cancellation root cause: temporary test trace append assumed an ignored local artifacts directory existed; clean Linux checkout raised ENOENT in test event callback. Removed this incidental file output; test assertions retain real events in memory. No runtime authority or model contract relaxation. Corrected-source frozen full2344 passed; clean-trace long-stage and new CI/host verification required.
