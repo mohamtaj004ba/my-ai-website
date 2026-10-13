@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "9e06450271804852cd7ab1d12e02170b1311f795d2e1843922fa46b22b453acb",
+  "risk": "critical",
+  "scope": "Preview-only publish harmless verification nonce before awaiting controller, enabling the real separately restricted worker to join the exact isolated task.",
+  "riskAnalysis": "The external restricted verification driver must receive the nonce while owner supervision is active. Publishing only after response would prevent actual hosted participation; nonce is not a capability or paid authority.",
+  "threatModel": {
+    "assets": "Owner session, exact approved task, immutable evidence, central Redis authority, spending reservations and Production isolation.",
+    "trustBoundaries": "Authenticated dashboard to same-origin guarded owner API; supervisor to restricted worker; central CAS across deployments; untrusted receipts to text-only display.",
+    "abuseCases": "Nonowner/worker impersonation; stale or changed expiration approval; duplicate Start; disconnected owner; partial activation; revoked old deployment; Redis outage; leaking task capabilities.",
+    "mitigations": "Current server owner/session/origin/Preview checks; full approval digest and exact deployment selection; existing one-use CAS/leases; independent central owner revoke and readback; no minting/limits inputs; provider-inaccessible inert verification."
+  },
+  "rollback": "Keep paid false; remove temporary inert window, revoke all test records and verify old/current/replacement brokers. Restore reviewed feature source only if needed; preserve historical ledger/evidence and Production.",
+  "negativePaths": {
+    "malformed-response": "Actual Node QA/Auditor tests and retained contract-first suite cover malformed-response with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "stale-state": "Actual Node QA/Auditor tests and retained contract-first suite cover stale-state with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "concurrency": "Actual Node QA/Auditor tests and retained contract-first suite cover concurrency with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "cancellation": "Actual Node QA/Auditor tests and retained contract-first suite cover cancellation with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "worker-interruption": "Actual Node QA/Auditor tests and retained contract-first suite cover worker-interruption with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "api-outage": "Actual Node QA/Auditor tests and retained contract-first suite cover api-outage with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "authorization-denial": "Actual Node QA/Auditor tests and retained contract-first suite cover authorization-denial with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "spending-limit": "Actual Node QA/Auditor tests and retained contract-first suite cover spending-limit with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "partial-execution": "Actual Node QA/Auditor tests and retained contract-first suite cover partial-execution with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Verification task reference was only recorded after awaiting the owner controller result.",
+      "detectionGap": "Local integration had direct access to request DTO; a real hosted worker requires a visible reference before controller completion.",
+      "regression": "Executed UI test asserts visible nonce before the real supervisor request waits, while fixed zero-call worker authorization remains enforced.",
+      "historicalPrevention": "Hosted readiness cannot be inferred from a fixture-only out-of-band nonce; visible record linkage now exists before worker bootstrap."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing authoritative controller/worker/Redis/provider path reused; no duplicate execution system.",
+    "dependencies": "Owner browser session and same-origin fetch are explicit dependencies; platform protection and Redis remain unchanged.",
+    "threats": "Exact approval mutation, stale deployment, disconnected owner and orphan authority reviewed independently.",
+    "failureModes": "AO-04 now includes supported owner entrypoint and cross-deployment cleanup; sixteen-item register preserved.",
+    "faultInjection": "Actual handler/CAS expiry/replay/revoke races, session loss, Redis outage and restricted transport tests; hosted infrastructure fault gaps remain explicit.",
+    "independentChallenge": "Separate Engineering Auditor and QA inspect actual implementation and negative tests; no implementing-agent-only readiness.",
+    "recovery": "Owner central revocation independent of stream; pre-task tombstone and expired disabled replacement cleanup; no paid retries.",
+    "readiness": "Offline full/contracts passed; hosted/CI/Redis/CodeQL results pending evidence. No live-model readiness inferred."
+  }
+}

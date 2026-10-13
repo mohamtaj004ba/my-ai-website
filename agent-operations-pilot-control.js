@@ -31,7 +31,7 @@
     finally{running=false;controller=null;if(!stopping)await stop([id]);controls();}
   }
   async function verify(){
-    controls();if(el('Verify').disabled)return;verifying=true;const input=Object.freeze({nonce:crypto.randomUUID().replaceAll('-',''),slot:0}),expected=verification;controls();let confirmed=false;
+    controls();if(el('Verify').disabled)return;verifying=true;const input=Object.freeze({nonce:crypto.randomUUID().replaceAll('-',''),slot:0}),expected=verification;controls();let confirmed=false;record({nonbillable:true,input,verificationStarted:true});
     try{const body=await(await request({action:'organization-supervisor-verification',input:{...input,scenario:'success'}},AbortSignal.timeout(45000))).json();record({nonbillable:true,input,body});}
     catch(e){record({nonbillable:true,input,error:e.message});}
     finally{
