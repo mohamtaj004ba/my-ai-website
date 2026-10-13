@@ -17,7 +17,7 @@ async function main(){
         res.status=n=>{res.statusCode=n;return res;};res.json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));return res;};return handler(req,res);
       }
       let file=url.pathname==='/'?'admin-dashboard.html':url.pathname.slice(1);
-      if(!['admin-dashboard.html','agent-operations.js','agent-operations.css','dashboard.css','logo-icon.png'].includes(file)){res.statusCode=404;return res.end();}
+      if(!['admin-dashboard.html','agent-operations.js','agent-operations-owner-verification.js','agent-operations-pilot-control.js','agent-operations.css','dashboard.css','logo-icon.png'].includes(file)){res.statusCode=404;return res.end();}
       let content=await fs.readFile(path.resolve(file));
       if(file==='admin-dashboard.html'){
         content=content.toString().replace(/<script src="\/(?!agent-operations\.js)[^"]+"><\/script>/g,'').replace('<section class="view" id="view-agent-operations"','<section class="view active" id="view-agent-operations"').replace('<section class="view active" id="view-overview"','<section class="view" id="view-overview"');

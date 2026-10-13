@@ -13,6 +13,7 @@
     if(!Array.isArray(data.tasks)||!Array.isArray(data.agents)||!Array.isArray(data.reservations))throw new Error('Task state is incomplete.');
     latest=data;create.disabled=busy;
     window.CallerCoreOwnerVerification?.update(data);
+    window.CallerCorePilotControl?.update(data);
     const counts={};for(const t of data.tasks)counts[t.status]=(counts[t.status]||0)+1;
     const reserved=data.reservations.reduce((n,r)=>n+r.ceilingMicros,0),actual=data.reservations.reduce((n,r)=>n+(r.actualMicros||0),0),unknown=data.reservations.filter(r=>r.status==='pending').length;
     byId('agentOpsSummary').textContent=(data.paidExecution?'One approved pilot enabled. ':'Paid execution disabled. ')+data.tasks.length+' tasks · '+Object.entries(counts).map(([k,v])=>k.replaceAll('_',' ')+': '+v).join(' · ')+' · Ceiling reserved $'+(reserved/1e6).toFixed(2)+' · Recorded cost $'+(actual/1e6).toFixed(4)+' · Unresolved executions '+unknown+'. Mock reservations are synthetic budget tests.';
@@ -34,7 +35,7 @@
   async function refresh(){
     const id=++sequence;status.textContent='Refreshing persisted task state…';
     try{const data=await request();if(id!==sequence)return;render(data);status.textContent='Updated '+new Date().toLocaleTimeString()+'. '+(data.mode==='mock'?'Development results are synthetic.':'');}
-    catch(e){if(id!==sequence)return;latest=null;window.CallerCoreOwnerVerification?.update(null);create.disabled=true;byId('agentOpsTasks').querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent=e.message+' Previously displayed state may be outdated.';}
+    catch(e){if(id!==sequence)return;latest=null;window.CallerCoreOwnerVerification?.update(null);window.CallerCorePilotControl?.update(null);create.disabled=true;byId('agentOpsTasks').querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent=e.message+' Previously displayed state may be outdated.';}
   }
   async function mutate(body){
     if(busy||!latest)return;busy=true;create.disabled=true;byId('agentOpsTasks').querySelectorAll('button').forEach(b=>b.disabled=true);
