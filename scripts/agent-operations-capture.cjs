@@ -3,14 +3,15 @@ const fs=require('node:fs/promises');
 const path=require('node:path');
 const {createHash}=require('node:crypto');
 const {ORIGIN,previewTransport,offlineFonts}=require('./agent-operations-preview-access.cjs');
-async function capture(scope,{signal,executionId,outputDir='artifacts/agent-operations',oidcToken,collectGeometry=false,workflowId}={}){
+async function capture(scope,{signal,executionId,outputDir='artifacts/agent-operations',oidcToken,collectGeometry=false,workflowId,browserExecutable}={}){
   if(scope.origin!==ORIGIN||scope.commit!=='8133597ff2fc5b48e3de42336e9e06fa4191c2a8'||JSON.stringify(scope.paths)!==JSON.stringify(['/industries/legal','/#pricing']))throw new Error('Unapproved capture scope');
   if(!/^exec_[a-zA-Z0-9_-]{1,80}$/.test(executionId))throw new Error('Invalid execution');
   if(collectGeometry&&!/^wf_[a-f0-9]{32}$/.test(workflowId||''))throw new Error('Geometry task binding required');
   const transport=previewTransport({token:oidcToken,signal});
   const fonts=offlineFonts();
   const browserEnv=Object.fromEntries(['PATH','SystemRoot','TEMP','TMP','USERPROFILE','LOCALAPPDATA','APPDATA','HOME','DISPLAY','XDG_RUNTIME_DIR'].filter(k=>process.env[k]).map(k=>[k,process.env[k]]));
-  const {chromium}=require('playwright'),browser=await chromium.launch({headless:true,env:browserEnv,...(process.env.CALLERCORE_AGENTOPS_BROWSER_EXECUTABLE?{executablePath:process.env.CALLERCORE_AGENTOPS_BROWSER_EXECUTABLE}:{})});
+  const executablePath=browserExecutable||process.env.CALLERCORE_AGENTOPS_BROWSER_EXECUTABLE;
+  const {chromium}=require('playwright'),browser=await chromium.launch({headless:true,timeout:10000,env:browserEnv,...(executablePath?{executablePath}:{})});
   const abort=()=>browser.close().catch(()=>{});signal?.addEventListener('abort',abort,{once:true});
   try{
     if(signal?.aborted)throw new Error('Cancelled');

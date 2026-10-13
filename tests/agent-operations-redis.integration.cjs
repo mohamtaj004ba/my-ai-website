@@ -5,6 +5,15 @@ const {randomUUID}=require('node:crypto');
 const {createStore,redisAdapter}=require('../lib/agent-operations-store');
 const {runStage,mockAdapter}=require('../lib/agent-operations-worker');
 const {command}=require('./helpers/agent-operations-redis-client.cjs');
+
+test('real Redis isolates rehearsal initialization, one-use consumption and pre-init revocation capability',async()=>{
+ const crypto=require('node:crypto'),prefix='test:agentops:rehearsal:'+randomUUID()+':',runtime={origin:'https://redis-rehearsal.vercel.app',commit:'a'.repeat(40)},scope={origin:'https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app',commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8',paths:['/industries/legal','/#pricing']},owner={kind:'owner',verifiedOwner:true,id:'redis-rehearsal@example.test'},secret='w'.repeat(40),kv={get:k=>command(['GET',prefix+k]),eval:(script,keys,args)=>command(['EVAL',script,keys.length,...keys.map(k=>prefix+k),...args])},env={VERCEL_ENV:'preview',CALLERCORE_AGENTOPS_ENABLED:'true',CALLERCORE_AGENTOPS_PAID_ENABLED:'false',CALLERCORE_AGENTOPS_WORKER_SECRET:secret,CALLERCORE_AGENTOPS_LIFECYCLE_VERIFY_UNTIL:String(Date.now()+3600000)},rehearsal=require('../lib/agent-operations-organizational-rehearsal').createRehearsal({kv,env,runtime,scope}),nonce=crypto.randomBytes(16).toString('hex'),cancel=new AbortController();
+ const controller=rehearsal.start(owner,{nonce,scenario:'accepted'},{authorize:async()=>true,signal:cancel.signal}).catch(e=>e.controllerEvidence);
+ let approval;for(let n=0;n<100;n++){try{const r=await rehearsal.worker({nonce,body:null});if(r.body.organization.controlAuthority){approval=r.body.organization.rehearsal;break;}}catch{}await new Promise(r=>setTimeout(r,5));}assert(approval);
+ const initialized=await Promise.allSettled([1,2].map(()=>rehearsal.worker({nonce,body:{action:'organization-rehearsal-initialize'}})));assert.equal(initialized.filter(r=>r.status==='fulfilled').length,1);
+ const token=require('../lib/agent-operations-worker-revocation').derive({workerSecret:secret,approval,runtime});await rehearsal.worker({nonce,body:{action:'organization-approval-revoke',input:{id:approval.id,token}}});cancel.abort();await controller;
+ const after=await rehearsal.inspect(owner,{nonce,operation:'check'});assert.equal(after.approvals[0].status,'revoked');assert.equal(after.approvals[0].leaseUntil,0);assert.equal(after.controlAuthority,false);assert.equal(after.paidExecution,false);assert.equal(after.reservations.length,0);assert.equal(after.workflows.length,1);assert.equal(after.workflows[0].status,'cancelled');await assert.rejects(rehearsal.worker({nonce,body:{action:'organization-rehearsal-initialize'}}));
+});
 test('real Redis Lua serializes creation, claims, budgets and a persisted manager/specialist/reviewer workflow',async()=>{
   const prefix='test:agentops:'+randomUUID()+':';
   const kv={get:key=>command(['GET',prefix+key]),eval:(script,keys,args)=>command(['EVAL',script,keys.length,...keys.map(k=>prefix+k),...args])};
