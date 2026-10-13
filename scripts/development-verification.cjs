@@ -68,16 +68,21 @@ function testsFor(p){
  const all=fs.readdirSync(path.join(root,'tests')).filter(n=>n.endsWith('.test.js')).sort();
  const contracts=require('./agent-operations-contract-preflight.cjs').tests.map(f=>path.basename(f));
  if([...contracts,'engineering-quality.test.js','engineering-quality-security-review.test.js','engineering-proactive-review.test.js','development-verification.test.js'].some(n=>!all.includes(n)))throw Error('Mandatory contract or policy test missing from full suite');
- return p.lane==='STRICT'?all:[...new Set(['development-verification.test.js','engineering-quality.test.js','engineering-quality-security-review.test.js','engineering-proactive-review.test.js',...(p.docsOnly?['preview-release-pin.test.js']:presentationTests)])].sort();
+ return p.lane==='STRICT'?all:[...new Set(['development-verification.test.js','development-verification-windows.test.js','engineering-quality.test.js','engineering-quality-security-review.test.js','engineering-proactive-review.test.js',...(p.docsOnly?['preview-release-pin.test.js']:presentationTests)])].sort();
 }
 function assertPlan(p,repository=root){const current=plan(p.base,'HEAD',repository);if(quality.hash(current)!==quality.hash(p))throw Error('Stale or altered verification selection');return current;}
+function argsForTests(tests){
+ if(!Array.isArray(tests)||!tests.length||new Set(tests).size!==tests.length||tests.some(f=>!/^[a-z0-9][a-z0-9_.-]*\.test\.js$/i.test(f)))throw Error('Canonical unique test names required');
+ const args=['--require','./tests/helpers/agent-operations-offline-only.cjs','--test','--test-concurrency=4',...tests.map(f=>'tests/'+f)];
+ if(args.join(' ').length>24000)throw Error('Portable verification argument limit exceeded');return args;
+}
 function run(p){
  assertPlan(p);
  const release=require('../lib/agent-operations-contracts').assertRelease(),tests=testsFor(p),started=Date.now();
  const env=Object.fromEntries(Object.entries(process.env).filter(([k])=>!/^OPENAI_|^CALLERCORE_|^VERCEL_/i.test(k)));
  const engineering=require('./engineering-quality-preflight.cjs').committed(p.base);
  // Policy tests are in the selected union, not run a second time by this gate.
- const result=spawnSync(process.execPath,['--require',path.join(root,'tests/helpers/agent-operations-offline-only.cjs'),'--test','--test-concurrency=4',...tests.map(f=>path.join(root,'tests',f))],{cwd:root,env,stdio:'inherit',windowsHide:true});if(result.status!==0)throw Error('Selected verification failed');
+ const result=spawnSync(process.execPath,argsForTests(tests),{cwd:root,env,stdio:'inherit',windowsHide:true});if(result.error)throw Error('Verification process failed: '+result.error.code);if(result.status!==0)throw Error('Selected verification failed');
  if(JSON.stringify(release)!==JSON.stringify(require('../lib/agent-operations-contracts').assertRelease()))throw Error('Release changed during verification');
  assertPlan(p);
  const evidence={...p,tests:tests.length,elapsedMs:Date.now()-started,engineering,environment:{node:process.version,platform:process.platform,architecture:process.arch},contracts:p.lane==='STRICT'?'executed-in-full-suite':'not-required-unchanged',release,modelRequests:0,liveVerified:false};
@@ -90,4 +95,4 @@ function main(args=process.argv.slice(2)){
  console.log(JSON.stringify(args[0]==='--run'?run(p):p));
 }
 if(require.main===module)try{main();}catch(e){console.error('Verification selection failed closed: '+e.message);process.exitCode=1;}
-module.exports={VERSION,classify,plan,assertPlan,testsFor,run,main};
+module.exports={VERSION,classify,plan,assertPlan,testsFor,argsForTests,run,main};
