@@ -393,7 +393,7 @@
     "deployment": "dpl_Hg6SRh4mmdgD613rB6dnyEgphqhv"
   },
   "phaseC4": {
-    "status": "implementation-review-before-release-verification",
+    "status": "qualified-hosted-source-to-inert-draft-verified-private-activation-blocked",
     "architecture": "Existing owner/workspace/task/CAS/evidence/review/child architecture retained; no parallel authorization system.",
     "providerPreparation": "User clarified full lifecycle connection grants: GitHub Contents/PR/Issues/Actionswrite+Metadataread, noAdmin/Secrets/Workflows; initial mintedreadtoken and existing gatewaywritesdisabled. Vercel projectread/configurationread/deploymentreadwrite selectedprojectonly; currentserverGETonly.",
     "controls": [
@@ -415,9 +415,14 @@
       "Dedicatedbrowsernotdeployed; hostingbudget/Previewidentity/OSegress qualification require owner",
       "Only firstoverview chart proposed correction; separateinsightschart followup",
       "Deterministic specialist/Chief/review; no paid or independent semantic inference",
-      "Trustedfixedchild not untrusted-code sandbox; parenthardkill orphan cleanup unverified"
+      "Trustedfixedchild not untrusted-code sandbox; parenthardkill orphan cleanup unverified",
+      "No free Sandbox entitlement assumed: connected team projection excludes plan/billing; provider spend approval required",
+      "Legacy comment-demo stage caption remains generic; actual correction objective/artifact/report exact"
     ],
-    "verification": "Frozen STRICT2779/396files/200389ms envelope passed; release928bb115 unchanged; actualNFT94required/9893traced/missing[]. IndependentAuditor8postcorrection, QA10 and faithfulUIpreset validated. Added14th disposableRedisC4actualOpscase; hosted/remoteCI pending.",
-    "accounting": "Actual17:53:09Zbrokerpaidfalse/noactiveapprovals/unchangedledger;15ceiling/10.60retained including2.20uncertain/4.40remaining"
+    "verification": "STRICT2779/396files/200389ms; engineering17; NFT94/9893/missing[]; Redis14/14; CI/CodeQL/Jekyllpassed; authenticatedBrowser38611666714 attempt2/job116018503497 SUCCESS; actualhostedfiveonce/unresolved/acceptedfalse/patcha18a/destroyed; independentQA/Auditor78auditlinks original67unchanged",
+    "accounting": "Actual18:10:12.924Zbrokerpaidfalse/noactivepaidapproval/originalledgerhashunchanged;15/10.60retainedincluding2.20uncertainty/4.40remaining; newpaidcalls/holds/settlements0",
+    "application": "dd25ed632aba959700e9c70d40fdf0a858ad558c",
+    "release": "928bb115ff2d8e89a5c37306b4ddfde57e01a95b8772d3dda999cc9fff1de1db",
+    "deployment": "dpl_FtW2ZpYMxwsN3G8TXJyagXRiMhmo"
   }
 }
