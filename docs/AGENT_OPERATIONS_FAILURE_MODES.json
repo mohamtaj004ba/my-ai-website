@@ -311,7 +311,7 @@
     }
   },
   "phaseC2": {
-    "status": "published-core-verified-hosted-partial-ui-correction",
+    "status": "published-core-and-real-hosted-five-stage-verified-qualified-prerequisites-remain",
     "controls": [
       "Fixed public GitHub GET, sourceSHA/workflow/output allowlist; no credentials/private logs",
       "Existing owner/CAS journal and final reviewer revalidation; current independent identity unavailable",
@@ -323,11 +323,30 @@
       "Remote Vercel read adapter not configured with scoped service credential",
       "No verified independent human/model semantic reviewer",
       "Parent crash may leave public-source temp data; no untrusted-code executor enabled",
-      "Hosted C2 workflow not yet demonstrated",
-      "Typed DRAFT failures deliberately do not authorize automatic recovery"
+      "Typed DRAFT failures deliberately do not authorize automatic recovery",
+      "Real hosted deterministic workflow does not prove semantic model accuracy or trusted independent review",
+      "UI readback source/release guarded; additional same-source replacement-origin comparison remains minor future hardening; server deployment binding authoritative"
     ],
-    "historicalAccounting": "Unchanged authoritative baseline2026-10-14T09:27:45Z:15USD allowance/10.60retained/2.20uncertain/4.40remaining; original ledger hash9f897bc97f3a59e31a357b0a7dc21ecb40082c4f29524065b1ce1f2600f16b6a",
+    "historicalAccounting": "Verifiedhosted2026-10-14T10:18:23.556Z:15USD/10.60retained including2.20uncertain/4.40remaining, originalledgerhashunchanged, paidfalse/noactiveapprovals",
     "hosted": {
+      "source": "6f7f75d88f46fbf1a90e07455c259732f1edbc4d",
+      "deploymentId": "dpl_Em3emJdNxK4RcwgvNabTjqfrhtuw",
+      "release": "a1c881cf74d2838abbe96797f8049834f372f9d23fb39bbaa250da5674fc1a72",
+      "taskId": "op_96cdc8078d7343a0abf17c79b09ab358",
+      "completedStages": 5,
+      "attemptsEach": 1,
+      "leases": 0,
+      "modelCalls": 0,
+      "reservations": 0,
+      "acceptedWork": false,
+      "proposals": "3unresolved",
+      "workspace": "actualfixedcomment/disposablefilesystem/destructionverified/publicationfalse",
+      "reviews": "separateQA/Auditorcanonicalartifactvalidation; nosemanticattestation",
+      "audit": "51valid/original30unchanged",
+      "browserQA": "38547794846 attempt2/job115800057466 success; originalexactpinfailure11885850377 preserved"
+    },
+    "newDetectionGap": "Client accepted HTTP200+anysnapshot without semanticmutationconfirmation; refreshcouldhideunconfirmedreceipt/reviewbundle. Precise original missingresponse cause unproved.",
+    "priorHosted": {
       "source": "687f3769ab22664b3a9f62580083a4f9df6feb00",
       "deploymentId": "dpl_GQu9iKQ5U4QSALCYzfRNfwuAaVvT",
       "release": "d6e90cf5b4e5984c43b4dac95d6cbb53982316cca4a0fb7ac1363ea10daa9c55",
@@ -340,8 +359,8 @@
       "remainingLeases": 0,
       "deadline": "2026-10-14T09:54:31.585Z",
       "cleanup": "expired failclosed; cancellation not confirmed",
-      "qualification": "No complete hostedC2/sandbox/semanticreview claim"
-    },
-    "newDetectionGap": "Client accepted HTTP200+anysnapshot without semanticmutationconfirmation; refreshcouldhideunconfirmedreceipt/reviewbundle. Precise original missingresponse cause unproved."
+      "qualification": "No complete hostedC2/sandbox/semanticreview claim",
+      "reconciliation": "Laterauthoritativerev10shows4completed/fifthcancelled0attempts/allleases0; originalrev5snapshotsretained; originalHTTPresponsesunknown"
+    }
   }
 }
