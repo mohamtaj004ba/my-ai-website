@@ -1,7 +1,7 @@
 {
   "version": "agent-operations-fmea-v1",
   "baseline": "d744f3b",
-  "assessment": "launcher-binding-corrected-disabled-preview-verified-fresh-paid-authorization-required",
+  "assessment": "one-live-five-stage-technical-completion-substantive-acceptance-withheld-paid-disabled",
   "noCriticalFindingInvented": true,
   "risks": [
     {
@@ -15,7 +15,8 @@
       "detectionStrategy": "Inert real-owner hosted probes; expired/revoked/admission readback",
       "recoveryBehavior": "Irreversible revoke; preserveholds; storageoutage deniesadmission",
       "acceptanceCriteria": "Actual old/replacement reject centralrevoke; no paid approval",
-      "relevantScope": "all paid pilots"
+      "relevantScope": "all paid pilots",
+      "liveCheckpoint": "One actual paid workflow centrally revoked before expiry; activated/replacement deny initialization. Infrastructure-outage/hardkill gaps remain."
     },
     {
       "id": "AO-02",
@@ -54,7 +55,8 @@
       "detectionStrategy": "Existing owner session, CSRF/member denials, real30second lease and aliasreplacement probes; mandatory executed dashboard→guarded handler→actual supervisor/restricted worker test; exact hosted normal-navigation Start-denial/inert control and cleanup evidence required.; Mandatory source/launch inventory and actual paid-profile process-boundary regression with trapped provider; absence of tracked launch/capture/assessor wiring must block preflight beforeapproval.; Mandatory actual fork/native five-stage rehearsal plus tracked wrapper dependency preflight; explicit lost-initialization response without owner callback, reflected-key error, remaining stage budget and refresh recovery regressions. Mandatory safe renewal cause/status/operation/timing tests; real pre-init403 fork; exact request reconstruction from persisted task and images. Do not substitute parsed response for successful remote state mutation.",
       "recoveryBehavior": "Revoke owner-selectedID evenlostresponse; lostcontroller leaseexpires; no recurringwork",
       "acceptanceCriteria": "Actual hosted nonbillable mainfouroutcomes andboundedfaults verified with independentreviews/shutdown; separatefreshlivepilot needed for actualprovider/modelaccuracy. Never promote syntheticacceptance toliveacceptance.",
-      "relevantScope": "before next pilot"
+      "relevantScope": "before next pilot",
+      "liveCheckpoint": "2026-10-14 actual Owner supervisor/restricted worker completed all five live stages; 58 audit links verified; revocation before expiry, zero workers. This single successful path does not prove every outage, clock-skew or hardkill scenario."
     },
     {
       "id": "AO-05",
@@ -67,7 +69,8 @@
       "detectionStrategy": "Capability isolation tests; manual independent image acceptance; exactcontract replays",
       "recoveryBehavior": "Fail/uncertain work remains notaccepted; owner escalation",
       "acceptanceCriteria": "Separate trustedreviewer attestation boundtask/evidence/release before unattendedwrites",
-      "relevantScope": "autonomous engineering writes"
+      "relevantScope": "autonomous engineering writes",
+      "liveCheckpoint": "Live QA accepted one and left three compound claims unresolved; Chief preserved all decisions and backend rejected acceptance. Sentence-level claim granularity bundles supported layout facts with uncertain text; trusted reviewer attestations and atomic clauses remain future work. No zero-false-rejection or probability-calibration claim."
     },
     {
       "id": "AO-06",
@@ -80,7 +83,8 @@
       "detectionStrategy": "Concurrent unrelatedheartbeat/mockwrite regression deliberately rejectsstaleChief",
       "recoveryBehavior": "Keep one pilot/no other active mutations; stop safely preservehold",
       "acceptanceCriteria": "Explicit serialized pilot until semantic dependency version tests pass; never weakenrevisionguards",
-      "relevantScope": "parallel autonomy; serializedpilot restriction"
+      "relevantScope": "parallel autonomy; serializedpilot restriction",
+      "liveCheckpoint": "Live Chief binding and owner renewal completed without stale-context weakening; unrelated concurrent task modification restrictions remain."
     },
     {
       "id": "AO-07",
@@ -93,7 +97,8 @@
       "detectionStrategy": "Current pricing/model/project access and estimate/residual exposure preflight",
       "recoveryBehavior": "Stop subsequentcalls; preserveuncertainholds; owner reconciliation",
       "acceptanceCriteria": "Fresh explicitfinancial acceptance for separately authorized boundedpilot",
-      "relevantScope": "all paid work"
+      "relevantScope": "all paid work",
+      "liveCheckpoint": "Live usage97832micros; new retained3.60; cumulative10.60 including2.20historical uncertainty;4.40remaining of15. Token-derived, not invoice reconciliation."
     },
     {
       "id": "AO-08",
@@ -119,7 +124,8 @@
       "detectionStrategy": "Fail-safe incident runbook + manually inspect hostedreadback",
       "recoveryBehavior": "Disable/revoke; retainuncertainty; unrelatedscope remainsdisabled",
       "acceptanceCriteria": "Authenticated telemetry and owner escalation with tested outage path before unattendedwork",
-      "relevantScope": "unattended operations"
+      "relevantScope": "unattended operations",
+      "liveCheckpoint": "Single pilot had owner monitoring and verified shutdown; persistent operational monitoring remains future."
     },
     {
       "id": "AO-10",
@@ -132,7 +138,8 @@
       "detectionStrategy": "Browser readiness verifies data loaded not layoutonly",
       "recoveryBehavior": "Use backendfinancialreports; do not rely on incompleteUI",
       "acceptanceCriteria": "Combined totals match ledger; mobile loadedtask/config evidence",
-      "relevantScope": "admin operational readiness"
+      "relevantScope": "admin operational readiness",
+      "liveCheckpoint": "Fresh mobile website PNG evidence does not resolve mobile dashboard loaded-data readiness."
     },
     {
       "id": "AO-11",
