@@ -29,3 +29,9 @@ Independent Auditor and QA reviewed actual source; focused owner QA9/9 and Audit
 ## Safe recovery
 
 Never retry an uncertain code exchange automatically. Inspect finite failure metadata; start new owner consent only after its cause is understood. Revocation cannot resurrect a consumed state. A provider installation may remain after a failed exchange and require owner removal. Keep paid execution disabled, preserve original audit records and historical accounting.
+
+## Private visibility consent entry correction
+
+The public /integrations/:slug/new path was tested hosted and returns404 for this Private integration, including the owner. The supported-on-screen private Dashboard path is https://vercel.com/mohamtaj004bas-projects/~/integrations/callercore-agent-operations and its Connect Account wizard exposes expected project selection and permissions. Backend construction and UI exactpath guard now use that fixed team path with only fresh state. No visibility/scope/client/redirect change or duplicate integration. Original failed pending consent was revoked; inspection wizard cancelled.
+
+The former mocks agreed on the public route and never tested Private provider-page availability; exact private path and historical-public-route rejection now regress that detection gap. Mock callback tests cannot prove provider UI state forwarding. Actual nonce-preserving callback and project read remain mandatory before calling the connection verified. If state is absent, stop failclosed and retain cleanup evidence. Never synthesize expected state or manually bypass the guarded link.

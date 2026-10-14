@@ -24,3 +24,6 @@ test('corrupt stored connection metadata receipts and diagnostic fields fail clo
 
 
 test('inherited exception names remain finite transport diagnostics',async()=>{for(const message of ['__proto__','constructor','toString']){const h=harness({fetchImpl:async()=>{throw Error(message);}}),q=await query(h);await a.rejects(h.api.callback(actor,q),/VCO_EXCHANGE_UNCONFIRMED/);a.equal((await h.api.status(actor)).lastFailure.category,'transport-unconfirmed');}});
+
+test('private integration uses observed team Dashboard entry with only fresh single-use state',async()=>{const h=harness(),b=await h.api.begin(actor),url=new URL(b.authorizationUrl);a.equal(url.origin,'https://vercel.com');a.equal(url.pathname,'/mohamtaj004bas-projects/~/integrations/callercore-agent-operations');a.deepEqual([...url.searchParams.keys()],['state']);a.match(url.searchParams.get('state'),/^[A-Za-z0-9_-]{43}$/);a.equal(h.calls.length,0);});
+test('private flow never synthesizes missing altered or revoked state before provider transport',async()=>{for(const mutation of [q=>{delete q.state;},q=>q.state='x'.repeat(43),async(q,h)=>{await h.api.revoke(actor);}]){const h=harness(),q=await query(h);await mutation(q,h);await a.rejects(h.api.callback(actor,q));a.equal(h.calls.length,0);}});
