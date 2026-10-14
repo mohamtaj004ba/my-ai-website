@@ -423,6 +423,21 @@
     "accounting": "Actual18:10:12.924Zbrokerpaidfalse/noactivepaidapproval/originalledgerhashunchanged;15/10.60retainedincluding2.20uncertainty/4.40remaining; newpaidcalls/holds/settlements0",
     "application": "dd25ed632aba959700e9c70d40fdf0a858ad558c",
     "release": "928bb115ff2d8e89a5c37306b4ddfde57e01a95b8772d3dda999cc9fff1de1db",
-    "deployment": "dpl_FtW2ZpYMxwsN3G8TXJyagXRiMhmo"
+    "deployment": "dpl_FtW2ZpYMxwsN3G8TXJyagXRiMhmo",
+    "ownerGithubActivation": {
+      "status": "reviewed-offline-hosted-authentication-pending",
+      "appId": 5321141,
+      "installationId": 171494892,
+      "repositoryId": 1284219633,
+      "keyStorage": "Vercel Secret, Preview feature/callercore-dashboards; metadata verified only",
+      "boundaries": "Existing owner API, task-specific github.app.ci.read grant and Redis CAS; fresh authority at installation lookup, token issuance, inventory/read and receipt; all writes remain disabled",
+      "newCompatibilityFinding": "Official GitHub stateless installation-token rollout requires bounded JWT-shaped token alphabet rather than legacy 255-character token ceiling",
+      "residual": "Already-transmitted token issuance cannot be recalled. No token cache/export; tokens expire in at most one hour; server gateway revocation blocks subsequent use. Actual provider verification awaits one source-and-secret deployment.",
+      "externalDependencies": [
+        "Vercel dedicated project credential or integration consent",
+        "Google mailbox/Cloud-project confirmation and OAuth",
+        "Separate browser infrastructure budget approval"
+      ]
+    }
   }
 }
