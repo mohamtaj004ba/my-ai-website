@@ -271,7 +271,7 @@
     }
   },
   "phaseC": {
-    "status": "implementation-under-strict-verification",
+    "status": "hosted-core-verified-final-ui-refresh-correction",
     "scope": "Task-bound curated deployed-source read tools and deterministic proposals; inert draft contract only.",
     "controls": [
       "Existing scoped owner policy/journal/CAS/fence/lease; original execution ledger read-only",
@@ -286,6 +286,17 @@
       "No actual draft filesystem/sandbox",
       "Secret screen recognizes patterns; curated public source scope remains required",
       "Existing journal retention, clock skew and cloud failure limitations remain"
-    ]
+    ],
+    "hosted": {
+      "source": "b20a29b632811106ab7a47a206c576e1eca1bf6d",
+      "deploymentId": "dpl_HhTUmocnkhkojS6RdPo9TbgH37yJ",
+      "workflow": "op_32e3decce6a74760b8d3a24ed1464cfd",
+      "cancel": "op_f17022a6eeb64576822f1a40f6354c39",
+      "emergency": "op_b819ba2608384510b3a7cf6e9b1f22ee",
+      "auditEvents": 30,
+      "originalEventsPreserved": 17,
+      "substantiveAcceptance": false,
+      "qualification": "Source-only realtool/deterministicreasoning; queuedcleanup. UIreport autorefresh correction under verification."
+    }
   }
 }

@@ -35,3 +35,9 @@ Prior PhaseB documentation-only pushes created READY deployments despite no appl
 ## Verification status
 
 Local actual-tool/service/API negatives and independent QA/Auditor passed initial targeted checks. Full frozen STRICT, realRedis11-case CI, exact READY packaging/source readback, authenticated owner four-stage investigation and Browser QA remain mandatory before declaring hosted verification. No new paid execution, independent semantic acceptance, browser/remote connector or real draft workspace is claimed.
+
+## Verified hosted core checkpoint
+
+Core b20a29b/dpl_HhTUmocnkhkojS6RdPo9TbgH37yJ/64a763 completed the actual owner four-stage task op_32e3decce6a74760b8d3a24ed1464cfd. Original-order raw JSON preserves all hash inputs; separate QA/Auditor validated the four-file manifest, excerpts958/521/7, four receipts, dependency bindings and Chief three unresolved proposals. Queued cancel and emergency each cancel four unstarted tasks; thirty audit events validate and original seventeen are unchanged. Full reload preserves six plans/zero active. Before/after/historical paid ledger identical and disabled. STRICT2574, realRedis11, CI/CodeQL passed. This is genuine curated-source retrieval with deterministic reasoning; no remote page capture, AI judgment, human acceptance or real sandbox is claimed.
+
+A final UI defect reproduced on hosted b20: automatic refresh collapsed the newly added Chief report. The narrow stable-details-ID correction uses existing open-state persistence. Independent QA/Auditor17UI cases pass; exact new-source poll verification pending. Hosted backend proof stays bound to b20.

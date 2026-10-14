@@ -121,3 +121,11 @@ test('explicit engineering dependencies survive parallel mode while ordered mode
 test('empty task selection, whitespace or oversized objectives and invalid priority cannot poison the pending journal',async()=>{
  for(const change of [h=>h.get('opsTemplates').querySelectorAll('input').forEach(i=>i.checked=false),h=>h.get('opsObjective').value='   \n  ',h=>h.get('opsObjective').value='',h=>h.get('opsObjective').value='x'.repeat(1001),h=>h.get('opsPriority').value='elevate-permissions']){const h=harness(async()=>{throw Error('Invalid form must not submit');});h.update(state());change(h);await h.submit();assert.equal(h.calls.length,0);assert.equal(h.storage.size,0);assert.match(h.get('opsStatus').textContent,/No draft was saved or request sent/);assert.equal(h.get('opsCreate').disabled,false);}
 });
+
+test('user-opened Chief engineering report survives refreshed snapshots without forcing other details open',()=>{
+ const p={...plan(),status:'completed',report:{engineering:{version:'engineering-chief-report-v1',reasoning:'deterministic-consolidation-not-model',acceptedWork:false,businessAcceptance:'not-granted',groups:[]}}},h=harness(async()=>{throw Error('Snapshot rendering must not dispatch');});
+ const chief=()=>h.get('opsPlans').querySelectorAll('details').find(d=>d.children[0]?.textContent.startsWith('Chief engineering report'));
+ h.update(state(1,{plans:[p]}));const original=chief();assert(original);assert.equal(original.open,false);original.open=true;
+ h.update(state(2,{plans:[structuredClone(p)]}));assert.notEqual(chief(),original);assert.equal(chief().open,true);assert.equal(h.get('opsPlans').querySelectorAll('details').filter(d=>d!==chief()).every(d=>!d.open),true);
+ chief().open=false;h.update(state(3,{plans:[structuredClone(p)]}));assert.equal(chief().open,false);assert.equal(h.calls.length,0);
+});
