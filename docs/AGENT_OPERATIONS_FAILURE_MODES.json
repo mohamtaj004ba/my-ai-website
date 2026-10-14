@@ -1,7 +1,7 @@
 {
   "version": "agent-operations-fmea-v1",
   "baseline": "d744f3b",
-  "assessment": "phase-b-internal-operations-under-strict-and-hosted-verification",
+  "assessment": "phase-b-hosted-internal-operations-and-independent-evidence-verification-passed-with-qualified-limits",
   "noCriticalFindingInvented": true,
   "risks": [
     {
@@ -43,7 +43,8 @@
       "recoveryBehavior": "Stop beforecapture/dispatch; explicit reviewed lock update",
       "acceptanceCriteria": "Modified capture/access/geometry source changes release and blocks paidpath",
       "relevantScope": "all visual pilots",
-      "phaseA": "New server-created tasks retain workspace and execution runtime; reviewer policy rechecks membership/workspace owner and original grant owner from same CAS snapshot. Historical workspace/implementer identity unknown remains explicitly unverified."
+      "phaseA": "New server-created tasks retain workspace and execution runtime; reviewer policy rechecks membership/workspace owner and original grant owner from same CAS snapshot. Historical workspace/implementer identity unknown remains explicitly unverified.",
+      "phaseBEvidence": "New runtime stylesheet tracing omission reproduced by actual NFT, explicit literal resolution and permanent counterfactual added; all74runtime read assets traced and hosted fingerprint confirmed."
     },
     {
       "id": "AO-04",
@@ -114,21 +115,25 @@
       "detectionStrategy": "Capacity thresholds in riskreview; ledger size/record monitoring planned",
       "recoveryBehavior": "Stop newwork; retainhistory; ownerapproved archive required",
       "acceptanceCriteria": "Archive proof preserves reservations/revocation tombstones/auditchain before long-runningoperations",
-      "relevantScope": "persistent operations"
+      "relevantScope": "persistent operations",
+      "phaseBEvidence": "Separate scoped journal protects global Chief revisions; normal400/cleanup500audit slots and700KB/800KB limits; max24plan192task cleanup regression passed. Retention/migration remains future."
     },
     {
       "id": "AO-09",
       "severity": "High",
-      "status": "restricted-future",
-      "title": "Monitoring is pure policy without operational adapters",
-      "evidence": "engineering-quality.anomalies has no scheduled ingest/alert executor",
-      "controls": "Durable audit/status and manualowner/controller checks",
+      "status": "mitigated-bounded-internal-dashboard-scope",
+      "title": "Operational monitoring lacks independent delivery and process probes",
+      "evidence": "Phase B owner/workspace persisted projections and incidents verified; original anomalies policy still has no unattended external adapter.",
+      "controls": "Authoritative scoped task/lease/budget/evidence reads, snapshot-qualified incidents, acknowledgement/escalation and existing cancellation/revocation.",
       "missingProtection": "No independent stall/spend/dependency/cleanup alert delivery",
       "detectionStrategy": "Fail-safe incident runbook + manually inspect hostedreadback",
       "recoveryBehavior": "Disable/revoke; retainuncertainty; unrelatedscope remainsdisabled",
       "acceptanceCriteria": "Authenticated telemetry and owner escalation with tested outage path before unattendedwork",
       "relevantScope": "unattended operations",
-      "liveCheckpoint": "Single pilot had owner monitoring and verified shutdown; persistent operational monitoring remains future."
+      "liveCheckpoint": "Hosted7787 owner four-report DAG and incident acknowledgement/escalation verified; external delivery and unattended outage/process monitoring remain future.",
+      "phaseBEvidence": "Actual persisted task/lease/dependency/provider-receipt/budget projections and owner-scoped incidents, acknowledgements/escalation; no provider probes or external notifications.",
+      "remaining": "External monitoring adapters, delivery, physical process liveness and cloud outage detection remain inactive/unverified; browser failure is not proof of backend outage.",
+      "originalTitle": "Monitoring is pure policy without operational adapters"
     },
     {
       "id": "AO-10",
@@ -142,7 +147,8 @@
       "recoveryBehavior": "Use backendfinancialreports; do not rely on incompleteUI",
       "acceptanceCriteria": "Combined totals match ledger; mobile loadedtask/config evidence",
       "relevantScope": "admin operational readiness",
-      "liveCheckpoint": "Fresh mobile website PNG evidence does not resolve mobile dashboard loaded-data readiness."
+      "liveCheckpoint": "Fresh mobile website PNG evidence does not resolve mobile dashboard loaded-data readiness.",
+      "phaseBEvidence": "Owner desktop task controls passed. New loaded mobile not proven; attempted390override measured1707 and automatic mobile screenshot unloaded. Preserve gap; low-risk initial status placeholder polish pending."
     },
     {
       "id": "AO-11",
@@ -245,12 +251,15 @@
       "Reserved audit/byte cleanup capacity; corrupt authority records fail closed",
       "Snapshot-qualified incidents and expired queued-task visibility"
     ],
-    "verification": "Targeted service/API/UI cases pass; frozen STRICT, real Redis CI and exact-release hosted verification pending.",
+    "verification": "7787eb5 STRICT2542, actual Redis10, CI/CodeQL, exact Browser38522587054 and real owner four-report DAG/cancel/emergency/incident receipts independently verified.",
     "limitations": [
       "Provider availability unknown; no recurring probe",
       "No new independent human identity or external notification delivery",
       "No autonomous scheduler, paid retry or engineering tool executor",
       "Historical owner-bound records without workspace metadata remain explicitly qualified"
-    ]
+    ],
+    "release": "f01cf8f514a2f29903cb142bfed23cd84c16132faa2c6bcb7ca0d6504e8faea0",
+    "deploymentId": "dpl_AqkMjUDnjzfnsLx4BBd8WGhjwojh",
+    "readiness": "bounded-nonbillable-internal-scope-only-no-paid-or-write-permissions"
   }
 }

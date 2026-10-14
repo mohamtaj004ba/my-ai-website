@@ -40,3 +40,24 @@ Phase C prerequisites: separate owner authorization for narrowly scoped developm
 ### Initial hosted packaging failure preserved
 
 Initial source abb1205 passed frozen2541 tests and CI/Redis but hosted owner and restricted-worker GET returned BROKER_STORAGE_UNCONFIRMED. Preserved Phase A exact broker still read the same ledger successfully. Actual installed Vercel Node File Trace, after Windows path normalization, identified exactly one missing runtime fingerprint asset: agent-operations-command-center.css. The stylesheet had only a dynamic file-list reference. An explicit literal require.resolve in the existing source map preserves hashing while tracing the asset. Corrected trace covers all74required files with zero missing. A mandatory non-JavaScript asset-reference regression and original-omission counterfactual pass; these lexical checks plus actual local tracer evidence do not replace successful hosted exact-release readback. The failed Browser run and trace artifacts are preserved.
+
+
+## Verified checkpoint — 7787eb5
+
+READY dpl_AqkMjUDnjzfnsLx4BBd8WGhjwojh / ae3uapmdt; fingerprint f01cf8f514a2f29903cb142bfed23cd84c16132faa2c6bcb7ca0d6504e8faea0. Full STRICT2542, targeted33, actualRedis10, CI andCodeQL pass. Browser38522587054/115716775119 attempt2 passes; inspected report287layout/196readability/502reportedPNG and0errors;6missing pixel baselines qualify drift claims. See canonical handoff for exact artifact/checksums.
+
+| Capability | Offline/API/contract | Real Redis | Actual hosted | Remaining qualification |
+| --- | --- | --- | --- | --- |
+| Four-report dependency routing | Passed, adversarial and replay | Passed | Four ordered reports persisted and reloaded | Deterministic substitutes; no new AI coordinator call |
+| Monitoring/incidents | Passed | Existing CAS plus new journal tested | Actual uncertainty/withheld-QA, acknowledge/escalate,17audit events | Snapshot-qualified, dashboard only; no probes/delivery |
+| Cancel/emergency | Race/capacity/source guards passed | Passed | Two queued plans/eight tasks cancelled with zero attempts/leases | New mid-execution hosted race not exercised |
+| One bounded recovery | Source movement/lost claim/expiry limits passed | Durable CAS covered | Not fault-injected on hosted system | No automatic retry, paid call or authority restoration |
+| Backend report verification | Canonical receipt/aggregate and corruption checks passed | Passed | All4result/review and17audit hashes independently recomputed | Structural/content integrity, not human/model semantic independence |
+| Paid execution/history preservation | Construction forbids provider/reservation writer | Original ledger unchanged | Current+historical disabled and identical before/after history hashes | No new live model accuracy or invoice evidence |
+| Mobile loaded owner operations | Responsive CSS present | Not applicable | Not verified | Requested390override measured1707; CI mobile screenshot unloaded |
+
+Actual report attempt durations:2423/2456/2434/2080ms. Final local STRICT elapsed153508ms; no before/after speed or Work-credit saving claimed. Existing valid Phase A/rehearsal evidence reused. Only actual source changes built; one necessary packaging correction caused a second application release. Documentation checkpoints reuse equivalent application identity; no manual duplicate full public screenshot suite.
+
+Raw rendered JSON strings in ignored phase-b-hosted-raw-dom.json preserve key order for hash recomputation. Parsed-object connector exports may sort fields and must not be used naively as insertion-order hash inputs. Both independent reviewers verified actual raw records and original current/historical broker projection hashes.
+
+Remaining: independent human identity, notification/monitor adapters, scheduler/AI task decomposition and Business/Growth tools, bounded retention/version migration, cloud fault/clock-skew proof, loaded mobile readiness and minor initial status-copy polish. These are not enabled by profile cards. Phase C requires separate owner-approved tool scopes, reviewer trust, risk-specific rollback and execution limits; no write capability is activated.
