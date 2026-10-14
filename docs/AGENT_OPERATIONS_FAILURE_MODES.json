@@ -391,5 +391,33 @@
     "application": "76a752c5a4dd71edb305c8cd5965e8cad549fb69",
     "release": "59e9dbf1d90bb99531cf225f6572123f660153c358e6ca899bf623eb6cbdbd2a",
     "deployment": "dpl_Hg6SRh4mmdgD613rB6dnyEgphqhv"
+  },
+  "phaseC4": {
+    "status": "implementation-review-before-release-verification",
+    "architecture": "Existing owner/workspace/task/CAS/evidence/review/child architecture retained; no parallel authorization system.",
+    "providerPreparation": "User clarified full lifecycle connection grants: GitHub Contents/PR/Issues/Actionswrite+Metadataread, noAdmin/Secrets/Workflows; initial mintedreadtoken and existing gatewaywritesdisabled. Vercel projectread/configurationread/deploymentreadwrite selectedprojectonly; currentserverGETonly.",
+    "controls": [
+      "Immutable broker-bound request inputs",
+      "Fresh durable authorization before credential access/each GET/final receipt",
+      "Exact repository/installation and project/team/Preview/source identity",
+      "No raw credentials/provider errors in receipts",
+      "Known-profile source-hash-bound inert draft; no source execution",
+      "Separate unresolved review and backend nonacceptance",
+      "Original fixedcomment/history/source-lock preserved"
+    ],
+    "confirmedDefects": [
+      "Client dailyoverview chart fixed24h boundary misbinsDSTdays; proposed draft only, authoritative source not changed",
+      "InactiveGitHubadapter requestbinding could mutate across await; immutable copied input corrected; original7pass1fail Auditor proof and independent8/8 postcorrection retained",
+      "Setup inherited keys returned metadata; own-property guard and regression added"
+    ],
+    "limitations": [
+      "No provider App/integration installation, managedsecretbroker/vault/OAuth callback or privategatewayactivation",
+      "Dedicatedbrowsernotdeployed; hostingbudget/Previewidentity/OSegress qualification require owner",
+      "Only firstoverview chart proposed correction; separateinsightschart followup",
+      "Deterministic specialist/Chief/review; no paid or independent semantic inference",
+      "Trustedfixedchild not untrusted-code sandbox; parenthardkill orphan cleanup unverified"
+    ],
+    "verification": "Frozen STRICT2779/396files/200389ms envelope passed; release928bb115 unchanged; actualNFT94required/9893traced/missing[]. IndependentAuditor8postcorrection, QA10 and faithfulUIpreset validated. Added14th disposableRedisC4actualOpscase; hosted/remoteCI pending.",
+    "accounting": "Actual17:53:09Zbrokerpaidfalse/noactiveapprovals/unchangedledger;15ceiling/10.60retained including2.20uncertain/4.40remaining"
   }
 }

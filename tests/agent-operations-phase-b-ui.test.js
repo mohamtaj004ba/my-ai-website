@@ -24,6 +24,19 @@ function harness(reply,storage=new Map()){
  return{get,calls,storage,intervals,update:value=>context.window.CallerCoreOperations.update(value===null?null:{operatingSystem:value}),refresh:()=>get('opsRefresh').emit('click'),submit:async()=>{await get('opsForm').emit('submit');await new Promise(setImmediate);},retry:()=>get('opsRetry').emit('click'),run:()=>get('opsPlans').querySelectorAll('button').find(b=>b.textContent==='Run next internal task').emit('click')};
 }
 
+test('calendar correction preset submits exact bounded profile and default preset clears it',async()=>{
+ for(const reset of [false,true]){
+  const s=state();s.organization.templates.push({id:'engineering-inspect',name:'Engineering inspection',department:'engineering-product'});
+  const h=harness(async body=>{if(body.action==='operations-create')throw Error('Preserve exact submitted draft for inspection');return s;});h.update(s);
+  const correction=h.get('agentOpsCommandCenter').children.find(e=>e.id==='opsCorrectionPreset');assert(correction,'shipped correction button is attached to the existing command center');await correction.emit('click');
+  assert.match(h.get('opsObjective').value,/local-day chart DST boundary/);assert.equal(h.get('opsSequence').value,'ordered');assert.deepEqual(h.get('opsTemplates').querySelectorAll('input').filter(e=>e.checked).map(e=>e.value),['engineering-inspect']);
+  if(reset)await h.get('opsEngineeringPreset').emit('click');await h.submit();assert.equal(h.calls.length,1);assert.equal(h.calls[0].action,'operations-create');const input=h.calls[0].input;
+  assert.equal(input.durationMs,600000);assert.equal(input.subtasks[0].template,'engineering-inspect');assert.equal(input.subtasks.length,1);
+  if(reset){assert.equal(Object.hasOwn(input,'engineeringProfile'),false);assert.match(input.objective,/comment-only patch/);}else assert.equal(input.engineeringProfile,'dashboard-local-day-v1');
+  const saved=JSON.parse([...h.storage.values()][0]);assert.deepEqual(saved.input,input);
+ }
+});
+
 test('older main dashboard GET cannot overwrite a newer local operation readback',async()=>{
  const completed=plan(3);completed.status='completed';completed.tasks[0]={...completed.tasks[0],status:'completed',internalVerified:true,attempts:[{executionId:'internal_actual_fixture_001',status:'completed',resultHash:'e'.repeat(64),reviewHash:'f'.repeat(64)}]};
  const h=harness(async body=>body.action==='operations-read'?state(7,{plans:[completed]}):completed);
