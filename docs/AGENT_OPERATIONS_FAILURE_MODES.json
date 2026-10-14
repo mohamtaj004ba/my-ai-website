@@ -311,7 +311,7 @@
     }
   },
   "phaseC2": {
-    "status": "implementation-targeted-verification",
+    "status": "published-core-verified-hosted-partial-ui-correction",
     "controls": [
       "Fixed public GitHub GET, sourceSHA/workflow/output allowlist; no credentials/private logs",
       "Existing owner/CAS journal and final reviewer revalidation; current independent identity unavailable",
@@ -323,8 +323,25 @@
       "Remote Vercel read adapter not configured with scoped service credential",
       "No verified independent human/model semantic reviewer",
       "Parent crash may leave public-source temp data; no untrusted-code executor enabled",
-      "Hosted C2 workflow not yet demonstrated"
+      "Hosted C2 workflow not yet demonstrated",
+      "Typed DRAFT failures deliberately do not authorize automatic recovery"
     ],
-    "historicalAccounting": "Unchanged authoritative baseline2026-10-14T09:27:45Z:15USD allowance/10.60retained/2.20uncertain/4.40remaining; original ledger hash9f897bc97f3a59e31a357b0a7dc21ecb40082c4f29524065b1ce1f2600f16b6a"
+    "historicalAccounting": "Unchanged authoritative baseline2026-10-14T09:27:45Z:15USD allowance/10.60retained/2.20uncertain/4.40remaining; original ledger hash9f897bc97f3a59e31a357b0a7dc21ecb40082c4f29524065b1ce1f2600f16b6a",
+    "hosted": {
+      "source": "687f3769ab22664b3a9f62580083a4f9df6feb00",
+      "deploymentId": "dpl_GQu9iKQ5U4QSALCYzfRNfwuAaVvT",
+      "release": "d6e90cf5b4e5984c43b4dac95d6cbb53982316cca4a0fb7ac1363ea10daa9c55",
+      "taskId": "op_acb873b4ed744cdb99093d9b461c17d9",
+      "completed": [
+        "source+realCI",
+        "proposals"
+      ],
+      "remainingAttempts": 0,
+      "remainingLeases": 0,
+      "deadline": "2026-10-14T09:54:31.585Z",
+      "cleanup": "expired failclosed; cancellation not confirmed",
+      "qualification": "No complete hostedC2/sandbox/semanticreview claim"
+    },
+    "newDetectionGap": "Client accepted HTTP200+anysnapshot without semanticmutationconfirmation; refreshcouldhideunconfirmedreceipt/reviewbundle. Precise original missingresponse cause unproved."
   }
 }

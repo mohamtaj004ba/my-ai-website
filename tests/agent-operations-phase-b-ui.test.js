@@ -25,7 +25,8 @@ function harness(reply,storage=new Map()){
 }
 
 test('older main dashboard GET cannot overwrite a newer local operation readback',async()=>{
- const h=harness(async body=>body.action==='operations-read'?state(7,{plans:[plan(3)]}):{completed:true});
+ const completed=plan(3);completed.status='completed';completed.tasks[0]={...completed.tasks[0],status:'completed',internalVerified:true,attempts:[{executionId:'internal_actual_fixture_001',status:'completed',resultHash:'e'.repeat(64),reviewHash:'f'.repeat(64)}]};
+ const h=harness(async body=>body.action==='operations-read'?state(7,{plans:[completed]}):completed);
  h.update(state(5,{plans:[plan()]}));await h.run();assert.match(contents(h.get('opsOverview')),/observed-r7/);
  h.update(state(6,{plans:[plan(2)]}));assert.match(contents(h.get('opsOverview')),/observed-r7/);assert.doesNotMatch(contents(h.get('opsOverview')),/observed-r6/);
 });
