@@ -1,7 +1,7 @@
 {
   "version": "agent-operations-fmea-v1",
   "baseline": "d744f3b",
-  "assessment": "phase-a-atomic-evidence-and-owner-review-implemented-verification-in-progress",
+  "assessment": "phase-a-published-strict-redis-ci-codeql-full-browser-and-owner-png-verification-passed-with-qualified-limits",
   "noCriticalFindingInvented": true,
   "risks": [
     {
@@ -66,13 +66,14 @@
       "title": "Independent acceptance shares trusted parent",
       "evidence": "Runner receives worker/capture/assessor capabilities; middlestage hash trust",
       "controls": "Backend separate roles/capabilities/sealedobservation/semanticchecks; no modeloverride; Conservative tracked independent assessment withholds general visual/Legal suitability acceptance; can establish only exact price-spacing statement using verified capture-time geometry. Model agreement is never independent acceptance.",
-      "missingProtection": "Distinct authenticated reviewer identities and attestations absent",
+      "missingProtection": "Independently authorized reviewer identities/criteria and general acceptance policy remain absent. Owner evidence-review records exist but always grant no acceptance or operational authority; authentication/hashes do not prove human inspection.",
       "detectionStrategy": "Capability isolation tests; manual independent image acceptance; exactcontract replays",
       "recoveryBehavior": "Fail/uncertain work remains notaccepted; owner escalation",
       "acceptanceCriteria": "Separate trustedreviewer attestation boundtask/evidence/release before unattendedwrites",
       "relevantScope": "autonomous engineering writes",
       "liveCheckpoint": "Live QA accepted one and left three compound claims unresolved; Chief preserved all decisions and backend rejected acceptance. Sentence-level claim granularity bundles supported layout facts with uncertain text; trusted reviewer attestations and atomic clauses remain future work. No zero-false-rejection or probability-calibration claim.",
-      "phaseA": "Explicit atomic claims, direct region/observation binding, geometry polarity and exact summary coverage implemented; authenticated append-only owner review never rewrites original QA/acceptance. Unknown independence and human inspection remain unverified; no paid accuracy evaluation."
+      "phaseA": "Explicit atomic claims, direct region/observation binding, geometry polarity and exact summary coverage implemented; authenticated append-only owner review never rewrites original QA/acceptance. Unknown independence and human inspection remain unverified; no paid accuracy evaluation.",
+      "phaseAVerification": "Published a2e448d/release00e53b: STRICT2509, LinuxCI2509, realRedis9, CI38514215812, CodeQL38514215763 and fullBrowser38514211743 attempt2 passed. Actual authenticated original review read and4localPNG hashes/dimensions/decode/display passed after owner enabled extension file access. No new live accuracy proof, historical mutation or hosted owner verdict; independent reviewer policy remains unavailable."
     },
     {
       "id": "AO-06",
@@ -219,7 +220,19 @@
       "detectionStrategy": "Execute actual workflow embedded gate for absentstatus, stale alias, mismatched target, hostile URL and deniedauth.",
       "recoveryBehavior": "Failclosed with no QAacceptance; rerun nonbillable checks only after exactidentity verified.",
       "acceptanceCriteria": "Full authenticated browser run on exactpublishedsource with inspectedartifact; no paidverification.",
-      "relevantScope": "hosted verification reliability"
+      "relevantScope": "hosted verification reliability",
+      "phaseA": "Exact READY a2e448d/00e53b pin and full Browser passed after aligning only existing feature alias. Original failed release-pin artifact preserved. Six comparisons lacked a prior PNG baseline: visual equivalence remains unverified; choose a prior full screenshot artifact before claiming drift coverage."
     }
-  ]
+  ],
+  "phaseAVerification": {
+    "application": "a2e448d6e321d5f58f217e08b5ef4102526fcc1f",
+    "release": "00e53b44072f06df846d7dd0ff46dcab887dd22f6e46ce67d5419aa59deedd16",
+    "paidExecution": false,
+    "reviewAuthority": "separate-owner-record-only-no-acceptance",
+    "liveAccuracyVerified": false,
+    "hostedPngVerification": "passed-four-original-hashes-dimensions-local-decode-display-no-verdict",
+    "browser": "38514211743-attempt2-passed-exact-a2e448d-502PNG-287layout-196readability",
+    "originalEvidencePreserved": true,
+    "pixelBaseline": "6missing-baseline-comparisons-no-drift-equivalence-claim"
+  }
 }
