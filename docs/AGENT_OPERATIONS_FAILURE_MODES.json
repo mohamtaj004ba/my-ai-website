@@ -437,7 +437,16 @@
         "Vercel dedicated project credential or integration consent",
         "Google mailbox/Cloud-project confirmation and OAuth",
         "Separate browser infrastructure budget approval"
-      ]
+      ],
+      "firstHostedAttempt": {
+        "application": "d3b8423",
+        "task": "op_18baeec145a74c7699f4b1397fa07a87",
+        "invocation": "ii_2949d22a672b4f3ca33fd2a6318ffa70",
+        "outcome": "HTTP409;grant-revoked",
+        "rootCause": "not retained; cannot determine retrospectively",
+        "detectionGap": "generic errors discarded safe stage-specific diagnostics",
+        "correction": "shared finite codes across broker/App and audit; no raw provider text; separately recorded verification after reviewed deployment"
+      }
     }
   }
 }
