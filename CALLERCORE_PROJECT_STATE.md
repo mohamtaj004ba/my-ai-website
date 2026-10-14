@@ -1,5 +1,15 @@
 # CallerCore project state
 
+## Operation Piña Colada — LIVE five-stage technical milestone; backend acceptance rejected
+
+One authorized live five-call workflow completed on unchanged application58cf249/releasecc2ae through actual authenticated Owner control, supervisor and restricted worker. All HTTP200/contracts valid; four fresh screenshot hashes and blind sealing verified. Independent QA:1accepted/3unresolved; Chief faithfully reported notaccepted, backend acceptedWork=false. No retries or further paid tasks.
+
+Actual35,016tokens (259reasoning included in3,475output), usage-derived$0.097832, not invoice reconciliation. Ledger15ceiling/10.60retained including2.20historical uncertainty/4.40available; new3.60ceilings retained. Central approval revoked before expiry; activated6kancdc84 and disabled READY replacementbczmoce9s/dpl_Ey5JMYddXHDAPkJXRhB7FUr3Pqaz report paidfalse. Featurealias aligned.13historicaldisabled,3init403,03:27:49UTC zero workers/credentialscan1569 zero. Production unchanged.
+
+Fresh86targetedchecks passed; unchanged2450full/Redis8/CI/CodeQL/fullBrowser502 evidence reused. Independent Auditor verified actual path/audit/finalreport; independent QA inspected originalPNG. Sentence-level compound claims limit partial acceptance; trusted attestations, monitoring, mobileloadeddata and controlledwrites remain future work. No100percentaccuracy or autonomousengineeringreadiness claim. Four-department roadmap and disabled recovery preserved.
+
+See [exact live checkpoint](docs/AGENT_OPERATIONS_PINA_COLADA_LIVE_CHECKPOINT.md) for each stage, request IDs, evidence hashes, verdicts, deployment identities, shutdown and qualifications. This documentation publication is not a new application deployment.
+
 ## Development efficiency optimization — verified application checkpoint
 
 Preserved636fbfa/7961feb and historical evidence. Published optimization979f5c4bf48303c4536574e68bdaa943ce12cc24 and portable correction58cf249d6d4425a7e813c3b077233cc190182d97. Source-derived FAST/STANDARD/STRICT selects from actual Git changes, file modes and protected consumers in both trees; unknown/shared/backend/security/dependency/workflow/test changes remain STRICT. No developer label lowers risk. STRICT runs every contract/policy test once in the full union; Redis, independent QA/Auditor, CodeQL, exact Preview identity and full authenticated Browser checks remain mandatory. Documentation gets targeted tests plus fresh identity-only checks, explicitly no new visual/security acceptance. No general evidence cache or operational permission introduced.
