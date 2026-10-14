@@ -362,5 +362,28 @@
       "qualification": "No complete hostedC2/sandbox/semanticreview claim",
       "reconciliation": "Laterauthoritativerev10shows4completed/fifthcancelled0attempts/allleases0; originalrev5snapshotsretained; originalHTTPresponsesunknown"
     }
+  },
+  "phaseC3": {
+    "status": "implemented-focused-reviewed-pending-release-verification",
+    "architecture": "existingownerAPI/operationsCAS/audit only; no newcredential/spending system",
+    "controls": [
+      "exacttask/source/release/origin/role/fence grants",
+      "durable single-use admission/rate/maxcall/replay protection",
+      "immediate pretransport and finalpermissionchecks",
+      "localrevoke independentofunrelatedpaidledger",
+      "emergencystop allintegrationgrants",
+      "sanitizedtypedmetadata/escapedUI/no rawcredentials",
+      "browsercleanupfailurequarantine/cancelbeforegoto"
+    ],
+    "limitations": [
+      "Only fixed publicGitHubCI operational; allprivateconnectionsunconfigured",
+      "No registeredOAuthclient/consent/managedvault or keymanagement yet",
+      "BrowserChromium/dedicatedruntime/OSegress/Previewidentity absent; synthetic tests only",
+      "Localrevoke notprovidercredentialrevocation",
+      "Interruptedadmissions requireownerrevoke; no automaticretry",
+      "No semanticreview/newwriteauthority or newpaid execution"
+    ],
+    "verification": "focused30/API+27gateway; independentQA22/Auditor9; STRICT/Redis/hostedpending",
+    "accounting": "Baseline15USD/10.60retained including2.20uncertain/4.40remaining; no new approvals or calls"
   }
 }

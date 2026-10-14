@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const operations=require('../lib/agent-operations-operating-system'),tools=require('../lib/agent-operations-engineering-tools');
 const actor={kind:'owner',id:'auditor-owner@example.test',workspaceId:'auditor-workspace',verifiedOwner:true};
 function setup(){
- let unavailable=false;const rows=new Map(),kv={get:async k=>{if(unavailable)throw Error('Redis unavailable');return rows.get(k)??null;},eval:async(_,[k],[a,b])=>{if(unavailable)throw Error('Redis unavailable');if((rows.get(k)||'')!==a)return 0;rows.set(k,b);return 1;}},runtime={environment:'preview',origin:'https://auditor-prepare.vercel.app',commit:'a'.repeat(40),branch:'feature/callercore-dashboards'};
+ let unavailable=false;const rows=new Map(),kv={get:async k=>{if(unavailable)throw Error('Redis unavailable');return rows.get(k)??null;},eval:async(_,[k],[a,b])=>{if(unavailable)throw Error('Redis unavailable');if((rows.get(k)||'')!==a)return 0;rows.set(k,b);return 1;}},runtime={environment:'preview',origin:'https://my-ai-website-auditorprepare-mohamtaj004bas-projects.vercel.app',commit:'a'.repeat(40),branch:'feature/callercore-dashboards'};
  const ledger={version:1,revision:1,tasks:[],reservations:[],operations:{workflows:[],grants:[],reservations:[],audit:[],approvals:[]}};
  const service=operations.createOperations({kv,ledgerAdapter:{read:async()=>JSON.stringify(ledger)},runtime,clock:()=>1000000,assertOwner:async a=>a.id===actor.id});
  return{service,rows,ledger,setUnavailable:v=>unavailable=v};
