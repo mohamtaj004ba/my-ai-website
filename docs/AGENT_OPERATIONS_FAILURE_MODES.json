@@ -1,7 +1,7 @@
 {
   "version": "agent-operations-fmea-v1",
   "baseline": "d744f3b",
-  "assessment": "phase-a-published-strict-redis-ci-codeql-full-browser-and-owner-png-verification-passed-with-qualified-limits",
+  "assessment": "phase-b-internal-operations-under-strict-and-hosted-verification",
   "noCriticalFindingInvented": true,
   "risks": [
     {
@@ -234,5 +234,23 @@
     "browser": "38514211743-attempt2-passed-exact-a2e448d-502PNG-287layout-196readability",
     "originalEvidencePreserved": true,
     "pixelBaseline": "6missing-baseline-comparisons-no-drift-equivalence-claim"
+  },
+  "phaseB": {
+    "scope": "Owner/workspace-bound deterministic zero-provider internal reports only; no new paid or write authority.",
+    "controls": [
+      "Separate Redis CAS journal leaves authoritative execution/spending ledger immutable",
+      "Fresh owner policy, exact release binding, bounded DAG/fences/deadlines and one manual internal recovery",
+      "Canonical report verification never grants business acceptance",
+      "Scoped summaries and owner/workspace uncertain-delivery journal",
+      "Reserved audit/byte cleanup capacity; corrupt authority records fail closed",
+      "Snapshot-qualified incidents and expired queued-task visibility"
+    ],
+    "verification": "Targeted service/API/UI cases pass; frozen STRICT, real Redis CI and exact-release hosted verification pending.",
+    "limitations": [
+      "Provider availability unknown; no recurring probe",
+      "No new independent human identity or external notification delivery",
+      "No autonomous scheduler, paid retry or engineering tool executor",
+      "Historical owner-bound records without workspace metadata remain explicitly qualified"
+    ]
   }
 }

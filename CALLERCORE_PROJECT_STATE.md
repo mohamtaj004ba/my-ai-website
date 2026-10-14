@@ -1,3 +1,11 @@
+## Phase B — internal operations implementation under verification
+
+The new Preview-only owner/workspace coordination panel extends the existing broker and Redis client. Four bounded internal reports, durable department-aware DAGs, fenced execution, explicit cancellation/one manual recovery, snapshot-based incidents, scoped history/spending attribution and audit are implemented. AI department leads, new specialists/tools, independent human reviewer identity, notification adapters and autonomous writes remain inactive. Backend contract verification never grants business acceptance.
+
+Independent QA/Auditor identified and corrected draft dependency recovery, consumed-approval expiry, cross-workspace summary/audit projection, stale/session UI responses, audit cleanup capacity and durable-record validation gaps. Focused actual service/API/UI regressions pass; final source freeze, full STRICT, real Redis CI, CodeQL and hosted owner verification are still pending at this source checkpoint. New journals never modify historical execution/approval/spending records. Existing authenticated Preview readback confirms paid disabled, no approved Start, and $15 ceiling/$10.60 retained including $2.20 uncertain/$4.40 remaining. No new model call, reservation, approval or settlement.
+
+Architecture, threat boundaries, operational versus inactive roles and Phase C prerequisites: [Phase B](docs/AGENT_OPERATIONS_PHASE_B.md). Preserve the sixteen-item risk register and Phase A evidence. Exact resumable progress lives in ignored artifacts/agent-operations/PHASE_B_CHECKPOINT.json. Do not infer hosted readiness from this implementation checkpoint.
+
 # CallerCore project state
 
 ## Phase A — published implementation, hosted verification checkpoint

@@ -1,0 +1,59 @@
+'use strict';
+// Independent behavioral tests execute the shipped UI, not a substitute state machine.
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),crypto=require('node:crypto');
+const source=fs.readFileSync(path.join(__dirname,'../agent-operations-command-center.js'),'utf8');
+class Element{
+ constructor(tag='div'){this.tag=tag;this.value='';this.textContent='';this.children=[];this.dataset={};this.style={};this.disabled=false;this.hidden=false;this.checked=false;this.open=false;this.listeners={};}
+ append(...items){this.children.push(...items);}replaceChildren(...items){this.children=items;}
+ addEventListener(type,listener){(this.listeners[type]??=[]).push(listener);}
+ async emit(type,event={preventDefault(){}}){for(const listener of this.listeners[type]||[])await listener(event);}
+ querySelectorAll(selector){const all=this.children.flatMap(x=>[x,...x.querySelectorAll('*')]),parts=selector.split(',');return all.filter(x=>parts.some(p=>p==='*'||p==='details[open]'?p==='*'||x.tag==='details'&&x.open:x.tag===p));}
+}
+const contents=e=>[e.textContent,...e.children.map(contents)].join(' ');
+function state(revision=1,{ownerHash='a'.repeat(64),workspaceHash='b'.repeat(64),plans=[]}={}){return{
+ version:'internal-operations-v1',revision,at:1700000000000+revision,runtime:{sourceCommit:'c'.repeat(40),release:{digest:'d'.repeat(64)}},scopeIdentity:{ownerHash,workspaceHash},plans,incidents:[],audit:[],permissions:{paidExecution:false,writesEnabled:false},reviewPolicy:{},organization:{templates:[{id:'budget-audit',name:'Budget report',department:'finance-operations'}],departments:[]},monitoring:{status:'observed-r'+revision,budget:{retainedMicros:10600000,pendingMicros:2200000,remainingMicros:4400000},activity:[],attribution:[],alerts:[],dependencies:{provider:{status:'unknown'}}}
+};}
+function plan(revision=1){return{id:'op_existing',revision,status:'queued',objective:'Existing zero-provider plan',priority:'normal',modelCalls:0,tasks:[{id:'op_existing_one',template:'budget-audit',department:'finance-operations',role:'finance-cost-control',status:'queued',dependsOn:[],recoveryCount:0}]};}
+function harness(reply,storage=new Map()){
+ const elements=new Map(),calls=[],intervals=[],get=id=>{if(!elements.has(id))elements.set(id,new Element(id==='opsForm'?'form':['opsRefresh','opsCreate','opsEmergency','opsSync','opsRetry'].includes(id)?'button':id==='opsObjective'?'textarea':id==='opsPriority'||id==='opsSequence'?'select':'div'));return elements.get(id);};
+ get('opsObjective').value='Read owned internal records.';get('opsPriority').value='normal';get('opsSequence').value='ordered';
+ get('agentOpsCommandCenter').querySelectorAll=selector=>[...elements.values()].filter(e=>e!==get('agentOpsCommandCenter')).flatMap(e=>[e,...e.querySelectorAll(selector)]).filter(e=>selector.split(',').includes(e.tag));
+ const context={window:{},document:{getElementById:get,createElement:tag=>new Element(tag)},crypto:crypto.webcrypto,AbortSignal,Date,setInterval:fn=>intervals.push(fn),sessionStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fetch:async(url,options)=>{assert.equal(url,'/api/agent-operations');assert.equal(options.credentials,'same-origin');assert.equal(options.redirect,'error');const body=JSON.parse(options.body);calls.push(body);return{ok:true,json:async()=>({operatingSystem:await reply(body)})};}};
+ vm.runInNewContext(source,context);
+ return{get,calls,storage,intervals,update:value=>context.window.CallerCoreOperations.update(value===null?null:{operatingSystem:value}),refresh:()=>get('opsRefresh').emit('click'),submit:async()=>{await get('opsForm').emit('submit');await new Promise(setImmediate);},retry:()=>get('opsRetry').emit('click'),run:()=>get('opsPlans').querySelectorAll('button').find(b=>b.textContent==='Run next internal task').emit('click')};
+}
+
+test('older main dashboard GET cannot overwrite a newer local operation readback',async()=>{
+ const h=harness(async body=>body.action==='operations-read'?state(7,{plans:[plan(3)]}):{completed:true});
+ h.update(state(5,{plans:[plan()]}));await h.run();assert.match(contents(h.get('opsOverview')),/observed-r7/);
+ h.update(state(6,{plans:[plan(2)]}));assert.match(contents(h.get('opsOverview')),/observed-r7/);assert.doesNotMatch(contents(h.get('opsOverview')),/observed-r6/);
+});
+
+test('malformed refresh and operation readback never report confirmed success',async()=>{
+ for(const mode of ['refresh','mutation']){const h=harness(async()=>({version:'internal-operations-v1',status:'unavailable'}));h.update(state(1,{plans:[plan()]}));if(mode==='refresh')await h.refresh();else await h.run();
+  assert.doesNotMatch(h.get('opsStatus').textContent,/Operation verified|Operational state refreshed/);assert.match(h.get('opsStatus').textContent,/unavailable|unconfirmed|stale/i);assert.equal(h.get('opsCreate').disabled,true);
+ }
+});
+
+test('session loss invalidates an in-flight refresh response without restoring controls',async()=>{
+ let resolve;const h=harness(()=>new Promise(r=>resolve=r));h.update(state());const pending=h.refresh();await new Promise(setImmediate);h.update(null);resolve(state(2));await pending;
+ assert.equal(h.get('agentOpsCommandCenter').hidden,true);assert.equal(h.get('opsCreate').disabled,true);assert.doesNotMatch(h.get('opsStatus').textContent,/Operational state refreshed/);
+});
+
+test('session loss during a mutation cannot install its later readback or report verified work',async()=>{
+ let resolve;const h=harness(body=>body.action==='operations-run'?new Promise(r=>resolve=r):state(3,{plans:[plan(2)]}));h.update(state(1,{plans:[plan()]}));const pending=h.run();await new Promise(setImmediate);h.update(null);resolve({completed:true});await pending;
+ assert.equal(h.get('agentOpsCommandCenter').hidden,true);assert.equal(h.get('opsCreate').disabled,true);assert.doesNotMatch(h.get('opsStatus').textContent,/Operation verified/);
+});
+
+test('saved assignment keys are scoped to both owner and workspace and cannot be resent under another session',async()=>{
+ for(const foreign of [{ownerHash:'f'.repeat(64),workspaceHash:'b'.repeat(64)},{ownerHash:'a'.repeat(64),workspaceHash:'f'.repeat(64)}]){
+  const storage=new Map([['callercore-internal-assignment-pending-v1',JSON.stringify({...foreign,input:{idempotencyKey:'foreign_assignment_001',objective:'Foreign draft'}})]]),h=harness(async()=>{throw Error('Foreign draft must never dispatch');},storage);h.update(state());assert.equal(h.get('opsRetry').disabled,true);await h.retry();assert.equal(h.calls.length,0);
+ }
+});
+
+test('uncertain Create preserves its exact key, never retries automatically, and refresh reconciles committed state',async()=>{
+ const storage=new Map();let submitted;const h=harness(async body=>{submitted=body.input;throw Error('Response lost after Create commit');},storage);h.update(state());await h.submit();
+ assert.equal(h.calls.length,1);assert.equal(h.calls[0].action,'operations-create');assert.equal(storage.size,1);assert.match(h.get('opsStatus').textContent,/unconfirmed/i);assert.equal(submitted.subtasks[0].template,'budget-audit');
+ const saved=JSON.parse([...storage.values()][0]);assert.deepEqual(saved.input,submitted);assert.equal(saved.ownerHash,'a'.repeat(64));assert.equal(saved.workspaceHash,'b'.repeat(64));
+ const resumed=harness(async()=>state(2,{plans:[{...plan(),idempotencyKey:submitted.idempotencyKey}]}),storage);resumed.update(state());await resumed.refresh();assert.equal(storage.size,0);assert.equal(resumed.calls.length,1);assert.equal(resumed.calls[0].action,'operations-read');
+});

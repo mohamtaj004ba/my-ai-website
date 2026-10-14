@@ -20,3 +20,8 @@ Implementation sequence: (1) engineering policy and independent review disciplin
 Organizational context must ingest only verified project state, history with limitations, capabilities, active tasks, blockers, budgets and recorded decisions, with provenance/freshness. Keep blind image reviewers free of original conclusions until observations are durably sealed. Backend task state, policy, reservations and independent acceptance remain authoritative. Any critical issue can reach owner escalation without a Chief override. Actual notification delivery is not implemented by this roadmap.
 
 Completed today: review-role policy metadata, risk/plan tooling, acceptance/readiness evaluators and offline anomaly rules. Proposed: authenticated Auditor runtime, durable review receipts, active monitoring/routing, department agents, new write executors and Production capabilities. None of the proposed capabilities is activated.
+
+
+## Phase B internal departmental coordination
+
+The current taxonomy and bounded report primitives are defined in `AGENT_OPERATIONS_PHASE_B.md` and `lib/agent-operations-departments.js`. This refines the prior four-group roadmap without activating paid department leads or new agent tools. Quality, Security & Reliability retains independent veto boundaries; authenticated owner review remains separate from independent human attestation. Customer-facing AI receptionists remain distinct from the inactive internal Voice Systems Engineering role.
