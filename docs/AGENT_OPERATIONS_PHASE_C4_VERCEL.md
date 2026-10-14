@@ -1,3 +1,5 @@
+> Latest owner checkpoint: the private integration has now been created successfully. Client credentials are not yet confirmed configured; owner secret entry is pending. CI, CodeQL, real Redis and authenticated BrowserQA38641848852 attempt2 passed on03dc201. Provider authentication/installation remains unverified and operational agent broker/writes remain disabled.
+
 # C.4 Vercel owner OAuth connection
 
 Owner-only Preview implementation, not yet authenticated with the provider. Work's Vercel connection is never inherited by CallerCore agents.
