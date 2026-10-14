@@ -425,17 +425,17 @@
     "release": "928bb115ff2d8e89a5c37306b4ddfde57e01a95b8772d3dda999cc9fff1de1db",
     "deployment": "dpl_FtW2ZpYMxwsN3G8TXJyagXRiMhmo",
     "ownerGithubActivation": {
-      "status": "reviewed-offline-hosted-authentication-pending",
+      "status": "second-hosted-denial-preserved-authentication-unverified",
       "appId": 5321141,
       "installationId": 171494892,
       "repositoryId": 1284219633,
       "keyStorage": "Vercel Secret, Preview feature/callercore-dashboards; metadata verified only",
       "boundaries": "Existing owner API, task-specific github.app.ci.read grant and Redis CAS; fresh authority at installation lookup, token issuance, inventory/read and receipt; all writes remain disabled",
       "newCompatibilityFinding": "Official GitHub stateless installation-token rollout requires bounded JWT-shaped token alphabet rather than legacy 255-character token ceiling",
-      "residual": "Already-transmitted token issuance cannot be recalled. No token cache/export; tokens expire in at most one hour; server gateway revocation blocks subsequent use. Actual provider verification awaits one source-and-secret deployment.",
+      "residual": "Actual authenticated read has not succeeded. Both failed tasks/grants preserved and cancelled/revoked. Token issuance cannot be recalled; tokens not cached/exported and expire within one hour.",
       "externalDependencies": [
-        "Vercel dedicated project credential or integration consent",
-        "Google mailbox/Cloud-project confirmation and OAuth",
+        "Vercel reviewed callback/token storage and project-only owner consent",
+        "Gmail existing Inbox connected; central agent grant wiring remains separate",
         "Separate browser infrastructure budget approval"
       ],
       "firstHostedAttempt": {
@@ -446,6 +446,16 @@
         "rootCause": "not retained; cannot determine retrospectively",
         "detectionGap": "generic errors discarded safe stage-specific diagnostics",
         "correction": "shared finite codes across broker/App and audit; no raw provider text; separately recorded verification after reviewed deployment"
+      },
+      "secondHostedAttempt": {
+        "application": "8475980",
+        "task": "op_3ffe5b3b8d064340b45b86e57c8e3336",
+        "invocation": "ii_a2f8640d50494f71bbd35a97dcb07814",
+        "outcome": "INT_READ_UNCONFIRMED;grant-revoked;task-cancelled",
+        "rootCause": "unconfirmed",
+        "detectionGap": "Audit helper retained broker codes but discarded fixed App-level timeout/cancellation/validation errors",
+        "correction": "Exact existing SAFE_ERRORS and fixed transport fallback now map to separate INT_GITHUB_APP categories; no arbitrary provider text or execution changes",
+        "timingRisk": "Nine durable authorization callbacks plus four provider requests share six seconds. Plausible insufficient headroom, not established cause; retain all checks and limits pending measured evidence."
       }
     }
   }
