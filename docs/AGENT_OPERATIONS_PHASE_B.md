@@ -35,3 +35,8 @@ Targeted actual-interface tests cover routing, concurrent replay, cancellation/s
 Remaining limitations: no model planning accuracy measurement; no new independent human identity; no notification adapter, persistent worker scheduler, actual process heartbeat probe, cloud Redis outage injection or autonomous tool executor. Department cost attribution uses only supported recorded stages; unknowns stay unattributed. The existing $15 ceiling and $10.60 retained including $2.20 uncertainty remain authoritative; no new spending or settlement occurs.
 
 Phase C prerequisites: separate owner authorization for narrowly scoped development tools, trusted independent reviewer identity where required, risk-specific execution policy, rollback evidence, monitored canary limits and fresh release/financial preflight. Nothing here activates those capabilities.
+
+
+### Initial hosted packaging failure preserved
+
+Initial source abb1205 passed frozen2541 tests and CI/Redis but hosted owner and restricted-worker GET returned BROKER_STORAGE_UNCONFIRMED. Preserved Phase A exact broker still read the same ledger successfully. Actual installed Vercel Node File Trace, after Windows path normalization, identified exactly one missing runtime fingerprint asset: agent-operations-command-center.css. The stylesheet had only a dynamic file-list reference. An explicit literal require.resolve in the existing source map preserves hashing while tracing the asset. Corrected trace covers all74required files with zero missing. A mandatory non-JavaScript asset-reference regression and original-omission counterfactual pass; these lexical checks plus actual local tracer evidence do not replace successful hosted exact-release readback. The failed Browser run and trace artifacts are preserved.
