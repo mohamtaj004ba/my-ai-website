@@ -1,5 +1,11 @@
 # CallerCore project state
 
+## Phase A — implementation checkpoint, verification in progress
+
+Preserved application58cf249 / publishedhandoff0e3c491 and immutable live pilot. organization-contracts-v4, atomic-findings-v1 and chief-report-v3 implement explicit evidence-linked claims, same-region independent adjudication, capture-time geometry polarity and actionable proposal-only final reporting. Preview owner review uses existing authentication and Redis CAS; separate records never overwrite historical QA/acceptance or grant execution. Actual human inspection and historical reviewer independence remain unverified. New offline20case evaluator is separate from live accuracy.
+
+Independent challenge found/corrected unreviewed summaries, geometry polarity, whole-image citation bridging, UI read/file races and lost-response key recovery; permanent negatives added. Paid execution remains disabled, no paid approvals or requests, ledger15/10.60retained incl2.20uncertain/4.40available unchanged. See docs/AGENT_OPERATIONS_PHASE_A.md. Complete STRICT/Redis/CI/CodeQL/hosted verification and record exact commit/deployment before declaring publication acceptance. This checkpoint does not claim new live judgment accuracy.
+
 ## Operation Piña Colada — LIVE five-stage technical milestone; backend acceptance rejected
 
 One authorized live five-call workflow completed on unchanged application58cf249/releasecc2ae through actual authenticated Owner control, supervisor and restricted worker. All HTTP200/contracts valid; four fresh screenshot hashes and blind sealing verified. Independent QA:1accepted/3unresolved; Chief faithfully reported notaccepted, backend acceptedWork=false. No retries or further paid tasks.

@@ -1,7 +1,7 @@
 {
   "version": "agent-operations-fmea-v1",
   "baseline": "d744f3b",
-  "assessment": "one-live-five-stage-technical-completion-substantive-acceptance-withheld-paid-disabled",
+  "assessment": "phase-a-atomic-evidence-and-owner-review-implemented-verification-in-progress",
   "noCriticalFindingInvented": true,
   "risks": [
     {
@@ -42,7 +42,8 @@
       "detectionStrategy": "Fingerprint drift mutation tests beforetransport; pin exact deployment and localbundle",
       "recoveryBehavior": "Stop beforecapture/dispatch; explicit reviewed lock update",
       "acceptanceCriteria": "Modified capture/access/geometry source changes release and blocks paidpath",
-      "relevantScope": "all visual pilots"
+      "relevantScope": "all visual pilots",
+      "phaseA": "New server-created tasks retain workspace and execution runtime; reviewer policy rechecks membership/workspace owner and original grant owner from same CAS snapshot. Historical workspace/implementer identity unknown remains explicitly unverified."
     },
     {
       "id": "AO-04",
@@ -70,7 +71,8 @@
       "recoveryBehavior": "Fail/uncertain work remains notaccepted; owner escalation",
       "acceptanceCriteria": "Separate trustedreviewer attestation boundtask/evidence/release before unattendedwrites",
       "relevantScope": "autonomous engineering writes",
-      "liveCheckpoint": "Live QA accepted one and left three compound claims unresolved; Chief preserved all decisions and backend rejected acceptance. Sentence-level claim granularity bundles supported layout facts with uncertain text; trusted reviewer attestations and atomic clauses remain future work. No zero-false-rejection or probability-calibration claim."
+      "liveCheckpoint": "Live QA accepted one and left three compound claims unresolved; Chief preserved all decisions and backend rejected acceptance. Sentence-level claim granularity bundles supported layout facts with uncertain text; trusted reviewer attestations and atomic clauses remain future work. No zero-false-rejection or probability-calibration claim.",
+      "phaseA": "Explicit atomic claims, direct region/observation binding, geometry polarity and exact summary coverage implemented; authenticated append-only owner review never rewrites original QA/acceptance. Unknown independence and human inspection remain unverified; no paid accuracy evaluation."
     },
     {
       "id": "AO-06",
