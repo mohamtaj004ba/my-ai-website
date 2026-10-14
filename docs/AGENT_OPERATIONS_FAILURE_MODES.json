@@ -1,7 +1,7 @@
 {
   "version": "agent-operations-fmea-v1",
   "baseline": "d744f3b",
-  "assessment": "phase-b-hosted-internal-operations-and-independent-evidence-verification-passed-with-qualified-limits",
+  "assessment": "phase-c-bounded-readonly-hosted-tools-verified-with-qualified-limits",
   "noCriticalFindingInvented": true,
   "risks": [
     {
@@ -271,7 +271,7 @@
     }
   },
   "phaseC": {
-    "status": "hosted-core-verified-final-ui-refresh-correction",
+    "status": "bounded-readonly-hosted-milestone-verified",
     "scope": "Task-bound curated deployed-source read tools and deterministic proposals; inert draft contract only.",
     "controls": [
       "Existing scoped owner policy/journal/CAS/fence/lease; original execution ledger read-only",
@@ -296,7 +296,18 @@
       "auditEvents": 30,
       "originalEventsPreserved": 17,
       "substantiveAcceptance": false,
-      "qualification": "Source-only realtool/deterministicreasoning; queuedcleanup. UIreport autorefresh correction under verification."
+      "qualification": "Real fixed-source tools; deterministic reasoning and separate backend evidence checking only. Queued cleanup verified; no human/model semantic acceptance, real sandbox, remote adapter or new hosted outage/inflight proof."
+    },
+    "finalUI": {
+      "source": "28a6dbff6d9a9234a3f323ac80690e8929c209e9",
+      "deploymentId": "dpl_3U4DB9aqukog5sr4dPkZ5TV4qjrN",
+      "release": "9d9397ea985f5fc1b5665a8edccb278b378f03cad9e2e440fbd9d39741db836d",
+      "strict": 2575,
+      "redis": "115760512669:11/11",
+      "ci": "38536467556:success",
+      "codeql": "38536467492:success",
+      "browser": "38536468131 attempt2/job115762268529 SUCCESS, exact28a6/dpl_3U4/9d9397 pin verified; artifact11881107629 (163781380bytes) retained server-side, failed pin artifact11881040390 (333bytes) preserved",
+      "refresh": "Report open at both1:42:52AM and1:49:52AM server snapshots; no repeated investigation."
     }
   }
 }
