@@ -1,23 +1,29 @@
-# C.4 Vercel engineering connection preparation
+# C.4 Vercel owner OAuth connection
 
-Prepared, not connected. The new server-only `agent-operations-vercel-connection.js` wraps the existing exact-deployment GET adapter. There is no OAuth exchange, token creation, managed vault, installed integration or active private gateway route. Work's Vercel connection is used only for development verification, never inherited by CallerCore agents.
+Owner-only Preview implementation, not yet authenticated with the provider. Work's Vercel connection is never inherited by CallerCore agents.
 
-## Register once, authorize each action
+## Existing gateway and storage
 
-Prepare an API integration selected only for project `prj_AkD7VoSNCE6fRYXQnXkX1ywGqjLX` in team `team_6Rg3DdCrvOml6oEGwx6Ndf1I`. Provider console permissions: **Project Read**, **Integration Configuration Read**, and **Deployment Read/Write** for the requested future engineering lifecycle. Do not request environment variables, domains, billing, team/user administration or drains. The initial CallerCore adapter exposes only fixed GET inspection; provider write capability is not an agent grant. Deployment writes can also cancel/delete deployments, so future execution requires separately reviewed exact actions and explicit owner authority. Project selection does not distinguish Preview from Production: CallerCore must enforce environment/branch/task/release restrictions independently.
+The existing authenticated Agent Operations API exposes fixed owner-only status, begin and local-revoke actions. The callback uses the existing fresh workspace-owner policy and Redis compare-and-audit transactions. Ten-minute single-use state binds owner, workspace, exact source, release fingerprint and immutable deployment. Consent must begin on the feature alias, retaining its host-only owner session.
 
-The supported provider OAuth exchange requires an owner-registered integration, exact HTTPS callback, client credentials and installation consent. Its authorization code must be exchanged server-side once, with owner/workspace-bound single-use state and approved encrypted storage. That callback/store is not implemented or activated here: deployment origin, owner-approved integration identity and managed secret broker are prerequisites. No fabricated connect URL or plaintext credential form is exposed. See [official integration permissions and exchange](https://vercel.com/docs/integrations/create-integration/vercel-api-integrations).
+The server exchanges a code once at Vercel's fixed OAuth endpoint, verifies the actual installation, selected project and team, and performs a genuine fixed project GET. Each provider boundary freshly checks owner and durable state. Concurrent callbacks, replay, stale source, revocation and unavailable storage fail closed. Failed exchanges preserve only finite phase, HTTP category and elapsed timing.
 
-A project-scoped personal token is a fallback requiring a separate owner decision; it has project read/write capability, not a native read-only guarantee. Do not reuse a developer/team token. See [token scoping](https://vercel.com/docs/accounts/access-tokens).
+Tokens are encrypted with AES-256-GCM using existing CALLERCORE_ENCRYPTION_KEY storage architecture, authenticated to owner/workspace/provider/Preview/configuration. No key, token, authorization code or raw provider response enters UI diagnostics, model context or audit records. Local revoke destroys usable local credential/state; provider uninstall is a separate owner action. Already transmitted provider requests cannot be recalled.
 
-## Prepared adapter behavior
+## Owner registration
 
-The future trusted broker must validate live installation selection, exact team/project, disabled state, actual permissions and expiry, returning normalized facts only to the server. Local Redis authorization must remain authoritative through the existing gateway callback before broker access, immediately before transport, and before accepting a result. A constant callback is only a test substitute, never production authority.
+Private integration: CallerCore Agent Operations; slug callercore-agent-operations. Individual developer Tj Mohammed, contact tj@callercore.com, public support support@callercore.com. Selected team team_6Rg3DdCrvOml6oEGwx6Ndf1I and only project prj_AkD7VoSNCE6fRYXQnXkX1ywGqjLX. Request only Integration Configuration Read, Projects Read and Deployments Read/Write for future separately authorized engineering actions. No environment, secrets, billing, domain, user or team administration scopes.
 
-The adapter accepts only deployment ID and exact source SHA; it appends the fixed team context, uses the existing bounded Preview/source/project checks, rejects arbitrary methods/URLs and returns sanitized identity/status. A six-second whole-operation deadline includes stalled broker and response paths. Cancellation/revocation rejects late results without retries. Token values never enter receipts. Broad, foreign, expired, disabled or all-project credentials fail closed.
+Callback: https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app/api/vercel-oauth-callback
 
-Alias assignment is provider metadata, not independent alias resolution. Raw logs, environment values, billing/usage evidence and release-fingerprint remote probes are not implemented by this adapter. Cost visibility requires a separately justified provider permission; do not silently add Billing scope. No deployment mutation is callable.
+After the reviewed callback is deployed, the owner completes registration and stores CALLERCORE_VERCEL_CLIENT_ID and secret CALLERCORE_VERCEL_CLIENT_SECRET in Vercel Preview, feature/callercore-dashboards only. Never paste credentials into chat. A necessary configuration deployment activates those settings. Then initiate consent from the existing authenticated dashboard, choose only the CallerCore project and complete owner consent.
 
-## Owner-dependent next step
+## Authority and remaining evidence
 
-Confirm the business-owned integration identity and secure token/key storage. Register the proposed scopes and install only on the existing CallerCore project; the owner completes provider consent. Then implement the guarded callback/broker wiring and prove actual successful/denied reads and revocation before marking connected. No new provider account, paid service or credential has been created during this preparation.
+Provider deployment-write permissions are not agent execution grants and may cover deletion or Production within the project. All CallerCore external writes and operational credential-broker access remain disabled. Actual provider scope serialization must be observed and independently verified before any operational tool use; identity-verified-scope-unconfirmed explicitly reports that restriction. Token expiry is not invented. The callback's authenticated project receipt proves identity/read access only, not Preview mutation authority.
+
+Independent Auditor and QA reviewed actual source; focused owner QA9/9 and Auditor5/5 passed. Combined84 checks passed before final diagnostic-prototype and consent-refresh regressions. Real Redis OAuth race coverage was added to the existing integration suite; full STRICT CI, CodeQL and hosted authentication remain required. No provider registration, consent, credentials, paid calls or new spending reservations were created by these tests.
+
+## Safe recovery
+
+Never retry an uncertain code exchange automatically. Inspect finite failure metadata; start new owner consent only after its cause is understood. Revocation cannot resurrect a consumed state. A provider installation may remain after a failed exchange and require owner removal. Keep paid execution disabled, preserve original audit records and historical accounting.
