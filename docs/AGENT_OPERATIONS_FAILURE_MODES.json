@@ -309,5 +309,22 @@
       "browser": "38536468131 attempt2/job115762268529 SUCCESS, exact28a6/dpl_3U4/9d9397 pin verified; artifact11881107629 (163781380bytes) retained server-side, failed pin artifact11881040390 (333bytes) preserved",
       "refresh": "Report open at both1:42:52AM and1:49:52AM server snapshots; no repeated investigation."
     }
+  },
+  "phaseC2": {
+    "status": "implementation-targeted-verification",
+    "controls": [
+      "Fixed public GitHub GET, sourceSHA/workflow/output allowlist; no credentials/private logs",
+      "Existing owner/CAS journal and final reviewer revalidation; current independent identity unavailable",
+      "Trusted fixed-comment disposable filesystem only; source never executed; publication denied",
+      "500ms task/owner/store guard and explicit aborted finalization checks"
+    ],
+    "limitations": [
+      "Deployed browser binary/service and scoped protection identity unavailable",
+      "Remote Vercel read adapter not configured with scoped service credential",
+      "No verified independent human/model semantic reviewer",
+      "Parent crash may leave public-source temp data; no untrusted-code executor enabled",
+      "Hosted C2 workflow not yet demonstrated"
+    ],
+    "historicalAccounting": "Unchanged authoritative baseline2026-10-14T09:27:45Z:15USD allowance/10.60retained/2.20uncertain/4.40remaining; original ledger hash9f897bc97f3a59e31a357b0a7dc21ecb40082c4f29524065b1ce1f2600f16b6a"
   }
 }

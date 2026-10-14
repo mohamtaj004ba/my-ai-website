@@ -103,18 +103,18 @@ test('incomplete engineering checkbox selection is rejected before saving a key 
  for(const selected of [['engineering-propose'],['engineering-review'],['engineering-draft'],['engineering-inspect','engineering-draft']]){const h=harness(async()=>{throw Error('Invalid DAG must not dispatch');});h.update(engineeringState());for(const checkbox of h.get('opsTemplates').querySelectorAll('input'))checkbox.checked=selected.includes(checkbox.value);await h.submit();assert.equal(h.calls.length,0);assert.equal(h.storage.size,0);assert.match(h.get('opsStatus').textContent,/required.*predecessor/i);assert.equal(h.get('opsCreate').disabled,false);}
 });
 
-test('engineering preset constructs the actual four-stage backend-valid chain without hidden state or automatic submission',async()=>{
+test('engineering preset constructs the actual five-stage backend-valid fixed-demo chain without hidden state or automatic submission',async()=>{
  let input;const h=harness(async body=>{input=body.input;throw Error('Controlled unconfirmed Create boundary');});h.update(engineeringState());assert.equal(h.get('opsTemplates').querySelectorAll('input').some(i=>i.checked&&i.value.startsWith('engineering-')),false);
  await h.get('opsEngineeringPreset').emit('click');assert.equal(h.calls.length,0);assert.equal(h.storage.size,0);assert.equal(h.get('opsSequence').value,'ordered');
- const stages=['engineering-inspect','engineering-propose','engineering-review','engineering-draft'];assert.deepEqual(h.get('opsTemplates').querySelectorAll('input').filter(i=>i.checked).map(i=>i.value),stages);
- await h.submit();assert.equal(h.calls.length,1);assert.equal(h.calls[0].action,'operations-create');assert.deepEqual(input.subtasks.map(t=>t.template),stages);assert.deepEqual(input.subtasks.map(t=>t.dependsOn),[[],['task1'],['task2'],['task3']]);assert(input.subtasks.every(t=>Object.keys(t).sort().join(',')==='dependsOn,key,template'));
+ const stages=['engineering-inspect','engineering-propose','engineering-review','engineering-draft','engineering-prepare-demo'];assert.deepEqual(h.get('opsTemplates').querySelectorAll('input').filter(i=>i.checked).map(i=>i.value),stages);
+ await h.submit();assert.equal(h.calls.length,1);assert.equal(h.calls[0].action,'operations-create');assert.deepEqual(input.subtasks.map(t=>t.template),stages);assert.deepEqual(input.subtasks.map(t=>t.dependsOn),[[],['task1'],['task2'],['task3'],['task4']]);assert(input.subtasks.every(t=>Object.keys(t).sort().join(',')==='dependsOn,key,template'));
  assert.doesNotThrow(()=>require('../lib/agent-operations-operating-system').makePlan(input,{origin:'https://ui-fixture.vercel.app',sourceCommit:'a'.repeat(40),branch:'feature/callercore-dashboards',release:{digest:'b'.repeat(64)}},1000000));assert.deepEqual(JSON.parse([...h.storage.values()][0]).input,input);
 });
 
 test('explicit engineering dependencies survive parallel mode while ordered mode retains additional selected-task edges',async()=>{
  for(const sequence of ['parallel','ordered']){let input;const h=harness(async body=>{input=body.input;throw Error('Controlled unconfirmed Create boundary');});h.update(engineeringState());for(const i of h.get('opsTemplates').querySelectorAll('input'))i.checked=i.value.startsWith('engineering-')||i.value==='budget-audit';h.get('opsSequence').value=sequence;await h.submit();assert.equal(h.calls.length,1);
-  const byTemplate=new Map(input.subtasks.map(t=>[t.template,t]));for(const [template,required] of [['engineering-propose','engineering-inspect'],['engineering-review','engineering-propose'],['engineering-draft','engineering-review']])assert(byTemplate.get(template).dependsOn.includes(byTemplate.get(required).key));
-  assert.deepEqual(byTemplate.get('budget-audit').dependsOn,sequence==='ordered'?[byTemplate.get('engineering-draft').key]:[]);assert.doesNotThrow(()=>require('../lib/agent-operations-engineering').routing(input.subtasks));
+  const byTemplate=new Map(input.subtasks.map(t=>[t.template,t]));for(const [template,required] of [['engineering-propose','engineering-inspect'],['engineering-review','engineering-propose'],['engineering-draft','engineering-review'],['engineering-prepare-demo','engineering-draft']])assert(byTemplate.get(template).dependsOn.includes(byTemplate.get(required).key));
+  assert.deepEqual(byTemplate.get('budget-audit').dependsOn,sequence==='ordered'?[byTemplate.get('engineering-prepare-demo').key]:[]);assert.doesNotThrow(()=>require('../lib/agent-operations-engineering').routing(input.subtasks));
  }
 });
 
