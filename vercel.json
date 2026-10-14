@@ -69,5 +69,6 @@
     "api/agent-operations.js": {
       "maxDuration": 660
     }
-  }
+  },
+  "ignoreCommand": "node scripts/vercel-ignore-docs.cjs"
 }

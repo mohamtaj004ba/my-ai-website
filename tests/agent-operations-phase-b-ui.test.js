@@ -16,7 +16,7 @@ function state(revision=1,{ownerHash='a'.repeat(64),workspaceHash='b'.repeat(64)
 function plan(revision=1){return{id:'op_existing',revision,status:'queued',objective:'Existing zero-provider plan',priority:'normal',modelCalls:0,tasks:[{id:'op_existing_one',template:'budget-audit',department:'finance-operations',role:'finance-cost-control',status:'queued',dependsOn:[],recoveryCount:0}]};}
 const draftInput=idempotencyKey=>({idempotencyKey,objective:'Cached bounded internal assignment.',priority:'normal',durationMs:600000,subtasks:[{key:'task1',template:'budget-audit',dependsOn:[]}]});
 function harness(reply,storage=new Map()){
- const elements=new Map(),calls=[],intervals=[],get=id=>{if(!elements.has(id))elements.set(id,new Element(id==='opsForm'?'form':['opsRefresh','opsCreate','opsEmergency','opsSync','opsRetry'].includes(id)?'button':id==='opsObjective'?'textarea':id==='opsPriority'||id==='opsSequence'?'select':'div'));return elements.get(id);};
+ const elements=new Map(),calls=[],intervals=[],get=id=>{if(!elements.has(id))elements.set(id,new Element(id==='opsForm'?'form':['opsRefresh','opsCreate','opsEmergency','opsSync','opsRetry','opsEngineeringPreset'].includes(id)?'button':id==='opsObjective'?'textarea':id==='opsPriority'||id==='opsSequence'?'select':'div'));return elements.get(id);};
  get('opsObjective').value='Read owned internal records.';get('opsPriority').value='normal';get('opsSequence').value='ordered';
  get('agentOpsCommandCenter').querySelectorAll=selector=>[...elements.values()].filter(e=>e!==get('agentOpsCommandCenter')).flatMap(e=>[e,...e.querySelectorAll(selector)]).filter(e=>selector.split(',').includes(e.tag));
  const context={window:{},document:{getElementById:get,createElement:tag=>new Element(tag)},crypto:crypto.webcrypto,AbortSignal,Date,setInterval:fn=>intervals.push(fn),sessionStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fetch:async(url,options)=>{assert.equal(url,'/api/agent-operations');assert.equal(options.credentials,'same-origin');assert.equal(options.redirect,'error');const body=JSON.parse(options.body);calls.push(body);return{ok:true,json:async()=>({operatingSystem:await reply(body)})};}};
@@ -96,4 +96,28 @@ test('present primitive or incomplete cache values are quarantined rather than m
 
 test('cached idempotency keys must meet backend string and eighty-character limits',async()=>{
  for(const key of [12345678,'x'.repeat(81)]){const raw=JSON.stringify({ownerHash:'a'.repeat(64),workspaceHash:'b'.repeat(64),input:draftInput(key)}),h=harness(async()=>{throw Error('Backend-invalid key must never resend');},new Map([['callercore-internal-assignment-pending-v1',raw]]));h.update(state());assert.equal(h.get('opsRetry').disabled,true);await h.retry();assert.equal(h.calls.length,0);assert.match(h.get('opsPending').textContent,/quarantin/i);}
+});
+
+function engineeringState(){const v=state();v.organization=require('../lib/agent-operations-departments').directory();return v;}
+test('incomplete engineering checkbox selection is rejected before saving a key or sending Create',async()=>{
+ for(const selected of [['engineering-propose'],['engineering-review'],['engineering-draft'],['engineering-inspect','engineering-draft']]){const h=harness(async()=>{throw Error('Invalid DAG must not dispatch');});h.update(engineeringState());for(const checkbox of h.get('opsTemplates').querySelectorAll('input'))checkbox.checked=selected.includes(checkbox.value);await h.submit();assert.equal(h.calls.length,0);assert.equal(h.storage.size,0);assert.match(h.get('opsStatus').textContent,/required.*predecessor/i);assert.equal(h.get('opsCreate').disabled,false);}
+});
+
+test('engineering preset constructs the actual four-stage backend-valid chain without hidden state or automatic submission',async()=>{
+ let input;const h=harness(async body=>{input=body.input;throw Error('Controlled unconfirmed Create boundary');});h.update(engineeringState());assert.equal(h.get('opsTemplates').querySelectorAll('input').some(i=>i.checked&&i.value.startsWith('engineering-')),false);
+ await h.get('opsEngineeringPreset').emit('click');assert.equal(h.calls.length,0);assert.equal(h.storage.size,0);assert.equal(h.get('opsSequence').value,'ordered');
+ const stages=['engineering-inspect','engineering-propose','engineering-review','engineering-draft'];assert.deepEqual(h.get('opsTemplates').querySelectorAll('input').filter(i=>i.checked).map(i=>i.value),stages);
+ await h.submit();assert.equal(h.calls.length,1);assert.equal(h.calls[0].action,'operations-create');assert.deepEqual(input.subtasks.map(t=>t.template),stages);assert.deepEqual(input.subtasks.map(t=>t.dependsOn),[[],['task1'],['task2'],['task3']]);assert(input.subtasks.every(t=>Object.keys(t).sort().join(',')==='dependsOn,key,template'));
+ assert.doesNotThrow(()=>require('../lib/agent-operations-operating-system').makePlan(input,{origin:'https://ui-fixture.vercel.app',sourceCommit:'a'.repeat(40),branch:'feature/callercore-dashboards',release:{digest:'b'.repeat(64)}},1000000));assert.deepEqual(JSON.parse([...h.storage.values()][0]).input,input);
+});
+
+test('explicit engineering dependencies survive parallel mode while ordered mode retains additional selected-task edges',async()=>{
+ for(const sequence of ['parallel','ordered']){let input;const h=harness(async body=>{input=body.input;throw Error('Controlled unconfirmed Create boundary');});h.update(engineeringState());for(const i of h.get('opsTemplates').querySelectorAll('input'))i.checked=i.value.startsWith('engineering-')||i.value==='budget-audit';h.get('opsSequence').value=sequence;await h.submit();assert.equal(h.calls.length,1);
+  const byTemplate=new Map(input.subtasks.map(t=>[t.template,t]));for(const [template,required] of [['engineering-propose','engineering-inspect'],['engineering-review','engineering-propose'],['engineering-draft','engineering-review']])assert(byTemplate.get(template).dependsOn.includes(byTemplate.get(required).key));
+  assert.deepEqual(byTemplate.get('budget-audit').dependsOn,sequence==='ordered'?[byTemplate.get('engineering-draft').key]:[]);assert.doesNotThrow(()=>require('../lib/agent-operations-engineering').routing(input.subtasks));
+ }
+});
+
+test('empty task selection, whitespace or oversized objectives and invalid priority cannot poison the pending journal',async()=>{
+ for(const change of [h=>h.get('opsTemplates').querySelectorAll('input').forEach(i=>i.checked=false),h=>h.get('opsObjective').value='   \n  ',h=>h.get('opsObjective').value='',h=>h.get('opsObjective').value='x'.repeat(1001),h=>h.get('opsPriority').value='elevate-permissions']){const h=harness(async()=>{throw Error('Invalid form must not submit');});h.update(state());change(h);await h.submit();assert.equal(h.calls.length,0);assert.equal(h.storage.size,0);assert.match(h.get('opsStatus').textContent,/No draft was saved or request sent/);assert.equal(h.get('opsCreate').disabled,false);}
 });

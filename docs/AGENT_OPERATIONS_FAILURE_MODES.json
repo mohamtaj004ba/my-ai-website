@@ -269,5 +269,23 @@
       "control": "Quarantine preserves bytes/no resend; owner monitoring remains usable; main snapshot status truthful.",
       "verification": "STRICT2548; independent QA12/Auditor12; actual owner reload and unchanged broker history/accounting; CI/CodeQL/Redis pass; Browser38527350195 attempt2/job115732333832 success exact35ad/e84/dpl_5zw. Attempt1 pinfail preserved."
     }
+  },
+  "phaseC": {
+    "status": "implementation-under-strict-verification",
+    "scope": "Task-bound curated deployed-source read tools and deterministic proposals; inert draft contract only.",
+    "controls": [
+      "Existing scoped owner policy/journal/CAS/fence/lease; original execution ledger read-only",
+      "Literal allowlist, source manifest, single snapshot and bounded secret-screened bytes",
+      "Exactly one prerequisite; immutable dependency hashes and canonical downstream provenance",
+      "No network/shell/provider/writer; no acceptance/independence grants",
+      "Conservative Preview-only documentation build skip; unknown state builds"
+    ],
+    "limitations": [
+      "No independent human identity or substantive AI review",
+      "No remote CI/GitHub/browser adapters or new service credentials",
+      "No actual draft filesystem/sandbox",
+      "Secret screen recognizes patterns; curated public source scope remains required",
+      "Existing journal retention, clock skew and cloud failure limitations remain"
+    ]
   }
 }
