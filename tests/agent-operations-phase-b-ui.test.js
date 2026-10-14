@@ -14,6 +14,7 @@ function state(revision=1,{ownerHash='a'.repeat(64),workspaceHash='b'.repeat(64)
  version:'internal-operations-v1',revision,at:1700000000000+revision,runtime:{sourceCommit:'c'.repeat(40),release:{digest:'d'.repeat(64)}},scopeIdentity:{ownerHash,workspaceHash},plans,incidents:[],audit:[],permissions:{paidExecution:false,writesEnabled:false},reviewPolicy:{},organization:{templates:[{id:'budget-audit',name:'Budget report',department:'finance-operations'}],departments:[]},monitoring:{status:'observed-r'+revision,budget:{retainedMicros:10600000,pendingMicros:2200000,remainingMicros:4400000},activity:[],attribution:[],alerts:[],dependencies:{provider:{status:'unknown'}}}
 };}
 function plan(revision=1){return{id:'op_existing',revision,status:'queued',objective:'Existing zero-provider plan',priority:'normal',modelCalls:0,tasks:[{id:'op_existing_one',template:'budget-audit',department:'finance-operations',role:'finance-cost-control',status:'queued',dependsOn:[],recoveryCount:0}]};}
+const draftInput=idempotencyKey=>({idempotencyKey,objective:'Cached bounded internal assignment.',priority:'normal',durationMs:600000,subtasks:[{key:'task1',template:'budget-audit',dependsOn:[]}]});
 function harness(reply,storage=new Map()){
  const elements=new Map(),calls=[],intervals=[],get=id=>{if(!elements.has(id))elements.set(id,new Element(id==='opsForm'?'form':['opsRefresh','opsCreate','opsEmergency','opsSync','opsRetry'].includes(id)?'button':id==='opsObjective'?'textarea':id==='opsPriority'||id==='opsSequence'?'select':'div'));return elements.get(id);};
  get('opsObjective').value='Read owned internal records.';get('opsPriority').value='normal';get('opsSequence').value='ordered';
@@ -47,7 +48,7 @@ test('session loss during a mutation cannot install its later readback or report
 
 test('saved assignment keys are scoped to both owner and workspace and cannot be resent under another session',async()=>{
  for(const foreign of [{ownerHash:'f'.repeat(64),workspaceHash:'b'.repeat(64)},{ownerHash:'a'.repeat(64),workspaceHash:'f'.repeat(64)}]){
-  const storage=new Map([['callercore-internal-assignment-pending-v1',JSON.stringify({...foreign,input:{idempotencyKey:'foreign_assignment_001',objective:'Foreign draft'}})]]),h=harness(async()=>{throw Error('Foreign draft must never dispatch');},storage);h.update(state());assert.equal(h.get('opsRetry').disabled,true);await h.retry();assert.equal(h.calls.length,0);
+  const storage=new Map([['callercore-internal-assignment-pending-v1',JSON.stringify({...foreign,input:draftInput('foreign_assignment_001')})]]),h=harness(async()=>{throw Error('Foreign draft must never dispatch');},storage);h.update(state());assert.equal(h.get('opsRetry').disabled,true);await h.retry();assert.equal(h.calls.length,0);
  }
 });
 
@@ -56,4 +57,43 @@ test('uncertain Create preserves its exact key, never retries automatically, and
  assert.equal(h.calls.length,1);assert.equal(h.calls[0].action,'operations-create');assert.equal(storage.size,1);assert.match(h.get('opsStatus').textContent,/unconfirmed/i);assert.equal(submitted.subtasks[0].template,'budget-audit');
  const saved=JSON.parse([...storage.values()][0]);assert.deepEqual(saved.input,submitted);assert.equal(saved.ownerHash,'a'.repeat(64));assert.equal(saved.workspaceHash,'b'.repeat(64));
  const resumed=harness(async()=>state(2,{plans:[{...plan(),idempotencyKey:submitted.idempotencyKey}]}),storage);resumed.update(state());await resumed.refresh();assert.equal(storage.size,0);assert.equal(resumed.calls.length,1);assert.equal(resumed.calls[0].action,'operations-read');
+});
+
+test('corrupt same-owner journal cannot throw dashboard rendering or resend malformed input',async()=>{
+ for(const draft of [{input:null},{},{input:{objective:'Missing idempotency key'}}]){
+  const raw=JSON.stringify({ownerHash:'a'.repeat(64),workspaceHash:'b'.repeat(64),...draft}),storage=new Map([['callercore-internal-assignment-pending-v1',raw]]),h=harness(async()=>{throw Error('Corrupt cached input must never dispatch');},storage);
+  assert.doesNotThrow(()=>h.update(state(1,{plans:[plan()]})),'local cache damage must not escape through the dashboard update callback');
+  assert.equal(h.get('opsRefresh').disabled,false);assert.equal(h.get('opsSync').disabled,false);assert.equal(h.get('opsRetry').disabled,true);await h.retry();assert.equal(h.calls.length,0);
+  assert.match(h.get('opsPending').textContent+' '+h.get('opsStatus').textContent,/corrupt|invalid|unusable|quarantin|malformed|damaged/i,'show a local draft warning rather than claiming backend failure');
+  assert([...storage.values()].some(value=>value===raw),'preserve the original damaged draft for explicit recovery or quarantine');
+ }
+});
+
+test('valid main dashboard update clears initial and previously unavailable operational labels',()=>{
+ for(const prior of ['initial','unavailable']){const h=harness(async()=>{throw Error('No fetch needed for a valid dashboard snapshot');});if(prior==='initial')h.get('opsStatus').textContent='No operational snapshot loaded.';else h.update(null);
+  h.update(state());assert.equal(h.get('agentOpsCommandCenter').hidden,false);assert.equal(h.get('opsCreate').disabled,false);assert.doesNotMatch(h.get('opsStatus').textContent,/No operational snapshot loaded|unavailable|unconfirmed/i);assert(h.get('opsStatus').textContent.trim().length>0);
+ }
+});
+
+test('malformed JSON or unavailable local storage leaves monitoring usable and never dispatches a draft',async()=>{
+ class Unreadable extends Map{get(){throw Error('Storage access denied');}}
+ for(const storage of [new Map([['callercore-internal-assignment-pending-v1','{not JSON']]),new Unreadable()]){const h=harness(async()=>{throw Error('No draft dispatch allowed');},storage);assert.doesNotThrow(()=>h.update(state()));assert.equal(h.get('opsCreate').disabled,true);assert.equal(h.get('opsRetry').disabled,true);assert.equal(h.get('opsSync').disabled,false);await h.submit();await h.retry();assert.equal(h.calls.length,0);assert.match(h.get('opsPending').textContent,/invalid|quarantin/i);}
+ class Unwritable extends Map{set(){throw Error('Storage quota exceeded');}}
+ const h=harness(async()=>{throw Error('Create must not dispatch without durable local key');},new Unwritable());h.update(state());await h.submit();assert.equal(h.calls.length,0);assert.match(h.get('opsStatus').textContent,/not submitted/i);
+});
+
+test('failed removal of a reconciled draft keeps it quarantined and disables new submission in the same render',async()=>{
+ let deletions=0;class Undeletable extends Map{delete(){deletions++;throw Error('Storage deletion denied');}}
+ const raw=JSON.stringify({ownerHash:'a'.repeat(64),workspaceHash:'b'.repeat(64),input:draftInput('pending_saved_key_001')}),storage=new Undeletable([['callercore-internal-assignment-pending-v1',raw]]),h=harness(async()=>{throw Error('Reconciled but uncleared draft must not dispatch');},storage);
+ h.update(state(2,{plans:[{...plan(),idempotencyKey:'pending_saved_key_001'}]}));assert.equal(deletions,1,'exercise actual reconciliation rather than rejecting an incomplete fixture');assert.equal(h.get('opsCreate').disabled,true);assert.equal(h.get('opsRetry').disabled,true);assert.equal(h.get('opsSync').disabled,false);assert.match(h.get('opsPending').textContent,/quarantin/i);await h.submit();await h.retry();assert.equal(h.calls.length,0);assert.equal(storage.get('callercore-internal-assignment-pending-v1'),raw);
+});
+
+test('present primitive or incomplete cache values are quarantined rather than mistaken for absent drafts',async()=>{
+ for(const raw of ['false','0','""','null','[]','{}',JSON.stringify({ownerHash:'a'.repeat(64),workspaceHash:'b'.repeat(64),input:{idempotencyKey:'complete_key_but_missing_task'}})]){
+  const storage=new Map([['callercore-internal-assignment-pending-v1',raw]]),h=harness(async()=>{throw Error('Invalid cached draft must not submit');},storage);assert.doesNotThrow(()=>h.update(state()));assert.equal(h.get('opsCreate').disabled,true);assert.equal(h.get('opsRetry').disabled,true);assert.equal(h.get('opsSync').disabled,false);await h.submit();await h.retry();assert.equal(h.calls.length,0);assert.equal(storage.get('callercore-internal-assignment-pending-v1'),raw);assert.match(h.get('opsPending').textContent,/quarantin/i);
+ }
+});
+
+test('cached idempotency keys must meet backend string and eighty-character limits',async()=>{
+ for(const key of [12345678,'x'.repeat(81)]){const raw=JSON.stringify({ownerHash:'a'.repeat(64),workspaceHash:'b'.repeat(64),input:draftInput(key)}),h=harness(async()=>{throw Error('Backend-invalid key must never resend');},new Map([['callercore-internal-assignment-pending-v1',raw]]));h.update(state());assert.equal(h.get('opsRetry').disabled,true);await h.retry();assert.equal(h.calls.length,0);assert.match(h.get('opsPending').textContent,/quarantin/i);}
 });

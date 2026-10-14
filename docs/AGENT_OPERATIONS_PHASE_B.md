@@ -61,3 +61,7 @@ Actual report attempt durations:2423/2456/2434/2080ms. Final local STRICT elapse
 Raw rendered JSON strings in ignored phase-b-hosted-raw-dom.json preserve key order for hash recomputation. Parsed-object connector exports may sort fields and must not be used naively as insertion-order hash inputs. Both independent reviewers verified actual raw records and original current/historical broker projection hashes.
 
 Remaining: independent human identity, notification/monitor adapters, scheduler/AI task decomposition and Business/Growth tools, bounded retention/version migration, cloud fault/clock-skew proof, loaded mobile readiness and minor initial status-copy polish. These are not enabled by profile cards. Phase C requires separate owner-approved tool scopes, reviewer trust, risk-specific rollback and execution limits; no write capability is activated.
+
+### Final dashboard cache hardening
+
+Independent review reproduced a damaged local pending draft crashing the main dashboard and an initial status label remaining stale after a valid server snapshot. The UI now quarantines invalid saved drafts without deleting or resending them, blocks new Create while delivery history is unresolved, and keeps independent Refresh/Sync/cancellation controls usable. A valid main snapshot reports readback rather than mutation success. This is local defensive rendering, not a replacement for server authorization or payload validation. Original hosted report, cancellation and incident evidence remains preserved; new source verification is required before publication.
