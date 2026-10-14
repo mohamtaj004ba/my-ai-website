@@ -260,6 +260,14 @@
     ],
     "release": "f01cf8f514a2f29903cb142bfed23cd84c16132faa2c6bcb7ca0d6504e8faea0",
     "deploymentId": "dpl_AqkMjUDnjzfnsLx4BBd8WGhjwojh",
-    "readiness": "bounded-nonbillable-internal-scope-only-no-paid-or-write-permissions"
+    "readiness": "bounded-nonbillable-internal-scope-only-no-paid-or-write-permissions",
+    "dashboardHardening": {
+      "source": "e84e2bffbbdd25521b5d7af3afb06800ec7d3bf5",
+      "release": "35ad3de0ce1701a90ac35c7c05aeb4c019a0ab49aae19ade4612b2af5b0374b2",
+      "deploymentId": "dpl_5zwLh6TWhumHetk1LjX8SFLkB1oj",
+      "rootCause": "Malformed local pending draft assumed complete; main valid snapshot did not clear initial status.",
+      "control": "Quarantine preserves bytes/no resend; owner monitoring remains usable; main snapshot status truthful.",
+      "verification": "STRICT2548; independent QA12/Auditor12; actual owner reload and unchanged broker history/accounting; CI/CodeQL/Redis pass; Browser38527350195 attempt2/job115732333832 success exact35ad/e84/dpl_5zw. Attempt1 pinfail preserved."
+    }
   }
 }
