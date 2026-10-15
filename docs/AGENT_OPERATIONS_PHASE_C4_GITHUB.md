@@ -46,3 +46,12 @@ Errors are fixed sanitized codes; provider messages, tokens and headers are not 
 - [Registering an App](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app): manual registration and optional inactive webhook.
 
 Reviewed against official documentation on 2026-10-14. Actual installation and broker access remain owner-dependent prerequisites.
+
+
+## Finite timeout diagnostics (non-authorizing)
+
+The existing six-second total read bound remains unchanged. A trusted in-memory observer records bounded authorization counts/timings and finite credential-read, installation, narrowed-token, repository and requested-read phases. Provider HTTP results use fixed classes only. Active phases at timeout remain explicitly incomplete; an unknown exception is not described as a confirmed provider failure.
+
+Only errors created by the adapter carry a private WeakMap diagnostic receipt into the existing immutable interrupted-read audit. Provider-supplied properties cannot forge that receipt. No raw exception text, URLs, authorization headers, tokens, keys, request payloads, or provider bodies enter diagnostics. Successful model-visible evidence is unchanged. Late work cannot alter the sealed receipt; the internal signal is aborted on exit, and existing fresh authorization/central revocation still gates subsequent requests and completion.
+
+Historical hosted timeout remains phase-unconfirmed. Nine serial authorization callbacks and four provider requests share the existing bound; latency contention is a hypothesis until a separately authorized attempt on this exact deployed source records its actual phase. No automatic retry or credential recreation is justified.

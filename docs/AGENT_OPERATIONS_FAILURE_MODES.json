@@ -458,5 +458,15 @@
         "timingRisk": "Nine durable authorization callbacks plus four provider requests share six seconds. Plausible insufficient headroom, not established cause; retain all checks and limits pending measured evidence."
       }
     }
+  },
+  "integrationContinuation": {
+    "application": "655d9c4",
+    "paidExecution": false,
+    "github": "Historical six-second authentication timeout remains unresolved; reviewed finite phase diagnostics preserve exact guards and need STRICT/publication/hosted verification.",
+    "stripe": "Dedicated sandbox key expired following accidental unmasked DOM tool output. Local authority revoked and feature secret removed; old billing keys untouched. Original account403 requires Accounts Read; replacement awaits owner private provisioning.",
+    "browser": "Two of six sessions stopped, second through independent recovery after original cleanup unconfirmed. Transport diagnostic discard corrected offline; historical provider cause unknown. No hosted capture claimed.",
+    "vercel": "Owner OAuth identity verified; provider scope semantics and task-bound agent broker remain unverified and disabled.",
+    "google": "Existing Gmail retained; additional Workspace consent prototype only, no new grant or provider reads.",
+    "evidence": "Canonical handoff and ignored sanitized original failure/cleanup records; historical sixteen risk entries retained unchanged."
   }
 }
