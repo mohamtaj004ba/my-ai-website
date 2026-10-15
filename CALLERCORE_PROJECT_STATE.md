@@ -1,3 +1,11 @@
+## Documentation-efficiency regression corrected locally - October 15, 2026
+
+Published3164693 remains the verified READY application described below. Unpublished evidence-only handoff256613ca20bb861fe81317383eb24a9a8683f80e exposed two actual efficiency gaps: the historical DOCUMENT_RECOVERY citation literal was conservatively treated as a runtime dependency of canonical state, selecting STRICT; the exact existing activation document was absent from the deployment-ignore allowlist. The mistakenly named VERIFIED_CONTINUATION_DOCS_FAST.log actually ran STRICT3234:3213pass/21temporary Git/localhost sandbox permission failures,322891.1029ms. It is preserved, not passing evidence; no gate or failed test was weakened.
+
+Narrow candidate recognizes only the exact complete audited recovery declaration hash and fixed old/new ignore declaration hashes. Both-tree scans, real imports, modified declarations, source/test changes and nonregular files still escalate. Vercelignore adds only docs/AGENT_OPERATIONS_ENGINEERING_ACTIVATION.md; Production/main,unknown/mixed changes,missing history and wrong checkout still build. Work Auditor approved actual source conditional adversarial QA/STRICT. These two protected verification files change release fingerprint to candidate ccb729a5e7f68254a9889405b84355e50d468f2b5ab6a4d6991498ca824a7d66; this does not establish a READY deployment or activate authority.
+
+Next: finish independent fixture tests,source-bound critical plan and correctly permitted STRICT; publish one consolidated feature candidate,verify CI/Redis/CodeQL/READY/Browser,then use a genuinely documentation-only checkpoint to prove FAST identity/ignored-build behavior. Never skip mandatory checks for this source correction. No paid/count/model/browser operation,provider credential change or Production mutation.
+
 ## Verified continuation checkpoint - October 15, 2026
 
 Current application3164693d4028bee0aa903ba4c26debc4aa70ce1b, branch feature/callercore-dashboards, READY dpl_5YefQvNA18og39yXpprCgnddnFw7 / https://my-ai-website-8piu57tla-mohamtaj004bas-projects.vercel.app. Feature alias aligned; organization-contracts-v4 fingerprint68787c94235c2240e96b75b962194ee75c0c7274cde25f7246039e75b1bec7d3. The following handoff is documentation-only and reuses this application deployment, not a new release.

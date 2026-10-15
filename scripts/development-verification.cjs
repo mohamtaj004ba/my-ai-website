@@ -6,7 +6,7 @@ const VERSION='development-verification-v1',SHA=/^[a-f0-9]{40}$/;
 const styles=new Set(['industries.css','industry-refinement.css','industry-platform.css','industry-pages.css','home-motion.css','hero-film.css','homepage-imagery.css','dashboard-showcase.css']);
 // Audited literal-only declarations. Any edit (including an added import on the
 // same line) invalidates this exception and escalates its referenced dependency.
-const nameOnlyLines=Object.freeze({'scripts/vercel-ignore-docs.cjs':'bf58e2fa038a1698693b352207b693c075006b9cb647345c30a2eb31621de4b3','scripts/development-verification.cjs':'4386fa3b16aabc4100ca32df8cdb003358ee7e6fa577baf9ec34be127dc46bca','scripts/preview-release-pin.cjs':'d5c034df711399822ffa94ad9a3480f2cfe2369cd32a204285915c6dbe926538','lib/agent-operations-chief-context.js':'5e8fd4b4d06e654a4b507e80a03821ef05500be70eea473ae95f8c06a5bd5900'});
+const nameOnlyLines=Object.freeze({'scripts/vercel-ignore-docs.cjs':Object.freeze(['bf58e2fa038a1698693b352207b693c075006b9cb647345c30a2eb31621de4b3','899aadb7ab628a0871f8d7d3ee91d5b009744fdf4ca585af85ed8587da141110']),'scripts/engineering-quality-preflight.cjs':'ed77d52b859557745cb50d40e3ba24f25e2a07a1b1611274947b8add64b7fb69','scripts/development-verification.cjs':'4386fa3b16aabc4100ca32df8cdb003358ee7e6fa577baf9ec34be127dc46bca','scripts/preview-release-pin.cjs':'d5c034df711399822ffa94ad9a3480f2cfe2369cd32a204285915c6dbe926538','lib/agent-operations-chief-context.js':'5e8fd4b4d06e654a4b507e80a03821ef05500be70eea473ae95f8c06a5bd5900'});
 const publicPage=p=>p==='index.html'||/^industries\/[a-z-]+\.html$/.test(p);
 const presentationTests=['asset-links.test.js','ui-structure.test.js','syntax.test.js','public-premium.test.js','public-experience.test.js','industry-experience.test.js'];
 const strictRequirements=['full-regression','contracts','engineering','redis','codeql','full-browser','independent-qa','engineering-auditor'];
@@ -55,7 +55,8 @@ function plan(base,head='HEAD',repository=root){
    const real=out.split('\n').filter(Boolean).filter(line=>{
     const file=line.split(':')[1];
     if(styles.has(p)&&publicPage(file))return false; // explicitly mapped presentation consumer
-    return quality.hash(line.split(':').slice(3).join(':').replace(/\r$/,''))!==nameOnlyLines[file];
+    const audited=nameOnlyLines[file],lineHash=quality.hash(line.split(':').slice(3).join(':').replace(/\r$/,''));
+    return !(Array.isArray(audited)?audited:[audited]).includes(lineHash);
    });
    if(real.length)return true;}catch(error){if(error.status!==1)throw error;}}
   return false;

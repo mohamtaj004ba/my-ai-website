@@ -1,0 +1,31 @@
+'use strict';
+// Independent source-selection adversarial tests. Git fixtures only: no network,
+// provider transport, real deployment, selected-suite execution or credentials.
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{execFileSync}=require('node:child_process');
+const verification=require('../scripts/development-verification.cjs');
+const auditedStyleDeclaration=fs.readFileSync(path.join(__dirname,'../scripts/development-verification.cjs'),'utf8').split('\n').find(line=>line.startsWith('const styles=new Set('));
+const auditedIgnoreDeclaration=fs.readFileSync(path.join(__dirname,'../scripts/vercel-ignore-docs.cjs'),'utf8').split('\n').find(line=>line.startsWith('const SHA='));
+const entry=(p,before='old',after='new',extra={})=>({path:p,before,after,beforeMode:'100644',mode:'100644',...extra});
+const classify=(entries,options={})=>verification.classify(entries,{protectedConsumer:()=>false,...options});
+function fixture(initial){
+ const tempRoot=path.resolve(os.tmpdir()),dir=fs.mkdtempSync(path.join(tempRoot,'callercore-verification-qa-'));
+ const git=args=>execFileSync('git',args,{cwd:dir,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe']}).trim();
+ const write=(file,text)=>{fs.mkdirSync(path.dirname(path.join(dir,file)),{recursive:true});fs.writeFileSync(path.join(dir,file),text);};
+ const commit=()=>{git(['add','--all']);git(['commit','-m','synthetic verification fixture']);return git(['rev-parse','HEAD']);};
+ git(['init']);git(['config','user.name','Synthetic Verification QA']);git(['config','user.email','synthetic@example.test']);git(['config','core.autocrlf','false']);git(['config','core.filemode','false']);git(['config','core.symlinks','false']);
+ for(const[file,text]of Object.entries(initial))write(file,text);const base=commit();
+ return{dir,git,write,commit,base,clean(){const resolved=path.resolve(dir);assert(resolved.startsWith(tempRoot+path.sep)&&path.basename(resolved).startsWith('callercore-verification-qa-'));fs.rmSync(resolved,{recursive:true,force:true});}};
+}
+function withFixture(initial,fn){const f=fixture(initial);try{return fn(f);}finally{f.clean();}}
+const ignore=require('../scripts/vercel-ignore-docs.cjs');
+const recovery=fs.readFileSync(path.join(__dirname,'../scripts/engineering-quality-preflight.cjs'),'utf8').split('\n').find(line=>line.startsWith('const DOCUMENT_RECOVERY='));
+const target='CALLERCORE_PROJECT_STATE.md',activation='docs/AGENT_OPERATIONS_ENGINEERING_ACTIVATION.md';
+const ignoreEnv=f=>({VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'feature/callercore-dashboards',VERCEL_GIT_PREVIOUS_SHA:f.base,VERCEL_GIT_COMMIT_SHA:f.git(['rev-parse','HEAD'])});
+test('actual audited historical recovery literal permits only docs FAST identity',()=>withFixture({[target]:'old','scripts/engineering-quality-preflight.cjs':recovery},f=>{f.write(target,'new');f.commit();const p=verification.plan(f.base,'HEAD',f.dir);assert.equal(p.lane,'FAST');assert.equal(p.docsOnly,true);assert.equal(p.browser,'identity');assert.equal(p.paidPermission,false);assert.equal(p.required.includes('full-regression'),false);}));
+for(const kind of ['same-line','different-line','modified-literal'])test('recovery declaration does not hide '+kind+' protected consumer',()=>{const text=kind==='same-line'?recovery+'require("../'+target+'");':kind==='different-line'?recovery+'\nrequire("../'+target+'");':recovery.replace('const DOCUMENT_RECOVERY','const  DOCUMENT_RECOVERY');withFixture({[target]:'old','scripts/engineering-quality-preflight.cjs':text},f=>{f.write(target,'new');f.commit();const p=verification.plan(f.base,'HEAD',f.dir);assert.equal(p.lane,'STRICT');assert.equal(p.reason,'protected-dependency');assert.equal(p.browser,'full');});});
+test('exact activation document skips only feature Preview while mixed application change builds',()=>withFixture({[activation]:'old','scripts/vercel-ignore-docs.cjs':auditedIgnoreDeclaration,'app.js':'old'},f=>{f.write(activation,'new');f.commit();assert.equal(ignore.decide(ignoreEnv(f),f.git).skip,true);const p=verification.plan(f.base,'HEAD',f.dir);assert.equal(p.lane,'FAST');assert.equal(p.browser,'identity');for(const patch of [{VERCEL_ENV:'production'},{VERCEL_GIT_COMMIT_REF:'main'},{VERCEL_GIT_PREVIOUS_SHA:''}])assert.equal(ignore.decide({...ignoreEnv(f),...patch},f.git).skip,false);f.write('app.js','new');f.commit();assert.equal(ignore.decide(ignoreEnv(f),f.git).skip,false);assert.equal(verification.plan(f.base,'HEAD',f.dir).lane,'STRICT');}));
+test('activation lookalike unknown document still builds',()=>withFixture({'docs/AGENT_OPERATIONS_ENGINEERING_ACTIVATION_OTHER.md':'old'},f=>{f.write('docs/AGENT_OPERATIONS_ENGINEERING_ACTIVATION_OTHER.md','new');f.commit();assert.equal(ignore.decide(ignoreEnv(f),f.git).skip,false);}));
+test('document symlink mode in actual Git tree fails closed for build and verification',()=>withFixture({[activation]:'old'},f=>{f.write(activation,'symlink-target');const oid=f.git(['hash-object','-w',activation]);f.git(['update-index','--cacheinfo','120000,'+oid+','+activation]);f.git(['commit','-m','synthetic symlink mode']);assert.equal(ignore.decide(ignoreEnv(f),f.git).skip,false);assert.equal(verification.plan(f.base,'HEAD',f.dir).lane,'STRICT');}));
+test('missing historical comparison and wrong checkout never skip build',()=>withFixture({[activation]:'old'},f=>{f.write(activation,'new');f.commit();assert.equal(ignore.decide({...ignoreEnv(f),VERCEL_GIT_PREVIOUS_SHA:'f'.repeat(40)},f.git).skip,false);assert.equal(ignore.decide({...ignoreEnv(f),VERCEL_GIT_COMMIT_SHA:f.base},f.git).skip,false);assert.throws(()=>verification.plan('f'.repeat(40),'HEAD',f.dir));}));
+
+test('previous audited ignore declaration remains safe in base tree across exact allowlist update',()=>{const old=execFileSync('git',['show','256613c:scripts/vercel-ignore-docs.cjs'],{cwd:path.resolve(__dirname,'..'),encoding:'utf8',windowsHide:true}).split('\n').find(line=>line.startsWith('const SHA='));withFixture({[target]:'old','scripts/vercel-ignore-docs.cjs':old},f=>{f.write(target,'new');f.commit();const p=verification.plan(f.base,'HEAD',f.dir);assert.equal(p.lane,'FAST');assert.equal(p.browser,'identity');});});
