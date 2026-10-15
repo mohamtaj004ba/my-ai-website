@@ -48,7 +48,7 @@ async function prepareInternal(options={}){
  const inspected=tools.inspect(tools.PROFILE),text=tools.readFile(filename),expected=inspected.manifest.files.find(x=>x.path===filename);
  check(tools.hash(text)===expected.sha256,'DRAFT_SOURCE_DRIFT');check(Buffer.byteLength(text)+100<=limits.maxBytes,'DRAFT_BOUNDS');
  if(proposal)proposed.apply(text,proposal);
- const directory=fs.mkdtempSync(path.join(os.tmpdir(),proposal?'callercore-proposed-'+process.pid+'-':profile?'callercore-correction-':'callercore-draft-'));let result,error;
+ const directory=fs.mkdtempSync(path.join(os.tmpdir(),proposal?'callercore-proposed-'+process.pid+'-':profile?'callercore-correction-':'callercore-draft-'+process.pid+'-'));let result,error;
  try{
   fs.writeFileSync(path.join(directory,filename),text,{flag:'wx',mode:0o600});
   result=await new Promise((resolve,reject)=>{

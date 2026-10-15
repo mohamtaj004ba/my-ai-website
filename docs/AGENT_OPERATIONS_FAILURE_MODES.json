@@ -616,6 +616,12 @@
     "browser": "No spending authorization; builder/accountquote/protectedidentity and reviewed real-page controller remain blockers.",
     "visual": "Recoverable historical bytes found; provenance-bound compatible full-run selection under review. No fabricated old baseline.",
     "trial": "Plan only; no engineering inference adapter, paid request or financial authorization.",
-    "security": "Existing revocation, owner authority, financial ceiling and Production boundaries unchanged."
+    "security": "Existing revocation, owner authority, financial ceiling and Production boundaries unchanged.",
+    "historyCompatibility": {
+      "rootCause": "Persisted source-specific observations and draft manifests were revalidated using current source after a legitimate repair, hiding owner history.",
+      "correction": "Fixed bounded hash-pinned historical source/manifest used only by private persisted validation; exact original task/runtime/artifact/evidence/QA/authority remains. New execution uses current source, retired profiles deny.",
+      "evidence": "Actual owner failure retained; original hosted v1/v3/C3 receipts validated unchanged; mixed known-owner fixture read and derived v2 honestly labelled.44focusedpass; STRICT/newhosted verification pending.",
+      "cleanup": "Process-owned comment temp namespace corrects cross-process test collision; actual cleanup unchanged, parent crash remains qualified."
+    }
   }
 }

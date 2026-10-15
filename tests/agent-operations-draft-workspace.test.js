@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const draft=require('../scripts/agent-operations-draft-workspace.cjs'),tools=require('../lib/agent-operations-engineering-tools');
 const sourceSha='a'.repeat(40),options={sourceSha,expectedSourceSha:sourceSha};
-const dirs=()=>fs.readdirSync(os.tmpdir()).filter(x=>x.startsWith('callercore-draft-')).sort();
+const dirs=()=>fs.readdirSync(os.tmpdir()).filter(x=>x.startsWith('callercore-draft-'+process.pid+'-')).sort();
 test('actual permission-restricted child creates inspectable patch and destroys draft without repository mutation',async()=>{
  const before=tools.hash(tools.readFile('dashboard.html')),existing=dirs(),r=await draft.prepare(options);
  assert.equal(r.files[0].beforeSha256,before);assert.notEqual(r.files[0].afterSha256,before);assert.equal(r.patchSha256,tools.hash(r.patch));assert.equal(r.publicationAllowed,false);assert.deepEqual(r.cleanup,{destroyed:true});assert.equal(tools.hash(tools.readFile('dashboard.html')),before);assert.deepEqual(dirs(),existing);
