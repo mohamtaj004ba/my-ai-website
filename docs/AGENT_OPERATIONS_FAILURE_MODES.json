@@ -1,6 +1,6 @@
 {
   "googleOwnerCredentialVerification": {
-    "status": "candidate-reviewed-awaiting-strict-and-hosted-verification",
+    "status": "verified-at-8e95922-captured-owner-readback-not-resource-operational",
     "scope": "Existing encrypted Google credential, owner CAS/audit, fixed refresh and userinfo endpoints. No resource reads, agent grants, writes or legacy Inbox changes.",
     "confirmedDefectsCorrected": [
       "Authenticated proof originally omitted the granted-scope set; normalized scopes are now bound inside the existing AEAD verification hash.",
@@ -9,7 +9,8 @@
     "controls": "Exact owner/workspace/revision, source/release/deployment/origin/configuration and ten-minute/provider-expiry binding. Whole-operation 15-second deadline, bounded two-second cleanup, no retries. Newer consent/revocation remains authoritative.",
     "remainingRisks": "Redis operations cannot be physically cancelled. Lost provider responses or refresh-token rotation may require owner recovery; cleanup outages remain unconfirmed. Missing or changed refresh scopes fail closed. Identity verification does not establish Calendar/Drive/Contacts/Gmail resource access.",
     "acceptance": "Require STRICT, real Redis composition, CI/CodeQL, exact Preview and authenticated Browser QA. Genuine provider verification is a separate manual owner-bound operation, never inferred from fixtures.",
-    "permissions": "connected, operationalRead, agentAccessEnabled, externalWritesEnabled and paidExecution remain false. Independent human acceptance and publication policies unchanged."
+    "permissions": "connected, operationalRead, agentAccessEnabled, externalWritesEnabled and paidExecution remain false. Independent human acceptance and publication policies unchanged.",
+    "hostedEvidence": "8e95922/590d88f3d936/dpl_9uDTasG6DUneNXA9BDTHjWNXTnYW; STRICT3207, Redis22, CI/CodeQL/Jekyll and Browser pass. One genuine owner refresh/account identity check succeeded at1792073016616, revision7; ten-minute proof expires1792073614787. Do not reuse after expiry/source/configuration changes or repeat merely to refresh a checkpoint."
   },
   "version": "agent-operations-fmea-v1",
   "baseline": "d744f3b",
@@ -660,5 +661,20 @@
     "hosted": "op_a230e9e6912445c7b5ba73aa4834d6535/5,161344ms, allchildterminated/lease0, allrequestsfixture, zero paid/newreservation, QA/Auditorunresolved and acceptancefalse. Current21plans and originalC5fullbaseline independentlyverified.",
     "exportLimit": "Preserved MaxDepth and200KBtruncatedexports; exact individualrawtext and segmented7+7+7 produce fullcurrentrecords. Original20before comparison boundedfields only, no invented baseline.",
     "financial": "09:13:58Z paidfalse/no usableapproval/historyunchanged15/10.60incl2.20/4.40; no newmodel/browsercharge; localworkers0/actual5hostedleases0"
+  },
+  "engineeringExactTokenAdmission": {
+    "status": "reviewed-offline-candidate-final-strict-and-hosted-pending",
+    "scope": "Existing engineering transport/profile/provider and shared ledger only; no new gateway or live activation.",
+    "confirmedDefectsCorrected": [
+      "Input byte planning was not exact token admission; private request/context-bound count proof is now required before paid Responses dispatch.",
+      "Count request initially omitted supported reasoning; projection now includes it.",
+      "Unknown counting prices could be omitted from settlement; native requests now require a reviewed zero-cost-only account policy pinned by trusted server configuration and authoritative stored approval. No such verified policy/config exists.",
+      "Caller-supplied pricing approval could differ from stored workflow approval; full authoritative approval and pricing hashes must now match before credential access/provider requests.",
+      "Count proof could expire during final awaited authorization; the original private proof is synchronously revalidated immediately before transmission. Expiry does not invalidate an already-started request."
+    ],
+    "controls": "One-use CAS count dispatch/recording, at most five count attempts, 12k/60k input and4k/20k output limits, 30second admission proof, source/task/workspace/model/project binding, actual usage parity, no retries, whole-operation abort and bounded compensating cleanup. Entire reservation ceilings remain retained.",
+    "remainingRisks": "Provider count endpoint access/parity and account-specific zero-cost pricing are unverified; no native count/model request authorized. Missing pin/paid flags/owner approval fail closed. If counting is charged, this zero-cost-only policy must remain disabled until a separately reviewed priced policy exists. Owner controller and genuine semantic trial remain unfinished; automated technical roles do not establish independent human acceptance.",
+    "verification": "Independent45/45 focused checks passed before final freshness cases. Original localSTRICT3224 completed3203pass/21environmentfail:20temporaryGit config permission denials and1localhostpermission denial; preserved, no assertions relaxed. Final reviewed freshness cases and correctly permitted STRICT/realRedis23/CI/CodeQL/Preview remain required.",
+    "permissions": "No paid/count activation, independent acceptance, generated-source execution, internal-agent publication or Production authority."
   }
 }
