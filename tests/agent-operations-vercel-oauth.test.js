@@ -7,7 +7,7 @@ function harness(extra={}){const kv=store(),calls=[];let api;api=o.create({kv,en
 async function query(h){const begun=await h.api.begin(actor);return{code:'CODE_TEST',state:new URL(begun.authorizationUrl).searchParams.get('state'),configurationId:'icfg_test',teamId:o.TEAM};}
 test('unconfigured status is honest and begin cannot fabricate connection flow',async()=>{const h=harness({env:{...env,CALLERCORE_VERCEL_CLIENT_ID:''}});a.equal((await h.api.status(actor)).configured,false);await a.rejects(h.api.begin(actor),/VCO_CONFIGURATION_REQUIRED/);a.equal(h.calls.length,0);});
 test('owner-only Preview policy blocks cross tenant and production before writes or calls',async()=>{for(const bad of [{...actor,id:'other'},{...actor,workspaceId:'foreign'}])await a.rejects(harness().api.begin(bad),/VCO_OWNER_REQUIRED/);await a.rejects(harness({env:{...env,VERCEL_ENV:'production'}}).api.begin(actor),/VCO_PREVIEW_REQUIRED/);});
-test('legitimate state/code flow consumes once, fixed transport,encrypted AAD storage and safe metadata',async()=>{const h=harness(),q=await query(h),r=await h.api.callback(actor,q);a.equal(r.status,'identity-verified-scope-unconfirmed');a.equal(r.operationalRead,false);a.equal(h.calls.length,3);a.equal(h.calls[0][0],'https://api.vercel.com/v2/oauth/access_token');a.equal(h.calls[0][1].method,'POST');a.equal(new URLSearchParams(h.calls[0][1].body).get('redirect_uri'),o.REDIRECT);a.equal(h.calls[1][0],'https://api.vercel.com/v1/integrations/configuration/icfg_test?teamId='+o.TEAM);a.equal(h.calls[1][1].method,'GET');a.equal(JSON.stringify([...h.kv.map.values()]).includes('SECRET_TOKEN_TEST'),false);a.equal(JSON.stringify(r).includes('SECRET'),false);await a.rejects(h.api.callback(actor,q),/VCO_STATE_DENIED/);await a.rejects(h.api.credentialBroker(actor),/VCO_SCOPE_SEMANTICS_UNVERIFIED/);a.equal(h.calls.length,3);});
+test('legitimate state/code flow consumes once, fixed transport,encrypted AAD storage and safe metadata',async()=>{const h=harness(),q=await query(h),r=await h.api.callback(actor,q);a.equal(r.status,'identity-verified-scope-unconfirmed');a.equal(r.operationalRead,false);a.equal(h.calls.length,3);a.equal(h.calls[0][0],'https://api.vercel.com/v2/oauth/access_token');a.equal(h.calls[0][1].method,'POST');a.equal(new URLSearchParams(h.calls[0][1].body).get('redirect_uri'),o.REDIRECT);a.equal(h.calls[1][0],'https://api.vercel.com/v1/integrations/configuration/icfg_test?teamId='+o.TEAM);a.equal(h.calls[1][1].method,'GET');a.equal(JSON.stringify([...h.kv.map.values()]).includes('SECRET_TOKEN_TEST'),false);a.equal(JSON.stringify(r).includes('SECRET'),false);await a.rejects(h.api.callback(actor,q),/VCO_STATE_DENIED/);await a.rejects(h.api.credentialBroker(actor),/VCO_READ_UNCONFIRMED/);a.equal(h.calls.length,3);});
 test('CSRF wrong state,team and stale release fail before token transport',async()=>{const h=harness(),q=await query(h);await a.rejects(h.api.callback(actor,{...q,state:'x'.repeat(43)}),/VCO_STATE_DENIED/);await a.rejects(h.api.callback(actor,{...q,teamId:'other'}),/VCO_CALLBACK_INVALID/);const other=o.create({kv:h.kv,env,runtime:{...runtime,sourceCommit:'c'.repeat(40)},assertOwner:async()=>true,fetchImpl:async()=>{throw Error('not expected');}});await a.rejects(other.callback(actor,q),/VCO_STATE_DENIED/);a.equal(h.calls.length,0);});
 test('expired state and refreshed begin deny old callback',async()=>{let now=1000;const h=harness({clock:()=>now}),q=await query(h);now+=600001;await a.rejects(h.api.callback(actor,q),/VCO_STATE_DENIED/);const fresh=await query(h);await h.api.begin(actor);await a.rejects(h.api.callback(actor,fresh),/VCO_STATE_DENIED/);a.equal(h.calls.length,0);});
 test('configuration account/project/integration substitution and disabled states reject',async()=>{for(const change of [{teamId:'other'},{integrationId:'oac_foreign'},{projectSelection:'all'},{projects:[o.PROJECT,'foreign']},{disabledAt:1},{deletedAt:1},{status:'error'},{scopes:[{type:'unknown'}]}]){let n=0;const h=harness({fetchImpl:async()=>Response.json(++n===1?{access_token:'SECRET_TOKEN_TEST',team_id:o.TEAM}:{...facts(),...change})}),q=await query(h);await a.rejects(h.api.callback(actor,q),/VCO_EXCHANGE_UNCONFIRMED/);a.equal((await h.api.status(actor)).connected,false);await a.rejects(h.api.callback(actor,q),/VCO_STATE_DENIED/);a.equal(n,2);}});
@@ -27,3 +27,55 @@ test('inherited exception names remain finite transport diagnostics',async()=>{f
 
 test('private integration uses observed team Dashboard entry with only fresh single-use state',async()=>{const h=harness(),b=await h.api.begin(actor),url=new URL(b.authorizationUrl);a.equal(url.origin,'https://vercel.com');a.equal(url.pathname,'/mohamtaj004bas-projects/~/integrations/callercore-agent-operations');a.deepEqual([...url.searchParams.keys()],['state']);a.match(url.searchParams.get('state'),/^[A-Za-z0-9_-]{43}$/);a.equal(h.calls.length,0);});
 test('private flow never synthesizes missing altered or revoked state before provider transport',async()=>{for(const mutation of [q=>{delete q.state;},q=>q.state='x'.repeat(43),async(q,h)=>{await h.api.revoke(actor);}]){const h=harness(),q=await query(h);await mutation(q,h);await a.rejects(h.api.callback(actor,q));a.equal(h.calls.length,0);}});
+
+const approvedScopes=['read:project','read-write:deployment','read:integration-configuration'];
+async function connectedBrokerHarness(){
+ let readHook=null;const calls=[],h=harness({fetchImpl:async(url,options)=>{calls.push({url,method:options.method});if(readHook)return readHook(url,options);return Response.json(url.endsWith('/access_token')?{access_token:'SECRET_TOKEN_TEST',team_id:o.TEAM}:url.includes('/v9/projects/')?{id:o.PROJECT,accountId:o.TEAM}:{...facts(),scopes:approvedScopes});}});
+ await h.api.callback(actor,await query(h));calls.length=0;
+ return{...h,calls,hook:f=>{readHook=f;},request:{connectionId:'icfg_test',projectId:o.PROJECT,teamId:o.TEAM},options:()=>({signal:new AbortController().signal,authorize:async()=>true,deadline:Date.now()+5000})};
+}
+test('trusted Vercel read broker revalidates current fixed configuration and returns internal lease, not provider expiry',async()=>{
+ const h=await connectedBrokerHarness(),lease=await h.api.credentialBroker(actor,h.request,h.options());
+ a.equal(lease.token,'SECRET_TOKEN_TEST');a.equal(lease.providerExpiresAt,null);a.ok(lease.internalLeaseExpiresAt>Date.now());a.equal(lease.connectionRevision,3);a.equal(await lease.revalidate(),true);
+ a.deepEqual(h.calls,[{url:'https://api.vercel.com/v1/integrations/configuration/icfg_test?teamId='+o.TEAM,method:'GET'}]);
+ a.equal((await h.api.status(actor)).operationalRead,false);a.equal(JSON.stringify(await h.api.status(actor)).includes('SECRET'),false);
+ await h.api.revoke(actor);await a.rejects(lease.revalidate());
+});
+test('broker requires exact resource, trusted task authority and bounded internal deadline before provider access',async()=>{
+ const h=await connectedBrokerHarness();for(const [request,options]of [[{...h.request,teamId:'foreign'},h.options()],[{...h.request,extra:true},h.options()],[h.request,{...h.options(),authorize:async()=>false}],[h.request,{...h.options(),deadline:Date.now()+20000}],[h.request,{}]])await a.rejects(h.api.credentialBroker(actor,request,options),/^Error: VCO_READ_UNCONFIRMED$/);
+ a.equal(h.calls.length,0);
+});
+test('broker rejects stored or fresh duplicate, missing and additional scopes without issuing a lease',async()=>{
+ for(const scopes of [[],[...approvedScopes,'read:user'],[approvedScopes[0],approvedScopes[0],approvedScopes[2]]])for(const stored of [true,false]){
+  const h=await connectedBrokerHarness();if(stored){const [key,record]=[...h.kv.map].find(([,v])=>v.version===o.VERSION);record.connection.scopes=scopes;h.kv.map.set(key,record);}else h.hook(async()=>Response.json({...facts(),scopes}));
+  await a.rejects(h.api.credentialBroker(actor,h.request,h.options()),/VCO_READ_UNCONFIRMED/);a.equal(h.calls.length,stored?0:1);
+ }
+});
+test('revocation or replacement while configuration transport is in flight cannot return old authority',async()=>{
+ for(const change of ['revoke','begin']){const h=await connectedBrokerHarness();h.hook(async()=>{await h.api[change](actor);return Response.json({...facts(),scopes:approvedScopes});});await a.rejects(h.api.credentialBroker(actor,h.request,h.options()),/VCO_READ_UNCONFIRMED/);a.equal(h.calls.length,1);}
+});
+test('ciphertext tampering and storage failure deny before provider and never reflect secrets',async()=>{
+ const h=await connectedBrokerHarness(),[key,record]=[...h.kv.map].find(([,v])=>v.version===o.VERSION);const raw=Buffer.from(record.connection.ciphertext,'base64url');raw[28]^=1;record.connection.ciphertext=raw.toString('base64url');h.kv.map.set(key,record);
+ await a.rejects(h.api.credentialBroker(actor,h.request,h.options()),/^Error: VCO_READ_UNCONFIRMED$/);a.equal(h.calls.length,0);h.kv.get=async()=>{throw Error('SECRET_STORAGE_PAYLOAD');};await a.rejects(h.api.credentialBroker(actor,h.request,h.options()),/^Error: VCO_READ_UNCONFIRMED$/);
+});
+test('cancelled or deadline-stalled broker response cannot yield a late credential lease',async()=>{
+ const h=await connectedBrokerHarness();let finish;h.hook(()=>new Promise(resolve=>{finish=resolve;}));const c=new AbortController(),pending=h.api.credentialBroker(actor,h.request,{...h.options(),signal:c.signal});await new Promise(setImmediate);c.abort();await a.rejects(pending,/VCO_READ_UNCONFIRMED/);finish(Response.json({...facts(),scopes:approvedScopes}));await new Promise(setImmediate);a.equal(h.calls.length,1);
+});
+test('cancellation bounds stalled owner, Redis and task checks before provider access',async()=>{
+ for(const boundary of ['owner','redis','task']){
+  const h=await connectedBrokerHarness(),c=new AbortController(),never=()=>new Promise(()=>{});
+  const api=boundary==='owner'?o.create({kv:h.kv,env,runtime,assertOwner:never,fetchImpl:async()=>{throw Error('unexpected');}}):h.api;
+  if(boundary==='redis')h.kv.get=never;
+  const pending=api.credentialBroker(actor,h.request,{...h.options(),signal:c.signal,...(boundary==='task'?{authorize:never}:{})});
+  await new Promise(setImmediate);c.abort();await a.rejects(pending,/VCO_READ_UNCONFIRMED/);a.equal(h.calls.length,0);
+ }
+});
+test('lease revalidation remains cancellable when a later storage read stalls',async()=>{
+ const h=await connectedBrokerHarness(),c=new AbortController(),lease=await h.api.credentialBroker(actor,h.request,{...h.options(),signal:c.signal});
+ h.kv.get=()=>new Promise(()=>{});const pending=lease.revalidate();await new Promise(setImmediate);c.abort();await a.rejects(pending,/VCO_CANCELLED/);
+});
+test('broker snapshots caller resource before an asynchronous owner check',async()=>{
+ const h=await connectedBrokerHarness();let release;const waiting=new Promise(r=>{release=r;});let first=true;
+ const api=o.create({kv:h.kv,env,runtime,assertOwner:async()=>{if(first){first=false;await waiting;}return true;},fetchImpl:async url=>{a.match(url,/configuration\/icfg_test\?/);return Response.json({...facts(),scopes:approvedScopes});}});
+ const request={...h.request},pending=api.credentialBroker(actor,request,h.options());request.connectionId='icfg_foreign';release();const lease=await pending;a.equal(lease.configurationId,'icfg_test');
+});
