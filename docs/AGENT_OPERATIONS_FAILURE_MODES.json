@@ -678,9 +678,10 @@
     "permissions": "No paid/count activation, independent acceptance, generated-source execution, internal-agent publication or Production authority."
   },
   "previewReadinessWait": {
-    "status": "candidate-independent-eight-tests-passed-hosted-verification-pending",
+    "status": "verified-3164693-first-hosted-attempt-success",
     "cause": "Two first Browser runs exhausted old alias polling before the exact deployment became READY.",
     "controls": "Exact alias and immutable identities, source/project/branch/release validation unchanged;120 read-only attempts,ten-minute asynchronous deadline,request abort and no late evidence writes.",
-    "remaining": "JavaScript deadline is not an OS hard real-time guarantee. CI25minute job limit remains. No credential/provider mutation, paid inference or browser infrastructure activation."
+    "remaining": "JavaScript deadline is not an OS hard real-time guarantee. CI25minute job limit remains. No credential/provider mutation, paid inference or browser infrastructure activation.",
+    "evidence": "LocalSTRICT3234,CI3234,realRedis23,CodeQL/Jekyll pass; hostedBrowser38753756453 firstattempt success after241000ms exact-ready pin,44source mismatches rejected then45th attempt succeeded. Actual archive11983018467 SHA435f16b10c5cd4d450fc6c2474e039d5f8ca406b27d02a260e896c276dffa449 and selected evidence verified; sixvisualpass,max0.00019,zeroerrors. No dollar/Work-credit saving claimed."
   }
 }
