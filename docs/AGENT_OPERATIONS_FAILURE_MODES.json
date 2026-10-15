@@ -676,5 +676,11 @@
     "remainingRisks": "Provider count endpoint access/parity and account-specific zero-cost pricing are unverified; no native count/model request authorized. Missing pin/paid flags/owner approval fail closed. If counting is charged, this zero-cost-only policy must remain disabled until a separately reviewed priced policy exists. Owner controller and genuine semantic trial remain unfinished; automated technical roles do not establish independent human acceptance.",
     "verification": "Independent45/45 focused checks passed before final freshness cases. Original localSTRICT3224 completed3203pass/21environmentfail:20temporaryGit config permission denials and1localhostpermission denial; preserved, no assertions relaxed. Final reviewed freshness cases and correctly permitted STRICT/realRedis23/CI/CodeQL/Preview remain required.",
     "permissions": "No paid/count activation, independent acceptance, generated-source execution, internal-agent publication or Production authority."
+  },
+  "previewReadinessWait": {
+    "status": "candidate-independent-eight-tests-passed-hosted-verification-pending",
+    "cause": "Two first Browser runs exhausted old alias polling before the exact deployment became READY.",
+    "controls": "Exact alias and immutable identities, source/project/branch/release validation unchanged;120 read-only attempts,ten-minute asynchronous deadline,request abort and no late evidence writes.",
+    "remaining": "JavaScript deadline is not an OS hard real-time guarantee. CI25minute job limit remains. No credential/provider mutation, paid inference or browser infrastructure activation."
   }
 }
