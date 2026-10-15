@@ -1,19 +1,22 @@
 {
   "engineeringOwnerActivation": {
-    "status": "implemented-candidate-live-disabled",
+    "status": "published-ready-live-disabled-credential-and-pricing-blocked",
     "scope": "Existing organization CAS, lifecycle, engineering profile and owner-authenticated controller",
     "corrected": [
       "Prepared authority missing direct revocation",
       "Source-dependent recovery after evidence changes",
       "Expiry before orchestration cleanup",
       "Readiness or configured approval revoked during awaited dispatch checks",
-      "Unverified replacement shutdown claim"
+      "Unverified replacement shutdown claim",
+      "Circular deployment-bound environment approval replaced with exact authenticated owner-posted consent and existing durable CAS",
+      "Generic engineering authority visibility and workspace provenance; stable evidence hash excludes clock telemetry"
     ],
     "remaining": [
+      "Current Preview branch lacks all three dedicated Agent Operations OpenAI credential settings; metadata attempt denied before provider fetch. Existing key provisioning requires owner; general application key cannot substitute.",
       "Account-specific native count price and permission/parity unknown",
       "Trusted readiness digest is an operator-reviewed attestation, not automatic pricing discovery",
       "Fixed internal reservation is not provider-enforced billing cap",
-      "Native controller offline verified; actual Responses execution not authorized",
+      "Native controller independently verified; READY/CI3303/Redis24/CodeQL/authenticatedBrowser and sixvisualcomparisons passed. Actual model metadata denied before provider fetch; Responses execution remains unauthorized.",
       "Automated technical criticism does not establish independent human acceptance",
       "Crash cleanup relies on central lease expiry; transmitted requests cannot be recalled"
     ],
