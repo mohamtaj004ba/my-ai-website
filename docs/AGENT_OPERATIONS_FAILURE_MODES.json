@@ -563,10 +563,20 @@
     "pr5": "draft-unmerged"
   },
   "documentationDeclarationFalsePositive": {
-    "status": "correction-unpublished",
+    "status": "published-local-and-remote-strict-passed-browser-pending",
     "observed": "Local doc-only9e3cf3e selectedSTRICT due path-only Vercel ignore-command declaration; unnecessary run explicitly interrupted, not a passingFAST receipt.",
     "correction": "Exact normalized line hash bf58e2fa038a1698693b352207b693c075006b9cb647345c30a2eb31621de4b3 in exact auditedfile; other lines/both trees still protected.",
     "independentReview": "Auditor actual source/hash approved; QA9 newGitfixtures, initial68/69 wrong expectation label corrected and positive1/1; require clean frozenSTRICT.",
-    "remaining": "PolicySTRICT/remote/exactrelease; demonstrate actualfinaldocsFAST and provider buildskip before savings claims."
+    "remaining": "PolicySTRICT/remote/exactrelease; demonstrate actualfinaldocsFAST and provider buildskip before savings claims.",
+    "local": "2948/2948,207456ms runner; gate218017ms",
+    "remote": "CI38678888597 2948/2948,Redis17/17,CodeQLsuccess; exacta53 Browserattempt2pending"
+  },
+  "googleReadPreparation": {
+    "status": "inactive-reviewed-awaiting-strict",
+    "scope": "Fixed approved Calendar interval/Drive file/People resource GET metadata only;47 offline checks; final independent QA47/47 and actual-source Auditor approved",
+    "authority": "No credentials, promotion, route or gateway grant; unconfirmed OAuth remains unusable",
+    "corrected": "Impossible date normalization, interval mismatch, inherited MIME projection, path IDs, malformed pagination, deployment binding and full receipt hash",
+    "remaining": "Final independent review/frozenSTRICT/exactPreview; real consent/credential confirmation/refresh/gateway/resource approval and positive provider verification remain absent",
+    "limit": "Date-only Calendar evidence preserves local dates and explicitly unverified overlap absent calendar timezone; no synthetic UTC acceptance"
   }
 }
