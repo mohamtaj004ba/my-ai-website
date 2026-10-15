@@ -502,13 +502,42 @@
     }
   },
   "googleWorkspacePreparation": {
-    "status": "local-commit3df3e51-not-published-STRICT-failure-preserved",
+    "status": "published-facd1dc-hosted-owner-status-verified",
     "scope": "owner-only read-consent preparation; never operational agent access",
     "existingClientReused": true,
     "legacyGmail": "separate untouched records and callbacks",
     "credentialState": "durable credential-recorded-unconfirmed; no broker or activation method",
     "cleanup": "bounded exact-record compensation; storage outage may retain unusable encrypted record; exact hash/revision recovery cannot remove newer requests",
     "providerRevocation": "not performed; shared client revocation could disrupt Inbox",
-    "remaining": "Fixture-only clock-order correction, mandatory STRICT confirmation and actual CI Redis/CodeQL/exact Preview UI; real Google owner consent and operational read activation remain disabled"
+    "remaining": "Facd Browser38674278022 attempt2/job116225701130 succeeded. Real Google consent/token exchange unperformed; refresh/provider reads/agent tools unavailable.",
+    "source": "facd1dc9608e4fbdb85fbd219e189300027f323b",
+    "deploymentId": "dpl_41az66qauU9ezRxsVTfkDS7ZGNfL",
+    "releaseFingerprint": "4640f51a1fe6d85a6bea13ba2439b9c9e8177800a5a7952a0c5608a5bb19f461",
+    "verification": "local2935/2935; remote2935/2935; actualRedis17/17; CodeQL/Jekyll pass; actual owner status configuredtrue/rev0/no credential or pending state and parent refresh preservation",
+    "independentReview": "QA11 UI/composition; Auditor actual source; focused fixture17; final evidence consistency review"
+  },
+  "integrationEfficiencyCheckpoint": {
+    "source": "facd1dc",
+    "duplicatePushRegression": {
+      "job": 116224252703,
+      "tests": 2935,
+      "durationMs": 176121.375022
+    },
+    "duplicatePrRegression": {
+      "job": 116224277794,
+      "tests": 2935,
+      "durationMs": 171322.120057
+    },
+    "vercelBuildWallMs": 244594,
+    "qualification": "Reported wall/runner durations only; overlapping jobs, not CPU costs or Work-credit savings. Mandatory checks unchanged."
+  },
+  "connectionDeploymentEnvelopeDefect": {
+    "status": "minimal-correction-unpublished",
+    "sourceDiscovered": "facd1dc",
+    "rootCause": "Parent scope includes deploymentId; guarded owner provider responses omitted it. Earlier fixtures omitted it on both sides.",
+    "correction": "Trusted env deploymentId in exactly3ownerstatus response envelopes; global controller runtime and binding comparisons unchanged.",
+    "verification": "Independent Auditor actual source approval; actual guardedAPI+Ops+Stripe core+UI4/4 with matching/missing/foreign deployment and changedowner; STRICT/remote/exactnewhost pending.",
+    "providerRequests": 0,
+    "credentialChanges": 0
   }
 }
