@@ -563,20 +563,39 @@
     "pr5": "draft-unmerged"
   },
   "documentationDeclarationFalsePositive": {
-    "status": "published-local-and-remote-strict-passed-browser-pending",
+    "status": "published-exact-hosted-policy-release-passed",
     "observed": "Local doc-only9e3cf3e selectedSTRICT due path-only Vercel ignore-command declaration; unnecessary run explicitly interrupted, not a passingFAST receipt.",
     "correction": "Exact normalized line hash bf58e2fa038a1698693b352207b693c075006b9cb647345c30a2eb31621de4b3 in exact auditedfile; other lines/both trees still protected.",
     "independentReview": "Auditor actual source/hash approved; QA9 newGitfixtures, initial68/69 wrong expectation label corrected and positive1/1; require clean frozenSTRICT.",
     "remaining": "PolicySTRICT/remote/exactrelease; demonstrate actualfinaldocsFAST and provider buildskip before savings claims.",
     "local": "2948/2948,207456ms runner; gate218017ms",
-    "remote": "CI38678888597 2948/2948,Redis17/17,CodeQLsuccess; exacta53 Browserattempt2pending"
+    "remote": "CI38678888597 2948/2948,Redis17/17,CodeQL/Jekyllsuccess; exacta53Browser38678884946attempt2success"
   },
   "googleReadPreparation": {
-    "status": "inactive-reviewed-awaiting-strict",
+    "status": "published-inactive-strict-and-hosted-status-verified",
     "scope": "Fixed approved Calendar interval/Drive file/People resource GET metadata only;47 offline checks; final independent QA47/47 and actual-source Auditor approved",
     "authority": "No credentials, promotion, route or gateway grant; unconfirmed OAuth remains unusable",
     "corrected": "Impossible date normalization, interval mismatch, inherited MIME projection, path IDs, malformed pagination, deployment binding and full receipt hash",
     "remaining": "Final independent review/frozenSTRICT/exactPreview; real consent/credential confirmation/refresh/gateway/resource approval and positive provider verification remain absent",
-    "limit": "Date-only Calendar evidence preserves local dates and explicitly unverified overlap absent calendar timezone; no synthetic UTC acceptance"
+    "limit": "Date-only Calendar evidence preserves local dates and explicitly unverified overlap absent calendar timezone; no synthetic UTC acceptance",
+    "source": "8e82ac6af6f581ba2c3fe212d1dda9d4e2be9c0a",
+    "release": "7d9488e365ca5669cc3262a912f8018b56f6fbb3945204ad390b8f12fa3a797e",
+    "verification": "Local2995/2995; remote2995/2995; Redis17/17; CodeQL/Jekyll success; exactBrowser38680437104attempt2/job116245165260success",
+    "hosted": "Actual supported owner status path exact8e82: Stripe revoked/unconfigured, Workspace notconnected, Vercel priorconnection preserved; paidcontrolsdisabled"
+  },
+  "controlledStop": {
+    "requestedByOwner": true,
+    "autonomousDevelopment": "stopped-await-owner-review",
+    "application": "8e82ac6af6f581ba2c3fe212d1dda9d4e2be9c0a",
+    "deployment": "dpl_4K7d5bdHWPiPd9pJmAHp8cUqR63N",
+    "release": "7d9488e365ca5669cc3262a912f8018b56f6fbb3945204ad390b8f12fa3a797e",
+    "browser": "success",
+    "paid": false,
+    "nonRevokedPaidApprovals": 0,
+    "localRestrictedWorkers": 0,
+    "budget": "15USD/10.60retained incl2.20uncertainty/4.40remaining; not invoice-reconciled",
+    "remaining": "Owner Google consent/resources, Stripe private replacement, browser image/cost/protectedidentity; subsequent verified gateway/refresh wiring; no autonomous publication or untrusted-code execution",
+    "production": "unchanged",
+    "pr5": "draft-unmerged"
   }
 }
