@@ -14,6 +14,17 @@ function recoverDocumentation(commit,entries,records,{mode,load}={}){
 }
 function git(args){return execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:20*1024*1024});}
 function recordPath(p){return /^docs\/engineering-changes\/[a-z0-9-]+\.json$/.test(p);}
+// Cache only immutable JSON bytes during one scan, never a validation result.
+function planReader(readGit){
+ const blobs=new Map();
+ return ref=>readGit(['ls-tree','-rz',ref,'--','docs/engineering-changes']).split('\0').filter(Boolean).flatMap(line=>{
+  const entry=/^(\d+) ([a-z]+) ([a-f0-9]{40})\t(.+)$/.exec(line);if(!entry)throw Error('Invalid engineering plan tree entry');
+  const [,mode,type,oid,file]=entry;if(!recordPath(file))return[];
+  if(mode!=='100644'||type!=='blob')throw Error('Engineering plans must be regular JSON files');
+  if(!blobs.has(oid))blobs.set(oid,JSON.parse(readGit(['cat-file','blob',oid])));
+  return[structuredClone(blobs.get(oid))];
+ });
+}
 function digestEntries(entries){return policy.hash(entries.sort((a,b)=>a.path.localeCompare(b.path,'en')));}
 function treeBlob(ref,p){const out=git(['ls-tree','-z',ref,'--',p]).split('\0').filter(Boolean);if(!out.length)return 'deleted';if(out.length!==1||!/^\d+ blob [a-f0-9]+\t/.test(out[0]))throw Error('Unsupported or ambiguous tree entry');return out[0].split('\t')[0].split(' ')[2];}
 function changes(base,head){
@@ -39,12 +50,11 @@ function committed(base,head='HEAD'){
  if(!base||/^0+$/.test(base))base=BASELINE;
  // Initial adoption excludes already verified history, never future commits.
  try{git(['merge-base','--is-ancestor',base,BASELINE]);base=BASELINE;}catch{git(['merge-base','--is-ancestor',base,head]);}
- const commits=git(['rev-list','--reverse',base+'..'+head]).trim().split('\n').filter(Boolean),results=[];
+ const commits=git(['rev-list','--reverse',base+'..'+head]).trim().split('\n').filter(Boolean),results=[],readPlans=planReader(git);
  for(const commit of commits){
   const parents=git(['rev-list','--parents','-n','1',commit]).trim().split(' ').slice(1);
   if(parents.length!==1)throw Error('Merge commits require explicit review; linear feature history required');
-  const entries=changes(parents[0],commit),files=git(['ls-tree','-r','--name-only',commit,'--','docs/engineering-changes']).trim().split('\n').filter(recordPath);
-  const historical=files.map(p=>JSON.parse(git(['show',commit+':'+p]))),refs={parent:parents[0],commit,head};
+  const entries=changes(parents[0],commit),historical=readPlans(commit),refs={parent:parents[0],commit,head};
   const records=recoverDocumentation(commit,entries,historical,{mode:(kind,p)=>git(['ls-tree',refs[kind],'--',p]).split(' ')[0],load:p=>JSON.parse(git(['show',head+':'+p]))});
   let proactive=false;try{git(['merge-base','--is-ancestor',PROACTIVE_BASELINE,commit]);proactive=commit!==PROACTIVE_BASELINE;}catch{}results.push({commit,...check(entries,records,{proactive})});
  }
@@ -63,4 +73,4 @@ if(require.main===module){try{
   console.log(JSON.stringify({engineeringPreflight:'passed',version:policy.VERSION,results,paidPermission:false,writePermission:false,acceptanceNotInferred:true}));
  }
 }catch(e){console.error('Engineering preflight blocked: '+e.message);process.exitCode=1;}}
-module.exports={BASELINE,recordPath,digestEntries,check,working,committed,recoverDocumentation};
+module.exports={BASELINE,recordPath,digestEntries,check,working,committed,recoverDocumentation,planReader};
