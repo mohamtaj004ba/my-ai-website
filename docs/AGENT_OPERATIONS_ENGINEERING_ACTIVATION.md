@@ -1,5 +1,15 @@
 # Guarded engineering activation checkpoint — October 15, 2026
 
+## Exact-token admission increment — pending verification
+
+The existing provider boundary now prepares a fixed input-count request with the same model, input, instructions, reasoning, strict response format, tools and truncation as the proposed Responses request. The complete generation body and count projection are separately hashed. A private in-process provenance proof binds the count to the exact stage/context, project, source, release and request, with a30-second expiry. This is an offline-tested preparation boundary, not demonstrated provider parity.
+
+The existing shared-ledger broker admits at most five one-use count attempts, records each trusted count under its existing stage capability and checks12k input/call,60k input/workflow,4k output/call and20k output/workflow. Paid Responses dispatch rejects absent, copied, substituted, expired or replayed counts. Current authorization is revalidated after counting and before dispatch; actual reported input must match the admitted count before settlement. Fixture/history semantics remain unchanged. No additional orchestration or financial journal exists.
+
+Counting is NOT assumed free. Native dispatch additionally requires a reviewed zero-cost counting policy: the owner approval's countPricing.evidenceHash must exactly match trusted server configuration CALLERCORE_AGENTOPS_ENGINEERING_COUNT_PRICING_SHA256, alongside the existing disabled paid/count flags. There is currently no verified account-specific zero-cost policy or corresponding activation configuration. Therefore live counting and inference remain blocked. If the provider charges for counting, this zero-cost-only implementation must remain disabled until a separately reviewed priced policy includes that exposure; consent alone cannot establish a price. Successful synthetic settlement attributes count request quantity, zero-cost policy evidence and Responses usage separately while retaining the entire original reservation ceiling. Unknown/failed calls retain pending ceilings.
+
+Future fresh authorization must identify the exact release/task/model and separately disclose at most five input-count requests plus five model responses, with no retries, no code execution, no acceptance or publication. Existing historical1USD authorization is not reused. Verify actual endpoint access, pricing, count/generation parity, current ledger and independent review first. The owner-facing operational workflow remains fixture-only; these prepared transport changes do not activate a paid Start control.
+
 ## Policy and actual authority
 
 The existing engineering-independent-review-v1 owner-attestation route is unchanged. Its authenticated identity, workspace, implementer separation, independenceVerified and immutable decision requirements still apply. Current owner policy explicitly does not verify independence. A second model call or a service capability cannot satisfy that historical attestation. No independent human account exists in this owner-operated workspace.
