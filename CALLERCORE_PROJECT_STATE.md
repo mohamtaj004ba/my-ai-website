@@ -1,3 +1,7 @@
+## Guarded engineering activation — in progress, October 15, 2026
+
+Base application 3b74d81935774211cf1614087b261f1a4fb651ec and handoff bf77bb44533ce55a3fb705eca1a7a55ff67b4b54 were reconciled. New transport/profile/provider and actual Ops fixture composition are UNCOMMITTED and not hosted-verified. No paid activation, new approval, credential or browser spending. Existing owner/human attestation remains unchanged; automated task capabilities are procedural technical separation only. Independent QA passed28/28 focused cases in13425.75ms, including full-capacity cleanup, cached usage, deadline and resealed fixture fidelity. Auditor findings corrected, final review pending. See docs/AGENT_OPERATIONS_ENGINEERING_ACTIVATION.md and artifacts/agent-operations/ACTIVATION_RESUME.json. Next: freeze independent reviews, STRICT and realRedis, publish exact feature release then hosted fixture/Browser verification. Do not claim this draft is operational paid transport or accepted engineering work.
+
 ## Phase C.7 — guarded hosted rehearsal verified; live engineering remains blocked — October 15, 2026
 
 This is the authoritative current checkpoint. The pre-verification wording in docs/AGENT_OPERATIONS_PHASE_C7.md is historical and superseded here. Phase C.7 is PARTIAL: request/parser and hosted fixture boundaries are verified; paid transport, authenticated independent semantic authority and dedicated browser remain unavailable.
