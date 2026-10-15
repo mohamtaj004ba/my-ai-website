@@ -1,0 +1,21 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e9375826a0b3e76ba4c95a29ed3b5061a00d52bffb0411945b0eaef09402a2e0",
+  "risk": "substantial",
+  "scope": "Update the independent C4 QA Vercel broker fixture to explicit internal lease and revalidation contract; retain all scope, mutation, caller snapshot, cancellation and secret exclusion assertions.",
+  "riskAnalysis": "Test-only compatibility correction after original frozen full2885 run exposed four old fixture failures; actual runtime and release fingerprint unchanged. Do not replace unavailable expectations or remove adversarial assertions.",
+  "verification": [
+    "risk-analysis",
+    "targeted-tests",
+    "independent-qa",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Independent C4 QA fixture still modeled provider expiry and omitted required trusted connection revalidation.",
+      "detectionGap": "Focused new broker/adapter tests used the new contract, while full regression found the older cross-phase fixture.",
+      "regression": "All10 C4 QA tests now exercise the actual internal lease contract and pass without assertion removal.",
+      "historicalPrevention": "Full remote CI remains mandatory; original2881/2885 local invocation is preserved rather than reported all-green."
+    }
+  ]
+}
