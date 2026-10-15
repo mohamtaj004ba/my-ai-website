@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "c5636b16cda12495a5e3a5258bfa4696d7bc3ba34ef15c8790bb80b8cdbded89",
+  "risk": "critical",
+  "scope": "Prepare dependency-complete browser proposal without spending; extend existing exact-bound journal with both-chart DST inert text proposal and restricted trusted child. Product dashboard remains unchanged.",
+  "riskAnalysis": "STRICT task authority, source integrity, restricted filesystem, cancellation and release identity; no new paid or publication authority.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Curated repository source, task and review bindings, worker filesystem, immutable evidence and budget.",
+    "trustBoundaries": "Owner dashboard to existing journal; authority to bounded trusted child; proposed text is untrusted inert data, never code execution.",
+    "abuseCases": "Stale or substituted source/proposal/runtime, reordered or overlapping edits, forged acceptance, late cancellation, secret-bearing build context and unbounded browser charges.",
+    "mitigations": "Exact hashes and full context binding, cloned inputs, unique ordered bounded edits, empty child environment, Node filesystem permission, pre/post fenced authority, final CAS and destruction. Browser recipe inactive."
+  },
+  "rollback": "Revert Preview preparation modules and UI preset only; preserve legacy v1/v2 records, existing receipts and original source. Revoke active non-billable task before rollback; Production unchanged.",
+  "negativePaths": {
+    "malformed-response": "Unknown keys, paths, oversized/overlapping/reversed edits and altered manifests fail fixed validators.",
+    "stale-state": "Exact source/preimage/deployment/release/task/execution/fence guards deny stale artifacts.",
+    "concurrency": "Process-owned temporary namespaces prevent false cleanup claims from concurrent tests; existing final CAS remains.",
+    "cancellation": "Actual child cancellation/timeout waits for cleanup before rejection; no receipt after authority loss.",
+    "worker-interruption": "Child exit/start failures deny artifact; parent-crash orphan and OS resource isolation remain limitations, no untrusted execution enabled.",
+    "api-outage": "No new provider call in preparation; existing public CI outage produces unavailable evidence, no retries.",
+    "authorization-denial": "Trusted before/after callback must return exact true; existing owner/workspace/task authority and stale claim checks remain.",
+    "spending-limit": "Paid execution and browser spending disabled; no allowance use, approval or provider dispatch added.",
+    "partial-execution": "No partial artifact is accepted; source identity and cleanup verified before returned result."
+  },
+  "defects": [
+    {
+      "rootCause": "Both daily charts add fixed24h to local midnight, miscounting DST days; previous inert proposal covered only Overview.",
+      "detectionGap": "Old single-chart demonstration was not a complete shared-boundary correction.",
+      "regression": "Independent actual-source red reproduction for both charts; shared-helper inert edits and calendar reference across fractional and full DST, year/leap/midnight boundaries.",
+      "historicalPrevention": "Both-chart profile and source anchors are mandatory contract tests; preserve rolling-duration semantics and legacy records."
+    },
+    {
+      "rootCause": "Cleanup tests globally enumerated concurrent processes temporary workspaces.",
+      "detectionGap": "Separate suite passed while combined execution exposed cross-process interference.",
+      "regression": "Process-owned namespace still detects own orphan directories; combined restricted-child and Ops tests pass.",
+      "historicalPrevention": "Run new actual-child tests alongside task integration in frozen STRICT, preserve original failure."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing journal, role contracts and restricted text child; no new controller or authorization ledger.",
+    "dependencies": "Existing pinned Node, Playwright1.55.0 recipe, curated source lock, exact runtime/release/deployment and Redis CAS; no new package installation.",
+    "threats": "Proposal injection, stale authority, substituted evidence, forged review, accidental runtime execution or implicit infrastructure spending.",
+    "failureModes": "Missing exact source/runtime denies preparation. Unconfirmed browser digest/quote blocks build; no paid fallback or retry.",
+    "faultInjection": "Altered proposal/binding/patch, authority denial, ignored preauth, child timeout/cancellation and malicious inert throw text remain covered.",
+    "independentChallenge": "Engineering Auditor approved actual data-only path; QA independently reproduced both charts and strengthened browser qualifier predicate tests.",
+    "recovery": "Await child cleanup on failure, preserve old evidence; no authority restoration. Parent-hardkill orphan remains explicit future isolation limitation.",
+    "readiness": "Targeted47/47 complete; frozen STRICT, remote CI/Redis/CodeQL and exact hosted workflow still required. Browser and paid inference remain inactive."
+  }
+}
