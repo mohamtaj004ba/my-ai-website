@@ -1,3 +1,9 @@
+## C.6 — final preflight corrections pending frozen verification
+
+3072/3073 STRICTpassed on local7bf; mandatory literal asset tracing rejected historical JSON packaging. Original failure preserved; explicit require.resolve mapping added without weakening guard;26targetedpass. AuthenticatedfdaBrowser38694133564attempt2/job116288626619 succeeded, artifact11953234970 hashedc516e9c42790191f758d1414036665a77b5a6b73344baabf375129aeae511a05. ActualbothchartDOM spring[2,2,0]/fall[3,1,0] pass; realOverview/AnalyticsPNG inspected. Itsautomaticbaseline remainedunavailable: failedpin artifact could hide fullsame-run artifact. Loader now tries3boundartifacts per10runs and durably exportsprovenance;3focusedpass. Originalsixbaselinebytes recovered fromverifiedC5artifact11951455365; local pixelcomparisonall6ok,maxratio0.00022, no recreatedhistory. Finalautomaticrestore/latestreleaseverificationpending.
+
+Next: finalreview/freeze tracing+baselinecorrection, STRICT; publish reviewedcommits onlyafterpassed, verifyexactREADY/alias and actualownerhistory, finishnewCI/Redis/CodeQL/authBrowser +artifact/provenance. No model/browserVM/spending/approval. Preserve originalunresolvedC5task and allfailures.
+
 ## C.6 — historical evidence compatibility correction under verification
 
 Product fix41bce9d and test-onlyfda51f2 are published; currentREADYdpl_AYztHZ9LxUFQz19gFBdeD8QNXSEb/sourcefda/release7729d986530238351da7436d1b3e9ce92af79c315c2e9e8a1a65a6bf5d42088c. Featurealias aligned; exactbrokerpaidfalse/no usableapprovals/historyunchanged. Remote3051/3051 and18/18realRedis/CodeQL/Jekyll pass. Browser38694133564attempt2 underway; originalpin failure retained.
