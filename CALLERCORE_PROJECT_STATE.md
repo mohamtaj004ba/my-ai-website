@@ -1,3 +1,11 @@
+## Exact declaration efficiency correction in verification — October 14, 2026
+
+Published application remains fully verifiedd51d314/release880675/READY8sTk; its Browser38676315089 attempt2 succeeded. Local documentation checkpoint9e3cf3e is NOT published. Its intendedFAST gate selectedSTRICT because the existing Vercel ignore-command path-only declaration mentions canonical/FMEA names but was absent from audited nameOnlyLines. The redundant run was explicitly interrupted and partialINTEGRATION_HANDOFF_FAST.log retained; no FAST pass or saved runtime claimed.
+
+Current unpublished correction adds only the independently hashed exact line in exact scripts/vercel-ignore-docs.cjs to the existing audited literal-declaration map (bf58e2fa038a1698693b352207b693c075006b9cb647345c30a2eb31621de4b3). No file-wide ignore or operational permission. Both Git trees, added/changed/imported lines, unknown JSON, policy/security source and source/config/toolchain evidence drift retain STRICT. Auditor approved source; QA added9 permanent adversarial Gitfixtures. Initial focused68/69 failed only a wrong test expectation for existing reason label; corrected positive1/1 passes; no clean69 invocation claimed before frozenSTRICT.
+
+Next: commit reviewed policy/source lock and run STRICT, publish only feature, verify CI/Redis/CodeQL/new exact Preview/Browser, then demonstrate FAST on final documentation checkpoint and confirm build-ignore behavior. No new model/provider/key/browser session. Existing owner activation blockers and accounting remain unchanged.
+
 ## Final C.4 integration continuation — October 14, 2026, 20:45 PDT
 
 **Verified application:** d51d31424d1a87824b0e8770b9be53dd219b3e1f (includes Workspace runtime3df3e51 and fixturefacd1dc). READY **dpl_8sTk641uzwPcbFarsBkhgF8zWkzY**, https://my-ai-website-nfrosxpn1-mohamtaj004bas-projects.vercel.app. Feature alias independently matches deployment/source/project/branch and organization-contracts-v4/**8806757c8e3d0f4d9c279053e57bb71f299d7e8966a12d30f59dd08f2acc96f3**. Source is unchanged by this documentation checkpoint; no application deployment or alias change is required for it.

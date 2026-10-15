@@ -561,5 +561,12 @@
     "remaining": "Owner Google consent plus verified operational read wiring; Stripe private replacement; dependency-complete hosted browser image and protected-target identity; untrusted code and semantic review remain disabled",
     "production": "unchanged",
     "pr5": "draft-unmerged"
+  },
+  "documentationDeclarationFalsePositive": {
+    "status": "correction-unpublished",
+    "observed": "Local doc-only9e3cf3e selectedSTRICT due path-only Vercel ignore-command declaration; unnecessary run explicitly interrupted, not a passingFAST receipt.",
+    "correction": "Exact normalized line hash bf58e2fa038a1698693b352207b693c075006b9cb647345c30a2eb31621de4b3 in exact auditedfile; other lines/both trees still protected.",
+    "independentReview": "Auditor actual source/hash approved; QA9 newGitfixtures, initial68/69 wrong expectation label corrected and positive1/1; require clean frozenSTRICT.",
+    "remaining": "PolicySTRICT/remote/exactrelease; demonstrate actualfinaldocsFAST and provider buildskip before savings claims."
   }
 }

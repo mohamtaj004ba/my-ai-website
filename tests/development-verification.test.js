@@ -4,6 +4,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{execFileSync}=require('node:child_process');
 const verification=require('../scripts/development-verification.cjs');
 const auditedStyleDeclaration=fs.readFileSync(path.join(__dirname,'../scripts/development-verification.cjs'),'utf8').split('\n').find(line=>line.startsWith('const styles=new Set('));
+const auditedIgnoreDeclaration=fs.readFileSync(path.join(__dirname,'../scripts/vercel-ignore-docs.cjs'),'utf8').split('\n').find(line=>line.startsWith('const SHA='));
 const entry=(p,before='old',after='new',extra={})=>({path:p,before,after,beforeMode:'100644',mode:'100644',...extra});
 const classify=(entries,options={})=>verification.classify(entries,{protectedConsumer:()=>false,...options});
 function fixture(initial){
@@ -54,6 +55,26 @@ test('exact audited name declaration alone does not turn mapped CSS into a prote
 test('an unrecognized lookalike allowlist declaration is not excluded from protected consumers',()=>withFixture({'industries.css':'a{}','index.html':'<link href="industries.css">','scripts/development-verification.cjs':'const styles=new Set(["industries.css"]);'},f=>{
  f.write('industries.css','b{}');f.commit();assert.equal(verification.plan(f.base,'HEAD',f.dir).lane,'STRICT');
 }));
+
+test('exact audited deployment-ignore declaration permits canonical and FMEA documentation FAST identity only',()=>withFixture({'CALLERCORE_PROJECT_STATE.md':'old checkpoint','docs/AGENT_OPERATIONS_FAILURE_MODES.json':'{"version":1}','scripts/vercel-ignore-docs.cjs':auditedIgnoreDeclaration},f=>{
+ f.write('CALLERCORE_PROJECT_STATE.md','new checkpoint');f.write('docs/AGENT_OPERATIONS_FAILURE_MODES.json','{"version":2}');f.commit();const p=verification.plan(f.base,'HEAD',f.dir);
+ assert.equal(p.lane,'FAST');assert.equal(p.reason,'nonruntime-documentation');assert.equal(p.docsOnly,true);assert.equal(p.browser,'identity');assert.equal(p.paidPermission,false);assert.deepEqual(p.paths,['CALLERCORE_PROJECT_STATE.md','docs/AGENT_OPERATIONS_FAILURE_MODES.json']);assert(!p.required.includes('full-regression'));assert(!p.required.includes('codeql'));assert.deepEqual(verification.assertPlan(p,f.dir),p);
+}));
+
+for(const target of ['CALLERCORE_PROJECT_STATE.md','docs/AGENT_OPERATIONS_FAILURE_MODES.json'])for(const kind of ['different-line','same-line','modified-declaration'])test('deployment-ignore exception never hides '+kind+' consumer of '+target,()=>{
+ const consumer='const operationalPolicy=require("../'+target+'");',declaration=kind==='different-line'?auditedIgnoreDeclaration+'\n'+consumer:kind==='same-line'?auditedIgnoreDeclaration+consumer:auditedIgnoreDeclaration.replace('const SHA=','const  SHA=');
+ withFixture({[target]:'old','scripts/vercel-ignore-docs.cjs':declaration},f=>{f.write(target,'new');f.commit();const p=verification.plan(f.base,'HEAD',f.dir);assert.equal(p.lane,'STRICT');assert.equal(p.reason,'protected-dependency');assert.equal(p.browser,'full');assert(p.required.includes('full-regression'));assert(p.required.includes('codeql'));assert.equal(p.paidPermission,false);});
+});
+
+test('deployment-ignore import deleted from head cannot erase protected base-tree changes',()=>withFixture({'CALLERCORE_PROJECT_STATE.md':'old','scripts/vercel-ignore-docs.cjs':auditedIgnoreDeclaration+'\nconst policy=require("../CALLERCORE_PROJECT_STATE.md");'},f=>{
+ f.write('scripts/vercel-ignore-docs.cjs',auditedIgnoreDeclaration);f.write('CALLERCORE_PROJECT_STATE.md','new');f.commit();const p=verification.plan(f.base,'HEAD',f.dir);assert.equal(p.lane,'STRICT');assert(p.paths.includes('scripts/vercel-ignore-docs.cjs'));assert.equal(p.browser,'full');assert(p.required.includes('full-regression'));
+}));
+
+test('audited deployment-ignore name line cannot authorize unknown JSON or shared-security changes',()=>{
+ for(const target of ['docs/unrecognized-runtime-policy.json','lib/auth.js'])withFixture({'CALLERCORE_PROJECT_STATE.md':'old','scripts/vercel-ignore-docs.cjs':auditedIgnoreDeclaration,[target]:'old'},f=>{
+  f.write('CALLERCORE_PROJECT_STATE.md','new');f.write(target,'new');f.commit();const p=verification.plan(f.base,'HEAD',f.dir);assert.equal(p.lane,'STRICT');assert.equal(p.docsOnly,false);assert.equal(p.browser,'full');assert(p.required.includes('full-regression'));assert(p.required.includes('codeql'));assert.equal(p.paidPermission,false);
+ });
+});
 test('critical deletion and rename to documentation retain both sides of actual diff',()=>withFixture({'lib/security.js':'original executable'},f=>{
  fs.mkdirSync(path.join(f.dir,'docs'));f.git(['mv','lib/security.js','docs/security.md']);f.commit();const p=verification.plan(f.base,'HEAD',f.dir);assert.equal(p.lane,'STRICT');assert(p.paths.includes('lib/security.js'));assert(p.paths.includes('docs/security.md'));
 }));
