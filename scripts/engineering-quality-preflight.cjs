@@ -3,6 +3,15 @@
 const {execFileSync,spawnSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 const policy=require('../lib/engineering-quality'),root=path.resolve(__dirname,'..');
 const BASELINE='edc7a89d43d807012b796e470d8fb80d187739ba',PROACTIVE_BASELINE='68d19669a149e873f6ff9d5a6dad8bfe1d4d3e22';
+// One preserved documentation checkpoint omitted its plan. Recover that exact
+// historical evidence, never a general exception for missing or stale plans.
+const DOCUMENT_RECOVERY=Object.freeze({commit:'7934a97c860a025c37e09ea1c3532c698143bc0d',digest:'02a29c98b569773d511e48ce29b9f37aaddce2a04f68d5e38faeb8b6ae5159ae',path:'CALLERCORE_PROJECT_STATE.md',plan:'docs/engineering-changes/stripe-verified-checkpoint-recovery.json'});
+function recoverDocumentation(commit,entries,records,{mode,load}={}){
+ if(commit!==DOCUMENT_RECOVERY.commit||entries.length!==1||entries[0].path!==DOCUMENT_RECOVERY.path||digestEntries(entries)!==DOCUMENT_RECOVERY.digest||records.some(p=>p.changeDigest===DOCUMENT_RECOVERY.digest))return records;
+ if(typeof mode!=='function'||typeof load!=='function'||mode('parent',DOCUMENT_RECOVERY.path)!=='100644'||mode('commit',DOCUMENT_RECOVERY.path)!=='100644'||mode('head',DOCUMENT_RECOVERY.plan)!=='100644')throw Error('Historical documentation recovery requires exact regular files');
+ const supplement=load(DOCUMENT_RECOVERY.plan);if(supplement?.historicalCommit!==commit||supplement.changeDigest!==DOCUMENT_RECOVERY.digest||supplement.risk!=='routine')throw Error('Historical documentation recovery binding denied');
+ return [...records,supplement];
+}
 function git(args){return execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:20*1024*1024});}
 function recordPath(p){return /^docs\/engineering-changes\/[a-z0-9-]+\.json$/.test(p);}
 function digestEntries(entries){return policy.hash(entries.sort((a,b)=>a.path.localeCompare(b.path,'en')));}
@@ -35,7 +44,8 @@ function committed(base,head='HEAD'){
   const parents=git(['rev-list','--parents','-n','1',commit]).trim().split(' ').slice(1);
   if(parents.length!==1)throw Error('Merge commits require explicit review; linear feature history required');
   const entries=changes(parents[0],commit),files=git(['ls-tree','-r','--name-only',commit,'--','docs/engineering-changes']).trim().split('\n').filter(recordPath);
-  const records=files.map(p=>JSON.parse(git(['show',commit+':'+p])));
+  const historical=files.map(p=>JSON.parse(git(['show',commit+':'+p]))),refs={parent:parents[0],commit,head};
+  const records=recoverDocumentation(commit,entries,historical,{mode:(kind,p)=>git(['ls-tree',refs[kind],'--',p]).split(' ')[0],load:p=>JSON.parse(git(['show',head+':'+p]))});
   let proactive=false;try{git(['merge-base','--is-ancestor',PROACTIVE_BASELINE,commit]);proactive=commit!==PROACTIVE_BASELINE;}catch{}results.push({commit,...check(entries,records,{proactive})});
  }
  return results;
@@ -53,4 +63,4 @@ if(require.main===module){try{
   console.log(JSON.stringify({engineeringPreflight:'passed',version:policy.VERSION,results,paidPermission:false,writePermission:false,acceptanceNotInferred:true}));
  }
 }catch(e){console.error('Engineering preflight blocked: '+e.message);process.exitCode=1;}}
-module.exports={BASELINE,recordPath,digestEntries,check,working,committed};
+module.exports={BASELINE,recordPath,digestEntries,check,working,committed,recoverDocumentation};
