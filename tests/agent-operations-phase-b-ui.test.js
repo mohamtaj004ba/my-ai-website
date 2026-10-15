@@ -32,7 +32,7 @@ test('calendar correction preset submits exact bounded profile and default prese
   assert.match(h.get('opsObjective').value,/local-day chart DST boundary/);assert.equal(h.get('opsSequence').value,'ordered');assert.deepEqual(h.get('opsTemplates').querySelectorAll('input').filter(e=>e.checked).map(e=>e.value),['engineering-inspect']);
   if(reset)await h.get('opsEngineeringPreset').emit('click');await h.submit();assert.equal(h.calls.length,1);assert.equal(h.calls[0].action,'operations-create');const input=h.calls[0].input;
   assert.equal(input.durationMs,600000);assert.equal(input.subtasks[0].template,'engineering-inspect');assert.equal(input.subtasks.length,1);
-  if(reset){assert.equal(Object.hasOwn(input,'engineeringProfile'),false);assert.match(input.objective,/comment-only patch/);}else {assert.equal(input.engineeringProfile,'dashboard-local-days-v2');assert.match(input.objective,/Overview and Analytics/);assert.match(correction.textContent,/both daily charts/);}
+  if(reset){assert.equal(Object.hasOwn(input,'engineeringProfile'),false);assert.match(input.objective,/comment-only patch/);}else {assert.equal(input.engineeringProfile,'dashboard-local-days-v3');assert.match(input.objective,/Overview and Analytics/);assert.match(correction.textContent,/both daily charts/);}
   const saved=JSON.parse([...h.storage.values()][0]);assert.deepEqual(saved.input,input);
  }
 });

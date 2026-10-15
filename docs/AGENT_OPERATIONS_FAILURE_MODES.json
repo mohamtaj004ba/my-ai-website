@@ -599,12 +599,12 @@
     "pr5": "draft-unmerged"
   },
   "phaseC5": {
-    "status": "preparation-and-independent-verification-in-progress",
+    "status": "midnight-correction-under-frozen-verification",
     "paidExecution": false,
     "browserSpendingAuthorized": false,
     "source": "8e82ac6af6f581ba2c3fe212d1dda9d4e2be9c0a",
-    "browser": "Prior fifth proof failed at ldd with20 unresolved entries; names not retained. Prepared pinned Playwright1.55.0 Noble dependency image; exact digest, provider build/import/retention quote and protected Preview service identity remain unresolved. No new image or VM created.",
-    "product": "Independent actual-source reproduction confirms both Overview and Analytics local-day fixed24h defect. Shared-helper three-edit proposal remains inert/unpublished; trusted reference covers23/25h and fractional DST boundaries. General untrusted-code execution and patched runtime testing remain disabled.",
+    "browser": "Public official linux/amd64 metadata digest verified ffc33305f7b4b04057ae4a0caa70aad4fde87454fb403a1a22e7f931707dfcf9; four advertised compressed layers913944629bytes, no layer pull. Exact build/import/retention/transfer quote and protected Preview identity remain unresolved; no new paid resource.",
+    "product": "Independent source reproduction confirms both daily charts fixed24h and midnight hour-carry defects. Original v2 artifact preserved; v3 captures one reference and independently constructs both boundaries.55 focused composition checks pass, proposed source remains inert. Skipped civil date labels remain qualified.",
     "review": "Independent Auditor approved bounded text-only source/task/release-bound child and existing journal integration, conditional targeted/STRICT/hosted evidence. Engineering review authority remains independently unverified; deterministic decisions remain unresolved.",
     "limitations": "Parent crash orphan recovery and complete OS/egress isolation are not established by trusted child tests. No agent publication, paid reasoning, recurring scanning or customer-data authority."
   }
