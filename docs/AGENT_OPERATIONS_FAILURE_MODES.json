@@ -610,18 +610,25 @@
     "verification": "STRICT3038/3038; CI3038/3038; actualRedis17/17; CodeQL/Jekyll/authenticatedBrowser succeeded on2efd. Actual QA artifact inspected; six missing pixel reference baselines mean pixel drift unverified."
   },
   "phaseC6": {
-    "status": "in-progress-reviewed-product-correction",
-    "product": "Exactv3two-chartfix applied byWork; no internal-agent approval/publication. Analytics rolling input preserved; DOM acceptance pending.",
+    "status": "work-reviewed-two-chart-product-fix-published-hosted-verified-autonomy-disabled",
+    "product": "Work published exactv3 sharedcalendarhelper forbothcharts; independentactualsource tests and actualChromeDOM spring/fall pass. Existingrollingfilter and skippedcivil-date qualifications preserved.",
     "historicalAcceptance": "Original five-stage task/two unresolved QA decisions/acceptedWorkfalse unchanged.",
-    "browser": "No spending authorization; builder/accountquote/protectedidentity and reviewed real-page controller remain blockers.",
-    "visual": "Recoverable historical bytes found; provenance-bound compatible full-run selection under review. No fabricated old baseline.",
-    "trial": "Plan only; no engineering inference adapter, paid request or financial authorization.",
+    "browser": "PinnedPlaywright1.55.0LinuxAMD64recipe only. No qualifiedbuilder/all-inclusivequote/protectiontransport/realpagecontroller.0.0284006USDcompute-only estimate; proposed1USDall-resources envelope notquoted/authorized. No build/store/pull/VM.",
+    "visual": "OriginalC5sixPNG recovered unchanged; final335manualcomparison6/6max0.022%; final6c02automaticrestore exact335artifact provenance and6/6comparisonsmax0.005% verified fromactualartifact. Tallheightcap16384 retains40M/10kwidth/20MiB/CRC guards; originalfailure preserved.",
+    "trial": "Prepared5-callStandardGPT6.1SolMedium60kinput/20koutput0.32USDtextestimate/1USDproposedreservation only; engineeringadapter absent; freshauthorization required.",
     "security": "Existing revocation, owner authority, financial ceiling and Production boundaries unchanged.",
     "historyCompatibility": {
       "rootCause": "Persisted source-specific observations and draft manifests were revalidated using current source after a legitimate repair, hiding owner history.",
       "correction": "Fixed bounded hash-pinned historical source/manifest used only by private persisted validation; exact original task/runtime/artifact/evidence/QA/authority remains. New execution uses current source, retired profiles deny.",
-      "evidence": "Actual owner failure retained; original hosted v1/v3/C3 receipts validated unchanged; mixed known-owner fixture read and derived v2 honestly labelled.44focusedpass; STRICT/newhosted verification pending.",
+      "evidence": "Actualexistingowner335 originalplan readback deepEqual allparsedfields, independentlyQA/Auditorverified; 6c02 visibleowner source/release/active0/budget verified, same runtime. Boundedpersisted-only originalsource validation passedfocused andfullSTRICT; currentnewexecution/retiredprofiledeny unchanged.",
       "cleanup": "Process-owned comment temp namespace corrects cross-process test collision; actual cleanup unchanged, parent crash remains qualified."
-    }
+    },
+    "source": "6c02b79778f8dc2583b2a075c08e64eb1b1769db",
+    "deployment": "dpl_FB4aFg2j5XHfkAYH1pVf36RimJFV",
+    "release": "d60f326e0b386aa646d124f87d48646633d8744836397d5bb4235e17f9f373af",
+    "verification": "STRICT3075/3075; remoteCI38700607814 3075/3075, realRedis18/18; CodeQL38700607615/38700599655,Jekyll38700607609success; exactauthBrowser38700599831attempt2/job116309767978success; downloadedartifact11956966233 SHA832f8ac95165cb54b23b69b5994af308717dad802de11a1f0255cb6823bc3536 inspected.",
+    "independence": "WorkQA/Auditor reviewed actual product/security/toolingdiff and evidence. HistoricaloriginalC5all5receipts/Chiefreport/two unresolved decisions/acceptedWorkfalse unchanged. No fabricated internal semanticapproval.",
+    "financial": "08:03:08Z exactbroker paidfalse/no usableapproval; financialhistoryunchanged;15limit/10.60retained incl2.20uncertainty/4.40remaining, notinvoice-reconciled; no newpaidmodels/Sandbox/imagebuild/store/approvals.",
+    "remaining": "Browserquote/transport/freshspendapproval; guardedengineeringadapter+nonbillablerehearsal+freshmodelapproval; generaluntrustedcodeisolation and independenthumanattestation unqualified; no autonomouspublishing."
   }
 }
