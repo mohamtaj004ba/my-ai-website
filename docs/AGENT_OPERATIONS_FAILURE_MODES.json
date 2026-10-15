@@ -685,10 +685,12 @@
     "evidence": "LocalSTRICT3234,CI3234,realRedis23,CodeQL/Jekyll pass; hostedBrowser38753756453 firstattempt success after241000ms exact-ready pin,44source mismatches rejected then45th attempt succeeded. Actual archive11983018467 SHA435f16b10c5cd4d450fc6c2474e039d5f8ca406b27d02a260e896c276dffa449 and selected evidence verified; sixvisualpass,max0.00019,zeroerrors. No dollar/Work-credit saving claimed."
   },
   "documentationSelection": {
-    "status": "narrow-candidate-independent-auditor-approved-QA-and-STRICT-pending",
+    "status": "verified-09b9cdc-exact-literal-exceptions-and-single-document-ignore",
     "confirmedCause": "Historical recovery name citation classified canonical docs as a protected dependency; exact activation document missing deployment ignore allowlist.",
     "controls": "Exact complete literal line hashes only;old/new audited ignore hashes for before/after trees;real imports,modified lines,source edits and nonregular paths staySTRICT. Only reviewed activation.md newlyskippable forfeaturePreview.",
     "failureEvidence": "Unpublished256docsrun unexpectedlyselectedSTRICT;3213/3234pass,21tempGit/localhostsandboxpermissionfailures. Preserve failed log,run final committed source with proper offline fixture permissions.",
-    "authority": "No verification receipt from skipped deployment,no budget/model/agent/Production authority."
+    "authority": "No verification receipt from skipped deployment,no budget/model/agent/Production authority.",
+    "evidence": "Independent78focused(69existing+9new) and WorkAuditoractualdiffapproved;finalSTRICT3243,CI3243,realRedis23,PRCI/CodeQL/Jekyll and fullBrowser38758858576 pass. Actualartifact11986545676 verified exact09source/ccbrelease,zeroerrors,sixvisualpass. Priorfailed256run preserved;no testweakening.",
+    "remaining": "This finaldocumentationhead stillneeds its own source-bound targeted/identity verification and actual ignored-build evidence. ExistingPRfull-historychecks retained. No claimed dollar orWorkcreditsaving."
   }
 }

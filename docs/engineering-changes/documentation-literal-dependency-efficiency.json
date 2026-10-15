@@ -39,7 +39,7 @@
     {
       "rootCause": "Historical DOCUMENT_RECOVERY name literal was not included in exact declaration audit;existing activation document was absentfrombuildignoreallowlist.",
       "detectionGap": "Prior runtime-source verification passed, but next canonical handoff exposed the conservative false positive and narrow ignore mismatch.",
-      "regression": "Independent78tests passed including10new realGit adversarial cases:exactlineFAST,real/modifiedimportsSTRICT,old/newliteralbounds,symlink/missinghistory/mixedsourcebuild.",
+      "regression": "Independent78tests passed including9new realGit adversarial cases:exactlineFAST,real/modifiedimportsSTRICT,old/newliteralbounds,symlink/missinghistory/mixedsourcebuild.",
       "historicalPrevention": "Preserve failed256run and source-bound plans;verify next actual documentation-onlycheckpoint selectsFAST and cancelsunneededappbuild without granting releaseauthority."
     }
   ],
@@ -48,7 +48,7 @@
     "dependencies": "Existing Git before/after trees,Nodecrypto hash helper and exact reviewed regular documentation path.",
     "threats": "Wholelinehashes mustnot exempt actualimports or changed script logic;both-trees andsource/testpathescalation retained.",
     "failureModes": "Unknown source,nonregularfile,missinghistory,wrongbranch/environment andtampereddeclarations all remainfailclosed.",
-    "faultInjection": "Independent78/78 focused cases passed48228.1639ms;10newrealGitcases and existing68policycases unchanged.",
+    "faultInjection": "Independent78/78 focused cases passed48228.1639ms;9newrealGitcases and existing69policycases unchanged.",
     "independentChallenge": "WorkAuditor recomputed wholelinehashes and approved actualtwo-scriptdiff conditionalfinalSTRICT/hostedchecks;no materialfinding.",
     "recovery": "Preserve256failedsandboxrun3213/3234,do notweaken localhost/tempGit tests;runfinalofflinefixtures withproperpermissions andfreezeallsource.",
     "readiness": "Candidateonly;newcontractfingerprintccb729a5e7f68254a9889405b84355e50d468f2b5ab6a4d6991498ca824a7d66 requires finalSTRICT,realRedis,CI/CodeQL/READY/Browser. No count/model request,paidactivation or Productionchange."
