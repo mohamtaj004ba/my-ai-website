@@ -41,3 +41,11 @@ For future proactive intake, require separate categories: reproducible defect, d
 Preserve genuine historical repository-scoped GitHub and project-scoped Vercel reads and the existing Gmail Inbox with four verified sender identities. Calendar/Drive/Contacts preparation remains inactive pending owner consent/resource confirmation and verified refresh/gateway wiring; Docs/Sheets content adapters remain absent. The revoked Stripe sandbox credential is not reusable; privately provision the previously documented Accounts plus five resource read permissions, all writes None, before new verification. No broad live billing key may be substituted.
 
 Existing four departments, Engineering Auditor, recovery foundations and later premium command-center plans are unchanged. Paid model execution, internal publication and Production access remain disabled.
+
+## Final hosted verification
+
+Application2efd4a0, READYdpl_3fkbfthzT8LYv5tadTS4jsrQwPhG, release174faad877e614ca74a8b93b25080eeee14427a09586813cb7e4b3330bfb14f3. Actual owner assignment op_851bcb9ec41149d1b847e60edd75a074 completed all five stages once, with real deployed source/publicCI and actual restricted text child. Two QA decisions remain unresolved; Chief matches immutable review; acceptedWorkfalse, publicationfalse, allleases0, destroyedtrue, modelcalls/reservations0. Independent Work QA/Auditor validated rendered export and exact source/artifact bindings; this does not fabricate independent live-model/human semantic acceptance.
+
+LocalSTRICT3038/3038 and remoteCI3038/3038/actualRedis17/17 passed; CodeQL/Jekyll/authenticatedBrowser passed. Browser artifact11951455365 matched its SHA256 and exact deployment pin, with545 real PNGs and an inspected Agent Operations screenshot. Report has no console/page/API/visual-contract failure. Six pixel comparison reference images were missing, so no pixel-drift claim is made. Original failure artifacts and superseded v2 proposal remain preserved. Source and Preview product behavior have not been changed by the proposed dashboard patch.
+
+No new model or Sandbox resource was activated. Paid broker and accounting history remain unchanged; current owner snapshot shows no active assignment. See canonical project state for exact identities, qualified limits and the next owner decision.

@@ -599,13 +599,14 @@
     "pr5": "draft-unmerged"
   },
   "phaseC5": {
-    "status": "midnight-correction-under-frozen-verification",
+    "status": "bounded-inert-proposal-hosted-verified-operational-autonomy-not-enabled",
     "paidExecution": false,
     "browserSpendingAuthorized": false,
     "source": "8e82ac6af6f581ba2c3fe212d1dda9d4e2be9c0a",
-    "browser": "Public official linux/amd64 metadata digest verified ffc33305f7b4b04057ae4a0caa70aad4fde87454fb403a1a22e7f931707dfcf9; four advertised compressed layers913944629bytes, no layer pull. Exact build/import/retention/transfer quote and protected Preview identity remain unresolved; no new paid resource.",
-    "product": "Independent source reproduction confirms both daily charts fixed24h and midnight hour-carry defects. Original v2 artifact preserved; v3 captures one reference and independently constructs both boundaries.55 focused composition checks pass, proposed source remains inert. Skipped civil date labels remain qualified.",
-    "review": "Independent Auditor approved bounded text-only source/task/release-bound child and existing journal integration, conditional targeted/STRICT/hosted evidence. Engineering review authority remains independently unverified; deterministic decisions remain unresolved.",
-    "limitations": "Parent crash orphan recovery and complete OS/egress isolation are not established by trusted child tests. No agent publication, paid reasoning, recurring scanning or customer-data authority."
+    "browser": "Pinned official Linux/amd64 image metadata independently verified; current2GB layer limit accepts largest781780050byte layer. No image build/pull/import/storage or VM. Local builder absent; quote and fresh spending/protection identity approval still required.",
+    "product": "Shared calendar-v3 proposal corrects both start/end from one captured date in both charts, including full/fractional/midnight DST. Inert outputd0e084ec5a3926f0c306c65a1e94f15ff2d93af286023fdf7821b564018e9466; product source unchanged. Skipped civil-date empty/duplicate labels remain qualified.",
+    "review": "Independent QA/Auditor validated actual source, exact inert patch and all five rendered hosted receipts, dependencies and full artifact bindings; live owner read independently confirms zero active tasks. Two unresolved decisions remain immutable and acceptedWorkfalse.",
+    "limitations": "Parent crash orphan recovery and complete OS/egress isolation are not established by trusted child tests. No agent publication, paid reasoning, recurring scanning or customer-data authority.",
+    "verification": "STRICT3038/3038; CI3038/3038; actualRedis17/17; CodeQL/Jekyll/authenticatedBrowser succeeded on2efd. Actual QA artifact inspected; six missing pixel reference baselines mean pixel drift unverified."
   }
 }

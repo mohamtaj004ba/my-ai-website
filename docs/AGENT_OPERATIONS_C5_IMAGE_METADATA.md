@@ -23,3 +23,15 @@ That approval must name the staged context, base digest, output digest/readiness
 The old $1 proof authorization and sixth session are not available. No image was built, pulled, pushed, imported or stored, and no VM or subscription was created during this metadata check. Local evidence: `C5_PUBLIC_IMAGE_MANIFEST.json` and `C5_PUBLIC_PLATFORM_MANIFEST.json` under the existing artifacts directory.
 
 Primary pricing references: [Sandbox pricing](https://vercel.com/docs/sandbox/pricing), [registry limits and pricing](https://vercel.com/docs/container-registry/limits-and-pricing), and [official registry guide](https://vercel.com/kb/guide/how-to-use-vercel-container-registry). Metadata came directly from the public Microsoft registry, not a third-party image mirror.
+
+## Local compatibility checks without execution
+
+The existing installed `@vercel/sandbox` package is pinned at3.3.0. Its shipped TypeScript declarations expose digest-qualified VCR `image` selection, explicit `persistent:false`, network policy, and `Sandbox.asUser` execution contexts. This confirms a declared SDK path exists; it does not prove custom-image Ready state, permissions or launch compatibility. Do not pass an external MCR base directly as the runtime image: the reviewed output must first be imported/built into the permitted VCR project and pinned.
+
+The Windows environment has no available Docker command; no local image engine or build was exercised. Builder selection/setup and its cost remain prerequisites. The connected team metadata exposes identity only, not a billing plan or account-specific price quote. No free build entitlement or zero-cost transfer is assumed.
+
+## Provider documentation conflict resolved
+
+The July knowledge-base guide still lists a500MB compressed-layer limit. The current canonical limits page, updatedSeptember22,2026, lists **2GB per compressed layer**,15GB total,4MB manifest and1MB config, with gzip/zstd support. The largest recorded base layer is781780050bytes and fits that current limit. A preliminary inference from the older guide was withdrawn before any recipe change, build or upload; no rootfs repackaging is justified by this evidence. Preserve both sources and inspect the eventual output manifest against current limits before import. This is documentation reconciliation, not a confirmed browser defect.
+
+Current Sandbox pricing explicitly treats internet downloads as free ingress; internet egress and exposed-port traffic are metered. No exposed ports are proposed. This does not establish VCR import/registry billing or the account plan. The Vercel CLI documentation confirms its VCR build wrapper invokes a chosen Docker/Podman/Buildah tool; it does not establish an available free remote builder. No build command was run.
