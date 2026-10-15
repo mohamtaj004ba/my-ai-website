@@ -213,7 +213,8 @@
       "detectionStrategy": "Measure clock offsets and add skew fault cases before unattended operations.",
       "recoveryBehavior": "Explicit centralrevoke; never claim hardkill causes instantaneous denial.",
       "acceptanceCriteria": "Document acceptable drift or use authoritative bounded clock before unattended authority.",
-      "relevantScope": "unattended control leases"
+      "relevantScope": "unattended control leases",
+      "fixtureClockEvidence": "Independent2000 parent/child samples reproduced553 exact timestamp ordering violations (including1ms ahead); original capture failure did not retain exact timestamps. Synthetic capture gets real asynchronous window only; runtime strict freshness remains unchanged. No distributed clock-tolerance mitigation claimed."
     },
     {
       "id": "AO-16",
@@ -492,16 +493,22 @@
     "durationMs": 8214,
     "receipt": "vercel-authenticated-hosted-success-5b97f3f.json",
     "cleanup": "explicit-grant-revoke125/task-cancel126; completed receipt preserved",
-    "limitations": "Fixed current Preview read only. Sanitized receipt metadata does not enable independent raw evidence/audit hash recomputation. Cross-record snapshots and pre-existing distributed lease limitations remain."
+    "limitations": "Fixed current Preview read only. Sanitized receipt metadata does not enable independent raw evidence/audit hash recomputation. Cross-record snapshots and pre-existing distributed lease limitations remain.",
+    "browserQA": {
+      "run": 38671782055,
+      "attempt": 2,
+      "job": 116218057544,
+      "conclusion": "success"
+    }
   },
   "googleWorkspacePreparation": {
-    "status": "unpublished-implementation-under-verification",
+    "status": "local-commit3df3e51-not-published-STRICT-failure-preserved",
     "scope": "owner-only read-consent preparation; never operational agent access",
     "existingClientReused": true,
     "legacyGmail": "separate untouched records and callbacks",
     "credentialState": "durable credential-recorded-unconfirmed; no broker or activation method",
     "cleanup": "bounded exact-record compensation; storage outage may retain unusable encrypted record; exact hash/revision recovery cannot remove newer requests",
     "providerRevocation": "not performed; shared client revocation could disrupt Inbox",
-    "remaining": "independent composition QA, STRICT, actual Redis, CI/CodeQL, exact Preview status UI and owner consent; provider refresh/read adapters remain disabled"
+    "remaining": "Fixture-only clock-order correction, mandatory STRICT confirmation and actual CI Redis/CodeQL/exact Preview UI; real Google owner consent and operational read activation remain disabled"
   }
 }
