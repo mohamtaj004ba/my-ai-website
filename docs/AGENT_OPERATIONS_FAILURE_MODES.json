@@ -1,4 +1,16 @@
 {
+  "googleOwnerCredentialVerification": {
+    "status": "candidate-reviewed-awaiting-strict-and-hosted-verification",
+    "scope": "Existing encrypted Google credential, owner CAS/audit, fixed refresh and userinfo endpoints. No resource reads, agent grants, writes or legacy Inbox changes.",
+    "confirmedDefectsCorrected": [
+      "Authenticated proof originally omitted the granted-scope set; normalized scopes are now bound inside the existing AEAD verification hash.",
+      "Cleanup originally waited for final storage acknowledgement; independent abort compensation now fences exact pre-consume, running and stored records."
+    ],
+    "controls": "Exact owner/workspace/revision, source/release/deployment/origin/configuration and ten-minute/provider-expiry binding. Whole-operation 15-second deadline, bounded two-second cleanup, no retries. Newer consent/revocation remains authoritative.",
+    "remainingRisks": "Redis operations cannot be physically cancelled. Lost provider responses or refresh-token rotation may require owner recovery; cleanup outages remain unconfirmed. Missing or changed refresh scopes fail closed. Identity verification does not establish Calendar/Drive/Contacts/Gmail resource access.",
+    "acceptance": "Require STRICT, real Redis composition, CI/CodeQL, exact Preview and authenticated Browser QA. Genuine provider verification is a separate manual owner-bound operation, never inferred from fixtures.",
+    "permissions": "connected, operationalRead, agentAccessEnabled, externalWritesEnabled and paidExecution remain false. Independent human acceptance and publication policies unchanged."
+  },
   "version": "agent-operations-fmea-v1",
   "baseline": "d744f3b",
   "assessment": "phase-c-bounded-readonly-hosted-tools-verified-with-qualified-limits",
