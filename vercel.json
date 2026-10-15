@@ -65,7 +65,7 @@
       "schedule": "17 5 * * *"
     }
   ],
-  "functions": {"api/vercel-oauth-callback.js": {"maxDuration": 60},
+  "functions": {"api/google-oauth-callback.js": {"maxDuration": 60},"api/vercel-oauth-callback.js": {"maxDuration": 60},
     "api/agent-operations.js": {
       "maxDuration": 660
     }

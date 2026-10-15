@@ -485,5 +485,23 @@
     "correction": "Remove consecutive duplicate Ops checks only where same fresh owner/journal/adapter/receipt boundary already performs full authorization. Retain owner forfirstread, everyretry andpreCAS, sequentialbroker checks and finalconnectionrevision.",
     "verification": "Actualsource QA/Auditorapprove;11guardedHTTP tests9462ms with9negative timing scenarios. Sharedtx fullSTRICT/newreleasehosted pending.",
     "limitation": "Provider HTTP success is not durable evidence acceptance. No headroom/speedup or atomic cross-record revocation claim."
+  },
+  "vercelReadSuccessCheckpoint": {
+    "source": "5b97f3f7adb2322cee81518df873a0a68a92249a",
+    "deploymentId": "dpl_CHiXoC9TGAiHu1jxHnFoSA2ce4KQ",
+    "durationMs": 8214,
+    "receipt": "vercel-authenticated-hosted-success-5b97f3f.json",
+    "cleanup": "explicit-grant-revoke125/task-cancel126; completed receipt preserved",
+    "limitations": "Fixed current Preview read only. Sanitized receipt metadata does not enable independent raw evidence/audit hash recomputation. Cross-record snapshots and pre-existing distributed lease limitations remain."
+  },
+  "googleWorkspacePreparation": {
+    "status": "unpublished-implementation-under-verification",
+    "scope": "owner-only read-consent preparation; never operational agent access",
+    "existingClientReused": true,
+    "legacyGmail": "separate untouched records and callbacks",
+    "credentialState": "durable credential-recorded-unconfirmed; no broker or activation method",
+    "cleanup": "bounded exact-record compensation; storage outage may retain unusable encrypted record; exact hash/revision recovery cannot remove newer requests",
+    "providerRevocation": "not performed; shared client revocation could disrupt Inbox",
+    "remaining": "independent composition QA, STRICT, actual Redis, CI/CodeQL, exact Preview status UI and owner consent; provider refresh/read adapters remain disabled"
   }
 }

@@ -17,6 +17,12 @@ function validOauthStateRecord(record){
 }
 
 module.exports=async function handler(req,res){
+  // Distinct state namespace; the established Gmail callback below is unchanged.
+  const workspaceFlow=require('../lib/agent-operations-google-workspace-callback');
+  if(workspaceFlow.usesWorkspaceFlow(req.query)){
+    const {getSession}=require('../lib/auth'),{rateLimit}=require('../lib/rate-limit');
+    return workspaceFlow.createHandler({env:process.env,rateLimit,createRuntime:request=>require('../lib/agent-operations-google-workspace-runtime').createRuntime({kv,getSession,request,env:process.env})})(req,res);
+  }
   const state=String(req.query?.state||''),code=String(req.query?.code||''),error=String(req.query?.error||'');
   if(error)return res.redirect('/admin-dashboard?gmail=error');
   if(!/^[a-f0-9]{48}$/.test(state)||!code)return res.status(400).send('Missing or invalid Gmail OAuth response');
