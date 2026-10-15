@@ -1,3 +1,9 @@
+## Phase C.6 — application correction under review
+
+Owner authorized normal Work-reviewed Preview publication. Exact three-edit v3 dashboard patch applied locally (d0e084ec5a3926f0c306c65a1e94f15ff2d93af286023fdf7821b564018e9466); not yet committed/published. Independent QA9actual grouping tests pass; Auditor no source blocker, conditional DOM/release verification. Historical internal task/two unresolved decisions/acceptedWorkfalse preserved. Historical source tests replay exact pinned original fixture, no runtime guards altered. Source lock refreshed; contract lock refresh waits final QA scripts.
+
+QA is completing authenticated browser DOM checks and provenance-bound baseline recovery. Original C6_TARGETED35/39 failure retained: fixture changed source under release assertion; corrected test-only historical release fixture awaits rerun. Browser image/cost and model-trial proposals remain unspent; no new approval/VM/model call. Baseline remote branch c09803b and READY2efd independently reverified. Next: freeze reviewed source, targeted+STRICT, publish only feature, verify exact READY and actual chart DOM, finish artifact inspection and handoff. No Production/main/internal-agent publication.
+
 ## Phase C.5 — verified proposal milestone and browser preparation — October 14, 2026
 
 **Application:** 2efd4a00875f2d707bdc3e4a8dc62c22aecb9ee3. **READY Preview:** dpl_3fkbfthzT8LYv5tadTS4jsrQwPhG, https://my-ai-website-3lludd51s-mohamtaj004bas-projects.vercel.app. Feature alias provider metadata, rendered owner dashboard and served broker match source/project/branch and **organization-contracts-v4/174faad877e614ca74a8b93b25080eeee14427a09586813cb7e4b3330bfb14f3**. This final handoff changes documentation only; it needs no replacement application deployment.

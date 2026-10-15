@@ -1,5 +1,8 @@
 'use strict';
-const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),calendar=require('../lib/agent-operations-engineering-calendar'),tools=require('../lib/agent-operations-engineering-tools'),workspace=require('../scripts/agent-operations-draft-workspace.cjs'),ops=require('../lib/agent-operations-operating-system'),engineering=require('../lib/agent-operations-engineering');
+// Frozen historical source replay; not current-release or hosted evidence.
+const {withHistorical}=require('./helpers/historical-calendar-source.cjs');
+const test=(name,fn)=>nodeTest('historical replay: '+name,()=>withHistorical(fn));
+const {test:nodeTest}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),calendar=require('../lib/agent-operations-engineering-calendar'),tools=require('../lib/agent-operations-engineering-tools'),workspace=require('../scripts/agent-operations-draft-workspace.cjs'),ops=require('../lib/agent-operations-operating-system'),engineering=require('../lib/agent-operations-engineering');
 const sourceSha='a'.repeat(40),runtime={environment:'preview',origin:'https://my-ai-website-c5fixture-mohamtaj004bas-projects.vercel.app',commit:sourceSha,branch:'feature/callercore-dashboards',deploymentId:'dpl_c5fixture'};
 const owner={kind:'owner',id:'owner@example.test',workspaceId:'c5fixture',verifiedOwner:true};
 function fixture(){const rows=new Map(),ledger={version:1,revision:1,tasks:[],reservations:[],operations:{workflows:[],grants:[],reservations:[],audit:[],approvals:[]}},kv={get:async k=>rows.get(k)??null,eval:async(_,[k],[before,after])=>{if((rows.get(k)||'')!==before)return 0;rows.set(k,after);return 1;}};return{service:ops.createOperations({kv,runtime,ledgerAdapter:{read:async()=>JSON.stringify(ledger)},clock:()=>1000000,assertOwner:async actor=>actor.id===owner.id&&actor.workspaceId===owner.workspaceId}),rows,ledger};}

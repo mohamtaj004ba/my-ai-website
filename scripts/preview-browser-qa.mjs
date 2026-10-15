@@ -1,3 +1,4 @@
+import {verifyDashboardCalendar} from './dashboard-calendar-browser-qa.mjs';
 import {verifyPublicFeedback} from './public-feedback-browser-qa.mjs';
 import {verifyIndustryNarratives} from './industry-narrative-browser-qa.mjs';
 import {previewRequestHeaders} from './preview-request-headers.mjs';
@@ -1746,6 +1747,7 @@ try{
   await gotoAuthed(desktop.page,'/dashboard','button.nav-item[data-view="overview"]');
   await assertLayout(desktop.page,'client-desktop-overview');
   await shot(desktop.page,'client-overview-initial');
+  report.client.calendarBoundaries=await verifyDashboardCalendar({page:desktop.page});
   await sweepViews(desktop.page,'client');
   report.nativeBilling={uiFixture:true,providerComplete:false,note:'Billing UI uses intercepted canonical fixtures. Separate real Stripe acceptance is recorded in docs/STRIPE_SANDBOX_ACCEPTANCE.md.'};
   await verifyBillingDialogs(desktop.page,{assertLayout,shot,ensureView,label:'client-desktop'});

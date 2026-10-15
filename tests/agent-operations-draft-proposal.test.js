@@ -1,5 +1,8 @@
 'use strict';
-const test=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os');
+// Frozen historical source replay; not current-release or hosted evidence.
+const {withHistorical}=require('./helpers/historical-calendar-source.cjs');
+const test=(name,fn)=>nodeTest('historical replay: '+name,()=>withHistorical(fn));
+const nodeTest=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os');
 const workspace=require('../scripts/agent-operations-draft-workspace.cjs'),tools=require('../lib/agent-operations-engineering-tools');
 // Inspect every workspace belonging to this parent process, excluding unrelated
 // concurrently running test processes. An orphan from any local attempt still fails.

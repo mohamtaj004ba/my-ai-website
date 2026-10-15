@@ -1,3 +1,5 @@
+> C.6 continuation: owner has authorized Work to apply this exact diff to Preview. Historical proposal status below remains the original C.5 record; internal task decisions are unchanged. Current application/release acceptance is recorded separately in AGENT_OPERATIONS_PHASE_C6.md.
+
 # Owner-reviewable dashboard calendar proposal
 
 Status: inert proposed correction; NOT applied, executed, approved or published to the product. CallerCore internal agents have no publication authority. Work prepared the proposal; the internal orchestration is deterministic, not new live-model reasoning.

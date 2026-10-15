@@ -1,5 +1,8 @@
 'use strict';
-const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+// Frozen historical source replay; not current-release or hosted evidence.
+const {withHistorical}=require('./helpers/historical-calendar-source.cjs');
+const test=(name,fn)=>nodeTest('historical replay: '+name,()=>withHistorical(fn));
+const nodeTest=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const draft=require('../scripts/agent-operations-draft-workspace.cjs'),fix=require('../lib/agent-operations-draft-correction'),tools=require('../lib/agent-operations-engineering-tools');
 const options={sourceSha:'a'.repeat(40),expectedSourceSha:'a'.repeat(40),profile:fix.PROFILE};
 test('actual restricted workspace produces useful inert calendar correction and destroys it',async()=>{const before=tools.readFile('dashboard.js'),r=await draft.prepare(options);assert.equal(r.version,'draft-data-v2');assert.equal(r.patch.beforeText,fix.BEFORE);assert.equal(r.patch.afterText,fix.AFTER);assert.equal(r.patchSha256,fix.hash(r.patch));assert.equal(r.files[0].afterSha256,fix.hash(fix.apply(before)));assert.deepEqual(r.cleanup,{destroyed:true});assert.equal(r.publicationAllowed,false);assert.equal(tools.readFile('dashboard.js'),before);assert.match(r.qualification,/never executed/);assert.equal(draft.validateArtifact(r,{sourceSha:options.sourceSha}),true);});

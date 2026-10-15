@@ -1,5 +1,8 @@
 'use strict';
-const {test}=require('node:test'),assert=require('node:assert/strict');
+// Frozen historical source replay; not current-release or hosted evidence.
+const {withHistorical}=require('./helpers/historical-calendar-source.cjs');
+const test=(name,fn)=>nodeTest('historical replay: '+name,()=>withHistorical(fn));
+const {test:nodeTest}=require('node:test'),assert=require('node:assert/strict');
 const github=require('../lib/agent-operations-github-app');
 const setup=require('../lib/agent-operations-integration-setup');
 const sha='b'.repeat(40),now=100000;

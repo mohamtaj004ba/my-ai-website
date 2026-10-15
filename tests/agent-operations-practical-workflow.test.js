@@ -1,5 +1,8 @@
 'use strict';
-const test=require('node:test'),assert=require('node:assert/strict'),ops=require('../lib/agent-operations-operating-system'),engineering=require('../lib/agent-operations-engineering'),tools=require('../lib/agent-operations-engineering-tools');
+// Frozen historical source replay; not current-release or hosted evidence.
+const {withHistorical}=require('./helpers/historical-calendar-source.cjs');
+const test=(name,fn)=>nodeTest('historical replay: '+name,()=>withHistorical(fn));
+const nodeTest=require('node:test'),assert=require('node:assert/strict'),ops=require('../lib/agent-operations-operating-system'),engineering=require('../lib/agent-operations-engineering'),tools=require('../lib/agent-operations-engineering-tools');
 const owner={kind:'owner',id:'owner@example.test',workspaceId:'alpha',verifiedOwner:true};
 function fixture(){const rows=new Map(),runtime={environment:'preview',origin:'https://my-ai-website-c4fixture-mohamtaj004bas-projects.vercel.app',commit:'a'.repeat(40),branch:'feature/callercore-dashboards'},ledger={version:1,revision:1,tasks:[],reservations:[],operations:{workflows:[],grants:[],reservations:[],audit:[],approvals:[]}},kv={get:async k=>rows.get(k)??null,eval:async(_,[k],[a,b])=>{if((rows.get(k)||'')!==a)return 0;rows.set(k,b);return 1;}},service=ops.createOperations({kv,runtime,ledgerAdapter:{read:async()=>JSON.stringify(ledger)},clock:()=>1000000,assertOwner:async a=>a.id===owner.id&&a.workspaceId===owner.workspaceId});return{service,rows,ledger};}
 const input=()=>({idempotencyKey:'c4_calendar_fixture',objective:'Inspect real client chart source and prepare fixed inert DST correction.',priority:'normal',durationMs:600000,engineeringProfile:'dashboard-local-day-v1',subtasks:engineering.stages.map((template,i)=>({key:'step'+i,template,dependsOn:i?['step'+(i-1)]:[]}))});

@@ -99,20 +99,7 @@ jobs:
         shell: bash
         continue-on-error: true
         run: |
-          mkdir -p "$PREVIOUS_QA_DIR"
-          previous_run="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/preview-browser-qa.yml/runs?branch=feature%2Fcallercore-dashboards&status=success&per_page=10" --jq '.workflow_runs[0].id // empty' 2>/dev/null || true)"
-          if [ -z "$previous_run" ]; then
-            echo "No previous successful Preview QA run available."
-            exit 0
-          fi
-          artifact_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$previous_run/artifacts" --jq '.artifacts[] | select(.name | startswith("caller-core-preview-browser-qa-")) | .id' | head -n 1)"
-          if [ -z "$artifact_id" ]; then
-            echo "Previous QA run has no compatible artifact."
-            exit 0
-          fi
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > /tmp/previous-qa.zip
-          unzip -q /tmp/previous-qa.zip -d "$PREVIOUS_QA_DIR"
-          echo "Restored visual baseline from run $previous_run."
+          node scripts/restore-visual-baseline.mjs
 
       - name: Run affected public presentation QA
         if: steps.selection.outputs.browser == 'affected'
