@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "3dea73496ed439347502077d36d1f4089b54d804b9258a74fd56a692626e736b",
+  "risk": "routine",
+  "scope": "Documentation-only verified guarded engineering transport and explicit unconsumed paid activation gates; exact published app unchanged.",
+  "verification": [
+    "targeted-tests"
+  ],
+  "defects": []
+}
