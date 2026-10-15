@@ -532,12 +532,34 @@
     "qualification": "Reported wall/runner durations only; overlapping jobs, not CPU costs or Work-credit savings. Mandatory checks unchanged."
   },
   "connectionDeploymentEnvelopeDefect": {
-    "status": "minimal-correction-unpublished",
+    "status": "corrected-and-hosted-verified-d51d314",
     "sourceDiscovered": "facd1dc",
     "rootCause": "Parent scope includes deploymentId; guarded owner provider responses omitted it. Earlier fixtures omitted it on both sides.",
     "correction": "Trusted env deploymentId in exactly3ownerstatus response envelopes; global controller runtime and binding comparisons unchanged.",
-    "verification": "Independent Auditor actual source approval; actual guardedAPI+Ops+Stripe core+UI4/4 with matching/missing/foreign deployment and changedowner; STRICT/remote/exactnewhost pending.",
+    "verification": "IndependentQA4 actualAPI/core/Ops/UI, Auditor actualsource, local2939/2939, remote2939/2939, actualRedis17/17, CodeQL/Jekyll, hosted Stripe revoked/unconfigured confirmed; Workspace/Vercel states preserved through parent refresh",
     "providerRequests": 0,
-    "credentialChanges": 0
+    "credentialChanges": 0,
+    "source": "d51d31424d1a87824b0e8770b9be53dd219b3e1f",
+    "deploymentId": "dpl_8sTk641uzwPcbFarsBkhgF8zWkzY",
+    "releaseFingerprint": "8806757c8e3d0f4d9c279053e57bb71f299d7e8966a12d30f59dd08f2acc96f3",
+    "browser": "38676315089 attempt2/job116232013695 SUCCESS; original pin-only116230616913 preserved"
+  },
+  "finalIntegrationContinuation": {
+    "source": "d51d31424d1a87824b0e8770b9be53dd219b3e1f",
+    "deploymentId": "dpl_8sTk641uzwPcbFarsBkhgF8zWkzY",
+    "releaseFingerprint": "8806757c8e3d0f4d9c279053e57bb71f299d7e8966a12d30f59dd08f2acc96f3",
+    "browser": {
+      "run": 38676315089,
+      "attempt": 2,
+      "job": 116232013695,
+      "conclusion": "success",
+      "originalPinFailureJob": 116230616913
+    },
+    "paidExecution": false,
+    "nonRevokedPaidApprovals": 0,
+    "budget": "15USD ceiling/10.60retained including2.20uncertainty/4.40remaining; not invoice reconciled",
+    "remaining": "Owner Google consent plus verified operational read wiring; Stripe private replacement; dependency-complete hosted browser image and protected-target identity; untrusted code and semantic review remain disabled",
+    "production": "unchanged",
+    "pr5": "draft-unmerged"
   }
 }
