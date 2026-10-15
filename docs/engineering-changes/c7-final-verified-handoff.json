@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "4eb5321924da3d4356fcd770605cac55b4ed0bbd1351db4d7b3cf1291c12ce4a",
+  "risk": "routine",
+  "scope": "Preserve final C7 exact published request/fixture release, independent source/hosted/artifact verification, explicit paid and reviewer blockers, unchanged historical budget/product and exact resumable nextaction in canonical state/risk register only.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}
