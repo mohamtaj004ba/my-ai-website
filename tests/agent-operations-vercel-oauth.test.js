@@ -32,7 +32,7 @@ const approvedScopes=['read:project','read-write:deployment','read:integration-c
 async function connectedBrokerHarness(){
  let readHook=null;const calls=[],h=harness({fetchImpl:async(url,options)=>{calls.push({url,method:options.method});if(readHook)return readHook(url,options);return Response.json(url.endsWith('/access_token')?{access_token:'SECRET_TOKEN_TEST',team_id:o.TEAM}:url.includes('/v9/projects/')?{id:o.PROJECT,accountId:o.TEAM}:{...facts(),scopes:approvedScopes});}});
  await h.api.callback(actor,await query(h));calls.length=0;
- return{...h,calls,hook:f=>{readHook=f;},request:{connectionId:'icfg_test',projectId:o.PROJECT,teamId:o.TEAM},options:()=>({signal:new AbortController().signal,authorize:async()=>true,deadline:Date.now()+5000})};
+ return{...h,calls,hook:f=>{readHook=f;},request:{connectionId:'icfg_test',projectId:o.PROJECT,teamId:o.TEAM},options:()=>({signal:new AbortController().signal,authorize:async()=>true,deadline:Date.now()+5000,binding:{deploymentId:'dpl_test',sourceCommit:runtime.sourceCommit}})};
 }
 test('trusted Vercel read broker revalidates current fixed configuration and returns internal lease, not provider expiry',async()=>{
  const h=await connectedBrokerHarness(),lease=await h.api.credentialBroker(actor,h.request,h.options());
@@ -78,4 +78,36 @@ test('broker snapshots caller resource before an asynchronous owner check',async
  const h=await connectedBrokerHarness();let release;const waiting=new Promise(r=>{release=r;});let first=true;
  const api=o.create({kv:h.kv,env,runtime,assertOwner:async()=>{if(first){first=false;await waiting;}return true;},fetchImpl:async url=>{a.match(url,/configuration\/icfg_test\?/);return Response.json({...facts(),scopes:approvedScopes});}});
  const request={...h.request},pending=api.credentialBroker(actor,request,h.options());request.connectionId='icfg_foreign';release();const lease=await pending;a.equal(lease.configurationId,'icfg_test');
+});
+
+test('private composed guard accepts only original lease authorizer deployment source and connection',async()=>{
+ const h=await connectedBrokerHarness(),options=h.options(),lease=await h.api.credentialBroker(actor,h.request,options);
+ const guard=o.guardFor(lease,options.authorize,options.binding,h.request.connectionId);a.equal(typeof guard,'function');a.equal(await guard(),true);
+ a.equal(o.guardFor({...lease},options.authorize,options.binding,h.request.connectionId),null);
+ a.equal(o.guardFor(lease,async()=>true,options.binding,h.request.connectionId),null);
+ for(const binding of [{...options.binding,deploymentId:'dpl_foreign'},{...options.binding,sourceCommit:'c'.repeat(40)}])a.equal(o.guardFor(lease,options.authorize,binding,h.request.connectionId),null);
+ a.equal(o.guardFor(lease,options.authorize,options.binding,'icfg_foreign'),null);
+});
+
+test('revocation during stalled preconfiguration owner check prevents HTTP after committed revoke',async()=>{
+ const h=await connectedBrokerHarness();let checks=0,finish,calls=0;
+ const api=o.create({kv:h.kv,env,runtime,assertOwner:async()=>++checks===3?new Promise(r=>finish=r):true,fetchImpl:async()=>{calls++;return Response.json({...facts(),scopes:approvedScopes});}});
+ const pending=api.credentialBroker(actor,h.request,h.options());while(!finish)await new Promise(setImmediate);
+ await new Promise(setImmediate);await h.api.revoke(actor);finish(true);await a.rejects(pending,/VCO_READ_UNCONFIRMED/);a.equal(calls,0);a.equal((await h.api.status(actor)).status,'revoked');
+});
+
+test('broker snapshots exact task binding and rejects malformed bindings before provider access',async()=>{
+ const h=await connectedBrokerHarness();for(const binding of [null,{deploymentId:'dpl_test'},{deploymentId:'dpl_test',sourceCommit:runtime.sourceCommit,extra:true},{deploymentId:'foreign',sourceCommit:runtime.sourceCommit}])await a.rejects(h.api.credentialBroker(actor,h.request,{...h.options(),binding}));a.equal(h.calls.length,0);
+ let finish;const api=o.create({kv:h.kv,env,runtime,assertOwner:async()=>{if(!finish)await new Promise(r=>finish=r);return true;},fetchImpl:async()=>Response.json({...facts(),scopes:approvedScopes})}),options=h.options(),original={...options.binding},seen=[];
+ options.authorize=async binding=>{seen.push({...binding});a.ok(Object.isFrozen(binding));return true;};
+ const pending=api.credentialBroker(actor,h.request,options);while(!finish)await new Promise(setImmediate);options.binding.deploymentId='dpl_foreign';finish();const lease=await pending;a.ok(seen.length>=3);a.ok(seen.every(x=>JSON.stringify(x)===JSON.stringify(original)));a.equal(typeof o.guardFor(lease,options.authorize,original,h.request.connectionId),'function');
+});
+
+test('composed lease guard rechecks owner task and connection at each later boundary',async()=>{
+ for(const denial of ['owner','task','record']){const h=await connectedBrokerHarness();let allowed=true,task=true;
+  const api=o.create({kv:h.kv,env,runtime,assertOwner:async()=>allowed,fetchImpl:async()=>Response.json({...facts(),scopes:approvedScopes})}),options={...h.options(),authorize:async()=>task};
+  const lease=await api.credentialBroker(actor,h.request,options),guard=o.guardFor(lease,options.authorize,options.binding,h.request.connectionId);a.equal(await guard(),true);
+  if(denial==='owner')allowed=false;else if(denial==='task')task=false;else await h.api.revoke(actor);
+  await a.rejects(guard());
+ }
 });
