@@ -785,5 +785,40 @@
       }
     },
     "ownerReadback": "Exactff31120/f3c1 paidfalse/outstandingfalse;11USDretained including2.60USDpending,4USDremaining; not invoice reconciled"
+  },
+  "secondEngineeringTrialRecovery": {
+    "status": "qualified-awaiting-fresh-exact-release-owner-consent-no-paid-execution",
+    "application": "90a86019d2ee31c1220edaa3ea919db7ca9d1172",
+    "release": "dc386c94a1ff5cfd25049f43a34d9c4097d153c8b1b5178f1a5bb2d3d1a98513",
+    "preservation": "25originalidentities/hashreferences,42result/reviewpreimages,165auditprefix and fulloriginaltrialworkflow/approval verified;26thappended/cancelled;167chainvalid",
+    "retention": "50plans; unchanged700kbytes+100kcleanup,audit500/admission400. Eventual byte/audit exhaustion remains; rollback mustretain50reader.",
+    "diagnostics": "45five-stage fixtures; historical cause unrecoverable; no livecompatibility/independentacceptance claim",
+    "secondPolicy": "fixed separately pinned dormant descriptor; consumedfirstmarker unchanged; freshconsent and configurationrefresh before justintime admission",
+    "accounting": "11USDretained including2.60pending,4headroom; no newpaid/count/reservation; unknowncountsnotzero",
+    "verification": {
+      "strict": 3399,
+      "redis": 27,
+      "ci": "passed",
+      "codeql": "passed",
+      "jekyll": "passed",
+      "browser": {
+        "status": "passed",
+        "run": 38859845819,
+        "job": 116839405356,
+        "elapsedMs": 658834,
+        "artifact": 12029034849,
+        "sha256": "304f2b0f10a441c64d3c081f0ed16d663df6d709e6ce6c306bb5c3ae98164c33",
+        "visualComparisons": 6,
+        "maxDifference": 0.00004,
+        "unexpectedErrors": 0,
+        "actualReportPinPngInspected": true
+      }
+    },
+    "remaining": [
+      "Fresh exactrelease/task/model/budget ownerconsent before secondtrial",
+      "Actual five-stage live modelcompatibility and semantic usefulness unproven",
+      "Authenticated independent acceptance unavailable; automatedcriticism distinct",
+      "Dedicatedbrowser qualification/spending and Google resource authorization remain separately blocked"
+    ]
   }
 }
