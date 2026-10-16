@@ -1,3 +1,9 @@
+## Documentation-build correction, October 16, 2026
+
+Handoff ae299eb9bf36d9a559299f9396a37ff1c31d18a2 passed FAST97checks but its new result-document path is outside the existing Vercel skip allowlist. Automatic redundant Preview build dpl_CHP4pEESceot1nDVSeFSYc1cVtuv was safely CANCELED while running read-only tests; it never replaced the qualified a977/447e READY deployment. Thus the earlier statement that no extra documentation build occurred is superseded by this observed event. No runtime changes or savings claims. Subsequent documentation-only automatic builds must likewise be canceled rather than treated as new application qualification. Exact cancellation evidence is preserved in final durable artifacts. Do not weaken the fail-closed skip policy or start another runtime release just for this handoff. Actual application CI/CodeQL/Jekyll/Redis/Browser qualification remains the verified a977 release; documentation-head checks are separate.
+
+Initial handoff FAST failure for an omitted explicit defects array was corrected before publication. Its sandbox temporary-Git failure was preserved; unchanged authorized rerun passed97/97. No tests were weakened. Main/Production/PR5 and paid-shutdown boundaries unchanged.
+
 ## Final-context recovery — verified Preview and paid shutdown handoff, October 16, 2026
 
 Current application a9773a958f2b31eeeeb921664563d1a3ad4e7a92; organization-contracts-v4 fingerprint447e2c9b483b4eb4f116d733d1545e8fe5591478d188370c2a36a79427548258; READY paid-disabled Preview dpl_FFM3E7sLkdfDacziprt4ostdm7CC / https://my-ai-website-2wnhkt5li-mohamtaj004bas-projects.vercel.app. Featurealias aligned. Actual authenticated owner readback matches exact application/deployment/fingerprint; paidfalse/outstandingfalse/acceptancefalse/publicationfalse/generatedCodeExecutionfalse. Old trusted readiness pin cannot authorize this successor source. No new paid call during repair.
