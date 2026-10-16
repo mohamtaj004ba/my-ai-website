@@ -230,8 +230,24 @@ test('maximum unfinished plans near normal byte capacity retain bounded serial a
  for(const mode of ['serial','emergency']){
   const f=fixture();f.rows.set(key,bounded);const source=JSON.stringify(f.ledger());
   if(mode==='serial')for(const p of s.plans)await f.service.cancel(owner,command(p));else await f.service.emergencyStop(owner,{expectedRevision:s.revision});
-  const final=f.journal(),after=Buffer.byteLength(JSON.stringify(final));assert.equal(final.plans.length,24);assert.equal(final.plans.every(p=>p.status==='cancelled'&&p.acceptedWork===false&&p.tasks.every(t=>t.status==='cancelled'&&t.leaseUntil===0)),true);
+  const final=f.journal(),after=Buffer.byteLength(JSON.stringify(final));assert.equal(final.plans.length,ops.LIMITS.plans);assert.equal(final.plans.every(p=>p.status==='cancelled'&&p.acceptedWork===false&&p.tasks.every(t=>t.status==='cancelled'&&t.leaseUntil===0)),true);
   if(mode==='serial')assert(after>ops.LIMITS.bytes,'serial cleanup must use its separately reserved byte headroom');assert(after<=ops.LIMITS.bytes+ops.LIMITS.cleanupBytes);assert(after-before<ops.LIMITS.cleanupBytes);assert.equal(JSON.stringify(f.ledger()),source);
-  assert.equal((await f.service.read(owner)).plans.length,24);
+  assert.equal((await f.service.read(owner)).plans.length,ops.LIMITS.plans);
  }
+});
+
+
+test('one additional bounded admission preserves24historical plans and denies26th without audit loss',async()=>{
+ const f=fixture();for(let i=0;i<24;i++){const p=await f.service.create(owner,assignment('historical_plan_'+i));await f.service.cancel(owner,command(p));}
+ const before=f.journal(),source=JSON.stringify(f.ledger()),p=await f.service.create(owner,assignment('one_extra_admission'));const admitted=f.journal();
+ assert.equal(ops.LIMITS.plans,25);assert.equal(admitted.plans.length,25);assert.deepEqual(admitted.plans.slice(0,24),before.plans);assert.deepEqual(admitted.audit.slice(0,before.audit.length),before.audit);assert.equal(admitted.audit.length,before.audit.length+1);
+ const raw=JSON.stringify(admitted);await assert.rejects(f.service.create(owner,assignment('denied_plan_26')),/OPS_CAPACITY/);assert.equal(JSON.stringify(f.journal()),raw);
+ assert.equal((await f.service.create(owner,assignment('one_extra_admission'))).id,p.id);assert.equal(JSON.stringify(f.journal().plans),JSON.stringify(admitted.plans));
+ assert.equal((await f.service.cancel(owner,command(p))).status,'cancelled');assert.equal(JSON.stringify(f.ledger()),source);assert.equal(f.journal().plans.length,25);
+});
+test('concurrent final-slot admissions have one CAS winner and preserve historical prefix',async()=>{
+ const f=fixture();for(let i=0;i<24;i++)await f.service.create(owner,assignment('existing_plan_'+i));const before=f.journal();
+ const results=await Promise.allSettled(['one','two'].map(k=>f.service.create(owner,assignment('capacity_race_'+k))));
+ assert.equal(results.filter(x=>x.status==='fulfilled').length,1);assert.equal(results.filter(x=>x.status==='rejected'&&/OPS_CAPACITY/.test(x.reason.message)).length,1);
+ const after=f.journal();assert.equal(after.plans.length,25);assert.deepEqual(after.plans.slice(0,24),before.plans);assert.deepEqual(after.audit.slice(0,before.audit.length),before.audit);assert.equal(after.audit.length,before.audit.length+1);
 });
