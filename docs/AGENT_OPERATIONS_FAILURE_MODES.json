@@ -877,5 +877,50 @@
     "preservation": "All27plans/nativeauthority/ledger identical; originalfailurehash valid; all3approvals revoked; paidfalse.",
     "remaining": "Third trial unexecuted; fresh exact-source consent, trusted pins/config-only refresh and new just-in-time assignment required. Dedicated browser remains unqualified; independent human acceptance unavailable.",
     "spending": "No new requests/reservations;11.40 retained including3 pending,3.60 remaining. Counting/provider fees unknown, no invoice reconciliation."
+  },
+  "thirdLiveEngineeringTrial": {
+    "application": "771ceed3efd5f6f81a9cec6773900ae756c2749f",
+    "release": "416181164b2d3db8b5269826abbdc66a6d2bcddd48922f158b6a4d43745effd3",
+    "status": "consumed-stopped-specialist-content-policy-no-retry",
+    "planId": "op_c18e266c7d3c4e79a347b72347a6655b",
+    "approvalId": "pilot_545664c796249126d68f323dab847bb7",
+    "workflowId": "wf_545664c796249126d68f323dab847bb7",
+    "chief": "Validated live source-backed delegation; completion-criteria fragments remain incomplete.",
+    "specialist": {
+      "http": 200,
+      "status": "completed",
+      "code": "ENG_AI_PROPOSAL_DENIED",
+      "phase": "response-validate",
+      "category": "validation",
+      "classification": "content-policy",
+      "location": "$.proposal.afterText",
+      "mismatch": "proposal-markup",
+      "ruleId": "proposal-copy-markup-v1",
+      "failureHash": "385103663b3af745905e485940c67420f3a2ed8b1eb74c86584beb139400470b",
+      "known": "Decoded replacement contains a literal angle bracket.",
+      "unknown": "Exact rejected text, complete markup/code and intent; do not infer first/second trial causes."
+    },
+    "laterStages": "QA/Auditor/finalChief not reached; no artifact/acceptance/publication.",
+    "usage": {
+      "responses": 2,
+      "counts": 2,
+      "input": 2240,
+      "outputIncludingReasoning": 1251,
+      "reasoningIncluded": 335,
+      "calculatedResponsesMicros": 16990,
+      "elapsedActivationToRevocationMs": 70967
+    },
+    "ledger": {
+      "allowanceMicros": 15000000,
+      "retainedMicros": 11800000,
+      "pendingMicros": 3400000,
+      "remainingMicros": 3200000,
+      "knownSettledMicros": 225938,
+      "invoiceReconciled": false,
+      "countFeesKnown": false
+    },
+    "shutdown": "All4approvalsrevoked/leases0; newadmissioncancelled; futureflagsfalse; existingpaid-disabledaliasrestored; no fourthauthority.",
+    "preservation": "Original27plans/nativeauthority exact; prior169auditprefix unchanged, all171hashvalid.",
+    "next": "Nonbillable backward-compatible plain-label contract clarification with historical request hash tests, not another paid retry."
   }
 }
