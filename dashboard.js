@@ -564,9 +564,10 @@ async function loadOperations(){
     }
     await loadFollowupState();try{const viewed=await fetchJsonRetry('/api/account?action=calls-viewed',{attempts:1,timeout:5000});if(!Array.isArray(viewed.ids)||viewed.coverage?.verified!==true)throw new Error('Invalid call opened-state response');callViewedIds=new Set(viewed.ids.map(String));callViewedCoverage={verified:true,limited:viewed.coverage?.limited===true,retained:Math.max(0,Number(viewed.coverage?.retained||viewed.ids.length)||0),limit:Math.max(1,Number(viewed.coverage?.limit||2000)||2000)}}catch(_){callViewedCoverage={...callViewedCoverage,verified:false}}analyticsData=buildLocalAnalytics();renderClientData();
     const failedActions=settled.map((x,i)=>x.status==='rejected'?requests[i][0]:'').filter(Boolean),criticalFailed=failedActions.filter(x=>['calls','agent','settings'].includes(x));
-    setDataHealth('clientDataHealth',criticalFailed.length>0);setClientLoading(false);updateClientRefreshStamp();
+    setDataHealth('clientDataHealth',criticalFailed.length>0);setClientLoading(false);
+    if(criticalFailed.length)setClientSyncState('error','Could not refresh '+criticalFailed.join(', ')+' · showing last verified data');else updateClientRefreshStamp();
     if(failedActions.length&&!criticalFailed.length)console.warn('Optional dashboard data delayed:',failedActions.join(', '));loadSecondaryClientData();
-  }catch(err){console.error('Operations data failed',err);setClientLoading(false);setDataHealth('clientDataHealth',true)}
+  }catch(err){console.error('Operations data failed',err);setClientLoading(false);setDataHealth('clientDataHealth',true);setClientSyncState('error','Could not refresh · showing last verified data')}
 }
 
 function recordTime(x){

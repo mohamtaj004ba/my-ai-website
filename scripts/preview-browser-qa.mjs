@@ -398,6 +398,26 @@ async function startSession(context,mode){
 }
 
 async function runClientInteractions(page){
+  // Existing fictional QA workspace only: malformed GET fixtures exercise
+  // fallback recovery without writes or suppressing genuine HTTP errors.
+  const bundledFallbackRoute='**/api/account?action=client-dashboard-data',callsFallbackRoute='**/api/account?action=calls';
+  let failCallsFallback=true;
+  await page.route(bundledFallbackRoute,route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}));
+  await page.route(callsFallbackRoute,route=>failCallsFallback?route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({calls:null})}):route.continue());
+  try{
+    await page.waitForFunction(()=>!clientRefreshInFlight);
+    const lastSuccessfulSync=await page.evaluate(()=>clientLastSyncAt);
+    await page.evaluate(()=>loadOperations());
+    if(await page.locator('#clientLiveLabel').textContent()!=='Sync issue'||!await page.locator('#clientDataHealth').isVisible())throw new Error('Critical fallback failure did not show an honest sync error');
+    if(await page.evaluate(()=>clientLastSyncAt)!==lastSuccessfulSync)throw new Error('Failed critical fallback replaced the last successful timestamp');
+    failCallsFallback=false;
+    await page.evaluate(()=>loadOperations());
+    if(await page.locator('#clientLiveLabel').textContent()!=='Live'||await page.locator('#clientDataHealth').isVisible())throw new Error('Successful fallback recovery did not restore Live status');
+    if(await page.evaluate(()=>clientLastSyncAt)<=lastSuccessfulSync)throw new Error('Successful fallback recovery did not advance the successful timestamp');
+    report.client.interactions.push('critical fallback error preserves last successful sync + successful read-only recovery');
+  }finally{
+    await page.unroute(bundledFallbackRoute);await page.unroute(callsFallbackRoute);
+  }
   await ensureView(page,'calls');
   await page.locator('#callDateFilter').selectOption('all');
   await page.waitForTimeout(250);

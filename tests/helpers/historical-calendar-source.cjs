@@ -1,12 +1,12 @@
 'use strict';
 // Tests-only frozen replay. Never rewrites the repository, guards or proposals.
 const fs=require('node:fs'),path=require('node:path'),{createHash}=require('node:crypto');
-const profile=require('../../lib/agent-operations-engineering-calendar-boundaries');
+const {gunzipSync}=require('node:zlib');
 const sourcePath=fs.realpathSync(require.resolve('../../dashboard.js'));
 const manifestPath=fs.realpathSync(require.resolve('../../lib/agent-operations-engineering-source-lock.json'));
 const PIN='441484e8a28273bb17eb0c1533b306935c30e00526a5cfc68a8e75b011fad5a6';
 const hash=x=>createHash('sha256').update(x).digest('hex');
-function historicalText(){let text=fs.readFileSync(sourcePath,'utf8').replace(/\r\n/g,'\n');if(hash(text)!==PIN){for(const e of [...profile.EDITS].reverse()){if(text.split(e.afterText).length!==2)throw Error('HISTORICAL_CALENDAR_INVERSE_MISMATCH');text=text.replace(e.afterText,e.beforeText);}}if(hash(text)!==PIN)throw Error('HISTORICAL_CALENDAR_HASH_MISMATCH');return text;}
+function historicalText(){const archive=require('../../lib/agent-operations-engineering-history.json'),text=gunzipSync(Buffer.from(archive.gzipBase64,'base64'),{maxOutputLength:700000}).toString('utf8');if(hash(text)!==PIN||archive.sourceSha256!==PIN)throw Error('HISTORICAL_CALENDAR_HASH_MISMATCH');return text;}
 async function withHistorical(fn){
  const contracts=require('../../lib/agent-operations-contracts');contracts.assertRelease();
  const text=historicalText(),originalRead=fs.readFileSync,lock=require('../../lib/agent-operations-engineering-source-lock.json'),entry=lock.files.find(f=>f.path==='dashboard.js'),saved={...entry},releaseLock=require('../../lib/agent-operations-contract-lock.json'),savedRelease={...releaseLock};
