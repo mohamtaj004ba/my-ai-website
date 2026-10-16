@@ -1,4 +1,45 @@
 {
+  "engineeringExpandedFirstCompletion": {
+    "at": "2026-10-16",
+    "status": "five-genuine-stages-complete-proposal-not-accepted-paid-stopped",
+    "source": "9865a29f116aea574d81ffba7dcc11bd767ea5e6",
+    "fingerprint": "92d4ef60a5c6aea894ec678d4d51c28f359c7f4345d1237f84807e66f0d02a34",
+    "corrected": [
+      "Separate validated new5USD cumulative accounting preserves historical15USD uncertainty.",
+      "Reviewed successor-source enrollment, serial one-time identity, bounded quotas and full-audit ById revocation verified.",
+      "Final context repair proven in actual live Chief-final request with all prior reviews preserved."
+    ],
+    "remaining": [
+      "Chief completion criterion remains semantically clipped at200characters; Auditor rejection and missing customer-impact qualification preserved.",
+      "Automated technical criticism is not independently authenticated human or business acceptance.",
+      "Read-only expanded budget visibility is hidden when paid mode is disabled; source-backed inert finding prepared.",
+      "Countingfees/invoices unknown; new1USDpendinghold retained despite40014microUSD calculatedResponses.",
+      "Dedicated browser and arbitrary untrusted-code execution remain unqualified; no spending.",
+      "Historical rejected response content unavailable; original trial causes are not retroactively invented."
+    ],
+    "paid": {
+      "attempts": 1,
+      "responses": 5,
+      "counts": 5,
+      "inputTokens": 9002,
+      "outputTokens": 2201,
+      "reasoningIncluded": 761,
+      "responsesCalculatedMicros": 40014,
+      "newRetainedMicros": 1000000,
+      "newRemainingMicros": 4000000
+    },
+    "shutdown": {
+      "sequence": "stopped",
+      "approval": "revoked",
+      "leases": 0,
+      "activeGrants": 0,
+      "activeAttempts": 0,
+      "acceptance": false,
+      "publication": false,
+      "generatedCodeExecution": false,
+      "readyReplacement": "dpl_CfyhFCc8TTLaAFuqn4o7FbY6adg1"
+    }
+  },
   "engineeringCumulativeRecovery": {
     "at": "2026-10-16",
     "status": "one-new-attempt-four-live-stages-stopped-revoked-final-context-repair-verified-preview",
