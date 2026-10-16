@@ -9,10 +9,10 @@ const begin=source.indexOf('let secondaryClientLoadGeneration=0;');
 const end=source.indexOf('function renderWorkspaceAccessState()',begin);
 assert.ok(begin>=0&&end>begin);
 
-function harness(fetcher){
+function harness(fetcher,{calendar=true,appointments=true}={}){
   const coverage={textContent:''},notice={hidden:true,querySelector:()=>coverage};
   const context={
-    fetchJsonRetry:fetcher,document:{getElementById:id=>id==='clientSecondaryDataHealth'?notice:null},
+    fetchJsonRetry:fetcher,capability:name=>name==='calendar'&&calendar,has:feature=>feature==='appointments'&&appointments,document:{getElementById:id=>id==='clientSecondaryDataHealth'?notice:null},
     console:{warn:()=>{}},leadsData:[],conversationsData:[],conversationThreadsData:[],
     conversationPageTotal:0,conversationNextCursor:null,conversationBackendPaging:false,
     appointmentsData:[],automationsData:[],locationsData:[],locationsLimit:1,
@@ -24,6 +24,15 @@ function harness(fetcher){
   return {context,notice,coverage,load:()=>vm.runInContext('loadSecondaryClientData()',context),clear:()=>vm.runInContext('clearSecondaryClientCoverage()',context)};
 }
 const actions=['leads','conversations','appointments','automations','locations'];
+
+for(const [calendar,appointments]of [[false,false],[false,true],[true,false],[true,true]])test('secondary appointments require both calendar capability and plan entitlement '+JSON.stringify({calendar,appointments}),async()=>{
+  const requested=[],h=harness(async url=>{const action=new URL(url,'https://example.test').searchParams.get('action');requested.push(action);return {[action]:[{id:action+'-fixture'}]};},{calendar,appointments});
+  await h.load();
+  assert.deepEqual(requested,actions.filter(action=>action!=='appointments'||calendar&&appointments));
+  assert.equal(h.notice.hidden,true);
+  assert.equal(h.context.leadsData[0].id,'leads-fixture');assert.equal(h.context.conversationThreadsData[0].id,'conversations-fixture');assert.equal(h.context.automationsData[0].id,'automations-fixture');assert.equal(h.context.locationsData[0].id,'locations-fixture');
+  assert.equal(h.context.appointmentsData.length,calendar&&appointments?1:0);
+});
 test('secondary client feeds display explicit coverage warning and preserve last records on failure',async()=>{
   let failed=true;
   const h=harness(async url=>{

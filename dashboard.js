@@ -395,7 +395,7 @@ async function loadSecondaryClientData(){
   const tasks=[
     ['leads',d=>{leadsData=d.leads||[]}],
     ['conversations',d=>{conversationThreadsData=d.conversations||[];conversationPageTotal=Number(d.total||conversationThreadsData.length);conversationNextCursor=d.nextCursor||null;conversationBackendPaging=true;if(!conversationsData.length)conversationsData=conversationThreadsData}],
-    ['appointments',d=>{appointmentsData=d.appointments||[]}],
+    ...(capability('calendar')&&has('appointments')?[['appointments',d=>{appointmentsData=d.appointments||[]}]]:[]),
     ['automations',d=>{automationsData=d.automations||[]}],
     ['locations',d=>{locationsData=d.locations||locationsData;locationsLimit=Number(d.limit||locationsLimit||1)}]
   ];
