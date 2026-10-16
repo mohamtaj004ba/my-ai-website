@@ -820,5 +820,40 @@
       "Authenticated independent acceptance unavailable; automatedcriticism distinct",
       "Dedicatedbrowser qualification/spending and Google resource authorization remain separately blocked"
     ]
+  },
+  "secondLiveEngineeringTrial": {
+    "status": "consumed-stopped-specialist-content-validation-revoked-no-retry",
+    "application": "90a86019d2ee31c1220edaa3ea919db7ca9d1172",
+    "release": "dc386c94a1ff5cfd25049f43a34d9c4097d153c8b1b5178f1a5bb2d3d1a98513",
+    "workflow": "wf_303ecbc2a11098a52bfc09ca49d32a25",
+    "executionDeployment": "dpl_6mefNjuzGJjjuouLDA4XWdYUveEP",
+    "activeDisabledDeployment": "dpl_D1osgbu1hBXhBH8yStRgwtg2jydh",
+    "observed": "Chiefvalidated; SpecialistHTTP200completed then ENG_AI_PROPOSAL_DENIED atresponse-validate afterschema/refs/preimage. Exactmatchedtextunknown; no firstcause/maliceinference. QA/Auditor/finalnotrun.",
+    "usage": {
+      "responses": 2,
+      "counts": 2,
+      "input": 2207,
+      "output": 995,
+      "reasoningIncluded": 170,
+      "responsesCalculatedMicros": 14364,
+      "invoiceReconciled": false,
+      "countFees": "unknown"
+    },
+    "accounting": {
+      "allowanceMicros": 15000000,
+      "retainedMicros": 11400000,
+      "pendingIncludedMicros": 3000000,
+      "remainingMicros": 3600000,
+      "newPendingCeilingsMicros": 400000
+    },
+    "shutdown": "Revokedrevision20; leases/attempts/workers0; manifestcancelled; paidfalse activeD1;3futureflagsfalse. ImmutableQsnapshot retainsflags butconsumed+revokedauthority deniesreuse.",
+    "preservation": "26oldplans/2oldnativeflows/2oldapprovals unchanged;167auditprefix unchanged;169chainvalid",
+    "limitations": [
+      "No useful validated Specialist correction or five-stage live result",
+      "Contentguard groups multiplepredicates; exacttriggerunknown and benign sk-pattern collisionpossible",
+      "Chiefcompletioncriteria clipped; no businessacceptance",
+      "No freshpaidtrialauthority; unused ceilings cannotfundretry"
+    ],
+    "next": "Nonbillable safe reasoncategories/benigncollision fixtures and plainlabel-only outputcontract review; preserveguards and getfreshscopeapprovalbeforeanyfuturepaidtrial"
   }
 }
