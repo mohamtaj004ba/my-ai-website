@@ -746,11 +746,44 @@
     "remaining": "This finaldocumentationhead stillneeds its own source-bound targeted/identity verification and actual ignored-build evidence. ExistingPRfull-historychecks retained. No claimed dollar orWorkcreditsaving."
   },
   "engineeringFailureRecovery": {
-    "status": "implemented-nonbillable-release-qualification-pending",
+    "status": "verified-diagnostic-repair-historical-cause-unknown-second-trial-blocked",
     "historicalCause": "unknown; rejected output and original exception absent",
     "paidExecution": "disabled; consumed first-trial exception unchanged",
     "storageLimit": "Persistent storage outage can prevent durable diagnostics; safe observed facts and explicit diagnosticRecorded=false returned; cleanup separately bounded",
     "review": "Independent Work QA/Auditor technical review; not human acceptance",
-    "secondTrial": "Fresh exact owner authorization and reviewed new one-use identity required; no reset/reuse"
+    "secondTrial": "Fresh exact owner authorization and reviewed new one-use identity required; no reset/reuse",
+    "remainingActivationGates": [
+      "Preserve consumed original authorization; distinct reviewed fresh one-use identity required.",
+      "Original assignment cancelled/expired and old-release-bound; cannot reuse.",
+      "Current preserved owner journal25plans at25limit; reviewed preservation-safe admission capacity/lifecycle solution required.",
+      "Current exact release needs new trusted readiness binding and fresh explicit owner consent; all paid/count flags stay disabled.",
+      "Fixed controller limits cannot be advertised as smaller limits without actual enforcement."
+    ],
+    "application": "ff311204a29d46141bde42247a52571756631d59",
+    "release": "f3c1db619fd93f01aade4571c3b7acb452bc0205068b3574213058e33dc4ae66",
+    "verification": {
+      "focused": 114,
+      "independentQaNewCases": 24,
+      "strict": 3349,
+      "redis": 27,
+      "ci": "passed",
+      "codeql": "passed",
+      "jekyll": "passed",
+      "browser": {
+        "status": "success",
+        "run": 38854483814,
+        "job": 116822776293,
+        "elapsedMs": 702482,
+        "artifact": 12027202334,
+        "bytes": 164429528,
+        "sha256": "3288cc1e8170bbba32ab2d93dc665fd3eb0d7dcd67b58d8c92f8351d7826aff3",
+        "visualComparisons": 6,
+        "maxDifference": 0.00005,
+        "unexpectedErrors": 0,
+        "actualReportPinPngInspected": true,
+        "pinMismatchWaits": 82
+      }
+    },
+    "ownerReadback": "Exactff31120/f3c1 paidfalse/outstandingfalse;11USDretained including2.60USDpending,4USDremaining; not invoice reconciled"
   }
 }
