@@ -9,7 +9,8 @@
       "Readiness or configured approval revoked during awaited dispatch checks",
       "Unverified replacement shutdown claim",
       "Circular deployment-bound environment approval replaced with exact authenticated owner-posted consent and existing durable CAS",
-      "Generic engineering authority visibility and workspace provenance; stable evidence hash excludes clock telemetry"
+      "Generic engineering authority visibility and workspace provenance; stable evidence hash excludes clock telemetry",
+      "One-trial uncertainty exception now identifies the original owner/workspace/source/release/assignment/evidence through existing trusted readiness pin; legitimate other workspace owners cannot consume it."
     ],
     "remaining": [
       "One explicit owner exception permits unknown counting charges; all ceilings retained pending and no provider hardcap claimed. Global one-use authorization consumed at prepare. Execute only after exact new release STRICT/Redis/CI/CodeQL/hosted verification and scoped activation; zero-cost history unchanged.",
