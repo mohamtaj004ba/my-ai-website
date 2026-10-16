@@ -9,7 +9,7 @@ const proposed=require('../lib/agent-operations-draft-proposal'),PROPOSED=requir
 const SOURCE_LOCK=require('../lib/agent-operations-engineering-source-lock.json');
 const MARKER='\n<!-- CallerCore isolated deterministic draft; not approved for publication. -->\n';
 // Frozen expected output for the source-lock fixture, checked by actual-child regression.
-const EXPECTED_AFTER='fc7f8f92700a73bcc53f3979b8fb5f969cdc03aaac294bd360015f710c35ac58';
+const EXPECTED_AFTER='ec7c487d74898495542f6133bb82d8a11924e59f24314deb2bf4552e8d0d8b19';
 const QUALIFICATION='Fixed comment append only. Draft source is never executed. No untrusted-code sandbox, repository writer, shell, network adapter, commit, push or deployment executor.';
 const CORRECTION_QUALIFICATION='Reviewed fixed local-calendar chart correction only. Draft source is never executed. No untrusted-code sandbox, repository writer, shell, network adapter, commit, push or deployment executor.';
 const LIMITS=Object.freeze({maxFiles:3,maxBytes:200000,maxDurationMs:10000,maxOutputBytes:16000,maxOldSpaceMb:64,network:false,arbitraryCommands:false,externalCodeExecution:false,publication:false});

@@ -5,7 +5,7 @@ const sourceSha='a'.repeat(40),options={sourceSha,expectedSourceSha:sourceSha};
 const dirs=()=>fs.readdirSync(os.tmpdir()).filter(x=>x.startsWith('callercore-draft-'+process.pid+'-')).sort();
 test('actual permission-restricted child creates inspectable patch and destroys draft without repository mutation',async()=>{
  const before=tools.hash(tools.readFile('dashboard.html')),existing=dirs(),r=await draft.prepare(options);
- assert.equal(r.files[0].beforeSha256,before);assert.notEqual(r.files[0].afterSha256,before);assert.equal(r.patchSha256,tools.hash(r.patch));assert.equal(r.publicationAllowed,false);assert.deepEqual(r.cleanup,{destroyed:true});assert.equal(tools.hash(tools.readFile('dashboard.html')),before);assert.deepEqual(dirs(),existing);
+ assert.equal(r.files[0].beforeSha256,before);assert.notEqual(r.files[0].afterSha256,before);assert.equal(r.files[0].afterSha256,tools.hash(tools.readFile('dashboard.html')+r.patch.addedText));assert.equal(r.files[0].afterBytes,Buffer.byteLength(tools.readFile('dashboard.html'))+Buffer.byteLength(r.patch.addedText));assert.equal(r.patchSha256,tools.hash(r.patch));assert.equal(r.publicationAllowed,false);assert.deepEqual(r.cleanup,{destroyed:true});assert.equal(tools.hash(tools.readFile('dashboard.html')),before);assert.deepEqual(dirs(),existing);
 });
 test('source substitution, arbitrary path, secret options and exceeded limits fail before creation',async()=>{
  const before=dirs();for(const args of [{...options,sourceSha:'b'.repeat(40)},{...options,sourceSha:'main'},{...options,files:['../secret']},{...options,apiKey:'secret'},{...options,timeoutMs:10001},{...options,delayMs:-1}])await assert.rejects(draft.prepare(args),/DRAFT_/);assert.deepEqual(dirs(),before);

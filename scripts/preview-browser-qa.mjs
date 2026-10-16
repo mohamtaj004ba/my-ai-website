@@ -535,6 +535,12 @@ async function runClientInteractions(page){
   report.client.interactions.push('Conversations progressive loading + sorting + contact drawer + search/empty/reset');
 
   await ensureView(page,'leads');
+  if(await page.getByRole('searchbox',{name:'Search follow-ups',exact:true}).count()!==1||await page.getByRole('combobox',{name:'Filter follow-up type',exact:true}).count()!==1)throw new Error('Follow-up search and type filter must have unique accessible names');
+  const followupCount=await page.locator('#leadKanban .followup-card').count();
+  await page.getByRole('searchbox',{name:'Search follow-ups',exact:true}).fill('no-followup-qa-match');
+  if(await page.locator('#leadKanban .followup-card').count()!==0)throw new Error('Named follow-up search failed to filter');
+  await page.getByRole('searchbox',{name:'Search follow-ups',exact:true}).fill('');
+  if(await page.locator('#leadKanban .followup-card').count()!==followupCount)throw new Error('Cleared follow-up search did not restore records');
   const firstFollowup=page.locator('#leadKanban .followup-card').first();
   await firstFollowup.waitFor({state:'visible',timeout:5000});
   if(await firstFollowup.locator('[data-team-status]').count()!==1)throw new Error('Follow-up row lost its team status control');
@@ -1359,6 +1365,7 @@ async function runResponsive(kind,viewport,name){
         await page.locator('#contactDrawerBackdrop').click({position:{x:8,y:200}});
         if(await page.locator('#contactDrawer').evaluate(el=>el.classList.contains('open')))throw new Error('Outside tap did not dismiss contact details');
         await ensureView(page,'leads');
+        if(!await page.getByRole('searchbox',{name:'Search follow-ups',exact:true}).isVisible()||!await page.getByRole('combobox',{name:'Filter follow-up type',exact:true}).isVisible())throw new Error('Mobile follow-up controls are unavailable by accessible name');
         for(const status of ['priority','dismissed','completed','pending']){
           await page.locator('[data-followup-filter="'+status+'"]').click();
           const actual=await page.locator('[data-followup-filter="'+status+'"]').getAttribute('aria-pressed');

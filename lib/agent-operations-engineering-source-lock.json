@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "dashboard.html",
-      "sha256": "875dc165db2e4d9d83b35e90a9b0e2c655c5e453e1b92a4ef8c2fbac4fa41ad5",
-      "bytes": 70769
+      "sha256": "77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f",
+      "bytes": 70835
     },
     {
       "path": "dashboard.js",
