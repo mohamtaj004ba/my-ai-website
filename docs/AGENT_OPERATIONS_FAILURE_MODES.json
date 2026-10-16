@@ -1,4 +1,42 @@
 {
+  "engineeringCumulativeRecovery": {
+    "at": "2026-10-16",
+    "status": "one-new-attempt-four-live-stages-stopped-revoked-final-context-repair-verified-preview",
+    "source": "a9773a958f2b31eeeeb921664563d1a3ad4e7a92",
+    "releaseFingerprint": "447e2c9b483b4eb4f116d733d1545e8fe5591478d188370c2a36a79427548258",
+    "corrected": [
+      "Exact opt-in proposal-copy contract aligns literal replacement labels with model schema/instructions and backend rules; historical artifacts unchanged.",
+      "Singleton shared-dollar sequence prevents alternate-ID budget reset, concurrent attempts, stale release inheritance and continuation without cleanup/full exposure.",
+      "Actual four-receipt Chief-final context12552byteplanningbound rejected before count;32KBserialization cap separated from unchanged12k authenticated token cap.",
+      "Existing-workflow admission failures now retain closed immutable diagnostics without manufacturing stage tickets, provider usage or reservations."
+    ],
+    "remaining": [
+      "Full five-stage live workflow NOT complete: four validated live stages only; final Chief never dispatched.",
+      "Model placeholders/incomplete fields remain quality findings. AutomatedAuditorFAIL preserved; no independent human or business acceptance.",
+      "First-stage failure before any workflow still lacks workflow admission-failure receipt; returned sanitized error and cleanup tombstone only.",
+      "Shared1USD sequence stopped after0.80USDretained uncertainty;0.20USDcannot fund another full1USD exposure. No optimistic refund and no successor release authorization.",
+      "Countingfees/invoices/adjustments unknown; Responses-only30998microUSD calculation is not total provider charge.",
+      "Dedicated browser infrastructure and untrusted-code OS isolation remain unqualified; no new spending authorized."
+    ],
+    "accounting": {
+      "allowanceMicros": 15000000,
+      "retainedMicros": 12600000,
+      "pendingMicros": 4200000,
+      "remainingMicros": 2400000
+    },
+    "verification": {
+      "localStrict": 3493,
+      "redis": 27,
+      "workQA": 108,
+      "workAuditor": 93,
+      "ci": "passed",
+      "codeql": "passed",
+      "jekyll": "passed",
+      "browser": "passed-actualarchive-reviewed; initialAgentOpsPNGloading; separateownerDOMverified"
+    },
+    "evidence": "docs/AGENT_OPERATIONS_BOUNDED_SEQUENCE_RESULT.md",
+    "historicalPreservation": "All original risk entries below preserved; all28priorplans/4priorapprovals/workflows and171auditprefix unchanged."
+  },
   "engineeringOwnerActivation": {
     "status": "single-live-trial-stopped-specialist-revoked-no-retry",
     "scope": "Existing organization CAS, lifecycle, engineering profile and owner-authenticated controller",
