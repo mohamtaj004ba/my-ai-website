@@ -1,4 +1,22 @@
 {
+  "productiveDevelopmentOctober16": {
+    "status": "verified-product-fixes-no-new-paid-execution",
+    "application": "082843b23d7353a9995a2746913b6944234eb758",
+    "fingerprint": "649895d44c8be51f97a87aca78fc219e71c81d97fcde31efc604c41dca356d3c",
+    "corrected": [
+      "Follow-ups search and type filter have persistent accessible names; filtering behavior preserved.",
+      "Critical fallback failure reports Sync issue and retains last successful timestamp; successful recovery alone reports Live.",
+      "Secondary appointment feed requires both calendar capability and plan entitlement; backend denial unchanged."
+    ],
+    "remaining": [
+      "New report quality contract non-billable verified but no new live reasoning.",
+      "Starter Automations fallback finding awaits correction/rendered verification.",
+      "Counting fees/provider adjustments/invoices unresolved; no uncertain reservation released.",
+      "Dedicated browser quote,protected identity and relay missing; no spending.",
+      "Old Average daily label proposal remains unapplied and unaccepted."
+    ],
+    "evidence": "docs/engineering-changes/productive-development-handoff.json"
+  },
   "engineeringExpandedFirstCompletion": {
     "at": "2026-10-16",
     "status": "five-genuine-stages-complete-proposal-not-accepted-paid-stopped",
