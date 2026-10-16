@@ -1,6 +1,6 @@
 {
   "engineeringOwnerActivation": {
-    "status": "one-owner-authorized-uncertain-count-trial-amendment-under-verification",
+    "status": "single-live-trial-stopped-specialist-revoked-no-retry",
     "scope": "Existing organization CAS, lifecycle, engineering profile and owner-authenticated controller",
     "corrected": [
       "Prepared authority missing direct revocation",
@@ -10,19 +10,45 @@
       "Unverified replacement shutdown claim",
       "Circular deployment-bound environment approval replaced with exact authenticated owner-posted consent and existing durable CAS",
       "Generic engineering authority visibility and workspace provenance; stable evidence hash excludes clock telemetry",
-      "One-trial uncertainty exception now identifies the original owner/workspace/source/release/assignment/evidence through existing trusted readiness pin; legitimate other workspace owners cannot consume it."
+      "One-trial uncertainty exception now identifies the original owner/workspace/source/release/assignment/evidence through existing trusted readiness pin; legitimate other workspace owners cannot consume it.",
+      "One extra bounded operations admission slot24to25 preserves all historical records and existing cleanup, byte, audit and execution limits."
     ],
     "remaining": [
-      "One explicit owner exception permits unknown counting charges; all ceilings retained pending and no provider hardcap claimed. Global one-use authorization consumed at prepare. Execute only after exact new release STRICT/Redis/CI/CodeQL/hosted verification and scoped activation; zero-cost history unchanged.",
-      "Dedicated Preview credential configuration resolved; actual gpt-6.1-sol metadata authentication succeeded on dpl_7KHmmahcApVvrqD1Nyw2BotfRVaU. Counting and Responses remain unverified and unauthorized.",
-      "Account-specific native count price and permission/parity unknown",
+      "The single owner-accepted unknown-count exception was consumed once and revoked after two count/two Responses requests. No unused request or spending authority may be reused; zero-cost historical policy unchanged.",
+      "Actual gpt-6.1-sol metadata, two token counts and two Responses HTTP200 verified. Chief receipt validated; no Specialist receipt. Full engineering workflow compatibility/acceptance unproven.",
+      "Counting-request billing remains unknown; exact observed count/Responses input parity verified925and1330tokens only, not universal provider behavior.",
       "Trusted readiness digest is an operator-reviewed attestation, not automatic pricing discovery",
       "Fixed internal reservation is not provider-enforced billing cap",
-      "Native controller and source verification remain valid; new configuration-only READY and owner metadata verification passed. Exact organization audit row not independently read back; successful operation awaits durable audit write.",
+      "Prior metadata-only exact audit row limitation remains historical. Current live attempt has immutable hashes/status/usage and revoked approval, but generic transport catch erased the Specialist failure cause and rejected content was not retained.",
       "Automated technical criticism does not establish independent human acceptance",
-      "Crash cleanup relies on central lease expiry; transmitted requests cannot be recalled"
+      "Crash cleanup relies on central lease expiry; transmitted requests cannot be recalled",
+      "Chief completion criteria include incomplete strings at schema length; no complete reviewed engineering proposal produced.",
+      "Current financial attribution shows new engineering stages as unattributed/pending; role identity is preserved separately in workflow attempts."
     ],
-    "permissions": "No count/model calls, acceptance, generated code execution or internal publication authorized"
+    "permissions": "No further paid model/count requests authorized. One-use exception consumed, temporary approval revoked, loaded paid/count flags disabled. Acceptance, generated-code execution and internal publication remain disabled.",
+    "latestTrial": {
+      "application": "aeaa917491205a68aa24846490f3a61b2686d8e1",
+      "release": "c9934774046f2737618e4aef076c5647dbdc094b7012257c7d46a05b44ec41ba",
+      "workflowId": "wf_e7645aec7fe554b6de7ed10dca476d07",
+      "stage": "specialist",
+      "status": "blocked",
+      "requests": {
+        "counts": 2,
+        "responses": 2
+      },
+      "usage": {
+        "input": 2255,
+        "output": 1244,
+        "reasoningIncluded": 342
+      },
+      "conditionalResponsesMicros": 16950,
+      "countFees": "unknown",
+      "newRetainedMicros": 400000,
+      "acceptedWork": false,
+      "preciseFailureCause": "not-retained-unconfirmed",
+      "paidRetry": false,
+      "shutdownDeployment": "dpl_hhhnNzTajZuXgFy8o7DPZRCABBrq"
+    }
   },
   "googleOwnerCredentialVerification": {
     "status": "verified-at-8e95922-captured-owner-readback-not-resource-operational",

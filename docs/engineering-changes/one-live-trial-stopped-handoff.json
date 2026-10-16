@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "ae82181375fc1160b54f9c601bc395650ac1d64b9754174ffa408099a4ffb84a",
+  "risk": "routine",
+  "scope": "Preserve actual single failed live-trial evidence, reportedusage/uncertainty, safe shutdown, exact release and honest remaining diagnostic blocker; no runtime or permission change.",
+  "defects": []
+}
