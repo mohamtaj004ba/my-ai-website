@@ -1,6 +1,6 @@
 {
   "engineeringOwnerActivation": {
-    "status": "published-ready-live-disabled-count-pricing-and-access-blocked",
+    "status": "one-owner-authorized-uncertain-count-trial-amendment-under-verification",
     "scope": "Existing organization CAS, lifecycle, engineering profile and owner-authenticated controller",
     "corrected": [
       "Prepared authority missing direct revocation",
@@ -12,6 +12,7 @@
       "Generic engineering authority visibility and workspace provenance; stable evidence hash excludes clock telemetry"
     ],
     "remaining": [
+      "One explicit owner exception permits unknown counting charges; all ceilings retained pending and no provider hardcap claimed. Global one-use authorization consumed at prepare. Execute only after exact new release STRICT/Redis/CI/CodeQL/hosted verification and scoped activation; zero-cost history unchanged.",
       "Dedicated Preview credential configuration resolved; actual gpt-6.1-sol metadata authentication succeeded on dpl_7KHmmahcApVvrqD1Nyw2BotfRVaU. Counting and Responses remain unverified and unauthorized.",
       "Account-specific native count price and permission/parity unknown",
       "Trusted readiness digest is an operator-reviewed attestation, not automatic pricing discovery",
