@@ -855,5 +855,27 @@
       "No freshpaidtrialauthority; unused ceilings cannotfundretry"
     ],
     "next": "Nonbillable safe reasoncategories/benigncollision fixtures and plainlabel-only outputcontract review; preserveguards and getfreshscopeapprovalbeforeanyfuturepaidtrial"
+  },
+  "proposalGuardRepair": {
+    "application": "771ceed3efd5f6f81a9cec6773900ae756c2749f",
+    "release": "416181164b2d3db8b5269826abbdc66a6d2bcddd48922f158b6a4d43745effd3",
+    "status": "verified-nonbillable-repair-paid-disabled",
+    "verifiedDefect": "Unanchored sk- substring matches benign word endings; use standalone-token prefix boundary only.",
+    "historicalTrialCause": "Unknown; rejected wording and predicate not retained. Do not retrospectively attribute a false positive or malicious intent.",
+    "ruleReceipts": "Closed markup/nul/url/bearer/key-prefix IDs, static field location, no rejected text.",
+    "historicalCompatibility": "Unversioned prompt change withdrawn after independent audit. Actual preserved five-stage fixture validates old request hashes and synthetic usage.",
+    "verification": {
+      "focused": 195,
+      "strict": 3447,
+      "redis": 27,
+      "ci": "passed",
+      "codeql": "passed",
+      "jekyll": "passed",
+      "browserRun": 38866814756,
+      "visualComparisons": 6
+    },
+    "preservation": "All27plans/nativeauthority/ledger identical; originalfailurehash valid; all3approvals revoked; paidfalse.",
+    "remaining": "Third trial unexecuted; fresh exact-source consent, trusted pins/config-only refresh and new just-in-time assignment required. Dedicated browser remains unqualified; independent human acceptance unavailable.",
+    "spending": "No new requests/reservations;11.40 retained including3 pending,3.60 remaining. Counting/provider fees unknown, no invoice reconciliation."
   }
 }
