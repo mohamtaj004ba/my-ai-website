@@ -237,17 +237,17 @@ test('maximum unfinished plans near normal byte capacity retain bounded serial a
 });
 
 
-test('one additional bounded admission preserves24historical plans and denies26th without audit loss',async()=>{
- const f=fixture();for(let i=0;i<24;i++){const p=await f.service.create(owner,assignment('historical_plan_'+i));await f.service.cancel(owner,command(p));}
+test('bounded retention preserves all25 historical plans and denies overflow without audit loss',async()=>{
+ const f=fixture();for(let i=0;i<25;i++){const p=await f.service.create(owner,assignment('historical_plan_'+i));await f.service.cancel(owner,command(p));}
  const before=f.journal(),source=JSON.stringify(f.ledger()),p=await f.service.create(owner,assignment('one_extra_admission'));const admitted=f.journal();
- assert.equal(ops.LIMITS.plans,25);assert.equal(admitted.plans.length,25);assert.deepEqual(admitted.plans.slice(0,24),before.plans);assert.deepEqual(admitted.audit.slice(0,before.audit.length),before.audit);assert.equal(admitted.audit.length,before.audit.length+1);
- const raw=JSON.stringify(admitted);await assert.rejects(f.service.create(owner,assignment('denied_plan_26')),/OPS_CAPACITY/);assert.equal(JSON.stringify(f.journal()),raw);
- assert.equal((await f.service.create(owner,assignment('one_extra_admission'))).id,p.id);assert.equal(JSON.stringify(f.journal().plans),JSON.stringify(admitted.plans));
- assert.equal((await f.service.cancel(owner,command(p))).status,'cancelled');assert.equal(JSON.stringify(f.ledger()),source);assert.equal(f.journal().plans.length,25);
+ assert.equal(ops.LIMITS.plans,50);assert.equal(admitted.plans.length,26);assert.deepEqual(admitted.plans.slice(0,25),before.plans);assert.deepEqual(admitted.audit.slice(0,before.audit.length),before.audit);assert.equal(admitted.audit.length,before.audit.length+1);
+ for(let i=26;i<ops.LIMITS.plans;i++)await f.service.create(owner,assignment('retained_plan_'+i));const raw=JSON.stringify(f.journal());await assert.rejects(f.service.create(owner,assignment('denied_plan_overflow')),/OPS_CAPACITY/);assert.equal(JSON.stringify(f.journal()),raw);
+ assert.equal((await f.service.create(owner,assignment('one_extra_admission'))).id,p.id);assert.deepEqual(f.journal().plans.slice(0,26),admitted.plans);
+ assert.equal((await f.service.cancel(owner,command(p))).status,'cancelled');assert.equal(JSON.stringify(f.ledger()),source);assert.equal(f.journal().plans.length,ops.LIMITS.plans);
 });
 test('concurrent final-slot admissions have one CAS winner and preserve historical prefix',async()=>{
- const f=fixture();for(let i=0;i<24;i++)await f.service.create(owner,assignment('existing_plan_'+i));const before=f.journal();
+ const f=fixture();for(let i=0;i<ops.LIMITS.plans-1;i++)await f.service.create(owner,assignment('existing_plan_'+i));const before=f.journal();
  const results=await Promise.allSettled(['one','two'].map(k=>f.service.create(owner,assignment('capacity_race_'+k))));
  assert.equal(results.filter(x=>x.status==='fulfilled').length,1);assert.equal(results.filter(x=>x.status==='rejected'&&/OPS_CAPACITY/.test(x.reason.message)).length,1);
- const after=f.journal();assert.equal(after.plans.length,25);assert.deepEqual(after.plans.slice(0,24),before.plans);assert.deepEqual(after.audit.slice(0,before.audit.length),before.audit);assert.equal(after.audit.length,before.audit.length+1);
+ const after=f.journal();assert.equal(after.plans.length,ops.LIMITS.plans);assert.deepEqual(after.plans.slice(0,-1),before.plans);assert.deepEqual(after.audit.slice(0,before.audit.length),before.audit);assert.equal(after.audit.length,before.audit.length+1);
 });
