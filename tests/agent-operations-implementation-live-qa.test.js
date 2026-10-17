@@ -83,6 +83,8 @@ test('Starter reserves cleanup time and aborts a short-window stalled counting r
 });
 
 test('all five Starter stages use 135-second request timers and reserve fifteen seconds inside the ten-minute controller ceiling',async()=>{
- const f=await setup(),input=await activate(f),provider=installProvider(f),original=setTimeout,delays=[];global.setTimeout=function(callback,delay,...args){delays.push(delay);return original(callback,delay,...args);};
- try{const out=await f.control.run(owner,input);a.equal(out.result.receipts.length,5);a.equal(delays.filter(n=>n===135000).length,5);a.equal(delays.includes(150000),false);const workTimers=delays.filter(n=>n>135000);a.equal(workTimers.length,1);a(workTimers[0]>0&&workTimers[0]<=585000);a.equal(provider.calls.length,10);a.equal(out.shutdown.status,'revoked');}finally{global.setTimeout=original;provider.restore();}
+ // This case inspects timer construction, not real-time lease expiry. Keep one consistent logical clock across parsing, journal and controller; the real expiry/cancellation fixtures above remain unchanged.
+ const realNow=Date.now,logicalNow=realNow();Date.now=()=>logicalNow;let provider;const original=setTimeout,delays=[];
+ try{const f=await setup(),input=await activate(f);provider=installProvider(f);global.setTimeout=function(callback,delay,...args){delays.push(delay);return original(callback,delay,...args);};
+ const out=await f.control.run(owner,input);a.equal(out.result.receipts.length,5);a.equal(delays.filter(n=>n===135000).length,10,'Five initial timers and five admission re-arms retain the same ceiling with zero logical elapsed time');a.equal(delays.includes(150000),false);const workTimers=delays.filter(n=>n>135000);a.equal(workTimers.length,1);a(workTimers[0]>0&&workTimers[0]<=585000);a.equal(provider.calls.length,10);a.equal(out.shutdown.status,'revoked');}finally{Date.now=realNow;global.setTimeout=original;provider?.restore();}
 });
