@@ -68,11 +68,11 @@ async function prepareInternal(options={}){
   const after=fs.readFileSync(path.join(directory,filename));
   check(result.files?.length===1&&result.files[0].beforeSha256===expected.sha256&&result.files[0].afterSha256===tools.hash(after.toString('utf8'))&&result.patchSha256===tools.hash(result.patch)&&result.publicationAllowed===false,'DRAFT_RESULT_INVALID');
  }catch(e){error=e;}finally{
-  fs.rmSync(directory,{recursive:true,force:true,maxRetries:2});
+  try{fs.rmSync(directory,{recursive:true,force:true,maxRetries:2});}catch{throw Object.assign(Error('DRAFT_CLEANUP_FAILED'),{cleanupConfirmed:false});}
   check(!fs.existsSync(directory),'DRAFT_CLEANUP_FAILED');
   check(tools.hash(tools.readFile(filename))===expected.sha256,'DRAFT_AUTHORITATIVE_SOURCE_CHANGED');
  }
- if(error)throw error;
+ if(error)throw Object.assign(error,{cleanupConfirmed:true});
  const artifact={...result,sourceSha,sourceManifestHash:inspected.manifestHash,repository:inspected.repository,branch:inspected.branch,limits,cleanup:{destroyed:true},classification:'real-disposable-filesystem-trusted-data-only',qualification:proposal?PROPOSAL_QUALIFICATION:profile?CORRECTION_QUALIFICATION:QUALIFICATION,...(proposal?{proposal,binding:proposal.binding}:{})};
  validateArtifact(artifact,{sourceSha,proposal});return artifact;
 }
@@ -93,6 +93,6 @@ async function prepareProposal(options={}){
  check(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=10000,'DRAFT_LIMITS');const original=structuredClone(proposal),context=structuredClone(binding),captured=normalizeProposal(original,context,sourceSha);check(sourceSha===expectedSourceSha,'DRAFT_SOURCE_BINDING');
  const c=new AbortController(),combined=signal?AbortSignal.any([signal,c.signal]):c.signal,timer=setTimeout(()=>c.abort(),timeoutMs);let listener,active;
  const work=async()=>{check(!combined.aborted,'DRAFT_CANCELLED');check(await authorize('before',structuredClone(context),combined)===true,'DRAFT_PROPOSAL_AUTHORITY_DENIED');check(!combined.aborted,'DRAFT_CANCELLED');active=prepareInternal({sourceSha,expectedSourceSha,signal:combined,timeoutMs,delayMs,proposal:captured});const prepared=await active;check(await authorize('after',structuredClone(context),combined)===true,'DRAFT_PROPOSAL_AUTHORITY_DENIED');check(!combined.aborted,'DRAFT_CANCELLED');const artifact={...prepared,proposal:original,binding:context};validateProposalArtifact(artifact,{sourceSha,proposal:original,binding:context});return artifact;};
- try{return await Promise.race([work(),new Promise((_,reject)=>{listener=()=>reject(Error('DRAFT_CANCELLED'));if(combined.aborted)listener();else combined.addEventListener('abort',listener,{once:true});})]);}catch(error){if(active)await active.catch(()=>{});throw error;}finally{clearTimeout(timer);if(listener)combined.removeEventListener('abort',listener);c.abort();}
+ try{return await Promise.race([work(),new Promise((_,reject)=>{listener=()=>reject(Error('DRAFT_CANCELLED'));if(combined.aborted)listener();else combined.addEventListener('abort',listener,{once:true});})]);}catch(error){if(active)try{await active;}catch(workerError){if(workerError.cleanupConfirmed!==true)throw Object.assign(Error('DRAFT_CLEANUP_FAILED'),{cleanupConfirmed:false});}throw Object.assign(error,{cleanupConfirmed:true});}finally{clearTimeout(timer);if(listener)combined.removeEventListener('abort',listener);c.abort();}
 }
 module.exports={prepare,prepareProposal,validateArtifact,validateProposalArtifact,LIMITS};

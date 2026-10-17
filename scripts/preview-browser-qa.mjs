@@ -284,6 +284,10 @@ async function sweepViews(page,kind){
         await implementationPreset.waitFor({state:'visible'});
         if((await implementationPreset.innerText()).trim()!=='Prepare Starter fallback patch · no model calls')throw new Error('Implementation preparation control does not accurately disclose fixture reasoning');
         report.agentOperations.implementationPreparation={profile:implementation.profile,controlVisible:true,reasoningMode:implementation.reasoningMode,generatedCodeExecution:false,publicationAuthorized:false,taskCreated:false};
+        const starterAdmission=page.locator('#opsEngineeringStarterPreset');
+        await starterAdmission.waitFor({state:'visible'});
+        if((await starterAdmission.innerText()).trim()!=='Select Starter implementation admission · fresh consent required')throw new Error('Starter live admission control does not disclose fresh consent requirements');
+        report.agentOperations.starterAdmission={controlVisible:true,freshConsentRequired:true,taskCreated:false,paidExecutionStarted:false};
       }
     }
     await assertLayout(page,kind+'-desktop-'+view);

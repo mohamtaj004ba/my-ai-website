@@ -34,13 +34,13 @@ test('model-copied metadata cannot alter source scope or authenticate itself',()
  a.notEqual(implementation.requestScope(c).expectedBinding.contextHash,'0'.repeat(64));
 });
 
-test('all five new-profile request stages retain bounded metadata and inert capabilities in both adapter versions',()=>{
+test('all five new-profile request stages retain bounded metadata and inert capabilities in both adapter versions',async()=>{
  const initial=context(),base={...initial,priorReceipts:[]},first=[],second=[];let cumulative=0;
  for(const [i,stage]of inference.STAGES.entries()){
   const binding={...base.binding,taskId:'task_scope_'+i,executionId:'exec_scope_'+i},c1={...base,binding,priorReceipts:[...first]},r1=inference.buildRequest(stage,c1),data1=JSON.parse(r1.body.input[0].content[0].text);
   a.equal(Object.hasOwn(data1,'implementationScope'),stage==='specialist');a(r1.inputTokenPlanningBound<=12000);cumulative+=r1.inputTokenPlanningBound;a(cumulative<=60000);a.equal(r1.executionEnabled,false);a.deepEqual(r1.body.tools,[]);a.equal(r1.body.max_output_tokens,4000);first.push(inference.executeFixture(stage,c1));
   const c2={...base,binding,priorReceipts:[...second]},r2=provider.request(stage,c2),data2=JSON.parse(r2.body.input[0].content[0].text);a.equal(Object.hasOwn(data2,'implementationScope'),stage==='specialist');a(r2.inputBound<=32768);a.deepEqual(r2.body.tools,[]);a.equal(r2.body.max_output_tokens,4000);
-  const response=implementation.fixture(stage,c2),parsed=provider.parse(stage,raw(JSON.stringify(response)),c2);second.push(provider.receipt(stage,c2,parsed,'fixture','e'.repeat(64)));
+  const response=implementation.fixture(stage,c2),parsed=provider.parse(stage,raw(JSON.stringify(response)),c2);let artifact;if(stage==='specialist'){const unprepared=provider.receipt(stage,c2,parsed,'fixture','e'.repeat(64));a.throws(()=>provider.request('qa',{...base,binding:{...binding,taskId:'task_scope_2',executionId:'exec_scope_2'},priorReceipts:[...second,unprepared]}),/ENG_IMPLEMENTATION_WORKSPACE/);const bindingForCopy=implementation.workspaceBinding(c2),copy=await require('../scripts/agent-operations-draft-workspace.cjs').prepareProposal({sourceSha:bindingForCopy.runtime.sourceCommit,expectedSourceSha:bindingForCopy.runtime.sourceCommit,binding:bindingForCopy,proposal:implementation.proposal(response.proposal,c2),authorize:async()=>true});a.equal(copy.cleanup.destroyed,true);artifact=implementation.artifactFor(c2,response.proposal,copy);}second.push(provider.receipt(stage,c2,parsed,'fixture','e'.repeat(64),artifact));
  }
  a.equal(first.length,5);a.equal(second.length,5);a.equal(first[4].response.acceptedWork,false);a.equal(second[4].response.acceptedWork,false);a.equal(first[4].response.auditDecision,'unresolved');
 });
