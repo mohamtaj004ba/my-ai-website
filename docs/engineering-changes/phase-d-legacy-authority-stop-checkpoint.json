@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "49c862e78edd6d4698fc5c5d969d4d84ef23e33e98823ff809904e4ca6107f1f",
+  "risk": "routine",
+  "scope": "Preserve verified B381 grant security repair, exact release evidence, unchanged credentials and accounting, and the independently reviewed legacy-identity activation blocker; documentation only.",
+  "defects": [],
+  "verification": [
+    "scope-review"
+  ],
+  "riskAnalysis": "No runtime, financial, authentication or execution authority change. Preserve opaque historical ownership and require legitimate reconciliation before paid/configuration admission; no docs-only application build."
+}
