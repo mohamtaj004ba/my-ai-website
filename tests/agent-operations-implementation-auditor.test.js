@@ -17,3 +17,30 @@ test('same-file unrelated mutations and hidden execution cannot cross the initia
 test('revocation after data-copy execution rejects its artifact and leaves authoritative source intact',async()=>{const c=context(),v=implementation.fixture('specialist',c),b=implementation.workspaceBinding(c),source=path.join(__dirname,'../dashboard.js'),before=fs.readFileSync(source,'utf8'),directories=disposableDirectories(),workspace=require('../scripts/agent-operations-draft-workspace.cjs');let checks=0;await a.rejects(workspace.prepareProposal({sourceSha:b.runtime.sourceCommit,expectedSourceSha:b.runtime.sourceCommit,binding:b,proposal:implementation.proposal(v.proposal,c),authorize:async()=>++checks===1}),/DRAFT_PROPOSAL_AUTHORITY_DENIED/);a.equal(checks,2);a.deepEqual(disposableDirectories(),directories);a.equal(fs.readFileSync(source,'utf8'),before);});
 
 test('cancel during trusted data-only child prevents artifact return and preserves repository',async()=>{const c=context(),v=implementation.fixture('specialist',c),b=implementation.workspaceBinding(c),source=path.join(__dirname,'../dashboard.js'),before=fs.readFileSync(source,'utf8'),directories=disposableDirectories(),workspace=require('../scripts/agent-operations-draft-workspace.cjs'),controller=new AbortController();let authority=0;const pending=workspace.prepareProposal({sourceSha:b.runtime.sourceCommit,expectedSourceSha:b.runtime.sourceCommit,binding:b,proposal:implementation.proposal(v.proposal,c),authorize:async()=>{authority++;return true;},signal:controller.signal,delayMs:500});setTimeout(()=>controller.abort(),100);await a.rejects(pending,/DRAFT_CANCELLED/);a.equal(authority,1);a.deepEqual(disposableDirectories(),directories);a.equal(fs.readFileSync(source,'utf8'),before);});
+
+test('new Specialist request exposes server-derived patch metadata without supplying replacement source or authority',()=>{
+ const c=context(),v1=inference.buildRequest('specialist',c),scope=JSON.parse(v1.body.input[0].content[0].text).implementationScope;
+ a.deepEqual(Object.keys(scope).sort(),['profile','path','beforeSha256','expectedBinding','allowedBeforeText','maxEdits','maxReplacementBytes','criteriaCount','qualification'].sort());
+ a.deepEqual(scope.expectedBinding,implementation.patchContext(c).binding);a.equal(scope.path,'dashboard.js');a.equal(scope.beforeSha256,implementation.snapshot().sourceSha256);a.equal(scope.maxEdits,1);a.equal(scope.maxReplacementBytes,2048);a.equal(scope.criteriaCount,2);
+ a.equal(scope.allowedBeforeText,require('../lib/agent-operations-implementation-patch').BEFORE);a.equal(Object.hasOwn(scope,'afterText'),false);a.equal(Object.hasOwn(scope,'grant'),false);a.equal(Object.hasOwn(scope,'token'),false);a.deepEqual(v1.body.tools,[]);a.equal(v1.executionEnabled,false);
+ const chiefContext={...c,binding:c.priorReceipts[0].binding,priorReceipts:[]},chief=implementation.fixture('chief-plan',chiefContext),parsed=provider.parse('chief-plan',raw(JSON.stringify(chief)),chiefContext),receipt=provider.receipt('chief-plan',chiefContext,parsed,'fixture','e'.repeat(64)),v2Context={...c,priorReceipts:[receipt]},v2=provider.request('specialist',v2Context);
+ a.deepEqual(JSON.parse(v2.body.input[0].content[0].text).implementationScope,implementation.requestScope(v2Context));a.deepEqual(v2.body.tools,[]);
+});
+
+test('model-copied metadata cannot alter source scope or authenticate itself',()=>{
+ const c=context(),scope=implementation.requestScope(c),v=implementation.fixture('specialist',c);scope.expectedBinding.contextHash='0'.repeat(64);v.proposal.binding=scope.expectedBinding;a.throws(()=>inference.parseResponse('specialist',v,c),/IMPLEMENTATION_BINDING/);
+ const other=implementation.fixture('specialist',c);other.proposal.path='lib/agent-operations-budget.js';a.throws(()=>inference.parseResponse('specialist',other,c),/ENG_AI_RESPONSE_SCHEMA|IMPLEMENTATION_/);
+ const foreign=structuredClone(c);foreign.evidence[0].text+='forged';a.throws(()=>implementation.requestScope(foreign),/ENG_IMPLEMENTATION_SCOPE/);
+ a.notEqual(implementation.requestScope(c).expectedBinding.contextHash,'0'.repeat(64));
+});
+
+test('all five new-profile request stages retain bounded metadata and inert capabilities in both adapter versions',()=>{
+ const initial=context(),base={...initial,priorReceipts:[]},first=[],second=[];let cumulative=0;
+ for(const [i,stage]of inference.STAGES.entries()){
+  const binding={...base.binding,taskId:'task_scope_'+i,executionId:'exec_scope_'+i},c1={...base,binding,priorReceipts:[...first]},r1=inference.buildRequest(stage,c1),data1=JSON.parse(r1.body.input[0].content[0].text);
+  a.equal(Object.hasOwn(data1,'implementationScope'),stage==='specialist');a(r1.inputTokenPlanningBound<=12000);cumulative+=r1.inputTokenPlanningBound;a(cumulative<=60000);a.equal(r1.executionEnabled,false);a.deepEqual(r1.body.tools,[]);a.equal(r1.body.max_output_tokens,4000);first.push(inference.executeFixture(stage,c1));
+  const c2={...base,binding,priorReceipts:[...second]},r2=provider.request(stage,c2),data2=JSON.parse(r2.body.input[0].content[0].text);a.equal(Object.hasOwn(data2,'implementationScope'),stage==='specialist');a(r2.inputBound<=32768);a.deepEqual(r2.body.tools,[]);a.equal(r2.body.max_output_tokens,4000);
+  const response=implementation.fixture(stage,c2),parsed=provider.parse(stage,raw(JSON.stringify(response)),c2);second.push(provider.receipt(stage,c2,parsed,'fixture','e'.repeat(64)));
+ }
+ a.equal(first.length,5);a.equal(second.length,5);a.equal(first[4].response.acceptedWork,false);a.equal(second[4].response.acceptedWork,false);a.equal(first[4].response.auditDecision,'unresolved');
+});
