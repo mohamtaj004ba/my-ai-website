@@ -1,4 +1,18 @@
 {
+  "phaseDActivationBuildGate": {
+    "application": "eb297dffc39cc53213072dc814e1d16df72193be",
+    "fingerprint": "5222439657b5048ff7dbd7b918adab28c0223a4806b9044f6335edae1375f198",
+    "failedConfigurationSnapshot": "dpl_DdnhRdMSBm5GDXUX4J3PQAfiJt5i",
+    "verifiedFixtureDefect": "Constant base64url suffix replacement can leave encrypted synthetic credentials unchanged; independent deterministic counterfactual demonstrated a no-op. Original failing packet was not retained.",
+    "correction": "Test-only decoded authentication-tag byte12 XOR, encoded and decoded inequality assertions, original ownerCredentialVerified=false assertion preserved; runtime cryptography unchanged.",
+    "review": {"workQaPass": 77, "auditorPass": 12, "localRegressionPass": 3670, "linuxRegressionPass": 3670, "realRedisPass": 29},
+    "browserQualification": {"run": 39005239126, "passed": true, "actualArtifactHashVerified": true, "visualComparisonsPassed": 6},
+    "remaining": ["Fresh exact-source authority before another configuration snapshot or paid Starter trial", "No real agent-generated Starter patch yet", "Generated-code execution remains disabled pending qualified OS isolation"],
+    "paidRequests": 0,
+    "newReservationMicros": 0,
+    "originalConsent": "received for9ba; no paid approval created or consumed; not reusable on successor source",
+    "paidExecution": false
+  },
   "phaseDNativeStarter": {
     "at": "2026-10-17T04:45:45.252Z",
     "status": "reviewed-data-only-native-path-not-live-activated",
