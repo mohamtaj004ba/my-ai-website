@@ -57,6 +57,16 @@ test('uncooperative worker cannot report shutdown success when its bounded clean
  assert(started);assert.equal(revocations,1);assert.equal(readbacks,0);assert.equal((await f.org.summary()).paidExecution,false);assert.equal((await f.org.read()).operations.approvals[0].status,'revoked');assert(performance.now()-began<1500,'uncooperative worker must report unconfirmed shutdown within the short explicit deadline');
 });
 
+test('standalone controller process stays alive for cleanup and releases its deadline handle afterward',()=>{
+ const {execFileSync}=require('node:child_process'),file=require.resolve('../lib/agent-operations-activation-controller');
+ // There is deliberately no watchdog or test-runner handle inside either child.
+ // Parent exec timeout cannot keep a child event loop alive or fake its receipt.
+ const stalled=`const a=require('node:assert/strict'),{withActivation}=require(process.argv[1]);let revoked=0,read=0;const started=performance.now();withActivation({durationMs:10,deadlineAt:Date.now()+180,renewMs:10000,prepare:async()=>({}),activate:async()=>{},run:()=>new Promise(()=>{}),renew:async()=>{},revoke:async()=>{revoked++;},readback:async()=>{read++;return{paidExecution:false,replacementPaidExecution:false};}}).then(()=>{throw Error('Uncooperative run accepted');}).catch(e=>{a.match(e.message,/shutdown failed; owner intervention required/);a.equal(revoked,1);a.equal(read,0);a(performance.now()-started>=100);console.log(JSON.stringify({revoked,read,shutdownUnconfirmed:true}));});`;
+ const first=execFileSync(process.execPath,['-e',stalled,file],{env:{},windowsHide:true,timeout:3000,maxBuffer:4096,encoding:'utf8'});assert.deepEqual(JSON.parse(first),{revoked:1,read:0,shutdownUnconfirmed:true});
+ const completed=`const a=require('node:assert/strict'),{withActivation}=require(process.argv[1]);withActivation({durationMs:1000,prepare:async()=>({}),activate:async()=>{},run:async()=>({inert:true}),renew:async()=>{},revoke:async()=>{},readback:async()=>({paidExecution:false,replacementPaidExecution:false})}).then(r=>{a.equal(r.result.inert,true);console.log('settled');}).catch(e=>{console.error(e);process.exitCode=1;});`;
+ const began=performance.now(),second=execFileSync(process.execPath,['-e',completed,file],{env:{},windowsHide:true,timeout:3000,maxBuffer:4096,encoding:'utf8'});assert.equal(second.trim(),'settled');assert(performance.now()-began<1500,'successful cleanup must clear its referenced fifteen-second timer');
+});
+
 test('mocked provider completes Chief after approval renewal and worker heartbeats beyond original lease',async t=>{
  t.mock.timers.enable({apis:['setInterval']});
  const f=fixture(),{actor,dto}=await reserved(f),context=await f.org.chiefContext(actor,dto.id),provider=require('../lib/agent-operations-organization-provider');
