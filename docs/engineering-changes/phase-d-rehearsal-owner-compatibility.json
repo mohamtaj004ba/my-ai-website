@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "0972085d484a90930059694a0a647441d33fe96f9b6cdbe0563d7254b2442420",
+  "risk": "critical",
+  "scope": "Restore exact same-workspace control of the existing zero-paid organizational rehearsal while retaining foreign workspace and native-field denial.",
+  "riskAnalysis": "The new generic owner workspace veto rejected a valid mock rehearsal because it lacked native engineering scope. An explicit, definition-hash-bound zero-paid branch restores only its existing lifecycle control; no new model, execution, spending or publication authority.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Dedicated credentials, immutable owner records, source identity and existing testing exposure must remain isolated from models and frontend inputs.",
+    "trustBoundaries": "Authenticated owner controls journal intent; trusted Work performs reviewed Vercel operations; models remain data-only and cannot attest provider metadata or grant authority.",
+    "abuseCases": "Caller-chosen IDs bypassing dedupe, forged configuration chains, rehashed receipt substitutions, duplicate dispatch after lost acknowledgments, revoked authority masking failed workspace cleanup.",
+    "mitigations": "Stable scope/source/task duplicate key, unresolved intent lock, ordered hash-bound events, exact runtime and eight-key verification, predispatch enrollment receipt equality, physical preparation/destruction journal and serial fail-closed admission."
+  },
+  "rollback": "Revert only the reviewed feature changes while preserving all historical CAS records and pending financial exposure. Keep paid flags disabled. Never reopen old approvals, modify main/Production or apply the agent patch to the real product.",
+  "negativePaths": {
+    "malformed-response": "Exact field and manifest validation reject extra credential keys, wrong values and malformed configuration event chains.",
+    "stale-state": "Exact source/runtime/task/owner/workspace bindings and fresh review receipts reject old approvals and substituted deployments.",
+    "concurrency": "Existing organization Redis CAS permits one claim and one operation dispatch; durable markers survive restart and lost acknowledgments.",
+    "cancellation": "Revocation and canceled tasks cannot create model authority; physical preparation is recorded before I/O and missing destruction acknowledgment blocks continuation.",
+    "worker-interruption": "Closed attempts and revoked grants are insufficient: failed, missing or corrupt physical destruction evidence prevents new paid admission.",
+    "api-outage": "Unknown provider acknowledgments remain unresolved; no automatic deployment or model retry is permitted. Owner status is read-only recovery.",
+    "authorization-denial": "Worker/nonowner/cross-workspace identities cannot journal, enroll, activate, impersonate reviewers or publish.",
+    "spending-limit": "At most ten serial fresh attempts share four USD new retained exposure, also bounded by the unchanged five-USD ledger. Unknown counting charges remain pending, no provider hard-cap claim.",
+    "partial-execution": "Incomplete configuration ACK chain cannot authorize execution. Model usage remains recorded on artifact failure; no generated-code execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "Valid nonbillable organizational-rehearsal records have canonical owner-rehearsal lineage and mock grants rather than native paid engineering scope; the generic veto failed to recognize them.",
+      "detectionGap": "Existing positive tests asserted worker results without requiring the owner controller to complete renewal/revocation/readback. A greater-than30second capture exposed the denied renewal in CI.",
+      "regression": "Actual factory scope/lineage/malformed/native-field adversaries; strengthened six positive real restricted-process cases require controller completion, including35second capture/lost renewal reply and delayed sealed Chief context.",
+      "historicalPrevention": "Preserve exact Windows3810/3812 andLinux3811/3812 failures, failed deployment and synthetic actual-factory counterexample. No timeout changes, source execution, provider calls or historical model-root-cause claims."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse the existing owner controller, organization CAS, spending ledger and five-stage worker; no competing orchestration or provider gateway.",
+    "dependencies": "No new package, external provider, infrastructure or credentials. Configuration helper is included in the source fingerprint.",
+    "threats": "Models cannot mutate external configuration, choose policy fields or approve spending; exact allowlist and reviewed receipt chain remain authoritative.",
+    "failureModes": "Lost acknowledgment, expired task, unconfirmed disposal, forged receipt, insufficient headroom or stale release stops admission before paid dispatch.",
+    "faultInjection": "Deterministic malformed/foreign/duplicate and physical-cleanup fixtures plus real Redis contention test; no real provider requests in tests.",
+    "independentChallenge": "Separate Work QA and Auditor found and challenged duplicate, chain, provenance and physical cleanup flaws; repaired and focused tests passed.",
+    "recovery": "Preserve original failed logs and all historical accounting. Unknown operation requires actual provider readback, never blind retry.",
+    "readiness": "All six actual positive restricted-process cases passed with strengthened owner-controller completion;25 actual factory cases and59 independent Auditor adversaries passed. Frozen STRICT and exact remote release qualification remain required."
+  }
+}
