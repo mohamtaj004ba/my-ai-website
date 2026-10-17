@@ -1,0 +1,46 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "2387610fe27ba585037a057f632c091fa451d33b30835751a8bcb3ff428dd7c2",
+  "risk": "critical",
+  "scope": "Preview-only permanent cross-product engineering verification tooling and organization roadmap. No runtime execution permissions, provider calls, billing or credentials changed.",
+  "riskAnalysis": "Prevent false readiness, unreviewed authority changes, stale or incomplete change plans, hidden contract assumptions and sensitive telemetry exposure. Scope was reviewed before implementation; final Git binding is recorded after tests, not claimed as a timestamp proof.",
+  "threatModel": {
+    "assets": "Immutable evidence, source history, reservations, disabled paid execution, independent QA/security authority and protected Preview credentials.",
+    "trustBoundaries": "Declarative change plans versus actual Git bytes; model/caller claims versus trusted backend state; offline counters versus authoritative telemetry; Engineering versus independent review identities.",
+    "abuseCases": "Downgrade risk, omit mandatory checks, hide code in multi-commit changes, run plan-supplied commands, forge readiness or reviewer identities, promote failed work, expose raw errors or waive uncertain holds.",
+    "mitigations": "Conservative raise-only floors, per-commit old/new blob binding, explicit history and clean-tree gate, fixed offline child commands, separate acceptance dimensions, bounded alert codes; trusted reviewer store/runtime attestation remains explicitly unimplemented."
+  },
+  "rollback": "Revert only this reviewed feature implementation after checking unrelated work; no generic destructive rollback, Production deployment or historical record alteration. Existing contract-first release remains unchanged.",
+  "negativePaths": {
+    "malformed-response": "New malformed plan/telemetry cases and unchanged contract-first frozen Chief/observation failure regressions; no provider repair.",
+    "stale-state": "Old/new blob digest and readiness source mismatch regressions, stale telemetry; unchanged Chief v2 concurrency tests.",
+    "concurrency": "Each feature commit is separately bound, stale plan cannot validate new bytes; runtime atomic task/Redis concurrency tests retained unchanged.",
+    "cancellation": "No new executor introduced; existing cancelled-task and acceptance invalidation regressions retained in mandatory contract gate.",
+    "worker-interruption": "No worker changes; existing interruption/lease/diagnostic tests retain uncertain holds. Future active monitor and executor recovery remain separately gated.",
+    "api-outage": "Offline unknown/unavailable dependency and API failure counters; no active external probe or model request.",
+    "authorization-denial": "QA/Chief/Auditor role, execution identity and source binding negative tests; exact-source Preview unauthorized requests verified after publication.",
+    "spending-limit": "Bounded counter, near/exhausted allowance and uncertain-hold alerts; no changes to reservation enforcement or historical accounting.",
+    "partial-execution": "Missing readiness dimensions stay unverified, no mock-to-live promotion; existing five-stage rejected/bad adjudication/final-report mocks retained."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Prior Chief task/global revision namespaces and observation constraints diverged between model contract and backend validation.",
+      "detectionGap": "Backend-aware mocks supplied values absent from actual requests; green security/regression checks were mistaken for complete interface and live accuracy evidence.",
+      "regression": "Preserved tests/agent-operations-contract-first.test.js plus immutable tests/fixtures/agent-operations-contracts manifest and original raw failure replays.",
+      "historicalPrevention": "Both frozen historical outbound shapes fail unchanged mandatory pre-dispatch contract gate with zero provider fetches. No new paid rerun or duplicate investigation."
+    }
+  ]
+}

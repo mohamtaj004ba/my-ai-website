@@ -1,0 +1,15 @@
+'use strict';
+// Concise recovery pointer, never an authorization or trusted acceptance record.
+const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process'),root=path.resolve(__dirname,'..'),pin=require('./preview-release-pin.cjs');
+const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+function applicationSource(){for(const sha of git(['rev-list','--max-count=30','HEAD']).split('\n')){const paths=git(['diff-tree','--no-commit-id','--name-only','-r',sha]).split('\n').filter(Boolean);if(paths.some(p=>!pin.documentation(p)))return sha;}throw Error('Application source unconfirmed');}
+function snapshot(next){
+ if(typeof next!=='string'||next.trim().length<5||next.length>400||/[\r\n]/.test(next)||/sk-|Bearer |secret|password/i.test(next))throw Error('Short nonsensitive next action required');
+ const dir=path.join(root,'artifacts/agent-operations'),read=name=>{try{return JSON.parse(fs.readFileSync(path.join(dir,name),'utf8'));}catch{return null;}},recorded=read('organizational-runtime.json'),evidence=read('DEVELOPMENT_VERIFICATION.json');
+ let release;try{release=require('../lib/agent-operations-contracts').assertRelease();}catch{release=null;}
+ const app=applicationSource();let reusable=false;if(evidence?.head&&release&&JSON.stringify(evidence.release)===JSON.stringify(release))try{pin.equivalent(evidence.head,git(['rev-parse','HEAD']));reusable=true;}catch{}
+ return{version:'development-checkpoint-v1',at:new Date().toISOString(),branch:git(['branch','--show-current']),head:git(['rev-parse','HEAD']),applicationSource:app,dirty:git(['status','--porcelain','--untracked-files=all']).split('\n').filter(Boolean),release,preview:recorded?.runtime?{...recorded.runtime,observedAt:recorded.observedAt,currentApplication:recorded.runtime.commit===app}:null,verification:evidence?{head:evidence.head,lane:evidence.lane,elapsedMs:evidence.elapsedMs,localSourceEquivalent:reusable&&!git(['status','--porcelain']).trim(),sameToolchain:JSON.stringify(evidence.environment)===JSON.stringify({node:process.version,platform:process.platform,architecture:process.arch}),scope:'local-only; remote/configuration acceptance must be refreshed'}:null,authority:{recordedPaidExecution:recorded?.paidExecution??'unknown',observedAt:recorded?.observedAt||null,temporaryApprovals:recorded?.paidApprovalCount??'unknown',workerStatus:'requires-current-process-readback',freshCheckRequired:true},nextAction:next,executionPermission:false};
+}
+function main(args=process.argv.slice(2)){if(args.length!==2||args[0]!=='--next')throw Error('Use --next <short action>');const result=snapshot(args[1]),dir=path.join(root,'artifacts/agent-operations');fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'DEVELOPMENT_CHECKPOINT.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));}
+if(require.main===module)try{main();}catch(e){console.error('Checkpoint stopped: '+e.message);process.exitCode=1;}
+module.exports={snapshot,applicationSource,main};

@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "bbef0a810e4dd423ee7d977a17dc5eb9e8153f1c7b6d25d8b2cd51810caf24ec",
+  "risk": "critical",
+  "scope": "Preserve immutable historical engineering records after product source repair through persisted-only verified original source; do not grant historical execution or change acceptance.",
+  "riskAnalysis": "Historical read compatibility is an evidence integrity and authority boundary: exact fixed source/manifest/archive and complete original bindings must survive source replacement, while new tools remain current-only.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Curated repository source, task and review bindings, worker filesystem, immutable evidence and budget.",
+    "trustBoundaries": "Owner dashboard to existing journal; authority to bounded trusted child; proposed text is untrusted inert data, never code execution.",
+    "abuseCases": "Stale or substituted source/proposal/runtime, reordered or overlapping edits, forged acceptance, late cancellation, secret-bearing build context and unbounded browser charges.",
+    "mitigations": "Exact hashes and full context binding, cloned inputs, unique ordered bounded edits, empty child environment, Node filesystem permission, pre/post fenced authority, final CAS and destruction. Browser recipe inactive."
+  },
+  "rollback": "Revert Preview preparation modules and UI preset only; preserve legacy v1/v2 records, existing receipts and original source. Revoke active non-billable task before rollback; Production unchanged.",
+  "negativePaths": {
+    "malformed-response": "Unknown keys, paths, oversized/overlapping/reversed edits and altered manifests fail fixed validators.",
+    "stale-state": "Exact source/preimage/deployment/release/task/execution/fence guards deny stale artifacts.",
+    "concurrency": "Process-owned temporary namespaces prevent false cleanup claims from concurrent tests; existing final CAS remains.",
+    "cancellation": "Actual child cancellation/timeout waits for cleanup before rejection; no receipt after authority loss.",
+    "worker-interruption": "Child exit/start failures deny artifact; parent-crash orphan and OS resource isolation remain limitations, no untrusted execution enabled.",
+    "api-outage": "No new provider call in preparation; existing public CI outage produces unavailable evidence, no retries.",
+    "authorization-denial": "Trusted before/after callback must return exact true; existing owner/workspace/task authority and stale claim checks remain.",
+    "spending-limit": "Paid execution and browser spending disabled; no allowance use, approval or provider dispatch added.",
+    "partial-execution": "No partial artifact is accepted; source identity and cleanup verified before returned result."
+  },
+  "defects": [
+    {
+      "rootCause": "validatePersisted recomputed old observations and draft artifacts with current corrected source/manifest, rejecting legitimate immutable history.",
+      "detectionGap": "Fresh empty-workspace rehearsals and per-release replay never read mixed original owner journals after product source replacement; actual authenticated owner inspection exposed the failure.",
+      "regression": "Actual preserved hosted v1/v3/C3 records unchanged, qualified derived v2 and mixed-owner read, tamper/source/manifest/QA/artifact/authority negatives, real current-source denial and actual generic child cleanup.",
+      "historicalPrevention": "Persisted-only fixed-path bounded compressed original source and manifest hash verification; private report builder historical parameter never exposed to new execution. Mandatory preflight/contract source tracing covers bothhistorymodules/tests."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing journal, role contracts and restricted text child; no new controller or authorization ledger.",
+    "dependencies": "Existing pinned Node, Playwright1.55.0 recipe, curated source lock, exact runtime/release/deployment and Redis CAS; no new package installation.",
+    "threats": "Proposal injection, stale authority, substituted evidence, forged review, accidental runtime execution or implicit infrastructure spending.",
+    "failureModes": "Missing exact source/runtime denies preparation. Unconfirmed browser digest/quote blocks build; no paid fallback or retry.",
+    "faultInjection": "Altered proposal/binding/patch, authority denial, ignored preauth, child timeout/cancellation and malicious inert throw text remain covered.",
+    "independentChallenge": "Actual source grouping tests, artifact provenance rejection and true before/after release assertions; no self-approval or fabricated model semantics.",
+    "recovery": "Await child cleanup on failure, preserve old evidence; no authority restoration. Parent-hardkill orphan remains explicit future isolation limitation.",
+    "readiness": "44focusedpass, sourceindependentlyreviewed; mandatorySTRICT and exactnewownerhistoryread/remoteCIrequired beforeacceptance. Old3051runtimeevidence notreused for changedvalidationcode."
+  }
+}

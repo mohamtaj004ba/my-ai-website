@@ -1,0 +1,42 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "389c2d861ad2b61cdc6a7f7f7beb662aee2545f7877301621b2bd4ef2cc5c5c1",
+  "risk": "critical",
+  "scope": "Recover one exact historical canonical documentation plan while preserving all normal source-bound engineering verification.",
+  "riskAnalysis": "Verification-policy source requires STRICT. No history rewrite, runtime gate bypass or general recovery exception; the actual historical commit is independently pinned and classified.",
+  "verification": ["risk-analysis","threat-model","targeted-tests","full-regression","independent-qa","engineering-auditor","negative-paths","rollback-plan","ci","codeql","preview-check"],
+  "threatModel": {
+    "assets": "Historical source identities, required engineering plans and trustworthy CI admission.",
+    "trustBoundaries": "Actual immutable Git trees to one supplemental plan read from the requested verification head.",
+    "abuseCases": "Forged historical identity, stale digest, executable or symlink substitution, risk downgrade, duplicate plans or unrelated runtime escape.",
+    "mitigations": "Exact full commit/digest/canonical path, regular parent/current/supplement files, fixed plan path, exact plan identity/routine risk, unchanged ordinary validator."
+  },
+  "rollback": "Reverting this policy repair restores the historical CI failure; do not rewrite history or skip the gate. Preserve the original failure and correct only the exact documented plan under reviewed policy.",
+  "negativePaths": {
+    "malformed-response": "Malformed or incorrect supplement fails ordinary plan parsing and validation; no external response exists.",
+    "stale-state": "Different commit, blob digest, path or historicalCommit cannot invoke recovery.",
+    "concurrency": "Immutable Git-tree reads use the requested head; mutable worktree contents cannot replace the supplement.",
+    "cancellation": "Read-only verification can stop safely without provider calls, grants or application state writes.",
+    "worker-interruption": "No worker is created; interrupted preflight returns no verification receipt.",
+    "api-outage": "No network provider is involved. Missing Git objects or unavailable files fail closed.",
+    "authorization-denial": "Routine-only recovery is confined to one exact historical documentation delta; all runtime/security commits retain normal requirements.",
+    "spending-limit": "No paid inference, browser infrastructure, budget change, financial action or recurring work.",
+    "partial-execution": "Missing or duplicate plans still block; no partial scan can issue execution or publication authority."
+  },
+  "defects": [{
+    "rootCause": "Canonical-only handoff7934a97 was published without its required engineering plan.",
+    "detectionGap": "Local verification began after that checkpoint; PR CI correctly walked history from main and found it.",
+    "regression": "Independent actual-Git tests verify exact recovery, substitution/mode denial and unchanged ordinary validation. Full PR-base verification is now required for this repair.",
+    "historicalPrevention": "Source-bind documentation checkpoint plans before publishing and validate the full PR base rather than assuming a later local base covers earlier commits."
+  }],
+  "proactiveReview": {
+    "architecture": "Small extension to existing preflight only; no new journal, authority system or approval workflow.",
+    "dependencies": "Immutable historical Git objects, fixed canonical document and head-tree supplemental plan.",
+    "threats": "General missing-plan fallback or forged scope could weaken CI; exact immutable pins prohibit both.",
+    "failureModes": "Absent/malformed supplement, wrong modes and any mismatched binding remain hard failures.",
+    "faultInjection": "Independent QA tests altered commits/blobs/paths/modes/plans and confirms unrelated critical missing plans still fail.",
+    "independentChallenge": "Separate Work Auditor approved actual narrow implementation; independent QA6/6 passed.",
+    "recovery": "Preserve historical commits and original failure; correct evidence through this single reviewed supplement, never force-push or skip checks.",
+    "readiness": "Requires STRICT against full main comparison, remote CI/CodeQL/Redis and exact Preview verification; this record itself grants no execution authority."
+  }
+}

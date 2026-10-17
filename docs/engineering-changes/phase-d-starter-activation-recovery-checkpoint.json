@@ -1,0 +1,9 @@
+{
+  "version": "engineering-quality-v1",
+  "risk": "routine",
+  "scope": "Preserve independently verified activation-build recovery, exact Preview evidence, unconsumed historical consent, financial uncertainty and next exact-source owner decision",
+  "riskAnalysis": "Documentation only; no runtime, credential, permission, model execution, spending or publication authority change",
+  "verification": ["scope-review"],
+  "defects": [],
+  "changeDigest": "bbcd3ff736397e7ab42f55c8b27db6ae12850143a6162003ba7344566ec39f4f"
+}

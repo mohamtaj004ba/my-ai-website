@@ -1,0 +1,38 @@
+{
+  "observedAt": "2026-10-12T06:45:08.384Z",
+  "source": "6be8d905c514edecab0345513b4b09dca19fc85a",
+  "release": {
+    "version": "organization-contracts-v1",
+    "digest": "71add66c458273013c92a7fbd63ac53d2ab9bda80180ef0d595018cf448e874b"
+  },
+  "requiredCapability": "Chief summarizes accepted/rejected/unresolved individual findings from authoritative QA results",
+  "actualRequestKeys": [
+    "workflowId",
+    "outcomes",
+    "acceptance",
+    "specialistHash",
+    "qaHash"
+  ],
+  "actualOutputProperties": [
+    "stage",
+    "note"
+  ],
+  "allowedNotes": [
+    "Independent acceptance passed.",
+    "QA did not accept the specialist work."
+  ],
+  "individualFindingsAndVerdictsNotProvided": true,
+  "richSummaryRejectedByValidator": true,
+  "additionalFindingFieldsRejected": true,
+  "blocker": "Final Chief contract intentionally supports canonical aggregate status only; richer authorized reporting capability absent.",
+  "classification": "requirements-to-capability gap, not contract drift or observed provider failure",
+  "modelRequests": 0,
+  "transportCalls": 0,
+  "taskInitialized": false,
+  "approvalCreated": false,
+  "reservationsCreated": 0,
+  "proposedReservationMicros": 3600000,
+  "previousEstimateMicros": 1980024,
+  "previousResidualExposureMicros": 5964000,
+  "pricingReverification": "not completed after mandatory capability preflight stop"
+}

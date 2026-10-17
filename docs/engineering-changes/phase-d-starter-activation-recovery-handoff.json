@@ -1,0 +1,186 @@
+{
+  "version": "phase-d-starter-activation-recovery-handoff-v1",
+  "application": "eb297dffc39cc53213072dc814e1d16df72193be",
+  "release": {
+    "version": "organization-contracts-v4",
+    "digest": "5222439657b5048ff7dbd7b918adab28c0223a4806b9044f6335edae1375f198"
+  },
+  "deployment": "dpl_Fdj5evWing2F26QA3HsBWAejvjP6",
+  "preview": "https://my-ai-website-5ssrxfelu-mohamtaj004bas-projects.vercel.app",
+  "featureAlias": "https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app",
+  "failedConfigurationSnapshot": {
+    "id": "dpl_DdnhRdMSBm5GDXUX4J3PQAfiJt5i",
+    "source": "9baac851dec34f5bf60d10c277b32e55a98d40e9",
+    "tests": 3670,
+    "passed": 3666,
+    "failed": 1,
+    "skipped": 3,
+    "cancelled": 0,
+    "runnerMs": 260195.7362,
+    "code": "ERR_ASSERTION",
+    "location": "tests/agent-operations-google-owner-verification-qa.test.js:13:717",
+    "observed": "ownerCredentialVerified true; fixture expected false",
+    "exactCiphertextRecovered": false,
+    "modelRequests": 0
+  },
+  "verifiedRepair": {
+    "workAuthored": true,
+    "agentAuthored": false,
+    "scope": "Test-only guaranteed authentication-tag corruption; no runtime cryptography or product change",
+    "counterfactual": "A valid synthetic 193-byte AES-GCM packet with fixed suffix AA was unchanged by former suffix mutation; decoded tag byte12 XOR changed bytes and authentication failed",
+    "historicalLimitation": "Actual failed build nonce/ciphertext was not retained; do not assert its precise bytes were reconstructed",
+    "source": "tests/agent-operations-google-owner-verification-qa.test.js",
+    "runtimeFingerprintUnchanged": true,
+    "starterProductPatchApplied": false
+  },
+  "verification": {
+    "strict": {
+      "pass": 3670,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "runnerMs": 367928.4513,
+      "gateMs": 380866
+    },
+    "linux": {
+      "pass": 3670,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "runnerMs": 284850.065623,
+      "ci": [
+        39005242251,
+        39005239125
+      ]
+    },
+    "redis": {
+      "pass": 29,
+      "fail": 0,
+      "runnerMs": 63136.298668,
+      "job": 117316279227
+    },
+    "codeql": [
+      39005242252,
+      39005239213
+    ],
+    "jekyll": 39005242279,
+    "independent": {
+      "workQa": 77,
+      "workAuditor": 12,
+      "materialFindings": 0
+    },
+    "browser": {
+      "run": 39005239126,
+      "job": 117316245734,
+      "conclusion": "success",
+      "elapsedMs": 692024,
+      "exactPinVerified": true,
+      "preReadyMismatchesDenied": 66,
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "apiErrors": 0,
+      "visualFailures": 0,
+      "visualComparisons": 6,
+      "maxVisualRatio": 0.00008,
+      "artifact": 12091237490,
+      "artifactBytes": 164655684,
+      "artifactSha256": "4699fa48a8f4c116659ef397c35519929d46250943c7f5fcb344923af700d0af",
+      "artifactDownloadedAndHashVerified": true,
+      "screenshotsInspected": [
+        "admin-agent-operations.png",
+        "client-overview-initial.png",
+        "client-mobile-overview.png"
+      ],
+      "mode": "Work-connected hosted QA with fictional data; not dedicated internal browser or live model trial"
+    }
+  },
+  "currentTrial": {
+    "paidAttempts": 0,
+    "responses": 0,
+    "counts": 0,
+    "metadataGets": 0,
+    "newTasks": 0,
+    "newApprovals": 0,
+    "newReservationsMicros": 0,
+    "modelGeneratedPatch": false,
+    "fiveLiveStagesCompleted": false,
+    "reason": "Mandatory configuration build failed before admission; paid execution stopped. Reviewed test repair changes exact source, so earlier9ba consent is not successor authority",
+    "historicalConsent": "Received and preserved; no backend paid approval created or consumed",
+    "freshExactSourceDecisionRequired": true
+  },
+  "shutdown": {
+    "paidExecution": false,
+    "outstandingAuthority": false,
+    "executionAuthorized": false,
+    "currentSourceDispatches": 0,
+    "generatedCodeExecution": false,
+    "publication": false,
+    "independentAcceptance": false,
+    "futurePaidFlagsResetConfirmed": true,
+    "workersStarted": 0
+  },
+  "accounting": {
+    "new5Usd": {
+      "retainedMicros": 1000000,
+      "pendingMicros": 1000000,
+      "remainingMicros": 4000000,
+      "newExposureThisPass": 0
+    },
+    "historical15Usd": {
+      "retainedMicros": 12600000,
+      "pendingIncludedMicros": 4200000,
+      "remainingMicros": 2400000
+    },
+    "newOpenAiRequests": 0,
+    "providerInvoiceReconciled": false,
+    "countChargesUnresolved": true,
+    "vercelBuildCostAttribution": "Unknown; ordinary Preview build usage is not equated with zero provider charges",
+    "newSandboxOrBrowserSpending": 0
+  },
+  "shareLink": {
+    "revokedPreviouslyWithOwnerConsent": true,
+    "repairedDeploymentUiVerified": true,
+    "onlyPeopleWithAccess": true,
+    "publicDomainExceptionUnchanged": true,
+    "newTokenGenerated": false,
+    "tokenRead": false
+  },
+  "nextOwnerDecision": {
+    "draftOnly": true,
+    "authorized": false,
+    "task": "One genuine Starter-plan Automations source-bound patch investigation through five existing roles; actual patch only disposable copy",
+    "model": "gpt-6.1-sol",
+    "reasoning": "medium",
+    "attempts": 1,
+    "configurationOnlyRefresh": true,
+    "source": "eb297dffc39cc53213072dc814e1d16df72193be",
+    "releaseFingerprint": "5222439657b5048ff7dbd7b918adab28c0223a4806b9044f6335edae1375f198",
+    "responses": 5,
+    "counts": 5,
+    "inputTokens": 60000,
+    "outputTokens": 20000,
+    "perCallInputTokens": 12000,
+    "perCallOutputTokens": 4000,
+    "stageMs": 150000,
+    "overallMs": 600000,
+    "cleanupInsideDeadline": true,
+    "maxInternalMicrosFromExisting4Usd": 1000000,
+    "newAllowance": false,
+    "providerHardCap": false,
+    "countAndInvoiceUncertainty": true,
+    "noPaidRetry": true,
+    "noCodeExecution": true,
+    "noRepositoryOrProductWrite": true,
+    "noAgentPublication": true,
+    "noIndependentAcceptance": true
+  },
+  "resumeNotes": [
+    "Do not reuse old9ba operator pins, snapshot marker or old grants",
+    "New branch configuration selects Starter policy; derive future reviewed readiness identity from Starter context, not historical expanded context",
+    "New task and one-use approval only after fresh owner consent and verified configuration snapshot",
+    "OS-level generated-code tests remain disabled; no qualified local or hosted sandbox",
+    "Managed source qualifier still needs documented hard guest quotas/confinement and complete provider transfer/control-plane/failure quote",
+    "Dedicated browser additionally requires dependency-complete Playwright1.55 AMD64 image and dedicated protected-Preview test identity",
+    "Main and Production unchanged; PR5 remains draft/unmerged"
+  ]
+}

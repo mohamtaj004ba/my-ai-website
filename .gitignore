@@ -14,3 +14,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+artifacts/agent-operations/
+.env.agent-operations.local
+qa-artifacts/

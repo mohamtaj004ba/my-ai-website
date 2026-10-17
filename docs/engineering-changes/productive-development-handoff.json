@@ -1,0 +1,223 @@
+{
+  "version": "productive-development-handoff-v1",
+  "at": "2026-10-16",
+  "status": "published-and-verified",
+  "application": "082843b23d7353a9995a2746913b6944234eb758",
+  "priorPublishedApplications": [
+    "6f1287548364da6a25b3e4910c5b954a128ef503",
+    "878bfa4c26c42d3ba83700bffed9d9b0331987a3"
+  ],
+  "fingerprint": "649895d44c8be51f97a87aca78fc219e71c81d97fcde31efc604c41dca356d3c",
+  "deployment": {
+    "id": "dpl_6k32FcNoxacgqiNopP2nfHB7UXGf",
+    "url": "https://my-ai-website-ly861ceqp-mohamtaj004bas-projects.vercel.app",
+    "state": "READY"
+  },
+  "productCorrections": [
+    "Follow-ups search and type filter have persistent accessible names; filtering behavior preserved.",
+    "Critical fallback failure reports Sync issue and retains last successful timestamp; successful recovery alone reports Live.",
+    "Secondary appointment feed requires both calendar capability and plan entitlement; backend denial unchanged."
+  ],
+  "engineeringQuality": {
+    "mode": "opt-in engineering-report-v1; non-billable fixture verified, no new live reasoning",
+    "chief": [
+      "problem",
+      "source evidence",
+      "qualified intended impact",
+      "scope",
+      "exclusions",
+      "complete bounded criteria",
+      "uncertainty",
+      "deliverables"
+    ],
+    "specialist": [
+      "evidence-backed root cause",
+      "inert literal correction",
+      "qualified user impact",
+      "risks",
+      "affected interfaces",
+      "verification",
+      "uncertainty",
+      "one-based complete criterion mapping"
+    ],
+    "reviews": "QA criticism, Auditor rejection and acceptedWork=false remain enforced. Complete fields do not prove semantic correctness. Historical contracts/decisions unchanged."
+  },
+  "accounting": {
+    "newAllowanceUSD": 5,
+    "newRetainedPendingUSD": 1,
+    "newUnusedUSD": 4,
+    "recordedResponsesUSD": 0.040014,
+    "newUnpricedCountingRequests": 5,
+    "historicalAllowanceUSD": 15,
+    "historicalRetainedUSD": 12.6,
+    "historicalPendingIncludedUSD": 4.2,
+    "historicalRemainingUSD": 2.4,
+    "historicalKnownSettledCalculationUSD": 0.225938,
+    "releasedUSD": 0,
+    "newResponsesCalls": 0,
+    "newCountingRequests": 0,
+    "newReservations": 0,
+    "invoiceReconciled": false,
+    "explanation": "Known calculated token usage is within retained ceilings, not added twice. Failed-stage observed usage remains separate. Unknown counting/adjustments prevent a verified unused-reservation release; no financial reset."
+  },
+  "verification": {
+    "localStrict": {
+      "pass": 3564,
+      "fail": 0,
+      "skip": 0,
+      "runnerMs": 309588.0159,
+      "gateMs": 321992
+    },
+    "remote": {
+      "ciPush": 38979930126,
+      "ciPR": 38979937663,
+      "codeqlPush": 38979930089,
+      "codeqlPR": 38979937709,
+      "jekyll": 38979937667,
+      "regressions": 3564,
+      "redis": 27,
+      "conclusion": "CI push/PR, CodeQL push/PR, Jekyll,3564regressions,27realRedis passed"
+    },
+    "browser": {
+      "run": 38979930148,
+      "job": 117238148494,
+      "status": "passed",
+      "artifact": 12081615959,
+      "bytes": 162657968,
+      "sha256": "e29bea0e23dbc6be1224383a8ea76b3e36408f850a89e80d82c5a65d54a1ec4f",
+      "elapsedMs": 652154,
+      "unexpectedConsoleErrors": 0,
+      "pageErrors": 0,
+      "apiErrors": 0,
+      "visualFailures": 0,
+      "visualComparisons": [
+        {
+          "file": "client-overview-initial.png",
+          "status": "ok",
+          "changedPixels": 1917,
+          "totalPixels": 3231360,
+          "ratio": 0.00059,
+          "diffFile": "visual-diff-client-overview-initial.png"
+        },
+        {
+          "file": "admin-overview-initial.png",
+          "status": "ok",
+          "changedPixels": 488,
+          "totalPixels": 3735360,
+          "ratio": 0.00013,
+          "diffFile": "visual-diff-admin-overview-initial.png"
+        },
+        {
+          "file": "client-mobile-overview.png",
+          "status": "ok",
+          "changedPixels": 859,
+          "totalPixels": 1225380,
+          "ratio": 0.0007,
+          "diffFile": "visual-diff-client-mobile-overview.png"
+        },
+        {
+          "file": "admin-mobile-overview.png",
+          "status": "ok",
+          "changedPixels": 268,
+          "totalPixels": 1852890,
+          "ratio": 0.00014,
+          "diffFile": "visual-diff-admin-mobile-overview.png"
+        },
+        {
+          "file": "client-mobile-calls.png",
+          "status": "ok",
+          "changedPixels": 471,
+          "totalPixels": 3947580,
+          "ratio": 0.00012,
+          "diffFile": "visual-diff-client-mobile-calls.png"
+        },
+        {
+          "file": "admin-mobile-clients.png",
+          "status": "ok",
+          "changedPixels": 0,
+          "totalPixels": 1138020,
+          "ratio": 0,
+          "diffFile": "visual-diff-admin-mobile-clients.png"
+        }
+      ],
+      "releasePinAttempts": 78,
+      "qualification": "Actual downloaded JSON/PNG inspected; fictional authenticated QA, not dedicated internal browser or live model reasoning. Critical fallback failure/recovery and desktop/mobile Follow-ups accessible selectors passed."
+    },
+    "independentReviews": [
+      "Separate Work Auditor26 final source/evidence checks.",
+      "Separate Work Auditor18 budget/controller logic and isolation checks; not implementation author."
+    ],
+    "authorVerification": [
+      "Accounting implementer18 focusedchecks; not independentapproval.",
+      "Final product implementer20 functionalchecks; not independentapproval.",
+      "Quality and oldworker/history75 focusedchecks, scopedtechnicalverification."
+    ]
+  },
+  "preservedFailures": [
+    {
+      "kind": "initial local unqualified runs",
+      "finding": "Sandbox disposable-Git failures/source drift followed by ten genuine evidence/history pins/tracing issues; repaired and frozen STRICT passed. Original logs retained."
+    },
+    {
+      "run": 38975744361,
+      "status": "cancelled-before-rendered-QA",
+      "finding": "Superseded release-pin run safely cancelled; no fabricated pass."
+    },
+    {
+      "run": 38977028916,
+      "status": "failed",
+      "finding": "Two actual appointmentsGET403 due unavailable calendar; new sync recovery and six visual comparisons passed, whole run failed. Backend denial kept; client availability gate repaired.",
+      "artifact": 12080625367,
+      "sha256": "29e7d59fee7faf46901bc9a7faad4d298009db265a223e713ee98dded99f12d8"
+    }
+  ],
+  "history": {
+    "v1v2v3EvidenceByteIdentical": true,
+    "currentAdmission": "v4 only; v1/v2/v3 exact historical readback only",
+    "historicalDSTAndVisualBaselinesPreserved": true,
+    "oldAverageLabelProposal": "unapplied and unaccepted",
+    "proof": "PRODUCT_FINAL_HISTORY_PROOF.json"
+  },
+  "authority": {
+    "paid": false,
+    "outstanding": false,
+    "executionAuthorized": false,
+    "acceptance": false,
+    "publication": false,
+    "generatedCodeExecution": false,
+    "readback": "PRODUCT_082_OWNER_READBACK.json",
+    "qualification": "Authenticated owner UI observation, not server-sealed receipt. Current-origin zero dispatch counts do not erase historical usage. Stopped sequence not revived; no new paid trial."
+  },
+  "browserInfrastructure": {
+    "status": "unavailable",
+    "recipe": "existing Playwright1.55.0 LinuxAMD64 unchanged",
+    "builder": "manual Ubuntu24.04x64 GitHubActions DockerBuildx with VCR OIDC candidate; exact team/workflow trust requires owner approval",
+    "fiveMinuteComputeEstimateUSD": 0.0284006,
+    "registryPrice": "official0.10USD/GB, cadence unverified",
+    "unknowns": [
+      "account-specific storage cadence/retention/actual image size",
+      "build/import/transfer and applicable minimums/allowances",
+      "complete total ceiling",
+      "CallerCore-owned protected Preview identity and read-only broker/relay/test-account boundary"
+    ],
+    "createdResources": 0,
+    "next": "Read-only provider billing clarification plus reviewed protected-access identity/relay plan, then separately approve exact trust and all-inclusive bounded build/storage/import/run envelope. Do not run unchanged failed sessions or borrow Work cookies."
+  },
+  "otherProviders": "Existing GitHub/Vercel/Gmail, Stripe sandbox and Google consent records preserved; no new provider credential, grant, resource-access activation, email or billing mutation.",
+  "nextProductFinding": {
+    "artifact": "STARTER_AUTOMATIONS_FALLBACK_FINDING.json",
+    "status": "source-backed local deterministic reproduction, not rendered accepted",
+    "finding": "Starter fallback unconditionally requests unavailable automations and displays misleading secondary-feed warning; Growth/Pro are permitted.",
+    "next": "Bounded entitlement-gating correction with focused Starter/Growth/Pro tests and proportional Preview verification; no patch applied in this release."
+  },
+  "boundaries": {
+    "branch": "feature/callercore-dashboards",
+    "main": "37ef5cfcdccae35952822859f64fe83f0b9f09f0",
+    "production": "dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY",
+    "productionSource": "6d36aa454241588140a3d9945eed1a5696a65db6",
+    "PR5": "open draft unmerged",
+    "newRecurringObligations": false,
+    "vercelBuildCosts": "not attributable from returned team billing window; no invented charge or savings"
+  },
+  "authorship": "Product and contract changes authored/reviewed through ChatGPT Work. CallerCore agents did not autonomously implement or publish these fixes."
+}

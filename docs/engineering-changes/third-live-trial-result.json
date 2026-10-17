@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "58a62ef4a5c15d01980c518e85fbdb9040f7bb350102ccf9a5b6f906695083c4",
+  "risk": "routine",
+  "scope": "Preserve the single consumed third-trial outcome, exact sanitized markup rejection, provider usage and uncertainty, verified shutdown and unchanged historical evidence.",
+  "defects": []
+}

@@ -1,0 +1,49 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "14c15878f051c97d6b8ca98fc783011b38af0b064a887a34892253ed2a1447b0",
+  "risk": "routine",
+  "scope": "Documentation-only resumed run checkpoint, risk register and exact hosted shutdown/verification evidence; application7195 and fingerprint30f01 unchanged.",
+  "riskAnalysis": "Prevent false readiness claims by separating offline tests, actual partial hosted execution, current Browser QA and independently verified shutdown. Preserve historical uncertainty.",
+  "threatModel": {
+    "assets": "Owner session, exact approved task, immutable evidence, central Redis authority, spending reservations and Production isolation.",
+    "trustBoundaries": "Authenticated dashboard to same-origin guarded owner API; supervisor to restricted worker; central CAS across deployments; untrusted receipts to text-only display.",
+    "abuseCases": "Nonowner/worker impersonation; stale or changed expiration approval; duplicate Start; disconnected owner; partial activation; revoked old deployment; Redis outage; leaking task capabilities.",
+    "mitigations": "Current server owner/session/origin/Preview checks; full approval digest and exact deployment selection; existing one-use CAS/leases; independent central owner revoke and readback; no minting/limits inputs; provider-inaccessible inert verification."
+  },
+  "rollback": "Keep paid false; remove temporary inert window, revoke all test records and verify old/current/replacement brokers. Restore reviewed feature source only if needed; preserve historical ledger/evidence and Production.",
+  "negativePaths": {
+    "malformed-response": "Actual Node QA/Auditor tests and retained contract-first suite cover malformed-response with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "stale-state": "Actual Node QA/Auditor tests and retained contract-first suite cover stale-state with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "concurrency": "Actual Node QA/Auditor tests and retained contract-first suite cover concurrency with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "cancellation": "Actual Node QA/Auditor tests and retained contract-first suite cover cancellation with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "worker-interruption": "Actual Node QA/Auditor tests and retained contract-first suite cover worker-interruption with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "api-outage": "Actual Node QA/Auditor tests and retained contract-first suite cover api-outage with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "authorization-denial": "Actual Node QA/Auditor tests and retained contract-first suite cover authorization-denial with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "spending-limit": "Actual Node QA/Auditor tests and retained contract-first suite cover spending-limit with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "partial-execution": "Actual Node QA/Auditor tests and retained contract-first suite cover partial-execution with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [],
+  "proactiveReview": {
+    "architecture": "Exact dashboard/session/controller/Redis/parent-child/provider/capture/acceptance/report lifecycle mapped in organizational execution architecture.",
+    "dependencies": "Tracked browser startup/fonts/OIDC/evidence directory/release/assessor checks precede initialization; explicit owner-to-external-worker handoff.",
+    "threats": "Child authority forgery, credential reflection, stale/replayed approval, partial initialization and cancellation races reviewed independently.",
+    "failureModes": "Existing sixteen-item register retained; new confirmed launch, pre-init revocation, time and diagnostic gaps corrected with evidence.",
+    "faultInjection": "Actual restricted forks/native model contracts across four dispositions and faults, plus source-faithful late/error/partial-init cases.",
+    "independentChallenge": "Separate Security/Auditor and Independent QA inspected the frozen diagnostic diff and new regressions; no critical/high source blocker found. Hosted completion is not inferred.",
+    "recovery": "Bound irreversible central revoke before and after initialization; child termination/readback; unknown storage/transport remains unconfirmed and denied.",
+    "readiness": "Full source CI and current artifact passed; actual hosted complete workflow remains blocked by recorded heartbeat connection failure. This checkpoint grants no authority."
+  }
+}

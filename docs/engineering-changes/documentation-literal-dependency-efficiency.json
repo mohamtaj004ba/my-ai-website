@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "f51f62a22b9f7f1659b5440d53e88ad2dade0c6b971859f39f5b494e2330200d",
+  "risk": "critical",
+  "scope": "Correct confirmed documentation verification false positives with exact audited literal hashes and one existing activation-document deployment-ignore path; preserve all runtime/source and release checks.",
+  "riskAnalysis": "Documentation checkpoints unnecessarily selected fullSTRICT after the historical-recovery literal was added, and activation documentation unnecessarily triggered builds. Exact nonruntime name declarations may be excluded only without suppressing actual dependency reads.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Mandatory source-derived verification,exact Preview release identity,correct deployment skipping and immutable historical engineering plans.",
+    "trustBoundaries": "Git source/name reference scan to risk classification;fixed exact hashes distinguish reviewed citation literals from actual imports. Preview-only ignore decision is not a test or authority receipt.",
+    "abuseCases": "Modified or same-line imports masquerading as names,unrecognized declarations,mixed source/docs,symlink documents,wrong checkout,missing historical comparison or Production/main skip.",
+    "mitigations": "Whole-line crypto hashes for one recovery declaration and fixed old/new ignore literals;both source trees scanned;actual source/test edits STRICT upfront. Only exactexistingactivation.md added to Previewfeature skip allowlist;regular Gitblob modes and ancestry required."
+  },
+  "rollback": "Revert the two-script optimization and regenerated contract lock while keeping all paid/count flags disabled. Earlier conservative behavior may repeat verification/builds but still fails closed; never bypass source identity or rewrite history.",
+  "negativePaths": {
+    "malformed-response": "No provider response is introduced. Invalid Git tree or unknown/deleted context retains existing fail-closed build/STRICT behavior.",
+    "stale-state": "Both before/after trees checked;missing history,wrongcheckout or stale verification selection cannot skip or reuse evidence.",
+    "concurrency": "Read-only Git selection and fixed hashed declarations have no mutable shared cache;unchanged exact plan revalidation remains.",
+    "cancellation": "No new task or worker. Existing CI cancellation and deadlines remain; interrupted verification yields no passing receipt.",
+    "worker-interruption": "No worker,model or additional execution authority created;currentfailedrun remains preserved and notaccepted.",
+    "api-outage": "No network/providerdependency. Failed localGit comparison requires build rather than optimisticskip.",
+    "authorization-denial": "Production or main never skips;unknownfile,modifiedliteral or actualimport remainsprotected.",
+    "spending-limit": "No paid API/reservation/browser change. Buildskip does not grant paidpermission and no dollar savings asserted.",
+    "partial-execution": "A skipped build is not release/QA acceptance;exact existing READY source and documentation ancestry muststill verify."
+  },
+  "defects": [
+    {
+      "rootCause": "Historical DOCUMENT_RECOVERY name literal was not included in exact declaration audit;existing activation document was absentfrombuildignoreallowlist.",
+      "detectionGap": "Prior runtime-source verification passed, but next canonical handoff exposed the conservative false positive and narrow ignore mismatch.",
+      "regression": "Independent78tests passed including9new realGit adversarial cases:exactlineFAST,real/modifiedimportsSTRICT,old/newliteralbounds,symlink/missinghistory/mixedsourcebuild.",
+      "historicalPrevention": "Preserve failed256run and source-bound plans;verify next actual documentation-onlycheckpoint selectsFAST and cancelsunneededappbuild without granting releaseauthority."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Two existing verification scripts extended, no framework,gateway,CI bypass,authorization system or remote credential changes.",
+    "dependencies": "Existing Git before/after trees,Nodecrypto hash helper and exact reviewed regular documentation path.",
+    "threats": "Wholelinehashes mustnot exempt actualimports or changed script logic;both-trees andsource/testpathescalation retained.",
+    "failureModes": "Unknown source,nonregularfile,missinghistory,wrongbranch/environment andtampereddeclarations all remainfailclosed.",
+    "faultInjection": "Independent78/78 focused cases passed48228.1639ms;9newrealGitcases and existing69policycases unchanged.",
+    "independentChallenge": "WorkAuditor recomputed wholelinehashes and approved actualtwo-scriptdiff conditionalfinalSTRICT/hostedchecks;no materialfinding.",
+    "recovery": "Preserve256failedsandboxrun3213/3234,do notweaken localhost/tempGit tests;runfinalofflinefixtures withproperpermissions andfreezeallsource.",
+    "readiness": "Candidateonly;newcontractfingerprintccb729a5e7f68254a9889405b84355e50d468f2b5ab6a4d6991498ca824a7d66 requires finalSTRICT,realRedis,CI/CodeQL/READY/Browser. No count/model request,paidactivation or Productionchange."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "218e8496962e3953eaff7e7ffdbdba808849048b2d871ace56009c6b824f3270",
+  "risk": "critical",
+  "scope": "Existing organization-ledger guarded engineering transport, task-scoped automated service capabilities and actual Ops fixture composition; no paid activation, human attestation or publication authority.",
+  "riskAnalysis": "Critical task execution, evidence and reviewer boundaries require STRICT; fixture availability cannot imply paid dispatch, semantic acceptance or publication authority.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Curated repository source, task and review bindings, worker filesystem, immutable evidence and budget.",
+    "trustBoundaries": "Owner dashboard to existing journal; authority to bounded trusted child; proposed text is untrusted inert data, never code execution.",
+    "abuseCases": "Forged owner/reviewer, self-review, resealed source/proposal, stale scope/revision/source, prompt injection, paid permission escalation, repeated tasks and child interruption.",
+    "mitigations": "Existing owner/task CAS and lifecycle, immutable source and prefix, server-only per-stage capability, parsed-result provenance, model/usage/reservation bounds, whole-operation timeout, linked cancellation and compensating revocation; paid path disabled."
+  },
+  "rollback": "Cancel new non-billable plan then revert new fixture/templates and UI; preserve historical records and immutable snapshot files required to read them. No Production or original product source changes.",
+  "negativePaths": {
+    "malformed-response": "Unknown keys, paths, oversized/overlapping/reversed edits and altered manifests fail fixed validators.",
+    "stale-state": "Exact source/preimage/deployment/release/task/execution/fence guards deny stale artifacts.",
+    "concurrency": "Process-owned temporary namespaces prevent false cleanup claims from concurrent tests; existing final CAS remains.",
+    "cancellation": "Actual child cancellation/timeout waits for cleanup before rejection; no receipt after authority loss.",
+    "worker-interruption": "Child exit/start failures deny artifact; parent-crash orphan and OS resource isolation remain limitations, no untrusted execution enabled.",
+    "api-outage": "No new provider call in preparation; existing public CI outage produces unavailable evidence, no retries.",
+    "authorization-denial": "Trusted before/after callback must return exact true; existing owner/workspace/task authority and stale claim checks remain.",
+    "spending-limit": "Existing cumulative accounting reserves<=200k/stage and1M/workflow; synthetic local pilot tests only, actual paid dispatch remains disabled.",
+    "partial-execution": "No partial artifact is accepted; source identity and cleanup verified before returned result."
+  },
+  "defects": [
+    {
+      "rootCause": "Initial transport completion trusted caller-shaped parsed results; admission timeout/ACK loss and full grant capacity could leave authority; persisted v2 proof could diverge from actual predecessor and child fixture.",
+      "detectionGap": "Happy-path/self-hash checks did not prove parser provenance, transactional cleanup capacity or original fixture fidelity.",
+      "regression": "Independent28-case QA covers forged/mutated parsed results, delayed admission and lost acknowledgements,32grant cleanup, exact predecessor and four resealed fixture substitutions.",
+      "historicalPrevention": "Original v1 records unchanged; optional v2 proof validates original child fidelity, immutable metadata and actual predecessor. Never promote fixture criticism to human or business acceptance."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend actual existing owner journal and restricted organization child, no new orchestration, spending, authorization or credential system.",
+    "dependencies": "Existing pinned Node, Playwright1.55.0 recipe, curated source lock, exact runtime/release/deployment and Redis CAS; no new package installation.",
+    "threats": "Proposal injection, stale authority, substituted evidence, forged review, accidental runtime execution or implicit infrastructure spending.",
+    "failureModes": "Missing exact source/runtime denies preparation. Unconfirmed browser digest/quote blocks build; no paid fallback or retry.",
+    "faultInjection": "Altered proposal/binding/patch, authority denial, ignored preauth, child timeout/cancellation and malicious inert throw text remain covered.",
+    "independentChallenge": "Actual source grouping tests, artifact provenance rejection and true before/after release assertions; no self-approval or fabricated model semantics.",
+    "recovery": "Await child cleanup on failure, preserve old evidence; no authority restoration. Parent-hardkill orphan remains explicit future isolation limitation.",
+    "readiness": "Independent28/28 offline QA passed; finalAuditor/STRICT/realRedis20/CI/CodeQL/hostedfixture/Browser pending. No paid operations."
+  }
+}

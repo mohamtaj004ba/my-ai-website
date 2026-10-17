@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "ca9b84dc32be59065915dfba621deff22650cfa85895d02caf89e87be1164125",
+  "risk": "critical",
+  "scope": "Phase C.2 fixed public CI GET, exact captured evidence, guarded independent review records, trusted fixed-comment disposable workspace demonstration and existing owner dashboard integration. No paid execution, untrusted source execution, repository publication or new credentials.",
+  "riskAnalysis": "Critical network/tool/identity/CAS/filesystem boundaries require STRICT and independent challenge. Preview-only fresh owner scope, fixed URLs and source SHA, bounded sanitized outputs, trusted constant child with no source execution, current independence unavailable. Preserve original uncertainty and nonacceptance.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner identity, workspace records, immutable QA and pilot history, existing spending ledger and cancellation authority.",
+    "trustBoundaries": "Untrusted dashboard to fresh workspace-owner policy; scoped source ledger to canonical report; Redis CAS to fenced task and incident state; response readback to browser generations.; fixed public HTTP to sanitized source receipt; existing reviewer policy to separate immutable review record; trusted parent to temp-only Nodepermission child",
+    "abuseCases": "Traversal/symlink/private files, recognizable secrets, source drift/substitution, forged task/reviewer/tool identity, stale release/fence, cancellation, ambiguous DAGs, rehashed provenance, draft write/publish flags and unsafe build skipping.; redirects/foreign source, raw log secrets, unavailable metadata mistaken for CI success, parent interruption/tempdata, revived aborted operation, changed reviewer authority at CAS retry",
+    "mitigations": "Fixed GET origins/repo/source/workflows, no raw logs, unavailable qualifications;500ms owner/store/fence/lease guard plus aborted finalization checks; policy inside every CAS retry; Nodepermission child/emptyenv/fixedcomment/preimage and afterhash/timeout/destruction; no untrusted-code executor or new independent-review grant."
+  },
+  "rollback": "Keep paid disabled/no approvals. Revert only Phase B feature source and redeploy disabled Preview; preserve separate journal history, original ledger/holds, central revocation, main and Production.",
+  "negativePaths": {
+    "malformed-response": "Actual service/API/UI reject malformed envelopes, corrupt task records and fabricated authority; no hidden repairs.",
+    "stale-state": "Exact plan/task revisions, source snapshot and current release guards; UI discards older revisions.",
+    "concurrency": "Existing Redis Lua CAS enforces unique create/claim, fenced completion, and cancellation racing publication.",
+    "cancellation": "Owner cancellation and internal emergency stop reserve cleanup slots/bytes; original completed evidence remains.",
+    "worker-interruption": "Fixed child timeout/cancel destroys workspace; abrupt parent termination public tempdata cleanup remains unverified, untrusted code disabled.",
+    "api-outage": "Redis read/CAS failures deny execution; unknown delivery retains exact scoped idempotency key, no automatic retry.",
+    "authorization-denial": "Preview-only fresh session/member/workspace owner, worker/nonowner/CSRF/Production negatives and workspace-isolated journals.",
+    "spending-limit": "New module has no provider transport, credential path or reservation writer; original fifteen-dollar ledger bytes stay unchanged.",
+    "partial-execution": "Original attempt/history preserved, stale fences cannot publish, dependent tasks await verified reports and expired/cancelled work cannot recover."
+  },
+  "defects": [
+    {
+      "rootCause": "CI adapter could return qualified unavailable after guard abort, allowing transient recovered state to complete; reviewer authorization initially outside CAS retries.",
+      "detectionGap": "New asynchronous tool boundaries required independent cancellation and policy-revocation challenge beyond deterministic source tests.",
+      "regression": "Auditor actualOps midCIcancel, persistent/transientRedis abort, QA actualCAS reviewer/owner revocation, actual restricted child/preimage/hash/tamper/cancel/timeout/destruction.",
+      "historicalPrevention": "Explicit aborted checks before report and finalCAS prevent transient recovery completion; reviewer policy runs eachCASattempt. Original prior defects remain covered."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing authenticated broker, owner policy and Redis CAS; separate scoped internal journal cannot mutate paid execution/spending records.",
+    "dependencies": "Node builtins/fixed GitHub public API/existing KV and shipped dashboard. Playwright production service and remoteVercel scopedcredential unavailable; no Work connector inheritance.",
+    "threats": "Tenant projection leaks, forged authority, stale state, dependency loops, cancellation races and corrupted receipt evidence.",
+    "failureModes": "Observe storage only as of real read; provider unknown; expired tasks visible; reserve bounded cleanup audit/bytes; no auto retry.",
+    "faultInjection": "Actual operations/API/CAS, fake only HTTP boundary; real Nodepermission child and tempfiles. No paid transport or arbitrarycode.",
+    "independentChallenge": "Separate Engineering Auditor and QA inspect actual changed source and add negative-path tests; corrections require refreshed lock and frozen STRICT.",
+    "recovery": "One owner-requested zero-provider retry within original deadline/release; cancellation, original receipts, independent QA and uncertainty are never overwritten.",
+    "readiness": "Frozen STRICT, disposable realRedis, CodeQL, exactREADY/alias, actual owner five-stage source+realCI+workspace/destruction; limitations remain explicit, no semantic model accuracy or untrustedsandbox claim."
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "8e7803ad19a01c640d99d41254c8ea7f0b8deb8288f04afd74a7ba80df68efee",
+  "risk": "critical",
+  "scope": "Classify exactly three known configuration-only storage/admission failures into fixed diagnostic codes; retain generic unknown errors and unchanged non-configuration behavior.",
+  "riskAnalysis": "The actual admission failed before provider mutation, and the interface discarded the existing safe code. Preserve confidential errors and exact no-retry boundaries; do not speculate about capacity or relax owner gates.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Dedicated credentials, immutable owner records, source identity and existing testing exposure must remain isolated from models and frontend inputs.",
+    "trustBoundaries": "Authenticated owner controls journal intent; trusted Work performs reviewed Vercel operations; models remain data-only and cannot attest provider metadata or grant authority.",
+    "abuseCases": "Caller-chosen IDs bypassing dedupe, forged configuration chains, rehashed receipt substitutions, duplicate dispatch after lost acknowledgments, revoked authority masking failed workspace cleanup.",
+    "mitigations": "Stable scope/source/task duplicate key, unresolved intent lock, ordered hash-bound events, exact runtime and eight-key verification, predispatch enrollment receipt equality, physical preparation/destruction journal and serial fail-closed admission."
+  },
+  "rollback": "Revert only the reviewed feature changes while preserving all historical CAS records and pending financial exposure. Keep paid flags disabled. Never reopen old approvals, modify main/Production or apply the agent patch to the real product.",
+  "negativePaths": {
+    "malformed-response": "Exact field and manifest validation reject extra credential keys, wrong values and malformed configuration event chains.",
+    "stale-state": "Exact source/runtime/task/owner/workspace bindings and fresh review receipts reject old approvals and substituted deployments.",
+    "concurrency": "Existing organization Redis CAS permits one claim and one operation dispatch; durable markers survive restart and lost acknowledgments.",
+    "cancellation": "Revocation and canceled tasks cannot create model authority; physical preparation is recorded before I/O and missing destruction acknowledgment blocks continuation.",
+    "worker-interruption": "Closed attempts and revoked grants are insufficient: failed, missing or corrupt physical destruction evidence prevents new paid admission.",
+    "api-outage": "Unknown provider acknowledgments remain unresolved; no automatic deployment or model retry is permitted. Owner status is read-only recovery.",
+    "authorization-denial": "Worker/nonowner/cross-workspace identities cannot journal, enroll, activate, impersonate reviewers or publish.",
+    "spending-limit": "At most ten serial fresh attempts share four USD new retained exposure, also bounded by the unchanged five-USD ledger. Unknown counting charges remain pending, no provider hard-cap claim.",
+    "partial-execution": "Incomplete configuration ACK chain cannot authorize execution. Model usage remains recorded on artifact failure; no generated-code execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "Known audit-capacity, ledger-capacity and concurrent-policy errors are collapsed into generic storage failure, preventing safe exact admission diagnosis.",
+      "detectionGap": "The original configuration UI swallowed safe codes; after fixing that defect, backend plain-message paths were shown to remain indistinguishable.",
+      "regression": "Seven actual-handler tests verify exact error classification, unchanged state, unknown near-match suppression and unchanged unrelated routes; three UI tests verify finite safe readback.",
+      "historicalPrevention": "No capacity, authorization, retention, historical evidence, provider credential, publication permission or financial limit changes. Actual hosted admission cause remains unproven."
+    },
+    {
+      "rootCause": "Positive timer-construction fixture mixed real-time30second authority with scheduling-sensitive exact timer count; fixed logical time demonstrates five initial timers and five valid admission re-arms.",
+      "detectionGap": "Prior successful runs completed before lease pressure and counted only initial timers because real elapsed milliseconds changed the re-arm values.",
+      "regression": "One consistently scoped logical Date.now is restored finally; real setTimeout behavior,135second ceiling,585second work deadline, allfive receipts and revocation remain checked. Separate actual expiry/cancellation tests remain real-time.",
+      "historicalPrevention": "Original3745/3746failure and first deterministic10-versus5 mismatch logs preserved. No claim of proven historical lease root cause; no production timeout or authority relaxed."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse the existing owner controller, organization CAS, spending ledger and five-stage worker; no competing orchestration or provider gateway.",
+    "dependencies": "No new package, external provider, infrastructure or credentials. Configuration helper is included in the source fingerprint.",
+    "threats": "Models cannot mutate external configuration, choose policy fields or approve spending; exact allowlist and reviewed receipt chain remain authoritative.",
+    "failureModes": "Lost acknowledgment, expired task, unconfirmed disposal, forged receipt, insufficient headroom or stale release stops admission before paid dispatch.",
+    "faultInjection": "Deterministic malformed/foreign/duplicate and physical-cleanup fixtures plus real Redis contention test; no real provider requests in tests.",
+    "independentChallenge": "Separate Work QA and Auditor found and challenged duplicate, chain, provenance and physical cleanup flaws; repaired and focused tests passed.",
+    "recovery": "Preserve original failed logs and all historical accounting. Unknown operation requires actual provider readback, never blind retry.",
+    "readiness": "Independent QA and Auditor approved exact diagnostic mapping before application. Frozen prior4cd qualification had3745pass/1fail in an existing real-time five-stage fixture; preserved without claiming success. Focused isolation and final exact-source STRICT remain required."
+  }
+}

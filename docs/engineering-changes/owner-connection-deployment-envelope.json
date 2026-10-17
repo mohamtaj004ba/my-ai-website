@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "9790293e7852a101f05eed5627553b86b4f1ff83f2cdc3944d79a9626b1e3251",
+  "risk": "critical",
+  "scope": "Align guarded owner connection metadata with the existing exact deployment-bound Connections UI; no credential, permission or execution changes.",
+  "riskAnalysis": "STRICT shared authenticated API metadata. Add only trusted VERCEL_DEPLOYMENT_ID to3ownerresponse runtime projections; globalruntime/controllerDTOs and every UI comparison remain unchanged.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact deployed-source identity of owner connection status and existing private credentials.",
+    "trustBoundaries": "Trusted server environment to sanitized owner response to parent Connections UI.",
+    "abuseCases": "Omitted deployment causes false unconfirmed status; substituted deployment must never display success; role or owner substitution.",
+    "mitigations": "Exact server env deployment ID added after providerresult spread; existing owner/CSRF/rate/Preview guards and strict UI scope checks retained; actual composed positive and negative regressions."
+  },
+  "rollback": "Revert only the owner response metadata projection if invalid; preserve all credentials, revoked Stripe state, Google unconfirmed state, existing audit/accounting and failed hosted evidence.",
+  "negativePaths": {
+    "malformed-response": "Bound fixed Google JSON sizes; token identity/scopes validated; no raw provider errors or credentials returned.",
+    "stale-state": "Parent exact owner/workspace/source/release/origin/deployment comparison retained; missing/foreigndeployment rejected.",
+    "concurrency": "Concurrent callback consumes once; exact late-store compensation cannot clobber newer reconnect.",
+    "cancellation": "Whole callback timeout and separately bounded cleanup; unconfirmed record always unusable, no physical Redis cancellation claim.",
+    "worker-interruption": "No agent worker or provider model is started; existing worker lifecycle safeguards remain unchanged.",
+    "api-outage": "Storage outages explicitly preserve cleanup uncertainty; no automatic retry or shared-client provider revocation.",
+    "authorization-denial": "Existing fresh owner policy plus same-origin API guards; denied owner cannot exchange, recover or read foreign records.",
+    "spending-limit": "No paid model request, spending approval, browser session, service purchase or financial mutation.",
+    "partial-execution": "Only read-only status metadata; no provider verification or credential mutation initiated during hosted defect discovery."
+  },
+  "defects": [
+    {
+      "rootCause": "Owner connection response metadata omitted deployment ID required by parent scope comparison.",
+      "detectionGap": "Prior independent UI/API fixtures omitted deployment identity on both sides and therefore passed isolated tests.",
+      "regression": "Actual guardedAPI→realOps→realStripecore→actualConnectionsUI using nonemptydeployment; missing/foreigndeployment and changedowner deny; all3providerstatus core envelopes verified.",
+      "historicalPrevention": "Mandatory composed regression requires the same identity fields emitted by actual deployment records; never remove strict checks to make UI pass."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing guarded Ops API, three sanitized connection envelope projections only; no competing auth or controller.",
+    "dependencies": "Trusted Vercel deployment metadata and existing owner/Redis/connection cores; provider credentials unchanged.",
+    "threats": "Wrong or absent deployment identity, stale status display, changed owner authority and fixture-only success.",
+    "failureModes": "Missing or substituted deployment continues failclosed at UI; exact status now confirms real current environment.",
+    "faultInjection": "Composed actualhandler status with missing/foreign deployment and changed owner; providerfetch explicitly forbidden.",
+    "independentChallenge": "Auditor approved actual minimal diff; QA4 real composed regressions passed with deployment-present identity.",
+    "recovery": "No mutation/activation introduced; existing revocation remains effective and original unconfirmed status evidence retained.",
+    "readiness": "New frozenSTRICT/CI/Redis/CodeQL/exactPreview UI/Browser required; Google consent and Stripe replacement remain owner-dependent."
+  }
+}

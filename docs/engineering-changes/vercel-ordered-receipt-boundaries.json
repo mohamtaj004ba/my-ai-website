@@ -1,0 +1,68 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e087d923483d21fbcd7d0256d4de3f73119d2a31a809c4b7802a099e9c5077e1",
+  "risk": "critical",
+  "scope": "Remove consecutive duplicate Ops authorizations only where the same existing fresh read/retry/pre-CAS/adapter or receipt boundary already checks authority; preserve actual failed receipt evidence.",
+  "riskAnalysis": "STRICT shared transaction and receipt admission. No condition or boundary removed: initialread/retry/preCAS owner, adapterinitial guard and finalcomplete/authorizePending retained; no cache/parallel/deadline increase.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Fresh owner/task/source/deployment authority, atomic journal mutation and trustworthy evidence.",
+    "trustBoundaries": "Owner policy and current journal snapshots before firstread/retry/CAS, before provider credentials and final receipt.",
+    "abuseCases": "Revoke/cancel during initial/final status read, disabledowner beforeCAS, CASconflict thenstaletask, expiredadmission, duplicateinvocation.",
+    "mitigations": "Read-only metadata has no credential dispatch; adapterfreshguard aftermetadata; freshtransaction owner/currentjournal/complete beforeCAS; retryfreshowner andrecord; private sequentialbroker guard unchanged."
+  },
+  "rollback": "Revoke exact temporary read grants and cancel task, then revert only this reviewed Preview diagnostic/UI correction; preserve original failed receipts and all historical authorization/accounting. No Production changes.",
+  "negativePaths": {
+    "malformed-response": "Provider JSON cannot spoof HTTP classes; strict evidence sanitizers unchanged. Diagnostic tests exclude raw body/token/URL.",
+    "stale-state": "Initial/final status stalled while taskcancel/grantrevoke cannot produce dispatch/receipt respectively.",
+    "concurrency": "Actual CASconflict thenrevocation/fence change reread denies; concurrentinspect oneinvocation/twofixedGETs/onecompletion. No parallel permission observations.",
+    "cancellation": "All signals/deadlines unchanged; sharedtx retains freshowner initialread/everyretry/preCAS and currenttask permission.",
+    "worker-interruption": "No new worker. Existing actual supervisor/restricted-worker and interrupted cleanup regressions retained.",
+    "api-outage": "Finite phase events identify unconfirmed boundary, never fabricate successful provider access; no automatic retry.",
+    "authorization-denial": "Fresh owner denial beforeCAS cannot commit; if revokedowner also cannot cleanup, one-use consumed grant and ownerdenial prevent further dispatch, explicit restoration/expiry cleanup required.",
+    "spending-limit": "No model request, paid grant, new reservation or service purchase is introduced. The browser proof remains5/6 stopped and separate.",
+    "partial-execution": "Audit119 deploymentHTTP succeeded but receiptfailed10s; preserve original failure andcancel120, no retry."
+  },
+  "defects": [
+    {
+      "rootCause": "Duplicate serial authority checks at every adapter and broker boundary consumed real6s transport window before deployment dispatch.",
+      "detectionGap": "Immediate provider mocks passed but could not demonstrate hosted authentication/storage latency.",
+      "regression": "Real broker provenance and ordered complete guards, revocation barrier, forged/cloned lease/callback/binding, expiry/cancel and unchanged full gateway tests.",
+      "historicalPrevention": "Source-bound exact-release hosted finite trace required; passing isolated mocks does not establish headroom."
+    },
+    {
+      "rootCause": "Proposed parallel security reads weakened ordering when a final record check completed before a stalled sibling owner check.",
+      "detectionGap": "Initial71focused tests and Auditor4cases lacked precise stalled-owner/committed-revoke interleaving.",
+      "regression": "Independent QA exact schedule permanently retained; all parallel runtime changes withdrawn, one sequential composed guard.",
+      "historicalPrevention": "Independent adversarial timing challenge; private provenance permits duplicate removal without stale parallel security observations."
+    },
+    {
+      "rootCause": "Vercel provider read now finishes within6s, but redundant Ops authorization/status/receipt checks consume10sadmission before durablecompletion.",
+      "detectionGap": "Immediate localmocklatencies did not exercise observed hosted owner/Redis cost; finiteactualtrace identifies finalreceipt failure.",
+      "regression": "Guarded ownerHTTP realOps+broker ordered statusstall, revoke/cancel, preCASownerdenial, CASretry/fence, expiry andconcurrentadmission cases.",
+      "historicalPrevention": "Validate end-to-end durable receipt and cleanup on exact release; providerHTTP or span completion alone is not accepted evidence."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing owner/Ops transaction/gateway/adapter. Consecutive duplicatechecks removed only with immediate samefresh fullreplacementboundary; sharedtx revalidated broadly.",
+    "dependencies": "Sameownerpolicy, RedisCAS, task/fence/release/source/deployment, existingledger; no newdependency/credential.",
+    "threats": "Forged lease/callback/binding, stale record while prior owner check stalls, expired/cancelled late execution.",
+    "failureModes": "Ownerdenial beforeCAS leaves no completion; cleanup needsrestoredowner or expiry and cannot resurrectauthority. Oneuse consumption blocksnewdispatch. Existing6s/10s retained.",
+    "faultInjection": "11guardedHTTP tests cover9negative ordering schedules includingCASconflict+revokedgrant/fencechange andexpiryafterprovider.",
+    "independentChallenge": "ActualsourceAuditor+QAapprove,11tests9462ms. Priorparalleloptimization counterexample preserved; no snapshotparallelismintroduced.",
+    "recovery": "Existing exact grant revoke and task cancellation; no key change, consent repeat, retry or authority restoration.",
+    "readiness": "Candidateunpublished.71proveddeploymentHTTP response but no durablereceipt. FullSTRICT/remoteRedis/CI/CodeQL/exactreleasehosted completion required."
+  }
+}

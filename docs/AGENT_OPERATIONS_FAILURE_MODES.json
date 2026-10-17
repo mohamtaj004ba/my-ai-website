@@ -1,0 +1,1082 @@
+{
+  "phaseDActivationBuildGate": {
+    "application": "eb297dffc39cc53213072dc814e1d16df72193be",
+    "fingerprint": "5222439657b5048ff7dbd7b918adab28c0223a4806b9044f6335edae1375f198",
+    "failedConfigurationSnapshot": "dpl_DdnhRdMSBm5GDXUX4J3PQAfiJt5i",
+    "verifiedFixtureDefect": "Constant base64url suffix replacement can leave encrypted synthetic credentials unchanged; independent deterministic counterfactual demonstrated a no-op. Original failing packet was not retained.",
+    "correction": "Test-only decoded authentication-tag byte12 XOR, encoded and decoded inequality assertions, original ownerCredentialVerified=false assertion preserved; runtime cryptography unchanged.",
+    "review": {"workQaPass": 77, "auditorPass": 12, "localRegressionPass": 3670, "linuxRegressionPass": 3670, "realRedisPass": 29},
+    "browserQualification": {"run": 39005239126, "passed": true, "actualArtifactHashVerified": true, "visualComparisonsPassed": 6},
+    "remaining": ["Fresh exact-source authority before another configuration snapshot or paid Starter trial", "No real agent-generated Starter patch yet", "Generated-code execution remains disabled pending qualified OS isolation"],
+    "paidRequests": 0,
+    "newReservationMicros": 0,
+    "originalConsent": "received for9ba; no paid approval created or consumed; not reusable on successor source",
+    "paidExecution": false
+  },
+  "phaseDNativeStarter": {
+    "at": "2026-10-17T04:45:45.252Z",
+    "status": "reviewed-data-only-native-path-not-live-activated",
+    "application": "9baac851dec34f5bf60d10c277b32e55a98d40e9",
+    "fingerprint": "5222439657b5048ff7dbd7b918adab28c0223a4806b9044f6335edae1375f198",
+    "corrected": [
+      "Serial admission and reservation provenance",
+      "Physical cleanup joins, failed-disposal attestation and absolute trial deadlines",
+      "Referenced shutdown timer verified by standalone child and Linux CI"
+    ],
+    "evidence": "docs/engineering-changes/phase-d-native-starter-handoff.json",
+    "remaining": [
+      "Fresh exact Starter owner consent and same-source configuration-only reviewed-pin refresh before live inference",
+      "No live model-generated Starter patch yet",
+      "Generated-code tests disabled until independently qualified OS isolation and separate spending approval",
+      "No internal-agent publication or independently authenticated acceptance"
+    ],
+    "paidExecution": false,
+    "realProductPatchApplied": false,
+    "shareLinkRemediation": "Owner-approved narrow revocation verified; pre-existing public-domain exception unchanged"
+  },
+  "phaseDImplementation": {
+    "at": "2026-10-16",
+    "status": "data-only-preparation-reviewed-release-pending",
+    "profile": "engineering-implementation-v1",
+    "corrected": [
+      "Unsupported string-schema keywords replaced with existing validated bounded patterns.",
+      "Replacement scope narrowed to one reviewed entitlement-gate grammar preserving handler; model text is not substituted.",
+      "Prior receipt proposal binding validated against its own original task/execution, not current reviewer task.",
+      "Duplicate/escaped JSON keys rejected before actual implementation response decoding."
+    ],
+    "verified": [
+      "ExistingCASowner/task/release/fence and before/afterrevalidation reused.",
+      "Realtrustedrestrictedchilddataapplication+cleanup; generatedsource neverexecutes.",
+      "Immutablepinnedsourcehistoricalreadback and closedartifactclaims.",
+      "IndependentWorkQA19/Auditor25; rootcombined66 andaffected133 pass."
+    ],
+    "remaining": [
+      "No valid paidStartergrant; oldAverage sequence stopped and cannotrevive.",
+      "RealAIpatchgenerationnotdemonstrated; allnewreasoningfixtures.",
+      "OSsandboxexecutionunqualified/disabled; computeestimate notfullquote.",
+      "One reviewedtasktransformation only, notgeneralautonomousimplementation.",
+      "RequiredSTRICT/realRedis/hostedreleaseverification pending."
+    ]
+  },
+  "productiveDevelopmentOctober16": {
+    "status": "verified-product-fixes-no-new-paid-execution",
+    "application": "082843b23d7353a9995a2746913b6944234eb758",
+    "fingerprint": "649895d44c8be51f97a87aca78fc219e71c81d97fcde31efc604c41dca356d3c",
+    "corrected": [
+      "Follow-ups search and type filter have persistent accessible names; filtering behavior preserved.",
+      "Critical fallback failure reports Sync issue and retains last successful timestamp; successful recovery alone reports Live.",
+      "Secondary appointment feed requires both calendar capability and plan entitlement; backend denial unchanged."
+    ],
+    "remaining": [
+      "New report quality contract non-billable verified but no new live reasoning.",
+      "Starter Automations fallback finding awaits correction/rendered verification.",
+      "Counting fees/provider adjustments/invoices unresolved; no uncertain reservation released.",
+      "Dedicated browser quote,protected identity and relay missing; no spending.",
+      "Old Average daily label proposal remains unapplied and unaccepted."
+    ],
+    "evidence": "docs/engineering-changes/productive-development-handoff.json"
+  },
+  "engineeringExpandedFirstCompletion": {
+    "at": "2026-10-16",
+    "status": "five-genuine-stages-complete-proposal-not-accepted-paid-stopped",
+    "source": "9865a29f116aea574d81ffba7dcc11bd767ea5e6",
+    "fingerprint": "92d4ef60a5c6aea894ec678d4d51c28f359c7f4345d1237f84807e66f0d02a34",
+    "corrected": [
+      "Separate validated new5USD cumulative accounting preserves historical15USD uncertainty.",
+      "Reviewed successor-source enrollment, serial one-time identity, bounded quotas and full-audit ById revocation verified.",
+      "Final context repair proven in actual live Chief-final request with all prior reviews preserved."
+    ],
+    "remaining": [
+      "Chief completion criterion remains semantically clipped at200characters; Auditor rejection and missing customer-impact qualification preserved.",
+      "Automated technical criticism is not independently authenticated human or business acceptance.",
+      "Read-only expanded budget visibility is hidden when paid mode is disabled; source-backed inert finding prepared.",
+      "Countingfees/invoices unknown; new1USDpendinghold retained despite40014microUSD calculatedResponses.",
+      "Dedicated browser and arbitrary untrusted-code execution remain unqualified; no spending.",
+      "Historical rejected response content unavailable; original trial causes are not retroactively invented."
+    ],
+    "paid": {
+      "attempts": 1,
+      "responses": 5,
+      "counts": 5,
+      "inputTokens": 9002,
+      "outputTokens": 2201,
+      "reasoningIncluded": 761,
+      "responsesCalculatedMicros": 40014,
+      "newRetainedMicros": 1000000,
+      "newRemainingMicros": 4000000
+    },
+    "shutdown": {
+      "sequence": "stopped",
+      "approval": "revoked",
+      "leases": 0,
+      "activeGrants": 0,
+      "activeAttempts": 0,
+      "acceptance": false,
+      "publication": false,
+      "generatedCodeExecution": false,
+      "readyReplacement": "dpl_CfyhFCc8TTLaAFuqn4o7FbY6adg1"
+    }
+  },
+  "engineeringCumulativeRecovery": {
+    "at": "2026-10-16",
+    "status": "one-new-attempt-four-live-stages-stopped-revoked-final-context-repair-verified-preview",
+    "source": "a9773a958f2b31eeeeb921664563d1a3ad4e7a92",
+    "releaseFingerprint": "447e2c9b483b4eb4f116d733d1545e8fe5591478d188370c2a36a79427548258",
+    "corrected": [
+      "Exact opt-in proposal-copy contract aligns literal replacement labels with model schema/instructions and backend rules; historical artifacts unchanged.",
+      "Singleton shared-dollar sequence prevents alternate-ID budget reset, concurrent attempts, stale release inheritance and continuation without cleanup/full exposure.",
+      "Actual four-receipt Chief-final context12552byteplanningbound rejected before count;32KBserialization cap separated from unchanged12k authenticated token cap.",
+      "Existing-workflow admission failures now retain closed immutable diagnostics without manufacturing stage tickets, provider usage or reservations."
+    ],
+    "remaining": [
+      "Full five-stage live workflow NOT complete: four validated live stages only; final Chief never dispatched.",
+      "Model placeholders/incomplete fields remain quality findings. AutomatedAuditorFAIL preserved; no independent human or business acceptance.",
+      "First-stage failure before any workflow still lacks workflow admission-failure receipt; returned sanitized error and cleanup tombstone only.",
+      "Shared1USD sequence stopped after0.80USDretained uncertainty;0.20USDcannot fund another full1USD exposure. No optimistic refund and no successor release authorization.",
+      "Countingfees/invoices/adjustments unknown; Responses-only30998microUSD calculation is not total provider charge.",
+      "Dedicated browser infrastructure and untrusted-code OS isolation remain unqualified; no new spending authorized."
+    ],
+    "accounting": {
+      "allowanceMicros": 15000000,
+      "retainedMicros": 12600000,
+      "pendingMicros": 4200000,
+      "remainingMicros": 2400000
+    },
+    "verification": {
+      "localStrict": 3493,
+      "redis": 27,
+      "workQA": 108,
+      "workAuditor": 93,
+      "ci": "passed",
+      "codeql": "passed",
+      "jekyll": "passed",
+      "browser": "passed-actualarchive-reviewed; initialAgentOpsPNGloading; separateownerDOMverified"
+    },
+    "evidence": "docs/AGENT_OPERATIONS_BOUNDED_SEQUENCE_RESULT.md",
+    "historicalPreservation": "All original risk entries below preserved; all28priorplans/4priorapprovals/workflows and171auditprefix unchanged."
+  },
+  "engineeringOwnerActivation": {
+    "status": "single-live-trial-stopped-specialist-revoked-no-retry",
+    "scope": "Existing organization CAS, lifecycle, engineering profile and owner-authenticated controller",
+    "corrected": [
+      "Prepared authority missing direct revocation",
+      "Source-dependent recovery after evidence changes",
+      "Expiry before orchestration cleanup",
+      "Readiness or configured approval revoked during awaited dispatch checks",
+      "Unverified replacement shutdown claim",
+      "Circular deployment-bound environment approval replaced with exact authenticated owner-posted consent and existing durable CAS",
+      "Generic engineering authority visibility and workspace provenance; stable evidence hash excludes clock telemetry",
+      "One-trial uncertainty exception now identifies the original owner/workspace/source/release/assignment/evidence through existing trusted readiness pin; legitimate other workspace owners cannot consume it.",
+      "One extra bounded operations admission slot24to25 preserves all historical records and existing cleanup, byte, audit and execution limits.",
+      "Confirmed generic transport error erasure repaired with closed-vocabulary phase/code/path, bounded structural metadata, immutable server-bound first failure and independent diagnostic/cleanup bounds. Original historical failure remains unknown."
+    ],
+    "remaining": [
+      "The single owner-accepted unknown-count exception was consumed once and revoked after two count/two Responses requests. No unused request or spending authority may be reused; zero-cost historical policy unchanged.",
+      "Actual gpt-6.1-sol metadata, two token counts and two Responses HTTP200 verified. Chief receipt validated; no Specialist receipt. Full engineering workflow compatibility/acceptance unproven.",
+      "Counting-request billing remains unknown; exact observed count/Responses input parity verified925and1330tokens only, not universal provider behavior.",
+      "Trusted readiness digest is an operator-reviewed attestation, not automatic pricing discovery",
+      "Fixed internal reservation is not provider-enforced billing cap",
+      "Prior metadata-only exact audit row limitation remains historical. Current live attempt has immutable hashes/status/usage and revoked approval, but generic transport catch erased the Specialist failure cause and rejected content was not retained.",
+      "Automated technical criticism does not establish independent human acceptance",
+      "Crash cleanup relies on central lease expiry; transmitted requests cannot be recalled",
+      "Chief completion criteria include incomplete strings at schema length; no complete reviewed engineering proposal produced.",
+      "Current financial attribution shows new engineering stages as unattributed/pending; role identity is preserved separately in workflow attempts."
+    ],
+    "permissions": "No further paid model/count requests authorized. One-use exception consumed, temporary approval revoked, loaded paid/count flags disabled. Acceptance, generated-code execution and internal publication remain disabled.",
+    "latestTrial": {
+      "application": "aeaa917491205a68aa24846490f3a61b2686d8e1",
+      "release": "c9934774046f2737618e4aef076c5647dbdc094b7012257c7d46a05b44ec41ba",
+      "workflowId": "wf_e7645aec7fe554b6de7ed10dca476d07",
+      "stage": "specialist",
+      "status": "blocked",
+      "requests": {
+        "counts": 2,
+        "responses": 2
+      },
+      "usage": {
+        "input": 2255,
+        "output": 1244,
+        "reasoningIncluded": 342
+      },
+      "conditionalResponsesMicros": 16950,
+      "countFees": "unknown",
+      "newRetainedMicros": 400000,
+      "acceptedWork": false,
+      "preciseFailureCause": "not-retained-unconfirmed",
+      "paidRetry": false,
+      "shutdownDeployment": "dpl_hhhnNzTajZuXgFy8o7DPZRCABBrq"
+    }
+  },
+  "googleOwnerCredentialVerification": {
+    "status": "verified-at-8e95922-captured-owner-readback-not-resource-operational",
+    "scope": "Existing encrypted Google credential, owner CAS/audit, fixed refresh and userinfo endpoints. No resource reads, agent grants, writes or legacy Inbox changes.",
+    "confirmedDefectsCorrected": [
+      "Authenticated proof originally omitted the granted-scope set; normalized scopes are now bound inside the existing AEAD verification hash.",
+      "Cleanup originally waited for final storage acknowledgement; independent abort compensation now fences exact pre-consume, running and stored records."
+    ],
+    "controls": "Exact owner/workspace/revision, source/release/deployment/origin/configuration and ten-minute/provider-expiry binding. Whole-operation 15-second deadline, bounded two-second cleanup, no retries. Newer consent/revocation remains authoritative.",
+    "remainingRisks": "Redis operations cannot be physically cancelled. Lost provider responses or refresh-token rotation may require owner recovery; cleanup outages remain unconfirmed. Missing or changed refresh scopes fail closed. Identity verification does not establish Calendar/Drive/Contacts/Gmail resource access.",
+    "acceptance": "Require STRICT, real Redis composition, CI/CodeQL, exact Preview and authenticated Browser QA. Genuine provider verification is a separate manual owner-bound operation, never inferred from fixtures.",
+    "permissions": "connected, operationalRead, agentAccessEnabled, externalWritesEnabled and paidExecution remain false. Independent human acceptance and publication policies unchanged.",
+    "hostedEvidence": "8e95922/590d88f3d936/dpl_9uDTasG6DUneNXA9BDTHjWNXTnYW; STRICT3207, Redis22, CI/CodeQL/Jekyll and Browser pass. One genuine owner refresh/account identity check succeeded at1792073016616, revision7; ten-minute proof expires1792073614787. Do not reuse after expiry/source/configuration changes or repeat merely to refresh a checkpoint."
+  },
+  "version": "agent-operations-fmea-v1",
+  "baseline": "d744f3b",
+  "assessment": "phase-c-bounded-readonly-hosted-tools-verified-with-qualified-limits",
+  "noCriticalFindingInvented": true,
+  "risks": [
+    {
+      "id": "AO-01",
+      "severity": "High",
+      "status": "corrected-prior-checkpoint",
+      "title": "Pre-task orphan approval",
+      "evidence": "d744f3b lifecycle counterfactual and17QA groups",
+      "controls": "Durable registry/full binding/CAS consume/revoke/ownerlease",
+      "missingProtection": "Actual owner-authenticated original/replacement inert Node scenarios verified on6aaded6; full paid transport intentionally unexercised. Live infrastructure outage/hardkill/race gaps remain explicitly documented in AO-04.",
+      "detectionStrategy": "Inert real-owner hosted probes; expired/revoked/admission readback",
+      "recoveryBehavior": "Irreversible revoke; preserveholds; storageoutage deniesadmission",
+      "acceptanceCriteria": "Actual old/replacement reject centralrevoke; no paid approval",
+      "relevantScope": "all paid pilots",
+      "liveCheckpoint": "One actual paid workflow centrally revoked before expiry; activated/replacement deny initialization. Infrastructure-outage/hardkill gaps remain."
+    },
+    {
+      "id": "AO-02",
+      "severity": "High",
+      "status": "corrected-verified",
+      "title": "Late provider diagnostics lost after revoke",
+      "evidence": "Auditor actualprovider offline reproduction: HTTP200 usage/requestID in thrown error, durable diagnostic null",
+      "controls": "Pending hold remains; new execution-bound append-only diagnostic sink",
+      "missingProtection": "Actual provider transport remains untested nonbillably",
+      "detectionStrategy": "Actualprovider mocked200/400 afterrevoke/cancel/lease expiry; storefault recovery",
+      "recoveryBehavior": "Append bounded sanitized receipts to alreadydispatched reservation; never settle/advance/accept",
+      "acceptanceCriteria": "Correct token/request facts survive; unchangedstatus/hold/originaldiagnostic; foreign/replay/undispatched denial",
+      "relevantScope": "all paid pilots"
+    },
+    {
+      "id": "AO-03",
+      "severity": "High",
+      "status": "corrected-verified",
+      "title": "Trusted capture bundle outside release lock",
+      "evidence": "Prior whole-source list omitted capture/access/geometry/fontmanifest",
+      "controls": "New exact source bindings + manifest SHA validation in preview-access",
+      "missingProtection": "External browser/provider/network mutable dependencies still not cryptographically deterministic",
+      "detectionStrategy": "Fingerprint drift mutation tests beforetransport; pin exact deployment and localbundle",
+      "recoveryBehavior": "Stop beforecapture/dispatch; explicit reviewed lock update",
+      "acceptanceCriteria": "Modified capture/access/geometry source changes release and blocks paidpath",
+      "relevantScope": "all visual pilots",
+      "phaseA": "New server-created tasks retain workspace and execution runtime; reviewer policy rechecks membership/workspace owner and original grant owner from same CAS snapshot. Historical workspace/implementer identity unknown remains explicitly unverified.",
+      "phaseBEvidence": "New runtime stylesheet tracing omission reproduced by actual NFT, explicit literal resolution and permanent counterfactual added; all74runtime read assets traced and hosted fingerprint confirmed."
+    },
+    {
+      "id": "AO-04",
+      "severity": "High",
+      "status": "hosted-nonbillable-verified-with-restrictions",
+      "title": "Owner controller/session transport and entrypoint assurance",
+      "evidence": "48 preserved owner events plus10 expiration/cleanup events on70458be/c194: real BrowserWorker renewals, crossdeployment revoke before leaseexpiry, hardtermination before/after lease, fixedexpiry activation denial, all8revoked. Independent QA/Auditor read actual downloaded files. Actual historical local helper pinned obsolete911fce and4.7/1.2accounting with no durable lifecycle; retired byteexactbackup. New trackedNode execute/runPilot/supervisePilot +restrictedremote worker and ownerAPI composition tested without paid transport. Published36b59ac/c13ef81:2230full,154contract,19independentQA,9Auditor; actualownerAPI/supervisor/restrictedworker five-stage accepted+rejected mocks, native HTTP disconnect revocation, CIrealRedis6includingactualNodeSIGKILL30secondlease. Exactc13ef81/7363ceprotectedhostedreadbacks, sevenbrokerspaidfalse/emptyrealapprovalregistry andunchangedledger. No actualownerNodehostedprobeexecuted: Chromeabsent. New6aaded6 owner panel: actual authenticated original/replacement Node execution, eleven fixed scenarios, browser partial cancellation, revoked replay denial,13 centrally revoked records/57 metadata events; separate QA/Auditor inspected raw evidence. CI2240/164/Redis6/CodeQL0/Browser502 passed. Published47e3525/6fbc2bd actual hosted supervisePilot plus credential-free restricted runWorker/createRemote child, ten scenarios and replacement success.15records revoked/lease0/authorityfalse;56uniqueowner/84worker events,12old/current/replacement bootstrap409;2254full/178contracts/Redis7/CodeQL0. Independent QA/Auditor reviewed actual raw histories and disabled15brokers. Fresh paidpilot preflight after6d release alignment: actual normal authenticatedadmin navigation succeeds but owner-controllerAPI navigation shows Chrome ERR_BLOCKED_BY_CLIENT. Paidnodepage onlyservedafterconfiguredapproval; normalownerpanelisolatedtests only. No paidactivation/approval/task/modelcall.; Owner Pilot Control adds authenticated dashboard entry, six-field full approval binding and central emergency revocation;2279full/198contracts offline passed. Hosted new interface verification pending.; Final Owner Pilot Control186e5f1/5496512/bf60014: authenticated normal admin fetch to actual tracked supervisor/restricted child; one stopped3-boundary task and one completed5-boundary task,17owner/16workerHTTP events; both revokedlease0.2280full/199contract/17engineering/Redis7/CodeQL0; separate Auditor50 andQA48 plus finalpanel11. Final22broker disabled readback and10revokednonce denials verified; historical pending labels above superseded, not erased.; Fresh7e/bf paidpilot preflight: actual supervised paid launcher missing. Only tracked runWorker processcaller is inert transport-child(env{}), parent allows fixed zero-call profile only. Paidpanel test line27 directly invokes runWorker in-process with mocks. Independent Auditor confirms no paid restricted organization launcher; stop beforeapproval/activation,0modelcalls. Actual7195/30f01 rehearsal9e63bb retained inspection heartbeat UND_ERR_CONNECT_TIMEOUT10985ms then CONTROLLER_WORKER_LEASE_EXPIRED61042ms. Chief completed; no specialist model dispatch or later stages. Independent reviews confirm failure chain and central shutdown. Seven brokers paidfalse; six records revokedlease0/reinit409; replacementREADYdisabled. New authorized heartbeat pass: preserved 9e63 transport timeout chain; connection origin remains unproved. Actual restricted fork/supervisor long35s capture with committed lost renewal reply completed all5 stages offline, no semantic revision injection. Firsta507hostedacceptedec95/rejected63b all5complete; independentQA detected auditsequencepayloadcollision despitevalidhashlinks. Correctedleaseauditfield andglobalindexregression; historicalartifactsunchanged. Clean-CItesttracedirectory assumption removed; no runtime relaxation. b94LinuxCI exposed unreferenced AbortSignal timeout with otherwise handle-free ignored transport; owned referenced attempt timer correction preserves4s/max2/failclosed and is independently reviewed. New CI+host remains mandatory. 2ce correctedLinuxCI/full2344/contracts260/Redis8 passed. Actual0ab Chiefdispatch409 stop beforeprovider, exactreasonunretained; distinct deterministicownerrenew/pre-dispatchcontext race proved and backendversionedcontextseal correctedoffline. Originalsnapshotretained, explicitadmissionrevision; no unrelatedstate refresh. Newhostpending. Final1bc/eb41 actualhosted accepted6e4a/rejectedc9e8/uncertain53e4/mixedd3c2 allfive completed with4realPNG/hash/seal/exactfinalreport. Seven faults plus genuine UIcancel5b1a, renewalunavailabled933 and cleanupfallbackf8f0 independentlyverified. Original77b completedbeforecancel and excluded. Final11brokerspaidfalse/19original+replacementdenials,3freshrevokedreadbacks+16preservedownerrevoked/currentexpiredwindowdenials,0workers. Exactdisabled1er/dpl8Wc source1bc; baseline5vars. Full2363/contracts279/engineering17/Redis8/currentCI/CodeQL/Browser287layout196readability502screenshots passed. Detailedmatrix:AGENT_OPERATIONS_HEARTBEAT_HOSTED_CHECKPOINT.md. Operation Pina Colada fresh preflight found paid launch.run requires predeployment approval.deploymentOrigin although Vercel URL is assigned after configuration; actual paid tests skipped launcher and called driver. No paid activation occurred. Corrected636fbfa actual-launch23 cases pass; frozen2386full/302contracts/17engineering, independentQA/Auditor and exact disabled hostedBrowser38445402651 pass. New tests deliberately stop at dependency; full paid live path not established.",
+      "controls": "Tracked actual Node controller and initialize-once restricted worker; current owner/workspace reauthorization; exact bound receipts; bounded renew/init/stall/cleanup; durable central revocation, terminal projection, isolated zero-call hosted verifier. New fixed zero-authority isolated task profile selects actual supervisePilot/runWorker/createRemote with separate tracked driver/child HTTP transport; no operational/model/spending capability. Fast consume-before-admission race and inert receipt projection corrected with independent regressions. Inert-only pause2.5s→1.5s corrects real deadline margin, with350ms-per-request delayed transport regression;20s verifierdeadline and paidlimits unchanged.; Owner-only normal-dashboard Pilot Control; exact full-approval six-field binding, authoritative owner-filtered status/budget, independent central pre-task/expired/replacement emergency stop/readback, no refresh resume or approval minting.; Tracked restricted organizational driver/child/launch compose actual shared five-stage runner. Immutable zero-paid rehearsal uses isolated CAS, native requests/receipts and fixed provider responses. Pre-init revocation-only HMAC derives from existing worker credential and exact approval/runtime; parent redacts provider errors before IPC and enforces remaining stage deadlines. Versioned lease-only CAS command, pending execution/fence/stage/release/deployment binding, idempotent same-sequence receipt, parent singleflight5s pump4s attempts/max2 transport-only, no paid/stage retries; supervisor separates liveness from semantic progress;30s lease/150s stage/10min workflow unchanged.",
+      "missingProtection": "Live provider transport/wholefive-model substantive accuracy intentionally untested. CloudRedisoutage and cloudfunctionhardkill remain offline/disposableRedis evidence. Controlled1.5s initializationtimeout is not150sproviderhang; alteredchildbinding is notoldbinaryexecution. InitialChiefcontext/dispatch must still finish inside30slease; prolongednetworkoutage stopsfailclosed. Newpaidpilot requires freshapproval/exactrelease/financialpreflight; no automaticreadiness. Paid launcher binding correction passes independent actual-entrypoint23 cases and original-source counterfactual; full2386/contracts302/engineering17 pass, disabled636fbfa READY/alias/release verified, CI/Redis8/CodeQL/Browser38445402651 passed; fresh paid authorization required after changed release.",
+      "detectionStrategy": "Existing owner session, CSRF/member denials, real30second lease and aliasreplacement probes; mandatory executed dashboard→guarded handler→actual supervisor/restricted worker test; exact hosted normal-navigation Start-denial/inert control and cleanup evidence required.; Mandatory source/launch inventory and actual paid-profile process-boundary regression with trapped provider; absence of tracked launch/capture/assessor wiring must block preflight beforeapproval.; Mandatory actual fork/native five-stage rehearsal plus tracked wrapper dependency preflight; explicit lost-initialization response without owner callback, reflected-key error, remaining stage budget and refresh recovery regressions. Mandatory safe renewal cause/status/operation/timing tests; real pre-init403 fork; exact request reconstruction from persisted task and images. Do not substitute parsed response for successful remote state mutation.",
+      "recoveryBehavior": "Revoke owner-selectedID evenlostresponse; lostcontroller leaseexpires; no recurringwork",
+      "acceptanceCriteria": "Actual hosted nonbillable mainfouroutcomes andboundedfaults verified with independentreviews/shutdown; separatefreshlivepilot needed for actualprovider/modelaccuracy. Never promote syntheticacceptance toliveacceptance.",
+      "relevantScope": "before next pilot",
+      "liveCheckpoint": "2026-10-14 actual Owner supervisor/restricted worker completed all five live stages; 58 audit links verified; revocation before expiry, zero workers. This single successful path does not prove every outage, clock-skew or hardkill scenario."
+    },
+    {
+      "id": "AO-05",
+      "severity": "High",
+      "status": "restricted-future",
+      "title": "Independent acceptance shares trusted parent",
+      "evidence": "Runner receives worker/capture/assessor capabilities; middlestage hash trust",
+      "controls": "Backend separate roles/capabilities/sealedobservation/semanticchecks; no modeloverride; Conservative tracked independent assessment withholds general visual/Legal suitability acceptance; can establish only exact price-spacing statement using verified capture-time geometry. Model agreement is never independent acceptance.",
+      "missingProtection": "Independently authorized reviewer identities/criteria and general acceptance policy remain absent. Owner evidence-review records exist but always grant no acceptance or operational authority; authentication/hashes do not prove human inspection.",
+      "detectionStrategy": "Capability isolation tests; manual independent image acceptance; exactcontract replays",
+      "recoveryBehavior": "Fail/uncertain work remains notaccepted; owner escalation",
+      "acceptanceCriteria": "Separate trustedreviewer attestation boundtask/evidence/release before unattendedwrites",
+      "relevantScope": "autonomous engineering writes",
+      "liveCheckpoint": "Live QA accepted one and left three compound claims unresolved; Chief preserved all decisions and backend rejected acceptance. Sentence-level claim granularity bundles supported layout facts with uncertain text; trusted reviewer attestations and atomic clauses remain future work. No zero-false-rejection or probability-calibration claim.",
+      "phaseA": "Explicit atomic claims, direct region/observation binding, geometry polarity and exact summary coverage implemented; authenticated append-only owner review never rewrites original QA/acceptance. Unknown independence and human inspection remain unverified; no paid accuracy evaluation.",
+      "phaseAVerification": "Published a2e448d/release00e53b: STRICT2509, LinuxCI2509, realRedis9, CI38514215812, CodeQL38514215763 and fullBrowser38514211743 attempt2 passed. Actual authenticated original review read and4localPNG hashes/dimensions/decode/display passed after owner enabled extension file access. No new live accuracy proof, historical mutation or hosted owner verdict; independent reviewer policy remains unavailable."
+    },
+    {
+      "id": "AO-06",
+      "severity": "High",
+      "status": "restricted-future",
+      "title": "Unrelated writes invalidate Chief global snapshot",
+      "evidence": "org Chief expected globalledgerrevision; sameapproval renewal exception only",
+      "controls": "Failclosed revision/replay/concurrency validation",
+      "missingProtection": "Dependency-scoped versions needed for reliable parallel organization execution",
+      "detectionStrategy": "Concurrent unrelatedheartbeat/mockwrite regression deliberately rejectsstaleChief",
+      "recoveryBehavior": "Keep one pilot/no other active mutations; stop safely preservehold",
+      "acceptanceCriteria": "Explicit serialized pilot until semantic dependency version tests pass; never weakenrevisionguards",
+      "relevantScope": "parallel autonomy; serializedpilot restriction",
+      "liveCheckpoint": "Live Chief binding and owner renewal completed without stale-context weakening; unrelated concurrent task modification restrictions remain."
+    },
+    {
+      "id": "AO-07",
+      "severity": "High",
+      "status": "restricted-owner-acknowledgment",
+      "title": "Internal reservations cannot cap provider billing",
+      "evidence": "Usage-derivedcost canexceed reservedstage; uncertain image formula/pricing",
+      "controls": "Cumulative15usd internalceiling; allretainedholds; no automaticretry; providerlimits",
+      "missingProtection": "No hard providerbillcap; no invoice reconciliation",
+      "detectionStrategy": "Current pricing/model/project access and estimate/residual exposure preflight",
+      "recoveryBehavior": "Stop subsequentcalls; preserveuncertainholds; owner reconciliation",
+      "acceptanceCriteria": "Fresh explicitfinancial acceptance for separately authorized boundedpilot",
+      "relevantScope": "all paid work",
+      "liveCheckpoint": "Live usage97832micros; new retained3.60; cumulative10.60 including2.20historical uncertainty;4.40remaining of15. Token-derived, not invoice reconciliation."
+    },
+    {
+      "id": "AO-08",
+      "severity": "Medium",
+      "status": "planned",
+      "title": "Finite monolithic ledger and tombstone capacity",
+      "evidence": "32approvals/32grants/16workflows/600audit/bytecaps",
+      "controls": "Failclosed limits; emergencyrevocation headroom; newlate receipts capped separately",
+      "missingProtection": "No immutable archival/rotation or utilization adapter;10kglobal diagnosticheadroom cannot guarantee everylate receipt nearcapacity; per-dispatch reserved diagnosticbytes andalerts required before unattendedwork.",
+      "detectionStrategy": "Capacity thresholds in riskreview; ledger size/record monitoring planned",
+      "recoveryBehavior": "Stop newwork; retainhistory; ownerapproved archive required",
+      "acceptanceCriteria": "Archive proof preserves reservations/revocation tombstones/auditchain before long-runningoperations",
+      "relevantScope": "persistent operations",
+      "phaseBEvidence": "Separate scoped journal protects global Chief revisions; normal400/cleanup500audit slots and700KB/800KB limits; max24plan192task cleanup regression passed. Retention/migration remains future."
+    },
+    {
+      "id": "AO-09",
+      "severity": "High",
+      "status": "mitigated-bounded-internal-dashboard-scope",
+      "title": "Operational monitoring lacks independent delivery and process probes",
+      "evidence": "Phase B owner/workspace persisted projections and incidents verified; original anomalies policy still has no unattended external adapter.",
+      "controls": "Authoritative scoped task/lease/budget/evidence reads, snapshot-qualified incidents, acknowledgement/escalation and existing cancellation/revocation.",
+      "missingProtection": "No independent stall/spend/dependency/cleanup alert delivery",
+      "detectionStrategy": "Fail-safe incident runbook + manually inspect hostedreadback",
+      "recoveryBehavior": "Disable/revoke; retainuncertainty; unrelatedscope remainsdisabled",
+      "acceptanceCriteria": "Authenticated telemetry and owner escalation with tested outage path before unattendedwork",
+      "relevantScope": "unattended operations",
+      "liveCheckpoint": "Hosted7787 owner four-report DAG and incident acknowledgement/escalation verified; external delivery and unattended outage/process monitoring remain future.",
+      "phaseBEvidence": "Actual persisted task/lease/dependency/provider-receipt/budget projections and owner-scoped incidents, acknowledgements/escalation; no provider probes or external notifications.",
+      "remaining": "External monitoring adapters, delivery, physical process liveness and cloud outage detection remain inactive/unverified; browser failure is not proof of backend outage.",
+      "originalTitle": "Monitoring is pure policy without operational adapters"
+    },
+    {
+      "id": "AO-10",
+      "severity": "Medium",
+      "status": "planned",
+      "title": "Mobile readiness and legacy dashboard accounting",
+      "evidence": "Browser desktop6.20/0.1067 vs ledger7/0.128106; mobile refreshframe",
+      "controls": "Authoritative combinedledger/hostedchecks used forbudgetproof",
+      "missingProtection": "Unifiedorganization UI and loadedmobiledata absent",
+      "detectionStrategy": "Browser readiness verifies data loaded not layoutonly",
+      "recoveryBehavior": "Use backendfinancialreports; do not rely on incompleteUI",
+      "acceptanceCriteria": "Combined totals match ledger; mobile loadedtask/config evidence",
+      "relevantScope": "admin operational readiness",
+      "liveCheckpoint": "Fresh mobile website PNG evidence does not resolve mobile dashboard loaded-data readiness.",
+      "phaseBEvidence": "Owner desktop task controls passed. New loaded mobile not proven; attempted390override measured1707 and automatic mobile screenshot unloaded. Preserve gap; low-risk initial status placeholder polish pending."
+    },
+    {
+      "id": "AO-11",
+      "severity": "High",
+      "status": "restricted-current-boundary",
+      "title": "Untrusted images/text may contain instructions or misleading conclusions",
+      "evidence": "Model-visible screenshots/claims are untrusted; prior visual falseapprovals",
+      "controls": "Fixed policy/tools; no externalactions; evidence-first separation; canonical finalreport; backendacceptance",
+      "missingProtection": "Image truth/relevance cannot be established by structure alone",
+      "detectionStrategy": "Adversarial seedcases, evidence-linked independent acceptance, falseapproval/rejection metrics",
+      "recoveryBehavior": "Rejectunsupportedclaims; preserveoriginals; no modelpromotedacceptance",
+      "acceptanceCriteria": "Human/trustedindependent acceptance evaluates actual images before any consequentialwrite",
+      "relevantScope": "visual and autonomous tasks"
+    },
+    {
+      "id": "AO-12",
+      "severity": "Medium",
+      "status": "planned",
+      "title": "Provider JSON parsing is not streaming byte bounded",
+      "evidence": "provider.execute response.json precedes output-size receiptvalidation",
+      "controls": "20k outputmax/requesttimeout; receipt/diagnostic/request limits; New trusted organizational parent bounds provider response stream to 1MB before JSON parsing; controlled mock fallback size checked. Verification pending; retired/legacy direct executor paths retain prior limitation.",
+      "missingProtection": "Malformed oversizedproviderpayload can use parent memory before rejection",
+      "detectionStrategy": "Offline malformed/partial/refusal/timeouts; parentmemory/response cap followup",
+      "recoveryBehavior": "Abort request; retainknownusage oruncertainhold; no retry",
+      "acceptanceCriteria": "Bound actualresponsebytes and prove timeout/cancellation underchunked partialoutput before untrustedproviders",
+      "relevantScope": "provider hardening"
+    },
+    {
+      "id": "AO-13",
+      "severity": "Low",
+      "status": "corrected-verified",
+      "title": "Dynamic map dispatch diagnostic warning",
+      "evidence": "CodeQL unchangedmockverificationmapline31 constrainedprefix",
+      "controls": "Own-property checks nowexplicit on all APIaction maps",
+      "missingProtection": "No demonstratedarbitrary invocation or paidbypass",
+      "detectionStrategy": "CodeQL +prototype action negative tests",
+      "recoveryBehavior": "Deny unknownaction; no authority",
+      "acceptanceCriteria": "Own-property map guards +unchanged role/taskchecks",
+      "relevantScope": "internal API hygiene"
+    },
+    {
+      "id": "AO-14",
+      "severity": "Medium",
+      "status": "corrected-verified",
+      "title": "Harmless Blob renewal controller used relative URL and hid transport failure",
+      "evidence": "Authenticated owner issuance/activate/renew/consume passed onf566; BrowserWorker produced no acknowledgment. ExecutedgeneratedWorker harness reproduces relativeURL failure.",
+      "controls": "Absolute same-origin endpoint; visible HTTP/networkerrors; automaticallyrevoke immutableoriginalnonce/slot; capturedWorker preventsrestart race.",
+      "missingProtection": "Corrected real BrowserWorker renewal and hardtermination verified; Node paidparentcontroller remains separate.",
+      "detectionStrategy": "Execute actualrenderedworkerscript withrelativeURL-rejectingfetch; actualownerbrowser observesack andtermination expiry.",
+      "recoveryBehavior": "Ordinaryfailure attemptscentralrevoke; abruptWorkertermination sendsnorevoke andauthorityexpireswithin30secondlease; no paidpath exists.",
+      "acceptanceCriteria": "Realrenewalacks occur, termination preventsfurtheracks, authoritativecontrol falseafterlease; failedresponsesautorevoke correctrecord.",
+      "relevantScope": "nonbillable verification harness only"
+    },
+    {
+      "id": "AO-15",
+      "severity": "Medium",
+      "status": "restricted-future",
+      "title": "Distributed lease deadlines use instance clocks",
+      "evidence": "Lifecycle Date.now per instance; exact30second boundary tested with deterministic clocks, no measured crossinstance clockskew bound. Onefulllegacytwo-stage captureValidationError underdefaultparallelism; isolated9/9passed, exactcauseunproved, no evidenceofnewfive-stage clockfailure and no timingguardrelaxed. Bounded-concurrencyfullcheck pending. Final bounded-concurrency full2363/2363 and unchanged-source Linux default full2363 passed; original isolated failure remainsunexplained, notretrospectivelyattributedtoclockskew.",
+      "controls": "Central revocation tombstones remain decisive; shortownerlease, source/deploymentbinding and failclosed storage.",
+      "missingProtection": "No centraltime authority or measured drift bound; slow clock can extend wallclock lease and fastclock can deny early.",
+      "detectionStrategy": "Measure clock offsets and add skew fault cases before unattended operations.",
+      "recoveryBehavior": "Explicit centralrevoke; never claim hardkill causes instantaneous denial.",
+      "acceptanceCriteria": "Document acceptable drift or use authoritative bounded clock before unattended authority.",
+      "relevantScope": "unattended control leases",
+      "fixtureClockEvidence": "Independent2000 parent/child samples reproduced553 exact timestamp ordering violations (including1ms ahead); original capture failure did not retain exact timestamps. Synthetic capture gets real asynchronous window only; runtime strict freshness remains unchanged. No distributed clock-tolerance mitigation claimed."
+    },
+    {
+      "id": "AO-16",
+      "severity": "Medium",
+      "status": "corrected-verified-release-equivalence",
+      "title": "Browser QA relied on absent legacy deployment status",
+      "evidence": "38293688492 stopped before browser tests; commit70458be statusesempty while exactREADYPreviews verified. Correctedc13ef81 Browser38304701184attempt2passed; downloaded11772807860 ZIP0f25c7b256030c31ced2af331733c16826ba26ffd78b4595a3ea74e1a553a9d3 verified,502manifest/0errors/6nonsevere drift, independentreport/PNGinspection; featurealias must be assigned toREADYexactsource beforegate. New6fbc2bd Browser38318817538 attempt1 downloaded11778190942/hash76e3d4fddd502d10d007af16fc0259bc995ca1bbae927c53318af87ea98c8ac3 has failed SystemHealth classification assertion despite zero console/page/API/visual errors. Exact failed values unavailable; current authenticated UI8/8 core cannot prove original cause. Preserve failed report. Attempt2/job115046758182 passed exact6f protecteddo6, actual artifact11778289451/hash84c3fc2fc73e60f2968d8ae98953883a85b74f00b25eba0934313f4858bb7760 inspected:502checks/287layout/196readability/zeroerrors/sixvisualcomparisonsOK. Desktoppaidfalse; mobileRefresh preservesAO10. No speculative harness changes. Fresh authorized pilot preflight: f95ed62 Browser38322063787/job115052204758 failed exactidentitypin before browser tests. Current featurealias verified at prior6f/do6 while READYf95/icd exists; failed per-attempt identities not retained. No paidactivation. Current mandatoryBrowsergate unresolved. Final6d07fea exactREADYdplAq2/lb16 featurealias/platform/broker/QAidentity matched; docs-onlyf95/6f proven byrealGit. Browser38327069433attempt2/artifact11781877150/hasha70e2656f0f62db3f53f58b8d460eed993aa62177709f33fd328c05e70e210ce reviewed502/287/196zeroerrors6visualOK. Firstnewgate36invalididentity failures preserved separately. Full2259/contracts178/Redis7/CodeQL0; independentQA/Auditor11groups andhostedevidence accepted. Diagnostic8687 Preview build revealed historical regression depended on an old Git object absent from Vercel shallow checkout, although full-history CI passed. Test-only portability correction keeps real pin fail-closed and mandates complete historical replay in CI; shallow build explicitly reports historical evidence unavailable. Real shallow checkout exercised6pass/3unverified skips and CI-mode6pass/3expected failures. No runtime equivalence relaxation. Exact1bc Browser38356413900attempt2/job115161898511 passed;11794175687/SHA1ab37388a98e13dbc963ef96e13c8c6f7e566f8d1b34fc9309064db2e1975a4e downloadedandindependentlyreviewed287/196/502zeroerrors. Finalsame-source disabledreplacement1er alias/metadata/runtime/releaseverified; documentationcheckpoint mustproveactualGitequivalence.",
+      "controls": "933d6e0 removes redundant legacywait; authenticated expectedSHA plus immutableURL/SHA remains mandatory,10secondtimeouts/redirecterror. New release pin separates checkpoint from application source by actual Git ancestry/strict documentation diff; immutable deploymentID/project/branch/source/release equality and sanitized failed-attempt codes. Exact hosted featurealias corrected; model-fingerprint alone never establishes wholeapplication equivalence. Development verification lanes now use actual Git range/protected consumers, reject stale or altered selection, and keep exact source/deployment pin mandatory; STRICT shared/security changes retain full gates. New optimization itself under full verification; no general stale-evidence cache. Verified optimization58cf249: STRICT2450 and realRedis8; bothCI/CodeQLpassed. Browser38459562656attempt2 exactREADYsource/ID/cc2ae passed287layout/196readability/502captures/0errors; originalpinrelease-mismatchartifactpreserved. Documentation identity-only retains fresh exact pin and no freshvisual/securityclaim. AllactualmappedCSSprotected remainsSTRICT; affected-hosted lane unproved; no general evidence cache.",
+      "missingProtection": "Final933d6e0browser38296134780passed; actual downloaded artifact digest/reports/desktopmobile inspected. Transient network failure still failsclosed; mobileloadeddata and combinedaccounting remain separate AO10. Originalfailedpollidentities unavailable; no automatic mapping guarantee inferred. MobileloadeddataAO10 andfullpaidworkflowaccuracy remain separate. Futuredocscheckpointmayreuse6d onlyafterstrictGit/source/ID/fingerprintchecks.",
+      "detectionStrategy": "Execute actual workflow embedded gate for absentstatus, stale alias, mismatched target, hostile URL and deniedauth.",
+      "recoveryBehavior": "Failclosed with no QAacceptance; rerun nonbillable checks only after exactidentity verified.",
+      "acceptanceCriteria": "Full authenticated browser run on exactpublishedsource with inspectedartifact; no paidverification.",
+      "relevantScope": "hosted verification reliability",
+      "phaseA": "Exact READY a2e448d/00e53b pin and full Browser passed after aligning only existing feature alias. Original failed release-pin artifact preserved. Six comparisons lacked a prior PNG baseline: visual equivalence remains unverified; choose a prior full screenshot artifact before claiming drift coverage."
+    }
+  ],
+  "phaseAVerification": {
+    "application": "a2e448d6e321d5f58f217e08b5ef4102526fcc1f",
+    "release": "00e53b44072f06df846d7dd0ff46dcab887dd22f6e46ce67d5419aa59deedd16",
+    "paidExecution": false,
+    "reviewAuthority": "separate-owner-record-only-no-acceptance",
+    "liveAccuracyVerified": false,
+    "hostedPngVerification": "passed-four-original-hashes-dimensions-local-decode-display-no-verdict",
+    "browser": "38514211743-attempt2-passed-exact-a2e448d-502PNG-287layout-196readability",
+    "originalEvidencePreserved": true,
+    "pixelBaseline": "6missing-baseline-comparisons-no-drift-equivalence-claim"
+  },
+  "phaseB": {
+    "scope": "Owner/workspace-bound deterministic zero-provider internal reports only; no new paid or write authority.",
+    "controls": [
+      "Separate Redis CAS journal leaves authoritative execution/spending ledger immutable",
+      "Fresh owner policy, exact release binding, bounded DAG/fences/deadlines and one manual internal recovery",
+      "Canonical report verification never grants business acceptance",
+      "Scoped summaries and owner/workspace uncertain-delivery journal",
+      "Reserved audit/byte cleanup capacity; corrupt authority records fail closed",
+      "Snapshot-qualified incidents and expired queued-task visibility"
+    ],
+    "verification": "7787eb5 STRICT2542, actual Redis10, CI/CodeQL, exact Browser38522587054 and real owner four-report DAG/cancel/emergency/incident receipts independently verified.",
+    "limitations": [
+      "Provider availability unknown; no recurring probe",
+      "No new independent human identity or external notification delivery",
+      "No autonomous scheduler, paid retry or engineering tool executor",
+      "Historical owner-bound records without workspace metadata remain explicitly qualified"
+    ],
+    "release": "f01cf8f514a2f29903cb142bfed23cd84c16132faa2c6bcb7ca0d6504e8faea0",
+    "deploymentId": "dpl_AqkMjUDnjzfnsLx4BBd8WGhjwojh",
+    "readiness": "bounded-nonbillable-internal-scope-only-no-paid-or-write-permissions",
+    "dashboardHardening": {
+      "source": "e84e2bffbbdd25521b5d7af3afb06800ec7d3bf5",
+      "release": "35ad3de0ce1701a90ac35c7c05aeb4c019a0ab49aae19ade4612b2af5b0374b2",
+      "deploymentId": "dpl_5zwLh6TWhumHetk1LjX8SFLkB1oj",
+      "rootCause": "Malformed local pending draft assumed complete; main valid snapshot did not clear initial status.",
+      "control": "Quarantine preserves bytes/no resend; owner monitoring remains usable; main snapshot status truthful.",
+      "verification": "STRICT2548; independent QA12/Auditor12; actual owner reload and unchanged broker history/accounting; CI/CodeQL/Redis pass; Browser38527350195 attempt2/job115732333832 success exact35ad/e84/dpl_5zw. Attempt1 pinfail preserved."
+    }
+  },
+  "phaseC": {
+    "status": "bounded-readonly-hosted-milestone-verified",
+    "scope": "Task-bound curated deployed-source read tools and deterministic proposals; inert draft contract only.",
+    "controls": [
+      "Existing scoped owner policy/journal/CAS/fence/lease; original execution ledger read-only",
+      "Literal allowlist, source manifest, single snapshot and bounded secret-screened bytes",
+      "Exactly one prerequisite; immutable dependency hashes and canonical downstream provenance",
+      "No network/shell/provider/writer; no acceptance/independence grants",
+      "Conservative Preview-only documentation build skip; unknown state builds"
+    ],
+    "limitations": [
+      "No independent human identity or substantive AI review",
+      "No remote CI/GitHub/browser adapters or new service credentials",
+      "No actual draft filesystem/sandbox",
+      "Secret screen recognizes patterns; curated public source scope remains required",
+      "Existing journal retention, clock skew and cloud failure limitations remain"
+    ],
+    "hosted": {
+      "source": "b20a29b632811106ab7a47a206c576e1eca1bf6d",
+      "deploymentId": "dpl_HhTUmocnkhkojS6RdPo9TbgH37yJ",
+      "workflow": "op_32e3decce6a74760b8d3a24ed1464cfd",
+      "cancel": "op_f17022a6eeb64576822f1a40f6354c39",
+      "emergency": "op_b819ba2608384510b3a7cf6e9b1f22ee",
+      "auditEvents": 30,
+      "originalEventsPreserved": 17,
+      "substantiveAcceptance": false,
+      "qualification": "Real fixed-source tools; deterministic reasoning and separate backend evidence checking only. Queued cleanup verified; no human/model semantic acceptance, real sandbox, remote adapter or new hosted outage/inflight proof."
+    },
+    "finalUI": {
+      "source": "28a6dbff6d9a9234a3f323ac80690e8929c209e9",
+      "deploymentId": "dpl_3U4DB9aqukog5sr4dPkZ5TV4qjrN",
+      "release": "9d9397ea985f5fc1b5665a8edccb278b378f03cad9e2e440fbd9d39741db836d",
+      "strict": 2575,
+      "redis": "115760512669:11/11",
+      "ci": "38536467556:success",
+      "codeql": "38536467492:success",
+      "browser": "38536468131 attempt2/job115762268529 SUCCESS, exact28a6/dpl_3U4/9d9397 pin verified; artifact11881107629 (163781380bytes) retained server-side, failed pin artifact11881040390 (333bytes) preserved",
+      "refresh": "Report open at both1:42:52AM and1:49:52AM server snapshots; no repeated investigation."
+    }
+  },
+  "phaseC2": {
+    "status": "published-core-and-real-hosted-five-stage-verified-qualified-prerequisites-remain",
+    "controls": [
+      "Fixed public GitHub GET, sourceSHA/workflow/output allowlist; no credentials/private logs",
+      "Existing owner/CAS journal and final reviewer revalidation; current independent identity unavailable",
+      "Trusted fixed-comment disposable filesystem only; source never executed; publication denied",
+      "500ms task/owner/store guard and explicit aborted finalization checks"
+    ],
+    "limitations": [
+      "Deployed browser binary/service and scoped protection identity unavailable",
+      "Remote Vercel read adapter not configured with scoped service credential",
+      "No verified independent human/model semantic reviewer",
+      "Parent crash may leave public-source temp data; no untrusted-code executor enabled",
+      "Typed DRAFT failures deliberately do not authorize automatic recovery",
+      "Real hosted deterministic workflow does not prove semantic model accuracy or trusted independent review",
+      "UI readback source/release guarded; additional same-source replacement-origin comparison remains minor future hardening; server deployment binding authoritative"
+    ],
+    "historicalAccounting": "Verifiedhosted2026-10-14T10:18:23.556Z:15USD/10.60retained including2.20uncertain/4.40remaining, originalledgerhashunchanged, paidfalse/noactiveapprovals",
+    "hosted": {
+      "source": "6f7f75d88f46fbf1a90e07455c259732f1edbc4d",
+      "deploymentId": "dpl_Em3emJdNxK4RcwgvNabTjqfrhtuw",
+      "release": "a1c881cf74d2838abbe96797f8049834f372f9d23fb39bbaa250da5674fc1a72",
+      "taskId": "op_96cdc8078d7343a0abf17c79b09ab358",
+      "completedStages": 5,
+      "attemptsEach": 1,
+      "leases": 0,
+      "modelCalls": 0,
+      "reservations": 0,
+      "acceptedWork": false,
+      "proposals": "3unresolved",
+      "workspace": "actualfixedcomment/disposablefilesystem/destructionverified/publicationfalse",
+      "reviews": "separateQA/Auditorcanonicalartifactvalidation; nosemanticattestation",
+      "audit": "51valid/original30unchanged",
+      "browserQA": "38547794846 attempt2/job115800057466 success; originalexactpinfailure11885850377 preserved"
+    },
+    "newDetectionGap": "Client accepted HTTP200+anysnapshot without semanticmutationconfirmation; refreshcouldhideunconfirmedreceipt/reviewbundle. Precise original missingresponse cause unproved.",
+    "priorHosted": {
+      "source": "687f3769ab22664b3a9f62580083a4f9df6feb00",
+      "deploymentId": "dpl_GQu9iKQ5U4QSALCYzfRNfwuAaVvT",
+      "release": "d6e90cf5b4e5984c43b4dac95d6cbb53982316cca4a0fb7ac1363ea10daa9c55",
+      "taskId": "op_acb873b4ed744cdb99093d9b461c17d9",
+      "completed": [
+        "source+realCI",
+        "proposals"
+      ],
+      "remainingAttempts": 0,
+      "remainingLeases": 0,
+      "deadline": "2026-10-14T09:54:31.585Z",
+      "cleanup": "expired failclosed; cancellation not confirmed",
+      "qualification": "No complete hostedC2/sandbox/semanticreview claim",
+      "reconciliation": "Laterauthoritativerev10shows4completed/fifthcancelled0attempts/allleases0; originalrev5snapshotsretained; originalHTTPresponsesunknown"
+    }
+  },
+  "phaseC3": {
+    "status": "hosted-public-gateway-verified-private-and-browser-infrastructure-unconfigured",
+    "architecture": "existingownerAPI/operationsCAS/audit only; no newcredential/spending system",
+    "controls": [
+      "exacttask/source/release/origin/role/fence grants",
+      "durable single-use admission/rate/maxcall/replay protection",
+      "immediate pretransport and finalpermissionchecks",
+      "localrevoke independentofunrelatedpaidledger",
+      "emergencystop allintegrationgrants",
+      "sanitizedtypedmetadata/escapedUI/no rawcredentials",
+      "browsercleanupfailurequarantine/cancelbeforegoto"
+    ],
+    "limitations": [
+      "Only fixed publicGitHubCI operational; allprivateconnectionsunconfigured",
+      "No registeredOAuthclient/consent/managedvault or keymanagement yet",
+      "Dedicated hosted browser/OS egress/transport/protected Preview identity absent; real local Chromium trusted-fixture proof only, not remote agent access",
+      "Localrevoke notprovidercredentialrevocation",
+      "Interruptedadmissions requireownerrevoke; no automaticretry",
+      "No semanticreview/newwriteauthority or newpaid execution",
+      "Private OAuth registration, managed encrypted credential storage and actual private adapter/auth wiring require owner decisions; setup records are not OAuth flows",
+      "Manual gateway activity projection omits raw evidence body; independent IDs/audit/hash references verified without rehashing absent body",
+      "Initial loaded inventory caption may remain stale until owner action; presentation followup"
+    ],
+    "verification": "STRICT2732/390files; engineering17; realRedis13/13; CI/CodeQL passed; authenticatedBrowser38605594023 attempt2/job115997825804 SUCCESS exactsource/release; hosted5stages once/3unresolved/acceptedWorkfalse/67auditlinks original51unchanged; manualpublicCIread completed/grantrevoked; QA22/Auditor9 plus independent actualhostedreceipt review",
+    "accounting": "Broker2026-10-14T17:29:14.683Z paidfalse/noactiveapprovals/unchangedledger;15USD/10.60retained including2.20uncertain/4.40remaining; no new calls, approvals, holds or settlements",
+    "application": "76a752c5a4dd71edb305c8cd5965e8cad549fb69",
+    "release": "59e9dbf1d90bb99531cf225f6572123f660153c358e6ca899bf623eb6cbdbd2a",
+    "deployment": "dpl_Hg6SRh4mmdgD613rB6dnyEgphqhv"
+  },
+  "phaseC4": {
+    "status": "qualified-hosted-source-to-inert-draft-verified-private-activation-blocked",
+    "architecture": "Existing owner/workspace/task/CAS/evidence/review/child architecture retained; no parallel authorization system.",
+    "providerPreparation": "User clarified full lifecycle connection grants: GitHub Contents/PR/Issues/Actionswrite+Metadataread, noAdmin/Secrets/Workflows; initial mintedreadtoken and existing gatewaywritesdisabled. Vercel projectread/configurationread/deploymentreadwrite selectedprojectonly; currentserverGETonly.",
+    "controls": [
+      "Immutable broker-bound request inputs",
+      "Fresh durable authorization before credential access/each GET/final receipt",
+      "Exact repository/installation and project/team/Preview/source identity",
+      "No raw credentials/provider errors in receipts",
+      "Known-profile source-hash-bound inert draft; no source execution",
+      "Separate unresolved review and backend nonacceptance",
+      "Original fixedcomment/history/source-lock preserved"
+    ],
+    "confirmedDefects": [
+      "Client dailyoverview chart fixed24h boundary misbinsDSTdays; proposed draft only, authoritative source not changed",
+      "InactiveGitHubadapter requestbinding could mutate across await; immutable copied input corrected; original7pass1fail Auditor proof and independent8/8 postcorrection retained",
+      "Setup inherited keys returned metadata; own-property guard and regression added"
+    ],
+    "limitations": [
+      "No provider App/integration installation, managedsecretbroker/vault/OAuth callback or privategatewayactivation",
+      "Dedicatedbrowsernotdeployed; hostingbudget/Previewidentity/OSegress qualification require owner",
+      "Only firstoverview chart proposed correction; separateinsightschart followup",
+      "Deterministic specialist/Chief/review; no paid or independent semantic inference",
+      "Trustedfixedchild not untrusted-code sandbox; parenthardkill orphan cleanup unverified",
+      "No free Sandbox entitlement assumed: connected team projection excludes plan/billing; provider spend approval required",
+      "Legacy comment-demo stage caption remains generic; actual correction objective/artifact/report exact"
+    ],
+    "verification": "STRICT2779/396files/200389ms; engineering17; NFT94/9893/missing[]; Redis14/14; CI/CodeQL/Jekyllpassed; authenticatedBrowser38611666714 attempt2/job116018503497 SUCCESS; actualhostedfiveonce/unresolved/acceptedfalse/patcha18a/destroyed; independentQA/Auditor78auditlinks original67unchanged",
+    "accounting": "Actual18:10:12.924Zbrokerpaidfalse/noactivepaidapproval/originalledgerhashunchanged;15/10.60retainedincluding2.20uncertainty/4.40remaining; newpaidcalls/holds/settlements0",
+    "application": "dd25ed632aba959700e9c70d40fdf0a858ad558c",
+    "release": "928bb115ff2d8e89a5c37306b4ddfde57e01a95b8772d3dda999cc9fff1de1db",
+    "deployment": "dpl_FtW2ZpYMxwsN3G8TXJyagXRiMhmo",
+    "ownerGithubActivation": {
+      "status": "second-hosted-denial-preserved-authentication-unverified",
+      "appId": 5321141,
+      "installationId": 171494892,
+      "repositoryId": 1284219633,
+      "keyStorage": "Vercel Secret, Preview feature/callercore-dashboards; metadata verified only",
+      "boundaries": "Existing owner API, task-specific github.app.ci.read grant and Redis CAS; fresh authority at installation lookup, token issuance, inventory/read and receipt; all writes remain disabled",
+      "newCompatibilityFinding": "Official GitHub stateless installation-token rollout requires bounded JWT-shaped token alphabet rather than legacy 255-character token ceiling",
+      "residual": "Actual authenticated read has not succeeded. Both failed tasks/grants preserved and cancelled/revoked. Token issuance cannot be recalled; tokens not cached/exported and expire within one hour.",
+      "externalDependencies": [
+        "Vercel reviewed callback/token storage and project-only owner consent",
+        "Gmail existing Inbox connected; central agent grant wiring remains separate",
+        "Separate browser infrastructure budget approval"
+      ],
+      "firstHostedAttempt": {
+        "application": "d3b8423",
+        "task": "op_18baeec145a74c7699f4b1397fa07a87",
+        "invocation": "ii_2949d22a672b4f3ca33fd2a6318ffa70",
+        "outcome": "HTTP409;grant-revoked",
+        "rootCause": "not retained; cannot determine retrospectively",
+        "detectionGap": "generic errors discarded safe stage-specific diagnostics",
+        "correction": "shared finite codes across broker/App and audit; no raw provider text; separately recorded verification after reviewed deployment"
+      },
+      "secondHostedAttempt": {
+        "application": "8475980",
+        "task": "op_3ffe5b3b8d064340b45b86e57c8e3336",
+        "invocation": "ii_a2f8640d50494f71bbd35a97dcb07814",
+        "outcome": "INT_READ_UNCONFIRMED;grant-revoked;task-cancelled",
+        "rootCause": "unconfirmed",
+        "detectionGap": "Audit helper retained broker codes but discarded fixed App-level timeout/cancellation/validation errors",
+        "correction": "Exact existing SAFE_ERRORS and fixed transport fallback now map to separate INT_GITHUB_APP categories; no arbitrary provider text or execution changes",
+        "timingRisk": "Nine durable authorization callbacks plus four provider requests share six seconds. Plausible insufficient headroom, not established cause; retain all checks and limits pending measured evidence."
+      }
+    }
+  },
+  "integrationContinuation": {
+    "application": "655d9c4",
+    "paidExecution": false,
+    "github": "8688f4c genuine authenticated App CI read completed7415ms admission-to-receipt; evidence91458cbbaa22e7e68648efcd867cec141b119352640fe644d43e59069f199b58/audit103. Grant revoked104/taskcancelled105. Historical timeout evidence preserved, no model/write/retry. All fresh checks unchanged; no cached authority. Not general autonomy.",
+    "stripe": "Dedicated sandbox key expired following accidental unmasked DOM tool output. Local authority revoked and feature secret removed; old billing keys untouched. Original account403 requires Accounts Read; replacement awaits owner private provisioning.",
+    "browser": "Five of six bounded sessions stopped,833330micros retained. Fifth55 fixed small uploads and verified archive unpack succeeded;20 missing loader entries prevented browser launch. No hosted capture/service. Dependency-complete reviewed image and separate build/registry cost approval remain prerequisite; sixth unused.",
+    "vercel": "fac7d5b exactREADY ownerUI read failedclosed once after11003ms; exact failedboundary unknown. Grant/invocation revoked109 and taskcancelled110, no paidcalls. Confirmed child control restoration defect; finite private phase diagnostics and abort-on-exit correction inprogress with56focusedchecks. No guard/deadline relaxed. RemoteoriginalCI2885/2885 andRedis15/15 do not establish hosted operational Vercel read.",
+    "google": "Existing Internal project/client and exact registered Preview callback verified without secret values/settings changes; additional Workspace flow prototype-only, owner consent still required after reviewed implementation. Existing Gmail unchanged.",
+    "evidence": "Canonical handoff and ignored sanitized original failure/cleanup records; historical sixteen risk entries retained unchanged.",
+    "verification": "8688 remote full CI/Redis/CodeQL passed. Local full2865 had2862pass/3fail; unchanged sequential affected files31/31pass. Preserve original qualification, unconfirmed rehearsal cause. Browser8688 attempt2 pending;48db064 complete Browser success remains historical."
+  },
+  "vercelFreshReadConcurrencyCheckpoint": {
+    "source": "ec8bb84",
+    "hostedTask": "op_463b4e35be9e43cd8b81c592bc30686b",
+    "evidence": "Audit114 finite trace proves fixed configuration GET completed; repeated serial guards exhausted adapter6s before deployment HTTP observed. Grant revoked, task cancelled audit115.",
+    "correction": "Unpublished parallel variant rejected by independent QA: stale connection observation during delayed owner check. Replaced with privately branded exact-task/source/deployment composed guard, serial owner/task/record-last at every boundary. Initial adapter authorization, deadlines, final connection and receipt checks retained.",
+    "verification": "Parallelcandidate original71focused did not cover reproducedrace; rejectedunpublished, originaltestartifacts preserved. Revised actualsource Auditor+QA approve;51independenttests496.54ms. FrozenSTRICT/newreleasehosted pending.",
+    "limitations": "No successful Vercel deployment evidence receipt yet; cross-record snapshots remain non-atomic. Google unpublished QA defects remain inactive; browser dependencyimage and Stripe private owner entry blocked. Googlelate-storecompensation remains best-effort with cleanupuncertainty; candidateunwired/unpublished, no newGoogleauthority."
+  },
+  "vercelReceiptDeadlineCheckpoint": {
+    "source": "71ebe14",
+    "hostedTask": "op_db3c70f82a6e4c219fbf81ebe7781472",
+    "evidence": "Audit119 proves configuration/deploymentHTTP returned successfully, but no receipt or evidence identity acceptance. INT_RECEIPT_REVOKED at10s; grantrevoked/taskcancel120.",
+    "correction": "Remove consecutive duplicate Ops checks only where same fresh owner/journal/adapter/receipt boundary already performs full authorization. Retain owner forfirstread, everyretry andpreCAS, sequentialbroker checks and finalconnectionrevision.",
+    "verification": "Actualsource QA/Auditorapprove;11guardedHTTP tests9462ms with9negative timing scenarios. Sharedtx fullSTRICT/newreleasehosted pending.",
+    "limitation": "Provider HTTP success is not durable evidence acceptance. No headroom/speedup or atomic cross-record revocation claim."
+  },
+  "vercelReadSuccessCheckpoint": {
+    "source": "5b97f3f7adb2322cee81518df873a0a68a92249a",
+    "deploymentId": "dpl_CHiXoC9TGAiHu1jxHnFoSA2ce4KQ",
+    "durationMs": 8214,
+    "receipt": "vercel-authenticated-hosted-success-5b97f3f.json",
+    "cleanup": "explicit-grant-revoke125/task-cancel126; completed receipt preserved",
+    "limitations": "Fixed current Preview read only. Sanitized receipt metadata does not enable independent raw evidence/audit hash recomputation. Cross-record snapshots and pre-existing distributed lease limitations remain.",
+    "browserQA": {
+      "run": 38671782055,
+      "attempt": 2,
+      "job": 116218057544,
+      "conclusion": "success"
+    }
+  },
+  "googleWorkspacePreparation": {
+    "status": "published-facd1dc-hosted-owner-status-verified",
+    "scope": "owner-only read-consent preparation; never operational agent access",
+    "existingClientReused": true,
+    "legacyGmail": "separate untouched records and callbacks",
+    "credentialState": "durable credential-recorded-unconfirmed; no broker or activation method",
+    "cleanup": "bounded exact-record compensation; storage outage may retain unusable encrypted record; exact hash/revision recovery cannot remove newer requests",
+    "providerRevocation": "not performed; shared client revocation could disrupt Inbox",
+    "remaining": "Facd Browser38674278022 attempt2/job116225701130 succeeded. Real Google consent/token exchange unperformed; refresh/provider reads/agent tools unavailable.",
+    "source": "facd1dc9608e4fbdb85fbd219e189300027f323b",
+    "deploymentId": "dpl_41az66qauU9ezRxsVTfkDS7ZGNfL",
+    "releaseFingerprint": "4640f51a1fe6d85a6bea13ba2439b9c9e8177800a5a7952a0c5608a5bb19f461",
+    "verification": "local2935/2935; remote2935/2935; actualRedis17/17; CodeQL/Jekyll pass; actual owner status configuredtrue/rev0/no credential or pending state and parent refresh preservation",
+    "independentReview": "QA11 UI/composition; Auditor actual source; focused fixture17; final evidence consistency review"
+  },
+  "integrationEfficiencyCheckpoint": {
+    "source": "facd1dc",
+    "duplicatePushRegression": {
+      "job": 116224252703,
+      "tests": 2935,
+      "durationMs": 176121.375022
+    },
+    "duplicatePrRegression": {
+      "job": 116224277794,
+      "tests": 2935,
+      "durationMs": 171322.120057
+    },
+    "vercelBuildWallMs": 244594,
+    "qualification": "Reported wall/runner durations only; overlapping jobs, not CPU costs or Work-credit savings. Mandatory checks unchanged."
+  },
+  "connectionDeploymentEnvelopeDefect": {
+    "status": "corrected-and-hosted-verified-d51d314",
+    "sourceDiscovered": "facd1dc",
+    "rootCause": "Parent scope includes deploymentId; guarded owner provider responses omitted it. Earlier fixtures omitted it on both sides.",
+    "correction": "Trusted env deploymentId in exactly3ownerstatus response envelopes; global controller runtime and binding comparisons unchanged.",
+    "verification": "IndependentQA4 actualAPI/core/Ops/UI, Auditor actualsource, local2939/2939, remote2939/2939, actualRedis17/17, CodeQL/Jekyll, hosted Stripe revoked/unconfigured confirmed; Workspace/Vercel states preserved through parent refresh",
+    "providerRequests": 0,
+    "credentialChanges": 0,
+    "source": "d51d31424d1a87824b0e8770b9be53dd219b3e1f",
+    "deploymentId": "dpl_8sTk641uzwPcbFarsBkhgF8zWkzY",
+    "releaseFingerprint": "8806757c8e3d0f4d9c279053e57bb71f299d7e8966a12d30f59dd08f2acc96f3",
+    "browser": "38676315089 attempt2/job116232013695 SUCCESS; original pin-only116230616913 preserved"
+  },
+  "finalIntegrationContinuation": {
+    "source": "d51d31424d1a87824b0e8770b9be53dd219b3e1f",
+    "deploymentId": "dpl_8sTk641uzwPcbFarsBkhgF8zWkzY",
+    "releaseFingerprint": "8806757c8e3d0f4d9c279053e57bb71f299d7e8966a12d30f59dd08f2acc96f3",
+    "browser": {
+      "run": 38676315089,
+      "attempt": 2,
+      "job": 116232013695,
+      "conclusion": "success",
+      "originalPinFailureJob": 116230616913
+    },
+    "paidExecution": false,
+    "nonRevokedPaidApprovals": 0,
+    "budget": "15USD ceiling/10.60retained including2.20uncertainty/4.40remaining; not invoice reconciled",
+    "remaining": "Owner Google consent plus verified operational read wiring; Stripe private replacement; dependency-complete hosted browser image and protected-target identity; untrusted code and semantic review remain disabled",
+    "production": "unchanged",
+    "pr5": "draft-unmerged"
+  },
+  "documentationDeclarationFalsePositive": {
+    "status": "published-exact-hosted-policy-release-passed",
+    "observed": "Local doc-only9e3cf3e selectedSTRICT due path-only Vercel ignore-command declaration; unnecessary run explicitly interrupted, not a passingFAST receipt.",
+    "correction": "Exact normalized line hash bf58e2fa038a1698693b352207b693c075006b9cb647345c30a2eb31621de4b3 in exact auditedfile; other lines/both trees still protected.",
+    "independentReview": "Auditor actual source/hash approved; QA9 newGitfixtures, initial68/69 wrong expectation label corrected and positive1/1; require clean frozenSTRICT.",
+    "remaining": "PolicySTRICT/remote/exactrelease; demonstrate actualfinaldocsFAST and provider buildskip before savings claims.",
+    "local": "2948/2948,207456ms runner; gate218017ms",
+    "remote": "CI38678888597 2948/2948,Redis17/17,CodeQL/Jekyllsuccess; exacta53Browser38678884946attempt2success"
+  },
+  "googleReadPreparation": {
+    "status": "published-inactive-strict-and-hosted-status-verified",
+    "scope": "Fixed approved Calendar interval/Drive file/People resource GET metadata only;47 offline checks; final independent QA47/47 and actual-source Auditor approved",
+    "authority": "No credentials, promotion, route or gateway grant; unconfirmed OAuth remains unusable",
+    "corrected": "Impossible date normalization, interval mismatch, inherited MIME projection, path IDs, malformed pagination, deployment binding and full receipt hash",
+    "remaining": "Final independent review/frozenSTRICT/exactPreview; real consent/credential confirmation/refresh/gateway/resource approval and positive provider verification remain absent",
+    "limit": "Date-only Calendar evidence preserves local dates and explicitly unverified overlap absent calendar timezone; no synthetic UTC acceptance",
+    "source": "8e82ac6af6f581ba2c3fe212d1dda9d4e2be9c0a",
+    "release": "7d9488e365ca5669cc3262a912f8018b56f6fbb3945204ad390b8f12fa3a797e",
+    "verification": "Local2995/2995; remote2995/2995; Redis17/17; CodeQL/Jekyll success; exactBrowser38680437104attempt2/job116245165260success",
+    "hosted": "Actual supported owner status path exact8e82: Stripe revoked/unconfigured, Workspace notconnected, Vercel priorconnection preserved; paidcontrolsdisabled"
+  },
+  "controlledStop": {
+    "requestedByOwner": true,
+    "autonomousDevelopment": "stopped-await-owner-review",
+    "application": "8e82ac6af6f581ba2c3fe212d1dda9d4e2be9c0a",
+    "deployment": "dpl_4K7d5bdHWPiPd9pJmAHp8cUqR63N",
+    "release": "7d9488e365ca5669cc3262a912f8018b56f6fbb3945204ad390b8f12fa3a797e",
+    "browser": "success",
+    "paid": false,
+    "nonRevokedPaidApprovals": 0,
+    "localRestrictedWorkers": 0,
+    "budget": "15USD/10.60retained incl2.20uncertainty/4.40remaining; not invoice-reconciled",
+    "remaining": "Owner Google consent/resources, Stripe private replacement, browser image/cost/protectedidentity; subsequent verified gateway/refresh wiring; no autonomous publication or untrusted-code execution",
+    "production": "unchanged",
+    "pr5": "draft-unmerged"
+  },
+  "phaseC5": {
+    "status": "bounded-inert-proposal-hosted-verified-operational-autonomy-not-enabled",
+    "paidExecution": false,
+    "browserSpendingAuthorized": false,
+    "source": "8e82ac6af6f581ba2c3fe212d1dda9d4e2be9c0a",
+    "browser": "Pinned official Linux/amd64 image metadata independently verified; current2GB layer limit accepts largest781780050byte layer. No image build/pull/import/storage or VM. Local builder absent; quote and fresh spending/protection identity approval still required.",
+    "product": "Shared calendar-v3 proposal corrects both start/end from one captured date in both charts, including full/fractional/midnight DST. Inert outputd0e084ec5a3926f0c306c65a1e94f15ff2d93af286023fdf7821b564018e9466; product source unchanged. Skipped civil-date empty/duplicate labels remain qualified.",
+    "review": "Independent QA/Auditor validated actual source, exact inert patch and all five rendered hosted receipts, dependencies and full artifact bindings; live owner read independently confirms zero active tasks. Two unresolved decisions remain immutable and acceptedWorkfalse.",
+    "limitations": "Parent crash orphan recovery and complete OS/egress isolation are not established by trusted child tests. No agent publication, paid reasoning, recurring scanning or customer-data authority.",
+    "verification": "STRICT3038/3038; CI3038/3038; actualRedis17/17; CodeQL/Jekyll/authenticatedBrowser succeeded on2efd. Actual QA artifact inspected; six missing pixel reference baselines mean pixel drift unverified."
+  },
+  "phaseC6": {
+    "status": "work-reviewed-two-chart-product-fix-published-hosted-verified-autonomy-disabled",
+    "product": "Work published exactv3 sharedcalendarhelper forbothcharts; independentactualsource tests and actualChromeDOM spring/fall pass. Existingrollingfilter and skippedcivil-date qualifications preserved.",
+    "historicalAcceptance": "Original five-stage task/two unresolved QA decisions/acceptedWorkfalse unchanged.",
+    "browser": "PinnedPlaywright1.55.0LinuxAMD64recipe only. No qualifiedbuilder/all-inclusivequote/protectiontransport/realpagecontroller.0.0284006USDcompute-only estimate; proposed1USDall-resources envelope notquoted/authorized. No build/store/pull/VM.",
+    "visual": "OriginalC5sixPNG recovered unchanged; final335manualcomparison6/6max0.022%; final6c02automaticrestore exact335artifact provenance and6/6comparisonsmax0.005% verified fromactualartifact. Tallheightcap16384 retains40M/10kwidth/20MiB/CRC guards; originalfailure preserved.",
+    "trial": "Prepared5-callStandardGPT6.1SolMedium60kinput/20koutput0.32USDtextestimate/1USDproposedreservation only; engineeringadapter absent; freshauthorization required.",
+    "security": "Existing revocation, owner authority, financial ceiling and Production boundaries unchanged.",
+    "historyCompatibility": {
+      "rootCause": "Persisted source-specific observations and draft manifests were revalidated using current source after a legitimate repair, hiding owner history.",
+      "correction": "Fixed bounded hash-pinned historical source/manifest used only by private persisted validation; exact original task/runtime/artifact/evidence/QA/authority remains. New execution uses current source, retired profiles deny.",
+      "evidence": "Actualexistingowner335 originalplan readback deepEqual allparsedfields, independentlyQA/Auditorverified; 6c02 visibleowner source/release/active0/budget verified, same runtime. Boundedpersisted-only originalsource validation passedfocused andfullSTRICT; currentnewexecution/retiredprofiledeny unchanged.",
+      "cleanup": "Process-owned comment temp namespace corrects cross-process test collision; actual cleanup unchanged, parent crash remains qualified."
+    },
+    "source": "6c02b79778f8dc2583b2a075c08e64eb1b1769db",
+    "deployment": "dpl_FB4aFg2j5XHfkAYH1pVf36RimJFV",
+    "release": "d60f326e0b386aa646d124f87d48646633d8744836397d5bb4235e17f9f373af",
+    "verification": "STRICT3075/3075; remoteCI38700607814 3075/3075, realRedis18/18; CodeQL38700607615/38700599655,Jekyll38700607609success; exactauthBrowser38700599831attempt2/job116309767978success; downloadedartifact11956966233 SHA832f8ac95165cb54b23b69b5994af308717dad802de11a1f0255cb6823bc3536 inspected.",
+    "independence": "WorkQA/Auditor reviewed actual product/security/toolingdiff and evidence. HistoricaloriginalC5all5receipts/Chiefreport/two unresolved decisions/acceptedWorkfalse unchanged. No fabricated internal semanticapproval.",
+    "financial": "08:03:08Z exactbroker paidfalse/no usableapproval; financialhistoryunchanged;15limit/10.60retained incl2.20uncertainty/4.40remaining, notinvoice-reconciled; no newpaidmodels/Sandbox/imagebuild/store/approvals.",
+    "remaining": "Browserquote/transport/freshspendapproval; guardedengineeringadapter+nonbillablerehearsal+freshmodelapproval; generaluntrustedcodeisolation and independenthumanattestation unqualified; no autonomouspublishing."
+  },
+  "phaseC7": {
+    "status": "guarded-source-and-hosted-fixture-verified-live-engineering-blocked",
+    "paidExecution": false,
+    "liveTransport": "not-connected",
+    "independence": "Owner confirms no separately authenticated independent reviewer; automated distinct roles are not human attestation. Existing second-identity gate preserved.",
+    "scope": "Existing owner CAS journal, five ordered role tasks, genuine current curated source, actual restricted organization child, same request/Responses parser; no separate approval or budget ledger.",
+    "evidence": "Fixed immutable snapshot and literal digest, one captured source manifest/text, original runtime/task/fence/authority revision, preserved response/QA chain. Rebuilt fully resealed substitution rejected.",
+    "artifact": "Inert proposed label clarification Average daily calls -> Average per active day; no HTML execution, filesystem draft, arithmetic change or publication.",
+    "security": "Node permission process with empty environment, bounded IPC/time/memory, cancellation/timeout wait for exit. Trusted-data fixture only; not qualified arbitrary generated-code sandbox. Paid route always denies.",
+    "verification": "STRICT3131/3131; remoteCI3131/3131; actualdisposableRedis19/19; CodeQL/Jekyll/authenticatedBrowser success. Downloaded Browserartifact11960426676 SHA cc987bc12e5dc531c5e75c56a3836ab87802111f6c31ec3241d0ff8f48239e90,6/6comparisonsmax0.008%, bothactualchartDOM pass.",
+    "remaining": "Separate authenticated reviewer absent; no live engineering transport/ledger aggregate admission connected. Proposal-only policy requires explicit owner decision and independent review without weakening acceptance/publication. Browser totalquote/builder/limitedidentity and fresh resource/spending approval missing.",
+    "source": "3b74d81935774211cf1614087b261f1a4fb651ec",
+    "deployment": "dpl_Cv2aucaUPNr1GgLWWAJvVgSbJ8Wf",
+    "release": "39ea360d0d4d864e6355fe65e20e0c535bcf34ad2a44b17e2066474f579c7ef9",
+    "hosted": "op_a230e9e6912445c7b5ba73aa4834d6535/5,161344ms, allchildterminated/lease0, allrequestsfixture, zero paid/newreservation, QA/Auditorunresolved and acceptancefalse. Current21plans and originalC5fullbaseline independentlyverified.",
+    "exportLimit": "Preserved MaxDepth and200KBtruncatedexports; exact individualrawtext and segmented7+7+7 produce fullcurrentrecords. Original20before comparison boundedfields only, no invented baseline.",
+    "financial": "09:13:58Z paidfalse/no usableapproval/historyunchanged15/10.60incl2.20/4.40; no newmodel/browsercharge; localworkers0/actual5hostedleases0"
+  },
+  "engineeringExactTokenAdmission": {
+    "status": "reviewed-offline-candidate-final-strict-and-hosted-pending",
+    "scope": "Existing engineering transport/profile/provider and shared ledger only; no new gateway or live activation.",
+    "confirmedDefectsCorrected": [
+      "Input byte planning was not exact token admission; private request/context-bound count proof is now required before paid Responses dispatch.",
+      "Count request initially omitted supported reasoning; projection now includes it.",
+      "Unknown counting prices could be omitted from settlement; native requests now require a reviewed zero-cost-only account policy pinned by trusted server configuration and authoritative stored approval. No such verified policy/config exists.",
+      "Caller-supplied pricing approval could differ from stored workflow approval; full authoritative approval and pricing hashes must now match before credential access/provider requests.",
+      "Count proof could expire during final awaited authorization; the original private proof is synchronously revalidated immediately before transmission. Expiry does not invalidate an already-started request."
+    ],
+    "controls": "One-use CAS count dispatch/recording, at most five count attempts, 12k/60k input and4k/20k output limits, 30second admission proof, source/task/workspace/model/project binding, actual usage parity, no retries, whole-operation abort and bounded compensating cleanup. Entire reservation ceilings remain retained.",
+    "remainingRisks": "Provider count endpoint access/parity and account-specific zero-cost pricing are unverified; no native count/model request authorized. Missing pin/paid flags/owner approval fail closed. If counting is charged, this zero-cost-only policy must remain disabled until a separately reviewed priced policy exists. Owner controller and genuine semantic trial remain unfinished; automated technical roles do not establish independent human acceptance.",
+    "verification": "Independent45/45 focused checks passed before final freshness cases. Original localSTRICT3224 completed3203pass/21environmentfail:20temporaryGit config permission denials and1localhostpermission denial; preserved, no assertions relaxed. Final reviewed freshness cases and correctly permitted STRICT/realRedis23/CI/CodeQL/Preview remain required.",
+    "permissions": "No paid/count activation, independent acceptance, generated-source execution, internal-agent publication or Production authority."
+  },
+  "previewReadinessWait": {
+    "status": "verified-3164693-first-hosted-attempt-success",
+    "cause": "Two first Browser runs exhausted old alias polling before the exact deployment became READY.",
+    "controls": "Exact alias and immutable identities, source/project/branch/release validation unchanged;120 read-only attempts,ten-minute asynchronous deadline,request abort and no late evidence writes.",
+    "remaining": "JavaScript deadline is not an OS hard real-time guarantee. CI25minute job limit remains. No credential/provider mutation, paid inference or browser infrastructure activation.",
+    "evidence": "LocalSTRICT3234,CI3234,realRedis23,CodeQL/Jekyll pass; hostedBrowser38753756453 firstattempt success after241000ms exact-ready pin,44source mismatches rejected then45th attempt succeeded. Actual archive11983018467 SHA435f16b10c5cd4d450fc6c2474e039d5f8ca406b27d02a260e896c276dffa449 and selected evidence verified; sixvisualpass,max0.00019,zeroerrors. No dollar/Work-credit saving claimed."
+  },
+  "documentationSelection": {
+    "status": "verified-09b9cdc-exact-literal-exceptions-and-single-document-ignore",
+    "confirmedCause": "Historical recovery name citation classified canonical docs as a protected dependency; exact activation document missing deployment ignore allowlist.",
+    "controls": "Exact complete literal line hashes only;old/new audited ignore hashes for before/after trees;real imports,modified lines,source edits and nonregular paths staySTRICT. Only reviewed activation.md newlyskippable forfeaturePreview.",
+    "failureEvidence": "Unpublished256docsrun unexpectedlyselectedSTRICT;3213/3234pass,21tempGit/localhostsandboxpermissionfailures. Preserve failed log,run final committed source with proper offline fixture permissions.",
+    "authority": "No verification receipt from skipped deployment,no budget/model/agent/Production authority.",
+    "evidence": "Independent78focused(69existing+9new) and WorkAuditoractualdiffapproved;finalSTRICT3243,CI3243,realRedis23,PRCI/CodeQL/Jekyll and fullBrowser38758858576 pass. Actualartifact11986545676 verified exact09source/ccbrelease,zeroerrors,sixvisualpass. Priorfailed256run preserved;no testweakening.",
+    "remaining": "This finaldocumentationhead stillneeds its own source-bound targeted/identity verification and actual ignored-build evidence. ExistingPRfull-historychecks retained. No claimed dollar orWorkcreditsaving."
+  },
+  "engineeringFailureRecovery": {
+    "status": "verified-diagnostic-repair-historical-cause-unknown-second-trial-blocked",
+    "historicalCause": "unknown; rejected output and original exception absent",
+    "paidExecution": "disabled; consumed first-trial exception unchanged",
+    "storageLimit": "Persistent storage outage can prevent durable diagnostics; safe observed facts and explicit diagnosticRecorded=false returned; cleanup separately bounded",
+    "review": "Independent Work QA/Auditor technical review; not human acceptance",
+    "secondTrial": "Fresh exact owner authorization and reviewed new one-use identity required; no reset/reuse",
+    "remainingActivationGates": [
+      "Preserve consumed original authorization; distinct reviewed fresh one-use identity required.",
+      "Original assignment cancelled/expired and old-release-bound; cannot reuse.",
+      "Current preserved owner journal25plans at25limit; reviewed preservation-safe admission capacity/lifecycle solution required.",
+      "Current exact release needs new trusted readiness binding and fresh explicit owner consent; all paid/count flags stay disabled.",
+      "Fixed controller limits cannot be advertised as smaller limits without actual enforcement."
+    ],
+    "application": "ff311204a29d46141bde42247a52571756631d59",
+    "release": "f3c1db619fd93f01aade4571c3b7acb452bc0205068b3574213058e33dc4ae66",
+    "verification": {
+      "focused": 114,
+      "independentQaNewCases": 24,
+      "strict": 3349,
+      "redis": 27,
+      "ci": "passed",
+      "codeql": "passed",
+      "jekyll": "passed",
+      "browser": {
+        "status": "success",
+        "run": 38854483814,
+        "job": 116822776293,
+        "elapsedMs": 702482,
+        "artifact": 12027202334,
+        "bytes": 164429528,
+        "sha256": "3288cc1e8170bbba32ab2d93dc665fd3eb0d7dcd67b58d8c92f8351d7826aff3",
+        "visualComparisons": 6,
+        "maxDifference": 0.00005,
+        "unexpectedErrors": 0,
+        "actualReportPinPngInspected": true,
+        "pinMismatchWaits": 82
+      }
+    },
+    "ownerReadback": "Exactff31120/f3c1 paidfalse/outstandingfalse;11USDretained including2.60USDpending,4USDremaining; not invoice reconciled"
+  },
+  "secondEngineeringTrialRecovery": {
+    "status": "qualified-awaiting-fresh-exact-release-owner-consent-no-paid-execution",
+    "application": "90a86019d2ee31c1220edaa3ea919db7ca9d1172",
+    "release": "dc386c94a1ff5cfd25049f43a34d9c4097d153c8b1b5178f1a5bb2d3d1a98513",
+    "preservation": "25originalidentities/hashreferences,42result/reviewpreimages,165auditprefix and fulloriginaltrialworkflow/approval verified;26thappended/cancelled;167chainvalid",
+    "retention": "50plans; unchanged700kbytes+100kcleanup,audit500/admission400. Eventual byte/audit exhaustion remains; rollback mustretain50reader.",
+    "diagnostics": "45five-stage fixtures; historical cause unrecoverable; no livecompatibility/independentacceptance claim",
+    "secondPolicy": "fixed separately pinned dormant descriptor; consumedfirstmarker unchanged; freshconsent and configurationrefresh before justintime admission",
+    "accounting": "11USDretained including2.60pending,4headroom; no newpaid/count/reservation; unknowncountsnotzero",
+    "verification": {
+      "strict": 3399,
+      "redis": 27,
+      "ci": "passed",
+      "codeql": "passed",
+      "jekyll": "passed",
+      "browser": {
+        "status": "passed",
+        "run": 38859845819,
+        "job": 116839405356,
+        "elapsedMs": 658834,
+        "artifact": 12029034849,
+        "sha256": "304f2b0f10a441c64d3c081f0ed16d663df6d709e6ce6c306bb5c3ae98164c33",
+        "visualComparisons": 6,
+        "maxDifference": 0.00004,
+        "unexpectedErrors": 0,
+        "actualReportPinPngInspected": true
+      }
+    },
+    "remaining": [
+      "Fresh exactrelease/task/model/budget ownerconsent before secondtrial",
+      "Actual five-stage live modelcompatibility and semantic usefulness unproven",
+      "Authenticated independent acceptance unavailable; automatedcriticism distinct",
+      "Dedicatedbrowser qualification/spending and Google resource authorization remain separately blocked"
+    ]
+  },
+  "secondLiveEngineeringTrial": {
+    "status": "consumed-stopped-specialist-content-validation-revoked-no-retry",
+    "application": "90a86019d2ee31c1220edaa3ea919db7ca9d1172",
+    "release": "dc386c94a1ff5cfd25049f43a34d9c4097d153c8b1b5178f1a5bb2d3d1a98513",
+    "workflow": "wf_303ecbc2a11098a52bfc09ca49d32a25",
+    "executionDeployment": "dpl_6mefNjuzGJjjuouLDA4XWdYUveEP",
+    "activeDisabledDeployment": "dpl_D1osgbu1hBXhBH8yStRgwtg2jydh",
+    "observed": "Chiefvalidated; SpecialistHTTP200completed then ENG_AI_PROPOSAL_DENIED atresponse-validate afterschema/refs/preimage. Exactmatchedtextunknown; no firstcause/maliceinference. QA/Auditor/finalnotrun.",
+    "usage": {
+      "responses": 2,
+      "counts": 2,
+      "input": 2207,
+      "output": 995,
+      "reasoningIncluded": 170,
+      "responsesCalculatedMicros": 14364,
+      "invoiceReconciled": false,
+      "countFees": "unknown"
+    },
+    "accounting": {
+      "allowanceMicros": 15000000,
+      "retainedMicros": 11400000,
+      "pendingIncludedMicros": 3000000,
+      "remainingMicros": 3600000,
+      "newPendingCeilingsMicros": 400000
+    },
+    "shutdown": "Revokedrevision20; leases/attempts/workers0; manifestcancelled; paidfalse activeD1;3futureflagsfalse. ImmutableQsnapshot retainsflags butconsumed+revokedauthority deniesreuse.",
+    "preservation": "26oldplans/2oldnativeflows/2oldapprovals unchanged;167auditprefix unchanged;169chainvalid",
+    "limitations": [
+      "No useful validated Specialist correction or five-stage live result",
+      "Contentguard groups multiplepredicates; exacttriggerunknown and benign sk-pattern collisionpossible",
+      "Chiefcompletioncriteria clipped; no businessacceptance",
+      "No freshpaidtrialauthority; unused ceilings cannotfundretry"
+    ],
+    "next": "Nonbillable safe reasoncategories/benigncollision fixtures and plainlabel-only outputcontract review; preserveguards and getfreshscopeapprovalbeforeanyfuturepaidtrial"
+  },
+  "proposalGuardRepair": {
+    "application": "771ceed3efd5f6f81a9cec6773900ae756c2749f",
+    "release": "416181164b2d3db8b5269826abbdc66a6d2bcddd48922f158b6a4d43745effd3",
+    "status": "verified-nonbillable-repair-paid-disabled",
+    "verifiedDefect": "Unanchored sk- substring matches benign word endings; use standalone-token prefix boundary only.",
+    "historicalTrialCause": "Unknown; rejected wording and predicate not retained. Do not retrospectively attribute a false positive or malicious intent.",
+    "ruleReceipts": "Closed markup/nul/url/bearer/key-prefix IDs, static field location, no rejected text.",
+    "historicalCompatibility": "Unversioned prompt change withdrawn after independent audit. Actual preserved five-stage fixture validates old request hashes and synthetic usage.",
+    "verification": {
+      "focused": 195,
+      "strict": 3447,
+      "redis": 27,
+      "ci": "passed",
+      "codeql": "passed",
+      "jekyll": "passed",
+      "browserRun": 38866814756,
+      "visualComparisons": 6
+    },
+    "preservation": "All27plans/nativeauthority/ledger identical; originalfailurehash valid; all3approvals revoked; paidfalse.",
+    "remaining": "Third trial unexecuted; fresh exact-source consent, trusted pins/config-only refresh and new just-in-time assignment required. Dedicated browser remains unqualified; independent human acceptance unavailable.",
+    "spending": "No new requests/reservations;11.40 retained including3 pending,3.60 remaining. Counting/provider fees unknown, no invoice reconciliation."
+  },
+  "thirdLiveEngineeringTrial": {
+    "application": "771ceed3efd5f6f81a9cec6773900ae756c2749f",
+    "release": "416181164b2d3db8b5269826abbdc66a6d2bcddd48922f158b6a4d43745effd3",
+    "status": "consumed-stopped-specialist-content-policy-no-retry",
+    "planId": "op_c18e266c7d3c4e79a347b72347a6655b",
+    "approvalId": "pilot_545664c796249126d68f323dab847bb7",
+    "workflowId": "wf_545664c796249126d68f323dab847bb7",
+    "chief": "Validated live source-backed delegation; completion-criteria fragments remain incomplete.",
+    "specialist": {
+      "http": 200,
+      "status": "completed",
+      "code": "ENG_AI_PROPOSAL_DENIED",
+      "phase": "response-validate",
+      "category": "validation",
+      "classification": "content-policy",
+      "location": "$.proposal.afterText",
+      "mismatch": "proposal-markup",
+      "ruleId": "proposal-copy-markup-v1",
+      "failureHash": "385103663b3af745905e485940c67420f3a2ed8b1eb74c86584beb139400470b",
+      "known": "Decoded replacement contains a literal angle bracket.",
+      "unknown": "Exact rejected text, complete markup/code and intent; do not infer first/second trial causes."
+    },
+    "laterStages": "QA/Auditor/finalChief not reached; no artifact/acceptance/publication.",
+    "usage": {
+      "responses": 2,
+      "counts": 2,
+      "input": 2240,
+      "outputIncludingReasoning": 1251,
+      "reasoningIncluded": 335,
+      "calculatedResponsesMicros": 16990,
+      "elapsedActivationToRevocationMs": 70967
+    },
+    "ledger": {
+      "allowanceMicros": 15000000,
+      "retainedMicros": 11800000,
+      "pendingMicros": 3400000,
+      "remainingMicros": 3200000,
+      "knownSettledMicros": 225938,
+      "invoiceReconciled": false,
+      "countFeesKnown": false
+    },
+    "shutdown": "All4approvalsrevoked/leases0; newadmissioncancelled; futureflagsfalse; existingpaid-disabledaliasrestored; no fourthauthority.",
+    "preservation": "Original27plans/nativeauthority exact; prior169auditprefix unchanged, all171hashvalid.",
+    "next": "Nonbillable backward-compatible plain-label contract clarification with historical request hash tests, not another paid retry."
+  }
+}

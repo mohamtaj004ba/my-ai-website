@@ -1,0 +1,36 @@
+{
+  "provenance": {
+    "kind": "recorded-live-response",
+    "stage": "chief",
+    "sourceReport": "organization-v2-live-report.json",
+    "sourceReportSha256": "f3c4fa2d97973f62cd948ef0305eef8f5bda7988402a9480fd558d2ff65944cd",
+    "requestHash": "ac6b93127019d5f7cd88b468f00420600e9bdde0f43134fe825ec5ef0aff517b",
+    "requestId": "req_bc2b8d195b9a49e2a168bd3220d6d0e8",
+    "responseId": "resp_0328f5b19cc1ea80016acc67bafb3487d09d60e0c693607f46",
+    "rawProviderOutputHash": "7bc75e5fa42671944c86f07692ee0cc4627fc132fece67a4e2908b02d4cbff68"
+  },
+  "response": {
+    "model": "gpt-6.1-sol",
+    "status": "completed",
+    "service_tier": "default",
+    "usage": {
+      "input_tokens": 3040,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "output_tokens": 97,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 3137
+    },
+    "output": [
+      {
+        "type": "function_call",
+        "name": "delegate_inspection_v2",
+        "arguments": "{\"action\":\"delegate\",\"agent\":\"website-visual-qa\",\"reason\":\"Propose read-only visual inspection of /industries/legal and /#pricing at the assigned preview origin, limited to backend-granted scope. Record evidence-backed findings and inspection limitations; prior execution verification does not establish accepted work. Do not modify the site, retry automatically, or promote failed QA; preserve pending and uncertain spending.\"}"
+      }
+    ]
+  }
+}

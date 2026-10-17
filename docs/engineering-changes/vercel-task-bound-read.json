@@ -1,0 +1,64 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "917fd22a9eb6fd52622265440bf02ea681bf2855dc1e0c01c3189b51440e4b36",
+  "risk": "critical",
+  "scope": "Activate exact-task read-only Vercel deployment inspection using existing encrypted owner OAuth and operational journal; no new credentials, consent, paid or mutation authority.",
+  "riskAnalysis": "STRICT credentials, task permissions, deployment identity, revocation and immutable evidence. Future provider deployment write scope is not exposed by this GET-only gateway.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Encrypted Vercel token, owner/workspace identity, task grants and immutable evidence.",
+    "trustBoundaries": "Owner HTTP/UI to persisted task grant; trusted broker to fixed provider GET and untrusted response; OAuth connection and Ops CAS are separate records.",
+    "abuseCases": "Forged task, stale deployment/source/origin, broad scopes, replay, revocation races, secret-bearing responses and stalled authorization/storage.",
+    "mitigations": "Fresh owner and task checks, AES-GCM exact AAD, exact three scopes and selected project, fixed GET, internal deadline, revalidation and strict sanitized receipt; no writes/retry."
+  },
+  "rollback": "Revert only Preview read activation source; centrally revoke affected grants and local connection before rollback, preserve original receipts, main/Production unchanged.",
+  "negativePaths": {
+    "malformed-response": "Strict field/finite diagnostic validators reject secrets and unsupported evidence.",
+    "stale-state": "Exact task/source/release/origin/deployment/revision/fence binding at admission, transport and receipt.",
+    "concurrency": "Existing CAS/idempotency prevents duplicate dispatch; explicit provider-specific revoke and emergency stop. Separate OAuth/Ops final checks do not imply atomic cross-record cancellation.",
+    "provider-failure": "No automatic retry; unavailable evidence remains distinct from successful inspection.",
+    "partial-persistence": "No optimistic UI success; durable readback and immutable audit remain authoritative.",
+    "cancellation": "Abort tests cover stalled owner, Redis, task authorization, broker transport and lease revalidation; no late dispatch.",
+    "worker-interruption": "No new worker is added. Existing interrupted-read grant revocation is exercised by real composed broker failure and emergency stop.",
+    "api-outage": "Fixed GET failures become finite unavailable receipts; stalled requests remain bounded with no automatic retry.",
+    "authorization-denial": "Fresh owner/task/scope and revocation checks at broker and dispatch; unauthorized owner API and CSRF requests deny before provider access.",
+    "spending-limit": "This tool performs only two fixed read-only provider GETs, creates no model request, paid grant or spending reservation.",
+    "partial-execution": "Revoke during configuration read prevents deployment GET and revokes the exact pending grant; completed historical evidence remains immutable."
+  },
+  "defects": [
+    {
+      "rootCause": "Prepared Vercel adapter had no functional task-scoped encrypted credential broker and assumed provider expiry.",
+      "detectionGap": "Owner OAuth verified project identity but intentionally did not activate the agent tool.",
+      "regression": "Actual encrypted broker/service/adapter and guarded HTTP positives; exact scopes, ciphertext, timeout, cancellation, provider-specific revoke and receipt substitution negatives.",
+      "historicalPrevention": "Hosted exact-release read remains mandatory, no inference from owner OAuth alone."
+    },
+    {
+      "rootCause": "Initial new broker did not bound stalled owner/storage awaits; multi-provider policy audit inherited GitHub default; revoked OAuth read could persist unavailable without interrupted grant cleanup.",
+      "detectionGap": "Independent Auditor/QA and new real composition tests exposed each before publication.",
+      "regression": "Stalled owner/Redis/task and lease checks, exact audit-provider events, revoke during configuration GET must block deployment dispatch and revoke grant.",
+      "historicalPrevention": "Review and test actual composed boundaries, not only isolated adapter counts."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing gateway/operations and encrypted OAuth; no parallel task or authorization store.",
+    "dependencies": "Existing Vercel installation and three scopes, owner session/member/workspace policy, Redis CAS, provider configuration GET and deployment GET, actual VERCEL_DEPLOYMENT_ID.",
+    "threats": "Forged task, stale deployment/source/origin, broad scopes, replay, revocation races, secret-bearing responses and stalled authorization/storage.",
+    "failureModes": "Missing runtime deployment ID disables grant UI and denies dispatch. Deadline/provider/storage failures deny without retry; past provider requests cannot be recalled.",
+    "faultInjection": "Revocation during configuration GET, stalled identity/storage/task, altered ciphertext/scopes/receipt/source, replay and emergency stop.",
+    "independentChallenge": "Auditor approves local read-only wiring; QA verifies corrected audit attribution and actual HTTP/UI tests. Hosted identity and latency still unverified.",
+    "recovery": "Exact-grant interruption revocation and independent owner cleanup; no permission restoration, credential rotation or paid fallback.",
+    "readiness": "Local provider-substituted tests only so far; freeze and run mandatory STRICT/Redis/CI/CodeQL, then genuine exact-release owner UI read and cleanup. No paid model authority."
+  }
+}
