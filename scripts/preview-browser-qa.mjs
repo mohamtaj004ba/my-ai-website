@@ -278,6 +278,12 @@ async function sweepViews(page,kind){
       }else{
         if(response.status()!==200||!Array.isArray(body.tasks)||typeof body.paidExecution!=='boolean')throw new Error('Agent Operations persisted state is invalid');
         report.agentOperations={mode:body.mode,paidExecution:body.paidExecution,readOnlyCheck:true};
+        const implementation=body.operatingSystem?.organization?.implementationPreparation;
+        if(implementation?.profile!=='engineering-implementation-v1'||implementation.reasoningMode!=='explicit-fixture-no-model-calls'||implementation.generatedCodeExecution!==false||implementation.publicationAuthorized!==false)throw new Error('Implementation preparation capabilities are missing or overstate execution authority');
+        const implementationPreset=page.locator('#opsImplementationPreset');
+        await implementationPreset.waitFor({state:'visible'});
+        if((await implementationPreset.innerText()).trim()!=='Prepare Starter fallback patch · no model calls')throw new Error('Implementation preparation control does not accurately disclose fixture reasoning');
+        report.agentOperations.implementationPreparation={profile:implementation.profile,controlVisible:true,reasoningMode:implementation.reasoningMode,generatedCodeExecution:false,publicationAuthorized:false,taskCreated:false};
       }
     }
     await assertLayout(page,kind+'-desktop-'+view);
