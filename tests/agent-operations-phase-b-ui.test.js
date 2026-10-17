@@ -5,6 +5,7 @@ const source=fs.readFileSync(path.join(__dirname,'../agent-operations-command-ce
 class Element{
  constructor(tag='div'){this.tag=tag;this.value='';this.textContent='';this.children=[];this.dataset={};this.style={};this.disabled=false;this.hidden=false;this.checked=false;this.open=false;this.listeners={};}
  append(...items){this.children.push(...items);}replaceChildren(...items){this.children=items;}
+ setAttribute(name,value){this.attributes??={};this.attributes[name]=String(value);}getAttribute(name){return this.attributes?.[name]??null;}
  addEventListener(type,listener){(this.listeners[type]??=[]).push(listener);}
  async emit(type,event={preventDefault(){}}){for(const listener of this.listeners[type]||[])await listener(event);}
  querySelectorAll(selector){const all=this.children.flatMap(x=>[x,...x.querySelectorAll('*')]),parts=selector.split(',');return all.filter(x=>parts.some(p=>p==='*'||p==='details[open]'?p==='*'||x.tag==='details'&&x.open:x.tag===p));}
