@@ -1,4 +1,25 @@
 {
+  "phaseDNativeStarter": {
+    "at": "2026-10-17T04:45:45.252Z",
+    "status": "reviewed-data-only-native-path-not-live-activated",
+    "application": "9baac851dec34f5bf60d10c277b32e55a98d40e9",
+    "fingerprint": "5222439657b5048ff7dbd7b918adab28c0223a4806b9044f6335edae1375f198",
+    "corrected": [
+      "Serial admission and reservation provenance",
+      "Physical cleanup joins, failed-disposal attestation and absolute trial deadlines",
+      "Referenced shutdown timer verified by standalone child and Linux CI"
+    ],
+    "evidence": "docs/engineering-changes/phase-d-native-starter-handoff.json",
+    "remaining": [
+      "Fresh exact Starter owner consent and same-source configuration-only reviewed-pin refresh before live inference",
+      "No live model-generated Starter patch yet",
+      "Generated-code tests disabled until independently qualified OS isolation and separate spending approval",
+      "No internal-agent publication or independently authenticated acceptance"
+    ],
+    "paidExecution": false,
+    "realProductPatchApplied": false,
+    "shareLinkRemediation": "Owner-approved narrow revocation verified; pre-existing public-domain exception unchanged"
+  },
   "phaseDImplementation": {
     "at": "2026-10-16",
     "status": "data-only-preparation-reviewed-release-pending",

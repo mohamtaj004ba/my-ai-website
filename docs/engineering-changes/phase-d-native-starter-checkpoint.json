@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "risk": "routine",
+  "scope": "Preserve verified native Starter release, historical failures, redacted remediation, financial boundaries and inert OS qualifier",
+  "riskAnalysis": "Documentation only; no source, environment, credential, financial authority or execution change",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "changeDigest": "9ddc2e2e008333e8aef49b104b42499ac6e318eff485e9c154a643e49c8d4860"
+}
