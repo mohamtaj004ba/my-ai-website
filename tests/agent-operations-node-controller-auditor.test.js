@@ -24,7 +24,7 @@ test('Auditor Node: lost initialization response preserves consumed history and 
 });
 test('Auditor Node: nonresponsive renewal aborts once with no queued renewals and central cleanup',async()=>{
  const f=fixture();let renewals=0,aborted=false;f.port.renew=()=>{renewals++;return new Promise(()=>{});};
- await assert.rejects(node.execute({...f,renewMs:2,renewTimeoutMs:8,durationMs:500,run:(_,{signal})=>new Promise(()=>signal.addEventListener('abort',()=>aborted=true,{once:true}))}),/stopped/);
+ await assert.rejects(node.execute({...f,renewMs:2,renewTimeoutMs:8,durationMs:500,run:(_,{signal})=>new Promise((_,reject)=>{const stopped=()=>{aborted=true;reject(Error('Synthetic worker acknowledged cancellation'));};if(signal.aborted)stopped();else signal.addEventListener('abort',stopped,{once:true});})}),/stopped/);
  assert.equal(renewals,1);assert(aborted);assert.equal(life.find(f.ledger,f.approval).status,'revoked');
 });
 test('Auditor Node: shutdown contradiction cannot produce completion or replacement proof',async()=>{

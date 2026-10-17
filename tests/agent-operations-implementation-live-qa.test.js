@@ -68,3 +68,18 @@ test('failed physical workspace removal cannot be reported as confirmed shutdown
  try{await a.rejects(f.control.run(owner,input),/Activation shutdown failed|cleanup.*unconfirmed/i);a.equal(typeof directory,'string');a.equal(fs.existsSync(directory),true);a.equal(provider.calls.length,4);const s=f.state(),w=s.operations.workflows[0];a.equal(w.results.length,1);a.equal(w.results.some(r=>r.stage==='qa'),false);a.equal(w.leaseUntil,0);a.equal(s.operations.approvals[0].status,'revoked');a(s.operations.grants.every(g=>g.revoked));}
  finally{fs.rmSync=remove;provider.restore();if(directory){a.equal(path.dirname(directory),temporaryRoot);a(path.basename(directory).startsWith('callercore-proposed-'));remove(directory,{recursive:true,force:true});a.equal(fs.existsSync(directory),false);}}
 });
+
+test('Starter with no more than fifteen seconds remaining revokes approval before dispatch or reservation',async()=>{
+ const f=await setup(),input=await activate(f),saved=global.fetch;let calls=0;global.fetch=async()=>{calls++;throw Error('No provider request permitted');};f.plan.deadline=Date.now()+14900;
+ try{await a.rejects(f.control.run(owner,input),/ENG_CONTROL_DEADLINE/);a.equal(calls,0);const s=f.state();a.equal(s.operations.reservations.length,0);a.equal(s.operations.workflows.length,0);a.equal(s.operations.approvals[0].status,'revoked');a.equal(s.operations.approvals[0].leaseUntil,0);}finally{global.fetch=saved;}
+});
+
+test('Starter reserves cleanup time and aborts a short-window stalled counting request without retry',async()=>{
+ const f=await setup(),input=await activate(f),saved=global.fetch;let calls=0,aborted=false;global.fetch=async(url,options)=>{calls++;a(url.endsWith('/responses/input_tokens'));return new Promise((_,reject)=>{const abort=()=>{aborted=true;reject(Error('Synthetic counting request aborted'));};if(options.signal.aborted)abort();else options.signal.addEventListener('abort',abort,{once:true});});};f.plan.deadline=Date.now()+16000;const started=Date.now();
+ try{await a.rejects(f.control.run(owner,input));a.equal(calls,1);a.equal(aborted,true);a(Date.now()-started<10000,'Work plus actual cleanup must finish before the reserved overall deadline');const s=f.state();a.equal(s.operations.approvals[0].status,'revoked');a.equal(s.operations.approvals[0].leaseUntil,0);a(s.operations.grants.every(g=>g.revoked));a.equal(s.operations.workflows[0].calls,0);a.equal(s.operations.workflows[0].countCalls,1);}finally{global.fetch=saved;}
+});
+
+test('all five Starter stages use 135-second request timers and reserve fifteen seconds inside the ten-minute controller ceiling',async()=>{
+ const f=await setup(),input=await activate(f),provider=installProvider(f),original=setTimeout,delays=[];global.setTimeout=function(callback,delay,...args){delays.push(delay);return original(callback,delay,...args);};
+ try{const out=await f.control.run(owner,input);a.equal(out.result.receipts.length,5);a.equal(delays.filter(n=>n===135000).length,5);a.equal(delays.includes(150000),false);const workTimers=delays.filter(n=>n>135000);a.equal(workTimers.length,1);a(workTimers[0]>0&&workTimers[0]<=585000);a.equal(provider.calls.length,10);a.equal(out.shutdown.status,'revoked');}finally{global.setTimeout=original;provider.restore();}
+});
