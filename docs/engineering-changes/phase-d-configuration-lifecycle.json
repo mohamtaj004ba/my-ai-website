@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "c0ccd3f90f5f50e9254f213ab8b87423c8afcdbacafb9f0338c29e4324150185",
+  "risk": "critical",
+  "scope": "Separate bounded owner configuration preparation from paid task deadlines and safely close unverified refresh intents without rewriting history or granting execution.",
+  "riskAnalysis": "The original ten-minute task expired after a configuration refresh, before final reset acknowledgment. Preserve the partial intent and canceled deployment. Add explicit owner-only cancellation and a new-record-only24hour configuration lease; no paid, complete, model, token or funding deadline extension.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Dedicated credentials, immutable owner records, source identity and existing testing exposure must remain isolated from models and frontend inputs.",
+    "trustBoundaries": "Fresh authenticated owner may journal bounded configuration operations. Trusted Work operator verifies separate provider metadata; its commitment is an attestation, not provider authentication. Model roles have no configuration or publication authority.",
+    "abuseCases": "Expired task reuse for inference, canceled-task dispatch, stale CAS snapshots, replay of unknown provider operations, forged cancellation, cross-workspace intent access, bypass of original missing ACKs.",
+    "mitigations": "Exact queued plan/revision/fence/source binding and bounded lease; pre/post-CAS owner/task revalidation before returning receipt; failed postcheck freezes continuation. Cancel only with paid flags false and clean authority. Preserve exact original chain and duplicate refresh key. No provider execution in journal controller."
+  },
+  "rollback": "Revert only the reviewed feature changes while preserving all historical CAS records and pending financial exposure. Keep paid flags disabled. Never reopen old approvals, modify main/Production or apply the agent patch to the real product.",
+  "negativePaths": {
+    "malformed-response": "Exact field and manifest validation reject extra credential keys, wrong values and malformed configuration event chains.",
+    "stale-state": "Exact source/runtime/task/owner/workspace bindings and fresh review receipts reject old approvals and substituted deployments.",
+    "concurrency": "Existing organization Redis CAS permits one claim and one operation dispatch; durable markers survive restart and lost acknowledgments.",
+    "cancellation": "Revocation and canceled tasks cannot create model authority; physical preparation is recorded before I/O and missing destruction acknowledgment blocks continuation.",
+    "worker-interruption": "Closed attempts and revoked grants are insufficient: failed, missing or corrupt physical destruction evidence prevents new paid admission.",
+    "api-outage": "Unknown provider acknowledgments remain unresolved; no automatic deployment or model retry is permitted. Owner status is read-only recovery.",
+    "authorization-denial": "Worker/nonowner/cross-workspace identities cannot journal, enroll, activate, impersonate reviewers or publish.",
+    "spending-limit": "At most ten serial fresh attempts share four USD new retained exposure, also bounded by the unchanged five-USD ledger. Unknown counting charges remain pending, no provider hard-cap claim.",
+    "partial-execution": "Incomplete configuration ACK chain cannot authorize execution. Model usage remains recorded on artifact failure; no generated-code execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "Configuration intent has a24hour lifetime but its preparation task expires after10minutes; sequential provider mutations can outlast it and acknowledgment then fails closed.",
+      "detectionGap": "Prior fixtures completed all ordered steps under a short clock and did not exercise operator preparation beyond the paid task deadline.",
+      "regression": "Pure lifecycle and actual profile/controller tests cover bounded configuration lease, expired paid tasks, canceled/revised plans, post-CAS revocation, preserved partial chain and cancellation replay.",
+      "historicalPrevention": "Preserve original21-event intent with missing ACK and canceled refresh. Never manufacture ACKs or rerun unknown operations. New same-source IDs cannot bypass original duplicate key."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing configuration journal/controller only; no new provider, ledger, orchestration or permission system.",
+    "dependencies": "No dependencies or new infrastructure; dedicated credential values remain untouched.",
+    "threats": "Paid authority escalation, cross-owner cancellation, canceled task reuse, unsafe duplicate provider writes and false provider verification.",
+    "failureModes": "Any unconfirmed step blocks continuation; old records without lease never inherit exception. Terminal cancellation grants no completion, funding, acceptance or publication.",
+    "faultInjection": "Deterministic old/new records, timed lease boundaries, task/fence/revision mutations, owner revocation around CAS, unknown ACK and false shutdown assertions.",
+    "independentChallenge": "Separate Work QA and Engineering Auditor review actual implementation and bounded tests. Automated technical review is not independently authenticated human acceptance.",
+    "recovery": "All three actual future flags false, attempted snapshot canceled, preparation task canceled and qualified feature alias unchanged. Owner cancellation preserves intent/events and financial rows; exact reviewed successor requires new source/task evidence.",
+    "readiness": "Focused verification and independent review precede STRICT, Redis, CI, CodeQL and authenticated hosted Preview qualification. No new paid requests before all release and owner gates pass."
+  }
+}
