@@ -1,4 +1,19 @@
 {
+  "phaseDMetadataAuditDeadline": {
+    "observedApplication": "f0c98de1e22565461a7bb7fcf1a2ae1e11f48a57",
+    "observedDeployment": "dpl_2NUQzDxaBMisreRbt1ZAF5hTEisg",
+    "providerHttpStatus": 200,
+    "phase": "audit-commit",
+    "code": "timeout",
+    "elapsedMs": 10005,
+    "failureReceipt": "273f96f323ab6a86e7eac471df9eaca88e774dae683ae155c9744ed5c006d698",
+    "historicalCause": "Earlier generic2d1 failure remains unknown",
+    "candidateRepair": "Bound post-admission metadata operation30seconds; initial existing owner/task admission is separate; provider fetch/body remains10seconds; no total30second API-wall-time claim, paid timing or authority expansion",
+    "status": "under-independent-review-not-qualified",
+    "paidRequests": 0,
+    "countingRequests": 0,
+    "newReservationMicros": 0
+  },
   "phaseDActivationBuildGate": {
     "application": "eb297dffc39cc53213072dc814e1d16df72193be",
     "fingerprint": "5222439657b5048ff7dbd7b918adab28c0223a4806b9044f6335edae1375f198",
