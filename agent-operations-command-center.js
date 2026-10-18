@@ -94,17 +94,21 @@
  legacyPanel.append(legacyResult);root.append(legacyPanel);
  let activationBusy=false;
  async function activationCheck(metadata){
-  if(activationBusy||busy||!data)return;const before=data,epoch=scopeEpoch,source=before.runtime.sourceCommit,release=before.runtime.release.digest;
-  const plans=before.plans.filter(p=>p.engineeringProfile==='engineering-inference-rehearsal-v1'&&p.status==='queued'&&p.deadline>Date.now()&&p.runtime.sourceCommit===source&&p.runtime.release.digest===release&&p.tasks.every(t=>t.attempts.length===0));
+  if(activationBusy||busy||!data)return;const before=data,epoch=scopeEpoch,source=before.runtime.sourceCommit,release=before.runtime.release.digest,deployment=before.runtime.deploymentId,origin=before.runtime.origin;
+  const currentActivationFence=()=>epoch===scopeEpoch&&sameScope(before.scopeIdentity,data?.scopeIdentity)&&data?.runtime.sourceCommit===source&&data?.runtime.release.digest===release&&data?.runtime.deploymentId===deployment&&data?.runtime.origin===origin;
+  const plans=before.plans.filter(p=>['engineering-inference-rehearsal-v1','engineering-implementation-v1'].includes(p.engineeringProfile)&&p.status==='queued'&&p.deadline>Date.now()&&p.runtime.sourceCommit===source&&p.runtime.release.digest===release&&p.runtime.deploymentId===before.runtime.deploymentId&&p.runtime.origin===before.runtime.origin&&p.tasks.every(t=>t.attempts.length===0));
   if(metadata&&plans.length!==1){activationResult.textContent='Model metadata verification needs exactly one fresh, unstarted engineering assignment on this release. It does not run its fixture tasks or authorize inference.';return;}
   activationBusy=true;readinessButton.disabled=metadataButton.disabled=true;activationResult.textContent=metadata?'Checking only the configured project’s exact model metadata…':'Reading exact release activation gates…';
   try{
    const action=metadata?'verify-model':'readiness',input=metadata?{planId:plans[0].id,expectedRevision:plans[0].revision}:{};
-   const response=await fetch('/api/agent-operations',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'operations-engineering-activation-'+action,input})}),body=await response.json(),value=body.engineeringActivation;
-   if(!response.ok||!value||epoch!==scopeEpoch||!sameScope(before.scopeIdentity,data?.scopeIdentity)||data?.runtime.sourceCommit!==source||data?.runtime.release.digest!==release)throw Error('Unconfirmed response');
-   if(metadata?value.sourceCommit!==source||value.releaseFingerprint!==release||value.metadataAccessVerified!==true||value.paidExecution!==false:value.runtime?.commit!==source||value.runtime?.release?.digest!==release||typeof value.paidExecution!=='boolean')throw Error('Stale response');
+   const response=await fetch('/api/agent-operations',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(metadata?20000:15000),headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'operations-engineering-activation-'+action,input})}),body=await response.json(),value=body.engineeringActivation;
+   const diagnostic=body.modelMetadataDiagnostic;
+   if(metadata&&!response.ok&&body.code==='ENG_CONTROL_METADATA_UNCONFIRMED'&&diagnostic?.version==='engineering-model-metadata-diagnostic-v1'&&diagnostic.taskId===plans[0].id&&diagnostic.sourceCommit===source&&diagnostic.releaseHash===release&&diagnostic.deploymentId===deployment&&currentActivationFence()){activationResult.textContent=JSON.stringify({status:'unconfirmed',diagnostic},null,2);return;}
+   if(metadata&&!response.ok&&new Set(['ENG_CONTROL_OWNER','ENG_CONTROL_PREVIEW','ENG_CONTROL_SCOPE','ENG_CONTROL_STALE','ENG_CONTROL_INPUT']).has(body.code)&&currentActivationFence()){activationResult.textContent=JSON.stringify({status:'denied-before-provider-verification',code:body.code},null,2);return;}
+   if(!response.ok||!value||!currentActivationFence())throw Error('Unconfirmed response');
+   if(metadata?value.sourceCommit!==source||value.releaseFingerprint!==release||value.deploymentId!==deployment||value.origin!==origin||value.taskId!==plans[0].id||value.metadataAccessVerified!==true||value.paidExecution!==false:value.runtime?.commit!==source||value.runtime?.release?.digest!==release||value.runtime?.deploymentId!==deployment||value.runtime?.origin!==origin||typeof value.paidExecution!=='boolean')throw Error('Stale response');
    activationResult.textContent=JSON.stringify(value,null,2);
-  }catch{activationResult.textContent='Check not confirmed. No automatic retry occurred. Refresh owner state before another explicit check; model metadata does not establish pricing, Responses access or acceptance.';}
+  }catch{if(currentActivationFence())activationResult.textContent='Check not confirmed. No automatic retry occurred. Refresh owner state before another explicit check; model metadata does not establish pricing, Responses access or acceptance.';}
   finally{activationBusy=false;readinessButton.disabled=metadataButton.disabled=busy||!data;}
  }
  readinessButton.addEventListener('click',()=>activationCheck(false));metadataButton.addEventListener('click',()=>activationCheck(true));
