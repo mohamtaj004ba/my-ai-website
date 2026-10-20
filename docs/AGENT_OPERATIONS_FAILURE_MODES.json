@@ -9,7 +9,7 @@
     "failureReceipt": "273f96f323ab6a86e7eac471df9eaca88e774dae683ae155c9744ed5c006d698",
     "historicalCause": "Earlier generic2d1 failure remains unknown",
     "candidateRepair": "Bound post-admission metadata operation30seconds; initial existing owner/task admission is separate; provider fetch/body remains10seconds; no total30second API-wall-time claim, paid timing or authority expansion",
-    "status": "under-independent-review-not-qualified",
+    "status": "qualified62f-and-actual-metadata-success",
     "paidRequests": 0,
     "countingRequests": 0,
     "newReservationMicros": 0
@@ -20,9 +20,24 @@
     "failedConfigurationSnapshot": "dpl_DdnhRdMSBm5GDXUX4J3PQAfiJt5i",
     "verifiedFixtureDefect": "Constant base64url suffix replacement can leave encrypted synthetic credentials unchanged; independent deterministic counterfactual demonstrated a no-op. Original failing packet was not retained.",
     "correction": "Test-only decoded authentication-tag byte12 XOR, encoded and decoded inequality assertions, original ownerCredentialVerified=false assertion preserved; runtime cryptography unchanged.",
-    "review": {"workQaPass": 77, "auditorPass": 12, "localRegressionPass": 3670, "linuxRegressionPass": 3670, "realRedisPass": 29},
-    "browserQualification": {"run": 39005239126, "passed": true, "actualArtifactHashVerified": true, "visualComparisonsPassed": 6},
-    "remaining": ["Fresh exact-source authority before another configuration snapshot or paid Starter trial", "No real agent-generated Starter patch yet", "Generated-code execution remains disabled pending qualified OS isolation"],
+    "review": {
+      "workQaPass": 77,
+      "auditorPass": 12,
+      "localRegressionPass": 3670,
+      "linuxRegressionPass": 3670,
+      "realRedisPass": 29
+    },
+    "browserQualification": {
+      "run": 39005239126,
+      "passed": true,
+      "actualArtifactHashVerified": true,
+      "visualComparisonsPassed": 6
+    },
+    "remaining": [
+      "Fresh exact-source authority before another configuration snapshot or paid Starter trial",
+      "No real agent-generated Starter patch yet",
+      "Generated-code execution remains disabled pending qualified OS isolation"
+    ],
     "paidRequests": 0,
     "newReservationMicros": 0,
     "originalConsent": "received for9ba; no paid approval created or consumed; not reusable on successor source",
@@ -1093,5 +1108,17 @@
     "shutdown": "All4approvalsrevoked/leases0; newadmissioncancelled; futureflagsfalse; existingpaid-disabledaliasrestored; no fourthauthority.",
     "preservation": "Original27plans/nativeauthority exact; prior169auditprefix unchanged, all171hashvalid.",
     "next": "Nonbillable backward-compatible plain-label contract clarification with historical request hash tests, not another paid retry."
+  },
+  "phaseDOperationsCapacity": {
+    "observedSource": "62fb3e9764fd484ff5a163a787a16d66284147ba",
+    "code": "OPS_CAPACITY",
+    "actualPlans": 41,
+    "actualAudit": 206,
+    "originalDimension": "unknown",
+    "candidate": "Read-only exact raw-byte utilization and closed dimension codes; preconfiguration observation margin; no limit increase",
+    "historicalIntent": "refresh_f726edea0fe340bd99a1cb0ff9f8d59e",
+    "preservedEvents": 24,
+    "status": "unverified-intent-terminally-cancelled-successor-under-review",
+    "paidRequests": 0
   }
 }

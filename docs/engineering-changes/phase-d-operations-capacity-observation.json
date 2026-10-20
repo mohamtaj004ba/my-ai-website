@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "1d4b9213bc68fcf9a9d471f2f9cddef6ee8c4eed3ca1339c9ea1d63c0755f606",
+  "risk": "critical",
+  "scope": "Expose exact owner-scoped operations utilization and closed capacity codes; prevent configuration preparation when observed future assignment headroom is insufficient, preserving cleanup and all existing bounds.",
+  "riskAnalysis": "Original62f create denied generic OPS_CAPACITY. Current owner read confirms41plans and206audit records, not50plans. Exact original byte cause unknown; no capacity limit increased. Readback measures persisted raw UTF8 bytes. Margin1plan12audit24kbytes is an observation, not reservation or guarantee against concurrent writers.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Dedicated OpenAI credentials, task ownership, immutable audit records and exact Preview identity.",
+    "trustBoundaries": "Provider headers/body are untrusted. Only authenticated existing controller creates private diagnostic proof. Existing broker validates bound closed records. Frontend renders text only and rejects late deployment results.",
+    "abuseCases": "Cross-tenant utilization disclosure, forged/missing capacity, concurrent exhaustion, stale configuration authority, lost acknowledgment, capacity preflight blocking flag reset, audit rewriting or hidden limit increase.",
+    "mitigations": "Existing authenticated owner/workspace CAS remains authoritative. Closed codes and count-only telemetry; no content in errors. Recheck configuration claim and expanding dispatch; ACK/unknown and exact reset:false retain existing lease/order/identity checks but bypass new margin. No history mutation or capacity expansion."
+  },
+  "rollback": "Revert candidate feature code only, retain immutable failure receipts and historical records; keep paid flags disabled and exact release checks. No credential rotation, main/Production writes or old grant reuse.",
+  "negativePaths": {
+    "malformed-response": "Malformed capacity lacks admission proof; stable closedcodes no raw content.",
+    "stale-state": "Exact task/source/deployment revision remainsmandatory.",
+    "concurrency": "Existing CAS capacity bound applies to every mutation; observation doesnotreserve future slots.",
+    "cancellation": "Cleanup and exact flagreset/ACK bypass onlynew margin, notowner/task/order checks.",
+    "worker-interruption": "No worker spawned by metrics/preflight.",
+    "api-outage": "Read failure blocks newconfiguration; no automatic retry.",
+    "authorization-denial": "Foreign owner/workspace cannotreadorclaim.",
+    "spending-limit": "No Responses/count/reservation; existing cumulative4USDunchanged.",
+    "partial-execution": "ACK/unknown andexactreset remainpossible aftercapacitychanges; historicalevents preserved."
+  },
+  "defects": [
+    {
+      "rootCause": "One generic capacity code conflates distinct finite resources; configuration preparation had no observable future fresh-task headroom check.",
+      "detectionGap": "41actualplans and206audit coexist with opaque capacity denial; UI49preobjects included8nestedresults, so countingDOMnodes falsely suggests assignment count.",
+      "regression": "Owner-scoped read-only exactrawbyte/count fixture; dimension denials leaveCASunchanged; newclaim/dispatch denial and full24event cleanup/ACK despite later exhaustion.",
+      "historicalPrevention": "Originalfailedcreate and41assignment records preserved; no retry or inferred originaldimension. Expired24eventintent terminallycancelled without rewrite."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing operations CAS/readview and existing configuration controller only. No journal/ledger/credential replacement.",
+    "dependencies": "No new dependency, provider account or infrastructure; existing dedicated credentials reused server-side.",
+    "threats": "Credential echo in headers, forged diagnostic objects, cross-workspace receipt replay, stale same-source deployment result, expired owner authority, audit persistence failure.",
+    "failureModes": "Missing/invalid utilization fails closed; concurrent writes can still invalidate observed headroom. Existing atomic limits remain authoritative. Cleanup ACK/reset cannot be blocked by new margin.",
+    "faultInjection": "Plan/audit/byte pressure, owner/workspace isolation, unchanged historicalCAS, capacity changes between dispatch and ACK, exact cleanup and no reservation.",
+    "independentChallenge": "Independent Work QA and Auditor found and verified fixes for credential header echo and stale runtime fence; no independently authenticated human acceptance claim.",
+    "recovery": "Actualownerrestored via existing securelogin; old24eventintent canceled preservinghash. No paid/count/reservation. ExistingREADY62f retained until successorqualification.",
+    "readiness": "Independent Work QA/Auditor plusSTRICT/Redis/CI/CodeQL/Browser required before publication/admission. Actual full persisted bytes must be read before choosing preservation-safe capacity repair."
+  }
+}
