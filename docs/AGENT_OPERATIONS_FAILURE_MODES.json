@@ -1120,5 +1120,20 @@
     "preservedEvents": 24,
     "status": "diagnostics282released-byteextension-under-independent-review",
     "paidRequests": 0
+  },
+  "phaseDPreviewRestTarget": {
+    "observedSource": "d594d1462e8caa1c8feeb95e6cd4ccacf797c09b",
+    "httpStatus": 400,
+    "code": "bad_request",
+    "rule": "REST-target-preview-invalid",
+    "createdDeployment": false,
+    "postFailureDeploymentCount": 0,
+    "preservedIntent": "refresh_0001beb536ad4f8ba3b7cfb5a599f22c",
+    "preservedEvents": 17,
+    "cancellationHash": "1dc7f54767a50adb653d36d584f2ebfbeef37accc2428d2d1f24ec87992fa397",
+    "futureFlags": false,
+    "paidRequests": 0,
+    "status": "pure-Work-request-contract-correction-under-review",
+    "official": "https://vercel.com/docs/agent-resources/vercel-mcp/tools/deployments/create_deployment"
   }
 }
