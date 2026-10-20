@@ -1114,11 +1114,11 @@
     "code": "OPS_CAPACITY",
     "actualPlans": 41,
     "actualAudit": 206,
-    "originalDimension": "unknown",
-    "candidate": "Read-only exact raw-byte utilization and closed dimension codes; preconfiguration observation margin; no limit increase",
+    "originalDimension": "serialized-candidate-byteguard-strongly-inferred-by-callgraph-and-preserved-counts-exactbytesunrecorded",
+    "candidate": "normalCASbytes1M/cleanup100k; same50plans/400admissionaudit/500hard; no migration; existingreadinessutilization",
     "historicalIntent": "refresh_f726edea0fe340bd99a1cb0ff9f8d59e",
     "preservedEvents": 24,
-    "status": "unverified-intent-terminally-cancelled-successor-under-review",
+    "status": "diagnostics282released-byteextension-under-independent-review",
     "paidRequests": 0
   }
 }
