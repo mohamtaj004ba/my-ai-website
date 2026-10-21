@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "cdba875eeeaf67a77c040190e970dcac474bcb3f4385f9bff488bbfe6272e1ea",
+  "risk": "critical",
+  "scope": "Scope new QA-only instructions to QA; preserve unchanged request ceilings and all finding guards.",
+  "riskAnalysis": "No limits or authority changes. Realistic long-binding fixtures prevent prompt growth from overflowing Specialist planning bytes. Original failures and patch remain immutable.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Reviewer completeness, source/evidence integrity, historical decisions and execution/publication boundaries.",
+    "trustBoundaries": "Validated Specialist receipt supplies data IDs only; owner/server remains authoritative for all permissions.",
+    "abuseCases": "Extra or forged decisions, omitted findings, schema bypass, fabricated acceptance, secret-bearing diagnostics, missing prior receipts.",
+    "mitigations": "Exact count and finding enum plus unchanged semantic uniqueness/evidence checks; closed sanitized categories only; no authority expansion."
+  },
+  "rollback": "Revert new QA schema/instructions/diagnostic metadata on feature branch; keep original trial, generated patch, reservations and all audit records.",
+  "negativePaths": {
+    "malformed-response": "Strict schema and existing provider parser remain; new extra count/forged ID outputs denied.",
+    "stale-state": "Fresh prior receipt and exact source/task binding remain authoritative.",
+    "concurrency": "No CAS/serial-authority change; existing mandatory coverage retained.",
+    "cancellation": "Existing cancellation/revocation/cleanup behavior unchanged and native failure tests passed.",
+    "worker-interruption": "No worker modification; original destruction evidence and interruption tests retained.",
+    "api-outage": "No provider retries introduced; existing failure handling unchanged.",
+    "authorization-denial": "No owner/role/tool grants added; exact source pin changes require fresh reviewed enrollment.",
+    "spending-limit": "No budget, reservation or token-limit changes; remaining1.80USD conservatively enforced.",
+    "partial-execution": "Original third-stage failure preserves first two results, QA usage and destroyed workspace; no downstream success claimed."
+  },
+  "defects": [
+    {
+      "rootCause": "New QA guidance broadcast into every stage pushed realistic Specialist fixture binding over unchanged input byte planning ceiling.",
+      "detectionGap": "Previous new tests used short binding identities and did not run every fixture stage.",
+      "regression": "All five fixture stages with realistic task, execution and deployment identifiers; historical compact compatibility and QA guidance retained.",
+      "historicalPrevention": "Stage-scoped instructions and realistic full request construction rather than schema-only tests."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing implementation/schema/parser/failure boundary only; no new execution path or organization.",
+    "dependencies": "No new packages, services, credentials or infrastructure.",
+    "threats": "Output overcount, forged IDs, missing prior evidence, suppressed criticism and secret-bearing diagnostics.",
+    "failureModes": "Missing or unsupported prior evidence denies request; invalid count/IDs fail schema and semantic guards. Failed paid work remains revoked with observed usage retained.",
+    "faultInjection": "Old permissive schema counterexample, extra decisions, invented ID, absent prior receipt, duplicate generic finding, malformed diagnostics and historical request fixtures.",
+    "independentChallenge": "Independent Work QA20/20 and Auditor approve exact stage-scoped diff with no material finding; actual hosted qualification still required.",
+    "recovery": "Original failure and agent patch remain immutable; no paid retry until exact new release/configuration/admission qualification.",
+    "readiness": "New six focused cases pass; hosted exact successor verification required before any paid attempt."
+  }
+}

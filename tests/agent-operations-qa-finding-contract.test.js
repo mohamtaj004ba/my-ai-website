@@ -13,6 +13,16 @@ test('missing or unsupported prior findings fail before a provider request schem
  const two=context();two.priorReceipts[1].response.findings.push({...two.priorReceipts[1].response.findings[0],id:'unscoped'});a.throws(()=>copy.schema('qa',inf.schema('qa'),two),/ENG_AI_QA_COMPLETENESS/);
 });
 test('current instructions explain one decision per finding and retain criticism and rejection',()=>{const text=impl.instructionsFor(context());a.match(text,/exactly one decision per supplied Specialist finding/);a.match(text,/Do not add decision rows for criteria or patch edits/);a.match(text,/QA and Auditor may reject/);a.match(text,/preserves Auditor rejection/);});
+test('QA-specific guidance does not inflate non-QA requests; realistic bindings fit the unchanged fixture ceiling',()=>{
+ const c={...structuredClone(old.context),assignment:impl.OBJECTIVE,priorReceipts:[]};
+ c.binding.planId='op_'+ 'a'.repeat(32);c.binding.taskId=c.binding.planId+'_task1';c.binding.executionId='pilot_'+ 'b'.repeat(32)+'_chief-plan';
+ c.binding.runtime.origin='https://my-ai-website-52qb14k0h-mohamtaj004bas-projects.vercel.app';c.binding.runtime.deploymentId='dpl_DCPyCeJ5SNooD1cV6kW7kvNYR8A7';
+ for(const stage of inf.STAGES){
+  const instructions=impl.instructionsFor(c);a.equal(instructions.includes('QA: exactly one decision'),stage==='qa');
+  const receipt=inf.executeFixture(stage,c);a(receipt.inputTokenPlanningBound<=12000);c.priorReceipts.push(receipt);
+ }
+ a.equal(c.priorReceipts.length,5);a(c.priorReceipts.every(r=>r.simulated&&r.paidCalls===0));
+});
 test('historical compact request schema and instructions remain unchanged',()=>{
  const c=structuredClone(old.context);a.equal(copy.schema('qa',inf.schema('qa'),c).properties.decisions.maxItems,3);a.equal(impl.instructionsFor(c),old.instructions);
 });
