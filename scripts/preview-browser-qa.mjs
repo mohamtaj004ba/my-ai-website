@@ -8,6 +8,7 @@ import path from 'node:path';
 import {installBillingFixture,verifyBillingDialogs} from './native-billing-browser-qa.mjs';
 import {verifyCustomerExperience} from './customer-experience-browser-qa.mjs';
 import {verifyVoiceOperations} from './voice-browser-qa.mjs';
+import {waitForDashboardUi} from './dashboard-ui-readiness.mjs';
 
 const baseURL=String(process.env.PREVIEW_URL||'').replace(/\/$/,'');
 const secret=String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET||'');
@@ -154,7 +155,7 @@ async function gotoAuthed(page,route,requiredSelector){
   await page.waitForSelector(requiredSelector,{state:'attached',timeout:20000});
   await page.locator('.view.active').waitFor({state:'visible',timeout:20000});
   await page.waitForLoadState('networkidle',{timeout:10000}).catch(()=>{});
-  await page.waitForTimeout(1000);
+  await waitForDashboardUi(page);
   const body=await page.locator('body').innerText();
   if(/sign in to callercore|authentication required/i.test(body))throw new Error(route+' rendered an authentication screen');
 }
@@ -234,16 +235,16 @@ async function assertReadableCopy(page,label){
 }
 
 async function ensureView(page,view){
-  if(view==='conversations'&&await page.locator('body').getAttribute('data-dashboard')==='client'){await ensureView(page,'contacts');await page.locator('#contactRecordedSessions').click();await page.locator('#view-conversations.active').waitFor();return;}
+  if(view==='conversations'&&await page.locator('body').getAttribute('data-dashboard')==='client'){await ensureView(page,'contacts');await page.locator('#contactRecordedSessions').click();await waitForDashboardUi(page,{view});return;}
   const btn=page.locator('button.nav-item[data-view="'+view+'"]').first();
   if(!(await btn.count()))throw new Error('Missing nav view '+view);
   const menu=page.locator('.mobile-menu').first();
   if(await menu.isVisible()){
     const sidebarOpen=await page.locator('.sidebar').evaluate(el=>el.classList.contains('open'));
-    if(!sidebarOpen){await menu.click();await page.waitForTimeout(250)}
+    if(!sidebarOpen){await menu.click();await waitForDashboardUi(page,{sidebar:'open'})}
   }
   await btn.click();
-  await page.waitForTimeout(450);
+  await waitForDashboardUi(page,{view,...(await menu.isVisible()?{sidebar:'closed'}:{})});
   const active=await btn.evaluate(el=>el.classList.contains('active'));
   if(!active)throw new Error('Navigation did not activate '+view);
 }
