@@ -1,3 +1,9 @@
+## Vercel build-cost reduction implemented locally; qualification pending — October 21, 2026
+
+Work-authored packaging-only change overrides only the Vercel build command to avoid duplicate full regression. New fixed offline smoke runner checks syntax/assets/Previewidentity and realcontracts.assertRelease without repairing locks, sanitizes provider env and bounds child60s. CI, local npm build, npmtest, preflight and STRICT policy unchanged. New runner itself is fingerprint-bound. Local smoke4/4 in228.5443ms; sixfocused failure/drift/environment/policy cases passed. This does not grant release acceptance or paid authority. Exact source review/fullSTRICT and one normal featurePreview qualification pending; no paidtrial/configrefresh/newservice.
+
+InvoiceBOX4ECVV-0004 verifiedfromoriginal2pagePDF:59.51USDtotal,27.52buildCPU,20Pro,4.98tax. Latest Vercelbuild4cores/8GB workingcache:423454ms of462588ms spent on tests. No promised dollar savings; hostedmeasurementpending. Existing auditcapacity blocker remainsunmodified; normalBhMc paid-disabled, current.60remaining unchanged.
+
 Final stop readback confirms normalBhMc exact232/c331, paidExecutionfalse, cleanupreadytrue, all9approvalsrevoked/leases0, existingff7openzeroattempt. Expanded2.40USDpending/2.60remaining unchanged. Independent safe-stop QA4f8430232f6c226bc88d6ce222b1295e56d638df6a4e12b8e71ffbce334187b0 / Auditor26d31e2402ca7c4fedc939c1077e6d47eeca1a22b8e03670e2696c754fb8d91f passed. This is a local documentation-only checkpoint; no application build or source deployment is needed.
 
 ## Owner-requested safe checkpoint; exact audit-capacity denial preserved — October 21, 2026

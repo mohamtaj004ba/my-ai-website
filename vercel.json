@@ -65,10 +65,17 @@
       "schedule": "17 5 * * *"
     }
   ],
-  "functions": {"api/google-oauth-callback.js": {"maxDuration": 60},"api/vercel-oauth-callback.js": {"maxDuration": 60},
+  "functions": {
+    "api/google-oauth-callback.js": {
+      "maxDuration": 60
+    },
+    "api/vercel-oauth-callback.js": {
+      "maxDuration": 60
+    },
     "api/agent-operations.js": {
       "maxDuration": 660
     }
   },
-  "ignoreCommand": "node scripts/vercel-ignore-docs.cjs"
+  "ignoreCommand": "node scripts/vercel-ignore-docs.cjs",
+  "buildCommand": "node scripts/deployment-build.cjs"
 }
