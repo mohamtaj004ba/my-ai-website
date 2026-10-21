@@ -1135,5 +1135,19 @@
     "paidRequests": 0,
     "status": "pure-Work-request-contract-correction-under-review",
     "official": "https://vercel.com/docs/agent-resources/vercel-mcp/tools/deployments/create_deployment"
+  },
+  "phaseDQaDecisionCardinality": {
+    "observedSource": "1c666af4ad7545897d2a1adb86c9ad002ee8573c",
+    "workflow": "wf_ea0687a0f98ff4299ae89ae6462400f1",
+    "code": "ENG_AI_QA_COMPLETENESS",
+    "failureHash": "d69693baeff758cc98630884ad4fcaf4feb13da33113f8ca378ee28937d6ee6f",
+    "verifiedCause": "One validated Specialist finding; QA schema permitted2or3 decisions, which the authoritative count guard correctly rejected.",
+    "unknown": "Exact rejected QA text and whether its extra IDs duplicated are not retained.",
+    "repair": "Derive exact QA count/ID enum from preserved Specialist findings; explicit one-to-one instruction; unchanged authoritative guard and rejection freedom.",
+    "status": "independently-reviewed-local-release-qualification-pending",
+    "paidRetries": 0,
+    "agentPatchGenerated": true,
+    "sourceExecuted": false,
+    "publicationAuthorized": false
   }
 }
