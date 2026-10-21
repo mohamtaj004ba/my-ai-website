@@ -14,8 +14,8 @@ test('Auditor: shared legacy writer preserves lifecycle revocation capacity',asy
  const f=fixture();await f.org.prepareApproval(owner);await f.org.activateApproval(owner,{id:f.approval.id,expectedRevision:1});
  const before=await f.adapter.read(),s=JSON.parse(before);s.auditorCapacityPadding='';s.auditorCapacityPadding='x'.repeat(989950-Buffer.byteLength(JSON.stringify(s)));await f.adapter.compare(before,JSON.stringify(s));
  const padded=await f.adapter.read(),store=createStore(f.adapter,{scope,clock:Date.now});
- await assert.rejects(store.create({principal:'auditor@example.test',idempotencyKey:'auditor_capacity_command',objective:'Read-only capacity regression',mode:'mock'}),/capacity/i);
- assert.equal(await f.adapter.read(),padded,'Rejected legacy command must not commit over reserved headroom');
+ await store.create({principal:'auditor@example.test',idempotencyKey:'auditor_capacity_command',objective:'Read-only capacity regression',mode:'mock'});
+ const extended=JSON.parse(await f.adapter.read());assert.equal(extended.auditorCapacityPadding,JSON.parse(padded).auditorCapacityPadding);assert.deepEqual(extended.operations,JSON.parse(padded).operations);assert.equal(extended.tasks.length,1);
  await f.org.controlApproval(owner,{id:f.approval.id,type:'revoke'});assert.equal((await f.org.summary()).paidExecution,false);assert.equal((await f.org.read()).operations.approvals[0].status,'revoked');
  assert.equal((await f.org.summary()).budget.retainedMicros,0);
 });

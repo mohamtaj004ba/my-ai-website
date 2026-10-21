@@ -20,8 +20,8 @@
   "threatModel": {
     "assets": "Immutable audit history, task authority, credentials, spending and cross-workspace isolation.",
     "trustBoundaries": "Owner authorization precedes read-only projection; all mutations retain existing CAS, runtime and task checks.",
-    "abuseCases": "History overwrite, unbounded growth, full registry partial writes, false paid readiness or unavailable cleanup.",
-    "mitigations": "Existing CAS, owner/workspace isolation, source binding, per-field bounds, spending, cancellation and role separation remain. Provider exceptions propagate without uncertain retry. Telemetry reports numeric sizes only."
+    "abuseCases": "History overwrite, cross-workspace writes, authorization bypass, false paid readiness or concealed provider write failure.",
+    "mitigations": "Owner/workspace isolation, source binding, per-field bounds, spending, expiry, cancellation, role separation and atomic CAS remain. Application CAS propagates thrown exceptions. SDK network retry policy is unchanged. Telemetry exposes numeric sizes only."
   },
   "rollback": "Revert reviewed application code to prior paid-disabled Preview if qualification fails. Never roll back/delete persisted history or revive old grants; restored lower caps could reject larger current records.",
   "negativePaths": {
@@ -29,8 +29,8 @@
     "stale-state": "Existing task/runtime checks and CAS readback remain required.",
     "concurrency": "Real CAS conflict test retains concurrent historical row and appends once.",
     "cancellation": "Existing revocation bypasses new admission checks and retains earlier cleanup fallback.",
-    "worker-interruption": "No worker changes; immutable diagnostics and revocation byte reserve preserved.",
-    "api-outage": "Synthetic provider-write rejection is attempted once with unchanged durable state, no automatic retry.",
+    "worker-interruption": "No worker execution changes. Expiry and authority guards fail closed; diagnostics/revocation may write beyond removed application caps, subject to actual provider availability.",
+    "api-outage": "Synthetic thrown adapter exception is attempted once at the application CAS layer with unchanged durable state; existing SDK network retries remain separate and are not claimed disabled.",
     "authorization-denial": "Existing owner-before-read test and exact source task checks remain unchanged.",
     "spending-limit": "No budget change or new paid request. Actual provider write failures stop the workflow and retain financial uncertainty.",
     "partial-execution": "Diagnostics and revocation remain permitted beyond former bytecaps; actual provider failures propagate, never become successful cleanup receipts."
@@ -47,9 +47,9 @@
     "architecture": "Keep the existing shared Redis CAS and separate Operations key; no segmentation, journal duplication, archive or orchestration change.",
     "dependencies": "No package, lockfile, external service, worker or build-policy changes. New pure module fingerprint-bound.",
     "threats": "Uncontrolled field data, permission escalation, provider rejection or inaccurate cleanup claims remain prevented by unchanged validators and fail-closed transitions.",
-    "failureModes": "Count and byte guards fail closed, projection cannot authorize execution, cleanup earlierfallback retained.",
+    "failureModes": "Domain-count and authority guards fail closed. Provider errors propagate; no aggregate application byte guard or byte reserve remains. Actual provider rejection may prevent durable cleanup writes.",
     "faultInjection": "Oversized relative-to-old-cap history, escaped values, actual registry denial, provider errors and stale/concurrent CAS are exercised without paid calls.",
-    "independentChallenge": "Separate WorkQA and EngineeringAuditor found no material defect; both require actual byte headroom before paid activation.",
+    "independentChallenge": "Separate Work QA and Engineering Auditor reviewed removal under explicit owner direction. No material source finding; application CAS retry behavior is distinct from unchanged SDK network retries.",
     "recovery": "Keep old claimed configuration and all historical evidence intact until reviewed cancellation; never retry refresh blindly.",
     "readiness": "Focused tests and independent source review precede STRICT and exact paid-disabled Preview qualification; no paid activation inferred."
   }
