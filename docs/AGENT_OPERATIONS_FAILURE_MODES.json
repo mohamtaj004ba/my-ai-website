@@ -1,4 +1,56 @@
 {
+  "phaseDUsedSequenceRecovery": {
+    "observedApplication": "a908124d2784059db13be03924e403941d9d0de2",
+    "qualifiedRepair": "5853f1c2241ffedf869aee383fb48d8d9194297c",
+    "observedFailure": "Read-only UI selection recovery excluded used sequences after browser control interruption; no new server enrollment or paid request occurred.",
+    "verifiedCause": "Explicit attempts.length===0 and enrollments.length===1 predicates.",
+    "repair": "Recover bounded validated used history through two unchanged owner-scoped GETs and empty-cache fences; select latest already-enrolled runtime only. No grants, registration, current-release enrollment or budget changes.",
+    "verification": "4370 regressions,34 real Redis,six hosted visual comparisons and actual authenticated selection recovery passed.",
+    "status": "qualified-read-only-recovery-no-authority-expansion"
+  },
+  "phaseDQAFindingEvidenceScope": {
+    "observedApplication": "5853f1c2241ffedf869aee383fb48d8d9194297c",
+    "workflowId": "wf_0ee52ff805a15a97732232056a111b55",
+    "failureReceipt": "19422f02a50a16a19a02c5c39310fe6adfb966d876a368387915604688bf43e4",
+    "code": "ENG_AI_UNRELATED_EVIDENCE",
+    "stage": "qa",
+    "phase": "response-validate",
+    "observed": "HTTP200/completed; schema and supplied-global evidence validation passed, but a citation was outside the matched finding subset. Exact rejected IDs/text were not retained.",
+    "verifiedContractGap": "Current QA schema pinned finding count/identity but allowed evidence references prohibited by the authoritative same-finding subset guard.",
+    "repairApplication": "4194c8e114823f857db0d6ee3d229b495658a231",
+    "repairFingerprint": "f369f8ad6f4e9fb45a077f636211dfb2bd195ea6f9c6e33b5b61dc8421f123fa",
+    "repair": "Current-only per-finding evidence enum and QA instructions; unchanged semantic guard; closed indexed evidence-unrelated diagnostics.",
+    "verification": "143 focused cases;4376 STRICT;34 real Redis;CI/CodeQL/Jekyll/Browser passed;actual557-entry CRC/archive hash/release pin and502captures/sixvisualcomparisons inspected.",
+    "status": "qualified-nonbillably-live-repair-unproven",
+    "remainingQualityFinding": "Specialist verificationStrategy ends in a clipped fragment plus U+200B; retain rejection/uncertainty rather than claiming complete or accepted reporting.",
+    "liveStagesCompleted": [
+      "chief-plan",
+      "specialist"
+    ],
+    "liveStagesNotCompleted": [
+      "qa",
+      "auditor",
+      "chief-final"
+    ],
+    "generatedPatchAppliedOnlyToDisposableCopy": true,
+    "workspaceDestroyed": true,
+    "generatedCodeExecuted": false,
+    "actualProductPatchPublished": false,
+    "responses": 3,
+    "countRequests": 3,
+    "reportedInputTokens": 7870,
+    "reportedOutputTokens": 2483,
+    "reportedReasoningTokens": 411,
+    "calculatedResponsesMicros": 40570,
+    "countChargesAndInvoiceAdjustments": "unreconciled-not-zero",
+    "cohortAttemptsConsumed": 9,
+    "cohortRetainedMicros": 3400000,
+    "cohortRemainingMicros": 600000,
+    "expandedPendingMicros": 4400000,
+    "nextFullAttemptReservationMicros": 1000000,
+    "paidContinuation": "stopped-insufficient-conservative-headroom",
+    "shutdown": "all observed grants revoked;approvallease0;allattemptsclosed;taskcancelled;cleanupready;paidfalse;outstandingfalse"
+  },
   "phaseDMetadataAuditDeadline": {
     "observedApplication": "f0c98de1e22565461a7bb7fcf1a2ae1e11f48a57",
     "observedDeployment": "dpl_2NUQzDxaBMisreRbt1ZAF5hTEisg",

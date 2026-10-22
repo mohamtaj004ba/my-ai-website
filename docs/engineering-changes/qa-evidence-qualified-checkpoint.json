@@ -1,0 +1,15 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "5e2df50f48eb743e8510951c13b80f4c6e29f9478ecbd0532e910f28f142fd15",
+  "risk": "routine",
+  "scope": "Documentation-only preservation of qualified QA evidence repair, actual failed live attempt, agent patch, complete shutdown and financial stop; append risk records without changing original records.",
+  "defects": [],
+  "verification": [
+    "scope-review"
+  ],
+  "applicationSource": "4194c8e114823f857db0d6ee3d229b495658a231",
+  "applicationFingerprint": "f369f8ad6f4e9fb45a077f636211dfb2bd195ea6f9c6e33b5b61dc8421f123fa",
+  "modelRequests": 0,
+  "configurationMutations": 0,
+  "applicationRebuildRequired": false
+}
