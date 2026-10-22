@@ -120,8 +120,13 @@ test('real Redis Lua serializes creation, claims, budgets and a persisted manage
     await store().command(j.id,{type:'reserve',fence:c.fence,executionId:'exec_extra_'+i});await store().command(j.id,{type:'fail',fence:c.fence});
   }
   const over=await store().create({...input,idempotencyKey:'over_budget'}),c=await store().command(over.id,{type:'claim'});
-  await assert.rejects(store().command(over.id,{type:'reserve',fence:c.fence,executionId:'exec_over'}),/budget/);
-  assert.equal((await store().read()).reservations.length,16);
+  const priorReservations=(await store().read()).reservations;
+  await store().command(over.id,{type:'reserve',fence:c.fence,executionId:'exec_over'});
+  const afterReservations=(await store().read()).reservations;
+  assert.equal(afterReservations.length,17);assert.deepEqual(afterReservations.slice(0,16),priorReservations);
+  await assert.rejects(store().command(over.id,{type:'reserve',fence:c.fence,executionId:'exec_over'}));
+  await assert.rejects(store().command(over.id,{type:'finish',fence:c.fence+1,executionId:'exec_over',actualMicros:0,result:{}}));
+  assert.deepEqual((await store().read()).reservations,afterReservations);
   // No deletes/FLUSH commands; the CI container is disposed by the runner.
 });
 test('organization grants, delegation, sealed QA and cancellation persist through real Redis CAS connections',async()=>{

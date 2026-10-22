@@ -48,13 +48,13 @@ test('interrupted unreserved stage recovers but uncertain execution retains spen
   assert.equal((await s.command(a.id,{type:'recover'})).status,'blocked');await assert.rejects(s.command(a.id,{type:'claim'}),/terminal/);
   assert.equal((await s.read()).reservations[0].ceilingMicros,LIMITS.callMicros);
 });
-test('daily/monthly budgets serialize reservations across tasks; no refunds on failure',async t=>{
+test('daily/monthly estimates preserve serialized reservations without financial admission caps',async t=>{
   const f=fixture(t),s=f.connect();
   for(let i=0;i<16;i++){const j=await enqueue(s,'budget_'+i+'xx'),c=await s.command(j.id,{type:'claim'});await s.command(j.id,{type:'reserve',fence:c.fence,executionId:'exec_budget_'+i});await s.command(j.id,{type:'fail',fence:c.fence});}
   const j=await enqueue(s,'budget_last'),c=await s.command(j.id,{type:'claim'});
-  await assert.rejects(s.command(j.id,{type:'reserve',fence:c.fence,executionId:'exec_over'}),/Daily budget/);
+  const prior=structuredClone((await s.read()).reservations);await s.command(j.id,{type:'reserve',fence:c.fence,executionId:'exec_over'});assert.deepEqual((await s.read()).reservations.slice(0,16),prior);
   f.setTime(86401000);const next=await enqueue(s,'budget_next'),n=await s.command(next.id,{type:'claim'});
-  await assert.rejects(s.command(next.id,{type:'reserve',fence:n.fence,executionId:'exec_month'}),/Monthly budget/);
+  await s.command(next.id,{type:'reserve',fence:n.fence,executionId:'exec_month'});assert.equal((await s.read()).reservations.length,18);assert.deepEqual((await s.read()).reservations.slice(0,16),prior);
 });
 test('deadline, exhausted calls, audit capacity and storage uncertainty fail closed',async t=>{
   const f=fixture(t),s=f.connect(),j=await enqueue(s);f.setTime(601001);await assert.rejects(s.command(j.id,{type:'claim'}),/deadline/);
