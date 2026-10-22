@@ -1216,5 +1216,19 @@
     "agentPatchGenerated": true,
     "sourceExecuted": false,
     "publicationAuthorized": false
+  },
+  "ownerFinancialPolicyPropagationRelease": {
+    "application": "27f405793295697a4954d7862c94c4c2d562eb47",
+    "testHead": "d775fa4383b1bdc31e1019a7f2c55ea593f966a3",
+    "fingerprint": "a149f2f53d9762711d96ec7f379d3a5f01f4b327a2fae1e56839b23736aee7d1",
+    "cause": "Duplicated active dollar predicates in native/legacy callers and obsolete denial tests.",
+    "correction": "Existing shared numeric-validating monitor-only policy propagated to identified callers; original metadata/history preserved.",
+    "actualFullTests": 4379,
+    "actualRedisTests": 34,
+    "browser": "39722775465 passed; actual archive12402316511 SHA843109848eda2e727ffe5ccf5236d733815f1516e11d3f7bfe290b3f07e36219 verified;502captures/sixvisuals/zeroerrors",
+    "paidCalls": 0,
+    "providerBillingReconciled": false,
+    "historicalUncertaintyPreserved": true,
+    "separateRecordCapsNotClaimedRemoved": true
   }
 }
