@@ -19,6 +19,8 @@ test('QA-specific guidance does not inflate non-QA requests; realistic bindings 
  c.binding.runtime.origin='https://my-ai-website-52qb14k0h-mohamtaj004bas-projects.vercel.app';c.binding.runtime.deploymentId='dpl_DCPyCeJ5SNooD1cV6kW7kvNYR8A7';
  for(const stage of inf.STAGES){
   const instructions=impl.instructionsFor(c);a.equal(instructions.includes('QA: exactly one decision'),stage==='qa');
+  a.equal(instructions.includes('target at most 1,600 visible JSON tokens'),stage==='specialist');
+  if(stage==='specialist'){a.match(instructions,/retain every material risk and every criterion mapping/);a.match(instructions,/Never truncate or omit required fields/);a.match(instructions,/never full source/);}
   const receipt=inf.executeFixture(stage,c);a(receipt.inputTokenPlanningBound<=12000);c.priorReceipts.push(receipt);
  }
  a.equal(c.priorReceipts.length,5);a(c.priorReceipts.every(r=>r.simulated&&r.paidCalls===0));
