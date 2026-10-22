@@ -1230,5 +1230,32 @@
     "providerBillingReconciled": false,
     "historicalUncertaintyPreserved": true,
     "separateRecordCapsNotClaimedRemoved": true
+  },
+  "starterMonitorOnlyExecutionTiming": {
+    "source": "d775fa4383b1bdc31e1019a7f2c55ea593f966a3",
+    "workflow": "wf_410803cd720fc2e815601585d788d750",
+    "failureCode": "ENG_FAILURE_CANCELLED",
+    "authorityCode": "ENG_ACTIVATION_TIMEOUT",
+    "failureHash": "1540f3e58331358100b0241d7f6ce3881661bd626946172acf46cc58653bd89e",
+    "observedCause": "302702ms of600000ms task lifetime consumed by Work preparation before run; remaining-time timer minus15s cleanup reserve canceled QA fetch.",
+    "correction": "Complete configuration/enrollment under preparation task; create actual paid execution task last, just before prepare/rapid final review/run. Preserve limits and prior approval history.",
+    "validatedLiveStages": [
+      "chief-plan",
+      "specialist"
+    ],
+    "patchAppliedToDisposableCopy": true,
+    "copyDestroyed": true,
+    "generatedCodeExecuted": false,
+    "publication": false,
+    "acceptance": false,
+    "responses": 3,
+    "counts": 3,
+    "knownCalculatedResponsesMicros": 29354,
+    "qaUsageUnknown": true,
+    "countingFeesUnknown": true,
+    "cohortAttemptsConsumed": 10,
+    "paidDisabled": true,
+    "sequenceStopped": true,
+    "status": "actual-failure-and-clean-shutdown-independently-reviewed-process-correction"
   }
 }
