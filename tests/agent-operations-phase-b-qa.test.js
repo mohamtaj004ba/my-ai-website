@@ -150,22 +150,12 @@ test('same owner in two workspaces cannot receive foreign entity audit events th
  assert.equal(out.workflows.length,1);assert.equal(out.audit.length,1);assert.equal(out.audit[0].workflowId,'wf_own');assert.equal(JSON.stringify(out).includes('foreign'),false);
 });
 
-test('normal admission preserves reserved shutdown audit space and cannot strand an unstarted task at capacity',async()=>{
- const f=fixture(),p=await f.service.create(owner,assignment());fillAudit(f,ops.LIMITS.admissionAudit-1);
- await assert.rejects(f.service.run(owner,command(p)),/CAPACITY/);
- assert.equal(f.journal().plans[0].tasks[0].attempts.length,0);
- const cancelled=await f.service.cancel(owner,command(p));assert.equal(cancelled.status,'cancelled');assert.equal(f.journal().audit.length,ops.LIMITS.admissionAudit);
- await assert.rejects(f.service.create(owner,assignment('another_assignment_002')),/CAPACITY/);
- assert.equal(f.journal().plans.length,1);
+test('normal admission and cancellation preserve audit history above former thresholds',async()=>{
+ const f=fixture(),p=await f.service.create(owner,assignment());fillAudit(f,500);const before=structuredClone(f.journal().audit);
+ const cancelled=await f.service.cancel(owner,command(p));assert.equal(cancelled.status,'cancelled');await f.service.create(owner,assignment('another_assignment_002'));assert.deepEqual(f.journal().audit.slice(0,500),before);assert.equal(f.journal().plans.length,2);
 });
-
-test('Cancel and emergency stop can consume final reserved audit slot; repeated empty emergency needs no slot',async()=>{
- for(const action of ['cancel','emergencyStop']){
-  const f=fixture(),p=await f.service.create(owner,assignment()),source=JSON.stringify(f.ledger());fillAudit(f,ops.LIMITS.audit-1);
-  if(action==='cancel')await f.service.cancel(owner,command(p));else await f.service.emergencyStop(owner,{expectedRevision:f.journal().revision});
-  let s=f.journal();assert.equal(s.audit.length,ops.LIMITS.audit);assert.equal(s.plans[0].status,'cancelled');assert.equal(s.plans[0].tasks.every(t=>t.leaseUntil===0&&t.status==='cancelled'),true);
-  const again=await f.service.emergencyStop(owner,{expectedRevision:s.revision});assert.equal(again.idempotent,true);s=f.journal();assert.equal(s.audit.length,ops.LIMITS.audit);assert.equal(JSON.stringify(f.ledger()),source);
- }
+test('Cancel and emergency stop append above former audit ceiling; empty repeated stop is idempotent',async()=>{
+ for(const action of ['cancel','emergencyStop']){const f=fixture(),p=await f.service.create(owner,assignment()),source=JSON.stringify(f.ledger());fillAudit(f,500);const before=structuredClone(f.journal().audit);if(action==='cancel')await f.service.cancel(owner,command(p));else await f.service.emergencyStop(owner,{expectedRevision:f.journal().revision});let state=f.journal();assert.deepEqual(state.audit.slice(0,500),before);assert.equal(state.audit.length,501);assert.equal(state.plans[0].status,'cancelled');const again=await f.service.emergencyStop(owner,{expectedRevision:state.revision});assert.equal(again.idempotent,true);assert.equal(f.journal().audit.length,501);assert.equal(JSON.stringify(f.ledger()),source);}
 });
 
 test('expired queued assignment is visibly non-runnable, records a qualified incident, and remains cancellable',async()=>{
@@ -212,11 +202,11 @@ test('valid rehashed chain with an invalid global audit sequence is rejected',as
 
 test('maximum unfinished plans near normal byte capacity retain bounded serial and emergency cancellation headroom',async()=>{
  const original=fixture();
- for(let i=0;i<ops.LIMITS.plans;i++)await original.service.create(owner,{...assignment('capacity_assignment_'+String(i).padStart(3,'0')),objective:'界'.repeat(1000),subtasks:Array.from({length:8},(_,j)=>({key:('task_'+j+'_').padEnd(80,'x'),template:j%2?'runtime-health':'budget-audit',dependsOn:j?[('task_'+(j-1)+'_').padEnd(80,'x')]:[]}))});
+ for(let i=0;i<96;i++)await original.service.create(owner,{...assignment('capacity_assignment_'+String(i).padStart(3,'0')),objective:'界'.repeat(1000),subtasks:Array.from({length:8},(_,j)=>({key:('task_'+j+'_').padEnd(80,'x'),template:j%2?'runtime-health':'budget-audit',dependsOn:j?[('task_'+(j-1)+'_').padEnd(80,'x')]:[]}))});
  const [key,raw]=[...original.rows.entries()][0],s=JSON.parse(raw),target=999950;
  // Bounded legitimate incident/history records simulate a long-lived journal.
  // They do not inject execution results, acceptance, permissions or paid receipts.
- outer:for(let i=0;i<ops.LIMITS.incidents;i++){
+ outer:for(let i=0;i<64;i++){
   const evidence={taskId:'synthetic_capacity_task_'+i,revision:1},observation={sourceHash:'e'.repeat(64),sourceRevision:7,observedAt:1000000,operationsRevision:s.revision};
   const incident={id:'incident_capacity_'+i,conditionId:'condition_capacity_'+i,code:'assignment-blocked',severity:'medium',owner:'workspace-owner',taskId:evidence.taskId,evidenceHash:monitor.hash(evidence),originalEvidence:evidence,originalObservation:observation,latestObservation:observation,firstSeen:1000000,lastSeen:1000000,status:'acknowledged',revision:1,rechecks:0,history:[]};s.incidents.push(incident);
   if(Buffer.byteLength(JSON.stringify(s))>target){s.incidents.pop();break;}
@@ -230,34 +220,22 @@ test('maximum unfinished plans near normal byte capacity retain bounded serial a
  for(const mode of ['serial','emergency']){
   const f=fixture();f.rows.set(key,bounded);const source=JSON.stringify(f.ledger());
   if(mode==='serial')for(const p of s.plans)await f.service.cancel(owner,command(p));else await f.service.emergencyStop(owner,{expectedRevision:s.revision});
-  const final=f.journal(),after=Buffer.byteLength(JSON.stringify(final));assert.equal(final.plans.length,ops.LIMITS.plans);assert.equal(final.plans.every(p=>p.status==='cancelled'&&p.acceptedWork===false&&p.tasks.every(t=>t.status==='cancelled'&&t.leaseUntil===0)),true);
+  const final=f.journal(),after=Buffer.byteLength(JSON.stringify(final));assert.equal(final.plans.length,96);assert.equal(final.plans.every(p=>p.status==='cancelled'&&p.acceptedWork===false&&p.tasks.every(t=>t.status==='cancelled'&&t.leaseUntil===0)),true);
   if(mode==='serial')assert(after>1000000,'serial cleanup remains writable beyond the removed byte ceiling');assert(Math.abs(after-before)<100000);assert.equal(JSON.stringify(f.ledger()),source);
-  assert.equal((await f.service.read(owner)).plans.length,ops.LIMITS.plans);
+  assert.equal((await f.service.read(owner)).plans.length,96);
  }
 });
 
 
-test('bounded retention preserves all25 historical plans and denies overflow without audit loss',async()=>{
- const f=fixture();for(let i=0;i<25;i++){const p=await f.service.create(owner,assignment('historical_plan_'+i));await f.service.cancel(owner,command(p));}
- const before=f.journal(),source=JSON.stringify(f.ledger()),p=await f.service.create(owner,assignment('one_extra_admission'));const admitted=f.journal();
- assert.equal(ops.LIMITS.plans,96);assert.equal(admitted.plans.length,26);assert.deepEqual(admitted.plans.slice(0,25),before.plans);assert.deepEqual(admitted.audit.slice(0,before.audit.length),before.audit);assert.equal(admitted.audit.length,before.audit.length+1);
- for(let i=26;i<ops.LIMITS.plans;i++)await f.service.create(owner,assignment('retained_plan_'+i));const raw=JSON.stringify(f.journal());await assert.rejects(f.service.create(owner,assignment('denied_plan_overflow')),/OPS_CAPACITY/);assert.equal(JSON.stringify(f.journal()),raw);
- assert.equal((await f.service.create(owner,assignment('one_extra_admission'))).id,p.id);assert.deepEqual(f.journal().plans.slice(0,26),admitted.plans);
- assert.equal((await f.service.cancel(owner,command(p))).status,'cancelled');assert.equal(JSON.stringify(f.ledger()),source);assert.equal(f.journal().plans.length,ops.LIMITS.plans);
-});
-test('concurrent final-slot admissions have one CAS winner and preserve historical prefix',async()=>{
- const f=fixture();for(let i=0;i<ops.LIMITS.plans-1;i++)await f.service.create(owner,assignment('existing_plan_'+i));const before=f.journal();
- const results=await Promise.allSettled(['one','two'].map(k=>f.service.create(owner,assignment('capacity_race_'+k))));
- assert.equal(results.filter(x=>x.status==='fulfilled').length,1);assert.equal(results.filter(x=>x.status==='rejected'&&/OPS_CAPACITY/.test(x.reason.message)).length,1);
- const after=f.journal();assert.equal(after.plans.length,ops.LIMITS.plans);assert.deepEqual(after.plans.slice(0,-1),before.plans);assert.deepEqual(after.audit.slice(0,before.audit.length),before.audit);assert.equal(after.audit.length,before.audit.length+1);
-});
+test('historical retention appends above 96 plans with original audit and idempotency intact',async()=>{const f=fixture();for(let i=0;i<97;i++)await f.service.create(owner,assignment('historical_plan_'+i));const before=structuredClone(f.journal()),input=assignment('additional_history_append'),p=await f.service.create(owner,input);assert.equal(f.journal().plans.length,98);assert.deepEqual(f.journal().plans.slice(0,97),before.plans);assert.deepEqual(f.journal().audit.slice(0,before.audit.length),before.audit);assert.equal((await f.service.create(owner,input)).id,p.id);});
+test('concurrent admissions above former final slot each preserve historical prefix',async()=>{const f=fixture();for(let i=0;i<96;i++)await f.service.create(owner,assignment('existing_plan_'+i));const before=structuredClone(f.journal());await Promise.all(['one','two'].map(k=>f.service.create(owner,assignment('capacity_race_'+k))));const after=f.journal();assert.equal(after.plans.length,98);assert.deepEqual(after.plans.slice(0,96),before.plans);assert.deepEqual(after.audit.slice(0,before.audit.length),before.audit);assert.equal(after.audit.length,before.audit.length+2);});
 
-test('bounded64 retention preserves all50 old plans and the audit chain on the first new append',async()=>{const f=fixture();for(let i=0;i<50;i++){const p=await f.service.create(owner,assignment('old_fifty_'+i));await f.service.cancel(owner,command(p));}const old=f.journal(),ledger=JSON.stringify(f.ledger());await f.service.create(owner,assignment('first_after_fifty'));const next=f.journal();assert.equal(next.plans.length,51);assert.deepEqual(next.plans.slice(0,50),old.plans);assert.deepEqual(next.audit.slice(0,old.audit.length),old.audit);assert.equal(JSON.stringify(f.ledger()),ledger);assert.equal(ops.LIMITS.bytes,null);assert.equal(ops.LIMITS.cleanupBytes,null);assert.equal(ops.LIMITS.audit,500);});
+test('historical retention preserves all50 old plans and the audit chain on the first new append',async()=>{const f=fixture();for(let i=0;i<50;i++){const p=await f.service.create(owner,assignment('old_fifty_'+i));await f.service.cancel(owner,command(p));}const old=f.journal(),ledger=JSON.stringify(f.ledger());await f.service.create(owner,assignment('first_after_fifty'));const next=f.journal();assert.equal(next.plans.length,51);assert.deepEqual(next.plans.slice(0,50),old.plans);assert.deepEqual(next.audit.slice(0,old.audit.length),old.audit);assert.equal(JSON.stringify(f.ledger()),ledger);assert.equal(ops.LIMITS.bytes,null);assert.equal(ops.LIMITS.cleanupBytes,null);assert.equal(ops.LIMITS.audit,null);});
 
 test('owner utilization is read-only and measures exact stored bytes; foreign state stays isolated',async()=>{const f=fixture();await f.service.create(owner,assignment('capacity_read_only'));const before=[...f.rows.values()][0],v=await f.service.read(owner);assert.equal(v.capacity.bytes,Buffer.byteLength(before));assert.equal(v.capacity.plans,1);assert.equal(v.capacity.audit,1);assert.equal(v.capacity.executionAuthorized,false);assert.equal([...f.rows.values()][0],before);const other=await f.service.read({...owner,workspaceId:'beta'});assert.equal(other.capacity.plans,0);assert.equal(other.capacity.audit,0);await assert.rejects(f.service.read({...owner,id:'foreign@example.test'}),/OWNER/);assert.equal([...f.rows.values()][0],before);});
-for(const [dimension,value,code]of [['plans',require('../lib/agent-operations-operating-system').LIMITS.plans,'OPS_CAPACITY_PLANS'],['audit',388,'OPS_CAPACITY_ADMISSION_AUDIT']])test('configuration headroom denies '+dimension+' without rewriting history',()=>{const c={version:'operations-capacity-v1',plans:1,audit:1,bytes:10000,[dimension]:value},before=JSON.stringify(c);assert.throws(()=>ops.assertRefreshCapacity(c),new RegExp(code));assert.equal(JSON.stringify(c),before);});
-test('configuration headroom is conservative observation, not a new capacity limit or permission',()=>{assert.equal(ops.LIMITS.plans,96);assert.equal(ops.LIMITS.admissionAudit,400);assert.equal(ops.LIMITS.audit,500);assert.equal(ops.LIMITS.bytes,null);ops.assertRefreshCapacity({version:'operations-capacity-v1',plans:ops.LIMITS.plans-2,audit:387,bytes:2000000});for(const c of [null,{}, {version:'operations-capacity-v1',plans:1,audit:1,bytes:NaN}])assert.throws(()=>ops.assertRefreshCapacity(c),/OPS_CAPACITY_UNCONFIRMED/);});
-test('capacity denial names admission audit dimension and leaves original CAS document intact',async()=>{const f=fixture();await f.service.create(owner,assignment('capacity_original'));fillAudit(f,400);const before=[...f.rows.values()][0];await assert.rejects(f.service.create(owner,assignment('capacity_denied')),/OPS_CAPACITY_ADMISSION_AUDIT/);assert.equal([...f.rows.values()][0],before);});
+for(const [dimension,value]of [['plans',1000],['audit',10000]])test('historical '+dimension+' does not reject utilization observation',()=>{const c={version:'operations-capacity-v1',plans:1,audit:1,bytes:10000,[dimension]:value},before=JSON.stringify(c);ops.assertRefreshCapacity(c);assert.equal(JSON.stringify(c),before);});
+test('configuration utilization observation grants no capacity reservation or permission',()=>{for(const k of ['plans','admissionAudit','audit','bytes'])assert.equal(ops.LIMITS[k],null);ops.assertRefreshCapacity({version:'operations-capacity-v1',plans:1000,audit:10000,bytes:2000000});for(const c of [null,{}, {version:'operations-capacity-v1',plans:1,audit:1,bytes:NaN}])assert.throws(()=>ops.assertRefreshCapacity(c),/OPS_CAPACITY_UNCONFIRMED/);});
+test('assignment admission above former audit limit preserves original CAS history',async()=>{const f=fixture();await f.service.create(owner,assignment('capacity_original'));fillAudit(f,500);const before=structuredClone(f.journal().audit);await f.service.create(owner,assignment('capacity_allowed'));assert.deepEqual(f.journal().audit.slice(0,before.length),before);assert.equal(f.journal().audit.length,501);});
 
 test('bounded extension appends above old byte ceiling without rewriting preserved assignment or audit prefix',async()=>{const f=fixture(),p=await f.service.create(owner,assignment('byte_extension_original')),s=f.journal(),key=[...f.rows.keys()][0];for(let i=0;i<50&&Buffer.byteLength(JSON.stringify(s))<730000;i++){const evidence={taskId:'bounded_history_'+i},o={sourceHash:'e'.repeat(64),sourceRevision:1,observedAt:1000000,operationsRevision:s.revision};s.incidents.push({id:'incident_history_'+i,conditionId:'condition_history_'+i,code:'assignment-blocked',severity:'medium',owner:'workspace-owner',taskId:evidence.taskId,evidenceHash:monitor.hash(evidence),originalEvidence:evidence,originalObservation:o,latestObservation:o,firstSeen:1000000,lastSeen:1000000,status:'acknowledged',revision:11,rechecks:0,history:Array.from({length:10},()=>({at:1000000,operation:'acknowledge',reason:'界'.repeat(500),ownerHash:monitor.identity(owner.id)}))});}const prior=JSON.stringify(s);assert(Buffer.byteLength(prior)>700000);assert(Buffer.byteLength(prior)<900000);f.rows.set(key,prior);const next=await f.service.create(owner,assignment('byte_extension_new_task'));const after=f.journal();assert.deepEqual(after.plans[0],p);assert.deepEqual(after.audit.slice(0,s.audit.length),s.audit);assert.deepEqual(after.incidents,s.incidents);assert.equal(after.plans.length,2);assert.equal(next.acceptedWork,false);assert.equal(next.modelCalls,0);assert(Buffer.byteLength(JSON.stringify(after))>Buffer.byteLength(prior));});
 test('large escaped records are reported without an application byte ceiling or new authority',()=>{const state={operations:{audit:[]},padding:'\\'.repeat(1100000)},p=require('../lib/agent-operations-capacity').projection(state);assert(p.bytes>1000000);assert(p.providerRequest.serializedCurrentValueCasBytes>2*p.bytes);assert.equal(p.providerRequest.accountSpecificVerified,false);assert.equal(p.byteLimits.normal,null);assert.equal(p.executionAuthorized,false);ops.assertRefreshCapacity({version:'operations-capacity-v1',plans:1,audit:1,bytes:p.bytes});});
