@@ -1,12 +1,12 @@
 {
   "starterResumedRenewalReadback": {
-    "observedWorkflow": "wf_aecea3b06783c90f903e2ecaf21609da",
+    "observedWorkflow": "wf_aecea3b06783c90f903e2ecaf21609da and wf_7343f3420a94b642adecff33ecc5266c",
     "observedFailure": "QA admission outer approval-renewal timeout after genuine Chief and Specialist; no QA counting or Responses dispatch. Original safe diagnostic and source-bound patch retained.",
     "knownCause": "Outer renewal did not settle within existing10s deadline. Duplicate owner/stage authority reads are verified; the underlying slow operation is unmeasured.",
-    "correction": "Local content-free closed phase/timing diagnostics only; no timeout increase, ignored renewal failure, lease extension, retry or authorization bypass. Original CAS/cancellation repair preserved.",
-    "verification": "4405 local STRICT,28 independent QA,13 Auditor passes; candidate unpubished and remote qualification pending.",
-    "currentInterruption": "Distinct workflow wf_7343f3420a94b642adecff33ecc5266c dispatched once on existing qualified release; browser control detached before outcome readback. Outcome/usage/shutdown unverified. No further paid operation until authoritative recovery.",
-    "status": "preserved-failure-local-diagnostics-verified-current-run-readback-blocked"
+    "correction": "Bounded renewal-phase telemetry, stage admission diagnostics, fresh scoped authority reader avoiding unrelated monitoring ledger projection; preserve full scoped validation and broker live authority checks. Administrative config/V3 sequence history count caps removed without truncation.",
+    "verification": "4405 prior local STRICT; independent new actual-controller and authority-reader fixtures pass. Final successor qualification pending.",
+    "currentInterruption": "Second recovered: Chief valid; immutable dd69c1a failure confirms finish renewal timeout, grants revoked/cleanup ready. No new paid request during recovery.",
+    "status": "recovered-shutdown-verified-reviewed-successor-local-verification"
   },
   "financialPolicyPropagation": {
     "verifiedCause": "First monitor-only change covered native engineering; independent legacy constructors, stage capability and monetary predicates retained old policy. Combined17M retained estimates exceeded old15M context ceiling.",
