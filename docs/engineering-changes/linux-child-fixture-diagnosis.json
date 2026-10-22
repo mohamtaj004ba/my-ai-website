@@ -1,0 +1,27 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "b283cab4bc9c594c0ae03c65851342a5f93e0fe58a6f745dba6b715cf733d9a2",
+  "risk": "substantial",
+  "scope": "Correct remaining obsolete aggregate-history test expectations and add non-billable closed restricted-child diagnosis for unresolved Linux fixture failure.",
+  "riskAnalysis": "Production runtime and permissions are unchanged. Temporary trusted child copy has identical environment/read permissions/resource limits and only a closed diagnostic catch. No raw error text, secrets, prompts or stack paths emitted. Unknown outcomes fail; original production child remains unchanged.",
+  "verification": [
+    "risk-analysis",
+    "targeted-tests",
+    "independent-qa",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Several historical-cap fixtures treated cardinality as malformed state or cleanup failure; removal now requires actual malformed or revoked authority to trigger denial.",
+      "detectionGap": "Literal capacity searches did not identify every semantic aggregate-count expectation in adjacent cleanup and transport fixtures.",
+      "regression": "Three independently checked Node22 cases preserve full historical prefixes, opaque late unsafe authority, native attempt bound, revoked admission, exact cleanup tombstone, no dispatch and idempotence.",
+      "historicalPrevention": "Search semantic final-slot, bounded-history and cleanup failure fixtures across every test suffix; keep per-operation integrity bounds distinct from historical counts."
+    },
+    {
+      "rootCause": "Actual Linux restricted-child failure remains unknown because existing child catch and parent response guard replace underlying exception with generic errors.",
+      "detectionGap": "Standalone and four-file-concurrency Node22 Windows reproductions pass; local results cannot establish the Linux cause.",
+      "regression": "Trusted test-only temporary child reproduces exact Chief context/permissions, emits finite code/category/known module location, rejects raw ENG secret prefixes and inherited lookup keys, confirms child exit and removes copy.",
+      "historicalPrevention": "Obtain actual failing-environment sanitized diagnostic before selecting a repair; never classify a generic child denial as a model or permission cause without evidence."
+    }
+  ]
+}
