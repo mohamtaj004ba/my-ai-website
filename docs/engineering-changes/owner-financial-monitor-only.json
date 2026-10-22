@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "959ebb1bc1ac830c2d47c1f138fb2f98e9c79c9b7037aa81d79c3af76df1ab4d",
+  "risk": "critical",
+  "scope": "Owner-authorized monitor-only OpenAI financial policy and removal of shared audit count ceiling and admission margins.",
+  "riskAnalysis": "Dollar admission gates deliberately removed by explicit owner direction. Provider charges are not capped internally; billing may lag. Preserve existing nonfinancial execution authority, ledger history, count uncertainty and provider error handling. Separate Operations registry limits remain unchanged.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Credentials, source/task identity, historical audit and financial evidence, call/token/time controls, revocation and publication boundaries.",
+    "trustBoundaries": "Owner direction changes reviewed application policy only; model content cannot enable execution, change policy or grant authority.",
+    "abuseCases": "Revived consumed grant, forged source or workspace, false billing reconciliation, missing cost receipts, duplicate provider dispatch, result persistence after artificial audit exhaustion.",
+    "mitigations": "Existing owner/workspace/release/task/model and lifecycle gates retained; financial policy explicitly monitor-only; all historical rows retained; no unknown fees zeroed; actual provider failures propagate; audit hash/CAS preserved without count cap."
+  },
+  "rollback": "Revert reviewed policy/source changes on feature branch if required; never rewrite any existing grant, reservation, receipt or audit row. Keep paid disabled until exact release qualification.",
+  "negativePaths": {
+    "malformed-response": "Existing owner-controller, sequence, immutable evidence and cleanup negative cases remain. New tests permit monetary exhaustion while rejecting malformed accounting, wrong owner/workspace/source, stale or consumed grants, concurrent execution and exhausted attempt count; synthetic provider failure still revokes authority.",
+    "stale-state": "Existing owner-controller, sequence, immutable evidence and cleanup negative cases remain. New tests permit monetary exhaustion while rejecting malformed accounting, wrong owner/workspace/source, stale or consumed grants, concurrent execution and exhausted attempt count; synthetic provider failure still revokes authority.",
+    "concurrency": "Existing owner-controller, sequence, immutable evidence and cleanup negative cases remain. New tests permit monetary exhaustion while rejecting malformed accounting, wrong owner/workspace/source, stale or consumed grants, concurrent execution and exhausted attempt count; synthetic provider failure still revokes authority.",
+    "cancellation": "Existing owner-controller, sequence, immutable evidence and cleanup negative cases remain. New tests permit monetary exhaustion while rejecting malformed accounting, wrong owner/workspace/source, stale or consumed grants, concurrent execution and exhausted attempt count; synthetic provider failure still revokes authority.",
+    "worker-interruption": "Existing owner-controller, sequence, immutable evidence and cleanup negative cases remain. New tests permit monetary exhaustion while rejecting malformed accounting, wrong owner/workspace/source, stale or consumed grants, concurrent execution and exhausted attempt count; synthetic provider failure still revokes authority.",
+    "api-outage": "Existing owner-controller, sequence, immutable evidence and cleanup negative cases remain. New tests permit monetary exhaustion while rejecting malformed accounting, wrong owner/workspace/source, stale or consumed grants, concurrent execution and exhausted attempt count; synthetic provider failure still revokes authority.",
+    "authorization-denial": "Existing owner-controller, sequence, immutable evidence and cleanup negative cases remain. New tests permit monetary exhaustion while rejecting malformed accounting, wrong owner/workspace/source, stale or consumed grants, concurrent execution and exhausted attempt count; synthetic provider failure still revokes authority.",
+    "spending-limit": "Existing owner-controller, sequence, immutable evidence and cleanup negative cases remain. New tests permit monetary exhaustion while rejecting malformed accounting, wrong owner/workspace/source, stale or consumed grants, concurrent execution and exhausted attempt count; synthetic provider failure still revokes authority.",
+    "partial-execution": "Existing owner-controller, sequence, immutable evidence and cleanup negative cases remain. New tests permit monetary exhaustion while rejecting malformed accounting, wrong owner/workspace/source, stale or consumed grants, concurrent execution and exhausted attempt count; synthetic provider failure still revokes authority."
+  },
+  "defects": [
+    {
+      "rootCause": "Shared journal stopped at an artificial1024 entries; retained estimated ceilings were treated as spend forever despite separate actual token receipts. Explicit owner direction replaces financial admission ceilings with monitoring.",
+      "detectionGap": "Prior tests encoded conservative reservation and record-count policies as fixed requirements rather than configurable owner choices.",
+      "regression": "Append beyond1024/1100 with original hash chain preserved; historical monetary exhaustion permits preparation and one synthetic dispatch; retained rows unchanged; existing authority and cancellation denial tests.",
+      "historicalPrevention": "Keep authoritative provider billing separate from historical reservations and current execution authority; no artificial audit count admission buffer."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing controller, ledger, gateway and sequence; no new service, credential, orchestration or journal.",
+    "dependencies": "No dependency or infrastructure provisioning.",
+    "threats": "Scope escalation disguised as financial policy; billing uncertainty erased; historical authority revived.",
+    "failureModes": "Provider errors stop requests; cleanup/revocation retains fallback; financial monitoring is not automatic invoice synchronization.",
+    "faultInjection": "Historical monetary exhaustion, wrong-workspace/source/owner, canceled grants, provider failure, CAS conflict and thrown adapter exception; audit appends beyondoldcap.",
+    "independentChallenge": "Independent security38, accounting87 and sharedauditQA90 focused checks passed; final copy and new policy-readiness assertion recheck pending.",
+    "recovery": "Paid remains disabled. Exact verified successor release required before further authorized trial.",
+    "readiness": "Local205 activeengineering checks and90 audit checks passed; complete release qualification pending."
+  }
+}

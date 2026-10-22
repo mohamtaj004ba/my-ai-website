@@ -1,4 +1,12 @@
 {
+  "ownerFinancialMonitorOnly": {
+    "ownerDirection": "Remove internal OpenAI financial boundaries; OpenAI project billing is authoritative for billed charges.",
+    "implementation": "Active engineering dollar admission gates removed; original reservations, usage and unknown fees retained. Shared audit1024 cutoff and64/20/2-slot margins removed together.",
+    "authority": "No execution/publication/customer/credential authority granted; existing identity, model, token/time/call/attempt, serial and cleanup controls remain.",
+    "residualRisk": "No internal dollar cutoff. Provider billing may lag and count charges/adjustments remain unknown. No automatic billing synchronization claimed. Separate inactive legacy pilots and Operations registry limits not reactivated or claimed removed.",
+    "verification": "Independent focused reviews passed; full offline source verification in progress. Old monetary policy expectations intentionally revised; historical failed verification logs preserved.",
+    "status": "local-reviewed-not-yet-preview-qualified"
+  },
   "phaseDUsedSequenceRecovery": {
     "observedApplication": "a908124d2784059db13be03924e403941d9d0de2",
     "qualifiedRepair": "5853f1c2241ffedf869aee383fb48d8d9194297c",
@@ -1016,7 +1024,7 @@
         "bytes": 164429528,
         "sha256": "3288cc1e8170bbba32ab2d93dc665fd3eb0d7dcd67b58d8c92f8351d7826aff3",
         "visualComparisons": 6,
-        "maxDifference": 0.00005,
+        "maxDifference": 5e-05,
         "unexpectedErrors": 0,
         "actualReportPinPngInspected": true,
         "pinMismatchWaits": 82
@@ -1047,7 +1055,7 @@
         "artifact": 12029034849,
         "sha256": "304f2b0f10a441c64d3c081f0ed16d663df6d709e6ce6c306bb5c3ae98164c33",
         "visualComparisons": 6,
-        "maxDifference": 0.00004,
+        "maxDifference": 4e-05,
         "unexpectedErrors": 0,
         "actualReportPinPngInspected": true
       }
