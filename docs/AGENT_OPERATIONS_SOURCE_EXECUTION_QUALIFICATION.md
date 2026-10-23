@@ -191,3 +191,11 @@ Six fixture tests plus seven independent QA boundary checks passed. Initial QA f
 This tool is offline preparation, not a qualified sandbox or an application runtime integration. Preserve it locally for the next reviewed source batch; do not trigger a separate Preview application build merely to ship an unused operator probe. The verified Preview remains the existing 149ed7a application. Full source-batch release qualification remains pending. No sandbox or model spending occurred.
 
 Official firewall documentation reconfirms explicit `deny-all` blocks outbound access including DNS: https://vercel.com/docs/sandbox/concepts/firewall . Pricing remains https://vercel.com/docs/sandbox/pricing ; existing compute estimate is not a new all-inclusive account quote. Managed source-only qualification does not depend on the custom Playwright browser image or protected Preview identity. New infrastructure authorization and remaining provider/resource qualification are still required before a guest session.
+
+## Actual privilege-drop check verified
+
+The follow-up managed VM ran the fixed `scripts/source-execution-privilege-probe.cjs` command successfully: UID/GID65534, no supplementary groups, NoNewPrivs set and all five capability sets empty. All nine facts and complete source hash matched independent QA/Auditor readback. The VM was stopped, with no snapshot. This is actual trusted Linux evidence, not merely a fixture.
+
+The executable need not be root-owned when it and every ancestor are protected from the target UID and groups. Actual `/usr/local/bin/node` was owned by the trusted launcher user, and fixed read-only path/ownership checks verified protection without changing permissions. Future dispatch must preserve this distinction and cannot run model code as the trusted launcher. The exact reviewed privilege command is data, not authority; current backend has no integration that admits arbitrary commands.
+
+No generated code ran. Full filesystem/resource/egress/cancellation and source/test integrity qualification remains incomplete; existing no-execution/no-publication restrictions remain. Details and actual receipts are in the newest canonical checkpoint.
