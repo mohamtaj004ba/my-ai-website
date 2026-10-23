@@ -7,14 +7,14 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return{p
 async function setup(consumed=false){const h=fixture({paid:true}),c=h.context('chief-plan'),ap=approval(h,c),prepared=await h.broker.prepareApproval(owner,c,ap);await h.broker.activateApproval(owner,c,ap,prepared.record.revision);const admitted=consumed?await h.broker.admit(owner,'chief-plan',c,{mode:'pilot',approval:ap}):null;return{h,c,ap,admitted};}
 
 test('fresh active and consumed approvals revalidate without redundant writes; existing 20s renewal boundary is bounded',async()=>{
- for(const consumed of [false,true]){const {h,c,ap}=await setup(consumed);h.advance(9999);const before=h.raw(),count=h.compares(),v=await h.broker.renewApproval(owner,c,ap);a.equal(h.raw(),before);a.equal(h.compares(),count);a.equal(v.leaseUntil,h.now()+20001);h.advance(1);const renewed=await h.broker.renewApproval(owner,c,ap);a.equal(renewed.leaseUntil,h.now()+30000);a.equal(h.compares(),count+1);a.equal(renewed.executionAuthorized,false);}
+ for(const consumed of [false,true]){const {h,c,ap}=await setup(consumed);h.advance(9999);const before=h.raw(),count=h.compares(),compare=h.adapter.compare,calls=[];h.adapter.compare=async(b,n)=>{calls.push([b,n]);return compare(b,n);};const v=await h.broker.renewApproval(owner,c,ap);a.equal(h.raw(),before);a.equal(h.compares(),count+1);a.deepEqual(calls,[[before,before]]);a.equal(v.leaseUntil,h.now()+20001);h.advance(1);const renewed=await h.broker.renewApproval(owner,c,ap);a.equal(renewed.leaseUntil,h.now()+30000);a.equal(h.compares(),count+2);a.equal(renewed.executionAuthorized,false);}
 });
 
 test('fresh lease never bypasses current policy, owner, revocation or expiry checks',async()=>{
  for(const fault of ['policy','owner','revoked','expired']){const {h,c,ap}=await setup();if(fault==='policy')h.deny();if(fault==='revoked')await h.broker.revokeApproval(owner,c,ap);if(fault==='expired')h.advance(30001);const before=h.raw();await a.rejects(h.broker.renewApproval(fault==='owner'?{...owner,workspaceId:'other'}:owner,c,ap));a.equal(h.raw(),before);}
 });
 
-test('aborted renewal cannot begin a read or mutate after delayed authority validation',async()=>{
+test('aborted renewal cannot mutate after overlapping delayed authority validation',async()=>{
  for(const preAborted of [false,true]){const {h,c,ap}=await setup(),started=deferred(),gate=deferred(),controller=new AbortController();let checks=0;const broker=h.organization.engineering(async()=>{checks++;started.resolve();await gate.promise;});const before=h.raw(),count=h.compares();if(preAborted)controller.abort();const pending=broker.renewApproval(owner,c,ap,{signal:controller.signal});if(!preAborted){await started.promise;controller.abort();}gate.resolve();await a.rejects(pending,/ENG_TRANSPORT_CANCELLED/);a.equal(h.raw(),before);a.equal(h.compares(),count);a.equal(checks,preAborted?0:1);}
 });
 
@@ -35,5 +35,5 @@ test('stage heartbeat honors cancellation after authority checks and remains fen
 });
 
 test('overlapping stage and owner checks preserve count evidence and skip only a redundant approval write',async()=>{
- const {h,c,ap,admitted}=await setup(true);await h.broker.dispatchCount(admitted.ticket,admitted.context);h.advance(5000);await h.broker.verify(admitted.ticket,admitted.context,{renew:true});const before=h.raw(),count=h.compares();await h.broker.renewApproval(owner,c,ap);a.equal(h.raw(),before);a.equal(h.compares(),count);const w=h.state().operations.workflows[0];a.equal(w.countCalls,1);a.equal(w.calls,0);a.equal(w.attempts[0].countDispatched,true);a.equal(w.leaseUntil,h.now()+30000);await h.broker.revokeApproval(owner,c,ap);a.equal(h.state().operations.approvals[0].status,'revoked');
+ const {h,c,ap,admitted}=await setup(true);await h.broker.dispatchCount(admitted.ticket,admitted.context);h.advance(5000);await h.broker.verify(admitted.ticket,admitted.context,{renew:true});const before=h.raw(),count=h.compares(),compare=h.adapter.compare,calls=[];h.adapter.compare=async(b,n)=>{calls.push([b,n]);return compare(b,n);};await h.broker.renewApproval(owner,c,ap);a.equal(h.raw(),before);a.equal(h.compares(),count+1);a.deepEqual(calls,[[before,before]]);const w=h.state().operations.workflows[0];a.equal(w.countCalls,1);a.equal(w.calls,0);a.equal(w.attempts[0].countDispatched,true);a.equal(w.leaseUntil,h.now()+30000);await h.broker.revokeApproval(owner,c,ap);a.equal(h.state().operations.approvals[0].status,'revoked');
 });

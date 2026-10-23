@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "bbc40c3bd68eb196fa51a0e5f5a9f79107fe6c74ee30f5a831914518b8da8143",
+  "risk": "critical",
+  "scope": "Overlap fresh owner and ledger reads only during existing approval renewal; preserve atomic snapshot confirmation, exact scope, revocation and all existing deadlines.",
+  "riskAnalysis": "Actual live Specialist pre-dispatch renewal exceeded10s: observed owner phase4785ms followed by ledger phase5286ms. Specific Redis network/CPU/CAS contribution remains unknown. Serialized independent reads unnecessarily consume the same finite authority window.",
+  "threatModel": {
+    "assets": "Fresh owner authority, approval expiry, concurrent revocation, immutable ledger and live paid-request admission.",
+    "trustBoundaries": "Private existing organization transaction accepts only an internal renewal authorization callback; no model or UI can supply it. Both independent reads must succeed before synchronous policy checks and CAS.",
+    "abuseCases": "Late failed owner check, prefetch preceding revocation, stale no-op lease, aborted read, expired approval, confirmed conflict reusing old authority and uncertain CAS acknowledgment.",
+    "mitigations": "Fresh Promise.all per attempt; same10s outer and30s lease; signal check before renewal callback; CAS confirms identical raw no-op snapshot; conflict repeats BOTH reads; no cached authority, mutation retry on uncertainty or increased permissions."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Actual live Specialist pre-dispatch renewal exceeded10s: observed owner phase4785ms followed by ledger phase5286ms. Specific Redis network/CPU/CAS contribution remains unknown. Serialized independent reads unnecessarily consume the same finite authority window.",
+      "detectionGap": "Prior tests preserved delayed-boundary diagnostics and correct cancellation but did not exercise simultaneous real owner and ledger read latency under the finite renewal window.",
+      "regression": "Independent gated tests prove both reads start before either finishes; denial, abort, expiry, conflict reauthentication, concurrent no-op revocation and no cache. Existing cancellation diagnostics updated to identify overlapping boundary.",
+      "historicalPrevention": "Budget independent read latency together; optimize only independent reads while retaining current policy checks, exact snapshot CAS and original fail-closed limits."
+    }
+  ],
+  "rollback": "Disable paid execution and revoke fresh approval; preserve original failed workflow and accounting. Revert this feature-only renewal optimization if qualification fails; no Production changes or historical rewrites.",
+  "negativePaths": {
+    "malformed-response": "Bounded JSON/NDJSON parsers, exact23checks/7case IDs, final command/session binding; raw provider errors never enter receipts.",
+    "stale-state": "No-op prefetched result must compare identical raw snapshot; concurrent revocation triggers conflict then fresh owner+ledger checks.",
+    "concurrency": "One approval permission consumed atomically before unique provider-name creation; shared source jobs globally serial including cleanup-unconfirmed.",
+    "cancellation": "Abort while owner or ledger pending prevents mutation; same outer deadline and cleanup controls.",
+    "worker-interruption": "Unique durable claim survives lost acknowledgment; read named resource without create retry; absent/unconfirmed resource is not called clean.",
+    "api-outage": "Owner or ledger failure rejects before any renewal mutation; uncertain CAS is never retried.",
+    "authorization-denial": "Both checks complete before callback/CAS; owner denial cannot be hidden by successful prefetched read.",
+    "spending-limit": "No budget increase, model retry or recurring task. Existing owner financial monitoring unchanged; source VM remains finite1CPU2GB300s/deny-all/nonpersistent.",
+    "partial-execution": "Actual Chief usage retained, Specialist count uncertainty preserved, no Specialist Responses or Sandbox created during failure.",
+    "duplicate-request": "No provider retries or fresh authorization reuse. Only confirmed ledger CAS conflict repeats fresh reads."
+  },
+  "proactiveReview": {
+    "architecture": "Small option on existing private CAS transaction; only approval renewal uses overlapping reads. No new store, service, identity or controller.",
+    "dependencies": "No dependency, provider, credential, network permission or hosting changes.",
+    "threats": "Late failed owner check, prefetch preceding revocation, stale no-op lease, aborted read, expired approval, confirmed conflict reusing old authority and uncertain CAS acknowledgment.",
+    "failureModes": "Fresh Promise.all per attempt; same10s outer and30s lease; signal check before renewal callback; CAS confirms identical raw no-op snapshot; conflict repeats BOTH reads; no cached authority, mutation retry on uncertainty or increased permissions.",
+    "faultInjection": "29focusedPASS,independentQA7/Auditor3PASS. Full4554cases:4552PASS and2oldzero-compare assertions failed as expected after snapshotCAS. Updated assertions require one identical-byte compare and unchangedledger;18affectedtestsPASS. Runtime unchanged; remotefullqualification pending.",
+    "independentChallenge": "Work QA c483178ce3f0240eac3c9bed85fb35c0fa9a7ea63756a71d0eae6dbc7f676513; Auditor57f18145b4dfff01be0cda7c0591a95b7499b9b8ddffdc3b463a5d47331b5442. Both reject timeout inflation and cached authority.",
+    "recovery": "Original actual failure receipt and HTTP400 remain unchanged. Approval revoked, all grants revoked and cleanup ready; lost-tab task cancel was not sent and needs readback.",
+    "readiness": "Local reviewed optimization only. Hosted qualification and fresh exact-release configuration/enrollment required before another paid attempt; no fixture success claimed live."
+  }
+}
