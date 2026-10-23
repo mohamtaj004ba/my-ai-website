@@ -1,0 +1,16 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {create}=require('../lib/agent-operations-source-test-provider');
+const PROJECT='prj_AkD7VoSNCE6fRYXQnXkX1ywGqjLX',TEAM='team_6Rg3DdCrvOml6oEGwx6Ndf1I';
+const env={VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'feature/callercore-dashboards',VERCEL_PROJECT_ID:PROJECT};
+const token=()=>Promise.resolve('fixture.'+Buffer.from(JSON.stringify({project_id:PROJECT,owner_id:TEAM})).toString('base64url')+'.fixture');
+const response=(body,status=200,type='application/json')=>new Response(body,{status,headers:{'content-type':type}});
+const ndjson=rows=>response(rows.map(x=>JSON.stringify(x)).join('\n'),'200','application/x-ndjson');
+const command={command:'/usr/bin/env',args:['-i'],timeout:150000};
+test('fixed project/team metadata uses OIDC without mutation or redirect following',async()=>{const calls=[];const p=create({env,token,fetchImpl:async(u,o)=>{calls.push({u,o});return response('{"sessions":[]}');}});assert.equal((await p.metadata()).executionAuthorized,false);assert.equal(calls.length,1);assert.equal(calls[0].o.method,'GET');assert.equal(calls[0].u.origin,'https://vercel.com');assert.equal(calls[0].u.searchParams.get('teamId'),TEAM);assert.equal(calls[0].o.redirect,'error');});
+test('wrong environment or token scope denies before provider access',async()=>{for(const change of [{env:{...env,VERCEL_ENV:'production'}},{token:()=> 'x.e30.x'}]){let n=0;const p=create({env,token,fetchImpl:async()=>{n++;},...change});await assert.rejects(p.metadata(),/ENG_TEST_PROVIDER_AUTH/);assert.equal(n,0);}});
+test('failed create is not automatically retried',async()=>{let n=0;const p=create({env,token,fetchImpl:async()=>{n++;return response('{}',500);}});await assert.rejects(p.create({name:'fixed'}),/ENG_TEST_PROVIDER_HTTP/);assert.equal(n,1);});
+test('metadata parser rejects malformed and oversized JSON',async()=>{for(const b of ['bad','x'.repeat(128001)]){const p=create({env,token,fetchImpl:async()=>response(b)});await assert.rejects(p.metadata(),/ENG_TEST_PROVIDER_RESULT/);}});
+test('NDJSON accepts exact session command and bounded stdout',async()=>{let auth=0;const p=create({env,token,fetchImpl:async()=>ndjson([{command:{id:'cmd_abc',sessionId:'sbx_abc'}},{stream:'stdout',data:'{"ok":true}'},{command:{id:'cmd_abc',sessionId:'sbx_abc',exitCode:0}}])});assert.deepEqual(await p.run('sbx_abc',command,{authorize:async()=>auth++}),{exitCode:0,stdout:'{"ok":true}'});assert.equal(auth,1);});
+test('NDJSON fails closed on wrong scope malformed stream oversized output or missing completion',async()=>{const cases=[[{command:{id:'cmd_abc',sessionId:'sbx_other',exitCode:0}}],[{stream:'stderr',data:'PRIVATE'}],[{stream:'stdout',data:'x'.repeat(16001)}],[{stream:'stdout',data:'{}'}]];for(const rows of cases){const p=create({env,token,fetchImpl:async()=>ndjson(rows)});await assert.rejects(p.run('sbx_abc',command,{authorize:async()=>{}}),/ENG_TEST_PROVIDER_(SCOPE|RESULT)/);}});
+test('revoked initial authorization prevents command POST',async()=>{let n=0;const p=create({env,token,fetchImpl:async()=>n++});await assert.rejects(p.run('sbx_abc',command,{authorize:async()=>{throw Error('REVOKED');}}),/REVOKED/);assert.equal(n,0);});

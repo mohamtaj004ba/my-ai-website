@@ -1,0 +1,67 @@
+'use strict';
+// Independent Work QA of the native transport/controller path. Every provider
+// response below is a named offline fixture; no API credential or network is used.
+const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const org=require('../lib/agent-operations-organization'),controlFactory=require('../lib/agent-operations-activation-controller').createEngineeringOwnerControl,v1=require('../lib/agent-operations-engineering-inference'),v2=require('../lib/agent-operations-engineering-provider-v2'),impl=require('../lib/agent-operations-implementation'),helper=require('../lib/agent-operations-engineering-rehearsal'),budget=require('../lib/agent-operations-budget');
+const identity=x=>crypto.createHash('sha256').update(x).digest('hex'),owner={kind:'owner',verifiedOwner:true,id:'live-patch-qa@example.test',workspaceId:'live-patch-qa-workspace'},PROJECT=require('../lib/agent-operations-project').PROJECT;
+async function setup(testProvider){
+ let raw=null;const runtime={environment:'preview',origin:'https://my-ai-website-livepatchqa-mohamtaj004bas-projects.vercel.app',commit:'a'.repeat(40),branch:'feature/callercore-dashboards',deploymentId:'dpl_livePatchQa'},release=require('../lib/agent-operations-contracts').assertRelease();
+ const adapter={read:async()=>raw,compare:async(before,after)=>{if(raw!==before)return false;raw=after;return true;}},env={VERCEL_ENV:'preview',CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_ENGINEERING_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_ENGINEERING_COUNT_ENABLED:'true',CALLERCORE_AGENTOPS_ENGINEERING_MODEL_ACCESS_VERIFIED:'true',CALLERCORE_AGENTOPS_ENGINEERING_TRIAL_AUTHORIZATION_ID:v2.STARTER_TRIAL.authorizationId,CALLERCORE_AGENTOPS_ENGINEERING_COUNT_UNCERTAINTY_SHA256:v2.hash(v2.STARTER_TRIAL),CALLERCORE_AGENTOPS_OPENAI_API_KEY:'SYNTHETIC_OFFLINE_PROVIDER_CREDENTIAL_ONLY',CALLERCORE_AGENTOPS_OPENAI_PROJECT_ID:PROJECT.projectId,CALLERCORE_AGENTOPS_OPENAI_ORGANIZATION_ID:PROJECT.organizationId};
+ const organization=org.createOrganization(adapter,{scope:{commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8',origin:'https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app'},runtime,paidEnabled:()=>env.CALLERCORE_AGENTOPS_PAID_ENABLED==='true',sourceTestProvider:testProvider}),plan={id:'op_live_patch_qa',revision:1,status:'queued',deadline:Date.now()+600000,objective:impl.OBJECTIVE,engineeringProfile:impl.PROFILE,runtime:{origin:runtime.origin,sourceCommit:runtime.commit,branch:runtime.branch,deploymentId:runtime.deploymentId,release},tasks:helper.templates.map((template,i)=>({id:'op_live_patch_qa_task'+(i+1),template,fence:0,revision:1,attempts:[]}))},scope={ownerHash:identity(owner.id),workspaceHash:identity(owner.workspaceId)};
+ const context=helper.context(plan.tasks[0].template,{engineeringProfile:impl.PROFILE,assignment:impl.OBJECTIVE,planId:plan.id,taskId:plan.tasks[0].id,executionId:'approval_'+plan.id,fence:0,authorizationRevision:1,...scope,runtime:plan.runtime,dependencies:[]}),review={workQaHash:'1'.repeat(64),workAuditorHash:'2'.repeat(64),sourceCommit:runtime.commit,releaseHash:release.digest};
+ env.CALLERCORE_AGENTOPS_ENGINEERING_RELEASE_REVIEW_JSON=JSON.stringify(review);env.CALLERCORE_AGENTOPS_ENGINEERING_RELEASE_REVIEW_SHA256=v2.hash(review);env.CALLERCORE_AGENTOPS_ENGINEERING_PROVIDER_READINESS_SHA256=v2.uncertainReadiness(context,v2.STARTER_TRIAL);
+ const operations={read:async actor=>{a.equal(actor.id,owner.id);a.equal(actor.workspaceId,owner.workspaceId);return{scopeIdentity:scope,capacity:{version:'operations-capacity-v1',plans:1,audit:0,bytes:10000},plans:[structuredClone(plan)]};}},control=controlFactory({operations,organization,runtime,env,assertOwner:async actor=>actor.id===owner.id&&actor.workspaceId===owner.workspaceId});
+ return{runtime,release,env,organization,plan,context,control,state:()=>raw===null?null:JSON.parse(raw),set:s=>raw=JSON.stringify(s)};
+}
+function installProvider(f,{badSpecialist=false,failResponse=-1,afterResponse}={}){
+ const previous=global.fetch,calls=[],requests=[];global.fetch=async(url,options)=>{
+  a.equal(options.redirect,'error');a.equal(options.headers['OpenAI-Project'],PROJECT.projectId);a.match(url,/^https:\/\/api\.openai\.com\/v1\/responses(?:\/input_tokens)?$/);calls.push(url);const request=JSON.parse(options.body);requests.push({url,request});
+  if(url.endsWith('/input_tokens'))return Response.json({object:'response.input_tokens',input_tokens:1000});
+  const index=calls.filter(u=>u.endsWith('/responses')).length-1,stage=v1.STAGES[index];if(index===failResponse)return Response.json({error:{message:'Synthetic offline provider failure'}},{status:503});
+  const workflow=f.state().operations.workflows[0],approval=workflow.approval,c={...f.context,binding:{...f.context.binding,taskId:f.plan.tasks[index].id,executionId:approval.id+'_'+stage},priorReceipts:workflow.results},value=impl.fixture(stage,c);
+  if(stage==='specialist'&&badSpecialist)value.proposal.path='../protected.js';if(stage==='auditor'){value.decision='fail';value.reason='Offline independent criticism: generated-code testing remains unavailable.';}
+  await afterResponse?.(stage,c,value);
+  return Response.json({id:'resp_offline_starter_'+index,status:'completed',model:'gpt-6.1-sol',service_tier:'default',usage:{input_tokens:1000,output_tokens:500,input_tokens_details:{cached_tokens:0,cache_write_tokens:0},output_tokens_details:{reasoning_tokens:50}},output:[{type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:JSON.stringify(value)}]}]});
+ };return{calls,requests,restore:()=>{global.fetch=previous;}};
+}
+
+function sandboxFixture({fail=false,duringRun,cleanupFailure=false}={}){
+ const dispatch=require('../lib/agent-operations-source-test-dispatch');let session,starts=0,stops=0;
+ return{counts:()=>({starts,stops}),async metadata(){return{authenticated:true,executionAuthorized:false};},async create(input){starts++;session={id:'sbx_OfflineSourceTest',name:input.name,projectId:dispatch.PROJECT,image:dispatch.IMAGE,vcpus:1,memory:2048,timeout:300000,persistent:false,networkPolicy:{mode:'deny-all'},routes:[]};return session;},async find(){return session||null;},async stop(){stops++;},async read(){return{...session,status:cleanupFailure?'running':'stopped'};},async run(_id,command,{authorize}){
+  await authorize();await duringRun?.();if(fail)throw Error('SYNTHETIC_SECRET_PROVIDER_ERROR');
+  const row=(label,exitCode)=>({label,exitCode,timedOut:false,outputLimit:false,spawnFailed:false});
+  const report={version:'source-isolated-runner-result-v1',mode:'starter',programSha256:command.programSha256,testProgramSha256:command.testProgramSha256,sourceHashes:command.sourceHashes,qualificationPassed:true,runPassed:true,protectedIntegrity:true,cleanupConfirmed:true,publicationAuthorized:false,independentlyAccepted:false,results:[{...row('qualification',0),output:{passed:true,checks:Object.fromEntries(dispatch.CHECKS.map(k=>[k,true]))}},row('positive',0),row('seeded-failure',1),{label:'timeout',timedOut:true,signal:'SIGKILL',childStarted:true,descendantsTerminated:true},{...row('starter',0),programSha256:command.testProgramSha256,output:{passed:true,tests:dispatch.TESTS.map(id=>({id,passed:true}))}}]};return{exitCode:0,stdout:JSON.stringify(report)};
+ }};
+}
+async function authorize(f){const manifest=await f.control.trialManifest(owner,{planId:f.plan.id,expectedRevision:1}),input={planId:f.plan.id,expectedRevision:1,approval:manifest.approval},prepared=await f.control.prepare(owner,input);
+ await a.rejects(f.control.authorizeSourceTests({...owner,workspaceId:'foreign'},{...input,expectedApprovalRevision:prepared.record.revision}));
+ const tests=await f.control.authorizeSourceTests(owner,{...input,expectedApprovalRevision:prepared.record.revision});await a.rejects(f.control.authorizeSourceTests(owner,{...input,expectedApprovalRevision:prepared.record.revision}));
+ const active=await f.control.activate(owner,{...input,expectedApprovalRevision:tests.approvalRevision});return{...input,expectedApprovalRevision:active.revision};}
+test('existing five-stage controller automatically dispatches permitted source tests before QA and supplies verified outcomes',async()=>{
+ const sandbox=sandboxFixture(),f=await setup(sandbox),input=await authorize(f),provider=installProvider(f);
+ try{const result=await f.control.run(owner,input),r=result.result,e=r.receipts[1].sourceTestEvidence;
+  a.equal(r.receipts.length,5);a(e);a.equal(e.receipt.status,'completed');a.equal(e.receipt.stopConfirmed,true);a.equal(e.receipt.result.tests.length,7);a.deepEqual(sandbox.counts(),{starts:1,stops:1});
+  a.equal(r.receipts[1].implementationArtifact.sourceExecuted,false);a.equal(r.receipts[3].response.decision,'fail');a.equal(r.receipts[4].response.auditDecision,'fail');a.equal(r.acceptedWork,false);a.equal(result.shutdown.status,'revoked');
+  for(const index of [2,3,4]){const request=provider.requests.filter(x=>x.url.endsWith('/responses'))[index].request;a(JSON.stringify(request).includes(e.receipt.hash));a(JSON.stringify(request).includes('sourceTests'));}
+  const state=f.state(),w=state.operations.workflows[0],run=w.attempts[1].sourceTestRun;a.equal(run.status,'completed');a.equal(state.operations.approvals[0].sourceTestAuthority.status,'consumed');a.equal(run.receipt.hash,e.receipt.hash);a.equal(require('../lib/agent-operations-engineering-configuration').physicalWorkflowClean(w),true);
+  a(state.operations.grants.every(g=>g.revoked));a.equal(provider.calls.length,10);a.equal(fs.readFileSync(path.join(__dirname,'../dashboard.js'),'utf8'),impl.snapshot().text);
+ }finally{provider.restore();}
+});
+test('failed source tests stop before QA, retain model usage, close the sandbox and revoke prior authority',async()=>{
+ const sandbox=sandboxFixture({fail:true}),f=await setup(sandbox),input=await authorize(f),provider=installProvider(f);
+ try{await a.rejects(f.control.run(owner,input));const s=f.state(),w=s.operations.workflows[0];a.equal(w.results.length,1);a.equal(provider.calls.length,4);a.equal(w.attempts[1].sourceTestRun.status,'failed');a.equal(w.attempts[1].sourceTestRun.receipt.stopConfirmed,true);a.equal(w.attempts[1].diagnostic.inputTokens,1000);a(s.operations.grants.every(g=>g.revoked));a.deepEqual(sandbox.counts(),{starts:1,stops:1});a(!JSON.stringify(w.attempts[1].sourceTestRun.receipt).includes('SYNTHETIC_SECRET'));
+ }finally{provider.restore();}
+});
+test('concurrent owner companion authorization consumes only one exact prepared approval revision',async()=>{
+ const f=await setup(sandboxFixture()),m=await f.control.trialManifest(owner,{planId:f.plan.id,expectedRevision:1}),input={planId:f.plan.id,expectedRevision:1,approval:m.approval},p=await f.control.prepare(owner,input);
+ const results=await Promise.allSettled([1,2].map(()=>f.control.authorizeSourceTests(owner,{...input,expectedApprovalRevision:p.record.revision})));a.equal(results.filter(r=>r.status==='fulfilled').length,1);a.equal(f.state().operations.audit.filter(x=>x.type==='engineering_source_tests_authorized').length,1);
+});
+for(const kind of ['grant-revoked','permit-expired'])test('actual CAS '+kind+' during source tests prevents acceptance and preserves shutdown',async()=>{
+ let f;const sandbox=sandboxFixture({duringRun:()=>{const s=f.state();if(kind==='grant-revoked')s.operations.grants.forEach(g=>g.revoked=true);else s.operations.workflows[0].attempts[1].sourceTestRun.permit.expiresAt=0;f.set(s);}});f=await setup(sandbox);const input=await authorize(f),provider=installProvider(f);
+ try{await a.rejects(f.control.run(owner,input));const s=f.state(),w=s.operations.workflows[0];a.equal(w.results.length,1);a.equal(provider.calls.length,4);a.equal(w.attempts[1].sourceTestRun.receipt.stopConfirmed,true);a.equal(w.attempts[1].sourceTestRun.status,'failed');a(s.operations.grants.every(g=>g.revoked));a.deepEqual(sandbox.counts(),{starts:1,stops:1});}finally{provider.restore();}
+});
+test('unconfirmed source VM shutdown cannot be masked by destroyed data workspace or historical reconciliation',async()=>{
+ const sandbox=sandboxFixture({cleanupFailure:true}),f=await setup(sandbox),input=await authorize(f),provider=installProvider(f);
+ try{await a.rejects(f.control.run(owner,input));const s=f.state(),w=s.operations.workflows[0],r=w.attempts[1];a.equal(r.workspacePreparation.status,'destroyed');a.equal(r.sourceTestRun.status,'cleanup-unconfirmed');a.equal(r.sourceTestRun.receipt.stopConfirmed,false);a.equal(require('../lib/agent-operations-engineering-configuration').physicalWorkflowClean(w),false);a.equal(provider.calls.length,4);a(s.operations.grants.every(g=>g.revoked));a.equal(w.results.length,1);}finally{provider.restore();}
+});
+
