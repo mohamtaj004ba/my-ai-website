@@ -179,3 +179,15 @@ This is an owner-reviewable plan, not an executable runner or spending authoriza
   "nextAction": "Non-billably resolve guest hard quota support and account-specific cost terms; independently review this fixed plan. Only afterward request one exact owner resource/spending authorization. No hostile/generated execution is currently permitted."
 }
 ```
+
+## Offline layer-A inventory prepared — October 22, 2026
+
+`scripts/source-execution-inventory.cjs` now supplies the first fixed trusted read-only inventory from this plan. It reads only `/proc/self/status`, `/proc/self/limits` and `/sys/fs/cgroup/cgroup.controllers`, at most 65,536 bytes per file, and emits closed sanitized observations. No environment, raw file text, process execution, network, writes, provider SDK, credentials or provisioning is used. Non-Linux execution returns `QUAL_PLATFORM_UNSUPPORTED` without reading Linux paths.
+
+It observes UID/root state, effective capabilities, no-new-privileges, seccomp mode, individual resource-limit classifications and available controller names. Missing, duplicate, oversized, malformed, out-of-range UID and contradictory limit evidence stays unknown. A controller's availability is not proof of effective task membership or enforcement; per-process limits do not prove descendant limits. Output always has `qualified:false` and `generatedCodeExecutionAllowed:false`. It cannot attest image identity, filesystem confinement, sudo paths, effective task cgroups, egress or cleanup. Those remain explicit unresolved qualification items.
+
+Six fixture tests plus seven independent QA boundary checks passed. Initial QA findings on UID range, soft/hard ordering and empty controller lists were corrected; original review preserved. Final QA receipt SHA c86231246f0974526a42d583dae68a30f632cf956814d76e369b3524e6aab3f8. Initial independent Auditor passed five checks plus thirteen adversarial checks with no material security issue; the subsequent QA corrections tighten observation validity only. No actual Linux guest or generated source ran.
+
+This tool is offline preparation, not a qualified sandbox or an application runtime integration. Preserve it locally for the next reviewed source batch; do not trigger a separate Preview application build merely to ship an unused operator probe. The verified Preview remains the existing 149ed7a application. Full source-batch release qualification remains pending. No sandbox or model spending occurred.
+
+Official firewall documentation reconfirms explicit `deny-all` blocks outbound access including DNS: https://vercel.com/docs/sandbox/concepts/firewall . Pricing remains https://vercel.com/docs/sandbox/pricing ; existing compute estimate is not a new all-inclusive account quote. Managed source-only qualification does not depend on the custom Playwright browser image or protected Preview identity. New infrastructure authorization and remaining provider/resource qualification are still required before a guest session.
