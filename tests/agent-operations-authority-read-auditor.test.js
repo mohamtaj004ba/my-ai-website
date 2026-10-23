@@ -7,7 +7,7 @@ function fixture(){
  return{actor,runtime,api,setRaw:v=>raw=JSON.stringify(v),deny:()=>allowed=false,stats:()=>({reads,ledgerReads,writes}),state:()=>ops.validate(raw,actor)};
 }
 test('internal authority read authenticates freshly and avoids monitoring ledger reads or writes',async()=>{
- const f=fixture(),first=await f.api.readAuthority(f.actor);a.deepEqual(Object.keys(first).sort(),['capacity','plans','scopeIdentity']);a.equal(first.plans.length,0);a.deepEqual(f.stats(),{reads:1,ledgerReads:0,writes:0});f.deny();await a.rejects(f.api.readAuthority(f.actor),/OPS_OWNER_REQUIRED/);a.equal(f.stats().reads,1);
+ const f=fixture(),first=await f.api.readAuthority(f.actor);a.deepEqual(Object.keys(first).sort(),['capacity','plans','scopeIdentity']);a.equal(first.plans.length,0);a.deepEqual(f.stats(),{reads:1,ledgerReads:0,writes:0});f.deny();await a.rejects(f.api.readAuthority(f.actor),/OPS_OWNER_REQUIRED/);a.deepEqual(f.stats(),{reads:2,ledgerReads:0,writes:0},'Parallel private read cannot expose a result or write after owner denial');
 });
 for(const fault of ['foreign-owner','foreign-workspace','audit'])test('internal authority read retains complete scoped state validation: '+fault,async()=>{
  const f=fixture(),s=f.state();if(fault==='foreign-owner')s.ownerHash='b'.repeat(64);if(fault==='foreign-workspace')s.workspaceHash='b'.repeat(64);if(fault==='audit')s.audit.push({sequence:1,previousHash:null,hash:'b'.repeat(64)});f.setRaw(s);await a.rejects(f.api.readAuthority(f.actor),/OPS_STATE_INVALID|OPS_AUDIT_INVALID/);a.equal(f.stats().ledgerReads,0);a.equal(f.stats().writes,0);
