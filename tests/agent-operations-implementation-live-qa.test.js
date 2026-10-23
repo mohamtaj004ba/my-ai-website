@@ -78,7 +78,7 @@ test('Starter with no more than fifteen seconds remaining revokes approval befor
 });
 
 test('Starter reserves cleanup time and aborts a short-window stalled counting request without retry',async()=>{
- const f=await setup(),input=await activate(f),saved=global.fetch;let calls=0,aborted=false;global.fetch=async(url,options)=>{calls++;a(url.endsWith('/responses/input_tokens'));return new Promise((_,reject)=>{const abort=()=>{aborted=true;reject(Error('Synthetic counting request aborted'));};if(options.signal.aborted)abort();else options.signal.addEventListener('abort',abort,{once:true});});};f.plan.deadline=Date.now()+16000;const started=Date.now();
+ const f=await setup();f.plan.deadline=Date.now()+16000;const input=await activate(f),saved=global.fetch;let calls=0,aborted=false;global.fetch=async(url,options)=>{calls++;a(url.endsWith('/responses/input_tokens'));return new Promise((_,reject)=>{const abort=()=>{aborted=true;reject(Error('Synthetic counting request aborted'));};if(options.signal.aborted)abort();else options.signal.addEventListener('abort',abort,{once:true});});};const started=Date.now();
  try{await a.rejects(f.control.run(owner,input));a.equal(calls,1);a.equal(aborted,true);a(Date.now()-started<10000,'Work plus actual cleanup must finish before the reserved overall deadline');const s=f.state();a.equal(s.operations.approvals[0].status,'revoked');a.equal(s.operations.approvals[0].leaseUntil,0);a(s.operations.grants.every(g=>g.revoked));a.equal(s.operations.workflows[0].calls,0);a.equal(s.operations.workflows[0].countCalls,1);}finally{global.fetch=saved;}
 });
 
