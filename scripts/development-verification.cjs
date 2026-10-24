@@ -75,7 +75,14 @@ function assertPlan(p,repository=root){const current=plan(p.base,'HEAD',reposito
 function argsForTests(tests){
  if(!Array.isArray(tests)||!tests.length||new Set(tests).size!==tests.length||tests.some(f=>!/^[a-z0-9][a-z0-9_.-]*\.test\.js$/i.test(f)))throw Error('Canonical unique test names required');
  const args=['--require','./tests/helpers/agent-operations-offline-only.cjs','--test','--test-concurrency=4',...tests.map(f=>'tests/'+f)];
- if(args.join(' ').length>24000)throw Error('Portable verification argument limit exceeded');return args;
+ if(args.join(' ').length>24000){
+  // Node 22 expands this fixed pattern itself, without a shell. Only the exact
+  // complete source-derived suite may use it; subsets never gain extra tests.
+  const all=fs.readdirSync(path.join(root,'tests')).filter(n=>n.endsWith('.test.js')).sort();
+  if(JSON.stringify([...tests].sort())!==JSON.stringify(all))throw Error('Portable verification argument limit exceeded');
+  return [...args.slice(0,4),'tests/*.test.js'];
+ }
+ return args;
 }
 function run(p){
  assertPlan(p);
