@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Focused independent review UI checks execute the shipped interface.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),crypto=require('node:crypto');
 const source=fs.readFileSync(path.join(__dirname,'../agent-operations-command-center.js'),'utf8');

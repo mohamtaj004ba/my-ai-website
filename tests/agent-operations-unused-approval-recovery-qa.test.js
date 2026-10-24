@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'agent-operations-engineering-review-ui.test.js'),'utf8'),prefix=source.split(/\r?\ntest\(/)[0],payload=source.match(/function recoveryPayload\(\)\{[^\r\n]+/)[0],used=source.slice(source.indexOf('function usedRecoveryPayload(){'),source.indexOf('function uncappedRecoveryPayload(){'));
 const {harness,usedRecoveryPayload}=new Function('require','__dirname',prefix+'\n'+payload+'\n'+used+'\nreturn {harness,usedRecoveryPayload};')(require,__dirname),key='callercore-engineering-development-4usd-v1';

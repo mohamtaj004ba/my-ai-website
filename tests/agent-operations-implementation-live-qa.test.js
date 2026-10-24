@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Independent Work QA of the native transport/controller path. Every provider
 // response below is a named offline fixture; no API credential or network is used.
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
@@ -77,9 +78,11 @@ test('Starter with no more than fifteen seconds remaining revokes approval befor
  try{await a.rejects(f.control.run(owner,input),/ENG_CONTROL_DEADLINE/);a.equal(calls,0);const s=f.state();a.equal(s.operations.reservations.length,0);a.equal(s.operations.workflows.length,0);a.equal(s.operations.approvals[0].status,'revoked');a.equal(s.operations.approvals[0].leaseUntil,0);}finally{global.fetch=saved;}
 });
 
-test('Starter reserves cleanup time and aborts a short-window stalled counting request without retry',async()=>{
- const f=await setup();f.plan.deadline=Date.now()+16000;const input=await activate(f),saved=global.fetch;let calls=0,aborted=false;global.fetch=async(url,options)=>{calls++;a(url.endsWith('/responses/input_tokens'));return new Promise((_,reject)=>{const abort=()=>{aborted=true;reject(Error('Synthetic counting request aborted'));};if(options.signal.aborted)abort();else options.signal.addEventListener('abort',abort,{once:true});});};const started=Date.now();
- try{await a.rejects(f.control.run(owner,input));a.equal(calls,1);a.equal(aborted,true);a(Date.now()-started<10000,'Work plus actual cleanup must finish before the reserved overall deadline');const s=f.state();a.equal(s.operations.approvals[0].status,'revoked');a.equal(s.operations.approvals[0].leaseUntil,0);a(s.operations.grants.every(g=>g.revoked));a.equal(s.operations.workflows[0].calls,0);a.equal(s.operations.workflows[0].countCalls,1);}finally{global.fetch=saved;}
+test('Starter reserves cleanup time and aborts a short-window stalled counting request without retry',async t=>{
+ // Keep authorization time consistent during fixture setup; the actual abort timer and wall-clock cleanup bound remain real.
+ const realNow=Date.now,logicalNow=realNow();Date.now=()=>logicalNow;t.after(()=>{Date.now=realNow;});
+ const f=await setup();f.plan.deadline=Date.now()+16000;const input=await activate(f),saved=global.fetch;let calls=0,aborted=false;global.fetch=async(url,options)=>{calls++;a(url.endsWith('/responses/input_tokens'));return new Promise((_,reject)=>{const abort=()=>{aborted=true;reject(Error('Synthetic counting request aborted'));};if(options.signal.aborted)abort();else options.signal.addEventListener('abort',abort,{once:true});});};const started=realNow();
+ try{await a.rejects(f.control.run(owner,input));a.equal(calls,1);a.equal(aborted,true);a(realNow()-started<10000,'Work plus actual cleanup must finish before the reserved overall deadline');const s=f.state();a.equal(s.operations.approvals[0].status,'revoked');a.equal(s.operations.approvals[0].leaseUntil,0);a(s.operations.grants.every(g=>g.revoked));a.equal(s.operations.workflows[0].calls,0);a.equal(s.operations.workflows[0].countCalls,1);}finally{global.fetch=saved;Date.now=realNow;}
 });
 
 test('all five Starter stages use 135-second request timers and reserve fifteen seconds inside the ten-minute controller ceiling',async()=>{

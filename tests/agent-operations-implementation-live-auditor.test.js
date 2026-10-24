@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Independent offline audit: real existing CAS/broker/transport, synthetic responses only.
 const test=require('node:test'),a=require('node:assert/strict'),crypto=require('node:crypto'),org=require('../lib/agent-operations-organization'),impl=require('../lib/agent-operations-implementation'),v1=require('../lib/agent-operations-engineering-inference'),v2=require('../lib/agent-operations-engineering-provider-v2'),transport=require('../lib/agent-operations-engineering-transport'),budget=require('../lib/agent-operations-budget'),seq=require('../lib/agent-operations-engineering-sequence');
 const id=x=>crypto.createHash('sha256').update(x).digest('hex'),owner={kind:'owner',verifiedOwner:true,id:'starter-auditor@example.test',workspaceId:'starter-auditor-workspace'};

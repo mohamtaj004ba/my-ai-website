@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 const {test}=require('node:test'),a=require('node:assert/strict');
 const impl=require('../lib/agent-operations-implementation'),p=require('../lib/agent-operations-engineering-provider-v2'),seq=require('../lib/agent-operations-engineering-sequence'),config=require('../lib/agent-operations-engineering-configuration');
 const golden=require('./fixtures/engineering-source-test-historical-contract.json');

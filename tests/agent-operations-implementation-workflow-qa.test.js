@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Independent Work QA: real owner CAS journal and restricted trusted-data workers.
 // All model reasoning is explicitly simulated; generated JavaScript is never run.
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');

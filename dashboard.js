@@ -396,7 +396,7 @@ async function loadSecondaryClientData(){
     ['leads',d=>{leadsData=d.leads||[]}],
     ['conversations',d=>{conversationThreadsData=d.conversations||[];conversationPageTotal=Number(d.total||conversationThreadsData.length);conversationNextCursor=d.nextCursor||null;conversationBackendPaging=true;if(!conversationsData.length)conversationsData=conversationThreadsData}],
     ...(capability('calendar')&&has('appointments')?[['appointments',d=>{appointmentsData=d.appointments||[]}]]:[]),
-    ['automations',d=>{automationsData=d.automations||[]}],
+    ...(has('automations') ? [['automations',d=>{automationsData=d.automations||[]}]] : []),
     ['locations',d=>{locationsData=d.locations||locationsData;locationsLimit=Number(d.limit||locationsLimit||1)}]
   ];
   const failures=await Promise.all(tasks.map(async([action,apply])=>{

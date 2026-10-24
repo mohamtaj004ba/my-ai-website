@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Independent adversarial journal tests; all configuration ACKs are fixtures.
 const {test}=require('node:test'),a=require('node:assert/strict'),p=require('../lib/agent-operations-engineering-provider-v2'),config=require('../lib/agent-operations-engineering-configuration'),seq=require('../lib/agent-operations-engineering-sequence');
 function fixture(){

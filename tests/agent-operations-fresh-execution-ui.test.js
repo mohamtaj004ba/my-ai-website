@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),Module=require('node:module');
 const fixtureFile=path.join(__dirname,'agent-operations-engineering-review-ui.test.js'),prefix=fs.readFileSync(fixtureFile,'utf8').split('\ntest(')[0];
 const {harness,state}=new Function('require','__dirname',prefix+'\nreturn {harness,state};')(Module.createRequire(fixtureFile),__dirname);

@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Independent Work security review. No generated source or provider call runs.
 const test=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const disposableDirectories=()=>fs.readdirSync(os.tmpdir()).filter(x=>x.startsWith('callercore-proposed-'+process.pid+'-')).sort();

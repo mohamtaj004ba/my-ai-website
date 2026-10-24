@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 const {test}=require('node:test'),a=require('node:assert/strict'),impl=require('../lib/agent-operations-implementation'),inf=require('../lib/agent-operations-engineering-inference'),copy=require('../lib/agent-operations-proposal-copy'),contracts=require('../lib/agent-operations-contracts'),failure=require('../lib/agent-operations-engineering-failure'),old=require('./fixtures/engineering-implementation-compact-v1-chief-request.json');
 function context(){const c={...structuredClone(old.context),assignment:impl.OBJECTIVE,priorReceipts:[]};for(const stage of ['chief-plan','specialist'])c.priorReceipts.push({stage,response:inf.parseResponse(stage,impl.fixture(stage,c),c)});return c;}
 test('current QA schema requires exactly the preserved Specialist findings, without a required positive decision',()=>{

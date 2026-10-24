@@ -9,10 +9,10 @@ const begin=source.indexOf('let secondaryClientLoadGeneration=0;');
 const end=source.indexOf('function renderWorkspaceAccessState()',begin);
 assert.ok(begin>=0&&end>begin);
 
-function harness(fetcher,{calendar=true,appointments=true}={}){
+function harness(fetcher,{calendar=true,appointments=true,automations=true}={}){
   const coverage={textContent:''},notice={hidden:true,querySelector:()=>coverage};
   const context={
-    fetchJsonRetry:fetcher,capability:name=>name==='calendar'&&calendar,has:feature=>feature==='appointments'&&appointments,document:{getElementById:id=>id==='clientSecondaryDataHealth'?notice:null},
+    fetchJsonRetry:fetcher,capability:name=>name==='calendar'&&calendar,has:feature=>feature==='appointments'?appointments:feature==='automations'&&automations,document:{getElementById:id=>id==='clientSecondaryDataHealth'?notice:null},
     console:{warn:()=>{}},leadsData:[],conversationsData:[],conversationThreadsData:[],
     conversationPageTotal:0,conversationNextCursor:null,conversationBackendPaging:false,
     appointmentsData:[],automationsData:[],locationsData:[],locationsLimit:1,
@@ -109,4 +109,15 @@ test('client loading state exposes busy and live status semantics while workspac
   assert.match(html,/class="dashboard-main" aria-busy="true"/);
   assert.match(html,/id="clientLoadingState" role="status" aria-live="polite" aria-atomic="true"/);
   assert.match(ui,/document\.querySelector\('\.dashboard-main'\)\?\.setAttribute\('aria-busy',String\(!!loading\)\)/);
+});
+
+for(const plan of ['Starter','Growth','Pro'])test('Automations fallback respects '+plan+' entitlement and preserves other feeds',async()=>{
+ const requested=[],entitled=plan!=='Starter',h=harness(async url=>{const action=new URL(url,'https://example.test').searchParams.get('action');requested.push(action);if(action==='automations'&&!entitled)throw Error('Forbidden Starter feed');return {[action]:[{id:action+'-verified'}]};},{automations:entitled});
+ await h.load();assert.deepEqual(requested,actions.filter(action=>action!=='automations'||entitled));assert.equal(h.notice.hidden,true);assert.equal(h.context.automationsData.length,entitled?1:0);assert.equal(h.context.leadsData[0].id,'leads-verified');
+});
+test('entitlement transitions gate the next fallback while unrelated errors remain recoverable',async()=>{
+ let entitled=false,failed=true;const requested=[],h=harness(async url=>{const action=new URL(url,'https://example.test').searchParams.get('action');requested.push(action);if(failed&&action==='conversations')throw Error('offline');return {[action]:[{id:action+'-verified'}]};});h.context.has=feature=>feature==='automations'?entitled:feature==='appointments';
+ await h.load();assert(!requested.includes('automations'));assert.match(h.coverage.textContent,/conversations/);assert(!h.coverage.textContent.includes('automations'));
+ entitled=true;failed=false;requested.length=0;await h.load();assert(requested.includes('automations'));assert.equal(h.notice.hidden,true);assert.equal(h.context.automationsData[0].id,'automations-verified');
+ entitled=false;requested.length=0;await h.load();assert(!requested.includes('automations'));assert.equal(h.notice.hidden,true);
 });

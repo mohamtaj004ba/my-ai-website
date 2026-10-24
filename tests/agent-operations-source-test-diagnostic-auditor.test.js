@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 const {test}=require('node:test'),a=require('node:assert/strict'),d=require('../lib/agent-operations-source-test-diagnostic'),dispatch=require('../lib/agent-operations-source-test-dispatch');
 const job={manifest:{commandHash:'a'.repeat(64),testProgramHash:'b'.repeat(64),sourceHashes:{baseline:'c'.repeat(64),patched:'d'.repeat(64)}}};
 test('sanitizer excludes raw secrets and unrecognized enum or injected properties',()=>{const secret='sk-private-do-not-retain';const out=d.sanitize({phase:secret,sourceCode:secret,stderrClass:secret,stderr:secret,stdout:secret,message:secret,commandId:secret,setupStatus:-1,guestCleanupConfirmed:true,stdoutHash:'f'.repeat(64),stdoutBytes:123});a.equal(JSON.stringify(out).includes(secret),false);a.equal(out.phase,'provider-result');a.deepEqual(Object.keys(out).sort(),['guestCleanupConfirmed','phase','stdoutBytes','stdoutHash','version'].sort());});

@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Actual organization/profile/controller/HTTP wiring. No provider invocation.
 const {test}=require('node:test'),a=require('node:assert/strict'),crypto=require('node:crypto'),org=require('../lib/agent-operations-organization'),cfg=require('../lib/agent-operations-engineering-configuration'),p=require('../lib/agent-operations-engineering-provider-v2'),helper=require('../lib/agent-operations-engineering-rehearsal'),create=require('../lib/agent-operations-activation-controller').createEngineeringOwnerControl;
 const identity=x=>crypto.createHash('sha256').update(x).digest('hex'),actor={kind:'owner',verifiedOwner:true,id:'lifecycle-wiring@example.test',workspaceId:'lifecycle-wiring'};

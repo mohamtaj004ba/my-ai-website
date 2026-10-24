@@ -17,6 +17,9 @@ const CORRECTION_LIMITS=Object.freeze({...LIMITS,maxBytes:700000});
 const PROPOSAL_LIMITS=Object.freeze({...CORRECTION_LIMITS,maxFiles:1,maxEdits:3});
 const PROPOSAL_QUALIFICATION='Bounded proposed text replacements only. Draft source is never executed. No untrusted-code sandbox, repository writer, shell, network adapter, commit, push or deployment executor.';
 const check=(v,c)=>{if(!v)throw Error(c);};
+// Only the immutable approved Starter snapshot can supply a historical preimage.
+// This is data provenance, not current-source admission or execution authority.
+function historicalProposalSource(p){if(p?.preimageSha256!==require('../lib/agent-operations-implementation-source-v1.json').sourceSha256)return null;const a=require('../lib/agent-operations-implementation').snapshot();return{manifest:a.manifest,text:a.text};}
 function validateArtifact(result,{sourceSha,proposal,binding}={}){
  if(result?.version==='draft-data-v3'&&proposal?.version==='engineering-text-proposal-v1')return validateProposalArtifact(result,{sourceSha,proposal,binding});
  // Pure persisted-data validation. Caller still enforces authenticated task/release/fence binding.
@@ -26,13 +29,13 @@ function validateArtifact(result,{sourceSha,proposal,binding}={}){
  check(Object.keys(result).length===keys.length&&keys.every(k=>Object.hasOwn(result,k)),'DRAFT_RESULT_INVALID');
  const isCorrection=result.version==='draft-data-v2';
  if(isProposal){proposed.validate(proposal);check(tools.hash(result.proposal)===tools.hash(proposal)&&tools.hash(result.binding)===tools.hash(proposal.binding)&&proposal.sourceSha===sourceSha,'DRAFT_PROPOSAL_BINDING');}
- const source=SOURCE_LOCK.files.find(f=>f.path===(isCorrection||isProposal?'dashboard.js':'dashboard.html'));
+ const historical=isProposal?historicalProposalSource(proposal):null,sourceLock=historical?.manifest||SOURCE_LOCK;const source=sourceLock.files.find(f=>f.path===(isCorrection||isProposal?'dashboard.js':'dashboard.html'));
  const patch={path:'dashboard.html',operation:'append-fixed-html-comment',beforeSha256:source.sha256,afterSha256:EXPECTED_AFTER,addedText:MARKER};
- const text=isCorrection||isProposal?tools.readFile('dashboard.js'):null,expectedPatch=isProposal?proposed.patch(text,proposal):isCorrection?correction.patch(text):patch;
+ const text=isCorrection||isProposal?(historical?.text||tools.readFile('dashboard.js')):null,expectedPatch=isProposal?proposed.patch(text,proposal):isCorrection?correction.patch(text):patch;
  const afterHash=isCorrection||isProposal?expectedPatch.afterSha256:EXPECTED_AFTER;
  const file={path:isCorrection||isProposal?'dashboard.js':'dashboard.html',beforeSha256:source.sha256,afterSha256:afterHash,beforeBytes:source.bytes,afterBytes:isProposal?Buffer.byteLength(proposed.apply(text,proposal)):isCorrection?Buffer.byteLength(correction.apply(text)):source.bytes+Buffer.byteLength(MARKER)};
  check(['draft-data-v1','draft-data-v2','draft-data-v3'].includes(result.version)&&result.files?.length===1&&tools.hash(result.files[0])===tools.hash(file)&&tools.hash(result.patch)===tools.hash(expectedPatch)&&result.patchSha256===tools.hash(expectedPatch),'DRAFT_RESULT_INVALID');
- check(result.sourceManifestHash===tools.hash(SOURCE_LOCK)&&result.repository==='mohamtaj004ba/my-ai-website'&&result.branch==='feature/callercore-dashboards','DRAFT_SOURCE_BINDING');
+ check(result.sourceManifestHash===tools.hash(sourceLock)&&result.repository==='mohamtaj004ba/my-ai-website'&&result.branch==='feature/callercore-dashboards','DRAFT_SOURCE_BINDING');
  check(result.publicationAllowed===false&&tools.hash(result.limits)===tools.hash(isProposal?PROPOSAL_LIMITS:isCorrection?CORRECTION_LIMITS:LIMITS)&&tools.hash(result.cleanup)===tools.hash({destroyed:true})&&result.classification==='real-disposable-filesystem-trusted-data-only'&&result.qualification===(isProposal?PROPOSAL_QUALIFICATION:isCorrection?CORRECTION_QUALIFICATION:QUALIFICATION),'DRAFT_AUTHORITY_DENIED');
  return true;
 }
@@ -45,7 +48,7 @@ async function prepareInternal(options={}){
  if(proposal){proposed.validate(proposal);check(profile===null&&proposal.sourceSha===sourceSha,'DRAFT_PROPOSAL_BINDING');}
  check(!signal?.aborted,'DRAFT_CANCELLED');
  const filename=profile||proposal?'dashboard.js':'dashboard.html',limits=proposal?PROPOSAL_LIMITS:profile?CORRECTION_LIMITS:LIMITS;
- const inspected=tools.inspect(tools.PROFILE),text=tools.readFile(filename),expected=inspected.manifest.files.find(x=>x.path===filename);
+ const historical=proposal?historicalProposalSource(proposal):null,current=tools.inspect(tools.PROFILE),authoritativeHash=tools.hash(tools.readFile(filename)),inspected=historical?{...current,manifest:historical.manifest,manifestHash:tools.hash(historical.manifest)}:current,text=historical?.text||tools.readFile(filename),expected=inspected.manifest.files.find(x=>x.path===filename);
  check(tools.hash(text)===expected.sha256,'DRAFT_SOURCE_DRIFT');check(Buffer.byteLength(text)+100<=limits.maxBytes,'DRAFT_BOUNDS');
  if(proposal)proposed.apply(text,proposal);
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),proposal?'callercore-proposed-'+process.pid+'-':profile?'callercore-correction-':'callercore-draft-'+process.pid+'-'));let result,error;
@@ -70,7 +73,7 @@ async function prepareInternal(options={}){
  }catch(e){error=e;}finally{
   try{fs.rmSync(directory,{recursive:true,force:true,maxRetries:2});}catch{throw Object.assign(Error('DRAFT_CLEANUP_FAILED'),{cleanupConfirmed:false});}
   check(!fs.existsSync(directory),'DRAFT_CLEANUP_FAILED');
-  check(tools.hash(tools.readFile(filename))===expected.sha256,'DRAFT_AUTHORITATIVE_SOURCE_CHANGED');
+  check(tools.hash(tools.readFile(filename))===authoritativeHash,'DRAFT_AUTHORITATIVE_SOURCE_CHANGED');
  }
  if(error)throw Object.assign(error,{cleanupConfirmed:true});
  const artifact={...result,sourceSha,sourceManifestHash:inspected.manifestHash,repository:inspected.repository,branch:inspected.branch,limits,cleanup:{destroyed:true},classification:'real-disposable-filesystem-trusted-data-only',qualification:proposal?PROPOSAL_QUALIFICATION:profile?CORRECTION_QUALIFICATION:QUALIFICATION,...(proposal?{proposal,binding:proposal.binding}:{})};
@@ -82,7 +85,7 @@ function normalizeProposal(proposal,binding,sourceSha){
  check(exact(proposal,['version','path','beforeSha256','edits'])&&proposal.version==='engineering-text-proposal-v1'&&proposal.path==='dashboard.js'&&Array.isArray(proposal.edits)&&proposal.edits.length>=1&&proposal.edits.length<=3,'DRAFT_PROPOSAL_DENIED');
  check(exact(binding,['planId','taskId','executionId','fence','ownerHash','workspaceHash','runtime'])&&['planId','taskId','executionId'].every(k=>/^[A-Za-z0-9_-]{1,170}$/.test(binding[k]||''))&&Number.isSafeInteger(binding.fence)&&binding.fence>=0&&binding.runtime?.sourceCommit===sourceSha&&binding.runtime.branch==='feature/callercore-dashboards','DRAFT_PROPOSAL_BINDING');
  check(exact(binding.runtime,['deploymentId','origin','sourceCommit','branch','release'])&&exact(binding.runtime.release,['version','digest'])&&binding.runtime.release.version==='organization-contracts-v4','DRAFT_PROPOSAL_BINDING');
- const text=tools.readFile('dashboard.js'),normalized={version:proposed.VERSION,path:'dashboard.js',sourceSha,preimageSha256:proposal.beforeSha256,binding:{ownerHash:binding.ownerHash,workspaceHash:binding.workspaceHash,taskId:binding.taskId,sourceCommit:sourceSha,deploymentId:binding.runtime.deploymentId,origin:binding.runtime.origin,releaseHash:binding.runtime.release.digest,contextHash:tools.hash(binding)},edits:proposal.edits.map(e=>{check(exact(e,['beforeText','afterText'])&&typeof e.beforeText==='string','DRAFT_PROPOSAL_EDIT');return{offset:text.indexOf(e.beforeText),before:e.beforeText,after:e.afterText,beforeSha256:tools.hash(e.beforeText)};})};proposed.apply(text,normalized);return normalized;
+ const historical=historicalProposalSource({preimageSha256:proposal.beforeSha256}),text=historical?.text||tools.readFile('dashboard.js'),normalized={version:proposed.VERSION,path:'dashboard.js',sourceSha,preimageSha256:proposal.beforeSha256,binding:{ownerHash:binding.ownerHash,workspaceHash:binding.workspaceHash,taskId:binding.taskId,sourceCommit:sourceSha,deploymentId:binding.runtime.deploymentId,origin:binding.runtime.origin,releaseHash:binding.runtime.release.digest,contextHash:tools.hash(binding)},edits:proposal.edits.map(e=>{check(exact(e,['beforeText','afterText'])&&typeof e.beforeText==='string','DRAFT_PROPOSAL_EDIT');return{offset:text.indexOf(e.beforeText),before:e.beforeText,after:e.afterText,beforeSha256:tools.hash(e.beforeText)};})};proposed.apply(text,normalized);return normalized;
 }
 function validateProposalArtifact(result,{sourceSha,proposal,binding}={}){
  const normalized=normalizeProposal(proposal,binding,sourceSha);check(tools.hash(result?.proposal)===tools.hash(proposal)&&tools.hash(result?.binding)===tools.hash(binding),'DRAFT_PROPOSAL_BINDING');return validateArtifact({...result,proposal:normalized,binding:normalized.binding},{sourceSha,proposal:normalized});

@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Offline output-contract fixtures only; no model, provider or generated-code execution.
 const {test}=require('node:test'),a=require('node:assert/strict'),impl=require('../lib/agent-operations-implementation'),v1=require('../lib/agent-operations-engineering-inference'),v2=require('../lib/agent-operations-engineering-provider-v2'),copy=require('../lib/agent-operations-proposal-copy');
 const legacy=require('./fixtures/engineering-implementation-legacy-chief-request.json');

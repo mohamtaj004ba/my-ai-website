@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const d=require('../lib/agent-operations-source-test-dispatch');
 function job(taskId='source_test_1'){

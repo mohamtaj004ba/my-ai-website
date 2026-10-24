@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Explicit CI-only disposable localhost Redis. No application credentials or active DB.
 const {test}=require('node:test'),assert=require('node:assert/strict'),net=require('node:net');
 const {randomUUID}=require('node:crypto');

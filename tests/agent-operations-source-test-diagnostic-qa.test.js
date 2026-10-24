@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Diagnostic-only fixtures; no VM, provider calls or generated-source execution.
 const {test}=require('node:test'),a=require('node:assert/strict'),crypto=require('node:crypto'),d=require('../lib/agent-operations-source-test-diagnostic');
 const hash=s=>crypto.createHash('sha256').update(s).digest('hex'),job={manifest:{commandHash:'a'.repeat(64)}},secret='PRIVATE_API_KEY_AND_CUSTOMER_TEXT';

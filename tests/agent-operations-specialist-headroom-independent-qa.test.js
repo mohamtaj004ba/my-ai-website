@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Independent offline output-budget/authority tests. No provider or generated-code execution.
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),impl=require('../lib/agent-operations-implementation'),v1=require('../lib/agent-operations-engineering-inference'),v2=require('../lib/agent-operations-engineering-provider-v2'),saved=require('./fixtures/engineering-implementation-compact-v1-chief-request.json');
 function context(assignment=impl.OBJECTIVE){return{...structuredClone(saved.context),assignment,priorReceipts:[]};}

@@ -429,6 +429,33 @@ async function runClientInteractions(page){
   }finally{
     await page.unroute(bundledFallbackRoute);await page.unroute(callsFallbackRoute);
   }
+  // Fictional page-local entitlements only: no workspace/plan writes or model calls.
+  const automationsRoute='**/api/account?action=automations',optionalLeadsRoute='**/api/account?action=leads';
+  let automationReads=0,failOptionalLeads=false;
+  await page.evaluate(()=>{window.__qaAutomationsSaved={workspace:sessionWorkspace,plan:currentPlan};});
+  await page.route(automationsRoute,route=>{automationReads++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({automations:[]})});});
+  await page.route(optionalLeadsRoute,route=>failOptionalLeads?route.fulfill({status:200,contentType:'application/json',body:'{}'}):route.continue());
+  try{
+    for(const plan of ['Starter','Growth','Pro']){
+      await page.evaluate(plan=>{sessionWorkspace={...window.__qaAutomationsSaved.workspace,plan,entitlements:{...window.__qaAutomationsSaved.workspace.entitlements,features:{...window.__qaAutomationsSaved.workspace.entitlements?.features,automations:plan!=='Starter'}}};currentPlan=plan;},plan);
+      automationReads=0;await page.evaluate(()=>loadSecondaryClientData());
+      if(automationReads!==(plan==='Starter'?0:1))throw new Error(plan+' optional Automations entitlement was not respected');
+      if(await page.locator('#clientSecondaryDataHealth').isVisible())throw new Error(plan+' produced an unexpected optional coverage warning');
+    }
+    await page.evaluate(()=>{sessionWorkspace={...sessionWorkspace,plan:'Starter',entitlements:{...sessionWorkspace.entitlements,features:{...sessionWorkspace.entitlements.features,automations:false}}};currentPlan='Starter';});
+    automationReads=0;failOptionalLeads=true;const lastSync=await page.evaluate(()=>clientLastSyncAt);
+    await page.evaluate(()=>loadSecondaryClientData());
+    if(!await page.locator('#clientSecondaryDataHealth').isVisible()||!/leads/.test(await page.locator('[data-secondary-coverage]').textContent()))throw new Error('Starter hid an unrelated optional feed failure');
+    if(await page.evaluate(()=>clientLastSyncAt)!==lastSync)throw new Error('Optional retry changed the critical successful timestamp');
+    failOptionalLeads=false;await page.locator('#clientSecondaryRetry').click();await page.waitForFunction(()=>document.getElementById('clientSecondaryDataHealth').hidden);
+    await page.route(bundledFallbackRoute,route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}));
+    try{await page.evaluate(async()=>{await loadOperations();await loadSecondaryClientData();});if(automationReads!==0)throw new Error('Starter full fallback requested forbidden Automations');if(await page.locator('.dashboard-main').getAttribute('aria-busy')!=='false'||await page.locator('#clientLiveLabel').textContent()!=='Live')throw new Error('Starter fallback did not clear loading and restore honest live status');if(await page.evaluate(()=>clientLastSyncAt)<lastSync)throw new Error('Starter fallback regressed last successful timestamp');}finally{await page.unroute(bundledFallbackRoute);}
+    automationReads=0;await page.evaluate(()=>loadOperations());if(automationReads!==0)throw new Error('Successful bundled load unexpectedly requested optional Automations fallback');
+    report.client.interactions.push('fictional Starter/Growth/Pro Automations entitlement, unrelated optional failure/retry, bundled/fallback loading and timestamp');
+  }finally{
+    await page.unroute(automationsRoute);await page.unroute(optionalLeadsRoute);
+    await page.evaluate(()=>{sessionWorkspace=window.__qaAutomationsSaved.workspace;currentPlan=window.__qaAutomationsSaved.plan;delete window.__qaAutomationsSaved;});await page.evaluate(()=>loadOperations());
+  }
   await ensureView(page,'calls');
   await page.locator('#callDateFilter').selectOption('all');
   await page.waitForTimeout(250);

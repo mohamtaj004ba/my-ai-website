@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 const {test}=require('node:test'),a=require('node:assert/strict');
 const impl=require('../lib/agent-operations-implementation');
 test('all capability directory surfaces distinguish fixed Starter testing from arbitrary execution authority',()=>{

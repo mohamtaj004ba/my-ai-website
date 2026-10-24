@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 const {test}=require('node:test'),a=require('node:assert/strict'),impl=require('../lib/agent-operations-implementation'),inf=require('../lib/agent-operations-engineering-inference'),v2=require('../lib/agent-operations-engineering-provider-v2'),copy=require('../lib/agent-operations-proposal-copy'),report=require('../lib/agent-operations-engineering-report'),old=require('./fixtures/engineering-implementation-compact-v1-chief-request.json');
 const context=()=>({...structuredClone(old.context),assignment:impl.OBJECTIVE});
 function specialist(){const c=context();c.priorReceipts=[{stage:'chief-plan',response:impl.fixture('chief-plan',c)}];return{c,value:impl.fixture('specialist',c)};}

@@ -1,4 +1,5 @@
 'use strict';
+require('./helpers/historical-starter-fixture.cjs'); // Explicit pre-fix offline task replay.
 // Source identity/schema fixtures only. No provider calls or model code execution.
 const {test}=require('node:test'),a=require('node:assert/strict'),impl=require('../lib/agent-operations-implementation'),v1=require('../lib/agent-operations-engineering-inference'),v2=require('../lib/agent-operations-engineering-provider-v2'),copy=require('../lib/agent-operations-proposal-copy'),old=require('./fixtures/engineering-implementation-compact-v1-chief-request.json');
 function context(){const c={...structuredClone(old.context),assignment:impl.OBJECTIVE};c.priorReceipts=[];c.priorReceipts=[v1.executeFixture('chief-plan',c)];return c;}
