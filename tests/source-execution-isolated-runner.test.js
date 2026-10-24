@@ -13,7 +13,7 @@ test('fixed seccomp blocks alternate networking namespaces and x32 without block
 test('only fixed qualification and exact source-bound Starter program can be prepared',()=>{
  for(const x of [null,{},[],{mode:'shell'},{mode:'qualification',command:'id'},{mode:'starter',baseline:'x',patched:'y'}])assert.throws(()=>runner.command(x));
  const q=runner.command({mode:'qualification'});assert.equal(q.command,'/usr/bin/env');assert.deepEqual(q.args.slice(0,-1),['-i','PATH=/usr/local/bin:/usr/bin:/bin','HOME=/var/empty','/usr/bin/unshare','--mount','--pid','--net','--ipc','--fork','--kill-child=SIGKILL','--mount-proc','/usr/local/bin/node','-e']);assert.equal(q.sudo,true);assert.equal(q.timeout,150000);assert.equal(q.publicationAuthorized,false);assert.equal(q.programSha256,crypto.createHash('sha256').update(q.args.at(-1)).digest('hex'));
- const baseline=fs.readFileSync(require.resolve('../dashboard.js'),'utf8'),patched=baseline.replace("    ['automations',d=>{automationsData=d.automations||[]}],","    ...(has('automations') ? [['automations',d=>{automationsData=d.automations||[]}]] : []),");
+ const baseline=require('../lib/agent-operations-implementation').snapshot().text,patched=baseline.replace("    ['automations',d=>{automationsData=d.automations||[]}],","    ...(has('automations') ? [['automations',d=>{automationsData=d.automations||[]}]] : []),");
  const p=runner.command({mode:'starter',baseline,patched});assert.equal(p.sourceHashes.patched,'c812f5c62121e503ecd0946f7ca6d09eeac1a1147b4110d7dbc5c50493146cef');assert(p.testProgramSha256);assert.equal(p.executionClass,'exact-starter-patch-only');
 });
 test('prepared program includes hard boundaries and bounded diagnostics, never a provider connection',()=>{
@@ -24,7 +24,7 @@ test('prepared program includes hard boundaries and bounded diagnostics, never a
 // Execute only our trusted supervisor against fake OS/process interfaces. The
 // guest programs (including model-source strings) are never evaluated locally.
 async function supervisorFixture(options={}){
- const baseline=fs.readFileSync(require.resolve('../dashboard.js'),'utf8'),patched=baseline.replace("    ['automations',d=>{automationsData=d.automations||[]}],","    ...(has('automations') ? [['automations',d=>{automationsData=d.automations||[]}]] : []),");
+ const baseline=require('../lib/agent-operations-implementation').snapshot().text,patched=baseline.replace("    ['automations',d=>{automationsData=d.automations||[]}],","    ...(has('automations') ? [['automations',d=>{automationsData=d.automations||[]}]] : []),");
  const q=runner.command(options.starter?{mode:'starter',baseline,patched}:{mode:'qualification'}),code=q.args.at(-1);let output='',pid=100;const children=new Map();
  const fakeProcess={execArgv:['-e',code],exitCode:0,stdout:{write:s=>output+=s},kill:group=>{const c=children.get(-group);if(c)queueMicrotask(()=>c.emit('close',null,'SIGKILL'));}};
  const files=new Map(),osCalls=[];const fakeFs={constants:{COPYFILE_EXCL:1},mkdtempSync:()=>'/var/tmp/fake-qualified',realpathSync:p=>p,statSync:()=>({isFile:()=>true,uid:options.untrustedBinary?65534:0,mode:0o555}),copyFileSync:(src,dest)=>files.set(dest,'FIXED_BINARY'),chmodSync:()=>{},mkdirSync:()=>{},chownSync:()=>{},writeFileSync:(p,s)=>files.set(p,s),readFileSync:p=>{if(p.endsWith('/timeout-child-started')&&!options.childNotStarted)return '123';if(!files.has(p))throw Object.assign(Error('Missing fixture file'),{code:'ENOENT'});return files.get(p);},readdirSync:()=>[],rmSync:()=>{if(options.cleanupFailure)throw Error('SECRET_CANARY_CLEANUP');}};
