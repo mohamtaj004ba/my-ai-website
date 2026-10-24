@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e6a4ed0382f4667f7f23a474854b321856faa18366da03eba1caa0d1f4699995",
+  "risk": "critical",
+  "scope": "Owner-approved engineering-only60second lease and25second renewal window, with legacy30second leases and immutable authority boundaries preserved.",
+  "riskAnalysis": "Observed renewal exceeded15seconds; owner approved60second engineering lease and25second I/O budget. Longer stale-authority interval after total communication failure is explicit; revocation and task expiry remain enforced.",
+  "threatModel": {
+    "assets": "Exact task/source authority, revocation, expiry, serial model execution and historical audit evidence.",
+    "trustBoundaries": "Only authenticated engineering profile selects60seconds. Trusted owner wrapper accepts fixed30/60 lease duration; model and browser request cannot choose arbitrary lifetimes.",
+    "abuseCases": "Late renewal acknowledgment, expired or revoked authority revival, task expiry extension, unrelated legacy lease expansion, overlapping renewals and early no-op loops.",
+    "mitigations": "Separateengineeringconstant; fixed duration enum; deadline minACK-minus1second/task/end; unchangedownerchecks/CASfencing/revocation; coalescing-aligned schedule and cancellation regressions."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Previous15second renewal budget was below observed16.093second live renewal duration; underlying hosted latency remains unassigned.",
+      "detectionGap": "Fast fixture owner reads did not cover observed wall-clock delay; prior single-phase diagnostic cannot assign the full delay.",
+      "regression": "62focusedchecks pass, including real16.1second simulated renewal,60s/30s scope, no-op-loop prevention and lateACK/expiry/cancel/CAS denial.",
+      "historicalPrevention": "Test renewal budget together with acknowledged lease and broker coalescing; never change one timeout without preserving expiry and cancellation boundaries."
+    }
+  ],
+  "rollback": "Disablepaidexecution and revert only feature timing alignment if qualificationfails; retain original failures/financial uncertainty and unchangedProduction.",
+  "negativePaths": {
+    "malformed-response": "Existing strict task/source/owner checks remain; focused tests cover revoked/expired/foreign authority, late CAS, cancellation and cleanup. No paid retries or publication granted.",
+    "stale-state": "Existing strict task/source/owner checks remain; focused tests cover revoked/expired/foreign authority, late CAS, cancellation and cleanup. No paid retries or publication granted.",
+    "concurrency": "Existing strict task/source/owner checks remain; focused tests cover revoked/expired/foreign authority, late CAS, cancellation and cleanup. No paid retries or publication granted.",
+    "cancellation": "Existing strict task/source/owner checks remain; focused tests cover revoked/expired/foreign authority, late CAS, cancellation and cleanup. No paid retries or publication granted.",
+    "worker-interruption": "Existing strict task/source/owner checks remain; focused tests cover revoked/expired/foreign authority, late CAS, cancellation and cleanup. No paid retries or publication granted.",
+    "api-outage": "Existing strict task/source/owner checks remain; focused tests cover revoked/expired/foreign authority, late CAS, cancellation and cleanup. No paid retries or publication granted.",
+    "authorization-denial": "Existing strict task/source/owner checks remain; focused tests cover revoked/expired/foreign authority, late CAS, cancellation and cleanup. No paid retries or publication granted.",
+    "spending-limit": "Existing strict task/source/owner checks remain; focused tests cover revoked/expired/foreign authority, late CAS, cancellation and cleanup. No paid retries or publication granted.",
+    "partial-execution": "Existing strict task/source/owner checks remain; focused tests cover revoked/expired/foreign authority, late CAS, cancellation and cleanup. No paid retries or publication granted.",
+    "duplicate-request": "Existing strict task/source/owner checks remain; focused tests cover revoked/expired/foreign authority, late CAS, cancellation and cleanup. No paid retries or publication granted."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing lifecycle/controller/profile; no new orchestration, credential or financial system.",
+    "dependencies": "No package or infrastructure additions. Owner explicitlyapproved engineering60second lease and25second window.",
+    "threats": "Late renewal acknowledgment, expired or revoked authority revival, task expiry extension, unrelated legacy lease expansion, overlapping renewals and early no-op loops.",
+    "failureModes": "Separateengineeringconstant; fixed duration enum; deadline minACK-minus1second/task/end; unchangedownerchecks/CASfencing/revocation; coalescing-aligned schedule and cancellation regressions.",
+    "faultInjection": "62focusedchecks pass, including real16.1second simulated renewal,60s/30s scope, no-op-loop prevention and lateACK/expiry/cancel/CAS denial.",
+    "independentChallenge": "IndependentQA/Auditor source and timing regressions passed; committed and hostedverification remainrequired.",
+    "recovery": "Previousattempt7revoked/cancelled/archiveconfirmed, no VM. Originalfailure and providerusage preserved.",
+    "readiness": "Local62focusedgate passes; sourcepublication/STRICT/browser and new exactreleaseadmission precede any paidattempt."
+  }
+}
