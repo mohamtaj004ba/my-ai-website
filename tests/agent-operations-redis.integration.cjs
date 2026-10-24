@@ -6,6 +6,21 @@ const {createStore,redisAdapter}=require('../lib/agent-operations-store');
 const {runStage,mockAdapter}=require('../lib/agent-operations-worker');
 const {command}=require('./helpers/agent-operations-redis-client.cjs');
 
+test('real Redis terminal engineering diagnostics preserve absent usage under concurrent late writes',async()=>{
+ const fs=require('node:fs'),path=require('node:path'),source=fs.readFileSync(path.join(__dirname,'agent-operations-engineering-transport-qa.test.js'),'utf8');
+ const {fixture,owner}=new Function('require','__dirname',source.slice(0,source.indexOf("test('"))+'\nreturn {fixture,owner};')(require,__dirname),h=fixture();
+ const prefix='test:agentops:terminal-diagnostic:'+randomUUID()+':',keys=new Set(),kv={get:k=>command(['GET',prefix+k]),eval:(script,ks,args)=>{ks.forEach(k=>keys.add(prefix+k));return command(['EVAL',script,ks.length,...ks.map(k=>prefix+k),...args]);}},adapter=redisAdapter(kv);
+ h.adapter.read=()=>adapter.read();h.adapter.compare=(...args)=>adapter.compare(...args);
+ try{
+  const c=h.context('chief-plan'),ad=await h.broker.admit(owner,'chief-plan',c);await h.broker.dispatch(ad.ticket,ad.context);
+  await h.broker.diagnostic(ad.ticket,{responseStatus:'incomplete',incompleteReason:'max_output_tokens',outputItems:0,failure:{stage:'chief-plan',phase:'response-validate',category:'validation',code:'ENG_TRANSPORT_RESPONSE'}});
+  await h.broker.abortAdmission(owner,c);const before=JSON.parse(await adapter.read()),old=before.operations.workflows[0].attempts[0];assert.equal(old.closed,true);assert.equal(Object.hasOwn(old.diagnostic,'inputTokens'),false);
+  await Promise.all([true,false].map(workspaceCleanupConfirmed=>h.broker.diagnostic(ad.ticket,{inputTokens:9999,outputTokens:9999,workspaceCleanupConfirmed,failure:{stage:'chief-plan',phase:'finish',category:'persistence',code:'ENG_FAILURE_UNKNOWN'}})));
+  const after=JSON.parse(await adapter.read()),row=after.operations.workflows[0].attempts[0],{workspaceCleanupConfirmed,...facts}=row.diagnostic;
+  assert.equal(typeof workspaceCleanupConfirmed,'boolean');assert.deepEqual(facts,old.diagnostic);assert.deepEqual(row.failure,old.failure);assert.deepEqual(after.operations.reservations,before.operations.reservations);assert.deepEqual(after.operations.workflows[0].results,before.operations.workflows[0].results);assert.equal(after.operations.workflows[0].leaseUntil,0);
+ }finally{for(const key of keys)await command(['DEL',key]);}
+});
+
 test('real Redis renewal coalesces fresh approval writes and cancellation cannot resurrect revoked authority',async()=>{
  const fs=require('node:fs'),path=require('node:path'),source=fs.readFileSync(path.join(__dirname,'agent-operations-engineering-approval-control-qa.test.js'),'utf8'),{fixture,owner,approval}=new Function('require','__dirname',source.slice(0,source.indexOf("test('"))+'\nreturn {fixture,owner,approval};')(require,__dirname),h=fixture({paid:true}),c=h.context('chief-plan'),ap=approval(h,c),prepared=await h.broker.prepareApproval(owner,c,ap);await h.broker.activateApproval(owner,c,ap,prepared.record.revision);
  const prefix='test:agentops:renewal-cancel:'+randomUUID()+':',keys=new Set(),kv={get:k=>command(['GET',prefix+k]),eval:(script,ks,args)=>{ks.forEach(k=>keys.add(prefix+k));return command(['EVAL',script,ks.length,...ks.map(k=>prefix+k),...args]);}},adapter=redisAdapter(kv);let compares=0;const compared=[];
