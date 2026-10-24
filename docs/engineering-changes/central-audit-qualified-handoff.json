@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e9a7835e216445169a10410a688fb7fe6146af2a9d0369c17bd6ffdc9076a7ba",
+  "risk": "routine",
+  "scope": "Preserve exact qualified audit-capacity release, actual history and budget readback, and explicit unresolved full-workflow storage-growth gate.",
+  "verification": [
+    "scope-review"
+  ],
+  "riskAnalysis": "Documentation only; no application rebuild, paid execution, source change or provider mutation. Do not misrepresent observed free bytes as worst-case qualified capacity.",
+  "defects": []
+}

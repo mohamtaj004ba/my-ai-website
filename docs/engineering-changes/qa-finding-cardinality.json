@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "6bf941db7f9180c86d081cb7d003712ad99b4122e409424324270b00055b5b25",
+  "risk": "critical",
+  "scope": "Align current implementation QA request/schema with existing one-to-one finding completeness; preserve genuine failed trial and agent patch.",
+  "riskAnalysis": "Narrow output count/IDs without forcing positive reviews. No permission, budget, source patch execution or publication change. Missing prior finding fails before provider dispatch; original failure remains immutable.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Reviewer completeness, source/evidence integrity, historical decisions and execution/publication boundaries.",
+    "trustBoundaries": "Validated Specialist receipt supplies data IDs only; owner/server remains authoritative for all permissions.",
+    "abuseCases": "Extra or forged decisions, omitted findings, schema bypass, fabricated acceptance, secret-bearing diagnostics, missing prior receipts.",
+    "mitigations": "Exact count and finding enum plus unchanged semantic uniqueness/evidence checks; closed sanitized categories only; no authority expansion."
+  },
+  "rollback": "Revert new QA schema/instructions/diagnostic metadata on feature branch; keep original trial, generated patch, reservations and all audit records.",
+  "negativePaths": {
+    "malformed-response": "Strict schema and existing provider parser remain; new extra count/forged ID outputs denied.",
+    "stale-state": "Fresh prior receipt and exact source/task binding remain authoritative.",
+    "concurrency": "No CAS/serial-authority change; existing mandatory coverage retained.",
+    "cancellation": "Existing cancellation/revocation/cleanup behavior unchanged and native failure tests passed.",
+    "worker-interruption": "No worker modification; original destruction evidence and interruption tests retained.",
+    "api-outage": "No provider retries introduced; existing failure handling unchanged.",
+    "authorization-denial": "No owner/role/tool grants added; exact source pin changes require fresh reviewed enrollment.",
+    "spending-limit": "No budget, reservation or token-limit changes; remaining1.80USD conservatively enforced.",
+    "partial-execution": "Original third-stage failure preserves first two results, QA usage and destroyed workspace; no downstream success claimed."
+  },
+  "defects": [
+    {
+      "rootCause": "Current Specialist is restricted to one finding while QA schema permits up to three decisions and lacks explicit one-to-one instructions.",
+      "detectionGap": "Deterministic fixtures always mapped exactly one decision, so successful schema generation was not checked against this semantic guard.",
+      "regression": "Schema-valid old overcount reproduction; new count/enum, missing-prior, criticism freedom, generic guard diagnostics and historical compatibility checks.",
+      "historicalPrevention": "Derive request cardinality from validated prior evidence and retain independent backend validation."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing implementation/schema/parser/failure boundary only; no new execution path or organization.",
+    "dependencies": "No new packages, services, credentials or infrastructure.",
+    "threats": "Output overcount, forged IDs, missing prior evidence, suppressed criticism and secret-bearing diagnostics.",
+    "failureModes": "Missing or unsupported prior evidence denies request; invalid count/IDs fail schema and semantic guards. Failed paid work remains revoked with observed usage retained.",
+    "faultInjection": "Old permissive schema counterexample, extra decisions, invented ID, absent prior receipt, duplicate generic finding, malformed diagnostics and historical request fixtures.",
+    "independentChallenge": "Separate Work QA and Auditor approved actual changes; one invalid new test enum was corrected without altering production decisions.",
+    "recovery": "Original failure and agent patch remain immutable; no paid retry until exact new release/configuration/admission qualification.",
+    "readiness": "94 existing/focused cases passed before one new fixture typo; corrected new5/5, QA historical14/14 and Auditor5/5 passed. Full hosted qualification pending."
+  }
+}

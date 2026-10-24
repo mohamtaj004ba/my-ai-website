@@ -1,0 +1,68 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "39b18b2b584d6bc98a013697fd0850f72ef3f41bbe326693b581a137c9d35a1a",
+  "risk": "critical",
+  "scope": "Preserve failed hosted read evidence, add finite private Vercel phase/guard diagnostics, abort the adapter on every exit and restore owned connection controls after parent locking without losing consent.",
+  "riskAnalysis": "STRICT trusted diagnostics and authorization-source integration. No authorization, task/release binding, lease duration, external endpoint, provider scope, spending or publication permission is weakened.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Provider credentials, diagnostic truth, bounded work and owner controls.",
+    "trustBoundaries": "Trusted guard errors and private per-invocation trace versus untrusted provider/error/JSON objects; parent/child UI locks.",
+    "abuseCases": "Provider errors impersonating internal guard failures, JSON impersonating HTTP status, secret reflection, late trace mutation, stale owner UI or lost consent state.",
+    "mitigations": "Private WeakMaps bind traces and original fixed guard codes; actual Response HTTP classes; finite bounded events/timing; frozen seal; unchanged guards and deadline; controller abort-on-exit; owned refs only."
+  },
+  "rollback": "Revoke exact temporary read grants and cancel task, then revert only this reviewed Preview diagnostic/UI correction; preserve original failed receipts and all historical authorization/accounting. No Production changes.",
+  "negativePaths": {
+    "malformed-response": "Provider JSON cannot spoof HTTP classes; strict evidence sanitizers unchanged. Diagnostic tests exclude raw body/token/URL.",
+    "stale-state": "Existing task/source/release/deployment/fence/owner checks remain; changed UI scope clears state and denies late replies.",
+    "concurrency": "Private per-invocation trace cannot be injected through caller fields/errors; seal excludes late mutations; existing CAS replay/regression retained.",
+    "cancellation": "Existing signals/deadlines unchanged; adapter aborts its controller on every exit, including early denial, before durable cleanup can lag.",
+    "worker-interruption": "No new worker. Existing actual supervisor/restricted-worker and interrupted cleanup regressions retained.",
+    "api-outage": "Finite phase events identify unconfirmed boundary, never fabricate successful provider access; no automatic retry.",
+    "authorization-denial": "Static trusted guards mint private original-code identities; matching provider errors remain unclassified; diagnostic spans preserve operation results.",
+    "spending-limit": "No model request, paid grant, new reservation or service purchase is introduced. The browser proof remains5/6 stopped and separate.",
+    "partial-execution": "Original fac read auto-revoked after11003ms; task cancellation110 preserved. Never replay original grant; any future nonbillable test uses a distinct task/release."
+  },
+  "defects": [
+    {
+      "rootCause": "Hosted Vercel read failed after11003ms but generic GitHub-derived diagnostic discarded its actual failing boundary.",
+      "detectionGap": "Positive local HTTP mocks proved composition but did not prove deployed latency or retain Vercel boundary identity.",
+      "regression": "Finite private trace spans across actual Ops, OAuth broker, configuration HTTP, adapter, deployment HTTP and final receipt; forged cap/errors/JSON and late seal tests.",
+      "historicalPrevention": "No exact root cause claimed until actual new-release trace; existing deadlines and checks cannot be relaxed from timing alone."
+    },
+    {
+      "rootCause": "Parent locks all nested controls, while Vercel child only rendered its buttons on the first snapshot.",
+      "detectionGap": "Previous isolated child tests did not simulate parent mutation lock and subsequent child snapshot update.",
+      "regression": "Parent-lock restore, child busy preservation, unchanged prepared consent anchor and no extra requests.",
+      "historicalPrevention": "Test real parent/child lifecycle effects and preserve same-scope in-progress state."
+    },
+    {
+      "rootCause": "Initial finite diagnostics trusted matching exception messages and provider-shaped ok/status fields.",
+      "detectionGap": "Independent QA challenged provenance beyond finite-value sanitization.",
+      "regression": "Private Error identity binds original fixed code; mutated and spoofed messages cannot change category; only Response instances yield HTTP classes.",
+      "historicalPrevention": "Independent semantic challenge of diagnostic provenance, not only absence of secrets."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing gateway, owner OAuth and journal; private finite observation helper grants no authority. Existing child control refs restored instead of reconstructing consent state.",
+    "dependencies": "Same owner/session/Redis/provider/lease and exact Preview identity. New helper is release-fingerprinted and mandatory contract list includes actual Vercel gateway and diagnostics tests.",
+    "threats": "Provider errors impersonating internal guard failures, JSON impersonating HTTP status, secret reflection, late trace mutation, stale owner UI or lost consent state.",
+    "failureModes": "Observe unconfirmed stages without payloads. Private seal freezes pending state; no inference that elapsed admission time identifies a specific validator.",
+    "faultInjection": "Provider error code forgery, altered branded error message, JSON HTTP spoof, private-cap forgery, late completion, bounded event count, early failure abort and parent UI locking.",
+    "independentChallenge": "Auditor inspected actual source and ran diagnostic tests; QA found/fixed provenance then approved58focusedchecks. Source-bound STRICT and hosted evidence pending.",
+    "recovery": "Existing exact grant revoke and task cancellation; no key change, consent repeat, retry or authority restoration.",
+    "readiness": "Candidate only. fac7d5b baseline has clean remote2885/2885 andRedis15/15 but failed actual read. This new source needs STRICT/CI/Redis/CodeQL and exact-release hosted diagnostics."
+  }
+}

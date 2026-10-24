@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "cb96a481e89fbe6c2b83e771128821bb2d383e4093c6174e3fe6a528032e5fd1",
+  "risk": "routine",
+  "scope": "Documentation-only actual hosted supervisor/remote-worker evidence, independently reviewed shutdown and qualified Browser QA checkpoint. No runtime or permission changes.",
+  "defects": []
+}

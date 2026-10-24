@@ -1,0 +1,21 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "dc811b7bf1bd54635fd81fe57870e72c19a1bd9f2cb89f934fb075937a99436d",
+  "risk": "substantial",
+  "scope": "Align only obsolete Redis lifetime-cap fixture with owner-authorized full-history append semantics; preserve actual concurrent CAS and cleanup proof.",
+  "riskAnalysis": "Runtime application fingerprint unchanged. Explicit historical fixture cardinality prevents null-limit loop from silently skipping history. Both successful appends must preserve original prefixes and both must be canceled; no assertion or error is swallowed.",
+  "verification": [
+    "risk-analysis",
+    "targeted-tests",
+    "independent-qa",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Redis integration fixture derived historical seed and final-slot expectation from removed lifetime limit; null produced zero seeded records and a stale one-winner assertion.",
+      "detectionGap": "The first sweep selected .test.js files and omitted the real Redis .cjs fixture; remote Redis retained and exposed the genuine assertion failure.",
+      "regression": "Explicit95 actual historical cancellations, two concurrent appends,97 records, preserved prefixes/distinctIDs/both cancellations/no reservations; all test suffixes swept.",
+      "historicalPrevention": "Search all .js/.cjs/.mjs test files for numeric limit arithmetic when removing historical caps; keep fixture seed cardinalities explicit."
+    }
+  ]
+}

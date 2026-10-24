@@ -1,0 +1,46 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "6a381c6dc7b3e37aa9b16b11d5e5df8eb71cd729270aa5150d82b22ac2fbbd6e",
+  "risk": "critical",
+  "scope": "Non-billable Preview-only detailed final Chief contract, semantic completeness gates, permanent regression evidence and disabled recovery policy foundations. No paid approval, retries, new grants, write authority or Production changes.",
+  "riskAnalysis": "Report content must never invent or override independent QA. Hash-only inputs cannot fulfill reporting responsibility. Blind inputs can leak conclusions through extra metadata/messages. New recovery planning must not create execution or accept failed original work. Final source binding follows implementation; analysis/review began before wiring, without claiming cryptographic timing proof.",
+  "threatModel": {
+    "assets": "Immutable findings/images/observations/verdicts/acceptance, task revisions/leases, isolated credentials, historical pending spending reservations, disabled execution and quality/release authority.",
+    "trustBoundaries": "Model messages versus backend source data; Chief explanation versus immutable QA; transport DTO versus atomic state; copied hashes versus actual source content; offline recovery fixtures versus future durable/authenticated executors.",
+    "abuseCases": "Invent/omit findings, invert reject or uncertainty, borrow irrelevant evidence, forge overall acceptance, replay stale report, race completion/cancellation, leak specialist conclusions into blind messages, misclassify risky remediation or loop paid retries.",
+    "mitigations": "Versioned exact certified projection/schema/instructions, all-stage capability data guards and byte integrity, release binding and final request reconstruction, receipt plus atomic finish equality, existing CAS/fence/grant/cancel/budget controls, zero-transport adversaries and frozen blockers; recovery disabled/offline with no runtime adapter."
+  },
+  "rollback": "Revert only reviewed feature implementation after checking unrelated changes. Keep paid execution false and do not mutate original task records or settle historical holds. No generic destructive or Production rollback is authorized.",
+  "negativePaths": {
+    "malformed-response": "Final report tests reject shape, omission, duplication, altered verdict/ref/uncertainty/prose/status; frozen Chief/observation and final capability blocker reject before transport.",
+    "stale-state": "Report snapshot includes authoritative acceptance revision/hash; atomic final tests change assessment/evidence and outer revision; no model-generated task revisions.",
+    "concurrency": "Concurrent atomic final completion admits one result/settlement, stale second caller rejected; existing Redis integration and unrelated recovery-plan isolation retained.",
+    "cancellation": "Atomic final cancellation denies completion with pending hold retained; recovery cancellation invalidates planning checkpoint without modifying original acceptance.",
+    "worker-interruption": "Existing lease/diagnostic interruption tests retained; recovery is offline only and cannot resume an uncertain paid stage or release its reservation.",
+    "api-outage": "Existing provider HTTP/network/error sanitization tests retained; no live request needed. New report construction/capability failures stop before provider transport.",
+    "authorization-denial": "Existing grant/approval/role/project/credential gates unchanged; report cannot change permission fields; disabled hosted initializer/grant checks after publication.",
+    "spending-limit": "Five calls,20koutput,150secondsstage,10minutes,$3.60newholds/$15cumulative unchanged; reporting byte limits fail before dispatch. Recovery actualspend0/estimatedplanningbounds; historical$7/$2.20 unchanged.",
+    "partial-execution": "Complete native five-stage mock accepted/rejected/uncertain/mixed paths, bad adjudication/finalreport block with holds retained, recovery preserves original failed evidence and separate candidate review."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Previous final Chief contract intentionally constrained output to aggregate status and supplied no individual findings/verdicts, making the requested richer responsibility impossible.",
+      "detectionGap": "Contract consistency/mock completion did not establish semantic input completeness or requirements-to-capability fulfillment. Blind data boundaries also omitted extra/nested message contamination checks.",
+      "regression": "Permanent agent-operations-final-report.test.js frozen preflight blocker, immutable fixture hash, detailed valid/rejected/mixed/uncertain receipts and hostile atomic tests; stage-capabilities.test.js allfive actualrequests with missing-data/leak/byte adversaries.",
+      "historicalPrevention": "Unchanged frozen old hashes-only final request fails new responsibility gate with zero transport; both older live contract failures still reject before fetch. No paid rerun or historical repair."
+    }
+  ]
+}

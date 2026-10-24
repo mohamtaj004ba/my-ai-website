@@ -1,0 +1,555 @@
+{
+  "version": "quality-evaluation-v1",
+  "purpose": "offline-quality-evaluation",
+  "goldHandling": "Private evaluator data; never send this dataset or gold fields to model inputs. Use the explicit stage projection only.",
+  "reference": {
+    "workflowId": "wf_66960665244af030469b00672dead78e",
+    "sourceCommit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+    "evidenceHash": "b4c4fedbba574a5cadf659efe21e1a5d45b135b6126b52f36ce57391e36e1ba8",
+    "observationHash": "2e26dc9521a6c74642ef7fcaf34aeaac7676fea96643c7f5f4cfa88bec0de0fd",
+    "historicalQaHash": "8d9c2e8ad0351235dfd92e8305ffb9dab1e0eaf9e00d60989bee4d0fd9a5dbce",
+    "images": [
+      {
+        "id": "I1",
+        "sha256": "f1a9288f42f11a8412aa23aa7186219d44ebea88c835ae3199ca3f1521a9ee75"
+      },
+      {
+        "id": "I2",
+        "sha256": "bc441703c4d4d0c8387be50125e6addf8e94744661d882c33d3fb1c8ead64d59"
+      },
+      {
+        "id": "I3",
+        "sha256": "6634d5f72ae0489921e9d5813954f3749321b76f1bb067980a4eedbba65e9fe8"
+      },
+      {
+        "id": "I4",
+        "sha256": "c5233fc73c0a7c3d4907ed5ef1a10f05ff287d20bf0d347cac9d91a151b625f6"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "E01",
+      "imageId": "I1",
+      "statement": "The Legal image contains a framed call-log dashboard.",
+      "region": [
+        0.448,
+        0.281,
+        0.917,
+        0.833
+      ],
+      "gold": {
+        "decision": "supported",
+        "observations": [
+          "O3"
+        ],
+        "regions": [
+          [
+            0.448,
+            0.281,
+            0.917,
+            0.833
+          ]
+        ],
+        "rationale": "The visible frame and call-log table support presence only."
+      }
+    },
+    {
+      "id": "E02",
+      "imageId": "I1",
+      "statement": "The caption reads “Dashboard sample · Example data”.",
+      "region": [
+        0.448,
+        0.79,
+        0.917,
+        0.84
+      ],
+      "gold": {
+        "decision": "supported",
+        "observations": [
+          "O3"
+        ],
+        "regions": [
+          [
+            0.448,
+            0.79,
+            0.917,
+            0.84
+          ]
+        ],
+        "rationale": "The caption is legible below the desktop frame."
+      }
+    },
+    {
+      "id": "E03",
+      "imageId": "I1",
+      "statement": "A dashboard row identifies appliance repair.",
+      "region": [
+        0.448,
+        0.338,
+        0.917,
+        0.794
+      ],
+      "gold": {
+        "decision": "insufficient",
+        "observations": [
+          "O3"
+        ],
+        "regions": [
+          [
+            0.448,
+            0.338,
+            0.917,
+            0.794
+          ]
+        ],
+        "rationale": "The embedded row text does not reliably establish this exact service."
+      }
+    },
+    {
+      "id": "E04",
+      "imageId": "I1",
+      "statement": "A dashboard row identifies vehicle service.",
+      "region": [
+        0.448,
+        0.338,
+        0.917,
+        0.794
+      ],
+      "gold": {
+        "decision": "insufficient",
+        "observations": [
+          "O3"
+        ],
+        "regions": [
+          [
+            0.448,
+            0.338,
+            0.917,
+            0.794
+          ]
+        ],
+        "rationale": "The specific service label cannot be verified reliably from the pixels."
+      }
+    },
+    {
+      "id": "E05",
+      "imageId": "I1",
+      "statement": "The dashboard illustration is appropriate for Legal.",
+      "region": [
+        0.448,
+        0.281,
+        0.917,
+        0.833
+      ],
+      "gold": {
+        "decision": "insufficient",
+        "observations": [
+          "O3"
+        ],
+        "regions": [
+          [
+            0.448,
+            0.281,
+            0.917,
+            0.833
+          ]
+        ],
+        "rationale": "Visible presence is not an owner-approved industry suitability criterion."
+      }
+    },
+    {
+      "id": "E06",
+      "imageId": "I1",
+      "statement": "The dashboard proves confidential legal data is protected.",
+      "region": [
+        0.448,
+        0.281,
+        0.917,
+        0.833
+      ],
+      "gold": {
+        "decision": "insufficient",
+        "observations": [
+          "O3"
+        ],
+        "regions": [
+          [
+            0.448,
+            0.281,
+            0.917,
+            0.833
+          ]
+        ],
+        "rationale": "A static screenshot cannot establish a security property."
+      }
+    },
+    {
+      "id": "E07",
+      "imageId": "I2",
+      "statement": "The embedded dashboard table text is very small.",
+      "region": [
+        0.06,
+        0.393,
+        0.942,
+        0.712
+      ],
+      "gold": {
+        "decision": "supported",
+        "observations": [
+          "O5"
+        ],
+        "regions": [
+          [
+            0.06,
+            0.393,
+            0.942,
+            0.712
+          ]
+        ],
+        "rationale": "The narrow rendering visibly reduces table text size."
+      }
+    },
+    {
+      "id": "E08",
+      "imageId": "I2",
+      "statement": "The example-data caption below the dashboard is readable.",
+      "region": [
+        0.06,
+        0.69,
+        0.942,
+        0.74
+      ],
+      "gold": {
+        "decision": "supported",
+        "observations": [
+          "O5"
+        ],
+        "regions": [
+          [
+            0.06,
+            0.69,
+            0.942,
+            0.74
+          ]
+        ],
+        "rationale": "The external caption is readable even though table text is limited."
+      }
+    },
+    {
+      "id": "E09",
+      "imageId": "I2",
+      "statement": "All embedded dashboard table text is clearly readable.",
+      "region": [
+        0.06,
+        0.393,
+        0.942,
+        0.712
+      ],
+      "gold": {
+        "decision": "contradicted",
+        "observations": [
+          "O5"
+        ],
+        "regions": [
+          [
+            0.06,
+            0.393,
+            0.942,
+            0.712
+          ]
+        ],
+        "rationale": "The mobile table is visibly too small to support universal readability."
+      }
+    },
+    {
+      "id": "E10",
+      "imageId": "I3",
+      "statement": "The Growth heading overlaps the badge lettering.",
+      "region": [
+        0.372,
+        0.386,
+        0.613,
+        0.416
+      ],
+      "gold": {
+        "decision": "supported",
+        "observations": [
+          "O7"
+        ],
+        "regions": [
+          [
+            0.372,
+            0.386,
+            0.613,
+            0.416
+          ]
+        ],
+        "rationale": "The overlap is at the heading and badge region."
+      }
+    },
+    {
+      "id": "E11",
+      "imageId": "I3",
+      "statement": "The badge overlaps the $599 price.",
+      "region": [
+        0.372,
+        0.386,
+        0.613,
+        0.49
+      ],
+      "gold": {
+        "decision": "contradicted",
+        "observations": [
+          "O6",
+          "O7"
+        ],
+        "regions": [
+          [
+            0.372,
+            0.386,
+            0.613,
+            0.49
+          ]
+        ],
+        "rationale": "The price is visibly separate below the badge."
+      }
+    },
+    {
+      "id": "E12",
+      "imageId": "I3",
+      "statement": "The $599 price is below the badge with positive vertical spacing.",
+      "region": [
+        0.372,
+        0.386,
+        0.613,
+        0.49
+      ],
+      "gold": {
+        "decision": "supported",
+        "observations": [
+          "O6",
+          "O7"
+        ],
+        "regions": [
+          [
+            0.372,
+            0.386,
+            0.613,
+            0.49
+          ]
+        ],
+        "rationale": "Visible separation agrees with capture-time geometry; this is not textual transcription."
+      }
+    },
+    {
+      "id": "E13",
+      "imageId": "I3",
+      "statement": "The badge lettering says “Built to grow”.",
+      "region": [
+        0.372,
+        0.386,
+        0.613,
+        0.416
+      ],
+      "gold": {
+        "decision": "insufficient",
+        "observations": [
+          "O7"
+        ],
+        "regions": [
+          [
+            0.372,
+            0.386,
+            0.613,
+            0.416
+          ]
+        ],
+        "rationale": "The heading occludes lettering; exact full wording is not established confidently."
+      }
+    },
+    {
+      "id": "E14",
+      "imageId": "I4",
+      "statement": "The mobile Growth heading overlaps the badge lettering.",
+      "region": [
+        0.055,
+        0.55,
+        0.895,
+        0.65
+      ],
+      "gold": {
+        "decision": "supported",
+        "observations": [
+          "O10"
+        ],
+        "regions": [
+          [
+            0.055,
+            0.55,
+            0.895,
+            0.65
+          ]
+        ],
+        "rationale": "The heading overlaps small badge text on the mobile card."
+      }
+    },
+    {
+      "id": "E15",
+      "imageId": "I4",
+      "statement": "The mobile badge overlaps the $599 price.",
+      "region": [
+        0.055,
+        0.55,
+        0.895,
+        0.65
+      ],
+      "gold": {
+        "decision": "contradicted",
+        "observations": [
+          "O10"
+        ],
+        "regions": [
+          [
+            0.055,
+            0.55,
+            0.895,
+            0.65
+          ]
+        ],
+        "rationale": "The price remains separate below the overlapping heading."
+      }
+    },
+    {
+      "id": "E16",
+      "imageId": "I4",
+      "statement": "The mobile badge lettering says “Built to grow”.",
+      "region": [
+        0.055,
+        0.55,
+        0.895,
+        0.59
+      ],
+      "gold": {
+        "decision": "insufficient",
+        "observations": [
+          "O10"
+        ],
+        "regions": [
+          [
+            0.055,
+            0.55,
+            0.895,
+            0.59
+          ]
+        ],
+        "rationale": "The overlapping letters do not establish exact full wording confidently."
+      }
+    },
+    {
+      "id": "E17",
+      "imageId": "I3",
+      "statement": "The badge overlaps the Starter heading.",
+      "region": [
+        0.089,
+        0.336,
+        0.613,
+        0.49
+      ],
+      "gold": {
+        "decision": "contradicted",
+        "observations": [
+          "O6",
+          "O7"
+        ],
+        "regions": [
+          [
+            0.089,
+            0.336,
+            0.613,
+            0.49
+          ]
+        ],
+        "rationale": "The observed badge/heading overlap belongs to Growth, not Starter."
+      }
+    },
+    {
+      "id": "E18",
+      "imageId": "I3",
+      "statement": "The pricing screenshot contains no visible text overlap.",
+      "region": [
+        0.372,
+        0.386,
+        0.613,
+        0.416
+      ],
+      "gold": {
+        "decision": "contradicted",
+        "observations": [
+          "O7"
+        ],
+        "regions": [
+          [
+            0.372,
+            0.386,
+            0.613,
+            0.416
+          ]
+        ],
+        "rationale": "Visible Growth heading/badge overlap contradicts the blanket conclusion."
+      }
+    },
+    {
+      "id": "E19",
+      "imageId": "I1",
+      "statement": "The Expand control functions correctly when clicked.",
+      "region": [
+        0.448,
+        0.281,
+        0.917,
+        0.338
+      ],
+      "gold": {
+        "decision": "insufficient",
+        "observations": [
+          "O3"
+        ],
+        "regions": [
+          [
+            0.448,
+            0.281,
+            0.917,
+            0.338
+          ]
+        ],
+        "rationale": "A static screenshot cannot establish interaction behavior."
+      }
+    },
+    {
+      "id": "E20",
+      "imageId": "I2",
+      "statement": "The mobile header displays a Menu control.",
+      "region": [
+        0,
+        0,
+        1,
+        0.076
+      ],
+      "gold": {
+        "decision": "supported",
+        "observations": [
+          "O4"
+        ],
+        "regions": [
+          [
+            0,
+            0,
+            1,
+            0.076
+          ]
+        ],
+        "rationale": "The original mobile header visibly contains Menu."
+      }
+    }
+  ]
+}

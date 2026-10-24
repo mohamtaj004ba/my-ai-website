@@ -1,0 +1,49 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "005bf081c4b6d1ab899b68816bdff495de0a36396ac7e269571950c62a0dc7a9",
+  "risk": "critical",
+  "scope": "Explicit owner recovery of one existing open source-bound sequence selection from fresh server readbacks; local cache only.",
+  "riskAnalysis": "Security-sensitive UI recovery cannot create or expand server authority. Two fenced GETs, full clean shutdown, one zero-attempt approved-budget sequence, exact target identity and empty caches required. Current page cannot execute on another runtime; old exact snapshot still requires fresh task and approval.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner/workspace identity, exact release/source/sequence selection, original authority and audit history.",
+    "trustBoundaries": "Fresh authenticated server readbacks to non-authoritative existing browser selection cache; current UI epoch to older exact target runtime.",
+    "abuseCases": "Stale owner response, cross-workspace read, mismatched deployment/origin, conflicting approval overwrite, active grants, malformed private values, wildcard release inheritance and automatic registration.",
+    "mitigations": "Two fixed GET-only reads fenced after every await; typed target; sole eligible openzeroattempt v3 record; unchanged precise runtime gates; full revoked cleanup; all current approval caches veto; text-only explicit no-authority result; no server writes/navigation."
+  },
+  "rollback": "Restore last qualified paid-disabled feature Preview; preserve all records and failures. No history deletion or task revival. Keep paid execution blocked until exact stored sequence state is reconciled.",
+  "negativePaths": {
+    "malformed-response": "Incomplete, refused or malformed output remains rejected; no fake artifact.",
+    "stale-state": "Old policies, grants and release fingerprints cannot authorize new execution.",
+    "concurrency": "Serial cumulative admission and existing CAS; predecessor must be closed and clean.",
+    "cancellation": "Revocation and emergency stop remain authoritative; no retry after failure.",
+    "worker-interruption": "Cancel before/inside/after child, await actual termination/disposal; unknown or failed cleanup stays blocked. Remote authorization cannot outlive original authority.",
+    "api-outage": "No automatic paid retry; preserve sanitized diagnostic and usage uncertainty.",
+    "authorization-denial": "Reject workers/services, foreign owners/workspaces, stale source/review manifests, nonfalse flags, live leases/grants, altered failure/preparation/original record, and unsupported cleanup evidence.",
+    "spending-limit": "Existing aggregate authorization and token/call/time caps preserved across distinct successors.",
+    "partial-execution": "A complete model response is not a preserved implementation artifact; only actual accepted stage receipts reach downstream roles."
+  },
+  "defects": [],
+  "proactiveReview": {
+    "architecture": "Existing UI, GET owner status, existing selection journal and unchanged activation controller. No new server endpoint, grant, budget or executor.",
+    "dependencies": "No new dependency or provider; same8row validated readback limit.",
+    "threats": "Stale owner response, cross-workspace read, mismatched deployment/origin, conflicting approval overwrite, active grants, malformed private values, wildcard release inheritance and automatic registration.",
+    "failureModes": "Network/JSON, identity/runtime change, expiry, conflicting cache, multiple eligible records or inconsistent cleanup deny with no local selection write or server mutation.",
+    "faultInjection": "Two-read changes, owner/workspace/deployment/origin fencing, active leases/open attempts/live grants, unknown cleanup, all current approval caches, malformed/nested fields, wrong authorization/budget, network/JSON, currentDF denial and exacttarget read-only status.",
+    "independentChallenge": "Separate Work QA/Auditor inspect source and executable adversaries; author evidence never independent approval. ActualDF18 owner history confirms seven sequences including ff7open0 and allnine workflows closed/revoked.",
+    "recovery": "Explicit local selection restore only. Never repeat unconfirmed registration; source72 snapshot reuse needs independent actual admission review and fresh one-time task/approval. No automatic alias switch or paid request.",
+    "readiness": "121 focused passed; frozen STRICT and full remote release qualification required before hosted recovery. Paid inference remains disabled."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "36157959e76b07182ec8ba46e5d03cd8a18dba5f182530a93a9bf5ed3a9a5143",
+  "risk": "routine",
+  "scope": "Preserve exact C.5 hosted inert-proposal verification, qualified browser-image cost/metadata proposal and owner-reviewable diff; no runtime or authority change.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

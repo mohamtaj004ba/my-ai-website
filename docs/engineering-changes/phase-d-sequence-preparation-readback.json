@@ -1,0 +1,49 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "4f15e0dae691add4a49008f473b2020cccc3cd3a15403e90eddfe4edbdc2fb92",
+  "risk": "critical",
+  "scope": "Read-only owner/workspace sequence recovery and sanitized preparation phase diagnostics in existing controls.",
+  "riskAnalysis": "Expose validated bounded historical sequence summaries only to the verified original owner/workspace; no task revival, registration, approval, funding or inference. Typed whitelist prevents nested private values. Fixed phases/codes never display raw exceptions or provider content.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner/workspace sequence identities, immutable history, source/configuration bindings, retained financial uncertainty and secret-free diagnostics.",
+    "trustBoundaries": "Private stored sequence rows to verified owner-only readback and textContent rendering; untrusted error text to finite diagnostic classification.",
+    "abuseCases": "Cross-owner or tenant read, nested values inside known keys, malformed hashes or cohorts, stale task authority, false registration absence and repeated provider mutation.",
+    "mitigations": "Both identity hashes before projection; existing sequence validity/cohort accounting; max8 rows; typed runtime/summary projections; omit malformed; executionAuthorized false; finite codes and fixed method phases; unchanged task/release/spending gates."
+  },
+  "rollback": "Restore last qualified paid-disabled feature Preview; preserve all records and failures. No history deletion or task revival. Keep paid execution blocked until exact stored sequence state is reconciled.",
+  "negativePaths": {
+    "malformed-response": "Incomplete, refused or malformed output remains rejected; no fake artifact.",
+    "stale-state": "Old policies, grants and release fingerprints cannot authorize new execution.",
+    "concurrency": "Serial cumulative admission and existing CAS; predecessor must be closed and clean.",
+    "cancellation": "Revocation and emergency stop remain authoritative; no retry after failure.",
+    "worker-interruption": "Cancel before/inside/after child, await actual termination/disposal; unknown or failed cleanup stays blocked. Remote authorization cannot outlive original authority.",
+    "api-outage": "No automatic paid retry; preserve sanitized diagnostic and usage uncertainty.",
+    "authorization-denial": "Reject workers/services, foreign owners/workspaces, stale source/review manifests, nonfalse flags, live leases/grants, altered failure/preparation/original record, and unsupported cleanup evidence.",
+    "spending-limit": "Existing aggregate authorization and token/call/time caps preserved across distinct successors.",
+    "partial-execution": "A complete model response is not a preserved implementation artifact; only actual accepted stage receipts reach downstream roles."
+  },
+  "defects": [],
+  "proactiveReview": {
+    "architecture": "Existing ownerPilotControl and existing text-only Tasks panel; no new endpoint, controller, ledger or write.",
+    "dependencies": "No dependency or provider change; existing sequence validation and cohort view reused with max8 rows.",
+    "threats": "Cross-owner or tenant read, nested values inside known keys, malformed hashes or cohorts, stale task authority, false registration absence and repeated provider mutation.",
+    "failureModes": "Malformed/foreign sequence omitted; unavailable owner read fails closed; network/JSON/preparation denial preserves safe fixed phase and never retries or creates authority.",
+    "faultInjection": "Rehashed nested origin/version/summary values, foreign owner/workspace/service, invalid hashes, overcapacity, expired/stopped history, zero-CAS actual readback, safe/unknown errors and saved-sequence network/JSON failures.",
+    "independentChallenge": "Independent Work QA and Auditor review actual source; author reviews are not independent acceptance. Auditor confidentiality and phase-classification findings corrected and retested.",
+    "recovery": "Read back existing sequence state before any new registration or paid action. Canceled task op1411 zero calls preserved; old approvals revoked; feature alias restored once to paid-disabled qualified source.",
+    "readiness": "100 focused checks passed; frozen STRICT and remote release qualification pending. No paid request or new reservation."
+  }
+}

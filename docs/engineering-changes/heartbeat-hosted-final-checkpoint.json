@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "7b8194aa31e956b3e1b847bd435039fd6041ac510d05b6847ebe3efde47306df",
+  "risk": "routine",
+  "scope": "Documentation-only verified heartbeat/context-seal hosted rehearsal, exact shutdown evidence and qualified 16-item risk status. Preserve all historical failures; no runtime, model, authorization or spending changes.",
+  "defects": []
+}

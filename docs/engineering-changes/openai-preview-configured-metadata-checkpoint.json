@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "31929762a4077bb78141016770311b8238fc0f0749f80b459974d93e335f4f6c",
+  "risk": "routine",
+  "scope": "Record verified Preview-only dedicated credential metadata, actual model authentication, bounded cancellation, unchanged accounting and unresolved counting-price gates; documentation only.",
+  "defects": [],
+  "verification": [
+    "scope-review"
+  ],
+  "riskAnalysis": "No runtime, credential value, pricing pin, authority or paid execution change; historical failures and source verification preserved."
+}

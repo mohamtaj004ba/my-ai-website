@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e4fcf2bf54c6bad0a7c99a08746a5d2f27c9a6a82764d1bd7e3f838759005d35",
+  "risk": "critical",
+  "scope": "Bound exact Preview deployment readiness waiting without weakening identity validation; preserve verified source, Google evidence and browser builder cost limitations.",
+  "riskAnalysis": "Shared CI identity pinning can incorrectly fail before the application build is ready. Longer waiting must remain bounded, fail closed, abort hung requests and never accept stale or substituted releases.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact Preview source/deployment fingerprint, sanitized CI evidence, protection credentials and reliable mandatory Browser QA.",
+    "trustBoundaries": "Read-only authenticated alias/immutable identity responses to existing validation, then bounded waiting to evidence artifact and CI environment output.",
+    "abuseCases": "Old aliases, wrong branch/project/source, changed immutable identity, hung fetch or JSON body, late completion and unbounded retries.",
+    "mitigations": "Unchanged pin/validate/pair/equivalent guards;fixed120attempts/ten-minute deadline,per-request10seconds,abortable pause,late-result isolation and sanitized finite errors. No additional credentials or mutation."
+  },
+  "rollback": "Revert the waiting helper and its tests to the earlier fail-closed polling while retaining valid current source and evidence; never bypass exact Preview identity checks.",
+  "negativePaths": {
+    "malformed-response": "Existing actual pin validation rejects malformed identity and sanitized errors; no response is accepted without exact immutable match.",
+    "stale-state": "Actual pin tests preserve source ancestry, branch, release, project and immutable deployment checks.",
+    "concurrency": "Single sequential read-only attempt loop;late completions cannot supply evidence or schedule another attempt.",
+    "cancellation": "Whole deadline aborts fetch and pause;max120attempts and existing25minute workflow timeout remain.",
+    "worker-interruption": "No worker or paid dispatch is created;interrupted CI has no successful artifact or execution authority.",
+    "api-outage": "Hung fetch/body ends at deadline;HTTP and transport failures remain sanitized and fail closed.",
+    "authorization-denial": "Existing protection secret requirement unchanged;no denied identity can become a successful pin.",
+    "spending-limit": "Only bounded existing read-only identity GETs;no model requests, reservations, infrastructure activation or new recurring workload.",
+    "partial-execution": "No GITHUB_ENV target is written until exact verification succeeds;late completion cannot overwrite the returned result."
+  },
+  "defects": [
+    {
+      "rootCause": "Old36attempt polling exhausted before two observed exact Preview builds became READY.",
+      "detectionGap": "Correct fail-closed identity check had a readiness window shorter than the observed deployment build.",
+      "regression": "Eight independent offline wait tests plus original identity tests cover delayed success,hung fetch/body,abort and late completion.",
+      "historicalPrevention": "Preserve failed run evidence;measure a future first-attempt deployment check without cancelling current valid Browser QA."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend only existing pin script, no new gateway,release mechanism,credentials or orchestration.",
+    "dependencies": "Existing Node AbortController,AbortSignal and fixed identity endpoint;no package changes.",
+    "threats": "Longer readiness cannot permit older or substituted release,unsanitized diagnostics or unbounded requests.",
+    "failureModes": "All mismatches fail closed;shared asynchronous deadline and existing job timeout bound pending work.",
+    "faultInjection": "Independent8/8 tests passed;combined17/17 actual pin and wait tests passed1574.0256ms after final timer ordering.",
+    "independentChallenge": "Independent Work QA and Engineering Auditor reviewed actual diff;no material finding conditional on STRICT and hosted verification.",
+    "recovery": "Wait for current1f6 Browser run before publishing to avoid concurrency cancellation;retain all old failed attempts.",
+    "readiness": "Candidate only;required STRICT and final hosted verification pending. Browser infrastructure remains unavailable and all paid/count execution disabled."
+  }
+}

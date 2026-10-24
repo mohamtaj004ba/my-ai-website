@@ -1,0 +1,18 @@
+{
+  "version": "documentation-recovery-git-v1",
+  "qualification": "Hash-pinned historical Git metadata; fixture contract is not demonstrated inspection of unavailable Git history.",
+  "commit": "7934a97c860a025c37e09ea1c3532c698143bc0d",
+  "parent": "630cba06e316896efe8a3da92d1ca2d700ea906b",
+  "changedPaths": [
+    "CALLERCORE_PROJECT_STATE.md"
+  ],
+  "entries": [
+    {
+      "path": "CALLERCORE_PROJECT_STATE.md",
+      "oldBlob": "b49623b0f6674cd525d5fa5dadd13bcb44241e3f",
+      "blob": "fe2b0030e06e8de77852f0e8bbe5b6c630cd56df",
+      "parentMode": "100644",
+      "commitMode": "100644"
+    }
+  ]
+}

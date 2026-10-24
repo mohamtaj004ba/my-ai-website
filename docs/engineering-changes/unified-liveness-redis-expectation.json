@@ -1,0 +1,63 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "b04192079b55767fb1deb0645d02669f809adac1e6ee11c0c4b3a4fe8e24834d",
+  "risk": "critical",
+  "scope": "Correct exact Redis denial expectation and clean-checkout diagnostic emission in liveness tests; no runtime change.",
+  "riskAnalysis": "Actual Redis run63044cc passed33/34; one failure was a broad old error-message regex, while authority correctly failed closed with new ENG_TRANSPORT_RENEW_WORKFLOW. Runtime is unchanged.",
+  "threatModel": {
+    "assets": "Exact owner/task/source/release approval, workflow and grant leases, immutable history, cancellation, provider dispatch and cleanup.",
+    "trustBoundaries": "Only the existing trusted owner controller mints an in-memory WeakMap token after active invocation checks. Transport may validate but cannot mint; client/model/child data cannot suppress renewal. All renewal uses existing fresh-authority CAS.",
+    "abuseCases": "Forged or replayed proof; cross broker/signal/context/actor/approval; expired workflow revived under fresh approval; missing consumed workflow; wrong grant/workspace; stale concurrent CAS; interstage or terminal confusion; outer renewal failure during provider operation.",
+    "mitigations": "Full exact context/actor/approval hashes plus broker/signal identity; finally deletion; invalid supplied proof denied before admission. Atomic both-lease renewal validates exact existing workflow/grant/state, never revives expiry; effective shorter ACK; closed interstage and terminal checks; standalone pump and foreground checks untouched."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Actual Redis run63044cc passed33/34; one failure was a broad old error-message regex, while authority correctly failed closed with new ENG_TRANSPORT_RENEW_WORKFLOW. Runtime is unchanged.",
+      "detectionGap": "New exact workflow guard changed preadmission revoked denial classification; local fixtures did not assert the old Redis-only regex.",
+      "regression": "Independent normalized one-line test diff verified; exact anchored code replaces broad wording, unchanged state/zero lease assertions remain. Actual successor Redis verification pending.",
+      "historicalPrevention": "Include integration denial-code expectations when changing guard order; never loosen security assertions to accept success."
+    },
+    {
+      "rootCause": "New baseline test wrote report to ignored artifacts directory absent on fresh CI checkout. All security/history assertions passed before ENOENT.",
+      "detectionGap": "Local retained evidence directory masked test-only output dependency.",
+      "regression": "Targeted2/2PASS after using identical test-runner diagnostic evidence; QA909d5929 and Auditord1d96b61 confirm behavioral assertions unchanged.",
+      "historicalPrevention": "Repository tests must not require retained local evidence folders or overwrite historical evidence; use test-runner diagnostics."
+    }
+  ],
+  "rollback": "Revert only test expectation if exact diagnostic contract differs; no runtime, history or authority mutation.",
+  "negativePaths": {
+    "malformed-response": "Bounded JSON/NDJSON parsers, exact23checks/7case IDs, final command/session binding; raw provider errors never enter receipts.",
+    "stale-state": "Fresh owner/source/task checks retained; expired or missing consumed workflow cannot renew; no authority cache.",
+    "concurrency": "One managed background loop; standalone overlapping pumps retained for other callers. Every CAS conflict repeats fresh authority; no concurrent paid attempts.",
+    "cancellation": "Parent signal aborts managed transport; finite renewal deadline, immutable expiry and preCAS checks retained; finally revocation/readback and token deletion.",
+    "worker-interruption": "Unique durable claim survives lost acknowledgment; read named resource without create retry; absent/unconfirmed resource is not called clean.",
+    "api-outage": "Any identity/private-state read error rejects; no new retries/client or timeout increase. Closed pending phase labels expose no content.",
+    "authorization-denial": "Forged/cross-scope/stale private coverage fails before admission; grant/workflow owner/workspace/source binding checked atomically.",
+    "spending-limit": "No budget increase, model retry or recurring task. Existing owner financial monitoring unchanged; source VM remains finite1CPU2GB300s/deny-all/nonpersistent.",
+    "partial-execution": "Original live failure before counting/ResponsesHTTP/VM preserved; count admission marker not represented as provider usage.",
+    "duplicate-request": "No provider retry or consumed approval reuse. New release still requires exact reviewed configuration/enrollment/fresh task."
+  },
+  "proactiveReview": {
+    "architecture": "No runtime or architecture changes; existing actual Redis integration test remains authoritative.",
+    "dependencies": "No new dependency/provider/service/credential or network authority.",
+    "threats": "Forged or replayed proof; cross broker/signal/context/actor/approval; expired workflow revived under fresh approval; missing consumed workflow; wrong grant/workspace; stale concurrent CAS; interstage or terminal confusion; outer renewal failure during provider operation.",
+    "failureModes": "Full exact context/actor/approval hashes plus broker/signal identity; finally deletion; invalid supplied proof denied before admission. Atomic both-lease renewal validates exact existing workflow/grant/state, never revives expiry; effective shorter ACK; closed interstage and terminal checks; standalone pump and foreground checks untouched.",
+    "faultInjection": "Actual old run33/34, sole obsolete error regex. Successor Redis run required, no blind rerun; original failed job/evidence retained.",
+    "independentChallenge": "Test-only QA d0f6fec555df50b75382a2609dca3bec131c55eac5b74e333c91fcfdbf171d92 and Auditor ca2e831d35ba07c9c335c373c9bf2125343f0b4ccd01bced664277712ac1b93b approve sole exact assertion change. Clean-checkout output-only QA909d5929969ec44472292bfec352268429fd4451b89204a9afd0b563f7d8303f/Auditord1d96b615701d88fe5bfae605fc353ebc5abbcf3abee24f8b076de0c044125ac.",
+    "recovery": "Latest approval revoked revision6/lease0, task cancelledrevision2; supported local closed-attempt archive acknowledged. Historical evidence unchanged.",
+    "readiness": "Test-only successor pending; no paid grant, model request or VM. Runtime fingerprint ad0 unchanged."
+  }
+}

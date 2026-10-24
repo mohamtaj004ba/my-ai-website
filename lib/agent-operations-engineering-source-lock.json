@@ -1,0 +1,26 @@
+{
+  "version": "engineering-read-tools-v1",
+  "profile": "client-dashboard-source-v1",
+  "files": [
+    {
+      "path": "dashboard.html",
+      "sha256": "77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f",
+      "bytes": 70835
+    },
+    {
+      "path": "dashboard.js",
+      "sha256": "202a482a439821294d30a984d8f7402b9102fb5d28680a931da31969785ea049",
+      "bytes": 615443
+    },
+    {
+      "path": "dashboard.css",
+      "sha256": "303153da4b6e7ae032e75360beb15ce1bd653fe466985de8a188ea78765d8973",
+      "bytes": 339361
+    },
+    {
+      "path": "package.json",
+      "sha256": "dbd443f500bc19c2f4fdfedbd87add22720a54ea2238e68715e19b84e9b1fa32",
+      "bytes": 1272
+    }
+  ]
+}

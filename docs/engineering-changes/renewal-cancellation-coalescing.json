@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "5942430bcb039e439cfc643d3b6a78717100a45d03a990ea4d1679764b61c378",
+  "risk": "critical",
+  "scope": "Cancellation-aware owner/stage renewal and read-only fresh approval coalescing; unchanged 10s renewal deadline and30s lease.",
+  "riskAnalysis": "Late transmitted CAS remains uncertain and requires fenced revocation; no lease/deadline/spending/acceptance expansion. Fresh owner/source/task/policy/lifecycle checks remain before no-op.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Reviewer completeness, source/evidence integrity, historical decisions and execution/publication boundaries.",
+    "trustBoundaries": "Validated Specialist receipt supplies data IDs only; owner/server remains authoritative for all permissions.",
+    "abuseCases": "Timed-out callbacks continue lease work, stale/revoked approval resurrection, forged owner/scope, treating transmitted writes as canceled, suppressing count exposure.",
+    "mitigations": "Signal checks before/after awaits and CAS mutation/settlement; full lifecycle verification before no-op; unchanged revocation/CAS fences and immutable receipts."
+  },
+  "rollback": "Revert new QA schema/instructions/diagnostic metadata on feature branch; keep original trial, generated patch, reservations and all audit records.",
+  "negativePaths": {
+    "malformed-response": "Strict schema and existing provider parser remain; new extra count/forged ID outputs denied.",
+    "stale-state": "Fresh prior receipt and exact source/task binding remain authoritative.",
+    "concurrency": "No CAS/serial-authority change; existing mandatory coverage retained.",
+    "cancellation": "Existing cancellation/revocation/cleanup behavior unchanged and native failure tests passed.",
+    "worker-interruption": "No worker modification; original destruction evidence and interruption tests retained.",
+    "api-outage": "No provider retries introduced; existing failure handling unchanged.",
+    "authorization-denial": "No owner/role/tool grants added; exact source pin changes require fresh reviewed enrollment.",
+    "spending-limit": "No budget, reservation or token-limit changes; remaining1.80USD conservatively enforced.",
+    "partial-execution": "Original third-stage failure preserves first two results, QA usage and destroyed workspace; no downstream success claimed."
+  },
+  "defects": [
+    {
+      "rootCause": "Actual renewal timeout observed; specific slow boundary unknown. Verified callbacks ignored cancellation and redundant owner/stage approval writes existed.",
+      "detectionGap": "Prior tests covered closed cancellation reason but not actual delayed broker read/CAS versus revocation, or fresh-lease redundant write counts.",
+      "regression": "20,001/20,000ms boundaries, active/consumed/revoked/expired/foreign scope, delayed authority/read/CAS, transmitted-write uncertainty, count evidence and concurrent revocation; realRedis case added.",
+      "historicalPrevention": "Propagate cancellation across all authority awaits/CAS retries; coalesce only fresh verified leases, preserve unchanged short deadlines and explicit cleanup."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing implementation/schema/parser/failure boundary only; no new execution path or organization.",
+    "dependencies": "No new packages, services, credentials or infrastructure.",
+    "threats": "Output overcount, forged IDs, missing prior evidence, suppressed criticism and secret-bearing diagnostics.",
+    "failureModes": "Missing or unsupported prior evidence denies request; invalid count/IDs fail schema and semantic guards. Failed paid work remains revoked with observed usage retained.",
+    "faultInjection": "Old permissive schema counterexample, extra decisions, invented ID, absent prior receipt, duplicate generic finding, malformed diagnostics and historical request fixtures.",
+    "independentChallenge": "Independent Work QA34/34 and Auditor20/20 approve working repair; no material finding, exact hosted qualification pending.",
+    "recovery": "Original failure and agent patch remain immutable; no paid retry until exact new release/configuration/admission qualification.",
+    "readiness": "34 focused race/authority cases and90 additional native controller/transport/sequence/reuse cases passed; hosted exact successor qualification required. No live timeout cure claimed."
+  }
+}

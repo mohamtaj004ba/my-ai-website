@@ -1,0 +1,33 @@
+.home-site .demo-band{background:radial-gradient(ellipse at 80% 30%,#335b492e,transparent 55%),#172e2e;color:#edf5ec}
+.home-site .demo-band h2{color:#f0f5ec;font-size:clamp(34px,4vw,54px)}
+.home-site .demo-band h2 br{display:block}
+.home-site .demo-copy>p:not(.kicker){color:#b5c7bd}
+.home-site .try-prompts button{color:#bdd0c4;border-color:#476056;background:#ffffff03}
+.home-site .try-prompts button.active{background:#ecf1e5;color:#244538;border-color:#ecf1e5;box-shadow:0 0 26px #c2db9e1c}
+.home-site .live-stage{background:#203b37;border-color:#456257;box-shadow:0 25px 70px #071b1b60}
+.home-site .live-stage .stage-head{background:#19332e;border-color:#3d594e;padding:18px 26px}
+.home-site .stage-head small{color:#d3e7cd}.home-site .stage-head .example-label{color:#c2d8b6;font-weight:600}
+.showcase-wave{height:27px;display:flex;align-items:center;gap:3px;margin-left:18px}
+.showcase-wave i{width:3px;height:24px;border-radius:3px;background:#c4dcaa;animation:showcase-voice .65s ease-in-out infinite alternate;animation-delay:calc(var(--bar)*-120ms)}
+.showcase-wave i:nth-child(3n){height:12px}.showcase-wave i:nth-child(2n){height:18px}
+.call-journey{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:0;margin:0;list-style:none;border-bottom:1px solid #3d594e}
+.call-journey li{position:relative;padding:17px 24px;font-size:10px;color:#79978a;border-right:1px solid #3d594e;transition:color .4s,background .4s}
+.call-journey li span{margin-left:8px;font-size:12px;font-weight:600}.call-journey li.current{color:#f3d5b5;background:#bc603818}
+.call-journey li.current:after{content:'';position:absolute;bottom:0;left:0;height:2px;background:#e29465;animation:journey-fill 4.6s linear infinite}
+.call-journey li.complete{color:#c4dcaa}.home-site .demo-conversation{border-color:#3d594e;min-height:280px;justify-content:center;padding:28px}
+.home-site .demo-line span{color:#a7bdb0}.home-site .demo-line.customer p{background:#314e47;color:#eef4ea!important;border:1px solid #476359}
+.home-site .demo-line.agent span{color:#edaf83}.home-site .demo-line.agent p{background:#e9efdf;color:#264436!important;border:1px solid #f8fff080;box-shadow:0 12px 24px #0a231f25}
+.home-site .demo-outcome{background:#19342e;border-color:#3d594e;gap:18px;padding:26px}
+.home-site .demo-outcome small{color:#8fae9d}.home-site .demo-outcome strong{color:#e1eddb}
+.home-site .demo-band .capture-heading{font-size:10px;color:#d6a17b;margin:0 0 6px;font-weight:700;letter-spacing:.12em}
+.home-site .demo-band .capture-payoff{background:#a3c78615;border:1px solid #78995d44;border-radius:12px;padding:13px;margin:0;color:#d9ebc6;font-size:12px;animation:payoff-in .5s ease both}
+.capture-payoff[hidden]{display:none}.capture-payoff b,.capture-payoff span{display:block}.capture-payoff span{font-size:10px;margin-top:5px;color:#a7bea0}
+.home-site .demo-controls{background:#19332e;border-color:#3d594e}.home-site .demo-controls button{color:#b3cbb9}.home-site .demo-track{background:#3d594e}
+.showcase-foot small{color:#8da99a}.home-site .showcase-foot .demo-text-link{color:#d6e7c9}
+.live-stage[data-playing=false] .showcase-wave i,.live-stage[data-playing=false] .call-journey li:after{animation-play-state:paused}
+@keyframes showcase-voice{from{transform:scaleY(.2);opacity:.6}to{transform:scaleY(1);opacity:1}}
+@keyframes journey-fill{from{width:0}to{width:100%}}
+@keyframes payoff-in{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
+@media(max-width:600px){.home-site .demo-band h2{font-size:34px}.home-site .live-stage .stage-head{padding:14px 18px;gap:10px;flex-wrap:wrap}.showcase-wave{margin-left:7px}.home-site .stage-head .example-label{width:100%;font-size:10px}.call-journey li{padding:12px 8px;font-size:9px;text-align:center}.call-journey li span{display:block;margin:4px 0 0;font-size:10px}.home-site .demo-conversation{min-height:220px;padding:20px 18px}.home-site .demo-outcome{padding:18px}.home-site .demo-outcome .capture-heading{margin-bottom:0}.home-site .demo-band .capture-payoff{padding:12px}}
+@media(prefers-reduced-motion:reduce){.showcase-wave i,.call-journey li.current:after,.capture-payoff{animation:none!important}.call-journey li{transition:none}.call-journey li.current:after{width:100%}}
+.home-site .demo-band .kicker{color:#e3a079}.home-site .demo-outcome .capture-heading{color:#d6a17b}

@@ -1,0 +1,21 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "36bb2c3d1532eea3a61a8f6fd86e06e82a072febcb9c05c6557b8136a062c68e",
+  "risk": "routine",
+  "scope": "Documentation-only final exact-source qualification of owner-requested V3 ten-attempt removal; preserve historical authorization, accounting and actual archive-inspection limitation.",
+  "defects": [
+    {
+      "rootCause": "Repeated ten-attempt predicates remained active after later owner standing development changes.",
+      "detectionGap": "Earlier policy changes did not reconcile total-attempt admission and UI recovery paths.",
+      "regression": "290focused17preflight4397CI34Redis; real hostedBrowser/visualsteps/CodeQL/Jekyll passed on exactsource; independentQA154 and Auditor143 passed.",
+      "historicalPrevention": "Effective current policy remains explicit and separate from immutable metadata; check all equivalent entry points and accumulated history; preserve reader compatibility beyondten."
+    }
+  ],
+  "verification": [
+    "scope-review"
+  ],
+  "applicationSource": "04c47c04f16c6f7537f5b844f735898d7ef096fe",
+  "applicationFingerprint": "f89c7c3f84db0e08c04f2894e375a07a0de889281d4a3f441655d174b13145c1",
+  "deploymentId": "dpl_EwHWJD28JjDgtJsiziU19HvYzANu",
+  "applicationRebuildRequired": false
+}

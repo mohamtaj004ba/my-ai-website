@@ -1,0 +1,56 @@
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app/__agentops_fonts/b0ae3e89a7d3ef2b1838bb4b1ceb0b17cc3435af061eee809d76aa623ff116e9.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app/__agentops_fonts/376427b5322148d8de1e03f263bcca4935a2d60ba71d9f94f4947ab664c711ae.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app/__agentops_fonts/b79a2ea7a38f33fd96a282fadb9ce97626bb0724a44d21075859f0e50239993a.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app/__agentops_fonts/2a8e7f713ee79fbccdef3cef5c787aff47580299f7da60144961e7db2ec08211.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app/__agentops_fonts/f433e5d333be1128d8ec8a28b8aadd0314d10e14e4105406076666bc830fc15d.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app/__agentops_fonts/6bad1a774228464cc88b8b0271555b266f7a3c64a7bedf15e165fdab4f6ac0ce.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app/__agentops_fonts/b9584e099e0e7f1e1e914c3037aabb9010c50346a3ce8df5eeeeecc0563044d8.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app/__agentops_fonts/b8f802f05b322a7345805f5b89f8bb976604cc719a91530918d5ce3c47160950.ttf) format('truetype');
+}

@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "021c6c7aadbf5fef86ca74ea52a2a70c0e4123964cd693a25654cc4d1a54f4ef",
+  "risk": "critical",
+  "scope": "Separate fixed model metadata provider deadline from bounded post-admission owner/audit work without changing paid execution authority.",
+  "riskAnalysis": "Actual F0C diagnostic proves providerHTTP200 and model validation followed by audit-commit timeout at10005ms. Preserve failure and prior unknowncause. Allow30seconds post-admission with independent10second fetch/body timeout; initial existing owner/task admission is separate, not a total30second API-wall-time guarantee.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Dedicated OpenAI credentials, task ownership, immutable audit records and exact Preview identity.",
+    "trustBoundaries": "Provider headers/body are untrusted. Only authenticated existing controller creates private diagnostic proof. Existing broker validates bound closed records. Frontend renders text only and rejects late deployment results.",
+    "abuseCases": "Provider or body hangs, audit latency, cancellation during provider/audit, expiry or owner revocation, stale deployment, hidden retry or paid deadline expansion.",
+    "mitigations": "Independent referenced post-admission30s and provider10s timers share caller cancellation; provider timer clears only after bounded body read and in finally. Existing exact task/source/authority rechecks, no retries or paid control changes. UI40s only for metadata."
+  },
+  "rollback": "Revert candidate feature code only, retain immutable failure receipts and historical records; keep paid flags disabled and exact release checks. No credential rotation, main/Production writes or old grant reuse.",
+  "negativePaths": {
+    "malformed-response": "Provider JSON/body/model schema still failclosed withsanitizedproof.",
+    "stale-state": "Exact task/source/deployment/origin and owner checks unchanged.",
+    "concurrency": "Existing immutable auditCAS/oneprobe idempotency unchanged.",
+    "cancellation": "Caller,provider or post-admission deadline aborts sharedmetadataoperation. No taskexpiryextension.",
+    "worker-interruption": "Metadata creates no restrictedworker or executiongrant. Paid worker controls unchanged.",
+    "api-outage": "One fixedGET only; no retry. Missing audit confirmation cannotbe success.",
+    "authorization-denial": "Owner/workspace/source admission and revalidation remainmandatory.",
+    "spending-limit": "MetadataGET no Responses/count/reservation. Existing4USDallowance remainsuntouched.",
+    "partial-execution": "HTTP200 alone insufficient; full receipt and unexpired currentauthority required. Historicalfailure preserved."
+  },
+  "defects": [
+    {
+      "rootCause": "One10second metadata deadline covered repeated authenticated owner reads, provider fetch/body, revalidation and immutable journal commit. Actualvalidproviderresponse reachedaudit-commit but cumulative envelope expired.",
+      "detectionGap": "Earlier fast memory fixtures did not exercise cumulative authenticated read/audit latency beyond10seconds. Newly shipped immutable diagnostic identified the actual phase.",
+      "regression": "Actualcontroller latency fixture exceeds10seconds yet safely completes withinpost-admission30; providerfetch/body stalls still10seconds. Controlled outerdeadline test, cancellation,revocation and existing25securitycases remain covered.",
+      "historicalPrevention": "F0C timeoutreceipt273f96f323ab6a86e7eac471df9eaca88e774dae683ae155c9744ed5c006d698 preserved; older2d1genericfailurecause remainsunknown. No paid diagnostics or credential changes."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Change only existing metadata timer lifecycle and UI wait. No new transport,journal,credential or orchestration.",
+    "dependencies": "No new dependency, provider account or infrastructure; existing dedicated credentials reused server-side.",
+    "threats": "Credential echo in headers, forged diagnostic objects, cross-workspace receipt replay, stale same-source deployment result, expired owner authority, audit persistence failure.",
+    "failureModes": "Provider fetch/body stalls abort after10seconds. Owner/audit work is bounded by30second post-admission envelope plus2second diagnostic recording. Initial admission separate; no guaranteed totalAPI30s. Failed receipt cannot claim full readiness.",
+    "faultInjection": "Real fixed10second stalledfetch/body, cumulative authority/audit latency, accelerated outertimer, cancellation/revocation and no second request.",
+    "independentChallenge": "Independent Work QA and Auditor found and verified fixes for credential header echo and stale runtime fence; no independently authenticated human acceptance claim.",
+    "recovery": "Allmetadata tasks cancelled,no paid/count/reservation, allfutureexecutionflagsfalse. Preserve currentREADYF0C whilequalifying successor.",
+    "readiness": "Independent focused tests/reviews and STRICT/Redis/CI/CodeQL/Browser qualify exact successor before new metadata check. No paid activation whileunconfirmed."
+  }
+}

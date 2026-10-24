@@ -1,0 +1,20 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "892b7c43a41b2b7d3f66d49d88b032bff496bc12dd5664a7ab097dbe12988c6d",
+  "risk": "routine",
+  "scope": "Preserve actual owner-authorized trusted Sandbox creation, observed security limitations, pass/fail checks, stopped state and accounting without runtime changes.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "proactiveReview": {
+    "architecture": "Documentation only. One existing-project source-only session reused existing reviewed inventory; no application integration.",
+    "dependencies": "No package, registry, credential, deployment or new persistent service added.",
+    "threats": "Do not mistake nonroot UID or microVM availability for qualified generated-code execution.",
+    "failureModes": "Observed nonzero capabilities and unlimited process-level limits preserved as unresolved, not hidden.",
+    "faultInjection": "Fixed positive assertion exit0 and seeded failure exit1 captured in real guest; no hostile code executed.",
+    "independentChallenge": "Independent precreate QA/Auditor and final actual-result QA/Auditor passed; Auditor independently GET-confirmed stopped provider state.",
+    "recovery": "Explicit stop plus independent provider GET confirmed stopped; snapshots empty and no automatic create retry.",
+    "readiness": "Trusted session lifecycle proven, untrusted execution unqualified. Existing qualified Preview unchanged."
+  }
+}

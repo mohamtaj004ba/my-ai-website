@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "acf096238215a6008999a43c66dd694c3e27a89b518b993d142db6ce3797068a",
+  "risk": "critical",
+  "scope": "Correct actual Google issuer callback compatibility and observe existing incremental Gmail send grant without enabling operational authority.",
+  "riskAnalysis": "STRICT OAuth parameter and token-scope parsing. Exact issuer, duplicate rejection, source/runtime/state and encrypted-unconfirmed controls retained; no additional consent scope requested.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Google code, encrypted access/refresh tokens, immutable subject identity, existing Gmail Inbox and owner scope.",
+    "trustBoundaries": "Owner session to fixed callback state; provider responses to encrypted unconfirmed Redis records; cleanup versus newer reconnect.",
+    "abuseCases": "State replay, foreign workspace, stale deployment, subject substitution, enlarged scopes, lost storage acknowledgement, stalled owner checks and forged recovery.",
+    "mitigations": "Existing owner policy; exact runtime/deployment/source/release/subject/scopes; atomic consume/CAS audit; bounded callback and exact compensation; no operational activation or credential broker."
+  },
+  "rollback": "Locally revoke exact Workspace preparation record, then revert only this Preview consent extension. Preserve existing Gmail, Vercel/GitHub receipts, financial records and historical failures.",
+  "negativePaths": {
+    "malformed-response": "Bound fixed Google JSON sizes; token identity/scopes validated; no raw provider errors or credentials returned.",
+    "stale-state": "Exact runtime source/deployment/release plus one-use state and exact operation/revision recovery.",
+    "concurrency": "Concurrent callback consumes once; exact late-store compensation cannot clobber newer reconnect.",
+    "cancellation": "Whole callback timeout and separately bounded cleanup; unconfirmed record always unusable, no physical Redis cancellation claim.",
+    "worker-interruption": "No agent worker or provider model is started; existing worker lifecycle safeguards remain unchanged.",
+    "api-outage": "Storage outages explicitly preserve cleanup uncertainty; no automatic retry or shared-client provider revocation.",
+    "authorization-denial": "Existing fresh owner policy plus same-origin API guards; denied owner cannot exchange, recover or read foreign records.",
+    "spending-limit": "No paid model request, spending approval, browser session, service purchase or financial mutation.",
+    "partial-execution": "Lost final-store acknowledgement compensated against exact record; outage may retain encrypted but permanently unconfirmed credentials."
+  },
+  "defects": [
+    {
+      "rootCause": "Actual Google authorization response includes issuer field omitted from both callback allowlists; existing incremental Gmail send token scope also absent.",
+      "detectionGap": "Existing synthetic fixtures omitted real issuer parameter and existing Gmail send scope combination.",
+      "regression": "Real-shaped callback issuer and combined incremental scopes, foreign/nonscalar/rawduplicate issuer rejection and unchanged outgoing scopes/unconfirmed flags.",
+      "historicalPrevention": "Record sanitized real response shape and retain negative issuer and scope contract tests; never preserve OAuth state or code."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing session/owner policy and Redis compare-and-audit; distinct callback prefix preserves Gmail.",
+    "dependencies": "Existing Google CallerCore Admin client, registered stable callback, Preview encryption; no Work token transfer.",
+    "threats": "Replay, forged scopes/identity/recovery, cross-workspace substitution, stale source/deployment and late writes.",
+    "failureModes": "Bounded callback and cleanup; ciphertext may remain unconfirmed after outages, never agent authority.",
+    "faultInjection": "Owner/storage/exchange stalls, lost final CAS acknowledgement, newer reconnect and revocation schedules.",
+    "independentChallenge": "Separate Work QA actual-diff review plus 29 focused adversarial tests passed; Auditor actual-source review approved exact issuer/legacy scope boundary conditional on remote verification.",
+    "recovery": "Exact current operation hash/revision owner recovery or local revoke; shared Google grant untouched.",
+    "readiness": "Preparation only until full STRICT/Redis/CI/CodeQL/exact Preview UI verified; real consent requires owner and agent tools remain disabled."
+  }
+}

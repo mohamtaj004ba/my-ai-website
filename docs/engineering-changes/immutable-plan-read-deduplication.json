@@ -1,0 +1,49 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "a8b3eafefebcbcd4b76628e94f17a4ab6d2ecc77f264f7f8949031a5f93315d9",
+  "risk": "critical",
+  "scope": "Deduplicate identical immutable engineering-plan blob reads within one historical verification scan, without caching validation or authority.",
+  "riskAnalysis": "Verification policy remains STRICT. Repeated metadata retrieval is removed, but every commit retains fresh tree enumeration, source classification, digest calculation and ordinary/proactive plan validation.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source-bound historical plans, independent verification requirements and accurate CI outcomes.",
+    "trustBoundaries": "Validated immutable Git blob identities to invocation-local parsed JSON; cloned records to unchanged validators.",
+    "abuseCases": "Path-keyed stale data, cross-run reuse, caller mutation poisoning, malformed trees, duplicate-plan suppression or cached acceptance.",
+    "mitigations": "Fresh ls-tree per commit, exact regular100644 blob/OID/path checks, cat-file by immutable OID, new Map per scan, isolated clones and no cached check results."
+  },
+  "rollback": "Revert only this loading optimization; the separately reviewed exact documentation recovery remains. Reversion restores repeated reads without changing any historical plan or execution permission.",
+  "negativePaths": {
+    "malformed-response": "Malformed JSON, unsafe modes/types and malformed object identities fail before usable plan output.",
+    "stale-state": "Changed blob identity forces a new read; a separate invocation always rereads its plans.",
+    "concurrency": "No shared or persistent cache exists; returned nested objects are isolated from later commit checks.",
+    "cancellation": "Interrupted read-only scanning emits no passed verification receipt or execution grant.",
+    "worker-interruption": "No agent worker is created; process exit discards the entire cache.",
+    "api-outage": "No external API. Missing Git objects or read failures still block verification.",
+    "authorization-denial": "Every commit retains its actual source/risk/digest and unchanged mandatory checks; cache cannot grant permissions.",
+    "spending-limit": "No model, browser, budget, billing, customer mutation or recurring work is introduced.",
+    "partial-execution": "Duplicate matching records remain duplicates; unrelated missing plans and failed proactive checks remain failures."
+  },
+  "defects": [],
+  "proactiveReview": {
+    "architecture": "Small invocation-local immutable-data reader in existing preflight; no replacement workflow or evidence store.",
+    "dependencies": "Actual committed Git trees and blob objects; existing source-bound ordinary/proactive validators.",
+    "threats": "Cached verdicts or mutable shared plans could bypass review; neither is cached or shared.",
+    "failureModes": "Invalid metadata or JSON denies verification; no fallback to stale cached path data.",
+    "faultInjection": "Independent tests cover same/changed blob, cross-invocation freshness, deep mutation isolation, unsafe entries and unchanged duplicate/missing-plan rejection.",
+    "independentChallenge": "Independent QA6/6 passed and Work Auditor approved actual implementation conditional STRICT.",
+    "recovery": "Preserve original full-history baseline result and timing limitations; rollback changes performance only, never historical evidence.",
+    "readiness": "Original110-commit scan passed and was observed running over five minutes. Time the final full-history validation; do not invent exact prior duration, Work-credit savings or provider-cost savings."
+  }
+}

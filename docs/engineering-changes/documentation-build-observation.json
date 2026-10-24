@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "bfdea7994157a17db8ddf9bec772e69c8cacfdb393e9178398f7c741d0afe4ce",
+  "risk": "routine",
+  "scope": "Correct observed redundant documentation build and preserve cancellation/verification evidence; runtime unchanged.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "riskAnalysis": "Documentation correction only; exact existing application release remains qualified; no grant or runtime policy changes."
+}

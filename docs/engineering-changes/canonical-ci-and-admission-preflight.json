@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "68241c797fefe8d2fb8f725bce620bcb47f5550cc3502a2ed90c47835279b13d",
+  "risk": "critical",
+  "scope": "Canonical PR-based CI/security verification, focused local policy, same-release controller reuse proof and denial-only pre-refresh authorization/budget admission.",
+  "riskAnalysis": "Retain one exact-head full hosted STRICT plus Redis/CodeQL/Browser/review; PR must remain open. No security scan is replaced by a skipped result. New configuration preflight only adds early denials inside existing CAS and cannot grant or expand execution authority. New-source environment pins remain mandatory.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact source qualification, task/release authority, financial exposure and immutable records.",
+    "trustBoundaries": "Canonical PR-head CI is authoritative for full Linux regression; local focused and Windows-specific evidence remain distinct. Existing authenticated owner/controller and server-pinned review are unchanged.",
+    "abuseCases": "No-PR qualification, fork-name skip, stale CI reuse, source/workspace substitution, exhausted authority, insufficient or malformed financial accounting.",
+    "mitigations": "All-PR-to-main coverage without branch/actor/draft bypass, exact head checkout, main and scheduled security retained, separate Browser qualification, fresh one-time approvals and CAS-bound complete accounting/sequence checks."
+  },
+  "rollback": "Revert reviewed efficiency source on the feature branch, retaining every original approval, attempt, reservation and failed/cancelled qualification. Never reactivate consumed authority or remove historical records.",
+  "negativePaths": {
+    "malformed-response": "Focused and existing security cases cover malformed-response with unchanged source/authority/spending boundaries; failures and cleanup remain preserved and no automatic provider retry is introduced.",
+    "stale-state": "Focused and existing security cases cover stale-state with unchanged source/authority/spending boundaries; failures and cleanup remain preserved and no automatic provider retry is introduced.",
+    "concurrency": "Focused and existing security cases cover concurrency with unchanged source/authority/spending boundaries; failures and cleanup remain preserved and no automatic provider retry is introduced.",
+    "cancellation": "Focused and existing security cases cover cancellation with unchanged source/authority/spending boundaries; failures and cleanup remain preserved and no automatic provider retry is introduced.",
+    "worker-interruption": "Focused and existing security cases cover worker-interruption with unchanged source/authority/spending boundaries; failures and cleanup remain preserved and no automatic provider retry is introduced.",
+    "api-outage": "Focused and existing security cases cover api-outage with unchanged source/authority/spending boundaries; failures and cleanup remain preserved and no automatic provider retry is introduced.",
+    "authorization-denial": "Focused and existing security cases cover authorization-denial with unchanged source/authority/spending boundaries; failures and cleanup remain preserved and no automatic provider retry is introduced.",
+    "spending-limit": "Focused and existing security cases cover spending-limit with unchanged source/authority/spending boundaries; failures and cleanup remain preserved and no automatic provider retry is introduced.",
+    "partial-execution": "Focused and existing security cases cover partial-execution with unchanged source/authority/spending boundaries; failures and cleanup remain preserved and no automatic provider retry is introduced."
+  },
+  "defects": [
+    {
+      "rootCause": "Feature pushes and their PR synchronizations launch duplicate exact-head CI and CodeQL runs. Operators repeated a full local suite before the same full hosted suite and had not verified existing same-release configuration reuse. Configuration admission did not reject known exhausted consent or funding before expensive provider refresh.",
+      "detectionGap": "Prior policy kept event-specific duplicate routes and described environment checks without a complete early financial/sequence preflight.",
+      "regression": "Workflow contract mutation tests, native-controller two-fresh-approval reuse without fetch, and actual CAS preflight denials preserving history; existing strict qualification remains authoritative.",
+      "historicalPrevention": "Use canonical PR checks once, focus local checks, batch publication, check preparation eligibility before provider mutations and reuse only exact verified configuration with fresh attempt identities."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing workflows, controller, sequence helpers, CAS and budget only; no new orchestration, service or credential.",
+    "dependencies": "No dependency installation or infrastructure change; existing build smoke/docs-ignore remain.",
+    "threats": "Skipped source coverage, unauthenticated review claims, stale authority and financial reset.",
+    "failureModes": "Closed PR means no qualification; absent/expired/exhausted consent or invalid accounting denies configuration without writes. Cleanup/reset remains available.",
+    "faultInjection": "Missing PR/security trigger, duplicate push trigger, forged draft/path bypass, prior approval replay, source/workspace substitutions, expired/stopped/exhausted cohorts and full-state root reservations.",
+    "independentChallenge": "QA independently reviewed Auditor preflight; Auditor independently reviewed QA workflow changes and root documentation/reuse fixture. Neither self-approves its own implementation.",
+    "recovery": "Preserve cancelled intermediate Browser run and original count-only failed attempt. No blind provider retries; no paid request until canonical checks and exact source/configuration gates pass.",
+    "readiness": "Focused215passed; one canonical full hosted STRICT/Redis/CodeQL/Jekyll and automatic actual Browser artifact qualification remain required. No new full local run merely to duplicate the same hosted suite."
+  }
+}

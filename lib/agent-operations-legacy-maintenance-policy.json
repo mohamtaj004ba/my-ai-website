@@ -1,0 +1,243 @@
+{
+  "version": "legacy-maintenance-policy-v1",
+  "projectId": "prj_AkD7VoSNCE6fRYXQnXkX1ywGqjLX",
+  "teamId": "team_6Rg3DdCrvOml6oEGwx6Ndf1I",
+  "branch": "feature/callercore-dashboards",
+  "ownerHash": "2f17d0dddf50600be4ff4dc5e30a6d4b1fa14daf7bce317931dda6124970321a",
+  "workspaceId": "c70a3c33-242a-4dd8-82f9-b002d55ff0a2",
+  "workspaceHash": "950868b4dd216bddaa5498c1cf45dc1a7adb6696e0222f79833fb586dc478ee1",
+  "expiresAt": 1792363032024,
+  "scope": {
+    "origin": "https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app",
+    "commit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+    "paths": [
+      "/industries/legal",
+      "/#pricing"
+    ]
+  },
+  "consent": {
+    "kind": "owner-authorized-project-admin-cleanup",
+    "reference": "CALLERCORE — AUTHORIZE LEGACY PILOT CLEANUP AND OWNERSHIP RECOVERY, October 17 2026",
+    "attestationHash": "ae15a83a714bb0b01e9e36d3fed129620f833139477f10e3591d77615a2b5da5"
+  },
+  "projectAdministrator": {
+    "provider": "vercel",
+    "uid": "cvERV6CHSY4MWAlEDDPAoswZ",
+    "username": "mohamtaj004ba",
+    "role": "OWNER",
+    "confirmed": true,
+    "projectId": "prj_AkD7VoSNCE6fRYXQnXkX1ywGqjLX",
+    "teamId": "team_6Rg3DdCrvOml6oEGwx6Ndf1I",
+    "attestedAt": 1792276632024,
+    "receiptHash": "527680d4115658e8ed7fb6c5d60e99a2b25dd17d869a57cb5b6908eba866ec08"
+  },
+  "bundles": [
+    {
+      "id": "legacy-0",
+      "grantId": "grant_eb6a2544905b4878a9029ad9cc92925b",
+      "workflowId": "wf_6f21d82fb9bf4df89527761ee6e40d3d",
+      "approvalId": "pilot_6f9589c714d7ed7ff61e9e07",
+      "originalIssuerHash": "8468b8086c53cbe117f07a12377774337b286c4b0e8e63ff9c85c5e453725db4",
+      "workflowHash": "002cad3919c41a9619ace778f86695e472101dcd838d848ebb15436366c18e16",
+      "grantCritical": {
+        "id": "grant_eb6a2544905b4878a9029ad9cc92925b",
+        "level": "inspect-and-test",
+        "roles": [
+          "chief-of-staff",
+          "website-visual-qa",
+          "independent-qa"
+        ],
+        "tools": {
+          "chief": "delegate",
+          "inspect": "inspect_preview",
+          "observe": "observe",
+          "adjudicate": "adjudicate",
+          "chief_review": "report"
+        },
+        "scope": {
+          "origin": "https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app",
+          "commit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+          "paths": [
+            "/industries/legal",
+            "/#pricing"
+          ]
+        },
+        "mode": "pilot",
+        "paidEnabled": true,
+        "writesEnabled": false,
+        "expiresAt": 1791778959574,
+        "budgetMicros": 3600000,
+        "maxWorkflows": 1,
+        "maxConcurrent": 1,
+        "approvalId": "pilot_6f9589c714d7ed7ff61e9e07",
+        "approvalHash": "c1002998bafda33014e7c87d47dd8c1a419dfaef18626a5417f064718808604d"
+      },
+      "grantKeys": [
+        "approvalHash",
+        "approvalId",
+        "budgetMicros",
+        "expiresAt",
+        "id",
+        "issuerHash",
+        "level",
+        "maxConcurrent",
+        "maxWorkflows",
+        "mode",
+        "paidEnabled",
+        "revision",
+        "revoked",
+        "roles",
+        "scope",
+        "tools",
+        "writesEnabled"
+      ],
+      "grantRequestHash": null,
+      "grantPayloadHash": null,
+      "approvalPublicHash": null,
+      "archive": {
+        "file": "organization-live-report.json",
+        "sha256": "e467ad3074c265773389f426a275d56cd3055fa2f615534caefbe7baabe24727",
+        "source": "ba24edbcd0f55637a3b0930ee4782192cb1f0630"
+      },
+      "approvalPresence": "absent"
+    },
+    {
+      "id": "legacy-1",
+      "grantId": "grant_1e8ea514ad1c4b22851dbfde8c5145db",
+      "workflowId": "wf_9a4d3cb58ee5444580a78bec409d6c3f",
+      "approvalId": "pilot_6da164c8abc7d05368269ff6",
+      "originalIssuerHash": "8468b8086c53cbe117f07a12377774337b286c4b0e8e63ff9c85c5e453725db4",
+      "workflowHash": "763397617b03e42449cebedc4f2f447d36426c3e9870fe6c8134361df4f7715f",
+      "grantCritical": {
+        "id": "grant_1e8ea514ad1c4b22851dbfde8c5145db",
+        "level": "inspect-and-test",
+        "roles": [
+          "chief-of-staff",
+          "website-visual-qa",
+          "independent-qa"
+        ],
+        "tools": {
+          "chief": "delegate",
+          "inspect": "inspect_preview",
+          "observe": "observe",
+          "adjudicate": "adjudicate",
+          "chief_review": "report"
+        },
+        "scope": {
+          "origin": "https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app",
+          "commit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+          "paths": [
+            "/industries/legal",
+            "/#pricing"
+          ]
+        },
+        "mode": "pilot",
+        "paidEnabled": true,
+        "writesEnabled": false,
+        "expiresAt": 1791781347451,
+        "budgetMicros": 3600000,
+        "maxWorkflows": 1,
+        "maxConcurrent": 1,
+        "approvalId": "pilot_6da164c8abc7d05368269ff6",
+        "approvalHash": "e71ce38fe962e4e25594bfad60288ce76cb9eeedd4b900d655c18c280095d44a"
+      },
+      "grantKeys": [
+        "approvalHash",
+        "approvalId",
+        "budgetMicros",
+        "expiresAt",
+        "id",
+        "issuerHash",
+        "level",
+        "maxConcurrent",
+        "maxWorkflows",
+        "mode",
+        "paidEnabled",
+        "revision",
+        "revoked",
+        "roles",
+        "scope",
+        "tools",
+        "writesEnabled"
+      ],
+      "grantRequestHash": null,
+      "grantPayloadHash": null,
+      "approvalPublicHash": null,
+      "archive": {
+        "file": "organization-v2-live-report.json",
+        "sha256": "f3c4fa2d97973f62cd948ef0305eef8f5bda7988402a9480fd558d2ff65944cd",
+        "source": "911fce624f53f3c21042139181c23981f4217a44"
+      },
+      "approvalPresence": "absent"
+    },
+    {
+      "id": "legacy-2",
+      "grantId": "grant_26d01e8f19174ccea5057a1bca99db55",
+      "workflowId": "wf_66960665244af030469b00672dead78e",
+      "approvalId": "pilot_5808df1663aaac563d7f31988e007d2b",
+      "originalIssuerHash": "2f17d0dddf50600be4ff4dc5e30a6d4b1fa14daf7bce317931dda6124970321a",
+      "workflowHash": "81bbcfb17ae50b22a5727346a88298c5c1dca780dd29a4b82d59b53955054cdd",
+      "grantCritical": {
+        "id": "grant_26d01e8f19174ccea5057a1bca99db55",
+        "level": "inspect-and-test",
+        "roles": [
+          "chief-of-staff",
+          "website-visual-qa",
+          "independent-qa"
+        ],
+        "tools": {
+          "chief": "delegate",
+          "inspect": "inspect_preview",
+          "observe": "observe",
+          "adjudicate": "adjudicate",
+          "chief_review": "report"
+        },
+        "scope": {
+          "origin": "https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app",
+          "commit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+          "paths": [
+            "/industries/legal",
+            "/#pricing"
+          ]
+        },
+        "mode": "pilot",
+        "paidEnabled": true,
+        "writesEnabled": false,
+        "expiresAt": 1791947666657,
+        "budgetMicros": 3600000,
+        "maxWorkflows": 1,
+        "maxConcurrent": 1,
+        "approvalId": "pilot_5808df1663aaac563d7f31988e007d2b",
+        "approvalHash": "dab283011af870c423f23bbfbd721cfe45def9bdd531afd1049f3791773d8d4b"
+      },
+      "grantKeys": [
+        "approvalHash",
+        "approvalId",
+        "budgetMicros",
+        "expiresAt",
+        "id",
+        "issuerHash",
+        "level",
+        "maxConcurrent",
+        "maxWorkflows",
+        "mode",
+        "paidEnabled",
+        "revision",
+        "revoked",
+        "roles",
+        "scope",
+        "tools",
+        "writesEnabled"
+      ],
+      "grantRequestHash": null,
+      "grantPayloadHash": null,
+      "approvalPublicHash": "ed6b2bd3c30d349b3ad420bd29f20526c4c94a1f039342eaa98f001f593c7867",
+      "archive": {
+        "file": "pina-20261014-final-readback.json",
+        "sha256": "32d131df564f6900a7b40b543085f638c5f8e99d259726b00788cd41c0cbe355",
+        "source": "58cf249d6d4425a7e813c3b077233cc190182d97"
+      },
+      "approvalPresence": "present"
+    }
+  ]
+}

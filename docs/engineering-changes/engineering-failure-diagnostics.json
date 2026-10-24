@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "7cfcc622ddf9c85fb1c5a6c016f3333be50c603c94197b2fb937b012a77cda01",
+  "risk": "critical",
+  "scope": "Repair confirmed engineering failure-diagnostic erasure; preserve historical unknown cause, immutable facts, usage and independent bounded cleanup. No paid execution or permission expansion.",
+  "riskAnalysis": "Diagnostics are new trusted metadata surfaces in the existing transport and shared CAS broker. Strict closed vocabulary, schema-derived paths, server-owned correlation and independent cleanup prevent content leakage or evidence substitution.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Credentials, immutable source/request/evidence identities, model results, observed usage and revocation state.",
+    "trustBoundaries": "Untrusted provider output and exceptions to trusted transport facts, capability-bound existing journal and authenticated owner readback.",
+    "abuseCases": "Secret-bearing errors or schema keys, forged ticket identity, diagnostic overwrite, storage stalls, cancellation and lost finish acknowledgement.",
+    "mitigations": "Closed enums and schema paths, safe scalar facts, first-write-only receipts, server-derived bindings, separate two-second diagnostic and cleanup limits, unchanged parser/authority/financial controls."
+  },
+  "rollback": "Disable paid/count flags and revoke exact authority before reverting diagnostic-only increment. Preserve all historical receipts, reservations, pending uncertainty and original failed trial.",
+  "negativePaths": {
+    "malformed-response": "Wrong object/fields, noninteger/oversized counts and secret echo fail closed before Responses dispatch.",
+    "stale-state": "Source/context/request/expiry and authoritative stored approval mismatch deny dispatch.",
+    "concurrency": "Count dispatch and count recording are one-use existing-CAS operations; duplicate winners cannot occur.",
+    "cancellation": "Shared owner/task/revoke/lease checks run after counting and before dispatch; whole-operation abort includes count requests.",
+    "worker-interruption": "Bounded abortAdmission retains pending ceilings and reports cleanup uncertainty; no paid retry.",
+    "api-outage": "Fixed endpoint/redirect:error, bounded response body, deadline and sanitized status/hash diagnostics; no fallback or retry.",
+    "authorization-denial": "Missing count consent/server pricing pin, impersonated roles or substituted workspace/source deny; no model-granted permissions.",
+    "spending-limit": "At most five count and five Responses dispatches, existing 1USD retained internal ceiling. Unknown counts remain pending/null; known Responses usage separate; no invoice cap claimed.",
+    "partial-execution": "Successful count alone cannot settle or accept work. Responses usage mismatch leaves pending evidence/reservation; no generated source execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "Generic catch discarded the original failure code and phase. Exact historical Specialist cause remains unknown.",
+      "detectionGap": "Pre-existing fixtures verified generic failure and cleanup but not actionable retained classifications or schema locations.",
+      "regression": "Independent offline valid/malformed Specialist, schema/semantic/partial/refusal, cancellation/timeout, store failures and immutable capability-bound diagnostics; Redis diagnostic/cleanup race.",
+      "historicalPrevention": "Keep failure taxonomy and safe structural metadata independently from accepted output, and test storage outages without paid diagnostic retries."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing transport/provider/profile shared-CAS journal only; no new orchestrator, credentials, reviewer role or authority.",
+    "dependencies": "Pinned provider request schema and existing source evidence; new failure helper participates in source release fingerprint and tracing.",
+    "threats": "Provider text, exception messages and arbitrary object keys must never reach logs, model authority or owner decisions as trusted instructions.",
+    "failureModes": "Unknown historical root cause remains unknown. Persistent storage outage can prevent durable diagnostic writes; report failure explicitly and independently revoke authority.",
+    "faultInjection": "24 independent QA fixtures plus existing real five-stage fixture transport, owner control and token/revocation tests; disposable Redis concurrent diagnostic/cleanup race.",
+    "independentChallenge": "Separate Work QA and Engineering Auditor found no material issue; technical review does not establish human acceptance or approve another paid trial.",
+    "recovery": "No paid requests, retries, new reservations or reset of consumed exception. Keep all original pending charges and history unchanged.",
+    "readiness": "Exact-source STRICT, Redis, CI, CodeQL and authenticated Preview qualification required before final published checkpoint; second live trial still requires fresh exact owner consent."
+  }
+}

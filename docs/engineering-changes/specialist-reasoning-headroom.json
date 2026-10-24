@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "62d24b00b0a930785f743739c7fdce21fb4518668cda0dd3d995c9111332decb",
+  "risk": "critical",
+  "scope": "New exact Starter implementation task opts Specialist into 8000 output tokens including reasoning, other stages4000, total24000; preserve all historical requests and authority.",
+  "riskAnalysis": "Two reviewed serial live workflows returned incomplete max_output_tokens without visible Specialist output. A bounded output-headroom experiment is justified; hidden usage and provider billing cannot be reconstructed. No unbounded limit or validation bypass.",
+  "threatModel": {
+    "assets": "Task-bound authority, immutable historical receipts, model exposure tracking, exact source preimages and qualified isolated test permissions.",
+    "trustBoundaries": "Only exact new objective and newly selected reviewed policy admit8k Specialist/24k aggregate. Historical20k grants cannot authorize the new task; model text cannot choose limits.",
+    "abuseCases": "Forged stage or objective suffix, oversized output, old approval reuse, altered input counts, forged prior limits, source substitution or misleading readiness.",
+    "mitigations": "Central stage-aware limits across both builders/parsers/fixtures/planning and owner admission. Preserve4k legacy limits,12k input,16KB JSON,512character replacement, toolsnone and existing cleanup."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Observed provider envelope incomplete/max_output_tokens occurred twice under4000 output ceiling. Official documentation includes hidden reasoning in that ceiling; exact hidden usage remains unknown.",
+      "detectionGap": "Earlier successful fixtures and live patch proposals did not establish that4000 output tokens always suffice for current reasoning and structured patch output.",
+      "regression": "Offline tests cover8k exact opt-in,8001 rejection,old/Chief4k,20k grant rejection,24k manifest/readiness, forged prior ceilings and full five-stage fixture planning.",
+      "historicalPrevention": "Preserve every prior objective and policy digest; compare allfive historical request objects against the trusted245 source baseline before publishing changed limits."
+    }
+  ],
+  "rollback": "Keep paid authority revoked. Revert only new opt-in headroom contract on feature if qualification fails; preserve both incomplete trial receipts, historic objectives, accounting uncertainty and Production.",
+  "negativePaths": {
+    "malformed-response": "Existing source/task/owner/CAS/cancellation and immutable evidence checks remain. New adversarial coverage rejects oversized output, forged stages/prior limits, old approvals and incomplete envelopes; no paid retry or publication grant.",
+    "stale-state": "Existing source/task/owner/CAS/cancellation and immutable evidence checks remain. New adversarial coverage rejects oversized output, forged stages/prior limits, old approvals and incomplete envelopes; no paid retry or publication grant.",
+    "concurrency": "Existing source/task/owner/CAS/cancellation and immutable evidence checks remain. New adversarial coverage rejects oversized output, forged stages/prior limits, old approvals and incomplete envelopes; no paid retry or publication grant.",
+    "cancellation": "Existing source/task/owner/CAS/cancellation and immutable evidence checks remain. New adversarial coverage rejects oversized output, forged stages/prior limits, old approvals and incomplete envelopes; no paid retry or publication grant.",
+    "worker-interruption": "Existing source/task/owner/CAS/cancellation and immutable evidence checks remain. New adversarial coverage rejects oversized output, forged stages/prior limits, old approvals and incomplete envelopes; no paid retry or publication grant.",
+    "api-outage": "Existing source/task/owner/CAS/cancellation and immutable evidence checks remain. New adversarial coverage rejects oversized output, forged stages/prior limits, old approvals and incomplete envelopes; no paid retry or publication grant.",
+    "authorization-denial": "Existing source/task/owner/CAS/cancellation and immutable evidence checks remain. New adversarial coverage rejects oversized output, forged stages/prior limits, old approvals and incomplete envelopes; no paid retry or publication grant.",
+    "spending-limit": "Existing source/task/owner/CAS/cancellation and immutable evidence checks remain. New adversarial coverage rejects oversized output, forged stages/prior limits, old approvals and incomplete envelopes; no paid retry or publication grant.",
+    "partial-execution": "Existing source/task/owner/CAS/cancellation and immutable evidence checks remain. New adversarial coverage rejects oversized output, forged stages/prior limits, old approvals and incomplete envelopes; no paid retry or publication grant.",
+    "duplicate-request": "Existing source/task/owner/CAS/cancellation and immutable evidence checks remain. New adversarial coverage rejects oversized output, forged stages/prior limits, old approvals and incomplete envelopes; no paid retry or publication grant."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing implementation, inference, profile and owner controller; no new orchestration, credentials, ledger or infrastructure.",
+    "dependencies": "No package additions, provider changes or deployment privilege expansion. Model remains gpt-6.1-sol medium.",
+    "threats": "Forged stage or objective suffix, oversized output, old approval reuse, altered input counts, forged prior limits, source substitution or misleading readiness.",
+    "failureModes": "Incomplete responses remain rejected and observable. No inference after failed release, stale grants, missing test permission or cleanup. Unknown usage stays uncertain.",
+    "faultInjection": "Offline tests cover8k exact opt-in,8001 rejection,old/Chief4k,20k grant rejection,24k manifest/readiness, forged prior ceilings and full five-stage fixture planning.",
+    "independentChallenge": "Independent Work QA and Auditor source/adversarial reviews required; all historical native and fixture request bodies compared to245 baseline.",
+    "recovery": "Both preceding live attempts closed and archived, grantsrevoked, leaseszero and noVMcreated. No automatic retry of failed provider requests.",
+    "readiness": "Focused fixtures and independent source reviews precede committed STRICT/Redis/CI/CodeQL/Jekyll/Browser qualification. Fresh exact-release configuration and task approval required before any live experiment."
+  }
+}

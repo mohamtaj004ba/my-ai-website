@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "a19e0df4853bb1ef687d5b1a6277da90a26e5917bd54682fb7b6cbd2b1596f7f",
+  "risk": "critical",
+  "scope": "Add sanitized renewal progress timing to existing engineering controller failure receipts; preserve actual Starter run evidence and interrupted owner readback.",
+  "riskAnalysis": "No renewal cadence, deadline, lease or authorization behavior changes. Closed progress labels and bounded numbers must never leak arbitrary exceptions, source, model text or credentials. Historical failure receipts and protocol reasons remain compatible.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner task authority, immutable failure history, source binding, provider credentials, shutdown and independently attributed reviews.",
+    "trustBoundaries": "Trusted parent callback reports fixed phases; sanitizer validates exact closed object shape before immutable receipt persistence; model content grants no authority.",
+    "abuseCases": "Injected timing content, unknown phase labels, late callbacks, observer exceptions, revived expired authority, fabricated success from lost browser connection.",
+    "mitigations": "Strict key/enum/numeric allowlist, obsolete callback fence, unreported timing absent, unchanged owner/lease/revocation checks and honest unverified outcome records."
+  },
+  "rollback": "Revert only diagnostic source on feature branch if needed; preserve original run receipts and financial uncertainty. Keep paid stopped until interrupted run readback and exact release qualification. Never revive consumed approvals.",
+  "negativePaths": {
+    "malformed-response": "Closed enum and strict numeric timing shape reject arbitrary keys, raw content, unknown phases and forged signals; existing response guards unchanged.",
+    "stale-state": "Late/aborted/obsolete renewal trace callbacks cannot rewrite the captured stop reason; source and task checks remain unchanged.",
+    "concurrency": "Actual delayed owner and ledger broker fixtures, competing renewal/revocation CAS cases and observer exceptions preserve authority and revocation fencing.",
+    "cancellation": "Actual controller renewal timeout still aborts, revokes and independently reads shutdown; aborted broker cannot return a renewal confirmation.",
+    "worker-interruption": "Existing worker cleanup and interruption behavior unchanged; full local STRICT4405 passes, no generated source execution introduced.",
+    "api-outage": "Hung renewal reports only current closed phase and elapsed timings, preserving fail-closed timeout; real provider outage cause remains unclaimed.",
+    "authorization-denial": "Unchanged owner/workspace/source/release/current-policy and lifecycle checks precede any renewal confirmation or paid dispatch.",
+    "spending-limit": "No accounting or effective financial policy change. Existing monitoring records and unknown fees remain; no new budget authority.",
+    "partial-execution": "Preserve real two-stage patch and usage independently of failed QA admission; second interrupted browser readback remains unknown, never reported successful."
+  },
+  "defects": [
+    {
+      "rootCause": "Existing outer renewal timeout identifies cancellation origin but not which trusted renewal phase was pending; underlying historical latency remains unknown.",
+      "detectionGap": "Prior closed cancellation reason retained origin/code only; duplicate renewal reads were known but no safe per-phase attribution existed.",
+      "regression": "Closed trace tests exercise actual controller owner/transaction timeout and actual broker cancellation, late callbacks, observer failures and secret-negative sanitizer;4405 local STRICT passes.",
+      "historicalPrevention": "Add safe phase instrumentation when introducing bounded asynchronous authority work; preserve failure evidence and distinguish observed timeout from hypothetical backend latency."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse existing controller, broker and failure receipt; one pure closed telemetry module, no new gateway, journal or authority system.",
+    "dependencies": "No added packages, provider credentials, model calls or paid infrastructure for local diagnostic verification.",
+    "threats": "Arbitrary callback labels or exception content leaking to audit; stale trace accepted as fresh authority; historical receipts misrepresented.",
+    "failureModes": "Owner/transaction hangs, cancellation after reads, concurrent CAS revocation, late callback after stop and missing browser readback remain fail closed.",
+    "faultInjection": "Actual withActivation timeouts, delayed broker owner/ledger phases, throwing observer and stale late callbacks; no paid fixtures.",
+    "independentChallenge": "Independent Work QA28/28 and Auditor13/13 passed without material findings. Review artifacts remain local; this is not human acceptance.",
+    "recovery": "Second dispatched workflow7343 readback is blocked by detached browser; preserve exact IDs and do not retry. First workflowaecea cleanup confirmed. No new paid operation until reconciliation.",
+    "readiness": "Local STRICT4405/4405 passed. Candidate remains unpublished with remote Redis, CI, CodeQL and Preview qualification pending. Deployed04c remains unchanged."
+  }
+}

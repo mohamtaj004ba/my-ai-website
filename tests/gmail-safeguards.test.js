@@ -1,0 +1,168 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('fs');const path=require('path');
+const root=path.join(__dirname,'..');
+const src=fs.readFileSync(path.join(root,'lib','gmail.js'),'utf8');
+const account=fs.readFileSync(path.join(root,'api','account.js'),'utf8');
+
+test('Gmail API retries quota and concurrency responses with bounded exponential backoff',()=>{
+  assert.match(src,/for\(let attempt=0;attempt<3;attempt\+\+\)/);
+  assert.match(src,/r\.status===429/);
+  assert.match(src,/r\.status===403&&\/quota\|rate\|concurrent\/i\.test\(message\)/);
+  assert.match(src,/800\*Math\.pow\(2,attempt\)/);
+  assert.match(src,/Math\.min\(delay,5000\)/);
+});
+
+test('Inbox thread hydration is sequential to avoid Gmail concurrent-request limits',()=>{
+  assert.match(src,/for\(let i=0;i<refs\.length;i\+\+\)/);
+  assert.match(src,/threads\.push\(await loadThread\(refs\[i\]\)\)/);
+  assert.match(src,/setTimeout\(r,180\)/);
+  assert.doesNotMatch(src,/Promise\.all\(refs\.slice/);
+});
+
+test('Gmail token encryption requires a strong environment key',()=>{
+  assert.match(src,/CALLERCORE_ENCRYPTION_KEY must be at least 32 characters/);
+  assert.match(src,/String\(process\.env\.CALLERCORE_ENCRYPTION_KEY\|\|''\)\.length>=32/);
+  assert.match(src,/aes-256-gcm/);
+  assert.match(src,/randomBytes\(12\)/);
+});
+
+test('Gmail OAuth requests only the restricted modify scope needed for admin inbox operations',()=>{
+  assert.match(src,/gmail\.modify/);
+  assert.doesNotMatch(src,/gmail\.send/);
+  assert.match(src,/integration:gmail:admin:/);
+});
+
+test('Gmail sync is quota-conscious and cache-first',()=>{
+  assert.match(src,/maxResults=25/);
+  assert.match(account,/Date\.now\(\)-Number\(cached\.syncedAt\|\|0\)<2\*60\*1000/);
+  assert.match(account,/Math\.min\(25/);
+  assert.match(account,/6\*60\*60\*1000/);
+  assert.match(account,/parseGmailAliasCache\(aliasCache,conn\.gmailEmail\)/);
+  assert.match(account,/validGmailInboxPayload\(rawCached,\{cached:true\}\)/);
+  assert.match(account,/warning:'Fresh Gmail sync failed'/);
+  assert.match(account,/error:'Gmail sync failed'/);
+});
+
+
+test('Gmail cache validators reject malformed successful cache payloads instead of synthesizing empty state',()=>{
+  const start=account.indexOf('function validGmailAliases('),end=account.indexOf('\nasync function adminGmailStatus(',start);
+  assert.ok(start>=0&&end>start);
+  const vm=require('node:vm'),ctx=vm.createContext({Array,Object,String,Number});
+  vm.runInContext(account.slice(start,end),ctx);
+  assert.equal(vm.runInContext("parseGmailAliasCache({broken:true}).valid",ctx),false);
+  assert.equal(vm.runInContext("parseGmailAliasCache([{email:'ok@example.test',isPrimary:true}]).valid",ctx),true);
+  ctx.good={threads:[{id:'t1',messages:[{id:'m1',body:'Hello',direction:'inbound',unread:false,at:1}]}],analytics:{unread:0},coverage:{verified:true},syncedAt:1};
+  assert.equal(vm.runInContext("validGmailInboxPayload(good,{cached:true})",ctx),true);
+  ctx.bad={threads:[],analytics:{},coverage:{verified:false},syncedAt:1};
+  assert.equal(vm.runInContext("validGmailInboxPayload(bad,{cached:true})",ctx),false);
+  ctx.bad={threads:null,analytics:{},coverage:{verified:true},syncedAt:1};
+  assert.equal(vm.runInContext("validGmailInboxPayload(bad,{cached:true})",ctx),false);
+});
+test('cached Gmail thread and message identities and flags cannot make malformed history appear verified',()=>{
+  const start=account.indexOf('function validGmailAliases('),end=account.indexOf('\nasync function adminGmailStatus(',start),vm=require('node:vm'),ctx=vm.createContext({});
+  vm.runInContext(account.slice(start,end),ctx);
+  const thread={id:'thread',messages:[{id:'message',threadId:'thread',direction:'inbound',body:'Hello',at:1,unread:false}]};
+  for(const threads of [[{...thread,messages:[null]}],[{...thread,messages:[{id:'message',body:{}}]}],[{...thread,messages:[{id:'message',direction:'wrong'}]}],[{...thread,messages:[{id:'message',unread:'false'}]}],[{...thread,messages:[{id:'message',threadId:'another'}]}],[{...thread,unread:'false'}],[{...thread,messages:[thread.messages[0],thread.messages[0]]}],[thread,thread]]){
+    ctx.payload={threads,analytics:{},coverage:{verified:true},syncedAt:1};assert.equal(ctx.validGmailInboxPayload(ctx.payload,{cached:true}),false);
+  }
+  ctx.payload={threads:[thread],analytics:{},coverage:{verified:true},syncedAt:1};assert.equal(ctx.validGmailInboxPayload(ctx.payload,{cached:true}),true);
+});
+
+test('Gmail handlers never use malformed caches as stale provider fallbacks',()=>{
+  const aliasStart=account.indexOf('async function adminGmailAliases('),aliasEnd=account.indexOf('\nasync function adminGmailInbox(',aliasStart);
+  const inboxStart=account.indexOf('async function adminGmailInbox('),inboxEnd=account.indexOf('\nasync function adminGmailAliases(',inboxStart);
+  const aliasBody=account.slice(aliasStart,aliasEnd),inboxBody=account.slice(inboxStart,inboxEnd);
+  assert.match(aliasBody,/parsedCache\.valid&&cachedAliases\.length/);
+  assert.match(aliasBody,/Cached Gmail sender aliases are unavailable/);
+  assert.match(inboxBody,/cachedValid&&cached/);
+  assert.match(inboxBody,/Cached Gmail inbox is unavailable/);
+});
+
+
+test('Gmail inbox Growth enrichment fails closed on malformed lookup or record identity',()=>{
+  const start=account.indexOf('async function adminGmailInbox('),end=account.indexOf('\nasync function adminGmailAliases(',start);
+  assert.ok(start>=0&&end>start);
+  const body=account.slice(start,end);
+  assert.match(body,/rawPid=await kv\.get\('site:prospect:email:'\+emailKey\(sender\)\),pid=typeof rawPid==='string'\?rawPid\.trim\(\):''/);
+  assert.match(body,/rawPid!=null&&!pid/);
+  assert.match(body,/!p\|\|typeof p!=='object'\|\|Array\.isArray\(p\)\|\|String\(p\.id\|\|''\)!==pid/);
+  assert.match(body,/linked Growth records could not be verified/);
+  assert.match(body,/growthLinkWarning\?\{warning:growthLinkWarning\}/);
+});
+
+test('Admin Inbox surfaces Growth-link verification warnings even after a fresh Gmail sync',()=>{
+  const ui=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  const start=ui.indexOf('async function refreshAdminInboxLive('),end=ui.indexOf('\nfunction websiteInboxItems(',start);
+  assert.ok(start>=0&&end>start);
+  const body=ui.slice(start,end);
+  assert.match(body,/adminInboxData\.liveError=String\(d\.warning\|\|\(d\.stale===true\?'Gmail refresh failed':''\)\)/);
+  assert.match(ui,/adminInboxData\.liveError=String\(d\.warning\|\|''\)\.slice\(0,160\)/);
+});
+
+
+test('Gmail connection status and alias reads fail closed on malformed persisted connection state',()=>{
+  const helperStart=account.indexOf('function validGmailConnection('),helperEnd=account.indexOf('\nfunction validGmailAliases(',helperStart);
+  assert.ok(helperStart>=0&&helperEnd>helperStart);
+  const helper=account.slice(helperStart,helperEnd);
+  assert.match(helper,/typeof value!=='object'\|\|Array\.isArray\(value\)\|\|!String\(value\.refreshTokenEnc\|\|''\)/);
+  assert.match(helper,/storedAdmin===expectedAdmin/);
+  const statusStart=account.indexOf('async function adminGmailStatus('),statusEnd=account.indexOf('\nasync function adminGmailConnect(',statusStart);
+  const status=account.slice(statusStart,statusEnd);
+  assert.match(status,/conn!=null&&!validGmailConnection\(conn,admin\.email\)/);
+  assert.match(status,/Previously verified inbox data should be preserved/);
+  const aliasStart=account.indexOf('async function adminGmailAliases('),aliasEnd=account.indexOf('\nasync function adminGmailRead(',aliasStart);
+  assert.match(account.slice(aliasStart,aliasEnd),/!validGmailConnection\(conn,admin\.email\)/);
+});
+
+
+test('Gmail connection writes and disconnects require storage readback confirmation',()=>{
+  assert.match(src,/const confirmed=await kv\.get\(key\)/);
+  assert.match(src,/Gmail connection save could not be confirmed/);
+  assert.match(src,/String\(confirmed\.adminEmail\|\|''\)\.toLowerCase\(\)!==normalizedAdmin/);
+  assert.match(src,/String\(confirmed\.refreshTokenEnc\|\|''\)!==String\(value\.refreshTokenEnc\)/);
+  assert.match(src,/if\(await kv\.get\(key\)!=null\)throw new Error\('Gmail disconnect could not be confirmed'\)/);
+});
+
+
+test('Gmail OAuth initiation requires state readback before returning an authorization URL',()=>{
+  const start=account.indexOf('async function adminGmailConnect('),end=account.indexOf('\nasync function adminGmailDisconnect(',start);
+  assert.ok(start>=0&&end>start);
+  const body=account.slice(start,end);
+  assert.match(body,/stateKey='oauth:gmail:'\+state/);
+  assert.match(body,/const confirmed=await kv\.get\(stateKey\)/);
+  assert.match(body,/oauth state readback mismatch/);
+  assert.match(body,/Could not start a secure Gmail connection/);
+});
+
+test('Gmail OAuth callback validates state identity, age, redirect target, and one-time consumption',()=>{
+  const callback=fs.readFileSync(path.join(root,'api','google-oauth-callback.js'),'utf8');
+  assert.match(callback,/\^\[a-f0-9\]\{48\}\$/);
+  assert.match(callback,/validOauthStateRecord\(record\)/);
+  assert.match(callback,/url\.pathname==='\/api\/google-oauth-callback'/);
+  assert.match(callback,/url\.hostname\.endsWith\('\.vercel\.app'\)/);
+  assert.match(callback,/Date\.now\(\)-createdAt<=15\*60\*1000/);
+  assert.match(callback,/await kv\.del\(key\)/);
+  assert.match(callback,/if\(await kv\.get\(key\)!=null\)return res\.status\(503\)/);
+});
+
+
+test('Gmail provider mutations require canonical response identity before confirming success',()=>{
+  assert.match(src,/Gmail read-state response could not be verified/);
+  assert.match(src,/String\(result\.id\|\|''\)!==id/);
+  assert.match(src,/Gmail send response could not be verified/);
+  assert.match(src,/typeof result\.id!=='string'/);
+  assert.match(src,/typeof result\.threadId!=='string'/);
+  assert.match(src,/threadMismatch=!!safeThread&&result\.threadId!==safeThread/);
+  assert.match(src,/Gmail message sent, but Gmail placed it in a different thread/);
+  const start=account.indexOf('async function adminGmailDisconnect('),end=account.indexOf('\nasync function adminGmailInbox(',start);
+  assert.match(account.slice(start,end),/Gmail disconnect could not be confirmed/);
+});
+
+
+test('Gmail OAuth profile and persisted connection state must be canonical before save',()=>{
+  const callback=fs.readFileSync(path.join(__dirname,'..','api','google-oauth-callback.js'),'utf8');
+  assert.match(src,/Stored Gmail connection is malformed/);
+  assert.match(src,/Gmail profile email could not be verified/);
+  assert.match(callback,/profileRes\.json\(\)\.catch\(\(\)=>null\)/);
+  assert.match(callback,/Gmail profile response could not be verified/);
+  assert.match(callback,/profile\.emailAddress/);
+});
