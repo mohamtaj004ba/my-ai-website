@@ -13,7 +13,7 @@ test('both independent fresh reads begin before either completes; mutation waits
  const before=h.raw(),compares=h.compares(),pending=broker.renewApproval(owner,c,ap);
  await Promise.all([readStarted.promise,ownerStarted.promise]);a.equal(h.raw(),before);a.equal(h.compares(),compares);
  readGate.resolve();await Promise.resolve();a.equal(h.raw(),before);ownerGate.resolve();const result=await pending;
- a.equal(result.leaseUntil,h.now()+30000);a.equal(result.executionAuthorized,false);a.equal(h.compares(),compares+1);
+ a.equal(result.leaseUntil,h.now()+60000);a.equal(result.executionAuthorized,false);a.equal(h.compares(),compares+1);
 });
 
 test('prefetched no-op cannot hide concurrent revocation and retries fresh authentication',async()=>{
