@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "c0389313952f6a1650507e188ee5f68f904e86839d1bc69303cde1fe655ffe1b",
+  "risk": "routine",
+  "scope": "Preserve verified terminal diagnostic and portable-runner release evidence, original failures, shutdown and unresolved provider limitation without changing runtime.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}
