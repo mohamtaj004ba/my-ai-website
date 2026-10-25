@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "ec01d28a97ff60d40545ac3ceb05ab5045e5598de60cf464f44bf9c5d203a0da",
+  "risk": "routine",
+  "scope": "Preserve exact fully qualified result-transport repair, actual one-run evidence limitations, stopped resource metadata, fresh inert candidate and separately controlled next spending decision.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "qualification": "Documentation-only checkpoint. Application7a3bd64/c594/GeGt passed4901regressions35RedisCodeQLJekyllBrowserQA and6visualcomparisons; actual live codec/source qualification unproven. No new execution, spending, acceptance or publication authority. Preserve original partial failure and consumed one-run permission; no repeated appbuild."
+}
