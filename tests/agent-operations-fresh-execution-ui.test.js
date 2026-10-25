@@ -17,6 +17,20 @@ test('fresh execution uses a new idempotent ten-minute task after preparation, w
  await f.select();await f.click();assert.equal(f.h.calls.length,2);assert.equal(created.deadline-created.createdAt,600000);assert.equal(created.engineeringProfile,impl.PROFILE);assert.equal(created.tasks.length,5);assert.equal(f.storage.has(draftKey),false);assert.match(f.h.get('opsEngineeringTrialResult').textContent,/No paid request or approval/);assert.equal(f.h.get('opsEngineeringTrialPrepare').disabled,false);assert.equal(f.h.get('opsEngineeringFreshExecution').disabled,false);
  await f.click();assert.equal(f.h.calls.length,2,'A queued live task prevents duplicate creation');
 });
+
+test('current registered live objective is selected and submitted instead of historical Starter objective',async()=>{
+ let f,created;f=setup(async b=>{if(b.action==='operations-create'){created=require('../lib/agent-operations-operating-system').makePlan(b.input,f.v.runtime,Date.now());return created;}if(b.action==='operations-read')return {...f.v,revision:2,at:f.v.at+1,plans:[created]};throw Error('Unexpected operation');});
+ const current=require('../lib/agent-operations-implementation-tasks').CURRENT_OBJECTIVE;f.v.organization.implementationPreparation.liveObjective=current;f.h.update(f.v);await f.select();assert.equal(f.h.get('opsObjective').value,current);await f.click();assert.equal(created.objective,current);assert.equal(f.h.calls.filter(c=>c.action==='operations-create').length,1);
+});
+
+test('current task enrollment and Prepare both select the fresh live objective',async()=>{
+ let f;f=setup(async b=>{if(b.action.endsWith('-sequenceEnroll')||b.action.endsWith('-sequenceStatus'))return {__engineering:true,value:{id:f.seq.id}};if(b.action.endsWith('-trial-manifest')){assert.equal(b.input.planId,f.v.plans[0].id);throw Error('Intentional fixture stop before approval');}throw Error('Unexpected operation');});
+ const current=require('../lib/agent-operations-implementation-tasks').CURRENT_OBJECTIVE;f.v.organization.implementationPreparation.liveObjective=current;f.v.plans=[require('../lib/agent-operations-operating-system').makePlan({engineeringProfile:impl.PROFILE,idempotencyKey:'new_live_prepare_fixture',objective:current,priority:'normal',durationMs:600000,subtasks:helper.templates.map((template,i)=>({key:'task'+(i+1),template,dependsOn:i?['task'+i]:[]}))},f.v.runtime,Date.now())];f.h.update(f.v);await f.select();await f.h.get('opsEngineeringDevelopmentEnroll').emit('click');await f.h.get('opsEngineeringTrialPrepare').emit('click');assert.deepEqual(f.h.calls.map(c=>c.action),['operations-engineering-activation-sequenceEnroll','operations-engineering-activation-sequenceStatus','operations-engineering-activation-trial-manifest']);assert(f.h.calls.every(c=>c.input.planId===f.v.plans[0].id));
+});
+
+test('unqualified task test selection is denied before consuming its one-time approval',async()=>{
+ const f=setup(async()=>{throw Error('No operation allowed');}),tasks=require('../lib/agent-operations-implementation-tasks');f.v.organization.implementationPreparation.liveObjective=tasks.CURRENT_OBJECTIVE;f.v.organization.implementationPreparation.boundedTasks=tasks.list();f.v.plans=[require('../lib/agent-operations-operating-system').makePlan({engineeringProfile:impl.PROFILE,idempotencyKey:'unqualified_test_selection',objective:tasks.CURRENT_OBJECTIVE,priority:'normal',durationMs:600000,subtasks:helper.templates.map((template,i)=>({key:'task'+(i+1),template,dependsOn:i?['task'+i]:[]}))},f.v.runtime,Date.now())];f.h.update(f.v);await f.select();f.h.get('opsSourceTestConsent').checked=true;await f.h.get('opsEngineeringTrialPrepare').emit('click');assert.equal(f.h.calls.length,0);assert.match(f.h.get('opsEngineeringTrialResult').textContent,/no qualified dynamic-test profile/);
+});
 for(const fault of ['configuration','workspace','runtime','open-preparation','saved-approval','wrong-profile'])test('fresh execution denies '+fault+' before any mutation',async()=>{
  const f=setup(async()=>{throw Error('No request allowed');});
  if(fault==='configuration')f.storage.set(configKey,JSON.stringify({...f.config,status:'claimed'}));
