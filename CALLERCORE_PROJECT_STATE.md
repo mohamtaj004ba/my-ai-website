@@ -1,5 +1,12 @@
 # CallerCore project state
 
+## Exact engineering-record recovery — October 24, 2026 (qualification pending)
+
+CI40162200282/job121075946586 stopped BEFORE full regression: prior9f2e51 documentation lacked its plan (digest03477e2283b07677c1cb5e75657b5e63be36ed03da89a0f0d73061bfb10aece9); current7d58c89 source also lacked its plan (digest83704e98e41595bd88de83b14b6842fc6ab06444758c0d11d0c53f0ee593a4cc). This is an avoidable checkpoint/preflight omission, not a runtime or provider failure. Original commits/failed CI retained; no amend/force-push or silent passing claim. Redis alreadypassed for7d58; BrowserQA40162197252 canfinish and preserve evidence but does not replace the corrected release's qualification.
+
+Extended the existing historical attestation recovery with ONLY those two exact reviewed snapshots. Full40SHA, actual change digest and changed paths/blobs, exact file modes, supplemental plan path/content hash, risk and historical identity are pinned. Every unknown or altered snapshot remains blocked. Unchanged ordinary scope/risk/proactive validation still runs afterward. New critical recovery code itself has a normal source-bound change plan, independent QA/Auditor review and fullmain-base preflight BEFORE push.53 focused policy/recovery checks passed; original documentation recovery tests unchanged. No model request, guard, live authority or invoice changes.
+
+
 ## Canonical attempt journal repair — October 24, 2026 (qualification pending)
 
 Fixed verified UI routing with one exact-policy attemptJournal selector. CALL_ROW and legacy development policies now share the canonical development attempt journal consistently across save/read/revoke/archive. Development mode never falls back to generic historical approvals. Requested markers still persist before activation; no owner/backend/release/spending permission changed. Added normal Prepare-to-Run current/legacy tests, lost activation acknowledgment/no retry, selective archive and missing-canonical denial. Independent Work QA19/19 and Auditor review passed; combined171 relevant UI/current-source/controller/contract checks passed after regenerating contract-lock fingerprint36b756c6bb24be582e84f4d264fdbfd90502bc9ab5e2116f31d5539a429a73fd. Three initial release-drift denials and mixed-newline diff warning were preserved and resolved through the normal fingerprint update/LF normalization, not relaxed checks.

@@ -12,6 +12,20 @@ function recoverDocumentation(commit,entries,records,{mode,load}={}){
  const supplement=load(DOCUMENT_RECOVERY.plan);if(supplement?.historicalCommit!==commit||supplement.changeDigest!==DOCUMENT_RECOVERY.digest||supplement.risk!=='routine')throw Error('Historical documentation recovery binding denied');
  return [...records,supplement];
 }
+// Exact reviewed recovery for two preserved commits whose plans were omitted.
+// No caller-controlled registry and no fallback for other missing plans.
+const REVIEWED_CHECKPOINTS=Object.freeze([
+ {commit:'9f2e51f063c9a3ff9d7e8f9c5c24a6cda13ba7cb',digest:'03477e2283b07677c1cb5e75657b5e63be36ed03da89a0f0d73061bfb10aece9',risk:'routine',plan:'docs/engineering-changes/live-schema-checkpoint-recovery.json',planHash:'4c414c0cd4cacffaaad57c7ad8542e28da2fa6e64d8d15e833234be0a7103bd8',paths:['CALLERCORE_PROJECT_STATE.md']},
+ {commit:'7d58c89041a1dcf79282d3fac85fdcfda3f4db35',digest:'83704e98e41595bd88de83b14b6842fc6ab06444758c0d11d0c53f0ee593a4cc',risk:'critical',plan:'docs/engineering-changes/trial-journal-source-recovery.json',planHash:'c30b89f2c2a5b3958e94cce4b55df13580b71bca8a0cb402ea87c35df7cf3906',paths:['CALLERCORE_PROJECT_STATE.md','agent-operations-command-center.js','lib/agent-operations-contract-lock.json','tests/agent-operations-call-row-contract.test.js','tests/agent-operations-fresh-execution-ui.test.js']}
+]);
+function recoverReviewedCheckpoint(commit,entries,records,{mode,load}={}){
+ const pin=REVIEWED_CHECKPOINTS.find(x=>x.commit===commit);if(!pin||digestEntries(entries)!==pin.digest||records.some(p=>p.changeDigest===pin.digest))return records;
+ if(JSON.stringify(entries.map(e=>e.path).sort())!==JSON.stringify(pin.paths.slice().sort())||typeof mode!=='function'||typeof load!=='function')throw Error('Reviewed checkpoint scope denied');
+ for(const e of entries){const parent=mode('parent',e.path),current=mode('commit',e.path);if((e.oldBlob==='deleted'?parent!=='':parent!=='100644')||current!=='100644')throw Error('Reviewed checkpoint requires exact regular files');}
+ if(mode('head',pin.plan)!=='100644')throw Error('Reviewed checkpoint requires exact regular files');
+ const supplement=load(pin.plan);if(supplement?.historicalCommit!==pin.commit||supplement.changeDigest!==pin.digest||supplement.risk!==pin.risk||policy.hash(supplement)!==pin.planHash)throw Error('Reviewed checkpoint binding denied');
+ return [...records,supplement]; // The caller still runs unchanged full plan/proactive validation.
+}
 function git(args){return execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:20*1024*1024});}
 function recordPath(p){return /^docs\/engineering-changes\/[a-z0-9-]+\.json$/.test(p);}
 // Cache only immutable JSON bytes during one scan, never a validation result.
@@ -55,7 +69,8 @@ function committed(base,head='HEAD'){
   const parents=git(['rev-list','--parents','-n','1',commit]).trim().split(' ').slice(1);
   if(parents.length!==1)throw Error('Merge commits require explicit review; linear feature history required');
   const entries=changes(parents[0],commit),historical=readPlans(commit),refs={parent:parents[0],commit,head};
-  const records=recoverDocumentation(commit,entries,historical,{mode:(kind,p)=>git(['ls-tree',refs[kind],'--',p]).split(' ')[0],load:p=>JSON.parse(git(['show',head+':'+p]))});
+  const options={mode:(kind,p)=>git(['ls-tree',refs[kind],'--',p]).split(' ')[0],load:p=>JSON.parse(git(['show',head+':'+p]))};
+  const records=recoverReviewedCheckpoint(commit,entries,recoverDocumentation(commit,entries,historical,options),options);
   let proactive=false;try{git(['merge-base','--is-ancestor',PROACTIVE_BASELINE,commit]);proactive=commit!==PROACTIVE_BASELINE;}catch{}results.push({commit,...check(entries,records,{proactive})});
  }
  return results;
@@ -73,4 +88,4 @@ if(require.main===module){try{
   console.log(JSON.stringify({engineeringPreflight:'passed',version:policy.VERSION,results,paidPermission:false,writePermission:false,acceptanceNotInferred:true}));
  }
 }catch(e){console.error('Engineering preflight blocked: '+e.message);process.exitCode=1;}}
-module.exports={BASELINE,recordPath,digestEntries,check,working,committed,recoverDocumentation,planReader};
+module.exports={recoverReviewedCheckpoint,BASELINE,recordPath,digestEntries,check,working,committed,recoverDocumentation,planReader};
