@@ -118,3 +118,7 @@ The existing provider recognizes a distinct dormant safe-time policy. Exact seri
 A real-controller five-stage fixture with synthetic provider replies preserves the safe inert patch, separately attributed criticism and Auditor rejection, destroys its data-only copy and revokes authority. This does not run the revised code or establish live model quality. The old exact-patch VM recipe remains pinned to the old agent patch; it cannot test or qualify an unseen revised patch.
 
 The adoption-review document was missing from the existing exact Vercel documentation allowlist. Its one exact path is now added and its audited declaration hash is registered alongside the prior hashes. Feature Preview/docs-only checks skip the build; mixed application changes, wrong environment/branch, missing comparison and lookalike documents still build. This is source selection only, not acceptance or authority.
+
+## Successor source qualification
+
+Source `36d5503` / fingerprint `33c4898c` / READY `dpl_D5R2aCDKA5vzR2guEPSGbg1kwjuq` passed 4,907 regressions, 35 real Redis checks, CodeQL, Jekyll, authenticated Browser QA and six visual comparisons. Independent QA and Auditor inspected the actual archive and screenshots. The successor remains inactive, fixture-only preparation; no new model proposal or revised-code execution is claimed. The original failed patch and Auditor rejection remain intact.
