@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "8e183519c8fec924d01b41031e2dd81e90b4c2a2b4eb7c4d5aadc978aaf9813d",
+  "risk": "critical",
+  "scope": "Preserve the single failed sandbox qualification and repair connector-safe bounded result transport, without changing OS isolation, guest source, product behavior or execution authority.",
+  "riskAnalysis": "Observed connector coalescing truncated the original receipt. Bound compressed wire<=2800 and decompression<=16000 with closed shape, canonical base64 and exact hashes; malformed receipts fail closed. The old approval is consumed, original evidence unchanged, no live repair verification claimed.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable source/receipt identities, full diagnostic evidence, safe cleanup and isolated guest boundaries.",
+    "trustBoundaries": "Provider wire envelope versus host parser; trusted supervisor versus exact generated-source guest; owner one-run approval versus future releases.",
+    "abuseCases": "Compressed bomb, noncanonical encoding, altered hash/length, extra fields, wrong source/command, false cleanup or fabricated acceptance.",
+    "mitigations": "Closed bounded envelope and bounded gunzip, exact hash/length, existing semantic/source/cleanup guards and no new dispatch/qualification authority."
+  },
+  "defects": [
+    {
+      "rootCause": "Connector coalesced1200-character writes into one oversized log string and truncated1644 characters; Work stopped the VM before full evidence retrieval.",
+      "detectionGap": "Mock OS fixtures validated report semantics but not the actual connector string ceiling and post-stop log unavailability.",
+      "regression": "Success/failure wire envelope bound and full roundtrip; corrupt/hash/bytes/encoding/extra-fields/truncation/decompression-bomb denials; legacy receipt compatibility and normalized supervisor parity.",
+      "historicalPrevention": "Capture and validate the complete bounded outcome before shutdown when possible; always stop in finally, preserve any uncertainty, never rerun a paid request to conceal evidence loss."
+    }
+  ],
+  "rollback": "Revert only the new call-row encoding/decoder through reviewed feature source if qualification fails. Never rewrite the original run, revive its approval or claim missing evidence.",
+  "negativePaths": {
+    "malformed-response": "Fail closed on malformed or oversized envelope, incorrect identity/hash/checks/cleanup. Preserve original failed run and consumed approval; no provider retries, grants, execution or acceptance added.",
+    "stale-state": "Fail closed on malformed or oversized envelope, incorrect identity/hash/checks/cleanup. Preserve original failed run and consumed approval; no provider retries, grants, execution or acceptance added.",
+    "concurrency": "Fail closed on malformed or oversized envelope, incorrect identity/hash/checks/cleanup. Preserve original failed run and consumed approval; no provider retries, grants, execution or acceptance added.",
+    "cancellation": "Fail closed on malformed or oversized envelope, incorrect identity/hash/checks/cleanup. Preserve original failed run and consumed approval; no provider retries, grants, execution or acceptance added.",
+    "worker-interruption": "Fail closed on malformed or oversized envelope, incorrect identity/hash/checks/cleanup. Preserve original failed run and consumed approval; no provider retries, grants, execution or acceptance added.",
+    "api-outage": "Fail closed on malformed or oversized envelope, incorrect identity/hash/checks/cleanup. Preserve original failed run and consumed approval; no provider retries, grants, execution or acceptance added.",
+    "authorization-denial": "Fail closed on malformed or oversized envelope, incorrect identity/hash/checks/cleanup. Preserve original failed run and consumed approval; no provider retries, grants, execution or acceptance added.",
+    "spending-limit": "Fail closed on malformed or oversized envelope, incorrect identity/hash/checks/cleanup. Preserve original failed run and consumed approval; no provider retries, grants, execution or acceptance added.",
+    "partial-execution": "Fail closed on malformed or oversized envelope, incorrect identity/hash/checks/cleanup. Preserve original failed run and consumed approval; no provider retries, grants, execution or acceptance added."
+  },
+  "proactiveReview": {
+    "architecture": "47 focused fixtures and independent QA/Auditor verify bounded lossless receipt transport and denial paths; exact original evidence remains incomplete. Legacy commands and guest/isolation logic unchanged; live codec qualification and any new spending remain separately gated.",
+    "dependencies": "47 focused fixtures and independent QA/Auditor verify bounded lossless receipt transport and denial paths; exact original evidence remains incomplete. Legacy commands and guest/isolation logic unchanged; live codec qualification and any new spending remain separately gated.",
+    "threats": "47 focused fixtures and independent QA/Auditor verify bounded lossless receipt transport and denial paths; exact original evidence remains incomplete. Legacy commands and guest/isolation logic unchanged; live codec qualification and any new spending remain separately gated.",
+    "failureModes": "47 focused fixtures and independent QA/Auditor verify bounded lossless receipt transport and denial paths; exact original evidence remains incomplete. Legacy commands and guest/isolation logic unchanged; live codec qualification and any new spending remain separately gated.",
+    "faultInjection": "47 focused fixtures and independent QA/Auditor verify bounded lossless receipt transport and denial paths; exact original evidence remains incomplete. Legacy commands and guest/isolation logic unchanged; live codec qualification and any new spending remain separately gated.",
+    "independentChallenge": "47 focused fixtures and independent QA/Auditor verify bounded lossless receipt transport and denial paths; exact original evidence remains incomplete. Legacy commands and guest/isolation logic unchanged; live codec qualification and any new spending remain separately gated.",
+    "recovery": "47 focused fixtures and independent QA/Auditor verify bounded lossless receipt transport and denial paths; exact original evidence remains incomplete. Legacy commands and guest/isolation logic unchanged; live codec qualification and any new spending remain separately gated.",
+    "readiness": "47 focused fixtures and independent QA/Auditor verify bounded lossless receipt transport and denial paths; exact original evidence remains incomplete. Legacy commands and guest/isolation logic unchanged; live codec qualification and any new spending remain separately gated."
+  }
+}

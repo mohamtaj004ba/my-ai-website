@@ -12,6 +12,11 @@ function command(input){
  const replacements=[['programs.starter','programs[\'call-row\']'],["phase='starter'","phase='call-row'"],["run('starter',payload.test.program","run('call-row',payload.test.program"],["'starter-source-behavioral-result-v1'","'call-row-source-behavioral-result-v1'"],['const ids='+OLD_IDS,'const ids='+JSON.stringify(builder.TESTS)]];
  for(const [before,after]of replacements){if(prefix.split(before).length!==2)throw Error('CALL_ROW_SUPERVISOR_VERSION');prefix=prefix.replace(before,after);}
  if(prefix.split('SOURCE_STARTER_TESTS_FAILED').length!==3)throw Error('CALL_ROW_SUPERVISOR_VERSION');prefix=prefix.replaceAll('SOURCE_STARTER_TESTS_FAILED','SOURCE_CALL_ROW_TESTS_FAILED');
+ // Provider connectors can coalesce small stdout writes then truncate a string
+ // at 3,000 characters. Encode the complete receipt as one bounded envelope.
+ const oldOutput="const output=JSON.stringify(report)+'\\n';for(let offset=0;offset<output.length;offset+=1200){process.stdout.write(output.slice(offset,offset+1200));await new Promise(resolve=>setTimeout(resolve,25));}";
+ const newOutput="const raw=JSON.stringify(report),data=require('node:zlib').gzipSync(raw).toString('base64');const envelope=JSON.stringify({version:'call-row-result-envelope-v1',encoding:'gzip-base64',sha256:sha(raw),bytes:Buffer.byteLength(raw),data});if(envelope.length>2800)throw Error('CALL_ROW_RESULT_TRANSPORT_LIMIT');process.stdout.write(envelope+'\\n');";
+ if(prefix.split(oldOutput).length!==2)throw Error('CALL_ROW_SUPERVISOR_VERSION');prefix=prefix.replace(oldOutput,newOutput);
  payload.mode='call-row';payload.test={program:test.program,programSha256:test.programSha256,sourceHashes:test.sourceHashes};
  const program=prefix+JSON.stringify(payload)+');';
  return{...old,version:'call-row-isolated-runner-command-v1',args:[...old.args.slice(0,-1),program],programSha256:hash(program),testProgramSha256:test.programSha256,sourceHashes:test.sourceHashes,executionClass:'exact-call-row-patch-only',executionAuthorized:false,qualified:false};
