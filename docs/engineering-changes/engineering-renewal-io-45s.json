@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "cb679e28f964275b8367060432915344d054ae79f44a1d7b75a96d21bf0888be",
+  "risk": "critical",
+  "scope": "Permit bounded engineering renewal I/O up to45s inside the existing60s acknowledged lease; preserve legacy30s/25s and every immutable deadline, revocation and source boundary.",
+  "riskAnalysis": "A longer I/O wait must not extend authority. Bound end by last acknowledged lease minus1s, task/operation expiry and cancellation; reject late or malformed acknowledgments and malformed explicit budgets; preserve pre-CAS elapsed-wall guards and shutdown.",
+  "threatModel": {
+    "assets": "Owner authority, immutable task/release identity, ledger integrity, cancellation and pending provider exposure.",
+    "trustBoundaries": "Waiting for authenticated renewal versus granting extended execution authority; acknowledged lease versus untrusted late callbacks.",
+    "abuseCases": "Expired/revoked authority, late acknowledgment after timeout, null/coerced budgets, overlapping renewals, ignored cancellation or replay after failed dispatch.",
+    "mitigations": "Engineering-only45s I/O default with unchanged60s lease and min(lastACK-1s,expiry,operation) deadline, exact undefined-only default, pre-CAS checks, no overlap/retry, revoke/readback on every failure."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "One actual Chief-stage renewal exceeded the25s I/O allowance despite an existing60s engineering lease. Total26313ms and finalledger-cas2462ms are observed; the remaining latency and whether all slow cases fit45s are not established.",
+      "detectionGap": "Earlier16.1s real-timer regression proved the old allowance only for that lower latency, not the observed26.313s case.",
+      "regression": "Virtual observed26313ms and actual26.5s success inside60s; legacy25s rejection; lateACK/expiry/cancel/malformed-budget denials; existing pre-CAS wall deadline, diagnostics, no-overlap and five-stage fixtures.",
+      "historicalPrevention": "Derive I/O bounds from the distinct acknowledged lease policy and observed latency while preserving absolute deadlines; include delayed and expired-ack fixtures rather than treating fixture speed as hosted proof."
+    }
+  ],
+  "rollback": "Keep paid execution off and all grants revoked; preserve failedcount/request bookkeeping and uncertainty. Revert through a reviewed successor only; never reuse the failed approval or rewrite historical evidence.",
+  "negativePaths": {
+    "malformed-response": "Preserve no-retry exact source/task/owner grants; test malformed/late ACK, expired or revoked leases, ignored cancellation, concurrent renewals and pre-CAS elapsed deadlines. Provider/model/VM execution remains forbidden until exact successor qualification and a fresh grant. Preserve uncertain counting/dispatch exposure.",
+    "stale-state": "Preserve no-retry exact source/task/owner grants; test malformed/late ACK, expired or revoked leases, ignored cancellation, concurrent renewals and pre-CAS elapsed deadlines. Provider/model/VM execution remains forbidden until exact successor qualification and a fresh grant. Preserve uncertain counting/dispatch exposure.",
+    "concurrency": "Preserve no-retry exact source/task/owner grants; test malformed/late ACK, expired or revoked leases, ignored cancellation, concurrent renewals and pre-CAS elapsed deadlines. Provider/model/VM execution remains forbidden until exact successor qualification and a fresh grant. Preserve uncertain counting/dispatch exposure.",
+    "cancellation": "Preserve no-retry exact source/task/owner grants; test malformed/late ACK, expired or revoked leases, ignored cancellation, concurrent renewals and pre-CAS elapsed deadlines. Provider/model/VM execution remains forbidden until exact successor qualification and a fresh grant. Preserve uncertain counting/dispatch exposure.",
+    "worker-interruption": "Preserve no-retry exact source/task/owner grants; test malformed/late ACK, expired or revoked leases, ignored cancellation, concurrent renewals and pre-CAS elapsed deadlines. Provider/model/VM execution remains forbidden until exact successor qualification and a fresh grant. Preserve uncertain counting/dispatch exposure.",
+    "api-outage": "Preserve no-retry exact source/task/owner grants; test malformed/late ACK, expired or revoked leases, ignored cancellation, concurrent renewals and pre-CAS elapsed deadlines. Provider/model/VM execution remains forbidden until exact successor qualification and a fresh grant. Preserve uncertain counting/dispatch exposure.",
+    "authorization-denial": "Preserve no-retry exact source/task/owner grants; test malformed/late ACK, expired or revoked leases, ignored cancellation, concurrent renewals and pre-CAS elapsed deadlines. Provider/model/VM execution remains forbidden until exact successor qualification and a fresh grant. Preserve uncertain counting/dispatch exposure.",
+    "spending-limit": "Preserve no-retry exact source/task/owner grants; test malformed/late ACK, expired or revoked leases, ignored cancellation, concurrent renewals and pre-CAS elapsed deadlines. Provider/model/VM execution remains forbidden until exact successor qualification and a fresh grant. Preserve uncertain counting/dispatch exposure.",
+    "partial-execution": "Preserve no-retry exact source/task/owner grants; test malformed/late ACK, expired or revoked leases, ignored cancellation, concurrent renewals and pre-CAS elapsed deadlines. Provider/model/VM execution remains forbidden until exact successor qualification and a fresh grant. Preserve uncertain counting/dispatch exposure.",
+    "duplicate-request": "Preserve no-retry exact source/task/owner grants; test malformed/late ACK, expired or revoked leases, ignored cancellation, concurrent renewals and pre-CAS elapsed deadlines. Provider/model/VM execution remains forbidden until exact successor qualification and a fresh grant. Preserve uncertain counting/dispatch exposure."
+  },
+  "proactiveReview": {
+    "architecture": "Review the narrow engineering-only45s I/O window against the unchanged60s acknowledged lease, legacy25s limit, immutable task/operation deadlines, serial renewal, pre-CAS cancellation and cleanup. Preserve observed26313ms failure without attributing all latency toCAS; no new infrastructure or wider authority.",
+    "dependencies": "Review the narrow engineering-only45s I/O window against the unchanged60s acknowledged lease, legacy25s limit, immutable task/operation deadlines, serial renewal, pre-CAS cancellation and cleanup. Preserve observed26313ms failure without attributing all latency toCAS; no new infrastructure or wider authority.",
+    "threats": "Review the narrow engineering-only45s I/O window against the unchanged60s acknowledged lease, legacy25s limit, immutable task/operation deadlines, serial renewal, pre-CAS cancellation and cleanup. Preserve observed26313ms failure without attributing all latency toCAS; no new infrastructure or wider authority.",
+    "failureModes": "Review the narrow engineering-only45s I/O window against the unchanged60s acknowledged lease, legacy25s limit, immutable task/operation deadlines, serial renewal, pre-CAS cancellation and cleanup. Preserve observed26313ms failure without attributing all latency toCAS; no new infrastructure or wider authority.",
+    "faultInjection": "Review the narrow engineering-only45s I/O window against the unchanged60s acknowledged lease, legacy25s limit, immutable task/operation deadlines, serial renewal, pre-CAS cancellation and cleanup. Preserve observed26313ms failure without attributing all latency toCAS; no new infrastructure or wider authority.",
+    "independentChallenge": "Review the narrow engineering-only45s I/O window against the unchanged60s acknowledged lease, legacy25s limit, immutable task/operation deadlines, serial renewal, pre-CAS cancellation and cleanup. Preserve observed26313ms failure without attributing all latency toCAS; no new infrastructure or wider authority.",
+    "recovery": "Review the narrow engineering-only45s I/O window against the unchanged60s acknowledged lease, legacy25s limit, immutable task/operation deadlines, serial renewal, pre-CAS cancellation and cleanup. Preserve observed26313ms failure without attributing all latency toCAS; no new infrastructure or wider authority.",
+    "readiness": "Review the narrow engineering-only45s I/O window against the unchanged60s acknowledged lease, legacy25s limit, immutable task/operation deadlines, serial renewal, pre-CAS cancellation and cleanup. Preserve observed26313ms failure without attributing all latency toCAS; no new infrastructure or wider authority."
+  }
+}
