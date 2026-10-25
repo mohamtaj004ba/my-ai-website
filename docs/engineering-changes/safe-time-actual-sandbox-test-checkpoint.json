@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "8d8f066383c0be1c3727851eddec96044dc7f4fab0d808dc6d38657e271dd6c4",
+  "risk": "routine",
+  "scope": "Preserve actual isolated test success, first truncated receipt, standing sandbox authority, exact cost/cleanup evidence and unchanged product/publication boundaries. Documentation only.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}
