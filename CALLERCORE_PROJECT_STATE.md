@@ -1,6 +1,12 @@
 # CallerCore project state
 
 
+## Fresh live task — packaging correction, October 24, 2026
+
+Initial application507e2e98735e1cad3162db4b7f38cc0a9e9b2160 reached READY dpl_DVgzUDV6C5FrUr47Y64TeQ58bMyr. Exact authenticated pre-trial export verified all30 workflows,30 approvals,12 sequences and budget identical to b117; all authorities revoked, leases zero and cleanup ready. Metadata-only Vercel inspection confirmed all8 non-secret configuration keys plus3 dedicated OpenAI credential entries scoped solely to Preview/feature/callercore-dashboards. No secret decryption, credential mutation, paid/count request or configuration operation occurred.
+
+STRICT CI40158352619/job121064474268 passed4795/4796; the existing exhaustive asset-tracing test identified missing literal require.resolve for the new JSON task asset. The asset already had its content hash and registry import; added its explicit reference to the existing tracing map without weakening the test or source checks. Original failure preserved in CALL_ROW_507E2E9_PACKAGING_FAILURE.json. Real Redis, CodeQL and Jekyll passed for the initial source; no live qualification is inferred. Focused exact packaging test and actual controller success/failure tests are running; new exact source review and hosted qualification required. New fingerprint8a51c5040a06c502b148b00f0f16c45250e8d0222017c72431a6d1a99351371f.
+
 ## Fresh live task — complete controller simulation verified, October 24, 2026
 
 Cross-cutting search found an additional hard-coded legacy authorization ID in reservation verification and lifecycle capacity/activation admission. Updated these existing checks to recognize only the exact new verified policy, preserving historical policy descriptors and tightening task/policy/configuration binding in accounting. New actual owner-controller/organization-CAS/transport test now completes five simulated stages, records all five reservations, preserves Auditor rejection and final Chief findings, applies only the inert disposable patch, revokes authority and reconciles counting uncertainty. This is simulated provider evidence, not a live model run. Initial fixture initialization and new-policy capacity denials were preserved; no paid request occurred. Added incomplete-Specialist simulated failure coverage for usage, pending uncertainty, cleanup and no retry; final combined53 success/failure/accounting checks PASS38217.3786ms. Exact final source/review/qualification pending.
