@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "f4ad307baae9c3a5c9d891bb5eb120e6cf3d1a6767d9f9d4beaab0f2b4e69282",
+  "risk": "routine",
+  "scope": "Preserve the verified genuine five-stage patch milestone, prior renewal failure, exact release and review evidence, unresolved reporting defects, accounting uncertainty and complete shutdown without changing runtime code or authority.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "qualification": "Documentation evidence only. Workflow completed; proposal rejected, current product unchanged. No new model, execution, publication, acceptance or billing permission. Existing application verification remains pinned to4107c6b/8e1d/C3z. Allowlisted documentation-only Preview build skip must be verified."
+}
