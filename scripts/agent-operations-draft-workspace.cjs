@@ -19,7 +19,7 @@ const PROPOSAL_QUALIFICATION='Bounded proposed text replacements only. Draft sou
 const check=(v,c)=>{if(!v)throw Error(c);};
 // Only the immutable approved Starter snapshot can supply a historical preimage.
 // This is data provenance, not current-source admission or execution authority.
-function historicalProposalSource(p){if(p?.preimageSha256!==require('../lib/agent-operations-implementation-source-v1.json').sourceSha256)return null;const a=require('../lib/agent-operations-implementation').snapshot();return{manifest:a.manifest,text:a.text};}
+function historicalProposalSource(p){const taskSource=require('../lib/agent-operations-implementation-tasks').historicalSource(p?.preimageSha256);if(taskSource)return taskSource;if(p?.preimageSha256!==require('../lib/agent-operations-implementation-source-v1.json').sourceSha256)return null;const a=require('../lib/agent-operations-implementation').snapshot();return{manifest:a.manifest,text:a.text};}
 function validateArtifact(result,{sourceSha,proposal,binding}={}){
  if(result?.version==='draft-data-v3'&&proposal?.version==='engineering-text-proposal-v1')return validateProposalArtifact(result,{sourceSha,proposal,binding});
  // Pure persisted-data validation. Caller still enforces authenticated task/release/fence binding.

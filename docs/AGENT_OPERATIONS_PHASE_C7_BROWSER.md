@@ -1,5 +1,15 @@
 # C7 browser qualification and protected Preview plan — unavailable
 
+## October 24 non-billable decision refresh
+
+Verified the existing repository is public (GitHub repository1284219633). Standard GitHub-hosted Ubuntu runners are free for public repositories under [GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions). This qualifies the documented builder route, not a successful image build: Docker/Buildx compatibility and exact compressed output still need one separately authorized build. No workflow was started. Avoid uploaded archives/caches or larger runners in the proposed build; their storage or compute is separate.
+
+The existing [VCR OIDC procedure](https://vercel.com/docs/container-registry/github-actions) supports BuildKit zstd push and short-lived login with automatic logout/revocation. The required team OIDC read-write registry policy is a new permission grant; none was created. Restrict subject to this repository and a manually dispatched, exact reviewed workflow/ref, and restrict image repository where supported. Do not substitute a long-lived token or grant main/other projects.
+
+Complete proposed cost model: standard public runner build compute $0; VCR published $0.10/GB with unverified billing cadence, measured compressed image size unknown; import/optimization and registry transfer treatment unverified; one iad1 five-minute2vCPU/4GB nonpersistent session compute at most $0.0284006 under documented rates before transfer/storage/adjustments; optional snapshot storage explicitly excluded; cleanup must independently confirm stopped state and finite registry retention. Pro egress follows account Flat Rate CDN, so remaining plan entitlement must be checked rather than assuming free. Failed builds/imports and interrupted shutdown retain the same conservative exposure until reconciled. No defensible total ceiling can yet be quoted, and no new spending is authorized.
+
+Next actionable step: obtain account-specific VCR storage cadence, import/optimized-copy/transfer and retention billing clarification through existing Vercel account/support, then price the measured image and seek one exact build/import/qualification authorization. Protected Preview remains a later gate requiring a CallerCore-owned protection broker plus isolated read-only synthetic application identity; existing Work browser and CI bypass are not internal-agent credentials. Initial local-HTML deny-all qualification requires neither Preview identity nor customer data. The pinned recipe, five failed sessions and current source-test sandbox qualification are preserved; this assessment does not reopen them or block product delivery.
+
 ## October 16 non-billable decision refresh
 
 No image, registry write, builder, VM, test identity or paid browser operation was created. The pinned Playwright 1.55.0 Linux AMD64 recipe remains the candidate; its null output digest and unqualified runtime remain unchanged. This secondary task does not block product development.

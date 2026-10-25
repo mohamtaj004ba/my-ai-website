@@ -4827,7 +4827,7 @@ async function loadNotifications({silent=true}={}){
     if(request===notificationRequest)notificationLoadError='Refresh failed — showing the last verified alerts.';
     if(!silent)console.error('Notifications failed',e)
   }
-  finally{notificationsLoading=false;if(request===notificationRequest)renderNotifications()}
+  finally{notificationsLoading=false;renderNotifications()}
 }
 function renderNotifications(){
   const badge=document.getElementById('notificationBadge'),list=document.getElementById('notificationList'),empty=document.getElementById('notificationEmpty'),items=notificationMode==='history'?notificationData:notificationData.filter(n=>!n.read);

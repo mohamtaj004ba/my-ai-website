@@ -297,6 +297,30 @@ async function sweepViews(page,kind){
     report[kind].views.push(view);
   }
 }
+async function assertNotificationRefreshReadRecovery(page,kind){
+  // Fixed fictional alerts, intercepted successful read: never mutate account state.
+  const refresh='**/api/account?action=notifications&*',read='**/api/account?action=notifications-read';
+  let held=null,arrive;const arrived=new Promise(resolve=>{arrive=resolve});
+  await page.waitForFunction(()=>!notificationsLoading);
+  await page.evaluate(()=>{window.__qaRefreshReadSaved={data:notificationData,count:notificationUnreadCount,mode:notificationMode,error:notificationLoadError,readError:notificationReadError,last:notificationLastSyncAt,coverage:notificationCoverage};notificationData=[{id:'qa-refresh-read-race',read:false,title:'Fictional recovery alert',body:'No account write.',view:'overview'}];notificationUnreadCount=1;notificationMode='history';renderNotifications();});
+  await page.route(refresh,route=>{held=route;arrive();});
+  await page.route(read,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true})}));
+  try{
+    await page.locator('#notificationBell').click();await Promise.race([arrived,new Promise((_,reject)=>setTimeout(()=>reject(new Error(kind+' notification refresh request not received')),10000))]);
+    await page.locator('[data-notification-id="qa-refresh-read-race"]').click();
+    await page.waitForFunction(()=>notificationData[0]?.read===true);
+    const stale={notifications:[{id:'qa-refresh-read-race',read:false,title:'Stale response',view:'overview'}],unreadCount:1};
+    await held.fulfill({status:200,contentType:'application/json',body:JSON.stringify(stale)});held=null;
+    await page.waitForFunction(()=>!notificationsLoading&&!document.getElementById('notificationRetry').disabled);
+    const state=await page.evaluate(()=>({read:notificationData[0]?.read,title:notificationData[0]?.title,count:notificationUnreadCount,mode:notificationMode,panelHidden:document.getElementById('notificationPanel').hidden,focus:document.activeElement?.id}));
+    if(!state.read||state.count!==0||state.title!=='Fictional recovery alert'||state.mode!=='history'||!state.panelHidden||state.focus!=='notificationBell')throw new Error(kind+' notification refresh/read recovery overwrote state or focus');
+    report[kind].interactions.push('fictional gated notification refresh + intercepted alert-read mutation restores controls without stale overwrite or focus/tab reset');
+  }finally{
+    if(held)await held.fulfill({status:200,contentType:'application/json',body:JSON.stringify({notifications:[],unreadCount:0})});
+    await page.waitForFunction(()=>!notificationsLoading);await page.unroute(refresh);await page.unroute(read);
+    await page.evaluate(()=>{const x=window.__qaRefreshReadSaved;notificationData=x.data;notificationUnreadCount=x.count;notificationMode=x.mode;notificationLoadError=x.error;notificationReadError=x.readError;notificationLastSyncAt=x.last;notificationCoverage=x.coverage;notificationRequest++;delete window.__qaRefreshReadSaved;renderNotifications();});
+  }
+}
 async function assertSectionAlertContext(page,kind,label=kind){
   const view=kind==='client'?'calls':'clients',drawer=kind==='client'?'#callDrawer':'#adminClientDrawer',close=kind==='client'?'#closeCallDrawer':'#closeAdminClient';
   await ensureView(page,view);
@@ -789,6 +813,7 @@ async function runClientInteractions(page){
   if(await history.count()){await history.click();await page.locator('#notificationUnreadTab').click()}
   await page.locator('#notificationBell').click();
   report.client.interactions.push('notification panel/tabs');
+  await assertNotificationRefreshReadRecovery(page,'client');
   await assertSectionAlertContext(page,'client');
 
   await ensureView(page,'overview');
@@ -1377,6 +1402,7 @@ async function runAdminInteractions(page){
   if(await page.locator('#notificationRetry').count()!==1)throw new Error('Admin notification panel omitted retry control');
   await page.locator('#notificationBell').click();
   report.admin.interactions.push('admin notification panel');
+  await assertNotificationRefreshReadRecovery(page,'admin');
   await assertSectionAlertContext(page,'admin');
 
   await ensureView(page,'overview');
