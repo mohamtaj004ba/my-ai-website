@@ -1,0 +1,5 @@
+'use strict';
+// Frozen from git-archived reviewed31cd055 with synthetic provider replies only.
+const {test}=require('node:test'),a=require('node:assert/strict'),golden=require('./fixtures/engineering-call-row-v1-request-hashes.json'),inf=require('../lib/agent-operations-engineering-inference'),p=require('../lib/agent-operations-engineering-provider-v2');
+test('all five historical call-row v1 fixture request bodies remain byte-equivalent to reviewed baseline',()=>{a.equal(golden.baselineCommit,'31cd055176e2e5799d8251286b9fe9514956474c');const c=structuredClone(golden.v1.baseContext);for(const row of golden.v1.requests){a.equal(p.hash(inf.buildRequest(row.stage,c).body),row.requestHash);c.priorReceipts.push(inf.executeFixture(row.stage,c));}a.equal(c.priorReceipts.length,5);});
+test('all five historical call-row provider-v2 request bodies reconstruct exact baseline hashes',()=>{a.equal(golden.v2.length,5);for(const row of golden.v2)a.equal(p.request(row.stage,structuredClone(row.context)).requestHash,row.requestHash);});
