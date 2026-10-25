@@ -1,5 +1,14 @@
 # CallerCore project state
 
+## Canonical attempt journal repair — October 24, 2026 (qualification pending)
+
+Fixed verified UI routing with one exact-policy attemptJournal selector. CALL_ROW and legacy development policies now share the canonical development attempt journal consistently across save/read/revoke/archive. Development mode never falls back to generic historical approvals. Requested markers still persist before activation; no owner/backend/release/spending permission changed. Added normal Prepare-to-Run current/legacy tests, lost activation acknowledgment/no retry, selective archive and missing-canonical denial. Independent Work QA19/19 and Auditor review passed; combined171 relevant UI/current-source/controller/contract checks passed after regenerating contract-lock fingerprint36b756c6bb24be582e84f4d264fdbfd90502bc9ab5e2116f31d5539a429a73fd. Three initial release-drift denials and mixed-newline diff warning were preserved and resolved through the normal fingerprint update/LF normalization, not relaxed checks.
+
+Confirmed separate replacement-contract discoverability gap: server task descriptor has afterPattern, while modelRequestScope omits it and provider afterText schema constrains length only. Four non-billable characterization tests show double-quoted fallback and call-whitespace variants can pass the provider schema but fail the closed backend grammar. These are representative fixtures, NOT recovered historical output or evidence that the actual rejected patch was safe. No guard behavior, model prompts, historical task descriptor or request hashes changed. Next fix must expose the trusted syntax in a versioned contract while preserving old request reconstruction; do not silently rewrite the consumed task's request contract. Existing authorization stays consumed and paid execution stays off. No paid/count requests or environment mutation in this continuation.
+
+Source review complete; exact commit/remote STRICT/Redis/CI/CodeQL/Jekyll/Preview/browser qualification pending. One reviewed Preview source build planned; no configuration refresh, Production action or documentation-only rebuild.
+
+
 ## Current-source live schema check completed with guarded rejection — October 24, 2026
 
 Executed one genuine current-source trial on application264453164c03b4428dc309aaf6bfa787cef0f63b, fingerprint8a51c5040a06c502b148b00f0f16c45250e8d0222017c72431a6d1a99351371f; READY configuration snapshot dpl_4jVSs8bKvuZyPWVCpSjmNbQXFFsJ / https://my-ai-website-koxmhh4ix-mohamtaj004bas-projects.vercel.app. Task op_30a73bb56d534d8f92f39cf0566740b8; approval pilot_f7050b821c2965b9f155a85eda890b17; workflow wf_f7050b821c2965b9f155a85eda890b17. Exact CALL_ROW single-trial policy is now consumed; do not reuse it. No automatic retries.
