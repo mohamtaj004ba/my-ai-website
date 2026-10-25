@@ -1,5 +1,9 @@
 # CallerCore project state
 
+## Provider singleton-enum size correction — verification in progress, October 24, 2026
+
+Initial source 8f6ee55 reached READY Preview, with Redis35, CodeQL and Jekyll passing. STRICT CI40154563539/job121053090005 reported4775/4776PASS: the realistic-binding fixture hit ENG_AI_INPUT_LIMIT because appending another profile marker increased repeated assignment context. Failure preserved privately. Replaced the old current prose marker with the new schema marker instead of appending it; all historical aliases and unchanged limits retained. The actual failed realistic five-stage test plus schema/prose cases now35/35PASS. No paid/count request, VM, grant or environment mutation occurred. Previous owner readback verified unchanged30workflows/30approvals/12sequences/budget, zero leases and cleanup ready. Successor source/review/release pending.
+
 ## Provider singleton-enum workaround — local verification, October 24, 2026
 
 OpenAI Support attributes the preserved empty incomplete responses to initialization of a fixed identity enum combined with a redundant string pattern. Support recommends omitting that pattern while retaining the exact enum and application validation. This is a Support-attributed finding, not independent raw-response proof or a verified live fix. Original failures and billing uncertainty are unchanged.
