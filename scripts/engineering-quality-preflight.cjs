@@ -15,6 +15,7 @@ function recoverDocumentation(commit,entries,records,{mode,load}={}){
 // Exact reviewed recovery for two preserved commits whose plans were omitted.
 // No caller-controlled registry and no fallback for other missing plans.
 const REVIEWED_CHECKPOINTS=Object.freeze([
+ {commit:'079ee41df6eb37199613397360a194680b1c1419',digest:'bc6761dc2b2ad183dd1d0ff2e304c21d957cac553a9e5fe71ac9b1d840ffa10e',risk:'routine',plan:'docs/engineering-changes/five-stage-completion-checkpoint-recovery.json',planHash:'eb98a05356160c298de5356d9bd3073d9c0fb31103b57184ac839c40799e3212',paths:['CALLERCORE_PROJECT_STATE.md']},
  {commit:'9f2e51f063c9a3ff9d7e8f9c5c24a6cda13ba7cb',digest:'03477e2283b07677c1cb5e75657b5e63be36ed03da89a0f0d73061bfb10aece9',risk:'routine',plan:'docs/engineering-changes/live-schema-checkpoint-recovery.json',planHash:'4c414c0cd4cacffaaad57c7ad8542e28da2fa6e64d8d15e833234be0a7103bd8',paths:['CALLERCORE_PROJECT_STATE.md']},
  {commit:'7d58c89041a1dcf79282d3fac85fdcfda3f4db35',digest:'83704e98e41595bd88de83b14b6842fc6ab06444758c0d11d0c53f0ee593a4cc',risk:'critical',plan:'docs/engineering-changes/trial-journal-source-recovery.json',planHash:'c30b89f2c2a5b3958e94cce4b55df13580b71bca8a0cb402ea87c35df7cf3906',paths:['CALLERCORE_PROJECT_STATE.md','agent-operations-command-center.js','lib/agent-operations-contract-lock.json','tests/agent-operations-call-row-contract.test.js','tests/agent-operations-fresh-execution-ui.test.js']}
 ]);
