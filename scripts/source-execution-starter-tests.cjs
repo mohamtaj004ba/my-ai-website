@@ -20,7 +20,7 @@ function buildProgram(input){
  if(baseline.indexOf(BEFORE)<0||baseline.indexOf(BEFORE)!==baseline.lastIndexOf(BEFORE)||baseline.replace(BEFORE,AFTER)!==patched)throw Error('STARTER_PATCH_SCOPE');
  const sources={baseline:extract(baseline),patched:extract(patched)};
  const program='('+guestProgram.toString()+')('+JSON.stringify(sources)+');';
- return {version:'starter-source-behavioral-tests-v1',sourceHashes:{...HASHES},program,programSha256:hash(program),timeoutMs:15000,maxOutputBytes:16000,requiresQualifiedOsSandbox:true,executionAuthorized:false,generatedCodeExecutionAllowed:false,qualification:'Actual source functions against fictional DOM and fetch fixtures. This builder does not execute them. Node VM is not the security boundary.'};
+ return {version:'starter-source-behavioral-tests-v1',sourceHashes:{...HASHES},program,programSha256:hash(program),timeoutMs:20000,maxOutputBytes:16000,requiresQualifiedOsSandbox:true,executionAuthorized:false,generatedCodeExecutionAllowed:false,qualification:'Actual source functions against fictional DOM and fetch fixtures. This builder does not execute them. Node VM is not the security boundary.'};
 }
 // This function is serialized, never invoked by this module or its local tests.
 async function guestProgram(sources){

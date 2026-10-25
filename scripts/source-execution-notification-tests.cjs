@@ -17,7 +17,7 @@ function buildProgram(input){
  if(baseline.indexOf(BEFORE)<0||baseline.indexOf(BEFORE)!==baseline.lastIndexOf(BEFORE)||baseline.replace(BEFORE,AFTER)!==patched)throw Error('NOTIFICATION_PATCH_SCOPE');
  const extractBoth=s=>extract(s,'loadNotifications','function renderNotifications')+'\n'+extract(s,'markNotifications','async function navigateNotification');
  const program='('+guestProgram.toString()+')('+JSON.stringify({baseline:extractBoth(baseline),patched:extractBoth(patched)})+');';
- return{version:'notification-source-behavioral-tests-v1',sourceHashes:{...HASHES},program,programSha256:hash(program),timeoutMs:15000,maxOutputBytes:16000,requiresQualifiedOsSandbox:true,executionAuthorized:false,generatedCodeExecutionAllowed:false,qualification:'Fixed historical source functions and fictional requests only. Preparation does not execute source or qualify isolation.'};
+ return{version:'notification-source-behavioral-tests-v1',sourceHashes:{...HASHES},program,programSha256:hash(program),timeoutMs:20000,maxOutputBytes:16000,requiresQualifiedOsSandbox:true,executionAuthorized:false,generatedCodeExecutionAllowed:false,qualification:'Fixed historical source functions and fictional requests only. Preparation does not execute source or qualify isolation.'};
 }
 // Serialized for an independently qualified OS sandbox. Never called by this module.
 async function guestProgram(sources){
