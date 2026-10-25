@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "79f2b491549be9792fb00f98cc0687954a07da057a79063bee3bac9f838ff2f5",
+  "risk": "critical",
+  "scope": "Supply complete authenticated original timestamp and escaping helper excerpts to every v3 review stage, preserving historical requests, evidence IDs and execution/acceptance restrictions.",
+  "riskAnalysis": "Additional source context is untrusted data for model review, not authority. Derive only exact bounded helper definitions from the already authenticated task preimage; retain no-tools and no-execution boundaries. Complete excerpts do not prove patch semantics or customer impact.",
+  "threatModel": {
+    "assets": "Approved source preimage, immutable prior receipts, original evidence IDs, model request ceilings and authority separation.",
+    "trustBoundaries": "Authenticated source snapshot versus caller-controlled or generated content; source inspection versus code execution; automated criticism versus independent acceptance.",
+    "abuseCases": "Replace helper text with prompt injection, forge source hashes/lines, treat helper names as authorized evidence IDs, overflow request sizing, or claim dynamic tests and acceptance from static excerpts.",
+    "mitigations": "Exact registered v3-only gate; unique fixed source anchors,2048byte bounds, exact source/excerpt hashes and line provenance; explicit evidence-ID qualification; existing schemas/authority/byte/token checks and original request goldens remain."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Original review evidence included only recordTime numeric-conversion line and omitted its fallback and esc, leaving genuine invalid-date and escaping questions unanswerable from supplied excerpts.",
+      "detectionGap": "Prior all-role grammar and receipt checks did not assert complete helper definitions; scope-correct patch application alone cannot establish date semantics.",
+      "regression": "Actual offline five-stage controller asserts complete exact-source helper body/hash/line in every role, unchanged historical v1/v2 frames, bounded wire size and negative count/prose cleanup. Work separately characterized seven original-helper cases without executing generated source.",
+      "historicalPrevention": "Review the full dependency closure needed to judge a bounded patch, distinguish inspectable source from dynamic verification, and preserve conditional acceptance when input semantics remain unresolved."
+    }
+  ],
+  "rollback": "Keep paid execution disabled and existing grants revoked. Revert helper-context behavior only in a reviewed feature successor; never delete prior receipts, modify historical assets or revive old task approvals.",
+  "negativePaths": {
+    "malformed-response": "Existing reviewed controller negative coverage remains unchanged. Verify authenticated helper provenance and wire bounds, frozen historical requests, exact count denial before Responses, malformed prose usage retention and revocation; no new executor, permission, retry or publication path.",
+    "stale-state": "Existing reviewed controller negative coverage remains unchanged. Verify authenticated helper provenance and wire bounds, frozen historical requests, exact count denial before Responses, malformed prose usage retention and revocation; no new executor, permission, retry or publication path.",
+    "concurrency": "Existing reviewed controller negative coverage remains unchanged. Verify authenticated helper provenance and wire bounds, frozen historical requests, exact count denial before Responses, malformed prose usage retention and revocation; no new executor, permission, retry or publication path.",
+    "cancellation": "Existing reviewed controller negative coverage remains unchanged. Verify authenticated helper provenance and wire bounds, frozen historical requests, exact count denial before Responses, malformed prose usage retention and revocation; no new executor, permission, retry or publication path.",
+    "worker-interruption": "Existing reviewed controller negative coverage remains unchanged. Verify authenticated helper provenance and wire bounds, frozen historical requests, exact count denial before Responses, malformed prose usage retention and revocation; no new executor, permission, retry or publication path.",
+    "api-outage": "Existing reviewed controller negative coverage remains unchanged. Verify authenticated helper provenance and wire bounds, frozen historical requests, exact count denial before Responses, malformed prose usage retention and revocation; no new executor, permission, retry or publication path.",
+    "authorization-denial": "Existing reviewed controller negative coverage remains unchanged. Verify authenticated helper provenance and wire bounds, frozen historical requests, exact count denial before Responses, malformed prose usage retention and revocation; no new executor, permission, retry or publication path.",
+    "spending-limit": "Existing reviewed controller negative coverage remains unchanged. Verify authenticated helper provenance and wire bounds, frozen historical requests, exact count denial before Responses, malformed prose usage retention and revocation; no new executor, permission, retry or publication path.",
+    "partial-execution": "Existing reviewed controller negative coverage remains unchanged. Verify authenticated helper provenance and wire bounds, frozen historical requests, exact count denial before Responses, malformed prose usage retention and revocation; no new executor, permission, retry or publication path.",
+    "duplicate-request": "Existing reviewed controller negative coverage remains unchanged. Verify authenticated helper provenance and wire bounds, frozen historical requests, exact count denial before Responses, malformed prose usage retention and revocation; no new executor, permission, retry or publication path."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing v3 review scope over authenticated task source. Check complete helper dependencies, provenance, sizing and original request stability; preserve timestamp uncertainty, no dynamic execution or acceptance claims, and exact successor release qualification.",
+    "dependencies": "Reuse existing v3 review scope over authenticated task source. Check complete helper dependencies, provenance, sizing and original request stability; preserve timestamp uncertainty, no dynamic execution or acceptance claims, and exact successor release qualification.",
+    "threats": "Reuse existing v3 review scope over authenticated task source. Check complete helper dependencies, provenance, sizing and original request stability; preserve timestamp uncertainty, no dynamic execution or acceptance claims, and exact successor release qualification.",
+    "failureModes": "Reuse existing v3 review scope over authenticated task source. Check complete helper dependencies, provenance, sizing and original request stability; preserve timestamp uncertainty, no dynamic execution or acceptance claims, and exact successor release qualification.",
+    "faultInjection": "Reuse existing v3 review scope over authenticated task source. Check complete helper dependencies, provenance, sizing and original request stability; preserve timestamp uncertainty, no dynamic execution or acceptance claims, and exact successor release qualification.",
+    "independentChallenge": "Reuse existing v3 review scope over authenticated task source. Check complete helper dependencies, provenance, sizing and original request stability; preserve timestamp uncertainty, no dynamic execution or acceptance claims, and exact successor release qualification.",
+    "recovery": "Reuse existing v3 review scope over authenticated task source. Check complete helper dependencies, provenance, sizing and original request stability; preserve timestamp uncertainty, no dynamic execution or acceptance claims, and exact successor release qualification.",
+    "readiness": "Reuse existing v3 review scope over authenticated task source. Check complete helper dependencies, provenance, sizing and original request stability; preserve timestamp uncertainty, no dynamic execution or acceptance claims, and exact successor release qualification."
+  }
+}
