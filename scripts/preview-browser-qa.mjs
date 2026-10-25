@@ -283,7 +283,8 @@ async function sweepViews(page,kind){
         if(implementation?.profile!=='engineering-implementation-v1'||implementation.reasoningMode!=='explicit-fixture-no-model-calls'||implementation.generatedCodeExecution!==false||implementation.publicationAuthorized!==false)throw new Error('Implementation preparation capabilities are missing or overstate execution authority');
         const implementationPreset=page.locator('#opsImplementationPreset');
         await implementationPreset.waitFor({state:'visible'});
-        if((await implementationPreset.innerText()).trim()!=='Prepare Starter fallback patch · no model calls')throw new Error('Implementation preparation control does not accurately disclose fixture reasoning');
+        if((await implementationPreset.innerText()).trim()!=='Prepare available bounded patch · no model calls')throw new Error('Implementation preparation control does not accurately disclose fixture reasoning');
+        if(!Array.isArray(implementation.boundedTasks)||!implementation.boundedTasks.every(t=>t.paidExecution===false&&t.publicationAuthorized===false&&t.testProfile===null&&t.availability?.executionAuthorized===false))throw new Error('Bounded implementation metadata grants unqualified execution');
         report.agentOperations.implementationPreparation={profile:implementation.profile,controlVisible:true,reasoningMode:implementation.reasoningMode,generatedCodeExecution:false,publicationAuthorized:false,taskCreated:false};
         const starterAdmission=page.locator('#opsEngineeringStarterPreset');
         await starterAdmission.waitFor({state:'visible'});
