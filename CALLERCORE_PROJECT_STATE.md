@@ -1,3 +1,13 @@
+# CallerCore project state
+
+## Provider singleton-enum workaround — local verification, October 24, 2026
+
+OpenAI Support attributes the preserved empty incomplete responses to initialization of a fixed identity enum combined with a redundant string pattern. Support recommends omitting that pattern while retaining the exact enum and application validation. This is a Support-attributed finding, not independent raw-response proof or a verified live fix. Original failures and billing uncertainty are unchanged.
+
+The new exact implementation-singleton-enum-v1 objective opts into provider-only omission of ten redundant identity patterns. Each singleton is first checked against its original pattern; exact enums, types, all internal identity/source/evidence/permission validation and other schema constraints remain. The previous objective and policy descriptors remain readback aliases; all five old v1/v2 requests and policies reconstruct exactly from frozen fixtures (fixture hash 8d696ebbe271e283c70741b7ecdc04faf491afb5581b1322bf895cd38bf5d011). Old policy pinning cannot authorize current execution. No task, grant or resolved target is revived.
+
+Verification: 16 final schema checks, 18 prior contract/product checks, 61 combined schema/workflow/review/bounded checks and 49 security/cleanup cases passed (overlapping groups). Initial marker placement caused five local failures; those logs remain preserved and all affected checks passed after restoring the required report suffix. Source QA and Auditor review passed; final source and hosted qualification pending. Fingerprint 3612ad13ad669a55b73bdb74a8f9ade3a5ee9f060702b8a68e03f6b32ca0102a. No paid/count requests, VM, environment/credential change or deployment in this local repair. Starter and notification defects remain resolved; a live compatibility check needs a fresh admissible task and exact-release controller authority.
+
 ## Second fixed source-test profile prepared and Preview verified — October 24, 2026
 
 Application e6272c6ef087a2377892a362626a7428fb7aaacf, fingerprint 2bfb2bbfc732ec49d882d69feee721f02717cfe8bd605ba33a0c0a060f225354. READY dpl_AE5sumPChxTFZPmHiShwdzQMhFiM at https://my-ai-website-9c9rshcba-mohamtaj004bas-projects.vercel.app remains on the feature Preview alias. One source build, one durable WX/fsynced alias intent and verified assignment. Zero configuration refreshes, environment changes, credential rewrites, OpenAI/count requests, VMs or new infrastructure. This final documentation-only checkpoint needs no application build.
