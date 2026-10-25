@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "c7c1556a37d7d86ab8585638619a08901aca35b6924da54e8cf51c4227b0ac71",
+  "risk": "critical",
+  "scope": "Prepare a second exact-source test profile using the existing isolated execution policy; leave activation and live execution disabled.",
+  "riskAnalysis": "New fixed guest recipe and report parser are security-sensitive even while disabled. Preserve legacy command bytes, exact source identity, all jail/resource/cleanup boundaries and explicit profile separation. No new paid or execution authority.",
+  "threatModel": {
+    "assets": "Source/task/release identity, historical execution receipts, credentials, isolation policy, permission separation and audit history.",
+    "trustBoundaries": "Known fixed source pair vs untrusted future model patch; serialized guest vs trusted supervisor; synthetic report shape vs authenticated provider evidence; prepare-only metadata vs owner permission.",
+    "abuseCases": "Cross-profile/source/workspace results, forged qualification, arbitrary guest source/commands, legacy grant reuse, false cleanup/acceptance, secret log output.",
+    "mitigations": "Exact source and descriptor hashes, one canonical replacement, strict input keys, WeakMap prepared-job seal, separate fixed result contract, detached source metadata, no provider/dispatch interface, unchanged old authorization and resolved task denial."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Existing sandbox test recipe supports only exact Starter behavior; another bounded task cannot reuse a safe fixed test preparation contract.",
+      "detectionGap": "First sandbox milestone intentionally qualified one fixed task only.",
+      "regression": "Second exact hash pair, seven fixed guest checks; trusted fake-OS supervisor success/fail/cleanup, cross-profile/workspace/result tampering and byte-identical legacy commands.",
+      "historicalPrevention": "Version execution recipes rather than rewriting serialized historical commands. Require exact-profile OS qualification and fresh task permission before activation."
+    }
+  ],
+  "rollback": "Revert only new prepared profile/capability on feature Preview; do not restore grants or alter old source/command receipts. Main and Production unchanged.",
+  "negativePaths": {
+    "malformed-response": "Exact profile/source/descriptor/binding checks, sealed-job/result substitutions, malformed/oversize output, isolated supervisor failure/cancellation/termination/cleanup fixtures; no live provider or authorization route exists and old dispatch rejects the new job before spending.",
+    "stale-state": "Exact profile/source/descriptor/binding checks, sealed-job/result substitutions, malformed/oversize output, isolated supervisor failure/cancellation/termination/cleanup fixtures; no live provider or authorization route exists and old dispatch rejects the new job before spending.",
+    "concurrency": "Exact profile/source/descriptor/binding checks, sealed-job/result substitutions, malformed/oversize output, isolated supervisor failure/cancellation/termination/cleanup fixtures; no live provider or authorization route exists and old dispatch rejects the new job before spending.",
+    "cancellation": "Exact profile/source/descriptor/binding checks, sealed-job/result substitutions, malformed/oversize output, isolated supervisor failure/cancellation/termination/cleanup fixtures; no live provider or authorization route exists and old dispatch rejects the new job before spending.",
+    "worker-interruption": "Exact profile/source/descriptor/binding checks, sealed-job/result substitutions, malformed/oversize output, isolated supervisor failure/cancellation/termination/cleanup fixtures; no live provider or authorization route exists and old dispatch rejects the new job before spending.",
+    "api-outage": "Exact profile/source/descriptor/binding checks, sealed-job/result substitutions, malformed/oversize output, isolated supervisor failure/cancellation/termination/cleanup fixtures; no live provider or authorization route exists and old dispatch rejects the new job before spending.",
+    "authorization-denial": "Exact profile/source/descriptor/binding checks, sealed-job/result substitutions, malformed/oversize output, isolated supervisor failure/cancellation/termination/cleanup fixtures; no live provider or authorization route exists and old dispatch rejects the new job before spending.",
+    "spending-limit": "Exact profile/source/descriptor/binding checks, sealed-job/result substitutions, malformed/oversize output, isolated supervisor failure/cancellation/termination/cleanup fixtures; no live provider or authorization route exists and old dispatch rejects the new job before spending.",
+    "partial-execution": "Exact profile/source/descriptor/binding checks, sealed-job/result substitutions, malformed/oversize output, isolated supervisor failure/cancellation/termination/cleanup fixtures; no live provider or authorization route exists and old dispatch rejects the new job before spending.",
+    "duplicate-request": "Exact profile/source/descriptor/binding checks, sealed-job/result substitutions, malformed/oversize output, isolated supervisor failure/cancellation/termination/cleanup fixtures; no live provider or authorization route exists and old dispatch rejects the new job before spending."
+  },
+  "proactiveReview": {
+    "architecture": "Extend fixed source-test preparation within existing engineering architecture; version recipe for immutable old command preservation. No new orchestrator/provider/journal.",
+    "dependencies": "No package, provider, credential or permission changes. Shared seccomp and current pinned image policy preserved.",
+    "threats": "Cross-profile/source/workspace results, forged qualification, arbitrary guest source/commands, legacy grant reuse, false cleanup/acceptance, secret log output.",
+    "failureModes": "Parser success cannot establish actual execution, qualification or acceptance. Failed cleanup/test/output must remain failure; resolved task stays closed.",
+    "faultInjection": "Source/profile/workspace/command/test hashes and IDs; root failure, missing isolation/termination, output overflow, unsafe binary, unmount/cleanup failure. Guest source never evaluated by mocks.",
+    "independentChallenge": "Independent existing Work QA/Auditor reviewed prepare-only boundaries and no authority creation. Final delta and hosted review required.",
+    "recovery": "Leave existing Preview/Starter execution functional and old commands identical. Revert new profile only without rewriting prior receipts.",
+    "readiness": "Final59focused and58integration checks passed; independent final source QA7aeeb0b4/Auditor8559bc98 approved fingerprint2bfb2bbf. Actual profile VM qualification deliberately not performed. STRICT/Redis/security/hosted Preview verification follows one source publication."
+  }
+}
