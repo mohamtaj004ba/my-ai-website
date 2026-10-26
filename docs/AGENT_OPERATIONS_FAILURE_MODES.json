@@ -1,4 +1,27 @@
 {
+  "visibleTimeMetadataAndDependencyReview": {
+    "version": "visible-time-metadata-review-v1",
+    "browserFailure": {
+      "source": "4dbbbbd4dfd2db2950997c41bd8d9b8253a8e212",
+      "run": 40252407586,
+      "code": "Bounded implementation metadata grants unqualified execution",
+      "cause": "Outdated QA expectation required every registered test profile to be null.",
+      "correction": "Exact reviewed task/profile metadata allowlist, no authority flags, unique IDs and strict missing/unknown-profile denials.",
+      "verification": "Four targeted browser contract/syntax checks and independent QA/Auditor passed; hosted successor pending.",
+      "failedArchiveSha256": "766618215fbe3ad9288605648b618153ae52ff9aef7c9248c95524359c5f4495"
+    },
+    "dependencyAdvisory": {
+      "package": "zod",
+      "version": "4.1.11",
+      "via": "@vercel/functions → @vercel/oidc → @vercel/cli-config",
+      "advisory": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
+      "severity": "high",
+      "fixedVersion": "4.6.6",
+      "status": "open-not-remediated",
+      "assessment": "Inspected controlled OIDC/local-config use does not establish remotely controlled oversized Zod collection input. This is not a proof of absence or customer-launch clearance. Bounded model output uses JSON/custom validation.",
+      "followUp": "Review compatible upstream dependency update and regression implications separately; no force-update or claim of full security clearance."
+    }
+  },
   "starterResumedRenewalReadback": {
     "observedWorkflow": "wf_aecea3b06783c90f903e2ecaf21609da and wf_7343f3420a94b642adecff33ecc5266c",
     "observedFailure": "QA admission outer approval-renewal timeout after genuine Chief and Specialist; no QA counting or Responses dispatch. Original safe diagnostic and source-bound patch retained.",

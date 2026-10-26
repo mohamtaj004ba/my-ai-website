@@ -1,3 +1,4 @@
+import {verifyImplementationTaskMetadata} from './agent-implementation-browser-contract.mjs';
 import {verifyDashboardCalendar} from './dashboard-calendar-browser-qa.mjs';
 import {verifyPublicFeedback} from './public-feedback-browser-qa.mjs';
 import {verifyIndustryNarratives} from './industry-narrative-browser-qa.mjs';
@@ -284,8 +285,8 @@ async function sweepViews(page,kind){
         const implementationPreset=page.locator('#opsImplementationPreset');
         await implementationPreset.waitFor({state:'visible'});
         if((await implementationPreset.innerText()).trim()!=='Prepare available bounded patch · no model calls')throw new Error('Implementation preparation control does not accurately disclose fixture reasoning');
-        if(!Array.isArray(implementation.boundedTasks)||!implementation.boundedTasks.every(t=>t.paidExecution===false&&t.publicationAuthorized===false&&t.testProfile===null&&t.availability?.executionAuthorized===false))throw new Error('Bounded implementation metadata grants unqualified execution');
-        report.agentOperations.implementationPreparation={profile:implementation.profile,controlVisible:true,reasoningMode:implementation.reasoningMode,generatedCodeExecution:false,publicationAuthorized:false,taskCreated:false};
+        const fixedTestMetadata=verifyImplementationTaskMetadata(implementation.boundedTasks);
+        report.agentOperations.implementationPreparation={profile:implementation.profile,controlVisible:true,reasoningMode:implementation.reasoningMode,generatedCodeExecution:false,publicationAuthorized:false,taskCreated:false,fixedTestMetadata};
         const starterAdmission=page.locator('#opsEngineeringStarterPreset');
         await starterAdmission.waitFor({state:'visible'});
         if((await starterAdmission.innerText()).trim()!=='Select Starter implementation admission · fresh consent required')throw new Error('Starter live admission control does not disclose fresh consent requirements');
