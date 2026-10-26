@@ -1,5 +1,9 @@
 # CallerCore project state
 
+## Visible timestamp patch adoption and reviewer handoff candidate — October 26, 2026
+
+Local candidate only: exact genuine Specialist edit d91c3f12 adopted by Work into dashboard.js, postimage37d1a7c. Source/contract locks updated, original immutable model receipts and Auditor rejection retained. Validated manifest-bound test summary now reaches QA/Auditor/final Chief; complete-sentence guidance preserves rejection freedom. Nine focused tests pass, including synthetic five-stage success/failure cleanup and32768-byte request ceiling. Historical fixture replay explicit; actual resolved defect rejects fresh task admission. No new paid model or sandbox request, configuration refresh, alias operation or Production change. Full release qualification and final independent adoption review pending. Existing READY5409568 remains current until verified successor publication. Details docs/AGENT_OPERATIONS_VISIBLE_TIME_ADOPTION_REVIEW.md.
+
 ## Genuine five-stage patch-and-test workflow completed; proposal unaccepted — October 26, 2026
 
 Workflowwf_8fada462fe47c6c6f26c798726a5ecdc completed allfive genuinegpt-6.1-sol/medium Responses on540956854e461837bdf293d63ecc0c5ba6489716 /29088e18ded0b580dd97fd41da0a61198fb6698600181660c90d5f219b4842ed /dpl_7zZKnXbwqtLLbJnDM4LfkseZBC7M. Executionverified/completed365227ms fromfirststage admissiontolastfinish. Chief producedthreecompletecriteria; Specialistgeneratedsourceboundpatchd91c3f12ef66d4ba3a3b68b7b86f115e2c5817e998a9e8cdb42819605d4b3bc0, appliedonlytodisposablecopyanddestroyed. QualifiedVMrealtestexecutionpassedsevenbehaviorgroupsand23isolationchecks (notaddedtoregressioncount). SourceTestreceipt3ca84aca38c74792357f1abd8e03ca45698b059609875cc1614588e445acdd57, manifestda657254c681923ed2e47d654cfe17f53c1f4031397efcc59106c7718010f73c, one-usepermit140c9305f2823c185ff845b682e6a558. Providerindependentlyconfirmssbx_7Ebo2K9ODJr2GfzAhqrX1dkVTBlO stopped13947ms/activeCPU2808ms/denyall.
