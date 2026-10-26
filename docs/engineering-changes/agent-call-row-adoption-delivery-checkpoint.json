@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "d32bf57b70cd9fcc2a61a42e25a31b8b84a2fc745212037c9474a3fcf7cdf24c",
+  "risk": "routine",
+  "scope": "Preserve exact independently verified agent-patch adoption, complete hosted qualification, financial boundaries and next bounded source-backed task. Documentation only.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

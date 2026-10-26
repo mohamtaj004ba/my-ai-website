@@ -158,3 +158,10 @@ Source inspection found the adjacent visible time/date formatters still use time
 ### Reporting quality follow-up
 
 The completed original run remains rejected: QA uncertainty length400 and Auditor reason length600 have incomplete endings. Host parser directly decoded JSON; available evidence does not establish why the provider supplied those endings. Existing quality review correctly reported the defects and the final Chief preserved them. Future prompt changes should request materially shorter complete narratives and avoid repeating typed hashes/references; old task contracts and receipts stay frozen. No paid repetition is needed solely to improve punctuation.
+
+
+## Adoption delivered and hosted checks passed — October 25, 2026
+
+Exact sourceb5dc430/03e09 at READYBTz5 now contains the actual agent edit. Work published it after independent adoption review; original model rejection remains unmodified. CI4914/4914,Redis35/35,CodeQL/Jekyll and authenticated Browser passed. Actual557entry archivefb823428 matched metadata and was CRCchecked;502screens287layouts196readability,zeroerrors,6visualpasses max0.00382. New getByRole accessible-name/Enter and retained click checks passed; actual mobileCalls/adminimages inspected. Historical source/current-admission separation remains enforced. No new model/VM/configrefresh occurred. Final hosted reviewer receipts follow in canonical state. The prepared next visible-time task must preserve separate current fallbacks and the adopted label, and cannot reuse old execution authority.
+
+Final hosted WorkQA2a68d66b1a418dff662852f2aa35269d0e21fd413e17e7472eaebe5cd72dcc9a and Auditor554295c4b0a3590eefcb7c71d7f9c48cff573a27c99cf0848e92da13d3e3e6d4 passed exact source/archive review. No human acceptance inferred.
