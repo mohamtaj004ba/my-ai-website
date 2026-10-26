@@ -144,3 +144,17 @@ Fresh qualification_8921cee3a6f546ed93b61d0bc0e45d23 executed once in the existi
 The invalid/out-of-range label fallback now passes an actual isolated source-function test. Repeated callers at distinct valid times, escaping, missing-value fallbacks, equal-time limitation and unchanged non-label behavior also pass. This is Work-controlled verification, not an internal-agent dispatch grant or browser/screen-reader proof. Product is unchanged; old model report rejection remains preserved. A separate Work adoption review should decide whether to publish the patch to Preview and verify actual accessibility-tree names, keyboard/click behavior and responsive UI before acceptance claims.
 
 Two VMs were created; estimated direct total0.001679dollars, not invoice reconciled. No OpenAI calls, app rebuilds, image imports, persisted snapshots or product publications occurred in this test pass.
+
+
+## Work adoption review in progress — October 25, 2026
+
+The exact genuine Specialist edit22c3a070 is adopted locally, postimageaea8a45986d71205bcbc96ce8e0d362b16a63804be1452d72af51545aa10303f. Work authorizes feature delivery under standing development authority, separately from the original automated rejection. Actual isolated behavior/isolation evidence is unchanged. All50 focused adoption checks pass. Current source/evidence packaging is refreshed while historical source/receipt assets remain immutable. Resolved call-row tasks reject fresh assignments before append; old fixtures explicitly replay their authenticated source snapshot. Browser checks include the actual accessible button name and Enter/click drawer activation. Local broad regression and hosted qualification remain pending. Equal-time ambiguity and physical assistive-technology acceptance remain unresolved. No new model or VM request is needed for this adoption.
+
+
+### Next bounded product assignment prepared
+
+Source inspection found the adjacent visible time/date formatters still use timestamp truthiness rather than finite-Date validity. This is separate from the adopted accessible-label correction. Prepared non-executing investigation NEXT_VISIBLE_TIME_INVESTIGATION.json pins dashboard.jsaea8 and exact line/excerpt hash, limits scope to the two visible spans, and specifies valid/missing/invalid/out-of-range, escaping and unchanged click/filter coverage. Customer occurrence/rendered reproduction are unverified. No new paid task/grant created, and no Work-authored product patch substituted. It must receive a fresh task/release binding after this adoption qualifies.
+
+### Reporting quality follow-up
+
+The completed original run remains rejected: QA uncertainty length400 and Auditor reason length600 have incomplete endings. Host parser directly decoded JSON; available evidence does not establish why the provider supplied those endings. Existing quality review correctly reported the defects and the final Chief preserved them. Future prompt changes should request materially shorter complete narratives and avoid repeating typed hashes/references; old task contracts and receipts stay frozen. No paid repetition is needed solely to improve punctuation.

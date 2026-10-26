@@ -526,6 +526,15 @@ async function runClientInteractions(page){
 
   const firstCall=page.locator('#callsTable [data-call-id]').first();
   await firstCall.waitFor({state:'visible',timeout:10000});
+  const callLabel=await firstCall.getAttribute('aria-label');
+  if(!callLabel||!/^Open .+ call details, .+/.test(callLabel))throw new Error('Call accessible name omits caller or time');
+  if(await page.getByRole('button',{name:callLabel,exact:true}).count()!==1)throw new Error('Call row accessible name is missing or ambiguous');
+  await firstCall.focus();
+  await firstCall.press('Enter');
+  await page.locator('#callDrawer.open').waitFor({state:'visible',timeout:5000});
+  if(await page.locator('#callDrawer').getAttribute('aria-hidden')!=='false')throw new Error('Keyboard call activation did not open accessible drawer');
+  await page.locator('#closeCallDrawer').click();
+  report.client.interactions.push('call accessible name includes time and keyboard activation opens drawer');
   await firstCall.click();
   await page.locator('#callDrawer.open').waitFor({state:'visible',timeout:5000});
   if(await page.locator('#callDrawer').getAttribute('aria-hidden')!=='false')throw new Error('Call drawer aria state did not open');

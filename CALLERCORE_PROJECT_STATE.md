@@ -1,5 +1,12 @@
 # CallerCore project state
 
+## Work adoption of tested agent call-row patch underway — October 25, 2026
+
+Resumed clean41b67a3 without repeating prior model/OS tests. Applied exact preserved Specialist patch22c3a070 to local dashboard.js, a79132→aea8a45986d71205bcbc96ce8e0d362b16a63804be1452d72af51545aa10303f. This is Work-controlled adoption, not agent publication or retroactive model acceptance. Original QA/Auditor narrative rejection remains unchanged. Source-lock and new current evidence-v7 match actual product; oldv6 asset remains immutable and explicitly recognized for historical readback. Both evidence assets explicitly traced in contract packaging.
+
+50focused checks pass: distinct actual row labels, historical five-stage controller/worker replay, revoked/clean authority, all six historical call-row tasks denied fresh current-source admission before journal append. Historical controller fixtures use explicit authenticated pinned-preimage filesystem data only in isolated tests; production sourceEvidence and admission unchanged. Browser QA now checks real accessible button name, Enter/click drawer behavior and aria state. Full local regression is underway; no release qualification or publication claimed yet. Independent reviewers verified exact patch provenance and identified packaging trace and accessibility-tree coverage requirements, now addressed. No new OpenAI/Sandbox calls, configrefresh, credential mutation or paid grant. Main/Production unchanged. Continue through reviewed release/Preview qualification and actual archive before reporting adoption as delivered.
+
+
 ## Agent-generated safe-time patch passed actual isolated tests — October 25, 2026
 
 The owner approved the prepared one-VM test, then explicitly granted standing authority for necessary sandbox tests once readiness is established. Future routine reviewed sandbox tests do not require another per-run approval. This does not grant internal agents general execution/publication rights, authorize recurring activity or weaken source, isolation, review, cleanup or Production boundaries. Each run remains a fresh finite operation with durable create/run markers and exact source/job identity.

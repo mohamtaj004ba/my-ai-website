@@ -9,4 +9,6 @@ function setup(){const rows=new Map(),owner={kind:'owner',verifiedOwner:true,id:
  return{service,owner,runtime,input,rows,ledger,state:()=>JSON.parse([...rows.values()][0])};
 }
 async function run(f){let plan=await f.service.create(f.owner,f.input);for(let n=0;n<5;n++)plan=await f.service.run(f.owner,{planId:plan.id,expectedRevision:plan.revision});return plan;}
-module.exports={setup,run,historicalFixture};
+// Test-only explicit historical filesystem fixture. Never imported by runtime code.
+function historicalSourceFixture(assignment){const tools=require('../../lib/agent-operations-engineering-tools'),a=require('node:assert/strict'),original=tools.captureApproved,current=original(),old=tasks.snapshot({assignment});for(const file of old.manifest.files)if(file.path!=='dashboard.js')a.equal(tools.hash(current.texts[file.path]),file.sha256,'Historical replay dependencies changed');const value={texts:{...current.texts,'dashboard.js':old.text},manifest:old.manifest};tools.captureApproved=()=>structuredClone(value);return()=>{tools.captureApproved=original;};}
+module.exports={setup,run,historicalFixture,historicalSourceFixture};
