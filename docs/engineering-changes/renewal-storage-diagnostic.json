@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "350b365357ded928ca8a2c77b0c93a3329ad0e64aff40d01e2ef606b3d51e012",
+  "risk": "critical",
+  "scope": "Classify existing renewal CAS failures and provide an owner-only nonbillable identical-value storage verification in the existing engineering controller.",
+  "riskAnalysis": "The historical adapter failure is not reconstructed. Diagnostic labels remain closed and exceptions rethrow unchanged. The verification must authenticate Preview owner, preserve exact ledger bytes and concurrent authority, and never create grants, leases, accounting changes or model calls.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner authority, source/release identity, historical receipts, credentials, immutable accounting and cancellation.",
+    "trustBoundaries": "Authenticated owner route to existing controller and organization transaction; same-value CAS reaches actual isolated Preview Redis adapter.",
+    "abuseCases": "Foreign workspace or worker access, stale UI replies, raw exception leakage, late CAS after cancellation, hidden authority creation or overwriting concurrent data.",
+    "mitigations": "Existing fresh owner gate, exact empty input, Preview identity checks, current UI scope fence, fixed phase enum, deadline/closed guard before CAS, atomic raw-to-identical-raw comparison and no mutable callback."
+  },
+  "rollback": "Revert only these feature-branch changes; preserve both original trial exports, source-test receipts and accounting. Keep paid sequence stopped and future execution flags false until qualified.",
+  "negativePaths": {
+    "malformed-response": "Closed runtime identity checks reject substituted source, deployment, release and untrusted extra input; no raw storage content is returned.",
+    "stale-state": "Current UI scope fence suppresses late replies after workspace, source, deployment or release changes.",
+    "concurrency": "Real-broker fixtures repeat fresh authorization on confirmed conflicts; same-value CAS preserves intervening state; five failures report exhaustion.",
+    "cancellation": "Guard before every compare and closed flag prevent later retries; a sent same-value CAS remains atomic and cannot overwrite newer data.",
+    "worker-interruption": "No worker or generated source is executed by the probe; existing paid workflow cleanup remains unchanged.",
+    "api-outage": "Adapter failure gets only fixed ledger-cas-error classification, original exception rethrows in renewal; verification reports unconfirmed.",
+    "authorization-denial": "Foreign owner/workspace, false verification, non-Preview and revoked fresh authentication produce no probe compare.",
+    "spending-limit": "No new paid requests, infrastructure, credentials or financial policy changes; historical fees remain unknown.",
+    "partial-execution": "Preserve first three completed model stages, successful isolated patch tests and exact second failure; no fabricated Auditor or final Chief output."
+  },
+  "defects": [
+    {
+      "rootCause": "Existing ledger-cas marker loses the distinction between adapter exception, guard denial and conflict exhaustion; underlying historical live cause remains unknown.",
+      "detectionGap": "The previous timing-only phase did not classify the real compare outcome; nonbillable rehearsals used a different journal.",
+      "regression": "Real broker fixtures cover mutating and no-op CAS errors, conflicts, fresh authority, cancellation, outer shutdown, storage probe and reordered UI metadata.",
+      "historicalPrevention": "Instrument each asynchronous storage boundary with content-free failure classification and verify the actual adapter without paid inference."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse existing owner controller, organization transaction, Redis adapter and command-center panel. No new journal, service, credentials, agent roles or orchestration.",
+    "dependencies": "No packages or new infrastructure. Real Redis integration remains disposable localhost CI only.",
+    "threats": "Scope substitution, prompt content in errors, late callbacks, concurrent revocation, no-op overwrite, implicit grant or accounting mutation.",
+    "failureModes": "Unconfirmed probes provide no authority. Changed source requires normal qualified release; stopped trial approvals remain unusable.",
+    "faultInjection": "29focused reviewed tests pass; additional existing approval/deadline tests pass. STRICT and hosted checks recorded separately without predicting outcomes.",
+    "independentChallenge": "Independent Work QA reproduced UI key-order false negative and Auditor found pre-validation timer leak; both corrected and independently regression tested.",
+    "recovery": "Both original trials remain closed, sequence stopped, all grants revoked, test VM independently stopped, historical records retained.",
+    "readiness": "Candidate remains unpublished until normal STRICT/Redis/CI/CodeQL/Preview qualification. No paid trial authorized by this plan and no live five-stage success claimed."
+  }
+}

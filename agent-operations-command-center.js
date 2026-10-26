@@ -22,7 +22,7 @@
   const validReviewKeys=new Set(v.plans.flatMap(p=>p.tasks.filter(t=>t.template==='engineering-propose'&&t.status==='completed').map(t=>reviewKey(p,t,v))));for(const k of reviewBundles.keys())if(!validReviewKeys.has(k))reviewBundles.delete(k);
   data=v;loadedAt=Date.now();root.hidden=false;el('Refresh').disabled=busy;el('Create').disabled=busy||pendingProblem;el('Emergency').disabled=busy;el('Sync').disabled=busy;
   const stoppedArchive=document.getElementById('opsEngineeringStoppedSelectionArchive');if(stoppedArchive)stoppedArchive.disabled=busy||trialBusy||!!pending||pendingProblem;
-  for(const id of ['opsEngineeringActivationReadiness','opsEngineeringModelMetadata']){const button=document.getElementById(id);if(button)button.disabled=busy||activationBusy;}
+  for(const id of ['opsEngineeringActivationReadiness','opsEngineeringModelMetadata','opsEngineeringRenewalStorage']){const button=document.getElementById(id);if(button)button.disabled=busy||activationBusy;}
   for(const kind of ['Inventory','Prepare','Apply','Status']){const b=document.getElementById('opsLegacyMaintenance'+kind);let dispatched=true;try{dispatched=!!legacyClaimValue&&sessionStorage.getItem('callercore-legacy-maintenance-v1-dispatch-'+legacyClaimValue.id)!==null;}catch{}if(b)b.disabled=busy||legacyBusy||trialBusy||(kind==='Prepare'&&!legacyInventoryValue?.eligible)||(kind==='Apply'&&(!legacyClaimValue||dispatched));}
   for(const id of ['opsSourceTestConnection','opsSourceTestConsent','opsEngineeringFreshExecution','opsEngineeringAdmissionCheck','opsEngineeringSequenceRecover','opsEngineeringExpiredSequenceClose','opsEngineeringDevelopmentPreset','opsEngineeringDevelopmentEnroll','opsEngineeringcleanupReconcile','opsEngineeringconfigurationClaim','opsEngineeringconfigurationStep','opsEngineeringconfigurationStatus','opsEngineeringconfigurationComplete','opsEngineeringconfigurationCancel','opsEngineeringconfigurationRejectionReconcile','opsEngineeringStarterPreset','opsEngineeringTrialPreset','opsEngineeringSequencePreset','opsEngineeringSequenceStop','opsEngineeringExpandedPreset','opsEngineeringExpandedEnroll','opsEngineeringTrialPrepare','opsEngineeringTrialRun','opsEngineeringTrialRevoke']){const b=document.getElementById(id);if(b)b.disabled=busy||(id!=='opsEngineeringTrialRevoke'&&trialBusy);}
   el('Objective').disabled=busy;el('Priority').disabled=busy;el('Sequence').disabled=busy;const configurationInput=document.getElementById('opsEngineeringConfigurationInput');if(configurationInput)configurationInput.disabled=busy||trialBusy;
@@ -112,6 +112,13 @@
   }catch{if(currentActivationFence())activationResult.textContent='Check not confirmed. No automatic retry occurred. Refresh owner state before another explicit check; model metadata does not establish pricing, Responses access or acceptance.';}
   finally{activationBusy=false;readinessButton.disabled=metadataButton.disabled=busy||!data;}
  }
+ const storageCheck=node('button','Verify renewal storage — no model calls');storageCheck.type='button';storageCheck.id='opsEngineeringRenewalStorage';activationPanel.append(storageCheck);
+ storageCheck.addEventListener('click',async()=>{
+  if(!data||busy||activationBusy||trialBusy)return;const fence=trialFence();activationBusy=true;storageCheck.disabled=true;
+  try{const result=await trialCall('verifyRenewalStorage',{},50000);assertTrialFence(fence);const expected=JSON.parse(fence.runtime),actual=result?.runtime;if(result?.version!=='engineering-renewal-storage-check-v1'||!actual||!['origin','sourceCommit','branch','deploymentId'].every(k=>actual[k]===expected[k])||actual.release?.version!==expected.release?.version||actual.release?.digest!==expected.release?.digest||result.modelRequests!==0||result.executionAuthorized!==false)throw Error('Storage verification scope');activationResult.textContent=JSON.stringify(result,null,2);}
+  catch{if(currentTrialFence(fence))activationResult.textContent='Storage verification unconfirmed. No model calls or authority were requested. Do not repeat a pending check.';}
+  finally{activationBusy=false;if(currentTrialFence(fence))storageCheck.disabled=busy;}
+ });
  readinessButton.addEventListener('click',()=>activationCheck(false));metadataButton.addEventListener('click',()=>activationCheck(true));
 
  // Explicit owner control only; no background execution or automatic paid retry.

@@ -7,6 +7,15 @@ const {createStore,redisAdapter}=require('../lib/agent-operations-store');
 const {runStage,mockAdapter}=require('../lib/agent-operations-worker');
 const {command}=require('./helpers/agent-operations-redis-client.cjs');
 
+test('real Redis renewal storage verification compares unchanged bytes without granting authority',async()=>{
+ const fs=require('node:fs'),path=require('node:path'),source=fs.readFileSync(path.join(__dirname,'agent-operations-engineering-approval-control-qa.test.js'),'utf8');
+ const {fixture,owner,approval}=new Function('require','__dirname',source.slice(0,source.indexOf("test('"))+'\nreturn {fixture,owner,approval};')(require,__dirname),h=fixture({paid:true});
+ const prefix='test:agentops:renewal-storage:'+randomUUID()+':',keys=new Set(),kv={get:k=>command(['GET',prefix+k]),eval:(script,ks,args)=>{ks.forEach(k=>keys.add(prefix+k));return command(['EVAL',script,ks.length,...ks.map(k=>prefix+k),...args]);}},adapter=redisAdapter(kv);
+ h.adapter.read=()=>adapter.read();h.adapter.compare=(...args)=>adapter.compare(...args);
+ try{const c=h.context('chief-plan'),ap=approval(h,c);await h.broker.prepareApproval(owner,c,ap);const before=await adapter.read();let freshChecks=0;const result=await h.organization.verifyRenewalStorage(owner,{authorizeRead:async()=>{freshChecks++;},beforeCompare:()=>{}});assert.equal(freshChecks,1);assert.equal(result.comparedUnchanged,true);assert.equal(await adapter.read(),before);const state=JSON.parse(before);assert.equal(state.operations.approvals[0].status,'prepared');assert.equal(state.operations.approvals[0].leaseUntil,0);assert.equal(state.operations.workflows.length,0);assert.equal(state.operations.reservations.length,0);}
+ finally{for(const key of keys)await command(['DEL',key]);}
+});
+
 test('real Redis terminal engineering diagnostics preserve absent usage under concurrent late writes',async()=>{
  const fs=require('node:fs'),path=require('node:path'),source=fs.readFileSync(path.join(__dirname,'agent-operations-engineering-transport-qa.test.js'),'utf8');
  const {fixture,owner}=new Function('require','__dirname',source.slice(0,source.indexOf("test('"))+'\nreturn {fixture,owner};')(require,__dirname),h=fixture();
