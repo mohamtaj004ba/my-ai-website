@@ -11,7 +11,9 @@ async function withHistorical(fn){
  const contracts=require('../../lib/agent-operations-contracts');contracts.assertRelease();
  const text=historicalText(),originalRead=fs.readFileSync,lock=require('../../lib/agent-operations-engineering-source-lock.json'),entry=lock.files.find(f=>f.path==='dashboard.js'),saved={...entry},releaseLock=require('../../lib/agent-operations-contract-lock.json'),savedRelease={...releaseLock};
  const htmlPath=fs.realpathSync(require.resolve('../../dashboard.html')),archive=require('../../lib/agent-operations-engineering-history.json'),htmlEntry=lock.files.find(f=>f.path==='dashboard.html'),savedHtml={...htmlEntry},oldHtmlEntry=archive.manifest.files.find(f=>f.path==='dashboard.html');
- const html=originalRead(htmlPath,'utf8').replace(/\r\n/g,'\n').replace(' aria-label="Search follow-ups"','').replace(' aria-label="Filter follow-up type"','');
+ const frozenHtml=require('../fixtures/historical-dashboard-html-v1.json'),priorHtml=gunzipSync(Buffer.from(frozenHtml.gzipBase64,'base64'),{maxOutputLength:700000}).toString('utf8');
+ if(frozenHtml.sha256!=='77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f'||hash(priorHtml)!==frozenHtml.sha256)throw Error('HISTORICAL_HTML_HASH_MISMATCH');
+ const html=priorHtml.replace(' aria-label="Search follow-ups"','').replace(' aria-label="Filter follow-up type"','');
  if(hash(html)!==oldHtmlEntry.sha256||Buffer.byteLength(html)!==oldHtmlEntry.bytes)throw Error('HISTORICAL_HTML_HASH_MISMATCH');
  fs.readFileSync=function(file,options){if(typeof file==='string'&&[sourcePath,manifestPath,htmlPath].includes(path.resolve(file))){const resolved=path.resolve(file),value=resolved===sourcePath?text:resolved===htmlPath?html:JSON.stringify(lock),encoding=typeof options==='string'?options:options?.encoding;return encoding?Buffer.from(value).toString(encoding):Buffer.from(value);}return originalRead.apply(this,arguments);};
  Object.assign(entry,{sha256:PIN,bytes:Buffer.byteLength(text)});

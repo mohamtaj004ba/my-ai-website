@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "ba1ff75b38d492a3e11a0731dc620681b3541a0afc75fafe4daaf98b71e34857",
+  "risk": "critical",
+  "scope": "Repair exact-source fixed-comment postimage validation and authenticated calendar replay; preserve closed restricted-child failure codes for CI diagnosis.",
+  "riskAnalysis": "Fixed marker operation still checks approved HTML hash/size and exact result. Historical replay stays tests-only. Worker IPC exposes only explicit codes; no permission, timeout, retry or paid behavior changes.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Accessible control names, current source identity, immutable historical task evidence, credentials and review history.",
+    "trustBoundaries": "Static HTML names to browser accessibility tree; current evidence asset to live admission; explicit offline fixture to historical tests only.",
+    "abuseCases": "Missing/ambiguous names, historical HTML presented as current source, mutated fixture, accidental dependency or credential changes.",
+    "mitigations": "Unique exact names, whole HTML equality after removing labels, sourcev9 pins current hashes, immutable old assets, fixed historicalHTML hash/size, no production helper imports and current-vs-old admission negative tests."
+  },
+  "rollback": "Revert only candidate source; retain historical evidence assets, fixed product timestamp patch and security advisory history. No Production changes.",
+  "negativePaths": {
+    "malformed-response": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "stale-state": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "concurrency": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "cancellation": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "worker-interruption": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "api-outage": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "authorization-denial": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "spending-limit": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "partial-execution": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested."
+  },
+  "defects": [
+    {
+      "rootCause": "Fixed-comment postimage was hardcoded to an old HTML file; historical calendar fixture derived its preimage by removing only two older attributes. Separate Redis worker cause remains unknown.",
+      "detectionGap": "Initial focused checks did not include full legacy calendar/draft families. Worker failure discarded its underlying code.",
+      "regression": "All75tests from affected full-suite files pass;38repair checks and3independent actual-child checks pass. Raw env secrets, paths, prototype keys and unknown error text remain withheld.",
+      "historicalPrevention": "Derive deterministic postimages from authenticated preimages, replay archived HTML rather than editing current source backwards, preserve fixed error categories at process boundary."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing HTML, source/evidence adapter and browser suite reused; no new orchestration or provider.",
+    "dependencies": "No dependency changes; upstream bundled Zod advisory remains open with official integrity-verified archive evidence.",
+    "threats": "Historical source substitution, malformed labels, role collisions and misleading dependency remediation.",
+    "failureModes": "Current source mismatch fails closed; test-only replay validates pinned historical bytes; absent computed names fail browser suite.",
+    "faultInjection": "Original4959testCI had58failures in historical calendar/fixed-comment families; repaired75affectedchecks pass. Initial Redis31pass5fail retained;3genericworker failures remain unproven pending new diagnostic evidence.",
+    "independentChallenge": "Independent QA/Auditor verified hash/byte/manifest checks and closed25code lists plus fallback. QA caught stale diagnostic-test catch anchor; updated without removing sanitization assertions.",
+    "recovery": "Revert this candidate only, preserve original assets, reviews, model failures and financial uncertainty; no paid execution enabled.",
+    "readiness": "Candidate pending fresh CI/Redis/CodeQL/Preview verification. No inference or sandbox request was made."
+  }
+}

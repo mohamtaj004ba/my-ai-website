@@ -8,8 +8,6 @@ const CORRECTION=require.resolve('../lib/agent-operations-draft-correction');
 const proposed=require('../lib/agent-operations-draft-proposal'),PROPOSED=require.resolve('../lib/agent-operations-draft-proposal');
 const SOURCE_LOCK=require('../lib/agent-operations-engineering-source-lock.json');
 const MARKER='\n<!-- CallerCore isolated deterministic draft; not approved for publication. -->\n';
-// Frozen expected output for the source-lock fixture, checked by actual-child regression.
-const EXPECTED_AFTER='ec7c487d74898495542f6133bb82d8a11924e59f24314deb2bf4552e8d0d8b19';
 const QUALIFICATION='Fixed comment append only. Draft source is never executed. No untrusted-code sandbox, repository writer, shell, network adapter, commit, push or deployment executor.';
 const CORRECTION_QUALIFICATION='Reviewed fixed local-calendar chart correction only. Draft source is never executed. No untrusted-code sandbox, repository writer, shell, network adapter, commit, push or deployment executor.';
 const LIMITS=Object.freeze({maxFiles:3,maxBytes:200000,maxDurationMs:10000,maxOutputBytes:16000,maxOldSpaceMb:64,network:false,arbitraryCommands:false,externalCodeExecution:false,publication:false});
@@ -30,9 +28,11 @@ function validateArtifact(result,{sourceSha,proposal,binding}={}){
  const isCorrection=result.version==='draft-data-v2';
  if(isProposal){proposed.validate(proposal);check(tools.hash(result.proposal)===tools.hash(proposal)&&tools.hash(result.binding)===tools.hash(proposal.binding)&&proposal.sourceSha===sourceSha,'DRAFT_PROPOSAL_BINDING');}
  const historical=isProposal?historicalProposalSource(proposal):null,sourceLock=historical?.manifest||SOURCE_LOCK;const source=sourceLock.files.find(f=>f.path===(isCorrection||isProposal?'dashboard.js':'dashboard.html'));
- const patch={path:'dashboard.html',operation:'append-fixed-html-comment',beforeSha256:source.sha256,afterSha256:EXPECTED_AFTER,addedText:MARKER};
+ const html=isCorrection||isProposal?null:tools.readFile('dashboard.html');if(html!==null)check(tools.hash(html)===source.sha256&&Buffer.byteLength(html)===source.bytes,'DRAFT_SOURCE_DRIFT');
+ const expectedAfter=html===null?null:tools.hash(html+MARKER);
+ const patch={path:'dashboard.html',operation:'append-fixed-html-comment',beforeSha256:source.sha256,afterSha256:expectedAfter,addedText:MARKER};
  const text=isCorrection||isProposal?(historical?.text||tools.readFile('dashboard.js')):null,expectedPatch=isProposal?proposed.patch(text,proposal):isCorrection?correction.patch(text):patch;
- const afterHash=isCorrection||isProposal?expectedPatch.afterSha256:EXPECTED_AFTER;
+ const afterHash=isCorrection||isProposal?expectedPatch.afterSha256:expectedAfter;
  const file={path:isCorrection||isProposal?'dashboard.js':'dashboard.html',beforeSha256:source.sha256,afterSha256:afterHash,beforeBytes:source.bytes,afterBytes:isProposal?Buffer.byteLength(proposed.apply(text,proposal)):isCorrection?Buffer.byteLength(correction.apply(text)):source.bytes+Buffer.byteLength(MARKER)};
  check(['draft-data-v1','draft-data-v2','draft-data-v3'].includes(result.version)&&result.files?.length===1&&tools.hash(result.files[0])===tools.hash(file)&&tools.hash(result.patch)===tools.hash(expectedPatch)&&result.patchSha256===tools.hash(expectedPatch),'DRAFT_RESULT_INVALID');
  check(result.sourceManifestHash===tools.hash(sourceLock)&&result.repository==='mohamtaj004ba/my-ai-website'&&result.branch==='feature/callercore-dashboards','DRAFT_SOURCE_BINDING');
