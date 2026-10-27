@@ -27,7 +27,10 @@ test('Preview documentation build skip never grants checks or changes Production
  assert.equal(skip.decide(env,()=>{throw Error('shallow clone missing comparison');}).skip,false);assert.equal(skip.decide(env,fake(['CALLERCORE_PROJECT_STATE.md'],'120000')).skip,false);assert.equal(skip.decide(env,fake([])).skip,false);
 });
 test('read adapter has no provider/network/credential or arbitrary-execution dependency',()=>{
- const source=fs.readFileSync(require.resolve('../lib/agent-operations-engineering-tools'),'utf8');assert.doesNotMatch(source,/process\.env|child_process|\bfetch\(|writeFile|createWriteStream|execFile|spawn\(/);assert.match(source,/require\.resolve\('\.\.\/dashboard\.html'\)/);
+ const source=fs.readFileSync(require.resolve('../lib/agent-operations-engineering-tools'),'utf8');assert.doesNotMatch(source,/process\.env|child_process|\bfetch\(|writeFile|createWriteStream|execFile|spawn\(/);
+ const declaration=source.split('\n').find(line=>line.startsWith('const files=Object.freeze('));assert(declaration);
+ for(const name of ['dashboard.html','dashboard.js','dashboard.css','package.json'])assert(declaration.includes("'"+name+"':path.resolve(__dirname,'../"+name+"')"));
+ assert.equal((declaration.match(/path\.resolve\(/g)||[]).length,4);assert.doesNotMatch(declaration,/require\.resolve|process|arguments|caller/);
 });
 
 function instrument(overrides={}){const file=require.resolve('../lib/agent-operations-engineering-tools'),actual=require('node:module').createRequire(file),module={exports:{}},counts=new Map(),wrapped={...fs,readFileSync:(name,...args)=>{counts.set(String(name),(counts.get(String(name))||0)+1);return fs.readFileSync(name,...args);},...overrides},loader=name=>name==='node:fs'?wrapped:actual(name);loader.resolve=actual.resolve;require('node:vm').runInNewContext('(function(require,module,exports,__dirname){'+fs.readFileSync(file,'utf8')+'\n})',{TextDecoder,Buffer})(loader,module,module.exports,require('node:path').dirname(file));return{tools:module.exports,counts};}
