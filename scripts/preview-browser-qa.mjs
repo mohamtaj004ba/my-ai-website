@@ -511,6 +511,8 @@ async function runClientInteractions(page){
   await page.locator('#callSort').selectOption('oldest');
   await page.locator('.nav-item[data-view="contacts"]').click();
   await page.locator('#contactSearch').fill('nonexistent contact');
+  if(await page.getByRole('searchbox',{name:'Search contacts',exact:true}).count()!==1)throw new Error('Contact search lost its persistent accessible name after typing');
+  report.client.interactions.push('contact search accessible name persists with entered text');
   await page.locator('.nav-item[data-view="calls"]').click();
   if(await page.locator('#callSort').inputValue()!=='newest')throw new Error('Leaving calls did not reset sorting');
   await page.locator('.nav-item[data-view="contacts"]').click();
@@ -1068,6 +1070,8 @@ async function runAdminInteractions(page){
 
   await ensureView(page,'clients');
   await page.locator('#adminClientSearchInput').fill('North Ridge');
+  if(await page.getByRole('searchbox',{name:'Search client accounts',exact:true}).count()!==1)throw new Error('Client account search lost its persistent accessible name after typing');
+  report.admin.interactions.push('client account search accessible name persists with entered text');
   await page.waitForTimeout(250);
   if(await page.locator('#adminClientsTable [data-admin-client-row]').count()<1)throw new Error('Admin client search did not return seeded client');
   await page.locator('#adminClientSearchInput').fill('');

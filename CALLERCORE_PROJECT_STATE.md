@@ -1,5 +1,11 @@
 # CallerCore project state
 
+## Persistent dashboard control names candidate — October 27, 2026
+
+Work-authored accessibility correction adds25explicit aria-labels:5client/20admin static searches,filters,file inputs and editors. Removing only those attributes reproduces original HTML; no visual/behavior/authority change. Independent QA/Auditor found no material issue.29focused workflow/source/adoption checks pass;12static/current-vs-historical checks pass. Browser QA now checks computed search names after typing. Source evidencev9 pins current HTML; oldv8 remains readback-only and immutable. Offline fixture helper authenticates frozen historical HTML to replay old tasks without weakening live admission. Full STRICT/Redis/CI/CodeQL/Jekyll/Browser qualification pending; one candidate publication planned, no new paid inference/sandbox/configuration. Current qualified application remains e3863f9 until successor verified.
+
+Secondary security review preserved original Zod finding. Official registry latest functions3.10.4→OIDC4.0.4→CLI-config0.3.4 still declaresZod4.1.11; integrity-verified latest CLI-config archive includes inlined Zod implementation. Standalone Zod override would not establish complete remediation. No dependency changes/forced upgrade or unsafe downloaded execution; advisory remains open and remote exploit reachability unproven. Exact append-only follow-up docs/AGENT_OPERATIONS_FAILURE_MODES.json.
+
 ## Agent-authored visible timestamp correction published and qualified — October 26, 2026
 
 Work adopted the exact preserved genuine Specialist patchd91c3f12ef66d4ba3a3b68b7b86f115e2c5817e998a9e8cdb42819605d4b3bc0 under standing feature Preview development authority. Product dashboard.js postimage37d1a7c38970ba3a82b3e3d97ac0aec12395dd5d6f8eb1e1fab51836f5a2de0c guards both visible Date formatters while preserving separate escaped fallbacks, accessible label and every other product byte. Internal agents did not publish. Original model Auditor fail, final Chief fail/not-accepted and immutable receipts remain unchanged. Separate independent Work QA/Auditor recommend this bounded adoption; no human/business acceptance implied.
