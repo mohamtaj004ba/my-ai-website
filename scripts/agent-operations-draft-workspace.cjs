@@ -127,8 +127,8 @@ async function prepareBundle(options={}){
  const arm=ms=>{clearTimeout(timer);timer=setTimeout(()=>{expired=true;controller.abort();},ms);};arm(authorityTimeoutMs);
  async function work(){
   check(!combined.aborted,'DRAFT_CANCELLED');check(await authorize('before',structuredClone(binding),combined)===true,'DRAFT_PROPOSAL_AUTHORITY_DENIED');check(!combined.aborted,'DRAFT_CANCELLED');
-  directory=fs.mkdtempSync(path.join(os.tmpdir(),'callercore-proposed-bundle-'));fs.mkdirSync(path.join(directory,'lib'));
-  for(const f of context.files)fs.writeFileSync(path.join(directory,f.path),f.text,{flag:'wx',mode:0o600});
+  directory=fs.mkdtempSync(path.join(os.tmpdir(),'callercore-proposed-bundle-'));
+  for(const f of context.files){fs.mkdirSync(path.dirname(path.join(directory,f.path)),{recursive:true});fs.writeFileSync(path.join(directory,f.path),f.text,{flag:'wx',mode:0o600});}
   arm(timeoutMs);
   const receipt=await new Promise((resolve,reject)=>{
    child=spawn(process.execPath,['--max-old-space-size=64','--permission',`--allow-fs-read=${CHILD}`,`--allow-fs-read=${PROPOSED}`,`--allow-fs-read=${directory}`,`--allow-fs-write=${directory}`,CHILD],{cwd:directory,env:{},windowsHide:true,stdio:['pipe','pipe','pipe']});
@@ -143,10 +143,18 @@ async function prepareBundle(options={}){
   check(tools.hash(receipt)===tools.hash({version:'draft-data-bundle-v1',proposalHash:expected.proposalHash,files:summary,publicationAllowed:false,sourceExecuted:false,syntaxValidated:true}),'DRAFT_RESULT_INVALID');
   return{...receipt,binding,cleanup:{destroyed:true},classification:'real-disposable-filesystem-trusted-data-only',executionAuthorized:false};
  }
- try{return await Promise.race([work(),cancellation]);}
+ let result,failure;
+ try{result=await Promise.race([work(),cancellation]);}catch(error){failure=error;}
  finally{
   clearTimeout(timer);combined.removeEventListener('abort',abort);combined.removeEventListener('abort',stop);controller.abort();if(child)child.kill();if(closed)await closed;
   if(directory){try{fs.rmSync(directory,{recursive:true,force:true});check(!fs.existsSync(directory),'DRAFT_CLEANUP_FAILED');}catch{throw Object.assign(Error('DRAFT_CLEANUP_FAILED'),{cleanupConfirmed:false});}}
  }
+ if(failure){const codes=['DRAFT_CANCELLED','DRAFT_TIMEOUT','DRAFT_PROPOSAL_AUTHORITY_DENIED','DRAFT_SOURCE_BINDING','DRAFT_OUTPUT_BOUNDS','DRAFT_CHILD_DENIED','DRAFT_RESULT_INVALID','DRAFT_BUNDLE_SYNTAX'];throw Object.assign(Error(codes.includes(failure.message)?failure.message:'DRAFT_PROPOSAL_AUTHORITY_DENIED'),{cleanupConfirmed:true});}return result;
 }
-module.exports={prepare,prepareProposal,prepareBundle,validateArtifact,validateProposalArtifact,LIMITS};
+async function prepareImplementation({context,...options}){
+ const phone=require('../lib/agent-operations-phone-search');if(!phone.enabled(context))return prepareProposal(options);
+ check(options.sourceSha===context.binding.runtime.sourceCommit&&options.expectedSourceSha===options.sourceSha&&tools.hash(options.binding)===tools.hash(require('../lib/agent-operations-implementation').workspaceBinding(context)),'DRAFT_SOURCE_BINDING');
+ const authorize=async(...args)=>{check(phone.availability().freshAssignmentAllowed,'DRAFT_SOURCE_BINDING');return options.authorize(...args);};
+ return prepareBundle({proposal:options.proposal,binding:phone.workflowContext(context).binding,authorize,signal:options.signal,timeoutMs:options.timeoutMs,authorityTimeoutMs:options.authorityTimeoutMs||30000});
+}
+module.exports={prepare,prepareProposal,prepareBundle,prepareImplementation,validateArtifact,validateProposalArtifact,LIMITS};

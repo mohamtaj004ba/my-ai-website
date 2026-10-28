@@ -9,10 +9,10 @@ process.stdin.on('end',async()=>{let bundleInput=false;try{
  const m=JSON.parse(input),root=fs.realpathSync(process.cwd());
  if(m.version==='draft-data-bundle-v1'){
   bundleInput=true;
-  const proposed=require('../lib/agent-operations-draft-proposal'),names=['dashboard.js','lib/conversation-history.js'];
-  if(Object.keys(m).sort().join(',')!=='binding,files,proposal,version'||!Array.isArray(m.files)||m.files.length!==2)throw Error('DRAFT_INPUT_DENIED');
+  const proposed=require('../lib/agent-operations-draft-proposal');
+  if(Object.keys(m).sort().join(',')!=='binding,files,proposal,version'||!Array.isArray(m.files)||m.files.length<1)throw Error('DRAFT_INPUT_DENIED');
   const files=m.files.map((f,i)=>{
-   if(f.path!==names[i]||Object.keys(f).sort().join(',')!=='path,sha256,sites')throw Error('DRAFT_INPUT_DENIED');
+   proposed.bundlePath(f.path);if(Object.keys(f).sort().join(',')!=='path,sha256,sites')throw Error('DRAFT_INPUT_DENIED');
    const target=path.join(root,f.path);if(fs.lstatSync(target).isSymbolicLink()||fs.realpathSync(target)!==target||!fs.statSync(target).isFile())throw Error('DRAFT_PATH_DENIED');
    const bytes=fs.readFileSync(target);if(bytes.length>700000||hash(bytes)!==f.sha256)throw Error('DRAFT_PREIMAGE');
    return{...f,text:new TextDecoder('utf-8',{fatal:true}).decode(bytes)};
