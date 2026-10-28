@@ -20,7 +20,9 @@ for(const text of [
  'x.messages.map(m=>{return m.text})',
  '({}).__proto__','q["constructor"]',
  'false ? process.exit(0) : hay.includes(q)',
- '/(a+)+$/.test(q)','new RegExp(q).test(q)',
+ // Any unapproved regex is rejected statically; a harmless literal proves the
+ // boundary without embedding a pathological pattern that is never executed.
+ '/a/.test(q)','new RegExp(q).test(q)',
  'q); process.exit(0); (q','q// hide following source','q/* hidden comment */'
 ])test('reporter capability and side-effect syntax denied: '+text,()=>a.throws(()=>expr.validate(text,'calls'),/PHONE_SEARCH_EXPRESSION/));
 test('parser is the unchanged integrity-verified official distribution with license preserved',()=>{const root=require('node:path').join(__dirname,'../lib/vendor/'),m=require('../lib/vendor/acorn-8.19.0.provenance.json');a.equal(m.version,'8.19.0');a.equal(m.installScriptsExecuted,false);for(const[name,expected]of Object.entries(m.files)){const bytes=fs.readFileSync(root+name);a.equal(bytes.length,expected.bytes);a.equal(createHash('sha256').update(bytes).digest('hex'),expected.sha256);}a(fs.readFileSync(root+'acorn-8.19.0.LICENSE','utf8').includes('MIT'));});
