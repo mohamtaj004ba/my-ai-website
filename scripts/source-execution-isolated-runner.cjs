@@ -115,4 +115,14 @@ async function qualificationProbe(){
  const workers=[];let threadDenied=false;try{for(let i=0;i<80;i++){const w=new Worker('setTimeout(()=>{},5000)',{eval:true});w.on('error',()=>{});workers.push(w);}}catch(e){threadDenied=e.code==='ERR_WORKER_INIT_FAILED'&&/EAGAIN/.test(e.message);}finally{await Promise.all(workers.map(w=>w.terminate()));}checks.processThreadDenial=threadDenied;
  process.stdout.write(JSON.stringify({version:'source-isolation-probe-v1',checks,diagnostic,passed:Object.values(checks).every(v=>v===true)})+'\n');process.exitCode=Object.values(checks).every(v=>v===true)?0:1;
 }
-module.exports={command,seccompBytes,DENY_SYSCALLS};
+module.exports={reviewableAssertions,command,seccompBytes,DENY_SYSCALLS};
+
+// Native dispatch opts into complete failed-assertion review evidence. Historical
+// qualification recipes keep their exact supervisor/command bytes unchanged.
+function reviewableAssertions(program,mode='starter'){
+ if(!['starter','visible-time','phone-search'].includes(mode))throw Error('SOURCE_TEST_REVIEW_MODE');
+ const adapt=s=>s.replace("phase='starter'","phase='"+mode+"'").replace("run('starter',payload.test.program","run('"+mode+"',payload.test.program").replaceAll('SOURCE_STARTER_TESTS_FAILED','SOURCE_'+(mode==='starter'?'STARTER':mode==='visible-time'?'VISIBLE_TIME':'PHONE_SEARCH')+'_TESTS_FAILED');
+ const before=adapt("phase='starter';if(payload.test){if(sha(payload.test.program)!==payload.test.programSha256)throw Error('SOURCE_TEST_HASH_FAILED');const test=await run('starter',payload.test.program,20000);if(test.exitCode!==0||test.timedOut||test.outputLimit||test.spawnFailed||test.output?.passed!==true||!test.output.tests.every(t=>t.passed===true))throw Error('SOURCE_STARTER_TESTS_FAILED');}"),after=adapt("phase='starter';let testsPassed=true;if(payload.test){if(sha(payload.test.program)!==payload.test.programSha256)throw Error('SOURCE_TEST_HASH_FAILED');const test=await run('starter',payload.test.program,20000);if(![0,1].includes(test.exitCode)||test.timedOut||test.outputLimit||test.spawnFailed||!test.output||typeof test.output.passed!=='boolean'||!Array.isArray(test.output.tests)||!test.output.tests.length||!test.output.tests.every(t=>Object.keys(t).sort().join(',')==='id,passed'&&typeof t.passed==='boolean')||test.output.passed!==test.output.tests.every(t=>t.passed)||test.exitCode!==(test.output.passed?0:1))throw Error('SOURCE_STARTER_TESTS_FAILED');testsPassed=test.output.passed;}");
+ for(const [a,b]of [[before,after],['qualificationPassed:true,runPassed:true,results,sourceHashes:','qualificationPassed:true,runPassed:testsPassed,results,sourceHashes:'],['protectedIntegrity:true,publicationAuthorized:false,independentlyAccepted:false};','protectedIntegrity:true,publicationAuthorized:false,independentlyAccepted:false};if(!testsPassed)process.exitCode=1;']]){if(program.split(a).length!==2)throw Error('SOURCE_TEST_REVIEW_SUPERVISOR');program=program.replace(a,b);}
+ return program;
+}

@@ -10,14 +10,14 @@ const createRun=modify=>new Function('require','__dirname','modify',header+'\nre
 function closed(r){a.equal(r.result.shutdown.paidExecution,false);a.equal(r.result.result.artifact.workspace.cleanup.destroyed,true);a.equal(r.result.result.artifact.sourceExecuted,false);a(r.f.state().operations.grants.every(g=>g.revoked));a.equal(r.result.result.receipts.length,5);}
 function completed(r){if(r.error)throw Error(JSON.stringify({error:r.error.message,stages:r.frames.map(x=>x.stage),failures:r.f.state().operations.workflows.at(-1)?.attempts.map(x=>x.failure?.diagnostic).filter(Boolean)}));closed(r);}
 
-test('ordinary prose quality reaches all critics with immutable warnings and mandatory rejection',async()=>{
+test('ordinary prose quality reaches all critics as immutable advisory evidence with independent review choice',async()=>{
  const r=await createRun((stage,value)=>{if(stage==='specialist')value.proposal.verification=['Identify the field this label applies to.','Check timestamp edge cases'];})();
  completed(r);a.equal(r.calls.length,10);
  const receipt=r.result.result.receipts[1];a.deepEqual(receipt.reportQuality.issues,[{location:'$.proposal.verification[0]',code:'terminal-word-heuristic'},{location:'$.proposal.verification[1]',code:'missing-terminal-punctuation'}]);
- for(const stage of ['qa','auditor','chief-final']){const f=r.frames.find(f=>f.stage===stage),q=f.frame.implementationScope.qualityReview;a.equal(q.unresolved,true);a.equal(q.semanticQualityVerified,false);a.equal(q.assessments[0].receiptHash,receipt.hash);a.deepEqual(q.assessments[0].issues,receipt.reportQuality.issues);a.deepEqual(r.result.result.receipts[inf.STAGES.indexOf(stage)].response.qualityReviewRefs,q.requiredReviewRefs);a(Buffer.byteLength(JSON.stringify(f.body))<=32768);}
- const auditor=r.frames.find(f=>f.stage==='auditor');a.deepEqual(auditor.body.text.format.schema.properties.decision.enum,['fail']);
+ for(const stage of ['qa','auditor','chief-final']){const f=r.frames.find(f=>f.stage===stage),q=f.frame.implementationScope.qualityReview;a.equal(q.unresolved,false);a.equal(q.advisoryIssuesPresent,true);a.equal(q.semanticQualityVerified,false);a.equal(q.assessments[0].receiptHash,receipt.hash);a.deepEqual(q.assessments[0].issues,receipt.reportQuality.issues);a.deepEqual(r.result.result.receipts[inf.STAGES.indexOf(stage)].response.qualityReviewRefs,q.requiredReviewRefs);a(Buffer.byteLength(JSON.stringify(f.body))<=32768);}
+ const auditor=r.frames.find(f=>f.stage==='auditor');a(auditor.body.text.format.schema.properties.decision.enum.includes('pass'));a(auditor.body.text.format.schema.properties.decision.enum.includes('fail'));
  const final=r.result.result.receipts[4];a.equal(final.response.auditDecision,'fail');a.equal(final.response.acceptedWork,false);a.equal(final.reportQuality.priorReviewRefs.length,1);
- const auditValue=structuredClone(r.result.result.receipts[3].response);auditValue.decision='pass';a.throws(()=>report.validate('auditor',auditValue,auditor.c),e=>e.validationIssue?.mismatch==='quality-review-unresolved');
+ const auditValue=structuredClone(r.result.result.receipts[3].response);auditValue.decision='pass';a.doesNotThrow(()=>report.validate('auditor',auditValue,auditor.c));
  const qa=r.frames.find(f=>f.stage==='qa'),bad=structuredClone(r.result.result.receipts[2].response);bad.qualityReviewRefs=['f'.repeat(64)];a.throws(()=>report.validate('qa',bad,qa.c),e=>e.validationIssue?.mismatch==='quality-review-reference');
  for(const mutate of [c=>c.priorReceipts[1].reportQuality.issues.splice(0),c=>c.priorReceipts[1].binding.workspaceHash='f'.repeat(64),c=>c.binding.runtime.sourceCommit='f'.repeat(40)]){const c=structuredClone(qa.c);mutate(c);a.throws(()=>report.qualityReview(c),e=>e.validationIssue?.mismatch==='quality-review-provenance');}
  const specialist=r.frames.find(f=>f.stage==='specialist'),base=impl.fixture('specialist',specialist.c);
@@ -29,16 +29,16 @@ test('all five stages preserve quality observations without hiding upstream issu
  completed(r);a.equal(r.calls.length,10);
  const receipts=r.result.result.receipts;for(const [i,r]of receipts.entries()){a.equal(r.reportQuality.issues.length,1);a.equal(r.reportQuality.priorReviewRefs.length,i);a.equal(r.response.qualityReviewRefs.length,i);a.equal(r.usage.inputTokens,12000);a.equal(r.usage.outputTokens,500);}
  a.equal(receipts[4].reportQuality.issues[0].location,'$.summary');a.equal(receipts[4].response.auditDecision,'fail');a.equal(receipts[4].response.acceptedWork,false);
- a.equal(r.result.result.reportQuality.unresolved,true);a.equal(r.result.result.reportQuality.technicalReviewPassed,false);a.equal(r.result.result.reportQuality.assessmentHashes.length,5);a.deepEqual(r.f.state().operations.workflows.at(-1).outcomes.reportQuality,r.result.result.reportQuality);
+ a.equal(r.result.result.reportQuality.unresolved,false);a.equal(r.result.result.reportQuality.advisoryIssuesPresent,true);a.equal(r.result.result.reportQuality.technicalReviewPassed,false);a.equal(r.result.result.reportQuality.assessmentHashes.length,5);a.deepEqual(r.f.state().operations.workflows.at(-1).outcomes.reportQuality,r.result.result.reportQuality);
  // Even dense prior review text remains within the existing wire bound. This
  // is a byte fixture, not a measurement of actual provider token counts.
  for(const {body}of r.frames){a(Buffer.byteLength(JSON.stringify(body))<=32768);const stress=structuredClone(body),frame=JSON.parse(stress.input[0].content[0].text);for(const row of frame.priorResults){if(row.stage==='qa'){row.response.uncertainty='Q'.repeat(399)+'.';row.response.decisions.forEach(d=>d.reason='Q'.repeat(599)+'.');}if(row.stage==='auditor'){row.response.reason='A'.repeat(599)+'.';row.response.risks=Array.from({length:4},()=> 'R'.repeat(399)+'.');}}stress.input[0].content[0].text=JSON.stringify(frame);a(Buffer.byteLength(JSON.stringify(stress))<=32768);}
 });
 
-test('a final-only prose warning cannot conceal an incomplete handoff behind an earlier technical pass',async()=>{
+test('a final-only style observation remains visible without overturning the actual technical review decision',async()=>{
  const r=await createRun((stage,v)=>{if(stage==='auditor')v.decision='pass';if(stage==='chief-final')v.summary='Final review still needs coverage';})();completed(r);
  a.equal(r.result.result.receipts[4].response.auditDecision,'pass');a.equal(r.result.result.receipts[4].response.acceptedWork,false);
- a.equal(r.result.result.reportQuality.unresolved,true);a.equal(r.result.result.reportQuality.assessmentHashes.length,1);a.equal(r.result.result.reportQuality.technicalReviewPassed,false);a.equal(r.result.result.reportQuality.independentlyAccepted,false);
+ a.equal(r.result.result.reportQuality.unresolved,false);a.equal(r.result.result.reportQuality.advisoryIssuesPresent,true);a.equal(r.result.result.reportQuality.assessmentHashes.length,1);a.equal(r.result.result.reportQuality.technicalReviewPassed,true);a.equal(r.result.result.reportQuality.independentlyAccepted,false);
 });
 
 test('clean automated technical pass grants no independent acceptance and ordinary fixture consolidation stays non-billable',async()=>{
