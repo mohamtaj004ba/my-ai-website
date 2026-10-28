@@ -25,7 +25,11 @@ test('reusable manifest rejects protected source families and retains task scope
 test('new task policy is registered consistently without reviving historical authority',()=>{
  const p=require('../lib/agent-operations-engineering-provider-v2'),c={assignment:phone.OBJECTIVE},t=p.PHONE_SEARCH_TRIAL;
  a.equal(p.activeDevelopment(t),true);a.equal(p.developmentFor(c),t);a.equal(p.isDevelopmentPolicy(t),true);a.equal(p.selectedTrial({CALLERCORE_AGENTOPS_ENGINEERING_TRIAL_AUTHORIZATION_ID:t.authorizationId}),t);a.equal(p.trialFor({countPricing:{authorizationId:t.authorizationId,evidenceHash:p.hash(t)}}),t);
- for(const file of ['agent-operations-command-center.js','lib/agent-operations-approval-lifecycle.js'])a(fs.readFileSync(require('node:path').join(__dirname,'..',file),'utf8').includes(t.authorizationId));
+ a(fs.readFileSync(require.resolve('../agent-operations-command-center.js'),'utf8').includes(t.authorizationId));
+ // Serial authority is behavior, not a requirement to duplicate policy text.
+ const lifecycle=require('../lib/agent-operations-approval-lifecycle');
+ for(const status of ['prepared','active','consumed'])a.throws(()=>lifecycle.assertStarterSerial({approvals:[{id:'previous',status,engineeringScope:{uncertainAuthorizationId:t.authorizationId}}]},'next'),/ENG_IMPLEMENTATION_SERIAL/);
+ a.equal(lifecycle.assertStarterSerial({approvals:[{id:'previous',status:'revoked',engineeringScope:{uncertainAuthorizationId:t.authorizationId}}]},'next'),true);
  a.equal(phone.assignment().liveTaskRegistered,false); // descriptive preparation does not activate a grant
 });
 for(const mode of ['cancel','emergency'])test('phone task cannot preserve success after '+mode+' follows actual disposable cleanup',async()=>{
