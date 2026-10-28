@@ -1,0 +1,79 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "953b5e5192dcf238c0bfbe121a29439cdbf1991c3db49a7879f6a8b411a92d41",
+  "risk": "critical",
+  "scope": "Repair direct-backend phone and visible-time report encoding and preserve validated unaccepted patches before isolated testing.",
+  "riskAnalysis": "Trusted serialization and immutable owner-workspace evidence change. No model syntax, OS permissions, resources, spending, credential, acceptance or publication authority expanded.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable source-bound patch, provider usage, test integrity, cleanup evidence, existing credentials and Production isolation.",
+    "trustBoundaries": "Validated model patch to destroyed disposable-copy artifact; native CAS evidence before separately authorized OS tests; trusted supervisor report to bounded direct backend stream.",
+    "abuseCases": "Forged artifact or parsed context, leaked raw stderr, oversized or corrupt compressed report, dropped cleanup, persistence outage, false acceptance after failed tests.",
+    "mitigations": "Existing source/AST/evidence validation plus immutable artifact hash/context/parsed proof, false acceptance flags, 16KB encoded/decoded bounds,1200byte chunks,closed diagnostics and mandatory stop."
+  },
+  "rollback": "Revert only this repair and return feature alias to existing qualified non-paid deployment. Preserve original trial, audit and accounting; no Production operation.",
+  "negativePaths": {
+    "malformed-response": "Existing owner, task, release, cancellation, cleanup and serial controls unchanged; native failed-test/persistence-outage regressions verify no false success or new execution after failure.",
+    "stale-state": "Existing owner, task, release, cancellation, cleanup and serial controls unchanged; native failed-test/persistence-outage regressions verify no false success or new execution after failure.",
+    "concurrency": "Existing owner, task, release, cancellation, cleanup and serial controls unchanged; native failed-test/persistence-outage regressions verify no false success or new execution after failure.",
+    "cancellation": "Existing owner, task, release, cancellation, cleanup and serial controls unchanged; native failed-test/persistence-outage regressions verify no false success or new execution after failure.",
+    "worker-interruption": "Existing owner, task, release, cancellation, cleanup and serial controls unchanged; native failed-test/persistence-outage regressions verify no false success or new execution after failure.",
+    "api-outage": "Existing owner, task, release, cancellation, cleanup and serial controls unchanged; native failed-test/persistence-outage regressions verify no false success or new execution after failure.",
+    "authorization-denial": "Existing owner, task, release, cancellation, cleanup and serial controls unchanged; native failed-test/persistence-outage regressions verify no false success or new execution after failure.",
+    "spending-limit": "Existing owner, task, release, cancellation, cleanup and serial controls unchanged; native failed-test/persistence-outage regressions verify no false success or new execution after failure.",
+    "partial-execution": "Existing owner, task, release, cancellation, cleanup and serial controls unchanged; native failed-test/persistence-outage regressions verify no false success or new execution after failure."
+  },
+  "defects": [
+    {
+      "rootCause": "Direct backend phone/visible runners inherited Work-local1900encoder ceiling despite independently established16KB backend contract.",
+      "detectionGap": "Native synthetic providers bypassed actual writer and omitted full per-row hashes and diagnostics; originalstderr not retained.",
+      "regression": "Real serialized writer round-trips full entropy success/failure reports,hash/length/decompression failures,provider chunks and sanitized oversized fallback.",
+      "historicalPrevention": "Share direct backend writer across both profiles, preserve distinct Work connector codec and test full actual supervisor row shape."
+    },
+    {
+      "rootCause": "Validated artifact was retained in memory only until source tests passed, losing patch body on a failed isolated run.",
+      "detectionGap": "Tests asserted cleanup and usage but not durable patch body before VMdispatch.",
+      "regression": "Native realCAS failed-test retains hash-bound unaccepted artifact; artifact persistence rejection prevents every provider VMcall.",
+      "historicalPrevention": "Persist only validated inertartifact after destroyedcopy beforetests; finalcompletion revalidates persisted and memory provenance."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing direct-backend serialization and existing attemptjournal only; no new workflow, provider, ledger, agent or sandbox.",
+    "dependencies": "Uses existing built-in crypto and Brotli; no package installation or new external dependency.",
+    "threats": "Compressed bounds, private content leakage, forged artifacts and mistaken acceptance are explicitly denied.",
+    "failureModes": "Oversizedreport emits sanitized failure, corrupted report fails closed, artifact persistence outage denies VMcreation; oldexception remainsunknown.",
+    "faultInjection": "49independentQA and19Auditor checks include native failedtests,persistence rejection,providerchunkreassembly,hash/length corruption and oversizereport.",
+    "independentChallenge": "SeparateQA andAuditor approved frozenrepair withoutmaterialfindings; historicalfailedtrial preserved and not relabelled successful.",
+    "recovery": "All41grantsrevoked,leasezero,VMstopconfirmed,futureflagsfalse andaliasreturnedqualifiednonpaid; latertrialrequiresfreshsource/config/taskapproval.",
+    "readiness": "Sourcecandidate for exact successorrelease qualification; no livefive-stage phonecompletion or productpublication claimed."
+  },
+  "title": "Preserve validated patches and repair direct-backend source-test receipts",
+  "base": "23dab61168f93bf612c8a32ed668692a0b0e517f",
+  "description": "Fix demonstrated1900codec mismatch on direct backend only, preserve validated unaccepted patches before test exposure, add closed diagnostics and realistic data-only/full-native fault regressions. Originalfailedtrial andWork-localcodec remain unchanged.",
+  "files": [
+    "scripts/source-execution-backend-result-codec.cjs",
+    "scripts/source-execution-phone-search-runner.cjs",
+    "scripts/source-execution-visible-time-runner.cjs",
+    "lib/agent-operations-source-test-provider.js",
+    "lib/agent-operations-source-test-diagnostic.js",
+    "lib/agent-operations-engineering-profile.js",
+    "lib/agent-operations-contracts.js",
+    "lib/agent-operations-contract-lock.json",
+    "tests/source-execution-backend-result-codec.test.js",
+    "tests/agent-operations-source-test-provider.test.js",
+    "tests/agent-operations-phone-controller.test.js",
+    "CALLERCORE_PROJECT_STATE.md"
+  ]
+}
