@@ -28,3 +28,9 @@ test('new task policy is registered consistently without reviving historical aut
  for(const file of ['agent-operations-command-center.js','lib/agent-operations-approval-lifecycle.js'])a(fs.readFileSync(require('node:path').join(__dirname,'..',file),'utf8').includes(t.authorizationId));
  a.equal(phone.assignment().liveTaskRegistered,false); // descriptive preparation does not activate a grant
 });
+for(const mode of ['cancel','emergency'])test('phone task cannot preserve success after '+mode+' follows actual disposable cleanup',async()=>{
+ const f=h.setup();f.input={...f.input,idempotencyKey:'phone_late_'+mode,objective:phone.OBJECTIVE};let plan=await f.service.create(f.owner,f.input);plan=await f.service.run(f.owner,{planId:plan.id,expectedRevision:plan.revision});
+ const workspace=require('../scripts/agent-operations-draft-workspace.cjs'),original=workspace.prepareImplementation;let destroyed=false;
+ workspace.prepareImplementation=async options=>{const result=await original(options);destroyed=result.cleanup.destroyed;const s=f.state(),p=s.plans[0];if(mode==='cancel')await f.service.cancel(f.owner,{planId:p.id,expectedRevision:p.revision});else await f.service.emergencyStop(f.owner,{expectedRevision:s.revision});return result;};
+ try{await a.rejects(f.service.run(f.owner,{planId:plan.id,expectedRevision:plan.revision}));a.equal(destroyed,true);const p=f.state().plans[0];a.equal(p.tasks[1].result,null);a.equal(p.tasks.slice(1).some(t=>t.status==='completed'),false);a.equal(p.acceptedWork,false);}finally{workspace.prepareImplementation=original;}
+});

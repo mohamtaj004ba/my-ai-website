@@ -1,6 +1,6 @@
 // Metadata advertises a reviewed recipe; it must never advertise a grant.
 export function verifyImplementationTaskMetadata(tasks){
-  const profiles=new Map([['call-row-visible-time-v1','call-row-visible-time-source-tests-v1']]);
+  const profiles=new Map([['call-row-visible-time-v1','call-row-visible-time-source-tests-v1'],['client-phone-search-v1','client-phone-search-tests-v1']]);
   if(!Array.isArray(tasks)||!tasks.length||new Set(tasks.map(t=>t?.id)).size!==tasks.length)throw new Error('Bounded implementation metadata is malformed');
   for(const task of tasks){
     if(typeof task?.id!=='string'||!task.id||task.paidExecution!==false||task.publicationAuthorized!==false||task.availability?.executionAuthorized!==false||(task.executionAuthorized!==undefined&&task.executionAuthorized!==false))throw new Error('Bounded implementation metadata grants execution or publication');
