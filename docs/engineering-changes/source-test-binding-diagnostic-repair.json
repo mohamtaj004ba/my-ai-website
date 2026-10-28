@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "ed14f9ded43bfd5f6cf4460446caca71aa63fce25d109f3e431a4250389897e8",
+  "risk": "critical",
+  "scope": "Repair exact task-binding delimiter compatibility in isolated Starter command and preserve bounded sanitized test failures without changing authority or success requirements.",
+  "riskAnalysis": "Exact historical command hash reproduced SyntaxError in qualified Node24 VM because trailing line comment swallowed runtime wrapper. Closed diagnostic loss prevented original diagnosis. Block comment plus newline retains exact binding; nonzero/stderr remain rejected.",
+  "threatModel": {
+    "assets": "Task/source/release-bound command, immutable failure evidence, credential confidentiality, isolated VM termination.",
+    "trustBoundaries": "Trusted fixed runner only; model proposal remains inert until exact approved isolated test path. Guest output is untrusted; only digests and closed classifications retained.",
+    "abuseCases": "Raw stderr secrets; forged guest source code/phase; wrong command hash; arbitrary error properties; oversized output; nonzero treated as success; failed shutdown masked.",
+    "mitigations": "WeakMap error provenance, closed field enum/numeric/hash bounds, exact report command hash before guest attribution, bounded JSON parsing, unchanged nonzero/stderr rejection and stop/readback."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Exact historical command hash reproduced SyntaxError in qualified Node24 VM because trailing line comment swallowed runtime wrapper. Closed diagnostic loss prevented original diagnosis. Block comment plus newline retains exact binding; nonzero/stderr remain rejected.",
+      "detectionGap": "Earlier static parse did not include Node eval wrapper and live bound command; nonzero and stderr details were collapsed before persistence.",
+      "regression": "41 focused checks including actual five-stage fixtures; independent QA12/Auditor6; exact old command reproduces exit1, repaired bound command in qualified VM passes23 containment+7 behavioral cases.",
+      "historicalPrevention": "Exercise exact serialized bound argv and runtime wrapper; preserve safe failure classifications before stopping ephemeral provider resources."
+    }
+  ],
+  "rollback": "Disable paid authority and revert only feature diagnostic/binding repair if qualification fails; never rewrite original receipts or financial uncertainty. Production unchanged.",
+  "negativePaths": {
+    "malformed-response": "Malformed NDJSON, oversized stream/report, unknown stderr/code/phase, forged command hashes and raw content fail closed; known nonzero result never becomes success.",
+    "stale-state": "Bounded closed diagnostic rejection, exact task/source command identity, no provider retry; unchanged authorization, cleanup and failure paths are covered by focused controller and adversarial tests.",
+    "concurrency": "Bounded closed diagnostic rejection, exact task/source command identity, no provider retry; unchanged authorization, cleanup and failure paths are covered by focused controller and adversarial tests.",
+    "cancellation": "Existing controller and1s VM authority verification unchanged; final stop/readback mandatory even on denial.",
+    "worker-interruption": "Bounded closed diagnostic rejection, exact task/source command identity, no provider retry; unchanged authorization, cleanup and failure paths are covered by focused controller and adversarial tests.",
+    "api-outage": "Bounded closed diagnostic rejection, exact task/source command identity, no provider retry; unchanged authorization, cleanup and failure paths are covered by focused controller and adversarial tests.",
+    "authorization-denial": "Bounded closed diagnostic rejection, exact task/source command identity, no provider retry; unchanged authorization, cleanup and failure paths are covered by focused controller and adversarial tests.",
+    "spending-limit": "No changed model/token/serial/time/spending policy. Two Work-supervised qualified VM probes only; no model calls for diagnosis. Existing owner billing monitoring retained.",
+    "partial-execution": "Bounded closed diagnostic rejection, exact task/source command identity, no provider retry; unchanged authorization, cleanup and failure paths are covered by focused controller and adversarial tests.",
+    "duplicate-request": "Bounded closed diagnostic rejection, exact task/source command identity, no provider retry; unchanged authorization, cleanup and failure paths are covered by focused controller and adversarial tests."
+  },
+  "proactiveReview": {
+    "architecture": "Existing provider/dispatch/failure paths plus one closed diagnostic helper; no new ledger/controller/provider/credential.",
+    "dependencies": "No new dependencies or access.",
+    "threats": "Raw stderr secrets; forged guest source code/phase; wrong command hash; arbitrary error properties; oversized output; nonzero treated as success; failed shutdown masked.",
+    "failureModes": "WeakMap error provenance, closed field enum/numeric/hash bounds, exact report command hash before guest attribution, bounded JSON parsing, unchanged nonzero/stderr rejection and stop/readback.",
+    "faultInjection": "41 focused checks including actual five-stage fixtures; independent QA12/Auditor6; exact old command reproduces exit1, repaired bound command in qualified VM passes23 containment+7 behavioral cases.",
+    "independentChallenge": "Independent source reviews completed; final lock and actual VM evidence review before release; hosted qualification pending.",
+    "recovery": "Original trial approval/grants revoked, manifest cancelled, VM physically stopped, local closed selection archived. Original failure immutable.",
+    "readiness": "Repaired real VM path passes; full exact-source release and new owner-controller admission still required before paid inference."
+  }
+}

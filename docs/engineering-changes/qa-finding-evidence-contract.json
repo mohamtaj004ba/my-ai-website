@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "6535b27bd9b056e65c778084f62d4fc82bf0a494f3dba220bd4c33614bd01fa7",
+  "risk": "critical",
+  "scope": "Current implementation QA evidence schema and instructions aligned with existing per-finding semantic guard; closed evidence denial diagnostics.",
+  "riskAnalysis": "Narrow schema can deny prior unvalidated responses; authoritative evidence and acceptance guards remain unchanged. Current-only contract, historical compact behavior and source-bound receipts preserved.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Finding-to-evidence integrity, separately attributed criticism, original receipts and permission boundaries.",
+    "trustBoundaries": "Validated prior Specialist finding provides allowed citation IDs as untrusted data checked against approved source. Backend authorizes all actions.",
+    "abuseCases": "Globally known but unrelated citation, invented or duplicate prior evidence, acceptance laundering, hidden raw rejected text and suppression of legitimate rejection.",
+    "mitigations": "Current QA schema same-finding enum from validated nonempty unique known refs; unchanged semantic subset guard; fixed path/mismatch metadata only; rejection/uncertainty remain permitted."
+  },
+  "rollback": "Revert current QA schema/instruction/diagnostic additions and lock on feature branch; preserve every live receipt, patch, failure, revoked grant and accounting hold.",
+  "negativePaths": {
+    "malformed-response": "Existing source/task/authority/spending/cancellation and native-workspace tests remain; current QA unknown/duplicate/missing prior evidence denied, globally known unrelated evidence schema-denied, generic semantic denial sanitized.",
+    "stale-state": "Existing source/task/authority/spending/cancellation and native-workspace tests remain; current QA unknown/duplicate/missing prior evidence denied, globally known unrelated evidence schema-denied, generic semantic denial sanitized.",
+    "concurrency": "Existing source/task/authority/spending/cancellation and native-workspace tests remain; current QA unknown/duplicate/missing prior evidence denied, globally known unrelated evidence schema-denied, generic semantic denial sanitized.",
+    "cancellation": "Existing source/task/authority/spending/cancellation and native-workspace tests remain; current QA unknown/duplicate/missing prior evidence denied, globally known unrelated evidence schema-denied, generic semantic denial sanitized.",
+    "worker-interruption": "Existing source/task/authority/spending/cancellation and native-workspace tests remain; current QA unknown/duplicate/missing prior evidence denied, globally known unrelated evidence schema-denied, generic semantic denial sanitized.",
+    "api-outage": "Existing source/task/authority/spending/cancellation and native-workspace tests remain; current QA unknown/duplicate/missing prior evidence denied, globally known unrelated evidence schema-denied, generic semantic denial sanitized.",
+    "authorization-denial": "Existing source/task/authority/spending/cancellation and native-workspace tests remain; current QA unknown/duplicate/missing prior evidence denied, globally known unrelated evidence schema-denied, generic semantic denial sanitized.",
+    "spending-limit": "Existing source/task/authority/spending/cancellation and native-workspace tests remain; current QA unknown/duplicate/missing prior evidence denied, globally known unrelated evidence schema-denied, generic semantic denial sanitized.",
+    "partial-execution": "Existing source/task/authority/spending/cancellation and native-workspace tests remain; current QA unknown/duplicate/missing prior evidence denied, globally known unrelated evidence schema-denied, generic semantic denial sanitized."
+  },
+  "defects": [
+    {
+      "rootCause": "QA strict schema permitted generic evidence strings while the authoritative finding guard requires its evidence subset; live denial proves at least one globally valid unrelated reference, exact ID not retained.",
+      "detectionGap": "Prior cardinality tests pinned finding ID/count but did not test narrower finding evidence against other approved context evidence.",
+      "regression": "Six new finding-evidence and closed diagnostic cases plus realistic full five-stage fixture sizes, historical compact identity and native workflow/cleanup tests.",
+      "historicalPrevention": "Derive schema directly from the same validated prior finding used by the authoritative semantic guard; do not broaden permissions or rewrite rejected output."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing schema/instructions/error boundary only. No new orchestration, reviewer, gateway, credentials, journal or spending policy.",
+    "dependencies": "No dependency or infrastructure change.",
+    "threats": "Cross-finding citations, false acceptance, malformed prior evidence and raw diagnostic leakage.",
+    "failureModes": "Unsupported prior evidence fails before request; invalid current output fails schema; generic semantic denial preserves useful closed path.",
+    "faultInjection": "Known-but-unrelated citations, missing/empty/unknown/duplicate prior evidence, allowed rejection, schema mismatch metadata and all native stage failure/cleanup paths.",
+    "independentChallenge": "Independent Work QA26/26 and Auditor12/12 approved; actual clipped model reporting and original rejection uncertainty preserved.",
+    "recovery": "Paid remains stopped at600k remaining, below unchanged1M attempt reserve. No retry, spending increase, accounting release or new configuration refresh.",
+    "readiness": "143 focused native/history/transport/failure checks passed; full exact hosted STRICT/Redis/CI/CodeQL/Jekyll/Browser qualification required. No repaired live completion claim."
+  }
+}

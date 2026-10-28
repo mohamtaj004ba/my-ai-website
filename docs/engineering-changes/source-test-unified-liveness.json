@@ -1,0 +1,63 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "d5e2a4f5b4bd78ed65da1502da92e541d4b309e073353bad878511fa7bacc8f3",
+  "risk": "critical",
+  "scope": "Consolidate only owner-controller-managed transport background liveness using private invocation-bound coverage; renew exact approval and active workflow atomically, preserving standalone polling and every foreground check.",
+  "riskAnalysis": "Two independent background pumps repeatedly validate full history. Controlled valid-history fixtures prove overlap is permitted; this does not establish exclusive cause of live15s timeout. Consolidate duplicated work without increasing deadlines or weakening fresh authorization.",
+  "threatModel": {
+    "assets": "Exact owner/task/source/release approval, workflow and grant leases, immutable history, cancellation, provider dispatch and cleanup.",
+    "trustBoundaries": "Only the existing trusted owner controller mints an in-memory WeakMap token after active invocation checks. Transport may validate but cannot mint; client/model/child data cannot suppress renewal. All renewal uses existing fresh-authority CAS.",
+    "abuseCases": "Forged or replayed proof; cross broker/signal/context/actor/approval; expired workflow revived under fresh approval; missing consumed workflow; wrong grant/workspace; stale concurrent CAS; interstage or terminal confusion; outer renewal failure during provider operation.",
+    "mitigations": "Full exact context/actor/approval hashes plus broker/signal identity; finally deletion; invalid supplied proof denied before admission. Atomic both-lease renewal validates exact existing workflow/grant/state, never revives expiry; effective shorter ACK; closed interstage and terminal checks; standalone pump and foreground checks untouched."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Two independent background pumps repeatedly validate full history. Controlled valid-history fixtures prove overlap is permitted; this does not establish exclusive cause of live15s timeout. Consolidate duplicated work without increasing deadlines or weakening fresh authorization.",
+      "detectionGap": "Earlier fast fixtures did not exercise overlapping background producers with valid accumulated history or validate controller-owned coverage across stage boundaries.",
+      "regression": "123 initial focused checks PASS; final independent10Auditor/3managed-controller/2valid-history tests PASS. Exact45s deterministic longstage, denial, private token, interstage and terminal paths covered; no hosted latency claim.",
+      "historicalPrevention": "Inventory all liveness producers before changing deadlines; prove both lease coverage and exact invocation capability, preserve representative-history corruption checks and honest latency attribution."
+    },
+    {
+      "rootCause": "Existing organization transaction retires approval when final stage completes. New terminal liveness observer initially expected consumed active lifecycle and rejected verified completion. Independent fixture found this before release.",
+      "detectionGap": "Previous renewal tests exercised active leases but not a callback racing exact final-stage retirement.",
+      "regression": "Actual five-stage synthetic HTTP fixture verifies terminal authorityEnded with identical stored bytes; malformed result links, missing result, foreign grant and unrevoked grant deny.",
+      "historicalPrevention": "Test authoritative terminal lifecycle separately from active renewal and ensure observation cannot restore execution authority."
+    }
+  ],
+  "rollback": "Keep paid authority revoked; revert only this feature-branch liveness optimization if qualification fails. Original failure receipts, provider usage and history remain unchanged. No Production change.",
+  "negativePaths": {
+    "malformed-response": "Bounded JSON/NDJSON parsers, exact23checks/7case IDs, final command/session binding; raw provider errors never enter receipts.",
+    "stale-state": "Fresh owner/source/task checks retained; expired or missing consumed workflow cannot renew; no authority cache.",
+    "concurrency": "One managed background loop; standalone overlapping pumps retained for other callers. Every CAS conflict repeats fresh authority; no concurrent paid attempts.",
+    "cancellation": "Parent signal aborts managed transport; finite renewal deadline, immutable expiry and preCAS checks retained; finally revocation/readback and token deletion.",
+    "worker-interruption": "Unique durable claim survives lost acknowledgment; read named resource without create retry; absent/unconfirmed resource is not called clean.",
+    "api-outage": "Any identity/private-state read error rejects; no new retries/client or timeout increase. Closed pending phase labels expose no content.",
+    "authorization-denial": "Forged/cross-scope/stale private coverage fails before admission; grant/workflow owner/workspace/source binding checked atomically.",
+    "spending-limit": "No budget increase, model retry or recurring task. Existing owner financial monitoring unchanged; source VM remains finite1CPU2GB300s/deny-all/nonpersistent.",
+    "partial-execution": "Original live failure before counting/ResponsesHTTP/VM preserved; count admission marker not represented as provider usage.",
+    "duplicate-request": "No provider retry or consumed approval reuse. New release still requires exact reviewed configuration/enrollment/fresh task."
+  },
+  "proactiveReview": {
+    "architecture": "Existing owner controller/profile/transport only; private in-memory stage coverage, no new durable controller, ledger, service or credential.",
+    "dependencies": "No new dependency/provider/service/credential or network authority.",
+    "threats": "Forged or replayed proof; cross broker/signal/context/actor/approval; expired workflow revived under fresh approval; missing consumed workflow; wrong grant/workspace; stale concurrent CAS; interstage or terminal confusion; outer renewal failure during provider operation.",
+    "failureModes": "Full exact context/actor/approval hashes plus broker/signal identity; finally deletion; invalid supplied proof denied before admission. Atomic both-lease renewal validates exact existing workflow/grant/state, never revives expiry; effective shorter ACK; closed interstage and terminal checks; standalone pump and foreground checks untouched.",
+    "faultInjection": "123 initial focused checks PASS; final independent10Auditor/3managed-controller/2valid-history tests PASS. Exact45s deterministic longstage, denial, private token, interstage and terminal paths covered; no hosted latency claim.",
+    "independentChallenge": "Final Work QA55e33d1348b99b1e19edbb83fe28adfec3234bb13387dedc83dc3d445f671e7b and Auditor80f649f0f88af8906fbd78ed1a12b6a2dfc7e302d9c495d6c5b04dbcbb2d9e6e PASS source review. Terminal lifecycle and explicit grant scope findings corrected; hosted qualification pending.",
+    "recovery": "Latest approval revoked revision6/lease0, task cancelledrevision2; supported local closed-attempt archive acknowledged. Historical evidence unchanged.",
+    "readiness": "Non-billable correction under review; no new paid calls or VM. Hosted and exact-configuration qualification still required."
+  }
+}

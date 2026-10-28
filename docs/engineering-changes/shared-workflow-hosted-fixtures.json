@@ -1,0 +1,36 @@
+{
+  "version": "engineering-quality-v1",
+  "title": "Qualify shared workflow with current Redis identity and safe rejection fixture",
+  "base": "6752b9731fc72abb0dbd8d3fa2eb0cceb0819824",
+  "changeDigest": "920603c75de13140941cf9469edcf1215576837a6ec1797104db80fd520fab05",
+  "risk": "substantial",
+  "scope": "Correct two verification fixtures without changing application source or runtime contract2972d987.",
+  "riskAnalysis": "Current Redis plan must use the same server runtime constructor as actual operations. Static arbitrary-regex rejection remains covered with a harmless unsupported literal; no executable regex is introduced and historical contexts remain unchanged.",
+  "verification": [
+    "risk-analysis",
+    "targeted-tests",
+    "independent-qa",
+    "preview-check",
+    "redis",
+    "codeql"
+  ],
+  "defects": [
+    {
+      "rootCause": "The separately executed real Redis fixture retained an old manual runtime shape.",
+      "detectionGap": "Local full test glob includes test.js files while real Redis integration uses a separate cjs suite.",
+      "regression": "Use shared runtime builder only for the contemporary native controller plan; real Redis qualification remains mandatory.",
+      "historicalPrevention": "Review both local and integration fixture producers whenever changing immutable runtime fields."
+    },
+    {
+      "rootCause": "An inert hostile regex rejection fixture triggered CodeQL inefficient-regex detection.",
+      "detectionGap": "The static analyzer reports hazardous regex content even though this fixture only feeds static parsing and rejection.",
+      "regression": "Safe unsupported /a/ retains arbitrary regex denial; dynamic RegExp denial remains;42focusedchecks pass.",
+      "historicalPrevention": "Use nonpathological representative forbidden syntax where it proves the same capability boundary; do not encode unsafe text or suppress analysis."
+    }
+  ],
+  "files": [
+    "CALLERCORE_PROJECT_STATE.md",
+    "tests/agent-operations-redis.integration.cjs",
+    "tests/agent-operations-search-expression.test.js"
+  ]
+}

@@ -1,6 +1,6 @@
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 const LOGO_BASE64 = require('./logo-base64');
-const { CLAUSES } = require('./agreement-clauses');
+const { CLAUSES, AGREEMENT_VERSION, AGREEMENT_EFFECTIVE_DATE } = require('./agreement-clauses');
 
 // Brand palette
 const INK      = rgb(0.12, 0.13, 0.16);
@@ -32,7 +32,7 @@ function wrap(text, font, size, maxWidth) {
   return out;
 }
 
-async function buildAgreementPdfBytes({ business, fullName, plan, signedAt }) {
+async function buildAgreementPdfBytes({ business, fullName, plan, signedAt, clauses=CLAUSES, agreementVersion=AGREEMENT_VERSION, effectiveDate=AGREEMENT_EFFECTIVE_DATE, planSnapshot=null }) {
   const doc = await PDFDocument.create();
   doc.setTitle('CallerCore Service Agreement');
   doc.setAuthor('CallerCore');
@@ -99,11 +99,23 @@ async function buildAgreementPdfBytes({ business, fullName, plan, signedAt }) {
   page.drawLine({ start: { x: MARGIN, y: y + 6 }, end: { x: MARGIN + 52, y: y + 6 }, thickness: 2.5, color: SIGNAL });
   y -= 18;
 
+  let planLine = plan || '-';
+  if (planSnapshot) {
+    const planParts = [];
+    planParts.push(planSnapshot.plan || plan || 'Selected plan');
+    if (planSnapshot.monthlyPrice != null) planParts.push(String.fromCharCode(36) + planSnapshot.monthlyPrice + '/month');
+    if (planSnapshot.includedMinutes) planParts.push(planSnapshot.includedMinutes + ' minutes');
+    if (planSnapshot.locations) planParts.push(planSnapshot.locations);
+    if (planSnapshot.usageNote) planParts.push(planSnapshot.usageNote);
+    planLine = planParts.join(' / ');
+  }
+  const agreementLine = 'v' + String(agreementVersion || AGREEMENT_VERSION) + (effectiveDate ? (' / effective ' + effectiveDate) : '');
   const meta = [
     ['Between', 'CallerCore'],
     ['And', business || 'Client'],
-    ['Plan', plan || '-'],
-    ['Date', signedAt || '-'],
+    ['Plan', planLine],
+    ['Agreement', agreementLine],
+    ['Signed', signedAt || '-'],
   ];
   page.drawLine({ start: { x: MARGIN, y: y + 8 }, end: { x: PAGE_W - MARGIN, y: y + 8 }, thickness: 0.5, color: HAIRLINE });
   y -= 10;
@@ -117,7 +129,7 @@ async function buildAgreementPdfBytes({ business, fullName, plan, signedAt }) {
   page.drawLine({ start: { x: MARGIN, y: y + 8 }, end: { x: PAGE_W - MARGIN, y: y + 8 }, thickness: 0.5, color: HAIRLINE });
   y -= 24;
 
-  CLAUSES.forEach(function (c) {
+  (Array.isArray(clauses) ? clauses : CLAUSES).forEach(function (c) {
     space(48);
     para(c[0], { size: 11, f: bold, color: SIGNAL, gap: 5 });
     c[1].split('\n').forEach(function (block) {

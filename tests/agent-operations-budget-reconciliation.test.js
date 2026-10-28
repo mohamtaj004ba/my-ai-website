@@ -1,0 +1,10 @@
+'use strict';
+const {test}=require('node:test'),a=require('node:assert/strict'),b=require('../lib/agent-operations-budget');
+const state=rows=>({reservations:rows.map(r=>({mode:'pilot',...r}))});
+test('read-only reconciliation explains pending known Responses without releasing unknown exposure',()=>{
+ const s=state([{status:'pending',ceilingMicros:200000,responsesActualMicros:5838,countRequests:1,countCostMicros:null,countCostStatus:'unknown'},{status:'pending',ceilingMicros:200000,countRequests:1,countCostMicros:null,countCostStatus:'unknown'},{status:'settled',ceilingMicros:200000,actualMicros:9000}]),before=JSON.stringify(s),view=b.reconciliationFor(s);
+ a.equal(view.knownSettledMicros,9000);a.equal(view.pendingResponsesMicros,5838);a.equal(view.recordedUsageMicros,14838);a.equal(view.conservativeRemainderMicros,585162);a.equal(view.unpricedCountingRequests,2);a.equal(view.releasableMicros,0);a.equal(view.invoiceReconciled,false);a.equal(b.accounting(s).retainedMicros,600000);a.equal(JSON.stringify(s),before);
+});
+test('empty new allowance is separate from retained historical exposure',()=>{const s=state([{status:'pending',ceilingMicros:12600000}]);a.equal(b.accounting(s).remainingMicros,2400000);a.equal(b.accountingFor(s,b.EXPANDED_AUTHORIZATION.id).remainingMicros,5000000);a.equal(b.reconciliationFor(s,b.EXPANDED_AUTHORIZATION.id).recordedUsageMicros,0);});
+for(const defect of [{responsesActualMicros:-1},{responsesActualMicros:1.5},{status:'settled',actualMicros:100,responsesActualMicros:100},{countRequests:0},{countCostMicros:0}])test('reconciliation fails closed on malformed observed-cost record '+JSON.stringify(defect),()=>{a.throws(()=>b.reconciliationFor(state([{status:'pending',ceilingMicros:200000,countRequests:1,countCostMicros:null,countCostStatus:'unknown',...defect}])));});
+test('unverified budget tags cannot hide historical exposure in explanatory readback',()=>{const s=state([{status:'pending',ceilingMicros:200000,authorizationBudgetId:b.EXPANDED_AUTHORIZATION.id}]);a.throws(()=>b.reconciliationFor(s),/Unverified additional authorization accounting/);});

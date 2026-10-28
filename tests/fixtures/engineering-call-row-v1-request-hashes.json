@@ -1,0 +1,1828 @@
+{
+  "version": "call-row-v1-request-golden-v1",
+  "baselineCommit": "31cd055176e2e5799d8251286b9fe9514956474c",
+  "qualification": "Generated exclusively from git-archived reviewed baseline and synthetic provider replies; no real model calls, credentials or customer data.",
+  "v1": {
+    "baseContext": {
+      "binding": {
+        "planId": "op_legacy_request_fixture",
+        "taskId": "task_legacy_chief",
+        "executionId": "exec_legacy_chief",
+        "fence": 0,
+        "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "workspaceHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "runtime": {
+          "origin": "https://my-ai-website-legacyfixture-mohamtaj004bas-projects.vercel.app",
+          "sourceCommit": "cccccccccccccccccccccccccccccccccccccccc",
+          "branch": "feature/callercore-dashboards",
+          "deploymentId": "dpl_legacyRequestFixture",
+          "release": {
+            "version": "organization-contracts-v4",
+            "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        },
+        "authorizationRevision": 1
+      },
+      "assignment": "Prepare a bounded call-row accessible-name patch from current source. Distinguish repeated callers by call date and time, retain click behavior and evidence, and report static verification limits. Use implementation-singleton-enum-v1. Use engineering-report-v1: complete assignments and impact-qualified inert proposals.",
+      "evidence": [
+        {
+          "id": "call-row-label",
+          "path": "dashboard.js",
+          "line": 733,
+          "text": "    return '<button class=\"call-row data '+stateClass+(unviewed?' call-unviewed':' call-viewed')+'\" data-call-id=\"'+esc(x.id)+'\" aria-label=\"Open '+esc(x.caller||'caller')+' call details\"><span class=\"call-caller-cell\">'+(unviewed?'<i class=\"call-new-dot\" title=\"Not opened yet\"></i>':'')+'<span><strong title=\"'+esc(x.caller||'Unknown')+'\">'+esc(x.caller||'Unknown')+'</strong><small class=\"subtle\">'+esc(x.phone||'')+' · '+(unviewed?(callViewedCoverage.verified?'Not opened':'Opened state unknown'):'Opened')+'</small>'+callRecordAlertBadge(x.id)+'</span></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class=\"subtle\">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span><span><i class=\"call-type-pill\" title=\"'+esc(x.category||'General question')+'\">'+esc(x.category||'General question')+'</i></span><span class=\"call-reason\" title=\"'+esc(x.reason||'—')+'\">'+esc(x.reason||'—')+'</span><span><i class=\"disposition-pill '+callDispositionClass(x)+'\">'+esc(disposition.label)+'</i></span><span><i class=\"team-status-pill '+team.tone+'\">'+esc(team.label)+'</i></span><span class=\"call-duration\"><b>'+esc(x.duration||'—')+'</b><small class=\"call-view-cue\">View details →</small></span></button>';",
+          "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+          "excerptHash": "310ea512267613f6a740c74806dd34443d10c9783e0ecc9f420b08cc4fe30a9b"
+        },
+        {
+          "id": "call-time-source",
+          "path": "dashboard.js",
+          "line": 574,
+          "text": "  const n=Number(x?.activityAt||x?.createdAt||x?.at||0);if(n)return n;",
+          "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+          "excerptHash": "eafddf8b8aed6d85f3013bd02c318f9f88cbe3d414db9e9f859d1292dde8df05"
+        },
+        {
+          "id": "client-dashboard-target",
+          "path": "dashboard.html",
+          "line": 9,
+          "text": "<body data-dashboard=\"client\">",
+          "sha256": "77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f",
+          "excerptHash": "5e5fd5f51ae5c5d9dbb582fc248a95fa5fc70fc634468d600d863cb7275c5557"
+        }
+      ],
+      "priorReceipts": []
+    },
+    "requests": [
+      {
+        "stage": "chief-plan",
+        "requestHash": "6cad6df416ed0a49965f093d5b03c745f9251afdb203825fe3f68bdcf074b396"
+      },
+      {
+        "stage": "specialist",
+        "requestHash": "9cfa3540ab426f05aefd8c632dd53a8da75794642f0a7963281acd9c6c29daa7"
+      },
+      {
+        "stage": "qa",
+        "requestHash": "df946dd07059ff60d29873ce1e52b98287bf437d3012a12dd020d212ced88d4f"
+      },
+      {
+        "stage": "auditor",
+        "requestHash": "153d027bf21bb2b3c0a6a8fc40c3ba8e628b07a42819ab68218dc2cbb9b9fd9a"
+      },
+      {
+        "stage": "chief-final",
+        "requestHash": "5073c54c6c5fda1fb5e9f9bc4a354ef36f9760df38f5ee59460b7c8cd19a7f13"
+      }
+    ]
+  },
+  "v2": [
+    {
+      "stage": "chief-plan",
+      "context": {
+        "binding": {
+          "planId": "op_call_row_controller_fixture",
+          "taskId": "op_call_row_controller_fixture_task1",
+          "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_chief-plan",
+          "fence": 0,
+          "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+          "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+          "runtime": {
+            "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+            "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "branch": "feature/callercore-dashboards",
+            "deploymentId": "dpl_callRowFixture",
+            "release": {
+              "version": "organization-contracts-v4",
+              "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+            }
+          },
+          "authorizationRevision": 1
+        },
+        "assignment": "Prepare a bounded call-row accessible-name patch from current source. Distinguish repeated callers by call date and time, retain click behavior and evidence, and report static verification limits. Use implementation-singleton-enum-v1. Use engineering-report-v1: complete assignments and impact-qualified inert proposals.",
+        "evidence": [
+          {
+            "id": "call-row-label",
+            "path": "dashboard.js",
+            "line": 733,
+            "text": "    return '<button class=\"call-row data '+stateClass+(unviewed?' call-unviewed':' call-viewed')+'\" data-call-id=\"'+esc(x.id)+'\" aria-label=\"Open '+esc(x.caller||'caller')+' call details\"><span class=\"call-caller-cell\">'+(unviewed?'<i class=\"call-new-dot\" title=\"Not opened yet\"></i>':'')+'<span><strong title=\"'+esc(x.caller||'Unknown')+'\">'+esc(x.caller||'Unknown')+'</strong><small class=\"subtle\">'+esc(x.phone||'')+' · '+(unviewed?(callViewedCoverage.verified?'Not opened':'Opened state unknown'):'Opened')+'</small>'+callRecordAlertBadge(x.id)+'</span></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class=\"subtle\">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span><span><i class=\"call-type-pill\" title=\"'+esc(x.category||'General question')+'\">'+esc(x.category||'General question')+'</i></span><span class=\"call-reason\" title=\"'+esc(x.reason||'—')+'\">'+esc(x.reason||'—')+'</span><span><i class=\"disposition-pill '+callDispositionClass(x)+'\">'+esc(disposition.label)+'</i></span><span><i class=\"team-status-pill '+team.tone+'\">'+esc(team.label)+'</i></span><span class=\"call-duration\"><b>'+esc(x.duration||'—')+'</b><small class=\"call-view-cue\">View details →</small></span></button>';",
+            "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+            "excerptHash": "310ea512267613f6a740c74806dd34443d10c9783e0ecc9f420b08cc4fe30a9b"
+          },
+          {
+            "id": "call-time-source",
+            "path": "dashboard.js",
+            "line": 574,
+            "text": "  const n=Number(x?.activityAt||x?.createdAt||x?.at||0);if(n)return n;",
+            "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+            "excerptHash": "eafddf8b8aed6d85f3013bd02c318f9f88cbe3d414db9e9f859d1292dde8df05"
+          },
+          {
+            "id": "client-dashboard-target",
+            "path": "dashboard.html",
+            "line": 9,
+            "text": "<body data-dashboard=\"client\">",
+            "sha256": "77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f",
+            "excerptHash": "5e5fd5f51ae5c5d9dbb582fc248a95fa5fc70fc634468d600d863cb7275c5557"
+          }
+        ],
+        "priorReceipts": []
+      },
+      "requestHash": "7c0cacc8f6326cd2c7d2c41a45e8c3f8804011b34800f5cb823e93efb5f56c0e"
+    },
+    {
+      "stage": "specialist",
+      "context": {
+        "binding": {
+          "planId": "op_call_row_controller_fixture",
+          "taskId": "op_call_row_controller_fixture_task2",
+          "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+          "fence": 0,
+          "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+          "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+          "runtime": {
+            "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+            "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "branch": "feature/callercore-dashboards",
+            "deploymentId": "dpl_callRowFixture",
+            "release": {
+              "version": "organization-contracts-v4",
+              "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+            }
+          },
+          "authorizationRevision": 1
+        },
+        "assignment": "Prepare a bounded call-row accessible-name patch from current source. Distinguish repeated callers by call date and time, retain click behavior and evidence, and report static verification limits. Use implementation-singleton-enum-v1. Use engineering-report-v1: complete assignments and impact-qualified inert proposals.",
+        "evidence": [
+          {
+            "id": "call-row-label",
+            "path": "dashboard.js",
+            "line": 733,
+            "text": "    return '<button class=\"call-row data '+stateClass+(unviewed?' call-unviewed':' call-viewed')+'\" data-call-id=\"'+esc(x.id)+'\" aria-label=\"Open '+esc(x.caller||'caller')+' call details\"><span class=\"call-caller-cell\">'+(unviewed?'<i class=\"call-new-dot\" title=\"Not opened yet\"></i>':'')+'<span><strong title=\"'+esc(x.caller||'Unknown')+'\">'+esc(x.caller||'Unknown')+'</strong><small class=\"subtle\">'+esc(x.phone||'')+' · '+(unviewed?(callViewedCoverage.verified?'Not opened':'Opened state unknown'):'Opened')+'</small>'+callRecordAlertBadge(x.id)+'</span></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class=\"subtle\">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span><span><i class=\"call-type-pill\" title=\"'+esc(x.category||'General question')+'\">'+esc(x.category||'General question')+'</i></span><span class=\"call-reason\" title=\"'+esc(x.reason||'—')+'\">'+esc(x.reason||'—')+'</span><span><i class=\"disposition-pill '+callDispositionClass(x)+'\">'+esc(disposition.label)+'</i></span><span><i class=\"team-status-pill '+team.tone+'\">'+esc(team.label)+'</i></span><span class=\"call-duration\"><b>'+esc(x.duration||'—')+'</b><small class=\"call-view-cue\">View details →</small></span></button>';",
+            "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+            "excerptHash": "310ea512267613f6a740c74806dd34443d10c9783e0ecc9f420b08cc4fe30a9b"
+          },
+          {
+            "id": "call-time-source",
+            "path": "dashboard.js",
+            "line": 574,
+            "text": "  const n=Number(x?.activityAt||x?.createdAt||x?.at||0);if(n)return n;",
+            "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+            "excerptHash": "eafddf8b8aed6d85f3013bd02c318f9f88cbe3d414db9e9f859d1292dde8df05"
+          },
+          {
+            "id": "client-dashboard-target",
+            "path": "dashboard.html",
+            "line": 9,
+            "text": "<body data-dashboard=\"client\">",
+            "sha256": "77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f",
+            "excerptHash": "5e5fd5f51ae5c5d9dbb582fc248a95fa5fc70fc634468d600d863cb7275c5557"
+          }
+        ],
+        "priorReceipts": [
+          {
+            "version": "engineering-provider-v2",
+            "stage": "chief-plan",
+            "binding": {
+              "planId": "op_call_row_controller_fixture",
+              "taskId": "op_call_row_controller_fixture_task1",
+              "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_chief-plan",
+              "fence": 0,
+              "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+              "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+              "runtime": {
+                "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "branch": "feature/callercore-dashboards",
+                "deploymentId": "dpl_callRowFixture",
+                "release": {
+                  "version": "organization-contracts-v4",
+                  "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                }
+              },
+              "authorizationRevision": 1
+            },
+            "mode": "pilot",
+            "response": {
+              "stage": "chief-plan",
+              "objective": "Distinguish repeated callers in call-row accessible names.",
+              "specialist": "dashboard",
+              "completionCriteria": [
+                "Include caller, call date and time in the accessible name.",
+                "Escape dynamic text and handle missing call times.",
+                "Preserve behavior and read state; report no execution, publication or acceptance."
+              ],
+              "reason": "Accessible names omit call times.",
+              "problem": "Repeated callers have identical call-row accessible names despite different visible call times.",
+              "sourceEvidenceIds": [
+                "call-row-label",
+                "call-time-source",
+                "client-dashboard-target"
+              ],
+              "intendedImpact": {
+                "assessment": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "basis": "hypothesis",
+                "uncertainty": "Source-only fixture; impact is unverified."
+              },
+              "scope": [
+                "One accessible-name fragment only."
+              ],
+              "exclusions": [
+                "No behavior or authority changes."
+              ],
+              "uncertainty": "Customer impact is unverified.",
+              "deliverables": [
+                "One inert patch and review report."
+              ]
+            },
+            "requestHash": "7c0cacc8f6326cd2c7d2c41a45e8c3f8804011b34800f5cb823e93efb5f56c0e",
+            "evidenceHash": "c1939df002c6703520756790360c7b333c3a51528e4c5da068f61a5679c2704b",
+            "usage": {
+              "inputTokens": 1000,
+              "outputTokens": 500,
+              "reasoningTokens": 50,
+              "cachedInputTokens": 0,
+              "cacheWriteTokens": 0,
+              "calculatedCostMicros": 7000
+            },
+            "syntheticUsage": null,
+            "provider": {
+              "id": "resp_baseline_fixture_0",
+              "status": "completed",
+              "model": "gpt-6.1-sol",
+              "serviceTier": "default"
+            },
+            "principalHash": "ddda5b6f0f3ed73267ec582a961f23daa3fdc63699a5c4a7b811a78615d195bd",
+            "principalKind": "service",
+            "independence": "separate-capability-procedural-only",
+            "reviewMode": "authenticated-automated-technical",
+            "humanReview": false,
+            "acceptedWork": false,
+            "publicationAuthorized": false,
+            "hash": "1848bf30d645991948078f133247c62e37c1bb2bb5af1b056a06331e80a7e5fc"
+          }
+        ]
+      },
+      "requestHash": "8ef94bafcf444c3aeb093b7bc7be61266a48b5f1fd80979009e0f6d5f12bc17e"
+    },
+    {
+      "stage": "qa",
+      "context": {
+        "binding": {
+          "planId": "op_call_row_controller_fixture",
+          "taskId": "op_call_row_controller_fixture_task3",
+          "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_qa",
+          "fence": 0,
+          "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+          "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+          "runtime": {
+            "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+            "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "branch": "feature/callercore-dashboards",
+            "deploymentId": "dpl_callRowFixture",
+            "release": {
+              "version": "organization-contracts-v4",
+              "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+            }
+          },
+          "authorizationRevision": 1
+        },
+        "assignment": "Prepare a bounded call-row accessible-name patch from current source. Distinguish repeated callers by call date and time, retain click behavior and evidence, and report static verification limits. Use implementation-singleton-enum-v1. Use engineering-report-v1: complete assignments and impact-qualified inert proposals.",
+        "evidence": [
+          {
+            "id": "call-row-label",
+            "path": "dashboard.js",
+            "line": 733,
+            "text": "    return '<button class=\"call-row data '+stateClass+(unviewed?' call-unviewed':' call-viewed')+'\" data-call-id=\"'+esc(x.id)+'\" aria-label=\"Open '+esc(x.caller||'caller')+' call details\"><span class=\"call-caller-cell\">'+(unviewed?'<i class=\"call-new-dot\" title=\"Not opened yet\"></i>':'')+'<span><strong title=\"'+esc(x.caller||'Unknown')+'\">'+esc(x.caller||'Unknown')+'</strong><small class=\"subtle\">'+esc(x.phone||'')+' · '+(unviewed?(callViewedCoverage.verified?'Not opened':'Opened state unknown'):'Opened')+'</small>'+callRecordAlertBadge(x.id)+'</span></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class=\"subtle\">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span><span><i class=\"call-type-pill\" title=\"'+esc(x.category||'General question')+'\">'+esc(x.category||'General question')+'</i></span><span class=\"call-reason\" title=\"'+esc(x.reason||'—')+'\">'+esc(x.reason||'—')+'</span><span><i class=\"disposition-pill '+callDispositionClass(x)+'\">'+esc(disposition.label)+'</i></span><span><i class=\"team-status-pill '+team.tone+'\">'+esc(team.label)+'</i></span><span class=\"call-duration\"><b>'+esc(x.duration||'—')+'</b><small class=\"call-view-cue\">View details →</small></span></button>';",
+            "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+            "excerptHash": "310ea512267613f6a740c74806dd34443d10c9783e0ecc9f420b08cc4fe30a9b"
+          },
+          {
+            "id": "call-time-source",
+            "path": "dashboard.js",
+            "line": 574,
+            "text": "  const n=Number(x?.activityAt||x?.createdAt||x?.at||0);if(n)return n;",
+            "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+            "excerptHash": "eafddf8b8aed6d85f3013bd02c318f9f88cbe3d414db9e9f859d1292dde8df05"
+          },
+          {
+            "id": "client-dashboard-target",
+            "path": "dashboard.html",
+            "line": 9,
+            "text": "<body data-dashboard=\"client\">",
+            "sha256": "77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f",
+            "excerptHash": "5e5fd5f51ae5c5d9dbb582fc248a95fa5fc70fc634468d600d863cb7275c5557"
+          }
+        ],
+        "priorReceipts": [
+          {
+            "version": "engineering-provider-v2",
+            "stage": "chief-plan",
+            "binding": {
+              "planId": "op_call_row_controller_fixture",
+              "taskId": "op_call_row_controller_fixture_task1",
+              "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_chief-plan",
+              "fence": 0,
+              "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+              "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+              "runtime": {
+                "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "branch": "feature/callercore-dashboards",
+                "deploymentId": "dpl_callRowFixture",
+                "release": {
+                  "version": "organization-contracts-v4",
+                  "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                }
+              },
+              "authorizationRevision": 1
+            },
+            "mode": "pilot",
+            "response": {
+              "stage": "chief-plan",
+              "objective": "Distinguish repeated callers in call-row accessible names.",
+              "specialist": "dashboard",
+              "completionCriteria": [
+                "Include caller, call date and time in the accessible name.",
+                "Escape dynamic text and handle missing call times.",
+                "Preserve behavior and read state; report no execution, publication or acceptance."
+              ],
+              "reason": "Accessible names omit call times.",
+              "problem": "Repeated callers have identical call-row accessible names despite different visible call times.",
+              "sourceEvidenceIds": [
+                "call-row-label",
+                "call-time-source",
+                "client-dashboard-target"
+              ],
+              "intendedImpact": {
+                "assessment": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "basis": "hypothesis",
+                "uncertainty": "Source-only fixture; impact is unverified."
+              },
+              "scope": [
+                "One accessible-name fragment only."
+              ],
+              "exclusions": [
+                "No behavior or authority changes."
+              ],
+              "uncertainty": "Customer impact is unverified.",
+              "deliverables": [
+                "One inert patch and review report."
+              ]
+            },
+            "requestHash": "7c0cacc8f6326cd2c7d2c41a45e8c3f8804011b34800f5cb823e93efb5f56c0e",
+            "evidenceHash": "c1939df002c6703520756790360c7b333c3a51528e4c5da068f61a5679c2704b",
+            "usage": {
+              "inputTokens": 1000,
+              "outputTokens": 500,
+              "reasoningTokens": 50,
+              "cachedInputTokens": 0,
+              "cacheWriteTokens": 0,
+              "calculatedCostMicros": 7000
+            },
+            "syntheticUsage": null,
+            "provider": {
+              "id": "resp_baseline_fixture_0",
+              "status": "completed",
+              "model": "gpt-6.1-sol",
+              "serviceTier": "default"
+            },
+            "principalHash": "ddda5b6f0f3ed73267ec582a961f23daa3fdc63699a5c4a7b811a78615d195bd",
+            "principalKind": "service",
+            "independence": "separate-capability-procedural-only",
+            "reviewMode": "authenticated-automated-technical",
+            "humanReview": false,
+            "acceptedWork": false,
+            "publicationAuthorized": false,
+            "hash": "1848bf30d645991948078f133247c62e37c1bb2bb5af1b056a06331e80a7e5fc"
+          },
+          {
+            "version": "engineering-provider-v2",
+            "stage": "specialist",
+            "binding": {
+              "planId": "op_call_row_controller_fixture",
+              "taskId": "op_call_row_controller_fixture_task2",
+              "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+              "fence": 0,
+              "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+              "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+              "runtime": {
+                "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "branch": "feature/callercore-dashboards",
+                "deploymentId": "dpl_callRowFixture",
+                "release": {
+                  "version": "organization-contracts-v4",
+                  "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                }
+              },
+              "authorizationRevision": 1
+            },
+            "mode": "pilot",
+            "response": {
+              "stage": "specialist",
+              "findings": [
+                {
+                  "id": "call-row-accessible-time-v1",
+                  "claim": "Repeated callers have identical call-row accessible names despite different visible call times.",
+                  "classification": "source-observation",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ],
+                  "uncertainty": "Offline fixture, not model reasoning or customer evidence."
+                }
+              ],
+              "proposal": {
+                "version": "engineering-implementation-task-patch-v1",
+                "profile": "call-row-accessible-time-v1",
+                "descriptorHash": "6ce51beaf132feb6f7b4cdd6b7d8bd2ec35f55f1a2897ba6a59e7ae7b42f450b",
+                "binding": {
+                  "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+                  "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+                  "taskId": "op_call_row_controller_fixture_task2",
+                  "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+                  "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "deploymentId": "dpl_callRowFixture",
+                  "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                  "releaseHash": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3",
+                  "contextHash": "bfdc08fe47651fb8c492884569c2bfa44c1fe137ad2b2ff2df1b9d54d838b2fd"
+                },
+                "path": "dashboard.js",
+                "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                "evidenceIds": [
+                  "call-row-label",
+                  "call-time-source",
+                  "client-dashboard-target"
+                ],
+                "edits": [
+                  {
+                    "beforeText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                    "afterText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\"",
+                    "explanation": "Include existing call date and time in the escaped accessible name while preserving row behavior."
+                  }
+                ],
+                "expectedBehavior": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "risks": [
+                  "No qualified dynamic execution exists for this task."
+                ],
+                "verification": [
+                  "Compare repeated caller names with different timestamps and missing-time fallback."
+                ],
+                "acceptanceMapping": [
+                  {
+                    "criterion": 1,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 2,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 3,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  }
+                ]
+              },
+              "rootCause": {
+                "analysis": "Repeated callers have identical call-row accessible names despite different visible call times.",
+                "evidenceIds": [
+                  "call-row-label",
+                  "call-time-source",
+                  "client-dashboard-target"
+                ],
+                "uncertainty": "Source-backed mechanism; fixture reasoning is not live model analysis."
+              },
+              "expectedImpact": {
+                "assessment": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "basis": "hypothesis",
+                "uncertainty": "Explicit offline fixture; current customer occurrence and live model quality are not established."
+              },
+              "regressionRisks": [
+                "Do not change visible content, event routing, escaping or read state."
+              ],
+              "affectedInterfaces": [
+                "Client Calls row accessible button names."
+              ],
+              "verificationStrategy": [
+                "Compare names for same caller across timestamps; inspect missing-time and escaping behavior."
+              ],
+              "remainingUncertainty": "No qualified dynamic test profile for this task.",
+              "acceptanceMapping": [
+                {
+                  "criterion": 1,
+                  "status": "proposed",
+                  "explanation": "Source-backed proposal retained for review, not accepted.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                },
+                {
+                  "criterion": 2,
+                  "status": "proposed",
+                  "explanation": "Source-backed proposal retained for review, not accepted.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                },
+                {
+                  "criterion": 3,
+                  "status": "proposed",
+                  "explanation": "Source-backed proposal retained for review, not accepted.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                }
+              ]
+            },
+            "requestHash": "8ef94bafcf444c3aeb093b7bc7be61266a48b5f1fd80979009e0f6d5f12bc17e",
+            "evidenceHash": "c1939df002c6703520756790360c7b333c3a51528e4c5da068f61a5679c2704b",
+            "usage": {
+              "inputTokens": 1000,
+              "outputTokens": 500,
+              "reasoningTokens": 50,
+              "cachedInputTokens": 0,
+              "cacheWriteTokens": 0,
+              "calculatedCostMicros": 7000
+            },
+            "syntheticUsage": null,
+            "provider": {
+              "id": "resp_baseline_fixture_1",
+              "status": "completed",
+              "model": "gpt-6.1-sol",
+              "serviceTier": "default"
+            },
+            "implementationArtifact": {
+              "kind": "inert-source-bound-workspace-patch",
+              "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "patch": {
+                "version": "engineering-implementation-task-patch-v1",
+                "profile": "call-row-accessible-time-v1",
+                "descriptorHash": "6ce51beaf132feb6f7b4cdd6b7d8bd2ec35f55f1a2897ba6a59e7ae7b42f450b",
+                "binding": {
+                  "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+                  "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+                  "taskId": "op_call_row_controller_fixture_task2",
+                  "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+                  "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "deploymentId": "dpl_callRowFixture",
+                  "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                  "releaseHash": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3",
+                  "contextHash": "bfdc08fe47651fb8c492884569c2bfa44c1fe137ad2b2ff2df1b9d54d838b2fd"
+                },
+                "path": "dashboard.js",
+                "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                "evidenceIds": [
+                  "call-row-label",
+                  "call-time-source",
+                  "client-dashboard-target"
+                ],
+                "edits": [
+                  {
+                    "beforeText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                    "afterText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\"",
+                    "explanation": "Include existing call date and time in the escaped accessible name while preserving row behavior."
+                  }
+                ],
+                "expectedBehavior": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "risks": [
+                  "No qualified dynamic execution exists for this task."
+                ],
+                "verification": [
+                  "Compare repeated caller names with different timestamps and missing-time fallback."
+                ],
+                "acceptanceMapping": [
+                  {
+                    "criterion": 1,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 2,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 3,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  }
+                ]
+              },
+              "patchHash": "c3f6a8adf51c74a4bc4c25001ff31607c95d93137c577a75ece177e7662d150a",
+              "workspace": {
+                "version": "draft-data-v3",
+                "files": [
+                  {
+                    "path": "dashboard.js",
+                    "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                    "afterSha256": "8defc782ad52401e14df1d3e05e28286a341a844f31688ec51c082a9ccd61814",
+                    "beforeBytes": 615443,
+                    "afterBytes": 615537
+                  }
+                ],
+                "patch": {
+                  "path": "dashboard.js",
+                  "operation": "bounded-proposed-text-replacements",
+                  "proposalHash": "073ceabb44e820af108fc7a87fa0dcad3710532b2e4c0858661eb2a5905853d1",
+                  "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                  "afterSha256": "8defc782ad52401e14df1d3e05e28286a341a844f31688ec51c082a9ccd61814",
+                  "edits": [
+                    {
+                      "offset": 82242,
+                      "before": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                      "after": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\"",
+                      "beforeSha256": "5b7baf23e46abfbaec49972cf4e40f7cf73bd674de54807c7717e0459fedc53c"
+                    }
+                  ]
+                },
+                "patchSha256": "d117d2699984d6a26cd165ae4d631925e8b455a392fd654856c34a6841ad24ed",
+                "publicationAllowed": false,
+                "sourceSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceManifestHash": "1b0d03cfe56a5d9577dd328ef0cbdbdc4237a0e62d1a52a558046fddc7b7549f",
+                "repository": "mohamtaj004ba/my-ai-website",
+                "branch": "feature/callercore-dashboards",
+                "limits": {
+                  "maxFiles": 1,
+                  "maxBytes": 700000,
+                  "maxDurationMs": 10000,
+                  "maxOutputBytes": 16000,
+                  "maxOldSpaceMb": 64,
+                  "network": false,
+                  "arbitraryCommands": false,
+                  "externalCodeExecution": false,
+                  "publication": false,
+                  "maxEdits": 3
+                },
+                "cleanup": {
+                  "destroyed": true
+                },
+                "classification": "real-disposable-filesystem-trusted-data-only",
+                "qualification": "Bounded proposed text replacements only. Draft source is never executed. No untrusted-code sandbox, repository writer, shell, network adapter, commit, push or deployment executor.",
+                "proposal": {
+                  "version": "engineering-text-proposal-v1",
+                  "path": "dashboard.js",
+                  "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                  "edits": [
+                    {
+                      "beforeText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                      "afterText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\""
+                    }
+                  ]
+                },
+                "binding": {
+                  "planId": "op_call_row_controller_fixture",
+                  "taskId": "op_call_row_controller_fixture_task2",
+                  "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+                  "fence": 0,
+                  "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+                  "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+                  "runtime": {
+                    "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                    "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "branch": "feature/callercore-dashboards",
+                    "deploymentId": "dpl_callRowFixture",
+                    "release": {
+                      "version": "organization-contracts-v4",
+                      "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                    }
+                  }
+                }
+              },
+              "filesystemCreated": true,
+              "sourceExecuted": false,
+              "publicationAuthorized": false,
+              "verification": {
+                "scopeIntegrity": true,
+                "semanticsUnverified": true,
+                "executionQualified": false
+              }
+            },
+            "principalHash": "1b83657ee0a52be60443b29a4114c10105a93cbecf582d6afd5160781564e4df",
+            "principalKind": "service",
+            "independence": "separate-capability-procedural-only",
+            "reviewMode": "authenticated-automated-technical",
+            "humanReview": false,
+            "acceptedWork": false,
+            "publicationAuthorized": false,
+            "hash": "5e8995b2633c224d2d2efc930512f8611c0a7d8320553f2bc2d8faabe758f9bd"
+          }
+        ]
+      },
+      "requestHash": "74625dea0e0b1b5afe4303b7bfd4465b285b9512d4082e8feec107275da37665"
+    },
+    {
+      "stage": "auditor",
+      "context": {
+        "binding": {
+          "planId": "op_call_row_controller_fixture",
+          "taskId": "op_call_row_controller_fixture_task4",
+          "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_auditor",
+          "fence": 0,
+          "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+          "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+          "runtime": {
+            "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+            "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "branch": "feature/callercore-dashboards",
+            "deploymentId": "dpl_callRowFixture",
+            "release": {
+              "version": "organization-contracts-v4",
+              "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+            }
+          },
+          "authorizationRevision": 1
+        },
+        "assignment": "Prepare a bounded call-row accessible-name patch from current source. Distinguish repeated callers by call date and time, retain click behavior and evidence, and report static verification limits. Use implementation-singleton-enum-v1. Use engineering-report-v1: complete assignments and impact-qualified inert proposals.",
+        "evidence": [
+          {
+            "id": "call-row-label",
+            "path": "dashboard.js",
+            "line": 733,
+            "text": "    return '<button class=\"call-row data '+stateClass+(unviewed?' call-unviewed':' call-viewed')+'\" data-call-id=\"'+esc(x.id)+'\" aria-label=\"Open '+esc(x.caller||'caller')+' call details\"><span class=\"call-caller-cell\">'+(unviewed?'<i class=\"call-new-dot\" title=\"Not opened yet\"></i>':'')+'<span><strong title=\"'+esc(x.caller||'Unknown')+'\">'+esc(x.caller||'Unknown')+'</strong><small class=\"subtle\">'+esc(x.phone||'')+' · '+(unviewed?(callViewedCoverage.verified?'Not opened':'Opened state unknown'):'Opened')+'</small>'+callRecordAlertBadge(x.id)+'</span></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class=\"subtle\">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span><span><i class=\"call-type-pill\" title=\"'+esc(x.category||'General question')+'\">'+esc(x.category||'General question')+'</i></span><span class=\"call-reason\" title=\"'+esc(x.reason||'—')+'\">'+esc(x.reason||'—')+'</span><span><i class=\"disposition-pill '+callDispositionClass(x)+'\">'+esc(disposition.label)+'</i></span><span><i class=\"team-status-pill '+team.tone+'\">'+esc(team.label)+'</i></span><span class=\"call-duration\"><b>'+esc(x.duration||'—')+'</b><small class=\"call-view-cue\">View details →</small></span></button>';",
+            "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+            "excerptHash": "310ea512267613f6a740c74806dd34443d10c9783e0ecc9f420b08cc4fe30a9b"
+          },
+          {
+            "id": "call-time-source",
+            "path": "dashboard.js",
+            "line": 574,
+            "text": "  const n=Number(x?.activityAt||x?.createdAt||x?.at||0);if(n)return n;",
+            "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+            "excerptHash": "eafddf8b8aed6d85f3013bd02c318f9f88cbe3d414db9e9f859d1292dde8df05"
+          },
+          {
+            "id": "client-dashboard-target",
+            "path": "dashboard.html",
+            "line": 9,
+            "text": "<body data-dashboard=\"client\">",
+            "sha256": "77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f",
+            "excerptHash": "5e5fd5f51ae5c5d9dbb582fc248a95fa5fc70fc634468d600d863cb7275c5557"
+          }
+        ],
+        "priorReceipts": [
+          {
+            "version": "engineering-provider-v2",
+            "stage": "chief-plan",
+            "binding": {
+              "planId": "op_call_row_controller_fixture",
+              "taskId": "op_call_row_controller_fixture_task1",
+              "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_chief-plan",
+              "fence": 0,
+              "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+              "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+              "runtime": {
+                "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "branch": "feature/callercore-dashboards",
+                "deploymentId": "dpl_callRowFixture",
+                "release": {
+                  "version": "organization-contracts-v4",
+                  "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                }
+              },
+              "authorizationRevision": 1
+            },
+            "mode": "pilot",
+            "response": {
+              "stage": "chief-plan",
+              "objective": "Distinguish repeated callers in call-row accessible names.",
+              "specialist": "dashboard",
+              "completionCriteria": [
+                "Include caller, call date and time in the accessible name.",
+                "Escape dynamic text and handle missing call times.",
+                "Preserve behavior and read state; report no execution, publication or acceptance."
+              ],
+              "reason": "Accessible names omit call times.",
+              "problem": "Repeated callers have identical call-row accessible names despite different visible call times.",
+              "sourceEvidenceIds": [
+                "call-row-label",
+                "call-time-source",
+                "client-dashboard-target"
+              ],
+              "intendedImpact": {
+                "assessment": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "basis": "hypothesis",
+                "uncertainty": "Source-only fixture; impact is unverified."
+              },
+              "scope": [
+                "One accessible-name fragment only."
+              ],
+              "exclusions": [
+                "No behavior or authority changes."
+              ],
+              "uncertainty": "Customer impact is unverified.",
+              "deliverables": [
+                "One inert patch and review report."
+              ]
+            },
+            "requestHash": "7c0cacc8f6326cd2c7d2c41a45e8c3f8804011b34800f5cb823e93efb5f56c0e",
+            "evidenceHash": "c1939df002c6703520756790360c7b333c3a51528e4c5da068f61a5679c2704b",
+            "usage": {
+              "inputTokens": 1000,
+              "outputTokens": 500,
+              "reasoningTokens": 50,
+              "cachedInputTokens": 0,
+              "cacheWriteTokens": 0,
+              "calculatedCostMicros": 7000
+            },
+            "syntheticUsage": null,
+            "provider": {
+              "id": "resp_baseline_fixture_0",
+              "status": "completed",
+              "model": "gpt-6.1-sol",
+              "serviceTier": "default"
+            },
+            "principalHash": "ddda5b6f0f3ed73267ec582a961f23daa3fdc63699a5c4a7b811a78615d195bd",
+            "principalKind": "service",
+            "independence": "separate-capability-procedural-only",
+            "reviewMode": "authenticated-automated-technical",
+            "humanReview": false,
+            "acceptedWork": false,
+            "publicationAuthorized": false,
+            "hash": "1848bf30d645991948078f133247c62e37c1bb2bb5af1b056a06331e80a7e5fc"
+          },
+          {
+            "version": "engineering-provider-v2",
+            "stage": "specialist",
+            "binding": {
+              "planId": "op_call_row_controller_fixture",
+              "taskId": "op_call_row_controller_fixture_task2",
+              "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+              "fence": 0,
+              "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+              "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+              "runtime": {
+                "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "branch": "feature/callercore-dashboards",
+                "deploymentId": "dpl_callRowFixture",
+                "release": {
+                  "version": "organization-contracts-v4",
+                  "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                }
+              },
+              "authorizationRevision": 1
+            },
+            "mode": "pilot",
+            "response": {
+              "stage": "specialist",
+              "findings": [
+                {
+                  "id": "call-row-accessible-time-v1",
+                  "claim": "Repeated callers have identical call-row accessible names despite different visible call times.",
+                  "classification": "source-observation",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ],
+                  "uncertainty": "Offline fixture, not model reasoning or customer evidence."
+                }
+              ],
+              "proposal": {
+                "version": "engineering-implementation-task-patch-v1",
+                "profile": "call-row-accessible-time-v1",
+                "descriptorHash": "6ce51beaf132feb6f7b4cdd6b7d8bd2ec35f55f1a2897ba6a59e7ae7b42f450b",
+                "binding": {
+                  "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+                  "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+                  "taskId": "op_call_row_controller_fixture_task2",
+                  "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+                  "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "deploymentId": "dpl_callRowFixture",
+                  "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                  "releaseHash": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3",
+                  "contextHash": "bfdc08fe47651fb8c492884569c2bfa44c1fe137ad2b2ff2df1b9d54d838b2fd"
+                },
+                "path": "dashboard.js",
+                "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                "evidenceIds": [
+                  "call-row-label",
+                  "call-time-source",
+                  "client-dashboard-target"
+                ],
+                "edits": [
+                  {
+                    "beforeText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                    "afterText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\"",
+                    "explanation": "Include existing call date and time in the escaped accessible name while preserving row behavior."
+                  }
+                ],
+                "expectedBehavior": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "risks": [
+                  "No qualified dynamic execution exists for this task."
+                ],
+                "verification": [
+                  "Compare repeated caller names with different timestamps and missing-time fallback."
+                ],
+                "acceptanceMapping": [
+                  {
+                    "criterion": 1,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 2,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 3,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  }
+                ]
+              },
+              "rootCause": {
+                "analysis": "Repeated callers have identical call-row accessible names despite different visible call times.",
+                "evidenceIds": [
+                  "call-row-label",
+                  "call-time-source",
+                  "client-dashboard-target"
+                ],
+                "uncertainty": "Source-backed mechanism; fixture reasoning is not live model analysis."
+              },
+              "expectedImpact": {
+                "assessment": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "basis": "hypothesis",
+                "uncertainty": "Explicit offline fixture; current customer occurrence and live model quality are not established."
+              },
+              "regressionRisks": [
+                "Do not change visible content, event routing, escaping or read state."
+              ],
+              "affectedInterfaces": [
+                "Client Calls row accessible button names."
+              ],
+              "verificationStrategy": [
+                "Compare names for same caller across timestamps; inspect missing-time and escaping behavior."
+              ],
+              "remainingUncertainty": "No qualified dynamic test profile for this task.",
+              "acceptanceMapping": [
+                {
+                  "criterion": 1,
+                  "status": "proposed",
+                  "explanation": "Source-backed proposal retained for review, not accepted.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                },
+                {
+                  "criterion": 2,
+                  "status": "proposed",
+                  "explanation": "Source-backed proposal retained for review, not accepted.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                },
+                {
+                  "criterion": 3,
+                  "status": "proposed",
+                  "explanation": "Source-backed proposal retained for review, not accepted.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                }
+              ]
+            },
+            "requestHash": "8ef94bafcf444c3aeb093b7bc7be61266a48b5f1fd80979009e0f6d5f12bc17e",
+            "evidenceHash": "c1939df002c6703520756790360c7b333c3a51528e4c5da068f61a5679c2704b",
+            "usage": {
+              "inputTokens": 1000,
+              "outputTokens": 500,
+              "reasoningTokens": 50,
+              "cachedInputTokens": 0,
+              "cacheWriteTokens": 0,
+              "calculatedCostMicros": 7000
+            },
+            "syntheticUsage": null,
+            "provider": {
+              "id": "resp_baseline_fixture_1",
+              "status": "completed",
+              "model": "gpt-6.1-sol",
+              "serviceTier": "default"
+            },
+            "implementationArtifact": {
+              "kind": "inert-source-bound-workspace-patch",
+              "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "patch": {
+                "version": "engineering-implementation-task-patch-v1",
+                "profile": "call-row-accessible-time-v1",
+                "descriptorHash": "6ce51beaf132feb6f7b4cdd6b7d8bd2ec35f55f1a2897ba6a59e7ae7b42f450b",
+                "binding": {
+                  "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+                  "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+                  "taskId": "op_call_row_controller_fixture_task2",
+                  "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+                  "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "deploymentId": "dpl_callRowFixture",
+                  "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                  "releaseHash": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3",
+                  "contextHash": "bfdc08fe47651fb8c492884569c2bfa44c1fe137ad2b2ff2df1b9d54d838b2fd"
+                },
+                "path": "dashboard.js",
+                "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                "evidenceIds": [
+                  "call-row-label",
+                  "call-time-source",
+                  "client-dashboard-target"
+                ],
+                "edits": [
+                  {
+                    "beforeText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                    "afterText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\"",
+                    "explanation": "Include existing call date and time in the escaped accessible name while preserving row behavior."
+                  }
+                ],
+                "expectedBehavior": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "risks": [
+                  "No qualified dynamic execution exists for this task."
+                ],
+                "verification": [
+                  "Compare repeated caller names with different timestamps and missing-time fallback."
+                ],
+                "acceptanceMapping": [
+                  {
+                    "criterion": 1,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 2,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 3,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  }
+                ]
+              },
+              "patchHash": "c3f6a8adf51c74a4bc4c25001ff31607c95d93137c577a75ece177e7662d150a",
+              "workspace": {
+                "version": "draft-data-v3",
+                "files": [
+                  {
+                    "path": "dashboard.js",
+                    "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                    "afterSha256": "8defc782ad52401e14df1d3e05e28286a341a844f31688ec51c082a9ccd61814",
+                    "beforeBytes": 615443,
+                    "afterBytes": 615537
+                  }
+                ],
+                "patch": {
+                  "path": "dashboard.js",
+                  "operation": "bounded-proposed-text-replacements",
+                  "proposalHash": "073ceabb44e820af108fc7a87fa0dcad3710532b2e4c0858661eb2a5905853d1",
+                  "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                  "afterSha256": "8defc782ad52401e14df1d3e05e28286a341a844f31688ec51c082a9ccd61814",
+                  "edits": [
+                    {
+                      "offset": 82242,
+                      "before": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                      "after": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\"",
+                      "beforeSha256": "5b7baf23e46abfbaec49972cf4e40f7cf73bd674de54807c7717e0459fedc53c"
+                    }
+                  ]
+                },
+                "patchSha256": "d117d2699984d6a26cd165ae4d631925e8b455a392fd654856c34a6841ad24ed",
+                "publicationAllowed": false,
+                "sourceSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceManifestHash": "1b0d03cfe56a5d9577dd328ef0cbdbdc4237a0e62d1a52a558046fddc7b7549f",
+                "repository": "mohamtaj004ba/my-ai-website",
+                "branch": "feature/callercore-dashboards",
+                "limits": {
+                  "maxFiles": 1,
+                  "maxBytes": 700000,
+                  "maxDurationMs": 10000,
+                  "maxOutputBytes": 16000,
+                  "maxOldSpaceMb": 64,
+                  "network": false,
+                  "arbitraryCommands": false,
+                  "externalCodeExecution": false,
+                  "publication": false,
+                  "maxEdits": 3
+                },
+                "cleanup": {
+                  "destroyed": true
+                },
+                "classification": "real-disposable-filesystem-trusted-data-only",
+                "qualification": "Bounded proposed text replacements only. Draft source is never executed. No untrusted-code sandbox, repository writer, shell, network adapter, commit, push or deployment executor.",
+                "proposal": {
+                  "version": "engineering-text-proposal-v1",
+                  "path": "dashboard.js",
+                  "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                  "edits": [
+                    {
+                      "beforeText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                      "afterText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\""
+                    }
+                  ]
+                },
+                "binding": {
+                  "planId": "op_call_row_controller_fixture",
+                  "taskId": "op_call_row_controller_fixture_task2",
+                  "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+                  "fence": 0,
+                  "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+                  "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+                  "runtime": {
+                    "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                    "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "branch": "feature/callercore-dashboards",
+                    "deploymentId": "dpl_callRowFixture",
+                    "release": {
+                      "version": "organization-contracts-v4",
+                      "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                    }
+                  }
+                }
+              },
+              "filesystemCreated": true,
+              "sourceExecuted": false,
+              "publicationAuthorized": false,
+              "verification": {
+                "scopeIntegrity": true,
+                "semanticsUnverified": true,
+                "executionQualified": false
+              }
+            },
+            "principalHash": "1b83657ee0a52be60443b29a4114c10105a93cbecf582d6afd5160781564e4df",
+            "principalKind": "service",
+            "independence": "separate-capability-procedural-only",
+            "reviewMode": "authenticated-automated-technical",
+            "humanReview": false,
+            "acceptedWork": false,
+            "publicationAuthorized": false,
+            "hash": "5e8995b2633c224d2d2efc930512f8611c0a7d8320553f2bc2d8faabe758f9bd"
+          },
+          {
+            "version": "engineering-provider-v2",
+            "stage": "qa",
+            "binding": {
+              "planId": "op_call_row_controller_fixture",
+              "taskId": "op_call_row_controller_fixture_task3",
+              "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_qa",
+              "fence": 0,
+              "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+              "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+              "runtime": {
+                "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "branch": "feature/callercore-dashboards",
+                "deploymentId": "dpl_callRowFixture",
+                "release": {
+                  "version": "organization-contracts-v4",
+                  "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                }
+              },
+              "authorizationRevision": 1
+            },
+            "mode": "pilot",
+            "response": {
+              "stage": "qa",
+              "decisions": [
+                {
+                  "findingId": "call-row-accessible-time-v1",
+                  "decision": "unresolved",
+                  "reason": "Source supports a scoped accessible-name proposal; browser and dynamic execution remain unverified by this workflow.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                }
+              ],
+              "uncertainty": "Offline technical criticism; no independent human acceptance."
+            },
+            "requestHash": "74625dea0e0b1b5afe4303b7bfd4465b285b9512d4082e8feec107275da37665",
+            "evidenceHash": "c1939df002c6703520756790360c7b333c3a51528e4c5da068f61a5679c2704b",
+            "usage": {
+              "inputTokens": 1000,
+              "outputTokens": 500,
+              "reasoningTokens": 50,
+              "cachedInputTokens": 0,
+              "cacheWriteTokens": 0,
+              "calculatedCostMicros": 7000
+            },
+            "syntheticUsage": null,
+            "provider": {
+              "id": "resp_baseline_fixture_2",
+              "status": "completed",
+              "model": "gpt-6.1-sol",
+              "serviceTier": "default"
+            },
+            "principalHash": "f26c624874ba2382bf78568fd78768de19269fe5b009faf88b6bc91122c2f0cb",
+            "principalKind": "service",
+            "independence": "separate-capability-procedural-only",
+            "reviewMode": "authenticated-automated-technical",
+            "humanReview": false,
+            "acceptedWork": false,
+            "publicationAuthorized": false,
+            "hash": "37bde747a6ea3c800a921bbb2b3a8c69697dd3eefcad032cbcbe43747c84162c"
+          }
+        ]
+      },
+      "requestHash": "11e5380ae9d95d460530f6ca2bacec4a2f4c68e71bb620be113fb7f711c918c9"
+    },
+    {
+      "stage": "chief-final",
+      "context": {
+        "binding": {
+          "planId": "op_call_row_controller_fixture",
+          "taskId": "op_call_row_controller_fixture_task5",
+          "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_chief-final",
+          "fence": 0,
+          "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+          "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+          "runtime": {
+            "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+            "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "branch": "feature/callercore-dashboards",
+            "deploymentId": "dpl_callRowFixture",
+            "release": {
+              "version": "organization-contracts-v4",
+              "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+            }
+          },
+          "authorizationRevision": 1
+        },
+        "assignment": "Prepare a bounded call-row accessible-name patch from current source. Distinguish repeated callers by call date and time, retain click behavior and evidence, and report static verification limits. Use implementation-singleton-enum-v1. Use engineering-report-v1: complete assignments and impact-qualified inert proposals.",
+        "evidence": [
+          {
+            "id": "call-row-label",
+            "path": "dashboard.js",
+            "line": 733,
+            "text": "    return '<button class=\"call-row data '+stateClass+(unviewed?' call-unviewed':' call-viewed')+'\" data-call-id=\"'+esc(x.id)+'\" aria-label=\"Open '+esc(x.caller||'caller')+' call details\"><span class=\"call-caller-cell\">'+(unviewed?'<i class=\"call-new-dot\" title=\"Not opened yet\"></i>':'')+'<span><strong title=\"'+esc(x.caller||'Unknown')+'\">'+esc(x.caller||'Unknown')+'</strong><small class=\"subtle\">'+esc(x.phone||'')+' · '+(unviewed?(callViewedCoverage.verified?'Not opened':'Opened state unknown'):'Opened')+'</small>'+callRecordAlertBadge(x.id)+'</span></span><span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class=\"subtle\">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span><span><i class=\"call-type-pill\" title=\"'+esc(x.category||'General question')+'\">'+esc(x.category||'General question')+'</i></span><span class=\"call-reason\" title=\"'+esc(x.reason||'—')+'\">'+esc(x.reason||'—')+'</span><span><i class=\"disposition-pill '+callDispositionClass(x)+'\">'+esc(disposition.label)+'</i></span><span><i class=\"team-status-pill '+team.tone+'\">'+esc(team.label)+'</i></span><span class=\"call-duration\"><b>'+esc(x.duration||'—')+'</b><small class=\"call-view-cue\">View details →</small></span></button>';",
+            "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+            "excerptHash": "310ea512267613f6a740c74806dd34443d10c9783e0ecc9f420b08cc4fe30a9b"
+          },
+          {
+            "id": "call-time-source",
+            "path": "dashboard.js",
+            "line": 574,
+            "text": "  const n=Number(x?.activityAt||x?.createdAt||x?.at||0);if(n)return n;",
+            "sha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+            "excerptHash": "eafddf8b8aed6d85f3013bd02c318f9f88cbe3d414db9e9f859d1292dde8df05"
+          },
+          {
+            "id": "client-dashboard-target",
+            "path": "dashboard.html",
+            "line": 9,
+            "text": "<body data-dashboard=\"client\">",
+            "sha256": "77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f",
+            "excerptHash": "5e5fd5f51ae5c5d9dbb582fc248a95fa5fc70fc634468d600d863cb7275c5557"
+          }
+        ],
+        "priorReceipts": [
+          {
+            "version": "engineering-provider-v2",
+            "stage": "chief-plan",
+            "binding": {
+              "planId": "op_call_row_controller_fixture",
+              "taskId": "op_call_row_controller_fixture_task1",
+              "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_chief-plan",
+              "fence": 0,
+              "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+              "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+              "runtime": {
+                "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "branch": "feature/callercore-dashboards",
+                "deploymentId": "dpl_callRowFixture",
+                "release": {
+                  "version": "organization-contracts-v4",
+                  "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                }
+              },
+              "authorizationRevision": 1
+            },
+            "mode": "pilot",
+            "response": {
+              "stage": "chief-plan",
+              "objective": "Distinguish repeated callers in call-row accessible names.",
+              "specialist": "dashboard",
+              "completionCriteria": [
+                "Include caller, call date and time in the accessible name.",
+                "Escape dynamic text and handle missing call times.",
+                "Preserve behavior and read state; report no execution, publication or acceptance."
+              ],
+              "reason": "Accessible names omit call times.",
+              "problem": "Repeated callers have identical call-row accessible names despite different visible call times.",
+              "sourceEvidenceIds": [
+                "call-row-label",
+                "call-time-source",
+                "client-dashboard-target"
+              ],
+              "intendedImpact": {
+                "assessment": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "basis": "hypothesis",
+                "uncertainty": "Source-only fixture; impact is unverified."
+              },
+              "scope": [
+                "One accessible-name fragment only."
+              ],
+              "exclusions": [
+                "No behavior or authority changes."
+              ],
+              "uncertainty": "Customer impact is unverified.",
+              "deliverables": [
+                "One inert patch and review report."
+              ]
+            },
+            "requestHash": "7c0cacc8f6326cd2c7d2c41a45e8c3f8804011b34800f5cb823e93efb5f56c0e",
+            "evidenceHash": "c1939df002c6703520756790360c7b333c3a51528e4c5da068f61a5679c2704b",
+            "usage": {
+              "inputTokens": 1000,
+              "outputTokens": 500,
+              "reasoningTokens": 50,
+              "cachedInputTokens": 0,
+              "cacheWriteTokens": 0,
+              "calculatedCostMicros": 7000
+            },
+            "syntheticUsage": null,
+            "provider": {
+              "id": "resp_baseline_fixture_0",
+              "status": "completed",
+              "model": "gpt-6.1-sol",
+              "serviceTier": "default"
+            },
+            "principalHash": "ddda5b6f0f3ed73267ec582a961f23daa3fdc63699a5c4a7b811a78615d195bd",
+            "principalKind": "service",
+            "independence": "separate-capability-procedural-only",
+            "reviewMode": "authenticated-automated-technical",
+            "humanReview": false,
+            "acceptedWork": false,
+            "publicationAuthorized": false,
+            "hash": "1848bf30d645991948078f133247c62e37c1bb2bb5af1b056a06331e80a7e5fc"
+          },
+          {
+            "version": "engineering-provider-v2",
+            "stage": "specialist",
+            "binding": {
+              "planId": "op_call_row_controller_fixture",
+              "taskId": "op_call_row_controller_fixture_task2",
+              "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+              "fence": 0,
+              "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+              "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+              "runtime": {
+                "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "branch": "feature/callercore-dashboards",
+                "deploymentId": "dpl_callRowFixture",
+                "release": {
+                  "version": "organization-contracts-v4",
+                  "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                }
+              },
+              "authorizationRevision": 1
+            },
+            "mode": "pilot",
+            "response": {
+              "stage": "specialist",
+              "findings": [
+                {
+                  "id": "call-row-accessible-time-v1",
+                  "claim": "Repeated callers have identical call-row accessible names despite different visible call times.",
+                  "classification": "source-observation",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ],
+                  "uncertainty": "Offline fixture, not model reasoning or customer evidence."
+                }
+              ],
+              "proposal": {
+                "version": "engineering-implementation-task-patch-v1",
+                "profile": "call-row-accessible-time-v1",
+                "descriptorHash": "6ce51beaf132feb6f7b4cdd6b7d8bd2ec35f55f1a2897ba6a59e7ae7b42f450b",
+                "binding": {
+                  "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+                  "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+                  "taskId": "op_call_row_controller_fixture_task2",
+                  "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+                  "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "deploymentId": "dpl_callRowFixture",
+                  "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                  "releaseHash": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3",
+                  "contextHash": "bfdc08fe47651fb8c492884569c2bfa44c1fe137ad2b2ff2df1b9d54d838b2fd"
+                },
+                "path": "dashboard.js",
+                "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                "evidenceIds": [
+                  "call-row-label",
+                  "call-time-source",
+                  "client-dashboard-target"
+                ],
+                "edits": [
+                  {
+                    "beforeText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                    "afterText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\"",
+                    "explanation": "Include existing call date and time in the escaped accessible name while preserving row behavior."
+                  }
+                ],
+                "expectedBehavior": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "risks": [
+                  "No qualified dynamic execution exists for this task."
+                ],
+                "verification": [
+                  "Compare repeated caller names with different timestamps and missing-time fallback."
+                ],
+                "acceptanceMapping": [
+                  {
+                    "criterion": 1,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 2,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 3,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  }
+                ]
+              },
+              "rootCause": {
+                "analysis": "Repeated callers have identical call-row accessible names despite different visible call times.",
+                "evidenceIds": [
+                  "call-row-label",
+                  "call-time-source",
+                  "client-dashboard-target"
+                ],
+                "uncertainty": "Source-backed mechanism; fixture reasoning is not live model analysis."
+              },
+              "expectedImpact": {
+                "assessment": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "basis": "hypothesis",
+                "uncertainty": "Explicit offline fixture; current customer occurrence and live model quality are not established."
+              },
+              "regressionRisks": [
+                "Do not change visible content, event routing, escaping or read state."
+              ],
+              "affectedInterfaces": [
+                "Client Calls row accessible button names."
+              ],
+              "verificationStrategy": [
+                "Compare names for same caller across timestamps; inspect missing-time and escaping behavior."
+              ],
+              "remainingUncertainty": "No qualified dynamic test profile for this task.",
+              "acceptanceMapping": [
+                {
+                  "criterion": 1,
+                  "status": "proposed",
+                  "explanation": "Source-backed proposal retained for review, not accepted.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                },
+                {
+                  "criterion": 2,
+                  "status": "proposed",
+                  "explanation": "Source-backed proposal retained for review, not accepted.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                },
+                {
+                  "criterion": 3,
+                  "status": "proposed",
+                  "explanation": "Source-backed proposal retained for review, not accepted.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                }
+              ]
+            },
+            "requestHash": "8ef94bafcf444c3aeb093b7bc7be61266a48b5f1fd80979009e0f6d5f12bc17e",
+            "evidenceHash": "c1939df002c6703520756790360c7b333c3a51528e4c5da068f61a5679c2704b",
+            "usage": {
+              "inputTokens": 1000,
+              "outputTokens": 500,
+              "reasoningTokens": 50,
+              "cachedInputTokens": 0,
+              "cacheWriteTokens": 0,
+              "calculatedCostMicros": 7000
+            },
+            "syntheticUsage": null,
+            "provider": {
+              "id": "resp_baseline_fixture_1",
+              "status": "completed",
+              "model": "gpt-6.1-sol",
+              "serviceTier": "default"
+            },
+            "implementationArtifact": {
+              "kind": "inert-source-bound-workspace-patch",
+              "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "patch": {
+                "version": "engineering-implementation-task-patch-v1",
+                "profile": "call-row-accessible-time-v1",
+                "descriptorHash": "6ce51beaf132feb6f7b4cdd6b7d8bd2ec35f55f1a2897ba6a59e7ae7b42f450b",
+                "binding": {
+                  "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+                  "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+                  "taskId": "op_call_row_controller_fixture_task2",
+                  "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+                  "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "deploymentId": "dpl_callRowFixture",
+                  "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                  "releaseHash": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3",
+                  "contextHash": "bfdc08fe47651fb8c492884569c2bfa44c1fe137ad2b2ff2df1b9d54d838b2fd"
+                },
+                "path": "dashboard.js",
+                "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                "evidenceIds": [
+                  "call-row-label",
+                  "call-time-source",
+                  "client-dashboard-target"
+                ],
+                "edits": [
+                  {
+                    "beforeText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                    "afterText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\"",
+                    "explanation": "Include existing call date and time in the escaped accessible name while preserving row behavior."
+                  }
+                ],
+                "expectedBehavior": "Help assistive-technology users distinguish calls from the same person without opening each call.",
+                "risks": [
+                  "No qualified dynamic execution exists for this task."
+                ],
+                "verification": [
+                  "Compare repeated caller names with different timestamps and missing-time fallback."
+                ],
+                "acceptanceMapping": [
+                  {
+                    "criterion": 1,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 2,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  },
+                  {
+                    "criterion": 3,
+                    "status": "proposed",
+                    "explanation": "Static scoped proposal; dynamic behavior is not established by this fixture."
+                  }
+                ]
+              },
+              "patchHash": "c3f6a8adf51c74a4bc4c25001ff31607c95d93137c577a75ece177e7662d150a",
+              "workspace": {
+                "version": "draft-data-v3",
+                "files": [
+                  {
+                    "path": "dashboard.js",
+                    "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                    "afterSha256": "8defc782ad52401e14df1d3e05e28286a341a844f31688ec51c082a9ccd61814",
+                    "beforeBytes": 615443,
+                    "afterBytes": 615537
+                  }
+                ],
+                "patch": {
+                  "path": "dashboard.js",
+                  "operation": "bounded-proposed-text-replacements",
+                  "proposalHash": "073ceabb44e820af108fc7a87fa0dcad3710532b2e4c0858661eb2a5905853d1",
+                  "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                  "afterSha256": "8defc782ad52401e14df1d3e05e28286a341a844f31688ec51c082a9ccd61814",
+                  "edits": [
+                    {
+                      "offset": 82242,
+                      "before": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                      "after": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\"",
+                      "beforeSha256": "5b7baf23e46abfbaec49972cf4e40f7cf73bd674de54807c7717e0459fedc53c"
+                    }
+                  ]
+                },
+                "patchSha256": "d117d2699984d6a26cd165ae4d631925e8b455a392fd654856c34a6841ad24ed",
+                "publicationAllowed": false,
+                "sourceSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceManifestHash": "1b0d03cfe56a5d9577dd328ef0cbdbdc4237a0e62d1a52a558046fddc7b7549f",
+                "repository": "mohamtaj004ba/my-ai-website",
+                "branch": "feature/callercore-dashboards",
+                "limits": {
+                  "maxFiles": 1,
+                  "maxBytes": 700000,
+                  "maxDurationMs": 10000,
+                  "maxOutputBytes": 16000,
+                  "maxOldSpaceMb": 64,
+                  "network": false,
+                  "arbitraryCommands": false,
+                  "externalCodeExecution": false,
+                  "publication": false,
+                  "maxEdits": 3
+                },
+                "cleanup": {
+                  "destroyed": true
+                },
+                "classification": "real-disposable-filesystem-trusted-data-only",
+                "qualification": "Bounded proposed text replacements only. Draft source is never executed. No untrusted-code sandbox, repository writer, shell, network adapter, commit, push or deployment executor.",
+                "proposal": {
+                  "version": "engineering-text-proposal-v1",
+                  "path": "dashboard.js",
+                  "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+                  "edits": [
+                    {
+                      "beforeText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+                      "afterText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\""
+                    }
+                  ]
+                },
+                "binding": {
+                  "planId": "op_call_row_controller_fixture",
+                  "taskId": "op_call_row_controller_fixture_task2",
+                  "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_specialist",
+                  "fence": 0,
+                  "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+                  "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+                  "runtime": {
+                    "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                    "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "branch": "feature/callercore-dashboards",
+                    "deploymentId": "dpl_callRowFixture",
+                    "release": {
+                      "version": "organization-contracts-v4",
+                      "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                    }
+                  }
+                }
+              },
+              "filesystemCreated": true,
+              "sourceExecuted": false,
+              "publicationAuthorized": false,
+              "verification": {
+                "scopeIntegrity": true,
+                "semanticsUnverified": true,
+                "executionQualified": false
+              }
+            },
+            "principalHash": "1b83657ee0a52be60443b29a4114c10105a93cbecf582d6afd5160781564e4df",
+            "principalKind": "service",
+            "independence": "separate-capability-procedural-only",
+            "reviewMode": "authenticated-automated-technical",
+            "humanReview": false,
+            "acceptedWork": false,
+            "publicationAuthorized": false,
+            "hash": "5e8995b2633c224d2d2efc930512f8611c0a7d8320553f2bc2d8faabe758f9bd"
+          },
+          {
+            "version": "engineering-provider-v2",
+            "stage": "qa",
+            "binding": {
+              "planId": "op_call_row_controller_fixture",
+              "taskId": "op_call_row_controller_fixture_task3",
+              "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_qa",
+              "fence": 0,
+              "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+              "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+              "runtime": {
+                "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "branch": "feature/callercore-dashboards",
+                "deploymentId": "dpl_callRowFixture",
+                "release": {
+                  "version": "organization-contracts-v4",
+                  "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                }
+              },
+              "authorizationRevision": 1
+            },
+            "mode": "pilot",
+            "response": {
+              "stage": "qa",
+              "decisions": [
+                {
+                  "findingId": "call-row-accessible-time-v1",
+                  "decision": "unresolved",
+                  "reason": "Source supports a scoped accessible-name proposal; browser and dynamic execution remain unverified by this workflow.",
+                  "evidenceIds": [
+                    "call-row-label",
+                    "call-time-source",
+                    "client-dashboard-target"
+                  ]
+                }
+              ],
+              "uncertainty": "Offline technical criticism; no independent human acceptance."
+            },
+            "requestHash": "74625dea0e0b1b5afe4303b7bfd4465b285b9512d4082e8feec107275da37665",
+            "evidenceHash": "c1939df002c6703520756790360c7b333c3a51528e4c5da068f61a5679c2704b",
+            "usage": {
+              "inputTokens": 1000,
+              "outputTokens": 500,
+              "reasoningTokens": 50,
+              "cachedInputTokens": 0,
+              "cacheWriteTokens": 0,
+              "calculatedCostMicros": 7000
+            },
+            "syntheticUsage": null,
+            "provider": {
+              "id": "resp_baseline_fixture_2",
+              "status": "completed",
+              "model": "gpt-6.1-sol",
+              "serviceTier": "default"
+            },
+            "principalHash": "f26c624874ba2382bf78568fd78768de19269fe5b009faf88b6bc91122c2f0cb",
+            "principalKind": "service",
+            "independence": "separate-capability-procedural-only",
+            "reviewMode": "authenticated-automated-technical",
+            "humanReview": false,
+            "acceptedWork": false,
+            "publicationAuthorized": false,
+            "hash": "37bde747a6ea3c800a921bbb2b3a8c69697dd3eefcad032cbcbe43747c84162c"
+          },
+          {
+            "version": "engineering-provider-v2",
+            "stage": "auditor",
+            "binding": {
+              "planId": "op_call_row_controller_fixture",
+              "taskId": "op_call_row_controller_fixture_task4",
+              "executionId": "pilot_86d082ecf2e5172e3d1d4db7afb1c48a_auditor",
+              "fence": 0,
+              "ownerHash": "3b74f47156b6bec2b5c44f92a3c8f029e63a0cfe55523d38f6801bdf40243943",
+              "workspaceHash": "1fe9c0671bf2b81b5b92d5956d79147cf791631ebb816195afc82cdea19d9a38",
+              "runtime": {
+                "origin": "https://my-ai-website-callrowfixture-mohamtaj004bas-projects.vercel.app",
+                "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "branch": "feature/callercore-dashboards",
+                "deploymentId": "dpl_callRowFixture",
+                "release": {
+                  "version": "organization-contracts-v4",
+                  "digest": "f6c1513dab511c4b96ecc1dc6ce19a4a0620c8cadf882549a2312dae6733f8c3"
+                }
+              },
+              "authorizationRevision": 1
+            },
+            "mode": "pilot",
+            "response": {
+              "stage": "auditor",
+              "decision": "fail",
+              "reason": "Patch scope is bounded, but no qualified task-specific execution or customer acceptance is established.",
+              "risks": [
+                "Do not turn static scope verification into dynamic-test or acceptance claims."
+              ],
+              "evidenceIds": [
+                "call-row-label",
+                "call-time-source",
+                "client-dashboard-target"
+              ]
+            },
+            "requestHash": "11e5380ae9d95d460530f6ca2bacec4a2f4c68e71bb620be113fb7f711c918c9",
+            "evidenceHash": "c1939df002c6703520756790360c7b333c3a51528e4c5da068f61a5679c2704b",
+            "usage": {
+              "inputTokens": 1000,
+              "outputTokens": 500,
+              "reasoningTokens": 50,
+              "cachedInputTokens": 0,
+              "cacheWriteTokens": 0,
+              "calculatedCostMicros": 7000
+            },
+            "syntheticUsage": null,
+            "provider": {
+              "id": "resp_baseline_fixture_3",
+              "status": "completed",
+              "model": "gpt-6.1-sol",
+              "serviceTier": "default"
+            },
+            "principalHash": "68022c6025ca31cbfeb5db93b05dca748730d5f3ca3fcb94dc73de54620fcff4",
+            "principalKind": "service",
+            "independence": "separate-capability-procedural-only",
+            "reviewMode": "authenticated-automated-technical",
+            "humanReview": false,
+            "acceptedWork": false,
+            "publicationAuthorized": false,
+            "hash": "8fba8273a8ff4baecd8c3a50a65f19599786a9fb4f03f7b0980f86442fda6923"
+          }
+        ]
+      },
+      "requestHash": "4b12a594d48c0c2c41196bf6d6946d6edbc9da1a6532fffd628cbc3847a97089"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+# Work adoption review: agent-generated visible call timestamp guard
+
+The preserved genuine Specialist proposal from workflow wf_8fada462fe47c6c6f26c798726a5ecdc is copied exactly into dashboard.js. Patch d91c3f12ef66d4ba3a3b68b7b86f115e2c5817e998a9e8cdb42819605d4b3bc0 changes one declared fragment only. Baseline aea8a45986d71205bcbc96ce8e0d362b16a63804be1452d72af51545aa10303f becomes 37d1a7c38970ba3a82b3e3d97ac0aec12395dd5d6f8eb1e1fab51836f5a2de0c. The adopted edit is preserved in tests/fixtures/agent-visible-time-adopted-patch.json with Specialist and isolated-test receipt references.
+
+Both visible formatters now reject invalid Date values before formatting. Each existing fallback and escaping remain separate. Accessible labels and all other application bytes are unchanged. Actual qualified isolated tests previously passed seven behavior groups and 23 isolation checks; VM shutdown was independently confirmed. That evidence is historical, not a new sandbox run or broad browser acceptance.
+
+Work is implementing adoption under standing feature Preview development authority. Internal agents did not write the repository or publish. The original automated Auditor rejection and final Chief report are untouched; this addendum is neither retroactive model acceptance nor independently authenticated human/business acceptance.
+
+The reviewer handoff now includes a validated manifest-bound summary: descriptor, source/task/release binding, proposal/program/source hashes, historical permit reference, named isolation checks, test results, report hash and stop/cleanup. Existing validateLivePrior and dispatch.validateEvidence run before projection. No raw output, bearer credential, new authority or permission is exposed. New prose guidance asks for short complete sentences while preserving material risks, critic freedom and exact final-Chief review references. Fixtures explicitly replay historical source and do not grant live admission; resolved task admission is denied before journal writes.
+
+Focused combined verification: nine tests passed, including full synthetic five-stage controller/worker and failure cleanup; each request remained at most 32768 bytes. Fixtures do not establish new live model behavior. Full release qualification and final independent adoption review remain pending and must be recorded before claiming publication.

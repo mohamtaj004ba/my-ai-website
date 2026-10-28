@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "789919073344804fbff5f25adf8a57c1837be50005c079679dd3ce2ec3ba819c",
+  "risk": "routine",
+  "scope": "Preserve qualified Vercel-only cost fix, actual measured elapsed reduction, exact source and final remote artifact evidence.",
+  "verification": [
+    "scope-review"
+  ],
+  "riskAnalysis": "Documentation only; no application rebuild, paid grant, source modification or provider action. Preserve remaining engineering activation blocker and missing local browser selection honestly.",
+  "defects": []
+}

@@ -1,0 +1,372 @@
+{
+  "kind": "OFFLINE replay geometry, not original capture-time DOM evidence",
+  "source": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+  "observedAt": "2026-10-11T22:08:31.128Z",
+  "browserVersion": "154.0.8037.99",
+  "modelCalls": 0,
+  "externalNetworkRequests": 0,
+  "screenshotCaptures": 0,
+  "files": [
+    {
+      "file": "index.html",
+      "sha256": "53db8ede71fa6cb82fe39e0b59d35784d41c0b59022876d64ccaa57f2f47a025"
+    },
+    {
+      "file": "redesign.css",
+      "sha256": "fab3491e59b341c1f5b49a82f8c450c907164509faa3c716c39aa263afa6d98f"
+    },
+    {
+      "file": "public-premium.css",
+      "sha256": "02219f7af48d63c3432ec26a166b649b1f421236525c336769eb734190d062a1"
+    },
+    {
+      "file": "home-motion.css",
+      "sha256": "9cc526c97b09a34bc8db6856c11135b2ffca0de525c0d6e280d2b8cdcbc0835e"
+    },
+    {
+      "file": "hero-film.css",
+      "sha256": "4af5a5ebd4b02c582d06c2a149359c470bf51be2ec58ef553d93b084a9296f78"
+    },
+    {
+      "file": "dashboard-showcase.css",
+      "sha256": "6a7e16a09849e8f01a39ebc04698217ab9f93be7144442e2935a456037749c74"
+    },
+    {
+      "file": "industries.css",
+      "sha256": "93ac8bdc1f75c1ea3ed480a5b363c163a8c1d9a513464312715655e893316397"
+    },
+    {
+      "file": "homepage-imagery.css",
+      "sha256": "2a292593fe056fa8f608d694aa11f36dc0cfb8b6a6ba72a5144a23439370267a"
+    },
+    {
+      "file": "logo-icon.png",
+      "sha256": "37710227782f22bdc10dd1a78f436864b569313c332a8009f9f0fcee5e71d426"
+    },
+    {
+      "file": "assets/dashboard/today-sample.jpg",
+      "sha256": "b52b6915dfe1480c2d56f6f3e69974c5d0af29d1ec145be7757f9d914454cc13"
+    },
+    {
+      "file": "public-experience.js",
+      "sha256": "4d471b151493a4af5ba9e9742c36cee0908b313a35dd6b4b0b1baca3985647a4"
+    },
+    {
+      "file": "dashboard-showcase.js",
+      "sha256": "5d04b04b71f7a4c0cc27d6606a36b4a2f68eca84bda6dce35ce19cc4fdacca39"
+    },
+    {
+      "file": "hero-film.js",
+      "sha256": "b625c0064b713781abd2d9d8abf61838f54700e3dbcba98789e3f9ff85d7b256"
+    },
+    {
+      "file": "site.js",
+      "sha256": "849df2a17d9b10be8206aa196f930ed9220400cd4bb44682807b07b12207adb5"
+    },
+    {
+      "file": "industries.js",
+      "sha256": "72b02e4e9255604633f70f1063bcf0bcf29c6d442e93a5f067ad649c08d7e067"
+    },
+    {
+      "file": "assets/workspaces/after-hours.jpg",
+      "sha256": "0650a7321a94b5423d09b1de1a2158aa263de448c48b78b54dd84f41fb4726b1"
+    },
+    {
+      "file": "assets/workspaces/work-in-progress.jpg",
+      "sha256": "701f5be01987faf0b276f72b034cbff20d0b34955f83d46d0f663ad81b40f555"
+    },
+    {
+      "file": "assets/workspaces/clear-next-step.jpg",
+      "sha256": "230ae4cc8a8aa59b21236ad46c30d5e658f0d7622d0a4cc517f3b8dfc7422b6f"
+    },
+    {
+      "file": "assets/dashboard/calls-sample.jpg",
+      "sha256": "35ed34e7ed06711de03e2c2a49c86a1a1f905c01cb6f5e5b3aca3de6d8df317a"
+    },
+    {
+      "file": "assets/dashboard/contacts-sample.jpg",
+      "sha256": "e80962f5dc956f2f462711aaf64f7aebe231d2cd312642ec8270640acc199460"
+    },
+    {
+      "file": "assets/dashboard/follow-ups-sample.jpg",
+      "sha256": "15b777c9d87300497c65d6a991154ab3fc69b3adcf6ca43a03585f2be2b1b1be"
+    }
+  ],
+  "results": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "dpr": 1,
+        "scrollY": 3415
+      },
+      "card": {
+        "x": 531.328125,
+        "y": 354.125,
+        "width": 377.328125,
+        "height": 504.390625,
+        "right": 908.65625,
+        "bottom": 858.515625
+      },
+      "badge": {
+        "selector": ".badge",
+        "text": "Built to grow",
+        "box": {
+          "x": 536.328125,
+          "y": 405.125,
+          "width": 323.328125,
+          "height": 27.5,
+          "right": 859.65625,
+          "bottom": 432.625
+        },
+        "textRects": [
+          {
+            "x": 546.328125,
+            "y": 413.125,
+            "width": 87.828125,
+            "height": 11,
+            "right": 634.15625,
+            "bottom": 424.125
+          }
+        ],
+        "style": {
+          "position": "relative",
+          "zIndex": "2",
+          "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+          "fontSize": "10px",
+          "lineHeight": "15.5px",
+          "opacity": "1",
+          "visibility": "visible"
+        }
+      },
+      "heading": {
+        "selector": "p",
+        "text": "Growth",
+        "box": {
+          "x": 558.328125,
+          "y": 408.625,
+          "width": 323.328125,
+          "height": 27.890625,
+          "right": 881.65625,
+          "bottom": 436.515625
+        },
+        "textRects": [
+          {
+            "x": 558.328125,
+            "y": 411.625,
+            "width": 63,
+            "height": 20,
+            "right": 621.328125,
+            "bottom": 431.625
+          }
+        ],
+        "style": {
+          "position": "relative",
+          "zIndex": "2",
+          "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+          "fontSize": "18px",
+          "lineHeight": "27.9px",
+          "opacity": "1",
+          "visibility": "visible"
+        }
+      },
+      "price": {
+        "selector": "h3",
+        "text": "$599/mo",
+        "box": {
+          "x": 558.328125,
+          "y": 452.515625,
+          "width": 323.328125,
+          "height": 48,
+          "right": 881.65625,
+          "bottom": 500.515625
+        },
+        "textRects": [
+          {
+            "x": 558.328125,
+            "y": 448.515625,
+            "width": 90.96875,
+            "height": 55,
+            "right": 649.296875,
+            "bottom": 503.515625
+          },
+          {
+            "x": 649.296875,
+            "y": 477.515625,
+            "width": 20.484375,
+            "height": 18,
+            "right": 669.78125,
+            "bottom": 495.515625
+          },
+          {
+            "x": 649.296875,
+            "y": 477.515625,
+            "width": 20.484375,
+            "height": 18,
+            "right": 669.78125,
+            "bottom": 495.515625
+          }
+        ],
+        "style": {
+          "position": "relative",
+          "zIndex": "2",
+          "fontFamily": "Manrope, ui-sans-serif, system-ui, sans-serif",
+          "fontSize": "40px",
+          "lineHeight": "48px",
+          "opacity": "1",
+          "visibility": "visible"
+        }
+      },
+      "fontsLoaded": true,
+      "headingIntersection": {
+        "width": 301.328125,
+        "height": 24
+      },
+      "priceIntersection": {
+        "width": 301.328125,
+        "height": 0
+      },
+      "badgeToPriceVerticalGap": 19.890625
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 1000,
+        "dpr": 1,
+        "scrollY": 4649
+      },
+      "card": {
+        "x": 20,
+        "y": 512.1875,
+        "width": 350,
+        "height": 487.5625,
+        "right": 370,
+        "bottom": 999.75
+      },
+      "badge": {
+        "selector": ".badge",
+        "text": "Built to grow",
+        "box": {
+          "x": 22,
+          "y": 559.1875,
+          "width": 306,
+          "height": 27.5,
+          "right": 328,
+          "bottom": 586.6875
+        },
+        "textRects": [
+          {
+            "x": 32,
+            "y": 567.1875,
+            "width": 87.828125,
+            "height": 11,
+            "right": 119.828125,
+            "bottom": 578.1875
+          }
+        ],
+        "style": {
+          "position": "relative",
+          "zIndex": "2",
+          "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+          "fontSize": "10px",
+          "lineHeight": "15.5px",
+          "opacity": "1",
+          "visibility": "visible"
+        }
+      },
+      "heading": {
+        "selector": "p",
+        "text": "Growth",
+        "box": {
+          "x": 42,
+          "y": 563.6875,
+          "width": 306,
+          "height": 21.6875,
+          "right": 348,
+          "bottom": 585.375
+        },
+        "textRects": [
+          {
+            "x": 42,
+            "y": 565.6875,
+            "width": 49,
+            "height": 16,
+            "right": 91,
+            "bottom": 581.6875
+          }
+        ],
+        "style": {
+          "position": "relative",
+          "zIndex": "2",
+          "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+          "fontSize": "14px",
+          "lineHeight": "21.7px",
+          "opacity": "1",
+          "visibility": "visible"
+        }
+      },
+      "price": {
+        "selector": "h3",
+        "text": "$599/mo",
+        "box": {
+          "x": 42,
+          "y": 599.375,
+          "width": 306,
+          "height": 43.1875,
+          "right": 348,
+          "bottom": 642.5625
+        },
+        "textRects": [
+          {
+            "x": 42,
+            "y": 596.375,
+            "width": 81.875,
+            "height": 49,
+            "right": 123.875,
+            "bottom": 645.375
+          },
+          {
+            "x": 123.875,
+            "y": 620.375,
+            "width": 21.078125,
+            "height": 18,
+            "right": 144.953125,
+            "bottom": 638.375
+          },
+          {
+            "x": 123.875,
+            "y": 620.375,
+            "width": 21.078125,
+            "height": 18,
+            "right": 144.953125,
+            "bottom": 638.375
+          }
+        ],
+        "style": {
+          "position": "relative",
+          "zIndex": "2",
+          "fontFamily": "Manrope, ui-sans-serif, system-ui, sans-serif",
+          "fontSize": "36px",
+          "lineHeight": "43.2px",
+          "opacity": "1",
+          "visibility": "visible"
+        }
+      },
+      "fontsLoaded": true,
+      "headingIntersection": {
+        "width": 286,
+        "height": 21.6875
+      },
+      "priceIntersection": {
+        "width": 286,
+        "height": 0
+      },
+      "badgeToPriceVerticalGap": 12.6875
+    }
+  ],
+  "limitations": [
+    "Original pilot retained PNGs, not DOM boxes; these measurements cannot be retroactively bound to its capture time.",
+    "Same pinned source, fonts and viewport support reproduction, but browser/version/scroll/timing may differ.",
+    "Rect intersections identify candidates; transforms, clipping, pseudo-elements, stacking and painted glyphs require additional evidence before a generic overlap assertion."
+  ]
+}

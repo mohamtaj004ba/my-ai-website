@@ -1,0 +1,12 @@
+{
+  "version": "engineering-quality-v1",
+  "title": "Preserve fully qualified shared-workflow release and shutdown evidence",
+  "base": "82559527e071bcdccd8271fd7d6ce3b8f69e9474",
+  "changeDigest": "1f5dea1dd6e20fd7ecbd546433f16e5e1a0e74eb836593fa99bd368a8baf93ae",
+  "risk": "routine",
+  "scope": "Append verified release, independent review, historical failure preservation and remaining capability boundaries to the canonical checkpoint.",
+  "riskAnalysis": "Documentation only. Runtime, source evidence, credentials and authority remain unchanged. Fixture and live evidence are explicitly separated; no new application build is required.",
+  "verification": ["scope-review"],
+  "defects": [],
+  "files": ["CALLERCORE_PROJECT_STATE.md"]
+}

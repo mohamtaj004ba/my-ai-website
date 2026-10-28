@@ -1,0 +1,58 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "70cebf05a565d59baddbb724f7c26e790d725abeb8e6a64fe081582bc8b5116d",
+  "risk": "critical",
+  "scope": "Restore omitted attestations for exactly two preserved reviewed commits through hash-pinned recovery; retain normal engineering validation.",
+  "riskAnalysis": "A historical recovery path could bypass policy if broad. Restrict it to two known fullcommitSHA/digest/path/mode/planhash/risk sets. Do not replace normal plan validation or runtime authority.",
+  "threatModel": {
+    "assets": "Exact source history, review evidence and mandatory release qualification.",
+    "trustBoundaries": "Hardcoded reviewed snapshot pins versus supplied supplemental documentation.",
+    "abuseCases": "Generic missing-plan fallback, changed source/modes, forged reviews, lower risk or duplicate records.",
+    "mitigations": "Two exact identities/digests/pathsets/contenthashes/risks; ordinary full validation still mandatory."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Two published checkpoints omitted their mandatory source-bound engineering plans.",
+      "detectionGap": "Focused tests and selection plan ran, but complete PR-history engineering preflight did not run before push.",
+      "regression": "Unknowncommit, alteredblob/path/extra-path, unsafefilemodes, forgedplanrisk/digest/commit/content and duplicateplan denials; priorrecovery and fullnormalpolicy checks.",
+      "historicalPrevention": "Commit complete plans with source, then run engineering-quality-preflight against actualmainbase before pushing."
+    }
+  ],
+  "rollback": "Stop qualification and keep paid execution off; preserve original commits, failedCI and supplements. Never force-push or remove mandatory validation.",
+  "negativePaths": {
+    "malformed-response": "Unknown or altered historical snapshots and supplemental evidence fail closed; existing full risk/proactive checks remain required. No provider request, publication authority or state mutation.",
+    "stale-state": "Unknown or altered historical snapshots and supplemental evidence fail closed; existing full risk/proactive checks remain required. No provider request, publication authority or state mutation.",
+    "concurrency": "Unknown or altered historical snapshots and supplemental evidence fail closed; existing full risk/proactive checks remain required. No provider request, publication authority or state mutation.",
+    "cancellation": "Unknown or altered historical snapshots and supplemental evidence fail closed; existing full risk/proactive checks remain required. No provider request, publication authority or state mutation.",
+    "worker-interruption": "Unknown or altered historical snapshots and supplemental evidence fail closed; existing full risk/proactive checks remain required. No provider request, publication authority or state mutation.",
+    "api-outage": "Unknown or altered historical snapshots and supplemental evidence fail closed; existing full risk/proactive checks remain required. No provider request, publication authority or state mutation.",
+    "authorization-denial": "Unknown or altered historical snapshots and supplemental evidence fail closed; existing full risk/proactive checks remain required. No provider request, publication authority or state mutation.",
+    "spending-limit": "Unknown or altered historical snapshots and supplemental evidence fail closed; existing full risk/proactive checks remain required. No provider request, publication authority or state mutation.",
+    "partial-execution": "Unknown or altered historical snapshots and supplemental evidence fail closed; existing full risk/proactive checks remain required. No provider request, publication authority or state mutation.",
+    "duplicate-request": "Unknown or altered historical snapshots and supplemental evidence fail closed; existing full risk/proactive checks remain required. No provider request, publication authority or state mutation."
+  },
+  "proactiveReview": {
+    "architecture": "Extend existing historical recovery narrowly; no new review system.",
+    "dependencies": "No external provider, dependency or credential changes.",
+    "threats": "Generic missing-plan fallback, changed source/modes, forged reviews, lower risk or duplicate records.",
+    "failureModes": "Any unknown digest, path, mode, supplement or risk stays blocked.",
+    "faultInjection": "53 policy checks cover alteredcommit/blob/path/mode/hash/risk/duplicate records and oldrecovery.",
+    "independentChallenge": "Independent Work QA/Auditor reviewing exact implementation before release.",
+    "recovery": "Stop qualification and keep paid execution off; preserve original commits, failedCI and supplements. Never force-push or remove mandatory validation.",
+    "readiness": "Focused checks passed; fullmainbase preflight and exactsource hostedqualification required."
+  },
+  "qualification": "No execution authority; no retroactive CI-pass claim."
+}

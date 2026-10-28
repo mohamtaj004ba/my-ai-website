@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "534dc3164bec4683d0552d63d23227db713f62d58f0dc985fdbcbb473dec285b",
+  "risk": "routine",
+  "scope": "Documentation-only final verified detailed-report and disabled recovery checkpoint. Exact-source CI/CodeQL/Redis/Preview/browser evidence and limitations recorded; no application source, execution, accounting or permission change.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "evidence": "Published4867cb6656cd29dd8fd967ae9d07fcbdaf114dce;2156regressions/87contractchecks/Redis2/browser502; current and historical brokers disabled, original accounting unchanged; actual model calls0."
+}

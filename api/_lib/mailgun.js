@@ -2,13 +2,17 @@ const https = require('https');
 const crypto = require('crypto');
 
 const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
-const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'mail.callercore.com';
+const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'notify.callercore.com';
+function safeHeader(v,max=500){return String(v||'').replace(/[\r\n\0-\x1f\x7f]+/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
+function safeFilename(v){return safeHeader(v,180).replace(/["\\/]/g,'-')||'attachment'}
+function safeContentType(v){const s=safeHeader(v,100).toLowerCase();return /^[a-z0-9.+-]+\/[a-z0-9.+-]+$/.test(s)?s:'application/octet-stream'}
 
 // Sends via Mailgun. Pass `attachments: [{ filename, data (Buffer), contentType }]`
 // to include files — Mailgun's API needs multipart/form-data for that, so this
 // builds the multipart body by hand rather than pulling in a form-data library.
-function sendMail({ to, subject, text, html, attachments = [] }) {
+function sendMail({ to, subject, text, html, attachments = [], from = 'CallerCore <support@callercore.com>', replyTo = 'support@callercore.com' }) {
   return new Promise((resolve, reject) => {
+    if(!MAILGUN_API_KEY)return reject(new Error('MAILGUN_API_KEY missing'));
     const boundary = '----ccmail' + crypto.randomBytes(16).toString('hex');
     const parts = [];
 
@@ -18,15 +22,16 @@ function sendMail({ to, subject, text, html, attachments = [] }) {
       ));
     }
 
-    field('from', 'CallerCore <support@callercore.com>');
-    field('to', to);
-    field('subject', subject);
-    field('text', text);
-    field('html', html);
+    field('from', safeHeader(from,320));
+    field('h:Reply-To', safeHeader(replyTo,320));
+    field('to', safeHeader(to,320));
+    field('subject', safeHeader(subject,500));
+    field('text', String(text||''));
+    field('html', String(html||''));
 
     attachments.forEach((att) => {
       parts.push(Buffer.from(
-        `--${boundary}\r\nContent-Disposition: form-data; name="attachment"; filename="${att.filename}"\r\nContent-Type: ${att.contentType || 'application/octet-stream'}\r\n\r\n`
+        `--${boundary}\r\nContent-Disposition: form-data; name="attachment"; filename="${safeFilename(att.filename)}"\r\nContent-Type: ${safeContentType(att.contentType)}\r\n\r\n`
       ));
       parts.push(att.data);
       parts.push(Buffer.from('\r\n'));
@@ -51,8 +56,10 @@ function sendMail({ to, subject, text, html, attachments = [] }) {
       let resBody = '';
       res.on('data', (c) => { resBody += c; });
       res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) resolve(resBody);
-        else reject(new Error(`Mailgun error ${res.statusCode}: ${resBody}`));
+        if (!(res.statusCode >= 200 && res.statusCode < 300)) return reject(new Error(`Mailgun error ${res.statusCode}: ${resBody}`));
+        let receipt=null;try{receipt=JSON.parse(resBody)}catch(_){}
+        if(!receipt||typeof receipt!=='object'||Array.isArray(receipt)||!String(receipt.id||''))return reject(new Error('Mailgun delivery receipt could not be verified'));
+        resolve(receipt);
       });
     });
     req.on('error', reject);

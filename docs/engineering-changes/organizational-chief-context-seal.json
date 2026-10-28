@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "a1ea7ae2bc8e9249273e1eb1c6a3fbc9eb039609f6fae54abdc8582e98b453d7",
+  "risk": "critical",
+  "scope": "Backend-owned versioned Chief context seal across exact own-approval maintenance; preserves semantic stale-state checks and original snapshot, Preview-only nonbillable verification.",
+  "riskAnalysis": "Timing safety and revocation dominate availability. No semantic revision relaxation or retry of consequential stage/provider operations. Unknown underlying transport origin remains explicit.",
+  "threatModel": {
+    "assets": "Current owner session, task capabilities, isolated project key, immutable task/evidence/QA records, historical spending holds and durable approval registry.",
+    "trustBoundaries": "Authenticated owner browser to protected Node supervisor and Redis; restricted worker to exact task APIs and OpenAI; provider output to independent QA and backend acceptance.",
+    "abuseCases": "Lost committed renewal replay; revoked/expired authority revived; stale execution/fence/stage/release; unrelated Chief ledger changes; ignored abort; duplicate pumps; stale liveness reused; unbounded retry/audit; finalization deadline gap.; resealing after unrelated changes; context replay after dispatch; replaced pending execution; ownermaintenance disguising semantic mutation.",
+    "mitigations": "Atomic central grant and original lease checks before bounded sequence idempotency; unchanged semantic revisions; exact explicit receipts; parent singleflight5s/4s/max2 transport-only; final fresh confirm+drain;150s/10m independent deadlines; clear claimed-stage liveness; capture abort and central revoke. Exact projected seal/execution/task/fence/grant/approval/scope/release/deadline, originalcontext/hash/snapshot retained; expectedglobalrevision advances onlyfor ownapprovalmaintenance whenexactcurrent; no refresh; distinct admissionrevision."
+  },
+  "rollback": "Keep paid false; remove only temporary inert window; deploy exact reviewed disabled feature source and independently verify old/current/replacement brokers. Preserve original helper bytes, task records and uncertain holds. Revert feature-only reviewed changes if required, never Production or historical evidence.",
+  "negativePaths": {
+    "malformed-response": "Actual Node QA/Auditor tests and retained contract-first suite cover malformed-response with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "stale-state": "Actual Node QA/Auditor tests and retained contract-first suite cover stale-state with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "concurrency": "Actual Node QA/Auditor tests and retained contract-first suite cover concurrency with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "cancellation": "Actual Node QA/Auditor tests and retained contract-first suite cover cancellation with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "worker-interruption": "Actual Node QA/Auditor tests and retained contract-first suite cover worker-interruption with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "api-outage": "Actual Node QA/Auditor tests and retained contract-first suite cover api-outage with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "authorization-denial": "Actual Node QA/Auditor tests and retained contract-first suite cover authorization-denial with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "spending-limit": "Actual Node QA/Auditor tests and retained contract-first suite cover spending-limit with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "partial-execution": "Actual Node QA/Auditor tests and retained contract-first suite cover partial-execution with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Read-only Chief context snapshot could be invalidated by ownerapproval lease maintenance before strict backenddispatch, even though task and organizational semantics were unchanged.",
+      "detectionGap": "Fast mocks did not interleave actualsupervisor renewal with protected-network context/dispatch latency; two older tests privatelyassembled context outside authoritative interface.",
+      "regression": "Beforefix exactmaintenance test failsChiefsnapshotstale; sealedcontext duplicate/CAS/ownerrenew/unrelatedmutation/10tamper/revoke/expiry/replay cases; actualsupervisor/restrictedchild12scontextdelay through real10sownermaintenance completesallfive.",
+      "historicalPrevention": "Deterministicbefore/after proves this source race is caught offline. Actual0ab409cause remainsunproved because exactreasonwasnotretained; privatelyassembledunsealedcontextexplicitly rejected beforetransport."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing owner dashboard/Node supervisor, trusted parent and isolated child; new lease-only command shares same Redis CAS/taskcapability/central approval checks, no new route or executor.",
+    "dependencies": "Existing Vercel Pro/Fluid duration, Upstash CAS, owner session, restricted worker project credentials, native Responses contract and current official pricing reviewed.",
+    "threats": "Profile confusion, orphan activation, callback substitution, leaked task capability, replay/stale deployment/release, controller interruption, authority renewal after revoke, and partial initialization.",
+    "failureModes": "Connection timeout origin unproved; confirmed two-roundtrip timing contention corrected. InitialChief snapshot construction still bounded30s/no pump; prolonged outages safely expire. Hosted cloudhardkill/Redisoutage remain distinct offline evidence.",
+    "faultInjection": "Lost committed reply, ignored abort, concurrent sequence, lifecycle revoke/expire/deployment/release/stagedeadline, Chief ownrenew and unrelatedsnapshot mutation; actualparent long35scapture uses only providerresponse substitutes.",
+    "independentChallenge": "Separate EngineeringAuditor and QA source/tests review corrected stale stage liveness and finalization lease margin; actual hosted results still required.",
+    "recovery": "Central exact-ID revocation before/after init, cleanup readback validation, hardkill lease fallback, no retries, pending usage preserved and separate replacement verification.",
+    "readiness": "Finalsource full/contracts/CI/Redis/CodeQL and actualhosted corrected accepted/rejected/uncertain/mixed/fault profiles remainmandatory; previoushostedaccepted/rejected auditdefectpreserved, no paidreadinessyet."
+  }
+}

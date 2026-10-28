@@ -1,0 +1,45 @@
+{
+  "version": "c5-browser-image-proposal-v1",
+  "status": "offline-preparation-only-not-build-ready",
+  "baseTag": "mcr.microsoft.com/playwright:v1.55.0-noble",
+  "baseDigest": null,
+  "baseDigestRequirement": "Verify the linux/amd64 platform digest before supplying BASE_IMAGE; never substitute latest or a guessed digest.",
+  "outputVcrDigest": null,
+  "metadataProbe": {"kind":"single-public-manifest-GET-no-image-pull","result":"HttpRequestException; digest remains unconfirmed","authenticationUsed":false},
+  "imageCreated": false,
+  "sandboxCreated": false,
+  "playwrightVersion": "1.55.0",
+  "chromiumRevision": "1187",
+  "chromiumVersion": "140.0.7339.16",
+  "headlessShellSha256": "a6bd350a143a92159c12291f336d2f3cc65ea501e521070d9ebb596c8c90a2a7",
+  "headlessShellHashBasis": "Computed offline from chrome-linux/headless_shell inside the preserved Chromium zip; no binary execution.",
+  "nativeDependencyBasis": {
+    "source":"https://raw.githubusercontent.com/microsoft/playwright/v1.55.0/packages/playwright-core/src/server/registry/nativeDeps.ts",
+    "platform":"ubuntu24.04-x64",
+    "qualification":"Official pinned release requirements, not the twenty unidentified loader entries from the old VM. Actual installed package versions/SBOM remain unverified until authorized image inspection.",
+    "chromium":["libasound2t64","libatk-bridge2.0-0t64","libatk1.0-0t64","libatspi2.0-0t64","libcairo2","libcups2t64","libdbus-1-3","libdrm2","libgbm1","libglib2.0-0t64","libnspr4","libnss3","libpango-1.0-0","libx11-6","libxcb1","libxcomposite1","libxdamage1","libxext6","libxfixes3","libxkbcommon0","libxrandr2"],
+    "tools":["xvfb","fonts-noto-color-emoji","fonts-unifont","libfontconfig1","libfreetype6","xfonts-cyrillic","xfonts-scalable","fonts-liberation","fonts-ipafont-gothic","fonts-wqy-zenhei","fonts-tlwg-loma-otf","fonts-freefont-ttf"]
+  },
+  "assets": [
+    {"file":"playwright-1.55.0.tgz","sha256":"f9b9876bde4f0508941775648c673a2a94d34aefe38312a1fa3c9440d686d073"},
+    {"file":"playwright-core-1.55.0.tgz","sha256":"6b63fdf41725afb924880728d39cf560d770f785a861d18c15611e99dd3172bd"}
+  ],
+  "orchestratorRequirements": {
+    "persistent": false,
+    "networkPolicy": "deny-all",
+    "ports": [],
+    "credentialsInVm": false,
+    "concurrency": 1,
+    "region": "iad1",
+    "vcpus": 2,
+    "memoryMb": 4096,
+    "sessionTimeoutMs": 300000,
+    "workDeadlineMs": 240000,
+    "cleanupDeadlineMs": 25000,
+    "executeAs": "pwuser",
+    "automaticResume": false,
+    "automaticRetry": false
+  },
+  "priorAllowanceRenewed": false,
+  "approvalRequired": ["base digest and staged build context", "image build/import and registry storage/transfer allowance", "one bounded qualification session and independent cleanup", "separate protected Preview identity and egress approval before navigation"]
+}

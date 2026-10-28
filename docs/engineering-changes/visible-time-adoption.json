@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "ff37e26d592eb58eca1babf738700d648b327b7deb02652730d149d24fe49ebd",
+  "risk": "critical",
+  "scope": "Adopt the exact preserved agent-generated visible timestamp guard through Work review and restore complete validated test-evidence handoff to existing reviewers.",
+  "riskAnalysis": "Source-bound one-fragment product edit; typed historical evidence projection after full prior receipt validation. No new inference, execution, credential, grant or publication authority.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact product source, historical agent authorship, immutable reviews, source-test provenance, owner authority.",
+    "trustBoundaries": "Trusted journal and validated native test evidence to bounded reviewer model request; Work adoption separate from model review.",
+    "abuseCases": "Forged binding or test success, treating permit reference as authority, stale task reuse, arbitrary source edit or erasing rejection.",
+    "mitigations": "Existing validateLivePrior/validateEvidence; typed projection only; exact source hashes and single replacement; no mutable historical assets; resolved live admission rejects."
+  },
+  "rollback": "Revert this source candidate only. Preserve original model/test receipts, rejection and accounting; keep paid execution disabled.",
+  "negativePaths": {
+    "malformed-response": "Existing controller rejection, cleanup and authority boundaries unchanged; full fixture regression and source checks required. No new paid execution.",
+    "stale-state": "Existing controller rejection, cleanup and authority boundaries unchanged; full fixture regression and source checks required. No new paid execution.",
+    "concurrency": "Existing controller rejection, cleanup and authority boundaries unchanged; full fixture regression and source checks required. No new paid execution.",
+    "cancellation": "Existing controller rejection, cleanup and authority boundaries unchanged; full fixture regression and source checks required. No new paid execution.",
+    "worker-interruption": "Existing controller rejection, cleanup and authority boundaries unchanged; full fixture regression and source checks required. No new paid execution.",
+    "api-outage": "Existing controller rejection, cleanup and authority boundaries unchanged; full fixture regression and source checks required. No new paid execution.",
+    "authorization-denial": "Existing controller rejection, cleanup and authority boundaries unchanged; full fixture regression and source checks required. No new paid execution.",
+    "spending-limit": "Existing controller rejection, cleanup and authority boundaries unchanged; full fixture regression and source checks required. No new paid execution.",
+    "partial-execution": "Existing controller rejection, cleanup and authority boundaries unchanged; full fixture regression and source checks required. No new paid execution."
+  },
+  "defects": [
+    {
+      "rootCause": "Reviewer projection omitted manifest binding and isolation details already validated and preserved in the native journal; product visible formatters accepted out-of-range Date values.",
+      "detectionGap": "Prior reviewer frame assertion checked profile presence only; visible and accessible timestamp guards differed.",
+      "regression": "Exact projection assertions and tamper denial; genuine two-patch postimage chain; resolved source admission; synthetic five-stage and failure cleanup within unchanged request ceiling.",
+      "historicalPrevention": "Review actual bounded evidence projection and all parallel visible/accessibility formatting paths; retain distinct authorship and acceptance."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing projection, task admission, controller and Work adoption path reused.",
+    "dependencies": "No packages, provider, gateway or new infrastructure.",
+    "threats": "Evidence forgery, stale source, accidental authority inference, raw output leakage.",
+    "failureModes": "Validation remains fail closed; resolved task cannot create authority; historical fixture overrides test-only.",
+    "faultInjection": "Nine focused tests pass; broader release qualification pending.",
+    "independentChallenge": "Independent Work QA and Auditor review requested for complete adoption; handoff review found no material issue.",
+    "recovery": "Original paid workflow closed, all grants revoked, stopped VM and original rejection retained.",
+    "readiness": "Local candidate pending full release checks; no new paid calls required."
+  }
+}

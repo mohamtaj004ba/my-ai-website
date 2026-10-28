@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "1cef191eec4d81461800fc59f7af8d1436fc2e24c2d2dbbb1ebd49e8cdb0dcb5",
+  "risk": "critical",
+  "scope": "Phase C fixed read-only deployed-source tools, task-bound evidence/proposals/structural review, inert disabled draft contract, dashboard integration and conservative Preview documentation build skip.",
+  "riskAnalysis": "Critical tool/evidence/delegation boundaries remain owner/workspace scoped in existing CAS journal. No network, provider, shell or writer is introduced. Source-only facts do not establish rendered defects, independent human review or acceptance.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner identity, workspace records, immutable QA and pilot history, existing spending ledger and cancellation authority.",
+    "trustBoundaries": "Untrusted dashboard to fresh workspace-owner policy; scoped source ledger to canonical report; Redis CAS to fenced task and incident state; response readback to browser generations.",
+    "abuseCases": "Traversal/symlink/private files, recognizable secrets, source drift/substitution, forged task/reviewer/tool identity, stale release/fence, cancellation, ambiguous DAGs, rehashed provenance, draft write/publish flags and unsafe build skipping.",
+    "mitigations": "Exact literal4file profile, single screened source snapshot plus locked hashes, task-bound receipts/dependency canonical checks, existing fresh owner/CAS/fences/leases, unresolved substantive review, inert workspace descriptor and unknown-state-build gate."
+  },
+  "rollback": "Keep paid disabled/no approvals. Revert only Phase B feature source and redeploy disabled Preview; preserve separate journal history, original ledger/holds, central revocation, main and Production.",
+  "negativePaths": {
+    "malformed-response": "Actual service/API/UI reject malformed envelopes, corrupt task records and fabricated authority; no hidden repairs.",
+    "stale-state": "Exact plan/task revisions, source snapshot and current release guards; UI discards older revisions.",
+    "concurrency": "Existing Redis Lua CAS enforces unique create/claim, fenced completion, and cancellation racing publication.",
+    "cancellation": "Owner cancellation and internal emergency stop reserve cleanup slots/bytes; original completed evidence remains.",
+    "worker-interruption": "Lost committed internal claim yields visible lease expiry and one bounded owner-requested recovery; no process/provider executor added.",
+    "api-outage": "Redis read/CAS failures deny execution; unknown delivery retains exact scoped idempotency key, no automatic retry.",
+    "authorization-denial": "Preview-only fresh session/member/workspace owner, worker/nonowner/CSRF/Production negatives and workspace-isolated journals.",
+    "spending-limit": "New module has no provider transport, credential path or reservation writer; original fifteen-dollar ledger bytes stay unchanged.",
+    "partial-execution": "Original attempt/history preserved, stale fences cannot publish, dependent tasks await verified reports and expired/cancelled work cannot recover."
+  },
+  "defects": [
+    {
+      "rootCause": "Separate source reads could mislabel excerpts; ambiguous predecessors passed admission; self-consistent hashes alone omitted downstream provenance checks; incomplete UI selection could poison uncertain-create journal.",
+      "detectionGap": "New tool boundary required request-faithful independent negative testing beyond prior deterministic-report tests.",
+      "regression": "Actual service/API/UI and curated source tests cover source hashes, exactly one predecessor, canonical provenance, malformed paths/bytes, no premature journal, cancellation/lease/source races and forged review/write descriptors.",
+      "historicalPrevention": "Current negatives reject identified counterexamples before tool result acceptance; no paid transport is reachable."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing authenticated broker, owner policy and Redis CAS; separate scoped internal journal cannot mutate paid execution/spending records.",
+    "dependencies": "Node builtins and current browser only, existing KV client and static dashboard; no new provider/model/package credentials.",
+    "threats": "Tenant projection leaks, forged authority, stale state, dependency loops, cancellation races and corrupted receipt evidence.",
+    "failureModes": "Observe storage only as of real read; provider unknown; expired tasks visible; reserve bounded cleanup audit/bytes; no auto retry.",
+    "faultInjection": "Actual service source/CAS hooks, shipped UI delayed fetch promises, production/owner denial, disposable real Redis integration.",
+    "independentChallenge": "Separate Engineering Auditor and QA inspect actual changed source and add negative-path tests; corrections require refreshed lock and frozen STRICT.",
+    "recovery": "One owner-requested zero-provider retry within original deadline/release; cancellation, original receipts, independent QA and uncertainty are never overwritten.",
+    "readiness": "Targeted tests plus frozen full STRICT, real Redis CI, CodeQL, exact READY source/alias and authenticated owner workflow; new AI accuracy and tool autonomy remain unverified."
+  }
+}

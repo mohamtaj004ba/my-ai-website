@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "5ecc5fa300b428611546829601a2313751fe5a41b97f4927f3981fc9084939b3",
+  "risk": "critical",
+  "scope": "Version the current call-row task to disclose its existing closed replacement syntax and correct byte-versus-token planning for that new version, preserving historical requests and existing authority boundaries.",
+  "riskAnalysis": "New paid-task scope and token admission are security sensitive. Keep old policies/requests/spent approval immutable, require exact authenticated input counting before Responses, maintain bounded wire bytes and all token/call/output/time ceilings, serial grants, cleanup and proposal-only authority.",
+  "threatModel": {
+    "assets": "Task/source/release identity, old receipts, dedicated credentials, request/token accounting and disposable copy integrity.",
+    "trustBoundaries": "Trusted frozen syntax metadata versus untrusted model output; serialized wire bytes versus authenticated provider token counts; Work owner activation versus internal proposal-only roles.",
+    "abuseCases": "Treating grammar as execution authority; forged descriptor/policy or stale grant; using byte planning to bypass exact counts; parallel trials/retries; losing historical request reconstruction; claiming fixture or automated review as live acceptance.",
+    "mitigations": "Separate frozen descriptor and explicit policy; oldv1hash preserved; unchanged backend grammar, schema identities and source preimage; shared bounded wire ceiling plus actual count gate, per-call and aggregate bounds; exact release configuration, canonical journal, serial grants and cleanup; no test profile/publication authority."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "The model-facing scope omitted the exact replacement grammar enforced by the backend, and the legacy rehearsal planner compared serialized bytes with a token ceiling.",
+      "detectionGap": "Schema-valid proposals could fail an undisclosed constraint; compact byte-based fixtures did not reflect the real restricted-worker context. Historical rejected text is unavailable, so no claim that it was a false positive.",
+      "regression": "All-five actual-controller and restricted-worker fixtures; explicit grammar metadata/no fixture answer, wire-versus-token characterization,12000x5inclusive/12001beforeResponses, replay/cleanup and cross-version substitution. Frozen all10 historical request hashes plus both actual prior paid hashes reconstruct exactly.",
+      "historicalPrevention": "Use explicit versioned task contracts with shared transport-byte constants and independently counted token ceilings; freeze all-stage request reconstruction before changes, and run source-bound engineering preflight before every push."
+    }
+  ],
+  "rollback": "Disable paid authority and future flags, revoke temporary grants, stop the sequence and verify cleanup. Preserve old/new descriptor recognition, policy definitions, receipts, accounting and failed evidence; no history rewrite or Production action. Revert feature behavior only through reviewed exact successor releases.",
+  "negativePaths": {
+    "malformed-response": "Deny stale/cross-workspace/source/policy/descriptor substitution, altered syntax and unauthorized test permissions; keep requested-before-activate and no provider retries. Validate exact count limits before Responses, incomplete/provider failures, diagnostic usage, revoked authority and destroyed data copies.",
+    "stale-state": "Deny stale/cross-workspace/source/policy/descriptor substitution, altered syntax and unauthorized test permissions; keep requested-before-activate and no provider retries. Validate exact count limits before Responses, incomplete/provider failures, diagnostic usage, revoked authority and destroyed data copies.",
+    "concurrency": "Deny stale/cross-workspace/source/policy/descriptor substitution, altered syntax and unauthorized test permissions; keep requested-before-activate and no provider retries. Validate exact count limits before Responses, incomplete/provider failures, diagnostic usage, revoked authority and destroyed data copies.",
+    "cancellation": "Deny stale/cross-workspace/source/policy/descriptor substitution, altered syntax and unauthorized test permissions; keep requested-before-activate and no provider retries. Validate exact count limits before Responses, incomplete/provider failures, diagnostic usage, revoked authority and destroyed data copies.",
+    "worker-interruption": "Deny stale/cross-workspace/source/policy/descriptor substitution, altered syntax and unauthorized test permissions; keep requested-before-activate and no provider retries. Validate exact count limits before Responses, incomplete/provider failures, diagnostic usage, revoked authority and destroyed data copies.",
+    "api-outage": "Deny stale/cross-workspace/source/policy/descriptor substitution, altered syntax and unauthorized test permissions; keep requested-before-activate and no provider retries. Validate exact count limits before Responses, incomplete/provider failures, diagnostic usage, revoked authority and destroyed data copies.",
+    "authorization-denial": "Deny stale/cross-workspace/source/policy/descriptor substitution, altered syntax and unauthorized test permissions; keep requested-before-activate and no provider retries. Validate exact count limits before Responses, incomplete/provider failures, diagnostic usage, revoked authority and destroyed data copies.",
+    "spending-limit": "Deny stale/cross-workspace/source/policy/descriptor substitution, altered syntax and unauthorized test permissions; keep requested-before-activate and no provider retries. Validate exact count limits before Responses, incomplete/provider failures, diagnostic usage, revoked authority and destroyed data copies.",
+    "partial-execution": "Deny stale/cross-workspace/source/policy/descriptor substitution, altered syntax and unauthorized test permissions; keep requested-before-activate and no provider retries. Validate exact count limits before Responses, incomplete/provider failures, diagnostic usage, revoked authority and destroyed data copies.",
+    "duplicate-request": "Deny stale/cross-workspace/source/policy/descriptor substitution, altered syntax and unauthorized test permissions; keep requested-before-activate and no provider retries. Validate exact count limits before Responses, incomplete/provider failures, diagnostic usage, revoked authority and destroyed data copies."
+  },
+  "proactiveReview": {
+    "architecture": "Extend existing immutable task registry, inference builder, guarded owner controller, ledger and data-only worker; no migration, provider, journal or orchestrator.",
+    "dependencies": "No new dependencies or credentials; reuse dedicated OpenAI project and existing branch-only configuration.",
+    "threats": "Treating grammar as execution authority; forged descriptor/policy or stale grant; using byte planning to bypass exact counts; parallel trials/retries; losing historical request reconstruction; claiming fixture or automated review as live acceptance.",
+    "failureModes": "Provider output may remain invalid; counting/invoice uncertainty is unresolved. A full workflow does not imply proposal or human acceptance. Any material authority, accounting or cleanup uncertainty stops paid work.",
+    "faultInjection": "Forged/cross-version descriptors, policy hashes and count provenance;12001tokens beforeResponses; inclusive60000aggregate; old grant replay, malformed/incomplete fixture responses, serial denial and cleanup.",
+    "independentChallenge": "Independent Work QA and Auditor review the exact candidate; prior31source fullyqualified4831/35 and inspected502screens. Final source/CI/browser evidence still required.",
+    "recovery": "Disable paid authority and future flags, revoke temporary grants, stop the sequence and verify cleanup. Preserve old/new descriptor recognition, policy definitions, receipts, accounting and failed evidence; no history rewrite or Production action. Revert feature behavior only through reviewed exact successor releases.",
+    "readiness": "Local exact-count, history, grammar and full five-stage controller/data-worker fixtures passed. No live reasoning for v2, no actual new count or environment mutation. Standing user development/paid/successor authority under existing monitoring policy; fresh exact controller grant required for each attempt, Work stops after success or at most2 distinct attempts this pass."
+  }
+}

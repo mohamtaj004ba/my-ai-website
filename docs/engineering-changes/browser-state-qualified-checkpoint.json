@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "03ce4cc39d06fe4a3e48fcde2400c11dca8ce7b1a091fcbd204977b1944defd7",
+  "risk": "routine",
+  "scope": "Record actual browser efficiency qualification, same ordered coverage, independent reviews, unchanged accounting and exact Preview identity.",
+  "riskAnalysis": "Documentation only. No runtime, configuration, permission, financial or historical evidence mutation.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Browser evidence correctness, exact source qualification and existing security boundaries.",
+    "trustBoundaries": "Work-authored trusted QA code observes the protected Preview DOM; no generated code or permissions are added.",
+    "abuseCases": "Premature screenshot, wrong view, hidden or mid-transition sidebar, never-ending decorative animation, swallowed timeout or missing authentication/data assertion.",
+    "mitigations": "Self-contained state predicate, unique visible view, nav/aria-current, finite root transitions, fonts/busy and stable geometry. Native hard deadline propagates and original auth/data/diagnostics remain."
+  },
+  "rollback": "Revert only readiness helper, import and three navigation wait substitutions on the feature branch. Preserve all historical artifacts and qualification evidence.",
+  "negativePaths": {
+    "malformed-response": "Missing DOM state fails readiness; original API/data validation retained.",
+    "stale-state": "Wrong view/nav or renewed loading during three frames rejects readiness.",
+    "concurrency": "Geometry or busy changes during sampling reject readiness. No authority concurrency changes.",
+    "cancellation": "Native Playwright wait deadline/rejection propagates; suite cleanup unchanged.",
+    "worker-interruption": "Stalled page remains bounded by native wait timeout; existing suite finally closes contexts.",
+    "api-outage": "Original network/data/API diagnostics unchanged; readiness does not assert freshness.",
+    "authorization-denial": "Original authenticated-page and API denial checks unchanged.",
+    "spending-limit": "No provider model/count or infrastructure dispatch introduced.",
+    "partial-execution": "Suite cannot become successful through a swallowed readiness failure; all screenshot/report requirements retained."
+  },
+  "defects": [
+    {
+      "rootCause": "Fixed pauses always delay ready pages and do not prove delayed state is ready.",
+      "detectionGap": "Elapsed wall-clock sleep was used as navigation synchronization.",
+      "regression": "Ready/delayed/multiple/wrong views, loading fonts/busy, finite paused and infinite animations, mobile sidebar/backdrop, layout movement, serialization and deadline propagation.",
+      "historicalPrevention": "Wait for the observed state while preserving all data/authentication/security and visual assertions."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "One small Browser QA helper within existing suite; no service or orchestration.",
+    "dependencies": "Existing Playwright only; no packages, credentials or infrastructure.",
+    "threats": "Incorrect readiness can invalidate UI evidence; cannot grant source execution or paid authority.",
+    "failureModes": "Unready DOM returns false; missing state and hard deadline fail qualification. Existing asynchronous data assertions remain necessary.",
+    "faultInjection": "Wrong/multiple panels, stalled loading/fonts, paused finite transition, endless decoration, moving layout, missing backdrop, incorrect mobile state and native timeout.",
+    "independentChallenge": "Separate Work QA and Auditor reviewed and tested code. No material finding; full hosted qualification remains mandatory.",
+    "recovery": "Revert the small helper and three replacements; preserve original failures and reports. No automatic provider retry.",
+    "readiness": "Actual qualified application remains1c666af; this checkpoint grants no execution authority."
+  }
+}

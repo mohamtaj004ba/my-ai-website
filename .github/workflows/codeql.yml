@@ -1,0 +1,49 @@
+name: CallerCore CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '23 9 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: Analyze JavaScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: selection
+        if: github.event_name != 'schedule'
+        env:
+          QUALITY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/development-verification.cjs --plan --base "$QUALITY_BASE"
+      - uses: github/codeql-action/init@v3
+        if: github.event_name == 'schedule' || steps.selection.outputs.lane == 'STRICT'
+        with:
+          languages: javascript-typescript
+      - name: Analyze JavaScript and retain diagnostic SARIF
+        id: codeql
+        if: github.event_name == 'schedule' || steps.selection.outputs.lane == 'STRICT'
+        uses: github/codeql-action/analyze@v3
+        with:
+          output: codeql-results
+      - name: Summarize CodeQL findings
+        if: ${{ always() && steps.codeql.outputs.sarif-output != '' }}
+        run: node scripts/report-codeql.mjs "${{ steps.codeql.outputs.sarif-output }}"
+      - name: Record analysis scope
+        if: github.event_name != 'schedule' && steps.selection.outputs.lane != 'STRICT'
+        run: echo "CodeQL not required for selected nonexecutable source lane; no fresh security scan claimed."

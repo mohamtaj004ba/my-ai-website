@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "2dc201f2198748c0b6991185829ca2864e4d3768c21cbfc896f8b6b63fcc7eee",
+  "risk": "critical",
+  "scope": "Remove redundant per-lookup static asset hashing using one authenticated private immutable registry; preserve all current-source and authority checks.",
+  "riskAnalysis": "Only immutable reviewed task data is cached after hash authentication. Caller mutation must not affect trusted definitions; dynamic file identities, grants and deadlines remain fresh. Hosted15s timeout cause remains only partially established.",
+  "threatModel": {
+    "assets": "Source/task identity, frozen receipt integrity, current dashboard read state, permissions and publication boundaries.",
+    "trustBoundaries": "Server-authenticated descriptor and immutable source asset vs untrusted model patch; disposable data copy vs actual repository; Work publication vs internal agents.",
+    "abuseCases": "Forged descriptor, arbitrary regex/path/test profile, stale source substituted for current, source execution escalation, altered review, real account mutations hidden in QA.",
+    "mitigations": "Whole-asset hash/exact descriptor equality, one-edit closed grammar,512bytes, exact preimage/binding/evidence, source-only admission, current resolved-task denial, fixed VM source-hash rejection, no new paid policy, fully intercepted synthetic browser mutations."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Each negative historical objective lookup serialized and hashed the entire static compressed task asset.",
+      "detectionGap": "Focused correctness cases did not quantify repeated historical lookup overhead.",
+      "regression": "Measured10000lookups before9527ms/after1.6ms; mutation-isolation and startup-tamper denial; old frozen request contracts and fullfive-stage disposable fixture.",
+      "historicalPrevention": "Authenticate static asset at module load then keep a private deeply frozen clone; never cache source or authorization checks. Preserve original timeout evidence and qualify hosted successor."
+    }
+  ],
+  "rollback": "Revert only this feature Preview batch on verification failure; preserve all source/history/diagnostic evidence and revoked grants. No main or Production mutation.",
+  "negativePaths": {
+    "malformed-response": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "stale-state": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "concurrency": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "cancellation": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "worker-interruption": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "api-outage": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "authorization-denial": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "spending-limit": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "partial-execution": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "duplicate-request": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added."
+  },
+  "proactiveReview": {
+    "architecture": "Extend existing five-stage workflow and patch validator with immutable task data, not new orchestration.",
+    "dependencies": "No new packages, credential changes, provider requests or infrastructure.",
+    "threats": "Forged descriptor, arbitrary regex/path/test profile, stale source substituted for current, source execution escalation, altered review, real account mutations hidden in QA.",
+    "failureModes": "Resolved/current drift denies new tasks; history remains readable. Fixture success does not prove live reasoning or dynamic execution.",
+    "faultInjection": "Descriptor/path/source/workspace/grammar/protected command substitutions, no test-profile inheritance, concurrent read refresh failure paths.",
+    "independentChallenge": "Root reviews QA-authored browser/test fixtures; independent Work QA/Auditor review root task/product implementation. Final hosted review required.",
+    "recovery": "Retain original source snapshots, all old receipts/rejections and v1-v5 evidence. Work-only source publication, no grant revival.",
+    "readiness": "28focused checks passed before adding startup tamper denial. Independent source delta QA/Auditor PASS; actual hosted qualification pending."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e96ac104f731a81f6b580bd60eb7cf522a590e62181b124e1337dfde19f7cc1b",
+  "risk": "routine",
+  "scope": "Preserve focused provider-documentation qualification, verified remote checks and precise remaining activation blocker; canonical documentation only.",
+  "defects": [],
+  "verification": [
+    "scope-review"
+  ],
+  "riskAnalysis": "No runtime, credentials, grants, prices or exposure policy changed; documented cache semantics resolve a question without claiming live inference or counting compatibility."
+}

@@ -1,0 +1,14 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "621abaa39be03c8fb5c0287d0c4cf8ea1ff26626a76e4827ac6e1bb6ee7b5eef",
+  "risk": "routine",
+  "scope": "Documentation-only checkpoint records failed immediate-shutdown preflight without activating any paid pilot or changing source or permissions.",
+  "defects": [
+    {
+      "rootCause": "Immutable active deployment retains its approval without an independent durable revocation lookup before task initialization.",
+      "detectionGap": "Prior controller checked disabled source and terminal workflow shutdown, not activation failure before initialization.",
+      "regression": "Outside-Git actual organization summary counterfactual reproduces enabled original and disabled replacement with zero transport.",
+      "historicalPrevention": "This explicit partial-activation shutdown gate prevented the newly authorized pilot before any paid activation or dispatch."
+    }
+  ]
+}

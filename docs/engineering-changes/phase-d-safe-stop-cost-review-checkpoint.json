@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e951851274cb43ddf058946a59a1b2db2d855ac97a671fd506e385538433acba",
+  "risk": "routine",
+  "scope": "Preserve verified local safe-stop checkpoint, configuration history and exact pending audit-capacity blocker without runtime or authority change.",
+  "verification": [
+    "scope-review"
+  ],
+  "riskAnalysis": "Documentation only; no deployment, credentials, financial authority or application source changed.",
+  "defects": []
+}

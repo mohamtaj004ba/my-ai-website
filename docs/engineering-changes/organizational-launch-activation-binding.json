@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "33b17a36b883d9882fe4b2be2e3385c365e83d09cc6834088fa13f85ff946338",
+  "risk": "critical",
+  "scope": "Correct tracked paid launcher activation identity preflight; validate centrally activated deployment record without requiring an unknowable predeployment URL. Preview-only, no paid activation.",
+  "riskAnalysis": "An immutable deployment URL is assigned after configuration. Removing the impossible env-field requirement must retain exact source, release, task, approval hash, runtime, active lease and expiry checks before dependencies and provider dispatch.",
+  "threatModel": {
+    "assets": "Current owner session, task capabilities, isolated project key, immutable task/evidence/QA records, historical spending holds and durable approval registry.",
+    "trustBoundaries": "Authenticated owner browser to protected Node supervisor and Redis; restricted worker to exact task APIs and OpenAI; provider output to independent QA and backend acceptance.",
+    "abuseCases": "Wrong deployment, mismatched task/hash/release, malformed lease, revoked or consumed authorization, unavailable Redis, cancellation and revocation during dependency checks.",
+    "mitigations": "Fresh guarded broker GET before dependencies; exact activated central record comparison; optional explicit deployment binding retained; existing driver and backend repeat authority checks; unchanged fallback revocation."
+  },
+  "rollback": "Keep paid false; remove only temporary inert window; deploy exact reviewed disabled feature source and independently verify old/current/replacement brokers. Preserve original helper bytes, task records and uncertain holds. Revert feature-only reviewed changes if required, never Production or historical evidence.",
+  "negativePaths": {
+    "malformed-response": "Actual launcher denies missing record, invalid lifecycle version and missing/NaN/string lease before dependency startup. Existing provider malformed response regressions remain unchanged.",
+    "stale-state": "Exact source/release/approval hash/task/deployment comparisons reject stale records; driver and backend repeat these checks after startup.",
+    "concurrency": "Only active unused record admitted; consumed/revoked records denied, existing atomic initialize/CAS replay protections unchanged.",
+    "cancellation": "Existing parent cancellation and supervisor cancellation regressions retained; launcher signal feeds bounded broker read and dependency checks.",
+    "worker-interruption": "Existing restricted process interruption and bound cleanup tests reused; no new child process permissions or retry introduced.",
+    "api-outage": "Actual launcher synthetic storage unavailability rejects before provider, reports shutdown unconfirmed and owner cleanup required rather than fabricating revocation.",
+    "authorization-denial": "Actual launcher rejects foreign task/hash/runtime and disabled paid contexts; exact synthetic lifecycle verifies fallback revocation.",
+    "spending-limit": "No spending code modified. Existing contract and full budget regressions retained; fresh hosted ledger remains15/7/2.2/8 with no new reservation.",
+    "partial-execution": "Valid activated record with deliberate missing browser reaches dependency failure and centrally revokes before task/provider initialization; historical counterfactual fails before record read."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Paid launch.run required approval.deploymentOrigin before immutable Vercel URL exists; backend correctly assigns the authoritative binding at activation.",
+      "detectionGap": "Hosted rehearsals covered nonbillable launch mode; paid composition tests called driver.run directly and skipped the distinct paid launcher gate.",
+      "regression": "Mandatory actual launch.run tests with synthetic approval lacking deploymentOrigin and real in-memory lifecycle activation; malformed and mismatched records trapped before provider.",
+      "historicalPrevention": "Original launcher rejects the valid activated record before reading it; the new boundary regression must fail against original source. No paid failure or cost was incurred."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Same authenticated owner supervisor, central Redis lifecycle and restricted launcher. No new authorization route or executor; only source of deployment binding changes from nonexistent config field to activated record.",
+    "dependencies": "Existing Vercel Pro/Fluid duration, Upstash CAS, owner session, restricted worker project credentials, native Responses contract and current official pricing reviewed.",
+    "threats": "Profile confusion, orphan activation, callback substitution, leaked task capability, replay/stale deployment/release, controller interruption, authority renewal after revoke, and partial initialization.",
+    "failureModes": "Predeployment URL circularity confirmed. New tests cover active record mismatch and invalid lease; downstream checks remain authoritative if revocation races dependency startup.",
+    "faultInjection": "Lost committed reply, ignored abort, concurrent sequence, lifecycle revoke/expire/deployment/release/stagedeadline, Chief ownrenew and unrelatedsnapshot mutation; actualparent long35scapture uses only providerresponse substitutes.",
+    "independentChallenge": "Separate Auditor found circular binding; requested integer lease/version/optional mismatch checks. Separate QA authors actual-launcher tests independently.",
+    "recovery": "Central exact-ID revocation before/after init, cleanup readback validation, hardkill lease fallback, no retries, pending usage preserved and separate replacement verification.",
+    "readiness": "No paid pilot after this material source change. Require independent review, targeted/full/contract/Redis CI CodeQL and disabled hosted verification before fresh authorization."
+  }
+}

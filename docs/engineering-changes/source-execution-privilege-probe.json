@@ -1,0 +1,49 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "fda1d55c142af330fdf9579c0d4ff6e28951d0379017d527111a4e018725bf21",
+  "risk": "critical",
+  "scope": "Prepare and live-verify one fixed trusted guest privilege-drop probe; preserve actual owner-authorized session evidence and no generated execution authority.",
+  "riskAnalysis": "The fixed builder never dispatches commands or creates resources. Its sudo flag is trusted future control-plane metadata, not an agent grant. Live qualification ran only reviewed immutable trusted source in one pinned-image temporary VM; all authority/qualification flags remain false. Full application source-batch qualification pending.",
+  "threatModel": {
+    "assets": "Credential isolation, guest privilege boundaries, trusted binaries and truthful evidence.",
+    "trustBoundaries": "Trusted controller root wrapper drops to65534 before executing the fixed probe; models cannot select argv or access the controller.",
+    "abuseCases": "Command substitution, inherited supplementary groups/capabilities, forged metadata, source truncation or false full-qualification claims.",
+    "mitigations": "Two exact Node paths, fixed setpriv arguments, closed output requiring nine booleans and complete code SHA; protected binary/ancestors, one serial session with stop+independent readback."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [],
+  "rollback": "Remove the unused fixed probe builder if later qualification finds a problem. Preserve actual observed results and historical evidence. No live application integration or Production change exists.",
+  "negativePaths": {
+    "malformed-response": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "stale-state": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "concurrency": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "cancellation": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "worker-interruption": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "api-outage": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "authorization-denial": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "spending-limit": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "partial-execution": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged."
+  },
+  "proactiveReview": {
+    "architecture": "Extends existing fixed qualification plan with one probe, not another controller or execution system.",
+    "dependencies": "Only Node built-ins; Linux setpriv is checked in managed image and no software installed.",
+    "threats": "Privileged preparation must never become arbitrary root execution. Exact immutable trusted argv and no provider integration preserve this boundary.",
+    "failureModes": "Missing/duplicate/false privilege fields fail the probe. A passing privilege probe never grants full execution qualification.",
+    "faultInjection": "Root62focused checks plus independent QA14adversarial/Auditor9path-hash checks; real Linux nine-fact probe passed with exact source SHA.",
+    "independentChallenge": "Independent offline and actual Work QA/Auditor passed; Auditor separately GET-confirmed stopped state and approved distinct-UID binary protection.",
+    "recovery": "One new session stopped, no routes/snapshots. No model calls, generated code, publication or historical grant reuse.",
+    "readiness": "Privilege drop actually verified. Full filesystem/resource/network/cancellation and application release qualification remain pending; no automatic execution admission."
+  }
+}

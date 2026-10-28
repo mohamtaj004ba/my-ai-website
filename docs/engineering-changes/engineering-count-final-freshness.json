@@ -1,0 +1,49 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "7388935a62c6172656dc8c993f2cb6e03523170093327642b7c48079e03ae108",
+  "risk": "critical",
+  "scope": "Close the final asynchronous count-expiry admission gap; preserve successful Google proof, failed environment verification, independent reviews and risk history.",
+  "riskAnalysis": "A proof valid at ledger dispatch may expire during the final awaited authorization read. Revalidate the retained private proof synchronously immediately before native fetch; do not retroactively expire an already transmitted request.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Dedicated project credentials, exact source/task/model/evidence identities, authorization lifecycle, token ceilings and retained spending.",
+    "trustBoundaries": "Trusted parent native count response to private provenance proof; same existing CAS to one-use count/Responses admission; independently configured server pricing evidence to exact stored owner approval.",
+    "abuseCases": "Forged/copied count, changed generation body, wrong model/project/context, expired proof, replay/concurrent dispatch, old approval pricing substitution, prompt-driven authority, uncertain provider failure or unpriced counting.",
+    "mitigations": "Fixed native endpoint and supported text-only projection including reasoning/schema; full request and count hashes, private WeakMap proof, 30second expiry, current-authority checks, one-use CAS, explicit12k/60k and4k/20k limits, reported usage parity, pinned zero-cost-only policy and retained ceilings. No price evidence exists, so live counting remains disabled."
+  },
+  "rollback": "Revert this prepared boundary only while all paid/count flags remain disabled and no new approval exists. Preserve immutable evidence and historical Google/Stripe/rehearsal records; never restore an old approval or enable the earlier byte-planned path.",
+  "negativePaths": {
+    "malformed-response": "Wrong object/fields, noninteger/oversized counts and secret echo fail closed before Responses dispatch.",
+    "stale-state": "Source/context/request/expiry and authoritative stored approval mismatch deny dispatch.",
+    "concurrency": "Count dispatch and count recording are one-use existing-CAS operations; duplicate winners cannot occur.",
+    "cancellation": "Shared owner/task/revoke/lease checks run after counting and before dispatch; whole-operation abort includes count requests.",
+    "worker-interruption": "Bounded abortAdmission retains pending ceilings and reports cleanup uncertainty; no paid retry.",
+    "api-outage": "Fixed endpoint/redirect:error, bounded response body, deadline and sanitized status/hash diagnostics; no fallback or retry.",
+    "authorization-denial": "Missing count consent/server pricing pin, impersonated roles or substituted workspace/source deny; no model-granted permissions.",
+    "spending-limit": "At most five count attempts plus five Responses under existing stage ceilings; missing verified-zero-cost account pricing policy blocks native execution before admission. Unknown failures retain pending reservations.",
+    "partial-execution": "Successful count alone cannot settle or accept work. Responses usage mismatch leaves pending evidence/reservation; no generated source execution or publication."
+  },
+  "defects": [],
+  "proactiveReview": {
+    "architecture": "Small extension of existing provider/transport/profile and journal, no duplicate gateway/controller/ledger.",
+    "dependencies": "Official Responses input-token count schema, fixed dedicated OpenAI project, existing task/source evidence and shared authorization CAS.",
+    "threats": "Pricing pin must match the authoritative stored approval, not a substituted caller argument; API content never grants authority.",
+    "failureModes": "Counting price/access/parity unverified, so live path disabled. Timeouts/revocation/uncertain cleanup preserve reservations rather than optimistic settlement.",
+    "faultInjection": "Independent synthetic native fetch tests and actual profile tests cover count/proof/policy denial; one new realRedis concurrency/revocation case added for remote CI.",
+    "independentChallenge": "Root identified and Work Auditor confirmed final-await expiry race. Independent47/47 focused tests passed, including expired-beforeHTTP denial and in-flight expiry acceptance with real broker authority kept live. Final STRICT and hosted results remain required.",
+    "recovery": "Keep all flags/approvals disabled, retain historical accounting and evidence, preserve exact source checkpoint on interruption.",
+    "readiness": "Earlier local3224 suite had3203pass/21sandbox-environment failures, not acceptance. Final reviewed source needs correctly permitted STRICT. No native count/model call, new price policy, paid activation or Production change."
+  }
+}

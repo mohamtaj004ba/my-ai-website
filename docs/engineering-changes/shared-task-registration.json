@@ -1,0 +1,71 @@
+{
+  "version": "engineering-quality-v1",
+  "title": "Consolidate existing engineering task registration",
+  "base": "e10afbd6bfbbc6803fe845823fa202fd56744809",
+  "changeDigest": "24a462ba99111c45799a064e7ba47a22067d463841a43f7d6cee6610bd3057b6",
+  "risk": "critical",
+  "scope": "Use the existing task catalog for admission, policy associations, serial authority checks, model/patch descriptor lookup, fixed-test selection and capability metadata.",
+  "riskAnalysis": "Pure server-owned registration refactor. Historical request objectives, descriptors, serialized policies, source/test bindings and public capabilities remain unchanged. No added grant, execution, publication or customer access.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Historical task/source identities, serialized policy hashes, isolated-test profiles, serial execution and current owner authority.",
+    "trustBoundaries": "Untrusted assignment and patch data to authenticated server task catalog, then existing authorization and fixed-test consumers.",
+    "abuseCases": "Unknown objective or forged profile grants execution; caller mutation alters trusted catalog; historical objective becomes fresh admission; circular import bypasses checks.",
+    "mitigations": "Exact server objective lookup, isolated returned copies, preserved task-specific source validation, explicit historical admission and independently compared old-source compatibility."
+  },
+  "rollback": "Revert this feature-branch refactor and restore the qualified nonpaid8255952 Preview alias. Retain every historical receipt and financial record. No Production changes.",
+  "negativePaths": {
+    "malformed-response": "Existing native malformed response and patch validation fixtures remain unchanged and fail closed.",
+    "stale-state": "Historical source and descriptor hashes remain exact; fresh source availability and release checks stay in consumers.",
+    "concurrency": "Existing serial authority lifecycle and controller CAS tests remain; registry creates no executable state.",
+    "cancellation": "Native controller cancellation, revocation and cleanup integration tests remain intact.",
+    "worker-interruption": "Native test/worker and failed persistence fixtures preserve cleanup and honest failed evidence.",
+    "api-outage": "No network access added; existing provider failures remain subject to controller diagnostics and shutdown.",
+    "authorization-denial": "Unknown, edited, forged task/profile metadata produces no registration, policy or test capability.",
+    "spending-limit": "Existing monitor-only financial policy and historical accounting are unchanged; catalog is not spending consent.",
+    "partial-execution": "Existing five-stage fixtures retain Auditor rejection and qualified failed-test evidence without acceptance."
+  },
+  "defects": [
+    {
+      "rootCause": "Admission, provider policy selection, serial lifecycle and fixed-test routing separately registered the same engineering objectives.",
+      "detectionGap": "Each consumer could be updated independently when adding or revising a task, leaving another consumer stale.",
+      "regression": "19pre-refactor route snapshots plus actual old-source independent comparison, mutation/unknown tests and native five-stage integrations.",
+      "historicalPrevention": "One existing server-owned catalog supplies task recognition and associations; historical policies and descriptors retain exact serialization."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing implementation-tasks module; no competing controller, journal, provider or new task registration service.",
+    "dependencies": "No dependency installation, provider change, credential or execution image change.",
+    "threats": "Catalog data cannot issue authority; owner, exact runtime/source/task, test permission and publication checks remain in consumers.",
+    "failureModes": "Unknown tasks remain unknown, historical Starter objectives cannot gain fresh admission, and source-changed descriptors remain unusable.",
+    "faultInjection": "Forged assignments/profile fields, mutated copies, unknown versions and historical route compatibility are tested alongside native cancellation/cleanup.",
+    "independentChallenge": "Separate QA and Auditor approve efd78485; each25tests passed. QA compared actual old Git source and Auditor tested six import orders.",
+    "recovery": "No paid model/count call or test VM. Existing qualified nonpaid8255952 Preview remains rollback target; historical authority stays revoked.",
+    "readiness": "180focused/integration tests passed. Required full STRICT will run once in hosted CI with Redis, CodeQL, Jekyll and actual authenticated Browser evidence before live use."
+  },
+  "files": [
+    "CALLERCORE_PROJECT_STATE.md",
+    "docs/ENGINEERING_WORKFLOW_SYSTEM_REVIEW_2026_10_27.md",
+    "lib/agent-operations-approval-lifecycle.js",
+    "lib/agent-operations-contract-lock.json",
+    "lib/agent-operations-engineering-provider-v2.js",
+    "lib/agent-operations-implementation-tasks.js",
+    "lib/agent-operations-implementation.js",
+    "lib/agent-operations-operating-system.js",
+    "lib/agent-operations-source-test-dispatch.js",
+    "tests/agent-operations-task-registration.test.js",
+    "tests/fixtures/engineering-task-registration-before.json"
+  ]
+}

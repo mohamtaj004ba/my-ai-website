@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "98bffee1cc842cfa3ecef6874a8b2bddc58703f7480f80996097ca1caab4b7bc",
+  "risk": "critical",
+  "scope": "Project-wide financial policy propagation through native and legacy callers, preserving financial evidence and nonfinancial authority.",
+  "riskAnalysis": "Owner removed internal dollar boundaries. Legacy financial predicates must follow the same shared policy. Numeric data validation, immutable source/approval identities, provider usage math, token/time/call controls and real authorization remain enforced.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source/task/owner/workspace identity, immutable ledger history, provider usage truth, nonfinancial execution and publication safeguards.",
+    "trustBoundaries": "Shared code policy is owner-reviewed source, not context/model-supplied authority. Old approval metadata is immutable identity evidence, not a current spending cap.",
+    "abuseCases": "Hidden legacy caps, malformed or overflowing costs, financial policy treated as grant, fake usage above estimates, negative remainder corrupting capability state.",
+    "mitigations": "Existing withinEstimate validates numeric data then applies shared monitor-only policy; all identified callers updated. Existing receipt arithmetic/provider proof stays exact; aggregates safe; explicitly source-bound monitor-only metadata permits negative historic remainder without scope expansion."
+  },
+  "rollback": "Revert successor source on feature branch if necessary, preserving all original financial and audit evidence and keeping paid disabled. Do not revive previous grants.",
+  "negativePaths": {
+    "malformed-response": "Retain original owner/workspace/source/lifecycle and usage-proof negative tests. Add legacy Chief17M/negative remainder capability case, above-estimate accounting, twoMAXsafe aggregate overflow, exhausted old reservation acceptance, offline-only recovery, no paid dispatch during tests.",
+    "stale-state": "Retain original owner/workspace/source/lifecycle and usage-proof negative tests. Add legacy Chief17M/negative remainder capability case, above-estimate accounting, twoMAXsafe aggregate overflow, exhausted old reservation acceptance, offline-only recovery, no paid dispatch during tests.",
+    "concurrency": "Retain original owner/workspace/source/lifecycle and usage-proof negative tests. Add legacy Chief17M/negative remainder capability case, above-estimate accounting, twoMAXsafe aggregate overflow, exhausted old reservation acceptance, offline-only recovery, no paid dispatch during tests.",
+    "cancellation": "Retain original owner/workspace/source/lifecycle and usage-proof negative tests. Add legacy Chief17M/negative remainder capability case, above-estimate accounting, twoMAXsafe aggregate overflow, exhausted old reservation acceptance, offline-only recovery, no paid dispatch during tests.",
+    "worker-interruption": "Retain original owner/workspace/source/lifecycle and usage-proof negative tests. Add legacy Chief17M/negative remainder capability case, above-estimate accounting, twoMAXsafe aggregate overflow, exhausted old reservation acceptance, offline-only recovery, no paid dispatch during tests.",
+    "api-outage": "Retain original owner/workspace/source/lifecycle and usage-proof negative tests. Add legacy Chief17M/negative remainder capability case, above-estimate accounting, twoMAXsafe aggregate overflow, exhausted old reservation acceptance, offline-only recovery, no paid dispatch during tests.",
+    "authorization-denial": "Retain original owner/workspace/source/lifecycle and usage-proof negative tests. Add legacy Chief17M/negative remainder capability case, above-estimate accounting, twoMAXsafe aggregate overflow, exhausted old reservation acceptance, offline-only recovery, no paid dispatch during tests.",
+    "spending-limit": "Retain original owner/workspace/source/lifecycle and usage-proof negative tests. Add legacy Chief17M/negative remainder capability case, above-estimate accounting, twoMAXsafe aggregate overflow, exhausted old reservation acceptance, offline-only recovery, no paid dispatch during tests.",
+    "partial-execution": "Retain original owner/workspace/source/lifecycle and usage-proof negative tests. Add legacy Chief17M/negative remainder capability case, above-estimate accounting, twoMAXsafe aggregate overflow, exhausted old reservation acceptance, offline-only recovery, no paid dispatch during tests."
+  },
+  "defects": [
+    {
+      "rootCause": "Financial enforcement duplicated in native, legacy and planner paths; initial section-only change missed aggregate context and compatibility predicates.",
+      "detectionGap": "Native five-stage qualification did not exercise older Chief context with combined historical and expanded reservations above15M.",
+      "regression": "Source-backed Chief17M case, shared numeric validator and aggregate overflow cases, legacy and hybrid reservation/usage behaviors, preserved refusal/incomplete/cancellation negatives.",
+      "historicalPrevention": "Search errors, rule/function/field names and equivalent predicates across all callers; update shared rule and relevant callers together; second search classifies remaining metadata/history instead of blind replacement."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing budget module shared by store, organization, Chief context/stage capability, Chief parsers, pilot/hybrid adapters, dormant autonomy/recovery and native controller; no new architecture.",
+    "dependencies": "No dependency or infrastructure provisioning.",
+    "threats": "Scope escalation disguised as financial policy; billing uncertainty erased; historical authority revived.",
+    "failureModes": "Provider errors stop requests; cleanup/revocation retains fallback; financial monitoring is not automatic invoice synchronization.",
+    "faultInjection": "Old15M and per-call monetary exhaustion, negative historical remainder, malformed and overflowing financial totals, incomplete/refused provider output, wrong model/source/workspace and canceled authority.",
+    "independentChallenge": "Independent accounting/security39each pass; overflow and stale accounting wording corrected.",
+    "recovery": "No paid call/config refresh or original approval reuse. New exact source/Preview must qualify before future authorized trial.",
+    "readiness": "First9fd release fully qualified4375/34 and actual Browserarchive. Successor a149 reviewed, focused cases passed; use one CIfullsuite, not a duplicate local full run."
+  }
+}

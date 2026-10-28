@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "d2542ef1b743f9d906fbc0de95a28c8ee871e2811bdb2509cb2f8cc0d5eb7856",
+  "risk": "critical",
+  "scope": "Use Vercel-only lightweight packaging override; preserve full local npm build, regression, CI and all approved source evidence.",
+  "riskAnalysis": "Build success proves only static packaging smoke checks. Full local and CI STRICT verification remain unchanged. Normal automatic Preview may be READY before CI; it must not be used for paid activation or called qualified until all exact-source gates pass. Package.json remains byte-identical to approved source. An initial local candidate failed ENG_SOURCE_DRIFT and was narrowed before publication; evidence locks are not rewritten.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact release identity, source fingerprint, provider credentials and unchanged full verification gates.",
+    "trustBoundaries": "Vercel packaging versus local STRICT, GitHub CI and authorized reviewed Preview usage.",
+    "abuseCases": "Stale lock, silently skipped full CI, leaked environment, failed child reported as success or build success presented as acceptance.",
+    "mitigations": "Fixed offline smoke args, real assertRelease, runner included in source fingerprint, filtered environment,60second timeout and explicit no-qualification/no-publication receipt."
+  },
+  "rollback": "Restore previous normalBhMc Preview alias; revert packaging-only change on feature branch after review. Main and Production stay unchanged.",
+  "negativePaths": {
+    "malformed-response": "Malformed smoke child status fails closed and cannot produce a passing build receipt.",
+    "stale-state": "Real release lock assertion precedes smoke execution and refuses drift.",
+    "concurrency": "No new shared state; one bounded child, no paid execution or reservation.",
+    "cancellation": "Child interruption or signal fails packaging; existing runtime cancellation unchanged.",
+    "worker-interruption": "Smoke timeout or spawn error returns failure, without retry.",
+    "api-outage": "Smoke tests are offline and require no provider or network response.",
+    "authorization-denial": "Build receipt explicitly grants no qualification or publication; owner controllers unchanged.",
+    "spending-limit": "No model requests, new service or financial authority; only removes duplicate compute.",
+    "partial-execution": "Any failed smoke stage suppresses success receipt; full CI still independently required."
+  },
+  "defects": [
+    {
+      "rootCause": "Vercel npm build reran all worker regressions already required by fullCI, consuming92percent of latest buildtime.",
+      "detectionGap": "Build command inherited full regression as packaging, without separate cost/duration review.",
+      "regression": "Fixed smoke list and failure propagation tested; unchanged full npmtest/preflight/CI asserted.",
+      "historicalPrevention": "Separate packaging completion from engineering acceptance and measure deployed build duration."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing deployment process, one fixed smoke runner; no new orchestration or dependencies.",
+    "dependencies": "Unchanged lockfile and dependencies; existing Node runtime and offline harness.",
+    "threats": "False qualification, fingerprint drift, secret leakage or silent child failure.",
+    "failureModes": "Lock error, test failure, process signal or timeout all fail closed without retry.",
+    "faultInjection": "Focused tests cover stale lock, nonzero exit, timeout/error and signal plus secret stripping.",
+    "independentChallenge": "Separate WorkQA and EngineeringAuditor review source and verification before featurepublication.",
+    "recovery": "Prior qualified normal Preview remains rollback target; no paid authorization carried forward.",
+    "readiness": "Local smoke4 andfocused6 passed; frozenSTRICT and remote qualification remain pending."
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "f5213a69f27872e872b8e68da3242cd8e3e0819ccb5f84bd94028c6798607871",
+  "risk": "critical",
+  "scope": "Version the existing source-bound call-row task to give all five roles trusted review metadata, preserve the bounded final proposal, and bind Auditor attribution to its original immutable receipt without changing historical requests or authority.",
+  "riskAnalysis": "Review/source provenance and exact policy selection are security sensitive. New v3 objective/policy only; v1/v2 descriptors, requests, consumed approvals and receipts stay exact. Keep source grammar, no tools, no generated execution/publication/acceptance, counting/token/wire bounds, serial grants and revocation unchanged. Prose checks detect syntax limits, not semantic quality.",
+  "threatModel": {
+    "assets": "Immutable source/task/release identity, prior model receipts, QA/Auditor criticism, authority and usage accounting.",
+    "trustBoundaries": "Server-owned task contract and ledger-bound Specialist/Auditor identities versus untrusted model prose; technical review versus human acceptance; wire sizing versus authenticated token counting.",
+    "abuseCases": "Forged reviewer reference, reviewer-stage identity substituted for Specialist binding, cross-workspace prior receipts, acceptance after Auditor rejection, stale-policy use, instruction injection and clipped prose pretending to be complete evidence.",
+    "mitigations": "Exact v3 policy/controller/UI selection; receipt-derived Specialist attribution; schema/backend equality for original Auditor receipt/decision/reason digest; unchanged QA/rejection/source validation; field-aware diagnostics and full bounded proposal; no model tools, retries, code execution or publication."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Saved successful v2 requests supplied replacement grammar only to Specialist. Other roles lacked that contract, final input omitted the full proposal, and several permitted narrative fields ended mid-sentence; final claimed verbatim preservation was incomplete.",
+      "detectionGap": "Prior fixtures verified five-stage coordination and exact criticism rows but did not require every reviewer to see the same contract or characterize actual clipped prose.",
+      "regression": "Freeze all ten v2 request bodies before edits; retain original v1 golden tests. Actual five-stage owner controller/CAS fixture verifies all-role contract, Specialist identity, full final proposal, exact Auditor reference, 12000x5 counting and cleanup; reject clipped QA with usage retained, forged provenance/reference and false acceptance. Stress bounded final wire separately from provider token measurement.",
+      "historicalPrevention": "Version model-visible contracts, test each role context against the same trusted source, distinguish source attribution from prose claims, preserve full immutable reviews, and state syntactic/fixture limits honestly."
+    }
+  ],
+  "rollback": "Disable paid execution and future flags; revoke fresh grants and stop the sequence. Keep historical v1/v2/v3 descriptors, policies and receipts readable. Revert behavior only through a reviewed feature successor, never erase records or revive approvals.",
+  "negativePaths": {
+    "malformed-response": "Exercise exact owner/source/task/policy/reference binding, stale or forged grants, cross-workspace/reordered receipts, incomplete output with retained usage and cleanup, no downstream call after failure and no retry/publication. Preserve current token, spending-monitoring, cancellation and immutable evidence controls.",
+    "stale-state": "Exercise exact owner/source/task/policy/reference binding, stale or forged grants, cross-workspace/reordered receipts, incomplete output with retained usage and cleanup, no downstream call after failure and no retry/publication. Preserve current token, spending-monitoring, cancellation and immutable evidence controls.",
+    "concurrency": "Exercise exact owner/source/task/policy/reference binding, stale or forged grants, cross-workspace/reordered receipts, incomplete output with retained usage and cleanup, no downstream call after failure and no retry/publication. Preserve current token, spending-monitoring, cancellation and immutable evidence controls.",
+    "cancellation": "Exercise exact owner/source/task/policy/reference binding, stale or forged grants, cross-workspace/reordered receipts, incomplete output with retained usage and cleanup, no downstream call after failure and no retry/publication. Preserve current token, spending-monitoring, cancellation and immutable evidence controls.",
+    "worker-interruption": "Exercise exact owner/source/task/policy/reference binding, stale or forged grants, cross-workspace/reordered receipts, incomplete output with retained usage and cleanup, no downstream call after failure and no retry/publication. Preserve current token, spending-monitoring, cancellation and immutable evidence controls.",
+    "api-outage": "Exercise exact owner/source/task/policy/reference binding, stale or forged grants, cross-workspace/reordered receipts, incomplete output with retained usage and cleanup, no downstream call after failure and no retry/publication. Preserve current token, spending-monitoring, cancellation and immutable evidence controls.",
+    "authorization-denial": "Exercise exact owner/source/task/policy/reference binding, stale or forged grants, cross-workspace/reordered receipts, incomplete output with retained usage and cleanup, no downstream call after failure and no retry/publication. Preserve current token, spending-monitoring, cancellation and immutable evidence controls.",
+    "spending-limit": "Exercise exact owner/source/task/policy/reference binding, stale or forged grants, cross-workspace/reordered receipts, incomplete output with retained usage and cleanup, no downstream call after failure and no retry/publication. Preserve current token, spending-monitoring, cancellation and immutable evidence controls.",
+    "partial-execution": "Exercise exact owner/source/task/policy/reference binding, stale or forged grants, cross-workspace/reordered receipts, incomplete output with retained usage and cleanup, no downstream call after failure and no retry/publication. Preserve current token, spending-monitoring, cancellation and immutable evidence controls.",
+    "duplicate-request": "Exercise exact owner/source/task/policy/reference binding, stale or forged grants, cross-workspace/reordered receipts, incomplete output with retained usage and cleanup, no downstream call after failure and no retry/publication. Preserve current token, spending-monitoring, cancellation and immutable evidence controls."
+  },
+  "proactiveReview": {
+    "architecture": "Inspect the existing five-stage workflow only. Reuse controller/journal/provider/ledger; no architecture migration or new tools. Verify same trusted contract to reviewers, original Specialist identity, exact Auditor reference, unchanged historical requests and bounded inputs. Keep semantic acceptance, execution and publication separate; qualify one exact Preview source release.",
+    "dependencies": "Inspect the existing five-stage workflow only. Reuse controller/journal/provider/ledger; no architecture migration or new tools. Verify same trusted contract to reviewers, original Specialist identity, exact Auditor reference, unchanged historical requests and bounded inputs. Keep semantic acceptance, execution and publication separate; qualify one exact Preview source release.",
+    "threats": "Inspect the existing five-stage workflow only. Reuse controller/journal/provider/ledger; no architecture migration or new tools. Verify same trusted contract to reviewers, original Specialist identity, exact Auditor reference, unchanged historical requests and bounded inputs. Keep semantic acceptance, execution and publication separate; qualify one exact Preview source release.",
+    "failureModes": "Inspect the existing five-stage workflow only. Reuse controller/journal/provider/ledger; no architecture migration or new tools. Verify same trusted contract to reviewers, original Specialist identity, exact Auditor reference, unchanged historical requests and bounded inputs. Keep semantic acceptance, execution and publication separate; qualify one exact Preview source release.",
+    "faultInjection": "Inspect the existing five-stage workflow only. Reuse controller/journal/provider/ledger; no architecture migration or new tools. Verify same trusted contract to reviewers, original Specialist identity, exact Auditor reference, unchanged historical requests and bounded inputs. Keep semantic acceptance, execution and publication separate; qualify one exact Preview source release.",
+    "independentChallenge": "Inspect the existing five-stage workflow only. Reuse controller/journal/provider/ledger; no architecture migration or new tools. Verify same trusted contract to reviewers, original Specialist identity, exact Auditor reference, unchanged historical requests and bounded inputs. Keep semantic acceptance, execution and publication separate; qualify one exact Preview source release.",
+    "recovery": "Inspect the existing five-stage workflow only. Reuse controller/journal/provider/ledger; no architecture migration or new tools. Verify same trusted contract to reviewers, original Specialist identity, exact Auditor reference, unchanged historical requests and bounded inputs. Keep semantic acceptance, execution and publication separate; qualify one exact Preview source release.",
+    "readiness": "Inspect the existing five-stage workflow only. Reuse controller/journal/provider/ledger; no architecture migration or new tools. Verify same trusted contract to reviewers, original Specialist identity, exact Auditor reference, unchanged historical requests and bounded inputs. Keep semantic acceptance, execution and publication separate; qualify one exact Preview source release."
+  }
+}

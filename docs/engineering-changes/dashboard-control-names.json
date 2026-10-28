@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "13205949ccda5991151b6f3dadced91b9e685aac70e5fd4bc379ed66145eb5f4",
+  "risk": "critical",
+  "scope": "Provide25persistent accessible names across client/admin static controls; preserve exact source evidence and authenticated offline historical HTML replay.",
+  "riskAnalysis": "Only aria-label product additions. No validation/authentication/permission behavior changes. Fresh source admission remains exact; historical replay is test-only with pinned hash/size. Open dependency finding remains open.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Accessible control names, current source identity, immutable historical task evidence, credentials and review history.",
+    "trustBoundaries": "Static HTML names to browser accessibility tree; current evidence asset to live admission; explicit offline fixture to historical tests only.",
+    "abuseCases": "Missing/ambiguous names, historical HTML presented as current source, mutated fixture, accidental dependency or credential changes.",
+    "mitigations": "Unique exact names, whole HTML equality after removing labels, sourcev9 pins current hashes, immutable old assets, fixed historicalHTML hash/size, no production helper imports and current-vs-old admission negative tests."
+  },
+  "rollback": "Revert only candidate source; retain historical evidence assets, fixed product timestamp patch and security advisory history. No Production changes.",
+  "negativePaths": {
+    "malformed-response": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "stale-state": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "concurrency": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "cancellation": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "worker-interruption": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "api-outage": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "authorization-denial": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "spending-limit": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "partial-execution": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested."
+  },
+  "defects": [
+    {
+      "rootCause": "Multiple static dashboard controls lacked explicit label association and relied on placeholders or adjacent unassociated text.",
+      "detectionGap": "Earlier accessibility repairs covered only selected views; broad static dashboard scan was absent.",
+      "regression": "All static input/select/textarea controls require persistent labels; orphan aria-labelledby rejected. Browser role checks persist after typed contact/client queries.29focused and12static checks pass.",
+      "historicalPrevention": "Apply shared control-name inventory across both dashboards rather than fixing one search field at a time."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing HTML, source/evidence adapter and browser suite reused; no new orchestration or provider.",
+    "dependencies": "No dependency changes; upstream bundled Zod advisory remains open with official integrity-verified archive evidence.",
+    "threats": "Historical source substitution, malformed labels, role collisions and misleading dependency remediation.",
+    "failureModes": "Current source mismatch fails closed; test-only replay validates pinned historical bytes; absent computed names fail browser suite.",
+    "faultInjection": "Missing labels and orphan references fail static regression; old v8 HTML identity denied for fresh admission; existing full workflow failure/cleanup fixtures pass.",
+    "independentChallenge": "Independent Work QA confirmed25attribute-only additions and suggested aria-labelledby reference checks; added negative case. Auditor independently passed12checks and verified no admission widening.",
+    "recovery": "Revert this candidate only, preserve original assets, reviews, model failures and financial uncertainty; no paid execution enabled.",
+    "readiness": "Candidate pending one full CI STRICT/Redis/CodeQL/Jekyll and authenticated Preview browser/visual qualification; no new inference required."
+  }
+}

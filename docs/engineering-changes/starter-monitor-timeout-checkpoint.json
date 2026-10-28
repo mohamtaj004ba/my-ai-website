@@ -1,0 +1,21 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "7712d99fa5d633e4553466b0183f3d7a6b49300a4c60bc9d501444f2d76c1a9f",
+  "risk": "routine",
+  "scope": "Documentation-only actual Starter live patch, timeout sequencing diagnosis, independent review, usage uncertainty and verified shutdown; preserve original evidence.",
+  "defects": [
+    {
+      "rootCause": "Work created the actual live admission task before completing configuration/enrollment/preparation;302702ms task lifetime elapsed before RUN.",
+      "detectionGap": "Admission validated nonexpired authority but operator did not account for preparation consuming half of the ten-minute task window.",
+      "regression": "Actual task/run/failure timestamps and source15scleanup reserve independently checked; static source/patch hashes,14priorrecords and final revoked/zero-lease state verified.",
+      "historicalPrevention": "Finish configuration/enrollment using preparation task; create actual execution task last, immediately before prepare/rapid final identity review/run; preserve enforced deadlines."
+    }
+  ],
+  "verification": [
+    "scope-review"
+  ],
+  "applicationSource": "d775fa4383b1bdc31e1019a7f2c55ea593f966a3",
+  "applicationFingerprint": "a149f2f53d9762711d96ec7f379d3a5f01f4b327a2fae1e56839b23736aee7d1",
+  "deploymentId": "dpl_28eHDXA83fYH6yXrkzGNvmsGMbU4",
+  "applicationRebuildRequired": false
+}

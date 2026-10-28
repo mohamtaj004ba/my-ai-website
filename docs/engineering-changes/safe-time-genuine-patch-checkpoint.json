@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "aeca229552a8cab32b2d7762e841f4ec370afaf7f263e1aa2a7913cfa593af3f",
+  "risk": "routine",
+  "scope": "Preserve independently verified genuine safe-time trial, exact usage/shutdown, original report rejection and pending Work-local isolated-test decision. Documentation only; no runtime or authority changes.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

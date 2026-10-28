@@ -1,0 +1,21 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "fd05d167e5cdb2647567777aaa6c1cc618a0b14c42b2bbacd68178cf49a288b6",
+  "risk": "routine",
+  "scope": "Documentation-only actual JIT assignment source qualification, exact Preview, hosted QA job and evidence-inspection limitation; no source, authority, accounting or configuration changes.",
+  "defects": [
+    {
+      "rootCause": "Preparation consumed half the historical live task lifetime; the reviewed JIT path now creates a fresh assignment after setup.",
+      "detectionGap": "Earlier checkpoint had not yet recorded final exact hosted qualification statuses.",
+      "regression": "178focused,17preflight,4390CI,34Redis and hostedBrowser/CodeQL/Jekyll actual successful jobs; archive inspection explicitly not claimed.",
+      "historicalPrevention": "Keep actual release identities, consumed approvals and evidence limitations separate; documentation does not justify another application build."
+    }
+  ],
+  "verification": [
+    "scope-review"
+  ],
+  "applicationSource": "ffdd6163c9c388ea6c799e579ec7a9d3c3eafea2",
+  "applicationFingerprint": "50a1b3ccd5d4ccf3a9fe367554ed277166f0edcfb9bf4aaf041a53c303aa76ca",
+  "deploymentId": "dpl_GryqDZLwDyhDhk1Eraw7Au9VhnXU",
+  "applicationRebuildRequired": false
+}

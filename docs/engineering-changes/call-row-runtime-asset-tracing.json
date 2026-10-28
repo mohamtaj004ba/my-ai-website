@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "b02ece0f00a9af173237de6fa29f45d30b13568a0388f271b30eb3b810dce2b2",
+  "risk": "critical",
+  "scope": "Add the new current-source task JSON to explicit runtime asset tracing after exhaustive packaging regression denied release.",
+  "riskAnalysis": "Paid task selection and configuration are security-sensitive. Keep immutable current-source descriptors, exact enums and backend validation, one-time admission, serial execution, durable refresh markers, historical policy hashes and closed publication/execution boundaries. No new budget or provider.",
+  "threatModel": {
+    "assets": "Current source and task identity, credentials, exact release approval, historical records, spending evidence and authority cleanup.",
+    "trustBoundaries": "Immutable task descriptors versus caller data; new task-specific policy versus historical approvals; source inspection versus data-only patch application; Work publication versus internal proposal-only agents.",
+    "abuseCases": "Reviving resolved tasks, arbitrary source/grammar changes, cross-task/workspace approvals, duplicate configuration refresh, parallel trials, second attempt after revocation, forged dynamic tests or publication.",
+    "mitigations": "One hashed current-source task, exact selected policy and context-aware evidence, non-mutating fixtures, one-attempt guard, shared serial check, existing controller/configuration CAS, null dynamic-test profile and immutable receipts."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "The new JSON was included in the hashed runtime file set and registry import but omitted from the explicit require.resolve tracing map.",
+      "detectionGap": "Initial focused admission/controller checks did not include the exhaustive existing non-JavaScript runtime tracing test.",
+      "regression": "Run the actual failing exhaustive asset-tracing test and both complete controller success/failure fixtures; preserve the initial4795/4796 result and unchanged security bounds.",
+      "historicalPrevention": "Every new runtime asset must be included in both source fingerprint and explicit deployment tracing before release."
+    }
+  ],
+  "rollback": "Disable paid execution and revoke temporary authority through the existing controller. Preserve immutable task assets, policy recognition, receipts and accounting. Revert feature behavior only through reviewed changes that retain readback for any already-recorded new task.",
+  "negativePaths": {
+    "malformed-response": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "stale-state": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "concurrency": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "cancellation": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "worker-interruption": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "api-outage": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "authorization-denial": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "spending-limit": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "partial-execution": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "duplicate-request": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing registry, adapter, owner controller, configuration CAS and sequence; no competing orchestration or credential path.",
+    "dependencies": "No dependencies or credential creation/rotation.",
+    "threats": "Reviving resolved tasks, arbitrary source/grammar changes, cross-task/workspace approvals, duplicate configuration refresh, parallel trials, second attempt after revocation, forged dynamic tests or publication.",
+    "failureModes": "A fixture is not live provider proof. Source mismatch, second approval, unresolved configuration or cleanup must deny paid execution.",
+    "faultInjection": "Descriptor/path/source/workspace/grammar substitution, prepared/active/consumed/revoked replay, cross-policy concurrency, unknown configuration acknowledgments, full five-stage fixture and UI submission.",
+    "independentChallenge": "Independent QA and Auditor design review confirmed a current-source task is smaller and safer than historical-source diagnostic bypass; final source review required.",
+    "recovery": "Preserve old assets/policies/receipts and failed tests. No production change. On failure revoke authority, retain usage and stop this one-time trial.",
+    "readiness": "Initial4795/4796 regressions and actual current-source owner readback retained. One-line asset tracing correction; affected packaging/controller tests and independent review pending. No actual provider/configuration/credential changes."
+  }
+}

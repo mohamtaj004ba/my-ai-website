@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "827ade69afb533b30f7b10627ea2952206e84f9896449ecac8710dc437798a1c",
+  "risk": "critical",
+  "scope": "Preserve exact rejected Preview redeploy request identity and provide a fixed-scope data-only REST request builder; no network executor, authority or history rewrite.",
+  "riskAnalysis": "Two exact request-envelope hashes only; original legacy hash unchanged. Immutable cancelled18event proof, owner/workspace/current review/oneuse gates remain. Fixedscope17event dispatch request data omits invalid RESTtarget; actual metadata and fresh controller admission remain mandatory.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact provider failure identity, immutable refresh history, project and Preview boundary.",
+    "trustBoundaries": "Operator provider request and reviewed external rejection attestation versus actual execution authority.",
+    "abuseCases": "Forged or foreign request hash, replay, altered status, missing dispatch, stale source, unauthorized Production deployment.",
+    "mitigations": "Closed exact hash variants; unchanged cancellation/owner/review/oneuse checks; pure builder requires stored record and fixed Preview original runtime."
+  },
+  "defects": [
+    {
+      "rootCause": "Operator sent CLI-style target preview in REST redeploy. Existing rejection proof accepted only a different legacy request envelope, preventing honest representation of the observed rejection.",
+      "detectionGap": "Operational request was manually reconstructed rather than generated from the already reviewed durable intent.",
+      "regression": "137 focused checks include both exact request variants, foreign hash/status/source/replay denial and pure builder17event/scope/no-target tests.",
+      "historicalPrevention": "Always derive future REST refresh requests with cfg.deploymentRequest after live lease and durable marker verification; preserve actual rejected request rather than fabricate the legacy hash."
+    }
+  ],
+  "rollback": "Revert additive builder/hash variant only through reviewed feature source; preserve cancelled intent, rejection evidence, false flags and original hashes. No reactivation or provider retries.",
+  "negativePaths": {
+    "malformed-response": "Closed exact request hashes and immutable proof reject substitutions/replay; builder is data only. Existing owner/source/cleanup/financial/controller checks unchanged; actual provider failures stop dispatch.",
+    "stale-state": "Closed exact request hashes and immutable proof reject substitutions/replay; builder is data only. Existing owner/source/cleanup/financial/controller checks unchanged; actual provider failures stop dispatch.",
+    "concurrency": "Closed exact request hashes and immutable proof reject substitutions/replay; builder is data only. Existing owner/source/cleanup/financial/controller checks unchanged; actual provider failures stop dispatch.",
+    "cancellation": "Closed exact request hashes and immutable proof reject substitutions/replay; builder is data only. Existing owner/source/cleanup/financial/controller checks unchanged; actual provider failures stop dispatch.",
+    "worker-interruption": "Closed exact request hashes and immutable proof reject substitutions/replay; builder is data only. Existing owner/source/cleanup/financial/controller checks unchanged; actual provider failures stop dispatch.",
+    "api-outage": "Closed exact request hashes and immutable proof reject substitutions/replay; builder is data only. Existing owner/source/cleanup/financial/controller checks unchanged; actual provider failures stop dispatch.",
+    "authorization-denial": "Closed exact request hashes and immutable proof reject substitutions/replay; builder is data only. Existing owner/source/cleanup/financial/controller checks unchanged; actual provider failures stop dispatch.",
+    "spending-limit": "Closed exact request hashes and immutable proof reject substitutions/replay; builder is data only. Existing owner/source/cleanup/financial/controller checks unchanged; actual provider failures stop dispatch.",
+    "partial-execution": "Closed exact request hashes and immutable proof reject substitutions/replay; builder is data only. Existing owner/source/cleanup/financial/controller checks unchanged; actual provider failures stop dispatch."
+  },
+  "proactiveReview": {
+    "architecture": "137 focused checks and independent QA/Auditor review cover exact preserved request, closed variants, fixedscope builder, stale/forged denial, immutable evidence and no authority or network action. Hosted qualification remains required.",
+    "dependencies": "137 focused checks and independent QA/Auditor review cover exact preserved request, closed variants, fixedscope builder, stale/forged denial, immutable evidence and no authority or network action. Hosted qualification remains required.",
+    "threats": "137 focused checks and independent QA/Auditor review cover exact preserved request, closed variants, fixedscope builder, stale/forged denial, immutable evidence and no authority or network action. Hosted qualification remains required.",
+    "failureModes": "137 focused checks and independent QA/Auditor review cover exact preserved request, closed variants, fixedscope builder, stale/forged denial, immutable evidence and no authority or network action. Hosted qualification remains required.",
+    "faultInjection": "137 focused checks and independent QA/Auditor review cover exact preserved request, closed variants, fixedscope builder, stale/forged denial, immutable evidence and no authority or network action. Hosted qualification remains required.",
+    "independentChallenge": "137 focused checks and independent QA/Auditor review cover exact preserved request, closed variants, fixedscope builder, stale/forged denial, immutable evidence and no authority or network action. Hosted qualification remains required.",
+    "recovery": "137 focused checks and independent QA/Auditor review cover exact preserved request, closed variants, fixedscope builder, stale/forged denial, immutable evidence and no authority or network action. Hosted qualification remains required.",
+    "readiness": "137 focused checks and independent QA/Auditor review cover exact preserved request, closed variants, fixedscope builder, stale/forged denial, immutable evidence and no authority or network action. Hosted qualification remains required."
+  }
+}

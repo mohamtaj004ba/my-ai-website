@@ -1,0 +1,50 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "17d68a6869a6088b6fc6d1ae890595c26a647233e8242c4ed88cc8d75f15ec5e",
+  "risk": "critical",
+  "scope": "Exact new Specialist objective consolidates repeated provider descriptions into one identical instruction; historical HEADROOM requests and policy descriptors remain exact.",
+  "riskAnalysis": "Controlled contract-complexity experiment, not a proven provider fix. Preserve all validation constraints, output requirements, evidence and8k24k limits. Historical request and policy interpretation must not change or revive old authority.",
+  "threatModel": {
+    "assets": "Immutable historical requests and receipts, exact source/task binding, authenticated grants, inert patch safety, fixed test permission and financial uncertainty.",
+    "trustBoundaries": "Only exact server-owned new objective opts in; all inputs/model outputs remain untrusted. Provider instructions remain data guidance, never execution authority.",
+    "abuseCases": "Historical objective drift, old policy replay, substring marker bypass, removed validation constraints or identity enums, changed stage caps, false test chronology or fabricated acceptance.",
+    "mitigations": "Freeze allfive prior v1/v2 objects/policies and actual original live hash; retain historical descriptors/readback but current-only pinning; change exact duplicate description annotations only; adversarial backend validation remains."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [],
+  "rollback": "Keep paid execution off and revoke fresh task authority on failure; revert only new opt-in on feature if qualification fails. Preserve all original requests, uncertainty, historical policies and Production.",
+  "negativePaths": {
+    "malformed-response": "Existing controller/source/task/CAS/cancellation/cleanup checks remain selected. New exact-objective and policy tests reject old grants, forged scope, stale source, unsafe patch and incomplete output; fixtures never prove live generation.",
+    "stale-state": "Existing controller/source/task/CAS/cancellation/cleanup checks remain selected. New exact-objective and policy tests reject old grants, forged scope, stale source, unsafe patch and incomplete output; fixtures never prove live generation.",
+    "concurrency": "Existing controller/source/task/CAS/cancellation/cleanup checks remain selected. New exact-objective and policy tests reject old grants, forged scope, stale source, unsafe patch and incomplete output; fixtures never prove live generation.",
+    "cancellation": "Existing controller/source/task/CAS/cancellation/cleanup checks remain selected. New exact-objective and policy tests reject old grants, forged scope, stale source, unsafe patch and incomplete output; fixtures never prove live generation.",
+    "worker-interruption": "Existing controller/source/task/CAS/cancellation/cleanup checks remain selected. New exact-objective and policy tests reject old grants, forged scope, stale source, unsafe patch and incomplete output; fixtures never prove live generation.",
+    "api-outage": "Existing controller/source/task/CAS/cancellation/cleanup checks remain selected. New exact-objective and policy tests reject old grants, forged scope, stale source, unsafe patch and incomplete output; fixtures never prove live generation.",
+    "authorization-denial": "Existing controller/source/task/CAS/cancellation/cleanup checks remain selected. New exact-objective and policy tests reject old grants, forged scope, stale source, unsafe patch and incomplete output; fixtures never prove live generation.",
+    "spending-limit": "Existing controller/source/task/CAS/cancellation/cleanup checks remain selected. New exact-objective and policy tests reject old grants, forged scope, stale source, unsafe patch and incomplete output; fixtures never prove live generation.",
+    "partial-execution": "Existing controller/source/task/CAS/cancellation/cleanup checks remain selected. New exact-objective and policy tests reject old grants, forged scope, stale source, unsafe patch and incomplete output; fixtures never prove live generation.",
+    "duplicate-request": "Existing controller/source/task/CAS/cancellation/cleanup checks remain selected. New exact-objective and policy tests reject old grants, forged scope, stale source, unsafe patch and incomplete output; fixtures never prove live generation."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse implementation/provider-v2, existing controller, journal and qualified fixed Starter path. No new gateway or execution architecture.",
+    "dependencies": "No dependency, credential, model, provider or infrastructure change.",
+    "threats": "Historical objective drift, old policy replay, substring marker bypass, removed validation constraints or identity enums, changed stage caps, false test chronology or fabricated acceptance.",
+    "failureModes": "A smaller request can still be incomplete; fail closed, preserve diagnostics and revoke authority. No automatic paid retry.",
+    "faultInjection": "Historical allfive request equality, real oldrequesthash, new-stage/constraint equality, oldpolicydenial and malicious source/evidence fixtures.",
+    "independentChallenge": "Independent Work QA and Auditor reviewed exact opt-in and historical policy isolation;70focusedchecks plus strongerotherstagecheck passed.",
+    "recovery": "Historical failed workflows stay closed; fresh configuration intent, release enrollment and one-time task/test authorization required.",
+    "readiness": "Source qualification only. Actual STRICT/Redis/CI/CodeQL/Jekyll/Browser evidence and exact owner activation gates precede one controlled live experiment."
+  }
+}

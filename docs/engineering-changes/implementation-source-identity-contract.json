@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "a2d31031991c894d764f2ef93b2b5c01cdcc1fe0ffcbf50960ce0fb7419ef13d",
+  "risk": "critical",
+  "scope": "Pin server-owned patch identity in the new Specialist output schema while preserving historical requests and all backend guards.",
+  "riskAnalysis": "Trial6 stopped at exact source validation after HTTP200. Original wrong digest was not retained. New-task singleton enums prevent identity transcription errors; this is not proof of the original model value.",
+  "threatModel": {
+    "assets": "Exact source and task identity, immutable historical evidence, request limits and isolated-test authority.",
+    "trustBoundaries": "Model returns inert source proposal; only server supplies identity constants and separately validates every field before disposable application.",
+    "abuseCases": "Foreign source/task/workspace identity, shared-schema contamination, stale policy activation, instruction injection and oversized requests.",
+    "mitigations": "Deep-cloned per-request schema, exact singleton identity enums, unchanged direct backend checks, historical golden request hashes and unchanged request ceilings."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Live Specialist source digest failed exact validation; model-emitted server metadata was constrained only by a bounded string schema. Original value is unknown.",
+      "detectionGap": "Fixtures copied exact server metadata; earlier generic mismatch location did not identify the source digest field.",
+      "regression": "Both-adapter identity constants, fresh contexts, historical request golden hashes, direct backend denials and complete five-stage fixture criticism.",
+      "historicalPrevention": "Derive identity constants from verified task context and validate live identity output independently from generated engineering content."
+    }
+  ],
+  "rollback": "Disable new execution, revert only this feature repair if qualification fails; never reuse consumed grants or rewrite historical receipts.",
+  "negativePaths": {
+    "malformed-response": "Strict schemas reject stale or forged identity; direct backend equality remains authoritative. No automatic provider retry, new permission, execution or publication authority.",
+    "stale-state": "Strict schemas reject stale or forged identity; direct backend equality remains authoritative. No automatic provider retry, new permission, execution or publication authority.",
+    "concurrency": "Strict schemas reject stale or forged identity; direct backend equality remains authoritative. No automatic provider retry, new permission, execution or publication authority.",
+    "cancellation": "Strict schemas reject stale or forged identity; direct backend equality remains authoritative. No automatic provider retry, new permission, execution or publication authority.",
+    "worker-interruption": "Strict schemas reject stale or forged identity; direct backend equality remains authoritative. No automatic provider retry, new permission, execution or publication authority.",
+    "api-outage": "Strict schemas reject stale or forged identity; direct backend equality remains authoritative. No automatic provider retry, new permission, execution or publication authority.",
+    "authorization-denial": "Strict schemas reject stale or forged identity; direct backend equality remains authoritative. No automatic provider retry, new permission, execution or publication authority.",
+    "spending-limit": "Strict schemas reject stale or forged identity; direct backend equality remains authoritative. No automatic provider retry, new permission, execution or publication authority.",
+    "partial-execution": "Strict schemas reject stale or forged identity; direct backend equality remains authoritative. No automatic provider retry, new permission, execution or publication authority.",
+    "duplicate-request": "Strict schemas reject stale or forged identity; direct backend equality remains authoritative. No automatic provider retry, new permission, execution or publication authority."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing adapter, patch contract and exact-release controller. No new orchestration, journal or credential system.",
+    "dependencies": "No package or infrastructure changes; no new access or spending authority.",
+    "threats": "Cross-context schema mutation, stale approval reactivation, forged metadata and output-size regressions receive explicit adversarial coverage.",
+    "failureModes": "Wrong metadata is denied at strict schema and backend boundaries; immutable usage and cleanup remain independent of acceptance.",
+    "faultInjection": "Malformed and stale identities, modified evidence, malicious replacement text, five-stage fixtures and historical readback cases.",
+    "independentChallenge": "Independent Work QA15/15 and Auditor source/test reviews passed; exact committed lock and hosted qualification still required.",
+    "recovery": "Prior attempt is revoked and archived, task cancelled, no VM or active owned grants. Original failure and charges remain unchanged.",
+    "readiness": "Fixture proof only until exact successor Preview passes release checks and fresh task/configuration enrollment."
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "version": "engineering-inference-evidence-v8",
+  "profile": "engineering-inference-rehearsal-v1",
+  "evidence": [
+    {
+      "id": "metric-label",
+      "path": "dashboard.html",
+      "line": 231,
+      "text": "          <article><span>Average daily calls</span><strong id=\"analyticsDailyAvg\">0</strong><small id=\"analyticsCalls\">0 total calls</small></article>",
+      "sha256": "77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f",
+      "excerptHash": "da4b148b0a8e34913bae03ac8f4de5aac599e542a7f37449ba8bf04bf6e15d66"
+    },
+    {
+      "id": "metric-calculation",
+      "path": "dashboard.js",
+      "line": 1567,
+      "text": "  const days=Number(document.getElementById('insightsRange')?.value||30),rows=callsData.filter(x=>withinDays(recordTime(x),days)),total=rows.length,answered=rows.filter(callAnswered).length,resolved=rows.filter(callResolvedByAi).length,afterHours=rows.filter(x=>{const h=new Date(recordTime(x)).getHours();return h<8||h>=18}).length,activeDays=new Set(rows.map(x=>new Date(recordTime(x)).toDateString())).size,avg=activeDays?Math.round(total/activeDays*10)/10:0;",
+      "sha256": "37d1a7c38970ba3a82b3e3d97ac0aec12395dd5d6f8eb1e1fab51836f5a2de0c",
+      "excerptHash": "3c834eb9796726347fdeed463d828091074e64e063316f82736798978ea791c8"
+    }
+  ]
+}

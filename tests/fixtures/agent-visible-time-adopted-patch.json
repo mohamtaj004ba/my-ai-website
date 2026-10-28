@@ -1,0 +1,14 @@
+{
+  "workflowId": "wf_8fada462fe47c6c6f26c798726a5ecdc",
+  "patchHash": "d91c3f12ef66d4ba3a3b68b7b86f115e2c5817e998a9e8cdb42819605d4b3bc0",
+  "specialistReceiptHash": "d34f77ba05643116c5fe07a62d9eeebed8b500d2fb02df703ea197d1179770a2",
+  "sourceTestReceiptHash": "3ca84aca38c74792357f1abd8e03ca45698b059609875cc1614588e445acdd57",
+  "beforeSha256": "aea8a45986d71205bcbc96ce8e0d362b16a63804be1452d72af51545aa10303f",
+  "afterSha256": "37d1a7c38970ba3a82b3e3d97ac0aec12395dd5d6f8eb1e1fab51836f5a2de0c",
+  "edit": {
+    "beforeText": "<span><strong>'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class=\"subtle\">'+esc(recordTime(x)?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span>",
+    "afterText": "<span><strong>'+esc(recordTime(x)&&Number.isFinite(new Date(recordTime(x)).getTime())?new Date(recordTime(x)).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):(x.time||'—'))+'</strong><small class=\"subtle\">'+esc(recordTime(x)&&Number.isFinite(new Date(recordTime(x)).getTime())?new Date(recordTime(x)).toLocaleDateString(undefined,{month:'short',day:'numeric'}):(x.agent||'Maya'))+'</small></span>",
+    "explanation": "Guard both visible formatters with Date validity while preserving escaping, formatting and separate fallbacks."
+  },
+  "automatedAcceptance": false
+}

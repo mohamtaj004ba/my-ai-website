@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "207c2c195e2b0dddc4404076d4869456d68147dbf847dc7ecb4bce722de127bc",
+  "risk": "critical",
+  "scope": "Just-in-time owner UI creates fresh execution assignment after setup, preserving existing expiry, durable duplicate prevention and all backend authority.",
+  "riskAnalysis": "No grant lifetime extension or new execution authorization. New UI action can only create an existing bounded task; backend preparation remains authoritative. Exact release lock regenerated from actual sources.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Task identity, source binding, consumed approvals, durable creation key, cleanup and historical evidence.",
+    "trustBoundaries": "Cached UI configuration is a convenience prerequisite; server owner/source/task/sequence checks remain authoritative.",
+    "abuseCases": "Double clicks, lost creation acknowledgement, foreign runtime readback, stale saved approval and failure to persist pending draft.",
+    "mitigations": "Existing durable idempotency journal before dispatch, pending reentry denial, exact scope fence and persisted readback; no automatic activation or deadline extension."
+  },
+  "rollback": "Revert successor source on feature branch if necessary, preserving all original financial and audit evidence and keeping paid disabled. Do not revive previous grants.",
+  "negativePaths": {
+    "malformed-response": "Existing server-side admission and shutdown checks remain unchanged. Focused UI fixtures test malformed readback, stale scope, concurrentclicks, lostACK, storage failure and no automatic provider dispatch; controller fixtures verify cancellation/cleanup.",
+    "stale-state": "Existing server-side admission and shutdown checks remain unchanged. Focused UI fixtures test malformed readback, stale scope, concurrentclicks, lostACK, storage failure and no automatic provider dispatch; controller fixtures verify cancellation/cleanup.",
+    "concurrency": "Existing server-side admission and shutdown checks remain unchanged. Focused UI fixtures test malformed readback, stale scope, concurrentclicks, lostACK, storage failure and no automatic provider dispatch; controller fixtures verify cancellation/cleanup.",
+    "cancellation": "Existing server-side admission and shutdown checks remain unchanged. Focused UI fixtures test malformed readback, stale scope, concurrentclicks, lostACK, storage failure and no automatic provider dispatch; controller fixtures verify cancellation/cleanup.",
+    "worker-interruption": "Existing server-side admission and shutdown checks remain unchanged. Focused UI fixtures test malformed readback, stale scope, concurrentclicks, lostACK, storage failure and no automatic provider dispatch; controller fixtures verify cancellation/cleanup.",
+    "api-outage": "Existing server-side admission and shutdown checks remain unchanged. Focused UI fixtures test malformed readback, stale scope, concurrentclicks, lostACK, storage failure and no automatic provider dispatch; controller fixtures verify cancellation/cleanup.",
+    "authorization-denial": "Existing server-side admission and shutdown checks remain unchanged. Focused UI fixtures test malformed readback, stale scope, concurrentclicks, lostACK, storage failure and no automatic provider dispatch; controller fixtures verify cancellation/cleanup.",
+    "spending-limit": "Existing server-side admission and shutdown checks remain unchanged. Focused UI fixtures test malformed readback, stale scope, concurrentclicks, lostACK, storage failure and no automatic provider dispatch; controller fixtures verify cancellation/cleanup.",
+    "partial-execution": "Existing server-side admission and shutdown checks remain unchanged. Focused UI fixtures test malformed readback, stale scope, concurrentclicks, lostACK, storage failure and no automatic provider dispatch; controller fixtures verify cancellation/cleanup."
+  },
+  "defects": [
+    {
+      "rootCause": "Creating the actual live task before configuration/enrollment consumed302702ms of its600000ms lifetime.",
+      "detectionGap": "Nonexpired-task admission did not expose remaining work time or distinguish setup from final execution preparation.",
+      "regression": "Fresh task makePlan600s, lostACK/restart, cross-workspace/runtime, activeprep, storagefailure, duplicateclicks and actual remaining time; backend cancellation and cleanup cases remain.",
+      "historicalPrevention": "Finish setup and enrollment first, close preparation task, then use fresh execution assignment immediately before Prepare and Run. Never reset consumed authority."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Small existing owner UI action reuses the same creation API and pending journal; no new controller.",
+    "dependencies": "No dependency installation or credential modification.",
+    "threats": "Stale/foreign preparation, duplicate submissions and misleading timer claims.",
+    "failureModes": "Unknown delivery retains exact pending key; no automatic retry or paid execution.",
+    "faultInjection": "UI storagefailures, lostACK, repeatclicks and late cross-workspace response; controller deadline/cancellation fixtures.",
+    "independentChallenge": "Work QA151of151 and Auditor11of11; UI liveness and hanging test-only fixture findings corrected.",
+    "recovery": "Reconcile pending task from server history using the existing key; no expiry extension or grant revival.",
+    "readiness": "Release and hosted verification pending; no paid execution permitted by this UI change."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "9d74ace4c82b09e71a69b0e51b4a163c0bbe352beb461d27001b5320f774c8f3",
+  "risk": "critical",
+  "scope": "Shorten only the new evidence-map prompt to preserve the unchanged 12000-byte organizational worker request bound.",
+  "riskAnalysis": "Full STRICT found12actual organizationalworker cases blocked before safe fixture execution by ENG_AI_INPUT_LIMIT; native pilot fixture tests alone did not catch it. New evidence-map prompt is now a concise standalone contract, retaining security, exact binding, required reports, evidence/status semantics and QA/Auditor criticism. Legacy and compact-v1 instructions remain bit-identical. No byte/token/call/time/spending limit changes. The original precommit digest617fb omitted the subsequent canonical checkpoint text; committed preflight correctly blocked before tests. This additive documentation correction binds the exact full544e42 commit including that checkpoint, without changing runtime or prior audit evidence.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source/patch integrity, immutable historical records, finite cumulative budget and attempts, reviewer attribution and Production isolation.",
+    "trustBoundaries": "Untrusted model output to strict schema and patch guards; current policy admission to immutable historical readback; authenticated owner controller to restricted data-only worker.",
+    "abuseCases": "Fabricated citations, supported claims with no evidence, duplicate refs, stale contract activation, historical receipt drift, forged acceptance or source execution.",
+    "mitigations": "Exact objective opt-in; only supplied evidence enum; unchanged duplicate/source/status validation; independent QA/Auditor review; current-only paid admission and preserved older immutable readback."
+  },
+  "rollback": "Disable paid execution and revoke temporary authority; retain all old and new records and accounting. Restore last qualified Preview alias. Preserve legacy readback support even if compact admission is disabled.",
+  "negativePaths": {
+    "malformed-response": "Incomplete, refused or malformed output remains rejected; no fake artifact.",
+    "stale-state": "Old policies, grants and release fingerprints cannot authorize new execution.",
+    "concurrency": "Serial cumulative admission and existing CAS; predecessor must be closed and clean.",
+    "cancellation": "Revocation and emergency stop remain authoritative; no retry after failure.",
+    "worker-interruption": "Data-only source copy and worker cleanup remain bounded; partial output is not success.",
+    "api-outage": "No automatic paid retry; preserve sanitized diagnostic and usage uncertainty.",
+    "authorization-denial": "No bypass of owner, task, workspace, source, release or review controls.",
+    "spending-limit": "Existing aggregate authorization and token/call/time caps preserved across distinct successors.",
+    "partial-execution": "Only actual completed stages are reported; later stages cannot conceal failure."
+  },
+  "defects": [
+    {
+      "rootCause": "Additional new opt-in instructions and evidence schema exceeded an existing 12000-byte request bound in actual organizational-worker contexts.",
+      "detectionGap": "Initial50native transport tests passed but excluded existing organizationalworker implementation suite; fullSTRICT caught12failures.",
+      "regression": "Existing actual five-stage organizationalworker and late cancellation/cleanup tests plus historical request hashes and pilot transport tests.",
+      "historicalPrevention": "Preserve failed fullSTRICT log; no release or paid execution on failing commit."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing implementation profile, controller and journal only; no new orchestration, credential, ledger or executor.",
+    "dependencies": "No added package, provider, sandbox, browser service or infrastructure spending.",
+    "threats": "Contract drift invalidating history; successor resets; model truncation; false success or acceptance.",
+    "failureModes": "Any incomplete or malformed response fails closed with diagnostic and observed usage; no automatic provider retries.",
+    "faultInjection": "Legacy policy fresh-admission denial, stale binding, malformed/incomplete responses, excessive arrays/text, missing criteria, forged source/acceptance, exhausted aggregate attempts/exposure and unclean predecessor.",
+    "independentChallenge": "Separate Work QA and Auditor inspect actual failure, exact changes, historical readback and security controls before release.",
+    "recovery": "Close failed attempt, preserve evidence and uncertainty, revoke all authority; fresh exact reviewed release/config/task only.",
+    "readiness": "Focused offline checks, STRICT/Redis/CI/CodeQL/Jekyll/Browser and exact runtime/config readback before any further authorized paid attempt."
+  }
+}

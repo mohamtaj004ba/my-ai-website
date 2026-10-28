@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "3866046c663bbd9674c14225e100e2eeead93efab1a4e67448462a923e8b0019",
+  "risk": "routine",
+  "scope": "Preserve complete actual sandbox failure evidence, consumed one-run permission, independently verified cleanup and exact contract defect without modifying runtime code, original patch or product.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "qualification": "Documentation only. Six of seven real guest tests pass; invalid-time handling fails and current exact grammar forces it. OS probes and cleanup pass, post-test source integrity not attested. No successor contract/model/test/publication permission added. Existing qualified application remains7a3bd64/c594/GeGt; no new application build needed."
+}

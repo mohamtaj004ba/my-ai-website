@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "b98933480ee80ce9dc8ae0b87504ba64bac73ee51450ba2caa81e62c22672d5c",
+  "risk": "critical",
+  "scope": "Align request-faithful controller test oracles with newly authoritative backend acceptance; add counterfactual injected-assessor negative. No application runtime changes.",
+  "riskAnalysis": "Reviewer identity, evidence and acceptance boundaries are critical. Preserve independent QA and backend decisions, reject stale/tampered/replayed claims, distinguish offline evaluator mechanics from actual model accuracy.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable original screenshots, model outputs, QA, task acceptance, owner identity and retained financial ledger.",
+    "trustBoundaries": "Model statement to backend atoms; capture geometry to proposition; local PNG to manifest; authenticated owner to CAS review; original task release to current surface.",
+    "abuseCases": "Unreviewed summary, reversed geometry, whole-image citation bridge, self-review, foreign task, stale binding, duplicate submission, UI read/file race, gold leakage, uncertain delivery.",
+    "mitigations": "Shared strict schemas, canonical note/propositions, direct regional checks, same-document ownership, immutable hash projection, CAS/idempotency, file generations, visible pending journal, no authority from review."
+  },
+  "rollback": "Keep paid disabled and no approvals. Revert only Phase A feature commits and deploy disabled Preview; preserve all original evidence, appended reviews, accounting, central revocation and Production.",
+  "negativePaths": {
+    "malformed-response": "Explicit claim/schema validation, summary/polarity/region negatives and frozen live-response replay before any transport.",
+    "stale-state": "Task and global revision/hash/current release binding deny stale or altered owner review and report downgrade.",
+    "concurrency": "Real Redis CAS and unit race tests enforce unique review record; active pilot/rehearsal blocks review mutation.",
+    "cancellation": "Terminal review rejects changed/cancelled states; UI session loss invalidates in-flight reads and files; existing execution cancellation retained.",
+    "worker-interruption": "Tracked driver negative suites retained in mandatory STRICT union; no new worker executor or retry introduced.",
+    "api-outage": "Redis read/CAS outage fails closed; lost review response retains exact key/payload and explicit reconciliation only.",
+    "authorization-denial": "Actual session/member/workspace owner policy, worker/nonowner/disabled/impersonated/foreign/Production negatives.",
+    "spending-limit": "No paid provider in this pass; existing15USD spending/revocation contracts remain mandatory; review has acceptedWorkfalse and no operational authority.",
+    "partial-execution": "In-flight read/file races and lost commit response reproduced; no partial review can alter original workflow or silently create another submission."
+  },
+  "defects": [
+    {
+      "rootCause": "Prior controller integration fixtures injected accepted=true for a general badge claim with reproduction-only geometry.",
+      "detectionGap": "Those fixtures established transport composition but bypassed substantive criteria through the assessor callback.",
+      "regression": "Actual Node controller now completes accepted/rejected model verdict paths with backend task rejection; new negative proves injected true stops before final dispatch and centrally revokes.",
+      "historicalPrevention": "An assessor boolean cannot establish trusted general acceptance, even after four structurally valid model stages."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse five-stage supervisor/worker/shared schemas and existing owner API, Redis CAS and audit; separate appended review never replaces historical acceptance.",
+    "dependencies": "Node builtins, browser WebCrypto/FileReader and pinned Playwright only; no package, credential, database or external service added.",
+    "threats": "Summary/measurement substitution, irrelevant evidence bridges, self approval, foreign workspace, replay and leaked evaluation gold are challenged explicitly.",
+    "failureModes": "Uncertain image text remains unresolved; aggregate bytes, stale release, storage failure and unsupported review ownership deny safely before consequential work.",
+    "faultInjection": "Actual UI script promises, provider-boundary mocks, historical frozen response, Redis CAS races and existing interrupted-worker tests.",
+    "independentChallenge": "Separate QA and Auditor inspected actual source, original PNGs and request/review paths; confirmed draft defects were corrected with regressions.",
+    "recovery": "Preserve immutable originals and unknown charges; lost owner review submission uses saved exact idempotency payload, never an automatic retry or task resurrection.",
+    "readiness": "STRICT complete regression/contract union, Redis, CI, CodeQL and authenticated Preview still required; offline tests do not prove improved live model accuracy."
+  }
+}

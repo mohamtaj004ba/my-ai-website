@@ -1,0 +1,53 @@
+{
+  "version": "phone-historical-request-bindings-v1",
+  "containsCredentials": false,
+  "containsCustomerData": false,
+  "rows": [
+    {
+      "binding": {
+        "planId": "op_31ba36602c974120975200c783052fd9",
+        "taskId": "op_31ba36602c974120975200c783052fd9_task1",
+        "executionId": "pilot_52804d58afe90bad3344097cd8d86b88_chief-plan",
+        "fence": 0,
+        "ownerHash": "2f17d0dddf50600be4ff4dc5e30a6d4b1fa14daf7bce317931dda6124970321a",
+        "workspaceHash": "950868b4dd216bddaa5498c1cf45dc1a7adb6696e0222f79833fb586dc478ee1",
+        "runtime": {
+          "origin": "https://my-ai-website-5v5jq9ep7-mohamtaj004bas-projects.vercel.app",
+          "sourceCommit": "23dab61168f93bf612c8a32ed668692a0b0e517f",
+          "branch": "feature/callercore-dashboards",
+          "deploymentId": "dpl_EL8QdqWgUKsgjmUCBV5iaf3stGoP",
+          "release": {
+            "version": "organization-contracts-v4",
+            "digest": "9cefd6362ce1e07d65a990ef056e34d99fd5687c6682cb1cb6e95d65f791b90d"
+          }
+        },
+        "authorizationRevision": 1
+      },
+      "requestHash": "63e491ab37427838ee36e0f04f530b23368715cc1f049488ab9c6169d35e2605",
+      "policyHash": "0302059a303c9ddae83c50ec899ef081065ceebbaf3cfebe1768bbc3c44036c1"
+    },
+    {
+      "binding": {
+        "planId": "op_ef58441fd59646b48b2649302c216ecc",
+        "taskId": "op_ef58441fd59646b48b2649302c216ecc_task1",
+        "executionId": "pilot_5b7f38b3c50b26828a35ae43ef9f1ef8_chief-plan",
+        "fence": 0,
+        "ownerHash": "2f17d0dddf50600be4ff4dc5e30a6d4b1fa14daf7bce317931dda6124970321a",
+        "workspaceHash": "950868b4dd216bddaa5498c1cf45dc1a7adb6696e0222f79833fb586dc478ee1",
+        "runtime": {
+          "origin": "https://my-ai-website-k7cf52z9v-mohamtaj004bas-projects.vercel.app",
+          "sourceCommit": "f792f211416eb9ad1654ab1dc0a688c424fde45f",
+          "branch": "feature/callercore-dashboards",
+          "deploymentId": "dpl_82dyvhDq3XjjouB4EtEdH1CHPSYZ",
+          "release": {
+            "version": "organization-contracts-v4",
+            "digest": "60d429f4901dfcbcca9ae9ee592101591c9928071efed3f0b074a53b76e5cca9"
+          }
+        },
+        "authorizationRevision": 1
+      },
+      "requestHash": "655e4c5a4d5f0313f5a806188e7bd006966f57c3cd7bb742f970bb4da9e40923",
+      "policyHash": "0302059a303c9ddae83c50ec899ef081065ceebbaf3cfebe1768bbc3c44036c1"
+    }
+  ]
+}

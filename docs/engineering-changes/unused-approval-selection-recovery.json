@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e8a6eeb0fc66dd3d139d620840a69e4c2a39ece21f10b4837724e3ee9dbe0373",
+  "risk": "critical",
+  "scope": "Recover selection for exact never-activated revoked approvals without workflows; preserve backend enrollment and live authority gates; add closed diagnostics.",
+  "riskAnalysis": "Read-only local selection may recover only positively proved prepared-then-revoked identities with exact owner/workspace/task/source/enrollment binding and scope hash. No activation, approval reuse, backend policy, spending, credential, timeout or publication change. Unknown lifecycle records fail closed.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable prior approvals and workflow evidence, owner/workspace isolation, exact release enrollment and live authority.",
+    "trustBoundaries": "Two authenticated unchanged owner GET readbacks validate revoked unused identity before local selection; backend fresh enrollment/approval remains authoritative.",
+    "abuseCases": "Missing workflow used to conceal activated authority; forged scope, stale source, changed readback, injected diagnostic or overwritten saved approval.",
+    "mitigations": "Revoked revision2/lease0, exact prepared-revoked lifecycle, scope digest and enrollment matching; deny unknown events, existing cache overwrite and changed second readback; closed safe error codes."
+  },
+  "rollback": "Revert only UI repair and contractlock on feature branch; preserve prior configuration and owner records; no revival of revoked grants.",
+  "negativePaths": {
+    "malformed-response": "Focused actual UI adversarial fixtures preserve closed, scoped, replay-free read-only selection and existing backend gates; no provider call or generated execution.",
+    "stale-state": "Focused actual UI adversarial fixtures preserve closed, scoped, replay-free read-only selection and existing backend gates; no provider call or generated execution.",
+    "concurrency": "Focused actual UI adversarial fixtures preserve closed, scoped, replay-free read-only selection and existing backend gates; no provider call or generated execution.",
+    "cancellation": "Focused actual UI adversarial fixtures preserve closed, scoped, replay-free read-only selection and existing backend gates; no provider call or generated execution.",
+    "worker-interruption": "Focused actual UI adversarial fixtures preserve closed, scoped, replay-free read-only selection and existing backend gates; no provider call or generated execution.",
+    "api-outage": "Focused actual UI adversarial fixtures preserve closed, scoped, replay-free read-only selection and existing backend gates; no provider call or generated execution.",
+    "authorization-denial": "Focused actual UI adversarial fixtures preserve closed, scoped, replay-free read-only selection and existing backend gates; no provider call or generated execution.",
+    "spending-limit": "Focused actual UI adversarial fixtures preserve closed, scoped, replay-free read-only selection and existing backend gates; no provider call or generated execution.",
+    "partial-execution": "Focused actual UI adversarial fixtures preserve closed, scoped, replay-free read-only selection and existing backend gates; no provider call or generated execution."
+  },
+  "defects": [
+    {
+      "rootCause": "Read-only sequence recovery required a workflow for each historical approval, including an unused prepared approval revoked before workflow initialization. Enrollment errors hid safe precondition categories.",
+      "detectionGap": "Prior recovery fixtures used empty or initialized workflow history; legitimate never-activated revoked approvals were absent.",
+      "regression": "165 UI checks including19 new positive and adversarial cases cover exact unused lifecycle, scope hash, activated or malformed denial, cache preservation and sanitized diagnostics.",
+      "historicalPrevention": "Include prepared-but-never-activated records in lifecycle readback tests; separate local recovery selection from creation of execution authority."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing owner UI and existing backend journal/controller; no additional identity, gateway or authority.",
+    "dependencies": "No added packages, credentials or infrastructure.",
+    "threats": "Forged revoked record or missing workflow treated as cleanup proof; confidential exception text rendered.",
+    "failureModes": "Unknown/active/malformed history denies; interrupted enrollment remains unconfirmed and is read back before replay.",
+    "faultInjection": "Two-read changes, absent workflows, activation events, scope digest mismatch, foreign owner, queued-plan ambiguity and raw backend errors.",
+    "independentChallenge": "Work QA implementation tests plus separately attributed Auditor adversarial review; no human acceptance claim.",
+    "recovery": "Completed24-event prior configuration remains immutable. New exact source must qualify and receive fresh configuration enrollment before inference.",
+    "readiness": "Focused165/165 pass; final independent source review and remote STRICT/Redis/CodeQL/Jekyll/Browser pending."
+  }
+}

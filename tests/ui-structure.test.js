@@ -1,0 +1,157 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('fs');const path=require('path');
+const root=path.join(__dirname,'..');
+function html(name){return fs.readFileSync(path.join(root,name),'utf8')}
+function ids(src){return [...src.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1])}
+function duplicateIds(src){const seen=new Set(),dup=[];for(const id of ids(src)){if(seen.has(id))dup.push(id);seen.add(id)}return [...new Set(dup)]}
+test('client and admin dashboards contain no duplicate element ids',()=>{
+  assert.deepEqual(duplicateIds(html('dashboard.html')),[]);
+  assert.deepEqual(duplicateIds(html('admin-dashboard.html')),[]);
+});
+test('dashboard nav view targets exist',()=>{
+  for(const name of ['dashboard.html','admin-dashboard.html']){
+    const src=html(name),allIds=new Set(ids(src));
+    const targets=[...src.matchAll(/data-view="([^"]+)"/g)].map(m=>m[1]);
+    const missing=[...new Set(targets)].filter(v=>!allIds.has('view-'+v));
+    assert.deepEqual(missing,[],name+' missing view targets');
+  }
+});
+test('security headers include baseline protections',()=>{
+  const config=JSON.parse(fs.readFileSync(path.join(root,'vercel.json'),'utf8'));
+  const headers=(config.headers||[]).flatMap(x=>x.headers||[]);
+  const map=Object.fromEntries(headers.map(x=>[x.key.toLowerCase(),x.value]));
+  for(const key of ['strict-transport-security','content-security-policy','x-content-type-options','x-frame-options','referrer-policy'])assert.ok(map[key],key+' missing');
+  assert.match(map['content-security-policy'],/frame-ancestors 'none'/);
+});
+
+test('dashboard JavaScript has no duplicate named function declarations',()=>{
+  const src=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  const names=[...src.matchAll(/(?:async\s+)?function\s+([A-Za-z0-9_$]+)\s*\(/g)].map(m=>m[1]);
+  const counts={};for(const name of names)counts[name]=(counts[name]||0)+1;
+  assert.deepEqual(Object.entries(counts).filter(([,count])=>count>1),[]);
+});
+
+test('admin platform settings expose every required launch gate',()=>{
+  const src=html('admin-dashboard.html');
+  for(const id of ['launchGatePreviewIsolation','launchGateDisposableE2E','launchGateVoiceLifecycle','launchGateProductionEnvScope','launchGateSupportEmail','launchGateBusinessTax','launchGateLegalReview']){
+    assert.ok(src.includes('id="'+id+'"'),id+' launch gate missing');
+  }
+});
+
+test('admin client drawer exposes the recovery drill action',()=>{
+  assert.ok(html('admin-dashboard.html').includes('id="adminRecoveryDrillButton"'));
+  const js=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  assert.match(js,/admin-recovery-drill/);
+});
+
+
+test('client live dashboard bundle applies data without self-recursion',()=>{
+  const src=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  const start=src.indexOf('function applyClientDashboardData(');
+  assert.ok(start>=0,'applyClientDashboardData missing');
+  const open=src.indexOf('{',start),end=src.indexOf('\nfunction ',open+1);
+  const body=src.slice(open+1,end>=0?end:src.length);
+  assert.doesNotMatch(body,/applyClientDashboardData\s*\(/,'bundle applicator must not call itself');
+  for(const target of ['callsData=','leadsData=','agentData=','settingsData=','phoneRoutingData=','locationsData=','conversationsData=','automationsData=','followupState=']){
+    assert.ok(body.includes(target),target+' assignment missing from client bundle applicator');
+  }
+});
+
+
+test('individually mandatory name fields expose native required semantics',()=>{
+  const admin=html('admin-dashboard.html'),client=html('dashboard.html');
+  for(const id of ['campaignNameInput','companyDocumentName'])assert.match(admin,new RegExp('id="'+id+'"[^>]*\\brequired\\b'));
+  for(const id of ['automationName','locationName','profileNameInput'])assert.match(client,new RegExp('id="'+id+'"[^>]*\\brequired\\b'));
+  assert.doesNotMatch(admin,/id="prospectNameInput"[^>]*\\brequired\\b/,'prospects may instead be identified by business, email, or phone');
+});
+
+test('team note composer exposes the same required semantics enforced by JavaScript',()=>{
+  const client=html('dashboard.html');
+  assert.match(client,/id="drawerInternalNote"[^>]*\brequired\b/);
+  assert.match(client,/id="drawerInternalNote"[^>]*aria-describedby="drawerNoteStatus"/);
+});
+
+test('client support and AI feedback required text fields expose validation semantics',()=>{
+  const client=html('dashboard.html');
+  for(const [id,status] of [['supportSubject','supportStatus'],['supportMessage','supportStatus'],['agentFeedbackMessage','agentFeedbackStatus'],['aiFeedbackMessage','aiFeedbackStatus']]){
+    assert.match(client,new RegExp('id="'+id+'"[^>]*\\brequired\\b'));
+    assert.match(client,new RegExp('id="'+id+'"[^>]*aria-describedby="'+status+'"'));
+  }
+});
+
+test('dynamic save and recovery feedback uses live status semantics',()=>{
+  const client=html('dashboard.html'),admin=html('admin-dashboard.html');
+  assert.match(client,/id="drawerNoteStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(admin,/id="adminClientManageNote" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(admin,/id="adminTechStatus" role="status" aria-live="polite" aria-atomic="true"/);
+});
+
+
+test('date-range controls reference the validation status that explains invalid ranges',()=>{
+  const admin=html('admin-dashboard.html');
+  for(const [id,status] of [['campaignStartInput','campaignFormStatus'],['campaignEndInput','campaignFormStatus'],['companyDocumentEffective','companyDocumentStatusLine'],['companyDocumentExpires','companyDocumentStatusLine']]){
+    assert.match(admin,new RegExp('id="'+id+'"[^>]*aria-describedby="'+status+'"'));
+  }
+});
+
+test('required form controls reference their live validation feedback',()=>{
+  const admin=html('admin-dashboard.html'),client=html('dashboard.html');
+  for(const [id,status] of [['inboxReplyText','inboxReplyStatus'],['expenseNameInput','expenseFormStatus'],['expenseAmountInput','expenseFormStatus'],['phoneNumberInput','phoneFormStatus']]){
+    assert.match(admin,new RegExp('id="'+id+'"[^>]*aria-describedby="'+status+'"'));
+  }
+  assert.match(client,/id="settingsBusinessName"[^>]*aria-describedby="settingsFormStatus"/);
+});
+
+test('visually required admin fields expose required semantics',()=>{
+  const admin=html('admin-dashboard.html');
+  for(const id of ['expenseNameInput','expenseAmountInput','phoneNumberInput']){
+    assert.match(admin,new RegExp('id="'+id+'"[^>]*\\brequired\\b'));
+  }
+});
+
+test('admin modal validation feedback uses live status semantics',()=>{
+  const admin=html('admin-dashboard.html');
+  for(const id of ['companyDocumentStatusLine','prospectFormStatus','campaignFormStatus']){
+    assert.match(admin,new RegExp('id="'+id+'" role="status" aria-live="polite" aria-atomic="true"'));
+  }
+  assert.match(admin,/id="companyDocumentName"[^>]+aria-describedby="companyDocumentStatusLine"/);
+  assert.match(admin,/id="prospectNameInput"[^>]+aria-describedby="prospectFormStatus"/);
+  assert.match(admin,/id="campaignNameInput"[^>]+aria-describedby="campaignFormStatus"/);
+});
+
+
+test('notification refresh status is announced consistently',()=>{
+  for(const file of ['dashboard.html','admin-dashboard.html']){
+    const src=html(file);
+    assert.match(src,/id="notificationSyncStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  }
+});
+
+
+test('top-level save badges announce state changes',()=>{
+  const client=html('dashboard.html'),admin=html('admin-dashboard.html');
+  for(const id of ['agentSaveStatus','settingsSaveStatus'])assert.match(client,new RegExp('id="'+id+'" role="status" aria-live="polite" aria-atomic="true"'));
+  assert.match(admin,/id="platformSettingsStatus" role="status" aria-live="polite" aria-atomic="true"/);
+});
+
+
+test('admin prospect editor exposes useful field metadata and initial focus',()=>{
+  const admin=html('admin-dashboard.html'),js=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  assert.match(admin,/id="prospectNameInput"[^>]+autocomplete="name"/);
+  assert.match(admin,/id="prospectBusinessInput"[^>]+autocomplete="organization"/);
+  assert.match(admin,/id="prospectEmailInput" type="email" autocomplete="email" inputmode="email"/);
+  assert.match(admin,/id="prospectPhoneInput" type="tel" autocomplete="tel" inputmode="tel" maxlength="24"/);
+  const open=js.slice(js.indexOf('function openProspectModal('),js.indexOf('function closeProspectModal('));
+  assert.match(open,/nameInput\?\.focus\?\.\(\)/);
+  assert.match(open,/s\.className='form-status-line'/);
+});
+
+
+test('admin feedback updates use inline live feedback instead of alerts',()=>{
+  const admin=html('admin-dashboard.html'),js=fs.readFileSync(path.join(root,'dashboard.js'),'utf8');
+  assert.match(admin,/id="adminFeedbackActionStatus" role="status" aria-live="polite" aria-atomic="true"/);
+  const start=js.indexOf('async function updateAdminFeedback('),end=js.indexOf('\nfunction renderWebsiteTrafficChart(',start),block=js.slice(start,end);
+  assert.match(block,/actionStatus\.textContent='Updating feedback…'/);
+  assert.match(block,/actionStatus\.textContent='Feedback marked '/);
+  assert.match(block,/actionStatus\.className='muted error-text'/);
+  assert.doesNotMatch(block,/alert\(/);
+});

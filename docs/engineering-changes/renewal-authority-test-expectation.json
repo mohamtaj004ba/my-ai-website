@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "4ca0956434cefefee359ffe8c78333802c719130a9b81bc52f8e671d0d15c466",
+  "risk": "critical",
+  "scope": "Correct obsolete configuration-history test expectation and preserve recovery/release evidence; runtime fingerprint unchanged.",
+  "riskAnalysis": "Full scoped owner/task/source/audit validation and subsequent live broker authority remain mandatory. No settled authority cache, lease extension, timeout increase, paid retry, raw error logging or historical mutation. V1/V2 policies preserved.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner task authority, immutable failure history, source binding, provider credentials, shutdown and independently attributed reviews.",
+    "trustBoundaries": "Trusted parent callback reports fixed phases; sanitizer validates exact closed object shape before immutable receipt persistence; model content grants no authority.",
+    "abuseCases": "Injected timing content, unknown phase labels, late callbacks, observer exceptions, revived expired authority, fabricated success from lost browser connection.",
+    "mitigations": "Strict key/enum/numeric allowlist, obsolete callback fence, unreported timing absent, unchanged owner/lease/revocation checks and honest unverified outcome records."
+  },
+  "rollback": "Revert only diagnostic source on feature branch if needed; preserve original run receipts and financial uncertainty. Keep paid stopped until interrupted run readback and exact release qualification. Never revive consumed approvals.",
+  "negativePaths": {
+    "malformed-response": "Closed enum and strict numeric timing shape reject arbitrary keys, raw content, unknown phases and forged signals; existing response guards unchanged.",
+    "stale-state": "Late/aborted/obsolete renewal trace callbacks cannot rewrite the captured stop reason; source and task checks remain unchanged.",
+    "concurrency": "Actual delayed owner and ledger broker fixtures, competing renewal/revocation CAS cases and observer exceptions preserve authority and revocation fencing.",
+    "cancellation": "Actual controller renewal timeout still aborts, revokes and independently reads shutdown; aborted broker cannot return a renewal confirmation.",
+    "worker-interruption": "Existing worker cleanup and interruption behavior unchanged; full local STRICT4405 passes, no generated source execution introduced.",
+    "api-outage": "Hung renewal reports only current closed phase and elapsed timings, preserving fail-closed timeout; real provider outage cause remains unclaimed.",
+    "authorization-denial": "Unchanged owner/workspace/source/release/current-policy and lifecycle checks precede any renewal confirmation or paid dispatch.",
+    "spending-limit": "No accounting or effective financial policy change. Existing monitoring records and unknown fees remain; no new budget authority.",
+    "partial-execution": "Prior completed Chief/Specialist receipts and usage remain intact when next authority check fails; no false zero exposure for dispatched attempts."
+  },
+  "defects": [
+    {
+      "rootCause": "Existing outer renewal timeout identifies cancellation origin but not which trusted renewal phase was pending; underlying historical latency remains unknown.",
+      "detectionGap": "Prior closed cancellation reason retained origin/code only; duplicate renewal reads were known but no safe per-phase attribution existed.",
+      "regression": "Closed trace tests exercise actual controller owner/transaction timeout and actual broker cancellation, late callbacks, observer failures and secret-negative sanitizer;4405 local STRICT passes.",
+      "historicalPrevention": "Add safe phase instrumentation when introducing bounded asynchronous authority work; preserve failure evidence and distinguish observed timeout from hypothetical backend latency."
+    },
+    {
+      "rootCause": "Controller used full monitoring read where only fresh scoped task authority was consumed, adding organization ledger read and projections before broker ledger checks. Separate pre-transport exceptions bypassed stage diagnostics. Config20 and V3sequence8 lifetime history caps blocked reviewed successor creation.",
+      "detectionGap": "Tests covered transport failures and old administrative caps, not late authority failures, unnecessary monitoring reads or larger valid history. Historical timeout subphase remains unknown.",
+      "regression": "Independent actual-controller, real operations reader,21st configuration and9thsequence preservation tests plus required STRICT and remote qualification.",
+      "historicalPrevention": "Separate authority validation from display projections; instrument async phases and test continued append-only administrative history."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse existing controller, broker and failure receipt; one pure closed telemetry module, no new gateway, journal or authority system.",
+    "dependencies": "No added packages, provider credentials, model calls or paid infrastructure for local diagnostic verification.",
+    "threats": "Arbitrary callback labels or exception content leaking to audit; stale trace accepted as fresh authority; historical receipts misrepresented.",
+    "failureModes": "Owner/transaction hangs, cancellation after reads, concurrent CAS revocation, late callback after stop and missing browser readback remain fail closed.",
+    "faultInjection": "Actual withActivation timeouts, delayed broker owner/ledger phases, throwing observer and stale late callbacks; no paid fixtures.",
+    "independentChallenge": "Independent Work QA and Auditor actual-source review and adversarial tests; automated technical reviews, no human acceptance claim.",
+    "recovery": "Both resumed attempts reconciled and revoked. Actual second renewal timeout preserved; new diagnostics/reader must qualify before paid continuation.",
+    "readiness": "32 focused pass; prior4424pass/1obsoleteassertion retained; successor remoteSTRICT required."
+  }
+}
