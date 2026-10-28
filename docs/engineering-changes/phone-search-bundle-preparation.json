@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "4c4444d436736be214e19ff0f725c240816b016d1ef928ec38500a080c4b84b5",
+  "risk": "critical",
+  "scope": "Inactive source-bound two-file phone-search patch preparation using existing data-only worker.",
+  "riskAnalysis": "Fixed two source hashes and five predicate anchors; existing one-file behavior unchanged. No live registration or generated-code execution. Syntax compilation is not execution qualification.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source identity, isolated source copies, owner/task/release binding, immutable history and original repository.",
+    "trustBoundaries": "Untrusted patch text to pure-data validation to existing restricted child; no live authority or source execution.",
+    "abuseCases": "Traversal, protected files, stale bindings, duplicate keys, overlaps, hidden text, code execution and late work after cancellation.",
+    "mitigations": "Two fixed paths, five exact anchors, strict schema/wire checks, source preimages, no execution, permission denial, awaited cleanup and sanitized errors."
+  },
+  "rollback": "Revert this inactive extension only; preserve historical evidence and qualified Preview. No production operation.",
+  "negativePaths": {
+    "malformed-response": "Inactive pathway: source/binding/wire negative cases and actual restricted child revocation/cancellation/cleanup covered; no paid dispatch or new execution authority.",
+    "stale-state": "Inactive pathway: source/binding/wire negative cases and actual restricted child revocation/cancellation/cleanup covered; no paid dispatch or new execution authority.",
+    "concurrency": "Inactive pathway: source/binding/wire negative cases and actual restricted child revocation/cancellation/cleanup covered; no paid dispatch or new execution authority.",
+    "cancellation": "Inactive pathway: source/binding/wire negative cases and actual restricted child revocation/cancellation/cleanup covered; no paid dispatch or new execution authority.",
+    "worker-interruption": "Inactive pathway: source/binding/wire negative cases and actual restricted child revocation/cancellation/cleanup covered; no paid dispatch or new execution authority.",
+    "api-outage": "Inactive pathway: source/binding/wire negative cases and actual restricted child revocation/cancellation/cleanup covered; no paid dispatch or new execution authority.",
+    "authorization-denial": "Inactive pathway: source/binding/wire negative cases and actual restricted child revocation/cancellation/cleanup covered; no paid dispatch or new execution authority.",
+    "spending-limit": "Inactive pathway: source/binding/wire negative cases and actual restricted child revocation/cancellation/cleanup covered; no paid dispatch or new execution authority.",
+    "partial-execution": "Inactive pathway: source/binding/wire negative cases and actual restricted child revocation/cancellation/cleanup covered; no paid dispatch or new execution authority."
+  },
+  "defects": [
+    {
+      "rootCause": "Existing one-file single-edit contract cannot express a verified five-path two-file defect.",
+      "detectionGap": "Historical tasks only exercised one replacement in dashboard.js.",
+      "regression": "87 focused phone and historical checks plus 114 broader affected checks pass, including actual restricted data child and disposal.",
+      "historicalPrevention": "One source-bound bundle covers every declared path; no partial surface completion claim."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extends existing source tools, draft proposal and restricted child/workspace; no competing orchestration.",
+    "dependencies": "No dependency install; existing unresolved bundled Zod advisory preserved.",
+    "threats": "Binding substitution, hidden source changes, unsafe execution and raw cleanup exceptions.",
+    "failureModes": "All changed sites required; malformed source emits closed diagnostic; authority cancellation prevents late writes.",
+    "faultInjection": "Injected cleanup exception, malformed syntax, revoked authority and delayed authority covered.",
+    "independentChallenge": "Separate Work QA and Engineering Auditor approved inactive boundary; raw cleanup exception finding repaired.",
+    "recovery": "Await child close then destroy only created disposable directory; cleanup uncertainty fails closed.",
+    "readiness": "Inactive preparation only. Five-stage registration, isolated behavior qualification and exact-release gates remain required."
+  }
+}

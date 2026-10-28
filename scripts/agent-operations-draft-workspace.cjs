@@ -110,4 +110,43 @@ async function prepareProposal(options={}){
  const work=async()=>{check(!combined.aborted,'DRAFT_CANCELLED');check(await authorize('before',structuredClone(context),combined)===true,'DRAFT_PROPOSAL_AUTHORITY_DENIED');check(!combined.aborted,'DRAFT_CANCELLED');active=prepareInternal({sourceSha,expectedSourceSha,signal:combined,timeoutMs,delayMs,proposal:captured});const prepared=await active;check(await authorize('after',structuredClone(context),combined)===true,'DRAFT_PROPOSAL_AUTHORITY_DENIED');check(!combined.aborted,'DRAFT_CANCELLED');const artifact={...prepared,proposal:original,binding:context};validateProposalArtifact(artifact,{sourceSha,proposal:original,binding:context});return artifact;};
  try{return await Promise.race([work(),new Promise((_,reject)=>{listener=()=>reject(Error('DRAFT_CANCELLED'));if(combined.aborted)listener();else combined.addEventListener('abort',listener,{once:true});})]);}catch(error){if(active)try{await active;}catch(workerError){if(workerError.cleanupConfirmed!==true)throw Object.assign(Error('DRAFT_CLEANUP_FAILED'),{cleanupConfirmed:false});}throw Object.assign(error,{cleanupConfirmed:true});}finally{clearTimeout(timer);if(listener)combined.removeEventListener('abort',listener);c.abort();}
 }
-module.exports={prepare,prepareProposal,validateArtifact,validateProposalArtifact,LIMITS};
+// Inactive two-file task preparation: same restricted data worker, no source
+// execution and no controller/grant registration. Source is always captured by
+// the fixed server-owned phone task, never supplied by a model.
+async function prepareBundle(options={}){
+ check(Object.keys(options).every(k=>['proposal','binding','authorize','signal','timeoutMs','authorityTimeoutMs'].includes(k))&&typeof options.authorize==='function','DRAFT_PROPOSAL_AUTHORITY_REQUIRED');
+ const {authorize,signal,timeoutMs=10000,authorityTimeoutMs=30000}=options,proposal=structuredClone(options.proposal),binding=structuredClone(options.binding),phone=require('../lib/agent-operations-phone-search'),context=phone.context(binding);
+ check(Number.isInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=10000&&Number.isInteger(authorityTimeoutMs)&&authorityTimeoutMs>0&&authorityTimeoutMs<=30000,'DRAFT_LIMITS');
+ const expected=phone.apply(proposal,context),summary=expected.files.map(({path:filename,text,beforeSha256,afterSha256})=>({path:filename,beforeSha256,afterSha256,afterBytes:Buffer.byteLength(text)}));
+ const controller=new AbortController(),combined=signal?AbortSignal.any([signal,controller.signal]):controller.signal;
+ let directory=null,child,closed,abort,timer,expired=false;
+ const stop=()=>{if(child)child.kill();};combined.addEventListener('abort',stop,{once:true});
+ const cancellation=new Promise((_,reject)=>{abort=()=>reject(Error(expired?'DRAFT_TIMEOUT':'DRAFT_CANCELLED'));if(combined.aborted)abort();else combined.addEventListener('abort',abort,{once:true});});
+ // Preserve the repaired separation between remote bookkeeping windows and
+ // the short local data-worker deadline. An enclosing task signal still wins.
+ const arm=ms=>{clearTimeout(timer);timer=setTimeout(()=>{expired=true;controller.abort();},ms);};arm(authorityTimeoutMs);
+ async function work(){
+  check(!combined.aborted,'DRAFT_CANCELLED');check(await authorize('before',structuredClone(binding),combined)===true,'DRAFT_PROPOSAL_AUTHORITY_DENIED');check(!combined.aborted,'DRAFT_CANCELLED');
+  directory=fs.mkdtempSync(path.join(os.tmpdir(),'callercore-proposed-bundle-'));fs.mkdirSync(path.join(directory,'lib'));
+  for(const f of context.files)fs.writeFileSync(path.join(directory,f.path),f.text,{flag:'wx',mode:0o600});
+  arm(timeoutMs);
+  const receipt=await new Promise((resolve,reject)=>{
+   child=spawn(process.execPath,['--max-old-space-size=64','--permission',`--allow-fs-read=${CHILD}`,`--allow-fs-read=${PROPOSED}`,`--allow-fs-read=${directory}`,`--allow-fs-write=${directory}`,CHILD],{cwd:directory,env:{},windowsHide:true,stdio:['pipe','pipe','pipe']});
+   let output='',diagnostic='',bytes=0,tooLarge=false;closed=new Promise(done=>child.once('close',done));
+   child.on('error',()=>reject(Error('DRAFT_CHILD_DENIED')));
+   for(const stream of [child.stdout,child.stderr])stream.on('data',b=>{bytes+=b.length;if(bytes>LIMITS.maxOutputBytes){tooLarge=true;child.kill();}else if(stream===child.stdout)output+=b.toString('utf8');else diagnostic+=b.toString('utf8');});
+   child.on('close',code=>{if(code!==0||tooLarge)return reject(Error(tooLarge?'DRAFT_OUTPUT_BOUNDS':diagnostic==='DRAFT_BUNDLE_SYNTAX'?'DRAFT_BUNDLE_SYNTAX':'DRAFT_CHILD_DENIED'));try{resolve(JSON.parse(output));}catch{reject(Error('DRAFT_RESULT_INVALID'));}});
+   child.stdin.on('error',()=>{});child.stdin.end(JSON.stringify({version:'draft-data-bundle-v1',binding,files:context.files.map(({path:filename,sha256,sites})=>({path:filename,sha256,sites})),proposal}));
+   if(combined.aborted)child.kill();
+  });
+  check(!combined.aborted,'DRAFT_CANCELLED');arm(authorityTimeoutMs);check(await authorize('after',structuredClone(binding),combined)===true,'DRAFT_PROPOSAL_AUTHORITY_DENIED');check(!combined.aborted,'DRAFT_CANCELLED');
+  check(tools.hash(receipt)===tools.hash({version:'draft-data-bundle-v1',proposalHash:expected.proposalHash,files:summary,publicationAllowed:false,sourceExecuted:false,syntaxValidated:true}),'DRAFT_RESULT_INVALID');
+  return{...receipt,binding,cleanup:{destroyed:true},classification:'real-disposable-filesystem-trusted-data-only',executionAuthorized:false};
+ }
+ try{return await Promise.race([work(),cancellation]);}
+ finally{
+  clearTimeout(timer);combined.removeEventListener('abort',abort);combined.removeEventListener('abort',stop);controller.abort();if(child)child.kill();if(closed)await closed;
+  if(directory){try{fs.rmSync(directory,{recursive:true,force:true});check(!fs.existsSync(directory),'DRAFT_CLEANUP_FAILED');}catch{throw Object.assign(Error('DRAFT_CLEANUP_FAILED'),{cleanupConfirmed:false});}}
+ }
+}
+module.exports={prepare,prepareProposal,prepareBundle,validateArtifact,validateProposalArtifact,LIMITS};
