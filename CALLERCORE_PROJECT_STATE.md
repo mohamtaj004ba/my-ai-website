@@ -1,5 +1,11 @@
 # CallerCore project state
 
+## Phone-search preparation local regression verified — October 27, 2026
+
+Local source commitbb67602624b00b6455d75ea7c53116bd599a5cea; releasecontractb234af2075cc48d0369ae1c52409c0f677ea8905cb34175499b3dbf9bb435c97. One source-derived STRICT local run againsta2223b9b75eb66e80b6dd34358378775a8622985 passes5008/5008tests,0fail/cancel/skip; Node22.23.3/Windows,621307mstests,638696msincludingplan/contractchecks. Exact log PHONE_BUNDLE_STRICT.log and DEVELOPMENT_VERIFICATION.json preserved. No duplicate full run. Separate hostedCI/Redis/CodeQL/Jekyll/Browser qualification NOT performed for this inactive local extension; previously qualified798Preview remains unchanged. This documentation result must not trigger an application build.
+
+Immutable-source candidate PHONE_SEARCH_SOURCE_CANDIDATE_v1.json saved once under ignored engineering artifacts; canonicalJSONhashf584fae965f2c3436349f40a714c93dd403192e043704c4efbe58206ebe26772,197509bytes, both compressed source preimages/evidence/scope verified. Preparation only, not active journal task or immutable server receipt. Before live integration, preserve authenticated historical readback and extend the existing evidence contract narrowly: current inference accepts only2–4HTML/JS excerpts, whereas this task requires five sites including backend source. Do not simply rename an old single-file task or drop backend evidence to fit it. Existing adapter/provider/controller routing and qualified isolated behavior profile remain next work. No new paid calls, grants, reservations, VM, configuration refresh, credential access or deployment. Work has not authored the product correction. Internal agents have not yet performed this new investigation.
+
 ## Cross-path phone-search implementation preparation — October 27, 2026
 
 Local inactive platform extension only; qualified Preview remains798828f66ca5797f98459718dcb31913ac232f21/e74bbe61/dpl_HpBn6JikDj6BQfe1bXDh79CPrp3s. Preserved existing local documentation checkpointa2223b9 and all historical source/task/evidence assets. No product JS/backend modification, model/count request, VM run, configuration mutation or deployment occurred.
