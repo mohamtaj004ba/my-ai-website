@@ -7,6 +7,20 @@ const {createStore,redisAdapter}=require('../lib/agent-operations-store');
 const {runStage,mockAdapter}=require('../lib/agent-operations-worker');
 const {command}=require('./helpers/agent-operations-redis-client.cjs');
 
+test('real Redis exact unchanged confirmation preserves bytes and expiry and rejects a stale snapshot',async()=>{
+ const prefix='test:agentops:unchanged-confirmation:'+randomUUID()+':',keys=new Set(),calls=[],kv={get:k=>command(['GET',prefix+k]),eval:(script,ks,args)=>{ks.forEach(k=>keys.add(prefix+k));calls.push({script,args});return command(['EVAL',script,ks.length,...ks.map(k=>prefix+k),...args]);}},adapter=redisAdapter(kv),{KEY,CONFIRM,CAS}=require('../lib/agent-operations-store');
+ const raw=JSON.stringify({revision:3,history:['quoted "','日本語'],revoked:false}),revoked=JSON.stringify({revision:4,history:['quoted "','日本語'],revoked:true});
+ try{
+  assert.equal(await adapter.compare(null,raw),true);assert.equal(calls.at(-1).script,CAS);
+  await command(['PEXPIRE',prefix+KEY,60000]);const beforeTtl=Number(await command(['PTTL',prefix+KEY]));
+  assert.equal(await adapter.compare(raw,raw),true);assert.equal(calls.at(-1).script,CONFIRM);assert.equal(calls.at(-1).args.length,1);assert.equal(await adapter.read(),raw);
+  const afterTtl=Number(await command(['PTTL',prefix+KEY]));assert(afterTtl>0&&afterTtl<=beforeTtl,'confirmation must not remove or refresh expiry');
+  assert.equal(await adapter.compare(raw,revoked),true);assert.equal(await adapter.compare(raw,raw),false);assert.equal(await adapter.read(),revoked);
+  await command(['DEL',prefix+KEY]);assert.equal(await adapter.compare(revoked,revoked),false);assert.equal(await adapter.read(),null);
+  assert.equal(await adapter.compare(null,''),true);assert.equal(calls.at(-1).script,CAS);assert.equal(await adapter.compare('',''),true);assert.equal(calls.at(-1).script,CAS);
+ }finally{for(const key of keys)await command(['DEL',key]);}
+});
+
 test('real Redis renewal storage verification compares unchanged bytes without granting authority',async()=>{
  const fs=require('node:fs'),path=require('node:path'),source=fs.readFileSync(path.join(__dirname,'agent-operations-engineering-approval-control-qa.test.js'),'utf8');
  const {fixture,owner,approval}=new Function('require','__dirname',source.slice(0,source.indexOf("test('"))+'\nreturn {fixture,owner,approval};')(require,__dirname),h=fixture({paid:true});
