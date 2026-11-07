@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "02e1264d2a8317287f677cc499e644ae47a482a199155e450ef96491f048adc7",
+  "risk": "critical",
+  "scope": "Recover interrupted source-test shutdown through authenticated read-only provider observations in the existing attempt journal.",
+  "riskAnalysis": "Physical cleanup gates and serial sandbox admission consume append-only proof. Recovery grants no execution, acceptance, publication or financial authority. Original receipts remain unchanged by recovery.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner/workspace isolation, original trial evidence, revoked grants, physical sandbox shutdown and accounting.",
+    "trustBoundaries": "Authenticated owner to server CAS; trusted provider GET metadata to immutable task-bound cleanup proof.",
+    "abuseCases": "Forged stopped status, foreign sandbox, mutated manifest, replayed recovery, concurrent append, false acceptance or masking failed local destruction.",
+    "mitigations": "Server-only provider reads, exact project/name/session and immutable manifest/permit binding, current owner identity, revoked authority, CAS revalidation, hash-linked events, independent local destruction proof."
+  },
+  "defects": [
+    {
+      "rootCause": "Provider find/stop/read cleanup can outlive the transport cleanup window, leaving a closed attempt with cleanup-unconfirmed despite later provider shutdown.",
+      "detectionGap": "No durable read-only reconciliation existed for source-test provider shutdown after the request ended.",
+      "regression": "Actual controller and CAS fixture plus adversarial owner, manifest, session, provider, concurrency and late-closure tests.",
+      "historicalPrevention": "Shared proof consumed by both physical cleanup and source-test serial admission. Snapshot observations remain distinct from original test receipts."
+    }
+  ],
+  "rollback": "Disable recovery by reverting reviewed source changes; preserve appended receipts and original audit history. Never revive revoked grants or declare failed tests passed.",
+  "negativePaths": {
+    "malformed-response": "Reject missing, foreign or invalid provider observations before appending proof.",
+    "stale-state": "Revalidate exact immutable manifest, permit, owner and task inside CAS; reject stale event chain.",
+    "concurrency": "Concurrent same observation appends one event; actual controller organization-CAS regression.",
+    "cancellation": "Interrupted GET writes no shutdown proof; subsequent read-only confirmation is safe.",
+    "worker-interruption": "Original worker may close late; snapshot hashes document observations without rewriting its receipt.",
+    "api-outage": "Read errors remain unconfirmed, never imply shutdown.",
+    "authorization-denial": "Owner-only, exact workspace, all prior authority revoked and no active leases.",
+    "spending-limit": "No new VM or model/count request; accounting retained unchanged.",
+    "partial-execution": "Running provider or failed local workspace destruction remains blocked."
+  },
+  "proactiveReview": {
+    "architecture": "Extends existing journal/controller; no new orchestration or provider mutation.",
+    "dependencies": "Uses existing provider find/read and existing task catalog profiles.",
+    "threats": "Physical proof cannot grant test acceptance or agent publication.",
+    "failureModes": "Provider shutdown and original test success are separate; 404 is not shutdown proof.",
+    "faultInjection": "Timeout, late closure, malformed identities, active authority and concurrency covered offline.",
+    "independentChallenge": "Independent Work QA and Auditor approved final source after snapshot semantics and controller-CAS coverage were corrected.",
+    "recovery": "Append-only proof preserves original receipts, historical audits, approvals, grants and finances.",
+    "readiness": "Focused66 passed; expanded affected tests and exact-source hosted STRICT/Redis/security/browser qualification required before paid continuation."
+  }
+}
