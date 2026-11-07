@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "9ddc87437e70fcccfe19e4fdcbfd83b78bddf4a347179ad31ba8a1e2fc964528",
+  "risk": "critical",
+  "scope": "Replace repeated task-specific Preview refreshes with reviewed exact-release/task consent in the existing configuration journal; preserve legacy receipts and generic pilot denial.",
+  "riskAnalysis": "A consent is an owner-authenticated scoped permission record, not model authority or proof of human independent acceptance. Every paid stage still needs a fresh one-use task approval, exact runtime/source/evidence, live transactional consent validation and managed invocation proof. No provider credential or hosting settings are changed by this endpoint.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner authority, exact release/task identities, immutable historical receipts and financial provenance, provider credentials, revocation and cleanup.",
+    "trustBoundaries": "Owner API versus private controller proof; untrusted client selectors versus current journal/CAS; engineering transport versus generic pilot activation; automated criticism versus human acceptance.",
+    "abuseCases": "Reuse consent across tasks or workspaces, forge invocation proof, revoke between count and dispatch, disconnect while consent authentication waits, mutate historical evidence or enable generic paid workers.",
+    "mitigations": "Plan and canonical task checks, hashed immutable record, owner/workspace/runtime binding, private WeakMaps, transactional reread, early abort listeners and scoped bounded revocation, generic flags stay disabled."
+  },
+  "defects": [
+    {
+      "rootCause": "Per-task configuration refresh coupled owner trial scope to deployment metadata, adding repeated builds and acknowledgement recovery.",
+      "detectionGap": "Consumer contracts previously assumed the legacy hosting refresh record and did not share a task-specific alternative.",
+      "regression": "Real offline five-stage controller, API, CAS and data-copy worker tests use v2 records while all three legacy paid flags remain false. Historical configuration/lifecycle tests pass unchanged.",
+      "historicalPrevention": "V1 records and completed refresh acknowledgements remain immutable. V2 uses explicit versioned consent without invented provider acknowledgements."
+    },
+    {
+      "rootCause": "Initial candidate stored but did not enforce plan identity; API awaited consent before registering connection cancellation.",
+      "detectionGap": "Same-objective fixtures and direct controller tests did not challenge foreign plan or API disconnect during lookup.",
+      "regression": "Cross-plan/foreign-task denial and actual API disconnect with valid active approval assert zero provider requests and revoked authority.",
+      "historicalPrevention": "One shared assertConsent enforces live scope; cancellation listeners cover all awaited lookup work, with existing scoped cleanup before invocation."
+    }
+  ],
+  "rollback": "Keep paid execution disabled and revoke task grants/consents. Revert runtime only through a reviewed feature successor. Preserve all v1/v2 journal records, immutable hashes, revocation events and financial evidence; do not revive consumed approvals.",
+  "negativePaths": {
+    "malformed-response": "Existing model schema/evidence validators unchanged. New consent validates hashes, event chain, policy pins and source scope; forged selectors fail.",
+    "stale-state": "Expired/revoked consent and wrong plan/runtime denied; history validation remains separate from live admission.",
+    "concurrency": "Existing CAS and serial sequence controls remain. Same consent claim is idempotent in journal; no parallel dispatch or provider retry.",
+    "cancellation": "Operations emergency stop revokes consent; API disconnect before invocation performs bounded exact-approval revocation; existing in-run cancellation remains.",
+    "worker-interruption": "No worker execution permissions changed. Existing data-copy cleanup and artifact evidence are exercised by five-stage fixtures.",
+    "api-outage": "Interrupted consent lookup cannot start paid dispatch; request failure produces no automatic retry. Existing failure accounting remains.",
+    "authorization-denial": "Non-owner, cross-workspace, cross-plan and forged private proof denied; generic initializePilot remains disabled.",
+    "spending-limit": "Existing owner-directed billing monitoring policy unchanged; revoked/expired consent remains historical provenance without granting future paid authority.",
+    "partial-execution": "Counting-to-dispatch revocation retains observed uncertainty, no Responses call; failed attempts revoke authority and preserve evidence."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing journal, controller, sequence, broker and transport. No competing service, credential store or orchestration layer.",
+    "dependencies": "No new dependencies, provider permissions, hosting infrastructure or credentials. Non-secret policy pins come from verified persisted record only.",
+    "threats": "Independent review challenged cross-task reuse, cached readiness, lost abort events and pre-invocation cleanup; all receive direct regressions.",
+    "failureModes": "Expired task cannot use consent for replacement. UI preserves same reviewed task; next task needs fresh consent and new sequence with prior sequence stopped.",
+    "faultInjection": "Offline actual controller and API tests cover revocation after count, foreign scope, disconnect during read, malformed API selector, emergency stop and expiry.",
+    "independentChallenge": "Independent Work QA and Auditor identified plan binding and abort-window defects; both corrected before publication. Static review is not authenticated business acceptance.",
+    "recovery": "Durable configuration history preserved; stopping revokes consent and approval while retaining accounting. No duplicate refresh operations or live paid testing in this repair.",
+    "readiness": "Existing da19 Browser archive qualified. New candidate has focused controller/API/UI/history tests; exact-source STRICT/Redis/CI/CodeQL/Preview/browser qualification remains required before live use."
+  }
+}

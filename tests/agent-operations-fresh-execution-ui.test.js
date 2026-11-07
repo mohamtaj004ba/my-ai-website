@@ -74,3 +74,17 @@ test('explicit revocation archives only the new-policy development journal witho
 test('development mode never falls back to a generic approval when its canonical journal is absent',async()=>{
  const f=currentPreparedFixture(async()=>{throw Error('No API allowed');});f.storage.set(genericAttemptKey,JSON.stringify({scope:f.v.scopeIdentity,input:{approval:f.manifest.approval},expectedApprovalRevision:1,requested:false}));await f.select();await f.h.get('opsEngineeringTrialRun').emit('click');assert.equal(f.h.calls.length,0);assert.match(f.h.get('opsEngineeringTrialResult').textContent,/No fresh prepared trial/);
 });
+
+
+test('reviewed task consent keeps its execution assignment instead of recreating a different task',async()=>{
+ const f=setup(async()=>{throw Error('No mutation allowed');});
+ f.storage.set(configKey,JSON.stringify({...f.config,version:'engineering-reviewed-release-consent-v2',taskId:'op_reviewed'}));
+ await f.select();await f.click();assert.equal(f.h.calls.length,0);assert.match(f.h.get('opsEngineeringTrialResult').textContent,/already the execution task/);assert.match(f.h.get('opsEngineeringTrialResult').textContent,/no Preview refresh/);
+});
+
+
+test('reviewed consent shutdown ignores malformed editor content and preserves the selected receipt',async()=>{
+ const f=setup(async b=>{assert.equal(b.action,'operations-engineering-activation-stopReviewedConsent');assert.deepEqual(b.input,{});return{engineeringActivation:{executionAuthorized:false,cleanupStatus:{status:'ready'}}};});
+ f.h.get('opsEngineeringConfigurationInput').value='not JSON';const before=f.storage.get(configKey);
+ await f.h.get('opsEngineeringstopReviewedConsent').emit('click');assert.equal(f.h.calls.length,1);assert.equal(f.storage.get(configKey),before);
+});
