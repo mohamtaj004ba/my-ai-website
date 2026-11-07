@@ -152,7 +152,8 @@ test('ending a call never waits for an unrelated missed hours-context submission
  assert.equal(submissions,0);assert.equal(JSON.parse(result.results[0].result).status,'recorded');
 });
 
-test('delayed recovery runs the actual canonical processor without duplicate CRM or usage',async()=>{
+test('delayed recovery runs the actual canonical processor without duplicate CRM or usage',async t=>{
+  t.mock.timers.enable({apis:['Date'],now:Date.parse('2026-10-05T16:05:00Z')});
   const kv=memory(),ended={...call,status:'ended',endedAt:'2026-10-05T16:01:30Z',artifact:{messages:[]}};
   await processMessage(kv,{type:'end-of-call-report',call:{id:call.id}},{provider:provider(ended)});
   const id=require('../lib/voice-policy').revision(call.id),canonicalId='voice_'+id.slice(0,24);
@@ -246,10 +247,28 @@ test('delayed start cannot undo ended call or erase transcript/summary',async()=
   assert.equal(saved.status,'ended');assert.equal(saved.durationSeconds,60);assert.equal(saved.transcript[0].text,'Help');assert.equal(saved.summary,'Request');
   assert.deepEqual(kv.values.get('calls:tenant')[0].transcript,[['Caller','Help']]);
 });
-test('missing transcript remains pending, delayed artifact fills it without extra usage',async()=>{
+test('missing transcript remains pending, delayed artifact fills it without extra usage',async t=>{
+  t.mock.timers.enable({apis:['Date'],now:Date.parse('2026-10-05T16:05:00Z')});
   const kv=memory(),end={...call,status:'ended',endedAt:'2026-10-05T16:01:00Z'};await ingest(kv,binding,normalizedCall(end));assert.equal(kv.values.get('calls:tenant')[0].transcriptState,'pending');
   await ingest(kv,binding,normalizedCall({...end,artifact:{messages:[{role:'assistant',message:'Hello'}]}}));assert.equal(kv.values.get('calls:tenant')[0].transcriptState,'available');assert.equal(kv.values.get('workspace:tenant').usage.voiceMinutes,1);
 });
+test('next-month transcript recovery preserves historical usage without charging the current month',async t=>{
+  t.mock.timers.enable({apis:['Date'],now:Date.parse('2026-10-05T16:05:00Z')});
+  const kv=memory(),end={...call,status:'ended',endedAt:'2026-10-05T16:01:00Z'},id=normalizedCall(end).id;
+  await ingest(kv,binding,normalizedCall(end));
+  assert.equal(kv.values.get('workspace:tenant').usage.voiceMinutes,1);
+  const usage=structuredClone(kv.values.get('voice:usage:tenant'));
+  t.mock.timers.setTime(Date.parse('2026-11-05T16:05:00Z'));
+  const complete=normalizedCall({...end,artifact:{messages:[{role:'assistant',message:'Hello'}]}});
+  await ingest(kv,binding,complete);await ingest(kv,binding,complete);
+  assert.equal(kv.values.get('workspace:tenant').usage.voiceMinutes,0);
+  assert.equal(kv.values.get('workspace:tenant').usage.voiceMonth,'2026-11');
+  assert.deepEqual(kv.values.get('voice:usage:tenant'),usage);
+  assert.deepEqual(usage.calls[id],{seconds:60,month:'2026-10',purpose:'internal'});
+  assert.equal(kv.values.get('calls:tenant').length,1);
+  assert.equal(kv.values.get('calls:tenant')[0].transcriptState,'available');
+});
+
 test('failed call without connected start is preserved, not billed as guessed minutes',async()=>{
   const kv=memory(),n=normalizedCall({...call,startedAt:null,status:'ended',endedAt:'2026-10-05T16:01:00Z',endedReason:'pipeline-error'});await ingest(kv,binding,n);
   assert.equal(kv.values.get('calls:tenant').length,1);assert.equal(kv.values.get('workspace:tenant').usage.voiceMinutes,0);assert.equal(kv.values.get('calls:tenant')[0].durationSeconds,null);

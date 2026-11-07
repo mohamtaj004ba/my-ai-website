@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   authenticated-preview-qa:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright 1.55 supports this pinned OS; ubuntu-latest may advance.
     timeout-minutes: 25
     env:
       PREVIEW_URL: https://my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app
@@ -84,7 +84,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-1.55.0-chromium
+          key: ${{ runner.os }}-ubuntu24.04-playwright-1.55.0-chromium
 
       - name: Install Chromium system dependencies
         if: steps.selection.outputs.browser != 'identity'
