@@ -3,7 +3,7 @@ import {verifyImplementationTaskMetadata} from './agent-implementation-browser-c
 import {verifyDashboardCalendar} from './dashboard-calendar-browser-qa.mjs';
 import {verifyPublicFeedback} from './public-feedback-browser-qa.mjs';
 import {verifyIndustryNarratives} from './industry-narrative-browser-qa.mjs';
-import {installPreviewAccess} from './preview-request-headers.mjs';
+import {installPreviewAccess,assertPreviewAccessHealthy,closePreviewAccess,closePreviewPage,previewAccessDiagnostics} from './preview-request-headers.mjs';
 import {verifyPrivateRepositoryAssets} from './private-source-browser-qa.mjs';
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
@@ -1633,7 +1633,7 @@ async function runResponsive(kind,viewport,name){
     await shot(page,kind+'-'+name+'-failure').catch(()=>{});
     throw err;
   }finally{
-    await context.close().catch(()=>{});
+    await closePreviewAccess(context).catch(()=>{});
   }
 }
 
@@ -1677,7 +1677,7 @@ async function runReadOnlyBannerQA(viewport,name){
     }
     await page.locator('#exitAdminView').click();
     await page.waitForURL('**/admin-dashboard');
-  }finally{await context.close().catch(()=>{})}
+  }finally{await closePreviewAccess(context).catch(()=>{})}
 }
 
 async function runPublicSiteQA(){
@@ -1831,7 +1831,7 @@ async function runPublicSiteQA(){
           report.publicSite.interactions.push('contact malformed receipt preserves draft, verified intercepted receipt shows success; no inquiry transmitted');
         }
       }
-    }finally{await context.close().catch(()=>{})}
+    }finally{await closePreviewAccess(context).catch(()=>{})}
   }
 }
 
@@ -1862,7 +1862,7 @@ try{
   // Close the client page before rotating the disposable session. Background
   // detail hydration must not survive into the admin login and report the
   // intentionally revoked client cookie as a product authentication failure.
-  await desktop.page.close();
+  await closePreviewPage(desktop.context,desktop.page);
   desktop.page=await desktop.context.newPage();
   attachDiagnostics(desktop.page,'desktop-admin');
   await startSession(desktop.context,'admin');
@@ -1886,7 +1886,7 @@ try{
   // Preview QA sessions deliberately revoke older sessions. Close the desktop
   // context before issuing the next session so strict 401 detection only sees
   // authentication failures from the context currently under test.
-  await desktop.context.close();
+  await closePreviewAccess(desktop.context);
 
   await runResponsive('client',{width:1280,height:800},'laptop');
   await runResponsive('admin',{width:1280,height:800},'laptop');
@@ -1950,12 +1950,17 @@ try{
   }catch{}
   throw err;
 }finally{
+  const cleanupResults=await Promise.allSettled(contexts.map(c=>closePreviewAccess(c)));
+  let transportFailure=cleanupResults.find(r=>r.status==='rejected')?.reason;
+  if(transportFailure){report.ok=false;report.failure??=transportFailure.message;}
+  try{await Promise.all(contexts.map(c=>assertPreviewAccessHealthy(c)));}catch(error){transportFailure=error;report.ok=false;report.failure??=error.message;}
+  report.previewAccess=contexts.map(c=>previewAccessDiagnostics(c));
   report.finishedAt=new Date().toISOString();
   await fs.writeFile(path.join(outDir,'report.json'),JSON.stringify(report,null,2));
   await fs.writeFile(path.join(outDir,'layout-contracts.json'),JSON.stringify(report.layoutContracts,null,2));
   await fs.writeFile(path.join(outDir,'visual-manifest.json'),JSON.stringify(report.visualScreenshots,null,2));
-  await Promise.allSettled(contexts.map(c=>c.close()));
   await browser.close();
+  if(transportFailure)throw transportFailure;
 }
 
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {installPreviewAccess} from './preview-request-headers.mjs';
+import {installPreviewAccess,closePreviewAccess} from './preview-request-headers.mjs';
 export async function verifyIndustryNarratives({browser,baseURL,headers={},outDir,slugs=['home-services','professional-services','medical','automotive','property','legal']}){
  const report={checks:[],screenshots:[]};
  for(const width of [1920,1440,1280,1024,768,430,390,320]){
@@ -55,13 +55,13 @@ export async function verifyIndustryNarratives({browser,baseURL,headers={},outDi
    if(outDir){await page.evaluate(async()=>{await Promise.all([...document.querySelectorAll('main img[src]')].filter(img=>img.getAttribute('src')).map(async img=>{img.loading='eager';await img.decode();}));document.activeElement?.blur();scrollTo({top:0,left:0,behavior:'instant'});await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)});const file='industry-'+slug+'-'+width+'.png';await page.screenshot({path:path.join(outDir,file),fullPage:true});report.screenshots.push(file);}
    report.checks.push({slug,width,passed:true,workflowChoices:await experience.locator('[data-choice]').count(),proofViewer:'keyboard/escape/close/focus restoration'});
   }
-  assert.deepEqual(errors,[]);await context.close();
+  assert.deepEqual(errors,[]);await closePreviewAccess(context);
  }
  const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:900}});const page=await context.newPage();
  await installPreviewAccess(context,baseURL,headers);
- for(const slug of slugs){await page.goto(baseURL+'/industries/'+slug);if(slug==='home-services')assert.equal(await page.locator('.scenario-panel:visible').count(),4);else assert.equal(await page.locator('.experience-panel:visible').count(),await page.locator('[data-choice]').count());assert.equal(await page.locator('[data-proof-open]').count(),1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,slug+' no-script overflow');}await context.close();
+ for(const slug of slugs){await page.goto(baseURL+'/industries/'+slug);if(slug==='home-services')assert.equal(await page.locator('.scenario-panel:visible').count(),4);else assert.equal(await page.locator('.experience-panel:visible').count(),await page.locator('[data-choice]').count());assert.equal(await page.locator('[data-proof-open]').count(),1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,slug+' no-script overflow');}await closePreviewAccess(context);
  report.noScriptScenarios=true;
  const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:900}}),reducedPage=await reduced.newPage();
  await installPreviewAccess(reduced,baseURL,headers);
- await reducedPage.goto(baseURL+'/industries/home-services');assert.equal(await reducedPage.locator('.scenario-panel:visible').count(),1);await reducedPage.locator('[data-scenario]').last().click();assert.equal(await reducedPage.locator('#scenario-boundary').isVisible(),true);for(const slug of slugs.filter(s=>s!=='home-services')){await reducedPage.goto(baseURL+'/industries/'+slug);await reducedPage.locator('[data-choice]').last().click();assert.equal(await reducedPage.locator('.experience-panel:visible').count(),1);assert.equal(await reducedPage.locator('.experience-panel:visible').evaluate(el=>parseFloat(getComputedStyle(el).animationDuration)),0);}await reduced.close();report.reducedMotion=true;return report;
+ await reducedPage.goto(baseURL+'/industries/home-services');assert.equal(await reducedPage.locator('.scenario-panel:visible').count(),1);await reducedPage.locator('[data-scenario]').last().click();assert.equal(await reducedPage.locator('#scenario-boundary').isVisible(),true);for(const slug of slugs.filter(s=>s!=='home-services')){await reducedPage.goto(baseURL+'/industries/'+slug);await reducedPage.locator('[data-choice]').last().click();assert.equal(await reducedPage.locator('.experience-panel:visible').count(),1);assert.equal(await reducedPage.locator('.experience-panel:visible').evaluate(el=>parseFloat(getComputedStyle(el).animationDuration)),0);}await closePreviewAccess(reduced);report.reducedMotion=true;return report;
 }

@@ -1,3 +1,4 @@
+import {closePreviewAccess} from './preview-request-headers.mjs';
 // UI fixtures establish responsive controls and truthful states, never acoustic acceptance.
 export async function verifyVoiceOperations({makeContext,baseURL,shot,report}){
  report.voiceOperations={fixture:true,realCalls:false,layouts:[],states:[]};
@@ -34,7 +35,7 @@ export async function verifyVoiceOperations({makeContext,baseURL,shot,report}){
   await page.locator('#verify-state').click();await page.locator('#save-status').getByText('Voice provider timed out').waitFor();if(!await page.locator('#pause-voice').isDisabled()||!await page.locator('#resume-voice').isDisabled())throw Error('Failed verification kept answering controls enabled');
   await page.locator('[name=workspaceId]').fill('other-fixture');if(!await page.locator('#pause-voice').isDisabled()||!await page.locator('#resume-voice').isDisabled())throw Error('Workspace switch retained prior controls');
   if(await page.locator('#retention-metrics article').count())throw Error('Workspace switch retained another workspace’s retention results');
-  report.voiceOperations.states.push(name+'-policy-preserved',name+'-failed-verification',name+'-workspace-switch-guarded');await context.close();
+  report.voiceOperations.states.push(name+'-policy-preserved',name+'-failed-verification',name+'-workspace-switch-guarded');await closePreviewAccess(context);
  }
- const {context,page}=await makeContext({width:390,height:844},'voice-no-access');await page.route('**/api/account?action=session',r=>r.fulfill({status:401,json:{error:'Authentication required'}}));await page.goto(baseURL+'/voice-operations.html');await page.locator('#page-status').getByText('Sign in with an administrator account').waitFor();if(await page.locator('#operations').isVisible())throw Error('Voice controls shown without access');await context.close();
+ const {context,page}=await makeContext({width:390,height:844},'voice-no-access');await page.route('**/api/account?action=session',r=>r.fulfill({status:401,json:{error:'Authentication required'}}));await page.goto(baseURL+'/voice-operations.html');await page.locator('#page-status').getByText('Sign in with an administrator account').waitFor();if(await page.locator('#operations').isVisible())throw Error('Voice controls shown without access');await closePreviewAccess(context);
 }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {previewRequestHeaders,installPreviewAccess} from './preview-request-headers.mjs';
+import {previewRequestHeaders,installPreviewAccess,closePreviewAccess} from './preview-request-headers.mjs';
 export function feedbackRequestHeaders(url,headers,baseURL){
  const scoped=previewRequestHeaders(url,headers,baseURL);
  if(new URL(url).origin!==new URL(baseURL).origin){
@@ -52,6 +52,6 @@ export async function verifyPublicFeedback({browser,baseURL,headers={},outDir}){
   if(outDir){const file='feedback-login-'+width+'.png';await page.screenshot({path:path.join(outDir,file),fullPage:true});report.screenshots.push(file);}
   await page.goto(baseURL+'/login?next=/admin-dashboard');assert.equal(await page.locator('.eyebrow').textContent(),'Admin portal');
   assert.deepEqual(errors,[]);report.checks.push({width,passed:true,industries:6,plannerBoundaries:5,planSignups:3,loginHelp:'malformed receipt/retry/success/duplicate guard',demo:'fixture reveal with explicit copy/call actions'});
-  await context.close();
+  await closePreviewAccess(context);
  }return report;
 }

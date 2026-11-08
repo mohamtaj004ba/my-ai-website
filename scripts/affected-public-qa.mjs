@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import {createRequire} from 'node:module';
 import {chromium} from 'playwright';
-import {installPreviewAccess} from './preview-request-headers.mjs';
+import {installPreviewAccess,closePreviewAccess} from './preview-request-headers.mjs';
 const require=createRequire(import.meta.url),selection=require('./development-verification.cjs').plan(process.env.QUALITY_BASE);
 if(selection.lane==='STRICT'||selection.docsOnly||!selection.pages.length)throw Error('Exact affected presentation selection required');
 const pin=JSON.parse(await fs.readFile('qa-artifacts/release-pin.json','utf8')).result;
@@ -26,7 +26,7 @@ try{
     const screenshot='affected-'+file.replace(/[^a-z0-9]/gi,'-')+'-'+width+'.png';
     await page.screenshot({path:'qa-artifacts/'+screenshot,fullPage:true});report.checks.push({file,width,screenshot,geometry});
    }
-  }finally{await context.close();}
+  }finally{await closePreviewAccess(context);}
  }
  if(report.errors.length)throw Error('Affected page errors');report.ok=true;
 }finally{await browser.close();report.finishedAt=new Date().toISOString();await fs.writeFile('qa-artifacts/affected-report.json',JSON.stringify(report,null,2));}

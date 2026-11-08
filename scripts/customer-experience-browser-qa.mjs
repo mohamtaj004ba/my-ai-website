@@ -1,3 +1,4 @@
+import {closePreviewAccess} from './preview-request-headers.mjs';
 // UI states are intercepted fixtures, never payment acceptance or customer email delivery.
 export async function verifyCustomerExperience({makeContext,baseURL,shot,report}){
  report.customerExperience={fixture:true,states:[],layouts:[]};
@@ -28,6 +29,6 @@ export async function verifyCustomerExperience({makeContext,baseURL,shot,report}
    if(kind==='decline'&&await page.locator('#confirmSignupPayment').isDisabled())throw Error('Card correction remained disabled after a clear decline');
    await assertLayout(page,'customer-'+label+'-payment-'+kind);await shot(page,'customer-'+label+'-payment-'+kind);report.customerExperience.states.push(label+'-payment-'+kind);
   }
-  await context.close();
+  await closePreviewAccess(context);
  }
 }
