@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "939e9c53d57ae5da39dabb503d6feedd307f532af0f0f5860652fe86ac7f3303",
+  "risk": "critical",
+  "scope": "Update stale current-task selector expectations after repository Chief discovery; retain original policy hashes and separately verify the new read-only policy without runtime modifications.",
+  "riskAnalysis": "These tests must follow the intentionally changed default while protecting every old policy/descriptor baseline. Exclude only the explicitly new DISCOVERY_TRIAL from the historical hash, then verify its exact authorization and one-call/count ceilings separately. No runtime or baseline fixture changes.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Repository source confidentiality, provider credentials, owner/task/release identities, historical receipts, counted dispatch, public application assets and shutdown state.",
+    "trustBoundaries": "Tracked immutable Git blobs to private build asset; source policy to untrusted model; owner browser to existing API/CAS; automated Chief hypothesis versus independently authenticated acceptance.",
+    "abuseCases": "Private/static source exposure, data exports, forged source bytes, stale cursors, substituted workspace/model/task, extra stages/calls, resealed historical receipts, source leakage after account changes, credential extraction and fabricated acceptance.",
+    "mitigations": "Central path/content policy, exact blob hashes, private function include outside public-dist, linked asset graph, original source packet and attempt/request/result hashes, Chief-only one-time grant/count/Response, no tools/test profile, scoped UI clearing and existing cleanup."
+  },
+  "defects": [
+    {
+      "rootCause": "Three current-default assertions assumed the resolved phone task or treated a new exported policy as part of the old frozen policy set.",
+      "detectionGap": "Focused tests covered the new task but did not include all prior selector capability assertions; hosted full regression found them.",
+      "regression": "Original historical set hash remains unchanged, new policy call/count identity checked separately, and new default explicitly denies implementation and source testing.25historical registration checks and3independent changed assertions pass.",
+      "historicalPrevention": "Distinguish immutable historical policy baselines from an intentionally advancing current selector, retaining all previous security tests and failed CI evidence."
+    }
+  ],
+  "rollback": "Keep qualified381 feature alias and paid disabled. Revoke any later task authority, preserve failed deployment and original checkpoint, and repair only through reviewed feature commits. Production/main untouched.",
+  "negativePaths": {
+    "malformed-response": "Untrusted build exception messages are never rendered; fixed phase and closed uppercase code only. Existing provider response validation unchanged.",
+    "stale-state": "Trusted commit must match Git HEAD; only whitespace outside JSON strings in sole vercel.json can differ. Any semantic setting or other changed source still fails before packaging.",
+    "concurrency": "Existing owner CAS and serial sequence/grant checks; immutable packets and paged read-only retrieval; no parallel paid attempts.",
+    "cancellation": "Existing controller disconnect, cancellation, emergency stop and approval/consent revocation remain; no new executor or generated-code privileges.",
+    "worker-interruption": "One bounded provider stage uses existing cleanup; absence of a valid receipt is never model or workflow success. No Sandbox worker launched.",
+    "api-outage": "Unknown acknowledgments keep existing durable local journals; no paid or configuration retry; restore current UI controls without displaying late foreign results.",
+    "authorization-denial": "Non-owner/cross-workspace and substituted task denied; Chief-only one-count/one-Response limits; generic Ops fixture execution denied; implementation/tests/publication unavailable.",
+    "spending-limit": "Existing owner-directed provider-billing monitoring unchanged; no new internal financial cap, no invoice reconciliation claims, counting and interrupted usage uncertainty preserved.",
+    "partial-execution": "Usage survives schema failure; failure closes grants and attempts without fabricated artifacts. Chief inspect/hold is an honest one-stage result, not completed Specialist/QA/Auditor work."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing owner controller, transport, journal, counting, grants, consent and sequences; shared Git snapshot reader adds source coverage without replacing orchestration.",
+    "dependencies": "Built-in Node Git/zlib/fs only; no new provider, infrastructure, credentials or broad file execution. Public static assets are linked from existing frontend roots.",
+    "threats": "Independent reviewers reproduced privacy, crossscope UI and historical forgery counterexamples; mitigations preserve source/identity/authority separation.",
+    "failureModes": "Real controller tests exposed existing JSON-string versus raw-file hash domains; corrected only expected assignment hashing, never weaken exact source validation.",
+    "faultInjection": "Unsafe paths, secret-like data, symlinks/gitlinks, forged bytes, stale query cursors, empty/resealed attempts, unauthorized generic execution, extra-call approval and malformed provider output.",
+    "independentChallenge": "Existing independent Work QA and Engineering Auditor inspect exact source, test original counterexamples and retain signed hash attestations. This is technical review, not business acceptance.",
+    "recovery": "Preserve381 qualified Preview until successor is READY, mutate feature alias once after durable marker, verify exact runtime and cleanup before live Chief dispatch. No config refresh or credential rewrite.",
+    "readiness": "Independent Work QA and Auditor approved test-only corrections; final full hosted regression remains required for the combined successor."
+  }
+}

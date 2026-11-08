@@ -17,7 +17,8 @@ for(const [index,row] of baseline.rows.entries())test('registration preserves in
  }
 });
 test('historical policies remain immutable while current capability availability is explicit',()=>{
- a.equal(hash(Object.fromEntries(Object.entries(provider).filter(([k])=>k.endsWith('TRIAL')))),baseline.trialsHash);
+ a.equal(hash(Object.fromEntries(Object.entries(provider).filter(([k])=>k.endsWith('TRIAL')&&k!=='DISCOVERY_TRIAL'))),baseline.trialsHash);
+ a.equal(provider.DISCOVERY_TRIAL.authorizationId,'owner-repository-discovery-development-v1');a.equal(provider.DISCOVERY_TRIAL.maxResponses,1);a.equal(provider.DISCOVERY_TRIAL.maxCounts,1);
  const c=impl.capabilities(),phone=c.boundedTasks.find(t=>t.id==='client-phone-search-v1');
  a.deepEqual(phone.availability,{status:'source-changed',freshAssignmentAllowed:false,executionAuthorized:false});
  a.equal(c.assignmentDurationMs,1800000);a.equal(c.executionDurationMs,600000);a.equal(c.generatedCodeExecution,false);a.equal(c.publicationAuthorized,false);
