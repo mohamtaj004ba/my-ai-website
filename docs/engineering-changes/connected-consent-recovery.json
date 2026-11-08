@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "23a9def54d9d2689b7504229cedccc6471b7b2cdb3a1f775683d08c0ff2d2885",
+  "risk": "critical",
+  "scope": "Connect reviewed-consent diagnostics and recoverable owner history; verify actual assignment-to-five-stage API path.",
+  "riskAnalysis": "Owner readback adds metadata only. UI shares one action list for diagnostics, retains finite safe codes, and cannot grant authority through history. Existing source/task/release validation and accounting unchanged.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owned consent identities, immutable historical records, task binding, diagnostics confidentiality.",
+    "trustBoundaries": "Owner API authentication to existing organization journal; sanitized backend code to plain-text UI.",
+    "abuseCases": "Expose foreign consent IDs, display corrupted completion as verified, leak provider response, silently adopt historical authority.",
+    "mitigations": "Filter exact owner/workspace before validation; validate completed legacy receipts; project typed metadata only; no automatic selection, mutation or execution; finite safe errors."
+  },
+  "defects": [
+    {
+      "rootCause": "New consent UI controls were absent from separately maintained diagnostic method list.",
+      "detectionGap": "Seeded controller fixtures skipped first real task/consent admission; UI tests covered historical status only.",
+      "regression": "All nine configuration controls tested with safe denial; private codes/messages suppressed. Actual API-created task through five stages passes clean and stopped-legacy state.",
+      "historicalPrevention": "One configurationMethods list drives both controls and diagnostics; connected setup no longer pre-seeds consent or task."
+    },
+    {
+      "rootCause": "Owner history omitted consent records created before sequence registration, requiring local receipt ID after lost acknowledgement.",
+      "detectionGap": "Existing recovery tests assumed sequence already registered.",
+      "regression": "Owned v1/v2 metadata, foreign filtering, tampered completion, revocation and no authority verified.",
+      "historicalPrevention": "Existing owner readback exposes discoverable immutable receipt metadata; no new journal or execution endpoint."
+    }
+  ],
+  "rollback": "Revert reviewed feature changes if qualification fails; retain original history and denial evidence, never revive consumed approvals.",
+  "negativePaths": {
+    "malformed-response": "Unknown codes/raw errors remain hidden; malformed own records counted unverified.",
+    "stale-state": "Exact task/source/release checks unchanged; history is not execution authority.",
+    "concurrency": "Existing CAS unchanged; same first consent remains idempotent and exact-bound.",
+    "cancellation": "Connected fixture stops consent after run and asserts revoked grants/paidfalse.",
+    "worker-interruption": "Previouslyqualified cleanup recovery remains unchanged.",
+    "api-outage": "Unconfirmed delivery never retries automatically; exact intent retained for readback.",
+    "authorization-denial": "Foreign identities filtered before history validation; service actor gets no history.",
+    "spending-limit": "No accounting policy changes; no paid inference in fixtures.",
+    "partial-execution": "FinalChief preserves Auditor rejection; successfulworkflow is not proposalacceptance."
+  },
+  "proactiveReview": {
+    "architecture": "Existing API/controller/journal/UI only; no competing orchestration.",
+    "dependencies": "No new packages or infrastructure.",
+    "threats": "Readback excludes policy values, credentials, prompts and raw rejected content.",
+    "failureModes": "Original live denial unknown; diagnostics and history are factual prerequisite repairs.",
+    "faultInjection": "All configuration actions safe/unsafe denial, tamperedlegacy/v2receipt and foreignowner cases.",
+    "independentChallenge": "QA identified preseeded integration gap; Auditor identified legacycompletion truthfulness and fix verified.",
+    "recovery": "Historicalrecords untouched; user can inspect owned consent IDs after lost acknowledgement.",
+    "readiness": "145UIchecks,46affectedchecks and realAPI/CAS clean+legacy five-stage fixtures passed; exact release CI/Redis/security/browser required."
+  }
+}
