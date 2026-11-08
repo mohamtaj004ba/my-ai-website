@@ -32,7 +32,7 @@ function prepare({root=ROOT,commit,packPath=reader.PACK,output=path.join(root,'p
  const actual=cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();commit??=actual;
  if(commit!==actual||!/^[a-f0-9]{40}$/.test(commit))throw Error('ENG_REPOSITORY_BUILD_IDENTITY');
  onPhase('tracked-source-clean');
- try{cp.execFileSync('git',['diff','--exit-code','HEAD','--'],{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});}catch{throw Error('ENG_REPOSITORY_BUILD_DIRTY');}
+ try{cp.execFileSync('git',['diff','--exit-code','HEAD','--'],{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});}catch{const error=Error('ENG_REPOSITORY_BUILD_DIRTY');try{const paths=cp.execFileSync('git',['diff','--name-only','-z','HEAD','--'],{cwd:root,windowsHide:true,encoding:'utf8'}).split('\0').filter(Boolean);error.gitignoreChanged=paths.includes('.gitignore');error.lockfileChanged=paths.includes('package-lock.json');error.otherTrackedChanged=paths.some(p=>p!=='.gitignore'&&p!=='package-lock.json');}catch{}throw error;}
  onPhase('immutable-source-snapshot');const snapshot=reader.fromGit(commit,{root});
  onPhase('public-asset-graph');const all=reader.tree(commit,{root}).filter(e=>e.type==='blob'&&['100644','100755'].includes(e.mode)&&!reader.privatePath(e.path)&&PUBLIC_EXT.has(path.posix.extname(e.path.toLowerCase()))),bytes=reader.blobs(all,{root}),entries=publicEntries(all,bytes);
  onPhase('public-output');

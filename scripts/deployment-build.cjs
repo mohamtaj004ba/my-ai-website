@@ -14,5 +14,5 @@ function main(){
   console.log(JSON.stringify({repositorySource:source,privateServerAsset:true,publicOutput:'public-dist'}));
   console.log(JSON.stringify({deploymentBuild:'smoke-checks-passed',release,fullRegressionExecuted:false,qualificationGranted:false,modelRequests:0,publicationAuthorized:false}));
 }
-if(require.main===module)try{main();}catch(error){console.error(JSON.stringify({deploymentBuild:'failed',phase,code:/^ENG_[A-Z_]+$/.test(error?.message||'')?error.message:'ENG_BUILD_PHASE_FAILED',qualificationGranted:false,modelRequests:0}));process.exitCode=1;}
+if(require.main===module)try{main();}catch(error){console.error(JSON.stringify({deploymentBuild:'failed',phase,code:/^ENG_[A-Z_]+$/.test(error?.message||'')?error.message:'ENG_BUILD_PHASE_FAILED',...(error?.message==='ENG_REPOSITORY_BUILD_DIRTY'&&[error.gitignoreChanged,error.lockfileChanged,error.otherTrackedChanged].every(v=>typeof v==='boolean')?{gitignoreChanged:error.gitignoreChanged,lockfileChanged:error.lockfileChanged,otherTrackedChanged:error.otherTrackedChanged}:{}),qualificationGranted:false,modelRequests:0}));process.exitCode=1;}
 module.exports={main};
