@@ -1,5 +1,6 @@
 'use strict';
-const test=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),phone=require('../lib/agent-operations-phone-search'),impl=require('../lib/agent-operations-implementation'),inf=require('../lib/agent-operations-engineering-inference'),h=require('./helpers/bounded-implementation-workflow.cjs');
+const test=require('./helpers/historical-phone-fixture.cjs').historicalTest(require('node:test'));
+const nativeTest=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),phone=require('../lib/agent-operations-phone-search'),impl=require('../lib/agent-operations-implementation'),inf=require('../lib/agent-operations-engineering-inference'),h=require('./helpers/bounded-implementation-workflow.cjs');
 test('task-defined manifest can contain more than two files without changing source authority',()=>{
  const draft=require('../lib/agent-operations-draft-proposal'),ctx=phone.context({ownerHash:'a'.repeat(64),workspaceHash:'b'.repeat(64),taskId:'task_manifest_fixture',executionId:'execution_manifest_fixture',sourceCommit:'c'.repeat(40),deploymentId:'dpl_fixture',origin:'https://my-ai-website-fixture-mohamtaj004bas-projects.vercel.app',releaseHash:'d'.repeat(64),contextHash:'e'.repeat(64)});
  ctx.files=['first.js','lib/second.js','third.css','views/fourth.html'].map((path,i)=>({path,text:'fixture'+i,sha256:draft.hash('fixture'+i),sites:[{id:'site'+i,before:'fixture'+i}]}));

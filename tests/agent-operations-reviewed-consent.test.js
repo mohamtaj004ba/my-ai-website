@@ -1,6 +1,7 @@
 'use strict';
+const test=require('./helpers/historical-phone-fixture.cjs').historicalTest(require('node:test'));
 // Offline actual-controller/CAS integration. Scripted Responses are not live AI.
-const test=require('node:test'),a=require('node:assert/strict'),helper=require('./helpers/engineering-controller.cjs'),cfg=require('../lib/agent-operations-engineering-configuration'),phone=require('../lib/agent-operations-phone-search'),p=require('../lib/agent-operations-engineering-provider-v2'),budget=require('../lib/agent-operations-budget');
+const nativeTest=require('node:test'),a=require('node:assert/strict'),helper=require('./helpers/engineering-controller.cjs'),cfg=require('../lib/agent-operations-engineering-configuration'),phone=require('../lib/agent-operations-phone-search'),p=require('../lib/agent-operations-engineering-provider-v2'),budget=require('../lib/agent-operations-budget');
 const setup=()=>helper.fixture({objective:phone.OBJECTIVE,reviewedConsent:true});
 async function prepared(f){const m=await f.control.trialManifest(helper.owner,{planId:f.plan.id,expectedRevision:1,sequenceId:f.sequenceId}),input={planId:f.plan.id,expectedRevision:1,approval:m.approval},r=await f.control.prepare(helper.owner,input);return{input,prepared:r};}
 test('reviewed record retains exact deployment, has no hosting ACKs or paid flags, and is idempotent',async()=>{

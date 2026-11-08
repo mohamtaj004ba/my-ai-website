@@ -1,7 +1,8 @@
 'use strict';
+const test=require('./helpers/historical-phone-fixture.cjs').historicalTest(require('node:test'));
 // Provider-free regression from observed history and independently varied stage
 // responses. These checks never represent live reasoning or execute model code.
-const test=require('node:test'),a=require('node:assert/strict');
+const nativeTest=require('node:test'),a=require('node:assert/strict');
 const handoff=require('../lib/agent-operations-engineering-handoff'),inf=require('../lib/agent-operations-engineering-inference'),provider=require('../lib/agent-operations-engineering-provider-v2'),phone=require('../lib/agent-operations-phone-search'),copy=require('../lib/agent-operations-proposal-copy'),report=require('../lib/agent-operations-engineering-report');
 const observed=require('./fixtures/phone-chief-observed-050085d9.json');
 function context(){

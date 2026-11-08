@@ -723,7 +723,7 @@ function renderCalls(){
   const dateMatches=t=>dateFilter==='all'?true:dateFilter==='custom'?(dateRangeValid&&(!from||t>=from)&&(!to||t<=to)):withinDays(t,Number(dateFilter));
   let baseRows=[...callsData].filter(x=>{
     const disposition=callDispositionKey(x),hay=[x.caller,x.phone,x.category,x.reason,callDispositionLabel(x),teamStatusLabel(x),x.agent,x.address].join(' ').toLowerCase(),t=recordTime(x);
-    return (!q||hay.includes(q))&&(filter==='all'||disposition===filter)&&(categoryFilter==='all'||String(x.category||'General question')===categoryFilter)&&dateMatches(t);
+    return (!q||hay.includes(q)||(/^[0-9\s+().-]+$/.test(q)&&/[0-9]/.test(q)&&String(x.phone??'').replace(/\D/g,'').includes(String(q).replace(/\D/g,''))))&&(filter==='all'||disposition===filter)&&(categoryFilter==='all'||String(x.category||'General question')===categoryFilter)&&dateMatches(t);
   });
   const needsCount=baseRows.filter(teamStatusActive).length,resolvedCount=baseRows.filter(callResolvedByAi).length,unviewedCount=baseRows.filter(x=>!callWasViewed(x.id)).length;
   let rows=baseRows.filter(x=>callQuickFilter==='followup'?teamStatusActive(x):callQuickFilter==='resolved'?callResolvedByAi(x):callQuickFilter==='unread'?!callWasViewed(x.id):true).sort((a,b)=>callLogSort==='oldest'?recordTime(a)-recordTime(b):recordTime(b)-recordTime(a));
@@ -867,7 +867,7 @@ function renderLeads(){
   const q=(document.getElementById('leadSearch')?.value||'').trim().toLowerCase(),filter=document.getElementById('leadFilter')?.value||'all';
   const rows=followupCandidates().filter(x=>{
     const status=teamStatusForCall(x),closed=['completed','dismissed'].includes(status);if(followupStatusFilter==='completed'||followupStatusFilter==='dismissed'){if(status!==followupStatusFilter)return false}else if(closed)return false;if(followupStatusFilter==='priority'&&followupType(x)!=='urgent')return false;
-    const type=followupType(x),searchOk=!q||[x.caller,x.phone,x.reason,x.address,callDispositionLabel(x),teamStatusLabel(x)].join(' ').toLowerCase().includes(q),filterOk=filter==='all'||type===filter;
+    const type=followupType(x),searchOk=!q||[x.caller,x.phone,x.reason,x.address,callDispositionLabel(x),teamStatusLabel(x)].join(' ').toLowerCase().includes(q)||(/^[0-9\s+().-]+$/.test(q)&&/[0-9]/.test(q)&&String(x.phone??'').replace(/\D/g,'').includes(String(q).replace(/\D/g,''))),filterOk=filter==='all'||type===filter;
     return searchOk&&filterOk;
   });
   document.querySelectorAll('[data-followup-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.followupFilter===followupStatusFilter)));
@@ -1052,7 +1052,7 @@ function renderConversations(){
   const signature=JSON.stringify([q,conversationFilter,sort]);
   if(signature!==conversationLastFilterSignature){conversationVisibleLimit=50;conversationLastFilterSignature=signature;list.scrollTop=0}
   const localRows=conversationsData.filter(x=>{
-    const searchOk=!q||[x.name,x.phone,x.last,x.status,...(Array.isArray(x.messages)?x.messages:[]).map(m=>m.text)].join(' ').toLowerCase().includes(q);
+    const searchOk=!q||[x.name,x.phone,x.last,x.status,...(Array.isArray(x.messages)?x.messages:[]).map(m=>m.text)].join(' ').toLowerCase().includes(q)||(/^[0-9\s+().-]+$/.test(q)&&/[0-9]/.test(q)&&String(x.phone??'').replace(/\D/g,'').includes(String(q).replace(/\D/g,'')));
     const status=String(x.status||'').trim().toLowerCase();
     const filterOk=conversationFilter==='all'||(conversationFilter==='attention'&&/follow/i.test(status))||(conversationFilter==='active'&&status==='active')||(conversationFilter==='closed'&&status==='closed');
     return searchOk&&filterOk;
@@ -1126,7 +1126,7 @@ function renderContacts(){
   const wrap=document.getElementById('contactsTable');if(!wrap)return;
   const q=(document.getElementById('contactSearch')?.value||'').trim().toLowerCase(),typeFilter=document.getElementById('contactTypeFilter')?.value||'all',sort=document.getElementById('contactSort')?.value||'recent',all=buildContacts();
   const signature=JSON.stringify([q,typeFilter,sort]);if(signature!==contactLastFilterSignature){contactLastFilterSignature=signature;contactVisibleLimit=50}
-  let rows=all.filter(c=>{const kind=contactType(c),searchOk=!q||[c.name,c.phone,c.address,kind,...c.services].join(' ').toLowerCase().includes(q);return searchOk&&(typeFilter==='all'||kind===typeFilter)});
+  let rows=all.filter(c=>{const kind=contactType(c),searchOk=!q||[c.name,c.phone,c.address,kind,...c.services].join(' ').toLowerCase().includes(q)||(/^[0-9\s+().-]+$/.test(q)&&/[0-9]/.test(q)&&String(c.phone??'').replace(/\D/g,'').includes(String(q).replace(/\D/g,'')));return searchOk&&(typeFilter==='all'||kind===typeFilter)});
   rows.sort((a,b)=>sort==='name'?String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}):b.lastAt-a.lastAt);
   const totalRows=rows.length,visibleRows=rows.slice(0,contactVisibleLimit);
   const totalInteractions=c=>c.calls.length+c.conversations.reduce((n,x)=>n+(Array.isArray(x.messages)?x.messages.length:Number(x.messageCount||0)),0);

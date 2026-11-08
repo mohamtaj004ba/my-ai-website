@@ -13,9 +13,9 @@ test('two-file scope authenticates five exact source sites without changing hist
  const assignment=task.assignment();a.equal(assignment.liveTaskRegistered,false);a.equal(assignment.criteria.length,4);a.equal(assignment.scopeHash,s.scopeHash);
 });
 test('data-only application reuses text validators and preserves every out-of-scope byte',()=>{
- const {value,context}=fixture(),before=context.files.map(f=>f.text),result=task.apply(value,context);
+ const {value,context}=fixture(),before=context.files.map(f=>f.text),disk=context.files.map(f=>fs.readFileSync(path.join(__dirname,'..',f.path),'utf8').replace(/\r\n/g,'\n')),result=task.apply(value,context);
  a.equal(result.files.length,2);a.equal(result.executionAuthorized,false);a.equal(result.publicationAllowed,false);a.equal(result.proposalHash,draft.hash(value));
- result.files.forEach((file,i)=>{a.equal(file.text.split('/* inert contract fixture */').join(''),before[i]);a.equal(file.afterSha256,draft.hash(file.text));a.equal(fs.readFileSync(path.join(__dirname,'..',file.path),'utf8').replace(/\r\n/g,'\n'),before[i]);});
+ result.files.forEach((file,i)=>{a.equal(file.text.split('/* inert contract fixture */').join(''),before[i]);a.equal(file.afterSha256,draft.hash(file.text));a.equal(fs.readFileSync(path.join(__dirname,'..',file.path),'utf8').replace(/\r\n/g,'\n'),disk[i]);});
  a.deepEqual(context.files.map(f=>f.text),before);
 });
 for(const[name,mutate]of [

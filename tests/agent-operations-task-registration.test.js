@@ -16,9 +16,15 @@ for(const [index,row] of baseline.rows.entries())test('registration preserves in
   if(registration.sourceTest)a.equal(registration.sourceTest.version,dispatch.profileFor(c).version);
  }
 });
-test('all serialized historical policies and public capabilities remain unchanged',()=>{
+test('historical policies remain immutable while current capability availability is explicit',()=>{
  a.equal(hash(Object.fromEntries(Object.entries(provider).filter(([k])=>k.endsWith('TRIAL')))),baseline.trialsHash);
- a.equal(hash(impl.capabilities()),baseline.capabilitiesHash);
+ const c=impl.capabilities(),phone=c.boundedTasks.find(t=>t.id==='client-phone-search-v1');
+ a.deepEqual(phone.availability,{status:'source-changed',freshAssignmentAllowed:false,executionAuthorized:false});
+ a.equal(c.assignmentDurationMs,1800000);a.equal(c.executionDurationMs,600000);a.equal(c.generatedCodeExecution,false);a.equal(c.publicationAuthorized,false);
+ a(c.boundedTasks.every(t=>t.paidExecution===false&&t.publicationAuthorized===false&&t.availability.executionAuthorized===false));
+ a.deepEqual(c.authorityLevels.map(x=>[x.level,x.capability]),[[1,'source-inspection'],[2,'inert-proposal'],[3,'disposable-workspace'],[4,'workspace-modification'],[5,'generated-test-execution'],[6,'patch-generation'],[7,'technical-review'],[8,'Preview-publication'],[9,'future-agent-publication'],[10,'Production-publication']]);
+ a.equal(c.authorityLevels[8].status,'disabled');a.equal(c.authorityLevels[9].status,'prohibited');
+ a.equal(c.fixedSourceTests.executionAuthorized,false);a.equal(c.fixedSourceTests.arbitraryCommands,false);a.equal(c.fixedSourceTests.network,false);a.equal(c.fixedSourceTests.publicationAuthorized,false);
 });
 test('every development policy is selected through the catalog and participates in serial protection',()=>{
  const entries=tasks.developmentRegistrations(),ids=tasks.serialPolicyIds();

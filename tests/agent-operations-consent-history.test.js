@@ -1,5 +1,6 @@
 'use strict';
-const test=require('node:test'),a=require('node:assert/strict'),helper=require('./helpers/engineering-controller.cjs'),cfg=require('../lib/agent-operations-engineering-configuration');
+const test=require('./helpers/historical-phone-fixture.cjs').historicalTest(require('node:test'));
+const nativeTest=require('node:test'),a=require('node:assert/strict'),helper=require('./helpers/engineering-controller.cjs'),cfg=require('../lib/agent-operations-engineering-configuration');
 test('rehashed legacy metadata cannot carry nested private content into owner history',async()=>{
  const f=await helper.fixture({objective:require('../lib/agent-operations-phone-search').OBJECTIVE}),s=f.state(),base=s.operations.engineeringConfigurationIntents[0],p=require('../lib/agent-operations-engineering-provider-v2');
  const keys=['id','identity','sequenceIntentId','scope','sourceCommit','release','assignmentHash','evidenceHash','policyHash','review','values','refreshKey','taskId','originalRuntime','configurationHash','createdAt','expiresAt'];

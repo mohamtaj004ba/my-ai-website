@@ -1,7 +1,8 @@
 'use strict';
+const test=require('./helpers/historical-phone-fixture.cjs').historicalTest(require('node:test'));
 // Real controller/CAS and restricted data worker. ALL provider/configuration
 // responses below are synthetic; no external service or generated code runs.
-const test=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),phone=require('../lib/agent-operations-phone-search'),impl=require('../lib/agent-operations-implementation'),inf=require('../lib/agent-operations-engineering-inference'),dispatch=require('../lib/agent-operations-source-test-dispatch');
+const nativeTest=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),phone=require('../lib/agent-operations-phone-search'),impl=require('../lib/agent-operations-implementation'),inf=require('../lib/agent-operations-engineering-inference'),dispatch=require('../lib/agent-operations-source-test-dispatch');
 const controllerFixture=require('./helpers/engineering-controller.cjs'),owner=controllerFixture.owner;
 const setup=()=>controllerFixture.fixture({objective:phone.OBJECTIVE});
 const setupWithTests=provider=>controllerFixture.fixture({objective:phone.OBJECTIVE,sourceTestProvider:provider});

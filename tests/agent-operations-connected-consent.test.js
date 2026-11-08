@@ -1,7 +1,8 @@
 'use strict';
+const test=require('./helpers/historical-phone-fixture.cjs').historicalTest(require('node:test'));
 // Entire owner API path, including real assignment creation and first consent.
 // Only authentication, storage transport and provider Responses are fixtures.
-const test=require('node:test'),a=require('node:assert/strict'),crypto=require('node:crypto');
+const nativeTest=require('node:test'),a=require('node:assert/strict'),crypto=require('node:crypto');
 const org=require('../lib/agent-operations-organization'),ops=require('../lib/agent-operations-operating-system'),api=require('../lib/agent-operations-api'),handoff=require('../lib/agent-operations-engineering-handoff'),helper=require('../lib/agent-operations-engineering-rehearsal'),p=require('../lib/agent-operations-engineering-provider-v2'),cfg=require('../lib/agent-operations-engineering-configuration');
 for(const history of ['empty','stopped-legacy'])test('real assignment API through first consent, sequence and all five stages with '+history+' history',async()=>{
  const owner={kind:'owner',verifiedOwner:true,id:'connected@example.test',workspaceId:'connected-workspace'},runtime={environment:'preview',origin:'https://my-ai-website-connected-mohamtaj004bas-projects.vercel.app',commit:'a'.repeat(40),branch:'feature/callercore-dashboards',deploymentId:'dpl_connected'},release=require('../lib/agent-operations-contracts').assertRelease(),project=require('../lib/agent-operations-project').PROJECT;

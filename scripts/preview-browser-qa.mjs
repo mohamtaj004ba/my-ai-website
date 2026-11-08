@@ -1,3 +1,4 @@
+import {verifyPhoneSearch} from './phone-search-browser-qa.mjs';
 import {verifyImplementationTaskMetadata} from './agent-implementation-browser-contract.mjs';
 import {verifyDashboardCalendar} from './dashboard-calendar-browser-qa.mjs';
 import {verifyPublicFeedback} from './public-feedback-browser-qa.mjs';
@@ -645,6 +646,8 @@ async function runClientInteractions(page){
   await assertCompletionRecovery(page,'client-desktop');
   await page.locator('#closeCallDrawer').click();
   report.client.interactions.push('Follow-ups action hierarchy + call detail');
+  report.client.phoneSearch=await verifyPhoneSearch({page,ensureView});
+  report.client.interactions.push('Phone search formatting equivalence across four actual client views');
 
   await ensureView(page,'agent');
   const savedAgentName=await page.locator('#agentName').inputValue();
