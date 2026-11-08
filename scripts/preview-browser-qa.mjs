@@ -130,6 +130,14 @@ async function makeContext(viewport,label){
   });
   await context.route('**/*',route=>route.continue({headers:previewRequestHeaders(route.request().url(),route.request().headers(),baseURL)}));
   contexts.push(context);
+  if(label==='desktop'){
+    for(const privatePath of ['/node_modules/.cache/callercore/repository-source.json.gz','/lib/agent-operations-repository-source.js','/scripts/prepare-repository-source.cjs','/CALLERCORE_PROJECT_STATE.md']){
+      const response=await context.request.get(baseURL+privatePath,{maxRedirects:0});
+      if(response.status()!==404)throw new Error('Private repository asset boundary was not confirmed');
+      await response.dispose();
+    }
+    report.privateRepositoryAssets='four private source paths returned 404';
+  }
   const page=await context.newPage();
   if(label==='desktop'||label.startsWith('client-'))await installBillingFixture(page);
   attachDiagnostics(page,label);

@@ -73,9 +73,11 @@
       "maxDuration": 60
     },
     "api/agent-operations.js": {
-      "maxDuration": 660
+      "maxDuration": 660,
+      "includeFiles": "node_modules/.cache/callercore/repository-source.json.gz"
     }
   },
   "ignoreCommand": "node scripts/vercel-ignore-docs.cjs",
-  "buildCommand": "node scripts/deployment-build.cjs"
+  "buildCommand": "node scripts/deployment-build.cjs",
+  "outputDirectory": "public-dist"
 }

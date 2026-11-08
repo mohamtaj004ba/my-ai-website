@@ -17,3 +17,4 @@ Thumbs.db
 artifacts/agent-operations/
 .env.agent-operations.local
 qa-artifacts/
+public-dist/
