@@ -79,5 +79,6 @@
   },
   "ignoreCommand": "node scripts/vercel-ignore-docs.cjs",
   "buildCommand": "node scripts/deployment-build.cjs",
+  "installCommand": "npm ci --ignore-scripts",
   "outputDirectory": "public-dist"
 }

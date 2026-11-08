@@ -27,11 +27,15 @@ function publicEntries(all,raws){
  }
  return entries.filter(e=>chosen.has(e.path));
 }
-function prepare({root=ROOT,commit,packPath=reader.PACK,output=path.join(root,'public-dist')}={}){
+function prepare({root=ROOT,commit,packPath=reader.PACK,output=path.join(root,'public-dist'),onPhase=()=>{}}={}){
+ onPhase('git-identity');
  const actual=cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();commit??=actual;
  if(commit!==actual||!/^[a-f0-9]{40}$/.test(commit))throw Error('ENG_REPOSITORY_BUILD_IDENTITY');
- cp.execFileSync('git',['diff','--exit-code','HEAD','--'],{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});
- const snapshot=reader.fromGit(commit,{root}),all=reader.tree(commit,{root}).filter(e=>e.type==='blob'&&['100644','100755'].includes(e.mode)&&!reader.privatePath(e.path)&&PUBLIC_EXT.has(path.posix.extname(e.path.toLowerCase()))),bytes=reader.blobs(all,{root}),entries=publicEntries(all,bytes);
+ onPhase('tracked-source-clean');
+ try{cp.execFileSync('git',['diff','--exit-code','HEAD','--'],{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});}catch{throw Error('ENG_REPOSITORY_BUILD_DIRTY');}
+ onPhase('immutable-source-snapshot');const snapshot=reader.fromGit(commit,{root});
+ onPhase('public-asset-graph');const all=reader.tree(commit,{root}).filter(e=>e.type==='blob'&&['100644','100755'].includes(e.mode)&&!reader.privatePath(e.path)&&PUBLIC_EXT.has(path.posix.extname(e.path.toLowerCase()))),bytes=reader.blobs(all,{root}),entries=publicEntries(all,bytes);
+ onPhase('public-output');
  const absolute=path.resolve(output),expected=path.join(path.resolve(root),'public-dist');
  if(absolute!==expected||!absolute.startsWith(path.resolve(root)+path.sep))throw Error('ENG_REPOSITORY_BUILD_TARGET');
  if(fs.existsSync(absolute)){
@@ -41,7 +45,7 @@ function prepare({root=ROOT,commit,packPath=reader.PACK,output=path.join(root,'p
  }
  fs.mkdirSync(absolute,{recursive:true});fs.writeFileSync(path.join(absolute,'.callercore-generated'),'public-build-output-v1',{flag:'wx'});
  for(const e of entries){const target=path.join(absolute,e.path);if(!target.startsWith(absolute+path.sep))throw Error('ENG_REPOSITORY_BUILD_TARGET');fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,bytes.get(e.blob),{flag:'wx'});}
- fs.mkdirSync(path.dirname(packPath),{recursive:true});const packed=zlib.gzipSync(Buffer.from(JSON.stringify(snapshot)));fs.writeFileSync(packPath,packed,{mode:0o600});
+ onPhase('private-source-pack');fs.mkdirSync(path.dirname(packPath),{recursive:true});const packed=zlib.gzipSync(Buffer.from(JSON.stringify(snapshot)));fs.writeFileSync(packPath,packed,{mode:0o600});
  return {version:reader.VERSION,sourceCommit:commit,snapshotHash:snapshot.hash,sourceFiles:snapshot.files.length,contentDenied:snapshot.contentDenied,privatePackBytes:packed.length,publicFiles:entries.length,modelRequests:0,executionAuthorized:false};
 }
 if(require.main===module)try{console.log(JSON.stringify(prepare({commit:process.env.VERCEL_GIT_COMMIT_SHA})));}catch{console.error('ENG_REPOSITORY_BUILD_UNCONFIRMED');process.exitCode=1;}
