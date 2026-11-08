@@ -55,7 +55,9 @@ jobs:
         with:
           node-version: 22
       - name: Disposable Redis atomicity and mock orchestration
-        run: node --test tests/agent-operations-redis.integration.cjs
+        run: |
+          node scripts/engineering-evidence-preflight.cjs
+          node --test tests/agent-operations-redis.integration.cjs
   test:
     needs: selection
     runs-on: ubuntu-latest

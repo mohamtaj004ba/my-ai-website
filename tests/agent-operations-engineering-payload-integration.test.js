@@ -2,7 +2,7 @@
 // Full reporting-chain payload qualification using independent rich fixtures.
 // Exact bytes are measured; no byte-to-token estimate is made. Synthetic usage
 // exercises the unchanged parser ceiling only, never claims actual consumption.
-const test=require('node:test'),a=require('node:assert/strict');
+const test=require('./helpers/historical-phone-fixture.cjs').historicalTest(require('node:test')),a=require('node:assert/strict');
 const helper=require('./helpers/engineering-rich-payload-fixtures.cjs'),inf=require('../lib/agent-operations-engineering-inference'),provider=require('../lib/agent-operations-engineering-provider-v2'),impl=require('../lib/agent-operations-implementation'),handoff=require('../lib/agent-operations-engineering-handoff'),copy=require('../lib/agent-operations-proposal-copy'),contracts=require('../lib/agent-operations-contracts');
 
 for(const profile of ['starter','visible','phone'])test(profile+' rich source-bound reports complete all five request/parser handoffs with unchanged token ceilings',async()=>{

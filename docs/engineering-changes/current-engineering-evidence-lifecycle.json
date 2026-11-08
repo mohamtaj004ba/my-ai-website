@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "f70e6329592227f8c17c1de9f9c4c5f1129d8bf1f61a20be657e2ca05dca2614",
+  "risk": "critical",
+  "scope": "Synchronize current generic engineering evidence after product delivery, preserve historical readback, and fail early on future evidence drift.",
+  "riskAnalysis": "Current evidence remains pinned and matches canonical capture. Prior v9 remains exact readback only. Generator emits inert exclusive candidates, not authority. Existing source/task/release, worker, permission and spending policies remain unchanged. Timeout changes are test-only virtual clocks.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Current source provenance, immutable historical evidence, release binding and denial semantics.",
+    "trustBoundaries": "Reviewed evidence candidate to selected current asset; source capture to admission; historical vectors to readback.",
+    "abuseCases": "Select stale or forged evidence, mix old/new identities, overwrite an archive, accept semantic anchor changes, bypass early checks through exported APIs.",
+    "mitigations": "Pinned v10; exact v1-v9 readback; expected predecessor hash and adjacent version; exclusive candidate writes; unique unchanged anchors; mandatory exported quality and Redis preflight."
+  },
+  "defects": [
+    {
+      "rootCause": "A current-source rehearsal still selected v9 whole-file hashes after legitimate phone-search delivery.",
+      "detectionGap": "Focused product tests did not exercise the shared generic evidence preflight before deployment; stale metadata amplified into400regression/9Redis failures.",
+      "regression": "All36affectedfiles462checks pass; current-capture, old-vector readback and forged/mixed-vector denial tested; representative five-stageAPI passes.",
+      "historicalPrevention": "One shared current evidence selector is rolled forward explicitly, with readback retained; candidate generator and early working/committed/Redis checks catch drift before expensive execution."
+    },
+    {
+      "rootCause": "Some historical product tests assumed no later legitimate source change, and tiny wall-clock timeout fixtures could expire during admission.",
+      "detectionGap": "Prior fixtures conflated historical replay with current product and wall-time scheduling with provider-stage behavior.",
+      "regression": "Immutable lineage reconstructs all delivered edits; archived payload replay explicit;115timeout/failure checks pass with dispatch-controlled virtual clocks.",
+      "historicalPrevention": "Current source is tested separately from archive replay; virtual timers advance only in the intended failure phase, without increasing production limits."
+    }
+  ],
+  "rollback": "Restore the previously qualified feature Preview if final qualification fails; preserve all source/evidence history and never re-enable old approvals.",
+  "negativePaths": {
+    "malformed-response": "Unknown codes/raw errors remain hidden; malformed own records counted unverified.",
+    "stale-state": "Exact task/source/release checks unchanged; history is not execution authority.",
+    "concurrency": "Existing CAS unchanged; same first consent remains idempotent and exact-bound.",
+    "cancellation": "Connected fixture stops consent after run and asserts revoked grants/paidfalse.",
+    "worker-interruption": "Previouslyqualified cleanup recovery remains unchanged.",
+    "api-outage": "Unconfirmed delivery never retries automatically; exact intent retained for readback.",
+    "authorization-denial": "Foreign identities filtered before history validation; service actor gets no history.",
+    "spending-limit": "No accounting policy changes; no paid inference in fixtures.",
+    "partial-execution": "FinalChief preserves Auditor rejection; successfulworkflow is not proposalacceptance."
+  },
+  "proactiveReview": {
+    "architecture": "Existing rehearsal/controller/evidence arrays retained; no new orchestration, ledger or dynamic source acceptance.",
+    "dependencies": "No new packages; canonical source capture and existing release fingerprint reused.",
+    "threats": "Historical vectors must not become fresh authority; unknown hashes and missing/ambiguous semantic anchors must fail.",
+    "failureModes": "400failures traced through one shared old selector rather than individually bypassed; raw failures retained.",
+    "faultInjection": "Forgedsha,mixedvectors,oldadmission,ambiguous/missinganchors,wrongpredecessorhash,duplicatewrites and preflightbypass tested.",
+    "independentChallenge": "QA exposed exportedpreflight reachability gap; Auditor confirmed corrected working/committed and Redis wiring.",
+    "recovery": "Restore last qualified feature Preview if qualification fails; preserve c4product evidence and all old records; never revive grants.",
+    "readiness": "462failure-matrix,74entrypoint,64connected,37independent,115timing and14lineage checks passed; final CI/Redis/security/Preview qualification required."
+  }
+}

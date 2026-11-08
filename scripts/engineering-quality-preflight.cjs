@@ -55,11 +55,13 @@ function check(entries,records,{proactive=false}={}){
  return {digest,...classification,planRisk:plans[0].risk,verified:'plan-and-source-binding',liveVerified:false};
 }
 function working(){
+ require('./engineering-evidence-preflight.cjs').verify();
  const names=[...new Set([...git(['diff','--no-renames','--name-only','-z','HEAD','--']).split('\0'),...git(['ls-files','--others','--exclude-standard','-z']).split('\0')].filter(Boolean))];
  const entries=names.filter(p=>!recordPath(p)).map(p=>{policy.canonical(p);const f=path.join(root,p),oldBlob=treeBlob('HEAD',p);if(!fs.existsSync(f))return{path:p,oldBlob,blob:'deleted'};if(!fs.lstatSync(f).isFile())throw Error('Non-file change denied');return{path:p,oldBlob,blob:git(['hash-object','--path='+p,f]).trim()};});
  return {entries,digest:digestEntries(entries),classification:entries.length?policy.classify(entries.map(x=>x.path)):null};
 }
 function committed(base,head='HEAD'){
+ require('./engineering-evidence-preflight.cjs').verify();
  if(git(['status','--porcelain','--untracked-files=all']).trim())throw Error('Dirty worktree: inspect --working and commit reviewed changes before preflight');
  git(['merge-base','--is-ancestor',BASELINE,head]);
  if(!base||/^0+$/.test(base))base=BASELINE;

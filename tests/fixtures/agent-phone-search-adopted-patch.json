@@ -1,0 +1,233 @@
+{
+  "binding": {
+    "planId": "op_113a2eb811df4be4a64128b83bb1d1c8",
+    "taskId": "op_113a2eb811df4be4a64128b83bb1d1c8_task2",
+    "executionId": "pilot_de64604243d6c72ca0869b0e2b7b4c77_specialist",
+    "fence": 0,
+    "ownerHash": "2f17d0dddf50600be4ff4dc5e30a6d4b1fa14daf7bce317931dda6124970321a",
+    "workspaceHash": "950868b4dd216bddaa5498c1cf45dc1a7adb6696e0222f79833fb586dc478ee1",
+    "runtime": {
+      "origin": "https://my-ai-website-4uc5rhejx-mohamtaj004bas-projects.vercel.app",
+      "sourceCommit": "3497464267f4aeb43e2396fc84f1a7a4d8b08a13",
+      "branch": "feature/callercore-dashboards",
+      "deploymentId": "dpl_4c4MEEzbeq1PGoREo85HmE9PeKsa",
+      "release": {
+        "version": "organization-contracts-v4",
+        "digest": "f4ab4cd87b3e0ec27ab6e7fc29daad8d14fbca368b65a98076330caf5dfede40"
+      },
+      "engineeringContract": "engineering-handoff-v2"
+    },
+    "authorizationRevision": 1
+  },
+  "chief": {
+    "reportQuality": {
+      "version": "report-quality-review-v2",
+      "issues": [
+        {
+          "location": "$.scope[0]",
+          "code": "missing-terminal-punctuation"
+        },
+        {
+          "location": "$.exclusions[1]",
+          "code": "missing-terminal-punctuation"
+        },
+        {
+          "location": "$.deliverables[0]",
+          "code": "missing-terminal-punctuation"
+        },
+        {
+          "location": "$.completionCriteria[0]",
+          "code": "missing-terminal-punctuation"
+        },
+        {
+          "location": "$.completionCriteria[1]",
+          "code": "missing-terminal-punctuation"
+        }
+      ],
+      "priorReviewRefs": []
+    },
+    "version": "engineering-provider-v2",
+    "stage": "chief-plan",
+    "binding": {
+      "planId": "op_113a2eb811df4be4a64128b83bb1d1c8",
+      "taskId": "op_113a2eb811df4be4a64128b83bb1d1c8_task1",
+      "executionId": "pilot_de64604243d6c72ca0869b0e2b7b4c77_chief-plan",
+      "fence": 0,
+      "ownerHash": "2f17d0dddf50600be4ff4dc5e30a6d4b1fa14daf7bce317931dda6124970321a",
+      "workspaceHash": "950868b4dd216bddaa5498c1cf45dc1a7adb6696e0222f79833fb586dc478ee1",
+      "runtime": {
+        "origin": "https://my-ai-website-4uc5rhejx-mohamtaj004bas-projects.vercel.app",
+        "sourceCommit": "3497464267f4aeb43e2396fc84f1a7a4d8b08a13",
+        "branch": "feature/callercore-dashboards",
+        "deploymentId": "dpl_4c4MEEzbeq1PGoREo85HmE9PeKsa",
+        "release": {
+          "version": "organization-contracts-v4",
+          "digest": "f4ab4cd87b3e0ec27ab6e7fc29daad8d14fbca368b65a98076330caf5dfede40"
+        },
+        "engineeringContract": "engineering-handoff-v2"
+      },
+      "authorizationRevision": 1
+    },
+    "mode": "pilot",
+    "response": {
+      "stage": "chief-plan",
+      "objective": "Delegate a source-bound, inert five-expression patch that makes phone search formatting-independent across Calls, Follow-ups, Contacts, and local/paged Conversations while preserving existing text matching and all surrounding behavior.",
+      "specialist": "dashboard",
+      "completionCriteria": [
+        "1. Supply exactly five replacement expressions, one for each declared site, bound to the exact manifest paths, file hashes, site IDs, and before expressions. S「",
+        "2. At all five sites, preserve existing text matches and add digit-substring matching against the record's phone field only for queries containing at least one "
+      ],
+      "reason": "The dashboard specialist must author the replacement expressions within the supplied pure-search-expression-v1 contract. This Chief receipt defines scope and verification requirements; it supplies no replacement implementation and grants no execution or acceptance authority.",
+      "problem": "The five supplied search expressions compare lowercased text without normalizing phone formatting. Consequently, a digit sequence can fail to match the same phone number when punctuation or spaces intervene. The excerpts support this mechanism, but do not establish production incidence, affected-user counts, or measured business impact.",
+      "sourceEvidenceIds": [
+        "calls",
+        "follow-ups",
+        "local-conversations",
+        "contacts",
+        "paged-conversations"
+      ],
+      "intendedImpact": {
+        "assessment": "The proposed change should recover phone matches lost solely to formatting differences while retaining current free-text results. No deployment, test success, or user benefit has been established.",
+        "basis": "source-supported",
+        "uncertainty": "Actual impact and regression risk remain unmeasured. Full-source review, isolated sourceTests evidence, QA criticism, and Auditor criticism are still required."
+      },
+      "scope": [
+        "Authorized requirements are workflowContract.taskRequirements. Numbered completion criteria in this receipt are the Chief acceptanceCriteria for subsequent acceptanceMapping; they "
+      ],
+      "exclusions": [
+        "No helper insertion, dependencies, comments inside replacement expressions, unrelated changes, or changes outside the five declared expressions.",
+        "No tools, network access, credentials, repository writes, publication, permission changes, customer actions, or independent acceptance. Patch data is inert; only the backend may "
+      ],
+      "uncertainty": "This receipt is a plan only. No patch, isolated sourceTests results, QA decisions, or Auditor reference exists in the supplied priorResults. The excerpts do not reveal every surrounding authorization, cursor, entitlement, rendering, or read-state dependency; those must be assessed against the exact bound source rather than assumed.",
+      "deliverables": [
+        "A complete specialist handoff explaining root cause, qualified impact, risks, input interfaces, and one changes entry for each of the five sites. The specialist must author all "
+      ],
+      "qualityReviewRefs": []
+    },
+    "requestHash": "c463c5e842fdbdb5db2876e51a3895d3e44ee6458000e44add1102ee039ffc75",
+    "evidenceHash": "1388b7c7a6b061574788c6277bd7b699c86fee3754e6eb65f053b41f5512552d",
+    "usage": {
+      "inputTokens": 3338,
+      "outputTokens": 847,
+      "reasoningTokens": 242,
+      "cachedInputTokens": 0,
+      "cacheWriteTokens": 0,
+      "calculatedCostMicros": 15146
+    },
+    "syntheticUsage": null,
+    "provider": {
+      "id": "resp_075b9af02498057f016aefdafa0c2487d2995b5af55f9bf97e",
+      "status": "completed",
+      "model": "gpt-6.1-sol",
+      "serviceTier": "default"
+    },
+    "principalHash": "e7bee450aa71287c9741c616c085a560816c22dacc44262884ae6d579d54c07d",
+    "principalKind": "service",
+    "independence": "separate-capability-procedural-only",
+    "reviewMode": "authenticated-automated-technical",
+    "humanReview": false,
+    "acceptedWork": false,
+    "publicationAuthorized": false,
+    "hash": "f7a12400e213d03ba7fc9ccd949a8d853695f71447780266123c1d89311ba251"
+  },
+  "proposal": {
+    "evidenceIds": [
+      "calls",
+      "follow-ups",
+      "local-conversations",
+      "contacts",
+      "paged-conversations"
+    ],
+    "patch": {
+      "version": "draft-proposal-bundle-v1",
+      "binding": {
+        "ownerHash": "2f17d0dddf50600be4ff4dc5e30a6d4b1fa14daf7bce317931dda6124970321a",
+        "workspaceHash": "950868b4dd216bddaa5498c1cf45dc1a7adb6696e0222f79833fb586dc478ee1",
+        "taskId": "op_113a2eb811df4be4a64128b83bb1d1c8_task2",
+        "executionId": "pilot_de64604243d6c72ca0869b0e2b7b4c77_specialist",
+        "sourceCommit": "3497464267f4aeb43e2396fc84f1a7a4d8b08a13",
+        "deploymentId": "dpl_4c4MEEzbeq1PGoREo85HmE9PeKsa",
+        "origin": "https://my-ai-website-4uc5rhejx-mohamtaj004bas-projects.vercel.app",
+        "releaseHash": "f4ab4cd87b3e0ec27ab6e7fc29daad8d14fbca368b65a98076330caf5dfede40",
+        "contextHash": "9d6bca5e512440bee2e1e7b56442db04b0e9aaee944721c022f86cd2a8aabe3d"
+      },
+      "files": [
+        {
+          "path": "dashboard.js",
+          "preimageSha256": "37d1a7c38970ba3a82b3e3d97ac0aec12395dd5d6f8eb1e1fab51836f5a2de0c",
+          "edits": [
+            {
+              "offset": 81151,
+              "before": "!q||hay.includes(q)",
+              "after": "!q||hay.includes(q)||(/^[0-9\\s+().-]+$/.test(q)&&/[0-9]/.test(q)&&String(x.phone??'').replace(/\\D/g,'').includes(String(q).replace(/\\D/g,'')))",
+              "beforeSha256": "d9c381c254f2598294e0980a0ac02d9625ecc7052b1e3a5754f57c5a23a92b0d"
+            },
+            {
+              "offset": 100422,
+              "before": "!q||[x.caller,x.phone,x.reason,x.address,callDispositionLabel(x),teamStatusLabel(x)].join(' ').toLowerCase().includes(q)",
+              "after": "!q||[x.caller,x.phone,x.reason,x.address,callDispositionLabel(x),teamStatusLabel(x)].join(' ').toLowerCase().includes(q)||(/^[0-9\\s+().-]+$/.test(q)&&/[0-9]/.test(q)&&String(x.phone??'').replace(/\\D/g,'').includes(String(q).replace(/\\D/g,'')))",
+              "beforeSha256": "5b325e60182328223c0ee39e2f041ca504f7a985a368eda0e05c82c9648ae907"
+            },
+            {
+              "offset": 128126,
+              "before": "!q||[x.name,x.phone,x.last,x.status,...(Array.isArray(x.messages)?x.messages:[]).map(m=>m.text)].join(' ').toLowerCase().includes(q)",
+              "after": "!q||[x.name,x.phone,x.last,x.status,...(Array.isArray(x.messages)?x.messages:[]).map(m=>m.text)].join(' ').toLowerCase().includes(q)||(/^[0-9\\s+().-]+$/.test(q)&&/[0-9]/.test(q)&&String(x.phone??'').replace(/\\D/g,'').includes(String(q).replace(/\\D/g,'')))",
+              "beforeSha256": "4262efc6978e9fcb22b644e8867668f3172e132eedc0ab96d495ab4f75eb43ec"
+            },
+            {
+              "offset": 138743,
+              "before": "!q||[c.name,c.phone,c.address,kind,...c.services].join(' ').toLowerCase().includes(q)",
+              "after": "!q||[c.name,c.phone,c.address,kind,...c.services].join(' ').toLowerCase().includes(q)||(/^[0-9\\s+().-]+$/.test(q)&&/[0-9]/.test(q)&&String(c.phone??'').replace(/\\D/g,'').includes(String(q).replace(/\\D/g,'')))",
+              "beforeSha256": "c80ff1e39371298a1045ace3632a9271ae3c87bbe0ae445457e30a88d64b17f3"
+            }
+          ]
+        },
+        {
+          "path": "lib/conversation-history.js",
+          "preimageSha256": "1d36a9d0cf68e5d35c15e6d2df0c43557dd6e16d2ed05c2eb531164762406b23",
+          "edits": [
+            {
+              "offset": 2345,
+              "before": "[item&&item.name,item&&item.phone,item&&item.last,item&&item.status,...messages.map(message=>message&&message.text)].join(' ').toLowerCase().includes(options.q)",
+              "after": "[item&&item.name,item&&item.phone,item&&item.last,item&&item.status,...messages.map(message=>message&&message.text)].join(' ').toLowerCase().includes(options.q)||(/^[0-9\\s+().-]+$/.test(options.q)&&/[0-9]/.test(options.q)&&String((item&&item.phone)??'').replace(/\\D/g,'').includes(String(options.q).replace(/\\D/g,'')))",
+              "beforeSha256": "12a19766f9afa0db8c3458170e358f940e90fadc5770f2acfb8719c583f60818"
+            }
+          ]
+        }
+      ]
+    },
+    "changes": [
+      {
+        "siteId": "calls",
+        "explanation": "Retain the complete haystack match and add gated digit-substring matching against x.phone without altering disposition, category, or date filters."
+      },
+      {
+        "siteId": "follow-ups",
+        "explanation": "Retain the original text predicate and add gated x.phone matching without editing status, priority, or type filtering."
+      },
+      {
+        "siteId": "local-conversations",
+        "explanation": "Retain name, phone, status, and message text searches and add gated x.phone matching within the existing search predicate."
+      },
+      {
+        "siteId": "contacts",
+        "explanation": "Retain the original contact text search and add gated c.phone matching without editing type filtering, sorting, or visibility-limit logic."
+      },
+      {
+        "siteId": "paged-conversations",
+        "explanation": "Retain the original options.q text match and add null-safe item.phone matching without editing query normalization or cursor handling."
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "dashboard.js",
+      "afterSha256": "9b5fa3c8532cab1c4b5d67e5ccdb08bbd7eddad7ecbf9d1886cfed21690f52e7"
+    },
+    {
+      "path": "lib/conversation-history.js",
+      "afterSha256": "fe538ab09bb95b671e1402f5957d4b8cf1b2a778b4dab3c7c76d3a7c82bc6751"
+    }
+  ],
+  "acceptedWork": false
+}
