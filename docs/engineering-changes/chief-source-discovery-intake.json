@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "ea59b45197767e967acbc380a59f65093574863cbbeeb153cb77c3d6c313f090",
+  "risk": "critical",
+  "scope": "Offline current-source discovery intake through existing Chief request/parser; no paid transport, task registration or application product modification.",
+  "riskAnalysis": "Provider text is untrusted, source locations are not defects, and validated drafts are not grants. Existing live controllers refuse unregistered assignments. Current local HEAD or trusted Preview environment and canonical release/capture must match. Prepared/imported artifacts do not establish genuine model provenance.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable source and release identities, historical Chief contracts, owner controller and credential isolation.",
+    "trustBoundaries": "Canonical local or trusted Preview source to untrusted model JSON to inert draft; no draft-to-executor crossing.",
+    "abuseCases": "Relabel source SHA, invent unread evidence, traverse paths, change dependencies, inject acceptance, contradictory provider completion, secrets in prose or forged import provenance.",
+    "mitigations": "Match trusted commit and pinned release/capture, rebuild context exactly, closed schema, cite only actually supplied ranges, no dependency edit scope, no tools, stable denied imports and unchanged owner activation boundary."
+  },
+  "defects": [
+    {
+      "rootCause": "Engineering implementation tasks were preselected immutable recipes; after product delivery no fresh available recipe or Chief source-discovery intake remained.",
+      "detectionGap": "Earlier five-stage success proved delegation and patches for supplied tasks, not discovery or autonomous task admission.",
+      "regression": "New discovery and existing Chief architecture/v2/review checks cover canonical source reads, hold/investigate/inspect decisions, parser failures, missing criteria, provenance and inert registry denial.",
+      "historicalPrevention": "Keep source discovery separate from permission and do not describe prepared/imported fixtures as live model work; retain exact historical request paths."
+    }
+  ],
+  "rollback": "Leave qualified application381 and feature alias unchanged until a complete successor release is qualified; revert only new local intake changes if necessary, preserve all earlier source and audit evidence.",
+  "negativePaths": {
+    "malformed-response": "Contradictory error, refusal, malformed JSON, unknown role, duplicate message and invented fields fail before any inert finding.",
+    "stale-state": "Actual commit, canonical source ranges, manifest hash and current release are rechecked on selection and further reads.",
+    "concurrency": "No shared controller writes; exclusive artifact creation denies overwrite; existing task CAS and serial dispatch unchanged.",
+    "cancellation": "No running provider call, process worker or grants are created by preparation/import; existing live cancellation unchanged.",
+    "worker-interruption": "No new workers; interrupted preparation cannot create authority or overwrite a previous artifact.",
+    "api-outage": "All new utilities are offline; incomplete exports fail rather than retrying a provider.",
+    "authorization-denial": "Existing task registration rejects these drafts and no new paid initializer, credentials or permissions are introduced.",
+    "spending-limit": "No spending occurs. Prepared requests preserve existing model, per-call token limits and explicit cache policy; future dispatch still requires exact counting and controller admission.",
+    "partial-execution": "Partial source ranges and unverified export provenance are explicit; no model, testing, acceptance or workflow success is inferred."
+  },
+  "proactiveReview": {
+    "architecture": "Extend existing Chief serialization/parser and source capture with inert intake, not a replacement orchestration system.",
+    "dependencies": "Only existing built-in modules and existing Chief/source/schema helpers; offline Git HEAD read is fixed argument, no shell or caller command.",
+    "threats": "Source and model narratives cannot issue grants, select arbitrary filesystem paths, publish code or make acceptance claims.",
+    "failureModes": "Reviewer-found provenance and contradictory-response gaps corrected with exact counterexample regressions before any live use.",
+    "faultInjection": "Malformed response, forged SHA/source/context, unread IDs, credentials, duplicate fields and stale evidence are rejected or remain inert.",
+    "independentChallenge": "Separate Work QA and Auditor reviewed final files, plus actual offline import/read/overwrite/invalid-input checks.",
+    "recovery": "Existing Preview and owner shutdown unchanged. Prior source/cost/failed trial evidence preserved and no new grants require cleanup.",
+    "readiness": "Connected55focused checks and independent55plus7CLI checks pass; frozen full regression is pending. Operational task/controller wiring and live discovery remain unproven."
+  }
+}
