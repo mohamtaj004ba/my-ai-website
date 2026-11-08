@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e1bf17bc49ad51d087672d8a8a019f372d0cd97fc6cd625b27a4552527f28044",
+  "risk": "critical",
+  "scope": "Repair all active protected Preview browser QA entrypoints with one redirect-safe credential handler; verify private source exposure using ordinary protected navigation and correct the Linux executable-mode test fixture.",
+  "riskAnalysis": "Playwright browser header overrides survive redirects. Keep credentials on a separate exact-origin non-following fetch, fulfill its response, and allow native browser redirects without global credentials. Preserve private response-body confidentiality and all source/owner/controller boundaries. This changes QA access transport, not provider inference authorization.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Preview protection and QA/bootstrap credentials, private repository source, immutable release identity and authenticated browser evidence.",
+    "trustBoundaries": "Protected Preview origin versus arbitrary foreign redirects; Node API request versus browser request; private source route versus public assets.",
+    "abuseCases": "Foreign redirect forwarding custom credentials, global headers on third-party assets, false private-source pass from login/protection failures, leaked raw request exception, executable-mode test falsely accepting mutation.",
+    "mitigations": "Shared exact-origin route.fetch with maxRedirects zero followed by fulfill; no global headers; off-origin removal of all four existing private header types; positive public200 and exact-origin/path404 private probes with no body read; fixed diagnostic messages; actual Git mode-change assertion."
+  },
+  "defects": [
+    {
+      "rootCause": "Browser route.continue header overrides are inherited by foreign redirects. Existing separate-origin filtering is bypassed for redirected requests.",
+      "detectionGap": "Pure URL/header tests did not exercise an actual native browser redirect. Independent two-origin local Chrome fixture with fictional credentials proved forwarding.",
+      "regression": "Actual imported-handler Chrome redirect/cookie fixture plus tests for no global credentials, maxRedirects zero, off-origin filtering and every active caller migration.",
+      "historicalPrevention": "All four browser QA entrypoints use the same helper; retain original fixture proof and failed hosted browser evidence, with no claim that any real credential was exposed."
+    },
+    {
+      "rootCause": "New private-source probe disabled redirects before protection cookie bootstrap; exact original response status was not preserved. Linux mode test staged chmod was canceled by worktree mode tracking.",
+      "detectionGap": "The private probe did not use the same ordinary navigation as authenticated UI, and local Windows mode semantics did not match Linux.",
+      "regression": "Positive public200/private404 normal navigation, foreign/path/login/error denial; mode fixture disables worktree mode tracking and verifies100644-to100755 raw diff before guard rejection.",
+      "historicalPrevention": "Keep runtime formatting guard unchanged and preserve the original5368-of5369 CI result; fixtures assert their own filesystem/Git preconditions."
+    }
+  ],
+  "rollback": "Keep paid execution disabled and preserve all failed/successful receipts. If qualification fails, retain the current feature alias or restore the preceding qualified feature deployment; never mutate main or Production.",
+  "negativePaths": {
+    "malformed-response": "Unexpected private response status, URL, path, absent response or navigation exception fails with fixed probe/status diagnostics and no body or raw URL.",
+    "stale-state": "Exact source, release pin and private-source identity unchanged; new hosted Browser artifacts must match the actual successor before any paid Chief operation.",
+    "concurrency": "Existing Browser workflow concurrency remains single per feature branch; this helper grants no concurrent provider execution or mutation rights.",
+    "cancellation": "Browser context closure and existing workflow cancellation terminate pending fetches; bounded30second transport timeout retained, no automatic retry.",
+    "worker-interruption": "Navigation/fetch failures abort browser request and retain fixed diagnostics; no success inferred from an interrupted fixture or missing screenshot.",
+    "api-outage": "HTTP401/403/200 at private paths cannot masquerade as private404; public positive control must200, all probes same-origin and exact path.",
+    "authorization-denial": "Private header types stripped off-origin; same-origin separate fetch cannot follow redirects; browser carries no global custom credential headers.",
+    "spending-limit": "No OpenAI or Sandbox requests in local security tests; owner-directed existing financial monitoring and uncertainty unchanged; no new paid resources.",
+    "partial-execution": "Prior CI/Browser failures preserved; no paid Chief task is authorized until every required hosted check and artifact inspection passes."
+  },
+  "proactiveReview": {
+    "architecture": "One shared existing QA access helper covers every active entrypoint; normal private-source browser navigation uses that transport, no new orchestration or credential system.",
+    "dependencies": "Existing Playwright browser and Node APIs only, no packages or providers added. Actual proof uses isolated localhost fictional credentials, not personal browser state.",
+    "threats": "Cross-origin redirect forwarding is demonstrated with fictional credentials and eliminated by separate non-following request/fulfill, not by disabling protection.",
+    "failureModes": "Lost responses and raw transport exceptions fail closed; positive control excludes generic404/login false positives, mode fixture verifies its actual staged condition.",
+    "faultInjection": "Foreign redirects, cookie bootstrap, private200/403, foreign404, wrong path, malformed response, raw error containing a fictional secret and executable-mode mutation.",
+    "independentChallenge": "Existing independent Work QA exercises actual imported helper in real headless browser; Engineering Auditor separately reviews every active caller and diagnostics.",
+    "recovery": "Preserve current66c and original failed artifacts; one reviewed feature source push/build, durable alias marker/readback once READY, no configuration refresh or credential rewrite.",
+    "readiness": "Fifteen focused tests passed. Final independent actual-browser proof and source-bound hosted CI, Redis, CodeQL, Jekyll and authenticated Browser artifact qualification required before paid Chief discovery."
+  }
+}

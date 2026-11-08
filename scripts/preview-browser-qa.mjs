@@ -3,7 +3,8 @@ import {verifyImplementationTaskMetadata} from './agent-implementation-browser-c
 import {verifyDashboardCalendar} from './dashboard-calendar-browser-qa.mjs';
 import {verifyPublicFeedback} from './public-feedback-browser-qa.mjs';
 import {verifyIndustryNarratives} from './industry-narrative-browser-qa.mjs';
-import {previewRequestHeaders} from './preview-request-headers.mjs';
+import {installPreviewAccess} from './preview-request-headers.mjs';
+import {verifyPrivateRepositoryAssets} from './private-source-browser-qa.mjs';
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -121,24 +122,11 @@ async function assertRefreshPreservesDraft(page,savedName){
 }
 
 async function makeContext(viewport,label){
-  const context=await browser.newContext({
-    viewport,
-    extraHTTPHeaders:{
-      'x-vercel-protection-bypass':secret,
-      'x-vercel-set-bypass-cookie':'true'
-    }
-  });
-  await context.route('**/*',route=>route.continue({headers:previewRequestHeaders(route.request().url(),route.request().headers(),baseURL)}));
+  const context=await browser.newContext({viewport});
+  await installPreviewAccess(context,baseURL,{'x-vercel-protection-bypass':secret});
   contexts.push(context);
-  if(label==='desktop'){
-    for(const privatePath of ['/node_modules/.cache/callercore/repository-source.json.gz','/lib/agent-operations-repository-source.js','/scripts/prepare-repository-source.cjs','/CALLERCORE_PROJECT_STATE.md']){
-      const response=await context.request.get(baseURL+privatePath,{maxRedirects:0});
-      if(response.status()!==404)throw new Error('Private repository asset boundary was not confirmed');
-      await response.dispose();
-    }
-    report.privateRepositoryAssets='four private source paths returned 404';
-  }
   const page=await context.newPage();
+  if(label==='desktop')report.privateRepositoryAssets=await verifyPrivateRepositoryAssets(page,baseURL);
   if(label==='desktop'||label.startsWith('client-'))await installBillingFixture(page);
   attachDiagnostics(page,label);
   return {context,page};

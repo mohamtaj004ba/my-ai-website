@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import {createRequire} from 'node:module';
 import {chromium} from 'playwright';
-import {previewRequestHeaders} from './preview-request-headers.mjs';
+import {installPreviewAccess} from './preview-request-headers.mjs';
 const require=createRequire(import.meta.url),selection=require('./development-verification.cjs').plan(process.env.QUALITY_BASE);
 if(selection.lane==='STRICT'||selection.docsOnly||!selection.pages.length)throw Error('Exact affected presentation selection required');
 const pin=JSON.parse(await fs.readFile('qa-artifacts/release-pin.json','utf8')).result;
@@ -13,7 +13,7 @@ const browser=await chromium.launch({headless:true});
 try{
  for(const width of [1440,390]){
   const context=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block'});
-  await context.route('**/*',route=>route.continue({headers:previewRequestHeaders(route.request().url(),{...route.request().headers(),'x-vercel-protection-bypass':process.env.VERCEL_AUTOMATION_BYPASS_SECRET},pin.url)}));
+  await installPreviewAccess(context,pin.url,{'x-vercel-protection-bypass':process.env.VERCEL_AUTOMATION_BYPASS_SECRET});
   try{const page=await context.newPage();page.on('pageerror',e=>report.errors.push(String(e.message).slice(0,200)));
    page.on('console',msg=>{if(msg.type()==='error')report.errors.push('Console: '+msg.text().slice(0,200));});
    page.on('response',response=>{if(new URL(response.url()).origin===new URL(pin.url).origin&&response.status()>=400)report.errors.push('HTTP '+response.status()+' '+new URL(response.url()).pathname);});

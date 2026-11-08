@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {feedbackRequestHeaders} from './public-feedback-browser-qa.mjs';
+import {installPreviewAccess} from './preview-request-headers.mjs';
 export async function verifyIndustryNarratives({browser,baseURL,headers={},outDir,slugs=['home-services','professional-services','medical','automotive','property','legal']}){
  const report={checks:[],screenshots:[]};
  for(const width of [1920,1440,1280,1024,768,430,390,320]){
   const context=await browser.newContext({viewport:{width,height:1000}});
-  await context.route('**/*',route=>route.continue({headers:feedbackRequestHeaders(route.request().url(),{...route.request().headers(),...headers},baseURL)}));
+  await installPreviewAccess(context,baseURL,headers);
   const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
   for(const slug of slugs){
    await page.goto(baseURL+'/industries/'+slug);await page.locator('.industry-hero-visual img').evaluate(img=>img.decode());
@@ -58,10 +58,10 @@ export async function verifyIndustryNarratives({browser,baseURL,headers={},outDi
   assert.deepEqual(errors,[]);await context.close();
  }
  const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:900}});const page=await context.newPage();
- await context.route('**/*',route=>route.continue({headers:feedbackRequestHeaders(route.request().url(),{...route.request().headers(),...headers},baseURL)}));
+ await installPreviewAccess(context,baseURL,headers);
  for(const slug of slugs){await page.goto(baseURL+'/industries/'+slug);if(slug==='home-services')assert.equal(await page.locator('.scenario-panel:visible').count(),4);else assert.equal(await page.locator('.experience-panel:visible').count(),await page.locator('[data-choice]').count());assert.equal(await page.locator('[data-proof-open]').count(),1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,slug+' no-script overflow');}await context.close();
  report.noScriptScenarios=true;
  const reduced=await browser.newContext({reducedMotion:'reduce',viewport:{width:390,height:900}}),reducedPage=await reduced.newPage();
- await reduced.route('**/*',route=>route.continue({headers:feedbackRequestHeaders(route.request().url(),{...route.request().headers(),...headers},baseURL)}));
+ await installPreviewAccess(reduced,baseURL,headers);
  await reducedPage.goto(baseURL+'/industries/home-services');assert.equal(await reducedPage.locator('.scenario-panel:visible').count(),1);await reducedPage.locator('[data-scenario]').last().click();assert.equal(await reducedPage.locator('#scenario-boundary').isVisible(),true);for(const slug of slugs.filter(s=>s!=='home-services')){await reducedPage.goto(baseURL+'/industries/'+slug);await reducedPage.locator('[data-choice]').last().click();assert.equal(await reducedPage.locator('.experience-panel:visible').count(),1);assert.equal(await reducedPage.locator('.experience-panel:visible').evaluate(el=>parseFloat(getComputedStyle(el).animationDuration)),0);}await reduced.close();report.reducedMotion=true;return report;
 }

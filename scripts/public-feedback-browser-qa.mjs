@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {previewRequestHeaders} from './preview-request-headers.mjs';
+import {previewRequestHeaders,installPreviewAccess} from './preview-request-headers.mjs';
 export function feedbackRequestHeaders(url,headers,baseURL){
  const scoped=previewRequestHeaders(url,headers,baseURL);
  if(new URL(url).origin!==new URL(baseURL).origin){
@@ -13,7 +13,7 @@ export async function verifyPublicFeedback({browser,baseURL,headers={},outDir}){
  for(const width of [1440,768,390,320]){
   const context=await browser.newContext({viewport:{width,height:1000}});
   // Preview credentials belong only to this deployment, including during redirects.
-  await context.route('**/*',route=>route.continue({headers:feedbackRequestHeaders(route.request().url(),{...route.request().headers(),...headers},baseURL)}));
+  await installPreviewAccess(context,baseURL,headers);
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   let contactMode='malformed',contactCount=0,payload;
   await page.route('**/api/contact',async route=>{contactCount++;payload=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(contactMode==='malformed'?{ok:true}:contactMode==='warning'?{ok:true,prospectId:'fixture-help',warning:'notification unavailable'}:{ok:true,prospectId:'fixture-help'})});});
