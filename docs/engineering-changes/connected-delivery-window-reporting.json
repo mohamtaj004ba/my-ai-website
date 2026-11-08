@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "335fc25d25b846715732bd4c740e2a1797ef1088e4d03e791910d9b6b4f5a151",
+  "risk": "critical",
+  "scope": "Separate implementation preparation from paid execution and share narrative guidance across modern tasks while preserving historical requests.",
+  "riskAnalysis": "Longer assignment lifetime grants no paid execution. Existing approval, source, token, lease, cancellation and publication boundaries remain authoritative. Provider descriptions cannot grant permissions or change validation.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source identity, fresh approvals, immutable historical requests and review evidence.",
+    "trustBoundaries": "Owner assignment to controller, model JSON to guarded patch, isolated execution to review.",
+    "abuseCases": "Borrow longer setup lifetime for execution, revive expired task, alter source schema, truncate independent review, change historical request hashes.",
+    "mitigations": "Implementation-only preparation lifetime; unchanged ten-minute approval/run; exact source checks; description-only provider guidance gated to modern contracts."
+  },
+  "defects": [
+    {
+      "rootCause": "Assignment preparation consumed execution deadline and legacy configuration duplicated its duration assumption.",
+      "detectionGap": "Fast seeded fixtures did not model owner setup overhead or compare all setup callers.",
+      "regression": "Five independent assignment-window tests and full phone controller checks preserve revocation and old deadlines.",
+      "historicalPrevention": "Shared timing definitions and capability-backed UI; legacy metadata and current assignment checks use the same setup lifetime."
+    },
+    {
+      "rootCause": "Phone implementation path bypassed compact prose guidance and produced incomplete schema-ceiling narratives.",
+      "detectionGap": "Schema validity alone did not prove semantic completeness; historical paths also lacked a shared guidance selector.",
+      "regression": "All five schemas on three modern tasks change only descriptions; historical request hashes remain exact.",
+      "historicalPrevention": "Shared narrative inventory guides modern requests only; existing review criticism and all authority checks remain intact."
+    }
+  ],
+  "rollback": "Revert reviewed feature changes if qualification fails; retain original history and denial evidence, never revive consumed approvals.",
+  "negativePaths": {
+    "malformed-response": "Unknown codes/raw errors remain hidden; malformed own records counted unverified.",
+    "stale-state": "Exact task/source/release checks unchanged; history is not execution authority.",
+    "concurrency": "Existing CAS unchanged; same first consent remains idempotent and exact-bound.",
+    "cancellation": "Connected fixture stops consent after run and asserts revoked grants/paidfalse.",
+    "worker-interruption": "Previouslyqualified cleanup recovery remains unchanged.",
+    "api-outage": "Unconfirmed delivery never retries automatically; exact intent retained for readback.",
+    "authorization-denial": "Foreign identities filtered before history validation; service actor gets no history.",
+    "spending-limit": "No accounting policy changes; no paid inference in fixtures.",
+    "partial-execution": "FinalChief preserves Auditor rejection; successfulworkflow is not proposalacceptance."
+  },
+  "proactiveReview": {
+    "architecture": "Existing workflow and journal retained; no new orchestrator or cross-task receipt import.",
+    "dependencies": "No package or provider changes; one timing source shared by assignment/setup consumers.",
+    "threats": "Setup must not extend paid approval or revive consumed authority; schema guidance must not alter protected data.",
+    "failureModes": "Original final count-record renewal failed after setup consumed task window; raw prose incomplete at field ceilings.",
+    "faultInjection": "Expired task, stopped consent, unsupported profile, overflow, malformed output, persistence failure and cancellation covered.",
+    "independentChallenge": "Auditor caught historical request drift; modern guard fixed and immutable hash regression retained.",
+    "recovery": "Original agent patch, tests and unresolved reviews preserved and revalidated against unchanged baseline.",
+    "readiness": "180 affected checks plus23 connected checks and12 guidance/history checks passed; final exact-source release verification remains required."
+  }
+}
