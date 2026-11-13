@@ -1,5 +1,9 @@
 # CallerCore project state
 
+## November 13 Preview API session qualification
+
+Release b463fc7 passed CI, Redis, CodeQL and Jekyll. Browser run 42531167352 reached responsive QA and received HTTP 401 opening a fresh client context. Its direct API session request had neither a protection cookie nor the bypass header. The shared exact-origin POST helper supplies the existing credential and disables redirects and retries. Failed response bodies stay out of the report. Independent review caught possible header and body excerpts in rejected API errors. Both now return fixed errors. 25 focused checks passed. Hosted verification and live Chief dispatch remain pending.
+
 ## November 8 broad source READY; QA lifecycle correction before live Chief dispatch
 
 Final isolated actual-imported-handler Chrome proof passes five lifecycle cases: expectedcontextclose healthy with recordedcancellation; unmarkedcontextclose fatalunexpected-closure; explicitpageclose/supersedednavigation healthy; socketfailure fataltransport; zero unhandledrejections, primarynavigationfailuresstillreject. Redirect/cookie/private404 and hypotheticalcredential-isolation regression also passes. Related128case local matrix127pass/1stale oldcleanup-literal assertion; migrated three assertions to shared markers while preserving session-rotation ordering, corrected23/23pass158ms. No need to repeat the unchanged127cases. Final source-bound reviews and next exact-source hosted qualification follow; no model/count dispatch.

@@ -2,6 +2,17 @@ export function previewRequestHeaders(url,headers,previewURL){
   if(new URL(url).origin===new URL(previewURL).origin)return {...headers};
   return Object.fromEntries(Object.entries(headers).filter(([name])=>!['x-vercel-protection-bypass','x-vercel-set-bypass-cookie','x-qa-secret','x-bootstrap-secret'].includes(name.toLowerCase())));
 }
+
+export function postProtectedPreview(request, previewURL, url, headers, data){
+  if(new URL(url).origin!==new URL(previewURL).origin)throw Error('PREVIEW_QA_API_ORIGIN_DENIED');
+  return Promise.resolve().then(()=>request.post(url,{headers,data,maxRedirects:0,maxRetries:0,timeout:30000})).catch(()=>{
+    throw Error('PREVIEW_QA_API_TRANSPORT_FAILED');
+  });
+}
+
+export async function readProtectedPreviewJson(response){
+  try{return await response.json();}catch{throw Error('PREVIEW_QA_API_INVALID_JSON');}
+}
 // Header overrides on route.continue survive redirects. Keep credentials on a
 // separate, non-following same-origin fetch, not on the browser request itself.
 // Fulfilling the original response preserves native URL/Set-Cookie behavior;

@@ -28,3 +28,20 @@ test('explicit context cleanup tolerates only lifecycle closure; unexpected clos
 test('all active protected browser QA entrypoints use the shared redirect-safe route and no global credential headers',()=>{const fs=require('node:fs');for(const file of ['preview-browser-qa.mjs','affected-public-qa.mjs','public-feedback-browser-qa.mjs','industry-narrative-browser-qa.mjs']){const s=fs.readFileSync(require('node:path').join(__dirname,'../scripts',file),'utf8');assert(s.includes('installPreviewAccess('),file);assert(!s.includes('extraHTTPHeaders:'),file);assert(!/route\.continue\(\{headers:/.test(s),file);}});
 
 test('every context teardown using protected access uses shared close and final transport assertion',()=>{const fs=require('node:fs'),path=require('node:path');for(const file of ['preview-browser-qa.mjs','affected-public-qa.mjs','public-feedback-browser-qa.mjs','industry-narrative-browser-qa.mjs','customer-experience-browser-qa.mjs','voice-browser-qa.mjs']){const s=fs.readFileSync(path.join(__dirname,'../scripts',file),'utf8');assert(s.includes('closePreviewAccess('),file);assert(!/await (?:context|reduced)\.close\(/.test(s),file);}const s=fs.readFileSync(path.join(__dirname,'../scripts/preview-browser-qa.mjs'),'utf8');assert(s.indexOf('const cleanupResults=')<s.indexOf("await fs.writeFile(path.join(outDir,'report.json')"));assert(s.includes('assertPreviewAccessHealthy(c)'));});
+
+test('fresh Preview QA API sessions send protection credentials only to the exact origin without redirects',async()=>{
+ const {postProtectedPreview}=await import('../scripts/preview-request-headers.mjs');
+ const origin='https://preview.test',headers={'x-vercel-protection-bypass':'fictional'},data={mode:'client'};
+ let calls=0;
+ const request={post:async(url,options)=>{calls++;assert.equal(url,origin+'/api/account');assert.deepEqual(options,{headers,data,maxRedirects:0,maxRetries:0,timeout:30000});return {status:()=>200};}};
+ assert.throws(()=>postProtectedPreview(request,origin,'https://foreign.test/api/account',headers,data),/ORIGIN_DENIED/);
+ assert.equal((await postProtectedPreview(request,origin,origin+'/api/account',headers,data)).status(),200);
+ assert.equal(calls,1);
+});
+
+test('direct Preview QA failures redact transport and body excerpts',async()=>{
+ const {postProtectedPreview,readProtectedPreviewJson}=await import('../scripts/preview-request-headers.mjs');
+ const origin='https://preview.test';
+ await assert.rejects(postProtectedPreview({post:()=>{throw Error('fictional credential in headers');}},origin,origin+'/api/account',{},{}),{message:'PREVIEW_QA_API_TRANSPORT_FAILED'});
+ await assert.rejects(readProtectedPreviewJson({json:async()=>{throw Error('fictional private body');}}),{message:'PREVIEW_QA_API_INVALID_JSON'});
+});

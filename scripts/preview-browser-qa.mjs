@@ -3,7 +3,7 @@ import {verifyImplementationTaskMetadata} from './agent-implementation-browser-c
 import {verifyDashboardCalendar} from './dashboard-calendar-browser-qa.mjs';
 import {verifyPublicFeedback} from './public-feedback-browser-qa.mjs';
 import {verifyIndustryNarratives} from './industry-narrative-browser-qa.mjs';
-import {installPreviewAccess,assertPreviewAccessHealthy,closePreviewAccess,closePreviewPage,previewAccessDiagnostics} from './preview-request-headers.mjs';
+import {installPreviewAccess,assertPreviewAccessHealthy,closePreviewAccess,closePreviewPage,previewAccessDiagnostics,postProtectedPreview,readProtectedPreviewJson} from './preview-request-headers.mjs';
 import {verifyPrivateRepositoryAssets} from './private-source-browser-qa.mjs';
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
@@ -134,17 +134,15 @@ async function makeContext(viewport,label){
 
 const qaHeaders={
   'content-type':'application/json',
+  'x-vercel-protection-bypass':secret,
   'x-bootstrap-secret':secret,
   'x-qa-secret':secret
 };
 
 async function post(request,action,data){
-  const res=await request.post(baseURL+'/api/account?action='+encodeURIComponent(action),{headers:qaHeaders,data});
-  const text=await res.text();
-  let body={};
-  try{body=text?JSON.parse(text):{}}catch{}
-  if(!res.ok())throw new Error(action+' failed ('+res.status()+'): '+String(body.error||text||'unknown error').slice(0,500));
-  return body;
+  const res=await postProtectedPreview(request,baseURL,baseURL+'/api/account?action='+encodeURIComponent(action),qaHeaders,data);
+  if(!res.ok())throw new Error(action+' failed ('+res.status()+')');
+  return readProtectedPreviewJson(res);
 }
 
 async function gotoAuthed(page,route,requiredSelector){
@@ -418,7 +416,7 @@ async function verifyLiveClientIntelligence(context,page){
     applied=await post(context.request,'intelligence-apply',{id:guide.proposal.id});
     if(applied.ok!==true||applied.agent?.openingMessage!==greeting)throw new Error('Intelligence did not return a verified canonical save receipt');
     const after=await readAgent();if(after.openingMessage!==greeting||Number(after.updatedAt)<=Number(before.updatedAt))throw new Error('Live Intelligence save did not persist with a new revision');
-    const replay=await context.request.post(baseURL+'/api/account?action=intelligence-apply',{headers:qaHeaders,data:{id:guide.proposal.id}});if(replay.status()!==409)throw new Error('Live Intelligence proposal could be replayed');
+    const replay=await postProtectedPreview(context.request,baseURL,baseURL+'/api/account?action=intelligence-apply',qaHeaders,{id:guide.proposal.id});if(replay.status()!==409)throw new Error('Live Intelligence proposal could be replayed');
     report.client.liveIntelligence={provider:guide.provider,model:guide.model,pendingCountMatchesDashboard:true,pendingCount:expectedPending,proposalDidNotMutate:true,canonicalSaveVerified:true,replayRejected:true};
   }finally{
     if(applied?.agent){const current=await readAgent();const restored=await post(context.request,'agent-save',{section:'identity',openingMessage:before.openingMessage,expectedUpdatedAt:current.updatedAt});if(restored.ok!==true||restored.agent?.openingMessage!==before.openingMessage)throw new Error('QA greeting recovery was not verified');if(report.client.liveIntelligence)report.client.liveIntelligence.originalGreetingRestored=true;}
