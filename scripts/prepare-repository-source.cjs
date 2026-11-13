@@ -5,11 +5,13 @@
 const fs=require('node:fs'),path=require('node:path'),zlib=require('node:zlib'),cp=require('node:child_process');
 const reader=require('../lib/agent-operations-repository-source'),ROOT=path.resolve(__dirname,'..');
 const PUBLIC_EXT=new Set(['.html','.css','.js','.svg','.png','.jpg','.jpeg','.webp','.gif','.ico','.woff','.woff2','.ttf','.mp4','.webm','.pdf','.txt','.xml','.webmanifest']);
+// The guarded API launcher renders this browser dependency without a static HTML entry.
+const API_LAUNCHER_ASSETS=new Set(['preview-e2e-client.js']);
 function publicPath(p,linked=false){
  if(reader.privatePath(p))return false;const parts=p.toLowerCase().split('/'),ext=path.posix.extname(p.toLowerCase());
  if(parts.some(x=>x.startsWith('.'))||!PUBLIC_EXT.has(ext))return false;
  if(parts.length>1)return ['assets','industries','public'].includes(parts[0]);
- return ext==='.html'||linked||['robots.txt','sitemap.xml'].includes(p.toLowerCase());
+ return ext==='.html'||linked||API_LAUNCHER_ASSETS.has(p)||['robots.txt','sitemap.xml'].includes(p.toLowerCase());
 }
 function publicEntries(all,raws){
  const entries=all.filter(e=>e.type==='blob'&&['100644','100755'].includes(e.mode)),byPath=new Map(entries.map(e=>[e.path,e])),chosen=new Set(entries.filter(e=>publicPath(e.path)).map(e=>e.path)),queue=[...chosen];

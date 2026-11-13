@@ -1,5 +1,9 @@
 # CallerCore project state
 
+## November 13 Preview launcher asset restoration
+
+Release 98a16f4 passed full CI, Redis, CodeQL and Jekyll. Browser run 43527958598 passed fresh session setup and reached its final console check. The API-rendered Preview launcher requested preview-e2e-client.js, which the static HTML asset graph omitted. The build now explicitly includes the existing browser-only launcher asset under the same content policy. Backend files remain outside the static output. 36 focused tests passed. Hosted qualification and live Chief investigation remain pending.
+
 ## November 13 Preview API session qualification
 
 Release b463fc7 passed CI, Redis, CodeQL and Jekyll. Browser run 42531167352 reached responsive QA and received HTTP 401 opening a fresh client context. Its direct API session request had neither a protection cookie nor the bypass header. The shared exact-origin POST helper supplies the existing credential and disables redirects and retries. Failed response bodies stay out of the report. Independent review caught possible header and body excerpts in rejected API errors. Both now return fixed errors. 25 focused checks passed. Hosted verification and live Chief dispatch remain pending.
