@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs');
 const tasks=require('../lib/agent-operations-implementation-tasks'),impl=require('../lib/agent-operations-implementation'),p=require('../lib/agent-operations-engineering-provider-v2'),inf=require('../lib/agent-operations-engineering-inference');
-for(const interrupted of [false,true])test('owner controller source review and shutdown: '+interrupted,async()=>{
+for(const interrupted of [false,true,'schema'])test('owner controller source review and shutdown: '+interrupted,async()=>{
  const setupText=fs.readFileSync(require.resolve('./agent-operations-call-row-syntax-controller.test'),'utf8').split('\ntest(')[0]
   .replaceAll('tasks.CURRENT_OBJECTIVE','tasks.SOURCE_REVIEW_OBJECTIVE')
   .replace(/^const restoreHistoricalSource=.*$/m,'')
@@ -28,8 +28,8 @@ for(const interrupted of [false,true])test('owner controller source review and s
    a.deepEqual(frame.priorSourceReads.map(read=>read.stage),['specialist','qa','auditor']);
    for(const read of frame.priorSourceReads)a.equal(read.binding.runtime.sourceCommit,f.runtime.commit);
   }
-  if(interrupted&&stage==='qa')return Response.json({}, {status:503});
-  return Response.json({...base,output:[{type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:JSON.stringify(impl.fixture(stage,c))}]}]});
+  if(interrupted===true&&stage==='qa')return Response.json({}, {status:503});
+  return Response.json({...base,output:[{type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:JSON.stringify(interrupted==='schema'&&stage==='qa'?{}:impl.fixture(stage,c))}]}]});
  };
  try{
   const manifest=await f.control.trialManifest(owner,{planId:f.plan.id,expectedRevision:1,sequenceId:f.sequenceId});
@@ -42,12 +42,12 @@ for(const interrupted of [false,true])test('owner controller source review and s
    a.deepEqual(w.results.map(r=>r.stage),['chief-plan','specialist']);
    a.equal(w.calls,5);a.equal(w.countCalls,5);
    a.equal(last.diagnostic.httpStatus,200);
-   a.equal(last.sourceResume.diagnostic.httpStatus,503);
+   a.equal(last.sourceResume.diagnostic.httpStatus,interrupted===true?503:200);
    a.equal(last.failure.diagnostic.requestHash,last.sourceResume.requestHash);
-   a.equal(last.failure.diagnostic.phase,'response-body');
+   a.equal(last.failure.diagnostic.phase,interrupted===true?'response-body':'response-validate');
    const reservation=state.operations.reservations.find(row=>row.executionId===last.executionId);
    a.equal(reservation.countRequests,2);
-   a.equal(reservation.responsesActualMicros,5670);
+   a.equal(reservation.responsesActualMicros,interrupted===true?5670:11340);
    a.equal(reservation.status,'pending');
    a.equal(w.leaseUntil,0);
    a(w.attempts.every(attempt=>attempt.closed));
