@@ -42,3 +42,52 @@ test('owner console submits related source queries together without a model requ
  a.equal(h.calls.length,1);
  a.match(h.get('opsRepositoryResult').textContent,/modelRequests/);
 });
+
+for(const combined of [true,false])test('Chief follow-up preserves earlier evidence when combined read is available: '+combined,async()=>{
+ const first={...r.initial(),kind:'read-file',path:'api/create-checkout-session.js'};
+ const next={...r.initial(),kind:'read-file',path:'lib/billing-provider.js'};
+ const {h,v}=setup(async request=>{
+  if(request.action.endsWith('-activate'))return {__engineering:true,value:{revision:2}};
+  if(request.action.endsWith('-run'))return {__engineering:true,value:{result:{mode:'live-read-only-discovery',artifact:{decision:{decision:'inspect',inspection:next}}}}};
+  if(request.action.endsWith('-revoke'))return {__engineering:true,value:{status:'revoked'}};
+  a.ok(request.action.endsWith('-repositorySource'));
+  if(Array.isArray(request.input.query)){
+   a.deepEqual(request.input,{query:[first,next]});
+   if(!combined)throw Error('Combined packet exceeds source budget');
+  }else{
+   a.equal(combined,false);
+   a.deepEqual(request.input,{query:next});
+  }
+  return {__engineering:true,value:{packet:{marker:'FOLLOW_UP_SOURCE'},modelRequests:0}};
+ });
+ v.plans=[{id:'op_trial_ui',tasks:[],repositoryPacket:{body:{repositoryView:{request:first}}}}];
+ h.update(v);
+ h.get('opsRepositoryQuery').value=JSON.stringify(first);
+ h.storage.set('callercore-engineering-trial-once-v1',JSON.stringify({scope:v.scopeIdentity,input:{planId:'op_trial_ui',approval:{sourceCommit:v.runtime.sourceCommit,contractHash:v.runtime.release.digest,deploymentOrigin:v.runtime.origin,id:'pilot_ui',workflowId:'wf_ui'}},expectedApprovalRevision:1,requested:false}));
+ await h.get('opsEngineeringTrialRun').emit('click');
+ a.match(h.get('opsRepositoryResult').textContent,/FOLLOW_UP_SOURCE/);
+ a.deepEqual(JSON.parse(h.get('opsRepositoryQuery').value),combined?[first,next]:first);
+ a.equal(h.calls.filter(c=>c.action.endsWith('-repositorySource')).length,combined?1:2);
+ a.equal(h.calls.filter(c=>c.action.endsWith('-run')).length,1);
+ a.ok(h.calls.findIndex(c=>c.action.endsWith('-revoke'))<h.calls.findIndex(c=>c.action.endsWith('-repositorySource')));
+});
+
+for(const status of ['read','unavailable','already-read'])test('console honors server follow-up without duplicating its read: '+status,async()=>{
+ const next={...r.initial(),kind:'read-file',path:'lib/billing-provider.js'};
+ const {h,v}=setup(async request=>{
+  if(request.action.endsWith('-activate'))return {__engineering:true,value:{revision:2}};
+  if(request.action.endsWith('-run'))return {__engineering:true,value:{result:{mode:'live-read-only-discovery',artifact:{decision:{decision:'inspect',inspection:next}},followUp:status==='read'?{status,query:next,packet:{marker:'VERIFIED_SOURCE'}}:{status}}}};
+  a.ok(request.action.endsWith('-revoke'));
+  return {__engineering:true,value:{status:'revoked'}};
+ });
+ h.storage.set('callercore-engineering-trial-once-v1',JSON.stringify({scope:v.scopeIdentity,input:{planId:'op_trial_ui',approval:{sourceCommit:v.runtime.sourceCommit,contractHash:v.runtime.release.digest,deploymentOrigin:v.runtime.origin,id:'pilot_ui',workflowId:'wf_ui'}},expectedApprovalRevision:1,requested:false}));
+ await h.get('opsEngineeringTrialRun').emit('click');
+ if(status==='read'){
+  a.match(h.get('opsRepositoryResult').textContent,/VERIFIED_SOURCE/);
+  a.deepEqual(JSON.parse(h.get('opsRepositoryQuery').value),next);
+ }else{
+  a.match(h.get('opsRepositoryResult').textContent,/prior draft was retained/);
+  a.equal(h.get('opsRepositoryQuery').value,'');
+ }
+ a.equal(h.calls.filter(c=>c.action.endsWith('-repositorySource')).length,0);
+});

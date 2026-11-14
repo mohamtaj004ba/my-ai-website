@@ -1,5 +1,93 @@
 # CallerCore project state
 
+## Source-review re-review corrections (local)
+
+Independent QA found a stale five-count assumption in the owner admission check and an old discovery-default test. Both are corrected. The Auditor found that the earlier reservation estimate reached $1.02 and could omit the first tool turn before read admission. Source-review per-stage estimates are now $0.07 per ordinary turn and $0.11 per Specialist turn, and validated initial tool usage is journaled before source retrieval. Local controller and console verification passed 29 checks, and the targeted visible-time expectation passed. The final receipt still distinguishes incomplete provider diagnostics from settled costs. Exact-release qualification remains pending.
+
+## Current-source full-date formatter assignment (local)
+
+The source-review policy now binds the reproduced Invalid Date issue to the current source manifest and one unique guard in formatFullDateTime. The dated call-row correction is preserved. The new controller fixture uses the actual current preimage without historical source substitution and completes all five stages with eight scripted Responses and count requests. The disposable-copy patch is data only. The product source is unchanged. Hosted qualification, independent review and live paid execution remain pending.
+
+## Current assignment qualification (local)
+
+The eight-request controller fixture uses the historical safe-time source. Current dashboard.js already contains that row-label correction and has no original anchor. The fresh assignment guard correctly refuses the old preimage. A separate product issue is reproducible on current tracked source: formatFullDateTime returns Invalid Date for an out-of-range activityAt even with usable date and time fields. It affects the call detail drawer and Follow-ups cards. dateGroupLabel and formatActivityTime also use unvalidated dates. This evidence is a candidate for a new bounded assignment against the current commit. No product patch, paid call or deployment occurred.
+
+## Source-review accounting and failure cleanup (local)
+
+Tool-turn and resumed-turn usage now share the same validation and cached-token pricing calculation. The owner-controller fixtures verified all eight usage charges and eight count records, and reproduced a QA resume HTTP 503 after five requests. It preserves both prior stage receipts, two QA counting requests, distinct HTTP evidence and revoked authority. 64 targeted tests passed plus the two final owner-controller cases. Independent QA/Auditor and hosted qualification remain pending.
+
+## Counted source review through the owner controller (local)
+
+The owner controller completed all five stages with a scripted provider, making eight Responses and eight counts under the new exact-release source-review policy. The Specialist, QA and Auditor each requested and used a release-pinned source packet. The final Chief preserved the Auditor rejection and grant shutdown passed. The selected scope is the existing safe-time task. 65 targeted tests passed. The expanded eight-request envelope has not been used against the provider or deployed, and independent review remains pending.
+
+## Source tool admission and count diagnostics (local)
+
+The broker requires the stage to have dispatched its admitted fixture request with the source tool before it will retrieve evidence. An ordinary stage ticket does not grant access. Follow-up counting HTTP status and sanitized count facts are journaled separately from the initial response and follow-up Responses facts. The count failure fixture confirms no follow-up Responses dispatch. This pass made no real provider call.
+
+## Follow-up capacity accounting (local)
+
+The broker now adds separately counted follow-up input and output to its totals and preserves a request, count and output allocation for each later stage. It verifies available capacity before admitting a fixture follow-up count and rechecks it with the actual token count before dispatch. Existing live approval ceilings are unchanged. Paid follow-up admission is still disabled.
+
+## Optional stage source retrieval (local)
+
+The broker-built fixture request explains when a repository read is available, and the resumed request explains how to use its evidence while preserving the current output contract. A five-stage fixture now verifies that QA may complete directly while the Specialist and Auditor still request evidence. All six focused cases passed, including the full read path and four failure paths. Live policy, paid dispatch, independent review and hosted qualification remain open.
+
+## Exact fixture tool request binding (local)
+
+The broker builds and journals the initial request including its single repository tool. The resumed request omits the tool. Later stages validate the prior fixture request hash. Existing live approvals still use the existing request shape.
+
+## Counted source resumption in the broker fixture (local)
+
+The offline five-stage path now makes a separate scripted count call for each Specialist, QA and Auditor resume. The broker journals the count request and requires the exact, fresh count proof before allowing a resumed Responses request. It requires matching usage at settlement. 57 transport and counting checks passed, including forbidden source, count failure, resumed HTTP failure and usage mismatch. This path remains restricted to the fixture mode. No deployment or real provider request occurred.
+
+## Source resume response provenance (local)
+
+The broker now requires a response parsed against the exact journaled resume request before settling the stage. The fixture verifies that a normally parsed response for the initial request cannot finish a resumed stage. All 55 transport and token-count tests passed. Paid follow-up dispatch and hosted qualification remain pending.
+
+## Separate diagnostics for source-resume responses (local)
+
+The transport applies the same bounded parser and sanitized fact extraction to resumed fixture responses. The broker journals their facts separately so the initial HTTP result remains immutable. A scripted QA follow-up returning HTTP 503 preserves the initial 200, the source reference and resumed request hash, and shuts down before further roles. No paid inference or Preview deployment occurred.
+
+## Source resume token-count proof (local)
+
+The native count parser now issues request-bound proof for the exact resumed stage body. The proof rejects reuse on the initial request, cloning and expiry, and shares the existing provider count schema and deadlines. The controller, transport and counting suite passed 65 checks. Paid dispatch remains unwired. A five-stage run with one follow-up from each of the three review roles requires eight Responses and eight count requests, beyond the five-request implementation manifest. Existing manifests must retain their original limits.
+
+## Broker-owned source resume request (local)
+
+The broker constructs the exact resumed request from a revalidated release packet and a journaled read reference. The transport uses that request rather than supplying an arbitrary hash. The counting request uses the same builder and binds the same source and serialized Responses request. The fixture rejects tampered source text. 54 transport and counting tests passed. Actual counted paid dispatch of resumed review stages remains unwired.
+
+## Source resume request journal (local)
+
+The fixture broker now records the exact resumed-request hash and the verified source-read reference before the scripted transport sends the second request. Completed stage receipts carry the same binding. The fixtures compare the journal to the actual serialized request, reject replay during the active stage, and confirm denied reads leave no resume dispatch. All 54 transport and token-count checks passed. This journal path is fixture-only.
+
+## Model-shaped stage source read and resume (local)
+
+A non-billable five-stage test now starts each Specialist, QA, and Auditor read from a scripted provider function-call response. It verifies the active stage capability, reads release-pinned source, journals the read, and resumes the same stage with the source packet. The final Chief receives all three read references and reports the Auditor rejection. A forbidden QA read stops the test with the earlier receipts and revocation preserved. All 54 transport and token-count tests passed. The mocked resume does not use the paid dispatch or counting path. Live follow-up request authorization and accounting, independent review, hosted qualification, and live execution remain pending.
+
+## Scoped engineering stage source reads (local)
+
+The existing broker can return an exact-release source packet to an admitted Specialist, QA or Auditor capability. Reads are rechecked before return, audited, included as references in stage receipts and supplied to the final Chief request. The offline transport fixture drives the broker directly and covers both preserved Auditor rejection and cleanup after a denied QA read. Model-directed source requests and resumption for these three roles have not been wired into the provider adapter. 46 targeted transport, repository controller and five-stage compatibility tests passed. No hosted qualification or paid inference occurred.
+
+## Chief continuation through owner controller (local)
+
+The new release-bound discovery policy permits up to two counted Chief requests in one task. The existing owner controller drives both turns through separate execution IDs, and the broker derives the follow-up evidence from the stored receipt. Old one-request approvals and receipt encodings remain valid. The local API fixture confirmed two counts, two Responses, historical verification, and shutdown. 51 targeted controller, console, token-count, and renewal tests passed, followed by 41 console tests and 30 catalog and five-stage compatibility tests. No paid provider call or hosted deployment occurred. Specialist, QA and Auditor interactive evidence requests and hosted qualification remain pending.
+
+## Chief same-task broker rehearsal (local)
+
+A fixture-only broker option admits two distinct Chief requests under one task. The second context is reconstructed from the first stored receipt and release-pinned source, and both requests run through existing admission, dispatch, CAS and receipt handling. Historical validation binds both receipts and the follow-up packet. The test confirms zero paid authority, revoked grants and replay denial. Paid activation and interactive Specialist, QA and Auditor retrieval remain open.
+
+## Discovery renewal consistency (local)
+
+The renewal observer now checks the admitted stage list, so a completed single-stage discovery can acknowledge revoked authority without attempting a renewal. Five-stage implementation keeps the same terminal checks. The local owner fixture verifies the acknowledgment does not change the ledger. The related controller, console, and managed renewal suite passed 34 checks. The broker now also checks aggregate counted input against the actual approval rather than the five-stage maximum. The token-count, transport, and repository-controller suite passed 59 checks, including the existing full 60,000-token fixture. No paid request or deployment occurred.
+
+## Chief server-side source follow-up (local)
+
+After verified revocation the owner controller resolves a Chief inspection against the original release and returns the source view in the trial result. The console uses that result without a separate request. Repeated requests for evidence already supplied return a distinct status and preserve the previous draft. Existing approvals still authorize one count and one model response. This checkpoint adds no paid model authority. The server checks the Chief response receipt, request hash, task and workspace binding, and original evidence before reading. The result carries a hashed reference linking the source packet to the Chief decision. The controller fixture rejected a different workspace and a changed inspection. A local continuation fixture builds a second Chief request with a fresh execution ID on the same task, then verifies that the response can cite the newly read evidence and is rejected against the original context. The fixture does not dispatch a second request or update the approval ledger. Same-task inference continuation and Specialist, QA, and Auditor retrieval remain open.
+
+## Chief source follow-up draft (local)
+
+The owner console combines the next verified source request with prior non-catalog reads from the persisted assignment. It updates the next draft only after successful readback in the same scope. The existing revocation-before-read order is preserved. If the combined read fails, the console tries the requested view alone and keeps the previous draft. All 169 focused repository and owner-console tests passed locally, including both handoff paths and scope changes. The current discovery authorization, transport broker and historical replay each bind one Chief response to the task. Same-task continuation needs a versioned authorization and receipt contract. Implementation stages still use assignment-defined evidence. Hosted qualification remains pending.
+
 ## Chief evidence across related source reads
 
 One reviewed Chief task can now carry a bounded list of source queries from the same immutable repository snapshot. The server derives the evidence and revalidates it before dispatch. Existing single-query packet and request encodings remain intact. The owner console accepts a query object or array. The controller fixture verified that a single model response can cite evidence from both the checkout handler and billing adapter. Automatic model continuation and per-role evidence requests still need lifecycle and authorization changes.

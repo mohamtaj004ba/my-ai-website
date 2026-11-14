@@ -2,7 +2,7 @@
 // Offline actual organization CAS/profile/parent transport. No real provider/key reads.
 const {test}=require('node:test'),a=require('node:assert/strict'),crypto=require('node:crypto'),org=require('../lib/agent-operations-organization'),v1=require('../lib/agent-operations-engineering-inference'),v2=require('../lib/agent-operations-engineering-provider-v2'),transport=require('../lib/agent-operations-engineering-transport'),rehearsal=require('../lib/agent-operations-engineering-rehearsal');
 const id=x=>crypto.createHash('sha256').update(x).digest('hex'),owner={kind:'owner',verifiedOwner:true,id:'transport-owner@example.test',workspaceId:'transport-workspace'};
-function fixture({paid=false}={}){let raw=null,now=1800000000000,current=true,compares=0;const runtime={environment:'preview',origin:'https://my-ai-website-transport-mohamtaj004bas-projects.vercel.app',commit:'a'.repeat(40),branch:'feature/callercore-dashboards',deploymentId:'dpl_transport'},release=require('../lib/agent-operations-contracts').assertRelease(),adapter={read:async()=>raw,compare:async(before,after)=>{compares++;if(raw!==before)return false;raw=after;return true;}},organization=org.createOrganization(adapter,{scope:{commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8',origin:'https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app'},runtime,clock:()=>now,paidEnabled:()=>paid}),broker=organization.engineering(async b=>{if(!current||b.ownerHash!==id(owner.id)||b.workspaceHash!==id(owner.workspaceId))throw Error('TEST_CURRENT_REVOKED');return true;});function context(stage,plan='op_transport'){const index=v1.STAGES.indexOf(stage);return{binding:{planId:plan,taskId:plan+'_task'+(index+1),executionId:'exec_'+plan+'_'+index,fence:1,ownerHash:id(owner.id),workspaceHash:id(owner.workspaceId),runtime:require('../lib/agent-operations-engineering-handoff').runtime({origin:runtime.origin,sourceCommit:runtime.commit,branch:runtime.branch,deploymentId:runtime.deploymentId,release}),authorizationRevision:2},assignment:'Investigate existing metric label using exact source; propose copy only, no acceptance or publication.',evidence:rehearsal.sourceEvidence(),priorReceipts:[]};}return{organization,broker,runtime,release,adapter,context,state:()=>JSON.parse(raw),raw:()=>raw,set:s=>raw=JSON.stringify(s),deny:()=>current=false,advance:n=>now+=n,now:()=>now,compares:()=>compares};}
+function fixture({paid=false,sourceCommit='a'.repeat(40),clock}={}){let raw=null,now=1800000000000,current=true,compares=0;const runtime={environment:'preview',origin:'https://my-ai-website-transport-mohamtaj004bas-projects.vercel.app',commit:sourceCommit,branch:'feature/callercore-dashboards',deploymentId:'dpl_transport'},release=require('../lib/agent-operations-contracts').assertRelease(),adapter={read:async()=>raw,compare:async(before,after)=>{compares++;if(raw!==before)return false;raw=after;return true;}},organization=org.createOrganization(adapter,{scope:{commit:'8133597ff2fc5b48e3de42336e9e06fa4191c2a8',origin:'https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app'},runtime,clock:clock??(()=>now),paidEnabled:()=>paid}),broker=organization.engineering(async b=>{if(!current||b.ownerHash!==id(owner.id)||b.workspaceHash!==id(owner.workspaceId))throw Error('TEST_CURRENT_REVOKED');return true;});function context(stage,plan='op_transport'){const index=v1.STAGES.indexOf(stage);return{binding:{planId:plan,taskId:plan+'_task'+(index+1),executionId:'exec_'+plan+'_'+index,fence:1,ownerHash:id(owner.id),workspaceHash:id(owner.workspaceId),runtime:require('../lib/agent-operations-engineering-handoff').runtime({origin:runtime.origin,sourceCommit:runtime.commit,branch:runtime.branch,deploymentId:runtime.deploymentId,release}),authorizationRevision:2},assignment:'Investigate existing metric label using exact source; propose copy only, no acceptance or publication.',evidence:rehearsal.sourceEvidence(),priorReceipts:[]};}return{organization,broker,runtime,release,adapter,context,state:()=>JSON.parse(raw),raw:()=>raw,set:s=>raw=JSON.stringify(s),deny:()=>current=false,advance:n=>now+=n,now:clock??(()=>now),compares:()=>compares};}
 function response(stage,c){const ids=c.evidence.map(e=>e.id),prior=s=>c.priorReceipts.find(r=>r.stage===s)?.response;const results={'chief-plan':{stage,objective:'Inspect exact source denominator and label.',specialist:'dashboard',completionCriteria:['Cite source.'],reason:'Bounded source-only investigation.'},specialist:{stage,findings:[{id:'label',claim:'Label omits active-day qualifier.',classification:'source-observation',evidenceIds:ids,uncertainty:'Intended metric and customer confusion unverified.'}],proposal:{path:'dashboard.html',beforeText:'Average daily calls',afterText:'Average per active day',reason:'Clarify current arithmetic only.',evidenceIds:ids}},qa:{stage,decisions:(prior('specialist')?.findings||[]).map(f=>({findingId:f.id,decision:'unresolved',reason:'Independent product intent review unavailable.',evidenceIds:f.evidenceIds})),uncertainty:'Automated technical review only.'},auditor:{stage,decision:'unresolved',reason:'No publication authority.',risks:['Product intent remains unverified.'],evidenceIds:ids},'chief-final':{stage,summary:'Proposed copy only; unresolved review retained.',findings:(prior('qa')?.decisions||[]).map(d=>({findingId:d.findingId,qaDecision:d.decision,reason:d.reason,evidenceIds:d.evidenceIds})),auditDecision:prior('auditor')?.decision,uncertainty:'No human acceptance.',acceptedWork:false}};return results[stage];}
 function envelope(stage,c){return{id:'resp_offline_fixture',status:'completed',model:'gpt-6.1-sol',service_tier:'default',usage:{input_tokens:1000,output_tokens:400,input_tokens_details:{cached_tokens:0,cache_write_tokens:0},output_tokens_details:{reasoning_tokens:100}},output:[{type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:JSON.stringify(response(stage,c))}]}]};}
 function capturedBroker(h){let admitted;return{broker:{...h.broker,admit:async(...args)=>admitted=await h.broker.admit(...args)},get:()=>admitted};}
@@ -34,3 +34,130 @@ test('missing workflow after authority revocation preserves full grant history a
 test('cached usage prices uncovered input/read/write/output separately and denies overlapping cache counts',()=>{const h=fixture(),c=h.context('chief-plan'),raw=envelope('chief-plan',c);raw.usage.input_tokens_details={cached_tokens:400,cache_write_tokens:100};const parsed=v2.parse('chief-plan',raw,c);a.equal(parsed.usage.calculatedCostMicros,5290);raw.usage.input_tokens_details={cached_tokens:700,cache_write_tokens:400};a.throws(()=>v2.parse('chief-plan',raw,c),/USAGE/);});
 test('existing overall workflow remainder shortens later stage transport timeout',async t=>{const h=fixture(),c=h.context('chief-plan'),ad=await h.broker.admit(owner,'chief-plan',c);await h.broker.dispatch(ad.ticket,ad.context);await h.broker.finish(ad.ticket,ad.context,v2.parse('chief-plan',envelope('chief-plan',ad.context),ad.context));h.advance(599975);let remaining,calls=0;const broker={...h.broker,admit:async(...args)=>{const result=await h.broker.admit(...args);remaining=result.remainingMs;return result;}};t.mock.timers.enable({apis:['Date','setTimeout'],now:Date.now()});const start=Date.now();await a.rejects(transport.execute({broker,actor:owner,stage:'specialist',context:h.context('specialist'),timeoutMs:5000,fetchImpl:async()=>{calls++;t.mock.timers.tick(25);return new Promise(()=>{});}}),/ENG_TRANSPORT_FAILED/);a.equal(remaining,25);a.equal(calls,1);a.equal(Date.now()-start,25,'25ms workflow remainder must replace five-second stage timer');a.equal(h.state().operations.workflows[0].status,'blocked');});
 test('fully resealed transport-only response reviewer provenance or usage cannot replace actual child fixture evidence',async()=>{const {h,service,rows,...f}=await linkedOpsFixture();let plan=f.plan;for(let i=1;i<5;i++)plan=await service.run(owner,{planId:plan.id,expectedRevision:plan.revision});const original=JSON.parse([...rows.values()][0]),ops=require('../lib/agent-operations-operating-system'),tools=require('../lib/agent-operations-engineering-tools');for(const mutate of [rc=>rc.response.proposal.afterText+=' substituted',rc=>rc.independence='human-independent',rc=>rc.reviewMode='owner-accepted',rc=>{rc.syntheticUsage.outputTokens++;rc.syntheticUsage.calculatedCostMicros+=10;}]){const s=structuredClone(original),p=s.plans[0],t=p.tasks[1],r=t.result.body.engineering,rc=r.body.transport.receipt;mutate(rc);const {hash:oldHash,...body}=rc;rc.hash=v2.hash(body);r.receiptHash=tools.hash({template:t.template,body:r.body});t.review.resultHash=tools.hash(t.result);t.attempts[0].resultHash=tools.hash(t.result);t.attempts[0].reviewHash=tools.hash(t.review);p.report.findings=p.tasks.map(t=>({taskId:t.id,department:t.department,resultHash:tools.hash(t.result),reviewHash:tools.hash(t.review),qualification:t.result.body.qualification}));a.throws(()=>ops.validate(JSON.stringify(s),owner),/ENG_TRANSPORT_/);}});
+
+for(const fail of [false,'optional','read','count','provider','usage'])test('admitted review roles preserve evidence and fail closed: '+fail,async()=>{
+ const source=require('../lib/agent-operations-repository-source');
+ const sourceCommit=require('node:child_process').execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+ const h=fixture({sourceCommit,clock:Date.now}),readers=['specialist','qa','auditor'];
+ const expectedReads=fail==='optional'?['specialist','auditor']:readers;
+ const seen=[],resumes=new Map(),counts=[],initialRequests=new Map();
+ for(const stage of v1.STAGES){
+  const spy=capturedBroker(h);
+  const pending=transport.execute({broker:spy.broker,actor:owner,stage,context:h.context(stage),rehearseStageSource:readers.includes(stage),fetchImpl:async(url,options)=>{
+   if(stage==='chief-plan'){
+    const {ticket,context}=spy.get();
+    await a.rejects(h.broker.readStageSource(ticket,context,source.initial()),/ENG_TRANSPORT_SOURCE_RESUME/);
+   }
+   if(url.endsWith('/input_tokens')){
+    counts.push(stage);
+    if(fail==='count'&&stage==='qa')return Response.json({}, {status:503});
+    return Response.json({object:'response.input_tokens',input_tokens:1000});
+   }
+   const {context}=spy.get();
+   const request=JSON.parse(options.body),body=JSON.parse(request.input[0].content[0].text);
+   if(readers.includes(stage)){
+    if(fail==='optional'&&stage==='qa')return Response.json(envelope(stage,context));
+    if(!body.requestedSource){
+     a.deepEqual(request.tools.map(tool=>tool.name),['read_repository_source']);
+     a.equal(request.parallel_tool_calls,false);
+     a.match(request.instructions,/may call read_repository_source once/);
+     initialRequests.set(stage,v2.hash(request));
+     a.equal(h.state().operations.workflows[0].attempts.at(-1).requestHash,initialRequests.get(stage));
+     const query={...source.initial(),kind:'read',path:fail==='read'&&stage==='qa'?'.env':'dashboard.js',lineCount:3};
+     return Response.json({status:'completed',model:'gpt-6.1-sol',output:[{type:'function_call',name:'read_repository_source',call_id:'call_fixture',arguments:JSON.stringify(query)}]});
+    }
+    a.deepEqual(request.tools,[]);
+    a.match(request.instructions,/requestedSource contains additional source evidence/);
+    const read=body.requestedSource;
+    a.equal(read.packet.body.identity.sourceCommit,sourceCommit);
+    a.equal(read.reference.stage,stage);
+    a.equal(read.reference.binding.taskId,context.binding.taskId);
+    a.equal(read.reference.packetHash,read.packet.hash);
+    a.equal(read.reference.executionAuthorized,false);
+    seen.push(stage);
+    resumes.set(stage,{referenceHash:read.reference.hash,requestHash:v2.hash(JSON.parse(options.body))});
+    await a.rejects(h.broker.finish(spy.get().ticket,context,v2.parse(stage,envelope(stage,context),context)),/ENG_TRANSPORT_PARSE_PROVENANCE/);
+
+    const {ticket}=spy.get();
+    const attempt=h.state().operations.workflows[0].attempts.at(-1);
+    a.deepEqual(attempt.sourceResume,resumes.get(stage));
+    a.equal(attempt.sourceResumeCount.inputTokens,1000);
+    a.equal(attempt.sourceResumeCount.diagnostic.countHttpStatus,200);
+    a.equal(attempt.sourceResumeCount.diagnostic.countInputTokens,1000);
+    a.match(attempt.sourceResumeCount.proofHash,/^[a-f0-9]{64}$/);
+    const count=v2.sourceResumeCountRequest(stage,context,read);
+    a.equal(count.requestHash,attempt.sourceResume.requestHash);
+    const now=h.now(),rawCount={object:'response.input_tokens',input_tokens:1000};
+    const proof=v2.parseSourceResumeCount(stage,rawCount,context,read,now,now+60000);
+    a.deepEqual(v2.assertSourceResumeCount(stage,context,read,proof,now),proof);
+    a.throws(()=>v2.assertCount(stage,context,proof,now),/ENG_TRANSPORT_COUNT_PROVENANCE/);
+    a.throws(()=>v2.assertSourceResumeCount(stage,context,read,{...proof},now),/ENG_TRANSPORT_COUNT_PROVENANCE/);
+    a.throws(()=>v2.assertSourceResumeCount(stage,context,read,proof,now+60000),/ENG_TRANSPORT_COUNT_PROVENANCE/);
+    a.deepEqual(count.body.input,JSON.parse(options.body).input);
+    const changed=structuredClone(read);
+    changed.packet.body.evidence[0].text+=' changed';
+    a.throws(()=>v2.sourceResumeCountRequest(stage,context,changed),/ENG_DISCOVERY_CONTEXT/);
+
+    await a.rejects(h.broker.dispatchFixtureSourceResume(ticket,context,read),/ENG_TRANSPORT_SOURCE_RESUME/);
+
+   }
+   if(fail==='provider'&&stage==='qa')return Response.json({}, {status:503});
+   const raw=envelope(stage,context);
+   if(fail==='usage'&&stage==='qa')raw.usage.input_tokens=999;
+   if(stage==='chief-final'){
+    const request=JSON.parse(JSON.parse(options.body).input[0].content[0].text);
+    a.deepEqual(request.priorSourceReads.map(read=>read.stage),expectedReads);
+   }
+   if(stage==='auditor'){
+    const content=raw.output[0].content[0],value=JSON.parse(content.text);
+    value.decision='fail';
+    content.text=JSON.stringify(value);
+   }
+   return Response.json(raw);
+  }});
+  if(fail&&fail!=='optional'&&stage==='qa'){
+   await a.rejects(pending,error=>error.message==='ENG_TRANSPORT_FAILED'&&error.cleanupConfirmed===true);
+   const state=h.state(),workflow=state.operations.workflows[0];
+   a.deepEqual(workflow.results.map(receipt=>receipt.stage),['chief-plan','specialist']);
+   a.equal(workflow.leaseUntil,0);
+   const attempt=workflow.attempts.at(-1);
+   if(['provider','usage'].includes(fail)){
+    a.equal(attempt.diagnostic.httpStatus,200);
+    const {diagnostic,...resume}=attempt.sourceResume;
+    a.equal(diagnostic.httpStatus,fail==='provider'?503:200);
+    a.deepEqual(resume,resumes.get('qa'));
+    a.equal(attempt.sourceReads.length,1);
+   }else{
+    a.equal(attempt.sourceResume,undefined);
+    a.equal(attempt.sourceReads?.length,fail==='count'?1:undefined);
+    a.equal(attempt.sourceResumeCount?.inputTokens,undefined);
+    a.equal(Boolean(attempt.sourceResumeCount),fail==='count');
+    if(fail==='count'){
+     a.deepEqual(attempt.sourceResumeCount.diagnostic,{countHttpStatus:503});
+     a.equal(attempt.failure.diagnostic.countRequestHash,attempt.sourceResumeCount.countRequestHash);
+    }
+   }
+   a(state.operations.grants.every(grant=>grant.revoked));
+   a.deepEqual(counts,fail==='read'?['specialist']:['specialist','qa']);
+   return;
+  }
+  const result=await pending;
+  if(stage==='chief-final'){
+   a.equal(result.receipt.response.auditDecision,'fail');
+   a.equal(result.receipt.response.acceptedWork,false);
+  }
+  if(expectedReads.includes(stage)){
+   a.equal(result.receipt.sourceReads.length,1);
+   a.equal(result.receipt.requestHash,initialRequests.get(stage));
+   a.deepEqual(result.receipt.sourceResume,resumes.get(stage));
+   const {ticket,context}=spy.get();
+   await a.rejects(h.broker.verify(ticket,context),/REVOKED/);
+  }
+  if(readers.includes(stage))await a.rejects(h.broker.readStageSource(spy.get().ticket,spy.get().context,source.initial()),/REVOKED/);
+ }
+ a.deepEqual(seen,expectedReads);
+ a.deepEqual(counts,expectedReads);
+ const state=h.state();
+ a.equal(state.operations.workflows[0].status,'verified');
+ a(state.operations.grants.every(grant=>grant.revoked));
+});
