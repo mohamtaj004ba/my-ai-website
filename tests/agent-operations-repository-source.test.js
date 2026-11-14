@@ -21,3 +21,28 @@ test('build ships only public files, keeps source pack outside static output, an
 test('dirty tracked build stops at a sanitized named phase before any output mutation',()=>{const phases=[];write('index.html','SYNTHETIC_DIRTY_SOURCE');try{assert.throws(()=>builder.prepare({root,onPhase:p=>phases.push(p)}),/ENG_REPOSITORY_BUILD_DIRTY/);assert.deepEqual(phases,['git-identity','tracked-source-clean']);assert.equal(fs.readFileSync(path.join(root,'public-dist/.callercore-generated'),'utf8'),'not-owned');}finally{git(['restore','index.html']);}});
 test('actual Git reproduction distinguishes provider ignore mutation from runtime source changes',()=>{write('.gitignore','node_modules/\n');git(['add','.gitignore']);git(['commit','-qm','old provider ignore policy']);write('.gitignore','node_modules/\n.vercel\n');assert.throws(()=>builder.prepare({root}),e=>e.message==='ENG_REPOSITORY_BUILD_DIRTY'&&e.gitignoreChanged===true&&e.lockfileChanged===false&&e.otherTrackedChanged===false);git(['add','.gitignore']);git(['commit','-qm','explicit provider ignore policy']);const before=fs.readFileSync(path.join(root,'.gitignore'),'utf8');if(!before.split('\n').includes('.vercel'))write('.gitignore',before+'.vercel\n');assert.equal(git(['diff','--name-only','HEAD','--']),'');});
 test('dirty source diagnostics retain public filenames but mask private tracked paths',()=>{write('private/credentials.txt','fictional original');git(['add','private/credentials.txt']);git(['commit','-qm','fictional private fixture']);write('private/credentials.txt','fictional changed');try{assert.throws(()=>builder.prepare({root}),e=>e.message==='ENG_REPOSITORY_BUILD_DIRTY'&&e.dirtyPathCount===1&&JSON.stringify(e.dirtyPaths)==='["excluded-tracked-path"]');}finally{git(['restore','private/credentials.txt']);}write('index.html','fictional public change');try{assert.throws(()=>builder.prepare({root}),e=>e.dirtyPathCount===1&&JSON.stringify(e.dirtyPaths)==='["index.html"]');}finally{git(['restore','index.html']);}});
+
+test('whole-file reading includes the checkout handler together and preserves exact continuation for larger files',()=>{
+ const checkout=fs.readFileSync(path.join(__dirname,'../api/create-checkout-session.js'),'utf8');
+ const large='const value = "'+ '🙂'.repeat(5000)+'";';
+ write('api/create-checkout-session.js',checkout);
+ write('api/long-source.js',large);
+ const boundary='a'.repeat(16000)+'\nnext';
+ write('api/newline-source.js',boundary);
+ git(['add','api/create-checkout-session.js','api/long-source.js','api/newline-source.js']);git(['commit','-qm','whole-file source fixtures']);
+ const snap=source.fromGit(git(['rev-parse','HEAD']),{root});
+ const q={...source.initial(),kind:'read-file',path:'api/create-checkout-session.js'};
+ const old=source.inspect(snap,{...q,kind:'read',lineCount:160});
+ assert.ok(old.nextRead);
+ const complete=source.inspect(snap,q);
+ assert.equal(complete.nextRead,null);
+ assert.equal(complete.evidence[0].text,checkout.replace(/\r\n/g,'\n'));
+ const first=source.inspect(snap,{...q,path:'api/long-source.js'});
+ assert.equal(first.nextRead.kind,'read-file');
+ const second=source.inspect(snap,first.nextRead);
+ assert.equal(second.nextRead,null);
+ assert.equal(first.evidence[0].text+second.evidence[0].text,large);
+ const prefix=source.inspect(snap,{...q,path:'api/newline-source.js'});
+ assert.equal(prefix.evidence[0].text+source.inspect(snap,prefix.nextRead).evidence[0].text,boundary);
+ assert.throws(()=>source.inspect(snap,{...q,path:'exports/customer.json'}),/ENG_REPOSITORY_DENIED/);
+});

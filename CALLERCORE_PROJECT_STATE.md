@@ -1,5 +1,18 @@
 # CallerCore project state
 
+## November 13 whole-file evidence reader, local qualification
+
+The shared repository reader now supports read-file. The checkout handler fits in one packet. Large files keep exact continuation coordinates, including at UTF-8 and newline boundaries. Legacy read behavior and both prior Chief request encodings remain available for historical verification. The Chief request schema exposes the new operation. A single approval still authorizes one model response. Other stages still receive prepared evidence. Automatic continuation and shared review-stage retrieval remain open. Final focused validation passed 32 tests, including the owner controller receiving and citing the complete checkout source with a mocked provider. The whole-file response accounts for JSON escaping inside the model request. The owner console retrieves a verified inspect decision after revocation and discards delayed source if the workspace or release changes. 139 browser-controller fixture checks passed. This handoff makes zero additional model calls.
+
+## November 13 live Chief source discovery verified
+
+Feature Preview 17a235d455a4881f816775ab4195d2c70bd22f21, fingerprint 4cbcf24dacbae70325a03f02d4bbd022af0b82143a747acd90c4648ed14122cb, deployment dpl_6p81GVa5G7S1Jf4VxPmR8iYyeQRS. CI43532078128, CodeQL43532078042, Jekyll43532078030 and Browser43532069980 passed. Browser artifact14089130152 verified 164773816 bytes and SHA256 efff7116e301f1cb26d0473c73d4fb55fb27ca44fa6de83c9d2b652787120082. Report passed with 502 screenshots and four private path 404s. Independent QA a6253463b3bef6ecc2569071239f232dab4965d5b41119678d813d9590f6d7d9 and Auditor 639c36baca08e61c192b490ac99d6d168e0cd4972fdaa897bf329f7c7a7a282a.
+
+Live GPT-6.1 Sol catalog workflow wf_c6cbfb89f61d8469412ee1b4b7b96825 verified, receipt ec50b1338931a841c00ec384025965221b35105fe61b69b1b98933af71e12c35. Chief selected api/create-checkout-session.js for source inspection. Live source workflow wf_76e53511236e6b24c040e6912a12d6e9 verified, receipt fe11c1237a150de20ebb345dc3eb23946a024cbe7bb44ef0234f4450f9407099. Chief read through line 107 and requested continuation at column 64 because the excerpt ended during prospect validation. Continuation through line 161 retrieved nonbillably, packet bcedd410f1a3200187c1bc7e60d17cb081e3a6ac60e42abc5d5d3585951bba1a. This is the next source packet for Chief review. No product defect established and no implementation assignment accepted.
+
+Three live Responses and three counting calls including the prior rejected response. Total reported 13259 input and 799 output tokens. Invoice/counting charges unverified. The old browser tab returned an unconfirmed preparation before sequence creation. Durable owner history confirmed no new sequence or approval from that action. Recovered the same persisted consent in a fresh tab and prepared once. Final authenticated readback confirmed paid execution disabled, zero active grants, approvals, sequences and leases, cleanup ready.
+
+
 ## November 13 live Chief attempt and output contract correction
 
 Preview cc6d85e8f3a83922eaa53ae29bfd22b9857ddca3, fingerprint f435fce39c772005ce2d0ab1058a17b3caa0fdc9d0b87aff9258213ce3fc1f3e, deployment dpl_C8MSQkttee2gaLmkxAZtyeLKCr7H. CI43529621518, CodeQL43529621574, Jekyll43529621382 and Browser43529610940 passed. Browser artifact14086788232 verified 162798800 bytes and SHA256 a6e3a6b32dab4b696e67d3725f2b0da81c462daf433fe0739696463112cc90ca. Report passed with 502 screenshots, six visual comparisons and four private path 404s.

@@ -20,7 +20,7 @@ async function setup(query=reader.initial()){
  return {call,plan,manifest,input,active,owner,runtime,intent,state:()=>JSON.parse(raw),organization};
 }
 for(const decision of ['hold','inspect','investigate'])test('existing owner controller completes one read-only Chief '+decision+' and revokes authority',async()=>{
- const q=decision==='inspect'?reader.initial():{...reader.initial(),kind:'read',path:'admin-dashboard.html',lineCount:20},f=await setup(q),previous=global.fetch,calls=[];
+ const q=decision==='inspect'?reader.initial():decision==='investigate'?{...reader.initial(),kind:'read-file',path:'api/create-checkout-session.js'}:{...reader.initial(),kind:'read',path:'admin-dashboard.html',lineCount:20},f=await setup(q),previous=global.fetch,calls=[];
  a.equal(f.manifest.approval.maxCalls,1);a.equal(f.manifest.approval.maxTokenCountRequests,1);a.equal(f.manifest.approval.maxInputTokens,12000);a.equal(f.manifest.approval.maxOutputTokens,4000);
  if(decision==='hold'){
   const before=f.state();
@@ -30,9 +30,14 @@ for(const decision of ['hold','inspect','investigate'])test('existing owner cont
   a.throws(()=>cfg.assertConsent(f.state().operations,input,f.intent.id,Date.now()),/ENG_CONSENT_REVOKED_OR_SCOPE/);
  }
  global.fetch=async(url,options)=>{calls.push(url);if(url.endsWith('/input_tokens'))return Response.json({object:'response.input_tokens',input_tokens:1500});const w=f.state().operations.workflows.at(-1),binding={planId:f.plan.id,taskId:f.plan.tasks[0].id,executionId:w.approval.id+'_chief-plan',fence:0,authorizationRevision:1,ownerHash:crypto.createHash('sha256').update(f.owner.id).digest('hex'),workspaceHash:crypto.createHash('sha256').update(f.owner.workspaceId).digest('hex'),runtime:f.plan.runtime},packet=f.plan.repositoryPacket;
- const value={contextHash:JSON.parse(options.body).text.format.schema.properties.contextHash.enum[0],decision,problem:'Explicit scripted source inspection fixture.',userImpact:'Not a verified product defect or customer impact.',evidenceIds:decision==='investigate'?[packet.body.evidence[0].id]:[],files:decision==='investigate'?['admin-dashboard.html']:[],acceptanceCriteria:decision==='investigate'?['Reproduce the proposed issue before implementation.']:[],exclusions:['No execution, mutation, publication or acceptance.'],uncertainty:'Scripted provider fixture only; no genuine model reasoning.',reason:'Verify the existing one-stage lifecycle and honest result.',inspection:decision==='inspect'?{...reader.initial(),kind:'read',path:'dashboard.js'}:discovery.noInspection()};
+ const value={contextHash:JSON.parse(options.body).text.format.schema.properties.contextHash.enum[0],decision,problem:'Explicit scripted source inspection fixture.',userImpact:'Not a verified product defect or customer impact.',evidenceIds:decision==='investigate'?[packet.body.evidence[0].id]:[],files:decision==='investigate'?[q.path]:[],acceptanceCriteria:decision==='investigate'?['Reproduce the proposed issue before implementation.']:[],exclusions:['No execution, mutation, publication or acceptance.'],uncertainty:'Scripted provider fixture only; no genuine model reasoning.',reason:'Verify the existing one-stage lifecycle and honest result.',inspection:decision==='inspect'?{...reader.initial(),kind:'read',path:'dashboard.js'}:discovery.noInspection()};
  const request=JSON.parse(options.body);
  a.match(request.input[0].content[0].text,/backendBinding/);
+ if(decision==='investigate'){
+  a.equal(packet.body.repositoryView.nextRead,null);
+  a.match(packet.body.evidence[0].text,/Stripe checkout creation response could not be verified/);
+  a.equal(Buffer.byteLength(options.body)<=32768,true);
+ }
  if(decision==='inspect'){
   const properties=request.text.format.schema.properties;
   a.deepEqual(properties.decision.enum,['inspect','hold']);
