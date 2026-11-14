@@ -197,7 +197,7 @@ for(const fails of [false,true])test('offline Chief follow-up preserves authorit
  a.equal(calls.length,2);
 });
 
-for(const interrupted of [false,true])test('owner controller verifies counted Chief continuation and cleanup: '+interrupted,async()=>{
+for(const interrupted of [false,true,'private'])test('owner controller verifies counted Chief continuation and cleanup: '+interrupted,async()=>{
  const f=await setup(reader.initial(),discovery.CONTINUATION_OBJECTIVE);
  a.equal(f.input.approval.maxCalls,2);
  a.equal(f.input.approval.maxTokenCountRequests,2);
@@ -207,14 +207,21 @@ for(const interrupted of [false,true])test('owner controller verifies counted Ch
  global.fetch=async(url,options)=>{
   if(url.endsWith('/input_tokens')){count++;return Response.json({object:'response.input_tokens',input_tokens:1500});}
   const input=JSON.parse(JSON.parse(options.body).input[0].content[0].text),first=++responses===1;
-  if(interrupted&&!first)return Response.json({}, {status:503});
+  if(interrupted===true&&!first)return Response.json({}, {status:503});
   const value={contextHash:input.responseContextHash,decision:first?'inspect':'investigate',
    problem:'Compare checkout source.',userImpact:'Potential checkout impact.',evidenceIds:first?[]:input.context.body.evidence.map(e=>e.id),
    files:first?[]:['api/create-checkout-session.js'],acceptanceCriteria:first?[]:['Compare source.'],exclusions:['No writes.'],
-   uncertainty:'Scripted fixture.',reason:'Read checkout source.',inspection:first?{...reader.initial(),kind:'read',path:'api/create-checkout-session.js'}:discovery.noInspection()};
+   uncertainty:'Scripted fixture.',reason:'Read checkout source.',inspection:first?{...reader.initial(),kind:'read',path:interrupted==='private'?'CALLERCORE_PROJECT_STATE.md':'api/create-checkout-session.js'}:discovery.noInspection()};
   return Response.json({id:'resp_counted_continuation_'+responses,status:'completed',model:'gpt-6.1-sol',service_tier:'default',usage:{input_tokens:1500,output_tokens:400,output_tokens_details:{reasoning_tokens:50}},output:[{type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:JSON.stringify(value)}]}]});
  };
  try{
+  if(interrupted==='private'){
+   const run=(await f.call('operations-engineering-activation-run',{...f.input,expectedApprovalRevision:f.active.revision})).engineeringActivation;
+   a.equal(run.result.receipts.length,1);
+   a.equal(count,1);a.equal(responses,1);
+   a.equal(run.shutdown.paidExecution,false);
+   return;
+  }
   if(interrupted){
    await f.call('operations-engineering-activation-run',{...f.input,expectedApprovalRevision:f.active.revision},409);
    const state=f.state(),w=state.operations.workflows.at(-1);

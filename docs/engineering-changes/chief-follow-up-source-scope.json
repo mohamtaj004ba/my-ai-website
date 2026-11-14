@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "465b8dcdde1900b725544a180c85000eea83e71f0cdbe5b06bc47b5e610dff74",
+  "risk": "critical",
+  "scope": "Prevent automatic Chief follow-up from sending operational documents or broad repository queries to the model.",
+  "riskAnalysis": "Model-selected source is untrusted. Restrict reviewer reads to task evidence paths, bind each transmitted request and count proof, account for both turns, and preserve shutdown and immutable historical receipts.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Review grants, provider credentials, exact source evidence, and usage and rejection history.",
+    "trustBoundaries": "Owner controller and ledger authorize transport. Model output supplies query data only. The server reconstructs all approved source from the pinned snapshot.",
+    "abuseCases": "Cross-workspace use, replay, secret path requests, changed preimages, usage substitution, and automatic continuation after authority loss.",
+    "mitigations": "Capability and release checks, descriptor path checks, exact counted request proof, compare-and-set admissions, fixed provider endpoint, no retries, and verified revocation."
+  },
+  "defects": [
+    {
+      "rootCause": "The existing task and one-response stage model could not acquire additional source and resume under the same approval.",
+      "detectionGap": "The former fixture proved prepared evidence only and could not detect a usage, authority or provenance failure during resume.",
+      "regression": "Current-source controller fixtures exercise success and HTTP failure with exact request and count ledgers and a final Auditor rejection.",
+      "historicalPrevention": "Preserve old approval limits and request encodings and explicitly select the successor policy."
+    }
+  ],
+  "rollback": "Retain the previous qualified feature alias until the candidate is READY and reviewed. Keep paid execution disabled if qualification fails and preserve all journal records.",
+  "negativePaths": {
+    "malformed-response": "Closed schema and private count proof reject malformed provider envelopes and usage.",
+    "stale-state": "Exact source and release checks reject changed identities and expired state.",
+    "concurrency": "The existing serial approval and atomic ledger compare prevent parallel or replayed dispatch.",
+    "cancellation": "Signal and active authority checks precede reads and every provider call.",
+    "worker-interruption": "The cleanup path closes the attempt, revokes the grant and retains observed usage.",
+    "api-outage": "A scripted QA follow-up HTTP 503 preserves earlier receipts and prevents all later dispatch.",
+    "authorization-denial": "The new role path is restricted to the registered policy, active stage and approved evidence files.",
+    "spending-limit": "The approval bounds all calls and tokens, and the per-stage retained exposure stays below the trial monitoring estimate.",
+    "partial-execution": "Provider facts are recorded separately for initial and resumed requests; a failed stage cannot complete."
+  },
+  "proactiveReview": {
+    "architecture": "Extend the existing controller, provider boundary, broker, and owner console without a second workflow or ledger.",
+    "dependencies": "Use existing Node runtime, Redis compare-and-set, source snapshot, and dedicated OpenAI project.",
+    "threats": "Prevent untrusted model text from selecting private files, acquiring broad capabilities or driving repository changes.",
+    "failureModes": "Reject invalid provider counts, source queries, stale capabilities and unverifiable responses. Retain known usage when the source follow-up fails.",
+    "faultInjection": "Script a denied read, count outage, provider outage, token mismatch, replay, changed evidence and audited rejection.",
+    "independentChallenge": "QA and Auditor reviews identified manifest, stale prompt, confidentiality, reserve, and failure evidence gaps. Fixes require exact-diff re-review before hosted activation.",
+    "recovery": "Preserve historical approvals and report receipts. Use the existing feature Preview rollback and emergency shutdown.",
+    "readiness": "Three local owner-controller tests passed, including private-path denial. Hosted verification remains pending."
+  }
+}
