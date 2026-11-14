@@ -1,5 +1,11 @@
 # CallerCore project state
 
+## Whole-file Chief checkout conclusion
+
+Preview ddfdc7107eeeaf16f55dc85ef5f5cafbf69f1cc7, deployment dpl_3QMP4bPwVdz4id8icUHGKFioMWcv, passed 5387 CI tests, 37 Redis tests, CodeQL, Jekyll and authenticated Browser QA. Chief workflow wf_5b33154b73041a5418b849f43c8e61d9 used all 161 lines in one packet and produced receipt d81e6012a58e9e2f2785e44f1f6d4a608e08d1cfa02eae4f8eb35c64af0fa7e9. One Response and one count, 4711 input and 683 output tokens. Owner readback confirmed zero active grants, approvals, sequences and leases.
+
+The Chief identified inconsistent Stripe price alias resolution in embedded checkout. Direct source inspection confirmed it. The local fix resolves all four prices once, uses primary names before aliases, and denies missing Preview prices before session creation. Existing fallback IDs outside Preview are preserved. 31 checkout and environment checks passed with fixture transport. No runtime checkout failure or provider transaction was reproduced. Automatic model continuation and evidence retrieval within the Specialist, QA and Auditor stages remain open.
+
 ## November 13 whole-file evidence reader, local qualification
 
 The shared repository reader now supports read-file. The checkout handler fits in one packet. Large files keep exact continuation coordinates, including at UTF-8 and newline boundaries. Legacy read behavior and both prior Chief request encodings remain available for historical verification. The Chief request schema exposes the new operation. A single approval still authorizes one model response. Other stages still receive prepared evidence. Automatic continuation and shared review-stage retrieval remain open. Final focused validation passed 32 tests, including the owner controller receiving and citing the complete checkout source with a mocked provider. The whole-file response accounts for JSON escaping inside the model request. The owner console retrieves a verified inspect decision after revocation and discards delayed source if the workspace or release changes. 139 browser-controller fixture checks passed. This handoff makes zero additional model calls.

@@ -10,12 +10,19 @@ const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
 const STRIPE_SECRET_KEY=process.env.STRIPE_SECRET_KEY||'';
 const STRIPE_PUBLISHABLE_KEY=process.env.STRIPE_PUBLISHABLE_KEY||'';
 
-const PLAN_PRICE={
-  Starter:process.env.STRIPE_STARTER_PRICE_ID||'price_1To98LF0BXlPng7V4YXh69Yc',
-  Growth:process.env.STRIPE_GROWTH_PRICE_ID||'price_1To9D3F0BXlPng7VH3Ye2OzZ',
-  Pro:process.env.STRIPE_PRO_PRICE_ID||'price_1To9G4F0BXlPng7VkvMGPE2Y'
+const DEFAULT_PRICE_IDS={
+  "Starter": "price_1To98LF0BXlPng7V4YXh69Yc",
+  "Growth": "price_1To9D3F0BXlPng7VH3Ye2OzZ",
+  "Pro": "price_1To9G4F0BXlPng7VkvMGPE2Y",
+  "Setup": "price_1To9HhF0BXlPng7V0OBFPmQR"
 };
-const SETUP_PRICE=process.env.STRIPE_SETUP_PRICE_ID||'price_1To9HhF0BXlPng7V0OBFPmQR';
+function checkoutPrices(env){
+  return Object.fromEntries(Object.entries(DEFAULT_PRICE_IDS).map(([name,fallback])=>{
+    const plan=name.toUpperCase();
+    const explicit=env['STRIPE_'+plan+'_PRICE_ID']||env['STRIPE_PRICE_'+plan];
+    return [name,explicit||(env.VERCEL_ENV==='preview'?null:fallback)];
+  }));
+}
 const ALLOWED_HOSTS=new Set(['callercore.com','www.callercore.com','localhost:3000','localhost']);
 function stripeCredentialModesValid(){
   const secretMode=(STRIPE_SECRET_KEY.match(/^sk_(live|test)_/)||[])[1]||'',publishableMode=(STRIPE_PUBLISHABLE_KEY.match(/^pk_(live|test)_/)||[])[1]||'',env=String(process.env.VERCEL_ENV||'').toLowerCase();
@@ -72,7 +79,8 @@ module.exports=async function handler(req,res){
   if(process.env.CALLERCORE_CHECKOUT_ENABLED!=='true')return res.status(503).json({error:'CallerCore checkout is not open yet'});
   if(!STRIPE_SECRET_KEY)return res.status(503).json({error:'Stripe checkout is not configured'});
   if(!stripeCredentialModesValid())return res.status(503).json({error:'Stripe credentials do not match this environment'});
-  if(process.env.VERCEL_ENV==='preview'&&(!(process.env.STRIPE_STARTER_PRICE_ID||process.env.STRIPE_PRICE_STARTER)||!(process.env.STRIPE_GROWTH_PRICE_ID||process.env.STRIPE_PRICE_GROWTH)||!(process.env.STRIPE_PRO_PRICE_ID||process.env.STRIPE_PRICE_PRO)||!(process.env.STRIPE_SETUP_PRICE_ID||process.env.STRIPE_PRICE_SETUP)))return res.status(503).json({error:'Preview checkout requires explicit Stripe test Price IDs'});
+  const prices=checkoutPrices(process.env);
+  if(Object.values(prices).some(price=>price===null))return res.status(503).json({error:'Preview checkout requires explicit Stripe test Price IDs'});
 
   const rl=await rateLimit({scope:'embedded-checkout',identifier:requestIp(req),limit:req.method==='GET'?30:10,windowSeconds:600,failClosed:true});
   if(rl.limited){res.setHeader('Retry-After',String(rl.retryAfter));return res.status(429).json({error:'Too many requests'})}
@@ -92,7 +100,7 @@ module.exports=async function handler(req,res){
   const visitorId=clean(raw.visitorId,120),sessionId=clean(raw.sessionId,120),utmSource=clean(raw.utmSource,120),utmMedium=clean(raw.utmMedium,120),utmCampaign=clean(raw.utmCampaign,160);
   const marketingEmailConsent=raw.marketingEmailConsent===true;
 
-  if(!name||!business||!email||!phone||!industry||!PLAN_PRICE[plan])return res.status(400).json({error:'Please complete all required fields'});
+  if(!name||!business||!email||!phone||!industry||!['Starter','Growth','Pro'].includes(plan))return res.status(400).json({error:'Please complete all required fields'});
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Enter a valid email address'});
   const existingMember=await kv.get('user:email:'+email);
   if(existingMember!=null&&(!existingMember||typeof existingMember!=='object'||Array.isArray(existingMember)))
@@ -132,9 +140,9 @@ module.exports=async function handler(req,res){
   params.set('submit_type','subscribe');
   params.set('customer_email',email);
   params.set('client_reference_id',leadId);
-  params.set('line_items[0][price]',PLAN_PRICE[plan]);
+  params.set('line_items[0][price]',prices[plan]);
   params.set('line_items[0][quantity]','1');
-  params.set('line_items[1][price]',SETUP_PRICE);
+  params.set('line_items[1][price]',prices.Setup);
   params.set('line_items[1][quantity]','1');
   params.set('metadata[plan]',plan);
   params.set('metadata[lead_id]',leadId);
