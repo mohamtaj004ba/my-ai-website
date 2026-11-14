@@ -28,3 +28,17 @@ for(const late of [false,true])test('Chief inspection fetches source without ano
  if(late)a.doesNotMatch(h.get('opsRepositoryResult').textContent,/CHECKOUT_SOURCE/);
  else a.match(h.get('opsRepositoryResult').textContent,/CHECKOUT_SOURCE/);
 });
+
+test('owner console submits related source queries together without a model request',async()=>{
+ const queries=[{...r.initial(),kind:'read',path:'api/create-checkout-session.js',lineCount:8},{...r.initial(),kind:'read',path:'lib/billing-provider.js',lineCount:8}];
+ const {h}=setup(async request=>{
+  a.equal(request.action,'operations-engineering-activation-repositorySource');
+  a.deepEqual(request.input,{query:queries});
+  return {__engineering:true,value:{modelRequests:0,executionAuthorized:false}};
+ });
+ await h.get('opsEngineeringDevelopmentPreset').emit('click');
+ h.get('opsRepositoryQuery').value=JSON.stringify(queries);
+ await h.get('opsRepositoryInspect').emit('click');
+ a.equal(h.calls.length,1);
+ a.match(h.get('opsRepositoryResult').textContent,/modelRequests/);
+});

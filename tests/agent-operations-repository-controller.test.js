@@ -56,3 +56,36 @@ test('malformed discovery after provider usage fails closed, retains usage and r
  global.fetch=async(url)=>{calls.push(url);return url.endsWith('/input_tokens')?Response.json({object:'response.input_tokens',input_tokens:1500}):Response.json({id:'resp_repository_malformed_offline',status:'completed',model:'gpt-6.1-sol',service_tier:'default',usage:{input_tokens:1500,output_tokens:400,input_tokens_details:{cached_tokens:0,cache_write_tokens:0},output_tokens_details:{reasoning_tokens:50}},output:[{type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:JSON.stringify({acceptedWork:true,secret:'SYNTHETIC_INVALID_UNTRUSTED_TEXT'})}]}]});};
  try{await f.call('operations-engineering-activation-run',{...f.input,expectedApprovalRevision:f.active.revision},409);const s=f.state(),w=s.operations.workflows.at(-1);a.equal(calls.length,2);a.equal(w.results.length,0);a.equal(w.calls,1);a.equal(w.countCalls,1);a.equal(w.leaseUntil,0);a(w.attempts.every(x=>x.closed));a(s.operations.grants.every(g=>g.revoked));a.equal(s.operations.approvals.at(-1).status,'revoked');a.equal(w.attempts[0].diagnostic.inputTokens,1500);a.equal(w.attempts[0].diagnostic.outputTokens,400);a.equal(s.operations.reservations.at(-1).status,'pending');a.doesNotMatch(JSON.stringify(w.attempts),/SYNTHETIC_INVALID_UNTRUSTED_TEXT/);await f.call('operations-engineering-activation-stopReviewedConsent',{});await f.call('operations-engineering-activation-sequenceStop',{sequenceId:f.intent.sequenceIntentId});}finally{global.fetch=previous;}
 });
+
+test('one approved Chief task carries evidence from multiple source reads',async()=>{
+ const query=[{...reader.initial(),kind:'read',path:'api/create-checkout-session.js',lineCount:8},{...reader.initial(),kind:'read',path:'lib/billing-provider.js',lineCount:8}];
+ const f=await setup(query);
+ const packet=f.plan.repositoryPacket;
+ a.deepEqual(packet.body.evidence.map(item=>item.path),query.map(item=>item.path));
+ a.equal(packet.body.repositoryView.additionalViews.length,1);
+ a.equal(discovery.current(packet,f.plan.runtime),true);
+ const forged=structuredClone(packet);
+ forged.body.evidence.pop();
+ forged.hash=reader.hash(forged.body);
+ a.throws(()=>discovery.current(forged,f.plan.runtime),/ENG_DISCOVERY_SOURCE_STALE/);
+ a.throws(()=>discovery.packet(packet.body.identity,[query[0],query[0]]),/ENG_DISCOVERY_EVIDENCE/);
+ a.throws(()=>discovery.packet(packet.body.identity,[query[0],{...query[1],path:'.env'}]),/ENG_REPOSITORY_DENIED/);
+ const previous=global.fetch;
+ global.fetch=async(url,options)=>{
+  if(url.endsWith('/input_tokens'))return Response.json({object:'response.input_tokens',input_tokens:1500});
+  const request=JSON.parse(options.body),input=JSON.parse(request.input[0].content[0].text);
+  a.deepEqual(input.context.body.evidence.map(item=>item.path),query.map(item=>item.path));
+  const value={contextHash:input.responseContextHash,decision:'investigate',problem:'Compare the configuration rules across the handler and its billing adapter.',userImpact:'Possible checkout configuration drift.',evidenceIds:packet.body.evidence.map(item=>item.id),files:query.map(item=>item.path),acceptanceCriteria:['Compare both supported configuration forms.'],exclusions:['No provider transaction.'],uncertainty:'Source evidence only.',reason:'Both source excerpts are available for comparison.',inspection:discovery.noInspection()};
+  return Response.json({id:'resp_repository_combined_fixture',status:'completed',model:'gpt-6.1-sol',service_tier:'default',usage:{input_tokens:1500,output_tokens:400,input_tokens_details:{cached_tokens:0,cache_write_tokens:0},output_tokens_details:{reasoning_tokens:50}},output:[{type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:JSON.stringify(value)}]}]});
+ };
+ try{
+  const run=(await f.call('operations-engineering-activation-run',{...f.input,expectedApprovalRevision:f.active.revision})).engineeringActivation;
+  a.equal(run.result.artifact.decision.decision,'investigate');
+  a.equal(run.result.artifact.evidence.length,2);
+  a.equal(run.shutdown.paidExecution,false);
+  const workflow=f.state().operations.workflows.at(-1);
+  a.equal(workflow.calls,1);
+  a.equal(workflow.countCalls,1);
+  a.equal(discovery.historical(workflow),true);
+ }finally{global.fetch=previous;}
+});

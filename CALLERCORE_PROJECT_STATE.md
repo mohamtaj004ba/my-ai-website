@@ -1,5 +1,9 @@
 # CallerCore project state
 
+## Chief evidence across related source reads
+
+One reviewed Chief task can now carry a bounded list of source queries from the same immutable repository snapshot. The server derives the evidence and revalidates it before dispatch. Existing single-query packet and request encodings remain intact. The owner console accepts a query object or array. The controller fixture verified that a single model response can cite evidence from both the checkout handler and billing adapter. Automatic model continuation and per-role evidence requests still need lifecycle and authorization changes.
+
 ## Whole-file Chief checkout conclusion
 
 Preview ddfdc7107eeeaf16f55dc85ef5f5cafbf69f1cc7, deployment dpl_3QMP4bPwVdz4id8icUHGKFioMWcv, passed 5387 CI tests, 37 Redis tests, CodeQL, Jekyll and authenticated Browser QA. Chief workflow wf_5b33154b73041a5418b849f43c8e61d9 used all 161 lines in one packet and produced receipt d81e6012a58e9e2f2785e44f1f6d4a608e08d1cfa02eae4f8eb35c64af0fa7e9. One Response and one count, 4711 input and 683 output tokens. Owner readback confirmed zero active grants, approvals, sequences and leases.
