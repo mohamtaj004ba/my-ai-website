@@ -1,5 +1,9 @@
 # CallerCore project state
 
+## Full-date Preview packaging qualification
+
+Preview commit 5086f631a286f953faf859baee174c23c8986a2d reached READY on dpl_FHkf6vjs6G9PGw4JpKLWWc2TAVWW. Authenticated Browser QA 43571516078, Redis, CodeQL and Jekyll passed. CI rerun 43571522072 completed with 5410 passes and one failure: the new immutable full-date task JSON lacked its explicit literal packaging reference. The local successor registers that exact asset and the failing regression passed. No paid model request occurred.
+
 ## Source-review re-review corrections (local)
 
 Independent QA found a stale five-count assumption in the owner admission check and an old discovery-default test. Both are corrected. The Auditor found that the earlier reservation estimate reached $1.02 and could omit the first tool turn before read admission. Source-review per-stage estimates are now $0.07 per ordinary turn and $0.11 per Specialist turn, and validated initial tool usage is journaled before source retrieval. Local controller and console verification passed 29 checks, and the targeted visible-time expectation passed. The final receipt still distinguishes incomplete provider diagnostics from settled costs. Exact-release qualification remains pending.
