@@ -1,5 +1,17 @@
 # CallerCore project state
 
+## Chief criterion validation follow-up (local)
+
+Reproduced a false positive through the modern handoff parser: a complete criterion naming the selector choice `unless` was rejected by the terminal-word rule. The date-fallback task already uses immutable prose observations for QA and Auditor review, but the separate handoff validator still rejected those endings before review. The local correction routes terminal-word observations through the existing review path for advisory-quality tasks. Dangling operators, explicit ellipses and duplicate criteria still fail. Historical hard-validation tasks keep their original rules. The original live criterion remains unavailable, so the replay does not establish whether that specific rejection was a false positive. No paid retry or new deployment occurred.
+
+Focused local verification passed 25 checks, plus a fresh five-stage controller fixture proving the Chief advisory remains in the immutable receipt and the final Chief preserves the Auditor failure. Independent Work QA passed 31 targeted checks, including historical request replay, and the Engineering Auditor found no material issue in the local correction. Candidate runtime fingerprint `dae3fc569632ae0db9d117e80afef5d0f951a1951214b816e91c2883e5359599`. Hosted qualification and a fresh exact-release paid authorization remain open.
+
+## First live date-fallback source-review trial
+
+Qualified `b7b330ff5955be8764e1ea7d2ea516ec664e30ab` / `1f5e68fd3f3b5526ca52f28d377594d06ed971c6647eb2034d1768fd72b53bac` / `dpl_4kn6YTn5SHV3aP17swRof8Qvb2FS`. STRICT and Redis 43573093051, CodeQL 43573093048, Jekyll 43573093082, and authenticated Browser QA 43573087749 passed. Independent exact-release QA and Auditor approved the bounded trial and confirmed 3/3 mocked success and failure cases. Used the reviewed task consent path, with no new Vercel configuration refresh or build. Task `op_1b49aeeff9604974a32883b6da95bbda`, consent `refresh_133e0930260545c99b1f562840affb61`, workflow `wf_862579571f14b387c6b435da6c9a411e`.
+
+One live count and one Responses call returned HTTP 200. Chief-plan failed at `response-validate`, `ENG_AI_REPORT_QUALITY`, `$.completionCriteria[2]`, `incomplete-criterion`. The source rule rejects criteria ending in a listed word followed by sentence punctuation. The criterion text is absent from the saved evidence, so truncation, grammatical incompleteness, and a false positive remain unverified. Zero accepted stage receipts and no Specialist patch. Provider usage was 2,315 input and 812 output tokens including 443 reasoning tokens, calculated Responses-only $0.012750. Counting and invoice adjustments are unresolved. The Chief stage had a $0.07 internal reservation. Private original export `artifacts/agent-operations/B7B330_SOURCE_REVIEW_LIVE_RECEIPTS.json` SHA-256 `59bb61099c929fae097ab6d2e52330d4a1561b7b86b3043a692a28ef89a62c4c` shows approval revoked, lease zero, and cleanup ready with no blockers. The one-run approval is consumed. No retry or product correction occurred.
+
 ## Full-date Preview packaging qualification
 
 Preview commit 5086f631a286f953faf859baee174c23c8986a2d reached READY on dpl_FHkf6vjs6G9PGw4JpKLWWc2TAVWW. Authenticated Browser QA 43571516078, Redis, CodeQL and Jekyll passed. CI rerun 43571522072 completed with 5410 passes and one failure: the new immutable full-date task JSON lacked its explicit literal packaging reference. The local successor registers that exact asset and the failing regression passed. No paid model request occurred.

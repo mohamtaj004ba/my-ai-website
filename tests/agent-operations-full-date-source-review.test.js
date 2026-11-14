@@ -29,7 +29,9 @@ for(const interrupted of [false,true,'schema'])test('owner controller source rev
    for(const read of frame.priorSourceReads)a.equal(read.binding.runtime.sourceCommit,f.runtime.commit);
   }
   if(interrupted===true&&stage==='qa')return Response.json({}, {status:503});
-  return Response.json({...base,output:[{type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:JSON.stringify(interrupted==='schema'&&stage==='qa'?{}:impl.fixture(stage,c))}]}]});
+  const reply=interrupted==='schema'&&stage==='qa'?{}:impl.fixture(stage,c);
+  if(!interrupted&&stage==='chief-plan')reply.completionCriteria=[...reply.completionCriteria.slice(0,2),'Use the existing fallback unless.'];
+  return Response.json({...base,output:[{type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:JSON.stringify(reply)}]}]});
  };
  try{
   const manifest=await f.control.trialManifest(owner,{planId:f.plan.id,expectedRevision:1,sequenceId:f.sequenceId});
@@ -61,6 +63,7 @@ for(const interrupted of [false,true,'schema'])test('owner controller source rev
   catch(error){throw Object.assign(Error(JSON.stringify(error.diagnostic??error.message)),{cause:error});}
   a.equal(calls.length,16);
   a.equal(result.result.receipts.length,5);
+  a(result.result.receipts[0].reportQuality.issues.some(issue=>issue.location==='$.completionCriteria[2]'&&issue.code==='terminal-word-heuristic'));
   a.equal(result.result.receipts.at(-1).response.auditDecision,'fail');
   a.equal(result.shutdown.paidExecution,false);
   const state=f.state(),w=state.operations.workflows.at(-1);

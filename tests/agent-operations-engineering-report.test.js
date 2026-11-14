@@ -9,6 +9,20 @@ test('all five bounded offline provider paths preserve quality fields and Audito
 test('historical schema and request remain unchanged without exact opt-in suffix',()=>{for(const assignment of [copy.OBJECTIVE,copy.EXPANDED_OBJECTIVE,'ordinary task',q.MARKER+' extra']){const c={...context('chief-plan'),assignment};a.deepEqual(q.schema('chief-plan',m.schema('chief-plan'),c),m.schema('chief-plan'));a.equal(q.enabled(c),false);}});
 test('required quality fields are enforced by the actual parser',()=>{for(const key of ['problem','sourceEvidenceIds','intendedImpact','scope','exclusions','uncertainty','deliverables']){const c=context('chief-plan'),r=response('chief-plan',c);delete r[key];a.throws(()=>m.parseResponse('chief-plan',r,c),/SCHEMA/);}});
 test('unfinished bounded criteria fail with sanitized location and no content',()=>{const c=context('chief-plan'),r=response('chief-plan',c);r.completionCriteria[0]='Do something and.';try{m.parseResponse('chief-plan',r,c);a.fail();}catch(e){const d=failure.failure(e,{stage:'chief-plan',phase:'response-validate',mode:'fixture'});a.equal(d.code,'ENG_AI_REPORT_QUALITY');a.equal(d.location,'$.completionCriteria[0]');a.equal(d.mismatch,'incomplete-criterion');a.equal(JSON.stringify(d).includes('Do something'),false);}});
+test('source review distinguishes terminal-word observations from structural gaps',()=>{
+ const qTasks=require('../lib/agent-operations-implementation-tasks');
+ const assignment=qTasks.SOURCE_REVIEW_OBJECTIVE,implementation=require('../lib/agent-operations-implementation');
+ const c={...context('chief-plan'),assignment,evidence:implementation.sourceEvidence({assignment})};
+ c.binding.runtime=require('../lib/agent-operations-engineering-handoff').runtime(c.binding.runtime);
+ const r=implementation.fixture('chief-plan',c);
+ r.completionCriteria=['Verify that the condition selector offers unless.'];
+ a.deepEqual(m.parseResponse('chief-plan',r,c).completionCriteria,r.completionCriteria);
+ a.deepEqual(q.qualityIssues('chief-plan',r).find(x=>x.location==='$.completionCriteria[0]'),{location:'$.completionCriteria[0]',code:'terminal-word-heuristic'});
+ for(const incomplete of ['Verify that the fallback includes…','Verify that the date is ≥']){
+  r.completionCriteria=[incomplete];
+  a.throws(()=>m.parseResponse('chief-plan',r,c),{message:'ENG_AI_REPORT_QUALITY'});
+ }
+});
 test('criteria mapping rejects duplicate missing or unsupported evidence, without inventing acceptance',()=>{const rs=run(),c=context('specialist',rs.slice(0,1));for(const alter of [r=>r.acceptanceMapping.pop(),r=>r.acceptanceMapping[1].criterion=1,r=>r.acceptanceMapping[0].evidenceIds=[],r=>r.rootCause.evidenceIds=['invented']]){const r=response('specialist',c);alter(r);a.throws(()=>m.parseResponse('specialist',r,c),/REPORT_QUALITY/);}});
 test('new quality path retains executable-copy extra-tools and final-authority restrictions',()=>{const rs=run(),c=context('specialist',rs.slice(0,1)),r=response('specialist',c);r.proposal.afterText='<script>alert(1)</script>';a.throws(()=>m.parseResponse('specialist',r,c),/PROPOSAL_DENIED|RESPONSE_SCHEMA/);r.proposal.afterText='Safe label';r.tools=['shell'];a.throws(()=>m.parseResponse('specialist',r,c),/SCHEMA/);const f=response('chief-final',context('chief-final',rs.slice(0,4)));f.acceptedWork=true;a.throws(()=>m.parseResponse('chief-final',f,context('chief-final',rs.slice(0,4))),/FINAL_AUTHORITY/);});
 
