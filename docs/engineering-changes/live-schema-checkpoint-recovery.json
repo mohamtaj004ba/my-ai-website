@@ -1,0 +1,19 @@
+{
+  "version": "engineering-quality-v1",
+  "historicalCommit": "9f2e51f063c9a3ff9d7e8f9c5c24a6cda13ba7cb",
+  "changeDigest": "03477e2283b07677c1cb5e75657b5e63be36ed03da89a0f0d73061bfb10aece9",
+  "risk": "routine",
+  "scope": "Preserve the exact prior live-trial result and shutdown documentation without rewriting its commit.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [
+    {
+      "rootCause": "The canonical checkpoint omitted its required source-bound change record.",
+      "detectionGap": "Focused local work did not run full PR-history engineering preflight before push.",
+      "regression": "Exact historical commit, digest, regular paths and reviewed supplemental plan hash; ordinary validation remains mandatory.",
+      "historicalPrevention": "Run full-main-base engineering preflight before every feature push, including checkpoint commits."
+    }
+  ],
+  "qualification": "Retrospective record only; not a historical CI pass or execution authority."
+}

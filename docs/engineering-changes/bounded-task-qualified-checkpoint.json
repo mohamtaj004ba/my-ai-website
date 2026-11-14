@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "c4f8826175b0f352a693b59c52d9bf0a0ea7dad8cdd5e48dbb0f9e93cc042c57",
+  "risk": "routine",
+  "scope": "Preserve fully verified bounded-task and notification product delivery, failures/corrections, exact hosted evidence, independent reviews, unchanged history/shutdown/accounting and browser blockers.",
+  "verification": [
+    "scope-review"
+  ],
+  "riskAnalysis": "Canonical documentation only, no runtime, identity, permissions, credentials, spending or deployment change. Preserve previous checkpoints and failed verification evidence.",
+  "defects": []
+}

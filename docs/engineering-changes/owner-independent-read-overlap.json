@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "6395930ba77a9db82efa1e2ce7675ce5b478c220b85bab2698073db9fcee4212",
+  "risk": "critical",
+  "scope": "Overlap independent member/workspace reads after unchanged fresh owner session validation, preserving every authorization check and execution deadline.",
+  "riskAnalysis": "STRICT shared owner policy. Both fresh records remain mandatory; concurrent failure must never return authority, cache identity or skip revocation checks.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "App signing key, narrowed token, owner authority, immutable audit and source identity.",
+    "trustBoundaries": "Trusted broker/adapter to untrusted provider response; private in-memory receipt to existing Ops failure audit.",
+    "abuseCases": "Forged diagnostic fields, raw secret errors, unbounded logging, stalled owner/provider, late completion after timeout or revocation.",
+    "mitigations": "Finite enums, at most 64 bounded events, private WeakMap, frozen terminal receipt, unchanged deadline and guards, abort on exit; no retry."
+  },
+  "rollback": "Revert only reviewed Preview diagnostic delta; preserve all existing App identity, grants, audit evidence, central revocation, main and Production.",
+  "negativePaths": {
+    "malformed-response": "Existing bounded parsers unchanged; diagnostics retain only phase and finite HTTP class.",
+    "stale-state": "Every existing task/source/release/owner check remains required.",
+    "concurrency": "Existing admission CAS and revocation remain unchanged; diagnostic events cannot grant authority.",
+    "cancellation": "Existing cancel signal plus internal deadline abort stop later boundaries; no already-transmitted request recall claimed.",
+    "worker-interruption": "No new worker or execution route; interrupted audit is terminal and existing cleanup revokes grant.",
+    "api-outage": "Stalled provider or authorization is bounded by unchanged six seconds; phase remains incomplete rather than fabricated success.",
+    "authorization-denial": "Fresh owner and pending grant guards remain before each boundary; diagnostic code cannot bypass them.",
+    "spending-limit": "No model calls, repository mutations or spending-ledger changes. The existing exact repository-scoped installation-token POST remains necessary and unchanged.",
+    "partial-execution": "Late completion cannot mutate sealed diagnostic receipt or complete a revoked invocation."
+  },
+  "defects": [
+    {
+      "rootCause": "Actual hosted authentication spent4919ms of6s in eight fresh authorizations; independent member/workspace reads were unnecessarily serial.",
+      "detectionGap": "Prior isolated transport tests did not measure real durable authorization critical-path cost. Finite hosted diagnostics now identify it.",
+      "regression": "Overlap and per-call freshness; disabled member, foreign ownership/workspace, either storage rejection and invalid session all deny. Existing revoke/CAS/timeout tests retained.",
+      "historicalPrevention": "Reduced sequential waiting without removing any check; actual hosted completion and savings remain unverified, not guaranteed."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing shared owner review policy, same fresh session followed by concurrent independent member/workspace reads; all validations and downstream task/release/revocation remain unchanged.",
+    "dependencies": "Same getSession/getMember/getWorkspace adapters and durable Redis reads; no new API, credential, cache or permission.",
+    "threats": "Cross-workspace or repository substitution, forged diagnostics, credential reflection, stale task/release authority, cancellation races and late provider continuation.",
+    "failureModes": "Either record rejection denies authority even if sibling read completes later. No atomic snapshot guarantee is added; previous sequential reads were also non-atomic.",
+    "faultInjection": "Deferred reads prove overlap, second invocation proves fresh reads, disabled/foreign member or owner and either rejected storage read deny; invalid session starts neither read.",
+    "independentChallenge": "Independent QA21 and Auditor6 pass actual source; neither claims measured hosted savings. Existing GitHub grant automatically revoked after recorded timeout.",
+    "recovery": "Existing interrupted-read CAS revokes the exact grant; no automatic retry, key rotation, permission expansion or authority restoration.",
+    "readiness": "Local security checks pass; source-bound STRICT, CI/Redis/CodeQL and new-release hosted attempt remain required. No paid authority."
+  }
+}

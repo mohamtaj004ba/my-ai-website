@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "65815d36feff34b05c1dfdb8d4e689c72eb99f8c74aa80f6ce9c4e88a1d35fa7",
+  "risk": "critical",
+  "scope": "Avoid filesystem resolution while importing fixed source-adapter metadata into restricted workers.",
+  "riskAnalysis": "Four fixed literal path constructions change from require.resolve to path.resolve only. No worker grant expansion; actual readFile safety checks unchanged.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Least-privilege worker boundary, curated source identity, source file read denial and historical evidence.",
+    "trustBoundaries": "Metadata-only module import versus explicit source read in existing adapter.",
+    "abuseCases": "Granting filesystem reads to fix eager resolution, accepting caller paths, skipping symlink or hash checks.",
+    "mitigations": "Construct4fixedliteral paths withoutIO; preserve own-property allowlist and allreadFilechecks; actualpermissionchild proves readstilldenied."
+  },
+  "rollback": "Revert only candidate source; retain historical evidence assets, fixed product timestamp patch and security advisory history. No Production changes.",
+  "negativePaths": {
+    "malformed-response": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "stale-state": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "concurrency": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "cancellation": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "worker-interruption": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "api-outage": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "authorization-denial": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "spending-limit": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested.",
+    "partial-execution": "Existing authorization, cancellation, spending, worker and publication enforcement remains unchanged; exact current/historical source and malformed accessibility metadata are regression tested."
+  },
+  "defects": [
+    {
+      "rootCause": "Eager require.resolve on dashboard source during module import triggers ERR_ACCESS_DENIED in restricted Linux fixture workers.",
+      "detectionGap": "Windows permission behavior did not reproduce Linux resolution denial; generic IPC error hid code until classified. Redis subset passed while fullsuite failed.",
+      "regression": "82focused workflow checks and23metadata/sourceboundary checks pass; metadata-only restricted import succeeds and actual source read remains denied.",
+      "historicalPrevention": "Keep module metadata initialization free of filesystem reads and verify import boundaries under actual worker grants; retain exact failures and source locations."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing HTML, source/evidence adapter and browser suite reused; no new orchestration or provider.",
+    "dependencies": "No dependency changes; upstream bundled Zod advisory remains open with official integrity-verified archive evidence.",
+    "threats": "Historical source substitution, malformed labels, role collisions and misleading dependency remediation.",
+    "failureModes": "Current source mismatch fails closed; test-only replay validates pinned historical bytes; absent computed names fail browser suite.",
+    "faultInjection": "Preserved ded6 fullsuite4921pass40fail and exacttools.js:5:53permissiondiagnostic; no assertion relabeled successful. Await fresh LinuxCI.",
+    "independentChallenge": "IndependentQA/Auditor verified no filesystem permission widening and unchangedreadguards. Auditor caught old syntax assertion; replaced with stronger4fixedliteral path checks,23tests pass.",
+    "recovery": "Revert this candidate only, preserve original assets, reviews, model failures and financial uncertainty; no paid execution enabled.",
+    "readiness": "Candidate only; fullCI/Redis/CodeQL/Browser qualification required before complete. No paidinference required."
+  }
+}

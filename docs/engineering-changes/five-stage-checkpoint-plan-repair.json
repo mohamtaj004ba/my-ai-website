@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "5a1cdebcc5dc262009eaa9e0b94277d6377795a21068505557e5b9aa4103c944",
+  "risk": "critical",
+  "scope": "Recover one exact historical documentation checkpoint through the existing reviewed registry, preserving the original commit and all normal validation.",
+  "riskAnalysis": "Only the exact079ee41 commit, one regular path, exact before/after blob digest and fixed supplemental plan hash qualify. No generic fallback, owner authority, source mutation permission or missing-plan exception is introduced. Retrospective evidence is not a historical CI success.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable checkpoint history, engineering plan validation, complete CI ancestry and current source/release identity.",
+    "trustBoundaries": "Reviewed code-owned exact recovery pin versus arbitrary caller/history/plan content; retrospective documentation versus execution authority.",
+    "abuseCases": "Substitute another commit or blob/path, add code to documentation recovery, forge or edit supplement, downgrade risk, use symlink/executable file or suppress duplicate matching records.",
+    "mitigations": "Existing exact registry/hash/regular-file checks, unchanged ordinary plan/proactive validation, additive single pin and complete negative matrix; old pins unchanged."
+  },
+  "defects": [
+    {
+      "rootCause": "Prior documentation checkpoint079ee41 omitted its source-bound plan; the immediate-parent check on later preparation did not scan that historical gap.",
+      "detectionGap": "Local preflight used the latest parent while CI scans the full PR base ancestry.",
+      "regression": "39 recovery tests cover exact pin and altered commit/blob/path/file modes/plan identity/content/duplicates; run full-main-base preflight before push.",
+      "historicalPrevention": "Always create the checkpoint plan in the same documentation commit and run full PR-history preflight locally before publishing."
+    }
+  ],
+  "rollback": "Do not rewrite historical commits. Revert the new registry pin through reviewed source changes if its facts fail verification; leave original CI failure and documentation evidence intact.",
+  "negativePaths": {
+    "malformed-response": "Recovery creates no execution, network, credentials, spending or publication permission. Altered historical identity/path/blob/file mode/plan/duplicate records remain rejected by existing validation; original failure evidence retained.",
+    "stale-state": "Recovery creates no execution, network, credentials, spending or publication permission. Altered historical identity/path/blob/file mode/plan/duplicate records remain rejected by existing validation; original failure evidence retained.",
+    "concurrency": "Recovery creates no execution, network, credentials, spending or publication permission. Altered historical identity/path/blob/file mode/plan/duplicate records remain rejected by existing validation; original failure evidence retained.",
+    "cancellation": "Recovery creates no execution, network, credentials, spending or publication permission. Altered historical identity/path/blob/file mode/plan/duplicate records remain rejected by existing validation; original failure evidence retained.",
+    "worker-interruption": "Recovery creates no execution, network, credentials, spending or publication permission. Altered historical identity/path/blob/file mode/plan/duplicate records remain rejected by existing validation; original failure evidence retained.",
+    "api-outage": "Recovery creates no execution, network, credentials, spending or publication permission. Altered historical identity/path/blob/file mode/plan/duplicate records remain rejected by existing validation; original failure evidence retained.",
+    "authorization-denial": "Recovery creates no execution, network, credentials, spending or publication permission. Altered historical identity/path/blob/file mode/plan/duplicate records remain rejected by existing validation; original failure evidence retained.",
+    "spending-limit": "Recovery creates no execution, network, credentials, spending or publication permission. Altered historical identity/path/blob/file mode/plan/duplicate records remain rejected by existing validation; original failure evidence retained.",
+    "partial-execution": "Recovery creates no execution, network, credentials, spending or publication permission. Altered historical identity/path/blob/file mode/plan/duplicate records remain rejected by existing validation; original failure evidence retained."
+  },
+  "proactiveReview": {
+    "architecture": "One additive exact entry in the existing registry; no new recovery or authorization system.",
+    "dependencies": "No packages, provider calls or credentials; source fingerprint updated for existing preflight tracing.",
+    "threats": "Unauthorized historical plan substitution or broad missing-plan fallback denied by fixed immutable identity/content hashes.",
+    "failureModes": "Wrong commits, blobs, paths, extras, modes, plan risk/digest/commit/content and duplicates tested; initial CI failure retained.",
+    "faultInjection": "39 recovery tests exercise positive and denial paths, including old registry entries unchanged.",
+    "independentChallenge": "Require QA and Auditor factual review of original documentation evidence and exact recovery before source publication.",
+    "recovery": "Full-main-base preflight must pass before next push; do not amend original checkpoint or revive consumed authority.",
+    "readiness": "Focused39checks pass; committed main-base preflight and hosted qualification remain required. No claim original CI passed."
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "40ff28b5b894952bdff93db28db58657dc386172b2813e6293518a14a562d8f8",
+  "risk": "critical",
+  "scope": "Replace redundant Vercel task checks with a privately branded complete sequential guard at every existing execution boundary; retain failed hosted and rejected parallel-candidate evidence.",
+  "riskAnalysis": "STRICT authority composition. No deadline, endpoint, scope, spending or publication change. Private lease identity binds exact authorizer/configuration/source/deployment; no parallel stale authorization snapshots.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Vercel token, fresh owner/task/connection authority, durable evidence.",
+    "trustBoundaries": "Real encrypted OAuth broker lease versus forged caller object; each provider/receipt boundary.",
+    "abuseCases": "Copied lease, substituted authorizer/binding, revocation while an earlier check stalls, stale OAuth record, expired or cancelled guard, late provider response.",
+    "mitigations": "Private WeakMap provenance; serialized owner -> exact task -> OAuth record last at each guard; stricttrue, signal/time/expiry after guard; fixed read-only HTTP and existing receipt CAS."
+  },
+  "rollback": "Revoke exact temporary read grants and cancel task, then revert only this reviewed Preview diagnostic/UI correction; preserve original failed receipts and all historical authorization/accounting. No Production changes.",
+  "negativePaths": {
+    "malformed-response": "Provider JSON cannot spoof HTTP classes; strict evidence sanitizers unchanged. Diagnostic tests exclude raw body/token/URL.",
+    "stale-state": "Original task/deployment/source/release/fence and complete OAuth record rechecked; private guard rejects copied lease or different exact callback.",
+    "concurrency": "Rejected parallel variant reproduced configuration GET after committed revoke; permanent barrier now passes with record-last sequential composed guard. No cross-record atomicity claimed.",
+    "cancellation": "No deadline increase. Initial authorization retained; private complete guard per postlease boundary, signal/expiry after each; adapter abort finally.",
+    "worker-interruption": "No new worker. Existing actual supervisor/restricted-worker and interrupted cleanup regressions retained.",
+    "api-outage": "Finite phase events identify unconfirmed boundary, never fabricate successful provider access; no automatic retry.",
+    "authorization-denial": "Static trusted guards mint private original-code identities; matching provider errors remain unclassified; diagnostic spans preserve operation results.",
+    "spending-limit": "No model request, paid grant, new reservation or service purchase is introduced. The browser proof remains5/6 stopped and separate.",
+    "partial-execution": "Hosted ec8 audit114 configuration read succeeded but deployment HTTP unobserved at6s; auto grant revoke and task cancel115 preserved. No retry of original task."
+  },
+  "defects": [
+    {
+      "rootCause": "Duplicate serial authority checks at every adapter and broker boundary consumed real6s transport window before deployment dispatch.",
+      "detectionGap": "Immediate provider mocks passed but could not demonstrate hosted authentication/storage latency.",
+      "regression": "Real broker provenance and ordered complete guards, revocation barrier, forged/cloned lease/callback/binding, expiry/cancel and unchanged full gateway tests.",
+      "historicalPrevention": "Source-bound exact-release hosted finite trace required; passing isolated mocks does not establish headroom."
+    },
+    {
+      "rootCause": "Proposed parallel security reads weakened ordering when a final record check completed before a stalled sibling owner check.",
+      "detectionGap": "Initial71focused tests and Auditor4cases lacked precise stalled-owner/committed-revoke interleaving.",
+      "regression": "Independent QA exact schedule permanently retained; all parallel runtime changes withdrawn, one sequential composed guard.",
+      "historicalPrevention": "Independent adversarial timing challenge; private provenance permits duplicate removal without stale parallel security observations."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing gateway/OAuth/adapter; one privately branded full guard per existing boundary, not a competing authority system.",
+    "dependencies": "Same exact task/source/release/deployment/Redis and provider dependencies. New helper tests use actual OAuth/encryption broker; no registry bypass.",
+    "threats": "Forged lease/callback/binding, stale record while prior owner check stalls, expired/cancelled late execution.",
+    "failureModes": "Existing6s adapter and10s admission remain. Failure auto-revokes grant, task cleanup independently confirmed.",
+    "faultInjection": "QA barrier reproduced unpublished optimization defect, now permanent zeroHTTP regression; cloned lease, wrong authorizer/config/source/deployment, expiry/cancel.",
+    "independentChallenge": "Auditor withdrew parallelapproval after QA counterexample; revised actualsource both approve.51independent QApass496.54ms. STRICT/hosted pending.",
+    "recovery": "Existing exact grant revoke and task cancellation; no key change, consent repeat, retry or authority restoration.",
+    "readiness": "Not yet hosted-verified. Preserve original ec8failed read, facfailed read, successful GitHubread and modeldisabled budget. Newrelease mustprove actualVercelreceipt/cleanup."
+  }
+}

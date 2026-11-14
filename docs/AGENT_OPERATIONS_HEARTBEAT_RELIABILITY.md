@@ -1,0 +1,41 @@
+# Bounded organizational lease renewal
+
+## Final verified checkpoint
+
+The pending labels below are historical. Source1bcf72d completed four actual hosted five-stage outcomes and ten bounded failure profiles, including genuine owner cancellation, unavailable renewal and cleanup fallback. All original evidence is preserved. Full2363/contracts279/engineering17/realRedis8/CI/CodeQL and exact-source Browser QA passed. Disabled replacement1er9lup7v/dpl_8WcUt5GCe3VtLH1Avg6Hscq1W8BT is READY at the same source/release;11brokers paidfalse and19records unusable verified. No paid requests or historical accounting changes. See [the detailed hosted checkpoint](AGENT_OPERATIONS_HEARTBEAT_HOSTED_CHECKPOINT.md) for actual scenario boundaries, independent reviews and remaining live/cloud evidence gaps. This establishes non-billable infrastructure completion, not live-model accuracy or unconditional pilot readiness.
+
+## Supported cause and limits
+
+Preserved run9e63 proves a10985ms UND_ERR_CONNECT_TIMEOUT on worker broker renewal, capture interruption and eventual30s lease expiry. cd987's initiating cause is still unproved. No evidence attributes the network fault to Chrome, Redis, Vercel or a local network. Existing renewal required protected authority GET plus revision-changing POST, with a10s cadence and15s request deadlines; realistic latency could consume the entire30s lease. This is a timing/control-plane design weakness, not proof of the network's root location.
+
+## Correction
+
+The existing organization-command route accepts renew-lease-v1 only with the task capability and exact pending execution, stage, fence, approval and release hashes. Central grant/approval, original live tasklease,150s stage and10m workflow deadline checks precede replay handling. A monotonic sequence (maximum40 per stage) identifies each renewal. Same sequence returns the original receipt without another extension, audit or ledger mutation; stale/gapped sequence fails. Renewal cannot change semantic taskrevision, spending, stage outputs or acceptance. Receipt explicitly binds runtime origin/source, task, execution, fence, stage, approval/release and fixed deadlines.
+
+The tracked trusted parent owns a singleflight5s pump. Each request is bounded4s even if transport ignores abort; only an allowlisted transport failure may repeat the identical sequence once while the previously confirmed lease retains a safety margin. HTTP denials, Redis errors and unknown errors stop. No provider, initialization, spending or stage transition retries are added. Parent abort interrupts parent capture and kills the restricted child. Child cannot disable this mandatory pump; in-process legacy paths retain their existing heartbeat. Pump remains active through evidence processing, then obtains a final confirmed lease and drains before finish. Semantic finalization remains one atomic backend operation. Supervisor treats execution-bound monotonic renewal as liveness, separately enforcing stage deadline; new claim clears prior-stage liveness.
+
+## Verification status
+
+14 lease/pump regressions passed, including real harmless lifecycle prepare/activate/consume, lostreply no-op, concurrent sequence, cancelled/expired/revoked grants/approval, mismatched release/deployment, unchanged Chief binding under own approvalrenewal and denial after unrelated ledger changes, unavailable storage and ignored abort. Actual authenticated-handler/supervisor/restricted-fork offline long-stage rehearsal passed with35s capture and a committed lostreply; all5 stages/5reservations, final report and revoke completed. This is offline integration evidence, not hosted completion. Exact new-source full/contracts/CI/Redis/CodeQL/Browser and actual hosted profiles are still pending. Paid execution stays disabled; historical15/7/2.20/8 accounting preserved.
+
+## Residual restrictions
+
+Chief pre-dispatch construction intentionally does not renew because a ledger mutation would invalidate its verified context snapshot. It must complete within its original30s lease, otherwise stop without paid dispatch. Requests already transmitted cannot be recalled. Arbitrary outages beyond confirmed authority must stop, never revive. Hosted cloud hardkill/Redis outage remain distinct from faithful offline injections. General visual/Legal suitability acceptance still requires trusted substantive review; capture-time deterministic price-spacing is the only automatic acceptance oracle. No paid-pilot readiness until full actual hosted path and shutdown are independently verified.
+
+## First hosted evidence and audit correction
+
+Publisheda5076d6 completed actual hosted acceptedec95 and rejected63b workflows through all5stages; hashes/seals/finalreport/revoke independently verified. A manual workerhandoff missedf469 initialization deadline; no taskcreated and centralrevoke succeeded. Newmaterialdefect: renewal event data.sequence overwrote reserved global audit sequence despitevalid hashlinks. Rename to leaseSequence preserves protocol/authority; permanent per-auditindex regression passes14/14 and independent replay of actuala507source fails expected5/actual1. Historical artifacts unchanged. Corrected-source full/contracts and freshhosted audit verification pending.
+
+CI a507 cancellation root cause: temporary test trace append assumed an ignored local artifacts directory existed; clean Linux checkout raised ENOENT in test event callback. Removed this incidental file output; test assertions retain real events in memory. No runtime authority or model contract relaxation. Corrected-source frozen full2344 passed; clean-trace long-stage and new CI/host verification required.
+
+## Referenced shutdown timer
+
+Audit correctionb94c310 LinuxCI38352622037/38352617214 exposed ignored-abort regression ERR_TEST_FAILURE: Promise resolution pending but eventloop resolved. AbortSignal.timeout is unreferenced; a broken transport with no other handle could exit before timeout cleanup. The pump now owns a referenced setTimeout/AbortController per attempt and clears it in finally. Same4s/max2 transport-only renewal behavior; no provider/stage retry or authority change. Independent QA/Auditor reviewed cleanup and standalone no-other-handle probe; targeted14passed. HistoricalLinuxfailure excerpt saved heartbeat-ci-b94-failure.txt. New full/contracts/actualLinuxCI and corrected hosted runs remain acceptance gates.
+
+## Backend Chief context sealing
+
+2ce hosted0ab stopped at Chief dispatch409 before any providerboundary and cleaned up; exactvalidatorcausewasnotretained. Separately, deterministic offline reproduction proved ownapprovalmaintenance betweencontext read anddispatch invalidated the strict globalrevision check. This is a proven source race, not retrospective proof of0ab. Existing chiefContext now atomically seals only the projectedverified context for exact pendingexecution/taskrevision/fence/grant/approval/scope/release/deadline. Version chief-context-seal-v1. Duplicate reads are byte-identical no-ops, never refresh stale snapshots. Onlysameapproval validmaintenance mayadvance internal expectedglobalrevision if it was exactlycurrent; unrelatedchanges stillpoison the seal. Dispatch reconstructs originalsealedcontext, retains originalsnapshotRevision andrecords admittedLedgerRevision separately. Model-facingChiefintent remainsv2; no metadata invented/substituted by model. Original30s lease stillbounds predispatch; no timeoutincrease.
+
+Beforefix maintenance regression failedChiefsnapshotstale; corrected44target and18independentQA cases passed. Actual supervisor/restrictedchild12scontextreplydelay with real10sownerrenew completed5stages offline17s. Two older tests privatelybuilt context; now use guarded org.chiefContext, with explicit privatelybuiltunsealed-context zero-transport denial. Full/mandatory/CI/host final gates pending. Previous failed artifacts andholds unchanged.
+
+Capacity-resume checkpoint: preserved allcontextseal work/reviews. Finalfull2362/2363 stopped on older two-stage specialist captureValidationError; unchangedsource, isolated9/9passed, exactinitiatorunproved. Failedlog retained; boundedtest-process-concurrency full andmandatory checks running withoutvalidationrelaxation. No activeworker/paidapproval; temporaryinertwindow remainsfinite.

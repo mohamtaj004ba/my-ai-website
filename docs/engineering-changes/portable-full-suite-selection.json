@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "a21a77a3bc748f6294510904c3da733133b7934fba02c0dc6014319df54b11cd",
+  "risk": "critical",
+  "scope": "Keep exact full regression selection portable after expanded test filenames exceed the existing command-line guard.",
+  "riskAnalysis": "CI stops before regression when enumerated arguments exceed24000characters. A fixed Node22 glob is permitted only for exact complete source-derived test membership; malformed, duplicate and oversized partial lists still deny.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact source-derived regression coverage, offline network preload, mandatory contract tests, bounded process concurrency and release identity.",
+    "trustBoundaries": "Only validated canonical local test basenames may select files; spawnSync remains shell-free and fixed-pattern fallback cannot select custom paths.",
+    "abuseCases": "Oversized subset gains unrelated tests, arbitrary glob/path injection, missing or duplicate files, accidental inclusion of real Redis/helper scripts, or increased process concurrency.",
+    "mitigations": "Validate unique safe names first; require sorted equality with full actual .test.js set; one fixed literal pattern; keep fourworkers/offlinepreload and all existing source/release plan checks."
+  },
+  "negativePaths": {
+    "malformed-response": "Malformed, duplicate, path-traversal and oversized fabricated test-name sets are rejected before spawning.",
+    "stale-state": "Existing assertPlan checks exact source state before and after the complete suite; no stale coverage attestation is introduced.",
+    "concurrency": "Fourworker limit unchanged; exact fixture verifies selected files run once.",
+    "cancellation": "Not altered by fixed local test-file selection; existing required failure, cleanup and authorization regressions remain selected exactly once.",
+    "worker-interruption": "Not altered by fixed local test-file selection; existing required failure, cleanup and authorization regressions remain selected exactly once.",
+    "api-outage": "Not altered by fixed local test-file selection; existing required failure, cleanup and authorization regressions remain selected exactly once.",
+    "authorization-denial": "No execution or paid permission is created; offline guard and all inference owner controls remain unchanged.",
+    "spending-limit": "Not altered by fixed local test-file selection; existing required failure, cleanup and authorization regressions remain selected exactly once.",
+    "partial-execution": "Not altered by fixed local test-file selection; existing required failure, cleanup and authorization regressions remain selected exactly once."
+  },
+  "rollback": "Revert runner/test changes and lock through authorized feature development if qualification fails; preserve failedCI and all original source/diagnostic evidence. No provider or audit data changes.",
+  "defects": [
+    {
+      "rootCause": "One full-suite filename argument per file eventually exceeded the portable process argument guard before tests could start.",
+      "detectionGap": "Portable runner test covered the earlier shorter complete suite and rejected synthetic oversized sets, without a bounded full-suite growth strategy.",
+      "regression": "Exact full filesystem-membership comparison and actual Node22 two-test glob fixture excluding .cjs/helper files; unsafe subsets still deny.",
+      "historicalPrevention": "Use fixed complete-suite discovery only after exact source-derived set verification; keep subset commands bounded and shell-free."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse the existing selection runner and Node22 test engine; no new orchestration, server or workflow framework.",
+    "dependencies": "No dependency install, new provider, service credentials or paid infrastructure.",
+    "threats": "A complete-suite fallback cannot accept user globs or arbitrary paths; source membership is verified before using the fixed literal.",
+    "failureModes": "Guard still rejects oversized subsets; failed tests and process errors continue to fail qualification.",
+    "faultInjection": "Actual hosted argument-limit failure preserved; malformed/duplicate/unsafe/oversized fixtures and excluded-file subprocess exercised.",
+    "independentChallenge": "Independent QA and Engineering Auditor reviewed fallback and exclusion invariants; no material findings.",
+    "recovery": "Do not retry failed paid calls or modify timing tests; preserve source history and original CI failure.",
+    "readiness": "Portable checks passed on verifiedNode22.23.3; final committed CI/Redis/CodeQL/browser qualification is still required."
+  }
+}

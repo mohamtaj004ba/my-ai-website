@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "9b8623ee33cdf2a604744063fb2c5106728b18d2f63f44036557dc98692d0e06",
+  "risk": "routine",
+  "scope": "Preserve verified diagnostic repair, actual historical evidence gap, exact release/Browser/Redis results, unchanged budget and honest second-trial blockers; no runtime or permission changes.",
+  "defects": []
+}

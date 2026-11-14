@@ -1,0 +1,227 @@
+{
+  "version": 1,
+  "kind": "curated seed, not independently adjudicated benchmark",
+  "sourceTaskId": "cb886190-18e5-4edb-8699-4ab070bbaabf",
+  "sourceFindingsHash": "11aa51913861bc4e57a28adb2d772456736b6e44d40bb751bf29c1fe0d479540",
+  "evidenceHash": "08870d2218527ef0fcccf7f3961054481e434a6d1df1bf6ab3f89183003a4e40",
+  "images": [
+    {
+      "id": "I1",
+      "path": "exec_e0eddfb2644e48eca3a52311e32e3faa-legal-1440.png",
+      "sha256": "f1a9288f42f11a8412aa23aa7186219d44ebea88c835ae3199ca3f1521a9ee75",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "id": "I2",
+      "path": "exec_e0eddfb2644e48eca3a52311e32e3faa-legal-390.png",
+      "sha256": "bc441703c4d4d0c8387be50125e6addf8e94744661d882c33d3fb1c8ead64d59",
+      "width": 390,
+      "height": 1000
+    },
+    {
+      "id": "I3",
+      "path": "exec_e0eddfb2644e48eca3a52311e32e3faa-pricing-1440.png",
+      "sha256": "6634d5f72ae0489921e9d5813954f3749321b76f1bb067980a4eedbba65e9fe8",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "id": "I4",
+      "path": "exec_e0eddfb2644e48eca3a52311e32e3faa-pricing-390.png",
+      "sha256": "c5233fc73c0a7c3d4907ed5ef1a10f05ff287d20bf0d347cac9d91a151b625f6",
+      "width": 390,
+      "height": 1000
+    }
+  ],
+  "cases": [
+    {
+      "id": "C01",
+      "imageId": "I3",
+      "claim": "The badge overlaps the Growth heading.",
+      "gold": {
+        "support": "supported",
+        "decision": "accept",
+        "reason": "Directly visible narrow claim; does not assert industry suitability or behavior."
+      },
+      "split": "development"
+    },
+    {
+      "id": "C02",
+      "imageId": "I4",
+      "claim": "The badge overlaps the Growth heading.",
+      "gold": {
+        "support": "supported",
+        "decision": "accept",
+        "reason": "Directly visible narrow claim; does not assert industry suitability or behavior."
+      },
+      "split": "development"
+    },
+    {
+      "id": "C03",
+      "imageId": "I3",
+      "claim": "The $599/mo price is visible below the badge.",
+      "gold": {
+        "support": "supported",
+        "decision": "accept",
+        "reason": "Directly visible narrow claim; does not assert industry suitability or behavior."
+      },
+      "split": "development"
+    },
+    {
+      "id": "C04",
+      "imageId": "I4",
+      "claim": "The $599/mo price is visible below the badge.",
+      "gold": {
+        "support": "supported",
+        "decision": "accept",
+        "reason": "Directly visible narrow claim; does not assert industry suitability or behavior."
+      },
+      "split": "claim-holdout"
+    },
+    {
+      "id": "C05",
+      "imageId": "I1",
+      "claim": "A dashboard containing a call list is visible.",
+      "gold": {
+        "support": "supported",
+        "decision": "accept",
+        "reason": "Directly visible narrow claim; does not assert industry suitability or behavior."
+      },
+      "split": "development"
+    },
+    {
+      "id": "C06",
+      "imageId": "I2",
+      "claim": "A software dashboard figure is visible on the page.",
+      "gold": {
+        "support": "supported",
+        "decision": "accept",
+        "reason": "Directly visible narrow claim; does not assert industry suitability or behavior."
+      },
+      "split": "development"
+    },
+    {
+      "id": "C07",
+      "imageId": "I3",
+      "claim": "On the desktop pricing table (Screenshot 3), the 'Growth' badge on the $599/mo plan slightly overlaps with the price text and its box edges. The bottom of the badge appears to rest very close to or over the price numerals, reducing readability. Correction: Add vertical spacing or margin below the 'Growth' badge for clear separation from the price.",
+      "gold": {
+        "support": "contradicted",
+        "decision": "reject",
+        "reason": "Wrong visible object, price or overlap location."
+      },
+      "originalCode": "GROWTH-BADGE-SPACING-DESKTOP",
+      "split": "development"
+    },
+    {
+      "id": "C08",
+      "imageId": "I4",
+      "claim": "In the mobile pricing comparison (Screenshot 4), the 'Growth' badge overlaps the price text significantly (the badge overlays the upper part of '$599'). This hinders legibility and does not visually differentiate pricing from the badge. Correction: Separate the 'Growth' badge from the price element with sufficient margin or padding.",
+      "gold": {
+        "support": "contradicted",
+        "decision": "reject",
+        "reason": "Wrong visible object, price or overlap location."
+      },
+      "originalCode": "GROWTH-BADGE-SPACING-MOBILE",
+      "split": "development"
+    },
+    {
+      "id": "C09",
+      "imageId": "I3",
+      "claim": "The Built to grow badge appears on the Starter card.",
+      "gold": {
+        "support": "contradicted",
+        "decision": "reject",
+        "reason": "Wrong visible object, price or overlap location."
+      },
+      "split": "development"
+    },
+    {
+      "id": "C10",
+      "imageId": "I4",
+      "claim": "The Growth plan price is $999/mo.",
+      "gold": {
+        "support": "contradicted",
+        "decision": "reject",
+        "reason": "Wrong visible object, price or overlap location."
+      },
+      "split": "claim-holdout"
+    },
+    {
+      "id": "C11",
+      "imageId": "I1",
+      "claim": "The Legal industry dashboard screenshot shown on desktop (Screenshot 1) is directly relevant: it displays a dashboard interface with call records, which matches the described legal use case of confidential record management. Correction not required.",
+      "gold": {
+        "support": "insufficient",
+        "decision": "reject",
+        "reason": "Claim exceeds static visual evidence or readable detail; reject as unverified, not proof the real-world claim is false."
+      },
+      "originalCode": "LEGAL-IMG-RELEVANCE-1",
+      "split": "development"
+    },
+    {
+      "id": "C12",
+      "imageId": "I2",
+      "claim": "On mobile (Screenshot 2), the Legal industry dashboard image remains visible and contextually appropriate, displaying a list of calls in a software UI. The visual message matches the legal vertical's narrative. No correction needed.",
+      "gold": {
+        "support": "insufficient",
+        "decision": "reject",
+        "reason": "Claim exceeds static visual evidence or readable detail; reject as unverified, not proof the real-world claim is false."
+      },
+      "originalCode": "LEGAL-IMG-RELEVANCE-2",
+      "split": "claim-holdout"
+    },
+    {
+      "id": "C13",
+      "imageId": "I2",
+      "claim": "The tiny call-log rows prove that a confidential legal matter has been saved securely.",
+      "gold": {
+        "support": "insufficient",
+        "decision": "reject",
+        "reason": "Claim exceeds static visual evidence or readable detail; reject as unverified, not proof the real-world claim is false."
+      },
+      "split": "development"
+    },
+    {
+      "id": "C14",
+      "imageId": "I1",
+      "claim": "Clicking Expand opens an accessible modal with correct keyboard focus management.",
+      "gold": {
+        "support": "insufficient",
+        "decision": "reject",
+        "reason": "Claim exceeds static visual evidence or readable detail; reject as unverified, not proof the real-world claim is false."
+      },
+      "split": "claim-holdout"
+    },
+    {
+      "id": "C15",
+      "imageId": "I3",
+      "claim": "The badge and price have an exact DOM vertical gap of 7 CSS pixels in the original capture.",
+      "gold": {
+        "support": "insufficient",
+        "decision": "reject",
+        "reason": "Claim exceeds static visual evidence or readable detail; reject as unverified, not proof the real-world claim is false."
+      },
+      "split": "development"
+    },
+    {
+      "id": "C16",
+      "imageId": "I4",
+      "claim": "The price is obscured; evidence uses a substituted PNG hash.",
+      "gold": {
+        "support": "integrity",
+        "decision": "reject",
+        "reason": "Evidence identity mismatch must be rejected before vision evaluation."
+      },
+      "split": "development",
+      "evidenceOverride": {
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ],
+  "limitations": [
+    "Gold labels are curated from original images and prior owner acceptance; require independent human adjudication before a paid model comparison.",
+    "Four repeated source images; claim holdout is not an independent-image generalization test.",
+    "No image degradation or historical artifact modification; ambiguity uses already small mobile text and claims beyond static screenshots."
+  ]
+}

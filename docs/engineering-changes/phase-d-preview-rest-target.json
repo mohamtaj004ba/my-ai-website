@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "11af5651128db583e4b84a5a5f7e980a19ddaaadf6268c200603e21e8c09c450",
+  "risk": "critical",
+  "scope": "Correct the Work-only REST Preview refresh request contract; retain existing central intent, exact source checks and exclusive local duplicate markers.",
+  "riskAnalysis": "Actual Vercel HTTP400 rejected target preview before deployment creation. Official REST documentation requires omitting target for Preview. Add a pure, exact-scope request builder and use it in the existing Work connector helper. No controller, permissions, spending, customer product code or inference changes. Prior failed intent is canceled and cannot be reused.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Production isolation, feature source identity, existing credentials, finite refresh operations and immutable configuration evidence.",
+    "trustBoundaries": "Authenticated owner configuration journal to reviewed Work operator to existing Vercel connector; internal agents receive no publisher or credential access.",
+    "abuseCases": "Production target substitution, latest-source substitution, wrong team/project, reuse of canceled intent, missing dispatch, hidden overrides or duplicate refresh after lost acknowledgment.",
+    "mitigations": "Exact fixed request keys; target omitted; same deployment ID withLatestCommit false; integrity-valid claimed record and pending deployment dispatch; existing full validator and WX markers unchanged. New source/task/intent after prior terminal cancellation."
+  },
+  "rollback": "Stop paid execution, reset future flags and cancel unverified intent using existing reviewed controls. Preserve records and READY alias. Revert Work-only helper use without restoring an invalid request or retrying a previous dispatch. Main and Production unchanged.",
+  "negativePaths": {
+    "malformed-response": "Provider rejection remains preserved; no HTTP200 or request ACK is treated as READY or runtime qualification.",
+    "stale-state": "Wrong source, release, deployment, expired record and canceled record fail before provider I/O.",
+    "concurrency": "Existing CAS ordering and same exclusive local marker directory remain; no parallel provider actions.",
+    "cancellation": "Canceled intent cannot construct a fresh request; original rejected intent remains terminal and immutable.",
+    "worker-interruption": "Pure builder cannot create a worker; local dispatch survives interruption and blocks duplicate actions.",
+    "api-outage": "No retry loop; unknown delivery requires metadata reconciliation and blocks completion.",
+    "authorization-denial": "Wrong scope, unverified metadata, missing dispatch or extra options fail closed.",
+    "spending-limit": "No model or infrastructure purchase; existing cumulative model limits remain unchanged.",
+    "partial-execution": "Original eight writes, rejected deployment and emergency resets are preserved separately; no false completion or replay."
+  },
+  "defects": [
+    {
+      "rootCause": "Work connector copied CLI target preview into REST /v13/deployments body; actual endpoint rejected it with HTTP400 bad_request.",
+      "detectionGap": "Prior no-provider connector fixtures asserted the incorrect literal rather than checking the authoritative REST contract.",
+      "regression": "Pure exact request equality and absence of target, latest-source overrides, files/settings and credential inputs; wrong project/team/source/release/branch and stale/canceled/missing dispatch rejected.",
+      "historicalPrevention": "Preserve failed17-event intent and terminal cancellation; require new exact-source configuration instead of relaxing duplicate guards or claiming a deployment occurred."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "One small Work-only pure request builder; existing connector, CAS controller and one-use marker directory reused.",
+    "dependencies": "No package, service, credential, provider registration or paid infrastructure added. Official Vercel REST tool documentation verified.",
+    "threats": "Wrong target, source or scope; hidden request overrides; duplicate refresh; false success after rejection; credential leakage.",
+    "failureModes": "Request creation grants no authority or READY guarantee; actual provider source/configuration readback remains mandatory.",
+    "faultInjection": "Wrong environment/project/team/source/deployment, unverified metadata, expired/canceled intent, missing dispatch and extra options.",
+    "independentChallenge": "Independent Work QA and Engineering Auditor reviewed actual failure and contract; source-bound final reviews required.",
+    "recovery": "No retry of canceled intent. Future flags false, preparation task canceled; successor source, fresh task and new one-use intent required.",
+    "readiness": "Focused tests then required STRICT/Redis/CI/CodeQL/Browser gates and exact runtime/config proof before any authorized inference."
+  }
+}

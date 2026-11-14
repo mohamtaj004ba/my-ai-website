@@ -1,0 +1,59 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "83704e98e41595bd88de83b14b6842fc6ab06444758c0d11d0c53f0ee593a4cc",
+  "risk": "critical",
+  "scope": "Recover the omitted reviewed journal-routing change record for exact7d58 source; no source/history rewrite.",
+  "riskAnalysis": "Only local UI journal selection changed. Preserve exact policy IDs, source/workspace checks, requested-before-activation marking, backend permissions, old receipts and consumed approvals.",
+  "threatModel": {
+    "assets": "Exact approval/task/release identity and immutable local/server evidence.",
+    "trustBoundaries": "UI journal selection versus server-side task/policy authorization.",
+    "abuseCases": "Picking foreign generic approvals, retrying requested operations, overwriting old receipts or treating local selection as authority.",
+    "mitigations": "Exact policy mapping, no generic fallback in development mode, scope checks and requested markers; existing backend validation unchanged."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "The new CALL_ROW policy used generic saved-attempt storage while development reads selected a different journal.",
+      "detectionGap": "Initial UI tests stopped before actual Prepare-to-Run, and this reviewed source commit omitted its mandatory plan.",
+      "regression": "Actual UI handlers verify canonical save/read/run/revoke/archive, durable requested marker before activation, lost acknowledgment denial and unchanged generic history.",
+      "historicalPrevention": "Use the central exact-policy journal helper and full PR-history preflight before pushing."
+    }
+  ],
+  "rollback": "Disable paid authority; preserve both historical storage journals and receipts. Revert behavior only through reviewed feature changes.",
+  "negativePaths": {
+    "malformed-response": "Verify exact saved grant selection, stale/workspace mismatch denial, requested-before-activation, lost acknowledgment no retry, revoke/archive integrity and unchanged backend authority.",
+    "stale-state": "Verify exact saved grant selection, stale/workspace mismatch denial, requested-before-activation, lost acknowledgment no retry, revoke/archive integrity and unchanged backend authority.",
+    "concurrency": "Verify exact saved grant selection, stale/workspace mismatch denial, requested-before-activation, lost acknowledgment no retry, revoke/archive integrity and unchanged backend authority.",
+    "cancellation": "Verify exact saved grant selection, stale/workspace mismatch denial, requested-before-activation, lost acknowledgment no retry, revoke/archive integrity and unchanged backend authority.",
+    "worker-interruption": "Verify exact saved grant selection, stale/workspace mismatch denial, requested-before-activation, lost acknowledgment no retry, revoke/archive integrity and unchanged backend authority.",
+    "api-outage": "Verify exact saved grant selection, stale/workspace mismatch denial, requested-before-activation, lost acknowledgment no retry, revoke/archive integrity and unchanged backend authority.",
+    "authorization-denial": "Verify exact saved grant selection, stale/workspace mismatch denial, requested-before-activation, lost acknowledgment no retry, revoke/archive integrity and unchanged backend authority.",
+    "spending-limit": "Verify exact saved grant selection, stale/workspace mismatch denial, requested-before-activation, lost acknowledgment no retry, revoke/archive integrity and unchanged backend authority.",
+    "partial-execution": "Verify exact saved grant selection, stale/workspace mismatch denial, requested-before-activation, lost acknowledgment no retry, revoke/archive integrity and unchanged backend authority.",
+    "duplicate-request": "Verify exact saved grant selection, stale/workspace mismatch denial, requested-before-activation, lost acknowledgment no retry, revoke/archive integrity and unchanged backend authority."
+  },
+  "proactiveReview": {
+    "architecture": "Centralize existing UI journal routing only.",
+    "dependencies": "No dependencies, credentials or provider changes.",
+    "threats": "Picking foreign generic approvals, retrying requested operations, overwriting old receipts or treating local selection as authority.",
+    "failureModes": "Missing receipt fails closed; unknown acknowledgment never retries.",
+    "faultInjection": "Lost activation acknowledgment, unrelated generic receipt, repeated Run and correct selective archive.",
+    "independentChallenge": "Independent Work QA19checks and Auditor approved exact source delta; hosted verification required.",
+    "recovery": "Disable paid authority; preserve both historical storage journals and receipts. Revert behavior only through reviewed feature changes.",
+    "readiness": "171focused checks passed after normal source-fingerprint regeneration; initial CI failed for missing plan before regressions."
+  },
+  "historicalCommit": "7d58c89041a1dcf79282d3fac85fdcfda3f4db35",
+  "qualification": "Retrospective source review record only, not a claim the failed CI passed."
+}

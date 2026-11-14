@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "4e45cff85eb44ee738c54191a6e3276d6b322acc48f6a1aeec09d6cbce286093",
+  "risk": "routine",
+  "scope": "Documentation-only actual Node integration and external-browser blocker checkpoint; exact source/test/Redis/hosted/browser evidence and unchanged accounting. No source, permission, execution or deployment change.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "evidence": "Publishedc13ef81;2230full/154contracts/Redis6/QA19/Auditor9/browser502;sevenbrokersdisabled. Actual hosted ownerNode scenario explicitly blocked; no paid requests."
+}

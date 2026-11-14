@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "20bfea1b59e8aa703f60c21328ba4b5389cac3de05757b6c5a29a0dc3b3fdaba",
+  "risk": "critical",
+  "scope": "Correct invalid synthetic restricted-key fixture in new real Redis one-use permit test; application runtime and guards unchanged.",
+  "riskAnalysis": "STRICT existing owner-CAS/API boundary. Oneuse fixed sixGET scope, exact runtime/key/epoch/expiry, no new ledger or agent permissions; preserve all historical evidence.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Restricted sandbox secret, owner identity, exact revoked-provider history and sanitized sixGET receipt.",
+    "trustBoundaries": "Authenticated owner API to existing Stripe CAS/audit; exact Ops revision to fixed native sandbox GET transport; stale store completions.",
+    "abuseCases": "Self-issued agent grants, repeated verification, changed key/source/deployment, stale owner input, late revocation, lost acknowledgement and stalled cleanup.",
+    "mitigations": "Explicit two-revision owner authorization, backend fixedscope/keyhash/runtime/deployment, atomic consume, current record then Ops checks, bounded wholeoperation/cleanup and immutable preserved revocation."
+  },
+  "rollback": "Keep central Stripe revoked and discard local permit with existing owner revoke; revert only candidate Preview source, preserving historical receipts and sensitive Preview-only secret metadata.",
+  "negativePaths": {
+    "malformed-response": "Reject wrong sandboxaccount, listtype, MIMEsize/shape, liveflags and excess records before another request.",
+    "stale-state": "Exact record/Ops revisions, keyhash, runtime source/release/deployment and 2minexpiry deny before provider dispatch.",
+    "concurrency": "Existing actualCAS consumes one permit; concurrent verification produces at most one sixGET sequence.",
+    "cancellation": "Whole deadline aborts nativefetch and laterguards; centralrevoke/Opsrevisionchange denies further GETs; transmittedrequests cannot be recalled.",
+    "worker-interruption": "No new worker/shell is created; interrupted HTTPverification leaves consumed permit unusable and exact owner cleanup available.",
+    "api-outage": "Lost consume/closure ACK and storage stalls return unconfirmed; no automatic provider retry or broadened scope.",
+    "authorization-denial": "Existing owner/workspace/CSRF policy gates new authorize action; agents and foreign owner identities cannot mint permits.",
+    "spending-limit": "Sandbox fixedGETs only; no payment/financial mutation, paid inference, new budget, browser VM or recurring service.",
+    "partial-execution": "Provider failure stops laterGETs; historical receipt mayremain stale-authority; exact bounded closure cannot overwrite newer revoke."
+  },
+  "defects": [
+    {
+      "rootCause": "New disposable Redis fixture used a synthetic key suffix containing underscore, incompatible with existing alphanumeric restricted test-key validator.",
+      "detectionGap": "Focused service fixtures used valid alphanumeric keys; new real Redis case was first executed remotely and did not assert its synthetic credential syntax.",
+      "regression": "Real Redis permit test keeps unchanged strict validator and uses valid fixed synthetic alphanumeric suffix; exactly one sixGET fixture sequence still required.",
+      "historicalPrevention": "Preserve failed Redis evidence and independently review fixture against actual guard; never weaken production key validation for a mock."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse existing Stripe CAS and audit, Ops owner auth, scope journal and six fixed GET transport. No new providergateway or task system.",
+    "dependencies": "Existing sensitive Preview-only restricted credential, actualowner session and unchanged sandboxaccount; no Workcredential inheritance.",
+    "threats": "Permit replay, stale key/source/release/deployment, foreign owner, centralrevocation races and fake success afterstalled cleanup.",
+    "failureModes": "Wholeoperation20sec deadline and independent2sec closure, no paid/API retries; consumedpermit unreusable ifstorage remains uncertain.",
+    "faultInjection": "Duplicate authorize/verify, lost CASack, stale Ops epoch, stalled admission/failurestore/closure, late writes/newer revoke and source substitution.",
+    "independentChallenge": "Separate Work QA49focused tests and actual-source Auditor approve boundedownerread boundary after completion defects corrected.",
+    "recovery": "Existing owner revoke remains available; never clear centralrevocation or revive historical agent grants; new attempt requires separate owner action.",
+    "readiness": "No provider call before STRICT and exact Preview verification. Record one real sixGET outcome truthfully; no operational agentconnection or billing authority."
+  }
+}

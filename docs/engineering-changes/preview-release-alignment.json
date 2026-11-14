@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "5366bba00fef70d1034f021873b54b06cfecd9a00a82fc9e11df5225dc8b16c8",
+  "risk": "critical",
+  "scope": "Preview-only authenticated release identity gate and source-equivalence correction. No paid execution, grants, customer records or Production changes.",
+  "riskAnalysis": "Exact source equality conflated documentation checkpoints with application deployment. Only ancestor plus strict documentary paths may differ; application, dependency, workflow and unknown paths still require exact source. Fingerprint alone cannot establish website equivalence.",
+  "threatModel": {
+    "assets": "QA credentials, immutable deployment identity, feature alias, source history, authoritative release fingerprint, Production isolation.",
+    "trustBoundaries": "Git checkout to authenticated branch identity; immutable endpoint to platform deployment metadata; QA CI secret to fixed trusted Preview origins.",
+    "abuseCases": "Stale application mistaken for docs; sibling source; foreign deployment ID/project/branch; stale contracts; credential-bearing redirect; misleading current-success reports.",
+    "mitigations": "Strict ancestry and changed-path proof, immutable pair equality, expected fingerprint/project/branch, redirect error and bounded timeout; sanitized attempt reasons; independent platform readback and restricted feature-only alias assignment."
+  },
+  "rollback": "Keep paid disabled. Restore only recorded feature Preview alias to its prior verified READY disabled deployment if identity or QA fails; no Production promotion. Preserve failed runs and original records.",
+  "negativePaths": {
+    "malformed-response": "Actual Node QA/Auditor tests and retained contract-first suite cover malformed-response with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "stale-state": "Actual Node QA/Auditor tests and retained contract-first suite cover stale-state with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "concurrency": "Actual Node QA/Auditor tests and retained contract-first suite cover concurrency with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "cancellation": "Actual Node QA/Auditor tests and retained contract-first suite cover cancellation with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "worker-interruption": "Actual Node QA/Auditor tests and retained contract-first suite cover worker-interruption with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "api-outage": "Actual Node QA/Auditor tests and retained contract-first suite cover api-outage with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "authorization-denial": "Actual Node QA/Auditor tests and retained contract-first suite cover authorization-denial with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "spending-limit": "Actual Node QA/Auditor tests and retained contract-first suite cover spending-limit with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "partial-execution": "Actual Node QA/Auditor tests and retained contract-first suite cover partial-execution with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Browser gate required deployment SHA equal documentation checkpoint SHA while branch alias remained at earlier equivalent application deployment.",
+      "detectionGap": "No explicit documentation-versus-application equivalence or deployment ID/fingerprint binding in the old gate; failed identity values were not retained.",
+      "regression": "Actual gate accepts strict documentation ancestor equivalence and rejects runtime/config/workflow changes, unrelated history, deployment mismatches and stale fingerprint.",
+      "historicalPrevention": "Historical f95/6f documentation difference is recognized explicitly; new app changes still fail before browser testing; sanitized failed reason retained."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "QA alias bootstrap pins immutable Preview deployment; existing server QA guards unchanged; no operational ledger or model path.",
+    "dependencies": "Git history, Vercel system deployment identity and protected Preview, same current Redis/account auth; GitHub CI.",
+    "threats": "Stale application mistaken for docs; sibling source; foreign deployment ID/project/branch; stale contracts; credential-bearing redirect; misleading current-success reports.",
+    "failureModes": "Stale alias, missing system identity, source drift, unavailable endpoint, redirect, deployment replacement and documentation-only commit.",
+    "faultInjection": "Executed request-faithful alias/immutable responses with identity and source mutation plus actual guarded identity function regression.",
+    "independentChallenge": "Separate QA and Engineering Auditor inspect actual code and downloaded hosted report.",
+    "recovery": "Keep paid disabled. Restore only recorded feature Preview alias to its prior verified READY disabled deployment if identity or QA fails; no Production promotion. Preserve failed runs and original records.",
+    "readiness": "Offline tests separate from exact-source hosted browser artifact; no paid workflow accuracy claims."
+  }
+}

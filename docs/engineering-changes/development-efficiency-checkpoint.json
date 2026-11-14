@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "3daf1d82ae7a942464f66a4792b15f07b25ded4deb87be8c68e23e9bba6602df",
+  "risk": "routine",
+  "scope": "Record verified Preview development efficiency source, exact test and Browser evidence, measured timings and unproved affected-page limitations; no runtime or authority changes.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "6cf7881ea86d09f6babf85df48e47393f8fc40200d7a8270cf0a195ee0784379",
+  "risk": "routine",
+  "scope": "Documentation-only exact verified Preview release-alignment results, independent review, artifact hash and remaining limitations; no runtime or permission changes.",
+  "defects": []
+}

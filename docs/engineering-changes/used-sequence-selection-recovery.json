@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "162670f7976d16abb2957000c26b84037f21f474af039157cfacfa2e1092d5f9",
+  "risk": "critical",
+  "scope": "Read-only recovery of an existing used engineering sequence selection after browser interruption; no server authorization changes.",
+  "riskAnalysis": "Recovery may select only a validated owner-scoped existing open sequence with closed authority and conservative headroom; fresh release enrollment and one-time approval remain mandatory.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Existing owner selection, immutable history, task/release isolation and spending authority.",
+    "trustBoundaries": "Server validates full owner/cohort/hash history. Redacted UI validates bounded references and double-readback stability; it cannot grant authority.",
+    "abuseCases": "Recover consumed approvals, choose foreign or stale sequence, overwrite uncertain cache, treat current release as enrolled, malformed history or active workers.",
+    "mitigations": "Two unchanged authenticated snapshots, same owner/workspace/runtime fence, empty caches, valid bounded history and revoked/closed references; save latest already enrolled runtime only."
+  },
+  "rollback": "Revert UI recovery extension and lock on feature branch; preserve all original sequence, configuration, tasks, grants, receipts and accounting.",
+  "negativePaths": {
+    "malformed-response": "Existing authoritative server checks unchanged; new used-selection UI fixtures deny invalid history, active authority, foreign state, cache races and insufficient conservative headroom without POST or provider access.",
+    "stale-state": "Existing authoritative server checks unchanged; new used-selection UI fixtures deny invalid history, active authority, foreign state, cache races and insufficient conservative headroom without POST or provider access.",
+    "concurrency": "Existing authoritative server checks unchanged; new used-selection UI fixtures deny invalid history, active authority, foreign state, cache races and insufficient conservative headroom without POST or provider access.",
+    "cancellation": "Existing authoritative server checks unchanged; new used-selection UI fixtures deny invalid history, active authority, foreign state, cache races and insufficient conservative headroom without POST or provider access.",
+    "worker-interruption": "Existing authoritative server checks unchanged; new used-selection UI fixtures deny invalid history, active authority, foreign state, cache races and insufficient conservative headroom without POST or provider access.",
+    "api-outage": "Existing authoritative server checks unchanged; new used-selection UI fixtures deny invalid history, active authority, foreign state, cache races and insufficient conservative headroom without POST or provider access.",
+    "authorization-denial": "Existing authoritative server checks unchanged; new used-selection UI fixtures deny invalid history, active authority, foreign state, cache races and insufficient conservative headroom without POST or provider access.",
+    "spending-limit": "Existing authoritative server checks unchanged; new used-selection UI fixtures deny invalid history, active authority, foreign state, cache races and insufficient conservative headroom without POST or provider access.",
+    "partial-execution": "Existing authoritative server checks unchanged; new used-selection UI fixtures deny invalid history, active authority, foreign state, cache races and insufficient conservative headroom without POST or provider access."
+  },
+  "defects": [
+    {
+      "rootCause": "Existing selection recovery explicitly required zero attempts and one enrollment, preventing recovery of a valid used open sequence after browser interruption.",
+      "detectionGap": "Prior recovery fixtures covered only pristine sequence and malformed attempted records.",
+      "regression": "Four consumed attempts and five valid enrollments recover through two GETs; 19 new adversaries and previous race/ownership/cache denial tests remain.",
+      "historicalPrevention": "Use realistic interrupted used-sequence readback; distinguish local selection from server enrollment or grants."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing UI selection recovery only; no gateway, journal, controller or financial policy changes.",
+    "dependencies": "No packages, secrets, infrastructure or provider permissions added.",
+    "threats": "Forged history references, stale runtime, ambiguous sequence, resurrected grants and cache overwrite.",
+    "failureModes": "Missing or changed authority/history fails closed without storage or server mutation.",
+    "faultInjection": "Used-chain ordinals/links/duplicates, missing closed workflow or revoked approval, changed second readback, insufficient budget, foreign owner/workspace and cache races.",
+    "independentChallenge": "Work QA156/156 and Auditor140/140 approved; incidental encoding defect caught and corrected before freeze.",
+    "recovery": "Latest previously enrolled runtime saved only as local selection; current successor still requires exact reviewed release enrollment, fresh task and one-time approval.",
+    "readiness": "Focused tests passed. Exact hosted STRICT/Redis/CI/CodeQL/Jekyll/Browser qualification required before paid continuation."
+  }
+}

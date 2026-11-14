@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "57cf0239ac95662dc918a28d52aaf68526c3e38f39d7461b6cec07b8fcf14a5f",
+  "risk": "routine",
+  "scope": "Preserve completed model-authored Starter product delivery, Work-controlled Preview publication, actual test/browser evidence, independent reviews and unchanged shutdown/history.",
+  "verification": [
+    "scope-review"
+  ],
+  "riskAnalysis": "Canonical documentation only, no runtime, identity, permissions, credentials, spending or deployment change. Preserve previous checkpoints and failed verification evidence.",
+  "defects": []
+}

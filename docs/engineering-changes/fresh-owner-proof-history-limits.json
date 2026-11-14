@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "851e27d07a9fa4203625718df5c7a5433eb83220868a3c4d20a178f02fdf4b11",
+  "risk": "critical",
+  "scope": "Remove artificial lifetime history admission caps and duplicate same-invocation owner authentication; retain exact live authority and full immutable history.",
+  "riskAnalysis": "Removing historical cardinality caps does not grant execution. Full historical validation and actual provider errors remain authoritative. Fresh single-use authority proof eliminates only duplicate production-equivalent authentication within a read; forged or stale proofs deny.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Historical audit records, revoked authority, owner/workspace isolation, exact source and release, and current execution controls.",
+    "trustBoundaries": "Fresh authenticated operations read mints module-private one-use proof; controller checks exact context; broker rechecks live ledger; cleanup scans complete historical collections.",
+    "abuseCases": "Forged or reused owner proof; changed identity during awaits; hidden late active record; invalid null-limit arithmetic; history truncation; concurrent append; foreign history disclosure.",
+    "mitigations": "Opaque per-call request/service/view/identity/runtime binding, preawait identity capture, fallback fresh authentication, full hash-chain and history readback, CAS, scoped redaction, late-record and provider-failure adversarial tests."
+  },
+  "rollback": "Revert only reviewed successor source on feature branch; preserve all historical records and consumed approvals. Never truncate rows to fit an older application cap; keep paid disabled pending compatible recovery.",
+  "negativePaths": {
+    "malformed-response": "Actual offline controller and history fixtures cover malformed-response with no provider access; unchanged task, source, role, timeout, serial and revocation gates remain authoritative.",
+    "stale-state": "Actual offline controller and history fixtures cover stale-state with no provider access; unchanged task, source, role, timeout, serial and revocation gates remain authoritative.",
+    "concurrency": "Actual offline controller and history fixtures cover concurrency with no provider access; unchanged task, source, role, timeout, serial and revocation gates remain authoritative.",
+    "cancellation": "Actual offline controller and history fixtures cover cancellation with no provider access; unchanged task, source, role, timeout, serial and revocation gates remain authoritative.",
+    "worker-interruption": "Actual offline controller and history fixtures cover worker-interruption with no provider access; unchanged task, source, role, timeout, serial and revocation gates remain authoritative.",
+    "api-outage": "Actual offline controller and history fixtures cover api-outage with no provider access; unchanged task, source, role, timeout, serial and revocation gates remain authoritative.",
+    "authorization-denial": "Actual offline controller and history fixtures cover authorization-denial with no provider access; unchanged task, source, role, timeout, serial and revocation gates remain authoritative.",
+    "spending-limit": "Actual offline controller and history fixtures cover spending-limit with no provider access; unchanged task, source, role, timeout, serial and revocation gates remain authoritative.",
+    "partial-execution": "Actual offline controller and history fixtures cover partial-execution with no provider access; unchanged task, source, role, timeout, serial and revocation gates remain authoritative."
+  },
+  "defects": [
+    {
+      "rootCause": "Every activation subject invocation authenticated the same owner twice serially before its ledger phase, contributing avoidable latency to observed renewal timeout.",
+      "detectionGap": "Previous controller fixtures tested denial and renewal separately but did not prove single fresh production-equivalent authentication per subject invocation.",
+      "regression": "Seventy-six affected checks include branded read, forged reader fallback, proof misuse, TOCTOU, revocation and scaled delayed-owner reproduction.",
+      "historicalPrevention": "Keep one-use proof scoped to exact invocation and include latency plus forged-reader cases when modifying authentication wiring."
+    },
+    {
+      "rootCause": "Historical cardinality ceilings blocked admission despite available provider resources, and cleanup projections silently sliced the first128 records.",
+      "detectionGap": "Prior cleanup tests stayed below historical collection ceilings and did not exercise late owned or foreign records.",
+      "regression": "Append and concurrent prefix preservation beyond old counts; late active/foreign/malformed records; full cleanup candidate visibility and actual provider-error preservation.",
+      "historicalPrevention": "Separate lifetime utilization telemetry from live resource/authority limits; test entire historical readback rather than only initial prefixes."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing controller, operations store, lifecycle and organization ledger extended; no competing system or authorization identity.",
+    "dependencies": "No new dependencies, credentials, services or infrastructure.",
+    "threats": "Authentication proof forgery or reuse; collection shape corruption; late authority hidden by projection; provider failure.",
+    "failureModes": "Unknown or revoked authority denies; malformed late records block; provider failures propagate without truncating history.",
+    "faultInjection": "Identity/runtime mutation during await, forged and copied proof, late active records, concurrent writes and unavailable provider.",
+    "independentChallenge": "Separate child implementation authors and Work QA; root independently reviewed proof; different child Auditor independently reviewed cap changes.",
+    "recovery": "Prior consumed trial unchanged; no paid retry; new exact qualified successor requires fresh configuration and execution grant.",
+    "readiness": "Focused verification and independent reviews passed; remote STRICT, Redis, CI, CodeQL, Jekyll and actual Preview Browser evidence required before paid dispatch."
+  }
+}

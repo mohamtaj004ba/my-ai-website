@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "d02fa345e116be05ff1931357a8d47b285badc591d08a5f6b137fad78ca3f840",
+  "risk": "critical",
+  "scope": "Finite lease-aware renewal response budget and absolute pre-CAS expiry/cancellation enforcement in existing owner and Node controllers; preserve original30s lease, task expiry, serial execution and cleanup.",
+  "riskAnalysis": "Actual d623 renewal exceeded10s after independent reads were already overlapped (10588ms total/10552ms phase). Network versus CPU cause remains unknown. Fixed10s response window was insufficient; initial lease age and delayed timers must not extend authority.",
+  "threatModel": {
+    "assets": "Acknowledged30s lease, immutable owner/task expiry, immediate cancellation, exact-source approval, concurrent revocation, provider admission and immutable ledger.",
+    "trustBoundaries": "Only trusted controller callbacks provide lease acknowledgments; private internal absolute deadlines can deny but cannot grant authority. Both existing owner and Node execution controllers use the same finite lease-aware mechanism.",
+    "abuseCases": "Expired initial seed escaping cleanup, stale lease acknowledgment, extension beyond immutable expiry, timer-delayed CAS, terminal heartbeat rescheduling, aborted or late renewal, concurrent revocation and forged terminal result.",
+    "mitigations": "Renewal max15s clamped to actual acknowledged lease minus1s and operation/immutable expiry; early bounded renewal for aged seed; no overlap/retry; dynamic seed checks inside finally-protected block; immediate absolute and abort checks before both CAS paths; authenticated exact terminal result stops scheduling without extending authority."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Actual d623 renewal exceeded10s after independent reads were already overlapped (10588ms total/10552ms phase). Network versus CPU cause remains unknown. Fixed10s response window was insufficient; initial lease age and delayed timers must not extend authority.",
+      "detectionGap": "Prior gated overlap tests did not exercise successful10.6s renewal within actual30s lease, aged initial lease or absolute deadline after delayed event-loop timer.",
+      "regression": "16 independent lease/deadline/cancellation cases plus explicit no-op and mutation pre-CAS tests; full4570 produced4569pass and one invalid post-activation deadline fixture, corrected without changing assertions and targeted pass.",
+      "historicalPrevention": "Keep immutable expiry and actual acknowledged lease distinct from response timeout; validate dynamic seeds within cleanup and check absolute deadlines synchronously before commit."
+    }
+  ],
+  "rollback": "Keep paid execution disabled, revoke current grant, preserve failures/accounting; revert feature-only runtime if qualification fails. No Production change or audit rewrite.",
+  "negativePaths": {
+    "malformed-response": "Bounded JSON/NDJSON parsers, exact23checks/7case IDs, final command/session binding; raw provider errors never enter receipts.",
+    "stale-state": "ACK cannot exceed immutable expiry or existing30s lease; aged seeds renew before work; actual no-op ACK does not become a fabricated fresh lease.",
+    "concurrency": "One approval permission consumed atomically before unique provider-name creation; shared source jobs globally serial including cleanup-unconfirmed.",
+    "cancellation": "Abort and absolute deadline checked before owner renewal, transaction callback and immediately before both identical-byte/mutation CAS; expired initial seed still revokes and reads back.",
+    "worker-interruption": "Unique durable claim survives lost acknowledgment; read named resource without create retry; absent/unconfirmed resource is not called clean.",
+    "api-outage": "Pending owner/ledger reads have closed phase diagnostics; finite15s response budget remains inside actual lease/expiry; no unknown mutation retry.",
+    "authorization-denial": "Both checks complete before callback/CAS; owner denial cannot be hidden by successful prefetched read.",
+    "spending-limit": "No budget increase, model retry or recurring task. Existing owner financial monitoring unchanged; source VM remains finite1CPU2GB300s/deny-all/nonpersistent.",
+    "partial-execution": "Latest failed attempt admitted count marker but source proves no count HTTP or Responses fetch; no VM. Previous actual Chief usage and unknown historical countfees remain preserved.",
+    "duplicate-request": "No provider retries or fresh authorization reuse. Only confirmed ledger CAS conflict repeats fresh reads."
+  },
+  "proactiveReview": {
+    "architecture": "Extend existing controller and private transaction options only; no new journal/provider/credential/orchestrator.",
+    "dependencies": "No dependency, provider, credential, network permission or hosting changes.",
+    "threats": "Expired initial seed escaping cleanup, stale lease acknowledgment, extension beyond immutable expiry, timer-delayed CAS, terminal heartbeat rescheduling, aborted or late renewal, concurrent revocation and forged terminal result.",
+    "failureModes": "Renewal max15s clamped to actual acknowledged lease minus1s and operation/immutable expiry; early bounded renewal for aged seed; no overlap/retry; dynamic seed checks inside finally-protected block; immediate absolute and abort checks before both CAS paths; authenticated exact terminal result stops scheduling without extending authority.",
+    "faultInjection": "16 independent cases plus explicit absolute-CAS checks PASS; full4570/4569PASS/1 invalid fixture FAIL preserved, same16s deadline moved before activation and targetedPASS; hosted/full final qualification pending.",
+    "independentChallenge": "QA c3a97fef684d63453b2f09ed572c638b4019ee74d16de8b4974ab5a3ca0269c1; Auditor232c03dbe6f114f2319083fdd1de560eae5d9119f9e02f3cba8269dbced10f2c. Found and corrected expired-seed cleanup and terminal rescheduling; absolute pre-CAS deadline independently fault injected.",
+    "recovery": "Last approval revoked revision6 lease0, grants revoked cleanup ready; task cancellation requested once pending fresh acknowledgment. All original receipts and financial uncertainty remain unchanged.",
+    "readiness": "Non-billable reviewed repair only; exact remote CI/Redis/security/browser/source qualification and fresh release enrollment/configuration required before another paid attempt."
+  }
+}

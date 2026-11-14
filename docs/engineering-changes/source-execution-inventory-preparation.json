@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "82ee1dcf7aee830ab70d0bb8726e65a834096b35ddb5b08489a66fdaff63b296",
+  "risk": "critical",
+  "scope": "Prepare an offline trusted read-only guest inventory for the existing OS qualification plan; no runtime integration or provisioning.",
+  "riskAnalysis": "Operator utility is not deployed or integrated into authorization. It cannot qualify execution, write data, execute commands or call providers. Full source-batch release checks remain pending; current Preview stays unchanged.",
+  "threatModel": {
+    "assets": "Credential confidentiality and truthful isolation qualification evidence.",
+    "trustBoundaries": "Kernel metadata or fixture input becomes closed observations, never authorization.",
+    "abuseCases": "Malformed or secret-bearing input could be echoed, impossible limits misclassified, or observations overstated as sandbox qualification.",
+    "mitigations": "Fixed kernel paths, bounded reads, strict parsers, closed sanitized output and permanent qualified:false/execution:false; independent review and no provisioning."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Initial parser did not reject impossible UID range or contradictory soft and hard resource limits.",
+      "detectionGap": "Initial fixtures covered lexical formats but not kernel numeric domain constraints.",
+      "regression": "Six focused tests plus independent boundary cases cover invalid UID widths, root IDs, contradictory limits, empty controllers and diagnostic secret canaries.",
+      "historicalPrevention": "Treat parsed metadata as observation only and validate domain constraints before reporting any property."
+    }
+  ],
+  "rollback": "Revert only this unused operator utility and its fixtures if later qualification reveals a problem; no application runtime, resource or original evidence changes.",
+  "negativePaths": {
+    "malformed-response": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "stale-state": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "concurrency": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "cancellation": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "worker-interruption": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "api-outage": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "authorization-denial": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "spending-limit": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged.",
+    "partial-execution": "No provider/runtime integration exists. Offline malformed/oversized/missing evidence remains unqualified; current live controller behavior is unchanged."
+  },
+  "proactiveReview": {
+    "architecture": "Existing OS qualification plan gains a fixed read-only inventory, not a new runner or orchestration architecture.",
+    "dependencies": "Uses only Node built-in filesystem; no package, service, credential or network capability added.",
+    "threats": "Secret-bearing malformed metadata must not leak or manufacture qualification. Fixed sanitized closed output and immutable false authority flags verified.",
+    "failureModes": "Missing, duplicate, oversized and contradictory data returns unknown; non-Linux environments return unsupported without probes.",
+    "faultInjection": "Root focused56tests and independent QA6plus7boundary checks exercise invalid metadata, secret canaries, source patch denial and cleanup.",
+    "independentChallenge": "Separate Work QA corrected three observation issues; Auditor found no material security issue,13adversarial checks passed.",
+    "recovery": "No guest/session/provider operation exists to clean up. Original paid grants and completed-trial evidence remain revoked and preserved.",
+    "readiness": "Offline preparation reviewed. Full regression, Redis, CI, CodeQL and hosted release qualification pending next source batch; not published or activated."
+  }
+}

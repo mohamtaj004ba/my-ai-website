@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "0e7e5a0e0c3ed7652e4e87d71f10ff30a71581159fbed01c238d399aa53a0184",
+  "risk": "critical",
+  "scope": "Current Specialist-only concise output guidance after correctly rejected max_output_tokens incomplete response; preserve all schema/authority limits.",
+  "riskAnalysis": "No increased output ceiling, truncated response recovery, omission or required criterion reduction. Exact failure preserved; partial content remains unknown. All other current stage instructions and historical compact instructions unchanged.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Reviewer completeness, source/evidence integrity, historical decisions and execution/publication boundaries.",
+    "trustBoundaries": "Validated Specialist receipt supplies data IDs only; owner/server remains authoritative for all permissions.",
+    "abuseCases": "Extra or forged decisions, omitted findings, schema bypass, fabricated acceptance, secret-bearing diagnostics, missing prior receipts.",
+    "mitigations": "Exact count and finding enum plus unchanged semantic uniqueness/evidence checks; closed sanitized categories only; no authority expansion."
+  },
+  "rollback": "Revert new QA schema/instructions/diagnostic metadata on feature branch; keep original trial, generated patch, reservations and all audit records.",
+  "negativePaths": {
+    "malformed-response": "Strict schema and existing provider parser remain; new extra count/forged ID outputs denied.",
+    "stale-state": "Fresh prior receipt and exact source/task binding remain authoritative.",
+    "concurrency": "No CAS/serial-authority change; existing mandatory coverage retained.",
+    "cancellation": "Existing cancellation/revocation/cleanup behavior unchanged and native failure tests passed.",
+    "worker-interruption": "No worker modification; original destruction evidence and interruption tests retained.",
+    "api-outage": "No provider retries introduced; existing failure handling unchanged.",
+    "authorization-denial": "No owner/role/tool grants added; exact source pin changes require fresh reviewed enrollment.",
+    "spending-limit": "No budget, reservation or token-limit changes; remaining1.80USD conservatively enforced.",
+    "partial-execution": "Original third-stage failure preserves first two results, QA usage and destroyed workspace; no downstream success claimed."
+  },
+  "defects": [
+    {
+      "rootCause": "Observed provider response exhausted4000 output tokens and was correctly rejected as incomplete; exactpartialcontent and reason for generation length unknown.",
+      "detectionGap": "Fixtures cannot establish live output length; previous complete genuine Specialist1455 tokens supports smaller target feasibility only.",
+      "regression": "Stage-only1600target, nofullsource, allrisk/criteria coverage retained; allfive realistic fixture requests below unchanged planning ceiling; historical request compatibility.",
+      "historicalPrevention": "Explicit bounded artifact guidance; incomplete responses always fail closed without retries or fabricated field completion."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing implementation/schema/parser/failure boundary only; no new execution path or organization.",
+    "dependencies": "No new packages, services, credentials or infrastructure.",
+    "threats": "Output overcount, forged IDs, missing prior evidence, suppressed criticism and secret-bearing diagnostics.",
+    "failureModes": "Missing or unsupported prior evidence denies request; invalid count/IDs fail schema and semantic guards. Failed paid work remains revoked with observed usage retained.",
+    "faultInjection": "Old permissive schema counterexample, extra decisions, invented ID, absent prior receipt, duplicate generic finding, malformed diagnostics and historical request fixtures.",
+    "independentChallenge": "Work QA20/20 and independent Auditor6/6 approve exact working guidance and verified shutdown; no material finding, pending exact hosted qualification.",
+    "recovery": "Original failure and agent patch remain immutable; no paid retry until exact new release/configuration/admission qualification.",
+    "readiness": "6focusedpass; no live success claim. Exact successor STRICT/Redis/Browser and review gates pending."
+  }
+}

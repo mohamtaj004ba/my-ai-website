@@ -1,0 +1,111 @@
+{
+  "qualification": "Historical observed Chief response only; not a new model run or authorization.",
+  "snapshotHash": "ad2b074fa95b369a141a6867bba8d0afc799822d894786b65fd930e4775e3a4e",
+  "receipt": {
+    "reportQuality": {
+      "version": "report-quality-review-v1",
+      "issues": [
+        {
+          "location": "$.problem",
+          "code": "missing-terminal-punctuation"
+        },
+        {
+          "location": "$.scope[0]",
+          "code": "missing-terminal-punctuation"
+        },
+        {
+          "location": "$.deliverables[0]",
+          "code": "missing-terminal-punctuation"
+        },
+        {
+          "location": "$.completionCriteria[0]",
+          "code": "missing-terminal-punctuation"
+        }
+      ],
+      "priorReviewRefs": []
+    },
+    "version": "engineering-provider-v2",
+    "stage": "chief-plan",
+    "binding": {
+      "planId": "op_09c328e652f94cd491959dab72b7b2c2",
+      "taskId": "op_09c328e652f94cd491959dab72b7b2c2_task1",
+      "executionId": "pilot_050085d9bbaa37d168b25e7f1128d3f5_chief-plan",
+      "fence": 0,
+      "ownerHash": "2f17d0dddf50600be4ff4dc5e30a6d4b1fa14daf7bce317931dda6124970321a",
+      "workspaceHash": "950868b4dd216bddaa5498c1cf45dc1a7adb6696e0222f79833fb586dc478ee1",
+      "runtime": {
+        "origin": "https://my-ai-website-4bcrl7p4u-mohamtaj004bas-projects.vercel.app",
+        "sourceCommit": "130143322c8b495bafdf113542a9bec547fb4acb",
+        "branch": "feature/callercore-dashboards",
+        "deploymentId": "dpl_4N929BhNxjvDgL9rSmeh8TFaoCAJ",
+        "release": {
+          "version": "organization-contracts-v4",
+          "digest": "049a913d90c1b2c1a0a89a94129c42bdeb7d9e08767f4864c9517c9ddac18ffc"
+        }
+      },
+      "authorizationRevision": 1
+    },
+    "mode": "pilot",
+    "response": {
+      "stage": "chief-plan",
+      "objective": "Assign the dashboard specialist to produce one source-bound, inert patch containing exactly five replacement search expressions for formatting-independent phone search, while preserving existing free-text behavior and every surrounding behavior. This plan neither executes nor accepts the patch.",
+      "specialist": "dashboard",
+      "completionCriteria": [
+        "Provide exactly one replacement expression for each of calls, follow-ups, local-conversations, contacts and paged-conversations, bound to the supplied source, ≤"
+      ],
+      "reason": "The five supplied search expressions perform literal, lowercased substring matching without phone normalization. Consequently, equivalent digit sequences separated by different phone punctuation can fail to match. The dashboard specialist must author the replacements; this plan supplies requirements, not replacement expressions.",
+      "problem": "Phone search must tolerate formatting differences across Calls, Follow-ups, Contacts and local/paged Conversations without broadening normalization to unrelated record text. Phone-only queries contain digits and common phone punctuation or spaces and must match contiguous digit substrings of the phone field. Country-code equivalence must not be invented. Existing ordinary text matches must remain,",
+      "sourceEvidenceIds": [
+        "calls",
+        "follow-ups",
+        "local-conversations",
+        "contacts",
+        "paged-conversations"
+      ],
+      "intendedImpact": {
+        "assessment": "Expected to recover phone-field matches currently missed because of formatting differences across all five paths. No measured improvement or verified regression-free result is available.",
+        "basis": "hypothesis",
+        "uncertainty": "The supplied excerpts support the literal-matching root cause, but runtime behavior, query preprocessing, production incidence and complete surrounding source have not been independently verified."
+      },
+      "scope": [
+        "Profile client-phone-search-v1; scopeHash 4d27ffcc6c86b78cd6592e88674985e0382bd8696e4ff18e685d578fbef2947a; expression contract pure-search-expression-v1; formatVersion machine狌"
+      ],
+      "exclusions": [
+        "No helper insertion, dependencies, unrelated edits, query preprocessing changes or country-code equivalence rules.",
+        "No tools, network access, credentials, repository writes, publication, permission changes, customer actions or independent acceptance.",
+        "No execution authority: executionAuthorized is false. Patch content remains inert data; only the backend may apply it to a disposable copy.",
+        "No changes to filters, sorting, paging, cursor binding, entitlements, authorization, rendering, escaping or read state."
+      ],
+      "uncertainty": "Only supplied source excerpts and metadata are available. There are no specialist replacements, qualified sourceTests results, QA decisions or Auditor reference yet. qualityReview.assessments and requiredReviewRefs are empty; semanticQualityVerified is false. Missing evidence must remain explicit, and rejection remains permitted.",
+      "deliverables": [
+        "The dashboard specialist must provide one inert, source-bound patch with all five exact before expressions copied from the manifest and five specialist-authored replacements. Each"
+      ],
+      "qualityReviewRefs": []
+    },
+    "requestHash": "b3baf182105ccdede9a4df40b04a94ac63fb8462ec0cb2d82a71794eb6d46eba",
+    "evidenceHash": "1388b7c7a6b061574788c6277bd7b699c86fee3754e6eb65f053b41f5512552d",
+    "usage": {
+      "inputTokens": 3105,
+      "outputTokens": 826,
+      "reasoningTokens": 170,
+      "cachedInputTokens": 0,
+      "cacheWriteTokens": 0,
+      "calculatedCostMicros": 14470
+    },
+    "syntheticUsage": null,
+    "provider": {
+      "id": "resp_084265ff801b9bd0016ae17b0b859087d2906ac3fa79abc5fb",
+      "status": "completed",
+      "model": "gpt-6.1-sol",
+      "serviceTier": "default"
+    },
+    "principalHash": "e7bee450aa71287c9741c616c085a560816c22dacc44262884ae6d579d54c07d",
+    "principalKind": "service",
+    "independence": "separate-capability-procedural-only",
+    "reviewMode": "authenticated-automated-technical",
+    "humanReview": false,
+    "acceptedWork": false,
+    "publicationAuthorized": false,
+    "hash": "90d9ab9357636377889cd0fae4cd10a3219fc8d01ddc84d626236aa24c86d1a2"
+  }
+}

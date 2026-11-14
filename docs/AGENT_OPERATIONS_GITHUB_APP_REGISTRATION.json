@@ -1,0 +1,33 @@
+{
+  "version": "github-app-registration-preparation-v1",
+  "status": "owner-consent-and-homepage-required-not-submission-ready",
+  "provider": "github",
+  "intendedAccountOwner": "mohamtaj004ba",
+  "repositorySelection": "selected",
+  "repositories": ["mohamtaj004ba/my-ai-website"],
+  "providerManifestFields": {
+    "name": "CallerCore Agent Operations",
+    "description": "CallerCore repository-scoped engineering integration; operational permissions remain separately enforced by CallerCore.",
+    "public": false,
+    "hook_attributes": {"active": false},
+    "default_events": [],
+    "request_oauth_on_install": false,
+    "default_permissions": {
+      "metadata": "read",
+      "contents": "write",
+      "pull_requests": "write",
+      "issues": "write",
+      "actions": "write"
+    }
+  },
+  "missingOwnerInputs": ["Confirm App owner and available App name", "Confirm the required public HTTPS App homepage URL"],
+  "registrationMode": "manual-owner-registration-preferred-until-managed-manifest-secret-handshake-exists",
+  "initialInstallationTokenPermissions": {"metadata": "read", "contents": "read", "actions": "read"},
+  "initialTokenRepositorySelection": "explicit-single-numeric-repository-id-required",
+  "callerCoreDisabledOperations": ["repository-write", "branch-create", "reference-delete", "tag-create", "pull-request-create", "pull-request-merge", "issue-write", "workflow-dispatch", "workflow-rerun", "workflow-cancel", "workflow-file-write", "main-write", "production-access"],
+  "prohibitedAppPermissions": ["administration", "secrets", "workflows"],
+  "credentialsCreated": false,
+  "accountCreated": false,
+  "installationPerformed": false,
+  "providerDocumentation": "https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest"
+}

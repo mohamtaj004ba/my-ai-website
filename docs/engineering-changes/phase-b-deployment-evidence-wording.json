@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "6c5c7c1f7279359a836d87c1a2f6523714aa6fa32c07bb8600c1be1dcdeac289",
+  "risk": "routine",
+  "scope": "Correct measured deployment-efficiency wording: documentation pushes still create automatic source-equivalent Vercel deployments; no runtime or permission changes.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "0228179dffd9c027e6f88e8e2c87459e41386eda6c5611bfd2d76496a97811ea",
+  "risk": "routine",
+  "scope": "Record exact Phase A source, independently reviewed safeguards, offline and hosted verification, preserved history, disabled authority and remaining evidence/acceptance limitations; no application changes.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

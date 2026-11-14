@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "6fc7c311297b32b525c2da34bea03de061ebedbee70165fa8b403754bcc13367",
+  "risk": "critical",
+  "scope": "Overlap fresh owner session/member/workspace and scoped operations-state reads in existing authority pathway; retain every denial and single-use proof, add closed pending-phase diagnostics, no authority cache or deadline increase.",
+  "riskAnalysis": "Actual third integrated attempt Chief succeeded, Specialist renewal waited15.389s at owner-read-pending. Source proves four serialized Redis REST waves, including duplicate membership read; exact provider/CPU/subread attribution remains unknown. Remove verified unnecessary serialization without another timeout increase.",
+  "threatModel": {
+    "assets": "Fresh owner session, auth version, admin membership, original workspace ownership, immutable source/task/release, private scoped plans and single-use authority proof.",
+    "trustBoundaries": "Trusted dependency functions read current identity records; known original workspace hint is captured before await. Concurrent private reads do not disclose data or authority until every authentication and full state check succeeds.",
+    "abuseCases": "Late null session, disabled/demoted member, adminView, wrong workspace/owner, changed actor or authority hint during await, foreign state, read failure, forged/reused proof, observer error or secret diagnostics.",
+    "mitigations": "Capture and compare actor/authority/runtime; original getSession checks unchanged; all three fresh hinted identity reads awaited and cross-bound; no-hint fallback session-derived; scoped read plus fresh owner both awaited before full validate/view/proof; private one-use proof unchanged; observers closed and non-authoritative."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Actual third integrated attempt Chief succeeded, Specialist renewal waited15.389s at owner-read-pending. Source proves four serialized Redis REST waves, including duplicate membership read; exact provider/CPU/subread attribution remains unknown. Remove verified unnecessary serialization without another timeout increase.",
+      "detectionGap": "Earlier overlap optimized only outer ledger versus complete owner path; fixtures did not gate nested session/member/workspace and scoped-state reads independently.",
+      "regression": "93 focused checks PASS, including independent14 owner-policy and6 scoped-read adversarial cases. Initial73/71+2serial read-count assumptions preserved; only two expectations updated, denial/no authority/zero writes retained.",
+      "historicalPrevention": "Review complete nested control-plane read graph and overlap independent fresh reads only; preserve exact binding, no caching and closed diagnostics at actual pending boundaries."
+    }
+  ],
+  "rollback": "Keep paid authority revoked, preserve third-attempt Chief usage/failure/count uncertainty; revert this feature-only read optimization if remote qualification fails. No Production change or historical rewrite.",
+  "negativePaths": {
+    "malformed-response": "Bounded JSON/NDJSON parsers, exact23checks/7case IDs, final command/session binding; raw provider errors never enter receipts.",
+    "stale-state": "Each invocation freshly reads session/member/workspace/private state; no cached proof across heartbeats, actor/runtime mutation and foreign ledger denied.",
+    "concurrency": "Gated tests prove independent reads start together but view/private proof cannot resolve before both fresh owner and scoped state pass; mutation controls and CAS unchanged.",
+    "cancellation": "Abort and absolute deadline checked before owner renewal, transaction callback and immediately before both identical-byte/mutation CAS; expired initial seed still revokes and reads back.",
+    "worker-interruption": "Unique durable claim survives lost acknowledgment; read named resource without create retry; absent/unconfirmed resource is not called clean.",
+    "api-outage": "Any identity/private-state read error rejects; no new retries/client or timeout increase. Closed pending phase labels expose no content.",
+    "authorization-denial": "All pending results remain private; late session denial, adminView, disabled or demoted member, wrong owner/workspace, changed hint all deny view/proof and write.",
+    "spending-limit": "No budget increase, model retry or recurring task. Existing owner financial monitoring unchanged; source VM remains finite1CPU2GB300s/deny-all/nonpersistent.",
+    "partial-execution": "Actual Chief1608/543 tokens $.008646 preserved; Specialist count/Responses HTTP not sent, no test VM, approval revoked and task canceled. Original failure immutable.",
+    "duplicate-request": "No provider retries or fresh authorization reuse. Only confirmed ledger CAS conflict repeats fresh reads."
+  },
+  "proactiveReview": {
+    "architecture": "Existing policy/readAuthority/private observer chain only; no credential/journal/orchestration/provider migration.",
+    "dependencies": "No new dependency, account, credential, network scope, provider or service. Existing getSession implementation unchanged.",
+    "threats": "Late null session, disabled/demoted member, adminView, wrong workspace/owner, changed actor or authority hint during await, foreign state, read failure, forged/reused proof, observer error or secret diagnostics.",
+    "failureModes": "Capture and compare actor/authority/runtime; original getSession checks unchanged; all three fresh hinted identity reads awaited and cross-bound; no-hint fallback session-derived; scoped read plus fresh owner both awaited before full validate/view/proof; private one-use proof unchanged; observers closed and non-authoritative.",
+    "faultInjection": "93 focusedPASS; independent late-denial/mutatedhint/crossworkspace/readerror/proofsingleuse/observerthrow checks. One remote fullSTRICT/Redis/security/browser qualification pending; no duplicate full local run.",
+    "independentChallenge": "QA4680aa32321810bf2c38ec7f6b4b5ee6aa94c515bd7fbd499bab266512dad11f; Auditor dee3d2f67165cbd56bbdf18eb7d175a3da4f5dcbf9d37396fc793d3e021dd7f7. Both approve source qualification only, no hosted speed claim.",
+    "recovery": "Last approval revoked revision12 lease0; allgrantsrevoked/cleanupready and exacttask canceledrevision2. Future project flags remain false; prior receipts and unresolved costs unchanged.",
+    "readiness": "Reviewed local fresh-read optimization; exact successor CI/Redis/security/browser artifact verification then new configuration intent/enrollment/task permission required before paid continuation. Live sufficiency unproven."
+  }
+}

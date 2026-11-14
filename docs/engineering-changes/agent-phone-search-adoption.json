@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "7e1506af81968fbf97af529bbb90e4ae3dabcde690178311c5756c887bfb2fbe",
+  "risk": "critical",
+  "scope": "Work-controlled adoption of preserved agent-authored phone-search patch across five client/backend sites, with current-product checks and explicit historical fixture replay.",
+  "riskAnalysis": "Exact five expression substitutions retain original search and filter behavior, adding a guarded phone-digit branch. No new runtime access, network, customer mutation or agent publication. Current source lock changes deliberately; old task admission closes while historical evidence remains immutable.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Search/filter correctness, tenant-scoped paging, source identity, historical receipts and authority.",
+    "trustBoundaries": "Agent inert patch to Work-reviewed product source; current product versus archived offline fixtures.",
+    "abuseCases": "OR branch bypasses filters, digits match missing/unrelated phones, cursor crosses queries, historical fixture bypass enters runtime, browser assertion races debounce.",
+    "mitigations": "Exact artifact/preimage validation; parentheses and predicates retained; phone character and digit-presence gates; actual backend filter/cursor tests; test-only scoped restored overrides; actual request/signature browser waits."
+  },
+  "defects": [
+    {
+      "rootCause": "Five search paths compared phone formatting literally, so equivalent digit queries missed records.",
+      "detectionGap": "Previous search tests exercised unmatched and textual queries without equivalent phone formats across client/backend.",
+      "regression": "Actual backend phone, text, mixed, punctuation, missing phone, country-code and cursor tests; seven original sandbox groups; four-view real browser checks.",
+      "historicalPrevention": "Shared delivered behavior checked across all five declared paths, not only one client view."
+    },
+    {
+      "rootCause": "Old fixtures and a whole-capability hash assumed the old source remained current after a product fix.",
+      "detectionGap": "Implementation demonstrations did not test the transition from available task to delivered product.",
+      "regression": "Current task unavailable, exact adopted hashes, historical assets unchanged, scoped archived replay restores on errors; immutable policy route hashes retained.",
+      "historicalPrevention": "Current-product and explicitly archived test environments are separate; no runtime guard or frozen baseline is weakened."
+    }
+  ],
+  "rollback": "Revert reviewed feature changes if qualification fails; retain original history and denial evidence, never revive consumed approvals.",
+  "negativePaths": {
+    "malformed-response": "Unknown codes/raw errors remain hidden; malformed own records counted unverified.",
+    "stale-state": "Exact task/source/release checks unchanged; history is not execution authority.",
+    "concurrency": "Existing CAS unchanged; same first consent remains idempotent and exact-bound.",
+    "cancellation": "Connected fixture stops consent after run and asserts revoked grants/paidfalse.",
+    "worker-interruption": "Previouslyqualified cleanup recovery remains unchanged.",
+    "api-outage": "Unconfirmed delivery never retries automatically; exact intent retained for readback.",
+    "authorization-denial": "Foreign identities filtered before history validation; service actor gets no history.",
+    "spending-limit": "No accounting policy changes; no paid inference in fixtures.",
+    "partial-execution": "FinalChief preserves Auditor rejection; successfulworkflow is not proposalacceptance."
+  },
+  "proactiveReview": {
+    "architecture": "Existing patch validation, sandbox evidence and Work-controlled publication retained; no new orchestration.",
+    "dependencies": "No package, credential or infrastructure changes; current source lock regenerated using canonical normalization.",
+    "threats": "Phone branch must not bypass filters or authorization; archived fixtures must not affect current admission.",
+    "failureModes": "Original four-stage workflow remains blocked and Auditor unresolved; Work adoption is separately reviewed product delivery.",
+    "faultInjection": "Missing phone, unrelated digits, mixed text, country policy, stale cursor, fixture interruption/nesting and asynchronous browser races tested.",
+    "independentChallenge": "Independent QA checked actual backend and archive restoration; Auditor inspected exact expressions, source hashes and all authority boundaries.",
+    "recovery": "Revert product commit to restore prior behavior; preserve original receipts and review outcomes, never revive consumed grants.",
+    "readiness": "24 current-product checks,76 contracts,39 archived workflow,2 corrected history and9 browser/restoration boundary checks passed; exact hosted qualification required."
+  }
+}

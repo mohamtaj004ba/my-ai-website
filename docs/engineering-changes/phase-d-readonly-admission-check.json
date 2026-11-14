@@ -1,0 +1,49 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "374af20319742dd09dbe625a8d7d423034e4e484b9c2a7521b4fb0ee4bef8688",
+  "risk": "critical",
+  "scope": "Explicit owner read-only admission path diagnostics; full actual Prepare validation remains pending and no approval is created.",
+  "riskAnalysis": "Read-only owner UI exposes finite phase/code and validated manifest hash/limits, never raw errors or provider data. Exact fresh task/runtime/sequence fences remain required. No registration, approval persistence, reservation, activation, inference, publication or existing-cache overwrite. Preserve previous unconfirmed preparation and all server history.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Existing approval cache, exact source/runtime/task/sequence scope and sanitized owner evidence.",
+    "trustBoundaries": "Authenticated owner frontend versus existing server read-only status/manifest routes and local immutable selection.",
+    "abuseCases": "Old-runtime selection, stale task, active cached approval, private error echo, forged manifest bounds, scope changes during awaits or implied spending permission.",
+    "mitigations": "Exact selection/task filtering, fence after every await, fixed status/manifest routes only, finite safe errors, validated model/limits/authority booleans, output hash only and no storage writes."
+  },
+  "rollback": "Restore prior qualified Preview and preserve existing sequence selection, approval journals, failed preparation and accounting. No rollback grants paid authority.",
+  "negativePaths": {
+    "malformed-response": "Incomplete, refused or malformed output remains rejected; no fake artifact.",
+    "stale-state": "Exact saved sequence and fresh task must match current runtime and captured fence. No wildcard release recovery.",
+    "concurrency": "UI busy guard and captured fence suppress duplicate checks or late scope changes; backend authoritative checks unchanged.",
+    "cancellation": "Revocation and emergency stop remain authoritative; no retry after failure.",
+    "worker-interruption": "Cancel before/inside/after child, await actual termination/disposal; unknown or failed cleanup stays blocked. Remote authorization cannot outlive original authority.",
+    "api-outage": "Safe finite phase/code only; no raw errors, retry or authority mutation.",
+    "authorization-denial": "Existing owner-only status/manifest routes enforce authority; UI does not register, prepare, activate or execute.",
+    "spending-limit": "Read-only manifest may deny audit headroom/budget/sequence; finite codes preserved and no reservation is created.",
+    "partial-execution": "A complete model response is not a preserved implementation artifact; only actual accepted stage receipts reach downstream roles."
+  },
+  "defects": [],
+  "proactiveReview": {
+    "architecture": "Existing owner UI and existing read-only controller routes; no backend change.",
+    "dependencies": "No new dependencies or credential access.",
+    "threats": "Raw error leaks, wrong runtime, unintended registration or approval.",
+    "failureModes": "Network, stale scope, status denial, manifest denial or invalid manifest remain unconfirmed without retries.",
+    "faultInjection": "Executed success/denial/network/fence/stale selection/cached approval UI fixtures; no authority-changing request.",
+    "independentChallenge": "Parent and Auditor cross-review Work-authored UI change; author tests are not independent acceptance.",
+    "recovery": "Read-only diagnosis exposes actual denial phase before any later explicit Prepare; no repeating unknown registration.",
+    "readiness": "114 focused UI checks passed; final separate QA and Auditor review and frozen STRICT/remote qualification required. Read-only success expressly leaves full approval validation pending; no paid authority."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e1bc0f66277ded72af9655742ea8cf656939c8d9de0b42645861d21356ee4edb",
+  "risk": "routine",
+  "scope": "Preserve verified singleton provider-schema repair, failed intermediate evidence, exact Preview/tests/reviews, unchanged history and explicit live compatibility limitation.",
+  "verification": [
+    "scope-review"
+  ],
+  "riskAnalysis": "Canonical documentation only. No runtime, credentials, authority, financial, deployment or task changes; preserve historical evidence and distinguish fixtures from live provider proof.",
+  "defects": []
+}

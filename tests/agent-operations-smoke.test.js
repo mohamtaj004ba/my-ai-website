@@ -1,0 +1,58 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {createStore,hash}=require('../lib/agent-operations-store');
+const {PROJECT}=require('../lib/agent-operations-project');
+const {MODEL,PRICING,pilotAdapter}=require('../lib/agent-operations-pilot');
+const {SMOKE}=require('../lib/agent-operations-smoke');
+const {runStage}=require('../lib/agent-operations-worker');
+const {diagnostic,taskDiagnostic,providerError,providerWording}=require('../lib/agent-operations-diagnostics');
+const {createHandler}=require('../lib/agent-operations-api');
+async function setup(fetchImpl){
+  let raw=null,captures=0;const store=createStore({read:async()=>raw,compare:async(a,b)=>{if(raw!==a)return false;raw=b;return true;}},{scope:{origin:'https://smoke-fixture.vercel.app',commit:'a'.repeat(40)}});
+  const approval={...PROJECT,profile:SMOKE.profile,maxCalls:1,maxMicros:300000,authorized:true,id:'pilot_smoke_fixture',scopeHash:hash(store.scope),expiresAt:Date.now()+60000,model:MODEL,pricingVersion:PRICING.version};
+  const task=await store.create({principal:'offline',idempotencyKey:'smoke_fixture',objective:SMOKE.objective,mode:'pilot',approval});approval.taskId=task.id;
+  const adapter=pilotAdapter({enabled:true,apiKey:'synthetic-only-key',getApproval:async()=>approval,capture:async()=>{captures++;throw Error('Smoke capture forbidden');},fetchImpl});
+  return {store,task,approval,adapter,get captures(){return captures;}};
+}
+function response(result={stage:'chief',note:'SMOKE_OK'},tokens=32){return new Response(JSON.stringify({id:'resp_offline_smoke',model:MODEL,status:'completed',usage:{input_tokens:250,output_tokens:tokens},output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(result)}]}]}),{headers:{'x-request-id':'req_offline_smoke'}});}
+test('actual smoke request shares authenticated Responses path with fixed payload, JSON mode and 128-token cap',async()=>{
+  let calls=0;const f=await setup(async(url,o)=>{calls++;assert.equal(url,'https://api.openai.com/v1/responses');assert.equal(o.method,'POST');assert.equal(o.redirect,'error');assert(o.signal instanceof AbortSignal);assert.deepEqual(Object.keys(o.headers).sort(),['Authorization','Content-Type','OpenAI-Organization','OpenAI-Project','X-Client-Request-Id'].sort());assert.equal(o.headers.Authorization,'Bearer synthetic-only-key');assert.equal(o.headers['OpenAI-Project'],PROJECT.projectId);assert.equal(o.headers['OpenAI-Organization'],PROJECT.organizationId);
+    const b=JSON.parse(o.body);assert.deepEqual(Object.keys(b).sort(),['model','instructions','input','max_output_tokens','store','tools','text','metadata'].sort());assert.equal(b.model,MODEL);assert.equal(b.max_output_tokens,128);assert.equal(b.store,false);assert.deepEqual(b.tools,[]);assert.deepEqual(b.text,{format:{type:'json_object'}});assert(b.instructions.startsWith(SMOKE.instructions));assert.deepEqual(b.input.map(m=>m.role),['developer','user']);assert.match(b.input[0].content[0].text,/JSON/);assert.deepEqual(b.input[1].content,[{type:'input_text',text:JSON.stringify({objective:SMOKE.objective})}]);assert.deepEqual(b.metadata,{task_id:f.task.id,execution_id:o.headers['X-Client-Request-Id']});assert(!o.body.includes('smoke-fixture.vercel.app'));assert(!o.body.includes('/industries/legal'));return response();});
+  const done=await runStage(f.store,f.adapter,{taskId:f.task.id});assert.equal(done.status,'verified');assert.equal(done.stage,'chief');assert.equal(done.calls,1);assert.deepEqual(Object.keys(done.results),['chief']);assert.equal(done.usage[0].actualMicros,756);assert.equal(done.costCeilingMicros,300000);assert.equal(f.captures,0);await runStage(f.store,f.adapter,{taskId:f.task.id});assert.equal(calls,1);const r=(await f.store.read()).reservations[0];assert.equal(r.status,'settled');assert.equal(r.ceilingMicros,300000);
+});
+test('smoke rejects delegate/extra fields, wrong marker and oversized usage without settling or retrying',async()=>{
+  for(const [result,tokens]of [[{stage:'chief',note:'SMOKE_OK',delegate:'website-visual-qa'},32],[{stage:'chief',note:'anything'},32],[{stage:'chief',note:'SMOKE_OK'},129]]){
+    let calls=0;const f=await setup(async()=>{calls++;return response(result,tokens);});const out=await runStage(f.store,f.adapter,{taskId:f.task.id});assert.equal(out.status,'blocked');assert.equal(out.usage.length,0);assert.equal((await f.store.read()).reservations[0].status,'pending');await runStage(f.store,f.adapter,{taskId:f.task.id});assert.equal(calls,1);assert.equal(f.captures,0);
+  }
+});
+test('smoke provider wording preserves safe lexical detail across checkpoints and redacts values, symbols and exact credentials',async()=>{
+  let calls=0;const message='Invalid input: expected a string. Unsupported encoding in request body. "PRIVATE_PAYLOAD" Authorization: Bearer synthetic-only-key https://secret.example/secret user@example.test !@#$%^&* 123456';
+  const f=await setup(async()=>{calls++;return new Response(JSON.stringify({error:{type:'invalid_request_error',code:'invalid_type',param:'input',message}}),{status:400,headers:{'x-request-id':'req_smoke_denied'}});});
+  const out=await runStage(f.store,f.adapter,{taskId:f.task.id}),state=await f.store.read(),d=out.events.at(-1).diagnostic;assert.equal(d.httpStatus,400);assert.equal(d.code,'invalid_type');assert.equal(d.providerParam,'input');assert.equal(d.requestId,'req_smoke_denied');assert.equal(d.clientRequestId,state.reservations[0].executionId);assert.equal(typeof d.elapsedMs,'number');assert.equal(typeof d.providerElapsedMs,'number');assert.match(d.providerErrorMessage,/invalid input: expected a string/);assert.match(d.providerErrorMessage,/unsupported encoding in request body/);assert.match(d.providerErrorMessage,/\[REDACTED\]/);assert(state.reservations[0].evidence.some(e=>e.providerErrorMessage===d.providerErrorMessage));for(const forbidden of ['PRIVATE_PAYLOAD','synthetic-only-key','secret.example','user@example.test','!@#$%^&*','123456'])assert(!JSON.stringify(state).includes(forbidden));assert.equal(state.reservations[0].status,'pending');await runStage(f.store,f.adapter,{taskId:f.task.id});assert.equal(calls,1);
+});
+test('provider wording sanitizer is bounded, idempotent and independently repeated at persistence/IPC boundaries',()=>{
+  for(const s of ['Invalid input: expected a string.','Bearer sk-proj-THIS_IS_SYNTHETIC_SECRET_123','!@#$%^&*','"private payload" '+ 'invalid input '.repeat(1000)]){const first=providerWording(s);assert(first.length<=1024);assert.equal(providerWording(first),first);assert.equal(diagnostic({providerErrorMessage:s}).providerErrorMessage,first);}
+  const large=providerError({message:'invalid input '.repeat(1000)},{retainMessage:true});assert.equal(large.providerErrorMessageTruncated,true);assert(large.providerErrorMessage.includes('[TRUNCATED]'));assert.equal(providerError({message:'invalid input'}).providerErrorMessage,undefined);
+  assert.equal(providerError({message:'model',type:'invalid_request_error'},{retainMessage:true,secrets:['model']}).providerErrorMessage,'[REDACTED]');
+  assert.equal(taskDiagnostic({providerErrorMessage:'invalid input',providerCode:'invalid_type'},{}).providerErrorMessage,undefined);
+  assert.equal(taskDiagnostic({providerErrorMessage:'invalid input',providerCode:'invalid_type'},{profile:SMOKE.profile}).providerErrorMessage,'invalid input');
+  const detail=providerError({code:null,type:'invalid_request_error',message:'Invalid input'},{retainMessage:true});assert.equal(detail.providerCode,null);assert.equal(detail.providerType,'invalid_request_error');assert.equal(diagnostic(detail).providerCode,null);assert.equal(diagnostic({providerCode:'invalid_json_schema'}).providerCode,'invalid_json_schema');assert.equal(diagnostic({providerCode:'PRIVATE_SECRET'}).providerCode,'[REDACTED]');
+});
+test('only trusted Preview smoke approval initializes a fixed idempotent task; clients cannot choose prompts or profile',async()=>{
+  const f=await setup(async()=>assert.fail('No provider request during API admission'));const env={VERCEL_ENV:'preview',CALLERCORE_AGENTOPS_ENABLED:'true',CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_WORKER_SECRET:'w'.repeat(40),CALLERCORE_AGENTOPS_PILOT_APPROVAL:JSON.stringify({...f.approval,id:'pilot_api_smoke_fixture'})};
+  const h=createHandler({env,store:f.store,getSession:async()=>({email:'admin@example.test',workspaceId:'w'}),getMember:async()=>({role:'admin',workspaceId:'w'}),rateLimit:async()=>({limited:false})});
+  async function call(body,worker=true){let status,value;await h({method:'POST',headers:{host:'fixture.test',origin:'https://fixture.test',...(worker?{authorization:'Bearer '+env.CALLERCORE_AGENTOPS_WORKER_SECRET}:{})},body},{setHeader(){},status(n){status=n;return this;},json(v){value=v;}});return {status,value};}
+  const first=await call({action:'initialize-smoke'});assert.equal(first.status,201);assert.equal(first.value.task.objective,SMOKE.objective);assert.equal(first.value.task.profile,SMOKE.profile);assert.equal(first.value.task.calls,0);assert.equal(first.value.task.costCeilingMicros,300000);assert.equal((await call({action:'initialize-smoke'})).value.task.id,first.value.task.id);
+  for(const b of [{action:'initialize-pilot'},{action:'initialize-smoke',objective:'changed'},{action:'initialize-smoke',profile:SMOKE.profile}])assert.equal((await call(b)).status,403);
+  assert.equal((await call({action:'initialize-smoke'},false)).status,403);env.CALLERCORE_AGENTOPS_PAID_ENABLED='false';assert.equal((await call({action:'initialize-smoke'})).status,403);env.CALLERCORE_AGENTOPS_PAID_ENABLED='true';env.VERCEL_ENV='production';assert.equal((await call({action:'initialize-smoke'})).status,503);
+});
+test('terminal smoke outcome consumes hosted paid gate immediately even before manifest expiry',async()=>{
+  for(const finish of [true,false]){
+    const f=await setup(async()=>assert.fail('Offline admission only'));const env={VERCEL_ENV:'preview',CALLERCORE_AGENTOPS_ENABLED:'true',CALLERCORE_AGENTOPS_PAID_ENABLED:'true',CALLERCORE_AGENTOPS_WORKER_SECRET:'w'.repeat(40),CALLERCORE_AGENTOPS_PILOT_APPROVAL:JSON.stringify(f.approval)};
+    const h=createHandler({env,store:f.store,getSession:async()=>null,getMember:async()=>null,rateLimit:async()=>({limited:false})});
+    async function call(method,body){let status,value;await h({method,headers:{authorization:'Bearer '+env.CALLERCORE_AGENTOPS_WORKER_SECRET},body},{setHeader(){},status(n){status=n;return this;},json(v){value=v;}});return {status,value};}
+    assert.equal((await call('GET')).value.paidExecution,true);const c=await f.store.command(f.task.id,{type:'claim'});await f.store.command(f.task.id,{type:'reserve',fence:c.fence,executionId:'exec_consumed_smoke'});
+    await f.store.command(f.task.id,{type:finish?'finish':'fail',fence:c.fence,executionId:'exec_consumed_smoke',...(finish?{...PROJECT,model:MODEL,inputTokens:20,outputTokens:10,actualMicros:120,result:{stage:'chief',note:'SMOKE_OK'}}:{})});
+    const after=await call('GET');assert.equal(after.value.paidExecution,false);assert.equal(after.value.chiefSmoke.enabled,false);assert.equal(after.value.pilotApproval,undefined);assert.equal((await call('POST',{action:'initialize-smoke'})).status,403);assert(f.approval.expiresAt>Date.now());
+  }
+});

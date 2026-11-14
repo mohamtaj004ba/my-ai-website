@@ -1,0 +1,12 @@
+{
+  "patchHash": "22c3a0706d99fc5b3138c5d6d902f05e37fbc82d55f94126a3ca31cca36b714d",
+  "specialistReceiptHash": "584f84e73a1c1f53d59d8be24ec8ed78d81a3a41843c49f71a7ebd890541ecd0",
+  "beforeSha256": "a79132d86e64401a08623ceed9cdbcd31371386a8bb0774f29d7004eb6ba47df",
+  "afterSha256": "aea8a45986d71205bcbc96ce8e0d362b16a63804be1452d72af51545aa10303f",
+  "edit": {
+    "beforeText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details\"",
+    "afterText": "aria-label=\"Open '+esc(x.caller||'caller')+' call details, '+esc(recordTime(x)&&Number.isFinite(new Date(recordTime(x)).getTime())?new Date(recordTime(x)).toLocaleString():(x.time||'Time unavailable'))+'\"",
+    "explanation": "Append escaped local date and time only after validating the resolved Date value; otherwise append escaped fallback text."
+  },
+  "automatedAcceptance": false
+}

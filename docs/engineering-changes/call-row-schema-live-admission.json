@@ -1,0 +1,81 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "2ae5045f9515d5c07ddd2c1af1a70b5d46dff49285a74e664d26820ed3ad86a1",
+  "risk": "critical",
+  "scope": "Admit exactly one fresh current-source call-row accessibility implementation task through the existing reviewed policy, configuration and five-stage paths; preserve all retired tasks and historical authority.",
+  "riskAnalysis": "Paid task selection and configuration are security-sensitive. Keep immutable current-source descriptors, exact enums and backend validation, one-time admission, serial execution, durable refresh markers, historical policy hashes and closed publication/execution boundaries. No new budget or provider.",
+  "threatModel": {
+    "assets": "Current source and task identity, credentials, exact release approval, historical records, spending evidence and authority cleanup.",
+    "trustBoundaries": "Immutable task descriptors versus caller data; new task-specific policy versus historical approvals; source inspection versus data-only patch application; Work publication versus internal proposal-only agents.",
+    "abuseCases": "Reviving resolved tasks, arbitrary source/grammar changes, cross-task/workspace approvals, duplicate configuration refresh, parallel trials, second attempt after revocation, forged dynamic tests or publication.",
+    "mitigations": "One hashed current-source task, exact selected policy and context-aware evidence, non-mutating fixtures, one-attempt guard, shared serial check, existing controller/configuration CAS, null dynamic-test profile and immutable receipts."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Existing paid development policy is Starter-bound and its unscoped source admission cannot select a fresh registered task.",
+      "detectionGap": "Prior bounded-task work qualified only fixtures, not paid admission for a new task.",
+      "regression": "New current-source five-stage restricted-copy fixture, exact task/policy/configuration binding, provider-only singleton normalization, one-attempt/serial denials and real UI objective selection; unchanged historical request/policy fixtures.",
+      "historicalPrevention": "Extend the existing typed task and policy path rather than reviving historical source or bypassing the controller."
+    },
+    {
+      "rootCause": "Current call-row aria-label omits the visible call timestamp.",
+      "detectionGap": "Existing call-row QA did not distinguish repeated callers in accessible-name assertions.",
+      "regression": "Real reviewed current renderRow baseline demonstrates duplicate names and different visible times; future model patch remains inert until separately accepted.",
+      "historicalPrevention": "Separate source-backed defect reproduction from unexecuted agent patch and acceptance claims."
+    },
+    {
+      "rootCause": "New fixture initially used four criteria and excess repeated prose/source context.",
+      "detectionGap": "Compact response/request limits also apply to new task profiles.",
+      "regression": "Original failures retained; three criteria, full current-source evidence hashes and bounded fixture context pass all five stages without raising limits.",
+      "historicalPrevention": "Measure the exact failed request components before repair; retain validators and all material uncertainty."
+    },
+    {
+      "rootCause": "Several live UI consumers still selected historical objective, and generic registered tasks were not rejected at Starter test permission issuance.",
+      "detectionGap": "Initial tests covered current-task creation and eventual VM source denial, not Prepare/enrollment selection or permission issuance.",
+      "regression": "Actual UI enrollment/Prepare handlers select current live task; incompatible test selection performs zero requests. Registered task authorization and injected permission deny before metadata/CAS/dispatch; no-permission path returns null and legacy qualified tests remain unchanged.",
+      "historicalPrevention": "Use one live-objective selector for related UI paths and enforce task execution qualification at permission issuance as well as dispatch."
+    },
+    {
+      "rootCause": "Reservation validation and lifecycle capacity/activation checks still recognized only legacy development authorization IDs.",
+      "detectionGap": "Task-level fixtures did not exercise complete new-policy paid-mode reservation flow.",
+      "regression": "Actual owner controller and organization CAS complete a five-stage simulated pilot with exact new policy, reservations, inert patch, rejection-preserving report and cleanup; incomplete Specialist failure retains usage and unknown counting exposure without retry. Wrong-policy accounting is rejected.",
+      "historicalPrevention": "Search all related authorization identities and exercise the complete non-billable controller path before paid dispatch; preserve historical policy recognition and never use raw authorization ID as new-policy proof."
+    }
+  ],
+  "rollback": "Disable paid execution and revoke temporary authority through the existing controller. Preserve immutable task assets, policy recognition, receipts and accounting. Revert feature behavior only through reviewed changes that retain readback for any already-recorded new task.",
+  "negativePaths": {
+    "malformed-response": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "stale-state": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "concurrency": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "cancellation": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "worker-interruption": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "api-outage": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "authorization-denial": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "spending-limit": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "partial-execution": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication.",
+    "duplicate-request": "Verify exact current task/source/policy binding, one-attempt and serial denial, descriptor/path/grammar tampering, stale and cross-workspace grants, duplicate/unknown refresh operations, cancellation and cleanup. Historical and resolved tasks remain unchanged; no generated source execution or publication."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing registry, adapter, owner controller, configuration CAS and sequence; no competing orchestration or credential path.",
+    "dependencies": "No dependencies or credential creation/rotation.",
+    "threats": "Reviving resolved tasks, arbitrary source/grammar changes, cross-task/workspace approvals, duplicate configuration refresh, parallel trials, second attempt after revocation, forged dynamic tests or publication.",
+    "failureModes": "A fixture is not live provider proof. Source mismatch, second approval, unresolved configuration or cleanup must deny paid execution.",
+    "faultInjection": "Descriptor/path/source/workspace/grammar substitution, prepared/active/consumed/revoked replay, cross-policy concurrency, unknown configuration acknowledgments, full five-stage fixture and UI submission.",
+    "independentChallenge": "Independent QA and Auditor design review confirmed a current-source task is smaller and safer than historical-source diagnostic bypass; final source review required.",
+    "recovery": "Preserve old assets/policies/receipts and failed tests. No production change. On failure revoke authority, retain usage and stop this one-time trial.",
+    "readiness": "159 admission and40 reviewed boundary checks passed. Full actual controller five-stage simulated pilot passed14197ms; combined53 success/failure/accounting and legacy checks passed38217ms. Final independent source review and hosted qualification remain required. No actual provider or configuration operations."
+  }
+}

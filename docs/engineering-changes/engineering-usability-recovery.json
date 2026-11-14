@@ -1,0 +1,69 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "3359d323aba12b2f53b4103eb7d086ffb5ac1d362878bebd272f63a4aacf95d3",
+  "risk": "critical",
+  "scope": "Reject observed incomplete Chief prose for new assignments; safely archive stopped local selections and export owner-bound persisted engineering receipts; verify existing full offline implementation path.",
+  "riskAnalysis": "Security-sensitive contract/history and owner UI changes. Preserve exact historical requests, original receipts and source identities. New prose screening is partial syntax checking, not semantic acceptance or a provider incomplete-response fix.",
+  "threatModel": {
+    "assets": "Historical request and receipt integrity, owner/workspace-scoped evidence, closed authority, review separation and source identity.",
+    "trustBoundaries": "New exact server-owned objective opts into Chief screening. Two authenticated owner readbacks precede local archival. Download is private and bound to the last authenticated snapshot; neither action creates authority.",
+    "abuseCases": "Old approval replay, foreign or active selection archival, lost storage acknowledgment, stale export after owner change, incomplete prose accepted as complete, forged review or publication.",
+    "mitigations": "Frozen five-stage historical fixtures/policies; current-only admission; stable twice-read stopped history and cleanup; append-before-clear exact raw selection archive; snapshot epoch/owner binding; unchanged review/source/token/permission enforcement."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Chief scope/exclusion/deliverable fields had length checks but accepted the exact observed unfinished model sentences.",
+      "detectionGap": "Prior tests covered placeholder/criterion validation but not the actual unfinished list fields. Provider cause and backend truncation remain unproven.",
+      "regression": "New exact-contract fixtures reject observed fragments and obvious dangling clauses; complete concise statements pass; native controller rejects before Specialist dispatch while recording usage/cleanup.",
+      "historicalPrevention": "Freeze all five former compact-guidance requests and policies; preserve old assignment parsing/readback while requiring new current policy for fresh tasks."
+    },
+    {
+      "rootCause": "Stopped development sequence selections remained in sessionStorage; exact runtime checks correctly rejected them after a successor release.",
+      "detectionGap": "Open-sequence recovery required empty local cache; no independently verified archive path existed for a stopped local selection.",
+      "regression": "Two authenticated stable GETs, closed authority, original raw archive before removal, storage interruption recovery, foreign/active/cache/history/admission rejection tests.",
+      "historicalPrevention": "Retain stopped server records and exact local selection history. Never relax runtime fences or restore consumed approvals."
+    },
+    {
+      "rootCause": "The legacy download exported only local pilot stream events, yielding an empty file when engineering work used the separate existing controller.",
+      "detectionGap": "Tests checked stream transport but not a useful private export of persisted engineering workflow receipts.",
+      "regression": "Separate private owner-bound snapshot export preserves receipt order/hash and failures, omits foreign records, rejects empty/stale owner/source states and makes no extra network request.",
+      "historicalPrevention": "Label both downloads and last-refresh provenance explicitly; do not represent snapshot checksums as human acceptance or invoice proof."
+    }
+  ],
+  "rollback": "Leave paid authority disabled. Revert only this reviewed feature-branch source batch if release qualification fails; preserve previous source/receipts, local archive records, checkpoints and all financial uncertainty. No Production rollback is needed.",
+  "negativePaths": {
+    "malformed-response": "Existing authority/source/token/test cleanup checks remain. Focused tests cover rejected prose, old-policy replay, stale/foreign/active sequence state, cache changes, interrupted archive writes, changed export scope and malformed provider responses. No paid retry or publication authority.",
+    "stale-state": "Existing authority/source/token/test cleanup checks remain. Focused tests cover rejected prose, old-policy replay, stale/foreign/active sequence state, cache changes, interrupted archive writes, changed export scope and malformed provider responses. No paid retry or publication authority.",
+    "concurrency": "Existing authority/source/token/test cleanup checks remain. Focused tests cover rejected prose, old-policy replay, stale/foreign/active sequence state, cache changes, interrupted archive writes, changed export scope and malformed provider responses. No paid retry or publication authority.",
+    "cancellation": "Existing authority/source/token/test cleanup checks remain. Focused tests cover rejected prose, old-policy replay, stale/foreign/active sequence state, cache changes, interrupted archive writes, changed export scope and malformed provider responses. No paid retry or publication authority.",
+    "worker-interruption": "Existing authority/source/token/test cleanup checks remain. Focused tests cover rejected prose, old-policy replay, stale/foreign/active sequence state, cache changes, interrupted archive writes, changed export scope and malformed provider responses. No paid retry or publication authority.",
+    "api-outage": "Existing authority/source/token/test cleanup checks remain. Focused tests cover rejected prose, old-policy replay, stale/foreign/active sequence state, cache changes, interrupted archive writes, changed export scope and malformed provider responses. No paid retry or publication authority.",
+    "authorization-denial": "Existing authority/source/token/test cleanup checks remain. Focused tests cover rejected prose, old-policy replay, stale/foreign/active sequence state, cache changes, interrupted archive writes, changed export scope and malformed provider responses. No paid retry or publication authority.",
+    "spending-limit": "Existing authority/source/token/test cleanup checks remain. Focused tests cover rejected prose, old-policy replay, stale/foreign/active sequence state, cache changes, interrupted archive writes, changed export scope and malformed provider responses. No paid retry or publication authority.",
+    "partial-execution": "Existing authority/source/token/test cleanup checks remain. Focused tests cover rejected prose, old-policy replay, stale/foreign/active sequence state, cache changes, interrupted archive writes, changed export scope and malformed provider responses. No paid retry or publication authority.",
+    "duplicate-request": "Existing authority/source/token/test cleanup checks remain. Focused tests cover rejected prose, old-policy replay, stale/foreign/active sequence state, cache changes, interrupted archive writes, changed export scope and malformed provider responses. No paid retry or publication authority."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing report/schema/provider, owner controller and UI; no new orchestration, account, credential, journal or infrastructure.",
+    "dependencies": "No dependency installation, provider migration, secret access or model-setting change. Existing fixed isolated tests remain separately permissioned.",
+    "threats": "Old approval replay, foreign or active selection archival, lost storage acknowledgment, stale export after owner change, incomplete prose accepted as complete, forged review or publication.",
+    "failureModes": "Partial prose screening can miss semantic fragments; QA/Auditor criticism remains necessary. Unknown history, active grants, storage failure and changed export state fail closed.",
+    "faultInjection": "52 focused checks include native five-stage offline controller/disposable copy/fixed-test adapter/rejection propagation; observed Chief fragments stop before Specialist/VM; UI storage races and export scope epochs exercised.",
+    "independentChallenge": "Independent Work QA d8b4b187120df202882bac3a9b3a479b4807630bf11e22ad581e8c4278f21388 and Auditor e1f6dca394b820db7d9ab13268bfbd3a4abc004492ad57cf52f1b34d353bdf5d found no material source issue; partial semantic screening caveat retained.",
+    "recovery": "Old local selection is preserved append-before-clear after stable owner readbacks. No server record erased or authorization revived. Prior paid trial remains closed; original exact live request hash still reconstructs.",
+    "readiness": "One combined source release requires committed preflight, STRICT CI regression/real Redis, CodeQL/Jekyll and actual authenticated Preview artifact/visual inspection. No paid trial under this implementation pass."
+  }
+}

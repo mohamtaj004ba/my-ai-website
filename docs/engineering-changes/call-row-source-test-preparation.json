@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "1a8f8143abe5692f8be46982abaabb2cc35ae6dd81e53fa3ebfdc9921e767f3d",
+  "risk": "critical",
+  "scope": "Prepare exact preserved agent-patch behavioral tests using the existing OS supervisor, without execution, new permissions or product adoption; align descriptive timeout metadata across all fixed builders.",
+  "riskAnalysis": "Prepare-only sealed job and exact source/patch hashes. No provider, grant, dispatch or qualification API; existing dispatcher rejects it. Guest code is serialized, never locally evaluated. Closed supervisor transformations preserve isolation; failed product outcomes cannot create qualification or acceptance.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact model patch provenance, source hashes, OS isolation controls, owner/workspace/release binding, sanitized outcomes, original review history and spending authority.",
+    "trustBoundaries": "Untrusted patched source remains data on host; existing OS jail is the future execution boundary. Parsed or mocked outcomes do not establish a live run, permission or acceptance.",
+    "abuseCases": "Substitute source or commands, forge job/result/workspace, bypass qualification, alter trusted supervisor, leak output, hide failed cleanup or adopt a failed patch.",
+    "mitigations": "Exact baseline/patched and proposal/descriptor pins, closed input keys, WeakMap preparation provenance, command/result hashes and ordered checks, exact supervisor parity, limited output and fail-closed cleanup; no activation surface."
+  },
+  "defects": [
+    {
+      "rootCause": "Current call-row task has no qualified source-test profile; existing Starter permission cannot safely execute another task. This is an intentional boundary, not evidence of a broken sandbox.",
+      "detectionGap": "Fixture patch application and model critique do not establish source behavior or isolate generated execution.",
+      "regression": "Seven fixed guest cases prepared, exact source/patch identity and authority denial checks; fakeOS supervisor runs never evaluate guest source. Invalid timestamp handling remains an unproven adoption gate.",
+      "historicalPrevention": "Require exact task/profile qualification and preserved actual test results; do not borrow consumed Starter grants or relabel fixtures."
+    },
+    {
+      "rootCause": "All fixed builders described a fifteen-second timeout while their existing supervisor enforces twenty seconds.",
+      "detectionGap": "Metadata was not crosschecked against the actual common supervised test call.",
+      "regression": "All three descriptors now state the unchanged twenty-second timeout; old command hashes and exact derived isolation parity remain checked.",
+      "historicalPrevention": "Keep descriptive resource metadata aligned with existing enforced behavior without silently changing bounds or historical evidence."
+    }
+  ],
+  "rollback": "Keep profile unqualified/disconnected and paid execution disabled. Revert new preparation files through reviewed feature changes; preserve original model evidence, failed test logs and historical commands. No resources exist to delete.",
+  "negativePaths": {
+    "malformed-response": "Existing source/authority/isolation boundary remains closed. New preparation rejects forged or substituted inputs/outcomes and cannot dispatch, execute, accept or publish; failed behavior and cleanup remain evidence, never success.",
+    "stale-state": "Existing source/authority/isolation boundary remains closed. New preparation rejects forged or substituted inputs/outcomes and cannot dispatch, execute, accept or publish; failed behavior and cleanup remain evidence, never success.",
+    "concurrency": "Existing source/authority/isolation boundary remains closed. New preparation rejects forged or substituted inputs/outcomes and cannot dispatch, execute, accept or publish; failed behavior and cleanup remain evidence, never success.",
+    "cancellation": "Existing source/authority/isolation boundary remains closed. New preparation rejects forged or substituted inputs/outcomes and cannot dispatch, execute, accept or publish; failed behavior and cleanup remain evidence, never success.",
+    "worker-interruption": "Existing source/authority/isolation boundary remains closed. New preparation rejects forged or substituted inputs/outcomes and cannot dispatch, execute, accept or publish; failed behavior and cleanup remain evidence, never success.",
+    "api-outage": "Existing source/authority/isolation boundary remains closed. New preparation rejects forged or substituted inputs/outcomes and cannot dispatch, execute, accept or publish; failed behavior and cleanup remain evidence, never success.",
+    "authorization-denial": "Existing source/authority/isolation boundary remains closed. New preparation rejects forged or substituted inputs/outcomes and cannot dispatch, execute, accept or publish; failed behavior and cleanup remain evidence, never success.",
+    "spending-limit": "Existing source/authority/isolation boundary remains closed. New preparation rejects forged or substituted inputs/outcomes and cannot dispatch, execute, accept or publish; failed behavior and cleanup remain evidence, never success.",
+    "partial-execution": "Existing source/authority/isolation boundary remains closed. New preparation rejects forged or substituted inputs/outcomes and cannot dispatch, execute, accept or publish; failed behavior and cleanup remain evidence, never success."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing serialized trusted supervisor and jail; no competing executor, provider, journal or orchestration.",
+    "dependencies": "No new package, image, account or credential. New files are included in existing source fingerprint tracing.",
+    "threats": "Untrusted source, forged qualification, altered supervisor, cross-workspace results and cleanup failure cannot create execution or acceptance authority.",
+    "failureModes": "Closed source identity, malformed result, fake checks, descendant proof missing, output overflow, failed cleanup and failed behavior covered without exposing raw content.",
+    "faultInjection": "Real trusted supervisor under fakeOS/process only; guest/source never evaluated. Exact normalized source parity preserves every isolation instruction.",
+    "independentChallenge": "Work QA found timeout metadata mismatch; corrected across all three builders. QA and Auditor approve preparation only, not live qualification.",
+    "recovery": "No VM/model call or provider mutation occurred. Future finite VM must have reviewed exact identities, separate spending authority, durable create intent and verified shutdown.",
+    "readiness": "53 focused checks and independent15-check review passed. Exact committed/hosted source verification and separately authorized live VM remain required; no fixture is called live execution."
+  }
+}

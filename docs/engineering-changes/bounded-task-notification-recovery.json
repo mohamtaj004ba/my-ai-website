@@ -1,0 +1,69 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "5d9256bae40bdeeb5678f3ba2bb0618a660770d9d945e03c1bc3825b1228b63f",
+  "risk": "critical",
+  "scope": "Extend the existing implementation workflow with one immutable bounded task descriptor; fix notification busy-control recovery after concurrent read mutation; preserve old contracts and source history.",
+  "riskAnalysis": "Server-owned immutable task definitions must not become model-controlled file/command authority. Current-source admission and explicit historical copy replay stay separate. Product fix redraws current state only; generation fences remain unchanged.",
+  "threatModel": {
+    "assets": "Source/task identity, frozen receipt integrity, current dashboard read state, permissions and publication boundaries.",
+    "trustBoundaries": "Server-authenticated descriptor and immutable source asset vs untrusted model patch; disposable data copy vs actual repository; Work publication vs internal agents.",
+    "abuseCases": "Forged descriptor, arbitrary regex/path/test profile, stale source substituted for current, source execution escalation, altered review, real account mutations hidden in QA.",
+    "mitigations": "Whole-asset hash/exact descriptor equality, one-edit closed grammar,512bytes, exact preimage/binding/evidence, source-only admission, current resolved-task denial, fixed VM source-hash rejection, no new paid policy, fully intercepted synthetic browser mutations."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Pending notification refresh finally cleared loading but skipped rendering after a successful read mutation changed the generation fence.",
+      "detectionGap": "Existing stale-data tests checked state but not last rendered loading controls.",
+      "regression": "Seven success/error/malformed read-race/failure/duplicate cases and real rendered client/admin intercepted read race.",
+      "historicalPrevention": "Keep request fences for data/error writes; always redraw current state after loading release. Preserve original failure artifact."
+    },
+    {
+      "rootCause": "Implementation metadata, schema and patch validation were hardwired to a single completed Starter task.",
+      "detectionGap": "Five-stage source-copy fixture previously exercised one source task only.",
+      "regression": "Second immutable descriptor through all five real controller stages with offline reasoning, adversarial binding/path/descriptor/grammar checks, old compact/prose request identity and null execution-profile rejection.",
+      "historicalPrevention": "Register reviewed immutable task data; never accept caller task definitions or default historical source for live admission."
+    },
+    {
+      "rootCause": "New-task metadata/schema initially inherited2048bytes while descriptor enforced512.",
+      "detectionGap": "Schema and backend limits were not initially compared.",
+      "regression": "Explicit schema/request/backend512 agreement; preserve old noarg schema unchanged.",
+      "historicalPrevention": "Independent Auditor identified mismatch before release; keep descriptor-derived limits in each new task branch."
+    }
+  ],
+  "rollback": "Revert only this feature Preview batch on verification failure; preserve all source/history/diagnostic evidence and revoked grants. No main or Production mutation.",
+  "negativePaths": {
+    "malformed-response": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "stale-state": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "concurrency": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "cancellation": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "worker-interruption": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "api-outage": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "authorization-denial": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "spending-limit": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "partial-execution": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added.",
+    "duplicate-request": "Exact binding/descriptor/source/path checks, bounded one-edit grammar, source-only current admission, resolved/stale denial, unchanged worker cancellation/disposal, preserved rejection, fixed VM hash denial; synthetic browser GET/POST interception restores local state. No paid policy or authority added."
+  },
+  "proactiveReview": {
+    "architecture": "Extend existing five-stage workflow and patch validator with immutable task data, not new orchestration.",
+    "dependencies": "No new packages, credential changes, provider requests or infrastructure.",
+    "threats": "Forged descriptor, arbitrary regex/path/test profile, stale source substituted for current, source execution escalation, altered review, real account mutations hidden in QA.",
+    "failureModes": "Resolved/current drift denies new tasks; history remains readable. Fixture success does not prove live reasoning or dynamic execution.",
+    "faultInjection": "Descriptor/path/source/workspace/grammar/protected command substitutions, no test-profile inheritance, concurrent read refresh failure paths.",
+    "independentChallenge": "Root reviews QA-authored browser/test fixtures; independent Work QA/Auditor review root task/product implementation. Final hosted review required.",
+    "recovery": "Retain original source snapshots, all old receipts/rejections and v1-v5 evidence. Work-only source publication, no grant revival.",
+    "readiness": "Current-source five-stage fixture completed with offline reasoning;27contract/bounded and64integration plus13product checks passed. Remote STRICT/Redis/security/Browser/archive qualification pending."
+  }
+}

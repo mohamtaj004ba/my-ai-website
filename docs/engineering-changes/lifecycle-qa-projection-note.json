@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "a5eba06fd0eb3b4cd06b1c9c68309899f21445237d4f11f73b8e09d1f12e1dfc",
+  "risk": "routine",
+  "scope": "Documentation-only final independent hosted QA qualification of legacy dashboard accounting; backend ledger remains authoritative and unchanged.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "evidence": "QA independently checked502screens/287layouts/exactrelease and bothdisabledbrokers; mobile data and desktop legacy-only accounting remain explicit follow-ups, not acceptance claims."
+}

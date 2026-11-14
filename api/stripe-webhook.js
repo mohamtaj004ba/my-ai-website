@@ -1,196 +1,386 @@
-const crypto = require('crypto');
-const https = require('https');
-const { kv } = require('@vercel/kv');
-
-// Vercel needs the raw request body to verify the Stripe signature —
-// disable the default JSON body parser for this route.
-module.exports.config = { api: { bodyParser: false } };
-
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
-const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
-const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'mail.callercore.com';
-const SITE_URL = process.env.SITE_URL || 'https://www.callercore.com';
-const PLAN_BY_PAYMENT_LINK = {
-  'plink_1To9m8F0BXlPng7VihxbmKPJ': 'Starter',
-  'plink_1To9pBF0BXlPng7VdkdBhHcx': 'Growth',
-  'plink_1To9qJF0BXlPng7VXXwBIHHf': 'Pro',
+const crypto=require('crypto');
+const {verifiedPurchase}=require('../lib/checkout-payment-proof');
+const {synchronizeBillingEvent}=require('../lib/billing-webhook');
+const {enqueueRenderedBillingEmail,deliverBillingEmail}=require('../lib/billing-email-outbox');
+const {kv}=require('../lib/kv');
+const {sendMail}=require('../lib/mail');
+const {safeError}=require('../lib/safe-log');
+const {lifecycleEmail,esc:escapeEmailHtml}=require('../lib/email-template');
+const {normalizePlan,entitlementsFor}=require('../lib/plans');
+const {recordSiteEvent,upsertWebsiteProspect}=require('../lib/site-analytics');
+const {addBusinessHours}=require('../lib/business-hours');
+const {lifecycleDecision}=require('../lib/stripe-lifecycle');
+const {claimCheckoutSession,releaseCheckoutSession}=require('../lib/stripe-session-lock');
+const {recordCheckoutReconciliation,resolveCheckoutReconciliation}=require('../lib/stripe-reconciliation');
+const {ensureStripeMonthlyMetricsCoverage,recordStripePaymentFailure}=require('../lib/stripe-monthly-metrics');
+module.exports.config={api:{bodyParser:false}};
+const STRIPE_WEBHOOK_SECRET=process.env.STRIPE_WEBHOOK_SECRET;
+const SITE_URL=process.env.SITE_URL||'https://www.callercore.com';
+const PLAN_BY_PAYMENT_LINK={
+  'plink_1To9m8F0BXlPng7VihxbmKPJ':'Starter',
+  'plink_1To9pBF0BXlPng7VdkdBhHcx':'Growth',
+  'plink_1To9qJF0BXlPng7VXXwBIHHf':'Pro'
 };
-
-function getRawBody(req) {
-  return new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', (chunk) => { data += chunk; });
-    req.on('end', () => resolve(data));
-    req.on('error', reject);
-  });
+function getRawBody(req){return new Promise((resolve,reject)=>{let data='';req.on('data',c=>data+=c);req.on('end',()=>resolve(data));req.on('error',reject)})}
+function validCheckoutSessionState(value,sessionId){
+  if(value==null)return true;
+  if(!value||typeof value!=='object'||Array.isArray(value))return false;
+  if(value.status&&!['awaiting_review','complete'].includes(String(value.status)))return false;
+  if(value.sessionId&&String(value.sessionId)!==String(sessionId))return false;
+  if(value.token&&!/^[a-f0-9]{48}$/i.test(String(value.token)))return false;
+  if(value.workspaceId&&(!String(value.workspaceId).trim()||String(value.workspaceId).length>120))return false;
+  return true;
+}
+async function markStripeEventProcessed(eventKey){
+  if(!eventKey)return;
+  await kv.set(eventKey,true,{ex:60*60*24*90});
+  const confirmed=await kv.get(eventKey);
+  if(confirmed!==true&&String(confirmed)!=='true')throw new Error('Stripe event receipt persistence could not be confirmed');
+}
+function verifyStripeSignature(rawBody,sigHeader,secret){
+  if(!sigHeader||!secret)return false;
+  const parts=sigHeader.split(',').map(p=>p.split('=').map(s=>s.trim()));
+  const timestamp=parts.find(([k])=>k==='t')?.[1];
+  const signatures=parts.filter(([k])=>k==='v1').map(([,v])=>v);
+  if(!timestamp||!signatures.length)return false;
+  const ts=Number(timestamp);if(!Number.isFinite(ts)||Math.abs(Math.floor(Date.now()/1000)-ts)>300)return false;
+  const expected=crypto.createHmac('sha256',secret).update(timestamp+'.'+rawBody).digest('hex');
+  const expectedBuf=Buffer.from(expected,'hex');
+  return signatures.some(sig=>{try{const got=Buffer.from(sig,'hex');return got.length===expectedBuf.length&&crypto.timingSafeEqual(got,expectedBuf)}catch(_){return false}})
 }
 
-function verifyStripeSignature(rawBody, sigHeader, secret) {
-  if (!sigHeader || !secret) return false;
-  const parts = sigHeader.split(',').map((p) => p.split('=').map((s) => s.trim()));
-  const timestamp = parts.find(([k]) => k === 't')?.[1];
-  const signatures = parts.filter(([k]) => k === 'v1').map(([,v]) => v);
-  if (!timestamp || !signatures.length) return false;
-
-  const ts = Number(timestamp);
-  if (!Number.isFinite(ts) || Math.abs(Math.floor(Date.now() / 1000) - ts) > 300) return false;
-
-  const signedPayload = `${timestamp}.${rawBody}`;
-  const expected = crypto.createHmac('sha256', secret).update(signedPayload).digest('hex');
-  const expectedBuf = Buffer.from(expected, 'hex');
-
-  return signatures.some((sig) => {
-    try {
-      const gotBuf = Buffer.from(sig, 'hex');
-      return expectedBuf.length === gotBuf.length && crypto.timingSafeEqual(expectedBuf, gotBuf);
-    } catch (_) { return false; }
-  });
+async function upsertWorkspace({lead,session,plan,email}){
+  const userKey='user:email:'+email;
+  const existingMember=await kv.get(userKey);
+  if(existingMember!=null&&(!existingMember||typeof existingMember!=='object'||Array.isArray(existingMember)))
+    throw new Error('Checkout account mapping is malformed and requires manual account reconciliation');
+  if(existingMember?.email&&String(existingMember.email).trim().toLowerCase()!==email)
+    throw new Error('Checkout account email mapping disagrees and requires manual account reconciliation');
+  if(existingMember?.role==='admin'||existingMember?.disabled)throw new Error('Checkout email is reserved or disabled and requires manual account reconciliation');
+  const [mappedCustomer,mappedSubscription]=await Promise.all([
+    session.customer?kv.get('stripe:customer:'+session.customer):null,
+    session.subscription?kv.get('stripe:subscription:'+session.subscription):null
+  ]);
+  for(const mapping of [mappedCustomer,mappedSubscription])if(mapping!=null&&(typeof mapping!=='string'||!mapping.trim()))
+    throw new Error('Stripe account mapping is malformed; manual reconciliation required');
+  const mappings=[mappedCustomer,mappedSubscription].filter(Boolean).map(String);
+  if(new Set(mappings).size>1)throw new Error('Stripe customer and subscription map to different workspaces; manual reconciliation required');
+  let workspaceId=existingMember&&existingMember.workspaceId;
+  if(workspaceId&&mappings.some(id=>id!==String(workspaceId)))throw new Error('Checkout account and Stripe mapping disagree; manual reconciliation required');
+  if(!workspaceId&&mappings.length){
+    const mapped=await kv.get('workspace:'+mappings[0]);
+    if(!mapped||String(mapped.ownerEmail||'').trim().toLowerCase()!==email)throw new Error('Stripe mapping belongs to another account or is unavailable; manual reconciliation required');
+    workspaceId=mappings[0];
+  }
+  if(!workspaceId)workspaceId=crypto.randomUUID();
+  const key='workspace:'+workspaceId,rawExisting=await kv.get(key);
+  if(rawExisting!=null&&(!rawExisting||typeof rawExisting!=='object'||Array.isArray(rawExisting)))
+    throw new Error('Existing workspace record is malformed; manual reconciliation required');
+  const existing=rawExisting||{};
+  if(existing.id&&String(existing.id)!==String(workspaceId))throw new Error('Existing workspace identity does not match checkout mapping; manual reconciliation required');
+  if(existing.id&&String(existing.ownerEmail||'').trim().toLowerCase()!==email)throw new Error('Existing workspace owner does not match checkout email; manual reconciliation required');
+  for(const [field,value] of [['acquisition',existing.acquisition],['conversion',existing.conversion],['usage',existing.usage],['stripeBilling',existing.stripeBilling]])
+    if(value!=null&&(!value||typeof value!=='object'||Array.isArray(value)))throw new Error('Existing workspace '+field+' state is malformed; manual reconciliation required');
+  const ent=entitlementsFor(plan);
+  const workspace={
+    ...existing,
+    id:workspaceId,
+    name:existing.id&&existing.name?existing.name:lead.business||'CallerCore Client',
+    ownerName:existing.id&&existing.ownerName?existing.ownerName:lead.name||'',
+    ownerEmail:email,
+    contactPhone:existing.id&&existing.contactPhone?existing.contactPhone:lead.phone||'',
+    phone:existing.phone||'',
+    industry:existing.id&&existing.industry?existing.industry:lead.industry||'',
+    plan:ent.plan,
+    status:existing.status||'onboarding',
+    subscriptionStatus:session._billing?.status||'active',
+    stripeBilling:session._billing?{...(existing.stripeBilling||{}),currentPeriodEnd:session._billing.currentPeriodEnd?session._billing.currentPeriodEnd*1000:null,cancelAtPeriodEnd:session._billing.cancelAtPeriodEnd,canonicalCheckedAt:Date.now()}:existing.stripeBilling,
+    stripeCustomerId:session.customer||existing.stripeCustomerId||null,
+    stripeSubscriptionId:session.subscription||existing.stripeSubscriptionId||null,
+    stripeCheckoutSessionId:session.id,
+    acquisition:existing.acquisition||{
+      prospectId:lead.prospectId||'',
+      source:lead.acquisition?.source||'website',
+      utmSource:lead.acquisition?.utmSource||lead.utmSource||'',
+      utmMedium:lead.acquisition?.utmMedium||lead.utmMedium||'',
+      utmCampaign:lead.acquisition?.utmCampaign||lead.utmCampaign||'',
+      visitorId:lead.visitorId||'',
+      sessionId:lead.sessionId||'',
+      firstTouchAt:lead.createdAt||Date.now()
+    },
+    conversion:{
+      ...(existing.conversion||{}),
+      firstPaidAt:existing.conversion?.firstPaidAt||Date.now(),
+      lastCheckoutAt:Date.now(),
+      checkoutSessionId:session.id||'',
+      plan:ent.plan,
+      monthlyValue:ent.price,
+      setupValue:500
+    },
+    usage:existing.usage||{minutes:0},
+    createdAt:existing.createdAt||Date.now(),
+    updatedAt:Date.now()
+  };
+  const memberRecord={...(existingMember||{}),workspaceId,role:existingMember?.role||'owner',email};
+  await kv.set(key,workspace);
+  // Preserve sessionVersion and profile/security metadata across repeat purchases.
+  await kv.set(userKey,memberRecord);
+  if(session.customer)await kv.set('stripe:customer:'+session.customer,workspaceId);
+  if(session.subscription)await kv.set('stripe:subscription:'+session.subscription,workspaceId);
+  const [confirmedWorkspace,confirmedMember,confirmedCustomer,confirmedSubscription]=await Promise.all([
+    kv.get(key),kv.get(userKey),
+    session.customer?kv.get('stripe:customer:'+session.customer):Promise.resolve(null),
+    session.subscription?kv.get('stripe:subscription:'+session.subscription):Promise.resolve(null)
+  ]);
+  if(!confirmedWorkspace||typeof confirmedWorkspace!=='object'||Array.isArray(confirmedWorkspace)||String(confirmedWorkspace.id||'')!==String(workspaceId)||
+    String(confirmedWorkspace.ownerEmail||'').trim().toLowerCase()!==email||
+    !confirmedMember||typeof confirmedMember!=='object'||Array.isArray(confirmedMember)||String(confirmedMember.workspaceId||'')!==String(workspaceId)||
+    String(confirmedMember.email||'').trim().toLowerCase()!==email||
+    (session.customer&&String(confirmedCustomer||'')!==String(workspaceId))||
+    (session.subscription&&String(confirmedSubscription||'')!==String(workspaceId)))
+    throw new Error('Checkout account persistence could not be confirmed; manual reconciliation required');
+  return confirmedWorkspace;
 }
+module.exports=async function handler(req,res){
+  if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
+  const rawBody=await getRawBody(req);
+  if(!verifyStripeSignature(rawBody,req.headers['stripe-signature'],STRIPE_WEBHOOK_SECRET))return res.status(400).json({error:'Invalid signature'});
+  let event;try{event=JSON.parse(rawBody)}catch(_){return res.status(400).json({error:'Invalid payload'})}
+  const eventKey=event.id?'stripe:event:'+event.id:null;
+  if(eventKey&&await kv.get(eventKey)){
+    const emailKey=await kv.get('billing:event-email:'+event.id);
+    if(emailKey){try{await deliverBillingEmail(kv,emailKey,sendMail)}catch(_){return res.status(503).json({error:'Billing email capture needs reconciliation. Retry this event.'})}}
+    return res.status(200).json({received:true,duplicate:true});
+  }
+  const checkoutEvent=event.type==='checkout.session.completed'||event.type==='checkout.session.async_payment_succeeded';
+  const lifecycleEvent=['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted','invoice.payment_failed','invoice.paid'].includes(event.type);
 
-function sendMail({ to, subject, text, html }) {
-  return new Promise((resolve, reject) => {
-    const auth = Buffer.from(`api:${MAILGUN_API_KEY}`).toString('base64');
-    const params = new URLSearchParams({
-      from: 'CallerCore <support@callercore.com>',
-      to,
-      subject,
-      text,
-      html,
-    }).toString();
-
-    const options = {
-      hostname: 'api.mailgun.net',
-      path: `/v3/${MAILGUN_DOMAIN}/messages`,
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': Buffer.byteLength(params),
-      },
-    };
-
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', (c) => { body += c; });
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) resolve(body);
-        else reject(new Error(`Mailgun error ${res.statusCode}: ${body}`));
-      });
-    });
-    req.on('error', reject);
-    req.write(params);
-    req.end();
-  });
-}
-
-module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const rawBody = await getRawBody(req);
-
-  if (!verifyStripeSignature(rawBody, req.headers['stripe-signature'], STRIPE_WEBHOOK_SECRET)) {
-    return res.status(400).json({ error: 'Invalid signature' });
+  if(lifecycleEvent){
+    try{
+      await ensureStripeMonthlyMetricsCoverage(kv,Date.now());
+      if(event.type==='invoice.payment_failed')await recordStripePaymentFailure(kv,event,{now:Date.now()});
+    }catch(err){
+      console.error('Stripe monthly metrics failed:',safeError(err));
+      return res.status(503).json({error:'Stripe billing metrics could not be confirmed. Retry the webhook event.'});
+    }
+    const obj=event.data&&event.data.object;
+    if(!obj||typeof obj!=='object'||Array.isArray(obj))return res.status(400).json({error:'Invalid Stripe lifecycle payload'});
+    const subscriptionId=event.type.startsWith('customer.subscription.')?obj.id:obj.subscription||obj.parent?.subscription_details?.subscription;
+    const customerId=obj.customer;
+    const [subscriptionWorkspace,customerWorkspace]=await Promise.all([
+      subscriptionId?kv.get('stripe:subscription:'+subscriptionId):Promise.resolve(null),
+      customerId?kv.get('stripe:customer:'+customerId):Promise.resolve(null)
+    ]);
+    for(const mapping of [subscriptionWorkspace,customerWorkspace])if(mapping!=null&&(typeof mapping!=='string'||!mapping.trim()))
+      return res.status(503).json({error:'Stripe lifecycle mapping is malformed. Stripe should retry.'});
+    if(subscriptionWorkspace&&customerWorkspace&&String(subscriptionWorkspace)!==String(customerWorkspace))
+      return res.status(503).json({error:'Stripe customer and subscription mappings disagree. Manual reconciliation is required.'});
+    const workspaceId=subscriptionWorkspace||customerWorkspace||null;
+    if(!workspaceId){if(eventKey)await markStripeEventProcessed(eventKey);return res.status(200).json({received:true,unmapped:true})}
+    const key='workspace:'+workspaceId,ws=await kv.get(key);
+    if(ws==null){if(eventKey)await markStripeEventProcessed(eventKey);return res.status(200).json({received:true,workspace_missing:true})}
+    if(!ws||typeof ws!=='object'||Array.isArray(ws)||String(ws.id||'')!==String(workspaceId))
+      return res.status(503).json({error:'Mapped workspace state could not be verified. Stripe should retry.'});
+    try{
+      const result=await synchronizeBillingEvent(kv,workspaceId,event);
+      if(result.emailKey)await deliverBillingEmail(kv,result.emailKey,sendMail);
+      delete result.emailKey;
+      return res.status(200).json({received:true,...result});
+    }
+    catch(error){console.error('Canonical billing synchronization failed',safeError(error));return res.status(503).json({error:'Billing synchronization could not be confirmed. Stripe should retry.'})}
+  }
+  if(!checkoutEvent){if(eventKey)await markStripeEventProcessed(eventKey);return res.status(200).json({received:true,ignored:true})}
+  let session=event.data&&event.data.object;
+  if(!session||typeof session!=='object'||Array.isArray(session))return res.status(400).json({error:'Invalid checkout session payload'});
+  if(event.type==='checkout.session.completed'&&!['paid','no_payment_required'].includes(session.payment_status))return res.status(200).json({received:true,pending_payment:true});
+  try{session=await verifiedPurchase(session)}
+  catch(error){console.error('Paid order verification requires reconciliation',safeError(error));return res.status(503).json({error:'Paid order could not be verified. Stripe should retry; no additional payment was created.'})}
+  const metadataPlan=String(session.metadata?.plan||session._verifiedPlan||'');
+  const mappedPlan=PLAN_BY_PAYMENT_LINK[session.payment_link]||(['Starter','Growth','Pro'].includes(metadataPlan)?metadataPlan:null);
+  if(!mappedPlan)return res.status(400).json({error:'Unknown checkout plan'});
+  const paidPlan=normalizePlan(mappedPlan);
+  if(!session.id||typeof session.id!=='string'||session.id.length>200)return res.status(400).json({error:'Invalid checkout session ID'});
+  const sessionKey='stripe:session:'+session.id;
+  let sessionState=sessionKey?await kv.get(sessionKey):null;
+  if(!validCheckoutSessionState(sessionState,session.id))return res.status(503).json({error:'Checkout session receipt is malformed. Stripe should retry after reconciliation.'});
+  if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
+    if(eventKey)await markStripeEventProcessed(eventKey);
+    return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
   }
 
-  let event;
-  try { event = JSON.parse(rawBody); }
-  catch (_) { return res.status(400).json({ error: 'Invalid payload' }); }
-
-  const checkoutEvent = event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded';
-  if (!checkoutEvent) {
-    return res.status(200).json({ received: true, ignored: true });
-  }
-
-  const eventKey = event.id ? `stripe:event:${event.id}` : null;
-  if (eventKey && await kv.get(eventKey)) {
-    return res.status(200).json({ received: true, duplicate: true });
-  }
-
-  const session = event.data.object;
-  if (event.type === 'checkout.session.completed' && !['paid','no_payment_required'].includes(session.payment_status)) {
-    return res.status(200).json({ received: true, pending_payment: true });
-  }
-  const paidPlan = PLAN_BY_PAYMENT_LINK[session.payment_link] || null;
-  const sessionKey = session.id ? `stripe:session:${session.id}` : null;
-  let sessionState = sessionKey ? await kv.get(sessionKey) : null;
-
-  if (sessionState && sessionState.status === 'complete') {
-    if (eventKey) await kv.set(eventKey, true, { ex: 60 * 60 * 24 * 90 });
-    return res.status(200).json({ received: true, duplicate: true });
-  }
-
-  const leadId = session.client_reference_id;
-  const customerEmail = session.customer_details && session.customer_details.email;
-  let lead = null;
-  let token = sessionState && sessionState.token ? sessionState.token : null;
-
-  if (token) {
-    lead = await kv.get(`onboarding:${token}`);
-  }
-
-  if (!lead) {
-    if (leadId) lead = await kv.get(`lead:${leadId}`);
-    if (!lead) {
-      lead = {
-        name: (session.customer_details && session.customer_details.name) || '',
-        business: '',
-        email: customerEmail || '',
-        phone: (session.customer_details && session.customer_details.phone) || '',
-        industry: '',
-        plan: paidPlan || 'Unknown',
-      };
+  const claim=await claimCheckoutSession(kv,session.id);
+  if(!claim){res.setHeader('Retry-After','15');return res.status(503).json({error:'Checkout provisioning is in progress. Stripe should retry.'})}
+  try{
+    // Recheck the durable receipt after taking the claim. A preceding worker
+    // could have completed between the first read and claim acquisition.
+    sessionState=await kv.get(sessionKey);
+    if(!validCheckoutSessionState(sessionState,session.id))throw new Error('Checkout session receipt became malformed during provisioning');
+    if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
+      if(eventKey)await markStripeEventProcessed(eventKey);
+      return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
     }
 
-    if (paidPlan) lead.plan = paidPlan;
-    token = crypto.randomBytes(24).toString('hex');
+  const leadId=session.client_reference_id;
+  const customerEmail=String(session.customer_details?.email||'').trim().toLowerCase();
+  let lead=null,token=sessionState?.token||null;
+  if(token){
+    lead=await kv.get('onboarding:'+token);
+    if(lead!=null&&(!lead||typeof lead!=='object'||Array.isArray(lead)))throw new Error('Persisted onboarding lead is malformed; manual reconciliation required');
+  }
+  if(!lead&&leadId){
+    lead=await kv.get('lead:'+leadId);
+    if(lead!=null&&(!lead||typeof lead!=='object'||Array.isArray(lead)))throw new Error('Persisted checkout lead is malformed; manual reconciliation required');
+  }
+  if(session.metadata?.attempt_hash&&(!lead||lead.attemptHash!==session.metadata.attempt_hash||!lead.termsAcceptedAt||lead.termsVersion!=='billing-summary-2026-10'||lead.setupAmount!==50000||lead.monthlyAmount!==entitlementsFor(paidPlan).price*100||lead.overageAccepted!==false||lead.taxEnabled!==false))throw new Error('Native checkout terms and saved order require reconciliation');
+  if(!lead)lead={name:session.customer_details?.name||'',business:'',email:customerEmail,phone:session.customer_details?.phone||'',industry:'',plan:paidPlan};
+  else lead={...lead};
+  lead.plan=paidPlan;
+  const recipient=String(lead.email||customerEmail||'').trim().toLowerCase();
+  if(!recipient)return res.status(500).json({error:'Missing customer email'});
+  if(customerEmail&&recipient!==customerEmail){
+    try{await recordCheckoutReconciliation(kv,{sessionId:session.id,eventId:event.id,email:customerEmail,reason:'email_mismatch'})}
+    catch(recordError){console.error('Checkout reconciliation recording failed',safeError(recordError))}
+    throw new Error('Checkout email and pre-saved lead disagree; manual reconciliation required');
+  }
 
-    await kv.set(
-      `onboarding:${token}`,
-      {
-        ...lead,
-        stripeSessionId: session.id,
-        agreementSigned: false,
-        agreementSignedAt: null,
-        intake: {},
-        status: 'awaiting_agreement',
-        createdAt: Date.now(),
-      },
-      { ex: 60 * 60 * 24 * 30 }
-    );
+  // Two different checkout sessions can refer to one customer. Serialize by
+  // normalized email and Stripe customer ID as well as by checkout session.
+  // Hash email-derived key material so identifiers do not expose an address.
+  const accountIdentities=['account-email:'+crypto.createHash('sha256').update(recipient).digest('hex')];
+  if(session.customer)accountIdentities.push('account-customer:'+crypto.createHash('sha256').update(String(session.customer)).digest('hex'));
+  const accountClaims=[];
+  try{
+    for(const identity of accountIdentities){
+      const accountClaim=await claimCheckoutSession(kv,identity);
+      if(!accountClaim){res.setHeader('Retry-After','15');return res.status(503).json({error:'Customer checkout provisioning is in progress. Stripe should retry.'})}
+      accountClaims.push(accountClaim);
+    }
+    // A different event could have finished this session while we awaited
+    // account identity claims. Never repeat payment setup on stale state.
+    sessionState=await kv.get(sessionKey);
+    if(!validCheckoutSessionState(sessionState,session.id))throw new Error('Checkout session receipt became malformed during provisioning');
+    if(sessionState&&(sessionState.status==='complete'||(sessionState.status==='awaiting_review'&&sessionState.workspaceId&&sessionState.token))){
+      if(eventKey)await markStripeEventProcessed(eventKey);
+      return res.status(200).json({received:true,duplicate:true,workspaceId:sessionState.workspaceId||null});
+    }
 
-    if (sessionKey) {
-      await kv.set(sessionKey, { token, status: 'pending_email' }, { ex: 60 * 60 * 24 * 90 });
+  let workspace;
+  try{workspace=await upsertWorkspace({lead,session,plan:paidPlan,email:recipient})}
+  catch(provisionError){
+    const message=String(provisionError?.message||'');
+    const reason=/reserved or disabled/.test(message)?'reserved_account':
+      /owner does not match|belongs to another account/.test(message)?'workspace_owner_mismatch':
+      /manual reconciliation required|mapping disagree|different workspaces/.test(message)?'account_mapping_conflict':'';
+    if(reason){
+      try{await recordCheckoutReconciliation(kv,{sessionId:session.id,eventId:event.id,email:recipient,reason})}
+      catch(recordError){console.error('Checkout reconciliation recording failed',safeError(recordError))}
+    }
+    throw provisionError;
+  }
+  if(lead.prospectId){
+    const paidEnt=entitlementsFor(paidPlan),convertedAt=Date.now();
+    await upsertWebsiteProspect({
+      id:lead.prospectId,name:lead.name,business:lead.business,email:recipient,phone:lead.phone,industry:lead.industry,plan:paidPlan,
+      stage:'converted',visitorId:lead.visitorId||'',sessionId:lead.sessionId||'',utmSource:lead.utmSource||undefined,utmMedium:lead.utmMedium||undefined,utmCampaign:lead.utmCampaign||undefined,
+      workspaceId:workspace.id,stripeCustomerId:session.customer||'',convertedAt,monthlyValue:paidEnt.price,setupValue:500
+    });
+  }
+  try{await recordSiteEvent({type:'checkout_complete',visitorId:lead.visitorId||'',sessionId:lead.sessionId||'',path:'/get-started',label:paidPlan,value:workspace.id})}
+  catch(analyticsError){console.error('Paid checkout analytics unavailable',safeError(analyticsError))}
+
+  if(!token){
+    const linkedToken=await kv.get('onboarding:workspace-token:'+workspace.id);
+    if(linkedToken){
+      const linkedOnboarding=await kv.get('onboarding:'+linkedToken);
+      if(linkedOnboarding!=null&&(!linkedOnboarding||typeof linkedOnboarding!=='object'||Array.isArray(linkedOnboarding)))
+        throw new Error('Linked onboarding record is malformed; Stripe should retry after reconciliation');
+      if(linkedOnboarding&&String(linkedOnboarding.workspaceId||'')===String(workspace.id))token=linkedToken;
     }
   }
-
-  const magicLink = `${SITE_URL}/onboarding?token=${token}`;
-  const firstName = (lead.name || '').split(' ')[0] || 'there';
-  const recipient = lead.email || customerEmail;
-
-  if (!recipient) {
-    console.error('Stripe checkout completed without a usable customer email', session.id);
-    return res.status(500).json({ error: 'Missing customer email' });
+  if(!token){
+    token=crypto.randomBytes(24).toString('hex');
+    await kv.set('onboarding:'+token,{...lead,workspaceId:workspace.id,stripeSessionId:session.id,agreementSigned:false,agreementSignedAt:null,intake:{},status:'awaiting_agreement',createdAt:Date.now()},{ex:60*60*24*30});
+  }else{
+    const onboarding=await kv.get('onboarding:'+token);
+    if(onboarding!=null&&(!onboarding||typeof onboarding!=='object'||Array.isArray(onboarding)))
+      throw new Error('Onboarding record is malformed; Stripe should retry after reconciliation');
+    if(onboarding&&!onboarding.workspaceId)await kv.set('onboarding:'+token,{...onboarding,workspaceId:workspace.id},{ex:60*60*24*30});
+    else if(onboarding&&String(onboarding.workspaceId||'')!==String(workspace.id))
+      throw new Error('Onboarding workspace identity disagrees; Stripe should retry after reconciliation');
   }
+  await kv.set('onboarding:workspace-token:'+workspace.id,token,{ex:60*60*24*90});
+  const onboardingStateKey='onboarding:workspace:'+workspace.id,rawExistingOnboarding=await kv.get(onboardingStateKey);
+  if(rawExistingOnboarding!=null&&(!rawExistingOnboarding||typeof rawExistingOnboarding!=='object'||Array.isArray(rawExistingOnboarding)))
+    throw new Error('Existing onboarding workspace state is malformed; Stripe should retry after reconciliation');
+  const existingOnboarding=rawExistingOnboarding||{};
+  if(existingOnboarding.workspaceId&&String(existingOnboarding.workspaceId)!==String(workspace.id))
+    throw new Error('Existing onboarding workspace identity disagrees; Stripe should retry after reconciliation');
+  const isRepeatPurchase=!!(existingOnboarding.workspaceId===workspace.id&&existingOnboarding.status&&existingOnboarding.firstStripeSessionId!==session.id);
+  const paidAt=Date.now(),reviewEligibleAt=addBusinessHours(paidAt,2);
+  const firstCheckoutChecklist={payment:true,accountReview:false,onboardingSent:false,agreement:false,intake:false,businessProfile:false,agentDraft:false,routingCaptured:false,phoneAssigned:!!String(workspace.phone||'').trim(),adminReview:false,testCall:false,clientApproval:false,live:false};
+  await kv.set(onboardingStateKey,{
+    ...existingOnboarding,
+    workspaceId:workspace.id,
+    status:isRepeatPurchase?existingOnboarding.status:'awaiting_review',
+    paidAt:isRepeatPurchase?(existingOnboarding.paidAt||paidAt):paidAt,
+    lastCheckoutAt:paidAt,
+    firstStripeSessionId:existingOnboarding.firstStripeSessionId||session.id,
+    reviewEligibleAt:isRepeatPurchase?(existingOnboarding.reviewEligibleAt||reviewEligibleAt):reviewEligibleAt,
+    onboardingLinkSent:isRepeatPurchase?!!existingOnboarding.onboardingLinkSent:false,
+    completionPercent:isRepeatPurchase?Number(existingOnboarding.completionPercent||0):0,
+    checklist:isRepeatPurchase?{...existingOnboarding.checklist,payment:true}:firstCheckoutChecklist,
+    updatedAt:Date.now()
+  });
 
-  try {
-    await sendMail({
-      to: recipient,
-      subject: 'Welcome to CallerCore — your setup link',
-      text: `Hi ${firstName},\n\nWelcome to CallerCore — payment received.\n\nYour next steps: ${magicLink}\n\nSign your service agreement and fill out your intake form there. We start building your AI the moment your intake form comes in — most accounts go live within 1 business day of that.\n\nQuestions any time: support@callercore.com\n\n— Tj, CallerCore`,
-      html: `<p>Hi ${firstName},</p><p>Welcome to CallerCore — payment received.</p><p><a href="${magicLink}">Click here for your next steps</a> — sign your service agreement and fill out your intake form. We start building your AI the moment your intake form comes in, and most accounts go live within 1 business day of that.</p><p>Questions any time: support@callercore.com</p><p>— Tj, CallerCore</p>`,
+  const [confirmedOnboarding,confirmedWorkspaceToken,confirmedOnboardingState,confirmedSessionState]=await Promise.all([
+    kv.get('onboarding:'+token),
+    kv.get('onboarding:workspace-token:'+workspace.id),
+    kv.get(onboardingStateKey),
+    sessionKey?kv.get(sessionKey):Promise.resolve(null)
+  ]);
+  if(!confirmedOnboarding||typeof confirmedOnboarding!=='object'||Array.isArray(confirmedOnboarding)||
+    String(confirmedOnboarding.workspaceId||'')!==String(workspace.id)||
+    String(confirmedWorkspaceToken||'')!==String(token)||
+    !confirmedOnboardingState||typeof confirmedOnboardingState!=='object'||Array.isArray(confirmedOnboardingState)||
+    String(confirmedOnboardingState.workspaceId||'')!==String(workspace.id)||
+    !validCheckoutSessionState(confirmedSessionState,session.id))
+    throw new Error('Checkout onboarding persistence could not be confirmed');
+  const firstName=(lead.name||'').split(' ')[0]||'there';
+  try{
+    const billingSummary='<p>Plan: '+escapeEmailHtml(paidPlan)+' · $'+entitlementsFor(paidPlan).price+'/month. One-time setup: $500. Your billing details and official invoices are available in CallerCore.</p>';
+    const email=lifecycleEmail({
+      preheader:isRepeatPurchase?'Payment received. Your existing CallerCore setup is preserved.':'Payment received. Your CallerCore setup request is now in review.',
+      eyebrow:'PAYMENT CONFIRMED',
+      title:isRepeatPurchase?'Your CallerCore payment is confirmed.':'Welcome to CallerCore, '+firstName+'.',
+      intro:billingSummary+(isRepeatPurchase?'Thank you — your new payment for <strong>'+escapeEmailHtml(workspace.name)+'</strong> was received. Your existing CallerCore account remains in place.':'Thank you — we received your payment and created the CallerCore account for <strong>'+escapeEmailHtml(workspace.name)+'</strong>.'),
+      statusLabel:'Current status',
+      statusText:isRepeatPurchase?'Your current setup progress remains in place.':'Account review in progress — no action needed from you right now.',
+      bodyHtml:isRepeatPurchase?'<p style="margin:0">Your current onboarding progress and completed steps have not been reset by this purchase. Visit your CallerCore dashboard for the latest account and billing details.</p>':'<p style="margin:0 0 12px">Our team will review your order and business details during business hours. Once that review is complete, we’ll send your welcome email with a secure onboarding link and service agreement.</p><p style="margin:0">You’ll always be able to see setup progress from your CallerCore account as the implementation moves forward.</p>',
+      siteUrl:SITE_URL
     });
-  } catch (err) {
-    console.error('Failed to send onboarding email:', err);
-    // Return 500 so Stripe retries the webhook. The session->token mapping
-    // lets a retry reuse the same onboarding link instead of creating duplicates.
-    return res.status(500).json({ error: 'Onboarding email failed' });
-  }
+    const queued=await enqueueRenderedBillingEmail(kv,{operationId:'purchase:'+session.id,workspaceId:workspace.id,to:recipient,subject:isRepeatPurchase?'CallerCore payment received — your account remains in place':'Payment received — welcome to CallerCore',...email});
+    await deliverBillingEmail(kv,queued.key,sendMail);
+  }catch(err){console.error('Payment confirmation outbox persistence failed:',safeError(err));throw err}
 
-  if (sessionKey) {
-    await kv.set(sessionKey, { token, status: 'complete' }, { ex: 60 * 60 * 24 * 90 });
+  if(sessionKey){
+    await kv.set(sessionKey,{token,workspaceId:workspace.id,status:'awaiting_review',sessionId:session.id},{ex:60*60*24*90});
+    const finalSessionState=await kv.get(sessionKey);
+    if(!validCheckoutSessionState(finalSessionState,session.id)||!finalSessionState||
+      String(finalSessionState.workspaceId||'')!==String(workspace.id)||String(finalSessionState.token||'')!==String(token))
+      throw new Error('Final checkout session receipt could not be confirmed');
   }
-  if (eventKey) {
-    await kv.set(eventKey, true, { ex: 60 * 60 * 24 * 90 });
+  if(eventKey)await markStripeEventProcessed(eventKey);
+  try{await resolveCheckoutReconciliation(kv,session.id)}
+  catch(recordError){console.error('Checkout reconciliation completion update failed',safeError(recordError))}
+  return res.status(200).json({received:true,workspaceId:workspace.id});
+  }finally{
+    for(const accountClaim of accountClaims.reverse()){
+      try{await releaseCheckoutSession(kv,accountClaim)}
+      catch(releaseError){console.error('Stripe customer claim cleanup failed',safeError(releaseError))}
+    }
   }
-  return res.status(200).json({ received: true });
+  }finally{
+    try{await releaseCheckoutSession(kv,claim)}
+    catch(releaseError){console.error('Stripe checkout claim cleanup failed',safeError(releaseError))}
+  }
 };

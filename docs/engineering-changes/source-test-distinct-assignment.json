@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "5aaabb2f15a0353071eb90791dd106270416ea25a3119b67a8d774828e5b797e",
+  "risk": "critical",
+  "scope": "Give the newly qualified isolated-test milestone a distinct future assignment identity, preserving byte-exact completed proposal contracts and completed-task replay protection. Add owner-only closure of verified expired sequences without renewing execution.",
+  "riskAnalysis": "Existing setup still selects already-completed proposal-only scope and explicitly asks missing dynamic verification. A distinct reviewed future test objective is required; no relaxation of sequence stop, consumed grants, exact release/configuration checks, provider or financial authority.",
+  "threatModel": {
+    "assets": "Owner identity, task/release integrity, controller credentials, exact code/test provenance, audit and VM shutdown.",
+    "trustBoundaries": "Existing fresh owner policy/API and shared approval CAS grant one exact source-test run; model workers see structured test evidence, never provider credentials or arbitrary commands. Private backend uses fixed Sandbox endpoints and qualified source class.",
+    "abuseCases": "Inherited proposal grants, forged or stale task/scope, async command substitution, cross-session result replay, duplicate create after lost ACK, foreign cleanup, revoked/expired permission, cleanup masking, false acceptance and stale UI consent.",
+    "mitigations": "Prepared-approval expected revision and exact scope, active Specialist ticket, private immutable job snapshot and task-salted command hash, atomic claim before fixed-name create, no retries, scoped find/stop/readback, explicit permit expiry, independent source/VM cleanup, separately hashed receipt validation, default-off/reset/snapshotted UI consent and pre-mutation durable marker."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Adding automatic isolated tests did not update the future assignment contract; setup reused completed proposal scope and instructions asking missing dynamic verification.",
+      "detectionGap": "Fresh fixture journals exercised new dispatch, but historical completed-scope admission was not represented together with the new capability.",
+      "regression": "Pinned committed897 historical objective/policy/schema/instruction contracts, Chief hash, four independent scope tests, and Auditor allfive actual native request hash comparison. Old completed scope remains denied; distinct new test objective passes non-mutating admission.",
+      "historicalPrevention": "When capability changes, update future assignment identity and reporting together while retaining exact historical descriptor recognition. Never remove completed-task replay prevention or rewrite old evidence."
+    },
+    {
+      "rootCause": "Normal recovery correctly excludes expired authority but provides no owner UI path to close a now-expired completed sequence after a lost tab.",
+      "detectionGap": "Original recovery tests covered active sequence selection and execution expiry independently, not administrative closure after session loss.",
+      "regression": "12actualUIbehavior checks cover verifiedexpiredclosure, noautomaticretry, perIDmarkers, changedscope/cleanup/readback and default expiredrecovery denial.",
+      "historicalPrevention": "Keep expiry authoritative for execution; administrative termination must not depend on execution still being current."
+    }
+  ],
+  "rollback": "Disable source-test opt-in, revoke current existing approval and stop exact named VM through the existing project control plane; preserve unconfirmed cleanup as an admission blocker until verified. Revert these new integration hooks on feature Preview if necessary; Production and existing historical receipts are unchanged.",
+  "negativePaths": {
+    "malformed-response": "Bounded JSON/NDJSON parsers, exact23checks/7case IDs, final command/session binding; raw provider errors never enter receipts.",
+    "stale-state": "Current owner/task/release checks, expected prepared-approval revision, active capability plus per-test permit expiry.",
+    "concurrency": "One approval permission consumed atomically before unique provider-name creation; shared source jobs globally serial including cleanup-unconfirmed.",
+    "cancellation": "Parent signal and authorization checks abort command transport; independent cleanup remains possible after permission revocation.",
+    "worker-interruption": "Unique durable claim survives lost acknowledgment; read named resource without create retry; absent/unconfirmed resource is not called clean.",
+    "api-outage": "Fixed no-retry provider requests; closed diagnostics and unresolved cleanup block another dispatch.",
+    "authorization-denial": "Worker API cannot grant owner consent; no old approval inherits source execution; wrong owner/workspace/release/revision denied.",
+    "spending-limit": "No budget increase, model retry or recurring task. Existing owner financial monitoring unchanged; source VM remains finite1CPU2GB300s/deny-all/nonpersistent.",
+    "partial-execution": "Usage retained independently; failed source tests stop before QA; confirmed data-copy destruction cannot mask failed VM cleanup."
+  },
+  "proactiveReview": {
+    "architecture": "Only current assignment contract and historical policy recognition; existing dispatch, isolation, controller, journal, cleanup, spending and publication checks unchanged.",
+    "dependencies": "No dependencies, provider projects, credentials, services or installation changes.",
+    "threats": "Historical authorizations must remain historical; new objective alone grants no source execution. Fresh owner prepared approval and separate source-test permission still required.",
+    "failureModes": "Old completed assignment stays blocked, current selected policy cannot dispatch an old descriptor, explicit evidence/acceptance boundaries remain.",
+    "faultInjection": "31affectedinput/workflow checks plus4historicalcontract and12expiredclosureUI tests pass. Preliminary4517/4532 failures preserved; verbose new prompt shortened without raising limits. Final frozen STRICT passed4544/4544, zero failures.",
+    "independentChallenge": "Final independent Work QA d024e58bdc32d4a096490270dabf92690ae96ed85d11d853aeb019730dcc4e86 and Auditor8df11b428bcbba5f548b82a2e90bc2cfc6598b61b96e87de44ccfdccd50e8d74 approve09d4 source; historical five native request compatibility independently preserved.",
+    "recovery": "Preserve denied refresh_bfcdb and original successful workflow. No configuration claim persisted or provider mutation. Old setup canceled; browser stop acknowledgment unknown, never blindly repeat.",
+    "readiness": "New assignment locally reviewed, historical compatibility verified; final STRICT/remote/browser qualification required. Current published897 dispatcher is hosted verified but no automatic live VM/model run has occurred."
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "version": "engineering-quality-v1",
+  "title": "Test actual phone serial authority after catalog consolidation",
+  "base": "a79d6e6bf7840c06e513ee9a847a3e02af7a29e2",
+  "changeDigest": "eded5ed94455e9cab414eee27d09d720e6694b89893a70776f473f4b10a95887",
+  "risk": "substantial",
+  "scope": "Replace a duplicated-source-text test with direct serial authority behavior; preserve hosted failure and exact runtime checkpoint.",
+  "riskAnalysis": "Runtime and permission controls unchanged. Tests explicitly reject concurrent prepared, active and consumed phone authority, while revoked historical authority is inert.",
+  "verification": [
+    "risk-analysis",
+    "targeted-tests",
+    "independent-qa",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "A legacy registration test required the lifecycle module to repeat a literal now supplied by the shared task catalog.",
+      "detectionGap": "Focused refactor coverage omitted this older source-text assertion; complete CI retained and exposed it.",
+      "regression": "Actual lifecycle behavior for all pending states and revoked history, alongside unchanged UI and provider registrations;32focusedtests pass.",
+      "historicalPrevention": "Assert externally meaningful authority behavior instead of implementation text duplication; searched related tests for the same assumption."
+    }
+  ],
+  "files": [
+    "CALLERCORE_PROJECT_STATE.md",
+    "tests/agent-operations-phone-workflow.test.js"
+  ]
+}

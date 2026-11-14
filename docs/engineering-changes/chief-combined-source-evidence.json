@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "359a943f8d5a102ce38fefd12ef938ccdbcd578d0140667c26713243f829a5f3",
+  "risk": "critical",
+  "scope": "Bind related repository excerpts to one Chief assignment and one existing approval.",
+  "riskAnalysis": "Derive all evidence from the same filtered snapshot. Check aggregate size, query duplicates, source hashes and task scope before dispatch.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Preview credentials, private repository assets, truthful browser pass/failure evidence and exact qualified release identity.",
+    "trustBoundaries": "Detached browser route callbacks versus test runner failure/report persistence; intentional context/page teardown versus unexpected transport errors.",
+    "abuseCases": "Swallowed background failures, fabricated Browser success after transport errors, raw error/query/credential logging, error ledger overflow hiding failures, unexpected closure mistaken for authorized cancellation.",
+    "mitigations": "Nonthrowing callback abort, finite code/phase/scope/resource/method/category ledger, cumulative failure count beyond bounded details, exact explicit cleanup markers plus canonical closure classifier, pending callback drain and final assertions before durable report writes."
+  },
+  "defects": [
+    {
+      "rootCause": "A single-query task loses earlier source when a later query is submitted as a new task.",
+      "detectionGap": "Whole-file support covers ordinary files but does not preserve cross-file context.",
+      "regression": "Run the real owner controller with a multi-query packet and fixture provider, cite both files, reject altered evidence and private paths, then verify shutdown.",
+      "historicalPrevention": "Keep the single-query serializer and all prior receipt encodings."
+    }
+  ],
+  "rollback": "Keep paid execution disabled and preserve065 failed Browser archive and successful5380 CI/37 Redis evidence. Ship only reviewed feature successors; on failure retain or restore the preceding qualified feature alias without Production/main changes.",
+  "negativePaths": {
+    "malformed-response": "Raw exception strings, URLs and query parameters never enter the ledger; only fixed categories/phase/origin/resource/method classes. Unexpected private response statuses still fail exact public200/private404 probes.",
+    "stale-state": "Exact source, release pin and private-source identity unchanged; new hosted Browser artifacts must match the actual successor before any paid Chief operation.",
+    "concurrency": "Existing Browser workflow concurrency remains single per feature branch; this helper grants no concurrent provider execution or mutation rights.",
+    "cancellation": "Explicit context/page teardown markers allow only canonical Playwright closure errors; unexpected closure and generic cancellation/socket/timeout remain failures. Marker never clears prior errors.",
+    "worker-interruption": "Close drains all pending route callbacks. Unexpected failures prevent ok and persist safe diagnostics before final throw; no detached route exception can terminate report writing.",
+    "api-outage": "HTTP401/403/200 at private paths cannot masquerade as private404; public positive control must200, all probes same-origin and exact path.",
+    "authorization-denial": "Private header types stripped off-origin; same-origin separate fetch cannot follow redirects; browser carries no global custom credential headers.",
+    "spending-limit": "No OpenAI or Sandbox requests in local security tests; owner-directed existing financial monitoring and uncertainty unchanged; no new paid resources.",
+    "partial-execution": "Cumulative failure count remains authoritative beyond20 retained details; all tracked contexts are asserted after close, including helper contexts closed early. Preserve original hosted failure evidence."
+  },
+  "proactiveReview": {
+    "architecture": "Extend the existing shared Preview access helper only; all six QA callers share explicit context/page close and final assertion. No provider gateway, executor, permission expansion or new orchestration.",
+    "dependencies": "Existing Playwright browser and Node APIs only, no packages or providers added. Actual proof uses isolated localhost fictional credentials, not personal browser state.",
+    "threats": "Cross-origin redirect forwarding is demonstrated with fictional credentials and eliminated by separate non-following request/fulfill, not by disabling protection.",
+    "failureModes": "Independent local Chrome reproduced context-close and socket failures with identical generic wrapper error; expected markers distinguish them while the exact original hosted cause remains unproven.",
+    "faultInjection": "Marked and unmarked closure, socket hangup, timeout, raw error containing fictional credential,25 failures with20 retained details, pending callbacks, foreign redirect and hypothetical credential types.",
+    "independentChallenge": "Existing independent Work QA exercises actual imported helper in real headless browser; Engineering Auditor separately reviews every active caller and diagnostics.",
+    "recovery": "Preserve current66c and original failed artifacts; one reviewed feature source push/build, durable alias marker/readback once READY, no configuration refresh or credential rewrite.",
+    "readiness": "Local focused verification only. Live Preview verification pending."
+  }
+}

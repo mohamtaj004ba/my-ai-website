@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "f8c93e7a1ab8c9a205fa1682e6c9c3c914a16dbbffd193e21cbc43789e108370",
+  "risk": "critical",
+  "scope": "Preservation-safe bounded extension of existing operations CAS byte ceiling from700000to1000000, unchanged100000cleanup/count limits, plus owner readiness utilization readback.",
+  "riskAnalysis": "All41assignments unchanged and206valid audit events predate originalfailedcreate. Source62fcreate guards exclude plan/audit dimensions; serializedcandidatebyteguard stronglyinferred, exact originalbytes unrecorded. No migration or historyrewrite. Atmost300000extra persistedbytes peraffectedownerkey; reads+300KB/CASrawargs+600KBperattempt. Samekeys/commands; no purchase/planupgrade or accountcostguarantee. OfficialUpstash10MBrequestlimit supports boundedescapedpayload; actualcurrentownermeasurement/admission stillrequired.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Original41assignments, immutable206eventchain, tenant ownership, bounded Redis storage/transfer and cleanup.",
+    "trustBoundaries": "Authenticatedowner controller ->existingoperationsCAS ->managedRedis. Readiness capacity is observation only; no spending/execution/acceptance authority.",
+    "abuseCases": "Unbounded storagegrowth, historyrewrite, crossworkspace access, oversizedRESTpayload, cleanup starvation, hiddenresource/policyexpansion, falsecleanreadiness onstoragefailure.",
+    "mitigations": "Onlybytes+300KB; plan50/audit400admission500hard/cleanup100KB/concurrencyunchanged. ExistingCAS/fences/hashchain remain. Nearnewbound50plancleanup andworstescapedrequest tested. Ownerdenial precedesread; unavailableOpscannotproducecleanreadiness."
+  },
+  "rollback": "Disable paid execution and revoke temporary grants; preserve all records. Feature rollback must not lower byte cap beneath actual stored state; retain bounded storage compatibility if state exceeds old800KBcleanup. Main/Production untouched.",
+  "negativePaths": {
+    "malformed-response": "Missingcapacityisnotfundingauthority; malformedstatefailclosed.",
+    "stale-state": "Exactsource/release/taskandownerrevalidationunchanged.",
+    "concurrency": "Existing5CASattempts andatomiccapacitychecks; no new retryloop.",
+    "cancellation": "Same100KBcleanupreserveverifiedat1MBnormalbound.",
+    "worker-interruption": "No newworkerorcodeexecution; existingcleanupunchanged.",
+    "api-outage": "ReadinessOpsreadfailurecannotclaimcleanstate.",
+    "authorization-denial": "OwnerdeniedbeforeOpsread; noforeignutilization.",
+    "spending-limit": "No model/count/reservation; existing4USDallowanceunchanged.",
+    "partial-execution": "Originalrecords/receiptsunchanged; fullqualifiedfreshscope requiredbeforepaid."
+  },
+  "defects": [
+    {
+      "rootCause": "Finite700KBnormalbyteceiling cannot admit freshsourceboundassignment whilepreserving accumulatedimmutablehistory; countlimits notexhausted.",
+      "detectionGap": "OldgenericOPS_CAPACITY didnotrecordresource; exactoldbytesunavailable. New282closedcodes/readmetricsretainthat historicaluncertainty.",
+      "regression": "Appendaboveold700KB preservesalloldassignments/auditprefix/incidents; normal1MBboundand100KBcleanupremainfinite; full50plancancelatnewthreshold; CASJSONescaping<10MB; owner/storagefailclosedreadiness.",
+      "historicalPrevention": "No recorddeleted/reassigned/archived/rehashed; old24eventintentterminallycancelled and41recordsequal. No originalfailure/rootcausebytesfabrication."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "SameoperationsCASkey/adapter/version andownergateway; no migration/competingjournal.",
+    "dependencies": "No newpackage/account/service/credential; officialUpstashrequestlimit10MBverified. Accountspecific marginalbillingunknown; no planpurchase.",
+    "threats": "OversizedCAS, historytampering, tenantleak, resourceexpansion, unavailablecapacitymasqueradingasreadiness.",
+    "failureModes": "Allfinitecount/audit/byteguards remain. Newceilingdoesnotguarantee10trialsorreserveheadroom. Readinessstoragefailurefailsclosed; extraauthenticatedreadlatencyrequireslivecheck.",
+    "faultInjection": "Normal/cleanupbyteedges,max50plans,concurrentlastslot,unchangedprefixes,escapedtransport,ownerdenialandstorageoutage.",
+    "independentChallenge": "IndependentQAandAuditorreviewboundedresourceimpactandcleanup; no humanindependenceclaim.",
+    "recovery": "Stoppaid/revokeauthority onanyfailure. Do notdowngradestoragecapbelowactualstate: ifstateexceedsoldcleanup800KB, keepnewboundanddisableexecutionuntilreviewedrecovery. No deletionforrollback.",
+    "readiness": "FrozenreviewandSTRICT/Redis/CI/CodeQL/Browserplusactualownerutilizationandfreshadmissionbeforepaidtrial."
+  }
+}

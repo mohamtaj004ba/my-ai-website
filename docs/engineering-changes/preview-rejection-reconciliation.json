@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "bbf3a6d0210f511d5724ee2f892dd27e1d71170bcc722c4614159747a8500048",
+  "risk": "critical",
+  "scope": "Append-only owner-attested reconciliation for an evidenced rejected Preview configuration request; preserve unknown-outcome duplicate protection.",
+  "riskAnalysis": "Narrow configuration recovery only; current server-pinned technical review, owner auth, false flags and clean authority remain mandatory. External HTTP evidence is attested, not cryptographic proof. No inference or publication permission.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable audit history, task authority, credentials, spending and cross-workspace isolation.",
+    "trustBoundaries": "Existing owner session and server-pinned exact technical review authorize recovery-only CAS. Internal agents, provider text and arbitrary submitted review hashes cannot authorize reconciliation.",
+    "abuseCases": "Forged HTTP rejection, wrong workspace, altered old evidence, duplicate recovery, hidden credentials, unsupported provider results or unauthorized inference.",
+    "mitigations": "Exact narrow400invalid-target classifier, bound historical hashes and runtime, safe fields, clean shutdown, immutable append, atomic one-use consumption and unchanged paid-admission gates."
+  },
+  "rollback": "Revert reviewed source to previous paid-disabled Preview; preserve all old events, cancellation and appended reconciliation evidence. Do not revive grants or retry unknown deployments.",
+  "negativePaths": {
+    "malformed-response": "Focused owner/controller/CAS fixtures cover malformed-response while preserving original history, false paid flags, no provider invocation and exact immutable evidence.",
+    "stale-state": "Focused owner/controller/CAS fixtures cover stale-state while preserving original history, false paid flags, no provider invocation and exact immutable evidence.",
+    "concurrency": "Focused owner/controller/CAS fixtures cover concurrency while preserving original history, false paid flags, no provider invocation and exact immutable evidence.",
+    "cancellation": "Focused owner/controller/CAS fixtures cover cancellation while preserving original history, false paid flags, no provider invocation and exact immutable evidence.",
+    "worker-interruption": "Focused owner/controller/CAS fixtures cover worker-interruption while preserving original history, false paid flags, no provider invocation and exact immutable evidence.",
+    "api-outage": "Focused owner/controller/CAS fixtures cover api-outage while preserving original history, false paid flags, no provider invocation and exact immutable evidence.",
+    "authorization-denial": "Focused owner/controller/CAS fixtures cover authorization-denial while preserving original history, false paid flags, no provider invocation and exact immutable evidence.",
+    "spending-limit": "Focused owner/controller/CAS fixtures cover spending-limit while preserving original history, false paid flags, no provider invocation and exact immutable evidence.",
+    "partial-execution": "Focused owner/controller/CAS fixtures cover partial-execution while preserving original history, false paid flags, no provider invocation and exact immutable evidence."
+  },
+  "defects": [
+    {
+      "rootCause": "Configuration recovery treats a positive HTTP400 rejection as an unknown deployment and has no append-only reconciliation; Work also bypassed the existing correct REST builder.",
+      "detectionGap": "The invalid RESTtarget response was initially hidden by an unchecked result parser; recovered original native tool evidence establishes HTTP400 without another provider request.",
+      "regression": "Narrow rejection fixtures, current server-reviewed owner/controller denials, unchanged history and atomic one-use recovery tests.",
+      "historicalPrevention": "Use existing reviewed connector bridge and request builder exclusively. Preserve sanitized provider errors before parsing response wrappers; never retry unknown delivery."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing configuration records and controller only; no parallel journal, gateway, budget or service.",
+    "dependencies": "No package, image, infrastructure or provider permission changes.",
+    "threats": "Forged HTTP rejection, wrong workspace, altered old evidence, duplicate recovery, hidden credentials, unsupported provider results or unauthorized inference.",
+    "failureModes": "Missing positive rejection evidence or server review pin denies recovery. Unknown outcomes remain frozen; provider failure cannot imply success.",
+    "faultInjection": "Malformed proofs, altered history, stale runtime, role/workspace impersonation and duplicate consumption are rejected in nonbillable fixtures.",
+    "independentChallenge": "Separate Work QA and Auditor inspect implementation and focused evidence; technical criticism does not become human acceptance.",
+    "recovery": "Append receipt only after cancelled exact intent, clean shutdown and server-pinned review; never alter old unknown events.",
+    "readiness": "Focused verification, STRICT, Redis, CI, CodeQL and actual authenticated Preview archive precede paid readiness."
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "8fe023d0aa4c0dce53a8c7316ff608ae86425eecaf1fe3bf48f905b072eda2a7",
+  "risk": "routine",
+  "scope": "Preserve exact qualified review-handoff source, hosted results, independent review, unchanged authority and accounting, with explicit fixture-versus-live and acceptance limitations.",
+  "verification": ["scope-review"],
+  "defects": []
+}

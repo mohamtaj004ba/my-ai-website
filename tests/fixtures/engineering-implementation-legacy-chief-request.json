@@ -1,0 +1,63 @@
+{
+  "qualification": "Synthetic task/workspace identities with existing approved source fragments. Legacy body derived from preserved pre-change request; no raw model response or credentials.",
+  "context": {
+    "binding": {
+      "planId": "op_legacy_request_fixture",
+      "taskId": "task_legacy_chief",
+      "executionId": "exec_legacy_chief",
+      "fence": 0,
+      "ownerHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "workspaceHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "runtime": {
+        "origin": "https://my-ai-website-legacyfixture-mohamtaj004bas-projects.vercel.app",
+        "sourceCommit": "cccccccccccccccccccccccccccccccccccccccc",
+        "branch": "feature/callercore-dashboards",
+        "deploymentId": "dpl_legacyRequestFixture",
+        "release": {
+          "version": "organization-contracts-v4",
+          "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      },
+      "authorizationRevision": 1
+    },
+    "assignment": "Investigate the Starter-plan Automations fallback warning using the supplied source. Prepare one entitlement-gated feed patch in a disposable copy, preserve the original handler, review scope and risks, and report missing dynamic verification without execution, publication or acceptance. Use engineering-report-v1: complete assignments and impact-qualified inert proposals.",
+    "evidence": [
+      {
+        "id": "starter-plan",
+        "path": "dashboard.js",
+        "line": 2,
+        "text": "Starter:{price:349,minutes:300,locations:1,used:214,features:{appointments:false,sms:false,automations:false,advancedAnalytics:false,apiAccess:false,unifiedInbox:false},unlock:'Growth'},",
+        "sha256": "202a482a439821294d30a984d8f7402b9102fb5d28680a931da31969785ea049",
+        "excerptHash": "82c0e1d31a0fe1a87c43d128c8d783d5c369ca45a339c808002e46e1b5c46a59"
+      },
+      {
+        "id": "secondary-automations",
+        "path": "dashboard.js",
+        "line": 399,
+        "text": "    ['automations',d=>{automationsData=d.automations||[]}],",
+        "sha256": "202a482a439821294d30a984d8f7402b9102fb5d28680a931da31969785ea049",
+        "excerptHash": "dbbdbf64a74a9204f45cda1f01e78100e78eb1965450494f3a878b457ebfa6bb"
+      },
+      {
+        "id": "automations-entitlement",
+        "path": "dashboard.js",
+        "line": 1451,
+        "text": "  if(!has('automations'))return;",
+        "sha256": "202a482a439821294d30a984d8f7402b9102fb5d28680a931da31969785ea049",
+        "excerptHash": "678d995f37e14eb6784bdb3b68df1bb8eddd237158ead58de24dd4c15cc4261b"
+      },
+      {
+        "id": "automations-interface",
+        "path": "dashboard.html",
+        "line": 212,
+        "text": "      <div id=\"automationGate\" class=\"locked-stage\" data-feature-card=\"automations\"></div>",
+        "sha256": "77b4ccbaaa4887b407582f3674925c86c6e95d83ed6c8385790572f66550f39f",
+        "excerptHash": "61536f817438929130bd14a162798bf79a3c0b2fb35654307f32f5593093eabc"
+      }
+    ],
+    "priorReceipts": []
+  },
+  "requestHash": "959a83c62a8966aa2fc6456ac4da4a8b561bb9c6c05b8190578bafd29cbe57bb",
+  "inputBound": 6636,
+  "maximumCostMicros": 200000
+}

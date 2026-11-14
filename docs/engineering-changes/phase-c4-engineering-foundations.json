@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "b9f880a8d0d052faf51cfe294d3a00990f8d3d529d545a7eccff0fbafeb1827c",
+  "risk": "critical",
+  "scope": "Phase C.4: prepared full-lifecycle repository/project connection permissions with inactive private read adapters; existing task-bound inert DST correction and owner setup visibility. No private credential, paid inference, external mutation or production authority.",
+  "riskAnalysis": "STRICT for credential brokers, asynchronous permission/input bindings, source-integrity and child workspace contracts. Provider installation writes are prepared only; runtime GET-only and exact fixed patch deny escalation. Semantic review and hosted browser remain unavailable.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner/workspace identity, provider installation keys and scopes, immutable source and audit evidence, task authority and retained financial uncertainty.",
+    "trustBoundaries": "Owner UI to guarded Ops API/CAS; task to read gateway; trusted managed broker to private GET adapter; parent to restricted fixed-data child; independent review to acceptance.",
+    "abuseCases": "Forged or stale scope, request mutation after await, cross-account substitution, late token/result after revoke, draft preimage or arbitrary command substitution, false semantic acceptance.",
+    "mitigations": "Exact identity and source checks, immutable inputs, fresh durable authorization before and after async boundaries, GET-only paths, fixed hash-locked inert patch, unresolved independent review and zero publication."
+  },
+  "rollback": "Keep paid execution and all private connections disabled. Revert only C4 application delta and redeploy disabled Preview, preserving original operational journal/evidence/holds and central revocation; never rewrite immutable history or main/Production.",
+  "negativePaths": {
+    "malformed-response": "Actual service/API/UI reject malformed envelopes, corrupt task records and fabricated authority; no hidden repairs.",
+    "stale-state": "Exact plan/task revisions, source snapshot and current release guards; UI discards older revisions.",
+    "concurrency": "Existing Redis Lua CAS enforces unique create/claim, fenced completion, and cancellation racing publication.",
+    "cancellation": "Owner cancellation and internal emergency stop reserve cleanup slots/bytes; original completed evidence remains.",
+    "worker-interruption": "Fixed child timeout/cancel destroys workspace; abrupt parent termination public tempdata cleanup remains unverified, untrusted code disabled.",
+    "api-outage": "Redis read/CAS failures deny execution; unknown delivery retains exact scoped idempotency key, no automatic retry.",
+    "authorization-denial": "Preview-only fresh session/member/workspace owner, worker/nonowner/CSRF/Production negatives and workspace-isolated journals.",
+    "spending-limit": "Private adapters remain inactive without approved broker/gateway wiring, no inference transport or reservation writer added; existing fifteen-dollar ledger and uncertainty preserved.",
+    "partial-execution": "Original attempt/history preserved, stale fences cannot publish, dependent tasks await verified reports and expired/cancelled work cannot recover."
+  },
+  "defects": [
+    {
+      "rootCause": "GitHub adapter read input again after asynchronous credential lookup, permitting receipt source identity to drift from its query.",
+      "detectionGap": "Initial transport mocks validated static inputs but not mutation across the broker await.",
+      "regression": "Independent Auditor SHA mutation test preserves failing pre-correction artifact and requires immutable request snapshot.",
+      "historicalPrevention": "A receipt cannot claim a different commit than the one dispatched."
+    },
+    {
+      "rootCause": "Client daily chart adds a fixed 86400000 milliseconds to local midnight, although DST local days may last 23 or 25 hours.",
+      "detectionGap": "Ordinary chart fixtures did not include both DST transition boundaries.",
+      "regression": "Exact source-linked America/Los_Angeles spring/fall fixtures prove old wrong inclusion/exclusion and inert next-calendar-midnight correction.",
+      "historicalPrevention": "Proposed draft fixes first daily overview chart only; authoritative source remains unchanged pending review and approval."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing owner API/OpsCAS/task journal, original independent review, same restricted data-only child. Prepared GitHub/Vercel boundary cannot create installations or grants.",
+    "dependencies": "Managed provider credential broker, owner App/integration installation and dedicated hosted browser are unavailable; no credential or paid service activation. Existing source/publicCI and trusted child usable.",
+    "threats": "Tenant projection leaks, forged authority, stale state, dependency loops, cancellation races and corrupted receipt evidence.",
+    "failureModes": "Observe storage only as of real read; provider unknown; expired tasks visible; reserve bounded cleanup audit/bytes; no auto retry.",
+    "faultInjection": "Actual operations/API/CAS, fake only HTTP boundary; real Nodepermission child and tempfiles. No paid transport or arbitrarycode.",
+    "independentChallenge": "Separate QA and Auditor source inspection found and regressed GitHub input TOCTOU and inherited setup keys; DST evidence and fixed child patch reviewed independently.",
+    "recovery": "One owner-requested zero-provider retry within original deadline/release; cancellation, original receipts, independent QA and uncertainty are never overwritten.",
+    "readiness": "Frozen STRICT and real Redis, CI/CodeQL, exact READY release, actual owner five-stage source-to-calendar-patch/destruction and final unresolved report required; private access/browser remains gated."
+  }
+}

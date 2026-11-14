@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "4da5d50c2e6a3b8a76e3b8dd11fb125626d1ef390961f9858694dc8943be908a",
+  "risk": "critical",
+  "scope": "Remove current V3 development total-attempt cap across sequence/controller/configuration/readback/UI while preserving original records and actual authorization.",
+  "riskAnalysis": "Owner explicitly removed ten-attempt limit. New effective policy is separate from historical protocol/hash metadata. No old grants reopen; all new attempts still require exact owner/task/release/configuration, serial cleanup and bounded per-run execution.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable history, consumed approvals, source and workspace identity, serial execution, cancellation and cleanup.",
+    "trustBoundaries": "Current reviewed owner policy controls admission; old maxAttempts10 remains immutable protocol evidence. Model content cannot grant authority.",
+    "abuseCases": "Hidden count duplicates, modified predecessor history, revived old approvals, forged policy marker, duplicate trial identity, active prior execution or unreviewed successor.",
+    "mitigations": "Shared V3-only hasAttemptRoom, unchanged hash/ordinal/replay/cleanup binding; strict policy projection and owner readback. Legacy V1/V2 remain unchanged."
+  },
+  "rollback": "Revert successor source on feature branch if necessary, preserving all original financial and audit evidence and keeping paid disabled. Do not revive previous grants.",
+  "negativePaths": {
+    "malformed-response": "Focused offline fixtures exercise native controller12, stopped predecessor history, duplicate identities, revoked approvals, expired/active authority, wrong source/workspace and failed UI persistence; no provider calls or generated code execution. Existing per-run token/time/request and cleanup cases remain.",
+    "stale-state": "Focused offline fixtures exercise native controller12, stopped predecessor history, duplicate identities, revoked approvals, expired/active authority, wrong source/workspace and failed UI persistence; no provider calls or generated code execution. Existing per-run token/time/request and cleanup cases remain.",
+    "concurrency": "Focused offline fixtures exercise native controller12, stopped predecessor history, duplicate identities, revoked approvals, expired/active authority, wrong source/workspace and failed UI persistence; no provider calls or generated code execution. Existing per-run token/time/request and cleanup cases remain.",
+    "cancellation": "Focused offline fixtures exercise native controller12, stopped predecessor history, duplicate identities, revoked approvals, expired/active authority, wrong source/workspace and failed UI persistence; no provider calls or generated code execution. Existing per-run token/time/request and cleanup cases remain.",
+    "worker-interruption": "Focused offline fixtures exercise native controller12, stopped predecessor history, duplicate identities, revoked approvals, expired/active authority, wrong source/workspace and failed UI persistence; no provider calls or generated code execution. Existing per-run token/time/request and cleanup cases remain.",
+    "api-outage": "Focused offline fixtures exercise native controller12, stopped predecessor history, duplicate identities, revoked approvals, expired/active authority, wrong source/workspace and failed UI persistence; no provider calls or generated code execution. Existing per-run token/time/request and cleanup cases remain.",
+    "authorization-denial": "Focused offline fixtures exercise native controller12, stopped predecessor history, duplicate identities, revoked approvals, expired/active authority, wrong source/workspace and failed UI persistence; no provider calls or generated code execution. Existing per-run token/time/request and cleanup cases remain.",
+    "spending-limit": "Focused offline fixtures exercise native controller12, stopped predecessor history, duplicate identities, revoked approvals, expired/active authority, wrong source/workspace and failed UI persistence; no provider calls or generated code execution. Existing per-run token/time/request and cleanup cases remain.",
+    "partial-execution": "Focused offline fixtures exercise native controller12, stopped predecessor history, duplicate identities, revoked approvals, expired/active authority, wrong source/workspace and failed UI persistence; no provider calls or generated code execution. Existing per-run token/time/request and cleanup cases remain."
+  },
+  "defects": [
+    {
+      "rootCause": "Ten-attempt admission limit was duplicated across cohort, controller, config preflight, storage validation and UI; local archive20 could introduce another total-count stop.",
+      "detectionGap": "Earlier financial policy removal preserved count limits and did not reconcile later owner instructions with those enforcement paths.",
+      "regression": "Native controller12 fresh approvals/revocations, serial pure12claims and stopped predecessor continuation; exact policy-marker readback recovery12 and archive21; all original scope/replay/cleanup negatives remain.",
+      "historicalPrevention": "Search equivalent predicates across all callers; distinguish immutable numeric identity metadata from effective policy; test realistic accumulated history through multiple entry points."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "One effective policy in existing sequence module; existing controller, profile audit, owner readback and UI reuse it. No competing ledger or orchestrator.",
+    "dependencies": "No new credentials, provider, package or paid infrastructure.",
+    "threats": "Count removal confused with permission grant, historical hashes rewritten, stopped sequences reopened, authorization or cleanup bypass.",
+    "failureModes": "All provider, storage, timeout, scope, replay and cleanup failures remain fail closed. Removing one policy count does not remove provider or registry limits.",
+    "faultInjection": "Actual12 new owner approvals without execution, wrong source/workspace, revokedapproval, repeated IDs, closed-state recovery, lost submission acknowledgments and malformed policy projection.",
+    "independentChallenge": "Independent WorkQA154/154 and Auditor143/143 pass; test-only archive mode setup corrected; no unresolved material finding.",
+    "recovery": "Preserve all historical records and use fresh identities; never reopen stopped sequences or consumed approvals. No paid dispatch for this repair.",
+    "readiness": "290 focused pass; one source qualification/Preview build next. Current effective policy does not create execution authority."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "fea9c7c627060c5657ef92f432dae2fbd2d2d81e2daea165465308dcd3d032bf",
+  "risk": "critical",
+  "scope": "Owner-approved dedicated GitHub App installation authentication through existing task-bound read gateway; server-only Vercel branch Secret, exact repository, no mutations or paid execution.",
+  "riskAnalysis": "STRICT credential signing and private API access. Keep owner/workspace/release/task fences and durable CAS authoritative, downscope actual token permissions and repository IDs, reject stale or revoked work and never expose token/key/JWT in evidence.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner/workspace identity, provider installation keys and scopes, immutable source and audit evidence, task authority and retained financial uncertainty.",
+    "trustBoundaries": "Owner UI to guarded Ops API/CAS; task to read gateway; trusted managed broker to private GET adapter; parent to restricted fixed-data child; independent review to acceptance.",
+    "abuseCases": "Forged or stale scope, request mutation after await, cross-account substitution, late token/result after revoke, draft preimage or arbitrary command substitution, false semantic acceptance.",
+    "mitigations": "Exact identity and source checks, immutable inputs, fresh durable authorization before and after async boundaries, GET-only paths, fixed hash-locked inert patch, unresolved independent review and zero publication."
+  },
+  "rollback": "Keep paid execution and all private connections disabled. Revert only C4 application delta and redeploy disabled Preview, preserving original operational journal/evidence/holds and central revocation; never rewrite immutable history or main/Production.",
+  "negativePaths": {
+    "malformed-response": "Actual service/API/UI reject malformed envelopes, corrupt task records and fabricated authority; no hidden repairs.",
+    "stale-state": "Exact plan/task revisions, source snapshot and current release guards; UI discards older revisions.",
+    "concurrency": "Existing Redis Lua CAS enforces unique create/claim, fenced completion, and cancellation racing publication.",
+    "cancellation": "Owner cancellation and internal emergency stop reserve cleanup slots/bytes; original completed evidence remains.",
+    "worker-interruption": "Fixed child timeout/cancel destroys workspace; abrupt parent termination public tempdata cleanup remains unverified, untrusted code disabled.",
+    "api-outage": "Redis read/CAS failures deny execution; unknown delivery retains exact scoped idempotency key, no automatic retry.",
+    "authorization-denial": "Preview-only fresh session/member/workspace owner, worker/nonowner/CSRF/Production negatives and workspace-isolated journals.",
+    "spending-limit": "Private adapters remain inactive without approved broker/gateway wiring, no inference transport or reservation writer added; existing fifteen-dollar ledger and uncertainty preserved.",
+    "partial-execution": "Original attempt/history preserved, stale fences cannot publish, dependent tasks await verified reports and expired/cancelled work cannot recover."
+  },
+  "defects": [
+    {
+      "rootCause": "Prepared adapter assumed legacy installation-token alphabet and maximum255 suffix length; official GitHub stateless rollout now uses JWT-shaped longer tokens.",
+      "detectionGap": "Legacy synthetic token fixtures did not reflect current documented provider credential format.",
+      "regression": "Actual broker-to-adapter API composition with long JWT-shaped token plus whitespace/header injection/oversize rejection.",
+      "historicalPrevention": "Current documented provider tokens can authenticate without allowing arbitrary Authorization header content."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing authenticated owner OpsAPI and task grant/CAS journal; new server broker signs fixed App JWT, validates actual installation and narrowly minted token before read-only adapter.",
+    "dependencies": "Owner installed App5321141 only on repository1284219633 and saved key in existing Vercel project Secret, exclusively Preview feature branch. No Work credential copying; one necessary reviewed deployment required.",
+    "threats": "Tenant projection leaks, forged authority, stale state, dependency loops, cancellation races and corrupted receipt evidence.",
+    "failureModes": "Observe storage only as of real read; provider unknown; expired tasks visible; reserve bounded cleanup audit/bytes; no auto retry.",
+    "faultInjection": "Actual operations/API/CAS, fake only HTTP boundary; real Nodepermission child and tempfiles. No paid transport or arbitrarycode.",
+    "independentChallenge": "Separate QA and Auditor source inspection found and regressed GitHub input TOCTOU and inherited setup keys; DST evidence and fixed child patch reviewed independently.",
+    "recovery": "One owner-requested zero-provider retry within original deadline/release; cancellation, original receipts, independent QA and uncertainty are never overwritten.",
+    "readiness": "Independent Auditor8, gateway QA5 and actual ownerAPI/CAS-to-broker boundary tests passed; frozen STRICT, current CI/CodeQL/Redis and actual authenticated hosted read remain required. No live-model or independent semantic acceptance inferred."
+  }
+}

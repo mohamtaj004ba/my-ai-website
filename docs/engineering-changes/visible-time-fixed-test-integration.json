@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "aa584e45cd03c49063d40839baf122eac13511030ec2848667b93924e64f9bd9",
+  "risk": "critical",
+  "scope": "Enable one current-source visible timestamp task and its separately permitted fixed OS-isolated tests within the existing controller, source evidence, journal and provider.",
+  "riskAnalysis": "Security-sensitive extension of fixed task execution. Exact immutable source, descriptor and replacement remain mandatory; all legacy tasks stay unchanged and cannot borrow the new profile. Actual fixture OS qualification and success/failure controller evidence precede release.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source/task/release identity, existing OIDC credential isolation, one-use sandbox authority, immutable usage/failure/test receipts and original adoption history.",
+    "trustBoundaries": "Untrusted model proposal to fixed validator/data copy, fresh owner companion test permission to existing CAS/provider, guest OS isolation to real application and Production.",
+    "abuseCases": "Forged task/test profile, cross-workspace receipt replay, arbitrary source/command substitution, stale or duplicate grants, encoded output bombs, lost acknowledgments and cleanup failure.",
+    "mitigations": "Authenticated immutable descriptor/manifest and full preimage; WeakMap job provenance; exact source pair/argv; bounded codec; one-use scoped permission; serial guarded provider; mandatory stop/reconciliation; independent review and actual23controls."
+  },
+  "rollback": "Reviewed feature revert with paid flags off; preserve all new source/task/receipt evidence and do not reuse old approvals. Stop any unconfirmed session by its exact recorded name through existing cleanup authority.",
+  "negativePaths": {
+    "malformed-response": "205 focused security/identity/cleanup tests and actual fixed OS qualification cover bounded profile handling. Failed test preserves usage, stops VM, blocks downstream and revokes authority; no arbitrary execution, retries or publication.",
+    "stale-state": "205 focused security/identity/cleanup tests and actual fixed OS qualification cover bounded profile handling. Failed test preserves usage, stops VM, blocks downstream and revokes authority; no arbitrary execution, retries or publication.",
+    "concurrency": "205 focused security/identity/cleanup tests and actual fixed OS qualification cover bounded profile handling. Failed test preserves usage, stops VM, blocks downstream and revokes authority; no arbitrary execution, retries or publication.",
+    "cancellation": "205 focused security/identity/cleanup tests and actual fixed OS qualification cover bounded profile handling. Failed test preserves usage, stops VM, blocks downstream and revokes authority; no arbitrary execution, retries or publication.",
+    "worker-interruption": "205 focused security/identity/cleanup tests and actual fixed OS qualification cover bounded profile handling. Failed test preserves usage, stops VM, blocks downstream and revokes authority; no arbitrary execution, retries or publication.",
+    "api-outage": "205 focused security/identity/cleanup tests and actual fixed OS qualification cover bounded profile handling. Failed test preserves usage, stops VM, blocks downstream and revokes authority; no arbitrary execution, retries or publication.",
+    "authorization-denial": "205 focused security/identity/cleanup tests and actual fixed OS qualification cover bounded profile handling. Failed test preserves usage, stops VM, blocks downstream and revokes authority; no arbitrary execution, retries or publication.",
+    "spending-limit": "205 focused security/identity/cleanup tests and actual fixed OS qualification cover bounded profile handling. Failed test preserves usage, stops VM, blocks downstream and revokes authority; no arbitrary execution, retries or publication.",
+    "partial-execution": "205 focused security/identity/cleanup tests and actual fixed OS qualification cover bounded profile handling. Failed test preserves usage, stops VM, blocks downstream and revokes authority; no arbitrary execution, retries or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "Visible date/time formatters use truthiness instead of finite Date validity; backend source-test integration previously supported only Starter.",
+      "detectionGap": "Earlier bounded aria-label patch intentionally left visible spans unchanged; source test profile was deliberately unavailable for other tasks.",
+      "regression": "205 related cases, full five-stage controller success/failure fixtures, actual7behavior/23isolation qualification, downstream selected-profile receipt checks and legacy diagnostic compatibility.",
+      "historicalPrevention": "Register exact current source/evidence/test profile together; exercise successful and failing test receipts through every later stage before paid dispatch."
+    },
+    {
+      "rootCause": "A new development policy was registered in provider selection but omitted from separate lifecycle serial and UI journal membership lists.",
+      "detectionGap": "Happy-path controller fixtures bypassed the real UI and did not enumerate every active policy across component boundaries.",
+      "regression": "Registry-wide provider/UI/lifecycle parity, prepared-active-consumed serial denial for every active policy, and actual visible-policy UI Prepare/Run/revoke one-dispatch case;51checks passed.",
+      "historicalPrevention": "Keep one server serial membership list and enumerate the provider registry in cross-component tests whenever adding a task policy; do not rely on a single happy-path workflow."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing architecture reused with one immutable task/profile and no new gateway or credential. Independent review corrected downstream legacy test-ID mismatch; actual fixed recipe7/23 and controller success/failure receipts verified. Hosted STRICT and browser qualification still required.",
+    "dependencies": "Existing architecture reused with one immutable task/profile and no new gateway or credential. Independent review corrected downstream legacy test-ID mismatch; actual fixed recipe7/23 and controller success/failure receipts verified. Hosted STRICT and browser qualification still required.",
+    "threats": "Existing architecture reused with one immutable task/profile and no new gateway or credential. Independent review corrected downstream legacy test-ID mismatch; actual fixed recipe7/23 and controller success/failure receipts verified. Hosted STRICT and browser qualification still required.",
+    "failureModes": "Existing architecture reused with one immutable task/profile and no new gateway or credential. Independent review corrected downstream legacy test-ID mismatch; actual fixed recipe7/23 and controller success/failure receipts verified. Hosted STRICT and browser qualification still required.",
+    "faultInjection": "Existing architecture reused with one immutable task/profile and no new gateway or credential. Independent review corrected downstream legacy test-ID mismatch; actual fixed recipe7/23 and controller success/failure receipts verified. Hosted STRICT and browser qualification still required.",
+    "independentChallenge": "Existing architecture reused with one immutable task/profile and no new gateway or credential. Independent review corrected downstream legacy test-ID mismatch; actual fixed recipe7/23 and controller success/failure receipts verified. Hosted STRICT and browser qualification still required.",
+    "recovery": "Existing architecture reused with one immutable task/profile and no new gateway or credential. Independent review corrected downstream legacy test-ID mismatch; actual fixed recipe7/23 and controller success/failure receipts verified. Hosted STRICT and browser qualification still required.",
+    "readiness": "Existing architecture reused with one immutable task/profile and no new gateway or credential. Independent review corrected downstream legacy test-ID mismatch; actual fixed recipe7/23 and controller success/failure receipts verified. Hosted STRICT and browser qualification still required."
+  }
+}

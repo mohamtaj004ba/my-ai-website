@@ -1,0 +1,49 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e9aaa5f243cb46c76355b6c3099e1969b1138fd07a559e509b30be90d992bd68",
+  "risk": "critical",
+  "scope": "Bounded owner configuration recovery after fully acknowledged cancellation before any deployment; preserve all historical records and existing authorization limits.",
+  "riskAnalysis": "Security-sensitive append-only recovery: no new endpoint, execution, funding or publication. New task/sequence/intent and hash-bound predecessor required. Unknown/unmatched or any deployment event remains permanently ineligible. Original R remains blocked; normal reviewed source successors retain exact release gates.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Historical raw workflow/private identity values, destruction proof, exact CAS and retained accounting.",
+    "trustBoundaries": "Owner-redacted readback versus private server record and owner-only maintenance write.",
+    "abuseCases": "Public preimage substitution, hash racing private-field changes, foreign owner/workspace leakage, malformed proofs, active grants, duplicate receipts and implied execution authority.",
+    "mitigations": "Server-derived hashes only, existing ownership/revoked authority and proof checks; bounded candidates, omit malformed/foreign/active/reconciled, unchanged strict CAS and pinned release checks."
+  },
+  "rollback": "Restore last qualified paid-disabled Preview and revoke all grants. Preserve all original and new reconciliation receipts, false diagnostics and financial records. Never delete historical evidence or treat rollback as renewed execution. Keep paid continuation blocked if cleanup cannot be verified.",
+  "negativePaths": {
+    "malformed-response": "Incomplete, refused or malformed output remains rejected; no fake artifact.",
+    "stale-state": "Old policies, grants and release fingerprints cannot authorize new execution.",
+    "concurrency": "Serial cumulative admission and existing CAS; predecessor must be closed and clean.",
+    "cancellation": "Revocation and emergency stop remain authoritative; no retry after failure.",
+    "worker-interruption": "Cancel before/inside/after child, await actual termination/disposal; unknown or failed cleanup stays blocked. Remote authorization cannot outlive original authority.",
+    "api-outage": "No automatic paid retry; preserve sanitized diagnostic and usage uncertainty.",
+    "authorization-denial": "Reject workers/services, foreign owners/workspaces, stale source/review manifests, nonfalse flags, live leases/grants, altered failure/preparation/original record, and unsupported cleanup evidence.",
+    "spending-limit": "Existing aggregate authorization and token/call/time caps preserved across distinct successors.",
+    "partial-execution": "A complete model response is not a preserved implementation artifact; only actual accepted stage receipts reach downstream roles."
+  },
+  "defects": [],
+  "proactiveReview": {
+    "architecture": "Existing configuration claim/CAS journal only; optional hash-bound recovery field, same20record limit and scope.",
+    "dependencies": "No new dependency/provider or storage writes; optional read-only candidates capped128 within existing record bounds.",
+    "threats": "Untrusted source or model text claiming authority; forged reviews; stale destruction; permission renewal; false success.",
+    "failureModes": "Incomplete ACK chain, uncertain provider outcome, deployment dispatch, stale or reused identity, mismatched shutdown runtime or live authority deny before new record. Original24hour configuration-only lease preserved.",
+    "faultInjection": "Fully acknowledged canceled predeploy serial recovery; unmatched and unknown dispatch; deployment attempts; forged cancellation; reused owner/task/sequence; storage and budget limits; immutable old records.",
+    "independentChallenge": "Separate Work QA/Auditor review candidate code, original receipts, native concurrency, realRedis and exact release; automated technical review is not human acceptance.",
+    "recovery": "Normal reviewed feature source deployment may update only existing two review metadata keys with durable one-time task-bound markers and allpaidflagsfalse. This is owner maintenance, not a fabricated paid configuration intent. After verified hosted reconciliation, future paid activation still needs its full existing configuration/task/sequence gates.",
+    "readiness": "142 focused checks passed; independent QA/Auditor final review and full STRICT/Redis/CI/CodeQL/Jekyll/authenticatedBrowser release checks required."
+  }
+}

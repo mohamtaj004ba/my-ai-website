@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "16f3274afa4146dcae4cca08e1822aa1b505b708f11a09d73929248a0072dd26",
+  "risk": "routine",
+  "scope": "Documentation-only verified durable approval lifecycle checkpoint; exact source/test/Redis/hosted/browser evidence and limits; no application, permission, accounting or execution change.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "evidence": "Published d744f3b;2177 regressions/108 contracts/Redis3/browser502, both new and old brokers disabled, unchanged historical accounting; zero paid model requests."
+}

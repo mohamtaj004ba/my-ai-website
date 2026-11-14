@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "9e6bf167a265f9628cfb49b20b724ef277c06d2ae4a894c226005e916669df29",
+  "risk": "critical",
+  "scope": "Correct the confirmed Private Vercel integration consent-entry404 using fixed observed team Dashboard route, without altering owner/state/callback/permission controls.",
+  "riskAnalysis": "STRICT credential lifecycle and cross-tenant identity risk. Owner session, exact source/release/origin, single-use Redis CAS state, provider identity checks and encrypted authenticated storage are authoritative. Provider scopes remain unconfirmed and broker disabled until genuine consent.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Provider tokens, owner and workspace identity, exact deployment and source, audit integrity, existing paid spending controls.",
+    "trustBoundaries": "Existing owner dashboard to guarded API, owner-session callback to Redis CAS, fixed provider endpoints to strict validators, encrypted storage to disabled credential broker.",
+    "abuseCases": "Forged state or owner, replayed code, cross-workspace callback, foreign installation/project, stale release, provider payload leakage, revocation during exchange, prototype diagnostic substitution.",
+    "mitigations": "Fresh owner policy and CSRF, exact expiring state, atomic consume/audit, finite phase diagnostics, fixed team/project endpoints, AES-GCM tenant AAD, local revocation and disabled agent broker."
+  },
+  "rollback": "Keep paid execution and all private connections disabled. Revert only C4 application delta and redeploy disabled Preview, preserving original operational journal/evidence/holds and central revocation; never rewrite immutable history or main/Production.",
+  "negativePaths": {
+    "malformed-response": "Actual service/API/UI reject malformed envelopes, corrupt task records and fabricated authority; no hidden repairs.",
+    "stale-state": "Exact plan/task revisions, source snapshot and current release guards; UI discards older revisions.",
+    "concurrency": "Existing Redis Lua CAS enforces unique create/claim, fenced completion, and cancellation racing publication.",
+    "cancellation": "Owner cancellation and internal emergency stop reserve cleanup slots/bytes; original completed evidence remains.",
+    "worker-interruption": "No worker is launched by OAuth; interrupted callback consumes state once, no automatic retry, local revoke prevents later storage. Already sent provider request cannot be recalled.",
+    "api-outage": "Redis read/CAS failures deny execution; unknown delivery retains exact scoped idempotency key, no automatic retry.",
+    "authorization-denial": "Preview-only fresh session/member/workspace owner, worker/nonowner/CSRF/Production negatives and workspace-isolated journals.",
+    "spending-limit": "Private adapters remain inactive without approved broker/gateway wiring, no inference transport or reservation writer added; existing fifteen-dollar ledger and uncertainty preserved.",
+    "partial-execution": "Original attempt/history preserved, stale fences cannot publish, dependent tasks await verified reports and expired/cancelled work cannot recover."
+  },
+  "defects": [
+    {
+      "rootCause": "Public provider consent URL was hardcoded although registered integration visibility is Private and provider explicitly requires its team Dashboard entry.",
+      "detectionGap": "Backend and UI mocks agreed on public URL and validated synthetic callback, not actual Private provider-page availability or state propagation.",
+      "regression": "Exact observed private-team entry and one fresh state; historical public, foreign team/app, suffix, encoding, duplicatequery rejection; missing/altered/revokedcallback zero transport.",
+      "historicalPrevention": "Old implementation fails fixed private-entry test before owner dispatch. Actual state propagation remains mandatory hosted evidence, not inferred from fake callback."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse existing workspace-owner policy, guarded Ops API and Redis compare-and-audit; dedicated fixed OAuth callback adds no agent execution route.",
+    "dependencies": "Existing encryption key and Preview Redis; owner must register private integration and enter client secret in scoped Vercel Secret before actual consent.",
+    "threats": "Replay, owner loss, state substitution, scope confusion, credential leakage, cross-tenant storage and revoked late-store behavior.",
+    "failureModes": "Bounded timeout, finite sanitized phase evidence, no automatic code retry, provider installation may require manual uninstall after unknown delivery.",
+    "faultInjection": "Only provider transport substituted in real API/runtime composition; actual Redis test covers one atomic callback consumption plus revoke/replay.",
+    "independentChallenge": "Separate Auditor actualdiff review approved guards unchanged; independent QA29/29 and focused37/37 pass. Both require actual original-nonce callback and prohibit nonce repair.",
+    "recovery": "Local revoke destroys state/token; subsequent provider boundary and store denied. Provider uninstall is separate; no auto retry or paid authority.",
+    "readiness": "Provider private Dashboard/wizard reachable, inspection cancelled and failedstate revoked. New route locallyverified only; real provider state propagation and authentication remain unverified until owner flow."
+  }
+}

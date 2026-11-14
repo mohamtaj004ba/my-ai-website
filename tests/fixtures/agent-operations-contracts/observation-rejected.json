@@ -1,0 +1,119 @@
+{
+  "provenance": {
+    "kind": "recorded-live-response",
+    "stage": "observe",
+    "sourceReport": "organization-v2-live-report.json",
+    "sourceReportSha256": "f3c4fa2d97973f62cd948ef0305eef8f5bda7988402a9480fd558d2ff65944cd",
+    "requestHash": "9a6d9cbf43cacbec1b4f6bd4d29b63bf8e91fc8d2e4c9210837e411c58157350",
+    "requestId": "req_ad9b7d129e1d46518fba004e89c43260",
+    "responseId": "resp_021160c0dfee0f6d016acc67db224887d0b9abcad0b35e5186",
+    "rawProviderOutputHash": "4de3bc424547182366ea74622177d87d444fc24c02161c77af4b5df840be607e"
+  },
+  "response": {
+    "model": "gpt-6.1-sol",
+    "status": "completed",
+    "service_tier": "default",
+    "usage": {
+      "input_tokens": 5318,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "output_tokens": 3198,
+      "output_tokens_details": {
+        "reasoning_tokens": 76
+      },
+      "total_tokens": 8516
+    },
+    "output": [
+      {
+        "type": "message",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\n  \"stage\": \"observe\",\n  \"facts\": [\n    {\n      \"id\": \"I1-F1\",\n      \"imageId\": \"I1\",\n      \"region\": [100, 17, 1341, 60],\n      \"observed\": \"White header contains the CallerCore logo, links 'Why CallerCore', 'Call answering', 'Plans', 'Talk to us', 'Client login', 'Try the AI', and an orange 'Get CallerCore' button.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"Link destinations and interaction behavior are not visible.\"\n    },\n    {\n      \"id\": \"I1-F2\",\n      \"imageId\": \"I1\",\n      \"region\": [119, 91, 906, 204],\n      \"observed\": \"Large two-line heading reads 'The call can end without the inquiry getting lost.'\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"\"\n    },\n    {\n      \"id\": \"I1-F3\",\n      \"imageId\": \"I1\",\n      \"region\": [119, 373, 507, 497],\n      \"observed\": \"Small section label reads 'Inside the product'. The larger heading below reads 'Review the first contact on your terms.'\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"\"\n    },\n    {\n      \"id\": \"I1-F4\",\n      \"imageId\": \"I1\",\n      \"region\": [119, 528, 568, 638],\n      \"observed\": \"Paragraph reads 'A captured contact request and concise call record give staff a starting point. Use a firm-approved intake process; detailed confidential matter information belongs in the appropriate protected workflow.'\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"This is visible page copy, not evidence that a protected workflow exists or is suitable.\"\n    },\n    {\n      \"id\": \"I1-F5\",\n      \"imageId\": \"I1\",\n      \"region\": [119, 682, 279, 724],\n      \"observed\": \"Orange underlined call to action reads 'Try it yourself' with an up-right arrow.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"The result of selecting it is not shown.\"\n    },\n    {\n      \"id\": \"I1-F6\",\n      \"imageId\": \"I1\",\n      \"region\": [645, 281, 1321, 338],\n      \"observed\": \"Pale green preview header reads 'CallerCore / Calls' on the left and 'Expand' with an up-right arrow on the right.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"\"\n    },\n    {\n      \"id\": \"I1-F7\",\n      \"imageId\": \"I1\",\n      \"region\": [646, 338, 1320, 795],\n      \"observed\": \"Embedded dashboard image has a dark left sidebar, a main heading 'Every call, one searchable record.', search/filter controls, and a multirow call table with colored status labels.\",\n      \"readability\": \"limited\",\n      \"uncertainty\": \"Much of the table and sidebar text is very small; exact fine-print transcription is uncertain.\"\n    },\n    {\n      \"id\": \"I1-F8\",\n      \"imageId\": \"I1\",\n      \"region\": [645, 814, 866, 832],\n      \"observed\": \"Caption below the dashboard reads 'Dashboard sample · Example data'.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"\"\n    },\n    {\n      \"id\": \"I1-F9\",\n      \"imageId\": \"I1\",\n      \"region\": [80, 929, 1360, 1000],\n      \"observed\": \"A horizontal section boundary appears near the bottom. The next section begins with a heading cut off by the image edge and the visible audience line 'Solo practices · Small firms · Multi-attorney teams · Client intake staff'.\",\n      \"readability\": \"limited\",\n      \"uncertainty\": \"The next section is only partially captured.\"\n    },\n    {\n      \"id\": \"I2-F1\",\n      \"imageId\": \"I2\",\n      \"region\": [0, 0, 390, 76],\n      \"observed\": \"White mobile header shows the CallerCore logo and a pale green 'Menu' button with a two-line icon.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"Menu contents are not shown.\"\n    },\n    {\n      \"id\": \"I2-F2\",\n      \"imageId\": \"I2\",\n      \"region\": [24, 76, 345, 98],\n      \"observed\": \"Only the heading fragment 'contact on your terms.' is visible directly below the header.\",\n      \"readability\": \"limited\",\n      \"uncertainty\": \"The upper part of the heading is outside the visible content area or covered; the image does not establish why.\"\n    },\n    {\n      \"id\": \"I2-F3\",\n      \"imageId\": \"I2\",\n      \"region\": [24, 128, 367, 264],\n      \"observed\": \"Paragraph reads 'A captured contact request and concise call record give staff a starting point. Use a firm-approved intake process; detailed confidential matter information belongs in the appropriate protected workflow.'\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"The paragraph states a workflow recommendation; the screenshot does not verify protection or suitability.\"\n    },\n    {\n      \"id\": \"I2-F4\",\n      \"imageId\": \"I2\",\n      \"region\": [24, 312, 182, 352],\n      \"observed\": \"Orange 'Try it yourself' call to action has an up-right arrow and underline.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"\"\n    },\n    {\n      \"id\": \"I2-F5\",\n      \"imageId\": \"I2\",\n      \"region\": [24, 393, 366, 445],\n      \"observed\": \"Preview header reads 'CallerCore / Calls' and 'Expand' with an up-right arrow.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"\"\n    },\n    {\n      \"id\": \"I2-F6\",\n      \"imageId\": \"I2\",\n      \"region\": [25, 445, 365, 676],\n      \"observed\": \"A small dashboard image shows a dark sidebar and a dense call table. Its heading reads 'Every call, one searchable record.'\",\n      \"readability\": \"limited\",\n      \"uncertainty\": \"Most row values, controls, and status text are too small to transcribe reliably.\"\n    },\n    {\n      \"id\": \"I2-F7\",\n      \"imageId\": \"I2\",\n      \"region\": [24, 691, 245, 708],\n      \"observed\": \"Caption reads 'Dashboard sample · Example data'.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"\"\n    },\n    {\n      \"id\": \"I2-F8\",\n      \"imageId\": \"I2\",\n      \"region\": [24, 803, 358, 933],\n      \"observed\": \"Lower section heading reads 'Built around the way your firm receives inquiries'. Below it is 'Solo practices · Small firms · Multi-attorney teams · Client intake staff', wrapped across two lines.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"\"\n    },\n    {\n      \"id\": \"I3-F1\",\n      \"imageId\": \"I3\",\n      \"region\": [100, 17, 1341, 60],\n      \"observed\": \"Header shows CallerCore branding, six navigation links, and the orange 'Get CallerCore' button.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"No navigation interaction is demonstrated.\"\n    },\n    {\n      \"id\": \"I3-F2\",\n      \"imageId\": \"I3\",\n      \"region\": [128, 163, 839, 284],\n      \"observed\": \"Section label reads 'SIMPLE PLANS'. Main heading reads 'A plan for your kind of busy.' Supporting text reads 'Choose your coverage. We’ll configure the receptionist around your business. $500 one-time setup.'\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"\"\n    },\n    {\n      \"id\": \"I3-F3\",\n      \"imageId\": \"I3\",\n      \"region\": [128, 336, 505, 841],\n      \"observed\": \"Left pricing card has heading 'Starter' and price '$349/mo'. Description: 'For owners who need dependable call coverage and clear messages.' Highlight strip: '300 included minutes · 1 location'. Features: '24/7 AI call answering', 'Business knowledge setup', 'Lead capture + call summaries', 'Basic call routing'. Button: 'Choose Starter →'.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"Prices and features are displayed offers, not independently verified service capabilities.\"\n    },\n    {\n      \"id\": \"I3-F4\",\n      \"imageId\": \"I3\",\n      \"region\": [531, 336, 909, 841],\n      \"observed\": \"Middle pricing card has an orange outline and pale warm background. Heading is 'Growth'; price is '$599/mo'. Description: 'For busy businesses that need deeper qualification and routing controls.' Highlight strip: '600 included minutes · up to 2 locations'. Features: 'Everything in Starter', 'Advanced lead qualification', 'Business-specific intake questions', 'Priority routing + escalation'. Orange button: 'Choose Growth →'.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"The heading intersects a separate badge near the top of the card.\"\n    },\n    {\n      \"id\": \"I3-F5\",\n      \"imageId\": \"I3\",\n      \"region\": [536, 387, 860, 416],\n      \"observed\": \"A peach rounded badge overlaps the 'Growth' heading. Small uppercase badge text appears to read 'BUILT TO GROW'. This badge is separate from the '$599/mo' price below.\",\n      \"readability\": \"limited\",\n      \"uncertainty\": \"Overlapping heading letters obscure part of the badge text.\"\n    },\n    {\n      \"id\": \"I3-F6\",\n      \"imageId\": \"I3\",\n      \"region\": [935, 336, 1312, 841],\n      \"observed\": \"Right pricing card has heading 'Pro' and price '$999/mo'. Description: 'For higher-volume teams that need advanced routing and custom workflows.' Highlight strip: 'Up to 5 locations · high-volume workflows'. Features: 'Everything in Growth', 'Custom call workflows', 'Multi-team routing', 'Advanced integrations'. Button: 'Choose Pro →'.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"No included-minute quantity is visible in this card.\"\n    },\n    {\n      \"id\": \"I3-F7\",\n      \"imageId\": \"I3\",\n      \"region\": [128, 889, 473, 906],\n      \"observed\": \"Below the cards, text reads 'Professional setup: $500 one-time, billed at checkout.'\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"Checkout itself is not shown.\"\n    },\n    {\n      \"id\": \"I3-F8\",\n      \"imageId\": \"I3\",\n      \"region\": [128, 936, 1312, 1000],\n      \"observed\": \"Top of a pale green rounded panel is visible at the bottom, with labels 'FIND YOUR FIT' and 'RECOMMENDED STARTING PLAN'.\",\n      \"readability\": \"limited\",\n      \"uncertainty\": \"The panel's remaining content is below the image boundary.\"\n    },\n    {\n      \"id\": \"I4-F1\",\n      \"imageId\": \"I4\",\n      \"region\": [0, 0, 390, 76],\n      \"observed\": \"Mobile header contains CallerCore branding and a pale green 'Menu' button.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"\"\n    },\n    {\n      \"id\": \"I4-F2\",\n      \"imageId\": \"I4\",\n      \"region\": [20, 76, 370, 496],\n      \"observed\": \"Upper pricing card is partially captured: its top and heading are not visible. Visible price is '$349/mo'. Description reads 'For owners who need dependable call coverage and clear messages.' Highlight strip reads '300 included minutes · 1 location'. Features are '24/7 AI call answering', 'Business knowledge setup', 'Lead capture + call summaries', and 'Basic call routing'. Button reads 'Choose Starter →'.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"The card heading cannot be read in this image.\"\n    },\n    {\n      \"id\": \"I4-F3\",\n      \"imageId\": \"I4\",\n      \"region\": [20, 513, 370, 1000],\n      \"observed\": \"Lower card is outlined in orange with a pale warm background. Heading reads 'Growth'; price reads '$599/mo'. Description reads 'For busy businesses that need deeper qualification and routing controls.' Highlight strip reads '600 included minutes · up to 2 locations'. Features are 'Everything in Starter', 'Advanced lead qualification', 'Business-specific intake questions', and 'Priority routing + escalation'. Orange button reads 'Choose Growth →'.\",\n      \"readability\": \"clear\",\n      \"uncertainty\": \"The heading overlaps a badge; the card's lower border reaches the image boundary.\"\n    },\n    {\n      \"id\": \"I4-F4\",\n      \"imageId\": \"I4\",\n      \"region\": [23, 559, 328, 588],\n      \"observed\": \"Peach pill-shaped badge shares vertical space with the 'Growth' heading. Its small uppercase text appears to read 'BUILT TO GROW'; the larger heading crosses that text. The '$599/mo' price is separately positioned below.\",\n      \"readability\": \"limited\",\n      \"uncertainty\": \"The overlap makes exact badge lettering partly uncertain.\"\n    }\n  ],\n  \"note\": \"Each image was observed independently. Regions use pixel coordinates [left, top, right, bottom] within the supplied image. Observations describe visible content only; screenshots do not establish security, legal suitability, functional behavior, or absence of defects.\"\n}"
+          }
+        ]
+      }
+    ]
+  },
+  "historicalContract": {
+    "format": {
+      "type": "json_schema",
+      "name": "callercore_observe_v1",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "observe"
+            ]
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "imageId": {
+                  "type": "string",
+                  "enum": [
+                    "I1",
+                    "I2",
+                    "I3",
+                    "I4"
+                  ]
+                },
+                "region": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 4,
+                  "maxItems": 4
+                },
+                "observed": {
+                  "type": "string"
+                },
+                "readability": {
+                  "type": "string",
+                  "enum": [
+                    "clear",
+                    "limited",
+                    "unreadable"
+                  ]
+                },
+                "uncertainty": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "imageId",
+                "region",
+                "observed",
+                "readability",
+                "uncertainty"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "stage",
+          "facts",
+          "note"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "instructions": "Independently observe each image before any claims are disclosed. Record precise localized facts, readable text, uncertain or unreadable areas; distinguish heading, badge and price. An image cannot establish security, legal suitability or the absence of defects. Do not evaluate any prior conclusions. No external tools."
+  }
+}

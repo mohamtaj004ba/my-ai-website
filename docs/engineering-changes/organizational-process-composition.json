@@ -1,0 +1,68 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "aaa149d152413d0b908bdccf83ac3c40795a6d54a97d95a9a3bafcc48a4b5596",
+  "risk": "critical",
+  "scope": "Preview-only tracked restricted organizational worker composition, zero-paid native five-stage rehearsal, runtime dependencies, authoritative cleanup and proactive failure evidence. No live model requests, paid approvals, writes or Production.",
+  "riskAnalysis": "Prior paid mocks exercised shared functions but never launched the operational process. New actual-fork tests and trusted runtime composition expose pre-init cleanup, capture/assessment availability, parent-stage timeouts and diagnostic loss before a paid pilot.",
+  "threatModel": {
+    "assets": "Owner session, exact approved task, immutable evidence, central Redis authority, spending reservations and Production isolation.",
+    "trustBoundaries": "Authenticated dashboard to same-origin guarded owner API; supervisor to restricted worker; central CAS across deployments; untrusted receipts to text-only display.",
+    "abuseCases": "Nonowner/worker impersonation; stale or changed expiration approval; duplicate Start; disconnected owner; partial activation; revoked old deployment; Redis outage; leaking task capabilities.",
+    "mitigations": "Current server owner/session/origin/Preview checks; full approval digest and exact deployment selection; existing one-use CAS/leases; independent central owner revoke and readback; no minting/limits inputs; provider-inaccessible inert verification."
+  },
+  "rollback": "Keep paid false; remove temporary inert window, revoke all test records and verify old/current/replacement brokers. Restore reviewed feature source only if needed; preserve historical ledger/evidence and Production.",
+  "negativePaths": {
+    "malformed-response": "Actual Node QA/Auditor tests and retained contract-first suite cover malformed-response with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "stale-state": "Actual Node QA/Auditor tests and retained contract-first suite cover stale-state with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "concurrency": "Actual Node QA/Auditor tests and retained contract-first suite cover concurrency with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "cancellation": "Actual Node QA/Auditor tests and retained contract-first suite cover cancellation with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "worker-interruption": "Actual Node QA/Auditor tests and retained contract-first suite cover worker-interruption with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "api-outage": "Actual Node QA/Auditor tests and retained contract-first suite cover api-outage with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "authorization-denial": "Actual Node QA/Auditor tests and retained contract-first suite cover authorization-denial with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "spending-limit": "Actual Node QA/Auditor tests and retained contract-first suite cover spending-limit with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "partial-execution": "Actual Node QA/Auditor tests and retained contract-first suite cover partial-execution with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "The only tracked restricted launcher admitted an inert transport profile, while paid tests invoked runWorker in process.",
+      "detectionGap": "Standalone shared modules and a different zero-call process branch were mistaken for paid process composition.",
+      "regression": "Mandatory tracked actual child/native five-stage tests and exact wrapper dependency preflight with no live provider transport.",
+      "historicalPrevention": "Missing launcher or dependencies now stops contract/operational readiness before paid approval or provider dispatch."
+    },
+    {
+      "rootCause": "Initialization response loss deprived the trusted parent of its task revocation capability.",
+      "detectionGap": "Tests supplied privileged owner cleanup callbacks and masked the actual parent failure path.",
+      "regression": "Task-bound pre-init revocation HMAC, real lost committed response without owner callback and launch missing-browser cleanup tests.",
+      "historicalPrevention": "Original deployment authority is centrally revoked even when the child never receives initialization capabilities."
+    },
+    {
+      "rootCause": "IPC discarded cancellation/errors and parent response parsing could hide provider HTTP usage evidence.",
+      "detectionGap": "In-process provider mocks did not cross the new parent/child timeout and diagnostic boundary.",
+      "regression": "Parent remaining-deadline races, network/error reflection/invalid JSON/output/late receipt tests preserve sanitized evidence and pending holds.",
+      "historicalPrevention": "Expired execution cannot start another stage; malformed or late results cannot be repaired, accepted or silently settled."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Exact dashboard/session/controller/Redis/parent-child/provider/capture/acceptance/report lifecycle mapped in organizational execution architecture.",
+    "dependencies": "Tracked browser startup/fonts/OIDC/evidence directory/release/assessor checks precede initialization; explicit owner-to-external-worker handoff.",
+    "threats": "Child authority forgery, credential reflection, stale/replayed approval, partial initialization and cancellation races reviewed independently.",
+    "failureModes": "Existing sixteen-item register retained; new confirmed launch, pre-init revocation, time and diagnostic gaps corrected with evidence.",
+    "faultInjection": "Actual restricted forks/native model contracts across four dispositions and faults, plus source-faithful late/error/partial-init cases.",
+    "independentChallenge": "Separate clean Engineering Auditor and Independent QA reviewed source and failed/passing evidence; no source-level high blocker remaining.",
+    "recovery": "Bound irreversible central revoke before and after initialization; child termination/readback; unknown storage/transport remains unconfirmed and denied.",
+    "readiness": "Full2321 and mandatory240 passed offline. Actual new hosted rehearsal, CI/Redis/CodeQL/browser evidence remain explicitly pending publication."
+  }
+}

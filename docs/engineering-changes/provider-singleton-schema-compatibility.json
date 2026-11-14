@@ -1,0 +1,63 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "118f414f04411bab80f3490f95c0996e806c99c526cef081367e76cf64cdbb02",
+  "risk": "critical",
+  "scope": "Try the provider-reported singleton enum/pattern workaround through a new exact provider-schema opt-in, preserving backend validation and all historical requests.",
+  "riskAnalysis": "Schema constraint removal is safe only where the server-derived singleton already satisfies that exact pattern; exact enums and all internal identity/source checks remain. Preserve historical request hashes and consumed approvals. Live provider fix remains unproven.",
+  "threatModel": {
+    "assets": "Identity, source and evidence integrity; historical request and policy hashes; exact release/task approval; audit and financial uncertainty.",
+    "trustBoundaries": "Provider-facing schema versus authoritative backend validation; new opt-in versus historical replay; request preparation versus execution authorization.",
+    "abuseCases": "Arbitrary pattern removal, wrong identity enums, changed historical receipt hashes, consumed grant reuse, reopening resolved targets and unsupported live-success claims.",
+    "mitigations": "Exact objective opt-in; ten server-derived singleton fields checked against original patterns; exact enums and internal validation retained; frozen historical requests; unchanged admission and permissions."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Support attributes empty incomplete responses to provider initialization of fixed enum plus redundant pattern; source contains the reported combination.",
+      "detectionGap": "Raw provider responses reported max_output_tokens and did not expose schema initialization details.",
+      "regression": "Provider schemas differ only by ten redundant identity patterns; internal validation rejects all ten substitutions; all five historical v1/v2 requests and policy descriptors reconstruct exactly; invalid singleton values fail before request construction.",
+      "historicalPrevention": "Attribute the finding to Support separately from observed raw failures. Preserve the old contract and receipts. Fixture success does not establish live compatibility."
+    },
+    {
+      "rootCause": "The initial new marker was appended after the required report-profile suffix.",
+      "detectionGap": "Report opt-in requires the existing suffix to remain last.",
+      "regression": "The original five local failures were preserved; all 18 affected checks passed after inserting the marker before the suffix.",
+      "historicalPrevention": "Keep exact previous-objective aliases and verify full pipeline contract recognition when adding an opt-in."
+    }
+  ],
+  "rollback": "Revert the new schema opt-in on feature Preview only; leave original receipts, old schemas/policies, revoked grants, accounting and Production intact.",
+  "negativePaths": {
+    "malformed-response": "Reject invalid singleton values before request construction and retain all response schema, evidence and source checks.",
+    "stale-state": "Historical requests reconstruct byte-for-byte; historical policy evidence is readable but cannot pin current execution.",
+    "concurrency": "No lease or concurrency code changes. Existing sequence and source-test workflow suites pass.",
+    "cancellation": "Existing cancellation, lease expiry and authority revocation fixtures pass.",
+    "worker-interruption": "Existing source-test workflow interruption and cleanup cases pass; no worker changes.",
+    "api-outage": "Existing provider failure and diagnostic fixtures remain unchanged; no retries added.",
+    "authorization-denial": "No task or grant is created by schema preparation. Resolved source targets remain inadmissible.",
+    "spending-limit": "No model, counting, request, token, time or exposure limits changed. No paid request occurred.",
+    "partial-execution": "Existing usage, failure evidence and shutdown handling retained; interruption fixtures pass.",
+    "duplicate-request": "Historical approvals remain consumed or revoked; current policy selection rejects old policy pinning."
+  },
+  "proactiveReview": {
+    "architecture": "Small versioned provider-schema change inside the existing implementation; no new adapter, controller, credential or orchestration.",
+    "dependencies": "Existing dedicated credentials preserved; no dependency changes or secret reads.",
+    "threats": "Arbitrary pattern removal, wrong identity enums, changed historical receipt hashes, consumed grant reuse, reopening resolved targets and unsupported live-success claims.",
+    "failureModes": "Schema equivalence cannot prove provider compatibility. Historical request reconstruction must remain exact. Resolved tasks must deny fresh admission.",
+    "faultInjection": "Ten identity substitutions, invalid singleton, exact opt-in denial, frozen request/policy history, five-stage fixtures, cancellation and cleanup.",
+    "independentChallenge": "Independent Work QA and Auditor source review passed; final reviewed source and hosted verification remain required.",
+    "recovery": "Revert only the new opt-in; preserve original receipts, diagnostics and financial uncertainty. Never retry consumed paid requests.",
+    "readiness": "16 final schema regressions, 18 prior contract checks, 61 combined workflow/review/bounded checks and 49 security/cleanup cases passed in overlapping groups. Live compatibility remains unproven; release qualification pending."
+  }
+}

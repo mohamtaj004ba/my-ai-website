@@ -1,0 +1,49 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "d464efeb92406d027dab2bb3bb5fb83fbbbde25924519f95eee47c77bfe161a4",
+  "risk": "critical",
+  "scope": "One owner-authorized uncertain-count proposal-only Average daily calls trial through existing controller, with pending exposure, durable one-use authority and scoped owner UI.",
+  "riskAnalysis": "Paid/count authorization and truthful uncertain accounting are security critical. Owner expressly accepts unknown counting fees, not provider hardcap; preserve exact task/release/source binding, no retry, reviewer independence and disabled publication.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Dedicated project credentials, exact source/task/model/evidence identities, authorization lifecycle, token ceilings and retained spending.",
+    "trustBoundaries": "Fresh owner session to existing organization CAS approval lifecycle; immutable Ops admission manifest to linked native engineering workflow; native model metadata GET to audit-only evidence; operator-reviewed provider pricing digest to disabled execution gate.",
+    "abuseCases": "Cross-workspace or stale approval, forged owner or self-approval, count-to-Responses policy revocation, replay, expired authority before cleanup, source substitution, lost acknowledgements, mislabelled fixture intelligence and unsupported provider billing-cap claims.",
+    "mitigations": "Exact owner/workspace/task/release binding, stored-scope recovery, one-use lifecycle, repeated post-await configuration checks, whole-operation cancellation and bounded cleanup, original immutable fixture history, explicit technical-only reviewer attribution and retained uncertainty."
+  },
+  "rollback": "Revert the owner-controller increment only with paid/count flags disabled and exact central approvals revoked; preserve all historical results, accounting and provider identities. No migration or autonomous source publication.",
+  "negativePaths": {
+    "malformed-response": "Wrong object/fields, noninteger/oversized counts and secret echo fail closed before Responses dispatch.",
+    "stale-state": "Source/context/request/expiry and authoritative stored approval mismatch deny dispatch.",
+    "concurrency": "Count dispatch and count recording are one-use existing-CAS operations; duplicate winners cannot occur.",
+    "cancellation": "Shared owner/task/revoke/lease checks run after counting and before dispatch; whole-operation abort includes count requests.",
+    "worker-interruption": "Bounded abortAdmission retains pending ceilings and reports cleanup uncertainty; no paid retry.",
+    "api-outage": "Fixed endpoint/redirect:error, bounded response body, deadline and sanitized status/hash diagnostics; no fallback or retry.",
+    "authorization-denial": "Missing count consent/server pricing pin, impersonated roles or substituted workspace/source deny; no model-granted permissions.",
+    "spending-limit": "At most five count and five Responses dispatches, existing 1USD retained internal ceiling. Unknown counts remain pending/null; known Responses usage separate; no invoice cap claimed.",
+    "partial-execution": "Successful count alone cannot settle or accept work. Responses usage mismatch leaves pending evidence/reservation; no generated source execution or publication."
+  },
+  "defects": [],
+  "proactiveReview": {
+    "architecture": "Existing organization engineering profile/CAS/lifecycle and parent transport only. Ops plan stays a frozen admission manifest; linked organization workflow records actual roles/results/usage.",
+    "dependencies": "Official Responses input-token count schema, fixed dedicated OpenAI project, existing task/source evidence and shared authorization CAS.",
+    "threats": "Pricing pin must match the authoritative stored approval, not a substituted caller argument; API content never grants authority.",
+    "failureModes": "First count/Responses protocol failure, partial usage, cancellation or timeout stops all later stages without paid retry; keep pending uncertainty, revoke exact stored scope even after source/session changes.",
+    "faultInjection": "Focused native offline transport, unknown-cost accounting, wrongtask/pin/consent, concurrent one-use CAS, delayed UI crossworkspace and origin substitution; actual Redis uncertainty-race integration added for CI.",
+    "independentChallenge": "Independent QA found stale-context UI evidence disclosure, corrected and verified with actual UI harness delayed-phase and origin substitution tests; Auditor approved durable once marker and pending unknown accounting. Final STRICT/Redis/CI/CodeQL/hosted release gates still required.",
+    "recovery": "Keep all flags/approvals disabled, retain historical accounting and evidence, preserve exact source checkpoint on interruption.",
+    "readiness": "Unpublished source; no paid requests. Owner explicit one-trial authorization conditional on final reviewed source/deployment and enforceable limits. Counting price remains unknown by accepted policy, not falsely verifiedzero."
+  }
+}

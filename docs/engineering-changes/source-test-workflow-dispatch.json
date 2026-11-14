@@ -1,0 +1,68 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "8565089f19f01529e39856f602adaefdcc2ca2160879bb762f8eb82ee0e3b0fd",
+  "risk": "critical",
+  "scope": "Connect the already-qualified exact Starter test runner to existing owner approval/CAS and Specialist handoff, with separately attributed review evidence and an opt-in owner UI.",
+  "riskAnalysis": "Security-critical execution permission is a separate one-time owner consent on an exact prepared approval/release. Historical proposal-only grants stay unchanged. Server-only existing-project OIDC transport has no automatic mutation retries or new credentials/dependencies. Source-only conditional release qualification; actual deployed OIDC compatibility and automatic live execution remain unverified until read-only metadata and qualified task dispatch.",
+  "threatModel": {
+    "assets": "Owner identity, task/release integrity, controller credentials, exact code/test provenance, audit and VM shutdown.",
+    "trustBoundaries": "Existing fresh owner policy/API and shared approval CAS grant one exact source-test run; model workers see structured test evidence, never provider credentials or arbitrary commands. Private backend uses fixed Sandbox endpoints and qualified source class.",
+    "abuseCases": "Inherited proposal grants, forged or stale task/scope, async command substitution, cross-session result replay, duplicate create after lost ACK, foreign cleanup, revoked/expired permission, cleanup masking, false acceptance and stale UI consent.",
+    "mitigations": "Prepared-approval expected revision and exact scope, active Specialist ticket, private immutable job snapshot and task-salted command hash, atomic claim before fixed-name create, no retries, scoped find/stop/readback, explicit permit expiry, independent source/VM cleanup, separately hashed receipt validation, default-off/reset/snapshotted UI consent and pre-mutation durable marker."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Initial new dispatcher checked object provenance once but retained mutable caller references across awaits.",
+      "detectionGap": "Initial substitution tests covered only pre-dispatch mutations.",
+      "regression": "Independent tests mutate command and binding during claim/create and require the original private snapshot to be dispatched.",
+      "historicalPrevention": "All privileged asynchronous command handoffs must consume immutable private snapshots, never caller-owned mutable objects."
+    },
+    {
+      "rootCause": "Initial separate data-workspace cleanup success could mask a later source VM shutdown failure.",
+      "detectionGap": "Existing cleanup policy was designed for data-only copies before test execution existed.",
+      "regression": "Native test confirms destroyed workspace cannot clear cleanup-unconfirmed VM state, preserve failure flag and block downstream QA.",
+      "historicalPrevention": "Check each newly introduced resource independently before applying historical cleanup reconciliation."
+    },
+    {
+      "rootCause": "New evidence-bearing model instructions initially retained the old dynamic-tests-unavailable sentence.",
+      "detectionGap": "Historical proposal-only instructions were correct before execution evidence existed.",
+      "regression": "New verified source-test context receives accurate evidence chronology while unchanged legacy contexts retain their original instructions.",
+      "historicalPrevention": "When adding actual capabilities, inspect prompts, schemas, runtime validation and final reporting together."
+    }
+  ],
+  "rollback": "Disable source-test opt-in, revoke current existing approval and stop exact named VM through the existing project control plane; preserve unconfirmed cleanup as an admission blocker until verified. Revert these new integration hooks on feature Preview if necessary; Production and existing historical receipts are unchanged.",
+  "negativePaths": {
+    "malformed-response": "Bounded JSON/NDJSON parsers, exact23checks/7case IDs, final command/session binding; raw provider errors never enter receipts.",
+    "stale-state": "Current owner/task/release checks, expected prepared-approval revision, active capability plus per-test permit expiry.",
+    "concurrency": "One approval permission consumed atomically before unique provider-name creation; shared source jobs globally serial including cleanup-unconfirmed.",
+    "cancellation": "Parent signal and authorization checks abort command transport; independent cleanup remains possible after permission revocation.",
+    "worker-interruption": "Unique durable claim survives lost acknowledgment; read named resource without create retry; absent/unconfirmed resource is not called clean.",
+    "api-outage": "Fixed no-retry provider requests; closed diagnostics and unresolved cleanup block another dispatch.",
+    "authorization-denial": "Worker API cannot grant owner consent; no old approval inherits source execution; wrong owner/workspace/release/revision denied.",
+    "spending-limit": "No budget increase, model retry or recurring task. Existing owner financial monitoring unchanged; source VM remains finite1CPU2GB300s/deny-all/nonpersistent.",
+    "partial-execution": "Usage retained independently; failed source tests stop before QA; confirmed data-copy destruction cannot mask failed VM cleanup."
+  },
+  "proactiveReview": {
+    "architecture": "Existing five-stage broker/approvalCAS/receipts and qualified runner extended; no replacement orchestrator, ledger, agent platform or generic gateway.",
+    "dependencies": "Existing @vercel/functions OIDC and Node built-ins only; no installed packages, key rotation, env secret copies or new provider project.",
+    "threats": "New execution privilege is explicit and narrow. Model output cannot choose paths/commands/resources/OIDC headers, alter permission policy or publish.",
+    "failureModes": "Closed failure codes, source/task replay denial, no automatic create retry, independently scoped cleanup, no inherited owner authority or fabricated acceptance.",
+    "faultInjection": "17dispatcher/provider and6native CAS/five-stage fixture checks plus7UI checks independently pass; final frozen STRICT passed4528/4528. Previous mid-edit full run had2 release-drift failures preserved separately.",
+    "independentChallenge": "Independent Work QA/Auditor reviewed actual CAS integration and UI. Fingerprint0ea51427430315057574377cd43010cc559d46db73a249080bde34950b9c9ae0 approved only for conditional feature Preview qualification.",
+    "recovery": "Lost acknowledgments preserve journal markers; unconfirmed VM cleanup blocks admission before legacy cleanup exceptions. Original audit/financial/model evidence remains intact.",
+    "readiness": "Locally integrated and fixture-verified. No new live inference or VM creation in this continuation. Actual deployed OIDC metadata, remote STRICT/Redis/CI/CodeQL/Browser checks and first automatic live dispatch remain required before operational claim."
+  }
+}

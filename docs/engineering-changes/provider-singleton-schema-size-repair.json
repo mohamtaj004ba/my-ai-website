@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "38bafad77796ea0db656f52d246b7dbf2924b8bc5ba7dac2baea68e2032c2ee6",
+  "risk": "critical",
+  "scope": "Repair new opt-in assignment size without raising limits: replace the prior profile marker, preserving historical contracts and provider-only singleton normalization.",
+  "riskAnalysis": "Schema constraint removal is safe only where the server-derived singleton already satisfies that exact pattern; exact enums and all internal identity/source checks remain. Preserve historical request hashes and consumed approvals. Live provider fix remains unproven.",
+  "threatModel": {
+    "assets": "Identity, source and evidence integrity; historical request and policy hashes; exact release/task approval; audit and financial uncertainty.",
+    "trustBoundaries": "Provider-facing schema versus authoritative backend validation; new opt-in versus historical replay; request preparation versus execution authorization.",
+    "abuseCases": "Arbitrary pattern removal, wrong identity enums, changed historical receipt hashes, consumed grant reuse, reopening resolved targets and unsupported live-success claims.",
+    "mitigations": "Exact objective opt-in; ten server-derived singleton fields checked against original patterns; exact enums and internal validation retained; frozen historical requests; unchanged admission and permissions."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Appending a redundant profile marker increased repeated assignment context beyond the unchanged byte-based fixture planning ceiling.",
+      "detectionGap": "Initial focused suites omitted the existing realistic long-binding request-size regression.",
+      "regression": "Run the actual existing realistic five-stage fixture and assert the new objective does not grow compared with the prior objective; retain all historical request and schema tests.",
+      "historicalPrevention": "Version an existing marker rather than accumulating synonymous markers. Do not increase ceilings or shorten identities."
+    }
+  ],
+  "rollback": "Revert the new schema opt-in on feature Preview only; leave original receipts, old schemas/policies, revoked grants, accounting and Production intact.",
+  "negativePaths": {
+    "malformed-response": "Reject invalid singleton values before request construction and retain all response schema, evidence and source checks.",
+    "stale-state": "Historical requests reconstruct byte-for-byte; historical policy evidence is readable but cannot pin current execution.",
+    "concurrency": "No lease or concurrency code changes. Existing sequence and source-test workflow suites pass.",
+    "cancellation": "Existing cancellation, lease expiry and authority revocation fixtures pass.",
+    "worker-interruption": "Existing source-test workflow interruption and cleanup cases pass; no worker changes.",
+    "api-outage": "Existing provider failure and diagnostic fixtures remain unchanged; no retries added.",
+    "authorization-denial": "No task or grant is created by schema preparation. Resolved source targets remain inadmissible.",
+    "spending-limit": "No model, counting, request, token, time or exposure limits changed. No paid request occurred.",
+    "partial-execution": "Existing usage, failure evidence and shutdown handling retained; interruption fixtures pass.",
+    "duplicate-request": "Historical approvals remain consumed or revoked; current policy selection rejects old policy pinning."
+  },
+  "proactiveReview": {
+    "architecture": "Small versioned provider-schema change inside the existing implementation; no new adapter, controller, credential or orchestration.",
+    "dependencies": "Existing dedicated credentials preserved; no dependency changes or secret reads.",
+    "threats": "Arbitrary pattern removal, wrong identity enums, changed historical receipt hashes, consumed grant reuse, reopening resolved targets and unsupported live-success claims.",
+    "failureModes": "Schema equivalence cannot prove provider compatibility. Historical request reconstruction must remain exact. Resolved tasks must deny fresh admission.",
+    "faultInjection": "Ten identity substitutions, invalid singleton, exact opt-in denial, frozen request/policy history, five-stage fixtures, cancellation and cleanup.",
+    "independentChallenge": "Independent Work QA and Auditor source review passed; final reviewed source and hosted verification remain required.",
+    "recovery": "Revert only the new opt-in; preserve original receipts, diagnostics and financial uncertainty. Never retry consumed paid requests.",
+    "readiness": "35 focused checks passed after the size repair, including the exact CI-failed realistic-binding test. Previous CI failure retained. Successor review and release checks required."
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "3139decc21cb08a5176dc87446fea22cc1ae541f5779aedbe115a51e2cb90498",
+  "risk": "critical",
+  "scope": "Qualify a fixed source-only OS-isolated Starter test class and actually test the historical agent-generated patch without changing the product or granting generic internal-agent execution.",
+  "riskAnalysis": "Exact model-evidence/source hashes constrain the only generated-source input. Trusted root preparation is private to a disposable VM and drops all authority before source evaluation. No provider credentials, SDK dispatch or application backend wiring is added. Only the reviewed fixed Starter function test class is qualified; publication, acceptance and autonomous agent test dispatch remain disabled.",
+  "threatModel": {
+    "assets": "Source/evidence integrity, filesystem containment, private credentials, trusted test code, resource and cleanup truthfulness.",
+    "trustBoundaries": "Work-controlled provider API creates pinned deny-all VM; private namespace/root jail owns immutable tools/tests; UID65534 owns only bounded scratch; original model proposal stays historical and cannot select commands.",
+    "abuseCases": "Traversal/symlink/proc escape, altered test code, arbitrary model source, clone/session escape, networking via alternate syscalls, runaway process/disk/output, forged success, vacuous child cleanup, stale source and truncated evidence.",
+    "mitigations": "Pinned202a/c812 source pair and exact one-line patch grammar, minimal readonly chroot/readonly proc, no secrets/network, caps0/NNP/UIDdrop, seccomp arch/x32/namespace/socket/io_uring denial, 128MiB scratch/64UIDtasks/256FDs/finite VM, exact booleans and7testIDs, positive child-start and kill/readback, complete chunked source-bound receipts."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [],
+  "rollback": "Stop any current task VM through existing control plane; remove the unused source-test builders to withdraw this test class. Existing app/controllers/source/product remain unchanged. Preserve every successful/failed receipt and historical model proposal.",
+  "negativePaths": {
+    "malformed-response": "Reject wrong IDs, malformed output, false/missing checks and output overflow; no false green.",
+    "stale-state": "Pinned source/preimage/unique edit plus exact command and original immutable model receipt hashes.",
+    "concurrency": "Serial task-named sessions with prior404 and exclusive fsynced create marker; no automatic provider retry.",
+    "cancellation": "Actual fixed child began, process group SIGKILL timed out, zero active target descendants and provider stop independently read.",
+    "worker-interruption": "Provider hard300s lifetime plus stopped readback; lost acknowledgments cannot create duplicate named intent.",
+    "api-outage": "No autonomous integration or retry. Preserve unconfirmed control-plane result and reconcile exact unique session.",
+    "authorization-denial": "No server/agent authority added; only user-authorized Work-supervised fixed test class. Existing proposal-only/publication/acceptance policies unchanged.",
+    "spending-limit": "OneCPU2GB300s finite serial sessions, no persistent snapshot/drive or model call; exact measured resource estimate separate from invoice/historical ledgers.",
+    "partial-execution": "Failed containment exits before generated source; timeout and cleanup failure cannot pass; rawstderr hashed/closederrno only."
+  },
+  "proactiveReview": {
+    "architecture": "Two fixed guest program builders, no alternate orchestrator/controller/journal or runtime API.",
+    "dependencies": "Node built-ins and existing pinned managed image tools only. Trusted ldd inspects only fixed trusted Node/setpriv; no package installation.",
+    "threats": "Root controller cannot become model-selected command runner; model inputs pinned to existing one-line agent patch and immutable source. No general-code claim.",
+    "failureModes": "Landlock ENOSYS actually diagnosed; chroot ordering/loader/statfs defects corrected; groups and inherited stdio judged by real kernel evidence. Failed original attempts preserved.",
+    "faultInjection": "24focused helper checks include malformed/missing evidence, wrongsource, falsegreen, duplicateIDs, outputoverflow, missingchildstart and failedcleanup; actual23isolation negatives and7behavior tests passed.",
+    "independentChallenge": "Independent Work QA/Auditor approved exact qualification and actual historical-agent-source test, independently verified stoppedVM and complete untruncated report.",
+    "recovery": "All14listed sessions stopped;7current-session snapshots empty. Fixed source dispatch intents prevent duplicate creates; original evidence/financial history unchanged.",
+    "readiness": "Exact historical Starter source-function test class actually qualified and7/7tested under Work supervision. Autonomous internal-agent backend dispatcher remains unconnected; generic repo tests and publication remain disabled. Final frozen offline STRICT4498/4498 passed;24focused passed. No new remoteCI/Preview claim; existingqualified app unchanged."
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "50ec58220d57e2c2cc52fe7d7c7c3d986ab26cdd91561a433581b6eb3f989c19",
+  "risk": "routine",
+  "scope": "Preserve verified Vercel OAuth release evidence, successful owner registration and exact pending private credential-entry checkpoint; no runtime change.",
+  "defects": []
+}

@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "f5765c439c37f8bf095f29e1372931ef7a8f0f0595b4f378ff49972c387da7e6",
+  "risk": "critical",
+  "scope": "Add an exact versioned task and policy with final-stage-only concise output guidance; preserve v1-v4 requests, validation, warnings, model limits and all authority boundaries.",
+  "riskAnalysis": "Guidance is a bounded experiment, not a recovered cause or guaranteed success. Exact new v5 registration inherits v4 schema, source grammar, request/token/time and accounting controls. Only chief-final instructions change; no field, warning, provenance, acceptance or publication check relaxes. Old contracts remain exact.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable stage receipts and quality facts, exact source/task/release identity, review attribution, spending records and publication/acceptance restrictions.",
+    "trustBoundaries": "Untrusted model prose versus backend-derived closed observations; syntactic quality versus integrity; automated technical review versus independent acceptance; data-only patch worker versus generated execution.",
+    "abuseCases": "Concise wording suppresses QA findings, Auditor rejection, quality references or uncertainty; forged final acceptance; new policy omitted from authority selectors; historical requests silently changed.",
+    "mitigations": "Exact registered v5 final-only predicate; unchanged required QA/ref and unresolved rejection checks; full controller positive and forged acceptance cases; canonical journal/serial policy integration; forty frozen request hashes and five actual v4 request/context reconstructions."
+  },
+  "defects": [
+    {
+      "rootCause": "Observed v4 final HTTP200 response exhausted its 4000-output-token cap; exact partial output is absent, so reason for overgeneration is unknown. Exact-context valid synthetic final is1237bytes, proving no inherent need to raise limits.",
+      "detectionGap": "Fixture completion proves contract feasibility, not model output brevity or live success. Existing generic concise guidance did not prevent this one incomplete result.",
+      "regression": "Exact v5 final-only concise instructions, same4000final/24000aggregate limits, actual five-stage controller fixture with warnings and honest rejection, forged acceptance denial with preserved usage, forty historical request goldens and five actual v4 reconstructions.",
+      "historicalPrevention": "Preserve incomplete provider diagnostics and usage; distinguish controlled prompt experiment from proven historical cause, never synthesize a final result or replay consumed authority."
+    }
+  ],
+  "rollback": "Disable execution, revoke grants and stop current sequence; preserve all v1-v5 requests/receipts/accounting. Revert via reviewed feature successor only, never erase history or revive approvals.",
+  "negativePaths": {
+    "malformed-response": "Unchanged strict schema/refs/QA and Auditor integrity reject malformed output or fabricated acceptance; incomplete max_output_tokens remains a failure with usage, not fabricated success.",
+    "stale-state": "Exact new descriptor/policy and release/task binding, unchanged old request goldens; stale grants remain unusable.",
+    "concurrency": "Existing serial owner controller/CAS and one-time grant controls remain; UI canonical journal routes the new exact policy without parallel dispatch or automatic retry.",
+    "cancellation": "Existing cancellation/revocation/cleanup remains authoritative and is exercised by focused count-denial and full STRICT/Redis release coverage. No worker permission changed.",
+    "worker-interruption": "Real restricted data-copy worker lifecycle and cleanup are unchanged; generated source stays inert and source-test permission remains unavailable for this task.",
+    "api-outage": "Provider/count errors remain fatal with usage diagnostics, no automatic retries or fabricated stage success. Quality annotations do not replace transport evidence.",
+    "authorization-denial": "Source/owner/workspace/grant and policy checks remain fatal; forged/cross-workspace quality receipts and model refs cannot create authority.",
+    "spending-limit": "Existing monitoring policy and original ledger history remain unchanged, actual token usage is separate from uncertain fees; request/count/token/time ceilings remain enforced.",
+    "partial-execution": "The failed v3 stage and observed usage are preserved. V4 quality-only observations remain inside immutable validated receipts for later critics; final outcomes explicitly prevent technical acceptance when unresolved."
+  },
+  "proactiveReview": {
+    "architecture": "Same five roles, controller, journals and data-copy worker. New exact descriptor/policy preserves old contracts; final-only instruction change, no orchestration layer.",
+    "dependencies": "No package, credential, infrastructure or model migration. Existing authenticated task snapshot and cryptographic receipt helpers are reused.",
+    "threats": "Model warning suppression or forged receipt metadata must not cross the trusted review boundary; scalar source and authorization guards remain fatal.",
+    "failureModes": "Preserve omitted-ref, wrong-workspace/source, count denial, invalid patch, clipped narrative, final-only issue and cleanup failure evidence without claiming unobserved original text.",
+    "faultInjection": "Actual controller fixture runs all five stages with quality warning/rejection; forged final acceptance fails after four receipts with usage and cleanup preserved. Existing interruption/cancel/timeout coverage stays required.",
+    "independentChallenge": "Independent QA and Auditor checked exact final request feasibility, rejected blind limit increases and reviewed v5 narrow guidance; test-only result-shape mistake corrected without runtime relaxation.",
+    "recovery": "After each attempt preserve original receipts and usage, revoke grants, stop paid authority and qualify any exact successor before another distinct attempt. No consumed approval reuse.",
+    "readiness": "Focused source/UI/history/controller checks and independent review precede exact committed STRICT/Redis/CI/CodeQL/Browser qualification; no claim v5 live success until its receipts exist."
+  }
+}

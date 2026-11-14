@@ -1,0 +1,11 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "66e8e2d99a0af2e7e94ce2827f18c2fa8fa8183d420f483f202719d5a7d18177",
+  "risk": "routine",
+  "scope": "Documentation-only conditional pilot preflight stop and precise hosted remote transport evidence gap; no execution/configuration/source change.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "evidence": "Independent Auditor agrees actual hosted controller/inert callback does not establish supervisor/remote worker transport; fresh ten-broker disabled readback and unchanged ledger/Production."
+}

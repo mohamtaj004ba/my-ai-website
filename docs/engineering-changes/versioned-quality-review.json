@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "ec4cf4d798807c3ecc6eb168a7a3c3746a90cc597ed93c9b7ae16d5f0693ff29",
+  "risk": "critical",
+  "scope": "Version the existing engineering task to preserve prose-quality observations as immutable review evidence instead of aborting before critics, without relaxing source, schema, authorization or acceptance boundaries.",
+  "riskAnalysis": "Only closed prose heuristics become review observations in the exact new v4 task. Schema type/shape/size, source preimage and grammar, evidence/criteria coverage, placeholders, original QA/Auditor provenance and all permission/usage/cleanup checks remain fatal. Every observation requires bound reviewer references and mandatory rejection; final-only observations prevent a trusted technical pass. Preserve all historical request bytes and uncertainty.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable stage receipts and quality facts, exact source/task/release identity, review attribution, spending records and publication/acceptance restrictions.",
+    "trustBoundaries": "Untrusted model prose versus backend-derived closed observations; syntactic quality versus integrity; automated technical review versus independent acceptance; data-only patch worker versus generated execution.",
+    "abuseCases": "Model clears or forges warnings, copies another workspace receipt, omits required quality refs, fabricates pass after prior or final-only warnings, alters evidence/source/patch grammar, revives old policy, or conceals failed-stage usage.",
+    "mitigations": "V4-only exact objective/policy; receipt-hashed derived path/code metadata, ordered prior refs, binding/hash/recomputation checks, Auditor/final enum and backend fail constraints, trusted final outcome, unchanged source/authority/token/cleanup guards and frozen v1/v2/v3 contracts."
+  },
+  "defects": [
+    {
+      "rootCause": "A genuine Specialist HTTP200 response was stopped by a prose heuristic before QA/Auditor. Exact rejected text was not retained; actual false-positive status is unknown. Independent complete-English fixtures prove the heuristic is not a reliable semantic quality boundary.",
+      "detectionGap": "Prior checks treated selected word endings as incomplete statements and made ordinary report quality fatal to the whole workflow, preventing the actual independent technical critics from examining it.",
+      "regression": "Actual owner controller/CAS plus real data-copy workers exercise all five warning stages, clean automated pass without human acceptance, final-only machine failure, forged refs/metadata, source/evidence/schema denial, exact counting and cleanup. Thirty historical golden requests and both actual v3 request/context hashes remain exact.",
+      "historicalPrevention": "Separate enforceable integrity and authority failures from reviewable prose observations, keep observations immutable and explicitly unresolved, and let critics report evidence without claiming semantic proof or acceptance."
+    },
+    {
+      "rootCause": "A new profile was initially omitted from a duplicated fixture byte-versus-token planning selector. Full ordinary operations fixture coverage found it before any v4 paid request.",
+      "detectionGap": "Live-controller-only fixtures did not cover the classic rehearsal route, allowing version predicates to diverge across the same feature.",
+      "regression": "One registry-bound requiresProviderCount predicate supplies both request paths and compatibility metadata. Full ordinary five-stage fixture and thirty frozen request bodies pass without raising byte/token limits.",
+      "historicalPrevention": "Search every consumer of a versioned capability, centralize its predicate and verify complete live-controller and fixture paths before publishing."
+    }
+  ],
+  "rollback": "Keep paid execution disabled, revoke current grants and stop the sequence. Retain original v1-v4 task definitions, request/failure receipts and financial uncertainty. Revert behavior only through a reviewed feature successor, never erase evidence or revive old approvals.",
+  "negativePaths": {
+    "malformed-response": "Wrong types/shape/length, extra properties, placeholders, source/evidence/patch and review-reference violations remain fatal; only typed prose observations are non-fatal.",
+    "stale-state": "Exact source/release/task and old-consent denial remain; old v3 behavior and request hashes are frozen.",
+    "concurrency": "Existing serial owner controller/CAS and one-time grant controls remain; UI canonical journal routes the new exact policy without parallel dispatch or automatic retry.",
+    "cancellation": "Existing cancellation/revocation/cleanup remains authoritative and is exercised by focused count-denial and full STRICT/Redis release coverage. No worker permission changed.",
+    "worker-interruption": "Real restricted data-copy worker lifecycle and cleanup are unchanged; generated source stays inert and source-test permission remains unavailable for this task.",
+    "api-outage": "Provider/count errors remain fatal with usage diagnostics, no automatic retries or fabricated stage success. Quality annotations do not replace transport evidence.",
+    "authorization-denial": "Source/owner/workspace/grant and policy checks remain fatal; forged/cross-workspace quality receipts and model refs cannot create authority.",
+    "spending-limit": "Existing monitoring policy and original ledger history remain unchanged, actual token usage is separate from uncertain fees; request/count/token/time ceilings remain enforced.",
+    "partial-execution": "The failed v3 stage and observed usage are preserved. V4 quality-only observations remain inside immutable validated receipts for later critics; final outcomes explicitly prevent technical acceptance when unresolved."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse the five existing roles, controller, journals, providers and disposable data-copy machinery. New exact task version and review metadata only; no competing orchestrator.",
+    "dependencies": "No package, credential, infrastructure or model migration. Existing authenticated task snapshot and cryptographic receipt helpers are reused.",
+    "threats": "Model warning suppression or forged receipt metadata must not cross the trusted review boundary; scalar source and authorization guards remain fatal.",
+    "failureModes": "Preserve omitted-ref, wrong-workspace/source, count denial, invalid patch, clipped narrative, final-only issue and cleanup failure evidence without claiming unobserved original text.",
+    "faultInjection": "Focused actual-controller fixtures mutate every role, receipt metadata and source/evidence binding. Ordinary fixture route uses the real restricted data-copy worker without generated execution.",
+    "independentChallenge": "Independent QA and Auditor reviewed the design and implementation. Auditor found omitted no/not criterion observations; these are preserved and regression-tested before release.",
+    "recovery": "After each attempt preserve original receipts and usage, revoke grants, stop paid authority and qualify any exact successor before another distinct attempt. No consumed approval reuse.",
+    "readiness": "36 focused checks plus peak review-wire stress passed and historical actual requests reconstruct exactly. Exact committed STRICT/Redis/CI/CodeQL/Preview/Browser qualification and fresh configuration gates remain mandatory; no live v4 claim."
+  }
+}

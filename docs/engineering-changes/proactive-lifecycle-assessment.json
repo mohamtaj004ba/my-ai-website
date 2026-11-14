@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "cd49b2fb092aed300658f5941e7bd35f9c6d48f7b833cfae496333bbae5c307f",
+  "risk": "critical",
+  "scope": "Non-billable Preview proactive architecture audit, inert owner lifecycle verification, late diagnostic receipts, complete capture release binding and mandatory proactive review gate. No paid approvals, model requests, customer changes or autonomous writes.",
+  "riskAnalysis": "An inert verification seam must never create model authority or bypass owner/session/isolation controls; post-revocation receipt sink must not restore execution or settle uncertainty. Actual operational ledger stays unchanged during hosted probes.",
+  "threatModel": {
+    "assets": "Owner sessions and project credentials, isolated operational ledger, historical evidence and uncertain reservations, task acceptance and release authority.",
+    "trustBoundaries": "Real owner browser -> protected Preview -> isolated inertprobe versus operational ledger; model/provider -> existing dispatched diagnostic-only receipt; capturetrustedparent versus fingerprint; independentreview versus finalacceptance.",
+    "abuseCases": "Forge owner or paidprofile throughprobe, copyrecord toliveledger, stalecontrollerlease/replay, lostcommit orphan, revoke/providerreturnrace, tamper captureallowlist/source, consume emergencycleanupheadroom, falselycallmock/hostedfault liveproof.",
+    "mitigations": "Existing membership/owner/sameoriginchecks; strictPreviewpaidfalseexpiry; serverselectedisolatednamespace/zero-callunauthorizedprofile; actualsharedlifecycle/CAS; boundedreceiptbindings/caps; complete sourcefingerprint; separateQA/Auditor; explicitreadinessandresidualqualifications."
+  },
+  "rollback": "Revert only reviewed feature implementation after checking unrelated changes. Keep paid execution false and do not mutate original task records or settle historical holds. No generic destructive or Production rollback is authorized.",
+  "negativePaths": {
+    "malformed-response": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover malformed-response; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "stale-state": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover stale-state; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "concurrency": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover concurrency; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "cancellation": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover cancellation; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "worker-interruption": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover worker-interruption; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "api-outage": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover api-outage; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "authorization-denial": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover authorization-denial; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "spending-limit": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover spending-limit; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport.",
+    "partial-execution": "Permanent lifecycle QA/Auditor regressions plus retained contract-first suite cover partial-execution; storage CAS, immutable evidence and pending reservations remain authoritative. No live transport."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Normal diagnostic write required still-active execution authorization after provider response.",
+      "detectionGap": "Tests verified admission/revocation but not providerreturn after cancellation/expiry.",
+      "regression": "Independent proactiveQA9 and Auditor7 groups actualprovider delayedresponse and narrowreceipt/security/capacity tests.",
+      "historicalPrevention": "Auditor reproduced null durableusage afterrevoke; corrected actualprovider preserves sanitized receipt without taskacceptance or costsettlement."
+    },
+    {
+      "rootCause": "Whole-source release list omitted trusted capture/transport/geometry dependencies.",
+      "detectionGap": "Fingerprint tests focused model contracts/runtime and did not mutate trusted parent evidence/security helpers.",
+      "regression": "Independent Auditor mutatescapture/access/geometry/fontmanifest sources and actualproviderblocks beforetransport.",
+      "historicalPrevention": "Every omittedtrustedhelper drift now changes exactsource fingerprint and stops dispatch; no live rerun required."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Actual code and deployed flow map in AGENT_OPERATIONS_PROACTIVE_ASSESSMENT.md, allfive stages and authoritative acceptance boundaries.",
+    "dependencies": "OpenAI/Vercel/Upstash/GitHub/browserfonts/owner session/trustedparent dependencies mapped; source and package manifests fingerprinted.",
+    "threats": "Owner/provider/control/evidence trust boundaries and abusecases reviewed against actual code and API paths.",
+    "failureModes": "AGENT_OPERATIONS_FAILURE_MODES.json13prioritized actual evidence backed risks with recovery and measurable acceptance.",
+    "faultInjection": "Isolated read/CAS/lostcommit probes; provider late200/400 afterrevoke/cancel/leaseexpiry, actualsharedCASintegration and frozen contract replays.",
+    "independentChallenge": "Separate lifecycle_auditor and lifecycle_qa found/reproduced issues and independently reviewed source/test evidence; cannot infer trusted production attestation.",
+    "recovery": "Partialfailures revokeownerselectedID; hardcontrollerkill expires lease; failures preserveholds; per-stage no retry; storeunavailable shutdownunconfirmed.",
+    "readiness": "Unit/integration/replay/mock/hostedcontrol/liveprovider/Production remain separate; livefive-stage and autonomouswrites explicitlyunverified."
+  }
+}

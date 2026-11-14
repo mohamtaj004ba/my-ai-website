@@ -1,0 +1,22 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "41c744c09e9d4147bdcf9a4bbc335f9a38235c8e3e3088cdb5a09e029c0248b6",
+  "risk": "substantial",
+  "scope": "Align three remaining engineering lease assertions with the explicitly approved60second policy; preserve legacy30second cases.",
+  "riskAnalysis": "No runtime modification. Tests previously asserted30seconds despite actualapproved60seconds; retain all cancellation, stale authority and CAS checks.",
+  "verification": [
+    "risk-analysis",
+    "targeted-tests",
+    "independent-qa",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Three engineering-only lease equality assertions retained30second expectations after scoped60second runtime change.",
+      "detectionGap": "Initial targeted search selected js files and selected focusedsuite; Redis cjs and two otherrenewal testfiles were omitted.",
+      "regression": "Two remaininglocalfiles6/6PASS; updatedRedisexact60second expectation awaitsactualdisposableRedis rerun.",
+      "historicalPrevention": "Search all supported testfileextensions when updating a shared timing contract; distinguish legacy and engineering lease semantics."
+    }
+  ],
+  "rollback": "Revert assertions together with anyfutureengineeringleasepolicyrevert; never delete previousCI failure evidence."
+}

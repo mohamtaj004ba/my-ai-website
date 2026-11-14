@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "54ca9fb2a765b098c10c836e23358dddeff1e87e40930e3cf6684816f605e922",
+  "risk": "critical",
+  "scope": "Prevent unavailable appointment secondary-feed requests in client fallback; preserve exact historical evidence and strict rendered checks.",
+  "riskAnalysis": "Backend calendar/plan authorization stays unchanged. Frontend avoids denied requests when either required capability or entitlement is unavailable. Preserve source-bound evidence with new v4 current asset and immutable v1-v3 historical readback.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Accurate client sync indicators, last verified data, exact source evidence and historical receipts.",
+    "trustBoundaries": "Untrusted read-only API response payloads versus validated client state; current source admission versus historical readback.",
+    "abuseCases": "Malformed critical feeds falsely mark Live, stale timestamps suppress recovery, historical evidence substituted into new execution, QA intercepts leak beyond fixture.",
+    "mitigations": "Critical-only success stamping, catch error state, original payload validation/retry/draft guards, exact v3 current pins with v1/v2 readback only, finally-removed fictional QA GET intercepts."
+  },
+  "rollback": "Revert this feature-only source commit and requalify Preview. No persistent data, account, ledger, source publication policy or Production state is changed.",
+  "negativePaths": {
+    "malformed-response": "Wrong object/fields, noninteger/oversized counts and secret echo fail closed before Responses dispatch.",
+    "stale-state": "Source/context/request/expiry and authoritative stored approval mismatch deny dispatch.",
+    "concurrency": "Count dispatch and count recording are one-use existing-CAS operations; duplicate winners cannot occur.",
+    "cancellation": "Shared owner/task/revoke/lease checks run after counting and before dispatch; whole-operation abort includes count requests.",
+    "worker-interruption": "Revocation closes attempts/leases and retains uncertainty, including actual600audit capacity fallback in existing records; no retry or historical deletion.",
+    "api-outage": "Fixed endpoint/redirect:error, bounded response body, deadline and sanitized status/hash diagnostics; no fallback or retry.",
+    "authorization-denial": "Missing count consent/server pricing pin, impersonated roles or substituted workspace/source deny; no model-granted permissions.",
+    "spending-limit": "New5USD cumulative exposure separate from old15USD; fullattempt1USD availability and200k microUSD perstage holds; unknowncounts remain pending; maximum20attempts and stop on first complete workflow. No provider billing cap claim.",
+    "partial-execution": "Successful count alone cannot settle or accept work. Responses usage mismatch leaves pending evidence/reservation; no generated source execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "Fallback always requested appointments even when calendar capability was disabled; authenticated Browser QA preserved two genuine403 responses.",
+      "detectionGap": "Normal bundled loading did not exercise secondary fallback calendar denial. New read-only fallback scenario exposed the missing availability gate.",
+      "regression": "Four calendar/entitlement combinations plus other secondary feeds, critical fallback recovery and immutable source-history admission.",
+      "historicalPrevention": "Original failed Browser artifact and v1-v3 evidence bytes preserved; current v4 only for fresh admission."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing client refresh/load and fixed evidence contracts only, no architecture migration or new organization roles.",
+    "dependencies": "No dependency added. Original account GET endpoints, retry bounds, health and rendering helpers retained.",
+    "threats": "No API mutation or model authority. Evidence versioning cannot authorize an old source for new execution.",
+    "failureModes": "Unavailable appointments are not fetched; permitted appointments and other feeds continue. Backend rejects unauthorized access; no error filter or assertion suppression.",
+    "faultInjection": "Trusted-source deterministic fixtures and two transient malformed GET routes only inside the fictional QA workspace, removed in finally.",
+    "independentChallenge": "Independent Work QA20 and Auditor26 focused checks passed, including old-source substitution denial and both capability/entitlement requirements.",
+    "recovery": "No paid attempts or reservations. Historical byte assets remain unchanged and old records remain readable.",
+    "readiness": "Frozen source and fingerprint649895d44c8be51f97a87aca78fc219e71c81d97fcde31efc604c41dca356d3c; STRICT and new hosted qualification required."
+  }
+}

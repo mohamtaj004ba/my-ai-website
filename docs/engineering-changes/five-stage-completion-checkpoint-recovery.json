@@ -1,0 +1,19 @@
+{
+  "version": "engineering-quality-v1",
+  "historicalCommit": "079ee41df6eb37199613397360a194680b1c1419",
+  "changeDigest": "bc6761dc2b2ad183dd1d0ff2e304c21d957cac553a9e5fe71ac9b1d840ffa10e",
+  "risk": "routine",
+  "scope": "Preserve the exact independently verified live-completion documentation checkpoint without rewriting its historical commit.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [
+    {
+      "rootCause": "The completion documentation checkpoint omitted its required source-bound engineering plan.",
+      "detectionGap": "The prior push did not run the full PR-history engineering preflight; a later immediate-parent check could not detect it.",
+      "regression": "Pin exact historical commit, regular path and before/after blobs, digest and reviewed supplemental plan hash; retain ordinary plan validation and deny altered inputs.",
+      "historicalPrevention": "Run full-main-base engineering preflight before every push, including documentation checkpoints; include their bound change plan before committing."
+    }
+  ],
+  "qualification": "Retrospective reviewed documentation record only, never a historical CI pass, execution grant or review-policy exception."
+}

@@ -1,0 +1,21 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "f1b8382cef841a36c41d3ed3547155444f7b750a5e889bf1dcf32ac1929b6618",
+  "risk": "substantial",
+  "scope": "Make historical audited declaration test independent of Git checkout depth while preserving its exact original bytes and assertions.",
+  "riskAnalysis": "Test-only fixture substitution; runtime source, release fingerprint, authorization and execution boundaries are unchanged. Original git blob inspected before transcription.",
+  "verification": [
+    "risk-analysis",
+    "targeted-tests",
+    "independent-qa",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Historical assertion read an old Git object absent in Vercel shallow builds.",
+      "detectionGap": "Local and GitHub full-history checkouts retained the object, so only Preview build failed.",
+      "regression": "Run identical nine Git-fixture assertions using immutable embedded original declaration.",
+      "historicalPrevention": "Use committed self-contained historical fixtures instead of assuming historical Git objects exist in build checkouts."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": "engineering-quality-v1",
+  "historicalCommit": "7934a97c860a025c37e09ea1c3532c698143bc0d",
+  "changeDigest": "02a29c98b569773d511e48ce29b9f37aaddce2a04f68d5e38faeb8b6ae5159ae",
+  "risk": "routine",
+  "scope": "Recover the omitted source-bound plan for the exact historical canonical documentation checkpoint. Its only change is 21 lines in CALLERCORE_PROJECT_STATE.md; it grants no runtime authority and changes no application source.",
+  "verification": ["scope-review"],
+  "defects": [{
+    "rootCause": "The documentation checkpoint was published without its required engineering plan.",
+    "detectionGap": "The next local STRICT comparison started after the documentation commit, while PR CI correctly examined the full feature history from main.",
+    "regression": "Exact commit, digest, path, regular-file modes and supplemental-plan identity are required; unchanged ordinary plan validation still runs and all other missing plans fail.",
+    "historicalPrevention": "Validate canonical handoff commits against the full PR base before publishing; preserve immutable history and never bypass security or runtime review requirements."
+  }],
+  "qualification": "This retrospective documentation record is not a historical CI pass, deployment receipt, independent human acceptance or permission grant. The reviewed recovery mechanism has its own STRICT change plan."
+}

@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "d9b42fb9275c526c1ceb0a9a527cf26b415d747a9c004f148e6ba683856930d9",
+  "risk": "critical",
+  "scope": "Freeze terminal engineering provider diagnostics and first-failure creation under existing CAS; accurately report separately permitted fixed Starter tests.",
+  "riskAnalysis": "Late first-seen numeric fields could be added after failure, and a late failure could contradict success. Fix only terminal diagnostic writes; preserve required independent cleanup evidence, historical absence and all existing inference/publication controls.",
+  "threatModel": {
+    "assets": "Immutable provider observations, missing usage semantics, terminal result/failure provenance, financial uncertainty and reliable cleanup evidence.",
+    "trustBoundaries": "Only existing scoped broker capability enters existing transaction; capability readouts are informational and cannot dispatch source tests.",
+    "abuseCases": "Late or concurrent diagnostic calls invent missing token counts, append failure after success, overwrite failed cleanup or imply execution from static capability metadata.",
+    "mitigations": "Terminal computed inside CAS; block provider-field additions and new failure once failure/resultHash exists; only first boolean cleanup observation may append. Exact local release lock changes; no old grant reuse."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "negativePaths": {
+    "malformed-response": "Zero, missing, null and invalid usage fixtures retain exact numeric presence and fail incomplete responses closed.",
+    "stale-state": "Terminal flag is recomputed inside each existing CAS callback; historical receipts are never migrated.",
+    "concurrency": "Concurrent conflicting late provider/cleanup writes preserve first committed evidence; new real Redis case verifies shared CAS.",
+    "cancellation": "Existing full-stage cancellation and cleanup fixtures run; late physical cleanup boolean remains separately appendable.",
+    "worker-interruption": "Existing restricted-worker and unconfirmed physical cleanup tests remain mandatory; no worker execution code changed.",
+    "api-outage": "Existing provider and diagnostic-store failure fixtures retain uncertainty and independent bounded authority cleanup.",
+    "authorization-denial": "Existing capability tokens, owner/task/source checks unchanged; forged capability regression remains required.",
+    "spending-limit": "Reservations and observed usage before terminal remain unchanged; late fake usage cannot alter reservations or accepted results.",
+    "partial-execution": "Incomplete responses stop downstream stages; late failure cannot contradict an already successful resultHash."
+  },
+  "rollback": "Revert reviewed source and release-lock changes through feature development only; keep all historical receipts, unknown billing and original failed test evidence. No runtime data rollback or audit rewrite.",
+  "defects": [
+    {
+      "rootCause": "First-observation merging protected populated keys but did not freeze absent fields once terminal evidence existed.",
+      "detectionGap": "Prior immutable-diagnostic tests used populated usage, so late additions to absent numeric fields were not exercised.",
+      "regression": "Four empty incomplete usage variants and completed-result late-failure regression plus concurrent cleanup checks and real Redis integration.",
+      "historicalPrevention": "Require terminal diagnostic immutability to cover absence as well as values, and contradictory terminal receipt creation."
+    },
+    {
+      "rootCause": "Implementation capability metadata still described all tests as unqualified after separately permitted fixed Starter tests were added.",
+      "detectionGap": "Fixed-test dispatch tests exercised execution independently from shared directory capability readouts.",
+      "regression": "Check all three shared capability surfaces and detached mutable readouts; preserve execution/publication false.",
+      "historicalPrevention": "Update capability reporting alongside bounded execution features without implying readiness or granting permissions."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse existing broker transaction and shared capability function; no alternate journal, ledger, execution controller or publication pathway.",
+    "dependencies": "No dependencies, credentials, provider services or paid infrastructure introduced.",
+    "threats": "Protect terminal absence and result/failure consistency without exposing raw provider content or changing trust boundaries.",
+    "failureModes": "Diagnostic persistence failure cannot block independent revocation; late cleanup remains explicit rather than inferred.",
+    "faultInjection": "Actual late numeric insertion and late failure-after-success reproduced before fix; malformed and concurrent cases tested.",
+    "independentChallenge": "Independent Work QA and Engineering Auditor reviewed changes; Auditor adjacent terminal finding reproduced and addressed.",
+    "recovery": "Preserve original diagnostics, support case and accounting; paid authority stays closed and Production/main unchanged.",
+    "readiness": "Local focused checks pass; full STRICT and exact committed CI/Redis/CodeQL/browser qualification are required before release claims."
+  }
+}

@@ -1,0 +1,199 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+
+const api=fs.readFileSync('api/account.js','utf8');
+const ui=fs.readFileSync('dashboard.js','utf8');
+const html=fs.readFileSync('admin-dashboard.html','utf8');
+const start=api.indexOf('async function adminWebsiteAnalytics(');
+const end=api.indexOf('async function adminWebsiteProspectUpdate(',start);
+assert.ok(start>=0&&end>start);
+function fixture({sessionIds=[],prospectIds=[],events=[],records={}}={}){
+  const reads=[],now=Date.now();let code,body;
+  const ctx=vm.createContext({
+    kv:{
+      lrange:async key=>key==='site:events'?events:key==='site:session:index'?sessionIds:prospectIds,
+      get:async key=>{reads.push(key);return records[key]||null}
+    },
+    req:{query:{days:30}},res:{status(n){code=n;return this},json(x){body=x;return x}},
+    requireAdmin:async()=>({email:'admin@example.test'}),
+    clampInt:(v,min,max,fallback)=>Math.max(min,Math.min(max,Number(v)||fallback)),
+    safeError:()=> 'redacted',console:{error(){}},Date,Number,Array,Object,String,Set,Math,Promise
+  });
+  vm.runInContext(api.slice(start,end),ctx);
+  return {run:async()=>{await vm.runInContext('adminWebsiteAnalytics(req,res)',ctx);return {code,body,reads}},now};
+}
+test('website analytics retrieves the full 2000-entry retained prospect index',async()=>{
+  const now=Date.now(),recent=now-86400000,older=now-80*86400000;
+  const prospectIds=Array.from({length:1601},(_,i)=>'p'+i);
+  prospectIds.push('checkout-current','checkout-old');
+  const sessionIds=Array.from({length:1001},(_,i)=>'s'+i);
+  sessionIds.push('stale-visit');
+  const records={};
+  for(let i=0;i<1601;i++)records['site:prospect:p'+i]={id:'p'+i,stage:'converted',convertedAt:recent,updatedAt:recent,monthlyValue:10,source:'website'};
+  records['site:prospect:checkout-current']={id:'checkout-current',stage:'checkout_started',updatedAt:recent};
+  records['site:prospect:checkout-old']={id:'checkout-old',stage:'checkout_started',updatedAt:older};
+  for(let i=0;i<1001;i++)records['site:session:s'+i]={id:'s'+i,firstAt:recent,lastAt:recent,visitorId:'v'+i,pages:['/'],activeMs:1000};
+  records['site:session:stale-visit']={id:'stale-visit',firstAt:older,lastAt:now,visitorId:'stale',pages:['/'],activeMs:200};
+  const f=fixture({prospectIds,sessionIds,records});
+  const r=await f.run();
+  assert.equal(r.code,200);
+  assert.equal(r.body.analytics.prospects.length,1603);
+  assert.equal(r.body.analytics.conversions,1601);
+  assert.equal(r.body.analytics.attributedMrr,16010);
+  assert.equal(r.body.analytics.checkoutAbandoned,1);
+  assert.equal(r.body.analytics.sessions,1001);
+  assert.equal(r.body.analytics.recentSessions.length,20);
+  assert.ok(!r.body.analytics.recentSessions.some(s=>s.id==='stale-visit'));
+  assert.equal(r.body.analytics.coverage.retainedProspectIds,1603);
+  assert.equal(r.body.analytics.coverage.retainedSessionIds,1002);
+  assert.equal(r.body.analytics.coverage.isRetentionCapped,false);
+  assert.ok(r.reads.includes('site:prospect:p1600'));
+  assert.ok(r.reads.includes('site:session:s1000'));
+});
+test('de-identified prospects stay out of active Growth records but remain in aggregate conversion metrics',async()=>{
+  const now=Date.now(),prospectIds=['anon-conversion','active-lead'];
+  const records={
+    'site:prospect:anon-conversion':{id:'anon-conversion',privacyState:'deidentified',stage:'converted',convertedAt:now,updatedAt:now,monthlyValue:125,setupValue:300,source:'google'},
+    'site:prospect:active-lead':{id:'active-lead',stage:'new',updatedAt:now,name:'Active Lead',source:'website'}
+  };
+  const r=await fixture({prospectIds,records}).run();
+  assert.equal(r.code,200);
+  assert.deepEqual(Array.from(r.body.analytics.prospects,p=>p.id),['active-lead']);
+  assert.equal(r.body.analytics.coverage.deidentifiedProspectRecords,1);
+  assert.equal(r.body.analytics.conversions,1);
+  assert.equal(r.body.analytics.funnel.converted,1);
+  assert.equal(r.body.analytics.attributedMrr,125);
+  assert.equal(r.body.analytics.attributedSetupRevenue,300);
+});
+
+test('retention-cap notice is reported at the supported 2000 prospect limit',async()=>{
+  const now=Date.now();
+  const prospectIds=Array.from({length:2000},(_,i)=>'p'+i);
+  const records=Object.fromEntries(prospectIds.map(id=>['site:prospect:'+id,{id,stage:'new',updatedAt:now}]));
+  const r=await fixture({prospectIds,records}).run();
+  assert.equal(r.code,200);
+  assert.equal(r.body.analytics.prospects.length,2000);
+  assert.equal(r.body.analytics.coverage.isRetentionCapped,true);
+});
+test('malformed tracking indexes fail closed instead of returning partial metrics',async()=>{
+  for(const index of ['events','sessionIds','prospectIds']){
+    const args={events:[],sessionIds:[],prospectIds:[]};
+    args[index]=null;
+    const r=await fixture(args).run();
+    assert.equal(r.code,503,index);
+    assert.match(r.body.error,/No partial reporting/);
+  }
+});
+test('dashboard labels retained-history coverage in analytics and prospect search',()=>{
+  assert.match(html,/id="growthCoverageNote"/);
+  assert.match(ui,/adminWebsiteData\.coverage\?\.isRetentionCapped/);
+  assert.match(ui,/d\.coverage\?\.isRetentionCapped/);
+  assert.match(ui,/Older history may be outside retained tracking|Older history outside retained tracking/);
+});
+
+test('missing or malformed indexed prospects are disclosed instead of counted as a complete pipeline',async()=>{
+  const now=Date.now(),prospectIds=['good','missing','malformed','mismatched'];
+  const records={
+    'site:prospect:good':{id:'good',stage:'converted',convertedAt:now,updatedAt:now,monthlyValue:100},
+    'site:prospect:malformed':{stage:'converted',convertedAt:now,updatedAt:now},
+    'site:prospect:mismatched':{id:'other-record',stage:'converted',convertedAt:now,updatedAt:now}
+  };
+  const r=await fixture({prospectIds,records}).run();
+  assert.equal(r.code,200);
+  assert.equal(r.body.analytics.prospects.length,1);
+  assert.equal(r.body.analytics.conversions,1);
+  assert.equal(r.body.analytics.coverage.unavailableProspectRecords,3);
+  assert.equal(r.body.analytics.coverage.isIncomplete,true);
+  assert.equal(r.body.analytics.coverage.isRetentionCapped,false);
+});
+test('expired session index entries make analytics coverage explicitly incomplete',async()=>{
+  const now=Date.now();
+  const r=await fixture({sessionIds:['expired','recent'],records:{
+    'site:session:recent':{id:'recent',firstAt:now,lastAt:now,visitorId:'visitor',pages:[],activeMs:0}
+  }}).run();
+  assert.equal(r.code,200);
+  assert.equal(r.body.analytics.sessions,1);
+  assert.equal(r.body.analytics.coverage.unavailableSessionRecords,1);
+  assert.equal(r.body.analytics.coverage.isIncomplete,true);
+});
+test('admin receives incomplete-prospect alerts on both website and Growth screens',()=>{
+  assert.match(ui,/d\.coverage\?\.isIncomplete/);
+  assert.match(ui,/adminWebsiteData\.coverage\?\.isIncomplete/);
+  assert.match(ui,/retained analytics records are unavailable; verified traffic, conversion, and search totals may be partial/);
+});
+
+test('period conversions are disclosed as sales outcomes, not falsely reported as a cohort rate',async()=>{
+  const now=Date.now(),sessionIds=['visit-1'],prospectIds=['won-1','won-2'];
+  const records={
+    'site:session:visit-1':{id:'visit-1',visitorId:'visitor-1',firstAt:now,lastAt:now,utmCampaign:'campaign-a',utmMedium:'email'},
+    'site:prospect:won-1':{id:'won-1',stage:'converted',convertedAt:now,updatedAt:now,monthlyValue:100,firstUtmCampaign:'campaign-a',firstUtmMedium:'email'},
+    'site:prospect:won-2':{id:'won-2',stage:'converted',convertedAt:now,updatedAt:now,monthlyValue:100,firstUtmCampaign:'campaign-a',firstUtmMedium:'email'}
+  };
+  const r=await fixture({sessionIds,prospectIds,records}).run();
+  assert.equal(r.code,200);
+  assert.equal(r.body.analytics.sessions,1);
+  assert.equal(r.body.analytics.conversions,2);
+  const campaign=r.body.analytics.campaigns.find(x=>x.campaign==='campaign-a');
+  assert.equal(campaign.conversions,2);
+  assert.equal(campaign.sessions,1);
+  assert.equal(campaign.cohortLinked,false);
+  assert.equal(campaign.conversionRate,undefined);
+});
+test('website dashboard labels period conversions separately from website visitor cohort',()=>{
+  assert.match(html,/Prospects converted/);
+  assert.match(html,/not a same-visit conversion rate/);
+  assert.match(html,/These are not a single visitor cohort/);
+  assert.match(ui,/set\('webConversionRate',Number\(d\.conversions\|\|0\)\.toLocaleString\(\)\)/);
+  assert.match(ui,/Sales outcome \(not session-linked\)/);
+  assert.match(ui,/MRR from period conversions/);
+  assert.doesNotMatch(ui,/x\.conversionRate\|\|0/);
+});
+
+test('duplicate, blank, or non-string analytics index ids are excluded with explicit incomplete coverage',async()=>{
+  for(const args of [
+    {sessionIds:['s1','s1']},
+    {sessionIds:['']},
+    {prospectIds:['p1','p1']},
+    {prospectIds:['p1',42]}
+  ]){
+    const r=await fixture(args).run();
+    assert.equal(r.code,200);
+    assert.equal(r.body.analytics.coverage.isIncomplete,true);
+    assert.ok(Number(r.body.analytics.coverage.unavailableSessionRecords||0)+Number(r.body.analytics.coverage.unavailableProspectRecords||0)>0);
+  }
+});
+test('malformed historical analytics events are excluded with explicit incomplete coverage',async()=>{
+  for(const events of [[null],[{type:'page_view',at:0}],[{type:'',at:Date.now()}]]){
+    const r=await fixture({events}).run();
+    assert.equal(r.code,200);
+    assert.equal(r.body.analytics.coverage.unavailableEventRecords,1);
+    assert.equal(r.body.analytics.coverage.isIncomplete,true);
+    assert.equal(r.body.analytics.coverage.verifiedEvents,0);
+  }
+});
+test('malformed indexed session and prospect fields are counted as unavailable coverage',async()=>{
+  const now=Date.now();
+  const r=await fixture({
+    sessionIds:['good-session','bad-session'],
+    prospectIds:['good-prospect','bad-prospect'],
+    records:{
+      'site:session:good-session':{id:'good-session',firstAt:now,lastAt:now,activeMs:1,pages:[]},
+      'site:session:bad-session':{id:'bad-session',firstAt:'bad',lastAt:now},
+      'site:prospect:good-prospect':{id:'good-prospect',stage:'new',updatedAt:now},
+      'site:prospect:bad-prospect':{id:'bad-prospect',stage:'converted',updatedAt:now,monthlyValue:-5}
+    }
+  }).run();
+  assert.equal(r.code,200);
+  assert.equal(r.body.analytics.coverage.unavailableSessionRecords,1);
+  assert.equal(r.body.analytics.coverage.unavailableProspectRecords,1);
+  assert.equal(r.body.analytics.coverage.isIncomplete,true);
+});
+
+test('analytics UI disclosure includes event, session, and prospect unavailable-record counts',()=>{
+  assert.match(ui,/unavailableEventRecords/);
+  assert.match(ui,/unavailableSessionRecords/);
+  assert.match(ui,/unavailableProspectRecords/);
+  assert.match(ui,/retained analytics records unavailable; verified totals may be partial/);
+});

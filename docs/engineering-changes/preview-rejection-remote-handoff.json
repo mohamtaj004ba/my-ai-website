@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "bd879bb3352a83299686f8302c6b83dc974e0bdc98cf69f56081ca543b793835",
+  "risk": "routine",
+  "scope": "Preserve actual rejected-refresh repair source, verified tests, pending browser evidence and paid-disabled continuation.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

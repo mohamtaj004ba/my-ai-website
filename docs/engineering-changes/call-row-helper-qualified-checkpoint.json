@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "284292c056c822cf05e2ee8c8bf03f49b19dba9b201ff3fcaedb194e377ca0c8",
+  "risk": "routine",
+  "scope": "Preserve exact qualified helper-evidence release, actual impact findings and independent hosted checks while retaining original rejected patch, financial uncertainty and paid-off boundaries.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

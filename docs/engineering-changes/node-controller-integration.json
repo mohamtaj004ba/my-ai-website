@@ -1,0 +1,68 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "cc2512945c77ca6175d1e4d5a81279f11e63e9fef8ed462d3791c1c32389da59",
+  "risk": "critical",
+  "scope": "Actual tracked Node owner controller, bounded renewal/cleanup, authenticated supervisor and restricted initialize-once worker integration; harmless hosted verifier and adversarial/Redis tests; no paid authority activated.",
+  "riskAnalysis": "Owner authentication must remain current, task/release/budget bound and separate from worker authority. The historic local helper cannot be reused. Positive inert authority and revocation, real transport failure, automatic terminal retirement and fast completion must be verified without paid dispatch.",
+  "threatModel": {
+    "assets": "Current owner session, task capabilities, isolated project key, immutable task/evidence/QA records, historical spending holds and durable approval registry.",
+    "trustBoundaries": "Authenticated owner browser to protected Node supervisor and Redis; restricted worker to exact task APIs and OpenAI; provider output to independent QA and backend acceptance.",
+    "abuseCases": "Stale helper ownership substitution; lost prepare/init responses; hung renewal, controller or worker death; replay/concurrent initializer; forged terminal results; stale/foreign readback; owner workspace switch; cancelled transport suppressing diagnostic evidence; token disclosure in owner stream.",
+    "mitigations": "Existing current owner/member/workspace/same-origin checks, exact immutable bindings, durable CAS revocation and30slease, one initialization attempt, bounded renew/init/stall/cleanup, backend terminal result equality, narrow late diagnostic sink, zero-call isolated hosted probes and independent reviews."
+  },
+  "rollback": "Keep paid false; remove only temporary inert window; deploy exact reviewed disabled feature source and independently verify old/current/replacement brokers. Preserve original helper bytes, task records and uncertain holds. Revert feature-only reviewed changes if required, never Production or historical evidence.",
+  "negativePaths": {
+    "malformed-response": "Actual Node QA/Auditor tests and retained contract-first suite cover malformed-response with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "stale-state": "Actual Node QA/Auditor tests and retained contract-first suite cover stale-state with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "concurrency": "Actual Node QA/Auditor tests and retained contract-first suite cover concurrency with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "cancellation": "Actual Node QA/Auditor tests and retained contract-first suite cover cancellation with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "worker-interruption": "Actual Node QA/Auditor tests and retained contract-first suite cover worker-interruption with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "api-outage": "Actual Node QA/Auditor tests and retained contract-first suite cover api-outage with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "authorization-denial": "Actual Node QA/Auditor tests and retained contract-first suite cover authorization-denial with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "spending-limit": "Actual Node QA/Auditor tests and retained contract-first suite cover spending-limit with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "partial-execution": "Actual Node QA/Auditor tests and retained contract-first suite cover partial-execution with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Historical outside-Git controller omitted the durable lifecycle and used obsolete source/accounting plus Vercel identity.",
+      "detectionGap": "Callback and BrowserWorker tests did not execute the actual Node helper or its owner transport.",
+      "regression": "Actual runPilot and owner supervisor + restricted remote worker compose through the real handler/shared organization with request-faithful five-stage mocks, no hidden repairs.",
+      "historicalPrevention": "Retired helper throws before config/network; mandatory tests exercise the tracked actual controller entrypoints and paidfalse denial."
+    },
+    {
+      "rootCause": "Renewal could hang or queue past cleanup; terminal auto-revocation and fast completion were not part of controller completion contract.",
+      "detectionGap": "Earlier controller callback mocks neither reached real terminal retirement nor overlapped owner renewal and fast worker completion.",
+      "regression": "Hung renewal/no late callbacks, full accepted/rejected runPilot, terminal-renewal race, fast supervisor/worker completion, forged/cancelled/stale terminal refusal.",
+      "historicalPrevention": "Same boundary-faithful tests would fail before transport on the old completion and renewal behavior."
+    },
+    {
+      "rootCause": "Owner reauthorization could switch workspace for the same email during a long controller invocation.",
+      "detectionGap": "Initial HTTP authorization checks were covered, but original-workspace identity across repeated reauthorization was not.",
+      "regression": "Real handler switches same-email session/member to a different owned workspace; only a revoke tombstone may remain.",
+      "historicalPrevention": "Binding the original workspace prevents preparation or subsequent operational authority after a switch."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Actual controller/owner/worker/Redis/provider/acceptance map in AGENT_OPERATIONS_NODE_CONTROLLER.md; no duplicate autonomous organization work.",
+    "dependencies": "Existing Vercel Pro/Fluid duration, Upstash CAS, owner session, restricted worker project credentials, native Responses contract and current official pricing reviewed.",
+    "threats": "Task-bound privilege, identity/session/workspace drift, orphan activation, replay, leaked capabilities and post-cancel diagnostics challenged against actual source.",
+    "failureModes": "Updated16-item register preserves mitigated/restricted future risks and records the historical helper integration gap and corrected controller interactions.",
+    "faultInjection": "Lost committed responses, networkdisconnect, stuck renewals, wrong receipts, terminal races, Redis CAS concurrency and actual Node SIGKILL with30second real-time lease.",
+    "independentChallenge": "Separate Auditor and QA implement and execute negative tests against actual entrypoints/handler/native request mocks and challenge fast completion/terminal behavior.",
+    "recovery": "Central exact-ID revocation before/after init, cleanup readback validation, hardkill lease fallback, no retries, pending usage preserved and separate replacement verification.",
+    "readiness": "Unit/integration/mock/replay/realRedis/hostedNode controls/liveprovider/Production are separate. Hosted/CI results remain pending until actually verified."
+  }
+}

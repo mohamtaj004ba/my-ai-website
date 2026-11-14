@@ -1,0 +1,1515 @@
+{
+  "version": "pina-colada-frozen-live-v1",
+  "application": "58cf249d6d4425a7e813c3b077233cc190182d97",
+  "workflow": {
+    "id": "wf_66960665244af030469b00672dead78e",
+    "scope": {
+      "origin": "https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app",
+      "commit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+      "paths": [
+        "/industries/legal",
+        "/#pricing"
+      ]
+    },
+    "mode": "pilot",
+    "contractVersion": "organization-contracts-v3",
+    "contractHash": "cc2ae8ea547b5a06a35d200b5046b4086c8b688dc241b827646d9d25ee0c6159",
+    "revision": 32,
+    "stage": "outcome",
+    "status": "rejected",
+    "createdAt": 1791947432420,
+    "deadline": 1791947666657,
+    "calls": 5,
+    "fence": 5,
+    "leaseUntil": 0,
+    "results": {
+      "chief": {
+        "stage": "chief",
+        "delegate": "website-visual-qa",
+        "note": "Perform a read-only visual inspection of Legal dashboard imagery at /industries/legal and the Growth pricing badge at /#pricing on the scoped preview. Capture four fresh screenshots: desktop and mobile for each path. Ground findings in visible screenshot evidence, distinguish observations from uncertainty, and prepare evidence for blind observation and independent adjudication. Do not modify the site, expand scope, or retry automatically.",
+        "contractVersion": "chief-intent-v2",
+        "bindingHash": "e3b5c3c445df0aa6db430b1548b45c8cb6382ba6a043a191ba5fa3cc1df466cb",
+        "executionId": "exec_ef7f4017174d479dbd38c5cc5757a038"
+      },
+      "specialist": {
+        "findings": [
+          {
+            "code": "LEGAL_DESKTOP_SAMPLE",
+            "imageId": "I1",
+            "note": "The Legal section shows a CallerCore / Calls dashboard with call-log rows and the caption “Dashboard sample · Example data,” including entries such as appliance repair and vehicle service."
+          },
+          {
+            "code": "LEGAL_MOBILE_IMAGE_SCALE",
+            "imageId": "I2",
+            "note": "The mobile Legal section shows the dashboard scaled into a narrow card, with very small internal table text and a readable “Dashboard sample · Example data” caption below."
+          },
+          {
+            "code": "GROWTH_DESKTOP_HEADING_OVERLAP",
+            "imageId": "I3",
+            "note": "The “Built to grow” badge overlaps the “Growth” heading, while the $599/mo price remains visibly separate below."
+          },
+          {
+            "code": "GROWTH_MOBILE_HEADING_OVERLAP",
+            "imageId": "I4",
+            "note": "The mobile Growth card shows the “Built to grow” badge overlapping the “Growth” heading, not the $599/mo price below."
+          }
+        ],
+        "note": "Inspection is limited to visible content in the four supplied images; no site interaction, fresh capture, or independent adjudication was performed.",
+        "executionId": "exec_4171dbd189af42cf9d2ee7fffbc1ab50",
+        "findingsHash": "53aafbc5731e69c62ffcb33fe9c1b548d54a6a983f72d523c33eb6fc00bdb40d",
+        "evidenceHash": "b4c4fedbba574a5cadf659efe21e1a5d45b135b6126b52f36ce57391e36e1ba8"
+      },
+      "observation": {
+        "result": {
+          "stage": "observe",
+          "facts": [
+            {
+              "id": "O1",
+              "imageId": "I1",
+              "region": [
+                0.07,
+                0.016,
+                0.931,
+                0.06
+              ],
+              "observed": "The header shows CallerCore, desktop navigation links, and a rust-colored “Get CallerCore” button.",
+              "readability": "clear",
+              "uncertainty": ""
+            },
+            {
+              "id": "O2",
+              "imageId": "I1",
+              "region": [
+                0.082,
+                0.091,
+                0.658,
+                0.725
+              ],
+              "observed": "The page shows “The call can end without the inquiry getting lost.” Below it are “Review the first contact on your terms.”, intake-related copy, and a “Try it yourself” link.",
+              "readability": "clear",
+              "uncertainty": ""
+            },
+            {
+              "id": "O3",
+              "imageId": "I1",
+              "region": [
+                0.448,
+                0.281,
+                0.917,
+                0.833
+              ],
+              "observed": "A framed call-log preview has “CallerCore / Calls” and “Expand ↗” above it, with “Dashboard sample · Example data” below.",
+              "readability": "limited",
+              "uncertainty": "The frame labels are readable; much of the embedded dashboard text is too small to read reliably."
+            },
+            {
+              "id": "O4",
+              "imageId": "I2",
+              "region": [
+                0,
+                0,
+                1,
+                0.351
+              ],
+              "observed": "The mobile header shows CallerCore and a Menu button. Immediately beneath it, only the ending heading line “contact on your terms.” is visible, followed by intake copy and “Try it yourself”.",
+              "readability": "clear",
+              "uncertainty": ""
+            },
+            {
+              "id": "O5",
+              "imageId": "I2",
+              "region": [
+                0.06,
+                0.393,
+                0.942,
+                0.937
+              ],
+              "observed": "A call-log preview sits above “Dashboard sample · Example data”. Below is “Built around the way your firm receives inquiries” and a list including solo practices, small firms, multi-attorney teams, and client intake staff.",
+              "readability": "limited",
+              "uncertainty": "The surrounding text is readable, but the embedded dashboard's small text is largely unreadable."
+            },
+            {
+              "id": "O6",
+              "imageId": "I3",
+              "region": [
+                0.089,
+                0.162,
+                0.911,
+                0.842
+              ],
+              "observed": "The plans section shows “A plan for your kind of busy.” and three side-by-side cards: Starter at $349/mo, Growth at $599/mo, and Pro at $999/mo, each with a choose button.",
+              "readability": "clear",
+              "uncertainty": ""
+            },
+            {
+              "id": "O7",
+              "imageId": "I3",
+              "region": [
+                0.372,
+                0.386,
+                0.597,
+                0.416
+              ],
+              "observed": "In the Growth card, the Growth title overlaps small lettering inside a pale rust-colored horizontal badge.",
+              "readability": "limited",
+              "uncertainty": "The overlapping badge lettering cannot be read confidently."
+            },
+            {
+              "id": "O8",
+              "imageId": "I3",
+              "region": [
+                0.089,
+                0.887,
+                0.333,
+                0.909
+              ],
+              "observed": "Below the pricing cards, a line reads “Professional setup: $500 one-time, billed at checkout.”",
+              "readability": "clear",
+              "uncertainty": ""
+            },
+            {
+              "id": "O9",
+              "imageId": "I4",
+              "region": [
+                0.051,
+                0.076,
+                0.949,
+                0.496
+              ],
+              "observed": "Beneath the mobile header, the visible portion of a pricing card shows $349/mo, “300 included minutes · 1 location”, four feature lines, and “Choose Starter →”. The card title is not visible.",
+              "readability": "clear",
+              "uncertainty": ""
+            },
+            {
+              "id": "O10",
+              "imageId": "I4",
+              "region": [
+                0.051,
+                0.513,
+                0.949,
+                0.999
+              ],
+              "observed": "A rust-outlined Growth card shows $599/mo, “600 included minutes · up to 2 locations”, feature lines, and “Choose Growth →”. Its title overlaps small text on a pale badge.",
+              "readability": "limited",
+              "uncertainty": "The overlapping badge text is not reliably readable; the price, feature lines, and button label are readable."
+            }
+          ],
+          "note": "All four images were observed independently. These facts describe visible content and clipping only; they do not establish interactions, functionality, or the cause of overlapping text."
+        },
+        "hash": "2e26dc9521a6c74642ef7fcaf34aeaac7676fea96643c7f5f4cfa88bec0de0fd",
+        "evidenceHash": "b4c4fedbba574a5cadf659efe21e1a5d45b135b6126b52f36ce57391e36e1ba8",
+        "executionId": "exec_7b824c35460d463c90a131039ec25fba",
+        "sealedAt": 1791947514221
+      },
+      "qa": {
+        "result": {
+          "stage": "adjudicate",
+          "findings": [
+            {
+              "code": "LEGAL_DESKTOP_SAMPLE",
+              "decision": "reject",
+              "atoms": [
+                {
+                  "id": "C1A1",
+                  "support": "insufficient",
+                  "probability": 0.5,
+                  "reason": "The CallerCore / Calls preview, call-log rows, and example-data caption are visible, but the claimed appliance-repair and vehicle-service entries are not reliably established.",
+                  "observations": [
+                    "O3"
+                  ],
+                  "evidence": [
+                    {
+                      "imageId": "I1",
+                      "region": [
+                        0.448,
+                        0.281,
+                        0.917,
+                        0.833
+                      ]
+                    }
+                  ],
+                  "uncertainty": "Embedded dashboard text is too small to verify both named entry types confidently."
+                }
+              ]
+            },
+            {
+              "code": "LEGAL_MOBILE_IMAGE_SCALE",
+              "decision": "accept",
+              "atoms": [
+                {
+                  "id": "C2A1",
+                  "support": "supported",
+                  "probability": 0.96,
+                  "reason": "The mobile call-log dashboard occupies a narrow card; its internal table text is very small, while the example-data caption below is readable.",
+                  "observations": [
+                    "O5"
+                  ],
+                  "evidence": [
+                    {
+                      "imageId": "I2",
+                      "region": [
+                        0.06,
+                        0.393,
+                        0.942,
+                        0.712
+                      ]
+                    }
+                  ],
+                  "uncertainty": ""
+                }
+              ]
+            },
+            {
+              "code": "GROWTH_DESKTOP_HEADING_OVERLAP",
+              "decision": "reject",
+              "atoms": [
+                {
+                  "id": "C3A1",
+                  "support": "insufficient",
+                  "probability": 0.5,
+                  "reason": "The Growth heading visibly overlaps badge lettering, and $599/mo is separate below. The badge's exact wording is not reliably readable.",
+                  "observations": [
+                    "O6",
+                    "O7"
+                  ],
+                  "evidence": [
+                    {
+                      "imageId": "I3",
+                      "region": [
+                        0.372,
+                        0.386,
+                        0.613,
+                        0.49
+                      ]
+                    }
+                  ],
+                  "uncertainty": "The overlap obscures lettering needed to verify the exact phrase “Built to grow”; geometry does not resolve its readability."
+                }
+              ]
+            },
+            {
+              "code": "GROWTH_MOBILE_HEADING_OVERLAP",
+              "decision": "reject",
+              "atoms": [
+                {
+                  "id": "C4A1",
+                  "support": "insufficient",
+                  "probability": 0.5,
+                  "reason": "The mobile Growth heading overlaps small badge text, while $599/mo remains separate below. The exact badge wording cannot be confidently verified.",
+                  "observations": [
+                    "O10"
+                  ],
+                  "evidence": [
+                    {
+                      "imageId": "I4",
+                      "region": [
+                        0.055,
+                        0.55,
+                        0.895,
+                        0.65
+                      ]
+                    }
+                  ],
+                  "uncertainty": "Overlapping badge lettering is not reliably readable as “Built to grow”; spatial measurements cannot establish the obscured wording."
+                }
+              ]
+            }
+          ],
+          "note": "Visible layout subfacts are preserved. Claims requiring unreadable entry or badge text remain insufficient; supplied geometry was not treated as independent proof of text content."
+        },
+        "hash": "8d9c2e8ad0351235dfd92e8305ffb9dab1e0eaf9e00d60989bee4d0fd9a5dbce",
+        "observationHash": "2e26dc9521a6c74642ef7fcaf34aeaac7676fea96643c7f5f4cfa88bec0de0fd",
+        "evidenceHash": "b4c4fedbba574a5cadf659efe21e1a5d45b135b6126b52f36ce57391e36e1ba8",
+        "executionId": "exec_4cab05ffd7d34d1db468647e6a3651a5"
+      },
+      "acceptance": {
+        "expectedRevision": 25,
+        "executionId": "exec_b7ee1d1119064108a640b8d72af1d3f2",
+        "verdictHash": "8d9c2e8ad0351235dfd92e8305ffb9dab1e0eaf9e00d60989bee4d0fd9a5dbce",
+        "observationHash": "2e26dc9521a6c74642ef7fcaf34aeaac7676fea96643c7f5f4cfa88bec0de0fd",
+        "evidenceHash": "b4c4fedbba574a5cadf659efe21e1a5d45b135b6126b52f36ce57391e36e1ba8",
+        "accepted": false,
+        "reason": "Independent acceptance is withheld: rejected, uncertain, or non-measurable findings require a trusted substantive reviewer. Model agreement alone does not establish acceptance.",
+        "actor": "independent-acceptance",
+        "at": 1791947551531
+      },
+      "chiefReview": {
+        "contractVersion": "chief-report-v2",
+        "stage": "chief_review",
+        "snapshotHash": "bdf25379a3c2e28f5ec702fab864cf43f92a810c71caa0b0fdbdebc006bedb54",
+        "overallStatus": "not-accepted",
+        "summary": "Model QA findings: 1 accepted, 0 rejected, 3 unresolved. Independent workflow acceptance: not accepted.",
+        "findings": [
+          {
+            "code": "LEGAL_DESKTOP_SAMPLE",
+            "imageId": "I1",
+            "originalFinding": "The Legal section shows a CallerCore / Calls dashboard with call-log rows and the caption “Dashboard sample · Example data,” including entries such as appliance repair and vehicle service.",
+            "qaDecision": "reject",
+            "qaDisposition": "unresolved",
+            "atoms": [
+              {
+                "claim": "The Legal section shows a CallerCore / Calls dashboard with call-log rows and the caption “Dashboard sample · Example data,” including entries such as appliance repair and vehicle service.",
+                "id": "C1A1",
+                "support": "insufficient",
+                "probability": 0.5,
+                "reason": "The CallerCore / Calls preview, call-log rows, and example-data caption are visible, but the claimed appliance-repair and vehicle-service entries are not reliably established.",
+                "observations": [
+                  "O3"
+                ],
+                "evidence": [
+                  {
+                    "imageId": "I1",
+                    "region": [
+                      0.448,
+                      0.281,
+                      0.917,
+                      0.833
+                    ]
+                  }
+                ],
+                "uncertainty": "Embedded dashboard text is too small to verify both named entry types confidently."
+              }
+            ]
+          },
+          {
+            "code": "LEGAL_MOBILE_IMAGE_SCALE",
+            "imageId": "I2",
+            "originalFinding": "The mobile Legal section shows the dashboard scaled into a narrow card, with very small internal table text and a readable “Dashboard sample · Example data” caption below.",
+            "qaDecision": "accept",
+            "qaDisposition": "accepted",
+            "atoms": [
+              {
+                "claim": "The mobile Legal section shows the dashboard scaled into a narrow card, with very small internal table text and a readable “Dashboard sample · Example data” caption below.",
+                "id": "C2A1",
+                "support": "supported",
+                "probability": 0.96,
+                "reason": "The mobile call-log dashboard occupies a narrow card; its internal table text is very small, while the example-data caption below is readable.",
+                "observations": [
+                  "O5"
+                ],
+                "evidence": [
+                  {
+                    "imageId": "I2",
+                    "region": [
+                      0.06,
+                      0.393,
+                      0.942,
+                      0.712
+                    ]
+                  }
+                ],
+                "uncertainty": ""
+              }
+            ]
+          },
+          {
+            "code": "GROWTH_DESKTOP_HEADING_OVERLAP",
+            "imageId": "I3",
+            "originalFinding": "The “Built to grow” badge overlaps the “Growth” heading, while the $599/mo price remains visibly separate below.",
+            "qaDecision": "reject",
+            "qaDisposition": "unresolved",
+            "atoms": [
+              {
+                "claim": "The “Built to grow” badge overlaps the “Growth” heading, while the $599/mo price remains visibly separate below.",
+                "id": "C3A1",
+                "support": "insufficient",
+                "probability": 0.5,
+                "reason": "The Growth heading visibly overlaps badge lettering, and $599/mo is separate below. The badge's exact wording is not reliably readable.",
+                "observations": [
+                  "O6",
+                  "O7"
+                ],
+                "evidence": [
+                  {
+                    "imageId": "I3",
+                    "region": [
+                      0.372,
+                      0.386,
+                      0.613,
+                      0.49
+                    ]
+                  }
+                ],
+                "uncertainty": "The overlap obscures lettering needed to verify the exact phrase “Built to grow”; geometry does not resolve its readability."
+              }
+            ]
+          },
+          {
+            "code": "GROWTH_MOBILE_HEADING_OVERLAP",
+            "imageId": "I4",
+            "originalFinding": "The mobile Growth card shows the “Built to grow” badge overlapping the “Growth” heading, not the $599/mo price below.",
+            "qaDecision": "reject",
+            "qaDisposition": "unresolved",
+            "atoms": [
+              {
+                "claim": "The mobile Growth card shows the “Built to grow” badge overlapping the “Growth” heading, not the $599/mo price below.",
+                "id": "C4A1",
+                "support": "insufficient",
+                "probability": 0.5,
+                "reason": "The mobile Growth heading overlaps small badge text, while $599/mo remains separate below. The exact badge wording cannot be confidently verified.",
+                "observations": [
+                  "O10"
+                ],
+                "evidence": [
+                  {
+                    "imageId": "I4",
+                    "region": [
+                      0.055,
+                      0.55,
+                      0.895,
+                      0.65
+                    ]
+                  }
+                ],
+                "uncertainty": "Overlapping badge lettering is not reliably readable as “Built to grow”; spatial measurements cannot establish the obscured wording."
+              }
+            ]
+          }
+        ],
+        "independentAcceptance": {
+          "accepted": false,
+          "reason": "Independent acceptance is withheld: rejected, uncertain, or non-measurable findings require a trusted substantive reviewer. Model agreement alone does not establish acceptance.",
+          "geometryConflicts": [],
+          "geometryProvenance": "capture-time"
+        },
+        "authoritativeBinding": {
+          "version": "chief-report-v2",
+          "workflowId": "wf_66960665244af030469b00672dead78e",
+          "scopeHash": "02601501cd10466210bf3501af4a8320229cb0fb52e447338535de8935390cdf",
+          "evidenceHash": "b4c4fedbba574a5cadf659efe21e1a5d45b135b6126b52f36ce57391e36e1ba8",
+          "specialistHash": "53aafbc5731e69c62ffcb33fe9c1b548d54a6a983f72d523c33eb6fc00bdb40d",
+          "observationHash": "2e26dc9521a6c74642ef7fcaf34aeaac7676fea96643c7f5f4cfa88bec0de0fd",
+          "qaHash": "8d9c2e8ad0351235dfd92e8305ffb9dab1e0eaf9e00d60989bee4d0fd9a5dbce",
+          "acceptanceHash": "360d5e1847b041d3c347120d053b77283770d2163ebefa1968dc665d00a0418d",
+          "geometryHash": "15fb2f87eb0e040ba87d03dd94b1255c3b6b69fd496a24a509718adbf4d86afc",
+          "outcomesHash": "2f8c5a5bf0d5df9cdf76a13758c11b6cac517c12786ccf6b6fa850d4cdc45cea"
+        },
+        "executionId": "exec_c9b294c740904becab4537df436eac09"
+      }
+    },
+    "outcomes": {
+      "execution": "completed",
+      "structural": "passed",
+      "integrity": "passed",
+      "substantive": "failed",
+      "finalAcceptance": "rejected",
+      "acceptedWork": false,
+      "rejected": 3,
+      "geometryConflicts": []
+    },
+    "evidence": {
+      "workflowId": "wf_66960665244af030469b00672dead78e",
+      "sourceCommit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+      "executionId": "exec_4171dbd189af42cf9d2ee7fffbc1ab50",
+      "images": [
+        {
+          "id": "I1",
+          "sha256": "f1a9288f42f11a8412aa23aa7186219d44ebea88c835ae3199ca3f1521a9ee75",
+          "viewport": 1440,
+          "height": 1000,
+          "capturedAt": 1791947457459,
+          "executionId": "exec_4171dbd189af42cf9d2ee7fffbc1ab50",
+          "sourceCommit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+          "provenance": "fresh-preview"
+        },
+        {
+          "id": "I2",
+          "sha256": "bc441703c4d4d0c8387be50125e6addf8e94744661d882c33d3fb1c8ead64d59",
+          "viewport": 390,
+          "height": 1000,
+          "capturedAt": 1791947458704,
+          "executionId": "exec_4171dbd189af42cf9d2ee7fffbc1ab50",
+          "sourceCommit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+          "provenance": "fresh-preview"
+        },
+        {
+          "id": "I3",
+          "sha256": "6634d5f72ae0489921e9d5813954f3749321b76f1bb067980a4eedbba65e9fe8",
+          "viewport": 1440,
+          "height": 1000,
+          "capturedAt": 1791947460486,
+          "executionId": "exec_4171dbd189af42cf9d2ee7fffbc1ab50",
+          "sourceCommit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+          "provenance": "fresh-preview"
+        },
+        {
+          "id": "I4",
+          "sha256": "c5233fc73c0a7c3d4907ed5ef1a10f05ff287d20bf0d347cac9d91a151b625f6",
+          "viewport": 390,
+          "height": 1000,
+          "capturedAt": 1791947462479,
+          "executionId": "exec_4171dbd189af42cf9d2ee7fffbc1ab50",
+          "sourceCommit": "8133597ff2fc5b48e3de42336e9e06fa4191c2a8",
+          "provenance": "fresh-preview"
+        }
+      ],
+      "hash": "b4c4fedbba574a5cadf659efe21e1a5d45b135b6126b52f36ce57391e36e1ba8"
+    },
+    "geometry": {
+      "status": "measured",
+      "provenance": "capture-time",
+      "hash": "d012f2a4baadee381f769cbab49de98e26541e9dad0db101531fd72fe50ec37a",
+      "results": [
+        {
+          "imageId": "I3",
+          "headingOverlap": true,
+          "priceOverlap": false,
+          "priceGap": 19.890625
+        },
+        {
+          "imageId": "I4",
+          "headingOverlap": true,
+          "priceOverlap": false,
+          "priceGap": 12.6875
+        }
+      ],
+      "measurements": [
+        {
+          "imageId": "I3",
+          "samples": [
+            {
+              "viewport": {
+                "width": 1440,
+                "height": 1000,
+                "dpr": 1,
+                "scrollY": 3433
+              },
+              "card": {
+                "x": 531.328125,
+                "y": 336.125,
+                "width": 377.328125,
+                "height": 504.390625,
+                "right": 908.65625,
+                "bottom": 840.515625
+              },
+              "badge": {
+                "count": 1,
+                "text": "Built to grow",
+                "box": {
+                  "x": 536.328125,
+                  "y": 387.125,
+                  "width": 323.328125,
+                  "height": 27.5,
+                  "right": 859.65625,
+                  "bottom": 414.625
+                },
+                "textRects": [
+                  {
+                    "x": 546.328125,
+                    "y": 395.125,
+                    "width": 87.828125,
+                    "height": 11,
+                    "right": 634.15625,
+                    "bottom": 406.125
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "10px",
+                  "lineHeight": "15.5px",
+                  "transform": "none"
+                }
+              },
+              "heading": {
+                "count": 1,
+                "text": "Growth",
+                "box": {
+                  "x": 558.328125,
+                  "y": 390.625,
+                  "width": 323.328125,
+                  "height": 27.890625,
+                  "right": 881.65625,
+                  "bottom": 418.515625
+                },
+                "textRects": [
+                  {
+                    "x": 558.328125,
+                    "y": 393.625,
+                    "width": 63,
+                    "height": 20,
+                    "right": 621.328125,
+                    "bottom": 413.625
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "18px",
+                  "lineHeight": "27.9px",
+                  "transform": "none"
+                }
+              },
+              "price": {
+                "count": 1,
+                "text": "$599/mo",
+                "box": {
+                  "x": 558.328125,
+                  "y": 434.515625,
+                  "width": 323.328125,
+                  "height": 48,
+                  "right": 881.65625,
+                  "bottom": 482.515625
+                },
+                "textRects": [
+                  {
+                    "x": 558.328125,
+                    "y": 430.515625,
+                    "width": 90.96875,
+                    "height": 55,
+                    "right": 649.296875,
+                    "bottom": 485.515625
+                  },
+                  {
+                    "x": 649.296875,
+                    "y": 459.515625,
+                    "width": 20.484375,
+                    "height": 18,
+                    "right": 669.78125,
+                    "bottom": 477.515625
+                  },
+                  {
+                    "x": 649.296875,
+                    "y": 459.515625,
+                    "width": 20.484375,
+                    "height": 18,
+                    "right": 669.78125,
+                    "bottom": 477.515625
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Manrope, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "40px",
+                  "lineHeight": "48px",
+                  "transform": "none"
+                }
+              },
+              "fontsLoaded": true,
+              "fontCheck": true
+            },
+            {
+              "viewport": {
+                "width": 1440,
+                "height": 1000,
+                "dpr": 1,
+                "scrollY": 3433
+              },
+              "card": {
+                "x": 531.328125,
+                "y": 336.125,
+                "width": 377.328125,
+                "height": 504.390625,
+                "right": 908.65625,
+                "bottom": 840.515625
+              },
+              "badge": {
+                "count": 1,
+                "text": "Built to grow",
+                "box": {
+                  "x": 536.328125,
+                  "y": 387.125,
+                  "width": 323.328125,
+                  "height": 27.5,
+                  "right": 859.65625,
+                  "bottom": 414.625
+                },
+                "textRects": [
+                  {
+                    "x": 546.328125,
+                    "y": 395.125,
+                    "width": 87.828125,
+                    "height": 11,
+                    "right": 634.15625,
+                    "bottom": 406.125
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "10px",
+                  "lineHeight": "15.5px",
+                  "transform": "none"
+                }
+              },
+              "heading": {
+                "count": 1,
+                "text": "Growth",
+                "box": {
+                  "x": 558.328125,
+                  "y": 390.625,
+                  "width": 323.328125,
+                  "height": 27.890625,
+                  "right": 881.65625,
+                  "bottom": 418.515625
+                },
+                "textRects": [
+                  {
+                    "x": 558.328125,
+                    "y": 393.625,
+                    "width": 63,
+                    "height": 20,
+                    "right": 621.328125,
+                    "bottom": 413.625
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "18px",
+                  "lineHeight": "27.9px",
+                  "transform": "none"
+                }
+              },
+              "price": {
+                "count": 1,
+                "text": "$599/mo",
+                "box": {
+                  "x": 558.328125,
+                  "y": 434.515625,
+                  "width": 323.328125,
+                  "height": 48,
+                  "right": 881.65625,
+                  "bottom": 482.515625
+                },
+                "textRects": [
+                  {
+                    "x": 558.328125,
+                    "y": 430.515625,
+                    "width": 90.96875,
+                    "height": 55,
+                    "right": 649.296875,
+                    "bottom": 485.515625
+                  },
+                  {
+                    "x": 649.296875,
+                    "y": 459.515625,
+                    "width": 20.484375,
+                    "height": 18,
+                    "right": 669.78125,
+                    "bottom": 477.515625
+                  },
+                  {
+                    "x": 649.296875,
+                    "y": 459.515625,
+                    "width": 20.484375,
+                    "height": 18,
+                    "right": 669.78125,
+                    "bottom": 477.515625
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Manrope, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "40px",
+                  "lineHeight": "48px",
+                  "transform": "none"
+                }
+              },
+              "fontsLoaded": true,
+              "fontCheck": true
+            },
+            {
+              "viewport": {
+                "width": 1440,
+                "height": 1000,
+                "dpr": 1,
+                "scrollY": 3433
+              },
+              "card": {
+                "x": 531.328125,
+                "y": 336.125,
+                "width": 377.328125,
+                "height": 504.390625,
+                "right": 908.65625,
+                "bottom": 840.515625
+              },
+              "badge": {
+                "count": 1,
+                "text": "Built to grow",
+                "box": {
+                  "x": 536.328125,
+                  "y": 387.125,
+                  "width": 323.328125,
+                  "height": 27.5,
+                  "right": 859.65625,
+                  "bottom": 414.625
+                },
+                "textRects": [
+                  {
+                    "x": 546.328125,
+                    "y": 395.125,
+                    "width": 87.828125,
+                    "height": 11,
+                    "right": 634.15625,
+                    "bottom": 406.125
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "10px",
+                  "lineHeight": "15.5px",
+                  "transform": "none"
+                }
+              },
+              "heading": {
+                "count": 1,
+                "text": "Growth",
+                "box": {
+                  "x": 558.328125,
+                  "y": 390.625,
+                  "width": 323.328125,
+                  "height": 27.890625,
+                  "right": 881.65625,
+                  "bottom": 418.515625
+                },
+                "textRects": [
+                  {
+                    "x": 558.328125,
+                    "y": 393.625,
+                    "width": 63,
+                    "height": 20,
+                    "right": 621.328125,
+                    "bottom": 413.625
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "18px",
+                  "lineHeight": "27.9px",
+                  "transform": "none"
+                }
+              },
+              "price": {
+                "count": 1,
+                "text": "$599/mo",
+                "box": {
+                  "x": 558.328125,
+                  "y": 434.515625,
+                  "width": 323.328125,
+                  "height": 48,
+                  "right": 881.65625,
+                  "bottom": 482.515625
+                },
+                "textRects": [
+                  {
+                    "x": 558.328125,
+                    "y": 430.515625,
+                    "width": 90.96875,
+                    "height": 55,
+                    "right": 649.296875,
+                    "bottom": 485.515625
+                  },
+                  {
+                    "x": 649.296875,
+                    "y": 459.515625,
+                    "width": 20.484375,
+                    "height": 18,
+                    "right": 669.78125,
+                    "bottom": 477.515625
+                  },
+                  {
+                    "x": 649.296875,
+                    "y": 459.515625,
+                    "width": 20.484375,
+                    "height": 18,
+                    "right": 669.78125,
+                    "bottom": 477.515625
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Manrope, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "40px",
+                  "lineHeight": "48px",
+                  "transform": "none"
+                }
+              },
+              "fontsLoaded": true,
+              "fontCheck": true
+            }
+          ]
+        },
+        {
+          "imageId": "I4",
+          "samples": [
+            {
+              "viewport": {
+                "width": 390,
+                "height": 1000,
+                "dpr": 1,
+                "scrollY": 4649
+              },
+              "card": {
+                "x": 20,
+                "y": 512.1875,
+                "width": 350,
+                "height": 487.5625,
+                "right": 370,
+                "bottom": 999.75
+              },
+              "badge": {
+                "count": 1,
+                "text": "Built to grow",
+                "box": {
+                  "x": 22,
+                  "y": 559.1875,
+                  "width": 306,
+                  "height": 27.5,
+                  "right": 328,
+                  "bottom": 586.6875
+                },
+                "textRects": [
+                  {
+                    "x": 32,
+                    "y": 567.1875,
+                    "width": 87.828125,
+                    "height": 11,
+                    "right": 119.828125,
+                    "bottom": 578.1875
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "10px",
+                  "lineHeight": "15.5px",
+                  "transform": "none"
+                }
+              },
+              "heading": {
+                "count": 1,
+                "text": "Growth",
+                "box": {
+                  "x": 42,
+                  "y": 563.6875,
+                  "width": 306,
+                  "height": 21.6875,
+                  "right": 348,
+                  "bottom": 585.375
+                },
+                "textRects": [
+                  {
+                    "x": 42,
+                    "y": 565.6875,
+                    "width": 49,
+                    "height": 16,
+                    "right": 91,
+                    "bottom": 581.6875
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "14px",
+                  "lineHeight": "21.7px",
+                  "transform": "none"
+                }
+              },
+              "price": {
+                "count": 1,
+                "text": "$599/mo",
+                "box": {
+                  "x": 42,
+                  "y": 599.375,
+                  "width": 306,
+                  "height": 43.1875,
+                  "right": 348,
+                  "bottom": 642.5625
+                },
+                "textRects": [
+                  {
+                    "x": 42,
+                    "y": 596.375,
+                    "width": 81.875,
+                    "height": 49,
+                    "right": 123.875,
+                    "bottom": 645.375
+                  },
+                  {
+                    "x": 123.875,
+                    "y": 620.375,
+                    "width": 21.078125,
+                    "height": 18,
+                    "right": 144.953125,
+                    "bottom": 638.375
+                  },
+                  {
+                    "x": 123.875,
+                    "y": 620.375,
+                    "width": 21.078125,
+                    "height": 18,
+                    "right": 144.953125,
+                    "bottom": 638.375
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Manrope, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "36px",
+                  "lineHeight": "43.2px",
+                  "transform": "none"
+                }
+              },
+              "fontsLoaded": true,
+              "fontCheck": true
+            },
+            {
+              "viewport": {
+                "width": 390,
+                "height": 1000,
+                "dpr": 1,
+                "scrollY": 4649
+              },
+              "card": {
+                "x": 20,
+                "y": 512.1875,
+                "width": 350,
+                "height": 487.5625,
+                "right": 370,
+                "bottom": 999.75
+              },
+              "badge": {
+                "count": 1,
+                "text": "Built to grow",
+                "box": {
+                  "x": 22,
+                  "y": 559.1875,
+                  "width": 306,
+                  "height": 27.5,
+                  "right": 328,
+                  "bottom": 586.6875
+                },
+                "textRects": [
+                  {
+                    "x": 32,
+                    "y": 567.1875,
+                    "width": 87.828125,
+                    "height": 11,
+                    "right": 119.828125,
+                    "bottom": 578.1875
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "10px",
+                  "lineHeight": "15.5px",
+                  "transform": "none"
+                }
+              },
+              "heading": {
+                "count": 1,
+                "text": "Growth",
+                "box": {
+                  "x": 42,
+                  "y": 563.6875,
+                  "width": 306,
+                  "height": 21.6875,
+                  "right": 348,
+                  "bottom": 585.375
+                },
+                "textRects": [
+                  {
+                    "x": 42,
+                    "y": 565.6875,
+                    "width": 49,
+                    "height": 16,
+                    "right": 91,
+                    "bottom": 581.6875
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "14px",
+                  "lineHeight": "21.7px",
+                  "transform": "none"
+                }
+              },
+              "price": {
+                "count": 1,
+                "text": "$599/mo",
+                "box": {
+                  "x": 42,
+                  "y": 599.375,
+                  "width": 306,
+                  "height": 43.1875,
+                  "right": 348,
+                  "bottom": 642.5625
+                },
+                "textRects": [
+                  {
+                    "x": 42,
+                    "y": 596.375,
+                    "width": 81.875,
+                    "height": 49,
+                    "right": 123.875,
+                    "bottom": 645.375
+                  },
+                  {
+                    "x": 123.875,
+                    "y": 620.375,
+                    "width": 21.078125,
+                    "height": 18,
+                    "right": 144.953125,
+                    "bottom": 638.375
+                  },
+                  {
+                    "x": 123.875,
+                    "y": 620.375,
+                    "width": 21.078125,
+                    "height": 18,
+                    "right": 144.953125,
+                    "bottom": 638.375
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Manrope, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "36px",
+                  "lineHeight": "43.2px",
+                  "transform": "none"
+                }
+              },
+              "fontsLoaded": true,
+              "fontCheck": true
+            },
+            {
+              "viewport": {
+                "width": 390,
+                "height": 1000,
+                "dpr": 1,
+                "scrollY": 4649
+              },
+              "card": {
+                "x": 20,
+                "y": 512.1875,
+                "width": 350,
+                "height": 487.5625,
+                "right": 370,
+                "bottom": 999.75
+              },
+              "badge": {
+                "count": 1,
+                "text": "Built to grow",
+                "box": {
+                  "x": 22,
+                  "y": 559.1875,
+                  "width": 306,
+                  "height": 27.5,
+                  "right": 328,
+                  "bottom": 586.6875
+                },
+                "textRects": [
+                  {
+                    "x": 32,
+                    "y": 567.1875,
+                    "width": 87.828125,
+                    "height": 11,
+                    "right": 119.828125,
+                    "bottom": 578.1875
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "10px",
+                  "lineHeight": "15.5px",
+                  "transform": "none"
+                }
+              },
+              "heading": {
+                "count": 1,
+                "text": "Growth",
+                "box": {
+                  "x": 42,
+                  "y": 563.6875,
+                  "width": 306,
+                  "height": 21.6875,
+                  "right": 348,
+                  "bottom": 585.375
+                },
+                "textRects": [
+                  {
+                    "x": 42,
+                    "y": 565.6875,
+                    "width": 49,
+                    "height": 16,
+                    "right": 91,
+                    "bottom": 581.6875
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Arial, Helvetica, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "14px",
+                  "lineHeight": "21.7px",
+                  "transform": "none"
+                }
+              },
+              "price": {
+                "count": 1,
+                "text": "$599/mo",
+                "box": {
+                  "x": 42,
+                  "y": 599.375,
+                  "width": 306,
+                  "height": 43.1875,
+                  "right": 348,
+                  "bottom": 642.5625
+                },
+                "textRects": [
+                  {
+                    "x": 42,
+                    "y": 596.375,
+                    "width": 81.875,
+                    "height": 49,
+                    "right": 123.875,
+                    "bottom": 645.375
+                  },
+                  {
+                    "x": 123.875,
+                    "y": 620.375,
+                    "width": 21.078125,
+                    "height": 18,
+                    "right": 144.953125,
+                    "bottom": 638.375
+                  },
+                  {
+                    "x": 123.875,
+                    "y": 620.375,
+                    "width": 21.078125,
+                    "height": 18,
+                    "right": 144.953125,
+                    "bottom": 638.375
+                  }
+                ],
+                "style": {
+                  "opacity": "1",
+                  "visibility": "visible",
+                  "fontFamily": "Manrope, ui-sans-serif, system-ui, sans-serif",
+                  "fontSize": "36px",
+                  "lineHeight": "43.2px",
+                  "transform": "none"
+                }
+              },
+              "fontsLoaded": true,
+              "fontCheck": true
+            }
+          ]
+        }
+      ]
+    },
+    "claims": [
+      {
+        "code": "LEGAL_DESKTOP_SAMPLE",
+        "imageId": "I1",
+        "text": "The Legal section shows a CallerCore / Calls dashboard with call-log rows and the caption “Dashboard sample · Example data,” including entries such as appliance repair and vehicle service.",
+        "atoms": [
+          {
+            "id": "C1A1",
+            "text": "The Legal section shows a CallerCore / Calls dashboard with call-log rows and the caption “Dashboard sample · Example data,” including entries such as appliance repair and vehicle service."
+          }
+        ]
+      },
+      {
+        "code": "LEGAL_MOBILE_IMAGE_SCALE",
+        "imageId": "I2",
+        "text": "The mobile Legal section shows the dashboard scaled into a narrow card, with very small internal table text and a readable “Dashboard sample · Example data” caption below.",
+        "atoms": [
+          {
+            "id": "C2A1",
+            "text": "The mobile Legal section shows the dashboard scaled into a narrow card, with very small internal table text and a readable “Dashboard sample · Example data” caption below."
+          }
+        ]
+      },
+      {
+        "code": "GROWTH_DESKTOP_HEADING_OVERLAP",
+        "imageId": "I3",
+        "text": "The “Built to grow” badge overlaps the “Growth” heading, while the $599/mo price remains visibly separate below.",
+        "atoms": [
+          {
+            "id": "C3A1",
+            "text": "The “Built to grow” badge overlaps the “Growth” heading, while the $599/mo price remains visibly separate below."
+          }
+        ]
+      },
+      {
+        "code": "GROWTH_MOBILE_HEADING_OVERLAP",
+        "imageId": "I4",
+        "text": "The mobile Growth card shows the “Built to grow” badge overlapping the “Growth” heading, not the $599/mo price below.",
+        "atoms": [
+          {
+            "id": "C4A1",
+            "text": "The mobile Growth card shows the “Built to grow” badge overlapping the “Growth” heading, not the $599/mo price below."
+          }
+        ]
+      }
+    ],
+    "grantId": "grant_26d01e8f19174ccea5057a1bca99db55"
+  },
+  "originalOutcomesUnchanged": true,
+  "paidPermission": false,
+  "providerReceipts": [
+    {
+      "stage": "chief",
+      "executionId": "exec_ef7f4017174d479dbd38c5cc5757a038",
+      "status": "settled",
+      "actualMicros": 7756,
+      "diagnostic": {
+        "phase": "provider_output",
+        "requestAttempted": true,
+        "httpStatus": 200,
+        "requestId": "req_b3cce66268ee40629dae9e47c96be9ec",
+        "providerStatus": "completed",
+        "inputTokens": 3333,
+        "outputTokens": 109,
+        "reasoningTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "outputCharacters": 712,
+        "serviceTier": "default",
+        "refusalDetected": false,
+        "outputHash": "4deee7e42a9eb721df4fcfa117f5869ba45a1ea322fda51f9000f05e6dbd57fe",
+        "startedAt": 1791947438940,
+        "elapsedMs": 8947,
+        "providerElapsedMs": 7313,
+        "clientRequestId": "exec_ef7f4017174d479dbd38c5cc5757a038",
+        "responseId": "resp_04593fa280a3a76f016acef2b24cdc87d09bc36da8e0f4773d",
+        "usageValidated": true
+      }
+    },
+    {
+      "stage": "inspect",
+      "executionId": "exec_4171dbd189af42cf9d2ee7fffbc1ab50",
+      "status": "settled",
+      "actualMicros": 20386,
+      "diagnostic": {
+        "phase": "provider_output",
+        "requestAttempted": true,
+        "httpStatus": 200,
+        "requestId": "req_f86597fa42394aec895a04ca003c594f",
+        "providerStatus": "completed",
+        "inputTokens": 8958,
+        "outputTokens": 247,
+        "reasoningTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "outputCharacters": 1308,
+        "serviceTier": "default",
+        "refusalDetected": false,
+        "outputHash": "49774a20ae757ace8d51eb0c082fee0632c422606bb0a801eb874d530e6282a6",
+        "startedAt": 1791947465848,
+        "elapsedMs": 14371,
+        "providerElapsedMs": 12471,
+        "clientRequestId": "exec_4171dbd189af42cf9d2ee7fffbc1ab50",
+        "responseId": "resp_015dc0d4e57e210c016acef2cd166087d0abdf1fd83f996a12",
+        "usageValidated": true
+      }
+    },
+    {
+      "stage": "observe",
+      "executionId": "exec_7b824c35460d463c90a131039ec25fba",
+      "status": "settled",
+      "actualMicros": 22424,
+      "diagnostic": {
+        "phase": "provider_output",
+        "requestAttempted": true,
+        "httpStatus": 200,
+        "requestId": "req_84fd841bd0514e7096ca4e2238c88951",
+        "providerStatus": "completed",
+        "inputTokens": 5407,
+        "outputTokens": 1161,
+        "reasoningTokens": 24,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "outputCharacters": 6280,
+        "serviceTier": "default",
+        "refusalDetected": false,
+        "outputHash": "fecf8598c6fb4f6d1f89defd69ba399220a4c8e277094c008a0623e064fa863c",
+        "startedAt": 1791947487100,
+        "elapsedMs": 23857,
+        "providerElapsedMs": 21711,
+        "clientRequestId": "exec_7b824c35460d463c90a131039ec25fba",
+        "responseId": "resp_09767fcf09bc5c5a016acef2e2acc487d0bb375da051784954",
+        "usageValidated": true
+      }
+    },
+    {
+      "stage": "adjudicate",
+      "executionId": "exec_4cab05ffd7d34d1db468647e6a3651a5",
+      "status": "settled",
+      "actualMicros": 31024,
+      "diagnostic": {
+        "phase": "provider_output",
+        "requestAttempted": true,
+        "httpStatus": 200,
+        "requestId": "req_d55555f6900f4ddcbea4d6df7cddf170",
+        "providerStatus": "completed",
+        "inputTokens": 10527,
+        "outputTokens": 997,
+        "reasoningTokens": 235,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "outputCharacters": 8189,
+        "serviceTier": "default",
+        "refusalDetected": false,
+        "outputHash": "249ca18d2abd98d9ab0571d4e6156db88b91ab54989721260cc4959af4b1acc1",
+        "startedAt": 1791947517486,
+        "elapsedMs": 26045,
+        "providerElapsedMs": 24688,
+        "clientRequestId": "exec_4cab05ffd7d34d1db468647e6a3651a5",
+        "responseId": "resp_068b6569f60c3a17016acef301b28887d0bd1edf28a91786eb",
+        "usageValidated": true
+      }
+    },
+    {
+      "stage": "chief_review",
+      "executionId": "exec_c9b294c740904becab4537df436eac09",
+      "status": "settled",
+      "actualMicros": 16242,
+      "diagnostic": {
+        "phase": "provider_output",
+        "requestAttempted": true,
+        "httpStatus": 200,
+        "requestId": "req_061bfc0bada545e1bb0882cb1a5bc5e9",
+        "providerStatus": "completed",
+        "inputTokens": 3316,
+        "outputTokens": 961,
+        "reasoningTokens": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "outputCharacters": 4460,
+        "serviceTier": "default",
+        "refusalDetected": false,
+        "outputHash": "5e7306da0859fd336d95aa2808b735691449298b5cc83f662a3666c6371a09cc",
+        "startedAt": 1791947555297,
+        "elapsedMs": 23125,
+        "providerElapsedMs": 21455,
+        "clientRequestId": "exec_c9b294c740904becab4537df436eac09",
+        "responseId": "resp_0cb24011b15cf985016acef326158c87d097084b45043fa419",
+        "usageValidated": true
+      }
+    }
+  ]
+}

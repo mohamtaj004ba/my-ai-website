@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "052e2241d45f323def1a5484da373a5f0a7b0589d48e2d0280aa9bb0f9dda154",
+  "risk": "critical",
+  "scope": "Connect repository-wide immutable source discovery to the existing owner controller, one Chief-only model stage, historical receipts and scoped owner UI; package source privately and preserve public website assets.",
+  "riskAnalysis": "Broad source visibility is not write/test/publication authority. Only tracked policy-approved Git blobs enter a server-owned private snapshot. Owner/task/workspace/release/evidence/count/receipt binding and existing CAS/revocation remain authoritative. Discovery has one Chief stage, no implementation descriptor, tools, generated-code execution or acceptance.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Repository source confidentiality, provider credentials, owner/task/release identities, historical receipts, counted dispatch, public application assets and shutdown state.",
+    "trustBoundaries": "Tracked immutable Git blobs to private build asset; source policy to untrusted model; owner browser to existing API/CAS; automated Chief hypothesis versus independently authenticated acceptance.",
+    "abuseCases": "Private/static source exposure, data exports, forged source bytes, stale cursors, substituted workspace/model/task, extra stages/calls, resealed historical receipts, source leakage after account changes, credential extraction and fabricated acceptance.",
+    "mitigations": "Central path/content policy, exact blob hashes, private function include outside public-dist, linked asset graph, original source packet and attempt/request/result hashes, Chief-only one-time grant/count/Response, no tools/test profile, scoped UI clearing and existing cleanup."
+  },
+  "defects": [
+    {
+      "rootCause": "Existing implementation recipes and four-file capture could not admit broad Chief-selected repository discovery after their product fixes shipped.",
+      "detectionGap": "Earlier five-stage patch trials established supplied assignments, not autonomous source navigation and fresh problem selection.",
+      "regression": "Actual owner API/CAS/controller fixtures exercise inspect/investigate/hold, one counted Chief response, immutable evidence, revoked grants, malformed provider usage and denied generic execution; reader tests cover broad source and private packaging.",
+      "historicalPrevention": "Keep historical four-file and five-stage contracts unchanged; new read-only subtype explicitly declares one actual Chief stage and never implies fourteen autonomous agents or implementation acceptance."
+    },
+    {
+      "rootCause": "Independent probes found private public-copy candidates, UTF8 BOM loss, stale owner source displays and historical receipt linkage gaps; actual controller found string hash-domain mismatch.",
+      "detectionGap": "Unit reader and synthetic receipt tests alone missed frontend asset closure, account/runtime transitions and actual provider assignment serialization.",
+      "regression": "Original counterexamples retained; public graph excludes private files, BOM bytes roundtrip, font query URLs pass while userinfo fails, UI clears/restores across scope changes, and original provider assignment plus attempt/request/result binding is validated.",
+      "historicalPrevention": "One central reader/privacy policy; stored historical source is validated without latestpack and uses existing provider hash domain; no old evidence rewritten or security check relaxed."
+    }
+  ],
+  "rollback": "Keep paid execution disabled, revoke fresh grants/consent/sequence and retain all evidence. If hosted packaging fails, keep qualified381 feature alias and use reviewed feature successor repair; no Production/main changes or reuse of old approvals.",
+  "negativePaths": {
+    "malformed-response": "Strict source-discovery JSON and citation schema reject forged acceptance/malformed outputs; observed tokens remain in diagnostics with pending uncertainty and no automatic retry.",
+    "stale-state": "Exact trusted commit/release/task/packet and query-bound cursors; no current pack required for historical validation.",
+    "concurrency": "Existing owner CAS and serial sequence/grant checks; immutable packets and paged read-only retrieval; no parallel paid attempts.",
+    "cancellation": "Existing controller disconnect, cancellation, emergency stop and approval/consent revocation remain; no new executor or generated-code privileges.",
+    "worker-interruption": "One bounded provider stage uses existing cleanup; absence of a valid receipt is never model or workflow success. No Sandbox worker launched.",
+    "api-outage": "Unknown acknowledgments keep existing durable local journals; no paid or configuration retry; restore current UI controls without displaying late foreign results.",
+    "authorization-denial": "Non-owner/cross-workspace and substituted task denied; Chief-only one-count/one-Response limits; generic Ops fixture execution denied; implementation/tests/publication unavailable.",
+    "spending-limit": "Existing owner-directed provider-billing monitoring unchanged; no new internal financial cap, no invoice reconciliation claims, counting and interrupted usage uncertainty preserved.",
+    "partial-execution": "Usage survives schema failure; failure closes grants and attempts without fabricated artifacts. Chief inspect/hold is an honest one-stage result, not completed Specialist/QA/Auditor work."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing owner controller, transport, journal, counting, grants, consent and sequences; shared Git snapshot reader adds source coverage without replacing orchestration.",
+    "dependencies": "Built-in Node Git/zlib/fs only; no new provider, infrastructure, credentials or broad file execution. Public static assets are linked from existing frontend roots.",
+    "threats": "Independent reviewers reproduced privacy, crossscope UI and historical forgery counterexamples; mitigations preserve source/identity/authority separation.",
+    "failureModes": "Real controller tests exposed existing JSON-string versus raw-file hash domains; corrected only expected assignment hashing, never weaken exact source validation.",
+    "faultInjection": "Unsafe paths, secret-like data, symlinks/gitlinks, forged bytes, stale query cursors, empty/resealed attempts, unauthorized generic execution, extra-call approval and malformed provider output.",
+    "independentChallenge": "Existing independent Work QA and Engineering Auditor inspect exact source, test original counterexamples and retain signed hash attestations. This is technical review, not business acceptance.",
+    "recovery": "Preserve381 qualified Preview until successor is READY, mutate feature alias once after durable marker, verify exact runtime and cleanup before live Chief dispatch. No config refresh or credential rewrite.",
+    "readiness": "Frozen affected fixtures and independent reviews precede one combined source deployment. Full hosted regression/Redis/CI/CodeQL/Jekyll/browser/private-path checks required before actual Chief reasoning; fixtures never prove live quality."
+  }
+}

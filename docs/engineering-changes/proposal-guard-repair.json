@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "6ff11038e2a4d81bb0b286669750156df4f926f5f1444f41af16455e30a9e09c",
+  "risk": "critical",
+  "scope": "Repair demonstrated word-internal key-prefix false positives and categorize proposal rejection without content leakage; preserve historical requests and all authority boundaries. Prepare dormant third selector only, no spending.",
+  "riskAnalysis": "The only behavior change narrows an unanchored substring to standalone key-prefix detection. Exact active-key echo remains denied by transport. Fixed diagnostic categories must not retain model text or mutate historical evidence.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Provider credentials, immutable source/evidence and historical receipts, workspace authority, pending financial uncertainty.",
+    "trustBoundaries": "Decoded untrusted replacement copy to fixed policy diagnostics; fixture-only review roles to trusted owner/CAS activation controller.",
+    "abuseCases": "Disguised key prefixes, markup/URLs/NUL/Bearer replacement, forged diagnostic paths/rules, historical request-hash drift, consumed-authorization reuse.",
+    "mitigations": "Unicode token-boundary key-prefix rule only, unchanged other predicates, closed rule map/static path, exact active-key echo guard, no prompt change, historical five-stage fixture, unchanged owner and spending controls."
+  },
+  "rollback": "Keep all paid/count flags disabled and approvals revoked. Revert reviewed guard/prompt source only with regenerated release lock; preserve historical records, consumption markers, pending ledger and cleanup compatibility.",
+  "negativePaths": {
+    "malformed-response": "Wrong object/fields, noninteger/oversized counts and secret echo fail closed before Responses dispatch.",
+    "stale-state": "Source/context/request/expiry and authoritative stored approval mismatch deny dispatch.",
+    "concurrency": "Count dispatch and count recording are one-use existing-CAS operations; duplicate winners cannot occur.",
+    "cancellation": "Shared owner/task/revoke/lease checks run after counting and before dispatch; whole-operation abort includes count requests.",
+    "worker-interruption": "Bounded abortAdmission retains pending ceilings and reports cleanup uncertainty; no paid retry.",
+    "api-outage": "Fixed endpoint/redirect:error, bounded response body, deadline and sanitized status/hash diagnostics; no fallback or retry.",
+    "authorization-denial": "Missing count consent/server pricing pin, impersonated roles or substituted workspace/source deny; no model-granted permissions.",
+    "spending-limit": "At most five count and five Responses dispatches, existing 1USD retained internal ceiling. Unknown counts remain pending/null; known Responses usage separate; no invoice cap claimed.",
+    "partial-execution": "Successful count alone cannot settle or accept work. Responses usage mismatch leaves pending evidence/reservation; no generated source execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "Unanchored sk- matches benign word endings; generic proposal-denied code hides which trusted predicate matched.",
+      "detectionGap": "Original tests covered only markup/Bearer/URLs and did not exercise risk-adjusted/task-based or per-rule receipts.",
+      "regression": "Offline false-positive/adversarial corpus, all five categorized transport failures with immutable usage/cleanup, five CAS stages and five restricted fixture children, actual preserved hosted request-hash compatibility.",
+      "historicalPrevention": "Keep replacement-copy policy separate from backend authority. Preserve versioned request construction and actual historical readback before any prompt change."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing organization engineering profile/CAS/lifecycle and parent transport only. Ops plan stays a frozen admission manifest; linked organization workflow records actual roles/results/usage.",
+    "dependencies": "Official Responses input-token count schema, fixed dedicated OpenAI project, existing task/source evidence and shared authorization CAS.",
+    "threats": "Pricing pin must match the authoritative stored approval, not a substituted caller argument; API content never grants authority.",
+    "failureModes": "First count/Responses protocol failure, partial usage, cancellation or timeout stops all later stages without paid retry; keep pending uncertainty, revoke exact stored scope even after source/session changes.",
+    "faultInjection": "Focused native offline transport, unknown-cost accounting, wrongtask/pin/consent, concurrent one-use CAS, delayed UI crossworkspace and origin substitution; actual Redis uncertainty-race integration added for CI.",
+    "independentChallenge": "Independent QA reproduced false positives and approved narrow repair. Engineering Auditor caught historical prompt-hash incompatibility; prompt change withdrawn and actual preserved hosted five-stage fixture added. Final audit required before publication.",
+    "recovery": "Keep all flags/approvals disabled, retain historical accounting and evidence, preserve exact source checkpoint on interruption.",
+    "readiness": "No paid execution authorized; dormant third policy alone grants nothing. Exact current qualified release, trusted pins, fresh source-backed task and explicit owner consent remain mandatory."
+  }
+}

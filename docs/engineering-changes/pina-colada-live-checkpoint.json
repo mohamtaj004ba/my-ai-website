@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "25f4d5b14b03ed3a156d44111c965a13d62445acb1649f878eb438fdcc744553",
+  "risk": "routine",
+  "scope": "Record one authorized five-stage live workflow, immutable evidence, rejected task acceptance, conservative ledger and verified disabled shutdown; no application or permissions change.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

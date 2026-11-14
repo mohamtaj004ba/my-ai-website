@@ -1,0 +1,84 @@
+{
+  "provenance": {
+    "kind": "recorded-live-response",
+    "stage": "chief",
+    "sourceReport": "organization-live-report.json",
+    "sourceReportSha256": "e467ad3074c265773389f426a275d56cd3055fa2f615534caefbe7baabe24727",
+    "requestHash": "f2b1e10c53d3649cb6ad08ca686d88cd1360777fbf3d795f61832b7e6e8d05bb",
+    "requestId": "req_c95fe3560ddd4ebe983ee6ff271c7d4e",
+    "responseId": "resp_093d3f4a0ac4a1bd016acc5e6ed64487d0bbc912a72e77bfd0",
+    "rawProviderOutputHash": "5770ba7b54fc7b83ce7c1986d51c6d22191bef90a026e0fdc5679714647ab963",
+    "expectedSnapshotRevision": 212
+  },
+  "response": {
+    "model": "gpt-6.1-sol",
+    "status": "completed",
+    "service_tier": "default",
+    "usage": {
+      "input_tokens": 3159,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "output_tokens": 215,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 3374
+    },
+    "output": [
+      {
+        "type": "function_call",
+        "name": "delegate_inspection",
+        "arguments": "{\"action\":\"delegate\",\"agent\":\"website-visual-qa\",\"taskId\":\"wf_6f21d82fb9bf4df89527761ee6e40d3d\",\"contextHash\":\"314ec1c05edd34e030f936a5a9619714b286a588529e4efb82e3a1d409252b4c\",\"expectedRevision\":2,\"reason\":\"Propose task-bound read-only visual inspection of /industries/legal and /#pricing at https://my-ai-website-lh7loz3s5-mohamtaj004bas-projects.vercel.app for commit 8133597ff2fc5b48e3de42336e9e06fa4191c2a8 under the assignment grant. Collect scoped evidence and findings without writes or automatic retries; preserve pending and retained spending. Prior execution verification and mock acceptance do not establish accepted work, and failed QA must not be promoted.\"}"
+      }
+    ]
+  },
+  "historicalContract": {
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "delegate",
+            "prioritize",
+            "report",
+            "escalate",
+            "hold"
+          ]
+        },
+        "agent": {
+          "type": "string",
+          "enum": [
+            "chief-of-staff",
+            "website-visual-qa",
+            "independent-qa"
+          ]
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "contextHash": {
+          "type": "string"
+        },
+        "expectedRevision": {
+          "type": "integer"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "agent",
+        "taskId",
+        "contextHash",
+        "expectedRevision",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "toolName": "delegate_inspection"
+  }
+}

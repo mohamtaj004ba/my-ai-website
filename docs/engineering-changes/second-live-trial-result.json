@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "84fa06809f39be0de11cb96c166d5233694c20874753e47598fcc526e518fc0f",
+  "risk": "routine",
+  "scope": "Preserve freshly owner-authorized single trial actual partial result, localized validation failure, immutable history, revocation and conservative pending accounting. Runtime unchanged; no new execution permission.",
+  "defects": []
+}

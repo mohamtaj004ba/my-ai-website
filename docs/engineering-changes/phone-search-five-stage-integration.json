@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "71d272d40d932afb6c2c0ffb1536f12a2d051478373467c1d11b973dc0bf35d6",
+  "risk": "critical",
+  "scope": "Connect task-manifest phone patch to existing five-stage controller and fixed isolated tests, preserving native diagnostics, cleanup and reporter integrity.",
+  "riskAnalysis": "Source/auth/worker/test-evidence changes require STRICT. Model code limited to reviewed pure search-expression AST; no arbitrary execution or publication. Historical single-file profiles unchanged.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source/task/release integrity, immutable accounting/evidence, test reporter, credentials, temporary authority and Production isolation.",
+    "trustBoundaries": "Untrusted model patch to static AST validation, data-only child, separately permitted OS guest and trusted receipt validation.",
+    "abuseCases": "Traversal/protected edits, reporter constructor escape, comments hiding adjacent source, forged tests/identity, stale grants, cleanup and diagnostic loss.",
+    "mitigations": "Exact server manifest/preimages, pinned parser/pure AST, old OS supervisor/23checks, fresh native permission, exact native evidence/rules, awaited cleanup and serial execution."
+  },
+  "rollback": "Revert this inactive extension only; preserve historical evidence and qualified Preview. No production operation.",
+  "negativePaths": {
+    "malformed-response": "Covered by targeted native controller/worker/AST/source test regressions and preserved existing enforcement; exact release CI/Preview qualification still required.",
+    "stale-state": "Covered by targeted native controller/worker/AST/source test regressions and preserved existing enforcement; exact release CI/Preview qualification still required.",
+    "concurrency": "Covered by targeted native controller/worker/AST/source test regressions and preserved existing enforcement; exact release CI/Preview qualification still required.",
+    "cancellation": "Covered by targeted native controller/worker/AST/source test regressions and preserved existing enforcement; exact release CI/Preview qualification still required.",
+    "worker-interruption": "Covered by targeted native controller/worker/AST/source test regressions and preserved existing enforcement; exact release CI/Preview qualification still required.",
+    "api-outage": "Covered by targeted native controller/worker/AST/source test regressions and preserved existing enforcement; exact release CI/Preview qualification still required.",
+    "authorization-denial": "Covered by targeted native controller/worker/AST/source test regressions and preserved existing enforcement; exact release CI/Preview qualification still required.",
+    "spending-limit": "Covered by targeted native controller/worker/AST/source test regressions and preserved existing enforcement; exact release CI/Preview qualification still required.",
+    "partial-execution": "Covered by targeted native controller/worker/AST/source test regressions and preserved existing enforcement; exact release CI/Preview qualification still required."
+  },
+  "defects": [
+    {
+      "rootCause": "Single-file task contracts could not express a five-path defect; generic code syntax did not establish reporter integrity.",
+      "detectionGap": "Original bounded examples used fixed after-grammars and did not exercise broad multi-file generated expressions.",
+      "regression": "45currentfocused checks plus8historical checks and separate independent native/AST review; native usage/cleanup failures retained.",
+      "historicalPrevention": "Manifest-defined scope, pure expression AST before acceptance AND job build, immutable source assets and coordinated policy coverage."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing Chief/Specialist/QA/Auditor/Chief, controller, journal, workers, reservations and OSsupervisor reused.",
+    "dependencies": "Official Acorn8.19.0 vendored exact with independently verified archive SRI and MIT license; no package upgrade or install scripts. Existing Zod advisory preserved.",
+    "threats": "Reporter escape, broad capability reachability, forged source/review, scope omissions and stale authority.",
+    "failureModes": "Exact native codes/locations, independently retained provider usage and cleanup receipts; no paid retry.",
+    "faultInjection": "Native malformedworker, unsafeconstructor, cleanupfailure, authorityrevocation, stalebinding, ledgerrecognition and reportcodec checks.",
+    "independentChallenge": "Two Work reviews identified cleanup/diagnostics/reporter/oracle issues, fixed and independently rerun; feature publication recommended.",
+    "recovery": "Revert candidate only; preserve original assets, failed attempts and accounting; fail closed on uncertain cleanup.",
+    "readiness": "Reviewed candidate only. Hosted STRICT/Redis/CodeQL/Jekyll/Browser and actual isolated-profile execution remain required before claiming live success."
+  }
+}

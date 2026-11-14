@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "1f9fc096d9976fb8c02d2ada8d0ea8b50a2b04653e10434491f01165c7d0e2e5",
+  "risk": "routine",
+  "scope": "Record live Chief source discovery, immutable receipts and verified shutdown.",
+  "defects": []
+}

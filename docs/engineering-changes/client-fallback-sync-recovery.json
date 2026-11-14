@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "ae68ba94c4248748f33a0168cfe394e030e90a43186fdd5207981945c4dc8133",
+  "risk": "critical",
+  "scope": "Correct client critical fallback synchronization status and successful timestamp; retain exact versioned evidence/history and add rendered read-only failure/recovery QA.",
+  "riskAnalysis": "Critical feed failures must not claim Live or advance the success timestamp. Preserve bounded retries, draft/race safeguards, current-source admission and immutable old evidence. No API writes, paid calls or permissions.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Accurate client sync indicators, last verified data, exact source evidence and historical receipts.",
+    "trustBoundaries": "Untrusted read-only API response payloads versus validated client state; current source admission versus historical readback.",
+    "abuseCases": "Malformed critical feeds falsely mark Live, stale timestamps suppress recovery, historical evidence substituted into new execution, QA intercepts leak beyond fixture.",
+    "mitigations": "Critical-only success stamping, catch error state, original payload validation/retry/draft guards, exact v3 current pins with v1/v2 readback only, finally-removed fictional QA GET intercepts."
+  },
+  "rollback": "Revert this feature-only source commit and requalify Preview. No persistent data, account, ledger, source publication policy or Production state is changed.",
+  "negativePaths": {
+    "malformed-response": "Wrong object/fields, noninteger/oversized counts and secret echo fail closed before Responses dispatch.",
+    "stale-state": "Source/context/request/expiry and authoritative stored approval mismatch deny dispatch.",
+    "concurrency": "Count dispatch and count recording are one-use existing-CAS operations; duplicate winners cannot occur.",
+    "cancellation": "Shared owner/task/revoke/lease checks run after counting and before dispatch; whole-operation abort includes count requests.",
+    "worker-interruption": "Revocation closes attempts/leases and retains uncertainty, including actual600audit capacity fallback in existing records; no retry or historical deletion.",
+    "api-outage": "Fixed endpoint/redirect:error, bounded response body, deadline and sanitized status/hash diagnostics; no fallback or retry.",
+    "authorization-denial": "Missing count consent/server pricing pin, impersonated roles or substituted workspace/source deny; no model-granted permissions.",
+    "spending-limit": "New5USD cumulative exposure separate from old15USD; fullattempt1USD availability and200k microUSD perstage holds; unknowncounts remain pending; maximum20attempts and stop on first complete workflow. No provider billing cap claim.",
+    "partial-execution": "Successful count alone cannot settle or accept work. Responses usage mismatch leaves pending evidence/reservation; no generated source execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "Fallback load marked Live and advanced clientLastSyncAt even after critical Calls/Agent/Settings failure; unexpected fallback catch also retained a prior Live label.",
+      "detectionGap": "Prior tests covered response and draft integrity but not contradictory status and timestamp after failed fallback.",
+      "regression": "Critical failure, successful fallback recovery, optional-only failure, exception after prior Live; hosted fictional read-only malformed GET/recovery scenario.",
+      "historicalPrevention": "Keep v1/v2 asset bytes unchanged; exact current v3 admission, strict old readback and bounded immutable historical-source replay."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing client refresh/load and fixed evidence contracts only, no architecture migration or new organization roles.",
+    "dependencies": "No dependency added. Original account GET endpoints, retry bounds, health and rendering helpers retained.",
+    "threats": "No API mutation or model authority. Evidence versioning cannot authorize an old source for new execution.",
+    "failureModes": "Critical fallback error reports Sync issue and preserves successful timestamp; recovery alone marks Live; optional failures preserve existing behavior.",
+    "faultInjection": "Trusted-source deterministic fixtures and two transient malformed GET routes only inside the fictional QA workspace, removed in finally.",
+    "independentChallenge": "Independent Work Engineering Auditor13 final sync checks and17 evidence/QA boundary checks passed; root51 focused passed. New contract remains non-billable and proposal-only.",
+    "recovery": "No paid attempts or reservations. Historical byte assets remain unchanged and old records remain readable.",
+    "readiness": "Source reviewed and focused verified; frozen STRICT then CI/Redis/CodeQL/Jekyll and actual Preview rendered failure/recovery remain required."
+  }
+}

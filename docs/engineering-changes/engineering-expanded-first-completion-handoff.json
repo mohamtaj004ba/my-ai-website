@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "fe7f2b2c928d4ff641b3df4e1342b9bed1400447fdaa451eab9b34dd926262fe",
+  "risk": "routine",
+  "scope": "Preserve first genuine five-stage result, rejected acceptance, exact paid-disabled Preview and separate new/historical accounting. Documentation only; no runtime or authorization changes.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "0d9b9cc10ca6bfc2e08c1b055a4ec9a38e14060773cbbf44477fcd3b054f64d1",
+  "risk": "critical",
+  "scope": "Existing Phase D four-USD ten-trial policy, exact reviewed successor release enrollment, durable Preview configuration intent, physical cleanup evidence and metadata-only owner controls",
+  "riskAnalysis": "Authorization is narrowed to the existing Starter source-backed implementation. Four USD NEW exposure shares the existing five-USD ledger, never new money or released historical uncertainty. Exact source/task/review/configuration receipts precede each fresh one-use attempt. No provider I/O occurs from configuration journal controls; Work must verify actual metadata before attestation. Unknown acknowledgments and physical cleanup deny continuation.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Dedicated credentials, immutable owner records, source identity and existing testing exposure must remain isolated from models and frontend inputs.",
+    "trustBoundaries": "Authenticated owner controls journal intent; trusted Work performs reviewed Vercel operations; models remain data-only and cannot attest provider metadata or grant authority.",
+    "abuseCases": "Caller-chosen IDs bypassing dedupe, forged configuration chains, rehashed receipt substitutions, duplicate dispatch after lost acknowledgments, revoked authority masking failed workspace cleanup.",
+    "mitigations": "Stable scope/source/task duplicate key, unresolved intent lock, ordered hash-bound events, exact runtime and eight-key verification, predispatch enrollment receipt equality, physical preparation/destruction journal and serial fail-closed admission."
+  },
+  "rollback": "Revert only the reviewed feature changes while preserving all historical CAS records and pending financial exposure. Keep paid flags disabled. Never reopen old approvals, modify main/Production or apply the agent patch to the real product.",
+  "negativePaths": {
+    "malformed-response": "Exact field and manifest validation reject extra credential keys, wrong values and malformed configuration event chains.",
+    "stale-state": "Exact source/runtime/task/owner/workspace bindings and fresh review receipts reject old approvals and substituted deployments.",
+    "concurrency": "Existing organization Redis CAS permits one claim and one operation dispatch; durable markers survive restart and lost acknowledgments.",
+    "cancellation": "Revocation and canceled tasks cannot create model authority; physical preparation is recorded before I/O and missing destruction acknowledgment blocks continuation.",
+    "worker-interruption": "Closed attempts and revoked grants are insufficient: failed, missing or corrupt physical destruction evidence prevents new paid admission.",
+    "api-outage": "Unknown provider acknowledgments remain unresolved; no automatic deployment or model retry is permitted. Owner status is read-only recovery.",
+    "authorization-denial": "Worker/nonowner/cross-workspace identities cannot journal, enroll, activate, impersonate reviewers or publish.",
+    "spending-limit": "At most ten serial fresh attempts share four USD new retained exposure, also bounded by the unchanged five-USD ledger. Unknown counting charges remain pending, no provider hard-cap claim.",
+    "partial-execution": "Incomplete configuration ACK chain cannot authorize execution. Model usage remains recorded on artifact failure; no generated-code execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "First draft duplicate key included caller IDs and trusted event order insufficiently; independent adversarial QA demonstrated bypass and integrity gaps before release.",
+      "detectionGap": "Configuration refresh previously relied on a local operator marker; the new controller must defend restart and changed-ID duplicates in durable owner CAS.",
+      "regression": "Pure configuration64, root107, native20, UI39 and Auditor82 focused checks passed; real Redis contention/restart added; full qualification pending.",
+      "historicalPrevention": "Old markers, receipts, approvals and the verified flaky-test repair stay unchanged; no provider mutation occurred during development."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse the existing owner controller, organization CAS, spending ledger and five-stage worker; no competing orchestration or provider gateway.",
+    "dependencies": "No new package, external provider, infrastructure or credentials. Configuration helper is included in the source fingerprint.",
+    "threats": "Models cannot mutate external configuration, choose policy fields or approve spending; exact allowlist and reviewed receipt chain remain authoritative.",
+    "failureModes": "Lost acknowledgment, expired task, unconfirmed disposal, forged receipt, insufficient headroom or stale release stops admission before paid dispatch.",
+    "faultInjection": "Deterministic malformed/foreign/duplicate and physical-cleanup fixtures plus real Redis contention test; no real provider requests in tests.",
+    "independentChallenge": "Separate Work QA and Auditor found and challenged duplicate, chain, provenance and physical cleanup flaws; repaired and focused tests passed.",
+    "recovery": "Preserve original failed logs and all historical accounting. Unknown operation requires actual provider readback, never blind retry.",
+    "readiness": "Focused reviewed candidate only. Full STRICT and remote verification, actual config marker/metadata proof and fresh task activation remain mandatory before paid execution."
+  }
+}

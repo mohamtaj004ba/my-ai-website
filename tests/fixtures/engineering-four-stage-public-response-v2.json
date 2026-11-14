@@ -1,0 +1,150 @@
+{
+  "qualification": "Historical live technical model outputs only; no authority, credentials or acceptance. Original admission computed bound 12552 bytes; exact rejected request was not sent.",
+  "historicalComputedBound": 12552,
+  "stages": [
+    {
+      "stage": "chief-plan",
+      "response": {
+        "stage": "chief-plan",
+        "objective": "Prepare an inert proposal-copy-v2 correction for the CallerCore dashboard metric, with separately attributed automated QA and Auditor criticism and a final Chief report that retains acceptedWork as false.",
+        "specialist": "dashboard",
+        "completionCriteria": [
+          "Cite metric-label at dashboard.html:231 as evidence that the displayed label is Average daily calls.",
+          "Cite metric-calculation at dashboard.js:1566 and explain that the supplied expression divides filtered call count by the number of distinct local calendar dates represented by those calls, rounds to a",
+          "reason_placeholder"
+        ],
+        "reason": "placeholder"
+      },
+      "usage": {
+        "inputTokens": 1072,
+        "outputTokens": 249,
+        "reasoningTokens": 97,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "calculatedCostMicros": 4634
+      }
+    },
+    {
+      "stage": "specialist",
+      "response": {
+        "stage": "specialist",
+        "findings": [
+          {
+            "id": "displayed-label",
+            "claim": "The supplied dashboard.html:231 excerpt labels the metric Average daily calls.",
+            "classification": "source-observation",
+            "evidenceIds": [
+              "metric-label"
+            ],
+            "uncertainty": "This establishes the supplied source label, not the currently deployed display."
+          },
+          {
+            "id": "active-day-arithmetic",
+            "claim": "In dashboard.js:1566, total is the count of calls passing withinDays for the selected range, which defaults to 30. activeDays counts distinct date strings produced by new Date(recordTime(x)).toDateString() for those calls. The average divides total by activeDays, rounds to one decimal place, and returns zero when activeDays is zero. Dates without calls do not enter the denominator.",
+            "classification": "source-observation",
+            "evidenceIds": [
+              "metric-calculation"
+            ],
+            "uncertainty": "Date grouping uses the executing environment's local calendar dates. The supplied evidence does not establish withinDays boundary behavior, timestamp validity, or the intended business timezone."
+          },
+          {
+            "id": "terminology-and-impact",
+            "claim": "The implementation calculates calls per date with recorded calls, rather than calls per calendar day across the entire selected interval. Average daily calls leaves that distinction unstated. Readers could interpret it as an all-days average, but actual customer misunderstanding is not established.",
+            "classification": "uncertain",
+            "evidenceIds": [
+              "metric-label",
+              "metric-calculation"
+            ],
+            "uncertainty": "Business intent is unknown. If the intended metric includes no-call days, changing the label alone would not correct the calculation."
+          }
+        ],
+        "proposal": {
+          "path": "dashboard.html",
+          "beforeText": "Average daily calls",
+          "afterText": "Average calls per day with calls",
+          "reason": "This inert label proposal makes the observed denominator explicit without changing arithmetic or assuming business intent. Automated QA criticism has not been obtained; a separate QA review must challenge whether the wording accurately communicates the denominator. Auditor criticism has not been obtained; a separate Auditor review must challenge unsupported business-intent and customer-impact conclusions. Neither review is represented as completed or independently attributed here. acceptedWork: ",
+          "evidenceIds": [
+            "metric-label",
+            "metric-calculation"
+          ]
+        }
+      },
+      "usage": {
+        "inputTokens": 1391,
+        "outputTokens": 671,
+        "reasoningTokens": 154,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "calculatedCostMicros": 9492
+      }
+    },
+    {
+      "stage": "qa",
+      "response": {
+        "stage": "qa",
+        "decisions": [
+          {
+            "findingId": "displayed-label",
+            "decision": "accepted",
+            "reason": "The supplied HTML excerpt explicitly labels the metric Average daily calls. This establishes source text, not the deployed display.",
+            "evidenceIds": [
+              "metric-label"
+            ]
+          },
+          {
+            "findingId": "active-day-arithmetic",
+            "decision": "accepted",
+            "reason": "The supplied expression divides the filtered call count by the number of distinct local calendar date strings represented by those calls, rounds the result to one decimal place, and returns zero for an empty denominator. Dates without calls are excluded. Rounding does not establish fixed one-decimal display formatting. The range fallback is 30, but withinDays boundary behavior is not supplied.",
+            "evidenceIds": [
+              "metric-calculation"
+            ]
+          },
+          {
+            "findingId": "terminology-and-impact",
+            "decision": "accepted",
+            "reason": "The label does not disclose the active-day denominator. An all-calendar-days interpretation is plausible, but neither actual customer misunderstanding nor intended business semantics is established. A label-only correction would not satisfy an intended all-days metric.",
+            "evidenceIds": [
+              "metric-label",
+              "metric-calculation"
+            ]
+          }
+        ],
+        "uncertainty": "This is separately attributed automated technical QA, not human review or Auditor review. The proposed replacement label, Average calls per day with calls, accurately describes the observed denominator and meets the literal-label constraint, although its wording is repetitive and has not been usability-tested. The prior proposal reason ends with an incomplete acceptedWork statement and should be a"
+      },
+      "usage": {
+        "inputTokens": 1734,
+        "outputTokens": 542,
+        "reasoningTokens": 184,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "calculatedCostMicros": 8888
+      }
+    },
+    {
+      "stage": "auditor",
+      "response": {
+        "stage": "auditor",
+        "decision": "fail",
+        "reason": "The technical interpretation is supported, but the supplied reporting artifacts are incomplete. metric-label establishes the source label Average daily calls. metric-calculation divides the filtered call count by distinct local calendar dates represented by those calls, rounds to one decimal place, and returns zero when no dates are represented. Dates without calls are excluded; fixed one-decimal display formatting is not established. The inert replacement label Average calls per day with calls accurately describes that denominator and meets the replacement-label constraints. However, the plan",
+        "risks": [
+          "Business intent remains unknown. If the intended metric includes every calendar day in the selected interval, a label-only correction would not fix the arithmetic.",
+          "Customer misunderstanding is plausible but unverified; the supplied source excerpts do not establish deployed behavior or actual customer impact.",
+          "The evidence does not establish withinDays boundary behavior, timestamp validity, or the intended business timezone.",
+          "The supplied plan contains an unfinished completion criterion and a placeholder. The specialist proposal reason ends with an incomplete acceptedWork statement, and the automated QA uncertainty text is also truncated. These defects prevent a complete reporting pass; missing text must not be invented."
+        ],
+        "evidenceIds": [
+          "metric-label",
+          "metric-calculation"
+        ]
+      },
+      "usage": {
+        "inputTokens": 2052,
+        "outputTokens": 388,
+        "reasoningTokens": 98,
+        "cachedInputTokens": 0,
+        "cacheWriteTokens": 0,
+        "calculatedCostMicros": 7984
+      }
+    }
+  ]
+}

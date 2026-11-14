@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "9912b7f22ad4ac3996eb43cb70af1734e38ec3b73a1640bd853d80ab6adeab03",
+  "risk": "routine",
+  "scope": "Record verified Phase C curated source investigation, final report refresh, independent evidence reviews, exact release and unchanged authority/accounting; documentation only.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

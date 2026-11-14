@@ -1,0 +1,15 @@
+{
+  "version": "engineering-quality-v1",
+  "historicalCommit": "5e4e2e81d22ae44184302cbf60c51904a3b474ed",
+  "changeDigest": "7e7f91eade38d10474fa8eb3d0ad0e5f0b48b54e78e2582952f6228b49b2604c",
+  "risk": "routine",
+  "scope": "Recover the omitted change-bound plan for the exact preserved documentation-only verified phone-delivery checkpoint; no runtime or historical evidence edits.",
+  "defects": [
+    {
+      "rootCause": "The documentation-only checkpoint was committed without its mandatory matching engineering plan.",
+      "detectionGap": "Later local qualification used that checkpoint as base, skipping its omitted record; hosted main-base qualification correctly refused it.",
+      "regression": "Pin exact commit, single changed path, original Git blobs, digest and supplemental plan hash; altered source, modes and plans remain denied.",
+      "historicalPrevention": "Qualify the full remote-base history before the next push, including every checkpoint, and create matching plans before future commits."
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e33c7128412bd91f375517231d0e239a9c324d6a9e95ad04b2eb3e53b871427f",
+  "risk": "routine",
+  "scope": "Record completed non-billable second-trial recovery, exact source/READY identity, actual preservation/hash proofs, qualified verification, unchanged accounting and fresh owner-consent requirements.",
+  "defects": []
+}

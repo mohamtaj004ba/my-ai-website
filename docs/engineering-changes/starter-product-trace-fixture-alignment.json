@@ -1,0 +1,57 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "18ceb9ec1b301223ab76f7d3713b4acff357dd89d2dd34bec36600799bc00427",
+  "risk": "critical",
+  "scope": "Complete pre-publication tracing for the current v5 evidence asset and explicitly pin remaining historical source-test fixtures; no product or permission delta.",
+  "riskAnalysis": "One customer JavaScript line changes optional request membership only. Supporting historical source/copy/admission changes are security-sensitive: never substitute old evidence for current source, weaken permissions, rewrite receipts or revive grants. Current-source product tests and explicitly historical regression fixtures are separate.",
+  "threatModel": {
+    "assets": "Product entitlement behavior, backend authorization, original source/receipt integrity, task/release binding and audit history.",
+    "trustBoundaries": "Model-authored line was independently inspected before Work source application. Current source lock and frozen historical source are distinct. Only Work controls publication; internal agents remain proposal-only.",
+    "abuseCases": "Stale source promoted as current, historical task readback reused as fresh authority, forged patch binding, arbitrary old preimage, cross-workspace change, hidden real plan mutation in QA, false acceptance.",
+    "mitigations": "Exact original file and five receipt hashes, one unique replacement, current-only source/task guard, explicit task retirement, immutable asset hash check for historical copies, unchanged bounded patch grammar/authorization/cancellation, separate current-product tests, fictional restored browser state and no provider writes."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "The new evidence asset lacked its explicit literal deployment tracer reference; two old patch test fixtures still selected the corrected product as their historical baseline.",
+      "detectionGap": "Focused product/identity tests did not enumerate every runtime trace asset or every historical test runner fixture.",
+      "regression": "Existing runtime asset coverage and original authority-timing/isolated-runner tests retain all assertions while selecting the pinned historical preimage.",
+      "historicalPrevention": "Never rewrite old source or weaken current guards to satisfy historical fixtures; explicit tracing is required before any source Preview."
+    }
+  ],
+  "rollback": "Revert this reviewed feature branch batch if verification fails; preserve original model receipts, rejected review, historical assets and financial uncertainty. No Production rollback, grant restoration or paid retry.",
+  "negativePaths": {
+    "malformed-response": "Existing source, owner, task, workspace, release, authorization, revocation and cleanup restrictions remain. New current-product tests assert resolved-task denial; historical tests retain forged preimage/path/binding/commands/review/cleanup rejection. Browser fixtures restore local state and do not alter accounts.",
+    "stale-state": "Existing source, owner, task, workspace, release, authorization, revocation and cleanup restrictions remain. New current-product tests assert resolved-task denial; historical tests retain forged preimage/path/binding/commands/review/cleanup rejection. Browser fixtures restore local state and do not alter accounts.",
+    "concurrency": "Existing source, owner, task, workspace, release, authorization, revocation and cleanup restrictions remain. New current-product tests assert resolved-task denial; historical tests retain forged preimage/path/binding/commands/review/cleanup rejection. Browser fixtures restore local state and do not alter accounts.",
+    "cancellation": "Existing source, owner, task, workspace, release, authorization, revocation and cleanup restrictions remain. New current-product tests assert resolved-task denial; historical tests retain forged preimage/path/binding/commands/review/cleanup rejection. Browser fixtures restore local state and do not alter accounts.",
+    "worker-interruption": "Existing source, owner, task, workspace, release, authorization, revocation and cleanup restrictions remain. New current-product tests assert resolved-task denial; historical tests retain forged preimage/path/binding/commands/review/cleanup rejection. Browser fixtures restore local state and do not alter accounts.",
+    "api-outage": "Existing source, owner, task, workspace, release, authorization, revocation and cleanup restrictions remain. New current-product tests assert resolved-task denial; historical tests retain forged preimage/path/binding/commands/review/cleanup rejection. Browser fixtures restore local state and do not alter accounts.",
+    "authorization-denial": "Existing source, owner, task, workspace, release, authorization, revocation and cleanup restrictions remain. New current-product tests assert resolved-task denial; historical tests retain forged preimage/path/binding/commands/review/cleanup rejection. Browser fixtures restore local state and do not alter accounts.",
+    "spending-limit": "Existing source, owner, task, workspace, release, authorization, revocation and cleanup restrictions remain. New current-product tests assert resolved-task denial; historical tests retain forged preimage/path/binding/commands/review/cleanup rejection. Browser fixtures restore local state and do not alter accounts.",
+    "partial-execution": "Existing source, owner, task, workspace, release, authorization, revocation and cleanup restrictions remain. New current-product tests assert resolved-task denial; historical tests retain forged preimage/path/binding/commands/review/cleanup rejection. Browser fixtures restore local state and do not alter accounts.",
+    "duplicate-request": "Existing source, owner, task, workspace, release, authorization, revocation and cleanup restrictions remain. New current-product tests assert resolved-task denial; historical tests retain forged preimage/path/binding/commands/review/cleanup rejection. Browser fixtures restore local state and do not alter accounts."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing loader, has entitlement helper, source tools, controller and data-only copy worker. No new architecture/provider/dependency.",
+    "dependencies": "No dependency or credential changes. Backend API permissions unchanged. No model/count/VM spending.",
+    "threats": "Stale source promoted as current, historical task readback reused as fresh authority, forged patch binding, arbitrary old preimage, cross-workspace change, hidden real plan mutation in QA, false acceptance.",
+    "failureModes": "Current source drift must fail closed; historical replay cannot establish current readiness. Missing customer impact remains explicitly unmeasured.",
+    "faultInjection": "Plan and failure/retry matrix; unchanged stale-response/calendar regressions; malformed preimage/binding/path and cancellation/cleanup tests; current task denial before append.",
+    "independentChallenge": "Independent QA reviewed root compatibility changes; Auditor reviewed model gate, QA cases, historical copy boundary and logical-clock cancellation fixture. Final committed/hosted review required.",
+    "recovery": "Historical receipts remain exact, no accepted-work flag fabricated, all old authorizations stay revoked; one reviewed source Preview with durable alias intent.",
+    "readiness": "Focused69 and current6 tests plus history19 alignment passed. Preliminary full local known fixture failures retained and separately corrected; clean remote STRICT/Redis/CodeQL/Jekyll/authenticated Browser artifact and independent final review required. No paid inference."
+  }
+}

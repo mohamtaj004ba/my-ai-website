@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "721f1105d68aa6d0eef4fb3229f0876eb66e937a59e6e612602254f736256ea3",
+  "risk": "critical",
+  "scope": "Preserve sanitized metadata-only model authentication failures and exact deployment-bound UI results using the existing controller and audit journal.",
+  "riskAnalysis": "Historical generic metadata failure has no recoverable underlying cause. Do not infer a provider failure. Capture closed phase/status diagnostics without raw content, credential echoes, paid authority or retries; admit both existing task profiles in the metadata-only UI.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Dedicated OpenAI credentials, task ownership, immutable audit records and exact Preview identity.",
+    "trustBoundaries": "Provider headers/body are untrusted. Only authenticated existing controller creates private diagnostic proof. Existing broker validates bound closed records. Frontend renders text only and rejects late deployment results.",
+    "abuseCases": "Credential echo in headers, forged diagnostic objects, cross-workspace receipt replay, stale same-source deployment result, expired owner authority, audit persistence failure.",
+    "mitigations": "Credential-aware header redaction before facts storage, closed fields and hashes, private WeakMap provenance, task/source/evidence/deployment binding, pre/post authority checks, immutable append-only journal, fixed GET with ten-second timeout and no retry."
+  },
+  "rollback": "Revert candidate feature code only, retain immutable failure receipts and historical records; keep paid flags disabled and exact release checks. No credential rotation, main/Production writes or old grant reuse.",
+  "negativePaths": {
+    "malformed-response": "Exact field and manifest validation reject extra credential keys, wrong values and malformed configuration event chains.",
+    "stale-state": "Exact source/runtime/task/owner/workspace bindings and fresh review receipts reject old approvals and substituted deployments.",
+    "concurrency": "Existing organization Redis CAS permits one claim and one operation dispatch; durable markers survive restart and lost acknowledgments.",
+    "cancellation": "Revocation and canceled tasks cannot create model authority; physical preparation is recorded before I/O and missing destruction acknowledgment blocks continuation.",
+    "worker-interruption": "Closed attempts and revoked grants are insufficient: failed, missing or corrupt physical destruction evidence prevents new paid admission.",
+    "api-outage": "Unknown provider acknowledgments remain unresolved; no automatic deployment or model retry is permitted. Owner status is read-only recovery.",
+    "authorization-denial": "Worker/nonowner/cross-workspace identities cannot journal, enroll, activate, impersonate reviewers or publish.",
+    "spending-limit": "At most ten serial fresh attempts share four USD new retained exposure, also bounded by the unchanged five-USD ledger. Unknown counting charges remain pending, no provider hard-cap claim.",
+    "partial-execution": "Incomplete configuration ACK chain cannot authorize execution. Model usage remains recorded on artifact failure; no generated-code execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "Metadata UI filtered out implementation tasks; generic failure discarded phase/status. Late result fences did not include deployment/origin. Candidate request ID diagnostic could echo credential before QA correction.",
+      "detectionGap": "Prior fixtures did not exercise implementation-profile selection, same-source deployment replacement, malformed provider metadata or credential-bearing request IDs.",
+      "regression": "Twenty-five offline actual-controller/profile/API/UI checks cover both profiles, timeout, cancellation, credential echo, HTTP/body/shape errors, revocation, storage failure, private DTO provenance and late results.",
+      "historicalPrevention": "Original generic failure remains unknown and unchanged; no retroactive root-cause assertion, raw response retention or paid diagnostic request."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing metadata GET controller, existing journal, API and UI only; no new credential, ledger or gateway.",
+    "dependencies": "No new dependency, provider account or infrastructure; existing dedicated credentials reused server-side.",
+    "threats": "Credential echo in headers, forged diagnostic objects, cross-workspace receipt replay, stale same-source deployment result, expired owner authority, audit persistence failure.",
+    "failureModes": "Unknown diagnostics remain unconfirmed; audit failure cannot become success. Metadata never proves Responses compatibility, counting, pricing or paid authority.",
+    "faultInjection": "Synthetic provider/error/header bodies, actual fixed timeout, owner revocation, failed persistence and same-source deployment races.",
+    "independentChallenge": "Independent Work QA and Auditor found and verified fixes for credential header echo and stale runtime fence; no independently authenticated human acceptance claim.",
+    "recovery": "Keep current qualified2d1 Preview and all future execution/count flags false; all metadata and unused trial tasks cancelled. Preserve original evidence and ledgers.",
+    "readiness": "Focused25 passed; exact successor requires STRICT, Redis, CI, CodeQL and authenticated Preview qualification before new task-bound metadata check or paid admission."
+  }
+}

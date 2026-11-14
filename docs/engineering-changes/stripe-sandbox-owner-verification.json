@@ -1,0 +1,68 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "60192f9ba109e21095e8f1f146fd010d456f49d6bd988f622f7f86fa4100041d",
+  "risk": "critical",
+  "scope": "Owner-approved dedicated Stripe sandbox five-resource read verification in existing guarded Agent Operations API and Connections UI; no agent grants, provider mutations, paid execution or budget changes.",
+  "riskAnalysis": "STRICT financial credential, identity and external-read boundary. Require fresh owner, Preview branch/release, exact provider sandbox account, shared Ops revocation/revision and sanitized first-page evidence. Preserve unchanged paid accounting and independently disabled internal-agent permissions.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Restricted sandbox credential, owner/workspace identity, immutable audit/evidence and customer confidentiality.",
+    "trustBoundaries": "Authenticated Owner UI to existing Ops API/policy; shared Ops journal to bounded fixed Stripe GETs; provider response to PII-free receipt; Redis atomic evidence persistence.",
+    "abuseCases": "Wrong sandbox/live key, forged owner, caller URL/account substitution, raw PII leak, replay/concurrent request, late response after revoke, failed identity bypass.",
+    "mitigations": "Restricted test-key guard, exact account GET before five fixed reads, no Stripe-Account header, fresh owner/release/journal at each boundary, CAS one running verification, finite diagnostics and no writes or agent grants."
+  },
+  "rollback": "Remove/disable Stripe owner controls and revert only reviewed Preview delta; preserve Secret without printing or rotating it, existing Ops/financial journal, historical evidence, main and Production. Local revoke fails closed and does not claim provider key revocation.",
+  "negativePaths": {
+    "malformed-response": "Actual service/API/UI reject malformed envelopes, corrupt task records and fabricated authority; no hidden repairs.",
+    "stale-state": "Exact Preview source/release/origin and existing owner operations-journal revision bind each verification boundary; no specialist task authority is created.",
+    "concurrency": "Atomic verification-record CAS admits one running owner read. Shared journal checks plus final readback prevent stale revoked health claims; no cross-record atomic transaction is claimed.",
+    "cancellation": "Abort/deadline rejects subsequent GETs and late results. Existing Emergency Stop changes the operations journal, invalidating the captured revision before subsequent boundaries.",
+    "worker-interruption": "No worker is launched. Interrupted running admission remains blocked until explicit owner local revoke; it is never silently reset or retried. Already transmitted reads cannot be recalled.",
+    "api-outage": "Redis read/CAS failures deny verification; uncertain admission remains conservatively running or failed, with no automatic retry or recovery of permissions.",
+    "authorization-denial": "Preview-only fresh session/member/workspace owner, worker/nonowner/CSRF/Production negatives and workspace-isolated journals.",
+    "spending-limit": "Six fixed read-only Stripe GETs at most; no inference transport, financial mutation or reservation writer exists. Existing fifteen-dollar testing ledger and unresolved uncertainty remain unchanged.",
+    "partial-execution": "A failed identity or resource check records only a finite phase/category and halts further GETs. Failed or revoked records never become agent grants or accepted engineering outcomes."
+  },
+  "defects": [
+    {
+      "rootCause": "Failure mapping inherited Object.prototype names instead of finite own entries.",
+      "detectionGap": "Initial synthetic errors omitted constructor, toString and __proto__.",
+      "regression": "Inherited-name provider errors remain fixed transport diagnostics, validated before persistence.",
+      "historicalPrevention": "Unknown errors cannot introduce non-enum failure values into stored evidence."
+    },
+    {
+      "rootCause": "Final receipt return used the initial journal instead of fresh provider-revocation state.",
+      "detectionGap": "Initial revocation checks covered transport boundaries but not a revoke racing final receipt CAS.",
+      "regression": "Actual operations.connectionsManage provider revoke injected at final store must return revoked and connected=false.",
+      "historicalPrevention": "A preserved receipt cannot falsely report current healthy authority after an observed revoke."
+    },
+    {
+      "rootCause": "UI retained a previous verified Stripe card after a failed new verification.",
+      "detectionGap": "Initial UI tests began from unknown state rather than prior success.",
+      "regression": "Verify success followed by network failure clears current healthy card.",
+      "historicalPrevention": "Failed owner verification is displayed as unconfirmed without stale success."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing owner Ops API and provider-revocation journal; narrow verification record is evidence/admission only, not a parallel permission system.",
+    "dependencies": "Existing owner-saved Hidden Secret exclusively Preview feature branch; actual /v1/account identity scope may require owner-approved minimum extra read after genuine denial.",
+    "threats": "Cross-workspace access, sandbox substitution, PII/credential exposure, indirect prompt injection, stale source and cancellation races.",
+    "failureModes": "Identity denial prevents all five list requests; unknown totals remain unknown; running or revoked state cannot silently retry or restore authority.",
+    "faultInjection": "Provider boundary substitutes only; real verifier/API/UI exercised for owner denial, GET-only, revocation, CAS races, cancellation, malformed/live responses and secret stripping.",
+    "independentChallenge": "Independent QA and Auditor review required before publication, hosted real read remains separately evidenced; no claim of provider permission introspection.",
+    "recovery": "Owner local revoke; no automatic retry, key rotation, provider mutations or restore capability.",
+    "readiness": "Targeted core/UI pass; source-bound API positive awaits final fingerprint; full STRICT, Redis, CI, CodeQL and hosted verification pending root orchestration."
+  }
+}

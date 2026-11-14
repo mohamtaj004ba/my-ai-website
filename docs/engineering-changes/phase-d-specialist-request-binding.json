@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "4b909fedfe6437f35cbbb2db61513df8625510af0a8ecc55a34e401820e0a4d4",
+  "risk": "critical",
+  "scope": "Expose server-derived source binding metadata to exact new Specialist profile without changing historical requests or authority",
+  "riskAnalysis": "New writes target one parent-created temporary copy only. Current repository/customer/provider/credential state is never writable by agents. Existing owner/workspace/task/source/release/fence guards revalidated before/after child. Untrusted generated code and tests remain disabled; paidStarterauthority not granted.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source integrity, owner/task identity, immutable journal evidence, temporary copies, financial history and protected publication boundary.",
+    "trustBoundaries": "Model/fixture structured text versus server-owned exact source region; existingCAS actor/runtime/task authority versus child data-only filesystem; automated review versus independent acceptance.",
+    "abuseCases": "Traversal/protectedfile edits, unrelated code in permittedspan, duplicatewirekeys, stale/replayed/crossworkspace proposal, forged cleanup or acceptance, cancellation afterchild, credential/codeexecution/networkescape and spending grant revival.",
+    "mitigations": "Exactsinglefile/preimage/closedgrammar/bounds, predecode ambiguity checks, serverderived bindings andauthorizationcallbacks, pinnedimmutablebyteproof, oldreceiptidentityfix, existingrestrictedtrustedchild noeval/shell/network/credentials, exactartifactchecks, disabled execution/publication/paidnewtask."
+  },
+  "rollback": "Revert this feature-only commit and requalify Preview; preserve all historical evidence, accounting and original records. No actual product patch, provider credential, paid authority or Production state changed.",
+  "negativePaths": {
+    "malformed-response": "Wrong object/fields, noninteger/oversized counts and secret echo fail closed before Responses dispatch.",
+    "stale-state": "Source/context/request/expiry and authoritative stored approval mismatch deny dispatch.",
+    "concurrency": "Count dispatch and count recording are one-use existing-CAS operations; duplicate winners cannot occur.",
+    "cancellation": "Shared owner/task/revoke/lease checks run after counting and before dispatch; whole-operation abort includes count requests.",
+    "worker-interruption": "Revocation closes attempts/leases and retains uncertainty, including actual600audit capacity fallback in existing records; no retry or historical deletion.",
+    "api-outage": "Fixed endpoint/redirect:error, bounded response body, deadline and sanitized status/hash diagnostics; no fallback or retry.",
+    "authorization-denial": "Missing count consent/server pricing pin, impersonated roles or substituted workspace/source deny; no model-granted permissions.",
+    "spending-limit": "New5USD cumulative exposure separate from old15USD; fullattempt1USD availability and200k microUSD perstage holds; unknowncounts remain pending; maximum20attempts and stop on first complete workflow. No provider billing cap claim.",
+    "partial-execution": "Successful count alone cannot settle or accept work. Responses usage mismatch leaves pending evidence/reservation; no generated source execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "Specialist output required server context hash missing from request",
+      "detectionGap": "Fixture computes binding directly but model cannot reconstruct server hash",
+      "regression": "28 independent checks including actual v1/v2 metadata and five bounded stages; historical request hashes unchanged",
+      "historicalPrevention": "Exact new profile only; no replacement output or authority"
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Oneopt-inprofile in existingtaskcatalog/CASjournal/inferenceworker; no hostedAgents migration,newroles,gateway,ledgerororchestrator.",
+    "dependencies": "No dependency installation. ExistingNodebuiltins/zlib, draftproposal/workspace/child reused; one hash-pinned compressedpublicsource snapshot.",
+    "threats": "GeneratedJS remainsdata. Closedtaskgrammar cannot authorizeexecution; liveowner/task/fencebeforeafterguards+immutableartifactproof preventauthorityforgery.",
+    "failureModes": "Badsource/patch/binding/malformedwire/latecancellation failsclosed; childcleanup required; downstreamcannotclaimupstreamsuccess; paidnewtask staysblocked.",
+    "faultInjection": "Deterministicvalid/adversarialfixtures only; actualrestrictedchildren andnativeRedisCItest neverexecuteproposedcode.",
+    "independentChallenge": "SeparateWorkQA19 andAuditor25 passed; duplicatewire, grammar, schema andoriginalreceiptbinding defects corrected. Authorchecksnotcalledindependenthumanacceptance.",
+    "recovery": "Preserveinitialfailedlogs/history; no paidrequests,retries,reservations,credentialchanges or infrastructurespending; no currentproductpatchapplied.",
+    "readiness": "Data-onlymilestonereviewed; frozenSTRICT andGitHub/Vercel/realRedis/Browser qualificationrequired. LiveStarterinference andhostilecodeexecutionremainunverified/disabled."
+  }
+}

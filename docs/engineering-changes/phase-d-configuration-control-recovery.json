@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "180ff105883f6e9a344d75adcee0a75a139750846ead21e93c061f4b949b9ee0",
+  "risk": "critical",
+  "scope": "Restore valid-owner configuration control lifecycle and standard DOM test-harness fidelity after failed initial STRICT qualification",
+  "riskAnalysis": "Backend security and financial enforcement unchanged. New controls must recover after valid rendering and remain disabled without current owner data; stale displayed evidence clears. Standard setAttribute/getAttribute added only to minimal mocks without weakening assertions. Prior GCM flaky-test repair untouched.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Dedicated credentials, immutable owner records, source identity and existing testing exposure must remain isolated from models and frontend inputs.",
+    "trustBoundaries": "Authenticated owner controls journal intent; trusted Work performs reviewed Vercel operations; models remain data-only and cannot attest provider metadata or grant authority.",
+    "abuseCases": "Caller-chosen IDs bypassing dedupe, forged configuration chains, rehashed receipt substitutions, duplicate dispatch after lost acknowledgments, revoked authority masking failed workspace cleanup.",
+    "mitigations": "Stable scope/source/task duplicate key, unresolved intent lock, ordered hash-bound events, exact runtime and eight-key verification, predispatch enrollment receipt equality, physical preparation/destruction journal and serial fail-closed admission."
+  },
+  "rollback": "Revert only the reviewed feature changes while preserving all historical CAS records and pending financial exposure. Keep paid flags disabled. Never reopen old approvals, modify main/Production or apply the agent patch to the real product.",
+  "negativePaths": {
+    "malformed-response": "Exact field and manifest validation reject extra credential keys, wrong values and malformed configuration event chains.",
+    "stale-state": "Exact source/runtime/task/owner/workspace bindings and fresh review receipts reject old approvals and substituted deployments.",
+    "concurrency": "Existing organization Redis CAS permits one claim and one operation dispatch; durable markers survive restart and lost acknowledgments.",
+    "cancellation": "Revocation and canceled tasks cannot create model authority; physical preparation is recorded before I/O and missing destruction acknowledgment blocks continuation.",
+    "worker-interruption": "Closed attempts and revoked grants are insufficient: failed, missing or corrupt physical destruction evidence prevents new paid admission.",
+    "api-outage": "Unknown provider acknowledgments remain unresolved; no automatic deployment or model retry is permitted. Owner status is read-only recovery.",
+    "authorization-denial": "Worker/nonowner/cross-workspace identities cannot journal, enroll, activate, impersonate reviewers or publish.",
+    "spending-limit": "At most ten serial fresh attempts share four USD new retained exposure, also bounded by the unchanged five-USD ledger. Unknown counting charges remain pending, no provider hard-cap claim.",
+    "partial-execution": "Incomplete configuration ACK chain cannot authorize execution. Model usage remains recorded on artifact failure; no generated-code execution or publication."
+  },
+  "defects": [
+    {
+      "rootCause": "New configuration buttons and textarea were not restored by authenticated render after global disable; older minimal VM DOM lacked standard attribute methods.",
+      "detectionGap": "Focused tests initially covered new route behavior and one harness; fullSTRICT exposed the other harness and independent review found actual lifecycle omission.",
+      "regression": "Independent all-command-center UI62 passed, including missingowner, mutationrecovery, overlappingrefresh and scopeclear. Original3739 run failed21 test mocks and is preserved; full successor qualification pending.",
+      "historicalPrevention": "No historical receipt, consumed approval, accounting record or verified tamper-test repair altered. No configuration or paid dispatch occurred."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse the existing owner controller, organization CAS, spending ledger and five-stage worker; no competing orchestration or provider gateway.",
+    "dependencies": "No new package, external provider, infrastructure or credentials. Configuration helper is included in the source fingerprint.",
+    "threats": "Models cannot mutate external configuration, choose policy fields or approve spending; exact allowlist and reviewed receipt chain remain authoritative.",
+    "failureModes": "Lost acknowledgment, expired task, unconfirmed disposal, forged receipt, insufficient headroom or stale release stops admission before paid dispatch.",
+    "faultInjection": "Deterministic malformed/foreign/duplicate and physical-cleanup fixtures plus real Redis contention test; no real provider requests in tests.",
+    "independentChallenge": "Separate Work QA and Auditor found and challenged duplicate, chain, provenance and physical cleanup flaws; repaired and focused tests passed.",
+    "recovery": "Preserve original failed logs and all historical accounting. Unknown operation requires actual provider readback, never blind retry.",
+    "readiness": "Focused reviewed candidate only. Full STRICT and remote verification, actual config marker/metadata proof and fresh task activation remain mandatory before paid execution."
+  }
+}

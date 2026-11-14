@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "7802443c72a7699ee8b39c32c5aa586deee90e9a18f65efe58181434b5e6632d",
+  "risk": "critical",
+  "scope": "Prepare inactive bounded Google Calendar/Drive/People metadata reads and exact resource/receipt validation; no credentials, grant, route or provider activation.",
+  "riskAnalysis": "STRICT credential-adjacent tool boundary. Explicit trusted authorization/transport injection only; no new authority issuance or runtime reachability. Frozen offline tests and independent source reviews required; real account access remains unavailable.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Owner/workspace source-bound Google resource metadata and truthful evidence; existing encrypted OAuth and Gmail isolation.",
+    "trustBoundaries": "Future trusted gateway authorization and transport versus model-selected resource inputs and untrusted provider outputs.",
+    "abuseCases": "Cross-workspace/resource/deployment substitution, stale/unconfirmed authority, path redirects, secret/error leakage, unsupported dates, fabricated all-day overlap, malformed provider fields, timeout/revocation.",
+    "mitigations": "No default credentials or transport/route/grant; exact allowlists/bindings and pre/post equality; fixed GET endpoints;32KB/3s bounds/cancel/abort; finite projections; full receipt hash; explicit local-date uncertainty."
+  },
+  "rollback": "Remove inactive module and mandatory references, regenerate release lock. No Google credentials or grants created, no provider mutation/cleanup needed. Preserve original failed probes and existing Gmail.",
+  "negativePaths": {
+    "malformed-response": "Reject impossible Gregorian/time fields, reversed/mismatched timed intervals, malformed pagination and unexpected identity; finite MIME projection.",
+    "stale-state": "Exact subject/workspace/task/source/deployment/release/connection revision and authority equality before/after.",
+    "concurrency": "No grant issuance or persistence; future authoritative gateway must supply current policy, concurrent revision drift denies result.",
+    "cancellation": "Whole operation signal and3s deadline; transport aborted finally; cancelled evidence never accepted.",
+    "worker-interruption": "No worker integration; future route remains disabled pending durable journal integration.",
+    "api-outage": "Finite sanitized failure, no retries, no default fetch or provider credentials.",
+    "authorization-denial": "Unconfirmed/revoked credentials and absent/foreign resource bindings deny.",
+    "spending-limit": "No model dispatch, paid approvals, browser sessions or financial operations.",
+    "partial-execution": "Preserve38/45 earlier focused results and failed date probes separately; final47 checks and frozenSTRICT required."
+  },
+  "defects": [
+    {
+      "rootCause": "New prepared provider projection initially used Date.parse normalization, inherited MIME lookup and timezone-unsafe all-day overlap assumptions.",
+      "detectionGap": "Synthetic happy-path timestamps and MIME values did not represent malformed provider bodies or calendar-local dates.",
+      "regression": "Permanent impossible date/MIME/path/interval/deployment/pagination/abort/receipt/local-date cases plus independent probes.",
+      "historicalPrevention": "Use actual provider field contracts and preserve uncertainty; never infer genuine account access from injected fixtures."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing gateway extension preparation only; no competing journal, credentials or authorization layer.",
+    "dependencies": "Existing Google owner OAuth remains permanently unconfirmed; module and focused tests added to exact release and mandatory contract coverage.",
+    "threats": "Untrusted resources/provider outputs, cross-tenant/identity/release substitution, prompt injection via metadata, stale authority and response fabrication.",
+    "failureModes": "Fixed GET/small metadata only; unsupported input fails closed, all-day overlap explicitly uncertain; no activation or automatic retries.",
+    "faultInjection": "47 focused tests including stream bounds, timeout, revoke/change after dispatch, malformed provider content and no default transport.",
+    "independentChallenge": "Independent Auditor and QA actual source review; corrected impossible dates, MIME integrity and timezone findings. Final QA47/47; no real Google API calls.",
+    "recovery": "Cancel and abort local operation without authority resurrection; future real gateway must use existing durable receipts and revocation.",
+    "readiness": "Inactive preparation only. Owner consent, confirmed credential/refresh, selected resources, gateway audit integration and real-provider verification remain necessary."
+  }
+}

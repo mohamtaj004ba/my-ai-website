@@ -1,0 +1,119 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('fs');const path=require('path');
+const root=path.join(__dirname,'..');
+const account=fs.readFileSync(path.join(root,'api','account.js'),'utf8');
+const auth=fs.readFileSync(path.join(root,'lib','auth.js'),'utf8');
+
+test('magic-link requests are limited by both IP and recipient',()=>{
+  assert.match(account,/auth:rate:/);
+  assert.match(account,/auth:email-rate:/);
+  assert.match(account,/Promise\.all\(\[kv\.incr\(bucket\),kv\.incr\(emailBucket\)\]\)/);
+  assert.match(account,/count>MAX\|\|emailCount>MAX/);
+});
+
+test('magic links are hashed at rest, one-time, and expire quickly',()=>{
+  assert.match(account,/function loginTokenKey\(token\)/);
+  assert.match(account,/tokenKey=loginTokenKey\(token\)/);
+  assert.match(account,/kv\.set\(tokenKey,tokenRecord/);
+  assert.match(account,/const confirmed=await kv\.get\(tokenKey\)/);
+  assert.match(account,/\{ex:15\*60\}/);
+  const verifyStart=account.indexOf('async function verify(');
+  const verifyBody=account.slice(verifyStart,account.indexOf('\nasync function ',verifyStart+1));
+  assert.match(verifyBody,/readLoginToken\(token\)/);
+  assert.match(verifyBody,/deleteLoginToken\(token\)/);
+  assert.match(verifyBody,/createSession/);
+});
+
+test('session cookies are protected and session ids are hashed at rest',()=>{
+  assert.match(auth,/HttpOnly; SameSite=Lax/);
+  assert.match(auth,/NODE_ENV==='production'\?'\; Secure'/);
+  assert.match(auth,/SESSION_TTL=60\*60\*24\*7/);
+  assert.match(auth,/function sessionKey\(token\)/);
+  assert.match(auth,/key=sessionKey\(token\)/);
+  assert.match(auth,/kv\.set\(key,record/);
+  assert.match(auth,/readSessionToken\(token\)/);
+});
+
+test('pending deletion disables customer magic-link access',()=>{
+  assert.match(account,/member&&typeof member==='object'&&!Array\.isArray\(member\)/);
+  assert.match(account,/loginWs\.status==='pending_deletion'/);
+  assert.match(account,/member\.disabled\|\|String\(member\.workspaceId\|\|''\)!==workspaceId/);
+});
+
+
+test('admin-generated login links never store raw bearer tokens',()=>{
+  assert.doesNotMatch(account,/kv\.set\('login:'\+token/);
+  const start=account.indexOf('async function adminSendClientLogin');
+  assert.ok(start>=0,'adminSendClientLogin missing');
+  const end=account.indexOf('\nasync function ',start+1);
+  const body=account.slice(start,end>=0?end:account.length);
+  assert.match(body,/const token=crypto\.randomBytes\(32\)\.toString\('hex'\),tokenKey=loginTokenKey\(token\)/);
+  assert.match(body,/kv\.set\(tokenKey,/);
+});
+
+
+test('session reads fail closed on malformed session or member identity records',()=>{
+  assert.match(auth,/typeof s!=='object'\|\|Array\.isArray\(s\)/);
+  assert.match(auth,/typeof member!=='object'\|\|Array\.isArray\(member\)/);
+  assert.match(auth,/member\.email&&String\(member\.email\)\.trim\(\)\.toLowerCase\(\)!==email/);
+});
+
+test('session cookies are issued only after hashed session persistence is read back and verified',()=>{
+  assert.match(auth,/const confirmed=await kv\.get\(key\)/);
+  assert.match(auth,/Session persistence could not be confirmed/);
+  const createStart=auth.indexOf('async function createSession('),cookieAt=auth.indexOf("res.setHeader('Set-Cookie'",createStart),confirmAt=auth.indexOf('const confirmed=await kv.get(key)',createStart);
+  assert.ok(createStart>=0&&confirmAt>createStart&&cookieAt>confirmAt,'cookie must be set only after verified session readback');
+});
+
+
+test('session revocation requires both hashed and legacy token keys to be confirmed absent',()=>{
+  assert.match(auth,/const \[hashed,legacy\]=await Promise\.all\(\[kv\.get\(hashedKey\),kv\.get\(legacyKey\)\]\)/);
+  assert.match(auth,/Session revocation could not be confirmed/);
+  assert.doesNotMatch(auth,/Promise\.allSettled\(\[kv\.del\(sessionKey\(token\)\)/);
+  const start=account.indexOf('async function logout('),end=account.indexOf('\nmodule.exports=',start);
+  const body=account.slice(start,end);
+  assert.match(body,/logout session revocation failed/);
+  assert.match(body,/Logout could not be confirmed\. Please try again\./);
+});
+
+
+test('magic-link verification refuses login unless token revocation is confirmed',()=>{
+  assert.match(account,/const \[hashed,legacy\]=await Promise\.all\(\[kv\.get\(hashedKey\),kv\.get\(legacyKey\)\]\)/);
+  assert.match(account,/Login token revocation could not be confirmed/);
+  const start=account.indexOf('async function verify('),end=account.indexOf('\nasync function ',start+1),body=account.slice(start,end);
+  assert.match(body,/login token revocation failed/);
+  assert.match(body,/return res\.redirect\(302,'\/login\?error=invalid'\)/);
+  const revoke=body.indexOf('try{await deleteLoginToken(token)}'),session=body.indexOf('await createSession');
+  assert.ok(revoke>=0&&session>revoke,'login token must be consumed before creating a session');
+});
+
+
+test('session readback includes authorization revision and admin-view context',()=>{
+  assert.match(auth,/Number\(confirmed\.authVersion\|\|0\)!==Number\(record\.authVersion\|\|0\)/);
+  assert.match(auth,/Boolean\(confirmed\.adminView\)!==Boolean\(record\.adminView\)/);
+  assert.match(auth,/String\(confirmed\.adminHomeWorkspaceId\|\|''\)!==String\(record\.adminHomeWorkspaceId\|\|''\)/);
+});
+
+test('magic-link request and verification reject mismatched stored member email identity',()=>{
+  assert.match(account,/!member\.email\|\|cleanEmail\(member\.email\)===email/);
+  const start=account.indexOf('async function verify('),end=account.indexOf('\nasync function ',start+1),body=account.slice(start,end);
+  assert.match(body,/member\.email&&cleanEmail\(member\.email\)!==email/);
+});
+
+
+test('login page only reports a sent sign-in link after a canonical acknowledgement',()=>{
+  const login=fs.readFileSync(path.join(__dirname,'..','login.html'),'utf8');
+  assert.match(login,/const data=await r\.json\(\)\.catch\(\(\)=>null\)/);
+  assert.match(login,/data\.ok!==true/);
+  assert.match(login,/If that email is linked to a CallerCore account, a sign-in link is on the way\./);
+});
+
+
+test('failed sign-in email delivery revokes the stored one-time token before returning',()=>{
+  const start=account.indexOf('async function requestLogin('),end=account.indexOf('\nasync function verify(',start);
+  const body=account.slice(start,end);
+  const mailFail=body.indexOf("console.error('auth email failed'");
+  const revoke=body.indexOf('await deleteLoginToken(token)',mailFail);
+  const response=body.indexOf("Sign-in email temporarily unavailable",mailFail);
+  assert.ok(mailFail>=0&&revoke>mailFail&&response>revoke);
+  assert.match(body,/undelivered login token cleanup failed/);
+});

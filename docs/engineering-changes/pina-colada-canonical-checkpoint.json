@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "1cedd252f420c1b1ecf53bd7b9b5140c132527c77ebe1ce1647b191fc3946cbf",
+  "risk": "routine",
+  "scope": "Synchronize canonical handoff with verified live pilot and disabled shutdown evidence; documentation only.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

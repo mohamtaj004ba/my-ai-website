@@ -1,0 +1,26 @@
+'use strict';
+// Trusted fixed qualification only; never invoked by import or agent input.
+const fs=require('node:fs'),crypto=require('node:crypto'),{execFileSync}=require('node:child_process');
+const VERSION='c5-browser-image-proposal-v1';
+const BINARY='/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell';
+const BINARY_SHA='a6bd350a143a92159c12291f336d2f3cc65ea501e521070d9ebb596c8c90a2a7';
+const baseAllowed=value=>typeof value==='string'&&/^mcr\.microsoft\.com\/playwright:v1\.55\.0-noble@sha256:[a-f0-9]{64}$/.test(value);
+const digest=b=>crypto.createHash('sha256').update(b).digest('hex');
+function configuration({mode,platform,arch,uid,baseImage}){if(!['--dependencies-only','--fixed-fixture'].includes(mode)||platform!=='linux'||arch!=='x64'||!Number.isSafeInteger(uid)||uid<=0||!baseAllowed(baseImage))throw Error('C5_IMAGE_CONFIGURATION_UNCONFIRMED');}
+function libraryNames(stdout){return [...new Set([...String(stdout).matchAll(/^\s*([A-Za-z0-9_.+-]{1,100})\s+=>\s+not found\s*$/gm)].map(x=>x[1]))].sort();}
+function distribution(text){return Object.fromEntries(String(text).split('\n').filter(x=>/^(ID|VERSION_ID)=/.test(x)).map(x=>{const [key,...rest]=x.split('=');const value=rest.join('=').replace(/^"|"$/g,'');if(!/^[a-zA-Z0-9._-]{1,40}$/.test(value))throw Error('C5_OS_METADATA_INVALID');return[key,value];}));}
+function requireDistribution(value){if(value?.ID!=='ubuntu'||value?.VERSION_ID!=='24.04')throw Error('C5_OS_IDENTITY_MISMATCH');return value;}
+function fixtureFacts(image,geometry,url){if(!Buffer.isBuffer(image)||image.length<1024||!image.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))throw Error('C5_FIXTURE_PNG_INVALID');if(!geometry||!['x','y','width','height'].every(k=>Number.isFinite(geometry[k]))||geometry.x<0||geometry.y<0||geometry.width<=0||geometry.height<=0||url!=='about:blank')throw Error('C5_FIXTURE_GEOMETRY_OR_URL_INVALID');return{version:VERSION,classification:'fixed-local-fixture-only',screenshotHash:digest(image),bytes:image.length,geometry:{x:geometry.x,y:geometry.y,width:geometry.width,height:geometry.height},url,protectedPreviewVerified:false};}
+async function closeSafely(context,browser,timeoutMs=3000){if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>3000)throw Error('C5_CLEANUP_CONFIGURATION');let confirmed=true;for(const target of [context,browser]){if(!target)continue;let timer;try{await Promise.race([Promise.resolve().then(()=>target.close()),new Promise((_,reject)=>timer=setTimeout(()=>reject(Error('C5_CLOSE_TIMEOUT')),timeoutMs))]);}catch{confirmed=false;}finally{clearTimeout(timer);}}if(!confirmed)throw Error('C5_BROWSER_CLEANUP_UNCONFIRMED');}
+async function main(mode){
+ configuration({mode,platform:process.platform,arch:process.arch,uid:process.getuid?.(),baseImage:process.env.C5_BROWSER_BASE_IMAGE});
+ for(const name of ['playwright','playwright-core'])if(require('/opt/callercore-browser/node_modules/'+name+'/package.json').version!=='1.55.0')throw Error('C5_PACKAGE_IDENTITY_MISMATCH');
+ if(digest(fs.readFileSync(BINARY))!==BINARY_SHA)throw Error('C5_BROWSER_IDENTITY_MISMATCH');
+ let stdout,exit=0;try{stdout=execFileSync('/usr/bin/ldd',[BINARY],{encoding:'utf8',timeout:10000,maxBuffer:32000,env:{}});}catch(error){exit=Number.isInteger(error.status)?error.status:-1;stdout=typeof error.stdout==='string'?error.stdout:'';}
+ const missing=libraryNames(stdout),metadata={version:VERSION,distribution:requireDistribution(distribution(fs.readFileSync('/etc/os-release','utf8'))),playwright:'1.55.0',chromiumRevision:'1187',binaryHash:BINARY_SHA,loaderExit:exit,missingLibraryNames:missing,dependenciesReady:exit===0&&missing.length===0,qualification:'No protected Preview access or agent authority is established.'};
+ console.log(JSON.stringify(metadata));if(!metadata.dependenciesReady)throw Error('C5_NATIVE_DEPENDENCIES_UNAVAILABLE');
+ if(mode==='--dependencies-only')return;
+ let browser,context,proof;try{const {chromium}=require('/opt/callercore-browser/node_modules/playwright');browser=await chromium.launch({executablePath:BINARY,headless:true,timeout:10000,env:{}});context=await browser.newContext({viewport:{width:1280,height:900},javaScriptEnabled:false,acceptDownloads:false,serviceWorkers:'block',permissions:[]});await context.route('**/*',r=>r.abort('blockedbyclient'));const page=await context.newPage();await page.setContent('<!doctype html><html lang="en"><title>CallerCore isolated fixture</title><main><h1>Trusted browser fixture</h1><p>No network or Preview session.</p></main></html>',{timeout:5000});const image=await page.screenshot({timeout:5000});proof=fixtureFacts(image,await page.locator('main').boundingBox(),page.url());fs.writeFileSync('/vercel/sandbox/c5-browser-proof.png',image,{flag:'wx',mode:0o600});}finally{await closeSafely(context,browser);}console.log(JSON.stringify(proof));
+}
+if(require.main===module){if(process.argv.length!==3){console.error('C5_FIXED_MODE_REQUIRED');process.exitCode=1;}else main(process.argv[2]).catch(()=>{console.error('C5_QUALIFICATION_UNCONFIRMED');process.exitCode=1;});}
+module.exports={VERSION,BINARY,BINARY_SHA,baseAllowed,configuration,libraryNames,distribution,requireDistribution,fixtureFacts,closeSafely};

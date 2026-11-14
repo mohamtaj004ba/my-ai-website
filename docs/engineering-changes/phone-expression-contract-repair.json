@@ -1,0 +1,69 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "60ecc95f7c851900e4c1ede5bf2e4f03b8a7745b63a07d0cd5ecf3413f0379d2",
+  "risk": "critical",
+  "scope": "Align model-facing phone expression grammar with the shared validator and preserve precise sanitized denial subrules.",
+  "riskAnalysis": "Only two exact flag-free digit-presence regex forms in literal .test are added for newly reviewed releases. Old release requests and regex policy remain frozen. No source, identity, worker, spending, execution or publication authority expands.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Model-output inertness, reporter isolation, source evidence, historical request hashes, one-time grants and protected Preview boundaries.",
+    "trustBoundaries": "Untrusted replacement string to static parser and shared syntax description; closed reason metadata to immutable failure receipt; exact runtime to legacy/new formatting selection.",
+    "abuseCases": "Constructor escape, computed access, effectful arguments, arbitrary regex or flags, regex role confusion, leaked rejected source, historical request drift or stale authority.",
+    "mitigations": "Existing structural validation plus exact .test-only regex exception, noflag/global-strip distinctions, closed enum reasons, exact historical request fixtures and unchanged current-release controller checks."
+  },
+  "rollback": "Revert current syntax repair and return feature alias to qualified non-paid f792 source. Preserve both failed trials and accounting; no Production operation.",
+  "negativePaths": {
+    "malformed-response": "Existing identity/source/task/worker/cancellation/spending/publication enforcement unchanged. Old and new static adversarial cases, historical hashes and native five-stage fixtures verify denial and cleanup.",
+    "stale-state": "Existing identity/source/task/worker/cancellation/spending/publication enforcement unchanged. Old and new static adversarial cases, historical hashes and native five-stage fixtures verify denial and cleanup.",
+    "concurrency": "Existing identity/source/task/worker/cancellation/spending/publication enforcement unchanged. Old and new static adversarial cases, historical hashes and native five-stage fixtures verify denial and cleanup.",
+    "cancellation": "Existing identity/source/task/worker/cancellation/spending/publication enforcement unchanged. Old and new static adversarial cases, historical hashes and native five-stage fixtures verify denial and cleanup.",
+    "worker-interruption": "Existing identity/source/task/worker/cancellation/spending/publication enforcement unchanged. Old and new static adversarial cases, historical hashes and native five-stage fixtures verify denial and cleanup.",
+    "api-outage": "Existing identity/source/task/worker/cancellation/spending/publication enforcement unchanged. Old and new static adversarial cases, historical hashes and native five-stage fixtures verify denial and cleanup.",
+    "authorization-denial": "Existing identity/source/task/worker/cancellation/spending/publication enforcement unchanged. Old and new static adversarial cases, historical hashes and native five-stage fixtures verify denial and cleanup.",
+    "spending-limit": "Existing identity/source/task/worker/cancellation/spending/publication enforcement unchanged. Old and new static adversarial cases, historical hashes and native five-stage fixtures verify denial and cleanup.",
+    "partial-execution": "Existing identity/source/task/worker/cancellation/spending/publication enforcement unchanged. Old and new static adversarial cases, historical hashes and native five-stage fixtures verify denial and cleanup."
+  },
+  "defects": [
+    {
+      "rootCause": "Static guard rejects exact bounded digit-presence tests needed for phone-query eligibility; model guidance was separate ambiguous prose.",
+      "detectionGap": "Actual rejected source was not retained and every AST failure shared one generic reason, so original branch remains unknown.",
+      "regression": "Two exact noflag.test forms pass only newrelease syntax; unsafe flags,replace roles,arguments,constructors,comments and capability paths remain denied.",
+      "historicalPrevention": "Generate model syntax from shared guard contract, persist closed deny subrules and freeze historical release-specific request formatting."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing task, static validator, failure receipt and modelScope only. No new controller, role, journal, adapter or sandbox.",
+    "dependencies": "Existing integrity-pinned Acorn unchanged; no new dependency or installation.",
+    "threats": "Regex role confusion, malicious call arguments and constructor escapes remain explicit adversarial cases.",
+    "failureModes": "Invalid AST fails with closed reason and field; original paid failure stays unknown. New helper metadata does not confer authority.",
+    "faultInjection": "Existing35 adversarial cases and37 new contract/replay cases include forbidden arguments,flags,replace roles,raw reason injection and legacy release gating.",
+    "independentChallenge": "IndependentQA83pass plus3freeze-race case reruns3/3 andAuditor72checks approve049a fingerprint; actual historicalrequesthashes/policy remainexact.",
+    "recovery": "Both model attempts revoked,all42grantsrevoked,noactiveworkers;currentqualifiednonpaidalias retained untilreviewed source publication.",
+    "readiness": "Reviewed sourcecandidate for hostedSTRICT/Redis/CodeQL/Jekyll/Browser qualification; futurepaidattempt needsnewexactreleaseconfiguration/enrollment/taskapproval."
+  },
+  "title": "Shared phone syntax contract and diagnostic repair",
+  "base": "f792f211416eb9ad1654ab1dc0a688c424fde45f",
+  "description": "Align model-facing phone expression grammar with the shared validator and preserve precise sanitized denial subrules.",
+  "files": [
+    "CALLERCORE_PROJECT_STATE.md",
+    "lib/agent-operations-contract-lock.json",
+    "lib/agent-operations-engineering-failure.js",
+    "lib/agent-operations-phone-search.js",
+    "lib/agent-operations-search-expression.js",
+    "tests/agent-operations-phone-controller.test.js",
+    "tests/agent-operations-search-expression-contract-v2.test.js",
+    "tests/fixtures/phone-historical-request-bindings.json"
+  ]
+}

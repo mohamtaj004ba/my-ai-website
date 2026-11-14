@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "2fabfc79b8cfaf7c7bac902dd25dcd2a690321b00561434299505883694cec3d",
+  "risk": "critical",
+  "scope": "Align existing live implementation capability selector with qualified safe-time task and registered exact policy; retain original task/policy history and authority gates.",
+  "riskAnalysis": "Single advertised objective switch; no authority, source grammar, token or execution permission expansion. Old contracts frozen and providerdefaultUNCERTAIN remains. RealUI dispatch fixture tests exact newpolicy canonical journal, one-run and cleanup.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact live task selection, historical source contracts and preserved owner task/release authority.",
+    "trustBoundaries": "Advertised capability versus actual selected task, registered provider policy and server-side authorization.",
+    "abuseCases": "Stale v5 selection, wrong policy, forged source, generic approval fallback or duplicated run after acknowledgment loss.",
+    "mitigations": "One exact safe-time objective, registry/policy assertion, realUI saved-grant one-dispatch case, immutable oldguidance and unchanged default UNCERTAIN."
+  },
+  "defects": [
+    {
+      "rootCause": "Live capability selector still advertised v5, so actual UI admission could not select the registered safe-time v6 task.",
+      "detectionGap": "Prior contract/lifecycle tests covered v6 descriptor but did not assert advertised live capability alignment.",
+      "regression": "Exact capability/policy assertion, frozen old v5 guidance and actual UI Prepare/Run/revoke one-dispatch case;60targeted checks passed.",
+      "historicalPrevention": "Verify actual owner control selection against exact intended registry policy before creating configuration or paid grants."
+    }
+  ],
+  "rollback": "Restore prior advertised selector only via reviewed feature commit and keep paidexecution off; preserve old tasks, canceled refresh and all failed evidence.",
+  "negativePaths": {
+    "malformed-response": "Single selector constant only; existing owner/release/task/cancellation/financial/cleanup gates remain authoritative. Real UI fixture preserves one dispatch and canonical journal; no provider or execution permission added.",
+    "stale-state": "Single selector constant only; existing owner/release/task/cancellation/financial/cleanup gates remain authoritative. Real UI fixture preserves one dispatch and canonical journal; no provider or execution permission added.",
+    "concurrency": "Single selector constant only; existing owner/release/task/cancellation/financial/cleanup gates remain authoritative. Real UI fixture preserves one dispatch and canonical journal; no provider or execution permission added.",
+    "cancellation": "Single selector constant only; existing owner/release/task/cancellation/financial/cleanup gates remain authoritative. Real UI fixture preserves one dispatch and canonical journal; no provider or execution permission added.",
+    "worker-interruption": "Single selector constant only; existing owner/release/task/cancellation/financial/cleanup gates remain authoritative. Real UI fixture preserves one dispatch and canonical journal; no provider or execution permission added.",
+    "api-outage": "Single selector constant only; existing owner/release/task/cancellation/financial/cleanup gates remain authoritative. Real UI fixture preserves one dispatch and canonical journal; no provider or execution permission added.",
+    "authorization-denial": "Single selector constant only; existing owner/release/task/cancellation/financial/cleanup gates remain authoritative. Real UI fixture preserves one dispatch and canonical journal; no provider or execution permission added.",
+    "spending-limit": "Single selector constant only; existing owner/release/task/cancellation/financial/cleanup gates remain authoritative. Real UI fixture preserves one dispatch and canonical journal; no provider or execution permission added.",
+    "partial-execution": "Single selector constant only; existing owner/release/task/cancellation/financial/cleanup gates remain authoritative. Real UI fixture preserves one dispatch and canonical journal; no provider or execution permission added."
+  },
+  "proactiveReview": {
+    "architecture": "60 targeted checks plus independent QA/Auditor verify exact capability/policy alignment, historical v5 guidance, actual UI Prepare/Run/revoke binding and absence of authority expansion. Hosted verification required before live dispatch.",
+    "dependencies": "60 targeted checks plus independent QA/Auditor verify exact capability/policy alignment, historical v5 guidance, actual UI Prepare/Run/revoke binding and absence of authority expansion. Hosted verification required before live dispatch.",
+    "threats": "60 targeted checks plus independent QA/Auditor verify exact capability/policy alignment, historical v5 guidance, actual UI Prepare/Run/revoke binding and absence of authority expansion. Hosted verification required before live dispatch.",
+    "failureModes": "60 targeted checks plus independent QA/Auditor verify exact capability/policy alignment, historical v5 guidance, actual UI Prepare/Run/revoke binding and absence of authority expansion. Hosted verification required before live dispatch.",
+    "faultInjection": "60 targeted checks plus independent QA/Auditor verify exact capability/policy alignment, historical v5 guidance, actual UI Prepare/Run/revoke binding and absence of authority expansion. Hosted verification required before live dispatch.",
+    "independentChallenge": "60 targeted checks plus independent QA/Auditor verify exact capability/policy alignment, historical v5 guidance, actual UI Prepare/Run/revoke binding and absence of authority expansion. Hosted verification required before live dispatch.",
+    "recovery": "60 targeted checks plus independent QA/Auditor verify exact capability/policy alignment, historical v5 guidance, actual UI Prepare/Run/revoke binding and absence of authority expansion. Hosted verification required before live dispatch.",
+    "readiness": "60 targeted checks plus independent QA/Auditor verify exact capability/policy alignment, historical v5 guidance, actual UI Prepare/Run/revoke binding and absence of authority expansion. Hosted verification required before live dispatch."
+  }
+}

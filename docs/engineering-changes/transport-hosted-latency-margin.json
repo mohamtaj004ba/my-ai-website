@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "14f087cb2aba8cf4d3e7ed916f1fd41ce60742577f3498f769c653cbf1b8dcca",
+  "risk": "critical",
+  "scope": "Shared actual supervisePilot/runWorker/createRemote nonbillable hosted verification, isolated tasks and central lifecycle; provider unavailable by construction; no paid permissions or operational ledger writes.",
+  "riskAnalysis": "Owner eligibility and every action remain server enforced; UI cleanup must bind exact original record/source/release and distinguish stopped tests from verified central revocation.",
+  "threatModel": {
+    "assets": "Current owner session, task capabilities, isolated project key, immutable task/evidence/QA records, historical spending holds and durable approval registry.",
+    "trustBoundaries": "Authenticated owner browser to protected Node supervisor and Redis; restricted worker to exact task APIs and OpenAI; provider output to independent QA and backend acceptance.",
+    "abuseCases": "Stale helper ownership substitution; lost prepare/init responses; hung renewal, controller or worker death; replay/concurrent initializer; forged terminal results; stale/foreign readback; owner workspace switch; cancelled transport suppressing diagnostic evidence; token disclosure in owner stream.",
+    "mitigations": "Existing current owner/member/workspace/same-origin checks, exact immutable bindings, durable CAS revocation and30slease, one initialization attempt, bounded renew/init/stall/cleanup, backend terminal result equality, narrow late diagnostic sink, zero-call isolated hosted probes and independent reviews."
+  },
+  "rollback": "Keep paid false; remove only temporary inert window; deploy exact reviewed disabled feature source and independently verify old/current/replacement brokers. Preserve original helper bytes, task records and uncertain holds. Revert feature-only reviewed changes if required, never Production or historical evidence.",
+  "negativePaths": {
+    "malformed-response": "Actual Node QA/Auditor tests and retained contract-first suite cover malformed-response with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "stale-state": "Actual Node QA/Auditor tests and retained contract-first suite cover stale-state with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "concurrency": "Actual Node QA/Auditor tests and retained contract-first suite cover concurrency with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "cancellation": "Actual Node QA/Auditor tests and retained contract-first suite cover cancellation with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "worker-interruption": "Actual Node QA/Auditor tests and retained contract-first suite cover worker-interruption with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "api-outage": "Actual Node QA/Auditor tests and retained contract-first suite cover api-outage with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "authorization-denial": "Actual Node QA/Auditor tests and retained contract-first suite cover authorization-denial with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "spending-limit": "Actual Node QA/Auditor tests and retained contract-first suite cover spending-limit with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled.",
+    "partial-execution": "Actual Node QA/Auditor tests and retained contract-first suite cover partial-execution with exact backend bindings, no model network, and conservative holds; localhost disconnect and real Redis child termination add real transport/process boundaries. Hosting faults remain isolated/labeled."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Hosted verification artificial pauses exhausted twenty-second controller deadline before final polling despite worker completion.",
+      "detectionGap": "Local zero-latency transport hid the control-plane latency margin.",
+      "regression": "Actual handler/supervisor/worker success with350ms per request latency must renew and report completed with five boundaries before the unchanged deadline.",
+      "historicalPrevention": "Regression retains genuine timers and delayed HTTP-shaped responses; shortening only inert pauses creates five seconds of deadline margin without changing paid timeouts."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Owner session starts tracked supervisor; separate restricted worker bearer invokes actual runWorker/createRemote HTTP ports; fixed zero-authority profile; isolated Redis CAS task/approval/capability/audit namespace. Operational ledger and provider path never selected.",
+    "dependencies": "Existing Vercel Pro/Fluid duration, Upstash CAS, owner session, restricted worker project credentials, native Responses contract and current official pricing reviewed.",
+    "threats": "Profile confusion, orphan activation, callback substitution, leaked task capability, replay/stale deployment/release, controller interruption, authority renewal after revoke, and partial initialization.",
+    "failureModes": "Startup absent, worker crash/stall, partial committed initialization loss, cancellation, central revoke, stale release, cleanup failure; hosted faults separated from actual infrastructure outage.",
+    "faultInjection": "Lost committed responses, networkdisconnect, stuck renewals, wrong receipts, terminal races, Redis CAS concurrency and actual Node SIGKILL with30second real-time lease.",
+    "independentChallenge": "Separate Auditor and QA implement and execute negative tests against actual entrypoints/handler/native request mocks and challenge fast completion/terminal behavior.",
+    "recovery": "Central exact-ID revocation before/after init, cleanup readback validation, hardkill lease fallback, no retries, pending usage preserved and separate replacement verification.",
+    "readiness": "No hosted claim until actual concurrent owner supervisor and separate worker requests observed and independently reviewed. No model accuracy/live paid workflow claim."
+  }
+}

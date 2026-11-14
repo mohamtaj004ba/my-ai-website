@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "e39b52e067cf115df15ecfa88e1eea54c4bf301c4eb40f6f5e1dcbbb3726163a",
+  "risk": "critical",
+  "scope": "Separate bounded remote authority checks from unchanged data-only child limits, preserve cleanup failure diagnostics, and permit exact reviewed owner-only append-only destruction reconciliation.",
+  "riskAnalysis": "Actual source-bound Specialist response reached workspace preparation then failed DRAFT_CANCELLED. The exact subphase is unknown. An8s wrapper included remote authority and a1s cleanup acknowledgement could expire before its CAS committed. Preserve original false/failure/workflow and every financial record. New bounded bookkeeping cannot extend original stage/task/approval deadlines, execute generated source, grant acceptance or publish. Owner reconciliation requires original validated server destruction proof, fully revoked/closed native authority and current server-pinned reviewed release; arbitrary hashes are insufficient at the controller.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source-bound patches, original failure/disposal evidence, owner/workspace authority, credentials, audit and historical funding.",
+    "trustBoundaries": "Trusted remote authorization versus unchanged8s data-only worker; authenticated owner maintenance versus generated model text and closed historical records.",
+    "abuseCases": "Late authorization after cancellation, child timeout renewal, forged destruction or review hashes, stale/CAS replay, cross-workspace maintenance, concealed cleanup failure or restored spending authority.",
+    "mitigations": "Original parent signal; separate finite30s authority checks;8s child; closed diagnostic vocabulary; exact idempotent destruction proof; source-bound existing reviewed manifest; owner-only false-paid-flags route; immutable original projection/failure/proof hashes and one appended audit receipt."
+  },
+  "rollback": "Restore last qualified paid-disabled Preview and revoke all grants. Preserve all original and new reconciliation receipts, false diagnostics and financial records. Never delete historical evidence or treat rollback as renewed execution. Keep paid continuation blocked if cleanup cannot be verified.",
+  "negativePaths": {
+    "malformed-response": "Incomplete, refused or malformed output remains rejected; no fake artifact.",
+    "stale-state": "Old policies, grants and release fingerprints cannot authorize new execution.",
+    "concurrency": "Serial cumulative admission and existing CAS; predecessor must be closed and clean.",
+    "cancellation": "Revocation and emergency stop remain authoritative; no retry after failure.",
+    "worker-interruption": "Cancel before/inside/after child, await actual termination/disposal; unknown or failed cleanup stays blocked. Remote authorization cannot outlive original authority.",
+    "api-outage": "No automatic paid retry; preserve sanitized diagnostic and usage uncertainty.",
+    "authorization-denial": "Reject workers/services, foreign owners/workspaces, stale source/review manifests, nonfalse flags, live leases/grants, altered failure/preparation/original record, and unsupported cleanup evidence.",
+    "spending-limit": "Existing aggregate authorization and token/call/time caps preserved across distinct successors.",
+    "partial-execution": "A complete model response is not a preserved implementation artifact; only actual accepted stage receipts reach downstream roles."
+  },
+  "defects": [
+    {
+      "rootCause": "Verified timing-design weakness: remote before/after authorization shared the local8s wrapper;1s destruction ACK timeout can precede its durable write. Exact historical cancellation point remains unproven.",
+      "detectionGap": "Previously fast deterministic bookkeeping did not model slow authority checks or delayed CAS acknowledgement.",
+      "regression": "Actual data-only child with delayed before/after authorization, ignored authority, original parent cancellation, child timeout/disposal; native delayed CAS/idempotence and tampered proof rejection; exact owner controller/organization CAS and realRedis reconciliation.",
+      "historicalPrevention": "Original failed attempt remains blocked with immutable failure/usage/false diagnostic. Only a separately reviewed exact server destruction proof can be reconciled; no regenerated model output or historical acceptance."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse existing owner controller, organization CAS journal, native data worker and approval boundaries. No new identity, financial ledger, orchestrator or code executor.",
+    "dependencies": "No new package/provider/paid infrastructure. Append one bounded reconciliation object and audit event; existing storage ceilings remain.",
+    "threats": "Untrusted source or model text claiming authority; forged reviews; stale destruction; permission renewal; false success.",
+    "failureModes": "Every original task/stage deadline and all financial/publication restrictions remain authoritative. Unconfirmed physical cleanup blocks future paid attempts.",
+    "faultInjection": "Delayed/hung authorization and CAS; before/worker/after cancellation; altered source/context/proposal/failure, stale/current manifest mismatch, cross-owner/workspace, active authority, concurrent replay and audit preservation.",
+    "independentChallenge": "Separate Work QA/Auditor review candidate code, original receipts, native concurrency, realRedis and exact release; automated technical review is not human acceptance.",
+    "recovery": "Normal reviewed feature source deployment may update only existing two review metadata keys with durable one-time task-bound markers and allpaidflagsfalse. This is owner maintenance, not a fabricated paid configuration intent. After verified hosted reconciliation, future paid activation still needs its full existing configuration/task/sequence gates.",
+    "readiness": "Focused regressions, independent final source review, STRICT/realRedis/CI/CodeQL/Jekyll/authenticatedBrowser+visuals, actual exact-source manifest and cleanup readback before paid continuation."
+  }
+}

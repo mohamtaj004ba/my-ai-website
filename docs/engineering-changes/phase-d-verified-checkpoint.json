@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "c5dabef478eee80caea806492ef3ff0751cbcfc3e506c7df315b200f8efa7b4e",
+  "risk": "routine",
+  "scope": "Preserve exact Phase D source, independently audited deployed data-only fixture evidence, remote qualification and disabled execution/paid boundaries; no runtime changes",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

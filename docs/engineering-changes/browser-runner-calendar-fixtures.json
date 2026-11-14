@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "b1b65fc92de2280a89ba4f4923922a4608dad0ae1667b5989f79fbd4aedfdc74",
+  "risk": "critical",
+  "scope": "Pin the existing Preview browser job to Playwright-supported Ubuntu24.04 and make two voice usage fixtures calendar-stable, with explicit next-month recovery coverage.",
+  "riskAnalysis": "Workflow OS selection affects release qualification. Only runner/cache, refreshed source fingerprint and tests change. Production code, permissions, credentials, spending, grants and visual baselines remain unchanged.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact source qualification, existing authentication secrets and immutable failure history.",
+    "trustBoundaries": "GitHub hosted runner versus protected Preview; deterministic fixture clock versus production accounting.",
+    "abuseCases": "Reuse incompatible browser cache, hide test failure by changing expected usage, confuse fixture success with hosted or live model success.",
+    "mitigations": "Pin OS and cache identity; retain original minute expectations with test-scoped clock and add cross-month historical-ledger check; qualify exact successor source."
+  },
+  "defects": [
+    {
+      "rootCause": "Floating ubuntu-latest advanced to Ubuntu26.04, unsupported by installed Playwright1.55.",
+      "detectionGap": "Host OS was not pinned alongside the browser version.",
+      "regression": "Existing workflow/source/access tests33passed; hosted browser required on corrected OS.",
+      "historicalPrevention": "OS-specific cache and pinned supported runner preserve dependency compatibility; original failed run remains."
+    },
+    {
+      "rootCause": "Two October call fixtures asserted current-month usage against an uncontrolled November wall clock.",
+      "detectionGap": "Fixtures passed in October and did not specify the billing month being tested.",
+      "regression": "Both failures reproduced; scoped Date mock retains assertions; next-month recovery preserves original ledger and excludes historical minutes. Full voice suite72passed.",
+      "historicalPrevention": "No changing fixture dates each month or weakening expected usage. Added explicit calendar transition and replay coverage."
+    }
+  ],
+  "rollback": "Keep execution disabled if qualification fails. Revert reviewed feature changes while retaining original CI failures and audit records. Never change Production or restore consumed authority.",
+  "negativePaths": {
+    "malformed-response": "No response parser changed; existing fixture validation remains mandatory.",
+    "stale-state": "Cache key includes pinned OS; exact source fingerprint must match successor deployment.",
+    "concurrency": "No worker or ledger concurrency changes; full suite still tests existing CAS behavior.",
+    "cancellation": "Workflow cancellation and cleanup steps unchanged; no paid operations initiated.",
+    "worker-interruption": "No restricted worker code changed; existing cleanup verification retained.",
+    "api-outage": "Provider and access errors still fail release qualification; no retries or bypass added.",
+    "authorization-denial": "Job permissions, protected access and owner checks unchanged.",
+    "spending-limit": "No accounting changes or new paid execution; one normal source build only after reviewed commit.",
+    "partial-execution": "Original pre-application browser failure and failed voice assertions preserved; no claim partial run passed."
+  },
+  "proactiveReview": {
+    "architecture": "Reuse existing release workflows; no added orchestration, gateway or infrastructure.",
+    "dependencies": "Existing Playwright1.55 package supports Ubuntu24.04; browser version unchanged.",
+    "threats": "OS/cache mismatch corrected without changing secrets, permissions or network boundaries.",
+    "failureModes": "Calendar rollover reproduced locally; production monthly attribution confirmed in source.",
+    "faultInjection": "Next-month delayed transcript and duplicate replay validate preserved historical ledger and zero current usage.",
+    "independentChallenge": "Independent Work QA and Engineering Auditor review the narrow follow-up before publication.",
+    "recovery": "Retain all historical checkpoint bytes and original failed job identities; no duplicate deployment.",
+    "readiness": "Runner33 and voice72 tests pass; full exact-source CI/Redis/CodeQL/Jekyll/Browser evidence remains required."
+  }
+}

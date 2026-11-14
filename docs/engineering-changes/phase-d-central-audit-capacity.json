@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "4cb0cf7c32902478c2b8391b75106be4ccbb098b3677a6728b8616118e71ea90",
+  "risk": "critical",
+  "scope": "Bound existing shared audit growth and expose owner-only measured storage before any further configuration or trial; preserve all history and byte ceilings.",
+  "riskAnalysis": "Count growth can consume storage, so original byte ceilings stay authoritative. This release is paid-disabled qualification only. Actual shared ledger utilization and conservative complete-artifact/failure headroom remain required before configuration or inference.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable audit history, task authority, credentials, spending and cross-workspace isolation.",
+    "trustBoundaries": "Owner authorization precedes read-only projection; all mutations retain existing CAS, runtime and task checks.",
+    "abuseCases": "History overwrite, unbounded growth, full registry partial writes, false paid readiness or unavailable cleanup.",
+    "mitigations": "Bound1024 append, unchanged byte caps, atomic preflight, earlier600 cleanup fallback, numeric-only projection and release fingerprint binding."
+  },
+  "rollback": "Retain current qualified paid-disabled Preview; revert reviewed source if qualification fails, never rewrite persisted records or revive old grants.",
+  "negativePaths": {
+    "malformed-response": "Capacity rejects non-array registry state, and unchanged inference parser remains authoritative.",
+    "stale-state": "Existing task/runtime checks and CAS readback remain required.",
+    "concurrency": "Real CAS conflict test retains concurrent historical row and appends once.",
+    "cancellation": "Existing revocation bypasses new admission checks and retains earlier cleanup fallback.",
+    "worker-interruption": "No worker changes; immutable diagnostics and revocation byte reserve preserved.",
+    "api-outage": "No provider calls in tests; telemetry read failure cannot grant clean authority.",
+    "authorization-denial": "Existing owner-before-read test and exact source task checks remain unchanged.",
+    "spending-limit": "No budget changes, paid disabled; expanded remaining allowance is not increased.",
+    "partial-execution": "Full registry and byte denials preserve unchanged raw CAS; emergencycleanup at1024 preserves history."
+  },
+  "defects": [
+    {
+      "rootCause": "Central audit600 reached after configuration steps, blocking completion although separate assignment capacity remained.",
+      "detectionGap": "Separate operations telemetry did not report shared organization bytes and audit storage together.",
+      "regression": "Actual CAS appends beyond600, preserves history/concurrency, denies1025 and full registry/bytes; cleanup tested at1024.",
+      "historicalPrevention": "Owner-only numeric shared capacity exposes all bounded registries before fresh task/configuration; full trial byte proof remains explicit."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse same organization CAS and authorization controller; no competing journal or orchestration.",
+    "dependencies": "No package, lockfile, external service, worker or build-policy changes. New pure module fingerprint-bound.",
+    "threats": "Unbounded audit writes, false availability, data leakage or cleanup rejection at full capacity.",
+    "failureModes": "Count and byte guards fail closed, projection cannot authorize execution, cleanup earlierfallback retained.",
+    "faultInjection": "Boundary, full registry, oversizedbytes, concurrency, readonlyprivacy and fullauditcleanup tested.",
+    "independentChallenge": "Separate WorkQA and EngineeringAuditor found no material defect; both require actual byte headroom before paid activation.",
+    "recovery": "Keep old claimed configuration and all historical evidence intact until reviewed cancellation; never retry refresh blindly.",
+    "readiness": "Focused verification and fullSTRICT required; deployment and live reasoning are not inferred from fixtures."
+  }
+}

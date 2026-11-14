@@ -1,0 +1,17 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "748b2d4e3e71512479ca121260be89bf8a26a9dc0d91ad654656bbe46c7112df",
+  "risk": "routine",
+  "scope": "Documentation-only record of the authorized pilot stopped at fresh capability preflight, before activation or any paid call. No source contract change or execution permission change.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [
+    {
+      "rootCause": "Final Chief contract was deliberately narrowed to canonical aggregate status; it lacks individual findings and QA verdict inputs and rejects richer reporting outputs.",
+      "detectionGap": "Existing shared-contract and five-stage mock tests establish the bounded status protocol, not the newly requested accepted/rejected/unresolved individual finding summary capability.",
+      "regression": "Offline actual-builder/schema diagnostic preserved in pilot-6be8d90-report-contract-blocker.json; permanent mixed-verdict report tests remain required with a separately scoped versioned implementation, not falsely claimed complete.",
+      "historicalPrevention": "This preflight inspection and real-validator counterexample stopped the current authorization before transport with zero model calls, tasks, approvals or reservations."
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "47a3707fb703c931ee25c73b6b93f108af2cf6343ce4a689f58fdd67b4c98389",
+  "risk": "critical",
+  "scope": "Work-controlled Preview adoption of actual reviewed agent call-row patch; preserve original rejection, current source identity, historical replay and keyboard/browser coverage.",
+  "riskAnalysis": "Exact one-label replacement already passed actual isolated tests. Primary risks are stale task reuse, historical readback regression and packaging drift; runtime admission remains fail-closed.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Immutable agent receipts, source identity, accessible call labels and task authorization history.",
+    "trustBoundaries": "Work source publication versus internal agent proposals, current source admission versus explicit historical test replay.",
+    "abuseCases": "Reusing stale patch grants, changing unrelated source, falsely rewriting the original model rejection or source evidence.",
+    "mitigations": "Exact before/after hashes, immutable old assets, new bounded evidence asset, stale assignment denial and independent QA/Auditor review."
+  },
+  "rollback": "Reviewed feature revert of the adoption commit only, paid execution disabled, preserve original receipts and historical source assets.",
+  "negativePaths": {
+    "malformed-response": "Existing controller protections unchanged; focused historical fixtures cover denial, malformed usage, cleanup and no retry. Separate current-source tests reject resolved task admission before persistence.",
+    "stale-state": "Existing controller protections unchanged; focused historical fixtures cover denial, malformed usage, cleanup and no retry. Separate current-source tests reject resolved task admission before persistence.",
+    "concurrency": "Existing controller protections unchanged; focused historical fixtures cover denial, malformed usage, cleanup and no retry. Separate current-source tests reject resolved task admission before persistence.",
+    "cancellation": "Existing controller protections unchanged; focused historical fixtures cover denial, malformed usage, cleanup and no retry. Separate current-source tests reject resolved task admission before persistence.",
+    "worker-interruption": "Existing controller protections unchanged; focused historical fixtures cover denial, malformed usage, cleanup and no retry. Separate current-source tests reject resolved task admission before persistence.",
+    "api-outage": "Existing controller protections unchanged; focused historical fixtures cover denial, malformed usage, cleanup and no retry. Separate current-source tests reject resolved task admission before persistence.",
+    "authorization-denial": "Existing controller protections unchanged; focused historical fixtures cover denial, malformed usage, cleanup and no retry. Separate current-source tests reject resolved task admission before persistence.",
+    "spending-limit": "Existing controller protections unchanged; focused historical fixtures cover denial, malformed usage, cleanup and no retry. Separate current-source tests reject resolved task admission before persistence.",
+    "partial-execution": "Existing controller protections unchanged; focused historical fixtures cover denial, malformed usage, cleanup and no retry. Separate current-source tests reject resolved task admission before persistence."
+  },
+  "defects": [
+    {
+      "rootCause": "Repeated callers had identical accessible button names because call timestamps were excluded from aria-label.",
+      "detectionGap": "Prior browser click checks did not assert accessible names or keyboard activation, and original unchecked patch failed invalid-time behavior.",
+      "regression": "Exact genuine safe-time replacement, seven actual isolated cases, fifty focused adoption checks and authenticated browser accessible-name/Enter assertions.",
+      "historicalPrevention": "Review current-source admission and historical replay separately whenever publishing a source-bound agent patch."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Exact agent patch and immutable evidence preserved; explicit current source and historical fixture separation independently reviewed. Full STRICT, Redis, security and actual Browser archive qualification required before release claim.",
+    "dependencies": "Exact agent patch and immutable evidence preserved; explicit current source and historical fixture separation independently reviewed. Full STRICT, Redis, security and actual Browser archive qualification required before release claim.",
+    "threats": "Exact agent patch and immutable evidence preserved; explicit current source and historical fixture separation independently reviewed. Full STRICT, Redis, security and actual Browser archive qualification required before release claim.",
+    "failureModes": "Exact agent patch and immutable evidence preserved; explicit current source and historical fixture separation independently reviewed. Full STRICT, Redis, security and actual Browser archive qualification required before release claim.",
+    "faultInjection": "Exact agent patch and immutable evidence preserved; explicit current source and historical fixture separation independently reviewed. Full STRICT, Redis, security and actual Browser archive qualification required before release claim.",
+    "independentChallenge": "Exact agent patch and immutable evidence preserved; explicit current source and historical fixture separation independently reviewed. Full STRICT, Redis, security and actual Browser archive qualification required before release claim.",
+    "recovery": "Exact agent patch and immutable evidence preserved; explicit current source and historical fixture separation independently reviewed. Full STRICT, Redis, security and actual Browser archive qualification required before release claim.",
+    "readiness": "Exact agent patch and immutable evidence preserved; explicit current source and historical fixture separation independently reviewed. Full STRICT, Redis, security and actual Browser archive qualification required before release claim."
+  }
+}

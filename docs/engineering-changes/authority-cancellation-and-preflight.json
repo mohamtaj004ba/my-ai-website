@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "277953ee446ca1ef857c2d771eac4d8e0cc417daa9a8154a8e86cf0a57174a94",
+  "risk": "critical",
+  "scope": "Preserve closed activation cancellation provenance, avoid unchanged authority CAS writes, and reserve two bounded assignment slots before Preview refresh.",
+  "riskAnalysis": "No lease, request, token, spending or publication authority expands. Fresh checks still run; unchanged verification avoids CAS. Assignment registry increases from64 to96 without deletion or new provider; bounded retrieval scans up to32 additional historical rows only. Provider storage/request failures remain authoritative.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Task and release authority, immutable history, spending, credentials and revocation.",
+    "trustBoundaries": "Existing authenticated owner/controller and trusted fixed-code broker; model output and arbitrary abort reasons cannot authorize execution.",
+    "abuseCases": "Forged abort metadata, expired/revoked authority, stale concurrent writes, cross-workspace admission and refresh with no live-task slot.",
+    "mitigations": "Closed origin/code pairs; fresh active checks; unchanged atomic dispatch/renewal checks and30s leases; bounded96-plan registry; two-slot refresh preflight; preserved CAS/history."
+  },
+  "rollback": "Revert reviewed platform changes to the prior paid-disabled Preview; retain failed attempt, reservations, configuration chain and all assignment history. Never revive approvals or remove persisted records.",
+  "negativePaths": {
+    "malformed-response": "Existing and new non-billable regression coverage checks malformed-response while preserving fail-closed authority, immutable history, cleanup and no automatic provider retry; full release qualification remains required.",
+    "stale-state": "Existing and new non-billable regression coverage checks stale-state while preserving fail-closed authority, immutable history, cleanup and no automatic provider retry; full release qualification remains required.",
+    "concurrency": "Existing and new non-billable regression coverage checks concurrency while preserving fail-closed authority, immutable history, cleanup and no automatic provider retry; full release qualification remains required.",
+    "cancellation": "Existing and new non-billable regression coverage checks cancellation while preserving fail-closed authority, immutable history, cleanup and no automatic provider retry; full release qualification remains required.",
+    "worker-interruption": "Existing and new non-billable regression coverage checks worker-interruption while preserving fail-closed authority, immutable history, cleanup and no automatic provider retry; full release qualification remains required.",
+    "api-outage": "Existing and new non-billable regression coverage checks api-outage while preserving fail-closed authority, immutable history, cleanup and no automatic provider retry; full release qualification remains required.",
+    "authorization-denial": "Existing and new non-billable regression coverage checks authorization-denial while preserving fail-closed authority, immutable history, cleanup and no automatic provider retry; full release qualification remains required.",
+    "spending-limit": "Existing and new non-billable regression coverage checks spending-limit while preserving fail-closed authority, immutable history, cleanup and no automatic provider retry; full release qualification remains required.",
+    "partial-execution": "Existing and new non-billable regression coverage checks partial-execution while preserving fail-closed authority, immutable history, cleanup and no automatic provider retry; full release qualification remains required."
+  },
+  "defects": [
+    {
+      "rootCause": "Ordinary authority verify used a normal transaction and wrote unchanged full ledger state. Outer activation abort discarded its closed origin before transport persistence. Refresh preflight reserved one slot although configuration preparation plus a fresh live task need two.",
+      "detectionGap": "Prior successful fixtures used low-latency adapters and did not assert no-op CAS counts or distinguish outer cancellation causes. Historical cancellation exact cause remains unproven.",
+      "regression": "Independent12 cancellation/actual-broker tests,4 registry history/concurrency/boundary tests, existing transport/failure/lifecycle and STRICT release suite.",
+      "historicalPrevention": "Preserve closed cancellation provenance before cleanup, assert actual no-op writes, and check complete preparation-plus-live capacity before configuration."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse existing controller, broker, transaction no-op option and assignment registry; no competing journal or gateway.",
+    "dependencies": "No dependency, credential, infrastructure or model changes.",
+    "threats": "Arbitrary exception text, forged diagnostics, stale/revoked authority, concurrent history loss or unauthorized task admission.",
+    "failureModes": "Any authority failure still cancels. Historical exact trigger remains unknown; performance repair is not proof of its cause. Existing inner heartbeat exact error remains unretained.",
+    "faultInjection": "Delayed/throwing renewals, external aborts, arbitrary secret-like reasons, revoked authority, concurrent appends, duplicate/stale/cross-workspace operations and exhausted registry.",
+    "independentChallenge": "Separate Work QA authored isolated tests; Engineering Auditor reviews actual changes and evidence. Automated criticism is not independently authenticated acceptance.",
+    "recovery": "Preserve original failed attempt and pending uncertainty; source repair must pass reviewed release/configuration gates before any fresh one-time attempt.",
+    "readiness": "Focused tests then STRICT, Redis, CI, CodeQL and actual authenticated Browser artifact before paid admission."
+  }
+}

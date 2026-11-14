@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "8b5be7b99b02ad2f00166e5a8c42824310624705c985bb07660a28f317261bdb",
+  "risk": "critical",
+  "scope": "Chief criterion review in the existing engineering handoff.",
+  "riskAnalysis": "A terminal word can produce a false positive. Ambiguous prose may proceed to technical review while structural gaps remain rejected.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Chief criteria, review receipts, and exact-source authority.",
+    "trustBoundaries": "The registered assignment selects the review policy. Model text remains untrusted.",
+    "abuseCases": "Submit incomplete criteria or suppress the Chief observation.",
+    "mitigations": "Keep structural rejection, immutable quality references, and separate Auditor judgment."
+  },
+  "defects": [
+    {
+      "rootCause": "The handoff validator rejected terminal words on tasks that already recorded them for review.",
+      "detectionGap": "Prior fixtures did not exercise an ambiguous ending in the modern handoff.",
+      "regression": "The parser regression distinguishes terminal-word observations from dangling operators and ellipses.",
+      "historicalPrevention": "Historical strict and receipt replay tests remain in the focused suite."
+    }
+  ],
+  "rollback": "Keep the existing feature Preview available and restore its alias if qualification fails.",
+  "negativePaths": {
+    "malformed-response": "Strict response schema remains enforced.",
+    "stale-state": "Exact release and task fencing remain enforced.",
+    "concurrency": "Existing serial admission remains enforced.",
+    "cancellation": "Existing revoke and cleanup paths remain enforced.",
+    "worker-interruption": "Existing controller failure fixtures verify shutdown.",
+    "api-outage": "The QA resume 503 fixture preserves evidence and revokes authority.",
+    "authorization-denial": "No authorization policy changes.",
+    "spending-limit": "No request or reservation policy changes.",
+    "partial-execution": "Preserve finished receipts and the final Auditor decision."
+  },
+  "proactiveReview": {
+    "architecture": "Use the existing advisory review contract.",
+    "dependencies": "No dependencies changed.",
+    "threats": "Reject structurally incomplete criteria and keep ambiguous prose visible to reviewers.",
+    "failureModes": "A rejected or unresolved criterion may still require human review.",
+    "faultInjection": "Test complete terminal-word examples, ellipses, operators and QA resume failures.",
+    "independentChallenge": "Independent Work QA passed 31 checks. Engineering Auditor approved the local handoff change.",
+    "recovery": "Use the existing Preview alias and exact-release qualification gates.",
+    "readiness": "Focused local checks passed. Hosted verification pending."
+  }
+}

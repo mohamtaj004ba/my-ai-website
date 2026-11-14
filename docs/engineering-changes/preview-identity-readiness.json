@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "bd5c42cf501632009a59d9f26df48d7d44d8bd3cc4f700ba63a9f41977eef623",
+  "risk": "critical",
+  "scope": "Remove obsolete Vercel commit-status prerequisite from nonbillable Preview browser QA while preserving mandatory authenticated exact-SHA and immutable-URL identity verification.",
+  "riskAnalysis": "Absent legacy status incorrectly prevents hosted verification despite READY exact-source Preview. Identity pinning remains authoritative; never test stale alias or enable model requests.",
+  "threatModel": {
+    "assets": "Preview automation credential and truthful exact-source hosted acceptance evidence.",
+    "trustBoundaries": "GitHub workflow credential to protected Preview alias and authenticated immutable deployment identity; no provider or operational write boundary.",
+    "abuseCases": "Missing Vercel status falsely blocks QA; stale alias, mismatched immutable target, hostile metadata URL, redirect credential forwarding or hung request.",
+    "mitigations": "Mandatory authenticated exact SHA plus immutable URL identity, trusted hostname pattern, redirect rejection, ten-second request deadline, paid verification false and executed inline workflow regressions."
+  },
+  "rollback": "Revert only reviewed feature implementation after checking unrelated changes. Keep paid execution false and do not mutate original task records or settle historical holds. No generic destructive or Production rollback is authorized.",
+  "negativePaths": {
+    "malformed-response": "This CI-only correction creates no task, spending authority, worker, or operational mutation. Existing lifecycle regressions remain unchanged; actual gate tests cover stale/malformed/mismatched identity, authorization denial and absent legacy status. Network interruption fails closed.",
+    "stale-state": "This CI-only correction creates no task, spending authority, worker, or operational mutation. Existing lifecycle regressions remain unchanged; actual gate tests cover stale/malformed/mismatched identity, authorization denial and absent legacy status. Network interruption fails closed.",
+    "concurrency": "This CI-only correction creates no task, spending authority, worker, or operational mutation. Existing lifecycle regressions remain unchanged; actual gate tests cover stale/malformed/mismatched identity, authorization denial and absent legacy status. Network interruption fails closed.",
+    "cancellation": "This CI-only correction creates no task, spending authority, worker, or operational mutation. Existing lifecycle regressions remain unchanged; actual gate tests cover stale/malformed/mismatched identity, authorization denial and absent legacy status. Network interruption fails closed.",
+    "worker-interruption": "This CI-only correction creates no task, spending authority, worker, or operational mutation. Existing lifecycle regressions remain unchanged; actual gate tests cover stale/malformed/mismatched identity, authorization denial and absent legacy status. Network interruption fails closed.",
+    "api-outage": "This CI-only correction creates no task, spending authority, worker, or operational mutation. Existing lifecycle regressions remain unchanged; actual gate tests cover stale/malformed/mismatched identity, authorization denial and absent legacy status. Network interruption fails closed.",
+    "authorization-denial": "This CI-only correction creates no task, spending authority, worker, or operational mutation. Existing lifecycle regressions remain unchanged; actual gate tests cover stale/malformed/mismatched identity, authorization denial and absent legacy status. Network interruption fails closed.",
+    "spending-limit": "This CI-only correction creates no task, spending authority, worker, or operational mutation. Existing lifecycle regressions remain unchanged; actual gate tests cover stale/malformed/mismatched identity, authorization denial and absent legacy status. Network interruption fails closed.",
+    "partial-execution": "This CI-only correction creates no task, spending authority, worker, or operational mutation. Existing lifecycle regressions remain unchanged; actual gate tests cover stale/malformed/mismatched identity, authorization denial and absent legacy status. Network interruption fails closed."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Workflow requires a legacy Vercel commit status that is absent for real READY deployments.",
+      "detectionGap": "Hosted source verification and CI status integration had not been challenged independently; earlier runs happened to receive legacy status.",
+      "regression": "Execute the actual model-free embedded workflow script with realistic authenticated metadata: absent status succeeds only with both exact identities; stale alias, mismatched immutable target, hostile target and denied auth fail.",
+      "historicalPrevention": "The historical missing-status failure is removed without weakening exact-source pinning; request timeout and redirect rejection fail closed."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Actual code and deployed flow map in AGENT_OPERATIONS_PROACTIVE_ASSESSMENT.md, allfive stages and authoritative acceptance boundaries.",
+    "dependencies": "OpenAI/Vercel/Upstash/GitHub/browserfonts/owner session/trustedparent dependencies mapped; source and package manifests fingerprinted. Legacy GitHub Vercel status is non-authoritative; actual authenticated deployment identity remains required.",
+    "threats": "Owner/provider/control/evidence trust boundaries and abusecases reviewed against actual code and API paths.",
+    "failureModes": "AGENT_OPERATIONS_FAILURE_MODES.json13prioritized actual evidence backed risks with recovery and measurable acceptance.",
+    "faultInjection": "Isolated read/CAS/lostcommit probes; provider late200/400 afterrevoke/cancel/leaseexpiry, actualsharedCASintegration and frozen contract replays.",
+    "independentChallenge": "Separate lifecycle_auditor and lifecycle_qa found/reproduced issues and independently reviewed source/test evidence; cannot infer trusted production attestation.",
+    "recovery": "Partialfailures revokeownerselectedID; hardcontrollerkill expires lease; failures preserveholds; per-stage no retry; storeunavailable shutdownunconfirmed.",
+    "readiness": "Unit/integration/replay/mock/hostedcontrol/liveprovider/Production remain separate; livefive-stage and autonomouswrites explicitlyunverified."
+  }
+}

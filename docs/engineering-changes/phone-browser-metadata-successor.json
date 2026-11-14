@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "5179cf355c1580cf6f8c13485d20d45e267020c54b7a85295fae02dafb80e0a8",
+  "risk": "critical",
+  "scope": "Register reviewed phone recipe in Browser QA metadata and maintain source-selector/cancellation regression coverage for new routing.",
+  "riskAnalysis": "Only QA metadata verifier, affected assertions/fault-injection hooks, and documentation change. No runtime stop guard, provider limit, grant or product source changes.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source/task/release integrity, immutable accounting/evidence, test reporter, credentials, temporary authority and Production isolation.",
+    "trustBoundaries": "Untrusted model patch to static AST validation, data-only child, separately permitted OS guest and trusted receipt validation.",
+    "abuseCases": "Traversal/protected edits, reporter constructor escape, comments hiding adjacent source, forged tests/identity, stale grants, cleanup and diagnostic loss.",
+    "mitigations": "Exact server manifest/preimages, pinned parser/pure AST, old OS supervisor/23checks, fresh native permission, exact native evidence/rules, awaited cleanup and serial execution."
+  },
+  "rollback": "Revert this inactive extension only; preserve historical evidence and qualified Preview. No production operation.",
+  "negativePaths": {
+    "malformed-response": "Existing controller/worker enforcement unchanged; affected metadata substitution and actual cancellation/emergency paths independently verified.",
+    "stale-state": "Existing controller/worker enforcement unchanged; affected metadata substitution and actual cancellation/emergency paths independently verified.",
+    "concurrency": "Existing controller/worker enforcement unchanged; affected metadata substitution and actual cancellation/emergency paths independently verified.",
+    "cancellation": "Existing controller/worker enforcement unchanged; affected metadata substitution and actual cancellation/emergency paths independently verified.",
+    "worker-interruption": "Existing controller/worker enforcement unchanged; affected metadata substitution and actual cancellation/emergency paths independently verified.",
+    "api-outage": "Existing controller/worker enforcement unchanged; affected metadata substitution and actual cancellation/emergency paths independently verified.",
+    "authorization-denial": "Existing controller/worker enforcement unchanged; affected metadata substitution and actual cancellation/emergency paths independently verified.",
+    "spending-limit": "Existing controller/worker enforcement unchanged; affected metadata substitution and actual cancellation/emergency paths independently verified.",
+    "partial-execution": "Existing controller/worker enforcement unchanged; affected metadata substitution and actual cancellation/emergency paths independently verified."
+  },
+  "defects": [
+    {
+      "rootCause": "Cross-surface task registration missed browser QA recipe map; tests retained old default and old fault-injection entry.",
+      "detectionGap": "Focused integration cases covered native controller but omitted independent browser metadata and historical fault hooks.",
+      "regression": "34affectedchecks independently pass, including old and new actualcopy cancellation/emergency denial; originalhosted5048pass5failretained.",
+      "historicalPrevention": "Keep exact task/recipe metadata table synchronized and inject faults at actual shared runtime entry; retain historical scope assertions."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Small repair of existing verifier/tests; no runtime/orchestration change.",
+    "dependencies": "No new or changed dependency in this delta; earlier pinned parser unchanged.",
+    "threats": "Missing recipe could block safe activation; stale hooks could fail to exercise cancellation.",
+    "failureModes": "Unknown recipes and all paid/execution/publication metadata remain denied; cancelled work cannot report success.",
+    "faultInjection": "Actualentry latecancel/emergency cases for legacy and phone tasks pass after real disposal.",
+    "independentChallenge": "IndependentQA34/34 andAuditor3metadata+2phone cases approve sourcepublication.",
+    "recovery": "Revert verifier/testdelta; keep original failure log and all audit/financial history. Paid remains disabled.",
+    "readiness": "Candidate for hosted qualification only; exact successor source/deployment required before paid work."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "faf736946a254065dc6608a6d01780ef85a1bb96279ede5a3ca3fbb3b3437d7e",
+  "risk": "routine",
+  "scope": "Preserve exact locally verified and published Phase D application, pending hosted qualification and zero-paid shutdown checkpoint.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": [],
+  "application": "d52ce1151df019d869c9cdfd9f1d8de43bf853f1",
+  "release": {
+    "version": "organization-contracts-v4",
+    "digest": "7fc16ddfbd1427811bd90b65b4fe8519fda2fd02f2d5d67cbe17a7e608dde73e"
+  },
+  "paidRequests": 0,
+  "configurationMutations": 0
+}

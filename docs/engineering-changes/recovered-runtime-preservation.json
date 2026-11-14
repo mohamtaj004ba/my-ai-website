@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "2640da4c8051faae7990d3f94d2828e3c7b9abb8445aaa06fb86b9bdbd5f4052",
+  "risk": "critical",
+  "scope": "Preserve the full verified runtime when recovering a stopped engineering sequence selection.",
+  "riskAnalysis": "Recovery clones the complete already verified runtime rather than projecting legacy fields. Owner scope, two-read consistency, exact archive comparison, cleanup and backend authorization remain unchanged. No new authority, retries, policy or execution path.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Complete source/release identity and stopped-selection historical proof.",
+    "trustBoundaries": "Authenticated recovery history to local non-authoritative selection cache.",
+    "abuseCases": "Drop contract marker, substitute runtime, clear active or foreign selection, treat cache as execution approval.",
+    "mitigations": "Clone all verified fields, retain all existing owner/history/cleanup checks and exact equality; backend fresh authorization remains mandatory."
+  },
+  "defects": [
+    {
+      "rootCause": "Recovery reconstructed five runtime fields and omitted the later engineeringContract marker required by archival equality.",
+      "detectionGap": "Legacy recovery fixtures did not include the modern marker in complete stop/archive flow.",
+      "regression": "150UIchecks pass including marked recovery/stop/archive, marker removal/substitution denials and legacy positive behavior.",
+      "historicalPrevention": "Copy full verified runtime rather than maintaining a second field list; full-marker lifecycle regression covers future omissions."
+    }
+  ],
+  "rollback": "Restore the previously qualified feature Preview if final qualification fails; preserve all source/evidence history and never re-enable old approvals.",
+  "negativePaths": {
+    "malformed-response": "Unknown codes/raw errors remain hidden; malformed own records counted unverified.",
+    "stale-state": "Exact task/source/release checks unchanged; history is not execution authority.",
+    "concurrency": "Existing CAS unchanged; same first consent remains idempotent and exact-bound.",
+    "cancellation": "Connected fixture stops consent after run and asserts revoked grants/paidfalse.",
+    "worker-interruption": "Previouslyqualified cleanup recovery remains unchanged.",
+    "api-outage": "Unconfirmed delivery never retries automatically; exact intent retained for readback.",
+    "authorization-denial": "Foreign identities filtered before history validation; service actor gets no history.",
+    "spending-limit": "No accounting policy changes; no paid inference in fixtures.",
+    "partial-execution": "FinalChief preserves Auditor rejection; successfulworkflow is not proposalacceptance."
+  },
+  "proactiveReview": {
+    "architecture": "Existing recovery and archival controls only; no new broker or authority.",
+    "dependencies": "Native browser structuredClone already supported; VM harness exposes the same native primitive.",
+    "threats": "Local cached history must never replace exact backend approval or source checks.",
+    "failureModes": "Original live archive failed safely; existing server sequence was stopped and allgrantsrevoked.",
+    "faultInjection": "Full marker preserved; missing/changed marker rejected and legacy unchanged behavior verified.",
+    "independentChallenge": "WorkQA150checks and separate Auditor reviewed exact guards and complete runtime copy.",
+    "recovery": "Original selection history retained; one-line revert available; owner shutdown independently confirmed.",
+    "readiness": "150focused checks plus exact-source independent reviews passed; hosted CI/Redis/CodeQL/Browser qualification required."
+  }
+}

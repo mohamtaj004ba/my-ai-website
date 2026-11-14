@@ -1,0 +1,7 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "3db972cfffa32d04c1756a3bac113d6b9d7fae1225cc82b7113d00a496a342ab",
+  "risk": "routine",
+  "scope": "Preserve verified legacy pilot recovery denial, exact source/deployment and completed release qualification in documentation only. No application, credentials, authority, financial or historical record changes.",
+  "defects": []
+}

@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "21bd1b1ea49fa54987f8dc775d08b68b90084a7ce280db1cea13f82987606857",
+  "risk": "substantial",
+  "scope": "Model an actual asynchronous capture window in the existing restricted specialist positive fixture; preserve original full failure and exact source-bound evidence.",
+  "riskAnalysis": "Test-only10ms waits around one actual capture timestamp. Runtime strict freshness, source checks, provider counts, assertions and release fingerprint unchanged. Original historical cause remains unproven without original image timestamps.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Truthful restricted-worker test evidence and unchanged screenshot freshness boundaries.",
+    "trustBoundaries": "Synthetic parent capture timestamp versus child process clock.",
+    "abuseCases": "Hiding a real freshness failure by backdating fixtures, loosening runtime timestamps or changing positive assertions.",
+    "mitigations": "Real Date.now only, asynchronous wait before/after capture; no runtime or assertion changes; existing explicit stale/future/duplicate/hash negative tests retained."
+  },
+  "rollback": "Revert only the specialist fixture window if invalid; preserve original full failure, focused replay and independent clock probes. No deployment or authorization cleanup is introduced.",
+  "negativePaths": {
+    "malformed-response": "Bound fixed Google JSON sizes; token identity/scopes validated; no raw provider errors or credentials returned.",
+    "stale-state": "Existing stale/future capturedAt, wrong execution/path/hash/count checks and every runtime assertion remain unchanged.",
+    "concurrency": "Concurrent callback consumes once; exact late-store compensation cannot clobber newer reconnect.",
+    "cancellation": "Whole callback timeout and separately bounded cleanup; unconfirmed record always unusable, no physical Redis cancellation claim.",
+    "worker-interruption": "No agent worker or provider model is started; existing worker lifecycle safeguards remain unchanged.",
+    "api-outage": "Storage outages explicitly preserve cleanup uncertainty; no automatic retry or shared-client provider revocation.",
+    "authorization-denial": "Existing fresh owner policy plus same-origin API guards; denied owner cannot exchange, recover or read foreign records.",
+    "spending-limit": "No paid model request, spending approval, browser session, service purchase or financial mutation.",
+    "partial-execution": "Original2934/2935 and interrupted confirmation logs remain retained; no claim of original failing timestamp or production clock correction."
+  },
+  "defects": [
+    {
+      "rootCause": "Zero-duration synthetic parent capture assumes exact cross-process Windows wall-clock ordering; independent probe reproduces parent1ms ahead of child return.",
+      "detectionGap": "Original full failure retained phasecapture ValidationError but not exact per-image timestamps, so exact historical attribution remains unproven.",
+      "regression": "Existing child9 plus specialist/security tests17/17 pass with real asynchronous capture window; no assertion removed.",
+      "historicalPrevention": "Retain source-bound full STRICT requirement and separate deterministic freshness negatives; do not infer real hosted capture or distributed-clock tolerance from this fixture."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Extend existing session/owner policy and Redis compare-and-audit; distinct callback prefix preserves Gmail.",
+    "dependencies": "Existing Google CallerCore Admin client, registered stable callback, Preview encryption; no Work token transfer.",
+    "threats": "Replay, forged scopes/identity/recovery, cross-workspace substitution, stale source/deployment and late writes.",
+    "failureModes": "Bounded callback and cleanup; ciphertext may remain unconfirmed after outages, never agent authority.",
+    "faultInjection": "Owner/storage/exchange stalls, lost final CAS acknowledgement, newer reconnect and revocation schedules.",
+    "independentChallenge": "Independent QA reproduced clock ordering with2000samples851violations and200capture-window samples0violations; Auditor reviews narrow test-only change.",
+    "recovery": "Exact current operation hash/revision owner recovery or local revoke; shared Google grant untouched.",
+    "readiness": "New source must pass frozen STRICT and remote checks before publication; Google real consent still unperformed and all operational access disabled."
+  }
+}

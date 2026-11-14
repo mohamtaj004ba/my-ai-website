@@ -1,0 +1,62 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "5104a5ce40a4599e8ffa7b5fc0cb7b22da105713ab17f5f8902495354a7174d0",
+  "risk": "critical",
+  "scope": "Add an immutable safe-time proposal successor and exact dormant policy registration; repair one audited documentation build-skip path without changing historical contracts, actual product or live authority.",
+  "riskAnalysis": "Closed single-label validity/fallback grammar, immutable prior contracts and goldens, fresh exact task/policy/source/release owner activation, serial lifecycle and canonical journal coverage. Default policy and live configuration unchanged; no generated execution or model calls. One exact nonruntime documentation path is allowlisted with both historical/current declaration hashes.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Source-bound patch integrity, historical evidence, owner/policy isolation, serial execution, honest criticism and Preview build selection.",
+    "trustBoundaries": "New immutable descriptor versus old grants/receipts; fixture data versus genuine model patch; exact documentation path versus mixed/runtime source.",
+    "abuseCases": "Unchecked Date recipe, injected code or attributes, old/cross-policy authority, parallel execution, missing report quality, wildcard skip or Production skip.",
+    "mitigations": "Exact safe grammar and preimage, fresh descriptor/policy, unchanged owner/source controller, serial/lifecycle/journal ID coverage, terminal marker, immutable historical pins and exact Preview/docs comparison."
+  },
+  "defects": [
+    {
+      "rootCause": "Old task grammar required the unchecked Date formatter that failed the real invalid-time test; it could not express the required fallback.",
+      "detectionGap": "Prior schema/fixture admission proved allowed shape but not this timestamp behavior.",
+      "regression": "New grammar/adversarial checks plus real-controller five-stage offline workflow; preserve old v5 contract/guidance and40historical request hashes.",
+      "historicalPrevention": "Use explicit edge-case criteria and actual source tests before product adoption; never rewrite old descriptors or call a fixture an agent implementation."
+    },
+    {
+      "rootCause": "Adoption-review path was absent from the exact documentation build-skip allowlist.",
+      "detectionGap": "Prior checkpoint assumed all nonruntime documentation paths were already audited.",
+      "regression": "Exact added path skips only confirmed feature Preview; wrong context, mixed source, missing history and lookalikes do not skip.",
+      "historicalPrevention": "Check actual allowlist membership and preserve audited old/new literal pins before documentation publication."
+    }
+  ],
+  "rollback": "Revert only new successor registration/grammar and exact docs skip change via reviewed feature commit; preserve all old contracts and failure evidence. Keep paid execution off and never reuse consumed approvals.",
+  "negativePaths": {
+    "malformed-response": "Reject unsafe/unchecked replacement, stale or cross-policy authority, parallel prepared/active/consumed work and missing quality marker. Preserve owner/source/release/count/cleanup guards. No provider, credential, product or execution authority added; unknown/mixed docs still build.",
+    "stale-state": "Reject unsafe/unchecked replacement, stale or cross-policy authority, parallel prepared/active/consumed work and missing quality marker. Preserve owner/source/release/count/cleanup guards. No provider, credential, product or execution authority added; unknown/mixed docs still build.",
+    "concurrency": "Reject unsafe/unchecked replacement, stale or cross-policy authority, parallel prepared/active/consumed work and missing quality marker. Preserve owner/source/release/count/cleanup guards. No provider, credential, product or execution authority added; unknown/mixed docs still build.",
+    "cancellation": "Reject unsafe/unchecked replacement, stale or cross-policy authority, parallel prepared/active/consumed work and missing quality marker. Preserve owner/source/release/count/cleanup guards. No provider, credential, product or execution authority added; unknown/mixed docs still build.",
+    "worker-interruption": "Reject unsafe/unchecked replacement, stale or cross-policy authority, parallel prepared/active/consumed work and missing quality marker. Preserve owner/source/release/count/cleanup guards. No provider, credential, product or execution authority added; unknown/mixed docs still build.",
+    "api-outage": "Reject unsafe/unchecked replacement, stale or cross-policy authority, parallel prepared/active/consumed work and missing quality marker. Preserve owner/source/release/count/cleanup guards. No provider, credential, product or execution authority added; unknown/mixed docs still build.",
+    "authorization-denial": "Reject unsafe/unchecked replacement, stale or cross-policy authority, parallel prepared/active/consumed work and missing quality marker. Preserve owner/source/release/count/cleanup guards. No provider, credential, product or execution authority added; unknown/mixed docs still build.",
+    "spending-limit": "Reject unsafe/unchecked replacement, stale or cross-policy authority, parallel prepared/active/consumed work and missing quality marker. Preserve owner/source/release/count/cleanup guards. No provider, credential, product or execution authority added; unknown/mixed docs still build.",
+    "partial-execution": "Reject unsafe/unchecked replacement, stale or cross-policy authority, parallel prepared/active/consumed work and missing quality marker. Preserve owner/source/release/count/cleanup guards. No provider, credential, product or execution authority added; unknown/mixed docs still build."
+  },
+  "proactiveReview": {
+    "architecture": "137 focused/impacted checks and independent QA/Auditor cover exact grammar, complete five-stage fixture, marker/registration regression, historical hashes and narrow build skip. Future actual model proposal/execution remains separately admitted; prior evidence and approvals unchanged.",
+    "dependencies": "137 focused/impacted checks and independent QA/Auditor cover exact grammar, complete five-stage fixture, marker/registration regression, historical hashes and narrow build skip. Future actual model proposal/execution remains separately admitted; prior evidence and approvals unchanged.",
+    "threats": "137 focused/impacted checks and independent QA/Auditor cover exact grammar, complete five-stage fixture, marker/registration regression, historical hashes and narrow build skip. Future actual model proposal/execution remains separately admitted; prior evidence and approvals unchanged.",
+    "failureModes": "137 focused/impacted checks and independent QA/Auditor cover exact grammar, complete five-stage fixture, marker/registration regression, historical hashes and narrow build skip. Future actual model proposal/execution remains separately admitted; prior evidence and approvals unchanged.",
+    "faultInjection": "137 focused/impacted checks and independent QA/Auditor cover exact grammar, complete five-stage fixture, marker/registration regression, historical hashes and narrow build skip. Future actual model proposal/execution remains separately admitted; prior evidence and approvals unchanged.",
+    "independentChallenge": "137 focused/impacted checks and independent QA/Auditor cover exact grammar, complete five-stage fixture, marker/registration regression, historical hashes and narrow build skip. Future actual model proposal/execution remains separately admitted; prior evidence and approvals unchanged.",
+    "recovery": "137 focused/impacted checks and independent QA/Auditor cover exact grammar, complete five-stage fixture, marker/registration regression, historical hashes and narrow build skip. Future actual model proposal/execution remains separately admitted; prior evidence and approvals unchanged.",
+    "readiness": "137 focused/impacted checks and independent QA/Auditor cover exact grammar, complete five-stage fixture, marker/registration regression, historical hashes and narrow build skip. Future actual model proposal/execution remains separately admitted; prior evidence and approvals unchanged."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "version": "engineering-quality-v1",
+  "risk": "substantial",
+  "scope": "Correct real Redis renewal integration expectations for atomic unchanged-snapshot comparisons; runtime bytes and security controls unchanged.",
+  "riskAnalysis": "The reviewed renewal overlap deliberately validates no-op prefetched snapshots with CAS; the CI-only Redis test still expected zero comparisons and failed while33otherintegrationcases passed.",
+  "verification": [
+    "risk-analysis",
+    "targeted-tests",
+    "independent-qa",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "A separate .cjs Redis integration test retained the old zero-noop-compare expectation after equivalent .test.js assertions were updated.",
+      "detectionGap": "Local full suite glob excludes .cjs integration files; real Redis CI exposed the missed independent assertion.",
+      "regression": "Require two comparisons with identical before/after bytes for two concurrent checks, unchanged actualRedisbytes, then third comparison at existing renewalboundary; revocation and cancellation remain checked.",
+      "historicalPrevention": "Search all supported test extensions and remote integration contracts when changing a shared CAS behavior; distinguish unchanged-byte confirmation from ledger mutation."
+    }
+  ],
+  "changeDigest": "91422b7047200c34b2eda4274240a1cf68046b35ab2b350290d824d9be91ef7e"
+}

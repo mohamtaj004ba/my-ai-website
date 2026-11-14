@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "a41312c3650219f8ffa2b794873e86edea181bdb191eb7d529929833298dc5e6",
+  "risk": "critical",
+  "scope": "Restore original explicit QA and Specialist contract clauses after three literal instruction regressions; preserve completed live trial and actual CI failure evidence.",
+  "riskAnalysis": "Prompt text is not authority. Exact source/task binding, schema/evidence validation, token/request/time limits, cancellation, no-tools policy and independent acceptance remain enforced server-side. New source fingerprint requires reviewed release qualification; consumed grants remain unusable.",
+  "threatModel": {
+    "assets": "Immutable model receipts, task/source/workspace identity, reviewer decisions and source-bound disposable patch evidence.",
+    "trustBoundaries": "Model prose remains untrusted data; server schema, source binding, artifact validators and owner controller remain authoritative.",
+    "abuseCases": "Fabricated evidence, forged acceptance, instruction injection, rewriting reviewer rejection or conflating model output with backend actions.",
+    "mitigations": "No schema/permission change; exact references and source identity validation, empty tools, preserved criticism, original receipt hashes and current exact-release checks."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Role-specific prompt refactoring shortened exact QA and Specialist clauses protected by an adjacent test file.",
+      "detectionGap": "First focused selection searched implementation test filenames but missed the shared instructionsFor consumer in qa-finding-contract tests.",
+      "regression": "All four tests referencing instructionsFor are now included:47 root checks,20 independent QA checks, both adapter native sizes and ten historical instruction comparisons pass without changing tests.",
+      "historicalPrevention": "Search the changed function and module consumers across all test filenames; preserve explicit instruction contracts and all five stage request bounds before publication."
+    }
+  ],
+  "rollback": "Work may revert only the reviewed feature-branch prompt change if qualification fails; preserve original completed model receipts, failed test evidence, cleanup and financial history. No Production change or history rewrite.",
+  "negativePaths": {
+    "malformed-response": "Existing implementation parser adversarial checks remain unchanged; focused tests reject malformed and duplicated fields.",
+    "stale-state": "Unchanged binding validators reject stale source, owner, workspace and copied model metadata in focused tests.",
+    "concurrency": "Prompt-only function has no storage writes or concurrency behavior; existing authoritative CAS and serial controller remain unchanged.",
+    "cancellation": "Independent actual offline worker tests verify cancellation and physical cleanup; no cancellation logic changed.",
+    "worker-interruption": "Existing restricted-child interruption and cleanup tests remain authoritative; no child permissions or process behavior changed.",
+    "api-outage": "No provider transport or retry logic changed. An outage still fails the attempt closed and is never automatically retried.",
+    "authorization-denial": "Focused actual implementation tests retain source/owner/workspace/policy denials; prompt cannot create authority.",
+    "spending-limit": "No financial controller change. Existing monitor-only historical policy and request/token/output limits remain authoritative.",
+    "partial-execution": "Actual completed live receipts preserve stage outcomes; fixtures preserve Auditor rejection and unavailable dynamic verification without claiming acceptance."
+  },
+  "proactiveReview": {
+    "architecture": "Only current role-specific instruction construction changes; existing adapter, schemas, controller and ledger are reused without new execution authority.",
+    "dependencies": "No packages, services, credentials, external systems or infrastructure were added or changed.",
+    "threats": "Untrusted prose may fabricate evidence, acceptance or execution; unchanged schema and source-binding validators remain authoritative.",
+    "failureModes": "Incomplete model prose remains criticizable. Audit rejection is copied honestly and no accepted implementation is fabricated.",
+    "faultInjection": "Focused parser adversarial tests and real offline restricted-worker cancellation, malformed response and cleanup-failure fixtures passed.",
+    "independentChallenge": "Separate Work QA passed28checks and actual-native request bounds; Engineering Auditor passed15checks and verified all original live receipt hashes.",
+    "recovery": "All live authority revoked and frozen task canceled. Historical source and receipts preserved; a successor cannot inherit consumed grants.",
+    "readiness": "Focused tests and independent reviews passed. Existing remote CI/Redis/CodeQL/Jekyll/Preview checks must qualify the successor; no new paid attempt merely repeats milestone."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "1018c1d6bcdf4be4f41596009d4bbbd08438904c6dd7e38a1537ea24945023d1",
+  "risk": "critical",
+  "scope": "Source-derived development verification lanes and exact-once STRICT test union; documentation identity-only Browser QA; concise non-authoritative recovery checkpoints. Preview-only, paid execution disabled.",
+  "riskAnalysis": "Verification control changes are critical: false-low classification or stale evidence could omit mandatory security tests. Default unknown/shared/executable/dependency changes to STRICT; preserve owner preflight and independent acceptance.",
+  "threatModel": {
+    "assets": "Mandatory security/contract tests, source/release identity, immutable evidence, owner authority and historical budget accounting.",
+    "trustBoundaries": "Actual Git history to lane selection; source-derived plan to CI jobs; protected Preview identity to browser scope; recorded checkpoint to resumed agent.",
+    "abuseCases": "Disguised dependency, renamed/deleted protected source, active CSS/HTML, stale plan, mutated source during test, skipped security scan labelled passed, or old authority observation treated as permission.",
+    "mitigations": "Complete no-renames diff, canonical paths/modes, both-tree protected-consumer checks, conservative active-content rejection, exact head/tree before and after execution, explicit scope labels, immutable release pin, no evidence-cache permissions."
+  },
+  "rollback": "Keep paid false. Revert only verification optimization on feature branch if gates fail; preserve full default npm test/live preflight and all historical evidence. Never change Production or authorization.",
+  "negativePaths": {
+    "malformed-response": "Independent policy regressions cover malformed-response where applicable through actual Git fixtures, stale/altered plan rejection and retained mandatory STRICT tests; no owner/runtime control is removed.",
+    "stale-state": "Independent policy regressions cover stale-state where applicable through actual Git fixtures, stale/altered plan rejection and retained mandatory STRICT tests; no owner/runtime control is removed.",
+    "concurrency": "Independent policy regressions cover concurrency where applicable through actual Git fixtures, stale/altered plan rejection and retained mandatory STRICT tests; no owner/runtime control is removed.",
+    "cancellation": "Independent policy regressions cover cancellation where applicable through actual Git fixtures, stale/altered plan rejection and retained mandatory STRICT tests; no owner/runtime control is removed.",
+    "worker-interruption": "Independent policy regressions cover worker-interruption where applicable through actual Git fixtures, stale/altered plan rejection and retained mandatory STRICT tests; no owner/runtime control is removed.",
+    "api-outage": "Independent policy regressions cover api-outage where applicable through actual Git fixtures, stale/altered plan rejection and retained mandatory STRICT tests; no owner/runtime control is removed.",
+    "authorization-denial": "Independent policy regressions cover authorization-denial where applicable through actual Git fixtures, stale/altered plan rejection and retained mandatory STRICT tests; no owner/runtime control is removed.",
+    "spending-limit": "No spending code or approval changes. Every lane has paidPermission false; existing budget and live preflight remain authoritative.",
+    "partial-execution": "Independent policy regressions cover partial-execution where applicable through actual Git fixtures, stale/altered plan rejection and retained mandatory STRICT tests; no owner/runtime control is removed."
+  },
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "CI executed standalone contract groups and24 named groups before a full suite containing the same tests; documentation Browser QA repeated502 captures.",
+      "detectionGap": "Prior readiness focused on coverage and missed execution duplication and distinction between documentation checkpoints and application visual changes.",
+      "regression": "Independent lane/hidden dependency/active content/stale plan/mode/rename tests and exact-once mandatory contract membership; actual final documentation workflow will measure identity-only behavior.",
+      "historicalPrevention": "The source union and Git-derived docs classification detect prior redundant composition without treating skipped checks as fresh verification."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing quality gate and contract list remain authoritative; one selector/runner and lightweight affected public checker, no parallel agent executor.",
+    "dependencies": "Node builtins and already pinned Playwright; no new packages, credentials, paid transport or customer mutations.",
+    "threats": "Low-risk concealment, escaped CSS, entity/active HTML, missing history, stale source, mismatched deployment, unsafe header forwarding and misleading cached evidence.",
+    "failureModes": "Selection errors stop rather than downgrade; source changes during tests reject evidence; manual Browser reruns force STRICT; failure artifacts preserved.",
+    "faultInjection": "Actual temporary Git histories, both-tree consumers, rename/delete/modes, altered plans, executable/dependency content, false authority and workflow gating.",
+    "independentChallenge": "Separate QA authored adversarial tests; Auditor identified CSS/HTML escapes, manual dispatch base, end-of-run source drift and metadata false positives; corrections independently reviewed.",
+    "recovery": "Concise source-bound recovery pointer with exact next action and observation age; no new authorization window; revert feature verification changes safely.",
+    "readiness": "Full optimization change itself is STRICT; run frozen full union, independent reviews, Redis/CI/CodeQL and exact hosted full Browser QA, then measure docs identity-only lane. Affected lane remains separately qualified."
+  }
+}

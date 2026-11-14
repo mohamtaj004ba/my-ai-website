@@ -1,0 +1,14 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "3b3bd144ef8d5b5b8de8c4eec9abd0dfd2b6664123a709c6001db0b040c9ef79",
+  "risk": "substantial",
+  "scope": "Align two legacy Auditor storage assertions with explicit owner policy, preserve history/revocation checks and add actual adapter-failure rejection coverage.",
+  "verification": [
+    "risk-analysis",
+    "targeted-tests",
+    "independent-qa",
+    "preview-check"
+  ],
+  "riskAnalysis": "Test and documentation changes only after full local runtime corpus. No application file or provider configuration changed. Previously expected arbitrary byte rejection becomes preserved-history success; real provider failure still rejects once without claiming SDK network retries disabled.",
+  "defects": []
+}

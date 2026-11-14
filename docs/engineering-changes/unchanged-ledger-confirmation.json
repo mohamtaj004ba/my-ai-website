@@ -1,0 +1,58 @@
+{
+  "version": "engineering-quality-v1",
+  "title": "Confirm unchanged engineering ledger without rewriting it",
+  "base": "ff03100240c4bfee2b8b0c06a1c49d09989deee2",
+  "changeDigest": "df25f7020655ce340bd193633f4d25aac04dd8fbaa7d31c21aca150700562d44",
+  "risk": "critical",
+  "scope": "Optimize only identical nonempty shared-ledger comparisons, expose separate request estimate and correct affected offline storage fixtures.",
+  "riskAnalysis": "Atomic exact Redis comparison remains authoritative. No cached approval, hash shortcut, permission grant, schema migration, history rewrite or financial change. Ordinary writes and expiring rehearsal adapters stay unchanged.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Exact ledger bytes, revocation state, leases, historical audit and accounting records.",
+    "trustBoundaries": "Local snapshot to atomic provider confirmation, then existing authenticated authority renewal.",
+    "abuseCases": "Stale snapshot confirms a revoked grant, missing value treated as success, mock erases state, or provider failure triggers a retry.",
+    "mitigations": "Exact atomic GET equality on identical nonempty strings only; original CAS for other cases, strict existing0/1result check, no adapter retry and explicit mock script semantics."
+  },
+  "rollback": "Revert the reviewed feature-branch optimization and restore qualified ff03100 Preview. Preserve every original record; no data migration is needed.",
+  "negativePaths": {
+    "malformed-response": "Unexpected provider result and thrown error reject without adapter retries.",
+    "stale-state": "Changed, differently serialized, revoked and missing snapshots fail exact comparison.",
+    "concurrency": "Real Redis stale compare plus existing renewal conflict retries require fresh owner and ledger checks.",
+    "cancellation": "Existing renewal cancellation and beforeCompare guards remain unchanged and focused-tested.",
+    "worker-interruption": "No worker behavior changes; existing controller cleanup integration remains covered.",
+    "api-outage": "Provider exceptions propagate; adapter creates no retry or fallback success.",
+    "authorization-denial": "Comparison grants no authority and cannot bypass current owner/source/workspace/lease checks.",
+    "spending-limit": "No paid calls, provider configuration, accounting settlement or spending policy changes.",
+    "partial-execution": "Current workflow and receipts unchanged; confirmation changes no revision/history/lease."
+  },
+  "defects": [
+    {
+      "rootCause": "An unchanged authority snapshot was sent twice and SET back to Redis despite no mutation.",
+      "detectionGap": "Existing tests checked final bytes only, and seven fake evaluators assumed every Lua script writes two arguments.",
+      "regression": "One-value/no-write exact confirmation, stale/missing/empty/error cases, real Redis TTL and revocation, plus strict shared three-script offline fixture.",
+      "historicalPrevention": "Separate no-op confirmation from mutation at the shared adapter; publish both transfer estimates and retain real Redis checks."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Reuse existing adapter and Lua CAS; add no storage key, journal, gateway or orchestration system.",
+    "dependencies": "No package, provider, credential, image or network permission changes.",
+    "threats": "Do not substitute hashes for exact comparison or reuse cached authority; current atomic and cancellation boundaries remain.",
+    "failureModes": "Null/empty retains historical initialization; real writes preserve CAS and expired records cannot confirm nonempty snapshots.",
+    "faultInjection": "Stale revocation, mismatched bytes, missing records, uncertain responses and cancellation are explicitly covered.",
+    "independentChallenge": "Independent QA and Auditor approve runtime2db47;12adapterchecks each. QA additionally approved shared helper3checks and all7consumerpaths.",
+    "recovery": "No migration; revert runtime only. All recorded approvals remain consumed/revoked, history and uncertainty remain.",
+    "readiness": "56focused and93consumer checks passed; helper15combinedchecks pass. Complete final CI/Redis/CodeQL/Jekyll/Browser required; no live speed claim."
+  }
+}

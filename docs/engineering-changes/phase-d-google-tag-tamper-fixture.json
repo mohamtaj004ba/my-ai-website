@@ -1,0 +1,14 @@
+{
+  "version": "engineering-quality-v1",
+  "risk": "substantial",
+  "scope": "Make the synthetic Google owner-verification ciphertext tamper test guaranteed to modify authentication bytes; preserve blocked Starter activation evidence",
+  "riskAnalysis": "Test-only correction; production encryption and authorization unchanged. A fixed Base64URL suffix could already equal the existing random suffix, so the negative fixture sometimes supplied valid unchanged ciphertext. Decode, flip GCM tag byte12, re-encode and assert wire/byte inequality before expecting denial. The actual failed build packet was not retained and must not be reconstructed by assertion.",
+  "verification": ["risk-analysis", "targeted-tests", "independent-qa", "preview-check"],
+  "defects": [{
+    "rootCause": "The synthetic tamper fixture replaced a random suffix with AA without asserting that any bytes changed; a deterministic valid packet demonstrated an exact no-op.",
+    "detectionGap": "Previous randomly generated fixture packets normally differed at this suffix, allowing the unasserted no-op case to escape repeated passing runs.",
+    "regression": "Guarantee a changed authentication tag and assert both encoded and decoded inequality while retaining ownerCredentialVerified=false denial; independent Google focused77 and Auditor12 checks pass.",
+    "historicalPrevention": "Negative authentication fixtures should mutate decoded authenticated bytes and assert mutation occurred instead of relying on random wire suffix differences. Preserve original failed build and its unknown nonce."
+  }],
+  "changeDigest": "40a3a454bf04b2de230d82c60395971b17ddd0e9f128ce0ae274ab16f65f6c95"
+}

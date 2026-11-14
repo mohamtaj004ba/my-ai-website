@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "6dcfb5ce4d32948dd64334a435605f35e1f5be24595c615e14cffe72c2c871bd",
+  "risk": "critical",
+  "scope": "Finite GitHub read timeout phase diagnostics in existing broker/adapter and interrupted-read audit; unchanged six-second bound, permissions, token scope, retries and financial controls.",
+  "riskAnalysis": "STRICT existing authentication and revocation boundary; diagnostics must not leak credentials, trust arbitrary provider properties, weaken fresh owner checks or allow late work to resume dispatch.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "App signing key, narrowed token, owner authority, immutable audit and source identity.",
+    "trustBoundaries": "Trusted broker/adapter to untrusted provider response; private in-memory receipt to existing Ops failure audit.",
+    "abuseCases": "Forged diagnostic fields, raw secret errors, unbounded logging, stalled owner/provider, late completion after timeout or revocation.",
+    "mitigations": "Finite enums, at most 64 bounded events, private WeakMap, frozen terminal receipt, unchanged deadline and guards, abort on exit; no retry."
+  },
+  "rollback": "Revert only reviewed Preview diagnostic delta; preserve all existing App identity, grants, audit evidence, central revocation, main and Production.",
+  "negativePaths": {
+    "malformed-response": "Existing bounded parsers unchanged; diagnostics retain only phase and finite HTTP class.",
+    "stale-state": "Every existing task/source/release/owner check remains required.",
+    "concurrency": "Existing admission CAS and revocation remain unchanged; diagnostic events cannot grant authority.",
+    "cancellation": "Existing cancel signal plus internal deadline abort stop later boundaries; no already-transmitted request recall claimed.",
+    "worker-interruption": "No new worker or execution route; interrupted audit is terminal and existing cleanup revokes grant.",
+    "api-outage": "Stalled provider or authorization is bounded by unchanged six seconds; phase remains incomplete rather than fabricated success.",
+    "authorization-denial": "Fresh owner and pending grant guards remain before each boundary; diagnostic code cannot bypass them.",
+    "spending-limit": "No model calls, repository mutations or spending-ledger changes. The existing exact repository-scoped installation-token POST remains necessary and unchanged.",
+    "partial-execution": "Late completion cannot mutate sealed diagnostic receipt or complete a revoked invocation."
+  },
+  "defects": [
+    {
+      "rootCause": "Historical timeout audit recorded only overall failure code, leaving the failing boundary unobservable.",
+      "detectionGap": "Successful substituted transports did not identify cumulative authorization/provider latency or the active phase of a stall.",
+      "regression": "Actual broker/adapter/Ops timeout audit and late completion tests; malicious provider-property and HTTP-category negatives.",
+      "historicalPrevention": "The historical timeout itself is not claimed corrected; a future timeout supplies finite phase evidence before selecting a correction."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing GitHub App broker, six-second read adapter, task-bound pending admission and interrupted-read audit; no new authentication or permission system.",
+    "dependencies": "Existing App installation/signing-key metadata and durable owner policy. Instrument nine fresh authorization callbacks and four serial GitHub requests before selecting a latency correction.",
+    "threats": "Cross-workspace or repository substitution, forged diagnostics, credential reflection, stale task/release authority, cancellation races and late provider continuation.",
+    "failureModes": "Installation identity failure prevents token mint; token or repository validation prevents evidence acceptance. Timeout retains the actual active phase without claiming a provider root cause.",
+    "faultInjection": "Actual broker/adapter/Ops path with only provider and storage boundaries substituted: installation GET, restricted token POST, repository inventory GET and CI GET; stalled authorization/transport, HTTP classes, revocation, forged diagnostic properties and late completions.",
+    "independentChallenge": "Independent QA and Auditor review required before publication, hosted real read remains separately evidenced; no claim of provider permission introspection.",
+    "recovery": "Existing interrupted-read CAS revokes the exact grant; no automatic retry, key rotation, permission expansion or authority restoration.",
+    "readiness": "Independent QA23 and Auditor source review pass; final source-bound STRICT/Redis/CI/CodeQL/Preview checks and genuine hosted authentication remain pending."
+  }
+}

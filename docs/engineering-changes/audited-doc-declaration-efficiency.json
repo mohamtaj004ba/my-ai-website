@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "cf20429343535c0ec7b04eb8a89e9734ae1f9b4041e59b807b624e65c2102a6d",
+  "risk": "critical",
+  "scope": "Recognize one exact audited path-only Vercel documentation declaration in existing verification dependency scanning; preserve all real protected consumers and evidence bindings.",
+  "riskAnalysis": "STRICT verification-policy change. Only exact normalized line hash in exact existing file is exempted as a literal path declaration, matching established finite exceptions. No broadpath/file ignore, skipped risk-specific gate, operational permission or provider action.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "Trustworthy risk classification, mandatory security/runtime checks and source-equivalent documentation evidence.",
+    "trustBoundaries": "Git before/after source dependency references versus audited literal path-only names.",
+    "abuseCases": "Hide import on same/different line, edit declaration, remove base import, introduce unknown JSON or shared security source and claimFAST.",
+    "mitigations": "Exact independently recomputed line/file hash; both Git trees scanned; other references remain protected; source/policy/test changesSTRICT first; permanent adversarial Gitfixtures."
+  },
+  "rollback": "Revert only new exact hash exception if any bypass occurs; failclosed STRICT remains safe default. Preserve original interrupted false-positive run, all independent QA and actual application evidence.",
+  "negativePaths": {
+    "malformed-response": "No provider response change; malformed plans/paths/modes continue failclosed in existing policy regressions.",
+    "stale-state": "Both before/after Git trees and exact source/tree/config/toolchain bindings retained; stale evidence cannot satisfy changed source.",
+    "concurrency": "Read-only Git classification; no task execution or concurrent authority mutation introduced.",
+    "cancellation": "Original unintended redundant suite was explicitly interrupted; no success receipt fabricated and no model task active.",
+    "worker-interruption": "No worker lifecycle change; existing full restricted worker/failure regression gate remains mandatory for policy fix.",
+    "api-outage": "Unknown Git/metadata context and unsupported references still selectSTRICT or failclosed; no fallback permission.",
+    "authorization-denial": "Policy changes themselves STRICT beforebody scan; exception cannot confer owner, agent, provider or paid authority.",
+    "spending-limit": "No paid model approval/request, browser session, service purchase or financial limit change.",
+    "partial-execution": "Initial68/69 QAwrong expected reason preserved; corrected1/1 separate; frozenfull needed before cleanpass claim."
+  },
+  "defects": [
+    {
+      "rootCause": "New Vercel ignore-command path-only document declaration was not added to existing audited literal exceptions, so documentation falsely appeared runtime-consumed.",
+      "detectionGap": "Existing declaration adversarial tests covered earlier fixed declarations but not the subsequently added ignore-command classifier.",
+      "regression": "Nine actual Gitfixture cases prove exactdocumentdeclarationFASTidentity and real altered/imported/security/unknownJSON casesSTRICT; cleanfrozenfull required before using optimization.",
+      "historicalPrevention": "Audit exact names when adding path classifiers; never use broadfile exclusions or claim savings without actual source-equivalent documentation verification."
+    }
+  ],
+  "proactiveReview": {
+    "architecture": "Existing risk selector finite audited declaration map only; no new verification framework or blanket documentation exclusion.",
+    "dependencies": "Exact original Vercel ignore-command literal line and normalized Git source both trees; source locks/mandatory tests updated.",
+    "threats": "Hidden same-line or separate-line import, modified declaration, removed base consumer, unknown JSON or shared security changes.",
+    "failureModes": "Unknown or changed consumers retainSTRICT. This exact path-only predicate never reads document contents.",
+    "faultInjection": "Nine new permanent Gitfixtures cover positive docs identity and all listed runtime/security bypass attempts.",
+    "independentChallenge": "Auditor recomputed exact hash and approved actual source; QA Gitfixtures preserve original focused expectation failure separately.",
+    "recovery": "Revert finite exception to conservative STRICT if necessary; no authority/credential cleanup required because none created.",
+    "readiness": "Run fullSTRICT/CI/Redis/CodeQL/exactPreview for policyfix; only then demonstrateFAST docs and actualbuildskip, without invented savings."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "ac34b5ca3ea20b11946e6185379c27e6b6e343ed3492501034c0fb2fbc60b829",
+  "risk": "routine",
+  "scope": "Preserve exact terminal live-trial evidence, confirmed shutdown, provider billing observations and sanitized unsent incident handoff; no runtime changes.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}

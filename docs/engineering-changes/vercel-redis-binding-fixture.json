@@ -1,0 +1,22 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "0f18bf38182a9479ba05712be38e64db0cd1690da05a5f18a48068cd6308486c",
+  "risk": "substantial",
+  "scope": "Supply the new exact task deployment/source binding in the existing disposable Redis Vercel lease fixture; preserve published runtime and every assertion.",
+  "riskAnalysis": "Test fixture compatibility only. Runtime releaseac132f8 remains unchanged; preserve actual14/15 failure and require corrected real Redis CI.",
+  "verification": [
+    "risk-analysis",
+    "targeted-tests",
+    "independent-qa",
+    "preview-check"
+  ],
+  "defects": [
+    {
+      "rootCause": "Broker provenance now requires exact deployment/source binding, but separate Redis .integration.cjs fixture retained old options.",
+      "detectionGap": "Local full2900 selects *.test.js; actual Redis CI separately executes .integration.cjs.",
+      "regression": "Retained real Redis atomic consume, encryption, lease revalidation and revoke assertions with exact synthetic binding.",
+      "historicalPrevention": "Review separate integration invocation contracts whenever trusted broker input changes; never rewrite original14/15 as all-green."
+    }
+  ],
+  "rollback": "Revert only the fixture addition and documentation; no credential, ledger, Production or runtime rollback required."
+}

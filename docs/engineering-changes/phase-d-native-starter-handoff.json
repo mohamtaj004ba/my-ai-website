@@ -1,0 +1,151 @@
+{
+  "version": "phase-d-native-starter-handoff-v1",
+  "at": "2026-10-17T04:45:45.232Z",
+  "application": "9baac851dec34f5bf60d10c277b32e55a98d40e9",
+  "fingerprint": "5222439657b5048ff7dbd7b918adab28c0223a4806b9044f6335edae1375f198",
+  "deployment": "dpl_6uuyTRude6ow7iApuhmcbzWSQpgr",
+  "url": "https://my-ai-website-5zegl6fpt-mohamtaj004bas-projects.vercel.app",
+  "commits": [
+    "32dbfe1a1812931050d0e22f3137cb85bf33ec91",
+    "8b2b02fd3d6c30936051f0cd5b9394b5952511a5",
+    "9baac851dec34f5bf60d10c277b32e55a98d40e9"
+  ],
+  "strict": {
+    "pass": 3670,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "runnerMs": 458627.1331,
+    "gateMs": 473445
+  },
+  "linux": {
+    "pass": 3670,
+    "fail": 0,
+    "cancelled": 0,
+    "runnerMs": 277091.244724,
+    "ciRuns": [
+      39002478269,
+      39002482094
+    ],
+    "redis": {
+      "pass": 29,
+      "fail": 0,
+      "skipped": 0,
+      "runnerMs": 63248.97376,
+      "job": 117308174755
+    },
+    "codeqlRuns": [
+      39002478272,
+      39002482072
+    ],
+    "jekyllRun": 39002482164
+  },
+  "independent": {
+    "qa": 87,
+    "auditor": 28,
+    "nativeChecksIncluded": 19
+  },
+  "browser": {
+    "run": 39002478280,
+    "job": 117308133742,
+    "conclusion": "success",
+    "artifact": 12089799092,
+    "bytes": 164363632,
+    "sha256": "209364126420b21f1ada61604eceb830380de9c5fb47acc632d82fc719eb976a",
+    "artifactVerified": true,
+    "visualPass": 6,
+    "maxVisualRatio": 0.00036,
+    "errors": 0,
+    "elapsedMs": 685701,
+    "preReadyDeniedObservations": 64,
+    "screenshotsInspected": [
+      "client-overview-initial.png",
+      "client-mobile-overview.png",
+      "admin-agent-operations.png"
+    ],
+    "agentOperations": {
+      "mode": "mock",
+      "paidExecution": false,
+      "readOnlyCheck": true,
+      "implementationPreparation": {
+        "profile": "engineering-implementation-v1",
+        "controlVisible": true,
+        "reasoningMode": "explicit-fixture-no-model-calls",
+        "generatedCodeExecution": false,
+        "publicationAuthorized": false,
+        "taskCreated": false
+      },
+      "starterAdmission": {
+        "controlVisible": true,
+        "freshConsentRequired": true,
+        "taskCreated": false,
+        "paidExecutionStarted": false
+      }
+    },
+    "qualification": "Authenticated Work-connected Browser QA with fictional data and explicit model fixtures; not dedicated CallerCore browser or live patch reasoning"
+  },
+  "protections": {
+    "main": "37ef5cfcdccae35952822859f64fe83f0b9f09f0",
+    "production": "dpl_4d13ERbPnK5gW4cBJjFMDUHNW1wY",
+    "productionSource": "6d36aa454241588140a3d9945eed1a5696a65db6",
+    "pr5": "open/draft/unmerged"
+  },
+  "ownerReadback": "PHASE_D_FINAL_STARTER_OWNER_READBACK.json",
+  "contributions": {
+    "work": "Native admission, financial provenance, real disposable preparation before QA, cancellation/physical cleanup/deadline repairs, independent verification and feature publication",
+    "internalAgents": "No new live reasoning or patch in this pass; provider fixtures explicitly simulated"
+  },
+  "paid": {
+    "responses": 0,
+    "counts": 0,
+    "newReservations": 0,
+    "consent": "Fresh Starter-only owner consent remains required; no previous stopped or consumed approval is revived. The existing $4 unused balance is not task authority.",
+    "expandedRetainedUsd": 1,
+    "expandedPendingUsd": 1,
+    "expandedUnusedUsd": 4,
+    "historicalRetainedUsd": 12.6,
+    "historicalPendingUsd": 4.2,
+    "historicalRemainingUsd": 2.4,
+    "invoiceReconciled": false
+  },
+  "remaining": [
+    "Fresh exact Starter owner consent and same-source configuration-only reviewed-pin refresh before live inference",
+    "No live model-generated Starter patch yet",
+    "Generated-code tests disabled until independently qualified OS isolation and separate spending approval",
+    "No internal-agent publication or independently authenticated acceptance"
+  ],
+  "incident": {
+    "classification": "Preview share-link token included in diagnostic tool output",
+    "scope": "Existing feature Preview alias shareable-link; not OpenAI or automation-bypass credential",
+    "alias": "my-ai-website-git-feature-caller-d75cb2-mohamtaj004bas-projects.vercel.app",
+    "deploymentAtObservation": "dpl_7Xn83atz6jUnepPqFPDfgtWwsPss",
+    "cause": "An object-key diagnostic enumerated protectionBypass keys instead of filtering only public alias/deployment fields",
+    "secretIncludedHere": false,
+    "secretUsed": false,
+    "secretWrittenToRepositoryOrArtifact": false,
+    "cachedAliasObjectCleared": true,
+    "externalUseObserved": "Not established; no use performed by this work",
+    "paidActivationBlocked": "Fresh Starter task consent and final release qualification still required",
+    "ownerAction": "Completed owner-authorized narrow sharing-link revocation with persisted UI readback; no replacement",
+    "continuedWork": "Non-billable source verification only; no paid requests or infrastructure sessions",
+    "ownerApprovedRevocation": true,
+    "remediation": "Affected feature alias Share menu changed from Anyone with the link to Only people with access, no replacement",
+    "verifiedAfterReload": true,
+    "selectedAffectedFeatureAlias": true,
+    "sharingModePersisted": "Only people with access",
+    "existingPublicDomainExceptionPreserved": true,
+    "proof": "PHASE_D_PREVIEW_SHARE_LINK_REVOKED.png",
+    "persistedScreenshot": "Capture timed out; persisted UI state verified without screenshot",
+    "revokedAt": "2026-10-17T04:21:32.621Z",
+    "originalOwnerAction": "Narrow approval requested to revoke only the exposed sharing link without replacement; no automatic rotation, automation-secret change or Production change",
+    "independentReview": "Passed redacted JSON and actual PNG review; existing public domain exception remains and no external-misuse conclusion is inferred",
+    "remediationStatus": "Completed",
+    "afterFeatureAliasAlignment": {
+      "deployment": "dpl_6uuyTRude6ow7iApuhmcbzWSQpgr",
+      "selectedAffectedAlias": true,
+      "onlyPeopleWithAccess": true,
+      "publicExceptionPreserved": true,
+      "verifiedVia": "Read-only provider UI, no token read"
+    }
+  }
+}

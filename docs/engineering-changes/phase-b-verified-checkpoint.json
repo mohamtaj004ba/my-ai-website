@@ -1,0 +1,10 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "6eb6fa2fafbdbd5d8dafce8c39f607fe6a35d0ce9137b7f731a3d7a9d2f79087",
+  "risk": "routine",
+  "scope": "Record verified Phase B runtime, hosted evidence, independent reviews and remaining restrictions; documentation only, no execution permission changes.",
+  "verification": [
+    "scope-review"
+  ],
+  "defects": []
+}
