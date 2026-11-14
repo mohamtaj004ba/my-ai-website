@@ -61,7 +61,8 @@ jobs:
   test:
     needs: selection
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # STRICT includes time-based supervision and cleanup regressions.
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4

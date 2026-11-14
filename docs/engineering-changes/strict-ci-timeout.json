@@ -1,0 +1,56 @@
+{
+  "version": "engineering-quality-v1",
+  "changeDigest": "f6af6a78e5b1bc902f09dd9376ede3e033affd4be6aa20d66e27cd65bd740de8",
+  "risk": "critical",
+  "scope": "Increase the GitHub STRICT regression job timeout from 10 to 20 minutes.",
+  "riskAnalysis": "Two hosted jobs exhausted ten minutes without a test failure in either available log. A longer upper bound permits full verification and increases possible GitHub runner minutes only for long runs.",
+  "verification": [
+    "risk-analysis",
+    "threat-model",
+    "targeted-tests",
+    "full-regression",
+    "independent-qa",
+    "engineering-auditor",
+    "negative-paths",
+    "rollback-plan",
+    "ci",
+    "codeql",
+    "preview-check"
+  ],
+  "threatModel": {
+    "assets": "GitHub Actions minutes and release confidence.",
+    "trustBoundaries": "Only GitHub's test job timeout changes.",
+    "abuseCases": "Unbounded CI hangs or bypassed tests.",
+    "mitigations": "Keep the job finite, cancel superseded jobs, and keep the full test selection."
+  },
+  "defects": [
+    {
+      "rootCause": "The ten-minute hosted limit was exhausted twice.",
+      "detectionGap": "Canceled jobs reported no full-suite outcome.",
+      "regression": "A new exact-release STRICT job must finish under its revised deadline.",
+      "historicalPrevention": "Use cancellation timing and actual test output to distinguish test failures from runner deadlines."
+    }
+  ],
+  "rollback": "Revert the CI timeout change if necessary. The previous verified development deployment remains available.",
+  "negativePaths": {
+    "malformed-response": "CI inputs and trace checks remain unchanged.",
+    "stale-state": "The release lock is regenerated for the exact runtime.",
+    "concurrency": "GitHub cancel-in-progress stays enabled.",
+    "cancellation": "The GitHub job remains time bounded.",
+    "worker-interruption": "Existing cleanup regressions still execute.",
+    "api-outage": "No inference is invoked by CI.",
+    "authorization-denial": "No job privileges change.",
+    "spending-limit": "Paid engineering and Vercel settings are unaffected.",
+    "partial-execution": "Canceled checks cannot qualify a release."
+  },
+  "proactiveReview": {
+    "architecture": "Change only the existing hosted job deadline.",
+    "dependencies": "No dependencies change.",
+    "threats": "Timeout remains finite and no checks are dropped.",
+    "failureModes": "A stuck job can consume additional runner time until canceled.",
+    "faultInjection": "Retain all existing STRICT fault profiles.",
+    "independentChallenge": "Independent QA and Auditor to verify the workflow and lock.",
+    "recovery": "Use captured CI logs and existing job cancellation.",
+    "readiness": "Requires successful exact-release CI and Preview checks."
+  }
+}
