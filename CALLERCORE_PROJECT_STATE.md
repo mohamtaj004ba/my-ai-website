@@ -1,5 +1,13 @@
 # CallerCore project state
 
+## November 13 live Chief attempt and output contract correction
+
+Preview cc6d85e8f3a83922eaa53ae29bfd22b9857ddca3, fingerprint f435fce39c772005ce2d0ab1058a17b3caa0fdc9d0b87aff9258213ce3fc1f3e, deployment dpl_C8MSQkttee2gaLmkxAZtyeLKCr7H. CI43529621518, CodeQL43529621574, Jekyll43529621382 and Browser43529610940 passed. Browser artifact14086788232 verified 162798800 bytes and SHA256 a6e3a6b32dab4b696e67d3725f2b0da81c462daf433fe0739696463112cc90ca. Report passed with 502 screenshots, six visual comparisons and four private path 404s.
+
+Fresh Chief assignment op_2ad81f520c0047a1aeacd5f268ce6a65 produced workflow wf_913f93be52e6edd92dac79da631f76ce. One count and one GPT-6.1 Sol Response returned HTTP200. Provider reported 4701 input and 295 output tokens. The response failed ENG_DISCOVERY_INSPECT_SCOPE during semantic validation. At least one investigation-only array was populated on an inspect result. Exact rejected fields and content were not retained. Failure receipt 90fcf26addfe1fb5619021bd5276bdb8f51c8125f29c497ac9009c275a6ef85a. No accepted artifact. Approval revoked, sequence stopped, zero active grants/approvals/leases/open sequences, cleanup ready and paid execution disabled. Counting charges and invoice total remain unverified.
+
+Local correction makes branch requirements explicit and restricts evidence-free catalog results to inspect or hold with empty investigation arrays. Historical request hashes remain verifiable against their original request format. No retry dispatched on this release.
+
 ## November 13 Preview launcher asset restoration
 
 Release 98a16f4 passed full CI, Redis, CodeQL and Jekyll. Browser run 43527958598 passed fresh session setup and reached its final console check. The API-rendered Preview launcher requested preview-e2e-client.js, which the static HTML asset graph omitted. The build now explicitly includes the existing browser-only launcher asset under the same content policy. Backend files remain outside the static output. 36 focused tests passed. Hosted qualification and live Chief investigation remain pending.

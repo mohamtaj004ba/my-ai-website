@@ -20,7 +20,7 @@ async function setup(query=reader.initial()){
  return {call,plan,manifest,input,active,owner,runtime,intent,state:()=>JSON.parse(raw),organization};
 }
 for(const decision of ['hold','inspect','investigate'])test('existing owner controller completes one read-only Chief '+decision+' and revokes authority',async()=>{
- const q={...reader.initial(),kind:'read',path:'admin-dashboard.html',lineCount:20},f=await setup(q),previous=global.fetch,calls=[];
+ const q=decision==='inspect'?reader.initial():{...reader.initial(),kind:'read',path:'admin-dashboard.html',lineCount:20},f=await setup(q),previous=global.fetch,calls=[];
  a.equal(f.manifest.approval.maxCalls,1);a.equal(f.manifest.approval.maxTokenCountRequests,1);a.equal(f.manifest.approval.maxInputTokens,12000);a.equal(f.manifest.approval.maxOutputTokens,4000);
  if(decision==='hold'){
   const before=f.state();
@@ -31,11 +31,18 @@ for(const decision of ['hold','inspect','investigate'])test('existing owner cont
  }
  global.fetch=async(url,options)=>{calls.push(url);if(url.endsWith('/input_tokens'))return Response.json({object:'response.input_tokens',input_tokens:1500});const w=f.state().operations.workflows.at(-1),binding={planId:f.plan.id,taskId:f.plan.tasks[0].id,executionId:w.approval.id+'_chief-plan',fence:0,authorizationRevision:1,ownerHash:crypto.createHash('sha256').update(f.owner.id).digest('hex'),workspaceHash:crypto.createHash('sha256').update(f.owner.workspaceId).digest('hex'),runtime:f.plan.runtime},packet=f.plan.repositoryPacket;
  const value={contextHash:JSON.parse(options.body).text.format.schema.properties.contextHash.enum[0],decision,problem:'Explicit scripted source inspection fixture.',userImpact:'Not a verified product defect or customer impact.',evidenceIds:decision==='investigate'?[packet.body.evidence[0].id]:[],files:decision==='investigate'?['admin-dashboard.html']:[],acceptanceCriteria:decision==='investigate'?['Reproduce the proposed issue before implementation.']:[],exclusions:['No execution, mutation, publication or acceptance.'],uncertainty:'Scripted provider fixture only; no genuine model reasoning.',reason:'Verify the existing one-stage lifecycle and honest result.',inspection:decision==='inspect'?{...reader.initial(),kind:'read',path:'dashboard.js'}:discovery.noInspection()};
- a.match(JSON.parse(options.body).input[0].content[0].text,/backendBinding/);
+ const request=JSON.parse(options.body);
+ a.match(request.input[0].content[0].text,/backendBinding/);
+ if(decision==='inspect'){
+  const properties=request.text.format.schema.properties;
+  a.deepEqual(properties.decision.enum,['inspect','hold']);
+  for(const key of ['evidenceIds','files','acceptanceCriteria'])a.equal(properties[key].maxItems,0);
+  a.match(request.instructions,/set evidenceIds, files, and acceptanceCriteria to \[\]/);
+ }
  return Response.json({id:'resp_repository_offline_1',status:'completed',model:'gpt-6.1-sol',service_tier:'default',usage:{input_tokens:1500,output_tokens:400,input_tokens_details:{cached_tokens:0,cache_write_tokens:0},output_tokens_details:{reasoning_tokens:50}},output:[{type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:JSON.stringify(value)}]}]});};
  try{const run=(await f.call('operations-engineering-activation-run',{...f.input,expectedApprovalRevision:f.active.revision})).engineeringActivation;a.equal(calls.length,2);a.equal(run.result.mode,'live-read-only-discovery');a.equal(run.result.receipts.length,1);a.equal(run.result.artifact.decision.decision,decision);a.equal(run.result.artifact.acceptedWork,false);a.equal(run.shutdown.paidExecution,false);const state=f.state(),w=state.operations.workflows.at(-1);a.equal(w.status,'verified');a.deepEqual(w.executionStages,['chief-plan']);a.deepEqual(state.operations.grants.at(-1).roles,['chief-of-staff']);a(state.operations.grants.every(g=>g.revoked));a.equal(w.calls,1);a.equal(w.countCalls,1);a.equal(w.attempts.length,1);a(w.attempts.every(x=>x.closed));a.equal(state.operations.approvals.at(-1).status,'revoked');a.equal(state.operations.reservations.at(-1).responsesActualMicros,7000);a.equal(w.discoveryPacket.hash,f.plan.repositoryPacket.hash);
  discovery.historical(w);
- for(const mutate of [v=>{v.attempts=[];},v=>{v.countCalls=0;},v=>{v.discoveryPacket.body.evidence[0].text='forged';},v=>{const r=v.results[0];r.binding.executionId='forged_execution';const {hash,...body}=r;r.hash=reader.hash(body);}]){const invalid=structuredClone(w);mutate(invalid);a.throws(()=>discovery.historical(invalid));}
+ for(const mutate of [v=>{v.attempts=[];},v=>{v.countCalls=0;},v=>{v.discoveryPacket.body.repositoryView.coverage='forged';},v=>{const r=v.results[0];r.binding.executionId='forged_execution';const {hash,...body}=r;r.hash=reader.hash(body);}]){const invalid=structuredClone(w);mutate(invalid);a.throws(()=>discovery.historical(invalid));}
  await f.call('operations-engineering-activation-stopReviewedConsent',{});a.equal(f.state().operations.engineeringConfigurationIntents.at(-1).status,'revoked');await f.call('operations-engineering-activation-sequenceStop',{sequenceId:f.intent.sequenceIntentId});a.equal(f.state().operations.engineeringSequences.at(-1).status,'stopped');}finally{global.fetch=previous;}
 });
 test('read-only catalog cannot enable implementation or source testing, and legacy stage plans stay five',()=>{const tasks=require('../lib/agent-operations-implementation-tasks'),impl=require('../lib/agent-operations-implementation'),c={assignment:discovery.OBJECTIVE};a.equal(impl.enabled(c),false);a.equal(tasks.registration(c).kind,'read-only-discovery');a.equal(tasks.testProfileFor(c),null);a.deepEqual(provider.executionStages(c),['chief-plan']);a.equal(provider.executionStages({assignment:'legacy'}).length,5);});
